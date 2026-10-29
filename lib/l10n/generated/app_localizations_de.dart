@@ -10843,4 +10843,93 @@ class AppLocalizationsDe extends AppLocalizations {
   String notifPushFolderDigestTitleMore(String folderName, int count) {
     return 'Neu in $folderName und $count weiteren';
   }
+
+  @override
+  String get historySetAndDownloaded => 'Gesetzt und heruntergeladen';
+
+  @override
+  String get historyDownloaded => 'Heruntergeladen';
+
+  @override
+  String get historyRecentlyViewed => 'Zuletzt angesehen';
+
+  @override
+  String get historySyncedNote => 'In deinem Konto gespeichert, damit sie auf einem neuen Handy wieder da sind.';
+
+  @override
+  String get historySyncedNoteGuest => 'Melde dich an, damit sie auf einem neuen Handy bleiben.';
+
+  @override
+  String get historyActionSet => 'Gesetzt';
+
+  @override
+  String get historyActionDownloaded => 'Heruntergeladen';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action um $time';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'Die Liste wird hier und in deinem Konto entfernt. Deine Hintergrundbilder und Downloads bleiben erhalten.';
+
+  @override
+  String get historyClearViewedTitle => 'Zuletzt angesehene löschen?';
+
+  @override
+  String get historyClearViewedBody =>
+      'Die Hintergrundbilder, die du geöffnet hast, werden aus dieser Liste und von der Startseite entfernt.';
+
+  @override
+  String get historyClearViewedAction => 'Zuletzt angesehene löschen';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'Hintergrundbilder, die du setzt oder herunterlädst, erscheinen hier, damit du sie wiederfindest.';
+
+  @override
+  String get historyEmptyBodyIos =>
+      'Hintergrundbilder, die du herunterlädst, erscheinen hier, damit du sie wiederfindest.';
+
+  @override
+  String get historyViewedEmptyTitle => 'Noch nichts angesehen';
+
+  @override
+  String get historyViewedEmptyBody =>
+      'Hintergrundbilder, die du öffnest, erscheinen hier, damit du sie wiederfindest.';
+
+  @override
+  String get historyViewedOffTitle => 'Ansichtsverlauf ist aus';
+
+  @override
+  String get historyViewedOffBody =>
+      'Schalte Ansichtsverlauf speichern ein, um die Hintergrundbilder zu sehen, die du hier öffnest.';
+
+  @override
+  String get historyViewedOffAction => 'Einschalten';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'Hintergrundbild öffnen, angesehen um $time';
+  }
+
+  @override
+  String get pickUpTitle => 'Dort weitermachen, wo du aufgehört hast';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return 'Hintergrundbild $index von $count öffnen';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'Ansichtsverlauf speichern';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'Zeigt die Hintergrundbilder, die du öffnest, im Verlauf und auf der Startseite. Wenn du das ausschaltest, wird die Liste gelöscht.';
+
+  @override
+  String get historyClearFailed =>
+      'Der Verlauf konnte nicht gelöscht werden. Prüfe deine Verbindung und versuche es erneut.';
 }

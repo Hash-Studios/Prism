@@ -11,6 +11,8 @@ String appliedTargetLabel(AppLocalizations l10n, String target) => switch (targe
   'home' => l10n.wallpaperAutoRotateHomeScreen,
   'lock' => l10n.wallpaperAutoRotateLockScreen,
   'both' => l10n.wallpaperHistoryBothScreens,
+  'set' => l10n.historyActionSet,
+  'download' => l10n.historyActionDownloaded,
   _ => target,
 };
 
@@ -18,21 +20,21 @@ String appliedTargetLabel(AppLocalizations l10n, String target) => switch (targe
 double appliedWallpaperFooterHeight(BuildContext context) =>
     MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.5).scale(36) + PrismSpace.xs;
 
-/// One wallpaper the user set: the image, which screen got it and when. A tap opens it; the button on the image sets
-/// it again.
+/// One wallpaper in history: the image, what happened to it and when. A tap opens it; the button on the image, when
+/// given, sets it again. A recently viewed tile shows only the time.
 class AppliedWallpaperTile extends StatelessWidget {
   const AppliedWallpaperTile({
     super.key,
     required this.item,
     required this.onTap,
-    required this.onSetAgain,
+    this.onSetAgain,
     this.onRemove,
     this.isCurrent = false,
   });
 
   final AppliedWallpaper item;
   final VoidCallback onTap;
-  final VoidCallback onSetAgain;
+  final VoidCallback? onSetAgain;
 
   /// Removes the tile from the list. Offered on long press and as a screen reader action.
   final VoidCallback? onRemove;
@@ -44,11 +46,17 @@ class AppliedWallpaperTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final AppLocalizations l10n = context.l10n;
-    final String target = appliedTargetLabel(l10n, item.target);
+    final bool viewed = item.target == 'view';
+    final String target = viewed ? '' : appliedTargetLabel(l10n, item.target);
     final String time = MaterialLocalizations.of(context).formatTimeOfDay(
       TimeOfDay.fromDateTime(item.appliedAt.toLocal()),
       alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
     );
+    final String label = switch (item.target) {
+      'view' => l10n.historyViewedTileLabel(time),
+      'set' || 'download' => l10n.historySyncedTileLabel(target, time),
+      _ => l10n.wallpaperHistoryTileLabel(isCurrent ? l10n.wallpaperHistoryCurrentPrefix : '', target, time),
+    };
     final Widget placeholder = ColoredBox(color: scheme.surfaceContainerHigh);
     final String thumbnail = item.thumbnailUrl.isEmpty ? item.fullUrl : item.thumbnailUrl;
     final Widget image = thumbnail.startsWith('http')
@@ -63,7 +71,7 @@ class AppliedWallpaperTile extends StatelessWidget {
             child: Semantics(
               button: true,
               image: true,
-              label: l10n.wallpaperHistoryTileLabel(isCurrent ? l10n.wallpaperHistoryCurrentPrefix : '', target, time),
+              label: label,
               customSemanticsActions: onRemove == null
                   ? null
                   : <CustomSemanticsAction, VoidCallback>{
@@ -105,17 +113,18 @@ class AppliedWallpaperTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                      PositionedDirectional(
-                        end: PrismSpace.xxs,
-                        bottom: PrismSpace.xxs,
-                        child: PrismIconButton(
-                          icon: Icons.replay_rounded,
-                          tooltip: l10n.wallpaperHistorySetAgain,
-                          onImage: true,
-                          iconSize: 20,
-                          onPressed: onSetAgain,
+                      if (onSetAgain != null)
+                        PositionedDirectional(
+                          end: PrismSpace.xxs,
+                          bottom: PrismSpace.xxs,
+                          child: PrismIconButton(
+                            icon: Icons.replay_rounded,
+                            tooltip: l10n.wallpaperHistorySetAgain,
+                            onImage: true,
+                            iconSize: 20,
+                            onPressed: onSetAgain,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -134,12 +143,13 @@ class AppliedWallpaperTile extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
-                      target,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 13),
-                    ),
+                    if (!viewed)
+                      Text(
+                        target,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 13),
+                      ),
                     Text(time, maxLines: 1, overflow: TextOverflow.ellipsis, style: PrismTextStyles.caption(context)),
                   ],
                 ),

@@ -55,12 +55,14 @@ extension WallpaperHistoryEventPatterns on WallpaperHistoryEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _Cleared value)?  cleared,TResult Function( _Removed value)?  removed,TResult Function( _Restored value)?  restored,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _Cleared value)?  cleared,TResult Function( _ViewedCleared value)?  viewedCleared,TResult Function( _ViewingTurnedOn value)?  viewingTurnedOn,TResult Function( _Removed value)?  removed,TResult Function( _Restored value)?  restored,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _Cleared() when cleared != null:
-return cleared(_that);case _Removed() when removed != null:
+return cleared(_that);case _ViewedCleared() when viewedCleared != null:
+return viewedCleared(_that);case _ViewingTurnedOn() when viewingTurnedOn != null:
+return viewingTurnedOn(_that);case _Removed() when removed != null:
 return removed(_that);case _Restored() when restored != null:
 return restored(_that);case _:
   return orElse();
@@ -80,12 +82,14 @@ return restored(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _Cleared value)  cleared,required TResult Function( _Removed value)  removed,required TResult Function( _Restored value)  restored,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _Cleared value)  cleared,required TResult Function( _ViewedCleared value)  viewedCleared,required TResult Function( _ViewingTurnedOn value)  viewingTurnedOn,required TResult Function( _Removed value)  removed,required TResult Function( _Restored value)  restored,}){
 final _that = this;
 switch (_that) {
 case _Started():
 return started(_that);case _Cleared():
-return cleared(_that);case _Removed():
+return cleared(_that);case _ViewedCleared():
+return viewedCleared(_that);case _ViewingTurnedOn():
+return viewingTurnedOn(_that);case _Removed():
 return removed(_that);case _Restored():
 return restored(_that);case _:
   throw StateError('Unexpected subclass');
@@ -104,12 +108,14 @@ return restored(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _Cleared value)?  cleared,TResult? Function( _Removed value)?  removed,TResult? Function( _Restored value)?  restored,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _Cleared value)?  cleared,TResult? Function( _ViewedCleared value)?  viewedCleared,TResult? Function( _ViewingTurnedOn value)?  viewingTurnedOn,TResult? Function( _Removed value)?  removed,TResult? Function( _Restored value)?  restored,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _Cleared() when cleared != null:
-return cleared(_that);case _Removed() when removed != null:
+return cleared(_that);case _ViewedCleared() when viewedCleared != null:
+return viewedCleared(_that);case _ViewingTurnedOn() when viewingTurnedOn != null:
+return viewingTurnedOn(_that);case _Removed() when removed != null:
 return removed(_that);case _Restored() when restored != null:
 return restored(_that);case _:
   return null;
@@ -128,11 +134,13 @@ return restored(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  cleared,TResult Function( String id)?  removed,TResult Function( AppliedWallpaper item)?  restored,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  cleared,TResult Function()?  viewedCleared,TResult Function()?  viewingTurnedOn,TResult Function( String id)?  removed,TResult Function( AppliedWallpaper item)?  restored,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _Cleared() when cleared != null:
-return cleared();case _Removed() when removed != null:
+return cleared();case _ViewedCleared() when viewedCleared != null:
+return viewedCleared();case _ViewingTurnedOn() when viewingTurnedOn != null:
+return viewingTurnedOn();case _Removed() when removed != null:
 return removed(_that.id);case _Restored() when restored != null:
 return restored(_that.item);case _:
   return orElse();
@@ -152,11 +160,13 @@ return restored(_that.item);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  cleared,required TResult Function( String id)  removed,required TResult Function( AppliedWallpaper item)  restored,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  cleared,required TResult Function()  viewedCleared,required TResult Function()  viewingTurnedOn,required TResult Function( String id)  removed,required TResult Function( AppliedWallpaper item)  restored,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _Cleared():
-return cleared();case _Removed():
+return cleared();case _ViewedCleared():
+return viewedCleared();case _ViewingTurnedOn():
+return viewingTurnedOn();case _Removed():
 return removed(_that.id);case _Restored():
 return restored(_that.item);case _:
   throw StateError('Unexpected subclass');
@@ -175,11 +185,13 @@ return restored(_that.item);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  cleared,TResult? Function( String id)?  removed,TResult? Function( AppliedWallpaper item)?  restored,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  cleared,TResult? Function()?  viewedCleared,TResult? Function()?  viewingTurnedOn,TResult? Function( String id)?  removed,TResult? Function( AppliedWallpaper item)?  restored,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _Cleared() when cleared != null:
-return cleared();case _Removed() when removed != null:
+return cleared();case _ViewedCleared() when viewedCleared != null:
+return viewedCleared();case _ViewingTurnedOn() when viewingTurnedOn != null:
+return viewingTurnedOn();case _Removed() when removed != null:
 return removed(_that.id);case _Restored() when restored != null:
 return restored(_that.item);case _:
   return null;
@@ -245,6 +257,70 @@ int get hashCode => runtimeType.hashCode;
 @override
 String toString() {
   return 'WallpaperHistoryEvent.cleared()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class _ViewedCleared implements WallpaperHistoryEvent {
+  const _ViewedCleared();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ViewedCleared);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WallpaperHistoryEvent.viewedCleared()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class _ViewingTurnedOn implements WallpaperHistoryEvent {
+  const _ViewingTurnedOn();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ViewingTurnedOn);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'WallpaperHistoryEvent.viewingTurnedOn()';
 }
 
 
@@ -388,7 +464,7 @@ as AppliedWallpaper,
 /// @nodoc
 mixin _$WallpaperHistoryState {
 
- List<AppliedWallpaper> get items;
+ List<AppliedWallpaper> get items; List<HistoryWall> get viewed; bool get viewingHistoryOn;
 /// Create a copy of WallpaperHistoryState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -399,16 +475,16 @@ $WallpaperHistoryStateCopyWith<WallpaperHistoryState> get copyWith => _$Wallpape
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WallpaperHistoryState&&const DeepCollectionEquality().equals(other.items, items));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WallpaperHistoryState&&const DeepCollectionEquality().equals(other.items, items)&&const DeepCollectionEquality().equals(other.viewed, viewed)&&(identical(other.viewingHistoryOn, viewingHistoryOn) || other.viewingHistoryOn == viewingHistoryOn));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(items));
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(items),const DeepCollectionEquality().hash(viewed),viewingHistoryOn);
 
 @override
 String toString() {
-  return 'WallpaperHistoryState(items: $items)';
+  return 'WallpaperHistoryState(items: $items, viewed: $viewed, viewingHistoryOn: $viewingHistoryOn)';
 }
 
 
@@ -419,7 +495,7 @@ abstract mixin class $WallpaperHistoryStateCopyWith<$Res>  {
   factory $WallpaperHistoryStateCopyWith(WallpaperHistoryState value, $Res Function(WallpaperHistoryState) _then) = _$WallpaperHistoryStateCopyWithImpl;
 @useResult
 $Res call({
- List<AppliedWallpaper> items
+ List<AppliedWallpaper> items, List<HistoryWall> viewed, bool viewingHistoryOn
 });
 
 
@@ -436,10 +512,12 @@ class _$WallpaperHistoryStateCopyWithImpl<$Res>
 
 /// Create a copy of WallpaperHistoryState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? items = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? items = null,Object? viewed = null,Object? viewingHistoryOn = null,}) {
   return _then(_self.copyWith(
 items: null == items ? _self.items : items // ignore: cast_nullable_to_non_nullable
-as List<AppliedWallpaper>,
+as List<AppliedWallpaper>,viewed: null == viewed ? _self.viewed : viewed // ignore: cast_nullable_to_non_nullable
+as List<HistoryWall>,viewingHistoryOn: null == viewingHistoryOn ? _self.viewingHistoryOn : viewingHistoryOn // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -524,10 +602,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<AppliedWallpaper> items)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<AppliedWallpaper> items,  List<HistoryWall> viewed,  bool viewingHistoryOn)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WallpaperHistoryState() when $default != null:
-return $default(_that.items);case _:
+return $default(_that.items,_that.viewed,_that.viewingHistoryOn);case _:
   return orElse();
 
 }
@@ -545,10 +623,10 @@ return $default(_that.items);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<AppliedWallpaper> items)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<AppliedWallpaper> items,  List<HistoryWall> viewed,  bool viewingHistoryOn)  $default,) {final _that = this;
 switch (_that) {
 case _WallpaperHistoryState():
-return $default(_that.items);case _:
+return $default(_that.items,_that.viewed,_that.viewingHistoryOn);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -565,10 +643,10 @@ return $default(_that.items);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<AppliedWallpaper> items)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<AppliedWallpaper> items,  List<HistoryWall> viewed,  bool viewingHistoryOn)?  $default,) {final _that = this;
 switch (_that) {
 case _WallpaperHistoryState() when $default != null:
-return $default(_that.items);case _:
+return $default(_that.items,_that.viewed,_that.viewingHistoryOn);case _:
   return null;
 
 }
@@ -580,7 +658,7 @@ return $default(_that.items);case _:
 
 
 class _WallpaperHistoryState implements WallpaperHistoryState {
-  const _WallpaperHistoryState({required final  List<AppliedWallpaper> items}): _items = items;
+  const _WallpaperHistoryState({required final  List<AppliedWallpaper> items, final  List<HistoryWall> viewed = const <HistoryWall>[], this.viewingHistoryOn = true}): _items = items,_viewed = viewed;
   
 
  final  List<AppliedWallpaper> _items;
@@ -590,6 +668,14 @@ class _WallpaperHistoryState implements WallpaperHistoryState {
   return EqualUnmodifiableListView(_items);
 }
 
+ final  List<HistoryWall> _viewed;
+@override@JsonKey() List<HistoryWall> get viewed {
+  if (_viewed is EqualUnmodifiableListView) return _viewed;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_viewed);
+}
+
+@override@JsonKey() final  bool viewingHistoryOn;
 
 /// Create a copy of WallpaperHistoryState
 /// with the given fields replaced by the non-null parameter values.
@@ -601,16 +687,16 @@ _$WallpaperHistoryStateCopyWith<_WallpaperHistoryState> get copyWith => __$Wallp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WallpaperHistoryState&&const DeepCollectionEquality().equals(other._items, _items));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WallpaperHistoryState&&const DeepCollectionEquality().equals(other._items, _items)&&const DeepCollectionEquality().equals(other._viewed, _viewed)&&(identical(other.viewingHistoryOn, viewingHistoryOn) || other.viewingHistoryOn == viewingHistoryOn));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_items));
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_items),const DeepCollectionEquality().hash(_viewed),viewingHistoryOn);
 
 @override
 String toString() {
-  return 'WallpaperHistoryState(items: $items)';
+  return 'WallpaperHistoryState(items: $items, viewed: $viewed, viewingHistoryOn: $viewingHistoryOn)';
 }
 
 
@@ -621,7 +707,7 @@ abstract mixin class _$WallpaperHistoryStateCopyWith<$Res> implements $Wallpaper
   factory _$WallpaperHistoryStateCopyWith(_WallpaperHistoryState value, $Res Function(_WallpaperHistoryState) _then) = __$WallpaperHistoryStateCopyWithImpl;
 @override @useResult
 $Res call({
- List<AppliedWallpaper> items
+ List<AppliedWallpaper> items, List<HistoryWall> viewed, bool viewingHistoryOn
 });
 
 
@@ -638,10 +724,12 @@ class __$WallpaperHistoryStateCopyWithImpl<$Res>
 
 /// Create a copy of WallpaperHistoryState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? items = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? items = null,Object? viewed = null,Object? viewingHistoryOn = null,}) {
   return _then(_WallpaperHistoryState(
 items: null == items ? _self._items : items // ignore: cast_nullable_to_non_nullable
-as List<AppliedWallpaper>,
+as List<AppliedWallpaper>,viewed: null == viewed ? _self._viewed : viewed // ignore: cast_nullable_to_non_nullable
+as List<HistoryWall>,viewingHistoryOn: null == viewingHistoryOn ? _self.viewingHistoryOn : viewingHistoryOn // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

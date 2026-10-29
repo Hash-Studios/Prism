@@ -1961,6 +1961,34 @@ events:
       - name: count
         key: count
         type: int
+  - id: recently_viewed_cleared
+    fields:
+      - name: count
+        key: count
+        type: int
+  - id: viewing_history_toggled
+    fields:
+      - name: value
+        key: value
+        type: bool
+  - id: history_restored
+    fields:
+      - name: count_bucket
+        key: count_bucket
+        type: string
+  - id: pick_up_row_seen
+    fields:
+      - name: count
+        key: count
+        type: int
+  - id: pick_up_tile_opened
+    fields:
+      - name: provider
+        key: provider
+        type: string
+      - name: position
+        key: position
+        type: int
   - id: favourites_exported
     fields:
       - name: count

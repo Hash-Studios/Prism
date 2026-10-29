@@ -11,20 +11,23 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/ios_widget_channel.dart';
 import 'package:Prism/core/platform/pigeon/prism_widget_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/services.dart';
 
-import '../../support/in_memory_local_store.dart';
 import '../../features/favourite_walls/support/fav_fixtures.dart';
+import '../../support/fake_firestore_client.dart';
+import '../../support/in_memory_local_store.dart';
 import '../../support/profile_user_fixture.dart';
 
 class _MockGuestFavouritesStore extends Mock implements GuestFavouritesStore {}
@@ -106,6 +109,17 @@ void main() {
       ownerId: 'user-2',
     );
     final history = WallpaperHistoryStore(settings);
+    final recentlyViewed = RecentlyViewedStore(settings);
+    final syncedHistory = SyncedHistoryStore(settings, FakeFirestoreClient(), ownerId: () => '');
+    final HistoryWall wall = HistoryWall.tryCreate(
+      id: 'wall-1',
+      source: WallpaperSource.wallhaven,
+      thumbnailUrl: 'https://th.wallhaven.cc/small/ab/wall-1.jpg',
+      action: HistoryAction.set,
+      at: DateTime.utc(2026, 10, 20, 12),
+    )!;
+    await recentlyViewed.record(wall);
+    await syncedHistory.record(wall);
     await history.record(
       AppliedWallpaper(
         id: 'wall-1',
@@ -133,6 +147,8 @@ void main() {
       ..registerSingleton<DownloadedWallIndex>(downloadedIndex)
       ..registerSingleton<FavoritesLocalDataSource>(favourites)
       ..registerSingleton<WallpaperHistoryStore>(history)
+      ..registerSingleton<RecentlyViewedStore>(recentlyViewed)
+      ..registerSingleton<SyncedHistoryStore>(syncedHistory)
       ..registerSingleton<GuestFavouritesStore>(guest)
       ..registerSingleton<FeedCacheLocalDataSource>(feed);
 
@@ -157,6 +173,8 @@ void main() {
     final acquisitions = jsonDecode(settings.get<String>('downloaded_walls_v1', defaultValue: '{}')) as Map;
     expect(acquisitions.values.map((value) => value['owner']), <String>['user-2']);
     expect(history.items(), isEmpty);
+    expect(recentlyViewed.items(), isEmpty);
+    expect(syncedHistory.items(), isEmpty);
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.getString(PersistenceKeys.shortcutsFavourites), contains('b.jpg'));
     expect(preferences.getString(PersistenceKeys.quickTileFavWallUrls), contains('b.jpg'));

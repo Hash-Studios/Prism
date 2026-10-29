@@ -11,6 +11,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -48,11 +49,15 @@ import 'package:Prism/features/personalized_feed/views/widgets/paged_chip_sliver
 import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
+import 'package:Prism/features/session/data/app_session_tracker.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/trending/domain/usecases/fetch_trending_usecase.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
+import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
+import 'package:Prism/features/wallpaper_history/views/widgets/pick_up_row.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -67,6 +72,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../support/coins_test_backend.dart';
 import '../../../support/fake_app_analytics.dart';
+import '../../../support/fake_firestore_client.dart';
 import '../../../support/fake_user_block_repository.dart';
 import '../../../support/favourite_test_scope.dart';
 import '../../../support/in_memory_local_store.dart';
@@ -247,6 +253,7 @@ void main() {
     bool tickersEnabled = true,
     WallOfTheDayEntity? wotdEntity,
     VoidCallback? onTuneTap,
+    DateTime? sessionStartedAt,
     Size viewSize = const Size(600, 3000),
     Size? mediaSize,
     double statusBar = 0,
@@ -288,7 +295,7 @@ void main() {
                 BlocProvider<FavouriteWallsBloc>.value(value: favourites),
                 BlocProvider<InAppNotificationsBloc>.value(value: notifications),
               ],
-              child: PersonalizedFeedScreen(onTuneTap: onTuneTap),
+              child: PersonalizedFeedScreen(onTuneTap: onTuneTap, sessionStartedAt: sessionStartedAt),
             ),
           ),
         ),
@@ -308,6 +315,50 @@ void main() {
 
   PersonalizedFeedBloc feedBloc(WidgetTester tester) =>
       tester.element(find.byType(CustomScrollView)).read<PersonalizedFeedBloc>();
+
+  testWidgets('the pickup row excludes this session and recomputes after clear and disable', (tester) async {
+    final settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set(AppSessionTracker.sessionCountKey, 1);
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    final viewed = RecentlyViewedStore(settings);
+    getIt.registerSingleton<RecentlyViewedStore>(viewed);
+    getIt.registerSingleton<SyncedHistoryStore>(SyncedHistoryStore(settings, FakeFirestoreClient(), ownerId: () => ''));
+    final sessionStart = DateTime(2026, 10, 29, 10);
+    Future<void> seed() async {
+      for (var i = 0; i < 8; i++) {
+        await viewed.record(
+          HistoryWall.tryCreate(
+            id: 'pickup-$i',
+            source: WallpaperSource.prism,
+            thumbnailUrl: 'https://example.com/pickup-$i-thumb.jpg',
+            action: HistoryAction.view,
+            at: sessionStart.add(Duration(minutes: i < 4 ? -60 - i : i)),
+          )!,
+        );
+      }
+    }
+
+    await seed();
+    await pumpScreen(tester, sessionStartedAt: sessionStart);
+    expect(tester.widget<PickUpRow>(find.byType(PickUpRow)).walls.map((wall) => wall.id), [
+      'pickup-0',
+      'pickup-1',
+      'pickup-2',
+      'pickup-3',
+    ]);
+
+    await viewed.clear();
+    await tester.pump();
+    expect(find.byType(PickUpRow), findsNothing);
+
+    await seed();
+    await tester.pump();
+    expect(find.byType(PickUpRow), findsOneWidget);
+    await viewed.setEnabled(false);
+    await tester.pump();
+    expect(find.byType(PickUpRow), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
 
   testWidgets('shows the five tabs in the header, with For you chosen', (tester) async {
     await pumpScreen(tester);
