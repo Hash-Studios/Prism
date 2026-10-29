@@ -26,6 +26,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [home-widget.md](home-widget.md) | Wall of the Day home screen widget (Android): loads by itself, opens the wall, one-tap Set |
 | [onboarding.md](onboarding.md) | Steps, first wallpaper, guest path on iOS, reduced motion |
 | [upload.md](upload.md) | Upload metadata, multi-upload, size warnings, rejected wall delete |
+| [wall-requests.md](wall-requests.md) | Ask for a wall, upvote requests, fills by creators and Prism Studio, filled push |
 | [profile.md](profile.md) | Profile links, username rules, share link, block and report |
 | [settings.md](settings.md) | Privacy and data, report a problem, data saver, rate prompt |
 | [coins-and-downloads.md](coins-and-downloads.md) | Price on the pill, already downloaded, ads, pending refunds and rewards |

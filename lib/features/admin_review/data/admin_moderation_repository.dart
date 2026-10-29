@@ -1,3 +1,5 @@
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
@@ -76,8 +78,8 @@ class AdminModerationRepository {
     List<String>? collections,
     bool? streakExclusive,
     int? streakShopCoinCost,
-  }) {
-    return _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
+  }) async {
+    await _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
       'review': true,
       'collections': collections == null || collections.isEmpty ? <String>['community'] : collections,
       'is_streak_exclusive': streakExclusive ?? FirestoreSentinels.delete(),
@@ -85,6 +87,14 @@ class AdminModerationRepository {
       'reviewedAt': DateTime.now().toUtc(),
       'createdAt': DateTime.now().toUtc(),
     }, sourceTag: 'admin_review.approve_wall');
+    final Object? requestId = wall.data()['requestId'];
+    if (requestId is String && requestId.isNotEmpty) {
+      analytics.track(
+        WallRequestFilledEvent(
+          filledBy: wall.data()['origin'] == 'studio' ? WallRequestFillerValue.studio : WallRequestFillerValue.creator,
+        ),
+      );
+    }
   }
 
   Future<void> rejectWall(FirestoreDocument wall, {required String reason}) async {

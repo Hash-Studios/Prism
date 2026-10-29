@@ -1,0 +1,159 @@
+import 'dart:async';
+
+import 'package:Prism/core/analytics/events/analytics_enums.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism/prism_chip.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/features/wall_requests/biz/wall_request_sheet_cubit.dart';
+import 'package:Prism/features/wall_requests/domain/entities/wall_request.dart';
+import 'package:Prism/features/wall_requests/views/widgets/wall_request_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+class _MockSheetCubit extends MockCubit<WallRequestSheetState> implements WallRequestSheetCubit {}
+
+WallRequest _request({bool mine = false, bool voted = false}) => WallRequest(
+  id: 'r1',
+  text: 'dark minimal mountains',
+  tags: const <String>['Minimal', 'dreamy'],
+  voteCount: 4,
+  status: WallRequestStatus.open,
+  createdAt: DateTime(2026, 10, 28),
+  requesterName: 'Ana',
+  requesterPhoto: '',
+  mine: mine,
+  voted: voted,
+  hidden: false,
+);
+
+void main() {
+  late _MockSheetCubit cubit;
+
+  void stub(WallRequestSheetState state) {
+    when(() => cubit.state).thenReturn(state);
+    whenListen(cubit, const Stream<WallRequestSheetState>.empty(), initialState: state);
+  }
+
+  setUp(() {
+    cubit = _MockSheetCubit();
+    when(() => cubit.upvoteInstead()).thenAnswer((_) async {});
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user_1'
+      ..loggedIn = true;
+  });
+
+  tearDown(() {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+  });
+
+  /// Opens the sheet from a button, as the app does, and lets it finish its entrance.
+  Future<void> openSheet(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (BuildContext context) => Scaffold(
+            body: Center(
+              child: TextButton(
+                onPressed: () {
+                  unawaited(
+                    showPrismSheet<void>(
+                      context,
+                      builder: (_) => BlocProvider<WallRequestSheetCubit>.value(
+                        value: cubit,
+                        child: const WallRequestSheetBody(source: WallRequestSourceValue.requestsPage),
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+  }
+
+  FilledButton submitButton(WidgetTester tester) =>
+      tester.widget<FilledButton>(find.ancestor(of: find.text('Request it'), matching: find.byType(FilledButton)));
+
+  testWidgets('a close open request offers Upvote this instead and Request mine anyway', (tester) async {
+    stub(WallRequestSheetDuplicate(_request(), exact: false));
+    await openSheet(tester);
+
+    expect(find.text('Someone asked for this already'), findsOneWidget);
+    expect(find.text('Upvote this instead'), findsOneWidget);
+    expect(find.text('Request mine anyway'), findsOneWidget);
+  });
+
+  testWidgets('an exact duplicate hides Request mine anyway', (tester) async {
+    stub(WallRequestSheetDuplicate(_request(), exact: true));
+    await openSheet(tester);
+
+    expect(find.text('Upvote this instead'), findsOneWidget);
+    expect(find.text('Request mine anyway'), findsNothing);
+  });
+
+  testWidgets('the user own duplicate has no upvote button', (tester) async {
+    stub(WallRequestSheetDuplicate(_request(mine: true), exact: false));
+    await openSheet(tester);
+
+    expect(find.text('You asked for this already'), findsOneWidget);
+    expect(find.text('Upvote this instead'), findsNothing);
+    expect(find.text('Request mine anyway'), findsNothing);
+  });
+
+  testWidgets('tapping Upvote this instead calls upvoteInstead', (tester) async {
+    stub(WallRequestSheetDuplicate(_request(), exact: false));
+    await openSheet(tester);
+
+    await tester.tap(find.text('Upvote this instead'));
+    await tester.pump();
+
+    verify(() => cubit.upvoteInstead()).called(1);
+  });
+
+  testWidgets('the submit button needs at least 3 characters', (tester) async {
+    stub(const WallRequestSheetEditing());
+    await openSheet(tester);
+
+    expect(submitButton(tester).onPressed, isNull);
+
+    await tester.enterText(find.byType(TextField), 'ab');
+    await tester.pump();
+    expect(submitButton(tester).onPressed, isNull);
+
+    await tester.enterText(find.byType(TextField), 'abc');
+    await tester.pump();
+    expect(submitButton(tester).onPressed, isNotNull);
+  });
+
+  testWidgets('a fourth tag cannot be selected after three', (tester) async {
+    stub(const WallRequestSheetEditing());
+    await openSheet(tester);
+
+    for (final String tag in <String>['Nature', 'Dark', 'Space']) {
+      await tester.ensureVisible(find.text(tag));
+      await tester.tap(find.text(tag));
+      await tester.pump();
+    }
+
+    await tester.ensureVisible(find.text('Neon'));
+    expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'Neon')).onTap, isNull);
+    expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'Dark')).selected, isTrue);
+  });
+}

@@ -313,6 +313,15 @@ node lib/scripts/backfillWallColors.js --apply --start-after=<wallId>   # resume
 
 Options: `--batch=<n>` (1 to 500, default 100), `--force` (recompute walls that already have `colors`). The script reads reviewed walls in document id order. It logs counts and the last id after each batch. It skips walls that already have `colors`, so a second run is safe. It needs Application Default Credentials for project `prism-wallpapers`. I did not run it with `--apply`.
 
+## Wall requests
+
+The full order is in [wall-requests.md](wall-requests.md#deploy-order).
+
+1. Indexes: 7 `wallRequests` composite indexes and the `votes.uid` collection group index. Wait until they are built.
+2. Rules: the `wallRequests`, `votes` and rate doc matches.
+3. Functions: run `make functions-env`, then deploy the 4 new callables and the 7 changed functions.
+4. Client release.
+
 ## Rollback
 
 | Part | How to roll back | Note |
