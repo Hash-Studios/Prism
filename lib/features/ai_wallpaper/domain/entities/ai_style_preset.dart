@@ -32,13 +32,15 @@ enum AiStylePreset {
   // The worker's studio route stores uploads only as flat `ai/studio/<name>` keys, so the version goes in the name.
   static const String _sampleBaseUrl = 'https://prismwalls.com/api/ai/assets/ai/studio';
 
+  // Debug builds with AI_STYLE_SAMPLES_LOCAL only. Debug builds allow cleartext to localhost.
+  static const String _localSampleBaseUrl = 'http://localhost:8765';
+
   /// [apiValue] as a key part: 'mesh gradient' is 'mesh-gradient'. tool/ai_style_samples.mjs uses the same rule.
   String get sampleSlug => apiValue.replaceAll(RegExp('[^a-z0-9]+'), '-');
 
   /// The one place that builds a sample URL. tool/ai_style_samples.mjs uploads to the same keys.
   String sampleUrl(AiStyleSampleSize size) {
-    final String debugBase = kDebugMode ? Env.normalize(Env.aiStyleSamplesDebugBaseUrl) : '';
-    final String base = debugBase.isNotEmpty ? debugBase : _sampleBaseUrl;
+    final String base = kDebugMode && Env.aiStyleSamplesLocal ? _localSampleBaseUrl : _sampleBaseUrl;
     return '$base/style-samples-$sampleVersion-$sampleSlug-${size.name}.webp';
   }
 
