@@ -8,11 +8,17 @@ internal class WotdTileService : WallpaperTileService() {
     internal override fun wallpaper(prefs: SharedPreferences): Wallpaper {
         val source = source(prefs)
         check(source != null) { "Open Prism to load today's Wall of the Day first" }
-        return Wallpaper(source, TileWallpaperTarget.parse(prefs.getString("flutter.quick_tile.wotd.target", null)))
+        return Wallpaper(
+            source,
+            TileWallpaperTarget.parse(prefs.getString("flutter.quick_tile.wotd.target", null)),
+        )
     }
 
     private fun source(prefs: SharedPreferences): String? =
-        tileSource(prefs.getString("flutter.quick_tile.wotd.url", null), prefs.getString(RETAINED_PREFERENCE, null))
+        tileSource(
+            readPreferenceString { prefs.getString("flutter.quick_tile.wotd.url", null) },
+            readPreferenceString { prefs.getString(RETAINED_PREFERENCE, null) },
+        )
 
     internal companion object {
         const val RETAINED_PREFERENCE = "flutter.quick_tile.wotd.retained"

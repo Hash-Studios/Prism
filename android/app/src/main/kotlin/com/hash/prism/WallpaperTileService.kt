@@ -40,6 +40,18 @@ internal fun tileErrorMessage(error: Throwable): Int = when (error) {
     else -> R.string.tile_error_generic
 }
 
+internal fun tileConfigured(isConfigured: () -> Boolean): Boolean = try {
+    isConfigured()
+} catch (_: ClassCastException) {
+    false
+}
+
+internal fun readPreferenceString(read: () -> String?): String? = try {
+    read()
+} catch (_: ClassCastException) {
+    null
+}
+
 internal abstract class WallpaperTileService : TileService() {
     internal data class Wallpaper(val url: String, val target: TileWallpaperTarget)
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -74,7 +86,7 @@ internal abstract class WallpaperTileService : TileService() {
                 val wallpaper = wallpaper(prefs)
                 file = OfflineTileAssets.retainedFile(
                     wallpaper.url,
-                    prefs.getString(OfflineTileAssets.PATHS_PREFERENCE, null),
+                    readPreferenceString { prefs.getString(OfflineTileAssets.PATHS_PREFERENCE, null) },
                     listOf(
                         File(filesDir, "prism/offline/assets/assets"),
                         File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Prism/Downloads"),
@@ -102,7 +114,8 @@ internal abstract class WallpaperTileService : TileService() {
     }
 
     private fun updateTile() {
-        val ready = isConfigured(applicationContext.getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE))
+        val prefs = applicationContext.getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE)
+        val ready = tileConfigured { isConfigured(prefs) }
         qsTile?.apply {
             state = if (!ready) Tile.STATE_UNAVAILABLE else if (applying) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
