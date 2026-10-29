@@ -17791,6 +17791,96 @@ abstract class AppLocalizations {
   /// **'Fills request'**
   String get adminFillsRequest;
 
+  /// Short label of the button that opens the AI tab with this wallpaper's prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Remix'**
+  String get wallRemixAction;
+
+  /// Tooltip of the Remix button on an AI wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Remix this wallpaper with AI'**
+  String get wallRemixActionTooltip;
+
+  /// Chip in the AI tab that names the wallpaper being remixed.
+  ///
+  /// In en, this message translates to:
+  /// **'Remixing {title} by {creator}'**
+  String wallRemixingChip(String title, String creator);
+
+  /// Tooltip of the x on the remix chip. It removes the link to the original wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove remix link'**
+  String get wallRemixDropLinkTooltip;
+
+  /// Name used for a wallpaper that has no title, inside remix copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled'**
+  String get wallRemixUntitled;
+
+  /// Name used for a creator with no public name, inside remix copy.
+  ///
+  /// In en, this message translates to:
+  /// **'a Prism creator'**
+  String get wallRemixUnknownCreator;
+
+  /// Heading of the row of remixes on a wallpaper's details.
+  ///
+  /// In en, this message translates to:
+  /// **'Remixes'**
+  String get wallRemixesTitle;
+
+  /// Number of remixes next to the Remixes heading.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 remix} other{{count} remixes}}'**
+  String wallRemixesCount(int count);
+
+  /// Screen reader label of one remix in the Remixes row.
+  ///
+  /// In en, this message translates to:
+  /// **'Open remix by {creator}'**
+  String wallRemixOpenRemixLabel(String creator);
+
+  /// Credit row on a remix. It opens the original wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Remix of {title} by {creator}'**
+  String wallRemixOfLabel(String title, String creator);
+
+  /// Tooltip of the credit row on a remix.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the original wallpaper'**
+  String get wallRemixOfTooltip;
+
+  /// Note on the AI submit sheet. Shared AI wallpapers show their prompt to anyone who remixes them.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone can see your prompt and remix this wallpaper.'**
+  String get economyAiSubmitPromptNotice;
+
+  /// Inbox title when another creator's remix of your wallpaper is approved.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallpaper was remixed'**
+  String get notifPushWallRemixedTitle;
+
+  /// Inbox body when another creator remixes your wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'{remixerName} remixed {wallTitle}.'**
+  String notifPushWallRemixedBody(String remixerName, String wallTitle);
+
+  /// Inbox body when another creator remixes your untitled wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'{remixerName} remixed your wallpaper.'**
+  String notifPushWallRemixedBodyUntitled(String remixerName);
+
   /// Intro text in the report a problem sheet.
   ///
   /// In en, this message translates to:

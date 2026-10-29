@@ -65,6 +65,10 @@ A signed-out user who taps Generate or Submit gets the sign-in sheet, not a toas
 
 When the balance is under the price, the button reads "Get coins · need N". It opens Rewards and scrolls to the "Earn coins" section (`RewardsRoute(scrollToEarn: true)`).
 
+### Remix
+
+A remix opens this tab from an approved wallpaper that has a prompt. The prompt and the tier fill in. The style fills in only when the original stores one. Studio walls and older walls store no style, so the current style stays. A chip shows the original. Its x drops the link, and the prompt stays. The app never generates by itself. Normal cost and coin rules apply. The details are in [remix.md](remix.md).
+
 ## Style text in the prompt
 
 The worker adds style text after the user's prompt (`stylePromptSuffix` in `infra/cloudflare/worker/src/ai_style_prompt.ts`). Fal and Gemini requests use the same text.

@@ -10572,6 +10572,105 @@
   "@adminFillsRequest": {
     "description": "Admin review card label: the text of the request this wall says it fills."
   },
+  "wallRemixAction": "Remix",
+  "@wallRemixAction": {
+    "description": "Short label of the button that opens the AI tab with this wallpaper's prompt."
+  },
+  "wallRemixActionTooltip": "Remix this wallpaper with AI",
+  "@wallRemixActionTooltip": {
+    "description": "Tooltip of the Remix button on an AI wallpaper."
+  },
+  "wallRemixingChip": "Remixing {title} by {creator}",
+  "@wallRemixingChip": {
+    "description": "Chip in the AI tab that names the wallpaper being remixed.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRemixDropLinkTooltip": "Remove remix link",
+  "@wallRemixDropLinkTooltip": {
+    "description": "Tooltip of the x on the remix chip. It removes the link to the original wallpaper."
+  },
+  "wallRemixUntitled": "Untitled",
+  "@wallRemixUntitled": {
+    "description": "Name used for a wallpaper that has no title, inside remix copy."
+  },
+  "wallRemixUnknownCreator": "a Prism creator",
+  "@wallRemixUnknownCreator": {
+    "description": "Name used for a creator with no public name, inside remix copy."
+  },
+  "wallRemixesTitle": "Remixes",
+  "@wallRemixesTitle": {
+    "description": "Heading of the row of remixes on a wallpaper's details."
+  },
+  "wallRemixesCount": "{count, plural, =1{1 remix} other{{count} remixes}}",
+  "@wallRemixesCount": {
+    "description": "Number of remixes next to the Remixes heading.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRemixOpenRemixLabel": "Open remix by {creator}",
+  "@wallRemixOpenRemixLabel": {
+    "description": "Screen reader label of one remix in the Remixes row.",
+    "placeholders": {
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRemixOfLabel": "Remix of {title} by {creator}",
+  "@wallRemixOfLabel": {
+    "description": "Credit row on a remix. It opens the original wallpaper.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRemixOfTooltip": "Open the original wallpaper",
+  "@wallRemixOfTooltip": {
+    "description": "Tooltip of the credit row on a remix."
+  },
+  "economyAiSubmitPromptNotice": "Anyone can see your prompt and remix this wallpaper.",
+  "@economyAiSubmitPromptNotice": {
+    "description": "Note on the AI submit sheet. Shared AI wallpapers show their prompt to anyone who remixes them."
+  },
+  "notifPushWallRemixedTitle": "Your wallpaper was remixed",
+  "@notifPushWallRemixedTitle": {
+    "description": "Inbox title when another creator's remix of your wallpaper is approved."
+  },
+  "notifPushWallRemixedBody": "{remixerName} remixed {wallTitle}.",
+  "@notifPushWallRemixedBody": {
+    "description": "Inbox body when another creator remixes your wallpaper.",
+    "placeholders": {
+      "remixerName": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushWallRemixedBodyUntitled": "{remixerName} remixed your wallpaper.",
+  "@notifPushWallRemixedBodyUntitled": {
+    "description": "Inbox body when another creator remixes your untitled wallpaper.",
+    "placeholders": {
+      "remixerName": {
+        "type": "String"
+      }
+    }
+  },
   "reportSheetMessage": "Tell us what went wrong. Reports have no email address or sign-in tokens.",
   "@reportSheetMessage": {
     "description": "Intro text in the report a problem sheet."

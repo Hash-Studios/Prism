@@ -663,9 +663,58 @@ void main() {
     expect(await repository.fetchLocalHistory(userId: 'user-1'), isEmpty);
   });
 
-  test('clearing an owner prevents a late generation response from restoring local history', () async {
+  test('a linked generation stores remixOf on its first local and remote history write', () async {
+    final Directory directory = await Directory.systemTemp.createTemp('prism-ai-remix-history-test');
+    addTearDown(() => directory.delete(recursive: true));
+    final FakeFirestoreClient firestore = getIt<FirestoreClient>() as FakeFirestoreClient;
+    final AiGenerationRepositoryImpl repository = AiGenerationRepositoryImpl.forTest(
+      client: MockClient((_) async => http.Response(_okBody, 200)),
+      auth: _FakeAuth(),
+      localStore: DurableJsonStore('ai_remix_history_test', directory: directory),
+    );
+
+    final AiGenerationRecord generated = await repository.generate(
+      prompt: 'misty peaks',
+      stylePreset: AiStylePreset.nature,
+      qualityTier: AiQualityTier.fast,
+      targetSize: '1080x1920',
+      chargeMode: AiChargeMode.coinSpend,
+      coinsSpent: 10,
+      remixOf: 'orig_1',
+    );
+    final List<AiGenerationRecord> local = await repository.fetchLocalHistory(userId: 'user-1');
+
+    expect(generated.remixOf, 'orig_1');
+    expect(local.single.remixOf, 'orig_1');
+    expect(firestore.docs['aiGenerations']?['gen-1']?['remixOf'], 'orig_1');
+  });
+
+  test('a variation made while linked stores remixOf in history', () async {
+    final Directory directory = await Directory.systemTemp.createTemp('prism-ai-remix-variation-test');
+    addTearDown(() => directory.delete(recursive: true));
+    final FakeFirestoreClient firestore = getIt<FirestoreClient>() as FakeFirestoreClient;
+    final AiGenerationRepositoryImpl repository = AiGenerationRepositoryImpl.forTest(
+      client: MockClient((_) async => http.Response(_okBody, 200)),
+      auth: _FakeAuth(),
+      localStore: DurableJsonStore('ai_remix_variation_test', directory: directory),
+    );
+
+    final AiGenerationRecord generated = await repository.generateVariation(
+      generationId: 'gen-0',
+      chargeMode: AiChargeMode.coinSpend,
+      coinsSpent: 10,
+      remixOf: 'orig_1',
+    );
+
+    expect(generated.remixOf, 'orig_1');
+    expect((await repository.fetchLocalHistory(userId: 'user-1')).single.remixOf, 'orig_1');
+    expect(firestore.docs['aiGenerations']?['gen-1']?['remixOf'], 'orig_1');
+  });
+
+  test('clearing an owner prevents a late linked generation response from restoring history', () async {
     final Directory directory = await Directory.systemTemp.createTemp('prism-ai-late-generation-test');
     addTearDown(() => directory.delete(recursive: true));
+    final FakeFirestoreClient firestore = getIt<FirestoreClient>() as FakeFirestoreClient;
     final Completer<void> requestStarted = Completer<void>();
     final Completer<http.Response> responseGate = Completer<http.Response>();
     final AiGenerationRepositoryImpl repository = AiGenerationRepositoryImpl.forTest(
@@ -684,13 +733,16 @@ void main() {
       targetSize: '1080x1920',
       chargeMode: AiChargeMode.coinSpend,
       coinsSpent: 10,
+      remixOf: 'orig_1',
     );
     await requestStarted.future;
     await repository.clearForUser('user-1');
     responseGate.complete(http.Response(_okBody, 200));
-    await generation;
+    final AiGenerationRecord generated = await generation;
 
+    expect(generated.remixOf, 'orig_1');
     expect(await repository.fetchLocalHistory(userId: 'user-1'), isEmpty);
+    expect(firestore.writes, isEmpty);
   });
 
   test('a stalled remote history write does not block local prompt saves or clear', () async {
