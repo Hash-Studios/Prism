@@ -18,8 +18,9 @@ class WallRemixRepository {
   static const int remixLimit = 24;
   static const Duration _timeout = Duration(seconds: 10);
 
-  /// Approved remixes of the wall with Firestore id [originalDocId], newest first.
-  Future<List<PrismWallpaper>> fetchRemixes(String originalDocId) async {
+  /// Approved remixes of the wall with Firestore id [originalDocId], newest first. Pass the last row's Firestore id as
+  /// [startAfterDocId] to read the next page.
+  Future<List<PrismWallpaper>> fetchRemixes(String originalDocId, {String? startAfterDocId}) async {
     if (originalDocId.trim().isEmpty) return const <PrismWallpaper>[];
     return _firestoreClient
         .query<PrismWallpaper>(
@@ -32,6 +33,7 @@ class WallRemixRepository {
             ],
             orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
             limit: remixLimit,
+            startAfterDocId: startAfterDocId,
             cachePolicy: FirestoreCachePolicy.serverOnly,
           ),
           (data, docId) => PrismWallDocDto.fromJson(data).toDomain(docId: docId),

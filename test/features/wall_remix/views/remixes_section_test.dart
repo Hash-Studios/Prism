@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/features/wall_remix/biz/remixes_cubit.dart';
 import 'package:Prism/features/wall_remix/data/wall_remix_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/features/wall_remix/views/widgets/remixes_section.dart';
@@ -28,7 +29,7 @@ class _FakeRemixRepository extends WallRemixRepository {
   final PrismWallpaper original;
 
   @override
-  Future<List<PrismWallpaper>> fetchRemixes(String originalDocId) async => remixes;
+  Future<List<PrismWallpaper>> fetchRemixes(String originalDocId, {String? startAfterDocId}) async => remixes;
 
   @override
   Future<Set<String>> blockedCreatorUids({bool waitForInitialLoad = true}) async => const <String>{};
@@ -46,7 +47,7 @@ class _MappedRemixRepository extends WallRemixRepository {
   int queryCount = 0;
 
   @override
-  Future<List<PrismWallpaper>> fetchRemixes(String originalDocId) async {
+  Future<List<PrismWallpaper>> fetchRemixes(String originalDocId, {String? startAfterDocId}) async {
     queryCount++;
     return remixesByOriginal[originalDocId] ?? const <PrismWallpaper>[];
   }
@@ -73,7 +74,7 @@ class _DeferredRemixRepository extends WallRemixRepository {
   Future<PrismWallpaper?> fetchApprovedWall(String docId) async => originalsByDocId[docId];
 
   @override
-  Future<List<PrismWallpaper>> fetchRemixes(String originalDocId) =>
+  Future<List<PrismWallpaper>> fetchRemixes(String originalDocId, {String? startAfterDocId}) =>
       pending[originalDocId]?.future ??
       Future<List<PrismWallpaper>>.value(remixesByOriginal[originalDocId] ?? const []);
 
@@ -97,7 +98,7 @@ Future<void> _pump(
         body: SingleChildScrollView(
           child: RemixesSection(
             original: original,
-            repository: _FakeRemixRepository(remixes, original),
+            cubit: RemixesCubit(_FakeRemixRepository(remixes, original)),
             viewer: _viewer(),
           ),
         ),
@@ -199,7 +200,7 @@ void main() {
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: SingleChildScrollView(
-          child: RemixesSection(original: original, repository: repository, viewer: viewer),
+          child: RemixesSection(original: original, cubit: RemixesCubit(repository), viewer: viewer),
         ),
       ),
     );
@@ -265,7 +266,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SingleChildScrollView(
-            child: RemixesSection(original: original, repository: repository, viewer: _viewer()),
+            child: RemixesSection(original: original, cubit: RemixesCubit(repository), viewer: _viewer()),
           ),
         ),
       ),
@@ -298,7 +299,7 @@ void main() {
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: SingleChildScrollView(
-          child: RemixesSection(original: original, repository: repository, viewer: _viewer()),
+          child: RemixesSection(original: original, cubit: RemixesCubit(repository), viewer: _viewer()),
         ),
       ),
     );

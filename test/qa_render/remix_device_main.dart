@@ -23,6 +23,8 @@ import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.da
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_row.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/features/wall_remix/biz/remix_credit_cubit.dart';
+import 'package:Prism/features/wall_remix/biz/remixes_cubit.dart';
 import 'package:Prism/features/wall_remix/data/wall_remix_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/features/wall_remix/views/widgets/remix_credit_row.dart';
@@ -74,7 +76,7 @@ class _QaRemixRepository extends WallRemixRepository {
   final PrismWallpaper original;
 
   @override
-  Future<List<PrismWallpaper>> fetchRemixes(String originalDocId) async => remixes;
+  Future<List<PrismWallpaper>> fetchRemixes(String originalDocId, {String? startAfterDocId}) async => remixes;
 
   @override
   Future<PrismWallpaper?> fetchApprovedWall(String docId) async => original;
@@ -291,7 +293,7 @@ class _QaLauncher extends StatelessWidget {
                       const SizedBox(height: 16),
                       RemixesSection(
                         original: _original,
-                        repository: _QaRemixRepository(remixes: _remixes, original: _original),
+                        cubit: RemixesCubit(_QaRemixRepository(remixes: _remixes, original: _original)),
                         viewer: _viewer,
                       ),
                     ],
@@ -324,7 +326,9 @@ class _QaLauncher extends StatelessWidget {
                             const SizedBox(height: 12),
                             RemixCreditRow(
                               remixOfDocId: _originalDocId,
-                              repository: _QaRemixRepository(remixes: const <PrismWallpaper>[], original: _original),
+                              cubit: RemixCreditCubit(
+                                _QaRemixRepository(remixes: const <PrismWallpaper>[], original: _original),
+                              ),
                               viewer: _viewer,
                             ),
                           ],

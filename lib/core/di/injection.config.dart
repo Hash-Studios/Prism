@@ -219,6 +219,8 @@ import '../../features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_use
     as _i398;
 import '../../features/wall_of_the_day/domain/usecases/fetch_wotd_archive_usecase.dart'
     as _i353;
+import '../../features/wall_remix/biz/remix_credit_cubit.dart' as _i1026;
+import '../../features/wall_remix/biz/remixes_cubit.dart' as _i405;
 import '../../features/wall_remix/data/wall_remix_repository.dart' as _i244;
 import '../../features/wall_requests/biz/wall_request_sheet_cubit.dart'
     as _i658;
@@ -670,6 +672,12 @@ _i174.GetIt initGetIt(
       gh<_i652.PaletteRepository>(),
       gh<_i364.GetWallpaperSetCountUseCase>(),
     ),
+  );
+  gh.factory<_i1026.RemixCreditCubit>(
+    () => _i1026.RemixCreditCubit(gh<_i244.WallRemixRepository>()),
+  );
+  gh.factory<_i405.RemixesCubit>(
+    () => _i405.RemixesCubit(gh<_i244.WallRemixRepository>()),
   );
   gh.factory<_i733.UserSearchBloc>(
     () => _i733.UserSearchBloc(gh<_i750.SearchUsersUseCase>()),

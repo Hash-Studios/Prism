@@ -28,6 +28,8 @@ import 'package:Prism/core/widgets/menu_button/share_button.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/features/wall_remix/biz/remix_credit_cubit.dart';
+import 'package:Prism/features/wall_remix/biz/remixes_cubit.dart';
 import 'package:Prism/features/wall_remix/data/wall_remix_repository.dart';
 import 'package:Prism/features/wall_remix/views/widgets/remix_action_button.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
@@ -104,7 +106,8 @@ class _RemixScreenRepository implements WallRemixRepository {
   Future<PrismWallpaper?> fetchApprovedWall(String docId) async => original;
 
   @override
-  Future<List<PrismWallpaper>> fetchRemixes(String originalDocId) async => remixes;
+  Future<List<PrismWallpaper>> fetchRemixes(String originalDocId, {String? startAfterDocId}) async =>
+      startAfterDocId == null ? remixes : const <PrismWallpaper>[];
 
   @override
   Future<Set<String>> blockedCreatorUids({bool waitForInitialLoad = true}) =>
@@ -301,6 +304,8 @@ void main() {
       firestoreDocumentId: 'remix-wall-doc',
     );
     getIt.registerSingleton<WallRemixRepository>(_RemixScreenRepository(blocks, original, <PrismWallpaper>[remix]));
+    getIt.registerFactory<RemixesCubit>(() => RemixesCubit(getIt<WallRemixRepository>()));
+    getIt.registerFactory<RemixCreditCubit>(() => RemixCreditCubit(getIt<WallRemixRepository>()));
     await pumpDetail(
       tester,
       const WallpaperDetailLoaded(
@@ -345,6 +350,8 @@ void main() {
       aiSource: WallAiSource(prompt: 'a koi pond'),
     );
     getIt.registerSingleton<WallRemixRepository>(_RemixScreenRepository(blocks, original, const <PrismWallpaper>[]));
+    getIt.registerFactory<RemixesCubit>(() => RemixesCubit(getIt<WallRemixRepository>()));
+    getIt.registerFactory<RemixCreditCubit>(() => RemixCreditCubit(getIt<WallRemixRepository>()));
 
     Future<void> pumpChild({
       required String id,

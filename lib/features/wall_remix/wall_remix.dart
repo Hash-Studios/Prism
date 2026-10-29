@@ -1,6 +1,8 @@
 /// Remix a Prism wall with AI: the rules, the repository and the detail-screen widgets.
 library;
 
+export 'package:Prism/features/wall_remix/biz/remix_credit_cubit.dart';
+export 'package:Prism/features/wall_remix/biz/remixes_cubit.dart';
 export 'package:Prism/features/wall_remix/data/wall_remix_repository.dart';
 export 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 export 'package:Prism/features/wall_remix/views/widgets/remix_action_button.dart';

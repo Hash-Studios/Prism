@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/features/wall_remix/biz/remix_credit_cubit.dart';
 import 'package:Prism/features/wall_remix/data/wall_remix_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/features/wall_remix/views/widgets/remix_credit_row.dart';
@@ -66,7 +67,11 @@ Future<void> _pump(WidgetTester tester, {required PrismWallpaper? original, requ
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
-        body: RemixCreditRow(remixOfDocId: 'doc-orig', repository: _FakeRemixRepository(original), viewer: viewer),
+        body: RemixCreditRow(
+          remixOfDocId: 'doc-orig',
+          cubit: RemixCreditCubit(_FakeRemixRepository(original)),
+          viewer: viewer,
+        ),
       ),
     ),
   );
@@ -135,7 +140,7 @@ void main() {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
-        body: RemixCreditRow(remixOfDocId: remixOfDocId, repository: repository, viewer: viewer),
+        body: RemixCreditRow(remixOfDocId: remixOfDocId, cubit: RemixCreditCubit(repository), viewer: viewer),
       ),
     );
 
@@ -169,7 +174,7 @@ void main() {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
-        body: RemixCreditRow(remixOfDocId: remixOfDocId, repository: repository, viewer: _viewer()),
+        body: RemixCreditRow(remixOfDocId: remixOfDocId, cubit: RemixCreditCubit(repository), viewer: _viewer()),
       ),
     );
 
