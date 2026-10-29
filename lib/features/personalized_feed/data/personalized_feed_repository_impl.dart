@@ -966,12 +966,15 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         for (final FeedItemEntity item in chunks.expand((chunk) => chunk)) item.id.toUpperCase(): item,
       };
       final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
+      final List<FeedItemEntity> items = <FeedItemEntity>[for (final String id in ids) ?byId[id]];
+      final List<FeedItemEntity> visible = BlockedCreatorsFilter.filterFeedItems(items, blocked);
+      // Popular is one page with no block-list listener, so walls hidden now would not come back without a refresh.
+      if (blocked is UnknownBlockedCreators && visible.length != items.length) {
+        return Result.error(const ServerFailure('Failed to fetch popular feed: blocked accounts did not load'));
+      }
       return Result.success(
         PersonalizedFeedPage(
-          items: AnimeContentFilter.filterFeedItems(
-            BlockedCreatorsFilter.filterFeedItems(<FeedItemEntity>[for (final String id in ids) ?byId[id]], blocked),
-            showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
-          ),
+          items: AnimeContentFilter.filterFeedItems(visible, showAnime: AnimeContentFilter.showsAnime(_settingsLocal)),
           hasMore: false,
         ),
       );

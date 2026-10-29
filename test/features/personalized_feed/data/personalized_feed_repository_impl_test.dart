@@ -2968,6 +2968,34 @@ void main() {
       expect(firestore.sourceTags, isNot(contains('popular.stats')));
     });
 
+    test('fails instead of an empty page while the block list is unknown', () async {
+      final _PopularFirestore firestore = _PopularFirestore(
+        popularIds: <String>['AAA'],
+        walls: <String>['AAA'],
+        creatorUid: 'creator-uid',
+      );
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+
+      expect((await repository.fetchPopular()).isFailure, isTrue);
+    });
+
+    test('keeps walls without a creator while the block list is unknown', () async {
+      final _PopularFirestore firestore = _PopularFirestore(popularIds: <String>['AAA'], walls: <String>['AAA']);
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+
+      expect((await repository.fetchPopular()).data!.items.map((item) => item.id), <String>['AAA']);
+    });
+
     test('falls back to the most viewed walls when the list is missing', () async {
       final _PopularFirestore firestore = _PopularFirestore(
         statsIds: <String>['BBB', 'AAA'],
@@ -3253,8 +3281,10 @@ class _PopularFirestore extends _EmptyFirestore {
     this.statsIds = const <String>[],
     this.popularFails = false,
     this.walls = const <String>[],
+    this.creatorUid,
   });
 
+  final String? creatorUid;
   final List<String> popularIds;
   final List<String> statsIds;
   final bool popularFails;
@@ -3297,6 +3327,7 @@ class _PopularFirestore extends _EmptyFirestore {
             'wallpaper_provider': 'prism',
             'review': true,
             'email': 'creator@example.com',
+            'creatorUid': ?creatorUid,
           }, 'doc-$id'),
     ];
   }
