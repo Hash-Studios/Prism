@@ -1035,7 +1035,7 @@ void main() {
       expect(find.text('Restart app'), findsNothing);
     });
 
-    testWidgets('Report a problem opens the preview sheet', (tester) async {
+    testWidgets('Report a problem opens the report form', (tester) async {
       messenger.setMockMethodCallHandler(const MethodChannel('dev.fluttercommunity.plus/package_info'), (call) async {
         return <String, Object?>{
           'appName': 'Prism',
@@ -1052,9 +1052,9 @@ void main() {
       await tester.tap(find.text('Report a problem'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('It has no email address or sign-in tokens.'), findsOneWidget);
-      expect(find.byKey(const Key('report_problem_preview')), findsOneWidget);
-      expect(find.text('Share'), findsOneWidget);
+      expect(find.text('Tell us what went wrong. Reports have no email address or sign-in tokens.'), findsOneWidget);
+      expect(find.text('Crash/freeze'), findsOneWidget);
+      expect(find.text('Send report'), findsOneWidget);
     });
   });
 

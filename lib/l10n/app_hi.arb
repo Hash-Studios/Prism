@@ -1435,16 +1435,7 @@
   "@accountReportAProblem": {
     "description": "Title for the report problem sheet and settings row."
   },
-  "accountReportPreviewNotice": "इस रिपोर्ट में आपके ऐप का वर्ज़न, डिवाइस और हाल के लॉग शामिल हैं। इसमें ईमेल पता या साइन-इन टोकन नहीं हैं। इसे पढ़ें, फिर {email} के साथ शेयर करें।",
-  "@accountReportPreviewNotice": {
-    "description": "Privacy explanation shown before sharing a diagnostic report.",
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
-  "accountReportProblemSubtitle": "Prism टीम के साथ अपने ऐप लॉग शेयर करें",
+  "accountReportProblemSubtitle": "Prism टीम को बग रिपोर्ट भेजें",
   "@accountReportProblemSubtitle": {
     "description": "Subtitle for reporting a problem."
   },
@@ -1595,10 +1586,6 @@
   "accountSettings": "सेटिंग्स",
   "@accountSettings": {
     "description": "Settings action label."
-  },
-  "accountShare": "शेयर करें",
-  "@accountShare": {
-    "description": "Share action label."
   },
   "accountShareInvite": "निमंत्रण शेयर करें",
   "@accountShareInvite": {
@@ -10584,5 +10571,106 @@
   "adminFillsRequest": "अनुरोध पूरा करता है",
   "@adminFillsRequest": {
     "description": "Admin review card label: the text of the request this wall says it fills."
+  },
+  "reportSheetMessage": "हमें बताएं कि क्या गड़बड़ हुई। रिपोर्ट में ईमेल पता या साइन-इन टोकन नहीं होते।",
+  "@reportSheetMessage": {
+    "description": "Intro text in the report a problem sheet."
+  },
+  "reportTopicCrashFreeze": "क्रैश/फ़्रीज़",
+  "@reportTopicCrashFreeze": {
+    "description": "Report topic chip: app crashed or froze."
+  },
+  "reportTopicWallpaperWontSet": "वॉलपेपर सेट नहीं हो रहा",
+  "@reportTopicWallpaperWontSet": {
+    "description": "Report topic chip: wallpaper could not be set."
+  },
+  "reportTopicLooksBroken": "गड़बड़ दिखता है",
+  "@reportTopicLooksBroken": {
+    "description": "Report topic chip: something looks visually broken."
+  },
+  "reportTopicSlow": "धीमा",
+  "@reportTopicSlow": {
+    "description": "Report topic chip: app is slow."
+  },
+  "reportTopicOther": "अन्य",
+  "@reportTopicOther": {
+    "description": "Report topic chip: any other problem."
+  },
+  "reportNoteHint": "क्या हुआ? आपको क्या उम्मीद थी?",
+  "@reportNoteHint": {
+    "description": "Hint text of the note field in the report sheet."
+  },
+  "reportScreenshotTitle": "स्क्रीनशॉट",
+  "@reportScreenshotTitle": {
+    "description": "Title of the screenshot row in the report sheet."
+  },
+  "reportScreenshotEmpty": "हमें दिखाएं कि आपको क्या दिख रहा है।",
+  "@reportScreenshotEmpty": {
+    "description": "Subtitle of the screenshot row when no screenshot is attached."
+  },
+  "reportScreenshotAttached": "देखने के लिए टैप करें। भेजने से पहले जांच लें।",
+  "@reportScreenshotAttached": {
+    "description": "Subtitle of the screenshot row when a screenshot is attached."
+  },
+  "reportAddScreenshot": "स्क्रीनशॉट जोड़ें",
+  "@reportAddScreenshot": {
+    "description": "Button to add a screenshot to the report."
+  },
+  "reportRemoveScreenshot": "हटाएं",
+  "@reportRemoveScreenshot": {
+    "description": "Button to remove the attached screenshot."
+  },
+  "reportViewScreenshot": "स्क्रीनशॉट देखें",
+  "@reportViewScreenshot": {
+    "description": "Tooltip or label to view the attached screenshot."
+  },
+  "reportIncludeDiagnostics": "डिवाइस जानकारी और हाल के लॉग शामिल करें",
+  "@reportIncludeDiagnostics": {
+    "description": "Switch label to include device info and recent logs in the report."
+  },
+  "reportShowDiagnostics": "क्या शामिल है, दिखाएं",
+  "@reportShowDiagnostics": {
+    "description": "Button to expand the list of included diagnostics."
+  },
+  "reportHideDiagnostics": "विवरण छिपाएं",
+  "@reportHideDiagnostics": {
+    "description": "Button to collapse the list of included diagnostics."
+  },
+  "reportSend": "रिपोर्ट भेजें",
+  "@reportSend": {
+    "description": "Button that sends the report."
+  },
+  "reportShareAsFile": "फ़ाइल के रूप में शेयर करें",
+  "@reportShareAsFile": {
+    "description": "Button that shares the report as a file."
+  },
+  "reportSent": "धन्यवाद, रिपोर्ट भेज दी गई। रेफ़रेंस {reference}",
+  "@reportSent": {
+    "description": "Confirmation after the report is sent, with a short reference code.",
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCouldNotSend": "भेजा नहीं जा सका",
+  "@reportCouldNotSend": {
+    "description": "Title of the dialog shown when the report fails to send."
+  },
+  "reportCouldNotSendBody": "अपना कनेक्शन जांचें और फिर कोशिश करें, या रिपोर्ट को फ़ाइल के रूप में शेयर करें।",
+  "@reportCouldNotSendBody": {
+    "description": "Body of the dialog shown when the report fails to send."
+  },
+  "reportShareInstead": "इसके बजाय शेयर करें",
+  "@reportShareInstead": {
+    "description": "Dialog action to share the report as a file after a send failure."
+  },
+  "reportShakeToReport": "रिपोर्ट के लिए शेक करें",
+  "@reportShakeToReport": {
+    "description": "Settings toggle label for shake to report."
+  },
+  "reportShakeToReportSubtitle": "किसी भी स्क्रीन पर समस्या की रिपोर्ट करने के लिए फ़ोन को हिलाएं",
+  "@reportShakeToReportSubtitle": {
+    "description": "Settings toggle subtitle for shake to report."
   }
 }

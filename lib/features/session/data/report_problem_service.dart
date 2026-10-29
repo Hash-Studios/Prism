@@ -1,12 +1,18 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:Prism/core/debug/in_memory_log_sink.dart';
+import 'package:Prism/core/monitoring/monitoring_runtime.dart';
+import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/app_logger.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 const String supportEmail = 'hash.studios.inc@gmail.com';
@@ -110,9 +116,64 @@ String buildProblemReport({
   return out.toString();
 }
 
+/// What the problem is about. [wire] is the value in Sentry tags and analytics.
+enum ReportTopic {
+  crashFreeze('crash_freeze'),
+  wallpaperWontSet('wallpaper_wont_set'),
+  looksBroken('looks_broken'),
+  slow('slow'),
+  other('other');
+
+  const ReportTopic(this.wire);
+
+  final String wire;
+}
+
+/// How the user opened the report.
+enum ReportTrigger { settings, shake, menu }
+
+/// One report as the user sends it. [diagnostics] is null when the user turned device info and logs off.
+@immutable
+class ProblemReportDraft {
+  const ProblemReportDraft({
+    required this.topic,
+    required this.trigger,
+    this.note = '',
+    this.screenshot,
+    this.diagnostics,
+  });
+
+  final ReportTopic topic;
+  final ReportTrigger trigger;
+  final String note;
+  final Uint8List? screenshot;
+  final String? diagnostics;
+}
+
+/// The report did not reach Sentry: no connection, monitoring is off in this build, or Sentry dropped it.
+class ReportNotSentException implements Exception {
+  const ReportNotSentException(this.reason);
+
+  final String reason;
+
+  @override
+  String toString() => 'ReportNotSentException: $reason';
+}
+
+// No 0/O or 1/I/L: users read the reference back to support.
+const String _referenceAlphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+String _newReference(Random random) => String.fromCharCodes(
+  List<int>.generate(6, (_) => _referenceAlphabet.codeUnitAt(random.nextInt(_referenceAlphabet.length))),
+);
+
 typedef DeviceLabelReader = Future<String> Function();
 typedef AppVersionReader = Future<String> Function();
 typedef ReportFileSharer = Future<void> Function(String text);
+typedef FeedbackCapture = Future<SentryId> Function(SentryFeedback feedback, {ScopeCallback? withScope});
+
+Future<SentryId> _sentryCapture(SentryFeedback feedback, {ScopeCallback? withScope}) =>
+    Sentry.captureFeedback(feedback, withScope: withScope);
 
 Future<String> _platformDeviceLabel() async {
   try {
@@ -161,11 +222,21 @@ class ReportProblemService {
     AppVersionReader? readAppVersion,
     ReportFileSharer? shareFile,
     DateTime Function()? clock,
+    FeedbackCapture? captureFeedback,
+    Future<bool> Function()? isOnline,
+    bool Function()? canSend,
+    SentryConfig? Function()? readConfig,
+    Random? random,
   }) : _readRecords = readRecords ?? (() => InMemoryLogSink.instance.records),
        _readDevice = readDevice ?? _platformDeviceLabel,
        _readAppVersion = readAppVersion ?? _platformAppVersion,
        _shareFile = shareFile,
-       _clock = clock ?? DateTime.now;
+       _clock = clock ?? DateTime.now,
+       _captureFeedback = captureFeedback ?? _sentryCapture,
+       _isOnline = isOnline ?? (() => InternetConnectionChecker.instance.hasConnection),
+       _canSend = canSend ?? (() => MonitoringRuntime.reporter.isEnabled),
+       _readConfig = readConfig ?? (() => MonitoringRuntime.config),
+       _random = random ?? Random.secure();
 
   static final ReportProblemService instance = ReportProblemService();
 
@@ -174,6 +245,11 @@ class ReportProblemService {
   final AppVersionReader _readAppVersion;
   final ReportFileSharer? _shareFile;
   final DateTime Function() _clock;
+  final FeedbackCapture _captureFeedback;
+  final Future<bool> Function() _isOnline;
+  final bool Function() _canSend;
+  final SentryConfig? Function() _readConfig;
+  final Random _random;
 
   /// The report text, with [theme] set to what the user sees, such as `dark`.
   Future<String> buildReport({required String theme}) async {
@@ -193,4 +269,52 @@ class ReportProblemService {
 
   Future<void> share(String report, {required String subject, required String shareText}) =>
       _shareFile?.call(report) ?? _shareReportFile(report, subject: subject, shareText: shareText);
+
+  /// Sends [draft] as Sentry user feedback and returns the 6-character reference the user can quote to support.
+  /// Throws [ReportNotSentException] when the report cannot reach Sentry, so the user can share the file instead.
+  Future<String> send(ProblemReportDraft draft) async {
+    if (!_canSend()) throw const ReportNotSentException('monitoring_off');
+    if (!await _isOnline()) throw const ReportNotSentException('offline');
+    final SentryConfig? config = _readConfig();
+    final String reference = _newReference(_random);
+    final String note = scrubSensitive(draft.note.trim());
+    final SentryId lastEventId = Sentry.lastEventId;
+    final SentryId id = await _captureFeedback(
+      SentryFeedback(
+        message: note.isEmpty ? '[${draft.topic.wire}]' : '[${draft.topic.wire}] $note',
+        associatedEventId: lastEventId == const SentryId.empty() ? null : lastEventId,
+      ),
+      withScope: (Scope scope) async {
+        // Error events carry the signed-in account. A report keeps to what the scrubber allows.
+        await scope.setUser(null);
+        final Map<String, String> tags = <String, String>{
+          'release': config?.release ?? '',
+          'environment': config?.environment ?? '',
+          'topic': draft.topic.wire,
+          'trigger': draft.trigger.name,
+          'hasScreenshot': '${draft.screenshot != null}',
+          'reference': reference,
+        };
+        for (final MapEntry<String, String> tag in tags.entries) {
+          await scope.setTag(tag.key, tag.value);
+        }
+        final Uint8List? screenshot = draft.screenshot;
+        if (screenshot != null) {
+          scope.addAttachment(SentryAttachment.fromUint8List(screenshot, 'screenshot.png', contentType: 'image/png'));
+        }
+        final String? diagnostics = draft.diagnostics;
+        if (diagnostics != null) {
+          scope.addAttachment(
+            SentryAttachment.fromIntList(
+              utf8.encode(diagnostics),
+              'prism-problem-report.txt',
+              contentType: 'text/plain',
+            ),
+          );
+        }
+      },
+    );
+    if (id == const SentryId.empty()) throw const ReportNotSentException('rejected');
+    return reference;
+  }
 }

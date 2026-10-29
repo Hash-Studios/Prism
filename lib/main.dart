@@ -188,6 +188,7 @@ Future<void> main() async {
 
       const skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
       final SentryConfig sentryConfig = _resolveSentryConfig();
+      MonitoringRuntime.config = sentryConfig;
 
       // Start Firebase early so it can initialize while persistence and monitoring run.
       // StartupRepositoryImpl.bootstrap() also awaits this future before accessing Remote Config.

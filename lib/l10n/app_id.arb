@@ -1639,16 +1639,7 @@
   "@accountReportAProblem": {
     "description": "Title for the report problem sheet and settings row."
   },
-  "accountReportPreviewNotice": "Laporan ini berisi versi aplikasi, perangkat, dan log terbaru Anda. Tidak ada alamat email atau token masuk. Baca laporan, lalu bagikan kepada {email}.",
-  "@accountReportPreviewNotice": {
-    "description": "Privacy explanation shown before sharing a diagnostic report.",
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
-  "accountReportProblemSubtitle": "Bagikan log aplikasi Anda dengan tim Prism",
+  "accountReportProblemSubtitle": "Kirim laporan bug ke tim Prism",
   "@accountReportProblemSubtitle": {
     "description": "Subtitle for reporting a problem."
   },
@@ -1799,10 +1790,6 @@
   "accountSettings": "Setelan",
   "@accountSettings": {
     "description": "Settings action label."
-  },
-  "accountShare": "Bagikan",
-  "@accountShare": {
-    "description": "Share action label."
   },
   "accountShareInvite": "Bagikan undangan",
   "@accountShareInvite": {
@@ -10515,5 +10502,106 @@
   "adminFillsRequest": "Memenuhi permintaan",
   "@adminFillsRequest": {
     "description": "Admin review card label: the text of the request this wall says it fills."
+  },
+  "reportSheetMessage": "Ceritakan apa yang salah. Laporan tidak berisi alamat email atau token masuk.",
+  "@reportSheetMessage": {
+    "description": "Intro text in the report a problem sheet."
+  },
+  "reportTopicCrashFreeze": "Crash/macet",
+  "@reportTopicCrashFreeze": {
+    "description": "Report topic chip: app crashed or froze."
+  },
+  "reportTopicWallpaperWontSet": "Wallpaper tidak bisa diatur",
+  "@reportTopicWallpaperWontSet": {
+    "description": "Report topic chip: wallpaper could not be set."
+  },
+  "reportTopicLooksBroken": "Tampilan rusak",
+  "@reportTopicLooksBroken": {
+    "description": "Report topic chip: something looks visually broken."
+  },
+  "reportTopicSlow": "Lambat",
+  "@reportTopicSlow": {
+    "description": "Report topic chip: app is slow."
+  },
+  "reportTopicOther": "Lainnya",
+  "@reportTopicOther": {
+    "description": "Report topic chip: any other problem."
+  },
+  "reportNoteHint": "Apa yang terjadi? Apa yang Anda harapkan?",
+  "@reportNoteHint": {
+    "description": "Hint text of the note field in the report sheet."
+  },
+  "reportScreenshotTitle": "Tangkapan layar",
+  "@reportScreenshotTitle": {
+    "description": "Title of the screenshot row in the report sheet."
+  },
+  "reportScreenshotEmpty": "Tunjukkan apa yang Anda lihat.",
+  "@reportScreenshotEmpty": {
+    "description": "Subtitle of the screenshot row when no screenshot is attached."
+  },
+  "reportScreenshotAttached": "Ketuk untuk melihat. Periksa sebelum mengirim.",
+  "@reportScreenshotAttached": {
+    "description": "Subtitle of the screenshot row when a screenshot is attached."
+  },
+  "reportAddScreenshot": "Tambah tangkapan layar",
+  "@reportAddScreenshot": {
+    "description": "Button to add a screenshot to the report."
+  },
+  "reportRemoveScreenshot": "Hapus",
+  "@reportRemoveScreenshot": {
+    "description": "Button to remove the attached screenshot."
+  },
+  "reportViewScreenshot": "Lihat tangkapan layar",
+  "@reportViewScreenshot": {
+    "description": "Tooltip or label to view the attached screenshot."
+  },
+  "reportIncludeDiagnostics": "Sertakan info perangkat dan log terbaru",
+  "@reportIncludeDiagnostics": {
+    "description": "Switch label to include device info and recent logs in the report."
+  },
+  "reportShowDiagnostics": "Tampilkan yang disertakan",
+  "@reportShowDiagnostics": {
+    "description": "Button to expand the list of included diagnostics."
+  },
+  "reportHideDiagnostics": "Sembunyikan detail",
+  "@reportHideDiagnostics": {
+    "description": "Button to collapse the list of included diagnostics."
+  },
+  "reportSend": "Kirim laporan",
+  "@reportSend": {
+    "description": "Button that sends the report."
+  },
+  "reportShareAsFile": "Bagikan sebagai file",
+  "@reportShareAsFile": {
+    "description": "Button that shares the report as a file."
+  },
+  "reportSent": "Terima kasih, laporan terkirim. Referensi {reference}",
+  "@reportSent": {
+    "description": "Confirmation after the report is sent, with a short reference code.",
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCouldNotSend": "Tidak dapat mengirim",
+  "@reportCouldNotSend": {
+    "description": "Title of the dialog shown when the report fails to send."
+  },
+  "reportCouldNotSendBody": "Periksa koneksi Anda lalu coba lagi, atau bagikan laporan sebagai file.",
+  "@reportCouldNotSendBody": {
+    "description": "Body of the dialog shown when the report fails to send."
+  },
+  "reportShareInstead": "Bagikan saja",
+  "@reportShareInstead": {
+    "description": "Dialog action to share the report as a file after a send failure."
+  },
+  "reportShakeToReport": "Goyang untuk melapor",
+  "@reportShakeToReport": {
+    "description": "Settings toggle label for shake to report."
+  },
+  "reportShakeToReportSubtitle": "Goyangkan ponsel di layar mana pun untuk melaporkan masalah",
+  "@reportShakeToReportSubtitle": {
+    "description": "Settings toggle subtitle for shake to report."
   }
 }
