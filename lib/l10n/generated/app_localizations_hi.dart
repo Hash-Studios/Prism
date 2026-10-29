@@ -3975,7 +3975,7 @@ class AppLocalizationsHi extends AppLocalizations {
     final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String costString = costNumberFormat.format(cost);
 
-    return 'इससे इसी से एक नया वॉलपेपर बनेगा। हर एक की कीमत $costString कॉइन है।';
+    return 'इससे एक नया वॉलपेपर बनेगा। हर एक की कीमत $costString कॉइन है।';
   }
 
   @override

@@ -3408,7 +3408,7 @@
   "@aiFollowUpConfirmTitle": {
     "description": "Title of the sheet shown the first time a follow-up chip is tapped."
   },
-  "aiFollowUpConfirmBody": "इससे इसी से एक नया वॉलपेपर बनेगा। हर एक की कीमत {cost} कॉइन है।",
+  "aiFollowUpConfirmBody": "इससे एक नया वॉलपेपर बनेगा। हर एक की कीमत {cost} कॉइन है।",
   "@aiFollowUpConfirmBody": {
     "description": null,
     "placeholders": {
