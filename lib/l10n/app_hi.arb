@@ -10714,7 +10714,7 @@
   },
   "challengeVote": "वोट दें",
   "challengeUnvote": "वोट हटाएँ",
-  "challengeVotes": "{count} वोट",
+  "challengeVotes": "{count, plural, =0{0 वोट} =1{1 वोट} other{{count} वोट}}",
   "@challengeVotes": {
     "placeholders": {
       "count": {

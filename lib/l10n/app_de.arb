@@ -10648,7 +10648,7 @@
   },
   "challengeVote": "Abstimmen",
   "challengeUnvote": "Stimme entfernen",
-  "challengeVotes": "{count} Stimmen",
+  "challengeVotes": "{count, plural, =0{0 Stimmen} =1{1 Stimme} other{{count} Stimmen}}",
   "@challengeVotes": {
     "placeholders": {
       "count": {

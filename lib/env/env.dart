@@ -12,6 +12,11 @@ class Env {
     return value;
   }
 
+  // Disposable demo-prism emulators only. Never accepted outside a debug build.
+  static const bool localQa = bool.fromEnvironment('PRISM_LOCAL_QA');
+  static const String localQaUser = String.fromEnvironment('PRISM_LOCAL_QA_USER', defaultValue: 'viewer');
+  static const String localQaCertificate = String.fromEnvironment('PRISM_LOCAL_QA_CERTIFICATE');
+
   // Measurement-only flow driver for profile builds; see lib/core/debug/perf_autodrive.dart.
   static const bool perfAutodrive = bool.fromEnvironment('PRISM_PERF_AUTODRIVE');
 

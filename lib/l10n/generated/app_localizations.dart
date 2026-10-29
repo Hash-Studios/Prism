@@ -17992,7 +17992,7 @@ abstract class AppLocalizations {
   /// No description provided for @challengeVotes.
   ///
   /// In en, this message translates to:
-  /// **'{count} votes'**
+  /// **'{count, plural, =0{0 votes} =1{1 vote} other{{count} votes}}'**
   String challengeVotes(int count);
 
   /// No description provided for @challengeShare.

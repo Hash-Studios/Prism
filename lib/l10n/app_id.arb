@@ -10645,7 +10645,7 @@
   },
   "challengeVote": "Pilih",
   "challengeUnvote": "Hapus suara",
-  "challengeVotes": "{count} suara",
+  "challengeVotes": "{count, plural, =0{0 suara} =1{1 suara} other{{count} suara}}",
   "@challengeVotes": {
     "placeholders": {
       "count": {

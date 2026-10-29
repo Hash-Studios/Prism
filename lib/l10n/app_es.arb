@@ -3074,7 +3074,7 @@
   },
   "challengeVote": "Votar",
   "challengeUnvote": "Quitar voto",
-  "challengeVotes": "{count} votos",
+  "challengeVotes": "{count, plural, =0{0 votos} =1{1 voto} other{{count} votos}}",
   "@challengeVotes": {
     "placeholders": {
       "count": {

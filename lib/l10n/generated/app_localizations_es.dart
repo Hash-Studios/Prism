@@ -11344,7 +11344,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String challengeVotes(int count) {
-    return '$count votos';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votos',
+      one: '1 voto',
+      zero: '0 votos',
+    );
+    return '$_temp0';
   }
 
   @override

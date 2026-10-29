@@ -31,6 +31,8 @@ class WeeklyChallengesCubit extends Cubit<WeeklyChallengesState> {
   final WeeklyChallengesRepository _repository;
   int _load = 0;
   int _voteVersion = 0;
+  String? _challengeId;
+  int _challengeVersion = 0;
   final Map<String, int> _versions = {};
   final Set<String> _pending = {};
   final Map<String, ({bool voted, int count})> _votes = {};
@@ -64,9 +66,18 @@ class WeeklyChallengesCubit extends Cubit<WeeklyChallengesState> {
   }
 
   Future<void> load(String id, {ChallengeSort? sort}) async {
+    final changed = _challengeId != id;
+    if (changed) {
+      _challengeId = id;
+      _challengeVersion++;
+      _pending.clear();
+      _votes.clear();
+      _versions.clear();
+    }
+    _closeTimer?.cancel();
     final int version = ++_load;
     final int votes = _voteVersion;
-    final ChallengeSort selected = sort ?? state.sort;
+    final ChallengeSort selected = sort ?? (changed ? ChallengeSort.top : state.sort);
     emit(WeeklyChallengesState(sort: selected));
     try {
       final detail = await _repository.get(id, selected);
@@ -113,17 +124,21 @@ class WeeklyChallengesCubit extends Cubit<WeeklyChallengesState> {
         !_pending.add(entry.id)) {
       return;
     }
+    final challengeVersion = _challengeVersion;
     final bool vote = !current.voted;
     _replace(current.id, vote, current.voteCount + (vote ? 1 : -1));
     try {
       final result = await _repository.setVote(detail.challenge.id, current.id, vote: vote);
-      _replace(current.id, result.voted, result.voteCount);
+      if (!isClosed && challengeVersion == _challengeVersion) {
+        _replace(current.id, result.voted, result.voteCount);
+      }
       analytics.track(
         result.voted
             ? ChallengeVotedEvent(challengeId: detail.challenge.id)
             : ChallengeUnvotedEvent(challengeId: detail.challenge.id),
       );
     } catch (e) {
+      if (isClosed || challengeVersion != _challengeVersion) return;
       _replace(
         current.id,
         current.voted,
@@ -135,7 +150,7 @@ class WeeklyChallengesCubit extends Cubit<WeeklyChallengesState> {
         await load(detail.challenge.id);
       }
     } finally {
-      _pending.remove(current.id);
+      if (challengeVersion == _challengeVersion) _pending.remove(current.id);
     }
   }
 

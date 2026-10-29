@@ -34,11 +34,13 @@ class Repository implements WeeklyChallengesRepository {
   Future<({bool voted, int voteCount})>? pendingVote;
   bool fail = false;
   final List<bool> votes = [];
+  final List<String> requestedIds = [];
   @override
   Future<List<WeeklyChallenge>> list({required bool past}) async =>
       pendingList ?? (past ? [challenge(state: ChallengeState.archived)] : [challenge()]);
   @override
   Future<ChallengeDetail> get(String id, ChallengeSort sort) async {
+    requestedIds.add(id);
     if (fail) throw const ChallengeException(ChallengeError.missing);
     return pendingLoad ?? detail;
   }
@@ -61,6 +63,50 @@ void main() {
   tearDown(() async {
     await cubit.close();
     AnalyticsRuntime.reset();
+  });
+  for (final fail in [false, true]) {
+    test('a previous challenge vote cannot change the replacement (failure=$fail)', () async {
+      await cubit.load('2026-10-26');
+      final pending = Completer<({bool voted, int voteCount})>();
+      repo.pendingVote = pending.future;
+      final voting = cubit.toggleVote(entry());
+      final replacement = WeeklyChallenge(
+        id: '2026-10-19',
+        theme: 'Replacement',
+        state: ChallengeState.open,
+        opensAt: DateTime.utc(2020),
+        closesAt: DateTime.utc(2100),
+      );
+      repo.detail = ChallengeDetail(challenge: replacement, entries: [entry(count: 12)], myEntryCount: 0);
+      await cubit.load(replacement.id);
+      expect(cubit.state.detail!.entries.single.voteCount, 12);
+      if (fail) {
+        pending.completeError(const ChallengeException(ChallengeError.missing));
+      } else {
+        pending.complete((voted: true, voteCount: 99));
+      }
+      await voting;
+      expect(cubit.state.detail!.challenge.id, replacement.id);
+      expect(cubit.state.detail!.entries.single.voteCount, 12);
+      expect(cubit.state.error, isNull);
+      expect(repo.requestedIds, ['2026-10-26', replacement.id]);
+    });
+  }
+  test('replacement suppresses an older load and its viewed analytics', () async {
+    final analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    final pending = Completer<ChallengeDetail>();
+    repo.pendingLoad = pending.future;
+    final old = cubit.load('2026-10-19');
+    repo.pendingLoad = null;
+    await cubit.load('2026-10-26');
+    pending.complete(repo.detail);
+    await old;
+    expect(cubit.state.detail!.challenge.id, '2026-10-26');
+    expect(
+      analytics.events.where((e) => e.eventName == 'challenge_viewed').map((e) => e.toWireParameters()['challenge_id']),
+      ['2026-10-26'],
+    );
   });
   test('home refresh clears stale cards and does not restore them after failure', () async {
     await cubit.loadOpen(clock: () => DateTime.utc(2026));

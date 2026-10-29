@@ -10714,7 +10714,7 @@
   },
   "challengeVote": "Vote",
   "challengeUnvote": "Remove vote",
-  "challengeVotes": "{count} votes",
+  "challengeVotes": "{count, plural, =0{0 votes} =1{1 vote} other{{count} votes}}",
   "@challengeVotes": {
     "placeholders": {
       "count": {

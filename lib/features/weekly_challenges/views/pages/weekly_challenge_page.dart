@@ -48,6 +48,16 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
   }
 
   @override
+  void didUpdateWidget(covariant WeeklyChallengePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.challengeId != widget.challengeId) {
+      _closeTimer?.cancel();
+      _winnerViewed = null;
+      unawaited(_cubit.load(widget.challengeId));
+    }
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) unawaited(_cubit.load(widget.challengeId));
   }
