@@ -1,3 +1,5 @@
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
@@ -68,6 +70,18 @@ class AdminModerationRepository {
     return true;
   }
 
+  /// The text of the request a pending wall says it fills, so the admin can check the match before approving.
+  /// The creator writes `requestId` on the wall, so the text comes from the request itself.
+  Future<String?> requestText(String requestId) async {
+    if (requestId.isEmpty || requestId.contains('/')) return null;
+    return _client.getById<String?>(
+      FirebaseCollections.wallRequests,
+      requestId,
+      (Map<String, dynamic> data, String _) => data['text'] is String ? data['text'] as String : null,
+      sourceTag: 'admin_review.request_text',
+    );
+  }
+
   /// onWallApproved writes the artist's inbox entry and push, so approval adds none here.
   /// A creator can write any `collections` or streak value on a pending wall. Approval therefore files the wall under
   /// `community` and removes the streak fields, unless the admin passes values.
@@ -76,8 +90,8 @@ class AdminModerationRepository {
     List<String>? collections,
     bool? streakExclusive,
     int? streakShopCoinCost,
-  }) {
-    return _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
+  }) async {
+    await _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
       'review': true,
       'collections': collections == null || collections.isEmpty ? <String>['community'] : collections,
       'is_streak_exclusive': streakExclusive ?? FirestoreSentinels.delete(),
@@ -85,6 +99,14 @@ class AdminModerationRepository {
       'reviewedAt': DateTime.now().toUtc(),
       'createdAt': DateTime.now().toUtc(),
     }, sourceTag: 'admin_review.approve_wall');
+    final Object? requestId = wall.data()['requestId'];
+    if (requestId is String && requestId.isNotEmpty) {
+      analytics.track(
+        WallRequestFilledEvent(
+          filledBy: wall.data()['origin'] == 'studio' ? WallRequestFillerValue.studio : WallRequestFillerValue.creator,
+        ),
+      );
+    }
   }
 
   Future<void> rejectWall(FirestoreDocument wall, {required String reason}) async {

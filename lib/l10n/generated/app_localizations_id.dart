@@ -10918,4 +10918,223 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get foldersRotatingDescription => 'Putar otomatis menggunakan folder ini';
+
+  @override
+  String get wallpaperAccentResetHint => 'Tahan untuk tindakan, termasuk Kembali ke asli';
+
+  @override
+  String get wallRequestsTitle => 'Permintaan wallpaper';
+
+  @override
+  String get wallRequestsTabTop => 'Teratas';
+
+  @override
+  String get wallRequestsTabNew => 'Terbaru';
+
+  @override
+  String get wallRequestsTabFilled => 'Terpenuhi';
+
+  @override
+  String get wallRequestsAsk => 'Minta wallpaper';
+
+  @override
+  String get wallRequestsEmptyTopTitle => 'Belum ada permintaan';
+
+  @override
+  String get wallRequestsEmptyTopBody => 'Minta wallpaper yang belum Anda temukan. Orang lain bisa mendukungnya.';
+
+  @override
+  String get wallRequestsEmptyFilledTitle => 'Belum ada yang terpenuhi';
+
+  @override
+  String get wallRequestsEmptyFilledBody =>
+      'Permintaan yang terpenuhi akan muncul di sini, beserta wallpaper yang menjawabnya.';
+
+  @override
+  String get wallRequestsLoadFailed => 'Permintaan tidak dapat dimuat';
+
+  @override
+  String get wallRequestsRetry => 'Coba lagi';
+
+  @override
+  String wallRequestVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count suara',
+      one: '1 suara',
+      zero: 'Belum ada suara',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestUpvote => 'Dukung';
+
+  @override
+  String get wallRequestRemoveUpvote => 'Hapus dukungan';
+
+  @override
+  String get wallRequestMine => 'Permintaan Anda';
+
+  @override
+  String get wallRequestSomeone => 'Seorang pengguna Prism';
+
+  @override
+  String wallRequestFilledByCreator(String name) {
+    return 'Dipenuhi oleh $name';
+  }
+
+  @override
+  String get wallRequestFilledByStudio => 'Dibuat oleh Prism Studio';
+
+  @override
+  String get wallRequestOpenWall => 'Buka wallpaper';
+
+  @override
+  String get wallRequestMoreActions => 'Aksi lainnya';
+
+  @override
+  String get wallRequestReport => 'Laporkan permintaan';
+
+  @override
+  String get wallRequestHide => 'Sembunyikan permintaan';
+
+  @override
+  String get wallRequestUnhide => 'Tampilkan permintaan';
+
+  @override
+  String get wallRequestHiddenLabel => 'Disembunyikan';
+
+  @override
+  String get wallRequestSheetTitle => 'Minta wallpaper';
+
+  @override
+  String get wallRequestSheetHint => 'Jelaskan, misalnya gunung gelap yang minimalis';
+
+  @override
+  String get wallRequestSheetTags => 'Tag, maksimal 3';
+
+  @override
+  String get wallRequestSheetSubmit => 'Kirim permintaan';
+
+  @override
+  String get wallRequestSignIn => 'Masuk untuk meminta wallpaper dan mendukungnya.';
+
+  @override
+  String get wallRequestDuplicateTitle => 'Seseorang sudah memintanya';
+
+  @override
+  String get wallRequestDuplicateBody => 'Dukung agar kreator bisa melihatnya lebih cepat.';
+
+  @override
+  String get wallRequestUpvoteInstead => 'Dukung yang ini saja';
+
+  @override
+  String get wallRequestCreateAnyway => 'Tetap kirim permintaan saya';
+
+  @override
+  String get wallRequestDuplicateMine => 'Anda sudah pernah memintanya';
+
+  @override
+  String get wallRequestDuplicateVoted => 'Anda sudah mendukungnya';
+
+  @override
+  String get wallRequestEditText => 'Ubah permintaan saya';
+
+  @override
+  String get wallRequestCreated => 'Permintaan terkirim. Kami akan memberi tahu saat terpenuhi.';
+
+  @override
+  String get wallRequestUpvoted => 'Didukung. Kami akan memberi tahu saat terpenuhi.';
+
+  @override
+  String get wallRequestErrorText => 'Gunakan 3 sampai 80 karakter, dan tetap ramah.';
+
+  @override
+  String get wallRequestErrorLimit => 'Anda bisa membuat 3 permintaan sehari. Coba lagi besok.';
+
+  @override
+  String get wallRequestErrorOwn => 'Anda tidak bisa mendukung permintaan sendiri.';
+
+  @override
+  String get wallRequestErrorClosed => 'Permintaan ini sudah terpenuhi.';
+
+  @override
+  String get wallRequestErrorGone => 'Permintaan ini tidak tersedia lagi.';
+
+  @override
+  String get wallRequestErrorGeneric => 'Terjadi kesalahan. Coba lagi.';
+
+  @override
+  String get searchRequestPrompt => 'Tidak menemukannya?';
+
+  @override
+  String get searchRequestAction => 'Minta';
+
+  @override
+  String get discoverRequestsTitle => 'Permintaan wallpaper';
+
+  @override
+  String get discoverRequestsSubtitle => 'Minta wallpaper, atau dukung salah satu';
+
+  @override
+  String get uploadFillsRequest => 'Memenuhi permintaan';
+
+  @override
+  String get uploadFillsRequestHint => 'Opsional. Pilih permintaan yang dijawab wallpaper ini.';
+
+  @override
+  String get uploadFillsRequestClear => 'Hapus permintaan';
+
+  @override
+  String get requestPickerTitle => 'Permintaan mana yang dipenuhi?';
+
+  @override
+  String get requestPickerSearch => 'Cari permintaan';
+
+  @override
+  String get requestPickerEmpty => 'Tidak ada permintaan terbuka yang cocok';
+
+  @override
+  String get notifPushWallRequestFilledTitle => 'Wallpaper permintaan Anda sudah tersedia';
+
+  @override
+  String notifPushWallRequestFilledBody(String requestText) {
+    return '$requestText';
+  }
+
+  @override
+  String get wallRequestAgeNow => 'Baru saja';
+
+  @override
+  String wallRequestAgeMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count menit lalu', one: '1 menit lalu');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count jam lalu', one: '1 jam lalu');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count hari lalu', one: '1 hari lalu');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count minggu lalu', one: '1 minggu lalu');
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestErrorAccountAge =>
+      'Akun Anda bisa membuat permintaan dan memberi suara setelah berumur 10 hari.';
+
+  @override
+  String get adminFillsRequest => 'Memenuhi permintaan';
 }

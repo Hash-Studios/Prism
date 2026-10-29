@@ -8,6 +8,7 @@ import {installFakeDb} from "./fakeDb";
 import {
   nativeNotificationLocalization,
   notificationCopyPayload,
+  renderNotificationCopy,
   type NotificationCopy,
 } from "../notificationCatalog";
 import type {PushGallery} from "../pushGallery";
@@ -1356,6 +1357,18 @@ test("maximum WOTD galleries fit the topic limit for legacy and localized topic 
   const localizedAlert = localized.apns?.payload?.aps.alert;
   assert.ok(localizedAlert && typeof localizedAlert !== "string");
   assert.equal(localizedAlert.locKey, "notif_push_wotd_for_audience_body");
+});
+
+test("wall request filled copy shows the request text and localizes with it as the body argument", () => {
+  const copy = renderNotificationCopy({kind: "wallRequestFilled", requestText: "Valorant Jett"});
+  assert.equal(copy.title, "Your request is here");
+  assert.equal(copy.body, "Valorant Jett");
+  assert.deepEqual(nativeNotificationLocalization(copy), {
+    titleKey: "notif_push_wall_request_filled_title",
+    titleArgs: [],
+    bodyKey: "notif_push_wall_request_filled_body",
+    bodyArgs: ["Valorant Jett"],
+  });
 });
 
 test("gallery drop copy localizes to the Drop title and the tags line", () => {

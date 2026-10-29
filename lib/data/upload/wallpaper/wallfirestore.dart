@@ -40,6 +40,7 @@ Future<WallSubmissionResult> createRecord(
   String? aiStylePreset,
   String? docId,
   DateTime Function()? now,
+  String requestId = '',
 }) async {
   final user = app_state.prismUser;
   final bool isPremium = user.premium;
@@ -103,6 +104,7 @@ Future<WallSubmissionResult> createRecord(
       if (aiModel != null && aiModel.trim().isNotEmpty) 'aiModel': aiModel,
       if (aiPrompt != null && aiPrompt.trim().isNotEmpty) 'aiPrompt': aiPrompt,
       if (aiStylePreset != null && aiStylePreset.trim().isNotEmpty) 'aiStylePreset': aiStylePreset,
+      if (requestId.isNotEmpty) 'requestId': requestId,
     },
     docId: docId,
     awardFirstUpload: () {

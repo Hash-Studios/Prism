@@ -78,6 +78,18 @@ async function holdWallAfterReports(wallId: string): Promise<boolean> {
   });
 }
 
+/** Hides a wall request that trusted users reported. An admin can show it again. Returns true when this call hid it. */
+async function hideRequestAfterReports(requestId: string): Promise<boolean> {
+  if (!(await reportedByTrustedUsers("wallRequest", requestId))) return false;
+  const ref = db.collection("wallRequests").doc(requestId);
+  return db.runTransaction(async (tx) => {
+    const request = await tx.get(ref);
+    if (!request.exists || request.data()?.hidden === true) return false;
+    tx.update(ref, {hidden: true, hiddenBy: "reports", hiddenAt: admin.firestore.FieldValue.serverTimestamp()});
+    return true;
+  });
+}
+
 /**
  * Holds a wall that several trusted users reported, then notifies the configured admins of the new UGC report.
  */
@@ -130,6 +142,18 @@ export const onContentReportCreated = onDocumentCreated(
           logger.error("onContentReportCreated: could not check the folder reports.", {reportId, targetId, err});
           throw err;
         }
+      }
+    }
+
+    if (contentType === "wallRequest" && targetId.length > 0) {
+      try {
+        if (await hideRequestAfterReports(targetId)) {
+          logger.warn("onContentReportCreated: wall request hidden after reports.", {reportId, targetId});
+        }
+      } catch (err) {
+        logger.error("onContentReportCreated: could not check the request reports.", {reportId, targetId, err});
+        // hideRequestAfterReports hides a request once, so a retry is safe.
+        throw err;
       }
     }
 

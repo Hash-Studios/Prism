@@ -30,19 +30,28 @@ function fake(t: TestContext, options: Options = {}) {
       log.push("anonymize");
     },
   };
-  const docsFor = (collection: string) => [{
-    id: "d1", data: () => collection === "boosts" ? {wallId: "w9"} : {},
-    ref: {path: `${collection}/d1`, collection: (name: string) => query(`${collection}/d1/${name}`)},
-  }];
-  const query = (collection: string) => {
+  const docsFor = (collection: string, filters: Array<[string, string, unknown]> = []) => {
+    const prefix = filters.find(([field, op]) => field === "__name__" && op === ">=")?.[2];
+    const upperBound = filters.find(([field, op]) => field === "__name__" && op === "<")?.[2];
+    const ids = (collection === "wallRequestRateDaily" || collection === "wallRequestVoteRateDaily") &&
+      typeof prefix === "string" && prefix === "u1_" && upperBound === `${prefix}\uf8ff` ?
+      ["u1_2026-10-29", "u1_2026-10-28"] : ["d1"];
+    return ids.map((id) => ({
+      id, data: () => collection === "boosts" ? {wallId: "w9"} : {},
+      ref: {path: `${collection}/${id}`, collection: (name: string) => query(`${collection}/${id}/${name}`)},
+    }));
+  };
+  const query = (collection: string, filters: Array<[string, string, unknown]> = []) => {
     const q = {
-      where: (field: string, op: string, value: unknown) => {
-        log.push(`query:${collection}.${field}${op}${value}`);
+      where: (field: string | admin.firestore.FieldPath, op: string, value: unknown) => {
+        const fieldPath = String(field);
+        log.push(`query:${collection}.${fieldPath}${op}${value}`);
+        filters.push([fieldPath, op, value]);
         return q;
       },
       get: async () => {
         if (options.slowQueries) await new Promise((resolve) => setTimeout(resolve, 20));
-        return {docs: docsFor(collection)};
+        return {docs: docsFor(collection, filters)};
       },
     };
     return q;
@@ -131,6 +140,15 @@ test("deleting an account removes every per-user doc, anonymizes, then deletes t
     "delete:referralStats/u1", "delete:subscriptionSync/u1", "delete:githubUploadStats/u1",
     "delete:badgeCheckRate/u1", "delete:coinAdRateDaily/d1", "delete:coinTransactions/d1",
     "delete:aiGenerations/d1", "delete:draftSetups/d1",
+  ]) {
+    assert.ok(log.includes(path), path);
+  }
+  for (const path of [
+    "query:wallRequests.requesterUid==u1", "recursive:wallRequests/d1", "query:votes.uid==u1",
+    "query:wallRequestRateDaily.__name__>=u1_", "query:wallRequestVoteRateDaily.__name__>=u1_",
+    "query:wallRequestRateDaily.__name__<u1_\uf8ff", "query:wallRequestVoteRateDaily.__name__<u1_\uf8ff",
+    "delete:wallRequestRateDaily/u1_2026-10-29", "delete:wallRequestRateDaily/u1_2026-10-28",
+    "delete:wallRequestVoteRateDaily/u1_2026-10-29", "delete:wallRequestVoteRateDaily/u1_2026-10-28",
   ]) {
     assert.ok(log.includes(path), path);
   }

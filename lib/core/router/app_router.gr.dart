@@ -2204,6 +2204,60 @@ class UserSearchRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [WallRequestsPage]
+class WallRequestsRoute extends PageRouteInfo<WallRequestsRouteArgs> {
+  WallRequestsRoute({
+    Key? key,
+    String tab = 'top',
+    List<PageRouteInfo>? children,
+  }) : super(
+         WallRequestsRoute.name,
+         args: WallRequestsRouteArgs(key: key, tab: tab),
+         rawQueryParams: {'tab': tab},
+         initialChildren: children,
+       );
+
+  static const String name = 'WallRequestsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final queryParams = data.queryParams;
+      final args = data.argsAs<WallRequestsRouteArgs>(
+        orElse: () =>
+            WallRequestsRouteArgs(tab: queryParams.getString('tab', 'top')),
+      );
+      return WrappedRoute(
+        child: WallRequestsPage(key: args.key, tab: args.tab),
+      );
+    },
+  );
+}
+
+class WallRequestsRouteArgs {
+  const WallRequestsRouteArgs({this.key, this.tab = 'top'});
+
+  final Key? key;
+
+  final String tab;
+
+  @override
+  String toString() {
+    return 'WallRequestsRouteArgs{key: $key, tab: $tab}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! WallRequestsRouteArgs) return false;
+    return key == other.key && tab == other.tab;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ tab.hashCode;
+}
+
+/// generated route for
 /// [WallpaperDetailScreen]
 class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
   WallpaperDetailRoute({

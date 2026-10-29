@@ -11004,4 +11004,231 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get foldersRotatingDescription => 'La rotación automática usa esta carpeta';
+
+  @override
+  String get wallpaperAccentResetHint => 'Mantén pulsado para ver acciones, incluida Restablecer original';
+
+  @override
+  String get wallRequestsTitle => 'Solicitudes de fondos';
+
+  @override
+  String get wallRequestsTabTop => 'Top';
+
+  @override
+  String get wallRequestsTabNew => 'Nuevas';
+
+  @override
+  String get wallRequestsTabFilled => 'Cumplidas';
+
+  @override
+  String get wallRequestsAsk => 'Pide un fondo';
+
+  @override
+  String get wallRequestsEmptyTopTitle => 'Aún no hay solicitudes';
+
+  @override
+  String get wallRequestsEmptyTopBody => 'Pide el fondo que no encuentras. Otros pueden apoyarlo.';
+
+  @override
+  String get wallRequestsEmptyFilledTitle => 'Aún no hay solicitudes cumplidas';
+
+  @override
+  String get wallRequestsEmptyFilledBody => 'Las solicitudes cumplidas aparecen aquí, con el fondo que las cumplió.';
+
+  @override
+  String get wallRequestsLoadFailed => 'No pudimos cargar las solicitudes';
+
+  @override
+  String get wallRequestsRetry => 'Intentar de nuevo';
+
+  @override
+  String wallRequestVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votos',
+      one: '1 voto',
+      zero: 'Sin votos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestUpvote => 'Apoyar';
+
+  @override
+  String get wallRequestRemoveUpvote => 'Quitar apoyo';
+
+  @override
+  String get wallRequestMine => 'Tu solicitud';
+
+  @override
+  String get wallRequestSomeone => 'Un usuario de Prism';
+
+  @override
+  String wallRequestFilledByCreator(String name) {
+    return 'Cumplida por $name';
+  }
+
+  @override
+  String get wallRequestFilledByStudio => 'Hecha por Prism Studio';
+
+  @override
+  String get wallRequestOpenWall => 'Abrir el fondo';
+
+  @override
+  String get wallRequestMoreActions => 'Más acciones';
+
+  @override
+  String get wallRequestReport => 'Reportar solicitud';
+
+  @override
+  String get wallRequestHide => 'Ocultar solicitud';
+
+  @override
+  String get wallRequestUnhide => 'Mostrar solicitud';
+
+  @override
+  String get wallRequestHiddenLabel => 'Oculta';
+
+  @override
+  String get wallRequestSheetTitle => 'Pide un fondo';
+
+  @override
+  String get wallRequestSheetHint => 'Descríbelo, por ejemplo: montañas oscuras y minimalistas';
+
+  @override
+  String get wallRequestSheetTags => 'Etiquetas, hasta 3';
+
+  @override
+  String get wallRequestSheetSubmit => 'Enviar solicitud';
+
+  @override
+  String get wallRequestSignIn => 'Inicia sesión para pedir fondos y apoyarlos.';
+
+  @override
+  String get wallRequestDuplicateTitle => 'Alguien ya pidió esto';
+
+  @override
+  String get wallRequestDuplicateBody => 'Apóyalo para que los creadores lo vean antes.';
+
+  @override
+  String get wallRequestUpvoteInstead => 'Apoya esta en su lugar';
+
+  @override
+  String get wallRequestCreateAnyway => 'Enviar la mía igual';
+
+  @override
+  String get wallRequestDuplicateMine => 'Ya pediste esto';
+
+  @override
+  String get wallRequestDuplicateVoted => 'Ya apoyaste esto';
+
+  @override
+  String get wallRequestEditText => 'Editar mi solicitud';
+
+  @override
+  String get wallRequestCreated => 'Solicitud enviada. Te avisaremos cuando se cumpla.';
+
+  @override
+  String get wallRequestUpvoted => 'Apoyada. Te avisaremos cuando se cumpla.';
+
+  @override
+  String get wallRequestErrorText => 'Usa de 3 a 80 caracteres y mantén un tono amable.';
+
+  @override
+  String get wallRequestErrorLimit => 'Puedes hacer 3 solicitudes al día. Inténtalo mañana.';
+
+  @override
+  String get wallRequestErrorOwn => 'No puedes apoyar tu propia solicitud.';
+
+  @override
+  String get wallRequestErrorClosed => 'Esta solicitud ya se cumplió.';
+
+  @override
+  String get wallRequestErrorGone => 'Esta solicitud ya no está disponible.';
+
+  @override
+  String get wallRequestErrorGeneric => 'Algo salió mal. Intenta de nuevo.';
+
+  @override
+  String get searchRequestPrompt => '¿No lo encuentras?';
+
+  @override
+  String get searchRequestAction => 'Pídelo';
+
+  @override
+  String get discoverRequestsTitle => 'Solicitudes de fondos';
+
+  @override
+  String get discoverRequestsSubtitle => 'Pide un fondo o apoya uno';
+
+  @override
+  String get uploadFillsRequest => 'Cumple una solicitud';
+
+  @override
+  String get uploadFillsRequestHint => 'Opcional. Elige la solicitud que responde este fondo.';
+
+  @override
+  String get uploadFillsRequestClear => 'Quitar solicitud';
+
+  @override
+  String get requestPickerTitle => '¿Qué solicitud cumple?';
+
+  @override
+  String get requestPickerSearch => 'Buscar solicitudes';
+
+  @override
+  String get requestPickerEmpty => 'No hay solicitudes abiertas que coincidan';
+
+  @override
+  String get notifPushWallRequestFilledTitle => 'Tu solicitud ya está aquí';
+
+  @override
+  String notifPushWallRequestFilledBody(String requestText) {
+    return '$requestText';
+  }
+
+  @override
+  String get wallRequestAgeNow => 'Justo ahora';
+
+  @override
+  String wallRequestAgeMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hace $count minutos',
+      one: 'Hace 1 minuto',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Hace $count horas', one: 'Hace 1 hora');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Hace $count días', one: 'Hace 1 día');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hace $count semanas',
+      one: 'Hace 1 semana',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestErrorAccountAge => 'Tu cuenta podrá hacer solicitudes y votar cuando tenga 10 días.';
+
+  @override
+  String get adminFillsRequest => 'Cumple la solicitud';
 }

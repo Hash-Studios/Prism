@@ -360,7 +360,7 @@ async function notifyCreator(
   }
 }
 
-const SIMILAR_FIELDS = ["id", "review", "createdAt", "colors", "visionLabels", "collections", "category", "spatial",
+export const SIMILAR_FIELDS = ["id", "review", "createdAt", "colors", "visionLabels", "collections", "category", "spatial",
   "depth", "originalProtected", "is_streak_exclusive", "dropReserved", "dropWeek", "wallpaper_thumb"];
 
 /**

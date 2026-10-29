@@ -11007,4 +11007,221 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get foldersRotatingDescription => 'ऑटो-रोटेशन इस फ़ोल्डर का उपयोग करता है';
+
+  @override
+  String get wallpaperAccentResetHint => 'मूल पर रीसेट सहित कार्रवाइयों के लिए दबाकर रखें';
+
+  @override
+  String get wallRequestsTitle => 'वॉलपेपर अनुरोध';
+
+  @override
+  String get wallRequestsTabTop => 'टॉप';
+
+  @override
+  String get wallRequestsTabNew => 'नए';
+
+  @override
+  String get wallRequestsTabFilled => 'पूरे हुए';
+
+  @override
+  String get wallRequestsAsk => 'वॉलपेपर माँगें';
+
+  @override
+  String get wallRequestsEmptyTopTitle => 'अभी कोई अनुरोध नहीं';
+
+  @override
+  String get wallRequestsEmptyTopBody => 'जो वॉलपेपर नहीं मिल रहा, उसके लिए पूछें। दूसरे उसे सपोर्ट कर सकते हैं।';
+
+  @override
+  String get wallRequestsEmptyFilledTitle => 'अभी कुछ पूरा नहीं हुआ';
+
+  @override
+  String get wallRequestsEmptyFilledBody => 'पूरे हुए अनुरोध, उन्हें पूरा करने वाले वॉलपेपर के साथ यहाँ दिखेंगे।';
+
+  @override
+  String get wallRequestsLoadFailed => 'अनुरोध लोड नहीं हो सके';
+
+  @override
+  String get wallRequestsRetry => 'फिर कोशिश करें';
+
+  @override
+  String wallRequestVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वोट',
+      one: '1 वोट',
+      zero: 'कोई वोट नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestUpvote => 'सपोर्ट करें';
+
+  @override
+  String get wallRequestRemoveUpvote => 'सपोर्ट हटाएँ';
+
+  @override
+  String get wallRequestMine => 'आपका अनुरोध';
+
+  @override
+  String get wallRequestSomeone => 'एक Prism उपयोगकर्ता';
+
+  @override
+  String wallRequestFilledByCreator(String name) {
+    return '$name ने पूरा किया';
+  }
+
+  @override
+  String get wallRequestFilledByStudio => 'Prism Studio का बनाया हुआ';
+
+  @override
+  String get wallRequestOpenWall => 'वॉलपेपर खोलें';
+
+  @override
+  String get wallRequestMoreActions => 'और विकल्प';
+
+  @override
+  String get wallRequestReport => 'अनुरोध की रिपोर्ट करें';
+
+  @override
+  String get wallRequestHide => 'अनुरोध छिपाएँ';
+
+  @override
+  String get wallRequestUnhide => 'अनुरोध दिखाएँ';
+
+  @override
+  String get wallRequestHiddenLabel => 'छिपा हुआ';
+
+  @override
+  String get wallRequestSheetTitle => 'वॉलपेपर माँगें';
+
+  @override
+  String get wallRequestSheetHint => 'बताएँ, जैसे गहरे और सादे पहाड़';
+
+  @override
+  String get wallRequestSheetTags => 'टैग, अधिकतम 3';
+
+  @override
+  String get wallRequestSheetSubmit => 'अनुरोध भेजें';
+
+  @override
+  String get wallRequestSignIn => 'वॉलपेपर माँगने और सपोर्ट करने के लिए साइन इन करें।';
+
+  @override
+  String get wallRequestDuplicateTitle => 'यह पहले ही माँगा जा चुका है';
+
+  @override
+  String get wallRequestDuplicateBody => 'इसे सपोर्ट करें, ताकि क्रिएटर इसे जल्दी देखें।';
+
+  @override
+  String get wallRequestUpvoteInstead => 'इसके बजाय सपोर्ट करें';
+
+  @override
+  String get wallRequestCreateAnyway => 'फिर भी मेरा अनुरोध भेजें';
+
+  @override
+  String get wallRequestDuplicateMine => 'आपने यह पहले ही माँगा है';
+
+  @override
+  String get wallRequestDuplicateVoted => 'आपने यह पहले ही सपोर्ट किया है';
+
+  @override
+  String get wallRequestEditText => 'मेरा अनुरोध बदलें';
+
+  @override
+  String get wallRequestCreated => 'अनुरोध भेज दिया गया। पूरा होने पर हम आपको बताएँगे।';
+
+  @override
+  String get wallRequestUpvoted => 'सपोर्ट किया गया। पूरा होने पर हम आपको बताएँगे।';
+
+  @override
+  String get wallRequestErrorText => '3 से 80 अक्षर लिखें, और भाषा दोस्ताना रखें।';
+
+  @override
+  String get wallRequestErrorLimit => 'आप एक दिन में 3 अनुरोध कर सकते हैं। कल फिर कोशिश करें।';
+
+  @override
+  String get wallRequestErrorOwn => 'आप अपने अनुरोध को सपोर्ट नहीं कर सकते।';
+
+  @override
+  String get wallRequestErrorClosed => 'यह अनुरोध पहले ही पूरा हो चुका है।';
+
+  @override
+  String get wallRequestErrorGone => 'यह अनुरोध अब उपलब्ध नहीं है।';
+
+  @override
+  String get wallRequestErrorGeneric => 'कुछ गड़बड़ हो गई। फिर कोशिश करें।';
+
+  @override
+  String get searchRequestPrompt => 'नहीं मिला?';
+
+  @override
+  String get searchRequestAction => 'अनुरोध करें';
+
+  @override
+  String get discoverRequestsTitle => 'वॉलपेपर अनुरोध';
+
+  @override
+  String get discoverRequestsSubtitle => 'वॉलपेपर माँगें, या किसी को सपोर्ट करें';
+
+  @override
+  String get uploadFillsRequest => 'एक अनुरोध पूरा करता है';
+
+  @override
+  String get uploadFillsRequestHint => 'वैकल्पिक। वह अनुरोध चुनें जिसका यह वॉलपेपर जवाब है।';
+
+  @override
+  String get uploadFillsRequestClear => 'अनुरोध हटाएँ';
+
+  @override
+  String get requestPickerTitle => 'यह किस अनुरोध को पूरा करता है?';
+
+  @override
+  String get requestPickerSearch => 'अनुरोध खोजें';
+
+  @override
+  String get requestPickerEmpty => 'कोई खुला अनुरोध नहीं मिला';
+
+  @override
+  String get notifPushWallRequestFilledTitle => 'आपका अनुरोध आ गया है';
+
+  @override
+  String notifPushWallRequestFilledBody(String requestText) {
+    return '$requestText';
+  }
+
+  @override
+  String get wallRequestAgeNow => 'अभी-अभी';
+
+  @override
+  String wallRequestAgeMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count मिनट पहले', one: '1 मिनट पहले');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count घंटे पहले', one: '1 घंटा पहले');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count दिन पहले', one: '1 दिन पहले');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count सप्ताह पहले', one: '1 सप्ताह पहले');
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestErrorAccountAge => 'आपका खाता 10 दिन पुराना होने पर अनुरोध और वोट कर सकेगा।';
+
+  @override
+  String get adminFillsRequest => 'अनुरोध पूरा करता है';
 }

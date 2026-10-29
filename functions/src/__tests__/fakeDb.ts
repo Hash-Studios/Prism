@@ -65,6 +65,7 @@ function matches(value: unknown, op: string, expected: unknown): boolean {
   case ">=": return a !== undefined && a >= b;
   case "in": return (expected as unknown[]).map(comparable).includes(a);
   case "array-contains": return Array.isArray(value) && value.includes(expected);
+  case "array-contains-any": return Array.isArray(value) && (expected as unknown[]).some((x) => value.includes(x));
   default: throw new Error(`fakeDb: unsupported operator ${op}`);
   }
 }

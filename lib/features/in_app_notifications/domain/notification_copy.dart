@@ -105,6 +105,10 @@ String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
     body: l10n.notifPushDropLastCallBody(_stringArg(args, 'dropTitle'), _intArg(args, 'hoursLeft')),
   ),
   'drawWinner' => (title: l10n.notifPushDrawWinnerTitle, body: l10n.notifPushDrawWinnerBody),
+  'wallRequestFilled' => (
+    title: l10n.notifPushWallRequestFilledTitle,
+    body: l10n.notifPushWallRequestFilledBody(_stringArg(args, 'requestText')),
+  ),
   'giftReceived' => (
     title: l10n.notifPushGiftReceivedTitle(_stringArg(args, 'senderName')),
     body: l10n.notifPushGiftReceivedBody,

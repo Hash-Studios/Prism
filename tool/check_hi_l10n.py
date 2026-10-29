@@ -11,6 +11,7 @@ from pathlib import Path
 # Reviewed messages that are intentionally identical in English and Hindi.
 # Keep values exact so a generic English UI message cannot be added by mistake.
 UNCHANGED_ENGLISH = {
+    'notifPushWallRequestFilledBody': '{requestText}',
     'wallpaperLiveStyleDepth': '3D',
     'accountLinkTypeBehance': 'Behance',
     'accountLinkTypeBioLink': 'bio.link',

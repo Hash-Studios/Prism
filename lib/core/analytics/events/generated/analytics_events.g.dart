@@ -52,6 +52,8 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'push_kind': PushKindValue.values.map((value) => value.wireValue).toList(),
   'immersive_toggle_source': ImmersiveToggleSourceValue.values.map((value) => value.wireValue).toList(),
   'favourite_pin_surface': FavouritePinSurfaceValue.values.map((value) => value.wireValue).toList(),
+  'wall_request_source': WallRequestSourceValue.values.map((value) => value.wireValue).toList(),
+  'wall_request_filler': WallRequestFillerValue.values.map((value) => value.wireValue).toList(),
 };
 
 class ContentReportSubmitEvent extends AnalyticsEvent {
@@ -3421,5 +3423,92 @@ class FavouritePinLimitHitEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'surface': surface.wireValue};
+  }
+}
+
+class WallRequestSheetOpenedEvent extends AnalyticsEvent {
+  const WallRequestSheetOpenedEvent({required this.source});
+
+  final WallRequestSourceValue source;
+
+  @override
+  String get eventName => 'wall_request_sheet_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
+  }
+}
+
+class WallRequestCreatedEvent extends AnalyticsEvent {
+  const WallRequestCreatedEvent({required this.source, required this.tagCount, required this.forced});
+
+  final WallRequestSourceValue source;
+  final int tagCount;
+  final bool forced;
+
+  @override
+  String get eventName => 'wall_request_created';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue, 'tag_count': tagCount, 'forced': forced ? 1 : 0};
+  }
+}
+
+class WallRequestDuplicateUpvotedEvent extends AnalyticsEvent {
+  const WallRequestDuplicateUpvotedEvent({required this.exact});
+
+  final bool exact;
+
+  @override
+  String get eventName => 'wall_request_duplicate_upvoted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'exact': exact ? 1 : 0};
+  }
+}
+
+class WallRequestVoteToggledEvent extends AnalyticsEvent {
+  const WallRequestVoteToggledEvent({required this.voted, required this.tab});
+
+  final bool voted;
+  final String tab;
+
+  @override
+  String get eventName => 'wall_request_vote_toggled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'voted': voted ? 1 : 0, 'tab': tab};
+  }
+}
+
+class WallRequestFilledEvent extends AnalyticsEvent {
+  const WallRequestFilledEvent({required this.filledBy});
+
+  final WallRequestFillerValue filledBy;
+
+  @override
+  String get eventName => 'wall_request_filled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'filled_by': filledBy.wireValue};
+  }
+}
+
+class WallRequestPushOpenedEvent extends AnalyticsEvent {
+  const WallRequestPushOpenedEvent({required this.requestId});
+
+  final String requestId;
+
+  @override
+  String get eventName => 'wall_request_push_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'request_id': requestId};
   }
 }
