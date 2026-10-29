@@ -1506,6 +1506,24 @@ void main() {
 
     int gems(_GatedWallsFirestore f) => f.sourceTags.where((tag) => tag == 'personalized.gems').length;
 
+    test('a page primed while the block list was unknown is rebuilt once the list is known', () async {
+      final _GatedWallsFirestore firestore = _GatedWallsFirestore()..gate.complete();
+      final _BlocksLoadedLater blocks = _BlocksLoadedLater();
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+
+      await repository.primeFirstPage();
+      blocks.listLoaded = true;
+      await repository.fetch(_firstPage);
+
+      expect(gems(firestore), 2);
+    });
+
     test('the next page-one refresh takes the primed page and hits the sources once', () async {
       final env = await build();
       env.firestore.gate.complete();
@@ -2598,6 +2616,22 @@ void main() {
       expect((await old).isFailure, isTrue);
       expect((await repository.fetchFollowing(page: 3)).data!.items.first.id, 'W24');
     });
+    test('an unknown block list does not fail a Following page that has no rows', () async {
+      app_state.prismUser = _signedInUser();
+      final firestore = _FollowingGraphFirestore()..followedUid = null;
+      final repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+
+      final result = await repository.fetchFollowing(page: 1);
+
+      expect(result.isSuccess, isTrue);
+      expect(result.data!.items, isEmpty);
+    });
+
     test('an unknown block list on a later Following page keeps its cursor for the retry', () async {
       app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
       final firestore = _FollowingFirestore(rows: 57);

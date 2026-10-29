@@ -277,7 +277,9 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       if (!result.isSuccess ||
           entry.generation != _feedGeneration ||
           entry.key != _primeKey() ||
-          _now().difference(entry.at) >= _primedTtl) {
+          _now().difference(entry.at) >= _primedTtl ||
+          // Built without Prism walls because the block list was unknown. Rebuild it now that the list is known.
+          (entry.builtWithUnknownBlocks && _userBlockRepository.blockedCreators is KnownBlockedCreators)) {
         return Result.error(const UnknownFailure('Primed feed page is no longer current'));
       }
       return Result.success(_excludingBlocked(result.data!));
@@ -322,6 +324,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           request,
           expectedPrimeKey: key,
           onPrimeKeyChanged: (updatedKey) => entry.key = updatedKey,
+          onUnknownBlocks: () => entry.builtWithUnknownBlocks = true,
           operationGeneration: generation,
         );
         entry.completed = true;
@@ -371,6 +374,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     FetchPersonalizedFeedRequest request, {
     String? expectedPrimeKey,
     void Function(String updatedKey)? onPrimeKeyChanged,
+    void Function()? onUnknownBlocks,
     int? operationGeneration,
   }) async {
     final String userId = app_state.prismUser.id.trim();
@@ -502,6 +506,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       if (!isCurrentSession() || !isCurrentPrime() || !isCurrentGeneration()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
+      if (blocked is UnknownBlockedCreators) onUnknownBlocks?.call();
       final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
       final List<RankingCandidate> candidates = pools
           .expand((pool) => pool)
@@ -864,7 +869,9 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         });
         rows.add(available.first.buffer.removeAt(0));
       }
-      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
+      final BlockedCreators blocked = rows.isEmpty
+          ? KnownBlockedCreators(const <String>{})
+          : await _userBlockRepository.loadBlockedCreators();
       if (!isCurrent()) return Result.error(const UnknownFailure('Following request was invalidated'));
       // Every Following row has a creator, so an unknown list would hide the page and still advance the cursors.
       if (blocked is UnknownBlockedCreators) {
@@ -1220,6 +1227,7 @@ class _PrimedPage {
   final int generation;
   bool claimed = false;
   bool completed = false;
+  bool builtWithUnknownBlocks = false;
 }
 
 class _CreatorChunk {
