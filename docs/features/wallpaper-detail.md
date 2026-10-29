@@ -136,6 +136,14 @@ Share and favourite:
 | `lib/core/widgets/menu_button/fav_wallpaper_button.dart` | Favourite. |
 | `lib/data/share/create_dynamic_link.dart` | Share link. |
 
+Remix (AI wallpapers with a prompt):
+
+- The **Remix** action opens the AI tab with the prompt, style and tier of the wallpaper. It is hidden when AI is off, the wallpaper is not approved, the wallpaper is premium-gated for a free user or streak exclusive, or the creator is blocked.
+- In the detail panel, an original with remixes shows **Remixes**, the count and a row of approved remixes by other creators.
+- A remix shows **Remix of <title> by <creator>**. A tap opens the original.
+
+The details are in [remix.md](remix.md).
+
 ## Limits
 
 - The share link preview title is the wallpaper title, else "Wallpaper by <creator>". If the creator is unknown it is "Wallpaper by Prism creator" for Prism walls and "Wallpaper on Prism" for others.

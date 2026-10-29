@@ -34,6 +34,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [streak-rescue.md](streak-rescue.md) | Restore a broken streak for coins |
 | [ai-wallpaper.md](ai-wallpaper.md) | AI tab errors, charge id, Try another |
 | [ai-charge.md](ai-charge.md) | AI charge check on the worker, refund evidence |
+| [remix.md](remix.md) | Remix an AI wallpaper: prompt and style, `remixOf`, remix count, Remixes row, inbox notice |
 | [studio.md](studio.md) | Prism Studio: daily AI wallpapers, checks, review queue, setup (backend) |
 | [popular-and-trending.md](popular-and-trending.md) | Engagement counters and the trending and popular lists (backend) |
 | [trending.md](trending.md) | Trending tab on home (the last 7 days; the all-time list is the Popular tab); boosted walls also show in the home carousel, after the Wall of the Day |
