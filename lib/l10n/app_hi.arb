@@ -3429,7 +3429,13 @@
     }
   },
   "economyAiStyleSheetTitle": "स्टाइल चुनें",
+  "@economyAiStyleSheetTitle": {
+    "description": "Title of the sheet that shows a large preview of every AI wallpaper style."
+  },
   "economyAiStyleSheetSubject": "हर प्रीव्यू में एक ही दृश्य है: शाम के समय एक चट्टान पर एक लाइटहाउस।",
+  "@economyAiStyleSheetSubject": {
+    "description": "Line under the style sheet title. Every style preview shows this one scene."
+  },
   "economyAiStyleWatercolor": "वॉटरकलर",
   "economyAiStyleSpace": "अंतरिक्ष",
   "economyAiStyleSynthwave": "सिंथवेव",

@@ -4167,7 +4167,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get economyAiStyleSheetTitle => 'Escolha um estilo';
 
   @override
-  String get economyAiStyleSheetSubject => 'Cada prévia mostra a mesma cena: um farol num penhasco ao entardecer.';
+  String get economyAiStyleSheetSubject => 'Cada prévia mostra a mesma cena: um farol em um penhasco ao entardecer.';
 
   @override
   String get economyAiStyleWatercolor => 'Aquarela';
