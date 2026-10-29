@@ -3,7 +3,11 @@ package com.hash.prism
 import android.content.SharedPreferences
 
 internal class WotdTileService : WallpaperTileService() {
-    internal override fun isConfigured(prefs: SharedPreferences): Boolean = source(prefs) != null || appLink(prefs) != null
+    internal override fun isConfigured(prefs: SharedPreferences): Boolean {
+        val source = source(prefs)
+        val link = openLink(source, readPreferenceString { prefs.getString(LINK_PREFERENCE, null) })
+        return tileConfiguredForWotd(source, link) { prefs.getString("flutter.quick_tile.wotd.target", null) }
+    }
 
     internal override fun appLink(prefs: SharedPreferences): String? =
         openLink(source(prefs), readPreferenceString { prefs.getString(LINK_PREFERENCE, null) })
@@ -32,6 +36,14 @@ internal class WotdTileService : WallpaperTileService() {
         internal fun tileSource(rawUrl: String?, rawRetained: String?): String? =
             rawUrl?.trim()?.takeIf(String::isNotEmpty)
                 ?: rawRetained?.let { RETAINED_KEY.find(it)?.groupValues?.get(1) }
+
+        internal fun tileConfiguredForWotd(source: String?, link: String?, readTarget: () -> String?): Boolean =
+            link != null || (source != null && try {
+                TileWallpaperTarget.parse(readTarget())
+                true
+            } catch (_: IllegalArgumentException) {
+                false
+            })
 
         /** Today's wall in Prism, for a protected wall the tile cannot set. Null when the tile can set a wallpaper. */
         internal fun openLink(source: String?, rawLink: String?): String? =

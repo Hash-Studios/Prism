@@ -55,6 +55,12 @@ internal fun readPreferenceString(read: () -> String?): String? = try {
     null
 }
 
+internal fun deferredTileAction(
+    resolveLink: () -> String?,
+    openApp: (String) -> Unit,
+    applyWallpaper: () -> Unit,
+): () -> Unit = { resolveLink()?.let(openApp) ?: applyWallpaper() }
+
 internal abstract class WallpaperTileService : TileService() {
     internal data class Wallpaper(val url: String, val target: TileWallpaperTarget)
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -77,8 +83,13 @@ internal abstract class WallpaperTileService : TileService() {
     override fun onClick() {
         super.onClick()
         if (destroyed || applying) return
-        val link = appLink(applicationContext.getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE))
-        val action = if (link != null) ({ openApp(link) }) else ({ applyWallpaper() })
+        val action = deferredTileAction(
+            resolveLink = {
+                appLink(applicationContext.getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE))
+            },
+            openApp = ::openApp,
+            applyWallpaper = ::applyWallpaper,
+        )
         if (isLocked) unlockAndRun(action) else action()
     }
 

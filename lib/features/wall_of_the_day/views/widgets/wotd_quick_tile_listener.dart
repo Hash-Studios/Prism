@@ -34,7 +34,13 @@ class _WotdQuickTileListenerState extends State<WotdQuickTileListener> with Widg
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _mirror(context.read<WotdBloc>().state);
+    final SessionState session = context.read<SessionBloc>().state;
+    final WotdState wotd = context.read<WotdBloc>().state;
+    if (session.session.loggedIn && !(wotd.status == LoadStatus.failure && wotd.entity == null)) {
+      _mirror(wotd);
+    } else {
+      _onSessionChanged(session);
+    }
   }
 
   @override
@@ -119,7 +125,16 @@ class _WotdQuickTileListenerState extends State<WotdQuickTileListener> with Widg
           wallDocumentId: documentId,
           featuredDayUtc: day,
           retainedAssetKey: selected.isEmpty ? null : assetKey,
-          openLink: url.isEmpty && documentId != null && entity != null
+          openLink:
+              selected.isEmpty &&
+                  url.isEmpty &&
+                  documentId != null &&
+                  documentId.trim().isNotEmpty &&
+                  entity != null &&
+                  (day == null || _isTodayUtc(day)) &&
+                  loggedIn &&
+                  app_state.prismUser.loggedIn &&
+                  app_state.prismUser.id.trim() == userId.trim()
               ? Uri(
                   scheme: 'prism',
                   host: 'share',
@@ -155,6 +170,12 @@ class _WotdQuickTileListenerState extends State<WotdQuickTileListener> with Widg
     return state.status == LoadStatus.success && identical(state.entity, entity);
   }
 
+  bool _isTodayUtc(DateTime day) {
+    final DateTime utcDay = day.toUtc();
+    final DateTime now = DateTime.now().toUtc();
+    return utcDay.year == now.year && utcDay.month == now.month && utcDay.day == now.day;
+  }
+
   void _onSessionChanged(SessionState state) {
     final generation = ++_generation;
     unawaited(_clearThenRemirror(state, generation));
@@ -162,12 +183,21 @@ class _WotdQuickTileListenerState extends State<WotdQuickTileListener> with Widg
 
   Future<void> _clearThenRemirror(SessionState state, int generation) async {
     try {
+      bool current() {
+        if (!mounted || generation != _generation) return false;
+        final session = context.read<SessionBloc>().state.session;
+        return session.userId == state.session.userId && session.loggedIn == state.session.loggedIn;
+      }
+
       await NativeAssetPathsStore.replaceGroup(
         'wotd',
         const <String, String>{},
-        afterReplace: () => QuickTileConfigService.pushWotdUrl(''),
+        isCurrent: current,
+        afterReplace: () => QuickTileConfigService.pushWotdUrl('', isCurrent: current),
       );
-      if (mounted && generation == _generation && state.session.loggedIn) _mirror(context.read<WotdBloc>().state);
+      if (!mounted || !current()) return;
+      final WotdState wotdState = context.read<WotdBloc>().state;
+      if (state.session.loggedIn || wotdState.entity?.url.isNotEmpty == true) _mirror(wotdState);
     } catch (error, stackTrace) {
       logger.w('Could not update Wall of the Day offline mirror', error: error, stackTrace: stackTrace);
     }
@@ -183,9 +213,18 @@ class _WotdQuickTileListenerState extends State<WotdQuickTileListener> with Widg
       ),
       BlocListener<WotdBloc, WotdState>(
         listenWhen: (previous, current) =>
-            current.status == LoadStatus.success &&
-            (previous.status != LoadStatus.success || !identical(previous.entity, current.entity)),
-        listener: (_, state) => _mirror(state),
+            (current.status == LoadStatus.success &&
+                (previous.status != LoadStatus.success || !identical(previous.entity, current.entity))) ||
+            (current.status == LoadStatus.failure &&
+                current.entity == null &&
+                (previous.status != LoadStatus.failure || previous.entity != null)),
+        listener: (context, state) {
+          if (state.status == LoadStatus.success) {
+            _mirror(state);
+          } else {
+            _onSessionChanged(context.read<SessionBloc>().state);
+          }
+        },
       ),
     ],
     child: widget.child,

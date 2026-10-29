@@ -34,5 +34,83 @@ internal class WotdTileServiceTest {
     @Test fun onlyPrismShareLinksAreOpened() {
         assertNull(WotdTileService.openLink(null, "https://evil.example.com/x"))
         assertNull(WotdTileService.openLink(null, null))
+        assertNull(WotdTileService.openLink(null, "prism://share@evil.example.com?id=doc"))
+        assertNull(WotdTileService.openLink(null, "prism://share.evil.example.com?id=doc"))
     }
+
+    @Test fun aWallpaperTileWithAnInvalidTargetIsUnavailable() {
+        assertEquals(
+            false,
+            WotdTileService.tileConfiguredForWotd("https://img.example.com/wall.jpg", null) { "invalid" },
+        )
+    }
+
+    @Test fun aWallpaperTileWithAWrongTypedTargetIsUnavailable() {
+        assertEquals(
+            false,
+            tileConfigured {
+                WotdTileService.tileConfiguredForWotd("https://img.example.com/wall.jpg", null) {
+                    throw ClassCastException("expected String")
+                }
+            },
+        )
+    }
+
+    @Test fun anOpenLinkDoesNotNeedAWallpaperTarget() {
+        assertEquals(
+            true,
+            WotdTileService.tileConfiguredForWotd(null, "prism://share?id=doc") {
+                throw ClassCastException("target must not be read for an open link")
+            },
+        )
+    }
+
+    @Test fun aMissingWallpaperTargetDefaultsToBoth() {
+        assertEquals(
+            true,
+            WotdTileService.tileConfiguredForWotd("https://img.example.com/wall.jpg", null) { null },
+        )
+    }
+
+    @Test fun validWallpaperTargetsKeepTheTileAvailable() {
+        for (target in listOf("home", "lock", "both")) {
+            assertEquals(
+                true,
+                WotdTileService.tileConfiguredForWotd("https://img.example.com/wall.jpg", null) { target },
+            )
+        }
+    }
+
+    @Test fun clickResolvesTheActionAfterUnlock() {
+        var currentLink: String? = "prism://share?id=old"
+        var opened: String? = null
+        var applied = false
+        val action = deferredTileAction(
+            resolveLink = { currentLink },
+            openApp = { opened = it },
+            applyWallpaper = { applied = true },
+        )
+
+        currentLink = null
+        action()
+
+        assertNull(opened)
+        assertEquals(true, applied)
+    }
+
+    @Test fun clickUsesTheLinkThatIsCurrentAfterUnlock() {
+        var currentLink: String? = "prism://share?id=old"
+        var opened: String? = null
+        val action = deferredTileAction(
+            resolveLink = { currentLink },
+            openApp = { opened = it },
+            applyWallpaper = {},
+        )
+
+        currentLink = "prism://share?id=current"
+        action()
+
+        assertEquals("prism://share?id=current", opened)
+    }
+
 }

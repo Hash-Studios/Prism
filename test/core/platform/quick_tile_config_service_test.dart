@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
@@ -59,6 +60,23 @@ void main() {
     await QuickTileConfigService.pushWotdUrl('https://img.example.com/public.jpg');
     expect(prefs.getString(QuickTileConfigService.wotdOpenLinkKey), isNull);
     expect(prefs.getString(PersistenceKeys.quickTileWotdUrl), 'https://img.example.com/public.jpg');
+
+    await QuickTileConfigService.pushWotdUrl('https://img.example.com/public.jpg', openLink: link);
+    expect(prefs.getString(QuickTileConfigService.wotdOpenLinkKey), isNull);
+
+    await QuickTileConfigService.pushWotdUrl(
+      '',
+      wallDocumentId: 'doc',
+      featuredDayUtc: DateTime.utc(2026, 10, 29),
+      retainedAssetKey: 'wotd:doc',
+      openLink: link,
+    );
+    expect(prefs.getString(QuickTileConfigService.wotdOpenLinkKey), isNull);
+    expect(jsonDecode(prefs.getString(QuickTileConfigService.wotdRetainedKey)!), <String, String>{
+      'documentId': 'doc',
+      'featuredDayUtc': '2026-10-29T00:00:00.000Z',
+      'assetKey': 'wotd:doc',
+    });
   });
 
   test('invalid native targets do not become both home and lock', () async {
@@ -75,6 +93,15 @@ void main() {
       expect(await QuickTileConfigService.loadWotdTileConfig(), isNull);
       expect(await QuickTileConfigService.loadFavsTileConfig(), isNull);
     }
+  });
+
+  test('malformed WOTD preference types are ignored instead of throwing', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      PersistenceKeys.quickTileWotdTarget: 42,
+      PersistenceKeys.quickTileWotdUrl: <String>['not', 'a', 'url'],
+    });
+
+    expect(await QuickTileConfigService.loadWotdTileConfig(), isNull);
   });
 
   test('malformed favourites are discarded before reaching the native tile', () async {
