@@ -232,7 +232,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         toasts.info(context.l10n.wallUploadLastDetailsUnavailable);
         return;
       }
-      _formKey.currentState?.useDetails(category: defaults.category, tags: defaults.tags);
+      final form = _formKey.currentState;
+      if (form == null || !_showMetadataForm) return;
+      form.useDetails(category: defaults.category, tags: defaults.tags);
       unawaited(analytics.track(const UploadLastDetailsUsedEvent()));
     } catch (error) {
       logger.w('Last upload details could not be loaded: $error');
