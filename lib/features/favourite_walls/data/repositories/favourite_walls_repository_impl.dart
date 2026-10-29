@@ -294,8 +294,14 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
         }
         final FavouriteWallEntity next = previous.withPinnedAt(pinnedAt);
         final Map<String, Object?>? operation = await _favoritesLocal.readFavouriteOperation(userId, wall.id);
-        final Object? desired = operation?['desired'];
-        final Object? status = operation?['status'];
+        final bool? desired = switch (operation?['desired']) {
+          final bool value => value,
+          _ => null,
+        };
+        final String? status = switch (operation?['status']) {
+          final String value => value,
+          _ => null,
+        };
         if (desired == false && status == 'pending') {
           throw const ServerFailure('Cannot pin a wall while its removal is pending.');
         }
