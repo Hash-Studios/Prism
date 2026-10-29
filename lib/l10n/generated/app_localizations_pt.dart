@@ -11424,7 +11424,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get accountShowAiWallpapersFootnote =>
-      'Os seus próprios envios e favoritos continuam visíveis quando isto está desativado.';
+      'Ocultar papéis de parede de IA nunca oculta os seus próprios envios nem os seus favoritos.';
 
   @override
   String get wallpaperFeedHideAi => 'Ocultar IA';
@@ -22868,7 +22868,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get accountShowAiWallpapersFootnote =>
-      'Seus próprios envios e favoritos continuam aparecendo quando isso está desativado.';
+      'Ocultar papéis de parede de IA nunca oculta seus próprios envios nem seus favoritos.';
 
   @override
   String get wallpaperFeedHideAi => 'Ocultar IA';

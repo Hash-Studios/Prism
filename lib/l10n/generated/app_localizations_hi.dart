@@ -11232,7 +11232,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountShowAiWallpapersSubtitle => 'केवल इंसानों के बनाए वॉलपेपर देखने के लिए बंद करें';
 
   @override
-  String get accountShowAiWallpapersFootnote => 'इसे बंद करने पर भी आपके अपलोड और पसंदीदा दिखते रहेंगे।';
+  String get accountShowAiWallpapersFootnote => 'AI वॉलपेपर छिपाने पर भी आपके अपलोड और पसंदीदा कभी नहीं छिपते।';
 
   @override
   String get wallpaperFeedHideAi => 'AI छिपाएँ';

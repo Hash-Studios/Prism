@@ -2947,7 +2947,7 @@
   "adminFillsRequest": "Atende o pedido",
   "accountShowAiWallpapers": "Mostrar papéis de parede gerados por IA",
   "accountShowAiWallpapersSubtitle": "Desative para ver só papéis de parede feitos por pessoas",
-  "accountShowAiWallpapersFootnote": "Seus próprios envios e favoritos continuam aparecendo quando isso está desativado.",
+  "accountShowAiWallpapersFootnote": "Ocultar papéis de parede de IA nunca oculta seus próprios envios nem seus favoritos.",
   "wallpaperFeedHideAi": "Ocultar IA",
   "wallpaperAiGenerated": "Gerado por IA",
   "wallpaperAiMadeWith": "Feito com {model}",

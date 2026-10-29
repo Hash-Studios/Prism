@@ -10518,7 +10518,7 @@
   },
   "accountShowAiWallpapers": "Tampilkan wallpaper buatan AI",
   "accountShowAiWallpapersSubtitle": "Matikan untuk melihat wallpaper buatan manusia saja",
-  "accountShowAiWallpapersFootnote": "Unggahan dan favorit Anda tetap tampil saat ini dimatikan.",
+  "accountShowAiWallpapersFootnote": "Menyembunyikan wallpaper AI tidak pernah menyembunyikan unggahan dan favorit Anda.",
   "wallpaperFeedHideAi": "Sembunyikan AI",
   "wallpaperAiGenerated": "Buatan AI",
   "wallpaperAiMadeWith": "Dibuat dengan {model}",

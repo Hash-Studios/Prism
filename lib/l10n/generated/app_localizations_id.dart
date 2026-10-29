@@ -11145,7 +11145,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountShowAiWallpapersSubtitle => 'Matikan untuk melihat wallpaper buatan manusia saja';
 
   @override
-  String get accountShowAiWallpapersFootnote => 'Unggahan dan favorit Anda tetap tampil saat ini dimatikan.';
+  String get accountShowAiWallpapersFootnote =>
+      'Menyembunyikan wallpaper AI tidak pernah menyembunyikan unggahan dan favorit Anda.';
 
   @override
   String get wallpaperFeedHideAi => 'Sembunyikan AI';

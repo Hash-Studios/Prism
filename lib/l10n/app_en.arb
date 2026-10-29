@@ -10593,7 +10593,7 @@
   "@accountShowAiWallpapersSubtitle": {
     "description": "Subtitle under the AI-generated wallpapers switch."
   },
-  "accountShowAiWallpapersFootnote": "Your own uploads and favourites still show when this is off.",
+  "accountShowAiWallpapersFootnote": "Hiding AI wallpapers never hides your own uploads or favourites.",
   "@accountShowAiWallpapersFootnote": {
     "description": "Footnote under the AI-generated wallpapers switch. Says what still shows when the switch is off."
   },

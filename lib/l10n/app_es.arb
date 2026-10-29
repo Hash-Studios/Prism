@@ -2947,7 +2947,7 @@
   "adminFillsRequest": "Cumple la solicitud",
   "accountShowAiWallpapers": "Mostrar fondos generados con IA",
   "accountShowAiWallpapersSubtitle": "Desactívalo para ver solo fondos hechos por personas",
-  "accountShowAiWallpapersFootnote": "Tus propias subidas y favoritos se siguen mostrando cuando esto está desactivado.",
+  "accountShowAiWallpapersFootnote": "Ocultar los fondos de IA nunca oculta tus propias subidas ni tus favoritos.",
   "wallpaperFeedHideAi": "Ocultar IA",
   "wallpaperAiGenerated": "Generado con IA",
   "wallpaperAiMadeWith": "Hecho con {model}",

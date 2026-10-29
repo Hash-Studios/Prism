@@ -666,7 +666,7 @@ void main() {
     );
 
     expect(switchOf(tester, 'Show AI-generated wallpapers').value, isTrue);
-    expect(find.text('Your own uploads and favourites still show when this is off.'), findsOneWidget);
+    expect(find.text('Hiding AI wallpapers never hides your own uploads or favourites.'), findsOneWidget);
 
     await tester.tap(find.text('Show AI-generated wallpapers'));
     await tester.pump();

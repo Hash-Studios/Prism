@@ -11240,7 +11240,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get accountShowAiWallpapersFootnote =>
-      'Tus propias subidas y favoritos se siguen mostrando cuando esto está desactivado.';
+      'Ocultar los fondos de IA nunca oculta tus propias subidas ni tus favoritos.';
 
   @override
   String get wallpaperFeedHideAi => 'Ocultar IA';

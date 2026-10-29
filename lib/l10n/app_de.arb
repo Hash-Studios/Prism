@@ -10521,7 +10521,7 @@
   },
   "accountShowAiWallpapers": "KI-generierte Hintergrundbilder anzeigen",
   "accountShowAiWallpapersSubtitle": "Ausschalten, um nur von Menschen gemachte Walls zu sehen",
-  "accountShowAiWallpapersFootnote": "Deine eigenen Uploads und Favoriten bleiben sichtbar, wenn dies aus ist.",
+  "accountShowAiWallpapersFootnote": "Wenn du KI-Hintergrundbilder ausblendest, bleiben deine eigenen Uploads und Favoriten sichtbar.",
   "wallpaperFeedHideAi": "KI ausblenden",
   "wallpaperAiGenerated": "KI-generiert",
   "wallpaperAiMadeWith": "Erstellt mit {model}",

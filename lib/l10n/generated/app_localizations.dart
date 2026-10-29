@@ -17818,7 +17818,7 @@ abstract class AppLocalizations {
   /// Footnote under the AI-generated wallpapers switch. Says what still shows when the switch is off.
   ///
   /// In en, this message translates to:
-  /// **'Your own uploads and favourites still show when this is off.'**
+  /// **'Hiding AI wallpapers never hides your own uploads or favourites.'**
   String get accountShowAiWallpapersFootnote;
 
   /// Chip in the Tune your feed sheet that hides AI-generated walls. Same setting as the Settings switch.

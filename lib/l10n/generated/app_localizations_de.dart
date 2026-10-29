@@ -11254,7 +11254,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get accountShowAiWallpapersFootnote =>
-      'Deine eigenen Uploads und Favoriten bleiben sichtbar, wenn dies aus ist.';
+      'Wenn du KI-Hintergrundbilder ausblendest, bleiben deine eigenen Uploads und Favoriten sichtbar.';
 
   @override
   String get wallpaperFeedHideAi => 'KI ausblenden';

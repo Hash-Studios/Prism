@@ -11088,7 +11088,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountShowAiWallpapersSubtitle => 'Turn off to see only human-made walls';
 
   @override
-  String get accountShowAiWallpapersFootnote => 'Your own uploads and favourites still show when this is off.';
+  String get accountShowAiWallpapersFootnote => 'Hiding AI wallpapers never hides your own uploads or favourites.';
 
   @override
   String get wallpaperFeedHideAi => 'Hide AI';
