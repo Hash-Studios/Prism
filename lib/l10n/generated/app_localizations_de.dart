@@ -11247,6 +11247,64 @@ class AppLocalizationsDe extends AppLocalizations {
   String get adminFillsRequest => 'Erfüllt Wunsch';
 
   @override
+  String get wallRemixAction => 'Remixen';
+
+  @override
+  String get wallRemixActionTooltip => 'Dieses Hintergrundbild mit KI remixen';
+
+  @override
+  String wallRemixingChip(String title, String creator) {
+    return 'Remix von $title von $creator';
+  }
+
+  @override
+  String get wallRemixDropLinkTooltip => 'Remix-Verknüpfung entfernen';
+
+  @override
+  String get wallRemixUntitled => 'Ohne Titel';
+
+  @override
+  String get wallRemixUnknownCreator => 'einem Prism-Creator';
+
+  @override
+  String get wallRemixesTitle => 'Remixe';
+
+  @override
+  String wallRemixesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Remixe', one: '1 Remix');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRemixOpenRemixLabel(String creator) {
+    return 'Remix von $creator öffnen';
+  }
+
+  @override
+  String wallRemixOfLabel(String title, String creator) {
+    return 'Remix von $title von $creator';
+  }
+
+  @override
+  String get wallRemixOfTooltip => 'Original-Hintergrundbild öffnen';
+
+  @override
+  String get economyAiSubmitPromptNotice => 'Alle können deinen Prompt sehen und dieses Hintergrundbild remixen.';
+
+  @override
+  String get notifPushWallRemixedTitle => 'Dein Hintergrundbild wurde geremixt';
+
+  @override
+  String notifPushWallRemixedBody(String remixerName, String wallTitle) {
+    return '$remixerName hat $wallTitle geremixt.';
+  }
+
+  @override
+  String notifPushWallRemixedBodyUntitled(String remixerName) {
+    return '$remixerName hat dein Hintergrundbild geremixt.';
+  }
+
+  @override
   String get accountShowAiWallpapers => 'KI-generierte Hintergrundbilder anzeigen';
 
   @override

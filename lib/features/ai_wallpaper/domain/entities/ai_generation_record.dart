@@ -24,6 +24,7 @@ class AiGenerationRecord {
     this.parentGenerationId,
     this.submittedWallId,
     this.submittedAt,
+    this.remixOf,
   });
 
   final String id;
@@ -45,6 +46,9 @@ class AiGenerationRecord {
   final String? parentGenerationId;
   final String? submittedWallId;
   final DateTime? submittedAt;
+
+  /// Firestore doc id of the wall this generation remixed, if any.
+  final String? remixOf;
 
   String displayUrl({required bool isPremium}) => isPremium ? imageUrl : watermarkedImageUrl;
 
@@ -69,6 +73,7 @@ class AiGenerationRecord {
       'parentGenerationId': parentGenerationId,
       'submittedWallId': submittedWallId,
       'submittedAt': submittedAt?.toUtc(),
+      'remixOf': remixOf,
     };
   }
 
@@ -95,6 +100,7 @@ class AiGenerationRecord {
       parentGenerationId: json['parentGenerationId']?.toString(),
       submittedWallId: json['submittedWallId']?.toString(),
       submittedAt: json['submittedAt'] == null ? null : parseDate(json['submittedAt']),
+      remixOf: _nonEmptyOrNull(json['remixOf']),
     );
   }
 
@@ -104,6 +110,7 @@ class AiGenerationRecord {
     String? submittedWallId,
     DateTime? submittedAt,
     String? status,
+    String? remixOf,
   }) {
     return AiGenerationRecord(
       id: id,
@@ -125,6 +132,12 @@ class AiGenerationRecord {
       parentGenerationId: parentGenerationId,
       submittedWallId: submittedWallId ?? this.submittedWallId,
       submittedAt: submittedAt ?? this.submittedAt,
+      remixOf: remixOf ?? this.remixOf,
     );
   }
+}
+
+String? _nonEmptyOrNull(Object? raw) {
+  final String value = raw?.toString().trim() ?? '';
+  return value.isEmpty ? null : value;
 }

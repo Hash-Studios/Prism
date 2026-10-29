@@ -45,6 +45,11 @@ _PrismWallDocDto _$PrismWallDocDtoFromJson(Map<String, dynamic> json) => _PrismW
   spatial: json['spatial'] == null
       ? const <String, Object?>{}
       : const FirestoreJsonMapConverter().fromJson(json['spatial']),
+  aiPrompt: json['aiPrompt'] == null ? '' : const FirestoreStringConverter().fromJson(json['aiPrompt']),
+  aiStylePreset: json['aiStylePreset'] == null ? '' : const FirestoreStringConverter().fromJson(json['aiStylePreset']),
+  origin: json['origin'] == null ? '' : const FirestoreStringConverter().fromJson(json['origin']),
+  remixOf: json['remixOf'] == null ? '' : const FirestoreStringConverter().fromJson(json['remixOf']),
+  remixCount: (json['remixCount'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$PrismWallDocDtoToJson(_PrismWallDocDto instance) => <String, dynamic>{
@@ -76,4 +81,9 @@ Map<String, dynamic> _$PrismWallDocDtoToJson(_PrismWallDocDto instance) => <Stri
   'boostedUntil': const FirestoreDateTimeConverter().toJson(instance.boostedUntil),
   'depth': const FirestoreJsonMapConverter().toJson(instance.depth),
   'spatial': const FirestoreJsonMapConverter().toJson(instance.spatial),
+  'aiPrompt': const FirestoreStringConverter().toJson(instance.aiPrompt),
+  'aiStylePreset': const FirestoreStringConverter().toJson(instance.aiStylePreset),
+  'origin': const FirestoreStringConverter().toJson(instance.origin),
+  'remixOf': const FirestoreStringConverter().toJson(instance.remixOf),
+  'remixCount': instance.remixCount,
 };

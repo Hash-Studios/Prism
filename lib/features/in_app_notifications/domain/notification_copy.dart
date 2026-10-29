@@ -71,6 +71,12 @@ String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
     title: l10n.notifPushNewFollowerTitle,
     body: l10n.notifPushNewFollowerBody(_stringArg(args, 'followerName')),
   ),
+  'wallRemixed' => (
+    title: l10n.notifPushWallRemixedTitle,
+    body: _stringArg(args, 'wallTitle').trim().isEmpty
+        ? l10n.notifPushWallRemixedBodyUntitled(_stringArg(args, 'remixerName'))
+        : l10n.notifPushWallRemixedBody(_stringArg(args, 'remixerName'), _stringArg(args, 'wallTitle')),
+  ),
   'streakReminder' => (title: l10n.notifPushStreakReminderTitle, body: l10n.notifPushStreakReminderBody),
   'wotdForCreator' => (title: l10n.notifPushWotdCreatorTitle, body: l10n.notifPushWotdCreatorBody),
   'wotdForAudience' => (

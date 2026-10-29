@@ -11226,6 +11226,64 @@ class AppLocalizationsHi extends AppLocalizations {
   String get adminFillsRequest => 'अनुरोध पूरा करता है';
 
   @override
+  String get wallRemixAction => 'रीमिक्स';
+
+  @override
+  String get wallRemixActionTooltip => 'इस वॉलपेपर को AI से रीमिक्स करें';
+
+  @override
+  String wallRemixingChip(String title, String creator) {
+    return '$creator के $title को रीमिक्स कर रहे हैं';
+  }
+
+  @override
+  String get wallRemixDropLinkTooltip => 'रीमिक्स लिंक हटाएं';
+
+  @override
+  String get wallRemixUntitled => 'बिना शीर्षक';
+
+  @override
+  String get wallRemixUnknownCreator => 'एक Prism क्रिएटर';
+
+  @override
+  String get wallRemixesTitle => 'रीमिक्स';
+
+  @override
+  String wallRemixesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count रीमिक्स', one: '1 रीमिक्स');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRemixOpenRemixLabel(String creator) {
+    return '$creator का रीमिक्स खोलें';
+  }
+
+  @override
+  String wallRemixOfLabel(String title, String creator) {
+    return '$creator के $title का रीमिक्स';
+  }
+
+  @override
+  String get wallRemixOfTooltip => 'मूल वॉलपेपर खोलें';
+
+  @override
+  String get economyAiSubmitPromptNotice => 'कोई भी आपका प्रॉम्प्ट देख सकता है और इस वॉलपेपर को रीमिक्स कर सकता है।';
+
+  @override
+  String get notifPushWallRemixedTitle => 'आपके वॉलपेपर को रीमिक्स किया गया';
+
+  @override
+  String notifPushWallRemixedBody(String remixerName, String wallTitle) {
+    return '$remixerName ने $wallTitle को रीमिक्स किया।';
+  }
+
+  @override
+  String notifPushWallRemixedBodyUntitled(String remixerName) {
+    return '$remixerName ने आपके वॉलपेपर को रीमिक्स किया।';
+  }
+
+  @override
   String get accountShowAiWallpapers => 'AI से बने वॉलपेपर दिखाएँ';
 
   @override

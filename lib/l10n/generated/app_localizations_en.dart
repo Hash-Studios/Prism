@@ -11082,6 +11082,64 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminFillsRequest => 'Fills request';
 
   @override
+  String get wallRemixAction => 'Remix';
+
+  @override
+  String get wallRemixActionTooltip => 'Remix this wallpaper with AI';
+
+  @override
+  String wallRemixingChip(String title, String creator) {
+    return 'Remixing $title by $creator';
+  }
+
+  @override
+  String get wallRemixDropLinkTooltip => 'Remove remix link';
+
+  @override
+  String get wallRemixUntitled => 'Untitled';
+
+  @override
+  String get wallRemixUnknownCreator => 'a Prism creator';
+
+  @override
+  String get wallRemixesTitle => 'Remixes';
+
+  @override
+  String wallRemixesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count remixes', one: '1 remix');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRemixOpenRemixLabel(String creator) {
+    return 'Open remix by $creator';
+  }
+
+  @override
+  String wallRemixOfLabel(String title, String creator) {
+    return 'Remix of $title by $creator';
+  }
+
+  @override
+  String get wallRemixOfTooltip => 'Open the original wallpaper';
+
+  @override
+  String get economyAiSubmitPromptNotice => 'Anyone can see your prompt and remix this wallpaper.';
+
+  @override
+  String get notifPushWallRemixedTitle => 'Your wallpaper was remixed';
+
+  @override
+  String notifPushWallRemixedBody(String remixerName, String wallTitle) {
+    return '$remixerName remixed $wallTitle.';
+  }
+
+  @override
+  String notifPushWallRemixedBodyUntitled(String remixerName) {
+    return '$remixerName remixed your wallpaper.';
+  }
+
+  @override
   String get accountShowAiWallpapers => 'Show AI-generated wallpapers';
 
   @override

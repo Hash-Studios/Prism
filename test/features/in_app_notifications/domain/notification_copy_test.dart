@@ -144,4 +144,27 @@ void main() {
       );
     }
   });
+
+  test('a wall remix names the remixer and the wall', () {
+    final InAppNotificationEntity item = notification(
+      'wall_remixed',
+      title: 'Legacy title',
+      body: 'Legacy body',
+    ).copyWith(copyKind: 'wallRemixed', copyArgs: const <String, Object?>{'remixerName': 'Asha', 'wallTitle': 'Koi'});
+
+    expect(localizedNotificationCopy(item, l10n), (title: l10n.notifPushWallRemixedTitle, body: 'Asha remixed Koi.'));
+  });
+
+  test('a wall remix with an empty wall title uses the untitled copy', () {
+    final InAppNotificationEntity item = notification(
+      'wall_remixed',
+      title: 'Legacy title',
+      body: 'Legacy body',
+    ).copyWith(copyKind: 'wallRemixed', copyArgs: const <String, Object?>{'remixerName': 'Asha', 'wallTitle': '  '});
+
+    expect(localizedNotificationCopy(item, l10n), (
+      title: l10n.notifPushWallRemixedTitle,
+      body: 'Asha remixed your wallpaper.',
+    ));
+  });
 }

@@ -3,6 +3,7 @@ export type NotificationCopy =
   | { kind: "wallApprovedForArtist"; wallTitle: string }
   | { kind: "wallLiveForFollowers"; artistName: string; wallTitle: string }
   | { kind: "wallApprovedForAdmin"; wallTitle: string; artistName: string }
+  | { kind: "wallRemixed"; remixerName: string; wallTitle: string }
   | { kind: "newFollower"; followerName: string }
   | { kind: "streakReminder" }
   | { kind: "wotdForCreator" }
@@ -232,6 +233,15 @@ export function renderNotificationCopy(
       title: "New content report",
       body: "A new content report is ready for review.",
     };
+  case "wallRemixed":
+    return {
+      kind: copy.kind,
+      args: {remixerName: copy.remixerName, wallTitle: copy.wallTitle},
+      title: "Your wallpaper was remixed",
+      body: copy.wallTitle ?
+        `${copy.remixerName} remixed ${copy.wallTitle}.` :
+        `${copy.remixerName} remixed your wallpaper.`,
+    };
   case "wallSubmittedForReview":
     return {
       kind: copy.kind,
@@ -283,7 +293,7 @@ export function nativeNotificationLocalization(
   message: Pick<RenderedNotificationCopy, "kind" | "args">,
 ): NativeNotificationLocalization | null {
   const kind = message.kind;
-  if (kind === "custom") return null;
+  if (kind === "custom" || kind === "wallRemixed") return null;
 
   const prefix = `notif_push_${kind.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)}`;
   const stringArg = (key: string): string => String(message.args[key] ?? "");

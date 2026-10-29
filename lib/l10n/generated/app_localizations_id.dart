@@ -11139,6 +11139,64 @@ class AppLocalizationsId extends AppLocalizations {
   String get adminFillsRequest => 'Memenuhi permintaan';
 
   @override
+  String get wallRemixAction => 'Remix';
+
+  @override
+  String get wallRemixActionTooltip => 'Remix wallpaper ini dengan AI';
+
+  @override
+  String wallRemixingChip(String title, String creator) {
+    return 'Me-remix $title oleh $creator';
+  }
+
+  @override
+  String get wallRemixDropLinkTooltip => 'Hapus tautan remix';
+
+  @override
+  String get wallRemixUntitled => 'Tanpa judul';
+
+  @override
+  String get wallRemixUnknownCreator => 'kreator Prism';
+
+  @override
+  String get wallRemixesTitle => 'Remix';
+
+  @override
+  String wallRemixesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count remix');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRemixOpenRemixLabel(String creator) {
+    return 'Buka remix oleh $creator';
+  }
+
+  @override
+  String wallRemixOfLabel(String title, String creator) {
+    return 'Remix dari $title oleh $creator';
+  }
+
+  @override
+  String get wallRemixOfTooltip => 'Buka wallpaper asli';
+
+  @override
+  String get economyAiSubmitPromptNotice => 'Siapa pun dapat melihat prompt Anda dan me-remix wallpaper ini.';
+
+  @override
+  String get notifPushWallRemixedTitle => 'Wallpaper Anda di-remix';
+
+  @override
+  String notifPushWallRemixedBody(String remixerName, String wallTitle) {
+    return '$remixerName me-remix $wallTitle.';
+  }
+
+  @override
+  String notifPushWallRemixedBodyUntitled(String remixerName) {
+    return '$remixerName me-remix wallpaper Anda.';
+  }
+
+  @override
   String get accountShowAiWallpapers => 'Tampilkan wallpaper buatan AI';
 
   @override
