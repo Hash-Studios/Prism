@@ -59,7 +59,7 @@ class _WallRequestSheetBodyState extends State<WallRequestSheetBody> {
     super.dispose();
   }
 
-  bool get _canSubmit => _text.text.trim().length >= wallRequestMinLength;
+  bool get _canSubmit => _text.text.trim().characters.length >= wallRequestMinLength;
 
   void _submit(WallRequestSheetCubit cubit, {bool force = false}) {
     unawaited(cubit.submit(text: _text.text.trim(), tags: List<String>.of(_tags), source: widget.source, force: force));

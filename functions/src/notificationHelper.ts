@@ -224,6 +224,12 @@ export function fcmMessage(
       kind: "wotdForAudience",
       wallTitle: bounded(payload.message.args.wallTitle, 96),
     }),
+  } : payload.message?.kind === "wallRequestFilled" ? {
+    ...payload,
+    ...notificationCopyPayload({
+      kind: "wallRequestFilled",
+      requestText: bounded(payload.message.args.requestText, 320),
+    }),
   } : payload;
   const kind = scoreKindFor(outgoing);
   const nativeCopy = outgoing.message ?

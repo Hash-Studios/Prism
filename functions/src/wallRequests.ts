@@ -1,3 +1,4 @@
+/// <reference lib="es2022.intl" />
 import * as admin from "firebase-admin";
 import {createHash} from "node:crypto";
 import {logger} from "firebase-functions/v2";
@@ -61,6 +62,7 @@ export interface WallRequestView {
 }
 
 const HIDDEN_CHARACTERS = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}]/u;
+const TEXT_SEGMENTER = new Intl.Segmenter(undefined, {granularity: "grapheme"});
 const STOP_WORDS = new Set([
   "a", "an", "the", "of", "and", "or", "with", "in", "on", "for", "to", "some", "any", "me", "my", "i", "pls", "please",
   "want", "need", "like", "wall", "walls", "wallpaper", "wallpapers", "background", "backgrounds", "hd", "4k", "phone",
@@ -97,7 +99,8 @@ export function publicRequestText(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   if (HIDDEN_CHARACTERS.test(raw)) return null;
   const text = raw.replace(/\s+/g, " ").trim();
-  if (text.length < MIN_TEXT_LENGTH || text.length > MAX_TEXT_LENGTH) return null;
+  const length = [...TEXT_SEGMENTER.segment(text)].length;
+  if (length < MIN_TEXT_LENGTH || length > MAX_TEXT_LENGTH) return null;
   if (hasBlockedWord(text) || requestTokens(text).length === 0) return null;
   return text;
 }

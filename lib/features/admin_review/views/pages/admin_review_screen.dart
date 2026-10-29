@@ -56,7 +56,24 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
 
   void _retryStreams() {
     PrismHaptics.tap();
+    _requestTexts.clear();
     setState(_subscribeStreams);
+  }
+
+  Future<String?> _requestText(String requestId) {
+    final Future<String?>? cached = _requestTexts[requestId];
+    if (cached != null) return cached;
+
+    late final Future<String?> request;
+    request = _repository.requestText(requestId).then(
+      (String? text) => text,
+      onError: (Object error, StackTrace stackTrace) {
+        if (identical(_requestTexts[requestId], request)) _requestTexts.remove(requestId);
+        Error.throwWithStackTrace(error, stackTrace);
+      },
+    );
+    _requestTexts[requestId] = request;
+    return request;
   }
 
   @override
@@ -123,7 +140,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         final String requestId = rawRequestId is String ? rawRequestId : '';
         if (requestId.isEmpty) return _wallCard(context, wall, previewUrl, createdAt, reserved, null);
         return FutureBuilder<String?>(
-          future: _requestTexts.putIfAbsent(requestId, () => _repository.requestText(requestId)),
+          future: _requestText(requestId),
           builder: (BuildContext context, AsyncSnapshot<String?> snapshot) => _wallCard(
             context,
             wall,

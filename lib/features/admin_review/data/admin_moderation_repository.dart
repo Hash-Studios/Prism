@@ -70,7 +70,6 @@ class AdminModerationRepository {
     return true;
   }
 
-  /// onWallApproved writes the artist's inbox entry and push, so approval adds none here.
   /// The text of the request a pending wall says it fills, so the admin can check the match before approving.
   /// The creator writes `requestId` on the wall, so the text comes from the request itself.
   Future<String?> requestText(String requestId) async {
@@ -83,6 +82,7 @@ class AdminModerationRepository {
     );
   }
 
+  /// onWallApproved writes the artist's inbox entry and push, so approval adds none here.
   /// A creator can write any `collections` or streak value on a pending wall. Approval therefore files the wall under
   /// `community` and removes the streak fields, unless the admin passes values.
   Future<void> approveWall(

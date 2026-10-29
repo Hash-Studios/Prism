@@ -185,6 +185,35 @@ void main() {
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, 'a' * 80);
   });
 
+  testWidgets('an initial query truncates at an emoji grapheme boundary', (tester) async {
+    stub(const WallRequestSheetEditing());
+    final String requestText = '${'a' * 79}😀';
+    await openSheet(tester, initialText: '$requestText😀');
+
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, requestText);
+  });
+
+  testWidgets('an initial query truncates at a decomposed grapheme boundary', (tester) async {
+    stub(const WallRequestSheetEditing());
+    final String requestText = '${'a' * 79}e\u0301';
+    await openSheet(tester, initialText: '${requestText}e\u0301');
+
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, requestText);
+  });
+
+  testWidgets('the submit button counts graphemes for the minimum length', (tester) async {
+    stub(const WallRequestSheetEditing());
+    await openSheet(tester);
+
+    await tester.enterText(find.byType(TextField), 'e\u0301e\u0301');
+    await tester.pump();
+    expect(submitButton(tester).onPressed, isNull);
+
+    await tester.enterText(find.byType(TextField), 'e\u0301e\u0301e\u0301');
+    await tester.pump();
+    expect(submitButton(tester).onPressed, isNotNull);
+  });
+
   testWidgets('a fourth tag cannot be selected after three', (tester) async {
     stub(const WallRequestSheetEditing());
     await openSheet(tester);
