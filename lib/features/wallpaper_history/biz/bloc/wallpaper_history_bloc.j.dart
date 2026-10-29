@@ -63,6 +63,7 @@ class WallpaperHistoryBloc extends Bloc<WallpaperHistoryEvent, WallpaperHistoryS
   /// Synced walls a remove took away, by row id, so Undo can put them back.
   final Map<String, HistoryWall> _removedSynced = <String, HistoryWall>{};
   final Map<String, (String, int)> _removedSessions = <String, (String, int)>{};
+  Future<bool>? _clearInFlight;
 
   WallpaperHistoryState _read() => WallpaperHistoryState(
     items: mergeHistoryRows(_store.items(), _synced.items()),
@@ -86,13 +87,25 @@ class WallpaperHistoryBloc extends Bloc<WallpaperHistoryEvent, WallpaperHistoryS
 
   /// Clears the account history first, then the sets on this device. False when the account could not be reached;
   /// both lists stay as they were.
-  Future<bool> clearSetAndDownloaded() async {
+  Future<bool> clearSetAndDownloaded() {
+    final Future<bool>? pending = _clearInFlight;
+    if (pending != null) return pending;
+    final Future<bool> clearing = _clearSetAndDownloaded();
+    _clearInFlight = clearing;
+    return clearing.whenComplete(() {
+      if (identical(_clearInFlight, clearing)) _clearInFlight = null;
+    });
+  }
+
+  Future<bool> _clearSetAndDownloaded() async {
+    final (String, int) recordingSession = _synced.recordingSession;
     try {
       await _synced.clear();
     } catch (error, stackTrace) {
       logger.w('Account history clear did not reach the server.', error: error, stackTrace: stackTrace);
       return false;
     }
+    if (_synced.recordingSession != recordingSession) return false;
     _removedSynced.clear();
     _removedSessions.clear();
     await _store.clear();
@@ -134,6 +147,12 @@ class WallpaperHistoryBloc extends Bloc<WallpaperHistoryEvent, WallpaperHistoryS
       return;
     }
     if (!isSyncedHistoryRow(item)) await _store.record(item);
+    final Future<bool>? clearing = _clearInFlight;
+    if (clearing != null && await clearing) return;
+    if (removedSession != _synced.recordingSession) {
+      _removedSynced.remove(item.id);
+      return;
+    }
     final HistoryWall? synced = _removedSynced.remove(item.id);
     if (synced != null) await _guard(() => _synced.record(synced));
   }

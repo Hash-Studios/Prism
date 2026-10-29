@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -15,12 +17,55 @@ import '../../support/in_memory_local_store.dart';
 class _Firestore extends Fake implements FirestoreClient {}
 
 class _OfflineFirestore extends Fake implements FirestoreClient {
+  bool offline = true;
+
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) =>
-      Future<List<T>>.error(StateError('offline'));
+      offline ? Future<List<T>>.error(StateError('offline')) : Future<List<T>>.value(<T>[]);
 
   @override
   Future<void> runBatch(Future<void> Function(FirestoreBatch batch) action, {required String sourceTag}) async {}
+}
+
+class _GatedFirestore extends Fake implements FirestoreClient {
+  final Completer<void> queryStarted = Completer<void>();
+  final Completer<void> queryGate = Completer<void>();
+  bool failQuery = false;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    if (!queryStarted.isCompleted) queryStarted.complete();
+    await queryGate.future;
+    if (failQuery) throw StateError('offline');
+    return <T>[];
+  }
+
+  @override
+  Future<void> runBatch(Future<void> Function(FirestoreBatch batch) action, {required String sourceTag}) async {}
+}
+
+class _GatedHistoryLocalStore extends InMemoryLocalStore {
+  final Completer<void> clearStarted = Completer<void>();
+  final Completer<void> clearGate = Completer<void>();
+  final Completer<void> appliedRecordStarted = Completer<void>();
+  final Completer<void> appliedRecordGate = Completer<void>();
+  bool gateClear = false;
+  bool gateAppliedRecord = false;
+
+  @override
+  Future<void> set(String key, Object? value) async {
+    if (gateAppliedRecord && key == 'settings.wallpaper.history.items') {
+      gateAppliedRecord = false;
+      appliedRecordStarted.complete();
+      await appliedRecordGate.future;
+    }
+    if (gateClear && key == 'settings.history.synced.items' && value == '[]') {
+      gateClear = false;
+      clearStarted.complete();
+      await clearGate.future;
+    }
+    await super.set(key, value);
+  }
 }
 
 AppliedWallpaper _item(String id, DateTime at) => AppliedWallpaper(
@@ -77,6 +122,133 @@ void main() {
 
     expect(store.items().map((item) => item.id), <String>['p1']);
     expect(online.items().map((wall) => wall.key), <String>['wallhaven_w1']);
+  });
+
+  test('a failed clear preserves the undo receipt when Undo starts during its query', () async {
+    final DateTime at = DateTime.utc(2026, 10, 20, 8);
+    final AppliedWallpaper wall = _localSet('p1', at);
+    final _GatedHistoryLocalStore local = _GatedHistoryLocalStore();
+    final SettingsLocalDataSource gatedSettings = SettingsLocalDataSource(local);
+    final WallpaperHistoryStore gatedStore = WallpaperHistoryStore(gatedSettings);
+    await gatedStore.record(wall);
+    final _GatedFirestore firestore = _GatedFirestore();
+    final SyncedHistoryStore online = SyncedHistoryStore(gatedSettings, firestore, ownerId: () => 'u1');
+    await online.record(_synced(WallpaperSource.prism, 'p1', at));
+    final WallpaperHistoryBloc bloc = WallpaperHistoryBloc(gatedStore, online, viewed);
+    addTearDown(bloc.close);
+
+    bloc.add(const WallpaperHistoryEvent.started());
+    await bloc.stream.first;
+    bloc.add(const WallpaperHistoryEvent.removed('p1'));
+    await bloc.stream.first;
+    final Future<bool> clearing = bloc.clearSetAndDownloaded();
+    await firestore.queryStarted.future;
+    local.gateAppliedRecord = true;
+    await bloc.restore(wall);
+    await local.appliedRecordStarted.future;
+    firestore.failQuery = true;
+    local.appliedRecordGate.complete();
+    await pumpEventQueue();
+    firestore.queryGate.complete();
+    expect(await clearing, isFalse);
+
+    await pumpEventQueue();
+
+    expect(gatedStore.items().map((item) => item.id), <String>['p1']);
+    expect(online.items().map((item) => item.key), <String>['prism_p1']);
+  });
+
+  test('clear does not erase current-session history when the account changes during its query', () async {
+    final DateTime at = DateTime.utc(2026, 10, 20, 8);
+    await store.record(_localSet('p1', at));
+    final _GatedFirestore firestore = _GatedFirestore();
+    final SyncedHistoryStore gatedSynced = SyncedHistoryStore(settings, firestore, ownerId: () => 'u1');
+    await gatedSynced.record(_synced(WallpaperSource.prism, 'p1', at));
+    final WallpaperHistoryBloc bloc = WallpaperHistoryBloc(store, gatedSynced, viewed);
+    addTearDown(bloc.close);
+
+    final Future<bool> clearing = bloc.clearSetAndDownloaded();
+    await firestore.queryStarted.future;
+    await gatedSynced.clearLocal();
+    final AppliedWallpaper currentSessionWall = _localSet('current-session', at.add(const Duration(minutes: 1)));
+    await store.record(currentSessionWall);
+    await gatedSynced.record(_synced(WallpaperSource.prism, 'current-session', currentSessionWall.appliedAt));
+
+    firestore.queryGate.complete();
+    expect(await clearing, isFalse);
+    expect(store.items().map((item) => item.id), containsAll(<String>['p1', 'current-session']));
+    expect(gatedSynced.items().map((item) => item.key), <String>['prism_current-session']);
+  });
+
+  test('Undo does not restore a removed receipt into a new session after waiting for clear', () async {
+    final DateTime at = DateTime.utc(2026, 10, 20, 8);
+    final AppliedWallpaper wall = _localSet('p1', at);
+    final _GatedHistoryLocalStore local = _GatedHistoryLocalStore();
+    final SettingsLocalDataSource gatedSettings = SettingsLocalDataSource(local);
+    final WallpaperHistoryStore gatedStore = WallpaperHistoryStore(gatedSettings);
+    String ownerId = 'u1';
+    final _GatedFirestore firestore = _GatedFirestore();
+    final SyncedHistoryStore gatedSynced = SyncedHistoryStore(gatedSettings, firestore, ownerId: () => ownerId);
+    await gatedStore.record(wall);
+    await gatedSynced.record(_synced(WallpaperSource.prism, 'p1', at));
+    final WallpaperHistoryBloc bloc = WallpaperHistoryBloc(gatedStore, gatedSynced, viewed);
+    addTearDown(bloc.close);
+
+    bloc.add(const WallpaperHistoryEvent.started());
+    await bloc.stream.first;
+    bloc.add(const WallpaperHistoryEvent.removed('p1'));
+    await bloc.stream.first;
+
+    final Future<bool> clearing = bloc.clearSetAndDownloaded();
+    await firestore.queryStarted.future;
+    local.gateAppliedRecord = true;
+    await bloc.restore(wall);
+    await local.appliedRecordStarted.future;
+    await gatedSynced.clearLocal();
+    ownerId = 'u2';
+    local.appliedRecordGate.complete();
+    await pumpEventQueue();
+    firestore.queryGate.complete();
+
+    expect(await clearing, isFalse);
+    await pumpEventQueue();
+    expect(gatedStore.items().map((item) => item.id), <String>['p1']);
+    expect(gatedSynced.items(), isEmpty);
+  });
+
+  test('undo already recording locally cannot recreate history during a successful clear', () async {
+    final DateTime at = DateTime.utc(2026, 10, 20, 8);
+    final AppliedWallpaper wall = _localSet('p1', at);
+    final _GatedHistoryLocalStore local = _GatedHistoryLocalStore();
+    final SettingsLocalDataSource gatedSettings = SettingsLocalDataSource(local);
+    final WallpaperHistoryStore gatedStore = WallpaperHistoryStore(gatedSettings);
+    final _OfflineFirestore firestore = _OfflineFirestore()..offline = false;
+    final SyncedHistoryStore gatedSynced = SyncedHistoryStore(gatedSettings, firestore, ownerId: () => 'u1');
+    final WallpaperHistoryBloc bloc = WallpaperHistoryBloc(gatedStore, gatedSynced, viewed);
+    addTearDown(bloc.close);
+    await gatedStore.record(wall);
+    await gatedSynced.record(_synced(WallpaperSource.prism, 'p1', at));
+
+    bloc.add(const WallpaperHistoryEvent.started());
+    await bloc.stream.first;
+    bloc.add(const WallpaperHistoryEvent.removed('p1'));
+    await bloc.stream.first;
+    local.gateAppliedRecord = true;
+    await bloc.restore(wall);
+    await local.appliedRecordStarted.future;
+    local.gateClear = true;
+
+    final Future<bool> clearing = bloc.clearSetAndDownloaded();
+    await local.clearStarted.future;
+    local.appliedRecordGate.complete();
+    await pumpEventQueue();
+
+    local.clearGate.complete();
+    expect(await clearing, isTrue);
+    await pumpEventQueue();
+
+    expect(gatedStore.items(), isEmpty);
+    expect(gatedSynced.items(), isEmpty);
   });
 
   test('starts with no items', () {

@@ -43,6 +43,8 @@ class _FakeFirestore extends Fake implements FirestoreClient {
   int batches = 0;
   int queries = 0;
   Completer<void>? queryGate;
+  final Map<String, Completer<void>> queryGates = <String, Completer<void>>{};
+  final Map<String, Completer<void>> queryStarted = <String, Completer<void>>{};
   Completer<void>? batchGate;
   final Map<String, Map<String, dynamic>> documents = <String, Map<String, dynamic>>{};
   final Map<String, Completer<void>> actionGates = <String, Completer<void>>{};
@@ -52,6 +54,8 @@ class _FakeFirestore extends Fake implements FirestoreClient {
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
     queries++;
     querySpecs.add(spec);
+    final Completer<void> started = queryStarted.putIfAbsent(spec.sourceTag, Completer<void>.new);
+    if (!started.isCompleted) started.complete();
     final List<(String, Map<String, dynamic>)> rows = <(String, Map<String, dynamic>)>[
       for (int i = 0; i < serverIds.length; i++)
         (serverIds[i], i < serverDocs.length ? serverDocs[i] : const <String, dynamic>{}),
@@ -62,7 +66,7 @@ class _FakeFirestore extends Fake implements FirestoreClient {
         return order.descending ? -comparison : comparison;
       });
     }
-    await queryGate?.future;
+    await (queryGates[spec.sourceTag] ?? queryGate)?.future;
     if (throwOnQuery != null) throw throwOnQuery!;
     return rows.take(spec.limit ?? rows.length).map((row) => map(row.$2, row.$1)).toList();
   }
@@ -466,6 +470,109 @@ void main() {
       firestore.queryGate!.complete();
       await clearing;
       expect(firestore.ops, <String>['delete:usersv2/u1/history/wallhaven_a', 'delete:usersv2/u1/history/wallhaven_b']);
+    });
+
+    test('clear deletes a record created while its account query is pending', () async {
+      firestore.queryGate = Completer<void>();
+      final SyncedHistoryStore store = SyncedHistoryStore(settings, firestore, ownerId: () => uid);
+      final Future<void> clearing = store.clear();
+      await Future<void>.delayed(Duration.zero);
+
+      await store.record(_wall('during-clear', _base));
+      expect(firestore.ops, <String>['set:usersv2/u1/history/wallhaven_during-clear']);
+      firestore.ops.clear();
+      firestore.queryGate!.complete();
+      await clearing;
+
+      expect(store.items(), isEmpty);
+      expect(firestore.ops, <String>['delete:usersv2/u1/history/wallhaven_during-clear']);
+    });
+
+    test('clear during a guest session is local-only and does not query Firestore', () async {
+      uid = '';
+      final SyncedHistoryStore store = SyncedHistoryStore(settings, firestore, ownerId: () => uid);
+      await store.record(_wall('guest', _base));
+
+      await store.clear();
+
+      expect(store.items(), isEmpty);
+      expect(firestore.queries, 0);
+      expect(firestore.ops, isEmpty);
+    });
+
+    test('clear returns without deleting after local account cleanup during its query', () async {
+      firestore.serverIds = <String>['wallhaven_a'];
+      firestore.queryGate = Completer<void>();
+      final SyncedHistoryStore store = SyncedHistoryStore(settings, firestore, ownerId: () => uid);
+      final Future<void> clearing = store.clear();
+      await Future<void>.delayed(Duration.zero);
+
+      await store.clearLocal();
+      firestore.queryGate!.complete();
+      await clearing;
+
+      expect(store.items(), isEmpty);
+      expect(firestore.ops, isEmpty);
+    });
+
+    test('clear invalidates a restore whose query is pending', () async {
+      firestore.queryGates['wallpaper_history.synced.restore'] = Completer<void>();
+      firestore.queryGates['wallpaper_history.synced.clear.list'] = Completer<void>();
+      final SyncedHistoryStore store = SyncedHistoryStore(settings, firestore, ownerId: () => uid);
+      final Future<int> restoring = store.restore(uid, seed: <HistoryWall>[_wall('seed', _base)]);
+      await firestore.queryStarted.putIfAbsent('wallpaper_history.synced.restore', Completer<void>.new).future;
+      final Future<void> clearing = store.clear();
+      await firestore.queryStarted.putIfAbsent('wallpaper_history.synced.clear.list', Completer<void>.new).future;
+      expect(firestore.queries, 2);
+
+      firestore.queryGates['wallpaper_history.synced.clear.list']!.complete();
+      await clearing;
+      firestore.queryGates['wallpaper_history.synced.restore']!.complete();
+      expect(await restoring, 0);
+
+      expect(store.items(), isEmpty);
+      expect(settings.get<String>(PersistenceKeys.syncedHistoryRestoredFor, defaultValue: ''), isEmpty);
+      expect(firestore.ops, isEmpty);
+    });
+
+    test('restore started during a pending clear cannot repopulate the cleared session', () async {
+      firestore.serverDocs = <Map<String, dynamic>>[_wall('server', _base).toDoc()];
+      firestore.serverIds = <String>['wallhaven_server'];
+      firestore.queryGates['wallpaper_history.synced.clear.list'] = Completer<void>();
+      firestore.queryGates['wallpaper_history.synced.restore'] = Completer<void>();
+      final SyncedHistoryStore store = SyncedHistoryStore(settings, firestore, ownerId: () => uid);
+      final Future<void> clearing = store.clear();
+      await firestore.queryStarted.putIfAbsent('wallpaper_history.synced.clear.list', Completer<void>.new).future;
+
+      final Future<int> restoring = store.restore(uid);
+      await firestore.queryStarted.putIfAbsent('wallpaper_history.synced.restore', Completer<void>.new).future;
+      firestore.queryGates['wallpaper_history.synced.clear.list']!.complete();
+      await clearing;
+      expect(store.items(), isEmpty);
+      expect(firestore.ops, <String>['delete:usersv2/u1/history/wallhaven_server']);
+
+      firestore.queryGates['wallpaper_history.synced.restore']!.complete();
+      expect(await restoring, 0);
+      expect(store.items(), isEmpty);
+      expect(settings.get<String>(PersistenceKeys.syncedHistoryRestoredFor, defaultValue: ''), isEmpty);
+      expect(firestore.ops, <String>['delete:usersv2/u1/history/wallhaven_server']);
+    });
+
+    test('clearLocal followed by a new record keeps the new session and sends no stale clear deletes', () async {
+      firestore.serverIds = <String>['wallhaven_old'];
+      firestore.queryGates['wallpaper_history.synced.clear.list'] = Completer<void>();
+      final SyncedHistoryStore store = SyncedHistoryStore(settings, firestore, ownerId: () => uid);
+      final Future<void> clearing = store.clear();
+      await firestore.queryStarted.putIfAbsent('wallpaper_history.synced.clear.list', Completer<void>.new).future;
+
+      await store.clearLocal();
+      await store.record(_wall('new-session', _base.add(const Duration(minutes: 1))));
+      firestore.ops.clear();
+      firestore.queryGates['wallpaper_history.synced.clear.list']!.complete();
+      await clearing;
+
+      expect(store.items().map((wall) => wall.key), <String>['wallhaven_new-session']);
+      expect(firestore.ops, isEmpty);
     });
 
     test('clearLocal empties the list, writes nothing, and the next restore runs again', () async {

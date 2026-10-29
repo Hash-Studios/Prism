@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -23,6 +24,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -35,6 +37,15 @@ import '../../support/in_memory_local_store.dart';
 class _MockStackRouter extends Mock implements StackRouter {}
 
 class _Firestore extends Fake implements FirestoreClient {}
+
+class _FailingQueryFirestore extends Fake implements FirestoreClient {
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) =>
+      Future<List<T>>.error(StateError('offline'));
+
+  @override
+  Future<void> runBatch(Future<void> Function(FirestoreBatch batch) action, {required String sourceTag}) async {}
+}
 
 final DateTime fixedNow = DateTime(2026, 10, 28, 15);
 
@@ -52,6 +63,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late FakeAppAnalytics analytics;
+  late SettingsLocalDataSource settings;
   late WallpaperHistoryStore store;
   late RecentlyViewedStore viewed;
   late SyncedHistoryStore synced;
@@ -65,7 +77,7 @@ void main() {
   setUp(() {
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
-    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    settings = SettingsLocalDataSource(InMemoryLocalStore());
     store = WallpaperHistoryStore(settings);
     viewed = RecentlyViewedStore(settings);
     synced = SyncedHistoryStore(settings, _Firestore(), ownerId: () => '');
@@ -82,6 +94,14 @@ void main() {
       await store.record(wall);
     }
   }
+
+  HistoryWall syncedWall(String id, DateTime at) => HistoryWall.tryCreate(
+    id: id,
+    source: WallpaperSource.wallhaven,
+    thumbnailUrl: 'https://example.com/$id-thumb.jpg',
+    action: HistoryAction.download,
+    at: at,
+  )!;
 
   Widget app({Widget? extra, StackRouter? router, bool canSetWallpaper = true, bool signedIn = false}) {
     Widget home = BlocProvider.value(
@@ -367,6 +387,47 @@ void main() {
     expect(analytics.events.whereType<LibraryHistoryClearedEvent>(), isEmpty);
   });
 
+  testWidgets('a failed account-history read keeps both lists and shows the localized error', (tester) async {
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    final List<String> messages = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (
+      call,
+    ) async {
+      if (call.method == 'showToast') messages.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+      return true;
+    });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+    });
+
+    synced = SyncedHistoryStore(settings, _FailingQueryFirestore(), ownerId: () => 'user-1');
+    await recordAll(<AppliedWallpaper>[item('local', DateTime(2026, 10, 28, 14))]);
+    await synced.record(syncedWall('account', DateTime(2026, 10, 28, 13)));
+    await pumpList(
+      tester,
+      extra: Builder(
+        builder: (context) => TextButton(
+          onPressed: () => confirmClearHistory(context, HistorySegment.setAndDownloaded),
+          child: const Text('Start clear'),
+        ),
+      ),
+      signedIn: true,
+    );
+
+    await tester.tap(find.text('Start clear'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear history'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(store.items().map((wall) => wall.id), <String>['local']);
+    expect(synced.items().map((wall) => wall.id), <String>['account']);
+    expect(bloc!.state.items.map((wall) => wall.id), containsAll(<String>['local', 'synced:wallhaven_account']));
+    expect(messages, contains(AppLocalizationsEn().historyClearFailed));
+    expect(analytics.events.whereType<LibraryHistoryClearedEvent>(), isEmpty);
+  });
+
   testWidgets('the Current tile has a screen reader label with the time and a remove action', (tester) async {
     final SemanticsHandle handle = tester.ensureSemantics();
     await recordAll(<AppliedWallpaper>[item('a', DateTime(2026, 10, 28, 14)), item('b', DateTime(2026, 10, 20, 10))]);
@@ -459,14 +520,6 @@ void main() {
     source: WallpaperSource.prism,
     thumbnailUrl: 'https://example.com/$id-thumb.jpg',
     action: HistoryAction.view,
-    at: at,
-  )!;
-
-  HistoryWall syncedWall(String id, DateTime at) => HistoryWall.tryCreate(
-    id: id,
-    source: WallpaperSource.wallhaven,
-    thumbnailUrl: 'https://example.com/$id-thumb.jpg',
-    action: HistoryAction.download,
     at: at,
   )!;
 

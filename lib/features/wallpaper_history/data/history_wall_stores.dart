@@ -188,8 +188,8 @@ class SyncedHistoryStore extends ChangeNotifier {
   }
 
   /// Clears the list here and every doc in the account.
-  /// Clears the list here and every doc in the account. A signed-in clear reads the account first, so an offline
-  /// clear throws and keeps both copies instead of leaving account docs that come back on another phone.
+  /// A signed-in clear reads the account first, so an offline clear throws and keeps both copies instead of leaving
+  /// account docs that come back on another phone.
   Future<void> clear() async {
     final String uid = _ownerId();
     final int epoch = _accountEpoch;
@@ -207,10 +207,11 @@ class SyncedHistoryStore extends ChangeNotifier {
               .timeout(_networkTimeout);
     if (uid.isNotEmpty && !_current(uid, epoch)) return;
     _mutationVersion++;
+    final Set<String> deleteKeys = <String>{...keys, ...items().map((item) => item.key)};
     await _list.clear();
     notifyListeners();
     if (uid.isEmpty) return;
-    _send(uid, epoch: epoch, deletes: keys, sourceTag: 'wallpaper_history.synced.clear');
+    _send(uid, epoch: epoch, deletes: deleteKeys, sourceTag: 'wallpaper_history.synced.clear');
   }
 
   /// Forgets the device copy only, as on sign-out. The account keeps its history.

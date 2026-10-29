@@ -65,6 +65,25 @@ class _FailingViewingPreferenceStore extends InMemoryLocalStore {
   }
 }
 
+class _TrackingRecentlyViewedStore extends RecentlyViewedStore {
+  _TrackingRecentlyViewedStore(super.settings);
+
+  int listenersAdded = 0;
+  int listenersRemoved = 0;
+
+  @override
+  void addListener(VoidCallback listener) {
+    listenersAdded++;
+    super.addListener(listener);
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    listenersRemoved++;
+    super.removeListener(listener);
+  }
+}
+
 class _RecordingUrlLauncher extends UrlLauncherPlatform {
   _RecordingUrlLauncher({required this.opens});
 
@@ -1159,6 +1178,24 @@ void main() {
       await getIt<RecentlyViewedStore>().setEnabled(true);
       await tester.pump();
       expect(switchOf(tester, 'Save viewing history').value, isTrue);
+    });
+
+    testWidgets('Save viewing history listener is removed when Settings is disposed', (tester) async {
+      final _TrackingRecentlyViewedStore store = _TrackingRecentlyViewedStore(getIt<SettingsLocalDataSource>());
+      await getIt.unregister<RecentlyViewedStore>();
+      getIt.registerSingleton<RecentlyViewedStore>(store);
+      await pumpSettings(tester);
+
+      expect(store.listenersAdded, 1);
+      await store.setEnabled(false);
+      await tester.pump();
+      expect(switchOf(tester, 'Save viewing history').value, isFalse);
+
+      await tester.pumpWidget(const SizedBox());
+
+      expect(store.listenersRemoved, 1);
+      await store.setEnabled(true);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('the cache size counts tinted wallpapers', (tester) async {
