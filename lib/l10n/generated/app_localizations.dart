@@ -6849,6 +6849,84 @@ abstract class AppLocalizations {
   /// **'Open in Prism'**
   String get aiLiveActivityOpen;
 
+  /// Primary button on a finished AI wallpaper. On Android it opens the Set screen; on iOS it saves to Photos.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get aiResultApply;
+
+  /// Button on the full-screen AI result that returns to the prompt editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit prompt'**
+  String get aiResultEditPrompt;
+
+  /// Screen reader label for the strip of thumbnails made in this session.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpapers from this session'**
+  String get aiSessionStripLabel;
+
+  /// Screen reader label for one thumbnail in the session strip.
+  ///
+  /// In en, this message translates to:
+  /// **'Take {index} of {count}'**
+  String aiSessionTake(int index, int count);
+
+  /// Follow-up chip. Makes a new take of the wallpaper as a watercolour painting.
+  ///
+  /// In en, this message translates to:
+  /// **'As watercolour'**
+  String get aiFollowUpWatercolour;
+
+  /// Follow-up chip. Makes a night-time take.
+  ///
+  /// In en, this message translates to:
+  /// **'Night version'**
+  String get aiFollowUpNight;
+
+  /// Follow-up chip. Makes a simpler take.
+  ///
+  /// In en, this message translates to:
+  /// **'More minimal'**
+  String get aiFollowUpMinimal;
+
+  /// Follow-up chip. Makes a take with warmer colours.
+  ///
+  /// In en, this message translates to:
+  /// **'Warmer'**
+  String get aiFollowUpWarmer;
+
+  /// Follow-up chip. Makes a take with more depth and layers.
+  ///
+  /// In en, this message translates to:
+  /// **'Add depth'**
+  String get aiFollowUpDepth;
+
+  /// Screen reader label for the coin price shown next to the follow-up chips.
+  ///
+  /// In en, this message translates to:
+  /// **'Each new take costs {cost} coins'**
+  String aiFollowUpCostLabel(int cost);
+
+  /// Title of the sheet shown the first time a follow-up chip is tapped.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a new take?'**
+  String get aiFollowUpConfirmTitle;
+
+  /// No description provided for @aiFollowUpConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A follow-up makes a new wallpaper from this one. Each one costs {cost} coins.'**
+  String aiFollowUpConfirmBody(int cost);
+
+  /// Confirm button on the follow-up cost sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Make it'**
+  String get aiFollowUpConfirmAction;
+
   /// No description provided for @economyAiDailyLimit.
   ///
   /// In en, this message translates to:

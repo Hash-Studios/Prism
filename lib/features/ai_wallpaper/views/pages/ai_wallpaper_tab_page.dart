@@ -10,6 +10,8 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/live_activity_channel.dart';
 import 'package:Prism/core/platform/pigeon/prism_live_activity_api.g.dart';
@@ -24,12 +26,14 @@ import 'package:Prism/core/utils/ai_target_size.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wallstore;
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_follow_up.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart' show AiQualityTier;
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
@@ -42,6 +46,7 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_pickers.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_preview_stage.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_actions.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheets.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -93,7 +98,13 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   AiStylePreset _selectedStyle = AiStylePreset.abstract;
   AiQualityTier _selectedQualityTier = AiQualityTier.fast;
   List<AiGenerationRecord> _history = <AiGenerationRecord>[];
-  AiGenerationRecord? _latest;
+
+  /// The wallpaper shown full-bleed. Null shows the prompt editor.
+  AiGenerationRecord? _hero;
+  AiApplyFromValue _heroFrom = AiApplyFromValue.hero;
+
+  /// The wallpapers made since the page opened, oldest first.
+  List<AiGenerationRecord> _session = <AiGenerationRecord>[];
   final Map<String, AiGenerationRecord> _confirmedSubmissionRecords = <String, AiGenerationRecord>{};
   String _historyUserId = '';
   String _promptOwner = '';
@@ -117,6 +128,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   bool _saving = false;
   bool _sharing = false;
   bool _submitting = false;
+  bool _applying = false;
+  bool _confirmingFollowUp = false;
   final Set<String> _unconfirmedSubmissionIds = <String>{};
 
   static const int _maxPromptChars = 160;
@@ -277,9 +290,24 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   void _selectFromHistory(AiGenerationRecord record) {
     PrismHaptics.selection();
-    setState(() => _latest = record);
-    _scrollToTop();
+    setState(() {
+      _hero = record;
+      _heroFrom = AiApplyFromValue.hero;
+    });
   }
+
+  void _selectTake(AiGenerationRecord record) {
+    if (record.id == _hero?.id) return;
+    PrismHaptics.selection();
+    final int position = _session.indexWhere((AiGenerationRecord take) => take.id == record.id);
+    setState(() {
+      _hero = record;
+      _heroFrom = AiApplyFromValue.strip;
+    });
+    analytics.track(AiStripSwappedEvent(position: position, count: _session.length));
+  }
+
+  void _closeResult() => setState(() => _hero = null);
 
   Future<bool> _hasNetworkOrUnknown() async {
     try {
@@ -304,7 +332,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     if (_historyUserId != userId) {
       _historyUserId = userId;
       _history = <AiGenerationRecord>[];
-      _latest = null;
+      _hero = null;
+      _session = <AiGenerationRecord>[];
       _confirmedSubmissionRecords.clear();
       _unconfirmedSubmissionIds.clear();
     }
@@ -312,7 +341,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       setState(() {
         _loadingHistory = false;
         _history = <AiGenerationRecord>[];
-        _latest = null;
+        _hero = null;
+        _session = <AiGenerationRecord>[];
         _confirmedSubmissionRecords.clear();
         _unconfirmedSubmissionIds.clear();
       });
@@ -331,10 +361,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           _confirmedSubmissionRecords,
           fetchedUserId: userId,
         );
-        setState(() {
-          _history = localWithConfirmed;
-          _latest = localWithConfirmed.first;
-        });
+        setState(() => _history = localWithConfirmed);
       }
       final bool online = await _hasNetworkOrUnknown();
       if (!mounted || !isCurrentLoad()) return;
@@ -346,10 +373,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       final result = await _repository.fetchHistory(userId: userId);
       if (!isCurrentLoad()) return;
       final mergedResult = mergeAiSubmissionHistory(result, _confirmedSubmissionRecords, fetchedUserId: userId);
-      setState(() {
-        _history = mergedResult;
-        _latest = mergedResult.isEmpty ? null : mergedResult.first;
-      });
+      setState(() => _history = mergedResult);
       analytics.track(AiHistoryOpenedEvent(count: result.length));
     } catch (error, stackTrace) {
       logger.w('AI history fetch failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
@@ -432,10 +456,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     );
   }
 
-  Future<void> _generateVariation() async {
+  /// Makes a new take of the hero. [prompt] is what to change: typed in the refine sheet, or a follow-up chip's.
+  Future<void> _generateVariation({required String prompt, required bool fromSheet}) async {
     if (!_canStartGeneration()) return;
 
-    final String prompt = _variationController.text.trim();
     if (prompt.isEmpty) {
       toasts.error(context.l10n.economyAiDescribeChanges);
       return;
@@ -444,7 +468,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       toasts.error(context.l10n.economyAiVariationTooLong(_maxVariationChars));
       return;
     }
-    final AiGenerationRecord? latest = _latest;
+    final AiGenerationRecord? latest = _hero;
     if (latest == null || !app_state.aiVariationsEnabled) {
       toasts.error(context.l10n.economyAiVariationUnavailable);
       return;
@@ -464,8 +488,59 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       ),
       successEvent: (AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) =>
           AiVariationUsedEvent(provider: generated.provider, mode: mode, coinsSpent: coinsSpent),
-      onSuccess: (_) => _variationController.clear(),
+      onSuccess: (_) {
+        if (fromSheet) _variationController.clear();
+      },
     );
+  }
+
+  int get _confirmedFollowUpCost {
+    try {
+      if (!getIt.isRegistered<SettingsLocalDataSource>()) return 0;
+      return getIt<SettingsLocalDataSource>().get<int>(PersistenceKeys.aiFollowUpConfirmedCost, defaultValue: 0);
+    } catch (error, stackTrace) {
+      logger.w(
+        'Could not read the confirmed follow-up price',
+        tag: 'ai_wallpaper',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return 0;
+    }
+  }
+
+  void _saveConfirmedFollowUpCost(int cost) {
+    try {
+      if (!getIt.isRegistered<SettingsLocalDataSource>()) return;
+      unawaited(getIt<SettingsLocalDataSource>().set(PersistenceKeys.aiFollowUpConfirmedCost, cost));
+    } catch (error, stackTrace) {
+      logger.w(
+        'Could not save the confirmed follow-up price',
+        tag: 'ai_wallpaper',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// Runs [followUp] on the hero at its tier's price. The first time, and when the price goes up, the user confirms.
+  Future<void> _runFollowUp(AiFollowUp followUp) async {
+    final AiGenerationRecord? parent = _hero;
+    if (parent == null || _loadingGeneration || _confirmingFollowUp || !app_state.aiVariationsEnabled) return;
+    final int cost = parent.qualityTier.costFor(isPro: app_state.prismUser.premium);
+    if (cost > _confirmedFollowUpCost) {
+      _confirmingFollowUp = true;
+      final bool confirmed;
+      try {
+        confirmed = await showAiFollowUpConfirmSheet(context, cost: cost);
+      } finally {
+        _confirmingFollowUp = false;
+      }
+      if (!confirmed || !mounted || _hero?.id != parent.id) return;
+      _saveConfirmedFollowUpCost(cost);
+    }
+    analytics.track(AiFollowUpUsedEvent(chipId: followUp.name));
+    await _generateVariation(prompt: followUp.prompt, fromSheet: false);
   }
 
   Future<void> _runGeneration({
@@ -620,9 +695,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           ++_historyLoadGeneration;
           _loadingHistory = false;
           _historyFailed = false;
-          _latest = generated;
+          _hero = generated;
+          _heroFrom = AiApplyFromValue.hero;
+          _session = <AiGenerationRecord>[..._session.where((item) => item.id != generated.id), generated];
           _history = <AiGenerationRecord>[generated, ..._history.where((item) => item.id != generated.id)];
         });
+        _promptFocus.unfocus();
       }
 
       if (mounted && !context.reduceMotion) {
@@ -707,15 +785,35 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     }
   }
 
-  Future<void> _setWallpaper(AiGenerationRecord record) async {
-    final AppLocalizations l10n = context.l10n;
+  /// Android opens the Set screen with this wall and no crop step. iOS saves it to Photos and shows the set guide.
+  Future<void> _apply(AiGenerationRecord record) async {
+    if (_applying) return;
+    analytics.track(AiResultAppliedEvent(platform: hideSetWallpaperUi ? 'ios' : 'android', from: _heroFrom));
+    setState(() => _applying = true);
     try {
-      final File file = await aiDownloadToTempFile(record.displayUrl(isPremium: app_state.prismUser.premium));
+      if (hideSetWallpaperUi) {
+        await _save(record);
+        return;
+      }
+      final AppLocalizations l10n = context.l10n;
+      final File file;
+      try {
+        file = await aiDownloadToTempFile(record.displayUrl(isPremium: app_state.prismUser.premium));
+      } catch (error, stackTrace) {
+        logger.w('AI apply prep failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+        toasts.error(aiDownloadFailureMessage(l10n, error));
+        return;
+      }
       if (!mounted) return;
-      context.router.push(DownloadWallpaperRoute(source: WallpaperSource.prism, file: file));
-    } catch (error, stackTrace) {
-      logger.w('AI set-wallpaper prep failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
-      toasts.error(aiDownloadFailureMessage(l10n, error));
+      await SetWallpaperFlow.run(
+        context,
+        url: file.path,
+        wallpaperSource: WallpaperSource.downloaded,
+        forceScreen: true,
+        entryPoint: 'ai_wallpaper',
+      );
+    } finally {
+      if (mounted) setState(() => _applying = false);
     }
   }
 
@@ -831,7 +929,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       if (!mounted || app_state.prismUser.id != record.userId) return;
       final AiSubmissionMetadata? edited = await showAiSubmitSheet(
         context,
-        record: _latest,
+        record: record,
         isPremium: app_state.prismUser.premium,
         metadata: metadata,
         prompt: _promptController.text.trim(),
@@ -880,8 +978,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       if (mounted) {
         setState(() {
           _history = _history.map((item) => item.id == updated.id ? updated : item).toList();
-          if (_latest?.id == updated.id) {
-            _latest = updated;
+          _session = _session.map((item) => item.id == updated.id ? updated : item).toList();
+          if (_hero?.id == updated.id) {
+            _hero = updated;
           }
         });
       }
@@ -954,9 +1053,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       context,
       controller: _variationController,
       maxChars: _maxVariationChars,
-      cost: (_latest?.qualityTier ?? _selectedQualityTier).costFor(isPro: app_state.prismUser.premium),
-      enabled: app_state.aiVariationsEnabled && _latest != null && !_loadingGeneration,
-      onSubmit: _generateVariation,
+      cost: (_hero?.qualityTier ?? _selectedQualityTier).costFor(isPro: app_state.prismUser.premium),
+      enabled: app_state.aiVariationsEnabled && _hero != null && !_loadingGeneration,
+      onSubmit: () => _generateVariation(prompt: _variationController.text.trim(), fromSheet: true),
     );
   }
 
@@ -979,15 +1078,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     return SignInPrompt(feature: context.l10n.economyAiWallpaper);
   }
 
-  Widget _composeBody(AiGenerationRecord? current) {
+  Widget _composeBody() {
     final bool busy = _loadingGeneration;
-    final bool canSubmit =
-        current != null &&
-        canSubmitAiGeneration(current, currentUserId: app_state.prismUser.id) &&
-        !_confirmedSubmissionRecords.containsKey(current.id) &&
-        app_state.aiSubmitEnabled &&
-        !_submitting &&
-        !_unconfirmedSubmissionIds.contains(current.id);
     const EdgeInsets page = PrismSpace.pageInsets;
     return RefreshIndicator(
       onRefresh: () {
@@ -1002,31 +1094,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           children: <Widget>[
             Padding(
               padding: page.copyWith(top: PrismSpace.xs),
-              child: AiPreviewStage(generating: busy, record: current, isPremium: app_state.prismUser.premium),
+              child: AiPreviewStage(generating: busy),
             ),
-            if (current != null && !busy) ...<Widget>[
-              Padding(
-                padding: page.copyWith(top: PrismSpace.md),
-                child: AiResultActions(
-                  showSet: !hideSetWallpaperUi,
-                  showRefine: app_state.aiVariationsEnabled,
-                  canSubmit: canSubmit,
-                  sharing: _sharing,
-                  onSet: () => _setWallpaper(current),
-                  onSave: () => _save(current),
-                  onShare: () => _share(current),
-                  onRefine: _openRefineSheet,
-                  onSubmit: () => _submitToCommunity(current),
-                ),
-              ),
-              if (_unconfirmedSubmissionIds.contains(current.id))
-                Padding(
-                  padding: page.copyWith(top: PrismSpace.sm),
-                  child: AiUnconfirmedNotice(onCheck: () => context.router.push(const ReviewRoute())),
-                ),
-            ],
             Padding(
-              padding: page.copyWith(top: current == null && !busy ? PrismSpace.xs : PrismSpace.xl),
+              padding: page.copyWith(top: busy ? PrismSpace.xl : PrismSpace.xs),
               child: AiPromptField(
                 controller: _promptController,
                 focusNode: _promptFocus,
@@ -1067,7 +1138,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
               loading: _loadingHistory,
               failed: _historyFailed,
               history: _history,
-              selectedId: current?.id,
+              selectedId: null,
               isPremium: app_state.prismUser.premium,
               onSelect: _selectFromHistory,
               onRetry: () => _loadHistory(userInitiated: true),
@@ -1079,7 +1150,44 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     );
   }
 
-  Widget _generateBar(AiGenerationRecord? current) {
+  Widget _resultView(AiGenerationRecord hero) {
+    final bool canSubmit =
+        canSubmitAiGeneration(hero, currentUserId: app_state.prismUser.id) &&
+        !_confirmedSubmissionRecords.containsKey(hero.id) &&
+        app_state.aiSubmitEnabled &&
+        !_submitting &&
+        !_unconfirmedSubmissionIds.contains(hero.id);
+    return AiResultView(
+      key: const ValueKey<String>('result'),
+      record: hero,
+      isPremium: app_state.prismUser.premium,
+      session: _session,
+      generating: _loadingGeneration,
+      showFollowUps: app_state.aiVariationsEnabled,
+      followUpCost: hero.qualityTier.costFor(isPro: app_state.prismUser.premium),
+      onEditPrompt: _closeResult,
+      onSelectTake: _selectTake,
+      onFollowUp: _runFollowUp,
+      trailing: const CoinBalanceChip(sourceTag: 'ai_gen_page', showStreak: false),
+      notice: _unconfirmedSubmissionIds.contains(hero.id)
+          ? AiUnconfirmedNotice(onCheck: () => context.router.push(const ReviewRoute()))
+          : null,
+      actions: AiResultActions(
+        showSave: !hideSetWallpaperUi,
+        showRefine: app_state.aiVariationsEnabled,
+        canSubmit: canSubmit,
+        sharing: _sharing,
+        applying: _applying,
+        onApply: () => _apply(hero),
+        onSave: () => _save(hero),
+        onShare: () => _share(hero),
+        onRefine: _openRefineSheet,
+        onSubmit: () => _submitToCommunity(hero),
+      ),
+    );
+  }
+
+  Widget _generateBar() {
     return ValueListenableBuilder<int>(
       valueListenable: CoinsService.instance.balanceNotifier,
       builder: (BuildContext context, int coinBalance, _) => ListenableBuilder(
@@ -1089,7 +1197,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           balance: coinBalance,
           hasPrompt: _promptController.text.trim().isNotEmpty,
           loading: _loadingGeneration,
-          prominent: current == null || _loadingGeneration,
           onGenerate: _generate,
           onGetCoins: () => context.router.push(RewardsRoute(scrollToEarn: true)),
         ),
@@ -1099,14 +1206,43 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   @override
   Widget build(BuildContext context) {
-    final AiGenerationRecord? current = _latest;
     final bool available = _isRolloutEligible && _isLoggedIn;
-    return PrismPage(
+    final AiGenerationRecord? hero = available ? _hero : null;
+    final Widget compose = PrismPage(
       title: AppLocalizations.of(context).economyAiWallpaper,
       showBack: Navigator.of(context).canPop(),
       actions: const <Widget>[CoinBalanceChip(sourceTag: 'ai_gen_page', showStreak: false)],
-      bottomBar: available ? _generateBar(current) : null,
-      body: available ? _composeBody(current) : _blockedState(),
+      bottomBar: available ? _generateBar() : null,
+      body: available ? _composeBody() : _blockedState(),
+    );
+    return PopScope(
+      canPop: hero == null,
+      onPopInvokedWithResult: (bool didPop, _) {
+        if (!didPop) _closeResult();
+      },
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          TickerMode(
+            enabled: hero == null,
+            child: IgnorePointer(
+              ignoring: hero != null,
+              child: ExcludeSemantics(excluding: hero != null, child: compose),
+            ),
+          ),
+          AnimatedSwitcher(
+            duration: context.motion(PrismDurations.base),
+            reverseDuration: context.motion(PrismDurations.fast),
+            switchInCurve: PrismCurves.enter,
+            switchOutCurve: PrismCurves.exit,
+            transitionBuilder: (Widget child, Animation<double> animation) => FadeTransition(
+              opacity: animation,
+              child: ScaleTransition(scale: Tween<double>(begin: 0.96, end: 1).animate(animation), child: child),
+            ),
+            child: hero == null ? const SizedBox.shrink(key: ValueKey<String>('compose')) : _resultView(hero),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -3519,6 +3519,80 @@
   "@aiLiveActivityOpen": {
     "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
   },
+  "aiResultApply": "Terapkan",
+  "@aiResultApply": {
+    "description": "Primary button on a finished AI wallpaper. On Android it opens the Set screen; on iOS it saves to Photos."
+  },
+  "aiResultEditPrompt": "Edit perintah",
+  "@aiResultEditPrompt": {
+    "description": "Button on the full-screen AI result that returns to the prompt editor."
+  },
+  "aiSessionStripLabel": "Wallpaper dari sesi ini",
+  "@aiSessionStripLabel": {
+    "description": "Screen reader label for the strip of thumbnails made in this session."
+  },
+  "aiSessionTake": "Ambil {index} dari {count}",
+  "@aiSessionTake": {
+    "description": "Screen reader label for one thumbnail in the session strip.",
+    "placeholders": {
+      "index": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpWatercolour": "Sebagai cat air",
+  "@aiFollowUpWatercolour": {
+    "description": "Follow-up chip. Makes a new take of the wallpaper as a watercolour painting."
+  },
+  "aiFollowUpNight": "Versi malam",
+  "@aiFollowUpNight": {
+    "description": "Follow-up chip. Makes a night-time take."
+  },
+  "aiFollowUpMinimal": "Lebih minimalis",
+  "@aiFollowUpMinimal": {
+    "description": "Follow-up chip. Makes a simpler take."
+  },
+  "aiFollowUpWarmer": "Lebih hangat",
+  "@aiFollowUpWarmer": {
+    "description": "Follow-up chip. Makes a take with warmer colours."
+  },
+  "aiFollowUpDepth": "Tambah kedalaman",
+  "@aiFollowUpDepth": {
+    "description": "Follow-up chip. Makes a take with more depth and layers."
+  },
+  "aiFollowUpCostLabel": "Setiap versi baru biayanya {cost} koin",
+  "@aiFollowUpCostLabel": {
+    "description": "Screen reader label for the coin price shown next to the follow-up chips.",
+    "placeholders": {
+      "cost": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpConfirmTitle": "Buat versi baru?",
+  "@aiFollowUpConfirmTitle": {
+    "description": "Title of the sheet shown the first time a follow-up chip is tapped."
+  },
+  "aiFollowUpConfirmBody": "Versi lanjutan membuat wallpaper baru dari yang ini. Setiap versi biayanya {cost} koin.",
+  "@aiFollowUpConfirmBody": {
+    "description": null,
+    "placeholders": {
+      "cost": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpConfirmAction": "Buat",
+  "@aiFollowUpConfirmAction": {
+    "description": "Confirm button on the follow-up cost sheet."
+  },
   "economyAiDailyLimit": "Anda mencapai batas AI hari ini.",
   "economyAiDescribeChanges": "Sebutkan perubahan yang Anda inginkan, seperti warna, suasana, atau detail.",
   "economyAiDescribeScene": "Jelaskan adegan yang ingin dibuat.",

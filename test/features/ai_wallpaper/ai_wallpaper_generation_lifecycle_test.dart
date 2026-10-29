@@ -22,7 +22,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart';
-import 'package:Prism/features/ai_wallpaper/views/widgets/ai_preview_stage.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -250,6 +250,13 @@ AiGenerationRecord _record({
   status: 'success',
 );
 
+Future<void> openFirstRecent(WidgetTester tester) async {
+  final Finder thumb = find.descendant(of: find.byType(AiHistoryStrip), matching: find.byType(AiGenerationThumb)).first;
+  await tester.ensureVisible(thumb);
+  await tester.tap(thumb);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
@@ -350,12 +357,12 @@ void main() {
     await tester.tap(find.text('Generate'));
     await tester.pumpAndSettle();
     expect(store.records['history/user-1/gen_mlt7o22q_7a9688a037a47de6']?['_syncState'], 'synced');
-    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'gen_mlt7o22q_7a9688a037a47de6');
+    expect(tester.widget<AiResultView>(find.byType(AiResultView)).record.id, 'gen_mlt7o22q_7a9688a037a47de6');
 
     firestore.pending.single.complete([]);
     await refresh;
     await tester.pumpAndSettle();
-    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'gen_mlt7o22q_7a9688a037a47de6');
+    expect(tester.widget<AiResultView>(find.byType(AiResultView)).record.id, 'gen_mlt7o22q_7a9688a037a47de6');
     expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history.map((r) => r.id), [
       'gen_mlt7o22q_7a9688a037a47de6',
     ]);
@@ -367,7 +374,11 @@ void main() {
     await nextRefresh;
     await tester.pumpAndSettle();
     expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history, isEmpty);
-    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record, isNull);
+    expect(
+      tester.widget<AiResultView>(find.byType(AiResultView)).record.id,
+      'gen_mlt7o22q_7a9688a037a47de6',
+      reason: 'a history refresh does not close the result the user is looking at',
+    );
     await tester.pump(const Duration(seconds: 2));
   });
 
@@ -397,7 +408,7 @@ void main() {
     local.complete([_record()]);
     await refresh;
     await tester.pumpAndSettle();
-    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'new-generation');
+    expect(tester.widget<AiResultView>(find.byType(AiResultView)).record.id, 'new-generation');
     expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).loading, false);
     await tester.pump(const Duration(seconds: 2));
   });
@@ -430,7 +441,7 @@ void main() {
       }
       await older;
       await tester.pumpAndSettle();
-      expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'newer');
+      expect(find.byType(AiResultView), findsNothing);
       final history = tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip));
       expect(history.history.map((r) => r.id), ['newer']);
       expect(history.failed, false);
@@ -463,7 +474,7 @@ void main() {
     oldHistory.complete([_record(id: 'old-session-history')]);
     await refresh;
     await tester.pumpAndSettle();
-    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'generation-1');
+    expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history.map((r) => r.id), ['generation-1']);
     expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).loading, false);
   });
 
@@ -530,7 +541,7 @@ void main() {
         generation.complete(_record(id: 'old-account-generation'));
       }
       await tester.pumpAndSettle();
-      expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'replacement-history');
+      expect(find.byType(AiResultView), findsNothing);
       expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history.map((r) => r.id), [
         'replacement-history',
       ]);
@@ -607,7 +618,8 @@ void main() {
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
     await setUpPage(tester, (name, parameters) async => <String, Object>{});
 
-    await tester.tap(find.text('Try another'));
+    await openFirstRecent(tester);
+    await tester.tap(find.byTooltip('Try another'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, '');
     await tester.pump();
@@ -1006,7 +1018,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final Finder refine = find.text('Try another');
+    await openFirstRecent(tester);
+    final Finder refine = find.byTooltip('Try another');
     await tester.ensureVisible(refine);
     await tester.tap(refine);
     await tester.pumpAndSettle();
@@ -1509,7 +1522,8 @@ void main() {
     await tester.ensureVisible(find.text('Quality').last);
     await tester.tap(find.text('Quality').last);
     await tester.pump();
-    await tester.tap(find.text('Try another'));
+    await openFirstRecent(tester);
+    await tester.tap(find.byTooltip('Try another'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'warmer palette');
     await tester.pump();
@@ -1533,8 +1547,8 @@ void main() {
     await tester.tap(generate);
     await tester.pumpAndSettle();
     await tester.pump(const Duration(milliseconds: 1400));
-    await tester.ensureVisible(find.text('Try another'));
-    await tester.tap(find.text('Try another'));
+    await tester.ensureVisible(find.byTooltip('Try another'));
+    await tester.tap(find.byTooltip('Try another'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'warmer palette');
     await tester.pump();

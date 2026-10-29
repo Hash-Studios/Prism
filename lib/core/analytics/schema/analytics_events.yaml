@@ -25,6 +25,11 @@ enums:
     values:
       - success
       - failure
+  - name: ai_apply_from
+    dart_type: AiApplyFromValue
+    values:
+      - hero
+      - strip
   - name: rc_or_fallback
     dart_type: RcOrFallbackValue
     values:
@@ -969,6 +974,28 @@ events:
       - name: generation_id
         key: generation_id
         type: string
+  - id: ai_result_applied
+    fields:
+      - name: platform
+        key: platform
+        type: string
+      - name: from
+        key: from
+        type: enum
+        enum: AiApplyFromValue
+  - id: ai_follow_up_used
+    fields:
+      - name: chip_id
+        key: chip_id
+        type: string
+  - id: ai_strip_swapped
+    fields:
+      - name: position
+        key: position
+        type: int
+      - name: count
+        key: count
+        type: int
   - id: coin_preview_unlock_attempt
     fields:
       - name: collection

@@ -42,6 +42,13 @@ enum BinaryResultValue {
   String get wireValue => _snakeCase(name);
 }
 
+enum AiApplyFromValue {
+  hero,
+  strip;
+
+  String get wireValue => _snakeCase(name);
+}
+
 enum RcOrFallbackValue {
   rcAttempt,
   fallbackOnly,

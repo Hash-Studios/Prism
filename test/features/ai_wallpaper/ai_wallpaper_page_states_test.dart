@@ -13,7 +13,9 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_preview_stage.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter/foundation.dart';
@@ -96,6 +98,13 @@ AiGenerationRecord _record() => AiGenerationRecord(
   status: 'success',
 );
 
+Future<void> openFirstRecent(WidgetTester tester) async {
+  final Finder thumb = find.descendant(of: find.byType(AiHistoryStrip), matching: find.byType(AiGenerationThumb)).first;
+  await tester.ensureVisible(thumb);
+  await tester.tap(thumb);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   test('TLS handshake failures are classified as network errors', () {
     expect(isAiOfflineOrNetworkError(const HandshakeException('TLS handshake failed')), isTrue);
@@ -109,7 +118,7 @@ void main() {
           ...AppLocalizations.localizationsDelegates,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const Scaffold(body: Center(child: AiPreviewStage(generating: true, record: null, isPremium: false))),
+        home: const Scaffold(body: Center(child: AiPreviewStage(generating: true))),
       ),
     );
 
@@ -281,16 +290,18 @@ void main() {
     expect(find.text('You need $half coins. You have ${half - 1}.'), findsOneWidget);
   });
 
-  testWidgets('a result shows Save as the accent action and Generate as tonal', (tester) async {
+  testWidgets('a result shows Apply as the one primary action', (tester) async {
     await pumpPage(tester, history: <AiGenerationRecord>[_record()]);
+    await openFirstRecent(tester);
 
-    expect(find.text('Save'), findsOneWidget);
-    expect(find.text('Try another'), findsOneWidget);
-    expect(find.byTooltip('Set as wallpaper'), findsOneWidget);
-    expect(find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview), findsOneWidget);
-    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Save')).variant, PrismButtonVariant.primary);
-    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Generate')).variant, PrismButtonVariant.tonal);
-    expect(find.bySemanticsLabel(AppLocalizationsEn().economyAiGenerationFrom('Jan 1')), findsOneWidget);
+    final Finder primaryButtons = find.descendant(
+      of: find.byType(AiResultView),
+      matching: find.byWidgetPredicate(
+        (Widget widget) => widget is PrismButton && widget.variant == PrismButtonVariant.primary,
+      ),
+    );
+    expect(primaryButtons.hitTestable(), findsOneWidget);
+    expect(tester.widget<PrismButton>(primaryButtons.hitTestable()).label, 'Apply');
   });
 
   testWidgets('a guest sees a sign-in prompt and no compose controls', (tester) async {
