@@ -8,6 +8,8 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+enum FavouritePinOutcome { done, limit, failed }
+
 class FavouriteWallsAdapter {
   FavouriteWallsAdapter(BuildContext context, {required bool listen})
     : _bloc = listen ? context.watch<FavouriteWallsBloc>() : context.read<FavouriteWallsBloc>();
@@ -39,6 +41,15 @@ class FavouriteWallsAdapter {
 
   Future<bool> restoreWalls(List<FavouriteWallEntity> walls) =>
       _runAction((int id) => FavouriteWallsEvent.restoreRequested(walls: walls, operationId: id));
+
+  Future<FavouritePinOutcome> setPinned(String wallId, {required bool pinned}) async {
+    await _ensureLoaded();
+    final FavouriteWallsState completed = await _dispatch(
+      (int id) => FavouriteWallsEvent.pinRequested(wallId: wallId, pinned: pinned, operationId: id),
+    );
+    if (completed.actionStatus == ActionStatus.success) return FavouritePinOutcome.done;
+    return completed.failure is FavouritePinLimitFailure ? FavouritePinOutcome.limit : FavouritePinOutcome.failed;
+  }
 
   Future<bool> _runAction(FavouriteWallsEvent Function(int operationId) eventFor) async {
     await _ensureLoaded();

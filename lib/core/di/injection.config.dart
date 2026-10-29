@@ -742,18 +742,23 @@ _i174.GetIt initGetIt(
     () =>
         _i406.ClearFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()),
   );
+  gh.lazySingleton<_i406.SetFavouritePinUseCase>(
+    () => _i406.SetFavouritePinUseCase(gh<_i643.FavouriteWallsRepository>()),
+  );
+  gh.lazySingleton<_i563.AutoRotateRepository>(
+    () => _i948.AutoRotateRepositoryImpl(
+      gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i727.PrismWallpaperRepository>(),
+      gh<_i489.WallOfTheDayRepository>(),
+      gh<_i121.WallpaperHistoryStore>(),
+      gh<_i847.FoldersRepository>(),
+    ),
+  );
   gh.factory<_i195.CategoryFeedBloc>(
     () => _i195.CategoryFeedBloc(
       gh<_i301.LoadCategoriesUseCase>(),
       gh<_i301.FetchCategoryFeedUseCase>(),
       gh<_i112.UserBlockRepository>(),
-    ),
-  );
-  gh.factory<_i782.FavouriteWallsBloc>(
-    () => _i782.FavouriteWallsBloc(
-      gh<_i406.FetchFavouriteWallsUseCase>(),
-      gh<_i406.ToggleFavouriteWallUseCase>(),
-      gh<_i406.ClearFavouriteWallsUseCase>(),
     ),
   );
   gh.lazySingleton<_i567.PersonalizedFeedRepository>(
@@ -775,14 +780,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i353.FetchWotdArchiveUseCase>(
     () => _i353.FetchWotdArchiveUseCase(gh<_i489.WallOfTheDayRepository>()),
   );
-  gh.lazySingleton<_i563.AutoRotateRepository>(
-    () => _i948.AutoRotateRepositoryImpl(
-      gh<_i1073.SettingsLocalDataSource>(),
-      gh<_i727.PrismWallpaperRepository>(),
-      gh<_i489.WallOfTheDayRepository>(),
-      gh<_i121.WallpaperHistoryStore>(),
-    ),
-  );
   gh.lazySingleton<_i502.FirstWallpaperService>(
     () => _i502.FirstWallpaperService(
       gh<_i563.CategoryFeedRepository>(),
@@ -795,6 +792,14 @@ _i174.GetIt initGetIt(
       gh<_i112.UserBlockRepository>(),
       gh<_i1073.SettingsLocalDataSource>(),
       gh<_i567.PersonalizedFeedRepository>(),
+    ),
+  );
+  gh.factory<_i782.FavouriteWallsBloc>(
+    () => _i782.FavouriteWallsBloc(
+      gh<_i406.FetchFavouriteWallsUseCase>(),
+      gh<_i406.ToggleFavouriteWallUseCase>(),
+      gh<_i406.ClearFavouriteWallsUseCase>(),
+      gh<_i406.SetFavouritePinUseCase>(),
     ),
   );
   gh.factory<_i408.AutoRotateBloc>(

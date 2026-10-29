@@ -214,4 +214,14 @@ void main() {
       expect(parser.parse(Uri.parse('https://prismwalls.com/l')), isA<UnknownIntent>());
     });
   });
+
+  test('the Wall of the Day tile link for a protected wall opens that wall', () {
+    final ShareLinkIntent share =
+        parser.parse(Uri.parse('prism://share?id=protected-doc&source=prism&url&thumb=preview')) as ShareLinkIntent;
+
+    expect(share.wallId, 'protected-doc');
+    expect(share.source, WallpaperSource.prism);
+    expect(share.wallpaperUrl, '');
+    expect(share.thumbnailUrl, 'preview');
+  });
 }

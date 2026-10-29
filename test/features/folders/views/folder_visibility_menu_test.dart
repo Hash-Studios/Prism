@@ -4,6 +4,7 @@ import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
@@ -14,12 +15,21 @@ import 'package:Prism/features/folders/views/pages/folder_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockStackRouter extends Mock implements StackRouter {}
+
+class _MockAutoRotateBloc extends MockBloc<AutoRotateEvent, AutoRotateState> implements AutoRotateBloc {}
+
+_MockAutoRotateBloc _idleRotation() {
+  final _MockAutoRotateBloc bloc = _MockAutoRotateBloc();
+  when(() => bloc.state).thenReturn(AutoRotateState.initial());
+  return bloc;
+}
 
 class _OnlineConnectivity implements ConnectivityService {
   @override
@@ -132,7 +142,10 @@ Future<void> _pumpFolder(WidgetTester tester, FolderEntity folder) async {
         stateHash: 0,
         child: BlocProvider<FoldersBloc>.value(
           value: bloc,
-          child: const FolderScreen(folderId: 'f1'),
+          child: BlocProvider<AutoRotateBloc>.value(
+            value: _idleRotation(),
+            child: const FolderScreen(folderId: 'f1'),
+          ),
         ),
       ),
     ),

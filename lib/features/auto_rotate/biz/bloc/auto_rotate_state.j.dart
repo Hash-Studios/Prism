@@ -18,6 +18,9 @@ abstract class AutoRotateState with _$AutoRotateState {
     required bool sourceLoadFailed,
     required bool proLapsed,
     required Set<WallpaperTarget> supportedTargets,
+
+    /// A folder rotation the app turned off, until the user has seen why.
+    AutoRotateFolderStop? folderStop,
   }) = _AutoRotateState;
 
   const AutoRotateState._();
@@ -25,7 +28,10 @@ abstract class AutoRotateState with _$AutoRotateState {
   int get sourceCount => switch (config.source) {
     AutoRotateSource.favourites => favouriteCount,
     AutoRotateSource.downloads => downloadCount,
-    AutoRotateSource.category || AutoRotateSource.wallOfTheDay || AutoRotateSource.history => remoteCount,
+    AutoRotateSource.category ||
+    AutoRotateSource.wallOfTheDay ||
+    AutoRotateSource.history ||
+    AutoRotateSource.folder => remoteCount,
   };
 
   factory AutoRotateState.initial() => const AutoRotateState(

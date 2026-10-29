@@ -29,6 +29,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get galleryScreenTitle => 'Walls for you';
 
   @override
+  String get favouritePin => 'Pin to top';
+
+  @override
+  String get favouriteUnpin => 'Unpin';
+
+  @override
+  String get favouritePinnedToast => 'Pinned to the top of Favourites';
+
+  @override
+  String get favouriteUnpinnedToast => 'Unpinned';
+
+  @override
+  String get favouritePinnedBadge => 'Pinned';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'You can pin up to $count favourites. Unpin one to pin this wallpaper.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed => 'Unable to update the pin. Check your connection and try again.';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7505,9 +7533,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperResetOriginal => 'Reset to original';
 
   @override
-  String get wallpaperAccentResetHint => 'Hold for actions, including Reset to original';
-
-  @override
   String get wallpaperAll => 'All';
 
   @override
@@ -8528,8 +8553,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperHomeAppName => 'Prism';
 
   @override
-  String get wallpaperImageSemanticHint =>
-      'Tap to cycle accent color. Hold for favourite, share, and reset actions. Scroll for details.';
+  String get wallpaperImageSemanticHint => 'Hold for favourite, share, and reset actions. Scroll for details.';
 
   @override
   String get wallpaperPreviousInFeed => 'Previous wallpaper';
@@ -8539,6 +8563,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'Wallpaper';
+
+  @override
+  String get wallpaperImmersiveHint => 'Tap to hide controls';
 
   @override
   String get wallpaperInsufficientCoins => 'Not enough coins. Earn coins in Rewards.';
@@ -10778,4 +10805,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get historyClearFailed => 'Couldn\'t clear history. Check your connection and try again.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Folder';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Folder: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'This folder needs at least 2 wallpapers that can rotate. Prism wallpapers rotate after you download them.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Open folder';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Pick a folder';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'You have no folders yet. Save a wallpaper to a folder, then pick it here.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return 'Rotate $folder?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Your wallpaper changes to one from this folder, on the schedule below.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Rotate this folder';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'Auto-rotate is off because the folder $folder was deleted.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'Auto-rotate is off because the folder $folder has fewer than 2 wallpapers.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Rotate this folder';
+
+  @override
+  String get foldersRotating => 'Rotating';
+
+  @override
+  String get foldersRotatingDescription => 'Auto-rotate uses this folder';
 }

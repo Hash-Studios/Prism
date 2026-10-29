@@ -29,6 +29,34 @@ class AppLocalizationsId extends AppLocalizations {
   String get galleryScreenTitle => 'Wallpaper untuk Anda';
 
   @override
+  String get favouritePin => 'Sematkan ke atas';
+
+  @override
+  String get favouriteUnpin => 'Lepas sematan';
+
+  @override
+  String get favouritePinnedToast => 'Disematkan di atas Favorit';
+
+  @override
+  String get favouriteUnpinnedToast => 'Sematan dilepas';
+
+  @override
+  String get favouritePinnedBadge => 'Disematkan';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda dapat menyematkan hingga $count favorit. Lepas satu sematan untuk menyematkan wallpaper ini.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed => 'Tidak dapat memperbarui sematan. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7530,9 +7558,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperResetOriginal => 'Kembali ke asli';
 
   @override
-  String get wallpaperAccentResetHint => 'Tahan untuk tindakan, termasuk Kembali ke asli';
-
-  @override
   String get wallpaperAll => 'Semua';
 
   @override
@@ -8553,8 +8578,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperHomeAppName => 'Prism';
 
   @override
-  String get wallpaperImageSemanticHint =>
-      'Ketuk untuk mengganti warna aksen. Tahan untuk favorit, berbagi, dan reset. Gulir untuk detail.';
+  String get wallpaperImageSemanticHint => 'Tahan untuk favorit, berbagi, dan reset. Gulir untuk detail.';
 
   @override
   String get wallpaperPreviousInFeed => 'Wallpaper sebelumnya';
@@ -8564,6 +8588,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'Wallpaper';
+
+  @override
+  String get wallpaperImmersiveHint => 'Ketuk untuk menyembunyikan kontrol';
 
   @override
   String get wallpaperInsufficientCoins => 'Koin tidak cukup. Dapatkan koin di Hadiah.';
@@ -10834,4 +10861,61 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get historyClearFailed => 'Riwayat tidak bisa dihapus. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Folder';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Folder: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Folder ini memerlukan minimal 2 wallpaper yang bisa diputar. Wallpaper Prism diputar setelah Anda mengunduhnya.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Buka folder';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Pilih folder';
+
+  @override
+  String get wallpaperAutoRotateNoFolders => 'Anda belum punya folder. Simpan wallpaper ke folder, lalu pilih di sini.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return 'Putar $folder?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Wallpaper Anda berubah menjadi salah satu dari folder ini, sesuai jadwal di bawah.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Putar folder ini';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'Putar otomatis nonaktif karena folder $folder telah dihapus.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'Putar otomatis nonaktif karena folder $folder memiliki kurang dari 2 wallpaper.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Putar folder ini';
+
+  @override
+  String get foldersRotating => 'Diputar';
+
+  @override
+  String get foldersRotatingDescription => 'Putar otomatis menggunakan folder ini';
 }

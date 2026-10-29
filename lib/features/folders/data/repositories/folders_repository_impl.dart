@@ -154,8 +154,9 @@ class FoldersRepositoryImpl implements FoldersRepository {
         };
       });
 
+  // A pin belongs to Favourites, and the folder item rules allow no pinnedAt.
   Map<String, dynamic> _itemDoc(FolderEntity folder, FavouriteWallEntity wall) => <String, dynamic>{
-    ...favouriteWallToDoc(wall),
+    ...favouriteWallToDoc(wall.withPinnedAt(null)),
     'ownerId': folder.ownerId,
     'addedAt': FirestoreSentinels.serverTimestamp(),
     if (wall case PrismFavouriteWall(:final wallpaper)) 'wallpaperDocumentId': wallpaper.firestoreDocumentId ?? wall.id,
