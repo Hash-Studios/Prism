@@ -372,11 +372,8 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
     final AutoRotateConfig config = await _applyPass(stored, passUntil, ownerId: ownerId);
     if (sessionGeneration != _sessionGeneration) return;
     await _loadSupportedTargets();
-    if (isPro && config.source == AutoRotateSource.folder) {
-      if (_folderDue(config)) await _refreshSource(config);
-    } else if (isPro || config.source == AutoRotateSource.downloads) {
-      await _refreshSource(config);
-    }
+    // Opening the screen always reloads the list. Only the automatic checks on resume wait for the recheck window.
+    if (isPro || config.source == AutoRotateSource.downloads) await _refreshSource(config);
     if (sessionGeneration != _sessionGeneration) return;
     await _loadApplied();
     final AutoRotateStatus status = await _status();

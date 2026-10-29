@@ -94,19 +94,19 @@ void main() {
   setUp(() => AnalyticsRuntime.instance = FakeAppAnalytics());
   tearDown(AnalyticsRuntime.reset);
 
-  test('reopening a folder rotation does not read it again inside the 15 minute window', () async {
+  test('reopening the screen reads the folder again inside the 15 minute window', () async {
     final _Repository repository = _Repository();
     final AutoRotateBloc bloc = AutoRotateBloc(repository)..clock = () => DateTime.utc(2026, 1, 1);
 
     bloc.add(const AutoRotateEvent.entitlementChanged(isPro: true, userId: 'account-a'));
     bloc.add(const AutoRotateEvent.started(favouriteUrls: <String>[], isPro: true));
     await Future<void>.delayed(const Duration(milliseconds: 40));
-    expect(repository.loadedOwners, <String>['account-a']);
+    expect(repository.loadedOwners, <String>['account-a', 'account-a']);
 
     bloc.add(const AutoRotateEvent.started(favouriteUrls: <String>[], isPro: true));
     await Future<void>.delayed(const Duration(milliseconds: 40));
 
-    expect(repository.loadedOwners, <String>['account-a']);
+    expect(repository.loadedOwners, <String>['account-a', 'account-a', 'account-a']);
     await bloc.close();
   });
 
@@ -195,7 +195,7 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 40));
 
     expect(bloc.state.remoteCount, 0);
-    expect(repository.loadedOwners, <String>['account-a']);
+    expect(repository.loadedOwners, <String>['account-a', 'account-a']);
     await bloc.close();
   });
 
