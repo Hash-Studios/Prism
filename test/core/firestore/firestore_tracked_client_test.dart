@@ -258,8 +258,9 @@ void main() {
   });
 
   test('watchQuery surfaces a stream failure as FirestoreError and records it', () async {
-    when(() => collection.snapshots(includeMetadataChanges: false))
-        .thenAnswer((_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(_permissionDenied()));
+    when(
+      () => collection.snapshots(includeMetadataChanges: false),
+    ).thenAnswer((_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(_permissionDenied()));
 
     final Stream<List<String>> stream = client.watchQuery<String>(
       const FirestoreQuerySpec(collection: 'walls', sourceTag: 'test.watch', isStream: true),
