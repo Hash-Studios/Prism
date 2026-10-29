@@ -10,7 +10,6 @@ import 'package:Prism/logger/app_logger.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -168,6 +167,9 @@ String _newReference(Random random) => String.fromCharCodes(
   List<int>.generate(6, (_) => _referenceAlphabet.codeUnitAt(random.nextInt(_referenceAlphabet.length))),
 );
 
+// A stalled network ends in "Couldn't send" instead of a spinner that never stops.
+const Duration _sendTimeout = Duration(seconds: 30);
+
 typedef DeviceLabelReader = Future<String> Function();
 typedef AppVersionReader = Future<String> Function();
 typedef ReportFileSharer = Future<void> Function(String text);
@@ -239,7 +241,6 @@ class ReportProblemService {
     AppVersionReader? readAppVersion,
     ReportFileSharer? shareFile,
     DateTime Function()? clock,
-    Future<bool> Function()? isOnline,
     bool Function()? canSend,
     SentryConfig? Function()? readConfig,
     Random? random,
@@ -250,7 +251,6 @@ class ReportProblemService {
        _readAppVersion = readAppVersion ?? _platformAppVersion,
        _shareFile = shareFile,
        _clock = clock ?? DateTime.now,
-       _isOnline = isOnline ?? (() => InternetConnectionChecker.instance.hasConnection),
        _canSend = canSend ?? (() => MonitoringRuntime.reporter.isEnabled),
        _readConfig = readConfig ?? (() => MonitoringRuntime.config),
        _random = random ?? Random.secure(),
@@ -264,7 +264,6 @@ class ReportProblemService {
   final AppVersionReader _readAppVersion;
   final ReportFileSharer? _shareFile;
   final DateTime Function() _clock;
-  final Future<bool> Function() _isOnline;
   final bool Function() _canSend;
   final SentryConfig? Function() _readConfig;
   final Random _random;
@@ -304,7 +303,6 @@ class ReportProblemService {
         config.environment.trim().isEmpty) {
       throw const ReportNotSentException('configuration_missing');
     }
-    if (!await _isOnline()) throw const ReportNotSentException('offline');
     final String reference = _newReference(_random);
     final String note = scrubSensitive(draft.note.trim());
     final SentryId lastEventId = Sentry.lastEventId;
@@ -326,7 +324,7 @@ class ReportProblemService {
     final SentryId id;
     try {
       // No scope: feedback must not inherit the app's native identity, contexts, breadcrumbs, or replay state.
-      id = await client.captureFeedback(feedback, hint: hint);
+      id = await client.captureFeedback(feedback, hint: hint).timeout(_sendTimeout);
     } catch (_) {
       throw const ReportNotSentException('rejected');
     } finally {

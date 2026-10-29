@@ -237,6 +237,15 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
       title: l10n.accountReportAProblem,
       message: l10n.reportSheetMessage,
       actions: <Widget>[
+        // Pinned with the actions: at the end of the scrolling form it sat below the fold.
+        if (_phase == _Phase.failed)
+          PrismInlineState(
+            icon: Icons.cloud_off_rounded,
+            title: l10n.reportCouldNotSend,
+            body: l10n.reportCouldNotSendBody,
+            actionLabel: l10n.reportShareInstead,
+            onAction: _sharing ? null : () => unawaited(_share()),
+          ),
         PrismButton(
           key: const Key('report_problem_send'),
           label: l10n.reportSend,
@@ -319,14 +328,6 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
           ),
           if (_showDiagnostics) _DiagnosticsPreview(report: report),
         ],
-        if (_phase == _Phase.failed)
-          PrismInlineState(
-            icon: Icons.cloud_off_rounded,
-            title: l10n.reportCouldNotSend,
-            body: l10n.reportCouldNotSendBody,
-            actionLabel: l10n.reportShareInstead,
-            onAction: _sharing ? null : () => unawaited(_share()),
-          ),
       ],
     );
   }

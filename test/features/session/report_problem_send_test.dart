@@ -100,13 +100,11 @@ void main() {
 
   tearDown(Sentry.close);
 
-  ReportProblemService service({bool online = true, bool canSend = true, Transport? feedbackTransport}) =>
-      ReportProblemService(
-        readConfig: () => _config,
-        isOnline: () async => online,
-        canSend: () => canSend,
-        feedbackTransport: feedbackTransport ?? transport,
-      );
+  ReportProblemService service({bool canSend = true, Transport? feedbackTransport}) => ReportProblemService(
+    readConfig: () => _config,
+    canSend: () => canSend,
+    feedbackTransport: feedbackTransport ?? transport,
+  );
 
   test(
     'sends feedback tagged with release, environment, topic, trigger and screenshot, linked to the last error',
@@ -176,13 +174,9 @@ void main() {
     expect(items.where((_Item i) => i.header['type'] == 'attachment'), isEmpty);
   });
 
-  test('offline or with monitoring off, throws and sends nothing', () async {
+  test('with monitoring off, throws and sends nothing', () async {
     const ProblemReportDraft draft = ProblemReportDraft(topic: ReportTopic.other, trigger: ReportTrigger.menu);
 
-    await expectLater(
-      service(online: false).send(draft),
-      throwsA(isA<ReportNotSentException>().having((ReportNotSentException e) => e.reason, 'reason', 'offline')),
-    );
     await expectLater(
       service(canSend: false).send(draft),
       throwsA(isA<ReportNotSentException>().having((ReportNotSentException e) => e.reason, 'reason', 'monitoring_off')),
@@ -209,7 +203,6 @@ void main() {
     final MockClient httpClient = MockClient((http.Request request) async => http.Response('', 429));
     final ReportProblemService reports = ReportProblemService(
       readConfig: () => _config,
-      isOnline: () async => true,
       canSend: () => true,
       feedbackHttpClient: httpClient,
     );
@@ -223,7 +216,6 @@ void main() {
   test('missing reporting configuration fails before creating a client', () async {
     final ReportProblemService unconfigured = ReportProblemService(
       readConfig: () => null,
-      isOnline: () async => true,
       canSend: () => true,
       feedbackTransport: transport,
     );
@@ -256,7 +248,6 @@ void main() {
     ]) {
       final ReportProblemService unconfigured = ReportProblemService(
         readConfig: () => config,
-        isOnline: () async => true,
         canSend: () => true,
         feedbackTransport: transport,
       );

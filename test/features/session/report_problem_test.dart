@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
@@ -222,7 +223,6 @@ void main() {
 
     ReportProblemService service({
       Future<SentryId> Function()? capture,
-      bool online = true,
       Future<String> Function()? readAppVersion,
       Future<String> Function()? readDevice,
       Future<void> Function()? share,
@@ -234,7 +234,6 @@ void main() {
         shared.add(text);
         await share?.call();
       },
-      isOnline: () async => online,
       canSend: () => true,
       readConfig: () => _reportConfig,
       feedbackTransport: _ReportTransport(sent, response: capture),
@@ -479,7 +478,7 @@ void main() {
     });
 
     testWidgets("offline, the sheet stays open with Couldn't send, and Share instead shares the file", (tester) async {
-      await openSheet(tester, service(online: false));
+      await openSheet(tester, service(capture: () async => throw const SocketException('Network is unreachable')));
 
       await tester.tap(find.text('Other'));
       await tester.enterText(find.byType(TextField), 'Mail me at jane@example.com');
@@ -490,7 +489,7 @@ void main() {
       expect(find.text("Couldn't send"), findsOneWidget);
       expect(sendButton(tester).onPressed, isNotNull);
 
-      await tester.ensureVisible(find.text('Share instead'));
+      // No scrolling: the message must be on screen right after the failed send.
       await tester.tap(find.text('Share instead'));
       await tester.pumpAndSettle();
 
