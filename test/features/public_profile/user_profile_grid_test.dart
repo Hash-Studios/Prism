@@ -298,6 +298,65 @@ void main() {
       expect(find.text('Try again'), findsOneWidget);
     });
 
+    testWidgets('See more keeps fetching while the new pages hold only AI walls', (tester) async {
+      await hideAi();
+      final states = StreamController<PublicProfileState>.broadcast(sync: true);
+      addTearDown(states.close);
+      var state = PublicProfileState.initial().copyWith(
+        status: LoadStatus.success,
+        profileId: 'profile',
+        walls: <PublicProfileWallEntity>[const PublicProfileWallEntity(id: 'human-1', wallpaperUrl: '')],
+        hasMoreWalls: true,
+      );
+      var fetchMoreCalls = 0;
+      whenListen(bloc, states.stream, initialState: state);
+      when(() => bloc.add(any())).thenAnswer((invocation) {
+        if (invocation.positionalArguments.single == const PublicProfileEvent.fetchMoreWallsRequested()) {
+          fetchMoreCalls++;
+        }
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: BlocProvider<PublicProfileBloc>.value(
+              value: bloc,
+              child: const CustomScrollView(slivers: <Widget>[UserProfileGrid()]),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      await tester.tap(find.text('See more'));
+      expect(fetchMoreCalls, 1);
+
+      state = state.copyWith(
+        walls: <PublicProfileWallEntity>[
+          ...state.walls,
+          const PublicProfileWallEntity(id: 'ai-2', isAiGenerated: true, wallpaperUrl: ''),
+        ],
+      );
+      states.add(state);
+      await tester.pump();
+      await tester.pump();
+      expect(fetchMoreCalls, 2, reason: 'a page of only AI walls asks for the next one');
+
+      state = state.copyWith(
+        walls: <PublicProfileWallEntity>[
+          ...state.walls,
+          const PublicProfileWallEntity(id: 'human-3', wallpaperUrl: ''),
+        ],
+      );
+      states.add(state);
+      await tester.pump();
+      await tester.pump();
+      expect(fetchMoreCalls, 2, reason: 'a page with a visible wall stops the chain');
+      expect(tileCount(tester), 3, reason: 'two human walls plus See more');
+    });
+
     testWidgets('bounds hidden-page scans at five, exposes a fetching retry, and resets the cap on refresh', (
       tester,
     ) async {

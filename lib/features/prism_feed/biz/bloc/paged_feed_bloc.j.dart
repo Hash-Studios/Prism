@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
 import 'package:bloc/bloc.dart';
@@ -26,8 +29,28 @@ abstract class PagedFeedBloc extends Bloc<PagedFeedEvent, PagedFeedState> {
   final String sourceContext;
   int _loadVersion = 0;
 
+  static const int _maxHiddenPages = 5;
+
   /// Page [page] of the list. Page 1 is a fresh load.
   Future<Result<PersonalizedFeedPage>> loadPage(int page);
+
+  bool _hides(FeedItemEntity item) =>
+      getIt.isRegistered<SettingsLocalDataSource>() &&
+      AiContentFilter.hidesFeedItem(item, showAi: AiContentFilter.showsAi(getIt<SettingsLocalDataSource>()));
+
+  /// Hidden AI walls can fill whole pages, so a page with nothing visible fetches the next, up to [_maxHiddenPages].
+  Future<(Result<PersonalizedFeedPage>, int)> _loadVisiblePage(int first, int loadVersion) async {
+    int page = first;
+    Result<PersonalizedFeedPage> result = await loadPage(page);
+    for (int skipped = 1; skipped < _maxHiddenPages; skipped++) {
+      final PersonalizedFeedPage? loaded = result.data;
+      if (loaded == null || !loaded.hasMore || loadVersion != _loadVersion || isClosed) break;
+      if (loaded.items.any((FeedItemEntity item) => !_hides(item))) break;
+      page += 1;
+      result = await loadPage(page);
+    }
+    return (result, page);
+  }
 
   Future<void> _onStarted(_Started event, Emitter<PagedFeedState> emit) async {
     if (state.status == LoadStatus.initial) {
@@ -49,7 +72,7 @@ abstract class PagedFeedBloc extends Bloc<PagedFeedEvent, PagedFeedState> {
       ),
     );
     final Stopwatch stopwatch = Stopwatch()..start();
-    final Result<PersonalizedFeedPage> result = await loadPage(1);
+    final (Result<PersonalizedFeedPage> result, int loadedPage) = await _loadVisiblePage(1, loadVersion);
     if (loadVersion != _loadVersion || emit.isDone) return;
     final int loadMs = (stopwatch..stop()).elapsedMilliseconds;
     result.fold(
@@ -58,7 +81,7 @@ abstract class PagedFeedBloc extends Bloc<PagedFeedEvent, PagedFeedState> {
           state.copyWith(
             status: LoadStatus.success,
             actionStatus: ActionStatus.success,
-            page: 1,
+            page: loadedPage,
             items: page.items,
             hasMore: page.hasMore,
             failure: null,
@@ -85,9 +108,8 @@ abstract class PagedFeedBloc extends Bloc<PagedFeedEvent, PagedFeedState> {
     }
     emit(state.copyWith(isFetchingMore: true, actionStatus: ActionStatus.inProgress, failure: null));
     final int loadVersion = _loadVersion;
-    final int nextPage = state.page + 1;
     final Stopwatch stopwatch = Stopwatch()..start();
-    final Result<PersonalizedFeedPage> result = await loadPage(nextPage);
+    final (Result<PersonalizedFeedPage> result, int nextPage) = await _loadVisiblePage(state.page + 1, loadVersion);
     if (loadVersion != _loadVersion || emit.isDone) return;
     final int loadMs = (stopwatch..stop()).elapsedMilliseconds;
     result.fold(

@@ -1,8 +1,11 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -18,6 +21,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/fake_app_analytics.dart';
+import '../../../../support/in_memory_local_store.dart';
 
 class _MockPrismRepository extends Mock implements PrismWallpaperRepository {}
 
@@ -34,6 +38,32 @@ PrismWallpaper _wall(String id) => PrismWallpaper(
 
 PersonalizedFeedPage _page(List<String> ids, {bool hasMore = false}) => PersonalizedFeedPage(
   items: ids.map((id) => PrismFeedItem(id: id, wallpaper: _wall(id))).toList(),
+  hasMore: hasMore,
+);
+
+/// Serves fixed pages. Ids that start with `ai` are AI walls.
+class _ScriptedFeedBloc extends PagedFeedBloc {
+  _ScriptedFeedBloc(this.pages) : super(surface: AnalyticsSurfaceValue.values.first, sourceContext: 'test_scripted');
+
+  final Map<int, PersonalizedFeedPage> pages;
+  final List<int> requested = <int>[];
+
+  @override
+  Future<Result<PersonalizedFeedPage>> loadPage(int page) async {
+    requested.add(page);
+    return Result.success(pages[page]!);
+  }
+}
+
+PersonalizedFeedPage _mixedPage(List<String> ids, {bool hasMore = true}) => PersonalizedFeedPage(
+  items: ids
+      .map(
+        (id) => PrismFeedItem(
+          id: id,
+          wallpaper: PrismWallpaper(core: _wall(id).core, isAiGenerated: id.startsWith('ai')),
+        ),
+      )
+      .toList(),
   hasMore: hasMore,
 );
 
@@ -230,6 +260,50 @@ void main() {
         analytics.events.whereType<SurfaceContentLoadedEvent>().single.surface,
         AnalyticsSurfaceValue.homePopularGrid,
       );
+    });
+  });
+
+  group('AI walls hidden', () {
+    setUp(() async {
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      await AiContentFilter.setShowsAi(settings, false);
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    });
+    tearDown(() => getIt.unregister<SettingsLocalDataSource>());
+
+    test('a first page of only AI walls loads the next page instead of stalling', () async {
+      final bloc = _ScriptedFeedBloc(<int, PersonalizedFeedPage>{
+        1: _mixedPage(<String>['ai-1', 'ai-2']),
+        2: _mixedPage(<String>['ai-3', 'human-4']),
+      });
+      addTearDown(bloc.close);
+
+      bloc.add(const PagedFeedEvent.started());
+      await _settle();
+      await _settle();
+
+      expect(bloc.requested, <int>[1, 2]);
+      expect(bloc.state.page, 2);
+      expect(bloc.state.items.map((item) => item.id), <String>['ai-3', 'human-4']);
+    });
+
+    test('fetching more skips AI-only pages, at most five pages per request', () async {
+      final bloc = _ScriptedFeedBloc(<int, PersonalizedFeedPage>{
+        1: _mixedPage(<String>['human-1']),
+        for (int page = 2; page <= 8; page++) page: _mixedPage(<String>['ai-$page']),
+      });
+      addTearDown(bloc.close);
+      bloc.add(const PagedFeedEvent.started());
+      await _settle();
+
+      bloc.add(const PagedFeedEvent.fetchMoreRequested());
+      for (int i = 0; i < 6; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1, 2, 3, 4, 5, 6]);
+      expect(bloc.state.page, 6);
+      expect(bloc.state.hasMore, isTrue);
     });
   });
 }

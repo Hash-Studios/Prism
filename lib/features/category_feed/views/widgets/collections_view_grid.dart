@@ -55,6 +55,10 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
     wallpaper: PrismWallDocDto.fromJson(wall).toDomain(docId: wallId),
   );
 
+  List<Map<String, dynamic>> _visibleWalls() => AiContentFilter.showsAi(getIt<SettingsLocalDataSource>())
+      ? anyCollectionWalls
+      : anyCollectionWalls.where((wall) => !_isAiWall(wall)).toList(growable: false);
+
   bool _isAiWall(Map<String, dynamic> wall) =>
       AiContentFilter.isAi(PrismWallDocDto.fromJson(wall).toDomain(docId: _wallString(wall, 'id')));
 
@@ -88,7 +92,12 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
       _loadMoreFailed = false;
     });
     try {
-      await seeMoreCollectionWithName();
+      // Hidden AI walls can fill whole pages, so keep going until a visible wall arrives.
+      final int visibleBefore = _visibleWalls().length;
+      for (int page = 0; page < _maxEmptyPages; page++) {
+        await seeMoreCollectionWithName();
+        if (!mounted || !collectionHasMore || _visibleWalls().length > visibleBefore) break;
+      }
     } catch (error, stackTrace) {
       logger.w('Failed to load more collection walls.', error: error, stackTrace: stackTrace);
       if (mounted) {
@@ -127,9 +136,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
   Widget _buildGrid(BuildContext context) {
     final bool hideAi = !AiContentFilter.showsAi(getIt<SettingsLocalDataSource>());
     final List<Map<String, dynamic>> loaded = anyCollectionWalls;
-    final List<Map<String, dynamic>> walls = hideAi
-        ? loaded.where((wall) => !_isAiWall(wall)).toList(growable: false)
-        : loaded;
+    final List<Map<String, dynamic>> walls = _visibleWalls();
     if (walls.isNotEmpty || !hideAi) _emptyPagesLoaded = 0;
     if (walls.isEmpty && hideAi && loaded.isNotEmpty) {
       if (_loadMoreFailed) {
@@ -141,10 +148,10 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
         );
       }
       if (collectionHasMore && _emptyPagesLoaded < _maxEmptyPages) {
-        // A page that hides every wall asks for the next one, up to _maxEmptyPages times.
+        // One automatic scan: _loadMore pages past hidden walls, up to _maxEmptyPages pages.
         if (!seeMoreLoader && !_emptyPageLoadScheduled) {
           _emptyPageLoadScheduled = true;
-          _emptyPagesLoaded += 1;
+          _emptyPagesLoaded = _maxEmptyPages;
           final int settingsRevision = personalizedFeedSettingsRevision.value;
           final List<Map<String, dynamic>> scheduledWalls = loaded;
           WidgetsBinding.instance.addPostFrameCallback((_) {

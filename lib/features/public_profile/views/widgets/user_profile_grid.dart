@@ -39,6 +39,10 @@ class _UserProfileGridState extends State<UserProfileGrid> {
   int _emptyPagesLoaded = 0;
   bool _emptyPageLoadScheduled = false;
   String? _lastProfileId;
+
+  /// Visible wall count when the user asked for more, while hidden AI walls keep the new pages empty.
+  int? _seeMoreFrom;
+  int _seeMorePages = 0;
   LoadStatus? _lastStatus;
 
   bool get ownProfile => widget.ownProfile;
@@ -66,6 +70,31 @@ class _UserProfileGridState extends State<UserProfileGrid> {
     });
   }
 
+  void _seeMore(PublicProfileBloc bloc, int visible) {
+    _seeMoreFrom = visible;
+    _seeMorePages = 1;
+    bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
+  }
+
+  /// A requested page that added no visible wall asks for the next one, up to [_maxEmptyPages] pages.
+  void _continueSeeMore(PublicProfileBloc bloc, PublicProfileState state, int visible) {
+    final int? from = _seeMoreFrom;
+    if (from == null || state.isFetchingMoreWalls) return;
+    if (visible > from ||
+        !state.hasMoreWalls ||
+        state.status == LoadStatus.failure ||
+        _seeMorePages >= _maxEmptyPages) {
+      _seeMoreFrom = null;
+      return;
+    }
+    _seeMorePages += 1;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !bloc.isClosed && !bloc.state.isFetchingMoreWalls) {
+        bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final PublicProfileBloc bloc = context.read<PublicProfileBloc>();
@@ -83,6 +112,7 @@ class _UserProfileGridState extends State<UserProfileGrid> {
         if (_lastProfileId != state.profileId) {
           _lastProfileId = state.profileId;
           _emptyPagesLoaded = 0;
+          _seeMoreFrom = null;
           _emptyPageLoadScheduled = false;
         } else if (state.status == LoadStatus.loading && _lastStatus != LoadStatus.loading) {
           // A refresh of this same profile starts a new bounded hidden-page scan.
@@ -96,6 +126,7 @@ class _UserProfileGridState extends State<UserProfileGrid> {
             ? state.walls.where((wall) => !wall.isAiGenerated).toList(growable: false)
             : state.walls;
         final bool failed = state.status == LoadStatus.failure;
+        if (_lastProfileId == state.profileId) _continueSeeMore(bloc, state, walls.length);
         final Widget retryState = GlintState(
           kind: GlintStateKind.error,
           title: context.l10n.accountCouldNotLoadWallpapers,
@@ -180,7 +211,7 @@ class _UserProfileGridState extends State<UserProfileGrid> {
                   if (index == walls.length) {
                     return SeeMoreButton(
                       seeMoreLoader: state.isFetchingMoreWalls,
-                      func: () => bloc.add(const PublicProfileEvent.fetchMoreWallsRequested()),
+                      func: () => _seeMore(bloc, walls.length),
                     );
                   }
                   final PublicProfileWallEntity wall = walls[index];

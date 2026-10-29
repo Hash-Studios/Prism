@@ -189,6 +189,41 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
+  testWidgets('See more pages past AI-only pages until a human wall arrives', (tester) async {
+    final originalWalls = anyCollectionWalls;
+    final originalHasMore = collectionHasMore;
+    final firestore = _MixedPagesFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    getIt.registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource());
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(() async {
+      anyCollectionWalls = originalWalls;
+      collectionHasMore = originalHasMore;
+      AnalyticsRuntime.reset();
+      await getIt.reset();
+    });
+    await AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), false);
+    await getCollectionWithName('mixed');
+    await tester.pumpWidget(
+      const MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(const ValueKey<String>('human-1')), findsOneWidget);
+
+    await tester.tap(find.text('See more'));
+    for (int i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+
+    expect(firestore.nextPageCalls, 2, reason: 'page 2 is all AI, so page 3 loads too');
+    expect(find.byKey(const ValueKey<String>('human-3')), findsOneWidget);
+  });
+
   testWidgets('skips a scheduled hidden-page request after collection contents change', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
@@ -678,6 +713,27 @@ class _AiPagesFirestore extends FakeFirestoreClient {
         'wallpaper_url': 'https://example.test/ai-$page-$index.jpg',
       }, 'ai-$page-$index'),
     );
+  }
+}
+
+/// Page 1 and page 3 each hold one human wall among AI walls. Page 2 holds only AI walls.
+class _MixedPagesFirestore extends FakeFirestoreClient {
+  int nextPageCalls = 0;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    final bool isNextPage = spec.sourceTag == 'collections.seeMoreCollectionWithName';
+    final int page = isNextPage ? ++nextPageCalls + 1 : 1;
+    return List<T>.generate(24, (index) {
+      final bool human = page != 2 && index == 0;
+      final String id = human ? 'human-$page' : 'ai-$page-$index';
+      return map(<String, dynamic>{
+        'id': id,
+        if (!human) 'isAiGenerated': true,
+        'wallpaper_thumb': 'https://example.test/$id-thumb.jpg',
+        'wallpaper_url': 'https://example.test/$id.jpg',
+      }, id);
+    });
   }
 }
 
