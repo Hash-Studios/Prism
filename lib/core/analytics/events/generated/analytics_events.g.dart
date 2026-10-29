@@ -11,6 +11,7 @@ import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 
 Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
+  'daily_moment_step': DailyMomentStepValue.values.map((value) => value.wireValue).toList(),
   'wallpaper_target': WallpaperTarget.values.map((value) => value.wireValue).toList(),
   'taste_quiz_source': TasteQuizSource.values.map((value) => value.wireValue).toList(),
   'quiz_side': QuizSide.values.map((value) => value.wireValue).toList(),
@@ -3628,5 +3629,59 @@ class RemixesGridOpenedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'count': count};
+  }
+}
+
+class DailyMomentShownEvent extends AnalyticsEvent {
+  const DailyMomentShownEvent();
+
+  @override
+  String get eventName => 'daily_moment_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class DailyMomentStepDoneEvent extends AnalyticsEvent {
+  const DailyMomentStepDoneEvent({required this.step});
+
+  final DailyMomentStepValue step;
+
+  @override
+  String get eventName => 'daily_moment_step_done';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'step': step.wireValue};
+  }
+}
+
+class DailyMomentStoppedEarlyEvent extends AnalyticsEvent {
+  const DailyMomentStoppedEarlyEvent({required this.step});
+
+  final DailyMomentStepValue step;
+
+  @override
+  String get eventName => 'daily_moment_stopped_early';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'step': step.wireValue};
+  }
+}
+
+class DailyMomentDeepLinkOpenedEvent extends AnalyticsEvent {
+  const DailyMomentDeepLinkOpenedEvent({required this.step});
+
+  final DailyMomentStepValue step;
+
+  @override
+  String get eventName => 'daily_moment_deep_link_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'step': step.wireValue};
   }
 }

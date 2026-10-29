@@ -6,6 +6,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -51,6 +52,7 @@ import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/ai_wallpaper/domain/ai_rollout.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
@@ -641,7 +643,11 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
 }
 
 class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with SingleTickerProviderStateMixin {
-  /// The set or save button of the phone preview. The action bar rebuilds it, so it always has the current tint.
+  int _setAwardCoins = 0;
+  String? _setAwardWall;
+  String? _setAwardOwner;
+  final Set<String> _shownSetReceipts = <String>{};
+
   /// The Set button in the action bar. On Android the phone preview opens its Set screen.
   final GlobalKey<SetWallpaperButtonState> _setButtonKey = GlobalKey<SetWallpaperButtonState>();
   final GlobalKey _cardHeroKey = GlobalKey();
@@ -2347,24 +2353,37 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       return label == null ? button : PressScale(child: button);
     }
 
-    Widget setButton({required String label}) => PressScale(
-      child: SetWallpaperButton(
-        key: _setButtonKey,
-        label: label,
-        url: source,
-        wallpaperId: entity.id,
-        wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
-        prepareSource: prepareSource,
-        prepareAuthorized: prepareAuthorized,
-        thumbnailUrl: WallpaperDisplaySource.of(entity).thumbnail,
-        promptNotificationPermissionOnSuccess: true,
-        entryPoint: 'wallpaper_detail',
-        requestId: widget.requestId,
-        previewTint: tint,
-        notes: wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context)),
-        onMatchAccent: _matchAccentAction(context, state),
-        onSet: () => _onWallpaperSet(entity),
-      ),
+    Widget setButton({required String label}) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        PressScale(
+          child: SetWallpaperButton(
+            key: _setButtonKey,
+            label: label,
+            url: source,
+            wallpaperId: entity.id,
+            wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
+            prepareSource: prepareSource,
+            prepareAuthorized: prepareAuthorized,
+            thumbnailUrl: WallpaperDisplaySource.of(entity).thumbnail,
+            promptNotificationPermissionOnSuccess: true,
+            entryPoint: 'wallpaper_detail',
+            requestId: widget.requestId,
+            previewTint: tint,
+            notes: wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context)),
+            onMatchAccent: _matchAccentAction(context, state),
+            onSet: () => _onWallpaperSet(entity),
+          ),
+        ),
+        if (DailyMomentConfig.enabled &&
+            _setAwardOwner == app_state.prismUser.id &&
+            _setAwardWall == entity.id &&
+            _setAwardCoins > 0)
+          Text(
+            context.l10n.economyCoinsEarned(_setAwardCoins),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.primary),
+          ),
+      ],
     );
     _saveAction = hideSetWallpaperUi ? (label) => downloadButton(label: label) : null;
     final primary = hideSetWallpaperUi
@@ -2495,11 +2514,27 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     return Size(px.shortestSide, px.longestSide);
   }
 
-  void _onWallpaperSet(FeedItemEntity entity) {
+  Future<void> _onWallpaperSet(FeedItemEntity entity) async {
     _recordTaste(TasteAction.set, entity);
     _actedOn(entity);
+    if (mounted && _setAwardCoins != 0) setState(() => _setAwardCoins = 0);
     if (shouldRecordWallpaperSetStats(entity)) {
-      unawaited(getIt<RecordWallpaperActionUseCase>()(entity.id, WallpaperAction.set));
+      final owner = app_state.prismUser.id;
+      final result = await getIt<RecordWallpaperActionUseCase>()(entity.id, WallpaperAction.set);
+      final receipt = result.data;
+      if (mounted &&
+          owner == app_state.prismUser.id &&
+          receipt != null &&
+          receipt.coins > 0 &&
+          receipt.receiptId != null &&
+          _shownSetReceipts.add(receipt.receiptId!)) {
+        setState(() {
+          _setAwardCoins = receipt.coins;
+          _setAwardWall = entity.id;
+          _setAwardOwner = owner;
+        });
+        unawaited(CoinsService.instance.refreshBalance().catchError((Object _) => app_state.prismUser.coins));
+      }
     }
   }
 

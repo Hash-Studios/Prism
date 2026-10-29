@@ -576,6 +576,72 @@ class DailyChestRouteArgs {
 }
 
 /// generated route for
+/// [DailyMomentPage]
+class DailyMomentRoute extends PageRouteInfo<DailyMomentRouteArgs> {
+  DailyMomentRoute({
+    Key? key,
+    DailyMomentStep? requestedStep,
+    bool deepLink = false,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DailyMomentRoute.name,
+         args: DailyMomentRouteArgs(
+           key: key,
+           requestedStep: requestedStep,
+           deepLink: deepLink,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'DailyMomentRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DailyMomentRouteArgs>(
+        orElse: () => const DailyMomentRouteArgs(),
+      );
+      return DailyMomentPage(
+        key: args.key,
+        requestedStep: args.requestedStep,
+        deepLink: args.deepLink,
+      );
+    },
+  );
+}
+
+class DailyMomentRouteArgs {
+  const DailyMomentRouteArgs({
+    this.key,
+    this.requestedStep,
+    this.deepLink = false,
+  });
+
+  final Key? key;
+
+  final DailyMomentStep? requestedStep;
+
+  final bool deepLink;
+
+  @override
+  String toString() {
+    return 'DailyMomentRouteArgs{key: $key, requestedStep: $requestedStep, deepLink: $deepLink}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! DailyMomentRouteArgs) return false;
+    return key == other.key &&
+        requestedStep == other.requestedStep &&
+        deepLink == other.deepLink;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ requestedStep.hashCode ^ deepLink.hashCode;
+}
+
+/// generated route for
 /// [DashboardPage]
 class DashboardRoute extends PageRouteInfo<void> {
   const DashboardRoute({List<PageRouteInfo>? children})
@@ -1766,18 +1832,69 @@ class ReviewPhotoPreviewRouteArgs {
 
 /// generated route for
 /// [ReviewScreen]
-class ReviewRoute extends PageRouteInfo<void> {
-  const ReviewRoute({List<PageRouteInfo>? children})
-    : super(ReviewRoute.name, initialChildren: children);
+class ReviewRoute extends PageRouteInfo<ReviewRouteArgs> {
+  ReviewRoute({
+    Key? key,
+    int earnedCoins = 0,
+    String? earnedCoinsOwnerId,
+    List<PageRouteInfo>? children,
+  }) : super(
+         ReviewRoute.name,
+         args: ReviewRouteArgs(
+           key: key,
+           earnedCoins: earnedCoins,
+           earnedCoinsOwnerId: earnedCoinsOwnerId,
+         ),
+         initialChildren: children,
+       );
 
   static const String name = 'ReviewRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const ReviewScreen();
+      final args = data.argsAs<ReviewRouteArgs>(
+        orElse: () => const ReviewRouteArgs(),
+      );
+      return ReviewScreen(
+        key: args.key,
+        earnedCoins: args.earnedCoins,
+        earnedCoinsOwnerId: args.earnedCoinsOwnerId,
+      );
     },
   );
+}
+
+class ReviewRouteArgs {
+  const ReviewRouteArgs({
+    this.key,
+    this.earnedCoins = 0,
+    this.earnedCoinsOwnerId,
+  });
+
+  final Key? key;
+
+  final int earnedCoins;
+
+  final String? earnedCoinsOwnerId;
+
+  @override
+  String toString() {
+    return 'ReviewRouteArgs{key: $key, earnedCoins: $earnedCoins, earnedCoinsOwnerId: $earnedCoinsOwnerId}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! ReviewRouteArgs) return false;
+    return key == other.key &&
+        earnedCoins == other.earnedCoins &&
+        earnedCoinsOwnerId == other.earnedCoinsOwnerId;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^ earnedCoins.hashCode ^ earnedCoinsOwnerId.hashCode;
 }
 
 /// generated route for

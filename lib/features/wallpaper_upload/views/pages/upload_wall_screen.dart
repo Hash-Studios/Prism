@@ -424,6 +424,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     await _saveRecord();
   }
 
+  int _uploadAwardCoins = 0;
+  String? _uploadAwardOwner;
+
   Future<void> _saveRecord() async {
     setState(() {
       _stage = _UploadStage.saving;
@@ -456,6 +459,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               thumbSourceKind: thumbSourceKind,
               docId: _wallDocId ??= 'wall_${_fileName ?? id}',
               requestId: _metadata.requestId,
+              onUploadAward: (result) {
+                _uploadAwardCoins = result.delta;
+                _uploadAwardOwner = app_state.prismUser.id;
+              },
             );
       if (result == wall_store.WallSubmissionResult.quotaExceeded && _submissionUnresolved) {
         setState(() {
@@ -525,7 +532,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     if (batch == null || batch.submittedCount > 0) {
       showGlintToast(context);
       Navigator.pop(context);
-      unawaited(router.push(const ReviewRoute()));
+      unawaited(router.push(ReviewRoute(earnedCoins: _uploadAwardCoins, earnedCoinsOwnerId: _uploadAwardOwner)));
     } else {
       Navigator.pop(context);
     }
@@ -833,7 +840,11 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       label: context.l10n.wallpaperUploadCheckReviewStatus,
                       variant: PrismButtonVariant.ghost,
                       size: PrismButtonSize.compact,
-                      onPressed: () => unawaited(context.router.push(const ReviewRoute())),
+                      onPressed: () => unawaited(
+                        context.router.push(
+                          ReviewRoute(earnedCoins: _uploadAwardCoins, earnedCoinsOwnerId: _uploadAwardOwner),
+                        ),
+                      ),
                     ),
                   ),
               ] else ...<Widget>[

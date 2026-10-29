@@ -11529,6 +11529,98 @@ class AppLocalizationsPt extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName remixou seu papel de parede.';
   }
+
+  @override
+  String get dailyMomentTitle => 'Momento diário';
+
+  @override
+  String get dailyMomentStreakTitle => 'Sequência diária';
+
+  @override
+  String get dailyMomentChestTitle => 'Baú diário';
+
+  @override
+  String get dailyMomentSpinTitle => 'Rodada grátis';
+
+  @override
+  String get dailyMomentUnavailable => 'Esta recompensa já não está disponível hoje.';
+
+  @override
+  String get dailyMomentError => 'Não foi possível carregar a recompensa. Tenta novamente.';
+
+  @override
+  String dailyMomentStreakReceipt(int coins, int days) {
+    return '$coins moedas recebidas · sequência de $days dias';
+  }
+
+  @override
+  String get dailyMomentCosmetic => 'Item cosmético adicionado à tua coleção';
+
+  @override
+  String dailyMomentReward(int coins) {
+    return '$coins moedas recebidas';
+  }
+
+  @override
+  String get dailyMomentChestBody => 'Abre o baú de hoje quando quiseres.';
+
+  @override
+  String get dailyMomentSpinBody => 'A tua rodada grátis está pronta.';
+
+  @override
+  String dailyMomentBalance(int coins) {
+    return 'Saldo: $coins moedas';
+  }
+
+  @override
+  String get dailyMomentDone => 'Concluído';
+
+  @override
+  String get dailyMomentRetry => 'Tentar novamente';
+
+  @override
+  String get dailyMomentContinue => 'Continuar';
+
+  @override
+  String get dailyMomentOpenFree => 'Abrir baú grátis';
+
+  @override
+  String dailyMomentOpenChest(int coins) {
+    return 'Abrir por $coins moedas';
+  }
+
+  @override
+  String get dailyMomentSpinAction => 'Rodar grátis';
+
+  @override
+  String get dailyMomentClose => 'Fechar momento diário';
+
+  @override
+  String get dailyMomentToday => 'Hoje';
+
+  @override
+  String get dailyMomentReady => 'As recompensas diárias estão prontas';
+
+  @override
+  String get dailyMomentComplete => 'Hoje está concluído';
+
+  @override
+  String get dailyMomentResume => 'Continuar momento diário';
+
+  @override
+  String get dailyMomentMore => 'Mais';
+
+  @override
+  String get dailyMomentQuests => 'Missões';
+
+  @override
+  String get dailyMomentChestLeft => 'Baú diário disponível';
+
+  @override
+  String get dailyMomentSpinLeft => 'Rodada grátis disponível';
+
+  @override
+  String get dailyMomentStreakLeft => 'Sequência diária disponível';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -23054,4 +23146,96 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName remixou seu papel de parede.';
   }
+
+  @override
+  String get dailyMomentTitle => 'Momento diário';
+
+  @override
+  String get dailyMomentStreakTitle => 'Sequência diária';
+
+  @override
+  String get dailyMomentChestTitle => 'Baú diário';
+
+  @override
+  String get dailyMomentSpinTitle => 'Giro grátis';
+
+  @override
+  String get dailyMomentUnavailable => 'Esta recompensa não está mais disponível hoje.';
+
+  @override
+  String get dailyMomentError => 'Não foi possível carregar a recompensa. Tente novamente.';
+
+  @override
+  String dailyMomentStreakReceipt(int coins, int days) {
+    return '$coins moedas recebidas · sequência de $days dias';
+  }
+
+  @override
+  String get dailyMomentCosmetic => 'Item cosmético adicionado à sua coleção';
+
+  @override
+  String dailyMomentReward(int coins) {
+    return '$coins moedas recebidas';
+  }
+
+  @override
+  String get dailyMomentChestBody => 'Abra o baú de hoje quando quiser.';
+
+  @override
+  String get dailyMomentSpinBody => 'Seu giro grátis está pronto.';
+
+  @override
+  String dailyMomentBalance(int coins) {
+    return 'Saldo: $coins moedas';
+  }
+
+  @override
+  String get dailyMomentDone => 'Concluído';
+
+  @override
+  String get dailyMomentRetry => 'Tentar novamente';
+
+  @override
+  String get dailyMomentContinue => 'Continuar';
+
+  @override
+  String get dailyMomentOpenFree => 'Abrir baú grátis';
+
+  @override
+  String dailyMomentOpenChest(int coins) {
+    return 'Abrir por $coins moedas';
+  }
+
+  @override
+  String get dailyMomentSpinAction => 'Girar grátis';
+
+  @override
+  String get dailyMomentClose => 'Fechar momento diário';
+
+  @override
+  String get dailyMomentToday => 'Hoje';
+
+  @override
+  String get dailyMomentReady => 'As recompensas diárias estão prontas';
+
+  @override
+  String get dailyMomentComplete => 'Hoje está concluído';
+
+  @override
+  String get dailyMomentResume => 'Continuar momento diário';
+
+  @override
+  String get dailyMomentMore => 'Mais';
+
+  @override
+  String get dailyMomentQuests => 'Missões';
+
+  @override
+  String get dailyMomentChestLeft => 'Baú diário disponível';
+
+  @override
+  String get dailyMomentSpinLeft => 'Giro grátis disponível';
+
+  @override
+  String get dailyMomentStreakLeft => 'Sequência diária disponível';
 }

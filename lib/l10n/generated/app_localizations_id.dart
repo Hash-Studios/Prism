@@ -11251,4 +11251,96 @@ class AppLocalizationsId extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName me-remix wallpaper Anda.';
   }
+
+  @override
+  String get dailyMomentTitle => 'Momen harian';
+
+  @override
+  String get dailyMomentStreakTitle => 'Runtun harian';
+
+  @override
+  String get dailyMomentChestTitle => 'Peti harian';
+
+  @override
+  String get dailyMomentSpinTitle => 'Putaran gratis';
+
+  @override
+  String get dailyMomentUnavailable => 'Hadiah ini tidak lagi tersedia hari ini.';
+
+  @override
+  String get dailyMomentError => 'Hadiah tidak dapat dimuat. Coba lagi.';
+
+  @override
+  String dailyMomentStreakReceipt(int coins, int days) {
+    return '$coins koin diperoleh · runtun $days hari';
+  }
+
+  @override
+  String get dailyMomentCosmetic => 'Item kosmetik ditambahkan ke koleksi';
+
+  @override
+  String dailyMomentReward(int coins) {
+    return '$coins koin diperoleh';
+  }
+
+  @override
+  String get dailyMomentChestBody => 'Buka peti hari ini saat kamu siap.';
+
+  @override
+  String get dailyMomentSpinBody => 'Putaran gratismu siap.';
+
+  @override
+  String dailyMomentBalance(int coins) {
+    return 'Saldo: $coins koin';
+  }
+
+  @override
+  String get dailyMomentDone => 'Selesai';
+
+  @override
+  String get dailyMomentRetry => 'Coba lagi';
+
+  @override
+  String get dailyMomentContinue => 'Lanjutkan';
+
+  @override
+  String get dailyMomentOpenFree => 'Buka peti gratis';
+
+  @override
+  String dailyMomentOpenChest(int coins) {
+    return 'Buka dengan $coins koin';
+  }
+
+  @override
+  String get dailyMomentSpinAction => 'Putar gratis';
+
+  @override
+  String get dailyMomentClose => 'Tutup momen harian';
+
+  @override
+  String get dailyMomentToday => 'Hari ini';
+
+  @override
+  String get dailyMomentReady => 'Hadiah harian sudah siap';
+
+  @override
+  String get dailyMomentComplete => 'Hari ini sudah selesai';
+
+  @override
+  String get dailyMomentResume => 'Lanjutkan momen harian';
+
+  @override
+  String get dailyMomentMore => 'Lainnya';
+
+  @override
+  String get dailyMomentQuests => 'Misi';
+
+  @override
+  String get dailyMomentChestLeft => 'Peti harian tersedia';
+
+  @override
+  String get dailyMomentSpinLeft => 'Putaran gratis tersedia';
+
+  @override
+  String get dailyMomentStreakLeft => 'Runtun harian tersedia';
 }

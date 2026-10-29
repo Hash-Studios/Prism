@@ -10,6 +10,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_activity_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
@@ -58,12 +59,25 @@ Widget _host(Widget child, Brightness brightness) => MaterialApp(
 
 void main() {
   setUpFavouriteCounts();
+  setUp(() => DailyMomentConfig.enabledOverride = false);
   tearDown(() async {
+    DailyMomentConfig.enabledOverride = null;
     app_state.prismUser = app_constants.createGuestPrismUser();
     CoinsService.instance.streakNotifier.value = StreakStatus.empty;
     CoinsService.instance.balanceNotifier.value = 0;
     CoinsService.instance.earnFlagsNotifier.value = CoinEarnFlags.empty;
     await getIt.reset();
+  });
+
+  testWidgets('daily moment earn section hides the three repeated daily rewards', (tester) async {
+    DailyMomentConfig.enabledOverride = true;
+    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.light));
+    expect(find.text('Daily streak'), findsNothing);
+    expect(find.text('Day 7 chest'), findsNothing);
+    expect(find.text('Free daily spin'), findsNothing);
+    expect(find.text(AppLocalizationsEn().economyWatchVideo), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyInviteFriend), findsOneWidget);
   });
 
   testWidgets('activity refreshes fresh transactions after a balance mutation', (tester) async {

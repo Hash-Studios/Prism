@@ -11359,4 +11359,96 @@ class AppLocalizationsDe extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName hat dein Hintergrundbild geremixt.';
   }
+
+  @override
+  String get dailyMomentTitle => 'Täglicher Moment';
+
+  @override
+  String get dailyMomentStreakTitle => 'Tägliche Serie';
+
+  @override
+  String get dailyMomentChestTitle => 'Tägliche Truhe';
+
+  @override
+  String get dailyMomentSpinTitle => 'Gratisdreh';
+
+  @override
+  String get dailyMomentUnavailable => 'Diese Belohnung ist heute nicht mehr verfügbar.';
+
+  @override
+  String get dailyMomentError => 'Die Belohnung konnte nicht geladen werden. Versuche es erneut.';
+
+  @override
+  String dailyMomentStreakReceipt(int coins, int days) {
+    return '$coins Münzen erhalten · $days Tage in Folge';
+  }
+
+  @override
+  String get dailyMomentCosmetic => 'Design zu deiner Sammlung hinzugefügt';
+
+  @override
+  String dailyMomentReward(int coins) {
+    return '$coins Münzen erhalten';
+  }
+
+  @override
+  String get dailyMomentChestBody => 'Öffne die heutige Truhe, wenn du bereit bist.';
+
+  @override
+  String get dailyMomentSpinBody => 'Dein Gratisdreh ist bereit.';
+
+  @override
+  String dailyMomentBalance(int coins) {
+    return 'Guthaben: $coins Münzen';
+  }
+
+  @override
+  String get dailyMomentDone => 'Fertig';
+
+  @override
+  String get dailyMomentRetry => 'Erneut versuchen';
+
+  @override
+  String get dailyMomentContinue => 'Weiter';
+
+  @override
+  String get dailyMomentOpenFree => 'Gratis-Truhe öffnen';
+
+  @override
+  String dailyMomentOpenChest(int coins) {
+    return 'Für $coins Münzen öffnen';
+  }
+
+  @override
+  String get dailyMomentSpinAction => 'Gratis drehen';
+
+  @override
+  String get dailyMomentClose => 'Täglichen Moment schließen';
+
+  @override
+  String get dailyMomentToday => 'Heute';
+
+  @override
+  String get dailyMomentReady => 'Tägliche Belohnungen sind bereit';
+
+  @override
+  String get dailyMomentComplete => 'Heute ist alles erledigt';
+
+  @override
+  String get dailyMomentResume => 'Täglichen Moment fortsetzen';
+
+  @override
+  String get dailyMomentMore => 'Mehr';
+
+  @override
+  String get dailyMomentQuests => 'Aufgaben';
+
+  @override
+  String get dailyMomentChestLeft => 'Tägliche Truhe verfügbar';
+
+  @override
+  String get dailyMomentSpinLeft => 'Gratisdreh verfügbar';
+
+  @override
+  String get dailyMomentStreakLeft => 'Tägliche Serie verfügbar';
 }

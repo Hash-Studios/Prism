@@ -11338,4 +11338,96 @@ class AppLocalizationsHi extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName ने आपके वॉलपेपर को रीमिक्स किया।';
   }
+
+  @override
+  String get dailyMomentTitle => 'रोज़ का पल';
+
+  @override
+  String get dailyMomentStreakTitle => 'रोज़ की लड़ी';
+
+  @override
+  String get dailyMomentChestTitle => 'रोज़ का संदूक';
+
+  @override
+  String get dailyMomentSpinTitle => 'मुफ़्त स्पिन';
+
+  @override
+  String get dailyMomentUnavailable => 'यह इनाम आज अब उपलब्ध नहीं है।';
+
+  @override
+  String get dailyMomentError => 'इनाम लोड नहीं हो सका। फिर कोशिश करें।';
+
+  @override
+  String dailyMomentStreakReceipt(int coins, int days) {
+    return '$coins सिक्के मिले · $days दिनों की लड़ी';
+  }
+
+  @override
+  String get dailyMomentCosmetic => 'सजावटी आइटम आपके संग्रह में जोड़ा गया';
+
+  @override
+  String dailyMomentReward(int coins) {
+    return '$coins सिक्के मिले';
+  }
+
+  @override
+  String get dailyMomentChestBody => 'जब चाहें आज का संदूक खोलें।';
+
+  @override
+  String get dailyMomentSpinBody => 'आपका मुफ़्त स्पिन तैयार है।';
+
+  @override
+  String dailyMomentBalance(int coins) {
+    return 'शेष: $coins सिक्के';
+  }
+
+  @override
+  String get dailyMomentDone => 'हो गया';
+
+  @override
+  String get dailyMomentRetry => 'फिर कोशिश करें';
+
+  @override
+  String get dailyMomentContinue => 'जारी रखें';
+
+  @override
+  String get dailyMomentOpenFree => 'मुफ़्त संदूक खोलें';
+
+  @override
+  String dailyMomentOpenChest(int coins) {
+    return '$coins सिक्कों में खोलें';
+  }
+
+  @override
+  String get dailyMomentSpinAction => 'मुफ़्त स्पिन लें';
+
+  @override
+  String get dailyMomentClose => 'रोज़ का पल बंद करें';
+
+  @override
+  String get dailyMomentToday => 'आज';
+
+  @override
+  String get dailyMomentReady => 'रोज़ के इनाम तैयार हैं';
+
+  @override
+  String get dailyMomentComplete => 'आज के इनाम पूरे हुए';
+
+  @override
+  String get dailyMomentResume => 'रोज़ का पल जारी रखें';
+
+  @override
+  String get dailyMomentMore => 'और';
+
+  @override
+  String get dailyMomentQuests => 'मिशन';
+
+  @override
+  String get dailyMomentChestLeft => 'रोज़ का संदूक उपलब्ध है';
+
+  @override
+  String get dailyMomentSpinLeft => 'मुफ़्त स्पिन उपलब्ध है';
+
+  @override
+  String get dailyMomentStreakLeft => 'रोज़ की लड़ी उपलब्ध है';
 }

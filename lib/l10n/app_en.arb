@@ -10757,5 +10757,140 @@
         "type": "String"
       }
     }
+  },
+  "dailyMomentTitle": "Daily moment",
+  "@dailyMomentTitle": {
+    "description": "Daily moment: Title."
+  },
+  "dailyMomentStreakTitle": "Daily streak",
+  "@dailyMomentStreakTitle": {
+    "description": "Daily moment: StreakTitle."
+  },
+  "dailyMomentChestTitle": "Daily chest",
+  "@dailyMomentChestTitle": {
+    "description": "Daily moment: ChestTitle."
+  },
+  "dailyMomentSpinTitle": "Free spin",
+  "@dailyMomentSpinTitle": {
+    "description": "Daily moment: SpinTitle."
+  },
+  "dailyMomentUnavailable": "This reward is no longer available today.",
+  "@dailyMomentUnavailable": {
+    "description": "Daily moment: Unavailable."
+  },
+  "dailyMomentError": "Could not load your reward. Try again.",
+  "@dailyMomentError": {
+    "description": "Daily moment: Error."
+  },
+  "dailyMomentStreakReceipt": "{coins} coins earned · {days} day streak",
+  "@dailyMomentStreakReceipt": {
+    "description": "Daily moment: StreakReceipt.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentCosmetic": "Cosmetic added to your collection",
+  "@dailyMomentCosmetic": {
+    "description": "Daily moment: Cosmetic."
+  },
+  "dailyMomentReward": "{coins} coins earned",
+  "@dailyMomentReward": {
+    "description": "Daily moment: Reward.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentChestBody": "Open today’s chest when you’re ready.",
+  "@dailyMomentChestBody": {
+    "description": "Daily moment: ChestBody."
+  },
+  "dailyMomentSpinBody": "Your free spin is ready.",
+  "@dailyMomentSpinBody": {
+    "description": "Daily moment: SpinBody."
+  },
+  "dailyMomentBalance": "Balance: {coins} coins",
+  "@dailyMomentBalance": {
+    "description": "Daily moment: Balance.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentDone": "Done",
+  "@dailyMomentDone": {
+    "description": "Daily moment: Done."
+  },
+  "dailyMomentRetry": "Try again",
+  "@dailyMomentRetry": {
+    "description": "Daily moment: Retry."
+  },
+  "dailyMomentContinue": "Continue",
+  "@dailyMomentContinue": {
+    "description": "Daily moment: Continue."
+  },
+  "dailyMomentOpenFree": "Open free chest",
+  "@dailyMomentOpenFree": {
+    "description": "Daily moment: OpenFree."
+  },
+  "dailyMomentOpenChest": "Open for {coins} coins",
+  "@dailyMomentOpenChest": {
+    "description": "Daily moment: OpenChest.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentSpinAction": "Take free spin",
+  "@dailyMomentSpinAction": {
+    "description": "Daily moment: SpinAction."
+  },
+  "dailyMomentClose": "Close daily moment",
+  "@dailyMomentClose": {
+    "description": "Daily moment: Close."
+  },
+  "dailyMomentToday": "Today",
+  "@dailyMomentToday": {
+    "description": "Daily moment: Today."
+  },
+  "dailyMomentReady": "Daily rewards are ready",
+  "@dailyMomentReady": {
+    "description": "Daily moment: Ready."
+  },
+  "dailyMomentComplete": "Today is complete",
+  "@dailyMomentComplete": {
+    "description": "Daily moment: Complete."
+  },
+  "dailyMomentResume": "Continue daily moment",
+  "@dailyMomentResume": {
+    "description": "Daily moment: Resume."
+  },
+  "dailyMomentMore": "More",
+  "@dailyMomentMore": {
+    "description": "Daily moment: More."
+  },
+  "dailyMomentQuests": "Quests",
+  "@dailyMomentQuests": {
+    "description": "Daily moment: Quests."
+  },
+  "dailyMomentChestLeft": "Daily chest available",
+  "@dailyMomentChestLeft": {
+    "description": "Daily moment: ChestLeft."
+  },
+  "dailyMomentSpinLeft": "Free spin available",
+  "@dailyMomentSpinLeft": {
+    "description": "Daily moment: SpinLeft."
+  },
+  "dailyMomentStreakLeft": "Daily streak available",
+  "@dailyMomentStreakLeft": {
+    "description": "Daily moment: StreakLeft."
   }
 }

@@ -163,6 +163,7 @@
                 <data android:path="/drops" />
                 <data android:path="/leaderboard" />
                 <data android:path="/draw" />
+                <data android:path="/daily-moment" />
                 <data android:path="/daily-chest" />
                 <data android:path="/spin-wheel" />
                 <data android:path="/photo-preview" />
@@ -285,6 +286,7 @@
                 <data android:path="/drops" />
                 <data android:path="/leaderboard" />
                 <data android:path="/draw" />
+                <data android:path="/daily-moment" />
                 <data android:path="/daily-chest" />
                 <data android:path="/spin-wheel" />
                 <data android:path="/photo-preview" />
@@ -396,6 +398,7 @@
                 <data android:path="/drops" />
                 <data android:path="/leaderboard" />
                 <data android:path="/draw" />
+                <data android:path="/daily-moment" />
                 <data android:path="/daily-chest" />
                 <data android:path="/spin-wheel" />
                 <data android:path="/photo-preview" />
@@ -507,6 +510,7 @@
                 <data android:path="/drops" />
                 <data android:path="/leaderboard" />
                 <data android:path="/draw" />
+                <data android:path="/daily-moment" />
                 <data android:path="/daily-chest" />
                 <data android:path="/spin-wheel" />
                 <data android:path="/photo-preview" />
@@ -618,6 +622,7 @@
                 <data android:path="/drops" />
                 <data android:path="/leaderboard" />
                 <data android:path="/draw" />
+                <data android:path="/daily-moment" />
                 <data android:path="/daily-chest" />
                 <data android:path="/spin-wheel" />
                 <data android:path="/photo-preview" />

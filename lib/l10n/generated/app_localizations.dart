@@ -17970,6 +17970,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{remixerName} remixed your wallpaper.'**
   String notifPushWallRemixedBodyUntitled(String remixerName);
+
+  /// Daily moment: Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily moment'**
+  String get dailyMomentTitle;
+
+  /// Daily moment: StreakTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily streak'**
+  String get dailyMomentStreakTitle;
+
+  /// Daily moment: ChestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily chest'**
+  String get dailyMomentChestTitle;
+
+  /// Daily moment: SpinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Free spin'**
+  String get dailyMomentSpinTitle;
+
+  /// Daily moment: Unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This reward is no longer available today.'**
+  String get dailyMomentUnavailable;
+
+  /// Daily moment: Error.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load your reward. Try again.'**
+  String get dailyMomentError;
+
+  /// Daily moment: StreakReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins} coins earned · {days} day streak'**
+  String dailyMomentStreakReceipt(int coins, int days);
+
+  /// Daily moment: Cosmetic.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmetic added to your collection'**
+  String get dailyMomentCosmetic;
+
+  /// Daily moment: Reward.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins} coins earned'**
+  String dailyMomentReward(int coins);
+
+  /// Daily moment: ChestBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Open today’s chest when you’re ready.'**
+  String get dailyMomentChestBody;
+
+  /// Daily moment: SpinBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your free spin is ready.'**
+  String get dailyMomentSpinBody;
+
+  /// Daily moment: Balance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance: {coins} coins'**
+  String dailyMomentBalance(int coins);
+
+  /// Daily moment: Done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get dailyMomentDone;
+
+  /// Daily moment: Retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get dailyMomentRetry;
+
+  /// Daily moment: Continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get dailyMomentContinue;
+
+  /// Daily moment: OpenFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Open free chest'**
+  String get dailyMomentOpenFree;
+
+  /// Daily moment: OpenChest.
+  ///
+  /// In en, this message translates to:
+  /// **'Open for {coins} coins'**
+  String dailyMomentOpenChest(int coins);
+
+  /// Daily moment: SpinAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Take free spin'**
+  String get dailyMomentSpinAction;
+
+  /// Daily moment: Close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close daily moment'**
+  String get dailyMomentClose;
+
+  /// Daily moment: Today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get dailyMomentToday;
+
+  /// Daily moment: Ready.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily rewards are ready'**
+  String get dailyMomentReady;
+
+  /// Daily moment: Complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Today is complete'**
+  String get dailyMomentComplete;
+
+  /// Daily moment: Resume.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue daily moment'**
+  String get dailyMomentResume;
+
+  /// Daily moment: More.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get dailyMomentMore;
+
+  /// Daily moment: Quests.
+  ///
+  /// In en, this message translates to:
+  /// **'Quests'**
+  String get dailyMomentQuests;
+
+  /// Daily moment: ChestLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily chest available'**
+  String get dailyMomentChestLeft;
+
+  /// Daily moment: SpinLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Free spin available'**
+  String get dailyMomentSpinLeft;
+
+  /// Daily moment: StreakLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily streak available'**
+  String get dailyMomentStreakLeft;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

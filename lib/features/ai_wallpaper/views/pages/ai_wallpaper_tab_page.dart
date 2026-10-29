@@ -53,6 +53,7 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheets.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_style_sheet.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -115,6 +116,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   /// The wallpapers made since the page opened, oldest first.
   List<AiGenerationRecord> _session = <AiGenerationRecord>[];
+  final Map<String, int> _uploadAwards = <String, int>{};
   final Map<String, AiGenerationRecord> _confirmedSubmissionRecords = <String, AiGenerationRecord>{};
   String _historyUserId = '';
   String _promptOwner = '';
@@ -405,6 +407,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       _hero = null;
       _session = <AiGenerationRecord>[];
       _confirmedSubmissionRecords.clear();
+      _uploadAwards.clear();
       _unconfirmedSubmissionIds.clear();
     }
     if (!_isLoggedIn) {
@@ -414,6 +417,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         _hero = null;
         _session = <AiGenerationRecord>[];
         _confirmedSubmissionRecords.clear();
+        _uploadAwards.clear();
         _unconfirmedSubmissionIds.clear();
       });
       return;
@@ -1067,6 +1071,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 aiPrompt: record.prompt,
                 aiStylePreset: record.stylePreset.apiValue,
                 remixOf: record.remixOf,
+                onUploadAward: (result) {
+                  if (mounted && app_state.prismUser.id == record.userId) {
+                    setState(() => _uploadAwards[record.id] = result.delta);
+                  }
+                },
               ));
       if (submissionResult == wallstore.WallSubmissionResult.quotaExceeded) {
         return;
@@ -1289,9 +1298,18 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       onSelectTake: _selectTake,
       onFollowUp: _runFollowUp,
       trailing: const CoinBalanceChip(sourceTag: 'ai_gen_page', showStreak: false),
-      notice: _unconfirmedSubmissionIds.contains(hero.id)
-          ? AiUnconfirmedNotice(onCheck: () => context.router.push(const ReviewRoute()))
-          : null,
+      notice: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (DailyMomentConfig.enabled && (_uploadAwards[hero.id] ?? 0) > 0)
+            Text(
+              context.l10n.economyCoinsEarned(_uploadAwards[hero.id]!),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.primary),
+            ),
+          if (_unconfirmedSubmissionIds.contains(hero.id))
+            AiUnconfirmedNotice(onCheck: () => context.router.push(const ReviewRoute())),
+        ],
+      ),
       actions: AiResultActions(
         showSave: !hideSetWallpaperUi,
         showRefine: app_state.aiVariationsEnabled,

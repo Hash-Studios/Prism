@@ -11345,4 +11345,96 @@ class AppLocalizationsEs extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName remezcló tu fondo de pantalla.';
   }
+
+  @override
+  String get dailyMomentTitle => 'Momento diario';
+
+  @override
+  String get dailyMomentStreakTitle => 'Racha diaria';
+
+  @override
+  String get dailyMomentChestTitle => 'Cofre diario';
+
+  @override
+  String get dailyMomentSpinTitle => 'Giro gratis';
+
+  @override
+  String get dailyMomentUnavailable => 'Esta recompensa ya no está disponible hoy.';
+
+  @override
+  String get dailyMomentError => 'No se pudo cargar la recompensa. Inténtalo de nuevo.';
+
+  @override
+  String dailyMomentStreakReceipt(int coins, int days) {
+    return '$coins monedas ganadas · racha de $days días';
+  }
+
+  @override
+  String get dailyMomentCosmetic => 'Objeto añadido a tu colección';
+
+  @override
+  String dailyMomentReward(int coins) {
+    return '$coins monedas ganadas';
+  }
+
+  @override
+  String get dailyMomentChestBody => 'Abre el cofre de hoy cuando quieras.';
+
+  @override
+  String get dailyMomentSpinBody => 'Tu giro gratis está listo.';
+
+  @override
+  String dailyMomentBalance(int coins) {
+    return 'Saldo: $coins monedas';
+  }
+
+  @override
+  String get dailyMomentDone => 'Listo';
+
+  @override
+  String get dailyMomentRetry => 'Reintentar';
+
+  @override
+  String get dailyMomentContinue => 'Continuar';
+
+  @override
+  String get dailyMomentOpenFree => 'Abrir cofre gratis';
+
+  @override
+  String dailyMomentOpenChest(int coins) {
+    return 'Abrir por $coins monedas';
+  }
+
+  @override
+  String get dailyMomentSpinAction => 'Girar gratis';
+
+  @override
+  String get dailyMomentClose => 'Cerrar momento diario';
+
+  @override
+  String get dailyMomentToday => 'Hoy';
+
+  @override
+  String get dailyMomentReady => 'Las recompensas diarias están listas';
+
+  @override
+  String get dailyMomentComplete => 'Hoy está completo';
+
+  @override
+  String get dailyMomentResume => 'Continuar momento diario';
+
+  @override
+  String get dailyMomentMore => 'Más';
+
+  @override
+  String get dailyMomentQuests => 'Misiones';
+
+  @override
+  String get dailyMomentChestLeft => 'Cofre diario disponible';
+
+  @override
+  String get dailyMomentSpinLeft => 'Giro gratis disponible';
+
+  @override
+  String get dailyMomentStreakLeft => 'Racha diaria disponible';
 }

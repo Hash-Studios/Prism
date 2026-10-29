@@ -1,6 +1,12 @@
 version: 1
 
 enums:
+  - name: daily_moment_step
+    dart_type: DailyMomentStepValue
+    values:
+      - streak
+      - chest
+      - spin
   - name: wallpaper_target
     dart_type: WallpaperTarget
     import: package:Prism/core/platform/wallpaper_service.dart
@@ -2507,3 +2513,24 @@ events:
       - name: count
         key: count
         type: int
+
+  - id: daily_moment_shown
+    fields: []
+  - id: daily_moment_step_done
+    fields:
+      - name: step
+        key: step
+        type: enum
+        enum: DailyMomentStepValue
+  - id: daily_moment_stopped_early
+    fields:
+      - name: step
+        key: step
+        type: enum
+        enum: DailyMomentStepValue
+  - id: daily_moment_deep_link_opened
+    fields:
+      - name: step
+        key: step
+        type: enum
+        enum: DailyMomentStepValue

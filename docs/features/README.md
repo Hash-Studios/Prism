@@ -31,6 +31,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [profile.md](profile.md) | Profile links, username rules, share link, block and report |
 | [settings.md](settings.md) | Privacy and data, report a problem, data saver, rate prompt |
 | [coins-and-downloads.md](coins-and-downloads.md) | Price on the pill, already downloaded, ads, pending refunds and rewards |
+| [daily-moment.md](daily-moment.md) | Shared streak, chest, and free Pro spin sheet, reward contracts, old entry points, and release limits |
 | [coins-ledger.md](coins-ledger.md) | Ledger rows, labels, coin history screen, subscription reconcile |
 | [streak-rescue.md](streak-rescue.md) | Restore a broken streak for coins |
 | [ai-wallpaper.md](ai-wallpaper.md) | AI tab errors, charge id, Try another |

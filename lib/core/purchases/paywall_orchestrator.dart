@@ -9,6 +9,7 @@ import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
+import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/widgets.dart';
@@ -39,8 +40,24 @@ class PaywallOrchestrator {
   static const Duration _loadTimeout = Duration(seconds: 10);
   bool get _rcPaywallsEnabled => app_state.useRcPaywalls;
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
+  int _activePresentations = 0;
 
   Future<PaywallResultValue> present({
+    required String placement,
+    required String source,
+    AppLocalizations? messages,
+  }) async {
+    _activePresentations++;
+    DailyMomentPresentationGate.instance.purchaseActive = true;
+    try {
+      return await _present(placement: placement, source: source, messages: messages);
+    } finally {
+      _activePresentations--;
+      DailyMomentPresentationGate.instance.purchaseActive = _activePresentations > 0;
+    }
+  }
+
+  Future<PaywallResultValue> _present({
     required String placement,
     required String source,
     AppLocalizations? messages,

@@ -1,0 +1,3 @@
+ts	phase	decision	why	evidence	result
+2026-10-29T18:30:28Z	design	Choose one daily sheet with ordered steps and explicit chest cost	One owner controls steps and dismissal; preserve all reward contracts	docs/features/daily-moment.md	open
+2026-10-29T18:30:28Z	contract	Extend set/save response with atomic quest award receipts	Owner approved option 2; original response could not attribute coins to the action	functions/src/wallStats.ts	open

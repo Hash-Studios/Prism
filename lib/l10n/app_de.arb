@@ -10691,5 +10691,140 @@
         "type": "String"
       }
     }
+  },
+  "dailyMomentTitle": "Täglicher Moment",
+  "@dailyMomentTitle": {
+    "description": "Daily moment: Title."
+  },
+  "dailyMomentStreakTitle": "Tägliche Serie",
+  "@dailyMomentStreakTitle": {
+    "description": "Daily moment: StreakTitle."
+  },
+  "dailyMomentChestTitle": "Tägliche Truhe",
+  "@dailyMomentChestTitle": {
+    "description": "Daily moment: ChestTitle."
+  },
+  "dailyMomentSpinTitle": "Gratisdreh",
+  "@dailyMomentSpinTitle": {
+    "description": "Daily moment: SpinTitle."
+  },
+  "dailyMomentUnavailable": "Diese Belohnung ist heute nicht mehr verfügbar.",
+  "@dailyMomentUnavailable": {
+    "description": "Daily moment: Unavailable."
+  },
+  "dailyMomentError": "Die Belohnung konnte nicht geladen werden. Versuche es erneut.",
+  "@dailyMomentError": {
+    "description": "Daily moment: Error."
+  },
+  "dailyMomentStreakReceipt": "{coins} Münzen erhalten · {days} Tage in Folge",
+  "@dailyMomentStreakReceipt": {
+    "description": "Daily moment: StreakReceipt.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentCosmetic": "Design zu deiner Sammlung hinzugefügt",
+  "@dailyMomentCosmetic": {
+    "description": "Daily moment: Cosmetic."
+  },
+  "dailyMomentReward": "{coins} Münzen erhalten",
+  "@dailyMomentReward": {
+    "description": "Daily moment: Reward.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentChestBody": "Öffne die heutige Truhe, wenn du bereit bist.",
+  "@dailyMomentChestBody": {
+    "description": "Daily moment: ChestBody."
+  },
+  "dailyMomentSpinBody": "Dein Gratisdreh ist bereit.",
+  "@dailyMomentSpinBody": {
+    "description": "Daily moment: SpinBody."
+  },
+  "dailyMomentBalance": "Guthaben: {coins} Münzen",
+  "@dailyMomentBalance": {
+    "description": "Daily moment: Balance.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentDone": "Fertig",
+  "@dailyMomentDone": {
+    "description": "Daily moment: Done."
+  },
+  "dailyMomentRetry": "Erneut versuchen",
+  "@dailyMomentRetry": {
+    "description": "Daily moment: Retry."
+  },
+  "dailyMomentContinue": "Weiter",
+  "@dailyMomentContinue": {
+    "description": "Daily moment: Continue."
+  },
+  "dailyMomentOpenFree": "Gratis-Truhe öffnen",
+  "@dailyMomentOpenFree": {
+    "description": "Daily moment: OpenFree."
+  },
+  "dailyMomentOpenChest": "Für {coins} Münzen öffnen",
+  "@dailyMomentOpenChest": {
+    "description": "Daily moment: OpenChest.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentSpinAction": "Gratis drehen",
+  "@dailyMomentSpinAction": {
+    "description": "Daily moment: SpinAction."
+  },
+  "dailyMomentClose": "Täglichen Moment schließen",
+  "@dailyMomentClose": {
+    "description": "Daily moment: Close."
+  },
+  "dailyMomentToday": "Heute",
+  "@dailyMomentToday": {
+    "description": "Daily moment: Today."
+  },
+  "dailyMomentReady": "Tägliche Belohnungen sind bereit",
+  "@dailyMomentReady": {
+    "description": "Daily moment: Ready."
+  },
+  "dailyMomentComplete": "Heute ist alles erledigt",
+  "@dailyMomentComplete": {
+    "description": "Daily moment: Complete."
+  },
+  "dailyMomentResume": "Täglichen Moment fortsetzen",
+  "@dailyMomentResume": {
+    "description": "Daily moment: Resume."
+  },
+  "dailyMomentMore": "Mehr",
+  "@dailyMomentMore": {
+    "description": "Daily moment: More."
+  },
+  "dailyMomentQuests": "Aufgaben",
+  "@dailyMomentQuests": {
+    "description": "Daily moment: Quests."
+  },
+  "dailyMomentChestLeft": "Tägliche Truhe verfügbar",
+  "@dailyMomentChestLeft": {
+    "description": "Daily moment: ChestLeft."
+  },
+  "dailyMomentSpinLeft": "Gratisdreh verfügbar",
+  "@dailyMomentSpinLeft": {
+    "description": "Daily moment: SpinLeft."
+  },
+  "dailyMomentStreakLeft": "Tägliche Serie verfügbar",
+  "@dailyMomentStreakLeft": {
+    "description": "Daily moment: StreakLeft."
   }
 }

@@ -2972,5 +2972,140 @@
   "economyAiSubmitPromptNotice": "Qualquer pessoa pode ver seu prompt e remixar este papel de parede.",
   "notifPushWallRemixedTitle": "Seu papel de parede foi remixado",
   "notifPushWallRemixedBody": "{remixerName} remixou {wallTitle}.",
-  "notifPushWallRemixedBodyUntitled": "{remixerName} remixou seu papel de parede."
+  "notifPushWallRemixedBodyUntitled": "{remixerName} remixou seu papel de parede.",
+  "dailyMomentTitle": "Momento diário",
+  "@dailyMomentTitle": {
+    "description": "Daily moment: Title."
+  },
+  "dailyMomentStreakTitle": "Sequência diária",
+  "@dailyMomentStreakTitle": {
+    "description": "Daily moment: StreakTitle."
+  },
+  "dailyMomentChestTitle": "Baú diário",
+  "@dailyMomentChestTitle": {
+    "description": "Daily moment: ChestTitle."
+  },
+  "dailyMomentSpinTitle": "Rodada grátis",
+  "@dailyMomentSpinTitle": {
+    "description": "Daily moment: SpinTitle."
+  },
+  "dailyMomentUnavailable": "Esta recompensa já não está disponível hoje.",
+  "@dailyMomentUnavailable": {
+    "description": "Daily moment: Unavailable."
+  },
+  "dailyMomentError": "Não foi possível carregar a recompensa. Tenta novamente.",
+  "@dailyMomentError": {
+    "description": "Daily moment: Error."
+  },
+  "dailyMomentStreakReceipt": "{coins} moedas recebidas · sequência de {days} dias",
+  "@dailyMomentStreakReceipt": {
+    "description": "Daily moment: StreakReceipt.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentCosmetic": "Item cosmético adicionado à tua coleção",
+  "@dailyMomentCosmetic": {
+    "description": "Daily moment: Cosmetic."
+  },
+  "dailyMomentReward": "{coins} moedas recebidas",
+  "@dailyMomentReward": {
+    "description": "Daily moment: Reward.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentChestBody": "Abre o baú de hoje quando quiseres.",
+  "@dailyMomentChestBody": {
+    "description": "Daily moment: ChestBody."
+  },
+  "dailyMomentSpinBody": "A tua rodada grátis está pronta.",
+  "@dailyMomentSpinBody": {
+    "description": "Daily moment: SpinBody."
+  },
+  "dailyMomentBalance": "Saldo: {coins} moedas",
+  "@dailyMomentBalance": {
+    "description": "Daily moment: Balance.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentDone": "Concluído",
+  "@dailyMomentDone": {
+    "description": "Daily moment: Done."
+  },
+  "dailyMomentRetry": "Tentar novamente",
+  "@dailyMomentRetry": {
+    "description": "Daily moment: Retry."
+  },
+  "dailyMomentContinue": "Continuar",
+  "@dailyMomentContinue": {
+    "description": "Daily moment: Continue."
+  },
+  "dailyMomentOpenFree": "Abrir baú grátis",
+  "@dailyMomentOpenFree": {
+    "description": "Daily moment: OpenFree."
+  },
+  "dailyMomentOpenChest": "Abrir por {coins} moedas",
+  "@dailyMomentOpenChest": {
+    "description": "Daily moment: OpenChest.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentSpinAction": "Rodar grátis",
+  "@dailyMomentSpinAction": {
+    "description": "Daily moment: SpinAction."
+  },
+  "dailyMomentClose": "Fechar momento diário",
+  "@dailyMomentClose": {
+    "description": "Daily moment: Close."
+  },
+  "dailyMomentToday": "Hoje",
+  "@dailyMomentToday": {
+    "description": "Daily moment: Today."
+  },
+  "dailyMomentReady": "As recompensas diárias estão prontas",
+  "@dailyMomentReady": {
+    "description": "Daily moment: Ready."
+  },
+  "dailyMomentComplete": "Hoje está concluído",
+  "@dailyMomentComplete": {
+    "description": "Daily moment: Complete."
+  },
+  "dailyMomentResume": "Continuar momento diário",
+  "@dailyMomentResume": {
+    "description": "Daily moment: Resume."
+  },
+  "dailyMomentMore": "Mais",
+  "@dailyMomentMore": {
+    "description": "Daily moment: More."
+  },
+  "dailyMomentQuests": "Missões",
+  "@dailyMomentQuests": {
+    "description": "Daily moment: Quests."
+  },
+  "dailyMomentChestLeft": "Baú diário disponível",
+  "@dailyMomentChestLeft": {
+    "description": "Daily moment: ChestLeft."
+  },
+  "dailyMomentSpinLeft": "Rodada grátis disponível",
+  "@dailyMomentSpinLeft": {
+    "description": "Daily moment: SpinLeft."
+  },
+  "dailyMomentStreakLeft": "Sequência diária disponível",
+  "@dailyMomentStreakLeft": {
+    "description": "Daily moment: StreakLeft."
+  }
 }

@@ -3,11 +3,12 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/features/daily_chest/daily_chest.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
 import 'package:Prism/features/quests/views/widgets/chest_banner.dart';
 import 'package:Prism/features/quests/views/widgets/today_card.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,6 +23,7 @@ void main() {
 
   setUp(() {
     toasts.clear();
+    DailyMomentConfig.enabledOverride = false;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (
       call,
     ) async {
@@ -33,6 +35,7 @@ void main() {
   tearDown(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
     await getIt.reset();
+    DailyMomentConfig.enabledOverride = null;
     EconomyConfig.resetForTest();
   });
 
@@ -85,6 +88,24 @@ void main() {
   testWidgets('shows nothing until the quests load', (tester) async {
     await pumpCard(tester, null);
     expect(find.text(AppLocalizationsEn().economyDailyQuests), findsNothing);
+  });
+
+  testWidgets('daily moment keeps quests quiet with actual reward feedback', (tester) async {
+    DailyMomentConfig.enabledOverride = true;
+    final FakeQuestsRepository repo = await pumpCard(tester, questState());
+    expect(find.text('Quests'), findsOneWidget);
+    expect(resetCountdown(), findsNothing);
+    expect(find.byType(ChestBanner), findsNothing);
+    repo.awards.value = const <QuestAward>[
+      QuestAward(id: 'set_wall', coins: 4, xp: 17),
+      QuestAward(id: 'weekly_set_5', coins: 18, xp: 81),
+    ];
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(AppLocalizationsEn().economyQuestDoneMessage(4, 17)), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyQuestDoneMessage(18, 81)), findsOneWidget);
+    expect(toasts, isEmpty);
+    expect(repo.consumed, 0);
   });
 
   testWidgets('paid: shows the header, the quest tiles, the chest with its price and the weekly tile', (tester) async {

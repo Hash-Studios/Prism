@@ -30,6 +30,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
@@ -160,6 +161,8 @@ class _DownloadTap {
 class _DownloadButtonState extends State<DownloadButton> {
   bool isLoading = false;
   bool _saved = false;
+  int _awardCoins = 0;
+  final Set<String> _shownReceipts = <String>{};
   late String _savedOwner;
   String? _preparedSource;
   String? _authorizedSource;
@@ -198,6 +201,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         oldWidget.indexSource != widget.indexSource ||
         _savedOwner != app_state.prismUser.id) {
       _savedOwner = app_state.prismUser.id;
+      _awardCoins = 0;
       _saved = _isSaved(_currentIdentity);
     }
   }
@@ -235,6 +239,21 @@ class _DownloadButtonState extends State<DownloadButton> {
 
   @override
   Widget build(BuildContext context) {
+    final button = _buildButton(context);
+    if (!DailyMomentConfig.enabled || _awardCoins <= 0 || _savedOwner != app_state.prismUser.id) return button;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        button,
+        Text(
+          context.l10n.economyCoinsEarned(_awardCoins),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.primary),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildButton(BuildContext context) {
     final String? label = widget.label;
     if (label == null && !widget.primary) {
       return CircularMenuButton(
@@ -300,6 +319,26 @@ class _DownloadButtonState extends State<DownloadButton> {
     );
   }
 
+  Future<void> _recordAward(String contentId, _DownloadTap tap) async {
+    if (!_ownerStillMatches(tap)) return;
+    try {
+      final result = await getIt<RecordWallpaperActionUseCase>()(contentId, WallpaperAction.download);
+      final receipt = result.data;
+      if (mounted &&
+          tap.identity == _currentIdentity &&
+          tap.ownerId == app_state.prismUser.id &&
+          receipt != null &&
+          receipt.coins > 0 &&
+          receipt.receiptId != null &&
+          _shownReceipts.add(receipt.receiptId!)) {
+        setState(() => _awardCoins = receipt.coins);
+        unawaited(CoinsService.instance.refreshBalance().catchError((Object _) => app_state.prismUser.coins));
+      }
+    } catch (error, stackTrace) {
+      logger.w('Download action record failed after media was saved', error: error, stackTrace: stackTrace);
+    }
+  }
+
   Future<void> _handleTap({bool playTapHaptic = true}) async {
     final AppLocalizations l10n = context.l10n;
     if (isLoading) {
@@ -315,7 +354,10 @@ class _DownloadButtonState extends State<DownloadButton> {
     if (playTapHaptic) PrismHaptics.tap();
 
     if (mounted) {
-      setState(() => isLoading = true);
+      setState(() {
+        isLoading = true;
+        _awardCoins = 0;
+      });
     }
     try {
       _preparedSource = null;
@@ -989,11 +1031,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     if (mounted && tap.identity == _currentIdentity) setState(() => _saved = true);
     final String recordedContentId = tap.contentId?.trim() ?? '';
     if (!isBundledStarter && recordedContentId.isNotEmpty) {
-      try {
-        unawaited(getIt<RecordWallpaperActionUseCase>()(recordedContentId, WallpaperAction.download));
-      } catch (e, stackTrace) {
-        logger.w('Download action record failed after media was saved', error: e, stackTrace: stackTrace);
-      }
+      unawaited(_recordAward(recordedContentId, tap));
     }
     try {
       // This async save may finish after the owning page is disposed. Keep the

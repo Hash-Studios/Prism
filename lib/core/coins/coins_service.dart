@@ -417,6 +417,8 @@ class CoinsService with WidgetsBindingObserver {
   /// Set only when a daily claim really paid out. The UI shows the daily sheet, then calls [consumeLastClaim].
   final ValueNotifier<StreakClaimResult?> lastClaimNotifier = ValueNotifier<StreakClaimResult?>(null);
   String? _pendingClaimUserId;
+  String? _pendingClaimLocalDay;
+  int? _pendingClaimOffsetMinutes;
   final Set<(String, String)> _publishedClaimDays = <(String, String)>{};
   String? _pendingFreezeUserId;
   String? _pendingFreezeRequestId;
@@ -528,13 +530,17 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   StreakClaimResult? get pendingClaimForCurrentUser {
-    if (!_canMutateCoins() || _pendingClaimUserId != app_state.prismUser.id) consumeLastClaim();
+    final offset = _pendingClaimOffsetMinutes;
+    final bool stale = offset != null && _pendingClaimLocalDay != _offsetDayKey(DateTime.now().toUtc(), offset);
+    if (!_canMutateCoins() || _pendingClaimUserId != app_state.prismUser.id || stale) consumeLastClaim();
     return lastClaimNotifier.value;
   }
 
   void consumeLastClaim() {
     lastClaimNotifier.value = null;
     _pendingClaimUserId = null;
+    _pendingClaimLocalDay = null;
+    _pendingClaimOffsetMinutes = null;
   }
 
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
@@ -1838,6 +1844,8 @@ class CoinsService with WidgetsBindingObserver {
           analytics.track(event);
         }
         _pendingClaimUserId = userId;
+        _pendingClaimLocalDay = todayLocalKey;
+        _pendingClaimOffsetMinutes = effectiveTimezoneOffset;
         lastClaimNotifier.value = result;
       }
 

@@ -633,3 +633,12 @@ test("a folder the repair trigger updates after the owner query is still deleted
   assert.deepEqual(await deleteAccount.run(request), {ok: true});
   assert.equal(store.has("folders/one"), false);
 });
+
+
+test("wall action receipts and event children are removed after the deletion barrier", async (t) => {
+  const log = fake(t);
+  await call();
+  const cleanup = log.indexOf("recursive:usersv2/u1/wallActionReceipts");
+  assert.ok(cleanup > log.indexOf("barrier:creatorDeletionState/u1"));
+  assert.ok(cleanup < log.indexOf("anonymize"));
+});

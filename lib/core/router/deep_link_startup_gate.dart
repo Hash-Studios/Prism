@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/router/push_tap_startup.dart';
+import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
 import 'package:auto_route/auto_route.dart';
 
 /// Reports when startup permits destination resolution and navigation.
@@ -57,6 +58,7 @@ class DeepLinkStartupGate {
   void _onRouterChanged() => scheduleMicrotask(_flush);
 
   void _flush() {
+    DailyMomentPresentationGate.instance.bootstrapReady = isReady;
     if (_disposed || !_bootstrapCompleted) return;
     for (final Completer<bool> waiter in _bootstrapWaiters) {
       waiter.complete(true);

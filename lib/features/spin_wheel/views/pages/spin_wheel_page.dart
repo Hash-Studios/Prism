@@ -9,6 +9,8 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/spin_wheel/biz/wheel_machine_controller.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
+import 'package:Prism/features/daily_flow/views/daily_moment_page.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_motion.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/coin_burst.dart';
@@ -33,6 +35,7 @@ typedef SpinFunction = Future<SpinWheelResult> Function({required int maxCost});
 
 /// Opens the spin machine over everything, including the bottom bar. The route fades in and scales up from 0.96.
 Future<void> showSpinWheel(BuildContext context) {
+  if (DailyMomentConfig.enabled) return showDailyMoment(context, requestedStep: DailyMomentStep.spin);
   final Duration duration = context.motion(PrismDurations.base);
   return Navigator.of(context, rootNavigator: true).push<void>(
     PageRouteBuilder<void>(

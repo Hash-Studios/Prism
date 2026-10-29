@@ -5,12 +5,13 @@ import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/coins/economy_state.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
 import 'package:Prism/features/quests/domain/quest_board.dart';
 import 'package:Prism/features/quests/views/widgets/chest_banner.dart';
 import 'package:Prism/features/quests/views/widgets/quest_tile.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -77,6 +78,7 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
         listener: (context, state) {
           final int coins = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.coins);
           final int xp = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.xp);
+          if (DailyMomentConfig.enabled) return;
           toasts.success(context.l10n.economyQuestDoneMessage(coins, xp));
           context.read<QuestsBloc>().add(const QuestsEvent.awardsShown());
         },
@@ -96,7 +98,7 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
                   l10n: context.l10n,
                 );
                 if (board == null) return const SizedBox.shrink();
-                return _TodayView(board: board, now: now, onOpenSpin: widget.onOpenSpin);
+                return _TodayView(board: board, now: now, onOpenSpin: widget.onOpenSpin, awards: state.awards);
               },
             );
           },
@@ -107,8 +109,9 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
 }
 
 class _TodayView extends StatelessWidget {
-  const _TodayView({required this.board, required this.now, required this.onOpenSpin});
+  const _TodayView({required this.board, required this.now, required this.onOpenSpin, required this.awards});
 
+  final List<QuestAward> awards;
   final QuestBoard board;
   final DateTime now;
   final VoidCallback? onOpenSpin;
@@ -119,19 +122,33 @@ class _TodayView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _Header(untilReset: nextDailyReset(now).difference(now)),
+        if (DailyMomentConfig.enabled)
+          Text(context.l10n.dailyMomentQuests, style: PrismTextStyles.sectionTitle(context))
+        else
+          _Header(untilReset: nextDailyReset(now).difference(now)),
+        if (DailyMomentConfig.enabled)
+          for (final QuestAward award in awards)
+            Padding(
+              padding: const EdgeInsets.only(top: PrismSpace.xs),
+              child: Text(
+                context.l10n.economyQuestDoneMessage(award.coins, award.xp),
+                style: PrismTextStyles.caption(context),
+              ),
+            ),
         const SizedBox(height: PrismSpace.sm),
         for (final QuestTileModel tile in board.daily) ...<Widget>[
           QuestTile(key: ValueKey<String>(tile.id), quest: tile),
           const SizedBox(height: PrismSpace.sm),
         ],
-        ChestBanner(board: board, onOpenSpin: onOpenSpin),
+        if (!DailyMomentConfig.enabled) ChestBanner(board: board, onOpenSpin: onOpenSpin),
         if (weekly != null) ...<Widget>[
           const SizedBox(height: PrismSpace.md),
           QuestTile(
             key: ValueKey<String>(weekly.id),
             quest: weekly,
-            endsIn: formatCountdown(context.l10n, nextWeeklyReset(now).difference(now)),
+            endsIn: DailyMomentConfig.enabled
+                ? null
+                : formatCountdown(context.l10n, nextWeeklyReset(now).difference(now)),
           ),
         ],
       ],

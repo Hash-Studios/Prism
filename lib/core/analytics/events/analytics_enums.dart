@@ -431,6 +431,14 @@ enum WallRequestFillerValue {
   String get wireValue => _snakeCase(name);
 }
 
+enum DailyMomentStepValue {
+  streak,
+  chest,
+  spin;
+
+  String get wireValue => name;
+}
+
 String _snakeCase(String name) => name.replaceAllMapped(RegExp('[A-Z]'), (Match m) => '_${m[0]!.toLowerCase()}');
 
 PaywallResultValue paywallResultValueFromSdkName(String rawResult) {
