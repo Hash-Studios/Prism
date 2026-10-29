@@ -51,6 +51,7 @@ Automatic presentation waits until an active deep-link target is left.
 | Chest banner and `/daily-chest` | Daily moment at the chest step | Existing chest page |
 | Free spin and `/spin-wheel` | Daily moment at the spin step | Existing wheel page |
 | Paid spin | Explicit wheel entry under More | Existing wheel entry |
+| New `/daily-moment` link | Daily moment from the first available step | Rewards |
 | Rank, creator progress, freeze, badges, collection, activity, and links | More group below Earn and Spend | Existing order |
 
 ## Action receipts
@@ -74,7 +75,19 @@ Deploy the callable update before enabling the feature in a release. Deployment 
 
 The feature is not ready for release until both mobile platforms have current build proof.
 The signed-in flow needs screenshots and a clip for the shared sheet, reward feedback, and flag-off fallback.
-An older QA app on the Android emulator does not verify this feature.
+The reviewed debug build starts on `Prism_QA_API36` (`emulator-5580`). Rewards stops at sign-in.
+The verification skill requires a human to complete Google or Apple sign-in.
+This Linux host has no iOS Simulator tooling. The required signed-in screenshots and clip are still pending.
 
 Keep `daily_moment_v1` off in release until the callable update is deployed and the mobile checks pass.
 The flag's debug default does not enable it for release builds.
+
+## Review
+
+The independent `gpt-6-astra` review fixed six issues and added regression tests.
+Receipt writes now stop during account deletion, and deletion removes their records.
+Deep-link suppression ends when its target closes. Today refreshes claim eligibility and pending receipts.
+Account changes clear the visible daily receipt and stop action retries. Late streak replies use the server claim day.
+
+The full Functions suite passed with 2,199 tests passed, 16 skipped, and no failures.
+The reviewed Android APK built with both skipped Firebase initialization and the existing dev configuration.
