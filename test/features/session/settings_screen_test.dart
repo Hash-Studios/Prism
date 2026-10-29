@@ -16,6 +16,7 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
@@ -649,6 +650,31 @@ void main() {
     expect(getIt<SettingsLocalDataSource>().get<int>('WHcategories', defaultValue: 100), 110);
     verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
     expect(switchOf(tester, 'Show anime wallpapers').value, isTrue);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('the AI switch is on by default, stores false when turned off and shows its footnote', (tester) async {
+    useTallSurface(tester);
+    final bloc = _MockCategoryFeedBloc();
+    when(() => bloc.state).thenReturn(CategoryFeedState.initial());
+    final revision = personalizedFeedSettingsRevision.value;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: BlocProvider<CategoryFeedBloc>.value(value: bloc, child: const SettingsScreen()),
+      ),
+    );
+
+    expect(switchOf(tester, 'Show AI-generated wallpapers').value, isTrue);
+    expect(find.text('Your own uploads and favourites still show when this is off.'), findsOneWidget);
+
+    await tester.tap(find.text('Show AI-generated wallpapers'));
+    await tester.pump();
+
+    expect(AiContentFilter.showsAi(getIt<SettingsLocalDataSource>()), isFalse);
+    expect(personalizedFeedSettingsRevision.value, revision + 1);
+    verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
+    expect(switchOf(tester, 'Show AI-generated wallpapers').value, isFalse);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   test('storage sizes read in B, KB, MB and GB', () {
@@ -1374,7 +1400,9 @@ void main() {
       for (final old in <String>['Clear Cache', 'Clear all Downloads', 'Delete Account', 'Logout', 'Review Status']) {
         expect(find.text(old), findsNothing, reason: old);
       }
-      expect(find.textContaining('walls'), findsNothing);
+      // The AI row subtitle is the one fixed copy that says "walls".
+      expect(find.textContaining('walls'), findsOneWidget);
+      expect(find.text('Turn off to see only human-made walls'), findsOneWidget);
     });
   });
 

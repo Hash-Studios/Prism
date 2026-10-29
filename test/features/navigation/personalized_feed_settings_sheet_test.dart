@@ -102,6 +102,7 @@ void main() {
   late _FakeFirebaseRemoteConfigPlatform remoteConfig;
   List<String>? savedInterests;
   FeedMix? savedMix;
+  bool? savedHideAi;
 
   setUpAll(() async {
     registerFallbackValue(const SaveInterestsParams(interests: <String>[]));
@@ -122,6 +123,7 @@ void main() {
     store = TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore()));
     savedInterests = null;
     savedMix = null;
+    savedHideAi = null;
   });
 
   /// Opens [sheet] in a Prism sheet, the way the app does. PrismSheetBody needs the sheet around it.
@@ -170,9 +172,10 @@ void main() {
         initialInterests: initial,
         initialFeedMix: FeedMix.balanced,
         tasteSignals: store,
-        onSave: (List<String> interests, FeedMix mix) async {
+        onSave: (List<String> interests, FeedMix mix, bool hideAi) async {
           savedInterests = interests;
           savedMix = mix;
+          savedHideAi = hideAi;
           return true;
         },
       ),
@@ -277,6 +280,37 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('the Hide AI chip is off by default, saves on, and Reset turns it off again', (tester) async {
+    await pumpSheet(tester);
+    await tester.ensureVisible(find.text('Hide AI'));
+    bool selected() =>
+        tester
+            .getSemantics(find.bySemanticsLabel('Hide AI'))
+            .getSemanticsData()
+            .flagsCollection
+            .isSelected
+            .toBoolOrNull() ==
+        true;
+    final SemanticsHandle handle = tester.ensureSemantics();
+    expect(selected(), isFalse);
+
+    await tester.tap(find.text('Hide AI'));
+    await tester.pumpAndSettle();
+    expect(selected(), isTrue);
+
+    await tester.tap(find.text('Reset'));
+    await tester.pumpAndSettle();
+    expect(selected(), isFalse);
+
+    await tester.tap(find.text('Hide AI'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+    expect(savedHideAi, isTrue);
+    handle.dispose();
+  });
+
   testWidgets('Save needs at least three interests', (tester) async {
     await pumpSheet(tester);
     expect(find.text('2 picked'), findsOneWidget);
@@ -311,7 +345,7 @@ void main() {
         initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
         initialFeedMix: FeedMix.balanced,
         tasteSignals: store,
-        onSave: (List<String> _, FeedMix _) async => false,
+        onSave: (List<String> _, FeedMix _, bool _) async => false,
       ),
     );
 
@@ -332,7 +366,7 @@ void main() {
         initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
         initialFeedMix: FeedMix.balanced,
         tasteSignals: store,
-        onSave: (_, _) async => throw StateError('save failed'),
+        onSave: (_, _, _) async => throw StateError('save failed'),
       ),
     );
     await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
@@ -410,7 +444,7 @@ void main() {
           initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
           initialFeedMix: FeedMix.balanced,
           tasteSignals: store,
-          onSave: (_, _) async => true,
+          onSave: (_, _, _) async => true,
         ),
         theme: ThemeData(colorScheme: scheme),
       );
@@ -479,7 +513,7 @@ void main() {
                       initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
                       initialFeedMix: FeedMix.balanced,
                       tasteSignals: store,
-                      onSave: (_, _) async => true,
+                      onSave: (_, _, _) async => true,
                     ),
                   ),
                   child: const Text('Open settings'),

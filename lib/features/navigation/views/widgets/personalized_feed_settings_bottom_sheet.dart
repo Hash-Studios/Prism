@@ -14,6 +14,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/navigation/views/widgets/tune_feed_tiles.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart';
@@ -23,6 +24,7 @@ import 'package:Prism/features/taste_quiz/taste_quiz.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 final ValueNotifier<int> personalizedFeedSettingsRevision = ValueNotifier<int>(0);
 
@@ -48,6 +50,14 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context) async
     selected = PersonalizedInterestsCatalog.defaultSelection(catalog).toSet();
   }
   final FeedMix currentMix = FeedMix.parse(settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: ''));
+  final bool hideAi = !AiContentFilter.showsAi(settingsLocal);
+  // Read before the sheet opens: the sheet's own context may not see the bloc, and the tests do not provide one.
+  CategoryFeedBloc? feedBloc;
+  try {
+    feedBloc = context.read<CategoryFeedBloc>();
+  } on ProviderNotFoundException {
+    feedBloc = null;
+  }
 
   await showPrismSheet<void>(
     context,
@@ -56,12 +66,20 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context) async
       catalog: catalog,
       initialInterests: selected,
       initialFeedMix: currentMix,
-      onSave: (List<String> interests, FeedMix feedMix) async {
+      initialHideAi: hideAi,
+      onSave: (List<String> interests, FeedMix feedMix, bool hideAiNext) async {
         final bool persisted = await _persistInterests(settingsLocal, interests);
         if (!persisted) {
           return false;
         }
         await settingsLocal.set(personalizedFeedMixLocalKey, feedMix.name);
+        if (hideAiNext != hideAi) {
+          await setShowAiWallpapers(settingsLocal, !hideAiNext);
+          feedBloc?.add(const CategoryFeedEvent.refreshRequested());
+          unawaited(
+            analytics.track(SettingsToggleChangedEvent(setting: SettingValue.aiWallpapers, value: !hideAiNext)),
+          );
+        }
         return true;
       },
     ),
@@ -85,6 +103,7 @@ class PersonalizedFeedSettingsSheet extends StatefulWidget {
     required this.initialInterests,
     required this.initialFeedMix,
     required this.onSave,
+    this.initialHideAi = false,
     this.tasteSignals,
     this.tasteQuiz,
     this.openRetake = openTasteQuizRetake,
@@ -93,7 +112,8 @@ class PersonalizedFeedSettingsSheet extends StatefulWidget {
   final List<PersonalizedInterest> catalog;
   final Set<String> initialInterests;
   final FeedMix initialFeedMix;
-  final Future<bool> Function(List<String> interests, FeedMix feedMix) onSave;
+  final bool initialHideAi;
+  final Future<bool> Function(List<String> interests, FeedMix feedMix, bool hideAi) onSave;
 
   /// Defaults to the app-wide store.
   final TasteSignalStore? tasteSignals;
@@ -114,6 +134,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
   late TasteProfile _learned;
   late Set<String> _selectedInterests;
   late FeedMix _feedMix;
+  late bool _hideAi;
   bool _saving = false;
   bool _loadingQuiz = false;
 
@@ -122,6 +143,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
     super.initState();
     _selectedInterests = {...widget.initialInterests};
     _feedMix = widget.initialFeedMix;
+    _hideAi = widget.initialHideAi;
     _learned = _readLearned();
   }
 
@@ -167,6 +189,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
     setState(() {
       _selectedInterests = PersonalizedInterestsCatalog.defaultSelection(widget.catalog).toSet();
       _feedMix = FeedMix.balanced;
+      _hideAi = false;
     });
   }
 
@@ -188,7 +211,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
     if (!_canSave) return;
     setState(() => _saving = true);
     try {
-      final bool saved = await widget.onSave(_selectedInterests.toList(growable: false), _feedMix);
+      final bool saved = await widget.onSave(_selectedInterests.toList(growable: false), _feedMix, _hideAi);
       if (!mounted) return;
       if (saved) {
         personalizedFeedSettingsRevision.value += 1;
@@ -340,6 +363,16 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
             FeedMix.balanced => context.l10n.wallpaperFeedMixBalancedDescription,
             FeedMix.adventurous => context.l10n.wallpaperFeedMixAdventurousDescription,
           }, style: PrismTextStyles.body(context)),
+        ),
+      ),
+      const SizedBox(height: PrismSpace.md),
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: PrismChip(
+          label: context.l10n.wallpaperFeedHideAi,
+          icon: Icons.auto_awesome_rounded,
+          selected: _hideAi,
+          onTap: () => setState(() => _hideAi = !_hideAi),
         ),
       ),
     ];

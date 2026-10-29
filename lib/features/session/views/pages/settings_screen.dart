@@ -19,6 +19,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
@@ -30,7 +31,7 @@ import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/ios_widgets/views/widget_guide_sheet.dart';
 import 'package:Prism/features/library/views/pages/library_screen.dart' show LibraryTab;
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart'
-    show personalizedFeedSettingsRevision;
+    show personalizedFeedSettingsRevision, setShowAiWallpapers;
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
@@ -136,6 +137,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   late bool _showAnime;
   late bool _showSketchy;
+  late bool _showAi;
   late String _defaultApplyTarget;
   bool _haptics = PrismHaptics.enabled;
   bool _lowData = LowDataMode.enabled.value;
@@ -155,6 +157,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _viewedStore.addListener(_onViewedStoreChanged);
     _showAnime = animeEnabledFromCategories(_settingsLocal.get<int>('WHcategories', defaultValue: 100));
     _showSketchy = _settingsLocal.get<int>('WHpurity', defaultValue: 100) == 110;
+    _showAi = AiContentFilter.showsAi(_settingsLocal);
     final String storedTarget = _settingsLocal.get<String>(PersistenceKeys.defaultApplyTarget, defaultValue: 'ask');
     _defaultApplyTarget = _applyTargetKeys.contains(storedTarget) ? storedTarget : 'ask';
     _loadStorageStats();
@@ -234,7 +237,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     unawaited(analytics.track(SettingsRowTappedEvent(row: row)));
   }
 
-  Widget _group(String title, List<Widget> rows) {
+  Widget _group(String title, List<Widget> rows, {String? footnote}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -244,6 +247,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, PrismSpace.xl, 0, PrismSpace.xs),
         ),
         PrismGroup(children: rows),
+        if (footnote != null)
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, PrismSpace.xs, PrismSpace.xs, 0),
+            child: Text(footnote, style: PrismTextStyles.caption(context)),
+          ),
       ],
     );
   }
@@ -423,6 +431,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() => _showAnime = value);
         _applyContentFilter('WHcategories', categoriesForAnime(value));
         _trackSettingsToggle(SettingValue.animeWallpapers, value);
+      },
+    ),
+    PrismSwitchRow(
+      icon: Icons.auto_awesome_rounded,
+      title: context.l10n.accountShowAiWallpapers,
+      subtitle: context.l10n.accountShowAiWallpapersSubtitle,
+      value: _showAi,
+      onChanged: (value) async {
+        setState(() => _showAi = value);
+        _trackSettingsToggle(SettingValue.aiWallpapers, value);
+        await setShowAiWallpapers(_settingsLocal, value);
+        if (!mounted) return;
+        context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.refreshRequested());
       },
     ),
     // App Store review: no sketchy content toggle on iOS, purity is forced SFW-only.
@@ -1023,7 +1044,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _group(context.l10n.accountAppearance, _appearanceRows()),
               if (_isAndroid || _iosShortcuts || _iosWidgets)
                 _group(context.l10n.accountPersonalise, _personaliseRows()),
-              _group(context.l10n.accountContent, _contentRows()),
+              _group(
+                context.l10n.accountContent,
+                _contentRows(),
+                footnote: context.l10n.accountShowAiWallpapersFootnote,
+              ),
               _group(context.l10n.accountNotifications, _notificationRows()),
               _group(context.l10n.accountStorage, _storageRows()),
               _group(context.l10n.accountPurchases, _purchaseRows()),
