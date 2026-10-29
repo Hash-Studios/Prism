@@ -11138,4 +11138,169 @@ class AppLocalizationsEn extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName remixed your wallpaper.';
   }
+
+  @override
+  String get wallMetadataDescription => 'Description';
+
+  @override
+  String get wallMetadataEdit => 'Edit details';
+
+  @override
+  String get wallResubmitAction => 'Fix and resubmit';
+
+  @override
+  String get wallResubmitChooseImage => 'Choose image';
+
+  @override
+  String get wallResubmitImageMissing => 'The original image is no longer available. Choose it again to keep editing.';
+
+  @override
+  String get wallResubmitImageKept => 'Original image ready';
+
+  @override
+  String get wallResubmitTitle => 'Fix your upload';
+
+  @override
+  String get wallUploadUseLastDetails => 'Use last details';
+
+  @override
+  String get wallUploadLastDetailsUnavailable => 'No previous details on this device.';
+
+  @override
+  String get wallUploadWithdraw => 'Withdraw upload';
+
+  @override
+  String get wallUploadWithdrawTitle => 'Withdraw this upload?';
+
+  @override
+  String get wallUploadWithdrawBody => 'This removes the upload from review and deletes its uploaded files.';
+
+  @override
+  String get wallUploadWithdrawn => 'Upload withdrawn';
+
+  @override
+  String get wallUploadDeleteHistory => 'Delete from history';
+
+  @override
+  String get wallMetadataInvalid => 'Check the text and tags, then try again.';
+
+  @override
+  String get wallUploadOwnerChanged => 'Your account changed. Open this upload again.';
+
+  @override
+  String get wallResubmitLimit => 'This wallpaper has reached its three linked resubmissions.';
+
+  @override
+  String get wallResubmitUnsupported => 'Choose the original image again. AI source details cannot be reused.';
+
+  @override
+  String get wallResubmitUnavailable => 'Unable to load this rejected upload. Try again.';
+
+  @override
+  String get wallMetadataEditDetails => 'Edit details';
+
+  @override
+  String get wallMetadataApprovedHelp =>
+      'Change the title, description and tags. The image and category stay the same.';
+
+  @override
+  String get wallMetadataPendingHelp => 'Update these details before your wallpaper is reviewed.';
+
+  @override
+  String get wallMetadataSave => 'Save details';
+
+  @override
+  String get wallMetadataSaved => 'Details saved';
+
+  @override
+  String get wallMetadataDiscardTitle => 'Discard changes?';
+
+  @override
+  String get wallMetadataDiscardBody => 'Your unsaved details will be lost.';
+
+  @override
+  String get wallMetadataDiscard => 'Discard changes';
+
+  @override
+  String get wallMetadataReload => 'Reload details';
+
+  @override
+  String get wallMetadataReloadTitle => 'Reload current details?';
+
+  @override
+  String get wallMetadataReloadBody => 'This replaces your unsaved details with the current version.';
+
+  @override
+  String get wallMetadataConflict =>
+      'These details changed elsewhere. Your edits are still here. Reload the current details before saving.';
+
+  @override
+  String get wallMetadataStatusChanged =>
+      'This wallpaper is no longer in the same review state. Your edits have not been saved.';
+
+  @override
+  String get wallMetadataMissing => 'This wallpaper is no longer available. Your edits have not been saved.';
+
+  @override
+  String get wallMetadataDenied => 'You do not have permission to edit this wallpaper.';
+
+  @override
+  String get wallMetadataSignedOut => 'Sign in again to edit this wallpaper.';
+
+  @override
+  String get wallMetadataDailyLimit => 'You have reached today\'s edit limit. Try again tomorrow.';
+
+  @override
+  String get wallMetadataUnavailable => 'Unable to save details. Check your connection and try again.';
+
+  @override
+  String get wallMetadataLoadFailed => 'Unable to load details';
+
+  @override
+  String get wallMetadataHistory => 'Edit history';
+
+  @override
+  String get wallMetadataHistoryEmpty => 'No metadata edits yet';
+
+  @override
+  String get wallMetadataHistoryEmptyBody => 'Changes to the approved title, description and tags appear here.';
+
+  @override
+  String get wallMetadataHistoryFailed => 'Unable to load edit history';
+
+  @override
+  String get wallMetadataBefore => 'Before';
+
+  @override
+  String get wallMetadataAfter => 'After';
+
+  @override
+  String get wallMetadataRevert => 'Revert edit';
+
+  @override
+  String get wallMetadataRevertTitle => 'Revert this edit?';
+
+  @override
+  String get wallMetadataRevertBody =>
+      'Restore only the previous title, description and tags shown here. The image and review state will not change.';
+
+  @override
+  String get wallMetadataReverted => 'Edit reverted';
+
+  @override
+  String get wallMetadataLoadMore => 'Load more edits';
+
+  @override
+  String get wallMetadataAbsent => 'Not set';
+
+  @override
+  String wallMetadataResubmitted(int attempt) {
+    return 'Resubmitted · attempt $attempt of 3';
+  }
+
+  @override
+  String get wallMetadataPreviousReason => 'Previous rejection reason';
+
+  @override
+  String get wallMetadataContextUnavailable => 'Resubmission details unavailable';
 }

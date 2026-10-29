@@ -11303,4 +11303,175 @@ class AppLocalizationsDe extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName hat dein Hintergrundbild geremixt.';
   }
+
+  @override
+  String get wallMetadataDescription => 'Beschreibung';
+
+  @override
+  String get wallMetadataEdit => 'Details bearbeiten';
+
+  @override
+  String get wallResubmitAction => 'Korrigieren und erneut einreichen';
+
+  @override
+  String get wallResubmitChooseImage => 'Bild auswählen';
+
+  @override
+  String get wallResubmitImageMissing =>
+      'Das Originalbild ist nicht mehr verfügbar. Wähle es erneut aus, um weiter zu bearbeiten.';
+
+  @override
+  String get wallResubmitImageKept => 'Originalbild bereit';
+
+  @override
+  String get wallResubmitTitle => 'Upload korrigieren';
+
+  @override
+  String get wallUploadUseLastDetails => 'Letzte Angaben verwenden';
+
+  @override
+  String get wallUploadLastDetailsUnavailable => 'Auf diesem Gerät gibt es keine vorherigen Angaben.';
+
+  @override
+  String get wallUploadWithdraw => 'Upload zurückziehen';
+
+  @override
+  String get wallUploadWithdrawTitle => 'Diesen Upload zurückziehen?';
+
+  @override
+  String get wallUploadWithdrawBody =>
+      'Der Upload wird aus der Prüfung entfernt und seine hochgeladenen Dateien werden gelöscht.';
+
+  @override
+  String get wallUploadWithdrawn => 'Upload zurückgezogen';
+
+  @override
+  String get wallUploadDeleteHistory => 'Aus dem Verlauf löschen';
+
+  @override
+  String get wallMetadataInvalid => 'Prüfe den Text und die Tags und versuche es erneut.';
+
+  @override
+  String get wallUploadOwnerChanged => 'Dein Konto hat sich geändert. Öffne diesen Upload erneut.';
+
+  @override
+  String get wallResubmitLimit =>
+      'Für dieses Hintergrundbild wurden bereits drei verknüpfte erneute Einreichungen erreicht.';
+
+  @override
+  String get wallResubmitUnsupported =>
+      'Wähle das Originalbild erneut aus. Angaben zur KI-Quelle können nicht wiederverwendet werden.';
+
+  @override
+  String get wallResubmitUnavailable => 'Dieser abgelehnte Upload konnte nicht geladen werden. Versuche es erneut.';
+
+  @override
+  String get wallMetadataEditDetails => 'Details bearbeiten';
+
+  @override
+  String get wallMetadataApprovedHelp => 'Ändere Titel, Beschreibung und Tags. Bild und Kategorie bleiben gleich.';
+
+  @override
+  String get wallMetadataPendingHelp => 'Aktualisiere diese Angaben, bevor dein Hintergrundbild geprüft wird.';
+
+  @override
+  String get wallMetadataSave => 'Details speichern';
+
+  @override
+  String get wallMetadataSaved => 'Details gespeichert';
+
+  @override
+  String get wallMetadataDiscardTitle => 'Änderungen verwerfen?';
+
+  @override
+  String get wallMetadataDiscardBody => 'Deine ungespeicherten Angaben gehen verloren.';
+
+  @override
+  String get wallMetadataDiscard => 'Änderungen verwerfen';
+
+  @override
+  String get wallMetadataReload => 'Details neu laden';
+
+  @override
+  String get wallMetadataReloadTitle => 'Aktuelle Details neu laden?';
+
+  @override
+  String get wallMetadataReloadBody => 'Deine ungespeicherten Angaben werden durch die aktuelle Version ersetzt.';
+
+  @override
+  String get wallMetadataConflict =>
+      'Diese Angaben wurden anderswo geändert. Deine Änderungen sind noch vorhanden. Lade die aktuellen Angaben vor dem Speichern neu.';
+
+  @override
+  String get wallMetadataStatusChanged =>
+      'Der Prüfstatus dieses Hintergrundbilds hat sich geändert. Deine Änderungen wurden nicht gespeichert.';
+
+  @override
+  String get wallMetadataMissing =>
+      'Dieses Hintergrundbild ist nicht mehr verfügbar. Deine Änderungen wurden nicht gespeichert.';
+
+  @override
+  String get wallMetadataDenied => 'Du hast keine Berechtigung, dieses Hintergrundbild zu bearbeiten.';
+
+  @override
+  String get wallMetadataSignedOut => 'Melde dich erneut an, um dieses Hintergrundbild zu bearbeiten.';
+
+  @override
+  String get wallMetadataDailyLimit => 'Du hast das heutige Bearbeitungslimit erreicht. Versuche es morgen erneut.';
+
+  @override
+  String get wallMetadataUnavailable =>
+      'Details konnten nicht gespeichert werden. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String get wallMetadataLoadFailed => 'Details konnten nicht geladen werden';
+
+  @override
+  String get wallMetadataHistory => 'Bearbeitungsverlauf';
+
+  @override
+  String get wallMetadataHistoryEmpty => 'Noch keine Änderungen an den Details';
+
+  @override
+  String get wallMetadataHistoryEmptyBody =>
+      'Änderungen am freigegebenen Titel, der Beschreibung und den Tags erscheinen hier.';
+
+  @override
+  String get wallMetadataHistoryFailed => 'Bearbeitungsverlauf konnte nicht geladen werden';
+
+  @override
+  String get wallMetadataBefore => 'Vorher';
+
+  @override
+  String get wallMetadataAfter => 'Nachher';
+
+  @override
+  String get wallMetadataRevert => 'Änderung rückgängig machen';
+
+  @override
+  String get wallMetadataRevertTitle => 'Diese Änderung rückgängig machen?';
+
+  @override
+  String get wallMetadataRevertBody =>
+      'Stelle nur den hier angezeigten vorherigen Titel, die Beschreibung und die Tags wieder her. Bild und Prüfstatus bleiben unverändert.';
+
+  @override
+  String get wallMetadataReverted => 'Änderung rückgängig gemacht';
+
+  @override
+  String get wallMetadataLoadMore => 'Weitere Änderungen laden';
+
+  @override
+  String get wallMetadataAbsent => 'Nicht festgelegt';
+
+  @override
+  String wallMetadataResubmitted(int attempt) {
+    return 'Erneut eingereicht · Versuch $attempt von 3';
+  }
+
+  @override
+  String get wallMetadataPreviousReason => 'Vorheriger Ablehnungsgrund';
+
+  @override
+  String get wallMetadataContextUnavailable => 'Details zur erneuten Einreichung nicht verfügbar';
 }

@@ -17892,6 +17892,324 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{remixerName} remixed your wallpaper.'**
   String notifPushWallRemixedBodyUntitled(String remixerName);
+
+  /// No description provided for @wallMetadataDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get wallMetadataDescription;
+
+  /// No description provided for @wallMetadataEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit details'**
+  String get wallMetadataEdit;
+
+  /// No description provided for @wallResubmitAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix and resubmit'**
+  String get wallResubmitAction;
+
+  /// No description provided for @wallResubmitChooseImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose image'**
+  String get wallResubmitChooseImage;
+
+  /// No description provided for @wallResubmitImageMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The original image is no longer available. Choose it again to keep editing.'**
+  String get wallResubmitImageMissing;
+
+  /// No description provided for @wallResubmitImageKept.
+  ///
+  /// In en, this message translates to:
+  /// **'Original image ready'**
+  String get wallResubmitImageKept;
+
+  /// No description provided for @wallResubmitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix your upload'**
+  String get wallResubmitTitle;
+
+  /// No description provided for @wallUploadUseLastDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Use last details'**
+  String get wallUploadUseLastDetails;
+
+  /// No description provided for @wallUploadLastDetailsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No previous details on this device.'**
+  String get wallUploadLastDetailsUnavailable;
+
+  /// No description provided for @wallUploadWithdraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw upload'**
+  String get wallUploadWithdraw;
+
+  /// No description provided for @wallUploadWithdrawTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw this upload?'**
+  String get wallUploadWithdrawTitle;
+
+  /// No description provided for @wallUploadWithdrawBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the upload from review and deletes its uploaded files.'**
+  String get wallUploadWithdrawBody;
+
+  /// No description provided for @wallUploadWithdrawn.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload withdrawn'**
+  String get wallUploadWithdrawn;
+
+  /// No description provided for @wallUploadDeleteHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete from history'**
+  String get wallUploadDeleteHistory;
+
+  /// No description provided for @wallMetadataInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the text and tags, then try again.'**
+  String get wallMetadataInvalid;
+
+  /// No description provided for @wallUploadOwnerChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account changed. Open this upload again.'**
+  String get wallUploadOwnerChanged;
+
+  /// No description provided for @wallResubmitLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'This wallpaper has reached its three linked resubmissions.'**
+  String get wallResubmitLimit;
+
+  /// No description provided for @wallResubmitUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the original image again. AI source details cannot be reused.'**
+  String get wallResubmitUnsupported;
+
+  /// No description provided for @wallResubmitUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load this rejected upload. Try again.'**
+  String get wallResubmitUnavailable;
+
+  /// No description provided for @wallMetadataEditDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit details'**
+  String get wallMetadataEditDetails;
+
+  /// No description provided for @wallMetadataApprovedHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the title, description and tags. The image and category stay the same.'**
+  String get wallMetadataApprovedHelp;
+
+  /// No description provided for @wallMetadataPendingHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Update these details before your wallpaper is reviewed.'**
+  String get wallMetadataPendingHelp;
+
+  /// No description provided for @wallMetadataSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save details'**
+  String get wallMetadataSave;
+
+  /// No description provided for @wallMetadataSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Details saved'**
+  String get wallMetadataSaved;
+
+  /// No description provided for @wallMetadataDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get wallMetadataDiscardTitle;
+
+  /// No description provided for @wallMetadataDiscardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your unsaved details will be lost.'**
+  String get wallMetadataDiscardBody;
+
+  /// No description provided for @wallMetadataDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes'**
+  String get wallMetadataDiscard;
+
+  /// No description provided for @wallMetadataReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload details'**
+  String get wallMetadataReload;
+
+  /// No description provided for @wallMetadataReloadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload current details?'**
+  String get wallMetadataReloadTitle;
+
+  /// No description provided for @wallMetadataReloadBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This replaces your unsaved details with the current version.'**
+  String get wallMetadataReloadBody;
+
+  /// No description provided for @wallMetadataConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'These details changed elsewhere. Your edits are still here. Reload the current details before saving.'**
+  String get wallMetadataConflict;
+
+  /// No description provided for @wallMetadataStatusChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'This wallpaper is no longer in the same review state. Your edits have not been saved.'**
+  String get wallMetadataStatusChanged;
+
+  /// No description provided for @wallMetadataMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This wallpaper is no longer available. Your edits have not been saved.'**
+  String get wallMetadataMissing;
+
+  /// No description provided for @wallMetadataDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have permission to edit this wallpaper.'**
+  String get wallMetadataDenied;
+
+  /// No description provided for @wallMetadataSignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to edit this wallpaper.'**
+  String get wallMetadataSignedOut;
+
+  /// No description provided for @wallMetadataDailyLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You have reached today\'s edit limit. Try again tomorrow.'**
+  String get wallMetadataDailyLimit;
+
+  /// No description provided for @wallMetadataUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to save details. Check your connection and try again.'**
+  String get wallMetadataUnavailable;
+
+  /// No description provided for @wallMetadataLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load details'**
+  String get wallMetadataLoadFailed;
+
+  /// No description provided for @wallMetadataHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit history'**
+  String get wallMetadataHistory;
+
+  /// No description provided for @wallMetadataHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No metadata edits yet'**
+  String get wallMetadataHistoryEmpty;
+
+  /// No description provided for @wallMetadataHistoryEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes to the approved title, description and tags appear here.'**
+  String get wallMetadataHistoryEmptyBody;
+
+  /// No description provided for @wallMetadataHistoryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load edit history'**
+  String get wallMetadataHistoryFailed;
+
+  /// No description provided for @wallMetadataBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Before'**
+  String get wallMetadataBefore;
+
+  /// No description provided for @wallMetadataAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'After'**
+  String get wallMetadataAfter;
+
+  /// No description provided for @wallMetadataRevert.
+  ///
+  /// In en, this message translates to:
+  /// **'Revert edit'**
+  String get wallMetadataRevert;
+
+  /// No description provided for @wallMetadataRevertTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Revert this edit?'**
+  String get wallMetadataRevertTitle;
+
+  /// No description provided for @wallMetadataRevertBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore only the previous title, description and tags shown here. The image and review state will not change.'**
+  String get wallMetadataRevertBody;
+
+  /// No description provided for @wallMetadataReverted.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit reverted'**
+  String get wallMetadataReverted;
+
+  /// No description provided for @wallMetadataLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more edits'**
+  String get wallMetadataLoadMore;
+
+  /// No description provided for @wallMetadataAbsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get wallMetadataAbsent;
+
+  /// No description provided for @wallMetadataResubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Resubmitted · attempt {attempt} of 3'**
+  String wallMetadataResubmitted(int attempt);
+
+  /// No description provided for @wallMetadataPreviousReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous rejection reason'**
+  String get wallMetadataPreviousReason;
+
+  /// No description provided for @wallMetadataContextUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Resubmission details unavailable'**
+  String get wallMetadataContextUnavailable;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -11282,4 +11282,167 @@ class AppLocalizationsHi extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName ने आपके वॉलपेपर को रीमिक्स किया।';
   }
+
+  @override
+  String get wallMetadataDescription => 'विवरण';
+
+  @override
+  String get wallMetadataEdit => 'जानकारी संपादित करें';
+
+  @override
+  String get wallResubmitAction => 'सुधारें और फिर से भेजें';
+
+  @override
+  String get wallResubmitChooseImage => 'चित्र चुनें';
+
+  @override
+  String get wallResubmitImageMissing => 'मूल चित्र अब उपलब्ध नहीं है। संपादन जारी रखने के लिए उसे फिर से चुनें।';
+
+  @override
+  String get wallResubmitImageKept => 'मूल चित्र तैयार है';
+
+  @override
+  String get wallResubmitTitle => 'अपना अपलोड सुधारें';
+
+  @override
+  String get wallUploadUseLastDetails => 'पिछली जानकारी का उपयोग करें';
+
+  @override
+  String get wallUploadLastDetailsUnavailable => 'इस डिवाइस पर पिछली जानकारी नहीं है।';
+
+  @override
+  String get wallUploadWithdraw => 'अपलोड वापस लें';
+
+  @override
+  String get wallUploadWithdrawTitle => 'क्या यह अपलोड वापस लें?';
+
+  @override
+  String get wallUploadWithdrawBody => 'इससे अपलोड समीक्षा से हट जाएगा और उसकी अपलोड की गई फ़ाइलें मिट जाएंगी।';
+
+  @override
+  String get wallUploadWithdrawn => 'अपलोड वापस लिया गया';
+
+  @override
+  String get wallUploadDeleteHistory => 'इतिहास से हटाएं';
+
+  @override
+  String get wallMetadataInvalid => 'टेक्स्ट और टैग जांचें, फिर दोबारा कोशिश करें।';
+
+  @override
+  String get wallUploadOwnerChanged => 'आपका खाता बदल गया है। यह अपलोड फिर से खोलें।';
+
+  @override
+  String get wallResubmitLimit => 'इस वॉलपेपर के लिए तीन जुड़े हुए पुनः सबमिशन पूरे हो गए हैं।';
+
+  @override
+  String get wallResubmitUnsupported => 'मूल चित्र फिर से चुनें। AI स्रोत की जानकारी दोबारा इस्तेमाल नहीं की जा सकती।';
+
+  @override
+  String get wallResubmitUnavailable => 'यह अस्वीकृत अपलोड लोड नहीं हो सका। दोबारा कोशिश करें।';
+
+  @override
+  String get wallMetadataEditDetails => 'जानकारी संपादित करें';
+
+  @override
+  String get wallMetadataApprovedHelp => 'शीर्षक, विवरण और टैग बदलें। चित्र और श्रेणी वही रहेंगे।';
+
+  @override
+  String get wallMetadataPendingHelp => 'वॉलपेपर की समीक्षा से पहले यह जानकारी अपडेट करें।';
+
+  @override
+  String get wallMetadataSave => 'जानकारी सेव करें';
+
+  @override
+  String get wallMetadataSaved => 'जानकारी सेव हुई';
+
+  @override
+  String get wallMetadataDiscardTitle => 'बदलाव छोड़ें?';
+
+  @override
+  String get wallMetadataDiscardBody => 'आपकी बिना सेव की गई जानकारी खो जाएगी।';
+
+  @override
+  String get wallMetadataDiscard => 'बदलाव छोड़ें';
+
+  @override
+  String get wallMetadataReload => 'जानकारी फिर लोड करें';
+
+  @override
+  String get wallMetadataReloadTitle => 'मौजूदा जानकारी फिर लोड करें?';
+
+  @override
+  String get wallMetadataReloadBody => 'इससे आपकी बिना सेव की गई जानकारी मौजूदा जानकारी से बदल जाएगी।';
+
+  @override
+  String get wallMetadataConflict =>
+      'यह जानकारी कहीं और बदल गई है। आपके बदलाव अभी भी यहां हैं। सेव करने से पहले मौजूदा जानकारी फिर लोड करें।';
+
+  @override
+  String get wallMetadataStatusChanged => 'इस वॉलपेपर की समीक्षा स्थिति बदल गई है। आपके बदलाव सेव नहीं हुए हैं।';
+
+  @override
+  String get wallMetadataMissing => 'यह वॉलपेपर अब उपलब्ध नहीं है। आपके बदलाव सेव नहीं हुए हैं।';
+
+  @override
+  String get wallMetadataDenied => 'आपको इस वॉलपेपर को संपादित करने की अनुमति नहीं है।';
+
+  @override
+  String get wallMetadataSignedOut => 'इस वॉलपेपर को संपादित करने के लिए फिर से साइन इन करें।';
+
+  @override
+  String get wallMetadataDailyLimit => 'आप आज की संपादन सीमा तक पहुंच गए हैं। कल दोबारा कोशिश करें।';
+
+  @override
+  String get wallMetadataUnavailable => 'जानकारी सेव नहीं हो सकी। अपना कनेक्शन जांचें और दोबारा कोशिश करें।';
+
+  @override
+  String get wallMetadataLoadFailed => 'जानकारी लोड नहीं हो सकी';
+
+  @override
+  String get wallMetadataHistory => 'संपादन इतिहास';
+
+  @override
+  String get wallMetadataHistoryEmpty => 'अभी जानकारी में कोई बदलाव नहीं है';
+
+  @override
+  String get wallMetadataHistoryEmptyBody => 'स्वीकृत शीर्षक, विवरण और टैग में बदलाव यहां दिखते हैं।';
+
+  @override
+  String get wallMetadataHistoryFailed => 'संपादन इतिहास लोड नहीं हो सका';
+
+  @override
+  String get wallMetadataBefore => 'पहले';
+
+  @override
+  String get wallMetadataAfter => 'बाद में';
+
+  @override
+  String get wallMetadataRevert => 'संपादन वापस करें';
+
+  @override
+  String get wallMetadataRevertTitle => 'यह संपादन वापस करें?';
+
+  @override
+  String get wallMetadataRevertBody =>
+      'केवल यहां दिखाए गए पिछले शीर्षक, विवरण और टैग वापस लाएं। चित्र और समीक्षा स्थिति नहीं बदलेंगे।';
+
+  @override
+  String get wallMetadataReverted => 'संपादन वापस किया गया';
+
+  @override
+  String get wallMetadataLoadMore => 'और संपादन लोड करें';
+
+  @override
+  String get wallMetadataAbsent => 'सेट नहीं है';
+
+  @override
+  String wallMetadataResubmitted(int attempt) {
+    return 'फिर से भेजा गया · प्रयास $attempt / 3';
+  }
+
+  @override
+  String get wallMetadataPreviousReason => 'पिछली अस्वीकृति का कारण';
+
+  @override
+  String get wallMetadataContextUnavailable => 'फिर से भेजने की जानकारी उपलब्ध नहीं है';
 }

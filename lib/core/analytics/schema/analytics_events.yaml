@@ -1877,6 +1877,22 @@ events:
       - name: category
         key: category
         type: string
+  - id: wall_pending_edited
+    fields:
+      - name: asset_id
+        key: asset_id
+        type: string
+      - name: fields
+        key: fields
+        type: string_list
+  - id: wall_approved_metadata_edited
+    fields:
+      - name: asset_id
+        key: asset_id
+        type: string
+      - name: fields
+        key: fields
+        type: string_list
   - id: follow_result
     fields:
       - name: action
@@ -2480,3 +2496,17 @@ events:
       - name: count
         key: count
         type: int
+  - id: wall_resubmitted
+    fields:
+      - name: asset_id
+        key: asset_id
+        type: string
+      - name: attempt
+        key: attempt
+        type: int
+  - id: upload_last_details_used
+  - id: upload_withdrawn
+    fields:
+      - name: asset_id
+        key: asset_id
+        type: string

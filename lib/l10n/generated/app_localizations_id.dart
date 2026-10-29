@@ -11195,4 +11195,169 @@ class AppLocalizationsId extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName me-remix wallpaper Anda.';
   }
+
+  @override
+  String get wallMetadataDescription => 'Deskripsi';
+
+  @override
+  String get wallMetadataEdit => 'Edit detail';
+
+  @override
+  String get wallResubmitAction => 'Perbaiki dan kirim ulang';
+
+  @override
+  String get wallResubmitChooseImage => 'Pilih gambar';
+
+  @override
+  String get wallResubmitImageMissing => 'Gambar asli tidak lagi tersedia. Pilih lagi untuk melanjutkan pengeditan.';
+
+  @override
+  String get wallResubmitImageKept => 'Gambar asli siap';
+
+  @override
+  String get wallResubmitTitle => 'Perbaiki unggahan';
+
+  @override
+  String get wallUploadUseLastDetails => 'Gunakan detail terakhir';
+
+  @override
+  String get wallUploadLastDetailsUnavailable => 'Tidak ada detail sebelumnya di perangkat ini.';
+
+  @override
+  String get wallUploadWithdraw => 'Tarik unggahan';
+
+  @override
+  String get wallUploadWithdrawTitle => 'Tarik unggahan ini?';
+
+  @override
+  String get wallUploadWithdrawBody =>
+      'Tindakan ini menghapus unggahan dari peninjauan dan menghapus file yang diunggah.';
+
+  @override
+  String get wallUploadWithdrawn => 'Unggahan ditarik';
+
+  @override
+  String get wallUploadDeleteHistory => 'Hapus dari riwayat';
+
+  @override
+  String get wallMetadataInvalid => 'Periksa teks dan tag, lalu coba lagi.';
+
+  @override
+  String get wallUploadOwnerChanged => 'Akun Anda berubah. Buka unggahan ini lagi.';
+
+  @override
+  String get wallResubmitLimit => 'Wallpaper ini telah mencapai tiga pengiriman ulang yang ditautkan.';
+
+  @override
+  String get wallResubmitUnsupported => 'Pilih lagi gambar aslinya. Detail sumber AI tidak dapat digunakan kembali.';
+
+  @override
+  String get wallResubmitUnavailable => 'Tidak dapat memuat unggahan yang ditolak ini. Coba lagi.';
+
+  @override
+  String get wallMetadataEditDetails => 'Edit detail';
+
+  @override
+  String get wallMetadataApprovedHelp => 'Ubah judul, deskripsi, dan tag. Gambar dan kategori tetap sama.';
+
+  @override
+  String get wallMetadataPendingHelp => 'Perbarui detail ini sebelum wallpaper Anda ditinjau.';
+
+  @override
+  String get wallMetadataSave => 'Simpan detail';
+
+  @override
+  String get wallMetadataSaved => 'Detail disimpan';
+
+  @override
+  String get wallMetadataDiscardTitle => 'Buang perubahan?';
+
+  @override
+  String get wallMetadataDiscardBody => 'Detail yang belum disimpan akan hilang.';
+
+  @override
+  String get wallMetadataDiscard => 'Buang perubahan';
+
+  @override
+  String get wallMetadataReload => 'Muat ulang detail';
+
+  @override
+  String get wallMetadataReloadTitle => 'Muat ulang detail saat ini?';
+
+  @override
+  String get wallMetadataReloadBody => 'Tindakan ini mengganti detail yang belum disimpan dengan versi saat ini.';
+
+  @override
+  String get wallMetadataConflict =>
+      'Detail ini berubah di tempat lain. Suntingan Anda masih ada. Muat ulang detail saat ini sebelum menyimpan.';
+
+  @override
+  String get wallMetadataStatusChanged =>
+      'Status peninjauan wallpaper ini telah berubah. Suntingan Anda belum disimpan.';
+
+  @override
+  String get wallMetadataMissing => 'Wallpaper ini tidak lagi tersedia. Suntingan Anda belum disimpan.';
+
+  @override
+  String get wallMetadataDenied => 'Anda tidak memiliki izin untuk mengedit wallpaper ini.';
+
+  @override
+  String get wallMetadataSignedOut => 'Masuk lagi untuk mengedit wallpaper ini.';
+
+  @override
+  String get wallMetadataDailyLimit => 'Anda telah mencapai batas edit hari ini. Coba lagi besok.';
+
+  @override
+  String get wallMetadataUnavailable => 'Tidak dapat menyimpan detail. Periksa koneksi Anda dan coba lagi.';
+
+  @override
+  String get wallMetadataLoadFailed => 'Tidak dapat memuat detail';
+
+  @override
+  String get wallMetadataHistory => 'Riwayat edit';
+
+  @override
+  String get wallMetadataHistoryEmpty => 'Belum ada perubahan detail';
+
+  @override
+  String get wallMetadataHistoryEmptyBody => 'Perubahan pada judul, deskripsi, dan tag yang disetujui muncul di sini.';
+
+  @override
+  String get wallMetadataHistoryFailed => 'Tidak dapat memuat riwayat edit';
+
+  @override
+  String get wallMetadataBefore => 'Sebelum';
+
+  @override
+  String get wallMetadataAfter => 'Sesudah';
+
+  @override
+  String get wallMetadataRevert => 'Urungkan edit';
+
+  @override
+  String get wallMetadataRevertTitle => 'Urungkan edit ini?';
+
+  @override
+  String get wallMetadataRevertBody =>
+      'Pulihkan hanya judul, deskripsi, dan tag sebelumnya yang ditampilkan di sini. Gambar dan status peninjauan tidak akan berubah.';
+
+  @override
+  String get wallMetadataReverted => 'Edit diurungkan';
+
+  @override
+  String get wallMetadataLoadMore => 'Muat lebih banyak edit';
+
+  @override
+  String get wallMetadataAbsent => 'Belum diatur';
+
+  @override
+  String wallMetadataResubmitted(int attempt) {
+    return 'Dikirim ulang · percobaan $attempt dari 3';
+  }
+
+  @override
+  String get wallMetadataPreviousReason => 'Alasan penolakan sebelumnya';
+
+  @override
+  String get wallMetadataContextUnavailable => 'Detail pengiriman ulang tidak tersedia';
 }

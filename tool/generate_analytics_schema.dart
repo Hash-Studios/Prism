@@ -214,6 +214,8 @@ class _FieldSpec {
     switch (type) {
       case 'string':
         return 'String';
+      case 'string_list':
+        return 'List<String>';
       case 'int':
         return 'int';
       case 'double':
