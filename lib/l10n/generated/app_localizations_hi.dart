@@ -10727,6 +10727,111 @@ class AppLocalizationsHi extends AppLocalizations {
   String get tasteQuizRetakeFailed => 'वॉलपेपर लोड नहीं हो सके। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
 
   @override
+  String get foldersPublic => 'सार्वजनिक';
+
+  @override
+  String get foldersMakePublic => 'सार्वजनिक करें';
+
+  @override
+  String get foldersMakePrivate => 'निजी करें';
+
+  @override
+  String get foldersMakePublicTitle => 'क्या इस फ़ोल्डर को सार्वजनिक करें?';
+
+  @override
+  String get foldersMakePublicMessage =>
+      'Prism पर कोई भी इसका नाम और वॉलपेपर देख सकेगा, इसे फ़ॉलो कर सकेगा और इसका लिंक खोल सकेगा। आपके शेयर किए गए लिंक का प्रीव्यू बना रहेगा, भले ही आप बाद में इसे प्राइवेट कर दें।';
+
+  @override
+  String get foldersMakePrivateTitle => 'क्या इस फ़ोल्डर को निजी करें?';
+
+  @override
+  String get foldersMakePrivateMessage =>
+      'इसे सिर्फ़ आप देखेंगे। इसका लिंक काम करना बंद कर देगा और इसके फ़ॉलोअर इसे खो देंगे।';
+
+  @override
+  String get foldersMadePublic => 'यह फ़ोल्डर अब सार्वजनिक है।';
+
+  @override
+  String get foldersMadePrivate => 'यह फ़ोल्डर अब निजी है।';
+
+  @override
+  String get foldersPublicNameRefused => 'इस फ़ोल्डर को सार्वजनिक करने के लिए इसका नाम बदलें।';
+
+  @override
+  String get foldersHiddenRefused =>
+      'रिपोर्ट मिलने के बाद यह फ़ोल्डर छिपा दिया गया था, इसलिए इसे सार्वजनिक नहीं किया जा सकता।';
+
+  @override
+  String get foldersLimitRefused => 'आपने आज फ़ोल्डर बहुत बार बदले हैं। कल फिर से कोशिश करें।';
+
+  @override
+  String get foldersFollow => 'फ़ॉलो करें';
+
+  @override
+  String get foldersFollowing => 'फ़ॉलो कर रहे हैं';
+
+  @override
+  String foldersFollowerCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString फ़ॉलोअर',
+      one: '1 फ़ॉलोअर',
+      zero: 'कोई फ़ॉलोअर नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersByOwner(String name) {
+    return '$name द्वारा';
+  }
+
+  @override
+  String get foldersShare => 'फ़ोल्डर साझा करें';
+
+  @override
+  String get foldersReport => 'फ़ोल्डर की शिकायत करें';
+
+  @override
+  String get foldersUnavailableTitle => 'यह फ़ोल्डर निजी है या अब मौजूद नहीं है';
+
+  @override
+  String get foldersUnavailableBody => 'मालिक ने इसे निजी किया होगा या हटा दिया होगा।';
+
+  @override
+  String get foldersFollowFailed => 'फ़ॉलो अपडेट नहीं हो सका। फिर से कोशिश करें।';
+
+  @override
+  String get foldersYouFollow => 'आपके फ़ॉलो किए गए फ़ोल्डर';
+
+  @override
+  String get foldersPublicEmptyTitle => 'यहाँ अभी कोई वॉलपेपर नहीं है';
+
+  @override
+  String get foldersPublicEmptyBody => 'मालिक वॉलपेपर जोड़ेगा तो नए वॉलपेपर यहाँ दिखेंगे।';
+
+  @override
+  String get notifSettingFolders => 'आपके फ़ॉलो किए गए फ़ोल्डर';
+
+  @override
+  String get notifSettingFoldersDescription => 'आपके फ़ॉलो किए गए फ़ोल्डरों में नए वॉलपेपर, दिन में एक बार';
+
+  @override
+  String notifPushFolderDigestTitleOne(String folderName) {
+    return '$folderName में नया';
+  }
+
+  @override
+  String notifPushFolderDigestTitleMore(String folderName, int count) {
+    return '$folderName में नया और $count और';
+  }
+
+  @override
   String get historySetAndDownloaded => 'सेट और डाउनलोड किए गए';
 
   @override

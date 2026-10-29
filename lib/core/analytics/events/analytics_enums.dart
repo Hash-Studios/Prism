@@ -272,7 +272,8 @@ enum NotificationPreferenceValue {
   posts,
   inApp,
   recommendations,
-  streakReminders;
+  streakReminders,
+  folders;
 
   String get wireValue => _snakeCase(name);
 }

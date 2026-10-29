@@ -3,11 +3,14 @@ import 'dart:async';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/data/repositories/folders_repository_impl.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
+import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -75,6 +78,31 @@ FolderEntity _folder() => FolderEntity(
   covers: const [],
 );
 
+class _NoPublicFolders implements PublicFoldersRepository {
+  @override
+  Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
+
+  @override
+  Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(<String>[]);
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async =>
+      Result.success(<PublicFolderEntity>[]);
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchFollowedFolders(String userId) async =>
+      Result.success(<PublicFolderEntity>[]);
+
+  @override
+  Future<Result<bool>> isFollowing(String folderId, String userId) async => Result.success(false);
+
+  @override
+  Future<Result<void>> setFollowing(String folderId, {required bool following}) async => Result.success<void>(null);
+
+  @override
+  Future<Result<bool>> setPublic(String folderId, {required bool isPublic}) async => Result.success(isPublic);
+}
+
 void main() {
   for (final holdQuery in <bool>[true, false]) {
     test('sign-out stops delete after the pending ${holdQuery ? 'query' : 'chunk'}', () async {
@@ -85,7 +113,7 @@ void main() {
                 (id: 'a', data: <String, dynamic>{'ownerId': 'u1', 'name': 'A', 'itemCount': 401}),
               ]
             : List.generate(401, (index) => (id: 'prism_$index', data: <String, dynamic>{})));
-      final bloc = FoldersBloc(FoldersRepositoryImpl(client));
+      final bloc = FoldersBloc(FoldersRepositoryImpl(client), _NoPublicFolders());
       addTearDown(bloc.close);
       await bloc.run((id) => FoldersEvent.started(userId: 'u1', operationId: id));
       if (holdQuery) {

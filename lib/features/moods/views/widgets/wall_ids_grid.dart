@@ -9,12 +9,15 @@ import 'package:flutter/material.dart';
 
 /// A grid of walls with the feed tile, so a tap opens the detail page and swipes through these walls.
 class WallIdsGrid extends StatelessWidget {
-  const WallIdsGrid({super.key, required this.walls, this.header});
+  const WallIdsGrid({super.key, required this.walls, this.header, this.top});
 
   final List<PrismWallpaper> walls;
 
   /// Text above the grid, aligned with the page title.
   final String? header;
+
+  /// A widget above the grid, for example a folder header.
+  final Widget? top;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +40,7 @@ class WallIdsGrid extends StatelessWidget {
               child: Text(header!, style: PrismTextStyles.body(context)),
             ),
           ),
+        if (top != null) SliverToBoxAdapter(child: top),
         SliverPadding(
           padding: PrismFeedLayout.gridPadding,
           sliver: SliverGrid(

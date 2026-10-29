@@ -6,6 +6,7 @@ import {closeCreatorProgressForDeletion} from "./creatorProgressDeletion";
 import {verifiedEmailForUid} from "./wallAuthor";
 import {removeUidFollowGraph} from "./profiles";
 import {FOLDERS, FOLDER_ITEMS, isFolderItemPath} from "./folders";
+import {FOLLOWED_FOLDERS, removeAllFolderFollows, removeOwnerPublicFolders} from "./publicFolders";
 
 const USERS = "usersv2";
 const COIN_TRANSACTIONS = "coinTransactions";
@@ -104,6 +105,9 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   // Close rewards before deleting private state, including cross-user member receipts.
   await closeCreatorProgressForDeletion(callerUid);
   await removeUidFollowGraph(callerUid);
+  // The deletion barrier is closed, so no sync can project these folders again.
+  await removeOwnerPublicFolders(callerUid);
+  await removeAllFolderFollows(callerUid);
 
   // 1. Favourite/private subcollections — same set the client wipes in delete_account_service.dart.
   await db.recursiveDelete(userRef.collection("images"));
@@ -111,6 +115,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await db.recursiveDelete(userRef.collection(BLOCKED_USERS));
   await db.recursiveDelete(userRef.collection("private"));
   await db.recursiveDelete(userRef.collection("history"));
+  await db.recursiveDelete(userRef.collection(FOLLOWED_FOLDERS));
   // Items are found by owner, not through their folder, so items whose folder is already gone are deleted too.
   // The owner filter keeps another owner's items in a reused folder id. Items go before their folders.
   const items = (await db.collectionGroup(FOLDER_ITEMS).where("ownerId", "==", callerUid).get())
