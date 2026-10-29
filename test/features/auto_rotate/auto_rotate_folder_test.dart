@@ -88,6 +88,9 @@ class _FakeFolderRepository implements AutoRotateRepository {
   Future<bool> rotateNow() async => true;
 
   @override
+  Future<List<String>> resolveSources(List<String> imageUrls) async => imageUrls;
+
+  @override
   Future<List<String>?> loadAppliedSources() async => applied;
 
   @override
@@ -207,9 +210,10 @@ void main() {
     test('a saved folder config loads back with its id and name', () async {
       await repository.saveConfig(
         const AutoRotateConfig(enabled: true, source: AutoRotateSource.folder, folderId: 'f1', folderName: 'Calm'),
+        ownerId: 'account-a',
       );
 
-      final AutoRotateConfig loaded = await repository.loadConfig();
+      final AutoRotateConfig loaded = await repository.loadConfig(ownerId: 'account-a');
 
       expect(loaded.source, AutoRotateSource.folder);
       expect(loaded.folderId, 'f1');
@@ -267,6 +271,73 @@ void main() {
       expect(repository.starts.last.$2, _folderUrls);
       expect(repository.config.source, AutoRotateSource.folder);
       expect(repository.config.folderId, 'f1');
+    });
+
+    test('choosing a folder can enable it atomically after its walls load', () async {
+      repository.config = const AutoRotateConfig(enabled: false);
+      repository.folder = (found: true, urls: _folderUrls);
+      await openAsPro();
+
+      bloc.add(const AutoRotateEvent.folderChosen(folderId: 'f1', name: 'Calm', enable: true));
+      await _settle();
+
+      expect(repository.starts, hasLength(1));
+      expect(repository.starts.single.$1.enabled, isTrue);
+      expect(repository.starts.single.$2, _folderUrls);
+      expect(repository.config.source, AutoRotateSource.folder);
+      expect(repository.config.enabled, isTrue);
+    });
+
+    test('retrying a rejected folder switch retries that source, not the old one', () async {
+      repository.config = const AutoRotateConfig(enabled: true);
+      repository.folder = null;
+      await openAsPro(favourites: <String>['https://example.com/fav0.jpg', 'https://example.com/fav1.jpg']);
+      expect(repository.starts, hasLength(1));
+
+      bloc.add(const AutoRotateEvent.folderChosen(folderId: 'f1', name: 'Calm', enable: true));
+      await _settle();
+      expect(bloc.state.config.source, AutoRotateSource.favourites);
+      expect(bloc.state.sourceLoadFailed, isTrue);
+
+      repository.folder = (found: true, urls: _folderUrls);
+      bloc.add(const AutoRotateEvent.toggled(true));
+      await _settle();
+
+      expect(repository.starts, hasLength(2));
+      expect(repository.starts.last.$1.source, AutoRotateSource.folder);
+      expect(repository.starts.last.$2, _folderUrls);
+      expect(bloc.state.config.source, AutoRotateSource.folder);
+      expect(bloc.state.config.enabled, isTrue);
+    });
+
+    test('a failed offered folder confirmation does not start favourites and can be retried', () async {
+      const List<String> favourites = <String>[
+        'https://example.com/favourite-one.jpg',
+        'https://example.com/favourite-two.jpg',
+      ];
+      repository.config = const AutoRotateConfig(enabled: false);
+      repository.folder = null;
+      await openAsPro(favourites: favourites);
+
+      bloc.add(const AutoRotateEvent.folderChosen(folderId: 'f1', name: 'Calm', enable: true));
+      await _settle();
+
+      expect(repository.starts, isEmpty);
+      expect(repository.config.source, AutoRotateSource.favourites);
+      expect(repository.config.enabled, isFalse);
+      expect(bloc.state.sourceLoadFailed, isTrue);
+
+      repository.folder = (found: true, urls: _folderUrls);
+      bloc.add(const AutoRotateEvent.folderChosen(folderId: 'f1', name: 'Calm', enable: true));
+      await _settle();
+
+      expect(repository.starts, hasLength(1));
+      expect(repository.starts.single.$1.source, AutoRotateSource.folder);
+      expect(repository.starts.single.$1.folderId, 'f1');
+      expect(repository.starts.single.$1.enabled, isTrue);
+      expect(repository.starts.single.$2, _folderUrls);
+      expect(repository.config.source, AutoRotateSource.folder);
+      expect(repository.config.enabled, isTrue);
     });
 
     test('a folder change with the same walls does not restart the rotation', () async {

@@ -27,6 +27,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
   static const String _categoryKey = 'autoRotate.category';
   static const String _folderIdKey = 'autoRotate.folderId';
   static const String _folderNameKey = 'autoRotate.folderName';
+  static const String _folderOwnerKey = 'autoRotate.folderOwnerId';
   static const int _categoryLimit = 40;
   static const int _folderLimit = 100;
   static const String _appliedSourcesKey = 'autoRotate.appliedSources';
@@ -61,7 +62,13 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
     );
     final String sourceName = _settings.get<String>(_sourceKey, defaultValue: defaults.source.name);
     final String folderId = _settings.get<String>(_folderIdKey, defaultValue: '');
+    final String folderOwnerId = _settings.get<String>(_folderOwnerKey, defaultValue: '');
     final AutoRotateSource source = AutoRotateSource.values.asNameMap()[sourceName] ?? defaults.source;
+    final String requestedOwnerId = ownerId?.trim() ?? '';
+    final bool folderBelongsToOwner =
+        folderId.trim().isNotEmpty && requestedOwnerId.isNotEmpty && folderOwnerId == requestedOwnerId;
+    final bool validFolder = source == AutoRotateSource.folder && folderBelongsToOwner;
+    final bool enabled = _settings.get<bool>(PersistenceKeys.autoRotateEnabled, defaultValue: defaults.enabled);
     final Map<String, Object?>? passRecord = _readPassRecord();
     final Object? storedUntilMs = passRecord?['untilMs'];
     final int passUntilMs =
@@ -69,16 +76,18 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
         ? storedUntilMs
         : 0;
     return AutoRotateConfig(
-      enabled: _settings.get<bool>(PersistenceKeys.autoRotateEnabled, defaultValue: defaults.enabled),
+      enabled: enabled && (source != AutoRotateSource.folder || validFolder),
       intervalMinutes: AutoRotateConfig.intervalOptions.contains(interval) ? interval : defaults.intervalMinutes,
       target: WallpaperTarget.values.asNameMap()[targetName] ?? defaults.target,
       shuffle: _settings.get<bool>(PersistenceKeys.autoRotateShuffle, defaultValue: defaults.shuffle),
-      source: source == AutoRotateSource.folder && folderId.isEmpty ? defaults.source : source,
+      source: source == AutoRotateSource.folder && !validFolder ? defaults.source : source,
       categoryName: _settings.get<String>(_categoryKey, defaultValue: defaults.categoryName),
       chargingOnly: _settings.get<bool>(PersistenceKeys.autoRotateChargingOnly, defaultValue: defaults.chargingOnly),
       passUntil: passUntilMs > 0 ? DateTime.fromMillisecondsSinceEpoch(passUntilMs, isUtc: true) : null,
-      folderId: folderId.isEmpty ? null : folderId,
-      folderName: _settings.get<String>(_folderNameKey, defaultValue: defaults.folderName),
+      folderId: folderBelongsToOwner ? folderId : null,
+      folderName: folderBelongsToOwner
+          ? _settings.get<String>(_folderNameKey, defaultValue: defaults.folderName)
+          : defaults.folderName,
     );
   }
 
@@ -91,8 +100,11 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
     await _settings.set(PersistenceKeys.autoRotateShuffle, config.shuffle);
     await _settings.set(_sourceKey, config.source.name);
     await _settings.set(_categoryKey, config.categoryName);
-    await _settings.set(_folderIdKey, config.folderId ?? '');
-    await _settings.set(_folderNameKey, config.folderName);
+    final String folderOwnerId = ownerId?.trim() ?? '';
+    final bool hasOwnedFolder = config.folderId?.trim().isNotEmpty == true && folderOwnerId.isNotEmpty;
+    await _settings.set(_folderIdKey, hasOwnedFolder ? config.folderId!.trim() : '');
+    await _settings.set(_folderNameKey, hasOwnedFolder ? config.folderName : '');
+    await _settings.set(_folderOwnerKey, hasOwnedFolder ? folderOwnerId : '');
     await _settings.set(PersistenceKeys.autoRotateChargingOnly, config.chargingOnly);
     final DateTime? passUntil = config.passUntil;
     if (ownerId == null || ownerId.isEmpty) return;
@@ -150,7 +162,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
 
   @override
   Future<bool> start(AutoRotateConfig config, List<String> imageUrls) async {
-    final List<String> safe = await _safeSources(imageUrls);
+    final List<String> safe = await resolveSources(imageUrls);
     if (safe.isEmpty) {
       await stop();
       return false;
@@ -175,6 +187,9 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
     if (result.isSuccess) await _settings.set(_appliedSourcesKey, jsonEncode(safe));
     return result.isSuccess;
   }
+
+  @override
+  Future<List<String>> resolveSources(List<String> imageUrls) => _safeSources(imageUrls);
 
   @override
   Future<bool> stop() async {
@@ -268,6 +283,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
 
   @override
   Future<({bool found, List<String> urls})?> loadFolderUrls(String folderId, {required String userId}) async {
+    if (folderId.trim().isEmpty || userId.trim().isEmpty) return null;
     final result = await _folders.fetchItems(folderId, userId: userId, limit: _folderLimit);
     if (result.isFailure) return null;
     final walls = result.data;
@@ -337,7 +353,17 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
 
   bool _isLocalSource(String source) {
     final Uri? uri = Uri.tryParse(source);
-    return uri?.scheme == 'file' || (uri?.scheme.isEmpty ?? false) && source.startsWith('/');
+    if (uri?.scheme == 'file') {
+      if (!source.substring('file:'.length).startsWith('/') || !(uri!.host.isEmpty || uri.host == 'localhost')) {
+        return false;
+      }
+      try {
+        return uri.toFilePath().isNotEmpty;
+      } catch (_) {
+        return false;
+      }
+    }
+    return (uri?.scheme.isEmpty ?? false) && source.startsWith('/');
   }
 
   String _rotationSource(String source) {

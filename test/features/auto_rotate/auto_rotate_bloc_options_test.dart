@@ -53,6 +53,9 @@ class _FakeRepository implements AutoRotateRepository {
   Future<bool> rotateNow() async => true;
 
   @override
+  Future<List<String>> resolveSources(List<String> imageUrls) async => imageUrls;
+
+  @override
   Future<List<String>?> loadAppliedSources() async => applied;
 
   @override

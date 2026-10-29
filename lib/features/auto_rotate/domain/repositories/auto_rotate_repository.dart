@@ -9,6 +9,9 @@ abstract class AutoRotateRepository {
   /// Returns false when the platform refused to start the rotation.
   Future<bool> start(AutoRotateConfig config, List<String> imageUrls);
 
+  /// Returns the ordered sources the platform can apply for this list.
+  Future<List<String>> resolveSources(List<String> imageUrls);
+
   /// Returns false when the platform could not stop the rotation.
   Future<bool> stop();
 

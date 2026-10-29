@@ -179,7 +179,7 @@ return proLapseAcknowledged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<String> favouriteUrls,  bool isPro,  DateTime? passUntil)?  started,TResult Function( bool isPro,  String userId,  DateTime? passUntil)?  entitlementChanged,TResult Function( List<String> favouriteUrls)?  favouritesChanged,TResult Function( bool enabled)?  toggled,TResult Function( int minutes)?  intervalChanged,TResult Function( WallpaperTarget target)?  targetChanged,TResult Function( bool shuffle)?  shuffleChanged,TResult Function( AutoRotateSource source)?  sourceChanged,TResult Function( String category)?  categoryChanged,TResult Function( String folderId,  String name)?  folderChosen,TResult Function( String folderId,  String? name)?  folderChanged,TResult Function()?  folderSettled,TResult Function()?  folderStopAcknowledged,TResult Function( bool chargingOnly)?  chargingOnlyChanged,TResult Function()?  rotateNowPressed,TResult Function()?  favouritesSettled,TResult Function()?  statusRefreshed,TResult Function()?  batteryTipDismissed,TResult Function()?  proLapseAcknowledged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<String> favouriteUrls,  bool isPro,  DateTime? passUntil)?  started,TResult Function( bool isPro,  String userId,  DateTime? passUntil)?  entitlementChanged,TResult Function( List<String> favouriteUrls)?  favouritesChanged,TResult Function( bool enabled)?  toggled,TResult Function( int minutes)?  intervalChanged,TResult Function( WallpaperTarget target)?  targetChanged,TResult Function( bool shuffle)?  shuffleChanged,TResult Function( AutoRotateSource source)?  sourceChanged,TResult Function( String category)?  categoryChanged,TResult Function( String folderId,  String name,  bool enable)?  folderChosen,TResult Function( String folderId,  String? name)?  folderChanged,TResult Function()?  folderSettled,TResult Function()?  folderStopAcknowledged,TResult Function( bool chargingOnly)?  chargingOnlyChanged,TResult Function()?  rotateNowPressed,TResult Function()?  favouritesSettled,TResult Function()?  statusRefreshed,TResult Function()?  batteryTipDismissed,TResult Function()?  proLapseAcknowledged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.favouriteUrls,_that.isPro,_that.passUntil);case _EntitlementChanged() when entitlementChanged != null:
@@ -191,7 +191,7 @@ return targetChanged(_that.target);case _ShuffleChanged() when shuffleChanged !=
 return shuffleChanged(_that.shuffle);case _SourceChanged() when sourceChanged != null:
 return sourceChanged(_that.source);case _CategoryChanged() when categoryChanged != null:
 return categoryChanged(_that.category);case _FolderChosen() when folderChosen != null:
-return folderChosen(_that.folderId,_that.name);case _FolderChanged() when folderChanged != null:
+return folderChosen(_that.folderId,_that.name,_that.enable);case _FolderChanged() when folderChanged != null:
 return folderChanged(_that.folderId,_that.name);case _FolderSettled() when folderSettled != null:
 return folderSettled();case _FolderStopAcknowledged() when folderStopAcknowledged != null:
 return folderStopAcknowledged();case _ChargingOnlyChanged() when chargingOnlyChanged != null:
@@ -218,7 +218,7 @@ return proLapseAcknowledged();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<String> favouriteUrls,  bool isPro,  DateTime? passUntil)  started,required TResult Function( bool isPro,  String userId,  DateTime? passUntil)  entitlementChanged,required TResult Function( List<String> favouriteUrls)  favouritesChanged,required TResult Function( bool enabled)  toggled,required TResult Function( int minutes)  intervalChanged,required TResult Function( WallpaperTarget target)  targetChanged,required TResult Function( bool shuffle)  shuffleChanged,required TResult Function( AutoRotateSource source)  sourceChanged,required TResult Function( String category)  categoryChanged,required TResult Function( String folderId,  String name)  folderChosen,required TResult Function( String folderId,  String? name)  folderChanged,required TResult Function()  folderSettled,required TResult Function()  folderStopAcknowledged,required TResult Function( bool chargingOnly)  chargingOnlyChanged,required TResult Function()  rotateNowPressed,required TResult Function()  favouritesSettled,required TResult Function()  statusRefreshed,required TResult Function()  batteryTipDismissed,required TResult Function()  proLapseAcknowledged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<String> favouriteUrls,  bool isPro,  DateTime? passUntil)  started,required TResult Function( bool isPro,  String userId,  DateTime? passUntil)  entitlementChanged,required TResult Function( List<String> favouriteUrls)  favouritesChanged,required TResult Function( bool enabled)  toggled,required TResult Function( int minutes)  intervalChanged,required TResult Function( WallpaperTarget target)  targetChanged,required TResult Function( bool shuffle)  shuffleChanged,required TResult Function( AutoRotateSource source)  sourceChanged,required TResult Function( String category)  categoryChanged,required TResult Function( String folderId,  String name,  bool enable)  folderChosen,required TResult Function( String folderId,  String? name)  folderChanged,required TResult Function()  folderSettled,required TResult Function()  folderStopAcknowledged,required TResult Function( bool chargingOnly)  chargingOnlyChanged,required TResult Function()  rotateNowPressed,required TResult Function()  favouritesSettled,required TResult Function()  statusRefreshed,required TResult Function()  batteryTipDismissed,required TResult Function()  proLapseAcknowledged,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started(_that.favouriteUrls,_that.isPro,_that.passUntil);case _EntitlementChanged():
@@ -230,7 +230,7 @@ return targetChanged(_that.target);case _ShuffleChanged():
 return shuffleChanged(_that.shuffle);case _SourceChanged():
 return sourceChanged(_that.source);case _CategoryChanged():
 return categoryChanged(_that.category);case _FolderChosen():
-return folderChosen(_that.folderId,_that.name);case _FolderChanged():
+return folderChosen(_that.folderId,_that.name,_that.enable);case _FolderChanged():
 return folderChanged(_that.folderId,_that.name);case _FolderSettled():
 return folderSettled();case _FolderStopAcknowledged():
 return folderStopAcknowledged();case _ChargingOnlyChanged():
@@ -256,7 +256,7 @@ return proLapseAcknowledged();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<String> favouriteUrls,  bool isPro,  DateTime? passUntil)?  started,TResult? Function( bool isPro,  String userId,  DateTime? passUntil)?  entitlementChanged,TResult? Function( List<String> favouriteUrls)?  favouritesChanged,TResult? Function( bool enabled)?  toggled,TResult? Function( int minutes)?  intervalChanged,TResult? Function( WallpaperTarget target)?  targetChanged,TResult? Function( bool shuffle)?  shuffleChanged,TResult? Function( AutoRotateSource source)?  sourceChanged,TResult? Function( String category)?  categoryChanged,TResult? Function( String folderId,  String name)?  folderChosen,TResult? Function( String folderId,  String? name)?  folderChanged,TResult? Function()?  folderSettled,TResult? Function()?  folderStopAcknowledged,TResult? Function( bool chargingOnly)?  chargingOnlyChanged,TResult? Function()?  rotateNowPressed,TResult? Function()?  favouritesSettled,TResult? Function()?  statusRefreshed,TResult? Function()?  batteryTipDismissed,TResult? Function()?  proLapseAcknowledged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<String> favouriteUrls,  bool isPro,  DateTime? passUntil)?  started,TResult? Function( bool isPro,  String userId,  DateTime? passUntil)?  entitlementChanged,TResult? Function( List<String> favouriteUrls)?  favouritesChanged,TResult? Function( bool enabled)?  toggled,TResult? Function( int minutes)?  intervalChanged,TResult? Function( WallpaperTarget target)?  targetChanged,TResult? Function( bool shuffle)?  shuffleChanged,TResult? Function( AutoRotateSource source)?  sourceChanged,TResult? Function( String category)?  categoryChanged,TResult? Function( String folderId,  String name,  bool enable)?  folderChosen,TResult? Function( String folderId,  String? name)?  folderChanged,TResult? Function()?  folderSettled,TResult? Function()?  folderStopAcknowledged,TResult? Function( bool chargingOnly)?  chargingOnlyChanged,TResult? Function()?  rotateNowPressed,TResult? Function()?  favouritesSettled,TResult? Function()?  statusRefreshed,TResult? Function()?  batteryTipDismissed,TResult? Function()?  proLapseAcknowledged,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.favouriteUrls,_that.isPro,_that.passUntil);case _EntitlementChanged() when entitlementChanged != null:
@@ -268,7 +268,7 @@ return targetChanged(_that.target);case _ShuffleChanged() when shuffleChanged !=
 return shuffleChanged(_that.shuffle);case _SourceChanged() when sourceChanged != null:
 return sourceChanged(_that.source);case _CategoryChanged() when categoryChanged != null:
 return categoryChanged(_that.category);case _FolderChosen() when folderChosen != null:
-return folderChosen(_that.folderId,_that.name);case _FolderChanged() when folderChanged != null:
+return folderChosen(_that.folderId,_that.name,_that.enable);case _FolderChanged() when folderChanged != null:
 return folderChanged(_that.folderId,_that.name);case _FolderSettled() when folderSettled != null:
 return folderSettled();case _FolderStopAcknowledged() when folderStopAcknowledged != null:
 return folderStopAcknowledged();case _ChargingOnlyChanged() when chargingOnlyChanged != null:
@@ -957,11 +957,12 @@ as String,
 
 
 class _FolderChosen with DiagnosticableTreeMixin implements AutoRotateEvent {
-  const _FolderChosen({required this.folderId, required this.name});
+  const _FolderChosen({required this.folderId, required this.name, this.enable = false});
   
 
  final  String folderId;
  final  String name;
+@JsonKey() final  bool enable;
 
 /// Create a copy of AutoRotateEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -974,21 +975,21 @@ _$FolderChosenCopyWith<_FolderChosen> get copyWith => __$FolderChosenCopyWithImp
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'AutoRotateEvent.folderChosen'))
-    ..add(DiagnosticsProperty('folderId', folderId))..add(DiagnosticsProperty('name', name));
+    ..add(DiagnosticsProperty('folderId', folderId))..add(DiagnosticsProperty('name', name))..add(DiagnosticsProperty('enable', enable));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FolderChosen&&(identical(other.folderId, folderId) || other.folderId == folderId)&&(identical(other.name, name) || other.name == name));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FolderChosen&&(identical(other.folderId, folderId) || other.folderId == folderId)&&(identical(other.name, name) || other.name == name)&&(identical(other.enable, enable) || other.enable == enable));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,folderId,name);
+int get hashCode => Object.hash(runtimeType,folderId,name,enable);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'AutoRotateEvent.folderChosen(folderId: $folderId, name: $name)';
+  return 'AutoRotateEvent.folderChosen(folderId: $folderId, name: $name, enable: $enable)';
 }
 
 
@@ -999,7 +1000,7 @@ abstract mixin class _$FolderChosenCopyWith<$Res> implements $AutoRotateEventCop
   factory _$FolderChosenCopyWith(_FolderChosen value, $Res Function(_FolderChosen) _then) = __$FolderChosenCopyWithImpl;
 @useResult
 $Res call({
- String folderId, String name
+ String folderId, String name, bool enable
 });
 
 
@@ -1016,11 +1017,12 @@ class __$FolderChosenCopyWithImpl<$Res>
 
 /// Create a copy of AutoRotateEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? folderId = null,Object? name = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? folderId = null,Object? name = null,Object? enable = null,}) {
   return _then(_FolderChosen(
 folderId: null == folderId ? _self.folderId : folderId // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,
+as String,enable: null == enable ? _self.enable : enable // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

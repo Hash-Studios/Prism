@@ -10,6 +10,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
@@ -99,6 +100,8 @@ class AutoRotateScreen extends StatefulWidget {
 class _AutoRotateScreenState extends State<AutoRotateScreen> {
   bool _initializationFailed = false;
   bool _started = false;
+  final String _offeredFolderOwnerId = app_state.prismUser.id;
+  StreamSubscription<SessionState>? _sessionSubscription;
   late ({String id, String name})? _offeredFolder = widget.folderId == null || widget.folderId!.isEmpty
       ? null
       : (id: widget.folderId!, name: widget.folderName ?? '');
@@ -108,10 +111,24 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _sessionSubscription ??= context.read<SessionBloc>().stream.listen((SessionState session) {
+      if (mounted &&
+          session.status == LoadStatus.success &&
+          session.session.userId != _offeredFolderOwnerId &&
+          _offeredFolder != null) {
+        setState(() => _offeredFolder = null);
+      }
+    });
     if (!_started) {
       _started = true;
       _start();
     }
+  }
+
+  @override
+  void dispose() {
+    unawaited(_sessionSubscription?.cancel());
+    super.dispose();
   }
 
   Future<void> _start() async {
@@ -229,10 +246,27 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
                   state: state,
                   offeredFolder: _offeredFolder,
                   onOfferClosed: () => setState(() => _offeredFolder = null),
+                  onChooseFolder: (String? current) => _chooseFolder(context, current),
+                  onRetrySource: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.toggled(true)),
+                  onConfirmOffer: (String id, String name) => _confirmOffer(context, id, name),
                 );
               },
             ),
     );
+  }
+
+  Future<void> _chooseFolder(BuildContext context, String? current) async {
+    final FolderEntity? picked = await _pickFolder(context, current);
+    if (!context.mounted || picked == null || app_state.prismUser.id != picked.ownerId) return;
+    context.read<AutoRotateBloc>().add(AutoRotateEvent.folderChosen(folderId: picked.id, name: picked.name));
+  }
+
+  void _confirmOffer(BuildContext context, String id, String name) {
+    if (app_state.prismUser.id != _offeredFolderOwnerId) {
+      setState(() => _offeredFolder = null);
+      return;
+    }
+    context.read<AutoRotateBloc>().add(AutoRotateEvent.folderChosen(folderId: id, name: name, enable: true));
   }
 }
 
@@ -341,11 +375,21 @@ class _ProPromptState extends State<_ProPrompt> {
 }
 
 class _Controls extends StatelessWidget {
-  const _Controls({required this.state, this.offeredFolder, required this.onOfferClosed});
+  const _Controls({
+    required this.state,
+    this.offeredFolder,
+    required this.onOfferClosed,
+    required this.onChooseFolder,
+    required this.onRetrySource,
+    required this.onConfirmOffer,
+  });
 
   final AutoRotateState state;
   final ({String id, String name})? offeredFolder;
   final VoidCallback onOfferClosed;
+  final ValueChanged<String?> onChooseFolder;
+  final VoidCallback onRetrySource;
+  final void Function(String id, String name) onConfirmOffer;
 
   String _statusText(AppLocalizations l10n) {
     if (state.startFailed) return l10n.wallpaperAutoRotateCouldNotStart;
@@ -415,12 +459,7 @@ class _Controls extends StatelessWidget {
                   label: context.l10n.wallpaperAutoRotateConfirmFolderAction,
                   icon: Icons.autorenew_rounded,
                   size: PrismButtonSize.compact,
-                  onPressed: () {
-                    bloc
-                      ..add(AutoRotateEvent.folderChosen(folderId: offer.id, name: offer.name))
-                      ..add(const AutoRotateEvent.toggled(true));
-                    onOfferClosed();
-                  },
+                  onPressed: () => onConfirmOffer(offer.id, offer.name),
                 ),
                 PrismButton(
                   label: context.l10n.wallpaperNotNow,
@@ -473,7 +512,7 @@ class _Controls extends StatelessWidget {
                   label: context.l10n.wallpaperTryAgain,
                   variant: PrismButtonVariant.tonal,
                   size: PrismButtonSize.compact,
-                  onPressed: () => bloc.add(const AutoRotateEvent.toggled(true)),
+                  onPressed: onRetrySource,
                 ),
               ],
             ),
@@ -546,7 +585,7 @@ class _Controls extends StatelessWidget {
             config.source,
             (v) => switch (v) {
               AutoRotateSource.category => _pickCategory(context, config.categoryName),
-              AutoRotateSource.folder => _pickFolder(context, config.folderId),
+              AutoRotateSource.folder => onChooseFolder(config.folderId),
               _ => bloc.add(AutoRotateEvent.sourceChanged(v)),
             },
           ),
@@ -640,22 +679,35 @@ Future<void> _pickCategory(BuildContext context, String current) async {
   if (picked != null) bloc.add(AutoRotateEvent.categoryChanged(picked));
 }
 
-Future<void> _pickFolder(BuildContext context, String? current) async {
-  final AutoRotateBloc bloc = context.read<AutoRotateBloc>();
+Future<FolderEntity?> _pickFolder(BuildContext context, String? current) async {
   final FoldersBloc folders = context.read<FoldersBloc>();
+  final String sheetOwnerId = app_state.prismUser.id;
   unawaited(ensureFoldersLoaded(context));
   final FolderEntity? picked = await showPrismSheet<FolderEntity>(
     context,
     builder: (sheetContext) => BlocBuilder<FoldersBloc, FoldersState>(
       bloc: folders,
-      builder: (context, state) {
-        final AppLocalizations l10n = context.l10n;
+      builder: (pickerContext, state) {
+        final AppLocalizations l10n = pickerContext.l10n;
         final bool mine = state.userId.isNotEmpty && state.userId == app_state.prismUser.id;
         final Widget body = switch (state.status) {
-          LoadStatus.failure when mine => Text(l10n.foldersLoadError, style: PrismTextStyles.body(context)),
+          _ when app_state.prismUser.id.isEmpty => SignInPrompt(feature: l10n.foldersSignInFeature),
+          LoadStatus.failure when mine => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(l10n.foldersLoadError, style: PrismTextStyles.body(pickerContext)),
+              const SizedBox(height: PrismSpace.sm),
+              PrismButton(
+                label: l10n.wallpaperTryAgain,
+                variant: PrismButtonVariant.tonal,
+                size: PrismButtonSize.compact,
+                onPressed: () => unawaited(ensureFoldersLoaded(context)),
+              ),
+            ],
+          ),
           LoadStatus.success when mine && state.folders.isEmpty => Text(
             l10n.wallpaperAutoRotateNoFolders,
-            style: PrismTextStyles.body(context),
+            style: PrismTextStyles.body(pickerContext),
           ),
           LoadStatus.success when mine => PrismGroup(
             children: <Widget>[
@@ -676,7 +728,10 @@ Future<void> _pickFolder(BuildContext context, String? current) async {
       },
     ),
   );
-  if (picked != null) bloc.add(AutoRotateEvent.folderChosen(folderId: picked.id, name: picked.name));
+  if (picked == null || !context.mounted || app_state.prismUser.id != sheetOwnerId || picked.ownerId != sheetOwnerId) {
+    return null;
+  }
+  return picked;
 }
 
 /// A short message in a card, with optional actions under it.
