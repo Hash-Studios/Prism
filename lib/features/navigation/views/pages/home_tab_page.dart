@@ -42,6 +42,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:quick_actions/quick_actions.dart';
 
+final DateTime _appSessionStartedAt = DateTime.now();
+
 const int _homeTabIndex = 0;
 const int _collectionTabIndex = 3;
 const String _wallOfTheDayShortcut = 'Wall_of_the_Day';
@@ -114,6 +116,7 @@ class HomeTabTickerMode extends StatelessWidget {
 }
 
 class _HomeTabPageState extends State<HomeTabPage> {
+  final DateTime _sessionStartedAt = _appSessionStartedAt;
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _isOnline = true;
   bool _hasHandledQuickActionInvocation = false;
@@ -344,7 +347,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         body: Stack(
           children: <Widget>[
-            PersonalizedFeedScreen(onTuneTap: _openFeedSettings),
+            PersonalizedFeedScreen(onTuneTap: _openFeedSettings, sessionStartedAt: _sessionStartedAt),
             Padding(
               padding: EdgeInsets.only(top: PersonalizedFeedScreen.headerHeight(context)),
               child: ConnectivityWidget(offline: !_isOnline),

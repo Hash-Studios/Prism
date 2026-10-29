@@ -62,6 +62,7 @@ class WallpaperHistoryBloc extends Bloc<WallpaperHistoryEvent, WallpaperHistoryS
 
   /// Synced walls a remove took away, by row id, so Undo can put them back.
   final Map<String, HistoryWall> _removedSynced = <String, HistoryWall>{};
+  final Map<String, (String, int)> _removedSessions = <String, (String, int)>{};
 
   WallpaperHistoryState _read() => WallpaperHistoryState(
     items: mergeHistoryRows(_store.items(), _synced.items()),
@@ -79,6 +80,8 @@ class WallpaperHistoryBloc extends Bloc<WallpaperHistoryEvent, WallpaperHistoryS
   }
 
   Future<void> _onCleared(_Cleared event, Emitter<WallpaperHistoryState> emit) async {
+    _removedSynced.clear();
+    _removedSessions.clear();
     await _store.clear();
     try {
       await _synced.clear();
@@ -95,12 +98,10 @@ class WallpaperHistoryBloc extends Bloc<WallpaperHistoryEvent, WallpaperHistoryS
 
   Future<void> _onRemoved(_Removed event, Emitter<WallpaperHistoryState> emit) async {
     final AppliedWallpaper? item = state.items.where((row) => row.id == event.id).firstOrNull;
-    final String? key = item == null
-        ? null
-        : isSyncedHistoryRow(item)
-        ? item.id.substring(_syncedPrefix.length)
-        : _keyOf(item);
-    if (item != null && !isSyncedHistoryRow(item)) await _store.remove(item.id);
+    if (item == null) return;
+    _removedSessions[event.id] = _synced.recordingSession;
+    final String? key = isSyncedHistoryRow(item) ? item.id.substring(_syncedPrefix.length) : _keyOf(item);
+    if (!isSyncedHistoryRow(item)) await _store.remove(item.id);
     final bool stillShown = key != null && _store.items().any((row) => _keyOf(row) == key);
     final HistoryWall? synced = key == null || stillShown
         ? null
@@ -118,6 +119,11 @@ class WallpaperHistoryBloc extends Bloc<WallpaperHistoryEvent, WallpaperHistoryS
   }
 
   Future<void> _restore(AppliedWallpaper item) async {
+    final (String, int)? removedSession = _removedSessions.remove(item.id);
+    if (removedSession == null || removedSession != _synced.recordingSession) {
+      _removedSynced.remove(item.id);
+      return;
+    }
     if (!isSyncedHistoryRow(item)) await _store.record(item);
     final HistoryWall? synced = _removedSynced.remove(item.id);
     if (synced != null) await _guard(() => _synced.record(synced));

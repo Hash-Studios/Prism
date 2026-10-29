@@ -57,6 +57,14 @@ class _MockSessionRepository extends Mock implements SessionRepository {}
 
 class _MockDownloadedWallIndex extends Mock implements DownloadedWallIndex {}
 
+class _FailingViewingPreferenceStore extends InMemoryLocalStore {
+  @override
+  Future<void> set(String key, Object? value) async {
+    if (key == PersistenceKeys.settings(PersistenceKeys.viewedHistoryEnabled)) throw StateError('disk full');
+    await super.set(key, value);
+  }
+}
+
 class _RecordingUrlLauncher extends UrlLauncherPlatform {
   _RecordingUrlLauncher({required this.opens});
 
@@ -1090,6 +1098,27 @@ void main() {
       expect(LowDataMode.enabled.value, isTrue);
       expect(getIt<SettingsLocalDataSource>().get<bool>(LowDataMode.settingsKey, defaultValue: false), isTrue);
       expect(switchOf(tester, 'Data saver').value, isTrue);
+    });
+
+    testWidgets('a failed viewing-history preference write leaves the switch on and shows an error', (tester) async {
+      await getIt.unregister<RecentlyViewedStore>();
+      final viewed = RecentlyViewedStore(SettingsLocalDataSource(_FailingViewingPreferenceStore()));
+      getIt.registerSingleton<RecentlyViewedStore>(viewed);
+      useTallSurface(tester);
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SettingsScreen(),
+        ),
+      );
+      await tester.tap(find.text('Save viewing history'));
+      await tester.pump();
+      expect(switchOf(tester, 'Save viewing history').value, isTrue);
+      expect(viewed.enabled, isTrue);
+      expect(messages, contains('Something went wrong. Try again.'));
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(seconds: 1));
     });
 
     testWidgets('Save viewing history is on by default, and turning it off clears the recent list', (tester) async {

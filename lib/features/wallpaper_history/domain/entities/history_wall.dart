@@ -41,16 +41,27 @@ class HistoryWall {
   }) {
     final String wallId = id?.trim() ?? '';
     final String thumb = thumbnailUrl?.trim() ?? '';
-    if (wallId.isEmpty || wallId.length > 128 || !catalogSources.contains(source)) return null;
+    if (wallId.isEmpty || wallId.length > 128 || wallId.contains('/') || !catalogSources.contains(source)) return null;
     if (!isPublicThumbnail(thumb)) return null;
     return HistoryWall._(id: wallId, source: source!, thumbnailUrl: thumb, action: action, at: at.toUtc());
   }
 
   /// Signed links expire and may unlock a gated original, so they are never stored.
   static bool isPublicThumbnail(String url) {
-    if (url.length > 1024 || !url.startsWith('https://') || url.length == 'https://'.length) return false;
-    final String lower = url.toLowerCase();
-    return !lower.contains('x-amz-signature') && !lower.contains('x-amz-credential');
+    if (url.length > 1024) return false;
+    final Uri? uri = Uri.tryParse(url);
+    if (uri == null || uri.scheme.toLowerCase() != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty) return false;
+    const Set<String> signedParameters = <String>{'signature', 'googleaccessid', 'sig'};
+    try {
+      return !uri.queryParameters.keys.any((key) {
+        final String normalized = key.toLowerCase();
+        return signedParameters.contains(normalized) ||
+            normalized.startsWith('x-amz-') ||
+            normalized.startsWith('x-goog-');
+      });
+    } on FormatException {
+      return false;
+    }
   }
 
   HistoryWall copyWith({HistoryAction? action, DateTime? at}) => HistoryWall._(
@@ -84,7 +95,14 @@ class HistoryWall {
     final Object? id = json['id'];
     final Object? thumb = json['thumb'];
     final HistoryAction? action = HistoryAction.values.asNameMap()[json['action']];
-    final DateTime? at = parseDateTime(json['at']);
+    final Object? rawAt = json['at'];
+    if (rawAt is int && (rawAt < -8640000000000000 || rawAt > 8640000000000000)) return null;
+    DateTime? at;
+    try {
+      at = parseDateTime(rawAt);
+    } on FormatException {
+      return null;
+    }
     if (id is! String || thumb is! String || action == null || at == null) return null;
     return tryCreate(
       id: id,

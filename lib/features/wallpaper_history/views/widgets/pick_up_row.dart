@@ -18,12 +18,14 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
-/// The pick-up walls for this session, read once when Home opens. A wall the user saved, set or downloaded is left
+/// The pick-up walls for this session. A wall the user saved, set or downloaded is left
 /// out, so are walls viewed in this session.
 List<HistoryWall> pickUpWallsForSession({DateTime? now}) {
   if (!getIt.isRegistered<RecentlyViewedStore>() || !getIt.isRegistered<SyncedHistoryStore>()) {
     return const <HistoryWall>[];
   }
+  final RecentlyViewedStore viewed = getIt<RecentlyViewedStore>();
+  if (!viewed.enabled) return const <HistoryWall>[];
   final Set<String> used = <String>{
     ...getIt<SyncedHistoryStore>().items().map((wall) => wall.key),
     if (getIt.isRegistered<WallpaperHistoryStore>())
@@ -34,7 +36,7 @@ List<HistoryWall> pickUpWallsForSession({DateTime? now}) {
       : null;
   final String userId = app_state.prismUser.id;
   return pickUpWalls(
-    viewedNewestFirst: getIt<RecentlyViewedStore>().items(),
+    viewedNewestFirst: viewed.items(),
     sessionStart: now ?? DateTime.now(),
     returningSession: AppSessionTracker.instance.sessionNumber > 1,
     kept: (wall) => used.contains(wall.key) || (favourites?.isWallFavourite(userId, wall.id) ?? false),

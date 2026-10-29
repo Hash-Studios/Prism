@@ -439,10 +439,23 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   bool get _onScreen => _FeedStep.maybeOf(context)?.active ?? true;
 
-  void _recordView() {
+  Future<void> _recordView() async {
     final FeedItemEntity? entity = _viewEntity;
     final HistoryWall? wall = entity == null ? null : _historyWall(entity, HistoryAction.view);
-    if (wall != null && getIt.isRegistered<RecentlyViewedStore>()) unawaited(getIt<RecentlyViewedStore>().record(wall));
+    if (wall == null || !getIt.isRegistered<RecentlyViewedStore>()) return;
+    try {
+      await getIt<RecentlyViewedStore>().record(wall);
+    } catch (error, stackTrace) {
+      logger.w('Viewing history could not be saved', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  void _observeLoaded(WallpaperDetailLoaded state) {
+    if (_openRecorded) return;
+    _openRecorded = true;
+    _recordTaste(TasteAction.open, state.entity);
+    _viewEntity = state.entity;
+    if (_onScreen) _views.shown();
   }
 
   /// Zoom, set, save and download count as a view at once.
@@ -560,6 +573,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       _loaded = true;
       _loadWallpaper(context);
     }
+    final WallpaperDetailState state = context.read<WallpaperDetailBloc>().state;
+    if (state is WallpaperDetailLoaded) _viewEntity ??= state.entity;
     if (!_onScreen) {
       _views.hidden();
     } else if (_viewEntity != null) {
@@ -608,12 +623,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         if (state is WallpaperDetailLoaded && !state.recommendations.started) {
           _loadMoreRecommendations();
         }
-        if (state is WallpaperDetailLoaded && !_openRecorded) {
-          _openRecorded = true;
-          _recordTaste(TasteAction.open, state.entity);
-          _viewEntity = state.entity;
-          if (_onScreen) _views.shown();
-        }
+        if (state is WallpaperDetailLoaded) _observeLoaded(state);
       },
       child: BlocBuilder<WallpaperDetailBloc, WallpaperDetailState>(
         builder: (context, state) {
@@ -1636,6 +1646,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   Widget _buildActionBar(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
+    final (String, int)? historySession = getIt.isRegistered<SyncedHistoryStore>()
+        ? getIt<SyncedHistoryStore>().recordingSession
+        : null;
+    final (String, bool) historyOwner = (app_state.prismUser.id, app_state.prismUser.loggedIn);
     final url = entity.fullUrl;
     final String previewTitle = wallpaperPreviewTitle(context.l10n, entity);
     final File? localFile = widget.localFile;
@@ -1689,6 +1703,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         sourceContext: _getSourceContext(state),
         requestId: widget.requestId,
         onDownloaded: () {
+          if (!mounted || historyOwner != (app_state.prismUser.id, app_state.prismUser.loggedIn)) return;
+          final (String, int)? currentSession = getIt.isRegistered<SyncedHistoryStore>()
+              ? getIt<SyncedHistoryStore>().recordingSession
+              : null;
+          if (currentSession != historySession) return;
           _recordTaste(TasteAction.download, entity);
           _actedOn(entity);
           unawaited(_recordDownload(entity));
@@ -1706,7 +1725,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
         prepareSource: prepareSource,
         prepareAuthorized: prepareAuthorized,
-        thumbnailUrl: entity.thumbnailUrl,
+        thumbnailUrl: WallpaperDisplaySource.of(entity).thumbnail,
         promptNotificationPermissionOnSuccess: true,
         entryPoint: 'wallpaper_detail',
         requestId: widget.requestId,

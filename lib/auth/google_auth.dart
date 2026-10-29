@@ -12,6 +12,7 @@ import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/streak_widget_sync.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notifications.dart';
@@ -215,6 +216,7 @@ class GoogleAuth {
   Future<bool> signOutGoogle({SignInSession? session}) async {
     final SignInSession operation = session ?? SignInSession(authenticatedUid: () => _auth.currentUser?.uid);
     if (!operation.isCurrent) return false;
+    WallpaperService.invalidatePendingHistoryWrites();
     final PrismUsersV2 existingUser = app_state.prismUser;
     final User? authenticatedUser = _auth.currentUser;
     clearInAppNotificationSyncGateAll();

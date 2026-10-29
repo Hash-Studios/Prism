@@ -7,6 +7,7 @@ import 'package:Prism/core/persistence/data_sources/notifications_local_data_sou
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/ios_widget_channel.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notification_tombstones.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
@@ -34,6 +35,7 @@ class LocalAccountDataCleaner {
   final List<LocalClearStep> _steps;
 
   Future<void> clearForUser(String userId) async {
+    WallpaperService.invalidatePendingHistoryWrites();
     for (final LocalClearStep step in _steps) {
       try {
         await step.run(userId);

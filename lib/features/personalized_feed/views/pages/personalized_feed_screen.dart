@@ -36,6 +36,7 @@ import 'package:Prism/features/personalized_feed/views/widgets/trending_chip_sli
 import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
 import 'package:Prism/features/wallpaper_history/views/widgets/pick_up_row.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -68,9 +69,10 @@ List<(int start, int end, MoodList? rowAfter)> forYouChunks(int itemCount, int c
 }
 
 class PersonalizedFeedScreen extends StatefulWidget {
-  const PersonalizedFeedScreen({super.key, this.onTuneTap});
+  const PersonalizedFeedScreen({super.key, this.onTuneTap, this.sessionStartedAt});
 
   final VoidCallback? onTuneTap;
+  final DateTime? sessionStartedAt;
 
   /// Height of the status bar strip, the top bar and the tabs together, for things that sit under the header.
   static double headerHeight(BuildContext context) =>
@@ -85,7 +87,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   static const int _carouselPreviewCount = PrismFeedLayout.carouselPreviewCount;
 
   late final PersonalizedFeedBloc _bloc;
-  late final List<HistoryWall> _pickUp = pickUpWallsForSession();
+  late final DateTime _sessionStart = widget.sessionStartedAt ?? DateTime.now();
+  RecentlyViewedStore? _viewedHistory;
+  SyncedHistoryStore? _syncedHistory;
   late final TrendingBloc _trending;
   late final TabController _tabs;
   final ScrollController _scrollController = ScrollController();
@@ -112,7 +116,17 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     unawaited(_loadHomeMoods());
     _tabs = TabController(length: HomeFeedChip.values.length, vsync: this, initialIndex: _bloc.state.chip.index);
     personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
+    if (getIt.isRegistered<RecentlyViewedStore>()) {
+      _viewedHistory = getIt<RecentlyViewedStore>()..addListener(_onHistoryChanged);
+    }
+    if (getIt.isRegistered<SyncedHistoryStore>()) {
+      _syncedHistory = getIt<SyncedHistoryStore>()..addListener(_onHistoryChanged);
+    }
     _bloc.add(const PersonalizedFeedEvent.started());
+  }
+
+  void _onHistoryChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onFeedSettingsChanged() {
@@ -141,6 +155,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   @override
   void dispose() {
     personalizedFeedSettingsRevision.removeListener(_onFeedSettingsChanged);
+    _viewedHistory?.removeListener(_onHistoryChanged);
+    _syncedHistory?.removeListener(_onHistoryChanged);
     _scrollController.dispose();
     _tabs.dispose();
     unawaited(_bloc.close());
@@ -601,14 +617,15 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       ),
     );
     // The pick-up row sits after the second grid row, so the feed still starts on the first screen.
-    final int? pickUpAt = _pickUp.isEmpty || visibleItems.isEmpty
+    final List<HistoryWall> pickUp = pickUpWallsForSession(now: _sessionStart);
+    final int? pickUpAt = pickUp.isEmpty || visibleItems.isEmpty
         ? null
         : math.min(_pickUpGridRows * crossAxisCount, chunks.first.$2);
     return <Widget>[
       for (int i = 0; i < chunks.length; i++) ...<Widget>[
         if (i == 0 && pickUpAt != null) ...<Widget>[
           grid(chunks[i].$1, pickUpAt, chunkItems[i]),
-          SliverToBoxAdapter(child: PickUpRow(walls: _pickUp)),
+          SliverToBoxAdapter(child: PickUpRow(walls: pickUp)),
           if (pickUpAt < chunks[i].$2) grid(pickUpAt, chunks[i].$2, chunkItems[i]),
         ] else
           grid(chunks[i].$1, chunks[i].$2, chunkItems[i]),

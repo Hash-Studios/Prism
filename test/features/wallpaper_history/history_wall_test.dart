@@ -32,6 +32,10 @@ void main() {
       expect(_tryCreate(id: 'a' * 129), isNull);
     });
 
+    test('returns null for an id that cannot be a Firestore document id', () {
+      expect(_tryCreate(id: 'folder/wall'), isNull);
+    });
+
     test('returns null for a downloaded or unknown source', () {
       expect(_tryCreate(source: WallpaperSource.downloaded), isNull);
       expect(_tryCreate(source: WallpaperSource.unknown), isNull);
@@ -53,12 +57,44 @@ void main() {
       expect(_tryCreate(thumbnailUrl: 'https://x.com/a.jpg?X-Amz-Credential=abc'), isNull);
     });
 
+    test('returns null for any X-Amz parameter', () {
+      expect(_tryCreate(thumbnailUrl: 'https://x.com/a.jpg?X-Amz-Date=20261029'), isNull);
+    });
+
+    test('returns null for percent-encoded signed parameters', () {
+      expect(_tryCreate(thumbnailUrl: 'https://x.com/a.jpg?%73ignature=abc'), isNull);
+    });
+
+    test('returns null instead of throwing for invalid UTF-8 query keys', () {
+      expect(_tryCreate(thumbnailUrl: 'https://x.com/a.jpg?%FF=x'), isNull);
+    });
+
+    test('allows public Pexels thumbnail resizing parameters', () {
+      expect(
+        _tryCreate(
+          source: WallpaperSource.pexels,
+          id: '123',
+          thumbnailUrl: 'https://images.pexels.com/photos/123/preview.jpeg?auto=compress&cs=tinysrgb&w=640',
+        ),
+        isNotNull,
+      );
+    });
+
     test('returns null for a thumbnail longer than 1024 chars', () {
       expect(_tryCreate(thumbnailUrl: 'https://x.com/${'a' * 1024}'), isNull);
     });
 
     test('returns null for a bare https scheme', () {
       expect(_tryCreate(thumbnailUrl: 'https://'), isNull);
+    });
+
+    test('returns null for malformed and hostless https thumbnails', () {
+      expect(_tryCreate(thumbnailUrl: 'https://[broken'), isNull);
+      expect(_tryCreate(thumbnailUrl: 'https:///path.jpg'), isNull);
+    });
+
+    test('returns null for Google signed thumbnails', () {
+      expect(_tryCreate(thumbnailUrl: 'https://x.com/a.jpg?X-Goog-Signature=abc'), isNull);
     });
   });
 
@@ -94,6 +130,11 @@ void main() {
 
   test('tryParse returns null when at is missing', () {
     final Map<String, Object?> json = _wall('abc').toJson()..remove('at');
+    expect(HistoryWall.tryParse(json), isNull);
+  });
+
+  test('tryParse returns null for an out-of-range timestamp', () {
+    final Map<String, Object?> json = _wall('abc').toJson()..['at'] = 1 << 62;
     expect(HistoryWall.tryParse(json), isNull);
   });
 

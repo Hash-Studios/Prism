@@ -113,6 +113,31 @@ void main() {
     verify: (bloc) => expect(bloc.state.items.map((item) => item.id), <String>['b', 'a']),
   );
 
+  for (final String invalidation in ['clear', 'account session']) {
+    test('Undo cannot restore a removed wallpaper after $invalidation', () async {
+      final wall = _localSet('a', DateTime(2026));
+      await store.record(wall);
+      await synced.record(_synced(WallpaperSource.prism, 'a', wall.appliedAt));
+      final bloc = build();
+      addTearDown(bloc.close);
+      bloc.add(const WallpaperHistoryEvent.started());
+      await bloc.stream.first;
+      bloc.add(const WallpaperHistoryEvent.removed('a'));
+      await bloc.stream.first;
+      if (invalidation == 'clear') {
+        bloc.add(const WallpaperHistoryEvent.cleared());
+        await pumpEventQueue();
+      } else {
+        await synced.clearLocal();
+      }
+      await bloc.restore(wall);
+      await pumpEventQueue();
+      expect(store.items(), isEmpty);
+      expect(synced.items(), isEmpty);
+      expect(bloc.state.items, isEmpty);
+    });
+  }
+
   group('synced history', () {
     final DateTime localAt = DateTime(2026, 1, 3, 9);
     final DateTime wallhavenAt = DateTime(2026, 1, 2, 9);

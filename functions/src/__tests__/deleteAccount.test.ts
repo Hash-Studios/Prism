@@ -125,6 +125,7 @@ test("deleting an account removes every per-user doc, anonymizes, then deletes t
   ]) {
     assert.ok(log.includes(path), path);
   }
+  assert.ok(log.indexOf("recursive:usersv2/u1/history") < log.indexOf("anonymize"));
   assert.ok(log.indexOf("anonymize") > log.indexOf("delete:draftSetups/d1"));
   assert.equal(log.at(-1), "auth");
   assert.equal(log.at(-2), "anonymize");

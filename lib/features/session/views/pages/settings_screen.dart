@@ -140,6 +140,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _haptics = PrismHaptics.enabled;
   bool _lowData = LowDataMode.enabled.value;
   bool _saveViewingHistory = getIt<RecentlyViewedStore>().enabled;
+  bool _savingViewingHistory = false;
   bool _restoring = false;
   bool _adPrivacyChoices = false;
   bool _iosShortcuts = false;
@@ -473,11 +474,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: context.l10n.settingsSaveViewingHistory,
       subtitle: context.l10n.settingsSaveViewingHistoryBody,
       value: _saveViewingHistory,
-      onChanged: (value) {
-        setState(() => _saveViewingHistory = value);
-        unawaited(getIt<RecentlyViewedStore>().setEnabled(value));
-        unawaited(analytics.track(ViewingHistoryToggledEvent(value: value)));
-      },
+      onChanged: _savingViewingHistory ? null : _setViewingHistory,
     ),
     PrismRow(
       icon: Icons.cleaning_services_rounded,
@@ -521,6 +518,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
         },
       ),
   ];
+
+  Future<void> _setViewingHistory(bool value) async {
+    final RecentlyViewedStore store = getIt<RecentlyViewedStore>();
+    setState(() => _savingViewingHistory = true);
+    try {
+      await store.setEnabled(value);
+      unawaited(analytics.track(ViewingHistoryToggledEvent(value: value)));
+    } catch (error, stackTrace) {
+      logger.w('Saving viewing history preference failed.', error: error, stackTrace: stackTrace);
+      if (mounted) toasts.error(context.l10n.coreSomethingWentWrong);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _saveViewingHistory = store.enabled;
+          _savingViewingHistory = false;
+        });
+      }
+    }
+  }
 
   Future<void> _clearCache() async {
     final AppLocalizations l10n = context.l10n;
