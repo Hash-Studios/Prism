@@ -6,13 +6,17 @@
 //   doppler run --project prism --config prd -- node tool/ai_style_samples.mjs
 //
 // Options: --dry-run (no secret, no spend, no writes), --skip-upload (generate and convert only, to review the
-// files in --out first), --only=<slug,slug>, --out=<dir> (default build/ai-style-samples).
+// files in --out first), --only=<slug,slug>, --out=<dir> (default build/ai-style-samples), --replace=<slug,slug>
+// (make and upload those styles again even when their files exist; only before the samples ship in a release,
+// because apps cache the URLs as immutable).
 // The real run needs STUDIO_SECRET and sharp from functions/node_modules (cd functions && npm ci).
 
 import { mkdir, readFile, writeFile, access } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+
+import { stylePromptSuffix } from '../infra/cloudflare/worker/src/ai_style_prompt.ts';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const STYLE_ENUM = path.join(REPO_ROOT, 'lib/features/ai_wallpaper/domain/entities/ai_style_preset.dart');
@@ -24,11 +28,10 @@ export const MODEL = 'fal-ai/bytedance/seedream/v5/lite/text-to-image';
 export const COST_PER_IMAGE_USD = 0.04;
 export const WIDTH = 1080;
 export const HEIGHT = 1920;
-// Seedream 5 Lite takes no seed, so the seed only names the attempt. A new seed for a style makes a new image, but
-// only before upload: an uploaded file is skipped, and its URL is cached as immutable. To replace uploaded samples,
-// bump VERSION and AiStylePreset.sampleVersion together.
+// Seedream 5 Lite takes no seed, so the seed only names the attempt. Change it to get a new generation instead of
+// replaying the cached raw image. After sample URLs ship, bump VERSION and AiStylePreset.sampleVersion together.
 export const DEFAULT_SEED = 20261029;
-export const SEED_OVERRIDES = { 'mesh-gradient': 20261030, '3d-render': 20261030 };
+export const SEED_OVERRIDES = { 'mesh-gradient': 20261030, '3d-render': 20261031 };
 export const SIZES = { tile: { width: 288, height: 360 }, sheet: { width: 540, height: 960 } };
 
 const API_BASE = 'https://prismwalls.com/api/ai';
@@ -54,16 +57,26 @@ export const fileName = (slug, size) => `style-samples-${VERSION}-${slug}-${size
 export const sampleUrl = (slug, size) => `${ASSET_BASE}/${fileName(slug, size)}`;
 export const seedFor = (slug) => SEED_OVERRIDES[slug] ?? DEFAULT_SEED;
 export const generationId = (slug) => `style-samples-${VERSION}-${slug}-${seedFor(slug)}`;
-// The worker adds the style the same way for an app generation.
-export const promptFor = (style) => `${SUBJECT}, ${style.apiValue} style`;
+// The same text the worker adds for an app generation.
+export const promptFor = (style) => `${SUBJECT}, ${stylePromptSuffix(style.apiValue)}`;
 
-/** One row per style and size. A style needs a generation only when one of its sizes is missing. */
-export async function planSamples({ styles, exists }) {
+export function selectStyles(all, { only, replace }) {
+  const unknown = [...(only ?? []), ...replace].filter((slug) => !all.some((style) => style.slug === slug));
+  if (unknown.length > 0) throw new Error(`Unknown style: ${unknown.join(', ')}`);
+  const styles = only ? all.filter((style) => only.includes(style.slug)) : all;
+  const excluded = replace.filter((slug) => !styles.some((style) => style.slug === slug));
+  if (excluded.length > 0) throw new Error(`Cannot replace styles excluded by --only: ${excluded.join(', ')}`);
+  return styles;
+}
+
+/** One row per style and size. A style needs a generation only when one of its sizes is missing or replaced. */
+export async function planSamples({ styles, exists, replace = [] }) {
   const items = [];
   for (const style of styles) {
     for (const size of Object.keys(SIZES)) {
       const url = sampleUrl(style.slug, size);
-      items.push({ style, size, url, fileName: fileName(style.slug, size), exists: await exists(url) });
+      const present = !replace.includes(style.slug) && (await exists(url));
+      items.push({ style, size, url, fileName: fileName(style.slug, size), exists: present });
     }
   }
   const generate = styles.filter((style) => items.some((i) => i.style === style && !i.exists));
@@ -83,6 +96,7 @@ function parseArgs(argv) {
     dryRun: argv.includes('--dry-run'),
     skipUpload: argv.includes('--skip-upload'),
     only: value('only')?.split(',').filter(Boolean),
+    replace: value('replace')?.split(',').filter(Boolean) ?? [],
     out: path.resolve(value('out') ?? path.join(REPO_ROOT, 'build/ai-style-samples')),
   };
 }
@@ -100,7 +114,7 @@ async function studioFetch(pathname, init, secret) {
 }
 
 /** The raw image for [style]. A cached file skips the call; the worker replays a finished id without a second bill. */
-async function rawImage(style, out, secret) {
+export async function rawImage(style, out, secret) {
   const id = generationId(style.slug);
   const cached = path.join(out, 'raw', `${id}.img`);
   if (await fileExists(cached)) return readFile(cached);
@@ -130,13 +144,11 @@ function loadSharp() {
   }
 }
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2));
+export async function main(argv = process.argv.slice(2)) {
+  const args = parseArgs(argv);
   const all = readStyles(await readFile(STYLE_ENUM, 'utf8'));
-  const unknown = (args.only ?? []).filter((slug) => !all.some((s) => s.slug === slug));
-  if (unknown.length > 0) throw new Error(`Unknown style: ${unknown.join(', ')}`);
-  const styles = args.only ? all.filter((s) => args.only.includes(s.slug)) : all;
-  const plan = await planSamples({ styles, exists: (url) => remoteExists(url) });
+  const styles = selectStyles(all, args);
+  const plan = await planSamples({ styles, exists: (url) => remoteExists(url), replace: args.replace });
 
   for (const item of plan.items) {
     console.log(`${item.exists ? 'skip  ' : 'create'} ${item.fileName}`);
