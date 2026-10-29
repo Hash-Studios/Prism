@@ -813,17 +813,18 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     }
     final List<String> following = _followingForOwner(owner);
     final String scope = '$owner:${following.join(',')}';
-    if (page == 1 || _followingScope != scope) {
+    final bool resetChunks = page == 1 || _followingScope != scope;
+    if (resetChunks) {
       _followingGeneration++;
-      _followingScope = scope;
-      _followingChunks = following.slices(10).map((emails) => _CreatorChunk(emails)).toList();
     }
     final int generation = _followingGeneration;
     bool isCurrent() =>
         generation == _followingGeneration &&
         _cacheScope == owner &&
         const ListEquality<String>().equals(_followingForOwner(owner), following);
-    final chunks = _followingChunks.map((chunk) => chunk.copy()).toList();
+    final chunks = resetChunks
+        ? following.slices(10).map((emails) => _CreatorChunk(emails)).toList()
+        : _followingChunks.map((chunk) => chunk.copy()).toList();
     try {
       final rows = <_WallRow>[];
       while (rows.length < _followingPageSize) {
@@ -869,6 +870,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       if (blocked is UnknownBlockedCreators) {
         return Result.error(const ServerFailure('Failed to fetch following feed: blocked accounts did not load'));
       }
+      _followingScope = scope;
       _followingChunks = chunks;
       return Result.success(
         PersonalizedFeedPage(

@@ -2534,6 +2534,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   List<Widget> _buildPanelExtras(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
+    final WallViewer? remixViewer = _remixViewer();
     final theme = Theme.of(context);
     final tags = wallpaperTags(entity);
     final notes = wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context));
@@ -2565,20 +2566,23 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       if (tags.isNotEmpty) padded(WallpaperTagChips(tags: tags, onTagTap: (tag) => openTagSearch(context, tag))),
       // The remix rows size themselves: they take no padding when they show nothing.
       if (entity case PrismFeedItem(:final wallpaper)
-          when wallpaper.aiSource != null &&
+          when remixViewer != null &&
+              wallpaper.aiSource != null &&
               wallpaper.remixOf != null &&
               wallpaper.remixOf!.trim().isNotEmpty &&
               wallpaper.remixOf!.trim() != wallpaper.firestoreDocumentId?.trim())
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: _sheetHPad),
-          child: RemixCreditRow(remixOfDocId: wallpaper.remixOf!, viewer: _remixViewer()),
+          child: RemixCreditRow(remixOfDocId: wallpaper.remixOf!, viewer: remixViewer),
         ),
-      if (entity case PrismFeedItem(
-        :final wallpaper,
-      ) when wallpaper.aiSource != null && wallpaper.remixCount > 0 && wallpaper.firestoreDocumentId != null)
+      if (entity case PrismFeedItem(:final wallpaper)
+          when remixViewer != null &&
+              wallpaper.aiSource != null &&
+              wallpaper.remixCount > 0 &&
+              wallpaper.firestoreDocumentId != null)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: _sheetHPad),
-          child: RemixesSection(original: wallpaper, viewer: _remixViewer()),
+          child: RemixesSection(original: wallpaper, viewer: remixViewer),
         ),
       if (depthTier != null && showsDepthEffect(depthTier)) padded(DepthEffectRow(tier: depthTier)),
       if (spatial != null && showsSpatialScene(spatial.tier))

@@ -33,6 +33,8 @@ import 'package:Prism/features/wall_remix/biz/remix_credit_cubit.dart';
 import 'package:Prism/features/wall_remix/biz/remixes_cubit.dart';
 import 'package:Prism/features/wall_remix/data/wall_remix_repository.dart';
 import 'package:Prism/features/wall_remix/views/widgets/remix_action_button.dart';
+import 'package:Prism/features/wall_remix/views/widgets/remix_credit_row.dart';
+import 'package:Prism/features/wall_remix/views/widgets/remixes_section.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
@@ -392,6 +394,36 @@ void main() {
 
     expect(find.byType(RemixActionButton), findsOneWidget);
     expect(find.text('Remixes'), findsOneWidget);
+  }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS, TargetPlatform.android}));
+
+  testWidgets('remix rows stay hidden when the block list is unknown and the repository is missing', (tester) async {
+    const PrismWallpaper wallpaper = PrismWallpaper(
+      core: WallpaperCore(
+        id: 'ai-remix-wall',
+        source: WallpaperSource.prism,
+        fullUrl: 'https://img.test/full.jpg',
+        thumbnailUrl: 'https://img.test/thumb.jpg',
+      ),
+      review: true,
+      firestoreDocumentId: 'ai-remix-wall-doc',
+      aiSource: WallAiSource(prompt: 'a koi pond'),
+      remixOf: 'source-wall-doc',
+      remixCount: 1,
+    );
+
+    await pumpDetail(
+      tester,
+      const WallpaperDetailLoaded(
+        recommendations: RecommendationState.exhausted(),
+        entity: FeedItemEntity.prism(id: 'ai-remix-wall', wallpaper: wallpaper),
+        paletteLoading: false,
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(RemixCreditRow), findsNothing);
+    expect(find.byType(RemixesSection), findsNothing);
+    expect(tester.takeException(), isNull);
   }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS, TargetPlatform.android}));
 
   testWidgets('credit appears only for an AI child with a different original document', (tester) async {

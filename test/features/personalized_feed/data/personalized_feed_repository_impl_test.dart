@@ -2618,6 +2618,28 @@ void main() {
 
       expect(second.items.map((item) => item.id), List<String>.generate(12, (i) => 'W${i + 12}'));
     });
+
+    test('an unknown block list on a refresh keeps the last committed cursor', () async {
+      app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
+      final firestore = _FollowingFirestore(rows: 57);
+      final blocks = _BlocksLoadedLater()..listLoaded = true;
+      final repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+      final first = (await repository.fetchFollowing(page: 1)).data!;
+      expect(first.items.map((item) => item.id), List<String>.generate(12, (i) => 'W$i'));
+
+      blocks.listLoaded = false;
+      expect((await repository.fetchFollowing(page: 1)).isFailure, isTrue);
+      blocks.listLoaded = true;
+      final second = (await repository.fetchFollowing(page: 2)).data!;
+
+      expect(second.items.map((item) => item.id), List<String>.generate(12, (i) => 'W${i + 12}'));
+    });
+
     test('cursor pages reach all 57 walls once without growing query limits', () async {
       app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
       final firestore = _FollowingFirestore(rows: 57);
