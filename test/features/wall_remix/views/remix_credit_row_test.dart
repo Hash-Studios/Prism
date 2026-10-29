@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wall_remix/biz/remix_credit_cubit.dart';
@@ -28,7 +29,7 @@ class _FakeRemixRepository extends WallRemixRepository {
   Future<PrismWallpaper?> fetchApprovedWall(String docId) async => original;
 
   @override
-  Future<Set<String>> blockedCreatorUids({bool waitForInitialLoad = true}) async => const <String>{};
+  Future<BlockedCreators> loadBlockedCreators() async => KnownBlockedCreators(const <String>{});
 }
 
 class _MappedRemixRepository extends WallRemixRepository {
@@ -40,7 +41,7 @@ class _MappedRemixRepository extends WallRemixRepository {
   Future<PrismWallpaper?> fetchApprovedWall(String docId) async => originalsByDocId[docId];
 
   @override
-  Future<Set<String>> blockedCreatorUids({bool waitForInitialLoad = true}) async => const <String>{};
+  Future<BlockedCreators> loadBlockedCreators() async => KnownBlockedCreators(const <String>{});
 }
 
 class _DeferredRemixRepository extends WallRemixRepository {
@@ -55,11 +56,14 @@ class _DeferredRemixRepository extends WallRemixRepository {
       pending[docId]?.future ?? Future<PrismWallpaper?>.value(originalsByDocId[docId]);
 
   @override
-  Future<Set<String>> blockedCreatorUids({bool waitForInitialLoad = true}) async => const <String>{};
+  Future<BlockedCreators> loadBlockedCreators() async => KnownBlockedCreators(const <String>{});
 }
 
-WallViewer _viewer({bool isPremium = true, Set<String> blocked = const <String>{}}) =>
-    WallViewer(isPremium: isPremium, premiumCollections: const <String>['space'], blockedCreatorUids: blocked);
+WallViewer _viewer({bool isPremium = true, Set<String> blocked = const <String>{}}) => WallViewer(
+  isPremium: isPremium,
+  premiumCollections: const <String>['space'],
+  blockedCreators: KnownBlockedCreators(blocked),
+);
 
 Future<void> _pump(WidgetTester tester, {required PrismWallpaper? original, required WallViewer viewer}) async {
   await tester.pumpWidget(

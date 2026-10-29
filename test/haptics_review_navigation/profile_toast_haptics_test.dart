@@ -2,6 +2,7 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
@@ -76,7 +77,10 @@ void main() {
       ),
     );
     final _MockUserBlockRepository blockRepository = _MockUserBlockRepository();
-    when(() => blockRepository.watchBlockedCreatorUids()).thenAnswer((_) => Stream<Set<String>>.value(<String>{}));
+    when(
+      () => blockRepository.watchBlockedCreators(),
+    ).thenAnswer((_) => Stream<BlockedCreators>.value(KnownBlockedCreators(const <String>{})));
+    when(() => blockRepository.blockedCreators).thenReturn(KnownBlockedCreators(const <String>{}));
     getIt.registerSingleton<PublicProfileBloc>(bloc);
     getIt.registerSingleton<PublicProfileRepository>(profileRepository);
     getIt.registerSingleton<UserBlockRepository>(blockRepository);

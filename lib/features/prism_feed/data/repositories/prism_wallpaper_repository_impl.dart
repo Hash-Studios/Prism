@@ -6,6 +6,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -49,8 +50,10 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
     final int generation = _feedGeneration;
 
     try {
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
       if (generation != _feedGeneration) return Result.success(const <PrismWallpaper>[]);
+      // Every Prism wall has a creator, so an unknown block list would hide them all and page through the whole feed.
+      if (blocked is UnknownBlockedCreators) return Result.error(const ServerFailure(wallpaperLoadFailureMessage));
       final List<_PrismRow> traversedRows = <_PrismRow>[];
       final List<PrismWallpaper> visibleWalls = <PrismWallpaper>[];
       String? nextCursor = refresh ? null : _lastDocId;
@@ -163,7 +166,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
             (data, docId) => (docId: docId, doc: PrismWallDocDto.fromJson(data)),
           )
           .timeout(_queryTimeout);
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
       return Result.success(
         rows
             .map((row) => row.doc.toDomain(docId: row.docId))
@@ -197,7 +200,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         ),
         (data, docId) => (docId: docId, doc: PrismWallDocDto.fromJson(data)),
       );
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
       final List<PrismWallpaper> walls = rows
           .map((row) => row.doc.toDomain(docId: row.docId))
           .where((w) => !BlockedCreatorsFilter.hidesCreatorUid(w.core.authorUid, blocked))
@@ -240,7 +243,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       if (rows.isEmpty) return Result.success(null);
       if (rows.length != 1) return Result.error(const ServerFailure('Ambiguous wallpaper identity'));
       final PrismWallpaper wall = rows.single.doc.toDomain(docId: rows.single.docId);
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
       if (BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked)) return Result.success(null);
       return Result.success(wall);
     } catch (error, stackTrace) {
@@ -274,7 +277,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         return Result.success(null);
       }
       final PrismWallpaper wall = PrismWallDocDto.fromJson(data).toDomain(docId: documentId);
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
       if (BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked)) return Result.success(null);
       return Result.success(wall);
     } catch (error, stackTrace) {
@@ -305,7 +308,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         return byDocId.data?.review == true ? byDocId : Result.success(null);
       }
       final PrismWallpaper wall = results.first.doc.toDomain(docId: results.first.docId);
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
       if (BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked)) {
         return Result.success(null);
       }
@@ -333,7 +336,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         return Result.success(null);
       }
       final PrismWallpaper wallpaper = PrismWallDocDto.fromJson(data).toDomain(docId: documentId);
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
       if (BlockedCreatorsFilter.hidesCreatorUid(wallpaper.core.authorUid, blocked)) {
         return Result.success(null);
       }
@@ -410,8 +413,8 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       return null;
     }
 
-    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
-    if (generation != _feedGeneration) return null;
+    final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
+    if (generation != _feedGeneration || blocked is UnknownBlockedCreators) return null;
     _hasMore = payload['hasMore'] == true;
     final String? cachedLastDocId = payload['lastDocId']?.toString();
     if (cachedLastDocId != null && cachedLastDocId.isNotEmpty) {
