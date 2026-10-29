@@ -294,6 +294,7 @@ async function completeUploadIntent(
     if (current.attemptId !== attemptId) throw new HttpsError("failed-precondition", "Upload attempt expired.");
     const savedResponse = {content: {path: content.path, sha, download_url: content.download_url},
       sourceKind: intent.sourceKind === "owned" ? "owned" : "github"};
+    const generation = randomUUID();
     tx.set(uploadRef, {
       uid: callerUid,
       repo,
@@ -301,12 +302,12 @@ async function completeUploadIntent(
       sha,
       sourceKind: intent.sourceKind === "owned" ? "owned" : "github",
       ...(retainedAsset ? {retainedAsset} : {}),
-      generation: randomUUID(),
+      generation,
       weeklyQuotaCharged: intent.weeklyQuotaCharged === true,
       uploadWeek: intent.uploadWeek,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
-    tx.update(intentRef, {status: "complete", sha, response: savedResponse, attemptId: "", attemptExpiresAt: 0,
+    tx.update(intentRef, {status: "complete", sha, generation, response: savedResponse, attemptId: "", attemptExpiresAt: 0,
       ...(retainedAsset ? {retainedAsset} : {})});
   });
 }
@@ -554,6 +555,14 @@ function githubHttpStatus(error: unknown): number | undefined {
   if (!(error instanceof HttpsError) || !error.details || typeof error.details !== "object") return undefined;
   const status = (error.details as {httpStatus?: unknown}).httpStatus;
   return typeof status === "number" ? status : undefined;
+}
+
+/** Read-only storage proof for a completed standard upload, not a caller-supplied URL. */
+export async function verifyGithubUpload(repo: string, path: string, sha: string): Promise<void> {
+  const value = await githubRequest(githubUrl(repo, path), {method: "GET"}, true);
+  if (!value || value.path !== path || value.sha !== sha || value.type !== "file") {
+    throw new HttpsError("failed-precondition", "Uploaded GitHub file is unavailable or changed.");
+  }
 }
 
 export const githubPutFile = onCall(

@@ -10,6 +10,7 @@ import {notificationCopyPayload} from "./notificationCatalog";
 import {sendToUser} from "./notificationHelper";
 import {isPreviewUrl, similarWallIds} from "./pushGallery";
 import {premiumCollections, protectedWalls, SIMILAR_FIELDS} from "./wallOfTheDay";
+import {hasBlockedWord, HIDDEN_CHARACTERS, TEXT_SEGMENTER, textWords as words} from "./textSafety";
 
 export const WALL_REQUESTS = "wallRequests";
 export const VOTES = "votes";
@@ -64,30 +65,10 @@ export interface WallRequestView {
   filledAtMs: number;
 }
 
-const HIDDEN_CHARACTERS = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}]/u;
-const TEXT_SEGMENTER = new Intl.Segmenter(undefined, {granularity: "grapheme"});
 const STOP_WORDS = new Set([
   "a", "an", "the", "of", "and", "or", "with", "in", "on", "for", "to", "some", "any", "me", "my", "i", "pls", "please",
   "want", "need", "like", "wall", "walls", "wallpaper", "wallpapers", "background", "backgrounds", "hd", "4k", "phone",
 ]);
-// ponytail: a short list of slurs and sexual words. Reports and admin hiding catch the rest; grow it from reports.
-const BLOCKED_WORDS = new Set([
-  "nigger", "nigga", "faggot", "fag", "retard", "kike", "chink", "spic", "tranny", "porn", "porno", "nude", "nudes",
-  "naked", "nsfw", "hentai", "sex", "sexy", "xxx", "boobs", "tits", "dick", "cock", "pussy", "cum", "rape", "milf",
-]);
-const BLOCKED_WORD_PATTERNS = [...BLOCKED_WORDS].map((word) =>
-  new RegExp(`^${[...word].map((character) => `${character}+`).join("")}$`));
-const LEET: Record<string, string> = {"0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s"};
-
-function words(text: string): string[] {
-  return text.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
-}
-
-function hasBlockedWord(text: string): boolean {
-  const plain = words(text);
-  const unleet = words(text.toLowerCase().replace(/[013457@$]/g, (c) => LEET[c]));
-  return [...plain, ...unleet].some((w) => BLOCKED_WORDS.has(w) || BLOCKED_WORD_PATTERNS.some((pattern) => pattern.test(w)));
-}
 
 /** Sorted unique words that carry meaning. Two requests with the same tokens ask for the same wall. */
 export function requestTokens(text: string): string[] {
