@@ -3959,7 +3959,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get aiFollowUpWatercolour => 'Em aguarela';
+  String get aiFollowUpWatercolour => 'Em aquarela';
 
   @override
   String get aiFollowUpNight => 'Versão noturna';
