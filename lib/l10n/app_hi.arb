@@ -10584,5 +10584,15 @@
   "adminFillsRequest": "अनुरोध पूरा करता है",
   "@adminFillsRequest": {
     "description": "Admin review card label: the text of the request this wall says it fills."
-  }
+  },
+  "accountShowAiWallpapers": "AI से बने वॉलपेपर दिखाएँ",
+  "accountShowAiWallpapersSubtitle": "केवल इंसानों के बनाए वॉलपेपर देखने के लिए बंद करें",
+  "accountShowAiWallpapersFootnote": "इसे बंद करने पर भी आपके अपलोड और पसंदीदा दिखते रहेंगे।",
+  "wallpaperFeedHideAi": "AI छिपाएँ",
+  "wallpaperAiGenerated": "AI से बना",
+  "wallpaperAiMadeWith": "{model} से बना",
+  "wallpaperAiMadeWithUnknown": "AI से बना",
+  "wallpaperAiReportWrongLabel": "गलत लेबल की रिपोर्ट करें",
+  "feedNoHumanWalls": "यहाँ अभी इंसानों के बनाए वॉलपेपर नहीं हैं",
+  "feedShowAiWalls": "AI वॉलपेपर दिखाएँ"
 }

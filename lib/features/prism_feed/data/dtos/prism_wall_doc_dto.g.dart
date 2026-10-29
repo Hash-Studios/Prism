@@ -35,6 +35,8 @@ _PrismWallDocDto _$PrismWallDocDtoFromJson(Map<String, dynamic> json) => _PrismW
   aiMetadata: json['aiMetadata'] == null
       ? const <String, Object?>{}
       : const FirestoreJsonMapConverter().fromJson(json['aiMetadata']),
+  isAiGenerated: json['isAiGenerated'] as bool? ?? false,
+  aiModel: json['aiModel'] == null ? '' : const FirestoreStringConverter().fromJson(json['aiModel']),
   isStreakExclusive: json['is_streak_exclusive'] as bool? ?? false,
   requiredStreakDays: (json['required_streak_days'] as num?)?.toInt(),
   streakShopCoinCost: (json['streak_shop_coin_cost'] as num?)?.toInt(),
@@ -66,6 +68,8 @@ Map<String, dynamic> _$PrismWallDocDtoToJson(_PrismWallDocDto instance) => <Stri
   'colors': const FirestoreStringListConverter().toJson(instance.colors),
   'review': instance.review,
   'aiMetadata': const FirestoreJsonMapConverter().toJson(instance.aiMetadata),
+  'isAiGenerated': instance.isAiGenerated,
+  'aiModel': const FirestoreStringConverter().toJson(instance.aiModel),
   'is_streak_exclusive': instance.isStreakExclusive,
   'required_streak_days': instance.requiredStreakDays,
   'streak_shop_coin_cost': instance.streakShopCoinCost,

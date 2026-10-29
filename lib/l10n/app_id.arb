@@ -10515,5 +10515,15 @@
   "adminFillsRequest": "Memenuhi permintaan",
   "@adminFillsRequest": {
     "description": "Admin review card label: the text of the request this wall says it fills."
-  }
+  },
+  "accountShowAiWallpapers": "Tampilkan wallpaper buatan AI",
+  "accountShowAiWallpapersSubtitle": "Matikan untuk melihat wallpaper buatan manusia saja",
+  "accountShowAiWallpapersFootnote": "Unggahan dan favorit Anda tetap tampil saat ini dimatikan.",
+  "wallpaperFeedHideAi": "Sembunyikan AI",
+  "wallpaperAiGenerated": "Buatan AI",
+  "wallpaperAiMadeWith": "Dibuat dengan {model}",
+  "wallpaperAiMadeWithUnknown": "Dibuat dengan AI",
+  "wallpaperAiReportWrongLabel": "Laporkan label salah",
+  "feedNoHumanWalls": "Belum ada wallpaper buatan manusia di sini",
+  "feedShowAiWalls": "Tampilkan wallpaper AI"
 }

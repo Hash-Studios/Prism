@@ -10518,5 +10518,15 @@
   "adminFillsRequest": "Erfüllt Wunsch",
   "@adminFillsRequest": {
     "description": "Admin review card label: the text of the request this wall says it fills."
-  }
+  },
+  "accountShowAiWallpapers": "KI-generierte Hintergrundbilder anzeigen",
+  "accountShowAiWallpapersSubtitle": "Ausschalten, um nur von Menschen gemachte Walls zu sehen",
+  "accountShowAiWallpapersFootnote": "Deine eigenen Uploads und Favoriten bleiben sichtbar, wenn dies aus ist.",
+  "wallpaperFeedHideAi": "KI ausblenden",
+  "wallpaperAiGenerated": "KI-generiert",
+  "wallpaperAiMadeWith": "Erstellt mit {model}",
+  "wallpaperAiMadeWithUnknown": "Mit KI erstellt",
+  "wallpaperAiReportWrongLabel": "Falsches Label melden",
+  "feedNoHumanWalls": "Hier gibt es noch keine von Menschen gemachten Walls",
+  "feedShowAiWalls": "KI-Walls anzeigen"
 }

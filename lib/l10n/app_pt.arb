@@ -2944,5 +2944,15 @@
   "wallRequestAgeDays": "{count, plural, =1{Há 1 dia} other{Há {count} dias}}",
   "wallRequestAgeWeeks": "{count, plural, =1{Há 1 semana} other{Há {count} semanas}}",
   "wallRequestErrorAccountAge": "Sua conta poderá fazer pedidos e votar quando tiver 10 dias.",
-  "adminFillsRequest": "Atende o pedido"
+  "adminFillsRequest": "Atende o pedido",
+  "accountShowAiWallpapers": "Mostrar papéis de parede gerados por IA",
+  "accountShowAiWallpapersSubtitle": "Desative para ver apenas papéis de parede feitos por pessoas",
+  "accountShowAiWallpapersFootnote": "Os seus próprios envios e favoritos continuam visíveis quando isto está desativado.",
+  "wallpaperFeedHideAi": "Ocultar IA",
+  "wallpaperAiGenerated": "Gerado por IA",
+  "wallpaperAiMadeWith": "Feito com {model}",
+  "wallpaperAiMadeWithUnknown": "Feito com IA",
+  "wallpaperAiReportWrongLabel": "Denunciar etiqueta errada",
+  "feedNoHumanWalls": "Ainda não há papéis de parede feitos por pessoas aqui",
+  "feedShowAiWalls": "Mostrar papéis de parede de IA"
 }

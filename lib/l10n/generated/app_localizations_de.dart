@@ -11245,4 +11245,37 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get adminFillsRequest => 'Erfüllt Wunsch';
+
+  @override
+  String get accountShowAiWallpapers => 'KI-generierte Hintergrundbilder anzeigen';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'Ausschalten, um nur von Menschen gemachte Walls zu sehen';
+
+  @override
+  String get accountShowAiWallpapersFootnote =>
+      'Deine eigenen Uploads und Favoriten bleiben sichtbar, wenn dies aus ist.';
+
+  @override
+  String get wallpaperFeedHideAi => 'KI ausblenden';
+
+  @override
+  String get wallpaperAiGenerated => 'KI-generiert';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return 'Erstellt mit $model';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'Mit KI erstellt';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'Falsches Label melden';
+
+  @override
+  String get feedNoHumanWalls => 'Hier gibt es noch keine von Menschen gemachten Walls';
+
+  @override
+  String get feedShowAiWalls => 'KI-Walls anzeigen';
 }

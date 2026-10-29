@@ -30,6 +30,8 @@ abstract class PrismWallDocDto with _$PrismWallDocDto {
     @FirestoreJsonMapConverter()
     @Default(<String, Object?>{})
     Map<String, Object?> aiMetadata,
+    @Default(false) bool isAiGenerated,
+    @FirestoreStringConverter() @Default('') String aiModel,
     @JsonKey(name: 'is_streak_exclusive') @Default(false) bool isStreakExclusive,
     @JsonKey(name: 'required_streak_days') int? requiredStreakDays,
     @JsonKey(name: 'streak_shop_coin_cost') int? streakShopCoinCost,

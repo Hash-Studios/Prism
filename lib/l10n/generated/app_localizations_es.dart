@@ -11231,4 +11231,37 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get adminFillsRequest => 'Cumple la solicitud';
+
+  @override
+  String get accountShowAiWallpapers => 'Mostrar fondos generados con IA';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'Desactívalo para ver solo fondos hechos por personas';
+
+  @override
+  String get accountShowAiWallpapersFootnote =>
+      'Tus propias subidas y favoritos se siguen mostrando cuando esto está desactivado.';
+
+  @override
+  String get wallpaperFeedHideAi => 'Ocultar IA';
+
+  @override
+  String get wallpaperAiGenerated => 'Generado con IA';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return 'Hecho con $model';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'Hecho con IA';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'Reportar etiqueta incorrecta';
+
+  @override
+  String get feedNoHumanWalls => 'Aún no hay fondos hechos por personas aquí';
+
+  @override
+  String get feedShowAiWalls => 'Mostrar fondos de IA';
 }

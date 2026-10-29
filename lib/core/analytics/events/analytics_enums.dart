@@ -116,6 +116,7 @@ enum SubscriptionEntitlementRefreshResultValue {
 
 enum SettingValue {
   animeWallpapers,
+  aiWallpapers,
   sketchyWallpapers,
   recommendationsNotifications,
   haptics;
