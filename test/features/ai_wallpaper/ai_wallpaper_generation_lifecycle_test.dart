@@ -276,6 +276,7 @@ void main() {
     FirestoreClient? firestore,
     ConnectivityService? connectivity,
     List<MethodCall>? toastCalls,
+    bool disableAnimations = false,
   }) async {
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
@@ -299,7 +300,10 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: AiWallpaperTabPage(repository: repository ?? _FakeAiGenerationRepository(_record())),
+        home: MediaQuery(
+          data: MediaQueryData.fromView(tester.view).copyWith(disableAnimations: disableAnimations),
+          child: AiWallpaperTabPage(repository: repository ?? _FakeAiGenerationRepository(_record())),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -1613,5 +1617,49 @@ void main() {
 
     expect(find.text('Sign in to Prism'), findsOneWidget);
     expect(toastMessages(toastCalls), isEmpty);
+  });
+
+  // Guards lib: `_scrollToTop` jumps when `context.reduceMotion` is true. A zero-duration animateTo asserts.
+  testWidgets('generation scrolls to top without a zero-duration animation under reduced motion', (tester) async {
+    await setUpPage(
+      tester,
+      (name, parameters) async => coinReply(name),
+      repository: _FakeAiGenerationRepository(_record(), generation: () async => _record()),
+      disableAnimations: true,
+    );
+    tester.view.physicalSize = const Size(400, 800);
+    await tester.pump();
+    await tester.ensureVisible(find.text('Quality').last);
+    expect(Scrollable.of(tester.element(find.text('Quality').last)).position.pixels, greaterThan(0));
+
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(find.byType(AiResultView), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  // Guards lib: `build` hides `_hero` when `_hero?.userId != app_state.prismUser.id`.
+  testWidgets('a result from the previous account is hidden after an account switch', (tester) async {
+    final repository = _FakeAiGenerationRepository(_record(), generation: () async => _record());
+    await setUpPage(tester, (name, parameters) async => coinReply(name), repository: repository);
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+    expect(find.byType(AiResultView), findsOneWidget);
+
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-2'
+      ..coins = 100
+      ..loggedIn = true;
+    tester.element(find.byType(AiWallpaperTabPage)).markNeedsBuild();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byType(AiResultView), findsNothing, reason: 'the same page must not show user-1 a result of user-2');
+    expect(tester.takeException(), isNull);
   });
 }

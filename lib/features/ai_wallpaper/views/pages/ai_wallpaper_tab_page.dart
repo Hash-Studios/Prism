@@ -285,6 +285,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   void _scrollToTop() {
     if (!_scroll.hasClients || _scroll.offset <= 0) return;
+    if (context.reduceMotion) {
+      _scroll.jumpTo(0);
+      return;
+    }
     _scroll.animateTo(0, duration: context.motion(PrismDurations.base), curve: PrismCurves.enter);
   }
 
@@ -395,7 +399,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   bool _canStartGeneration() {
-    if (_loadingGeneration) return false;
+    if (_loadingGeneration || _confirmingFollowUp) return false;
     if (!_isLoggedIn) {
       _promptSignIn();
       return false;
@@ -469,7 +473,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       return;
     }
     final AiGenerationRecord? latest = _hero;
-    if (latest == null || !app_state.aiVariationsEnabled) {
+    if (latest == null || latest.userId != app_state.prismUser.id || !app_state.aiVariationsEnabled) {
       toasts.error(context.l10n.economyAiVariationUnavailable);
       return;
     }
@@ -512,7 +516,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   void _saveConfirmedFollowUpCost(int cost) {
     try {
       if (!getIt.isRegistered<SettingsLocalDataSource>()) return;
-      unawaited(getIt<SettingsLocalDataSource>().set(PersistenceKeys.aiFollowUpConfirmedCost, cost));
+      unawaited(
+        getIt<SettingsLocalDataSource>().set(PersistenceKeys.aiFollowUpConfirmedCost, cost).catchError((Object error) {
+          logger.w('Could not save the confirmed follow-up price', tag: 'ai_wallpaper', error: error);
+        }),
+      );
     } catch (error, stackTrace) {
       logger.w(
         'Could not save the confirmed follow-up price',
@@ -527,6 +535,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   Future<void> _runFollowUp(AiFollowUp followUp) async {
     final AiGenerationRecord? parent = _hero;
     if (parent == null || _loadingGeneration || _confirmingFollowUp || !app_state.aiVariationsEnabled) return;
+    final String ownerId = app_state.prismUser.id;
     final int cost = parent.qualityTier.costFor(isPro: app_state.prismUser.premium);
     if (cost > _confirmedFollowUpCost) {
       _confirmingFollowUp = true;
@@ -536,7 +545,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       } finally {
         _confirmingFollowUp = false;
       }
-      if (!confirmed || !mounted || _hero?.id != parent.id) return;
+      if (!confirmed || !mounted || _hero?.id != parent.id || app_state.prismUser.id != ownerId) return;
+      // A price that rose while the sheet was open was never confirmed. The next tap asks at the new price.
+      if (parent.qualityTier.costFor(isPro: app_state.prismUser.premium) > cost) return;
       _saveConfirmedFollowUpCost(cost);
     }
     analytics.track(AiFollowUpUsedEvent(chipId: followUp.name));
@@ -787,7 +798,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   /// Android opens the Set screen with this wall and no crop step. iOS saves it to Photos and shows the set guide.
   Future<void> _apply(AiGenerationRecord record) async {
-    if (_applying) return;
+    if (_applying || record.userId != app_state.prismUser.id) return;
     analytics.track(AiResultAppliedEvent(platform: hideSetWallpaperUi ? 'ios' : 'android', from: _heroFrom));
     setState(() => _applying = true);
     try {
@@ -1207,7 +1218,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   @override
   Widget build(BuildContext context) {
     final bool available = _isRolloutEligible && _isLoggedIn;
-    final AiGenerationRecord? hero = available ? _hero : null;
+    final AiGenerationRecord? hero = available && _hero?.userId == app_state.prismUser.id ? _hero : null;
     final Widget compose = PrismPage(
       title: AppLocalizations.of(context).economyAiWallpaper,
       showBack: Navigator.of(context).canPop(),

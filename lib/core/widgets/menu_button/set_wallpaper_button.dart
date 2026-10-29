@@ -119,7 +119,11 @@ class SetWallpaperFlow {
   static void saveLastTarget(WallpaperTarget target) {
     try {
       if (!getIt.isRegistered<SettingsLocalDataSource>()) return;
-      unawaited(getIt<SettingsLocalDataSource>().set(PersistenceKeys.lastApplyTarget, target.name));
+      unawaited(
+        getIt<SettingsLocalDataSource>().set(PersistenceKeys.lastApplyTarget, target.name).catchError((Object error) {
+          logger.w('SetWallpaperFlow: could not save the last target', error: error);
+        }),
+      );
     } catch (error) {
       logger.w('SetWallpaperFlow: could not save the last target', error: error);
     }

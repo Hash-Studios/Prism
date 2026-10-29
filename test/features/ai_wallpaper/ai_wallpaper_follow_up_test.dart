@@ -18,6 +18,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_generate_bar.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
@@ -66,6 +67,16 @@ class _FakeHttpsCallable extends HttpsCallablePlatform {
 }
 
 class _MockStartupRepository extends Mock implements StartupRepository {}
+
+/// Fails only the saved follow-up price, the way a full disk would.
+class _FailingPriceSettings extends SettingsLocalDataSource {
+  _FailingPriceSettings() : super(InMemoryLocalStore());
+
+  @override
+  Future<void> set(String key, Object? value) => key == PersistenceKeys.aiFollowUpConfirmedCost
+      ? Future<void>.error(StateError('disk full'))
+      : super.set(key, value);
+}
 
 class _RecordingLiveActivityApi extends PrismLiveActivityHostApi {
   int starts = 0;
@@ -230,13 +241,14 @@ void main() {
     required _FollowUpRepository repository,
     required bool aiVariationsEnabled,
     int? confirmedCost,
+    bool failPriceSave = false,
   }) async {
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await getIt.reset();
-    settings = SettingsLocalDataSource(InMemoryLocalStore());
+    settings = failPriceSave ? _FailingPriceSettings() : SettingsLocalDataSource(InMemoryLocalStore());
     if (confirmedCost != null) await settings.set(PersistenceKeys.aiFollowUpConfirmedCost, confirmedCost);
     getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
@@ -459,6 +471,71 @@ void main() {
     expect(result.record.id, 'hero-1');
     expect(result.session.map((r) => r.id), <String>['hero-1']);
     expect(followUpChips(tester).every((PrismChip chip) => chip.onTap != null), isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  // Guards lib: `_canStartGeneration` returns false while `_confirmingFollowUp` is set.
+  testWidgets('a stale Generate cannot start while the chip confirm is open', (tester) async {
+    final repository = _FollowUpRepository();
+    await setUpPage(tester, repository: repository, aiVariationsEnabled: true, confirmedCost: 0);
+    await generateHero(tester);
+    final VoidCallback staleGenerate = tester.widget<AiGenerateBar>(find.byType(AiGenerateBar)).onGenerate;
+
+    await tapChip(tester, 'night');
+    await tester.pumpAndSettle();
+    expect(find.text('Make a new take?'), findsOneWidget);
+
+    staleGenerate();
+    await tester.pump();
+
+    expect(repository.variations, isEmpty);
+    expect(spends, isEmpty);
+    expect(find.text('Make a new take?'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(PrismButton, 'Cancel'));
+    await tester.pumpAndSettle();
+    expect(repository.variations, isEmpty);
+  });
+
+  // Guards lib: `_runFollowUp` returns when `parent.qualityTier.costFor(...) > cost` after the confirm.
+  testWidgets('a price rise while the confirm is open runs nothing and asks again at the new price', (tester) async {
+    final repository = _FollowUpRepository(heroQuality: AiQualityTier.fast);
+    await setUpPage(tester, repository: repository, aiVariationsEnabled: true, confirmedCost: 0);
+    app_state.prismUser.premium = true;
+    await generateHero(tester);
+
+    await tapChip(tester, 'night');
+    await tester.pumpAndSettle();
+    expect(find.text('A follow-up makes a new wallpaper from this one. Each one costs 5 coins.'), findsOneWidget);
+
+    app_state.prismUser.premium = false;
+    await tester.tap(find.widgetWithText(PrismButton, 'Make it'));
+    await tester.pumpAndSettle();
+
+    expect(repository.variations, isEmpty);
+    expect(spends, isEmpty);
+    expect(settings.get<int>(PersistenceKeys.aiFollowUpConfirmedCost, defaultValue: 0), 0);
+
+    await tapChip(tester, 'night');
+    await tester.pumpAndSettle();
+    expect(find.text('A follow-up makes a new wallpaper from this one. Each one costs 10 coins.'), findsOneWidget);
+    expect(repository.variations, isEmpty);
+  });
+
+  // Guards lib: `_saveConfirmedFollowUpCost` catches the Future error from `SettingsLocalDataSource.set`.
+  testWidgets('a failed price save still runs the confirmed take once', (tester) async {
+    final repository = _FollowUpRepository();
+    await setUpPage(tester, repository: repository, aiVariationsEnabled: true, failPriceSave: true);
+    await generateHero(tester);
+
+    await tapChip(tester, 'night');
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(PrismButton, 'Make it'));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(repository.variations, hasLength(1));
+    expect(spends, hasLength(1));
     expect(tester.takeException(), isNull);
   });
 }

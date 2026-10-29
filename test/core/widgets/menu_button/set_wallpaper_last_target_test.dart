@@ -54,6 +54,14 @@ class _Client implements WallpaperClient {
       throw UnimplementedError();
 }
 
+/// Fails every save, the way a full disk would.
+class _FailingSettings extends SettingsLocalDataSource {
+  _FailingSettings() : super(InMemoryLocalStore());
+
+  @override
+  Future<void> set(String key, Object? value) => Future<void>.error(StateError('disk full'));
+}
+
 /// Opens the Set screen from a button, the way a caller does.
 Future<void> _openSetScreen(WidgetTester tester) async {
   await tester.pumpWidget(
@@ -129,5 +137,16 @@ void main() {
 
     expect(settings.get<String>(PersistenceKeys.lastApplyTarget, defaultValue: ''), 'both');
     expect(SetWallpaperFlow.lastTarget(), WallpaperTarget.both);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  // Guards lib: `saveLastTarget` catches the Future error from `SettingsLocalDataSource.set`.
+  testWidgets('a failed async save of the last target does not throw', (tester) async {
+    await getIt.reset();
+    getIt.registerSingleton<SettingsLocalDataSource>(_FailingSettings());
+
+    SetWallpaperFlow.saveLastTarget(WallpaperTarget.lock);
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }
