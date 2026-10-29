@@ -25,7 +25,7 @@ The backend serves Android and iOS. Two items are iOS only:
 
 ## Free and Pro
 
-No change. No step in this release touches coins, premium, or subscription rules. `firestore.rules` is not changed. Do not deploy `firestore:rules` in this release.
+No change. No step in the first release of this guide touches coins, premium, or subscription rules, and that release does not change `firestore.rules`. Later sections that change rules, such as Wall requests, include their own rules step. Follow the order in each section.
 
 ## How it works
 

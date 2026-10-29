@@ -17,6 +17,8 @@ export const REQUEST_RATE_DAILY = "wallRequestRateDaily";
 export const VOTE_RATE_DAILY = "wallRequestVoteRateDaily";
 export const MIN_TEXT_LENGTH = 3;
 export const MAX_TEXT_LENGTH = 80;
+/** Combining marks stack on one character, so the grapheme count alone does not bound the stored size. */
+export const MAX_TEXT_UNITS = MAX_TEXT_LENGTH * 4;
 export const MAX_TAGS = 3;
 export const MAX_REQUESTS_PER_DAY = 3;
 export const MAX_VOTE_CHANGES_PER_DAY = 200;
@@ -100,6 +102,7 @@ export function publicRequestText(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   if (HIDDEN_CHARACTERS.test(raw)) return null;
   const text = raw.replace(/\s+/g, " ").trim();
+  if (text.length > MAX_TEXT_UNITS) return null;
   const length = [...TEXT_SEGMENTER.segment(text)].length;
   if (length < MIN_TEXT_LENGTH || length > MAX_TEXT_LENGTH) return null;
   if (hasBlockedWord(text) || requestTokens(text).length === 0) return null;

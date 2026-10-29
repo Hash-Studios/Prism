@@ -198,6 +198,7 @@ void main() {
   });
 
   testWidgets('retrying the pending list retries a failed request-text read', (WidgetTester tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
     final StreamController<List<FirestoreDocument>> firstWalls = StreamController<List<FirestoreDocument>>.broadcast();
     addTearDown(firstWalls.close);
     final StreamController<List<FirestoreDocument>> retryWalls = StreamController<List<FirestoreDocument>>.broadcast();
@@ -235,9 +236,11 @@ void main() {
 
     expect(find.bySemanticsLabel('Fills request: lofi capybara astronaut'), findsOneWidget);
     expect(repository.requestTextCalls, 2);
+    semantics.dispose();
   });
 
   testWidgets('a later pending-list emission retries a failed request-text read', (WidgetTester tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
     final StreamController<List<FirestoreDocument>> walls = StreamController<List<FirestoreDocument>>.broadcast();
     addTearDown(walls.close);
     const FirestoreDocument requestWall = FirestoreDocument('wall-a', <String, dynamic>{
@@ -263,9 +266,11 @@ void main() {
 
     expect(find.bySemanticsLabel('Fills request: lofi capybara astronaut'), findsOneWidget);
     expect(repository.requestTextCalls, 2);
+    semantics.dispose();
   });
 
   testWidgets('reuses a successful request-text read when the pending list rebuilds', (WidgetTester tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
     final StreamController<List<FirestoreDocument>> walls = StreamController<List<FirestoreDocument>>.broadcast();
     addTearDown(walls.close);
     const FirestoreDocument requestWall = FirestoreDocument('wall-a', <String, dynamic>{
@@ -286,9 +291,11 @@ void main() {
 
     expect(repository.requestTextCalls, 1);
     expect(find.bySemanticsLabel('Fills request: lofi capybara astronaut'), findsOneWidget);
+    semantics.dispose();
   });
 
   testWidgets('a changed request ID hides old text and ignores its delayed completion', (WidgetTester tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
     final StreamController<List<FirestoreDocument>> walls = StreamController<List<FirestoreDocument>>.broadcast();
     addTearDown(walls.close);
     final Completer<String?> oldRequest = Completer<String?>();
@@ -321,6 +328,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel('Fills request: current request text'), findsOneWidget);
     expect(find.bySemanticsLabel('Fills request: stale request text'), findsNothing);
+    semantics.dispose();
   });
 
   testWidgets('pending wallpaper card shows its creator details and both actions', (WidgetTester tester) async {

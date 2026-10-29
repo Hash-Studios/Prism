@@ -73,6 +73,9 @@ test("publicRequestText counts visible characters rather than UTF-16 code units"
   assert.equal(publicRequestText(decomposedBoundary), decomposedBoundary);
   assert.equal(publicRequestText("a".repeat(80) + "🌄"), null);
   assert.equal(publicRequestText("e\u0301".repeat(81)), null);
+  assert.equal(publicRequestText("a" + "\u0301".repeat(3000) + "bc"), null);
+  const flags = "nyc " + "🇮🇳".repeat(76);
+  assert.equal(publicRequestText(flags), flags);
   assert.equal(publicRequestText("e\u0301".repeat(2)), null);
 });
 
@@ -554,7 +557,7 @@ test("notifyRequestFilled pushes the requester and a voter once, with the wall d
 });
 
 test("notifyRequestFilled bounds only the push preview for combining-mark request text", async (t) => {
-  const text = "a" + "\u0301".repeat(3000) + "bc";
+  const text = "a" + "\u0301".repeat(300) + "bc";
   const preview = "a" + "\u0301".repeat(159);
   const store = installFakeDb(t, {
     ...notifySeed({text}),

@@ -177,9 +177,10 @@ fvm flutter test test/features/wall_requests
 
 On a device:
 
+Both accounts must be at least 10 days old, or requests and votes fail with `account-too-new`. On the Auth emulator, import the test users with an old `createdAt` (`firebase auth:import`), because a user made with `createUser` is new.
+
 1. Sign in with account A. Search for a word with no results. Tap "Request it" and send the request.
-2. Sign in with account B. Open Discover, then "Wall requests". Upvote the request.
-3. With account B, request the same words. The sheet offers "Upvote this instead".
-4. Upload a wall as a creator and pick the request in "Fills a request".
-5. Approve the wall in the admin review.
-6. Accounts A and B get the push. The request shows in the Filled tab with the wall.
+2. Sign in with account B. Request the same words. The sheet offers "Upvote this instead". Tap it, and the request has 1 vote.
+3. Upload a wall as a creator and pick the request in "Fills a request".
+4. Approve the wall in the admin review. The card shows "Fills request" and the request text.
+5. Accounts A and B get the push. The request shows in the Filled tab with the wall.
