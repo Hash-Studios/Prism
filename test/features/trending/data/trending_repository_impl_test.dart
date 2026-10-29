@@ -181,6 +181,21 @@ void main() {
     expect(result.data!.map((wall) => wall.id), <String>['A', 'E']);
   });
 
+  test('with an unknown block list, drops walls that have a creator and keeps one without', () async {
+    walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'N': _wall('N', creatorUid: '')};
+    setList('trending', <Object?>['A', 'N']);
+    final TrendingRepositoryImpl unloaded = TrendingRepositoryImpl(
+      client,
+      cache,
+      FakeUserBlockRepository.pending()..timeOutInitialLoad(),
+      settings,
+    );
+
+    final result = (await unloaded.fetch()).result;
+
+    expect(result.data!.map((wall) => wall.id), <String>['N']);
+  });
+
   test('upper-cases and de-duplicates the ids, and ignores blank ones', () async {
     walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B')};
     setList('trending', <Object?>['a', 'A', ' ', null, 'b']);

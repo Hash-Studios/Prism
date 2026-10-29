@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/usecase/usecase.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -28,24 +29,47 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
     on<_RefreshRequested>(_onRefreshRequested);
     on<_BlockedCreatorsChanged>(_onBlockedCreatorsChanged);
     // Blocking a creator removes their walls from the home feed at once (App Review 1.2).
-    _blockedCreatorsSub = _userBlockRepository
-        .watchBlockedCreatorUids()
-        .skip(1)
-        .listen((blocked) => add(CategoryFeedEvent.blockedCreatorsChanged(blocked: blocked)));
+    _blockListUnknown = _userBlockRepository.blockedCreators is UnknownBlockedCreators;
+    _blockedCreatorsSub = _userBlockRepository.watchBlockedCreators().skip(1).listen((blocked) {
+      if (blocked is UnknownBlockedCreators) _blockListUnknown = true;
+      add(CategoryFeedEvent.blockedCreatorsChanged(blocked: blocked is KnownBlockedCreators ? blocked.uids : const {}));
+    });
   }
 
   final LoadCategoriesUseCase _loadCategoriesUseCase;
   final FetchCategoryFeedUseCase _fetchCategoryFeedUseCase;
   final UserBlockRepository _userBlockRepository;
-  StreamSubscription<Set<String>>? _blockedCreatorsSub;
+  StreamSubscription<BlockedCreators>? _blockedCreatorsSub;
+  bool _blockListUnknown = true;
+  bool _blockRecoveryDuringLoad = false;
   int _generation = 0;
 
   static const int _maxEmptyPages = 5;
 
-  void _onBlockedCreatorsChanged(_BlockedCreatorsChanged event, Emitter<CategoryFeedState> emit) {
-    if (event.blocked.isEmpty) return;
-    final filtered = BlockedCreatorsFilter.filterFeedItems(state.items, event.blocked);
-    if (filtered.length != state.items.length) emit(state.copyWith(items: filtered));
+  Future<void> _onBlockedCreatorsChanged(_BlockedCreatorsChanged event, Emitter<CategoryFeedState> emit) async {
+    final BlockedCreators current = _userBlockRepository.blockedCreators;
+    if (current is UnknownBlockedCreators) {
+      _blockListUnknown = true;
+      final filtered = BlockedCreatorsFilter.filterFeedItems(state.items, const UnknownBlockedCreators());
+      if (filtered.length != state.items.length) emit(state.copyWith(items: filtered));
+      return;
+    }
+    final bool recovered = _blockListUnknown;
+    _blockListUnknown = false;
+    final KnownBlockedCreators known = current as KnownBlockedCreators;
+    if (known.uids.isNotEmpty) {
+      final filtered = BlockedCreatorsFilter.filterFeedItems(state.items, known);
+      if (filtered.length != state.items.length) emit(state.copyWith(items: filtered));
+    }
+    final CategoryEntity? selected = state.selectedCategory;
+    if (recovered && selected != null) {
+      if (state.status == LoadStatus.loading || state.isFetchingMore) {
+        _blockRecoveryDuringLoad = true;
+        return;
+      }
+      _blockRecoveryDuringLoad = false;
+      await _onCategorySelected(_CategorySelected(category: selected), emit);
+    }
   }
 
   @override
@@ -87,7 +111,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
         state.copyWith(
           status: LoadStatus.success,
           actionStatus: ActionStatus.success,
-          items: page.items,
+          items: BlockedCreatorsFilter.filterFeedItems(page.items, _userBlockRepository.blockedCreators),
           hasMore: page.hasMore,
           isFetchingMore: false,
           failure: null,
@@ -102,6 +126,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
         ),
       ),
     );
+    await _reloadAfterBlockRecoveryDuringLoad(emit);
   }
 
   Future<void> _onFetchMoreRequested(_FetchMoreRequested event, Emitter<CategoryFeedState> emit) async {
@@ -121,7 +146,10 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
 
     result.fold(
       onSuccess: (page) {
-        final merged = <FeedItemEntity>[...state.items, ...page.items];
+        final merged = <FeedItemEntity>[
+          ...state.items,
+          ...BlockedCreatorsFilter.filterFeedItems(page.items, _userBlockRepository.blockedCreators),
+        ];
         final uniqueById = <String, FeedItemEntity>{
           for (final item in merged) item.id: item,
         }.values.toList(growable: false);
@@ -140,6 +168,16 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
       onFailure: (failure) =>
           emit(state.copyWith(actionStatus: ActionStatus.failure, isFetchingMore: false, failure: failure)),
     );
+    await _reloadAfterBlockRecoveryDuringLoad(emit);
+  }
+
+  Future<void> _reloadAfterBlockRecoveryDuringLoad(Emitter<CategoryFeedState> emit) async {
+    if (!_blockRecoveryDuringLoad || _blockListUnknown) return;
+    _blockRecoveryDuringLoad = false;
+    final CategoryEntity? selected = state.selectedCategory;
+    if (selected != null) {
+      await _onCategorySelected(_CategorySelected(category: selected), emit);
+    }
   }
 
   /// Hidden AI or anime walls can empty a whole page, so an empty page with more behind it fetches the next one.

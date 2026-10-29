@@ -26,7 +26,6 @@ Widget _host({
             balance: balance,
             hasPrompt: hasPrompt,
             loading: loading,
-            prominent: true,
             onGenerate: onGenerate,
             onGetCoins: onGetCoins,
           ),

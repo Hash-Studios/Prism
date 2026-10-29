@@ -170,6 +170,22 @@ void main() {
       expect(ids, <String>['B']);
     });
 
+    test('with an unknown block list, drops walls that have a creator and keeps one without', () async {
+      walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', creatorUid: '')};
+      final MoodRepositoryImpl unloaded = MoodRepositoryImpl(
+        client,
+        FakeUserBlockRepository.pending()..timeOutInitialLoad(),
+        SettingsLocalDataSource(InMemoryLocalStore()),
+        feed,
+        random: Random(1),
+        now: () => DateTime.utc(2026, 10, 28),
+      );
+
+      final List<String> ids = (await unloaded.fetchMoodWalls(<String>['A', 'B'])).map((wall) => wall.id).toList();
+
+      expect(ids, <String>['B']);
+    });
+
     test('drops stale walls that are no longer eligible for free daily picks', () async {
       walls = <String, Map<String, dynamic>>{
         'A': _wall('A'),
@@ -262,6 +278,29 @@ void main() {
     blocks.completeInitial(<String>{});
     await pumpEventQueue();
     expect(changes, 2);
+  });
+
+  test('watchVisibilityChanges fires once when an unknown block list becomes known, not for a repeat', () async {
+    final FakeUserBlockRepository pending = FakeUserBlockRepository.pending();
+    final MoodRepositoryImpl unloaded = MoodRepositoryImpl(
+      client,
+      pending,
+      SettingsLocalDataSource(InMemoryLocalStore()),
+      feed,
+      random: Random(1),
+      now: () => DateTime.utc(2026, 10, 28),
+    );
+    int changes = 0;
+    final StreamSubscription<void> sub = unloaded.watchVisibilityChanges().listen((_) => changes++);
+    addTearDown(sub.cancel);
+
+    pending.completeInitial(<String>{});
+    await pumpEventQueue();
+    expect(changes, 1);
+
+    pending.completeInitial(<String>{});
+    await pumpEventQueue();
+    expect(changes, 1);
   });
 
   test('watchVisibilityChanges gives each listener an independent deduplication state', () async {

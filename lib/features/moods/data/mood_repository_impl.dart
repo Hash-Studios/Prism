@@ -6,6 +6,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
@@ -89,12 +90,12 @@ class MoodRepositoryImpl implements MoodRepository {
   @override
   Stream<void> watchVisibilityChanges() {
     return Stream<void>.multi((controller) {
-      Set<String> blocked = <String>{..._userBlockRepository.cachedBlockedCreatorUids};
+      BlockedCreators blocked = _userBlockRepository.blockedCreators;
       bool showAi = AiContentFilter.showsAi(_settingsLocal);
-      final StreamSubscription<Set<String>> subscription = _userBlockRepository.watchBlockedCreatorUids().listen(
+      final StreamSubscription<BlockedCreators> subscription = _userBlockRepository.watchBlockedCreators().listen(
         (next) {
-          if (next.length == blocked.length && next.containsAll(blocked)) return;
-          blocked = <String>{...next};
+          if (next == blocked) return;
+          blocked = next;
           controller.add(null);
         },
         onError: controller.addError,
@@ -122,7 +123,7 @@ class MoodRepositoryImpl implements MoodRepository {
   Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async {
     if (ids.isEmpty) return const <PrismWallpaper>[];
     final List<PrismWallpaper> walls = await _loadWalls(ids);
-    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+    final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
     if (keepOrder) return _visible(walls, blocked);
     final List<RankingCandidate> candidates = <RankingCandidate>[
       for (final PrismWallpaper wall in _visible(walls, blocked))
@@ -170,7 +171,7 @@ class MoodRepositoryImpl implements MoodRepository {
     return <PrismWallpaper>[for (final String id in ids) ?byId[id]];
   }
 
-  List<PrismWallpaper> _visible(List<PrismWallpaper> walls, Set<String> blocked) {
+  List<PrismWallpaper> _visible(List<PrismWallpaper> walls, BlockedCreators blocked) {
     final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
     final bool showAi = AiContentFilter.showsAi(_settingsLocal);
     return walls

@@ -1,3 +1,4 @@
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/premium_wall_utils.dart';
 import 'package:Prism/core/wallpaper/wall_ai_source.dart';
@@ -7,17 +8,17 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart
 
 /// What the viewer may see of a wall: the remix rules never show a wall the viewer cannot open in full.
 final class WallViewer {
-  const WallViewer({required this.isPremium, required this.premiumCollections, required this.blockedCreatorUids});
+  const WallViewer({required this.isPremium, required this.premiumCollections, required this.blockedCreators});
 
   final bool isPremium;
   final List<String> premiumCollections;
-  final Set<String> blockedCreatorUids;
+  final BlockedCreators blockedCreators;
 
   /// Approved, not premium-gated for this viewer, not streak-withheld, and not by a blocked creator.
   bool canFullyView(PrismWallpaper wall) {
     if (wall.review != true || wall.isStreakExclusive) return false;
     if (!isPremium && isPremiumWall(premiumCollections, wall.collections ?? const <String>[])) return false;
-    return !BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blockedCreatorUids);
+    return !BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blockedCreators);
   }
 }
 

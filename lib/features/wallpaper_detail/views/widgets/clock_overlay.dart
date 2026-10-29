@@ -168,7 +168,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
   late WallpaperTarget _target = _initialTarget;
   late final WallpaperTarget _initialTarget = widget.request == null
       ? WallpaperTarget.home
-      : SetWallpaperFlow.defaultTarget() ?? WallpaperTarget.home;
+      : SetWallpaperFlow.defaultTarget() ?? SetWallpaperFlow.lastTarget() ?? WallpaperTarget.home;
   late ClockPreviewMode _mode = hideSetWallpaperUi || _target == WallpaperTarget.lock
       ? ClockPreviewMode.lock
       : ClockPreviewMode.home;
@@ -483,7 +483,10 @@ class _ClockOverlayState extends State<ClockOverlay> {
   void _choose(SetWallpaperChoice choice) {
     if (_completed) return;
     _completed = true;
-    if (choice.kind == SetChoiceKind.apply) SetWallpaperFlow.saveDefaultTarget(_remember ? choice.target : null);
+    if (choice.kind == SetChoiceKind.apply) {
+      SetWallpaperFlow.saveDefaultTarget(_remember ? choice.target : null);
+      SetWallpaperFlow.saveLastTarget(choice.target);
+    }
     _placedHandedOff = choice.placed != null;
     Navigator.of(context).pop<SetWallpaperChoice>(choice);
   }

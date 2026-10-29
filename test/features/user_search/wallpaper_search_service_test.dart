@@ -9,6 +9,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
@@ -233,7 +234,7 @@ void main() {
   test('providers start while the local catalog scan is still waiting', () async {
     final Directory directory = await Directory.systemTemp.createTemp('wallpaper-search-slow-catalog-');
     addTearDown(() => directory.delete(recursive: true));
-    final Completer<Set<String>> blocked = Completer<Set<String>>();
+    final Completer<BlockedCreators> blocked = Completer<BlockedCreators>();
     final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
       store: DurableJsonStore('catalog', directory: directory),
       blockedUids: () => blocked.future,
@@ -255,9 +256,26 @@ void main() {
     expect(repository.calls, 1);
     expect(firestore.querySpecs, isNotEmpty);
 
-    blocked.complete(<String>{});
+    blocked.complete(KnownBlockedCreators(<String>{}));
     final page = await search;
     expect(page.results.map((wall) => wall.id), <String>['remote']);
+  });
+
+  test('search hides Prism walls from creators while the block list is unknown', () async {
+    final firestore = FakeFirestoreClient(onQuery: (spec) => <FakeDocRow>[(id: 'd1', data: _prismDoc('p1'))]);
+    final service = WallpaperSearchService(
+      _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('w')])),
+      _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
+      SettingsLocalDataSource(InMemoryLocalStore()),
+      PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{})),
+      null,
+      () => const UnknownBlockedCreators(),
+    );
+
+    final page = await service.search('nature');
+
+    expect(page.results.map((wall) => wall.id), <String>['w']);
+    expect(page.prismResults, isEmpty);
   });
 
   group('repeated search', () {
@@ -432,7 +450,7 @@ void main() {
       final firestore = FakeFirestoreClient(
         onQuery: (spec) => <FakeDocRow>[(id: 'd1', data: _prismDoc('p1', creatorUid: 'later-id'))],
       );
-      Set<String> blocked = <String>{};
+      BlockedCreators blocked = KnownBlockedCreators(<String>{});
       final service = WallpaperSearchService(
         _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')])),
         _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
@@ -443,7 +461,7 @@ void main() {
       );
 
       expect((await service.search('nature')).prismResults.map((wall) => wall.id), <String>['p1']);
-      blocked = <String>{'later-id'};
+      blocked = KnownBlockedCreators(<String>{'later-id'});
 
       expect((await service.search('nature')).prismResults, isEmpty);
     });

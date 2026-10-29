@@ -1,6 +1,7 @@
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
@@ -62,8 +63,9 @@ class WallRemixRepository {
     return rows.isEmpty ? null : rows.single;
   }
 
-  Future<Set<String>> blockedCreatorUids({bool waitForInitialLoad = true}) =>
-      _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: waitForInitialLoad);
+  Future<BlockedCreators> loadBlockedCreators() => _userBlockRepository.loadBlockedCreators();
 
-  Stream<Set<String>> watchBlockedCreatorUids() => _userBlockRepository.watchBlockedCreatorUids();
+  BlockedCreators get blockedCreators => _userBlockRepository.blockedCreators;
+
+  Stream<BlockedCreators> watchBlockedCreators() => _userBlockRepository.watchBlockedCreators();
 }

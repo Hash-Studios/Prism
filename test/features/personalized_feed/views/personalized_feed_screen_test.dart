@@ -891,6 +891,56 @@ void main() {
     expect(find.byType(WallpaperTile), findsNWidgets(2));
   });
 
+  testWidgets('a failed Popular load offers Try again and loads the walls', (tester) async {
+    int calls = 0;
+    when(() => feedRepository.fetchPopular()).thenAnswer(
+      (_) async => ++calls == 1
+          ? Result.error(const ServerFailure('Failed to fetch popular feed: blocked accounts did not load'))
+          : Result.success(_page(<String>['retried-popular'])),
+    );
+    await pumpScreen(tester);
+
+    await tapTab(tester, 'Popular');
+    await _settle(tester);
+
+    expect(find.text("Couldn't load popular wallpapers"), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(PrismButton, 'Try again'));
+    await _settle(tester);
+
+    expect(find.text("Couldn't load popular wallpapers"), findsNothing);
+    expect(find.byType(WallpaperTile), findsOneWidget);
+    verify(() => feedRepository.fetchPopular()).called(2);
+  });
+
+  testWidgets('an empty Popular page can refresh after a failure and load walls', (tester) async {
+    int calls = 0;
+    when(() => feedRepository.fetchPopular()).thenAnswer(
+      (_) async => switch (++calls) {
+        1 => Result.success(_page(<String>[])),
+        2 => Result.error(const ServerFailure('Failed to fetch popular feed: blocked accounts did not load')),
+        _ => Result.success(_page(<String>['refreshed-popular'])),
+      },
+    );
+    await pumpScreen(tester);
+
+    await tapTab(tester, 'Popular');
+    await _settle(tester);
+    expect(find.text('No popular wallpapers yet'), findsOneWidget);
+
+    await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator).first).onRefresh();
+    await _settle(tester);
+
+    expect(find.text("Couldn't load popular wallpapers"), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    await tester.tap(find.widgetWithText(PrismButton, 'Try again'));
+    await _settle(tester);
+
+    expect(find.byType(WallpaperTile), findsOneWidget);
+    verify(() => feedRepository.fetchPopular()).called(3);
+  });
+
   testWidgets('a tab is loaded once, however often the user comes back to it', (tester) async {
     await pumpScreen(tester);
 

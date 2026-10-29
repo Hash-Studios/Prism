@@ -1,6 +1,7 @@
 // The detail screen shows the Remix action when AiRemixSeed.of returns a seed for the wall, with the viewer built the
 // way _remixSeedOf builds it. Pumping the full detail screen needs its bloc, router and Firebase setup, so this test
 // checks that predicate directly. The screen also hides the action until the blocked creators have loaded.
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -25,7 +26,7 @@ bool _showsRemix({
     viewer: WallViewer(
       isPremium: viewerIsPremium,
       premiumCollections: const <String>['space'],
-      blockedCreatorUids: blockedCreator ? const <String>{'uid-asha'} : const <String>{},
+      blockedCreators: KnownBlockedCreators(blockedCreator ? const <String>{'uid-asha'} : const <String>{}),
     ),
     aiEnabled: aiEnabled,
   );

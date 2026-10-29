@@ -5,6 +5,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -85,7 +86,7 @@ void main() {
     wallhaven = _Wallhaven();
     pexels = _Pexels();
     blocks = _Blocks();
-    when(() => blocks.getBlockedCreatorUids(waitForInitialLoad: true)).thenAnswer((_) async => {'blocked-uid'});
+    when(() => blocks.loadBlockedCreators()).thenAnswer((_) async => KnownBlockedCreators({'blocked-uid'}));
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     local = [];
     repository = WallpaperRecommendationRepositoryImpl(
@@ -165,6 +166,35 @@ void main() {
 
     final page = await pendingPage;
     expect(page.items.map((item) => item.id), ['human']);
+  });
+
+  test('an unknown block list drops Prism rows with a creator and keeps Wallhaven discovery', () async {
+    when(() => blocks.loadBlockedCreators()).thenAnswer((_) async => const UnknownBlockedCreators());
+    firestore.rows = [
+      {'id': 'blocked', 'category': 'Nature', 'review': true, 'creatorUid': 'blocked-uid'},
+      {'id': 'kept', 'category': 'Nature', 'review': true, 'creatorUid': ''},
+    ];
+    final page = await repository.load(current: _item('current'), sessionKey: 'a');
+    expect(page.items.map((item) => item.id), ['kept']);
+
+    when(
+      () => wallhaven.fetchFeed(
+        categoryName: 'space',
+        refresh: any(named: 'refresh'),
+        paginationKey: any(named: 'paginationKey'),
+        startPage: any(named: 'startPage'),
+        categories: 100,
+        purity: 100,
+      ),
+    ).thenAnswer(
+      (_) async => Result.success([(_item('found', source: WallpaperSource.wallhaven) as WallhavenFeedItem).wallpaper]),
+    );
+    when(() => wallhaven.hasMoreForCategory('space', paginationKey: any(named: 'paginationKey'))).thenReturn(true);
+    final wallhavenPage = await repository.load(
+      current: _item('current', source: WallpaperSource.wallhaven, tags: [' space ', 'SPACE']),
+      sessionKey: 'visit-wh',
+    );
+    expect(wallhavenPage.items.map((item) => item.id), ['found']);
   });
 
   test('Wallhaven visits do not share each other or search cursors; release is scoped', () async {

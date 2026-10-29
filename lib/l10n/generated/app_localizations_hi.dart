@@ -3926,6 +3926,62 @@ class AppLocalizationsHi extends AppLocalizations {
   String get aiLiveActivityOpen => 'Prism में खोलें';
 
   @override
+  String get aiResultApply => 'लागू करें';
+
+  @override
+  String get aiResultEditPrompt => 'प्रॉम्प्ट संपादित करें';
+
+  @override
+  String get aiSessionStripLabel => 'इस सत्र के वॉलपेपर';
+
+  @override
+  String aiSessionTake(int index, int count) {
+    final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String indexString = indexNumberFormat.format(index);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'संस्करण $indexString, कुल $countString';
+  }
+
+  @override
+  String get aiFollowUpWatercolour => 'वॉटरकलर में';
+
+  @override
+  String get aiFollowUpNight => 'रात वाला संस्करण';
+
+  @override
+  String get aiFollowUpMinimal => 'और सरल';
+
+  @override
+  String get aiFollowUpWarmer => 'गर्म रंग';
+
+  @override
+  String get aiFollowUpDepth => 'गहराई जोड़ें';
+
+  @override
+  String aiFollowUpCostLabel(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'हर नए संस्करण की कीमत $costString कॉइन है';
+  }
+
+  @override
+  String get aiFollowUpConfirmTitle => 'नया संस्करण बनाएँ?';
+
+  @override
+  String aiFollowUpConfirmBody(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'इससे एक नया वॉलपेपर बनेगा। हर एक की कीमत $costString कॉइन है।';
+  }
+
+  @override
+  String get aiFollowUpConfirmAction => 'बनाएँ';
+
+  @override
   String get economyAiDailyLimit => 'आज की AI सीमा पूरी हो गई।';
 
   @override

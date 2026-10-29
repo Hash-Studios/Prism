@@ -131,7 +131,7 @@ void main() {
   setUp(() {
     bloc = _MockPublicProfileBloc();
     repository = _FakeProfileRepository();
-    blocks = FakeUserBlockRepository.pending();
+    blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
     AnalyticsRuntime.instance = FakeAppAnalytics();
     getIt
       ..registerFactory<PublicProfileBloc>(() => bloc)
@@ -555,6 +555,22 @@ void main() {
     expect(find.text('You blocked Ana Rivera'), findsOneWidget);
     expect(find.text('Unblock'), findsOneWidget);
     expect(find.text('Follow'), findsNothing);
+  });
+
+  testWidgets('an unknown block list keeps the profile loading until the list is known', (tester) async {
+    blocks.emitUnknown();
+    await pumpScreen(tester, identifier: 'u2');
+    repository.profiles.add(_ana);
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Ana Rivera'), findsNothing);
+    expect(find.text('You blocked Ana Rivera'), findsNothing);
+    expect(find.bySemanticsLabel('Loading'), findsWidgets);
+
+    blocks.completeInitial(<String>{});
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Ana Rivera'), findsOneWidget);
   });
 
   group('cosmetics, rank and gifts', () {
