@@ -1,8 +1,22 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 
-import { planSamples, promptFor, readStyles, remoteExists, sampleUrl } from './ai_style_samples.mjs';
+import {
+  generationId,
+  main,
+  planSamples,
+  promptFor,
+  rawImage,
+  readStyles,
+  remoteExists,
+  sampleUrl,
+  SEED_OVERRIDES,
+  seedFor,
+  selectStyles,
+} from './ai_style_samples.mjs';
 
 const dartEnum = await readFile(new URL('../lib/features/ai_wallpaper/domain/entities/ai_style_preset.dart', import.meta.url), 'utf8');
 const styles = readStyles(dartEnum);
@@ -70,6 +84,87 @@ test('--replace makes a style again even when its files exist', async () => {
   ]);
   assert.deepEqual(plan.generate.map((s) => s.slug), ['3d-render']);
   assert.equal(plan.costUsd, 0.04);
+});
+
+test('--replace works with --only and rejects an excluded or unknown style', () => {
+  const selected = selectStyles(styles, { only: ['3d-render'], replace: ['3d-render'] });
+  assert.deepEqual(selected.map((style) => style.slug), ['3d-render']);
+  assert.throws(
+    () => selectStyles(styles, { only: ['anime'], replace: ['3d-render'] }),
+    /excluded by --only: 3d-render/,
+  );
+  assert.throws(() => selectStyles(styles, { only: ['missing'], replace: [] }), /Unknown style: missing/);
+  assert.throws(() => selectStyles(styles, { only: ['anime'], replace: ['missing'] }), /Unknown style: missing/);
+});
+
+test('--dry-run --replace checks URLs without generation or file writes', async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'ai-style-samples-dry-run-'));
+  const outputDir = path.join(tempDir, 'output');
+  const originalFetch = globalThis.fetch;
+  const originalLog = console.log;
+  const originalSecret = process.env.STUDIO_SECRET;
+  const requests = [];
+  const logs = [];
+  console.log = (message) => logs.push(String(message));
+  globalThis.fetch = async (url, init) => {
+    requests.push({ url: String(url), method: init.method });
+    if (init.method !== 'HEAD') throw new Error('unexpected request');
+    return new Response(null, { status: 200 });
+  };
+  delete process.env.STUDIO_SECRET;
+  try {
+    await main(['--dry-run', '--only=anime,3d-render', '--replace=3d-render', `--out=${outputDir}`]);
+    assert.equal(requests.length, 2);
+    assert.ok(requests.every((request) => request.method === 'HEAD'));
+    assert.ok(logs.some((message) => message.includes('4 files (2 styles x 2 sizes), 2 missing, 1 generations')));
+    await assert.rejects(access(outputDir));
+  } finally {
+    globalThis.fetch = originalFetch;
+    console.log = originalLog;
+    if (originalSecret === undefined) delete process.env.STUDIO_SECRET;
+    else process.env.STUDIO_SECRET = originalSecret;
+    await rm(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('a new seed gets a new generation id and raw cache path; the same id reuses raw bytes', async () => {
+  assert.equal(seedFor('3d-render'), 20261031);
+  assert.equal(generationId('3d-render'), 'style-samples-v1-3d-render-20261031');
+
+  const out = await mkdtemp(path.join(os.tmpdir(), 'ai-style-samples-'));
+  const originalFetch = globalThis.fetch;
+  const originalSeed = SEED_OVERRIDES['3d-render'];
+  const requests = [];
+  let generated = 0;
+  globalThis.fetch = async (url, init = {}) => {
+    requests.push({ url: String(url), method: init.method ?? 'GET', body: init.body });
+    if (init.method === 'POST') {
+      generated += 1;
+      return new Response(JSON.stringify({ imageUrl: `https://example.test/image-${generated}`, width: 1080, height: 1920 }));
+    }
+    return new Response(Buffer.from(`raw image bytes ${url.endsWith('image-1') ? '1' : '2'}`));
+  };
+  try {
+    const style = styles.find((item) => item.slug === '3d-render');
+    SEED_OVERRIDES['3d-render'] = 20261030;
+    const first = await rawImage(style, out, 'test-secret');
+    const cached = await rawImage(style, out, 'test-secret');
+    SEED_OVERRIDES['3d-render'] = 20261031;
+    const regenerated = await rawImage(style, out, 'test-secret');
+    assert.deepEqual(first, Buffer.from('raw image bytes 1'));
+    assert.deepEqual(cached, first);
+    assert.deepEqual(regenerated, Buffer.from('raw image bytes 2'));
+    assert.equal(requests.length, 4);
+    assert.notEqual('style-samples-v1-3d-render-20261030', generationId('3d-render'));
+    assert.deepEqual(requests.filter((request) => request.method === 'POST').map((request) => JSON.parse(request.body).id), [
+      'style-samples-v1-3d-render-20261030',
+      'style-samples-v1-3d-render-20261031',
+    ]);
+  } finally {
+    SEED_OVERRIDES['3d-render'] = originalSeed;
+    globalThis.fetch = originalFetch;
+    await rm(out, { recursive: true, force: true });
+  }
 });
 
 test('the sample prompt uses the worker style text', () => {

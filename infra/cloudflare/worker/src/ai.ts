@@ -1108,7 +1108,7 @@ async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Res
     return aiError('invalid_request', 400, 'A free trial uses the fast tier');
   }
 
-  if (!isPromptSafe(parsed.prompt)) {
+  if (!isPromptSafe(`${parsed.prompt}, ${stylePromptSuffix(parsed.stylePreset)}`)) {
     return aiError('unsafe_prompt', 422, 'Prompt rejected by safety policy');
   }
 
@@ -1207,7 +1207,7 @@ async function handleVariation(request: Request, env: AiEnvBindings, parentGener
   const mergedPrompt = variationPrompt.length === 0
     ? original.prompt
     : `${original.prompt}. Variation request (${strength.toFixed(2)}): ${variationPrompt}`;
-  if (!isPromptSafe(mergedPrompt)) {
+  if (!isPromptSafe(`${mergedPrompt}, ${stylePromptSuffix(original.stylePreset)}`)) {
     return aiError('unsafe_prompt', 422, 'Variation prompt rejected by safety policy');
   }
 

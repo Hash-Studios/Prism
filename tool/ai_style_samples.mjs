@@ -28,9 +28,8 @@ export const MODEL = 'fal-ai/bytedance/seedream/v5/lite/text-to-image';
 export const COST_PER_IMAGE_USD = 0.04;
 export const WIDTH = 1080;
 export const HEIGHT = 1920;
-// Seedream 5 Lite takes no seed, so the seed only names the attempt. A new seed for a style makes a new image, but
-// only before upload: an uploaded file is skipped, and its URL is cached as immutable. To replace uploaded samples,
-// bump VERSION and AiStylePreset.sampleVersion together.
+// Seedream 5 Lite takes no seed, so the seed only names the attempt. Change it to get a new generation instead of
+// replaying the cached raw image. After sample URLs ship, bump VERSION and AiStylePreset.sampleVersion together.
 export const DEFAULT_SEED = 20261029;
 export const SEED_OVERRIDES = { 'mesh-gradient': 20261030, '3d-render': 20261031 };
 export const SIZES = { tile: { width: 288, height: 360 }, sheet: { width: 540, height: 960 } };
@@ -60,6 +59,15 @@ export const seedFor = (slug) => SEED_OVERRIDES[slug] ?? DEFAULT_SEED;
 export const generationId = (slug) => `style-samples-${VERSION}-${slug}-${seedFor(slug)}`;
 // The same text the worker adds for an app generation.
 export const promptFor = (style) => `${SUBJECT}, ${stylePromptSuffix(style.apiValue)}`;
+
+export function selectStyles(all, { only, replace }) {
+  const unknown = [...(only ?? []), ...replace].filter((slug) => !all.some((style) => style.slug === slug));
+  if (unknown.length > 0) throw new Error(`Unknown style: ${unknown.join(', ')}`);
+  const styles = only ? all.filter((style) => only.includes(style.slug)) : all;
+  const excluded = replace.filter((slug) => !styles.some((style) => style.slug === slug));
+  if (excluded.length > 0) throw new Error(`Cannot replace styles excluded by --only: ${excluded.join(', ')}`);
+  return styles;
+}
 
 /** One row per style and size. A style needs a generation only when one of its sizes is missing or replaced. */
 export async function planSamples({ styles, exists, replace = [] }) {
@@ -106,7 +114,7 @@ async function studioFetch(pathname, init, secret) {
 }
 
 /** The raw image for [style]. A cached file skips the call; the worker replays a finished id without a second bill. */
-async function rawImage(style, out, secret) {
+export async function rawImage(style, out, secret) {
   const id = generationId(style.slug);
   const cached = path.join(out, 'raw', `${id}.img`);
   if (await fileExists(cached)) return readFile(cached);
@@ -136,12 +144,10 @@ function loadSharp() {
   }
 }
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2));
+export async function main(argv = process.argv.slice(2)) {
+  const args = parseArgs(argv);
   const all = readStyles(await readFile(STYLE_ENUM, 'utf8'));
-  const unknown = [...(args.only ?? []), ...args.replace].filter((slug) => !all.some((s) => s.slug === slug));
-  if (unknown.length > 0) throw new Error(`Unknown style: ${unknown.join(', ')}`);
-  const styles = args.only ? all.filter((s) => args.only.includes(s.slug)) : all;
+  const styles = selectStyles(all, args);
   const plan = await planSamples({ styles, exists: (url) => remoteExists(url), replace: args.replace });
 
   for (const item of plan.items) {

@@ -70,7 +70,7 @@ When the balance is under the price, the button reads "Get coins · need N". It 
 The worker adds style text after the user's prompt (`stylePromptSuffix` in `infra/cloudflare/worker/src/ai_style_prompt.ts`). Fal and Gemini requests use the same text.
 
 - Most styles add `<apiValue> style`, for example `anime style`.
-- `3d render` reads as a photo from the name alone. It adds `stylized 3D render, smooth matte clay-like materials, soft global illumination, rendered CGI look`.
+- `3d render` adds `stylized 3D render, smooth matte clay-like materials, soft global illumination, rendered CGI look`.
 - To add text for another style, add it to the table. Then make that style sample again (see "Making the samples").
 
 ## Styles
@@ -134,13 +134,13 @@ The script `tool/ai_style_samples.mjs` makes the samples. Its test, `tool/ai_sty
 - It calls `POST /api/ai/studio/generations` on the worker. The model is `fal-ai/bytedance/seedream/v5/lite/text-to-image`, the balanced tier model. The studio route refuses the fast tier Z-Image model.
 - It makes each image at 1080x1920. The prompt is `<subject>, <style text>`. The style text comes from `stylePromptSuffix` in `infra/cloudflare/worker/src/ai_style_prompt.ts`, the same text the worker adds to app generations.
 - It costs about $0.04 an image, or $0.52 for all 13. It counts against the Studio budget (`STUDIO_DAILY_BUDGET_USD`, 2 USD a day).
-- It needs `STUDIO_SECRET` and `sharp`. Run `cd functions && npm ci` first.
+- It needs Node.js 24, the repository CI runtime. Generation and upload also need `STUDIO_SECRET` and `sharp`. Run `cd functions && npm ci` first.
 - It is idempotent. It skips files that already exist in R2 (HEAD check). It reuses raw images in `build/ai-style-samples/raw`. The worker replays a finished generation id, so it makes no second fal call.
 - To redo one style before upload, add its slug to `SEED_OVERRIDES` in the script. A new seed gives a new generation id. Seedream 5 Lite takes no seed input, so the seed only names the attempt.
 - A seed change does not replace an uploaded sample. The script skips files that exist, and the URL is cached as immutable.
-- Before the samples ship in a release, `--replace=<slug,slug>` makes and uploads those styles again. Also give each one a new seed, because the worker replays a finished generation id.
+- Before the samples ship in a release, `--replace=<slug,slug>` bypasses the uploaded-file check for those styles. Give each one a new seed to get a new raw image, because the local cache and worker replay the existing generation id. Keep `--replace` on both the `--skip-upload` review run and the upload run.
 - After the samples ship, bump `VERSION` in the script and `AiStylePreset.sampleVersion` together to replace them.
-- `--only=<slug,slug>` limits the styles.
+- `--only=<slug,slug>` limits the styles. Every `--replace` slug must be included when `--only` is set.
 
 Steps:
 
