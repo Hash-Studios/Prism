@@ -118,9 +118,7 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
   /// Set when opened from Downloads: shown instead of the network image, and the fallback if loading fails.
   final File? localFile;
 
-  /// Width over height of the picture the opener already shows, such as a decoded Downloads tile. The card opens at
-  /// this shape and keeps it, so it does not jump when the wallpaper loads. As on Pinterest, where a pin's size comes
-  /// with the feed.
+  /// Width over height of the opening image, retained while its wallpaper loads.
   final double? aspectRatio;
 
   /// The grid this wall was opened from. A sideways swipe on the card shows the next or previous wall in place.
@@ -340,6 +338,7 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
                   analyticsSurface: screen.analyticsSurface,
                   requestId: screen.requestId,
                   heroTag: tile.heroTag,
+                  aspectRatio: index == widget.start ? screen.aspectRatio : null,
                 ),
               ),
             ),

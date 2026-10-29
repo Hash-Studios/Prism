@@ -34,7 +34,9 @@ class _MockStackRouter extends Mock implements StackRouter {}
 Future<Uint8List> _png(int width, int height) async {
   final ui.PictureRecorder recorder = ui.PictureRecorder();
   Canvas(recorder).drawRect(Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()), Paint()..color = Colors.teal);
-  final ui.Image image = await recorder.endRecording().toImage(width, height);
+  final ui.Picture picture = recorder.endRecording();
+  final ui.Image image = await picture.toImage(width, height);
+  picture.dispose();
   final ByteData bytes = (await image.toByteData(format: ui.ImageByteFormat.png))!;
   image.dispose();
   return bytes.buffer.asUint8List();
@@ -93,6 +95,25 @@ void main() {
     await tester.pump();
     await tester.pump();
   }
+
+  testWidgets('the PNG fixture releases its recorded picture', (tester) async {
+    final List<ui.Picture> pictures = <ui.Picture>[];
+    final previousOnCreate = ui.Picture.onCreate;
+    ui.Picture.onCreate = (picture) {
+      previousOnCreate?.call(picture);
+      pictures.add(picture);
+    };
+    try {
+      await tester.runAsync(() => _png(40, 80));
+      expect(pictures, hasLength(1));
+      expect(pictures.single.debugDisposed, isTrue);
+    } finally {
+      ui.Picture.onCreate = previousOnCreate;
+      for (final ui.Picture picture in pictures) {
+        if (!picture.debugDisposed) picture.dispose();
+      }
+    }
+  });
 
   testWidgets('shows loading first, then the empty state with a browse action', (tester) async {
     final pending = Completer<DownloadItemsResult>();

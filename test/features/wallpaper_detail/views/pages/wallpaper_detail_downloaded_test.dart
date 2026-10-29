@@ -169,7 +169,7 @@ void main() {
             wallId: 'pexels-1',
             source: WallpaperSource.pexels,
             localFile: File('assets/images/prism.webp'),
-            aspectRatio: 16 / 9,
+            aspectRatio: 3 / 2,
             heroTag: 'download-1',
           ),
         ),
@@ -182,7 +182,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(loading.width / loading.height, closeTo(16 / 9, 0.01));
+    expect(loading.width / loading.height, closeTo(3 / 2, 0.01));
     expect(tester.getSize(find.byType(WallpaperDetailHero)), loading);
   });
 
