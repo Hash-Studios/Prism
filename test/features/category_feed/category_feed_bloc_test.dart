@@ -426,7 +426,11 @@ void main() {
           CategoryFeedPage(items: <FeedItemEntity>[_prismItem('human', authorUid: 'a')], hasMore: false),
         );
       });
-      final bloc = CategoryFeedBloc(_MockLoadCategoriesUseCase(), fetch, FakeUserBlockRepository.pending());
+      final bloc = CategoryFeedBloc(
+        _MockLoadCategoriesUseCase(),
+        fetch,
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
       addTearDown(bloc.close);
 
       bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
@@ -448,7 +452,11 @@ void main() {
           CategoryFeedPage(items: <FeedItemEntity>[_prismItem('wall-$calls', authorUid: 'a')], hasMore: true),
         );
       });
-      final bloc = CategoryFeedBloc(_MockLoadCategoriesUseCase(), fetch, FakeUserBlockRepository.pending());
+      final bloc = CategoryFeedBloc(
+        _MockLoadCategoriesUseCase(),
+        fetch,
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
       addTearDown(bloc.close);
 
       bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
@@ -464,7 +472,11 @@ void main() {
     test('stops after 5 empty pages in a row', () async {
       final fetch = _MockFetchCategoryFeedUseCase();
       when(() => fetch(any())).thenAnswer((_) async => Result.success(empty));
-      final bloc = CategoryFeedBloc(_MockLoadCategoriesUseCase(), fetch, FakeUserBlockRepository.pending());
+      final bloc = CategoryFeedBloc(
+        _MockLoadCategoriesUseCase(),
+        fetch,
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
       addTearDown(bloc.close);
 
       bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
