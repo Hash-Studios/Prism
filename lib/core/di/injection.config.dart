@@ -217,6 +217,8 @@ import '../../features/wall_of_the_day/domain/usecases/fetch_wotd_archive_usecas
 import '../../features/wall_requests/biz/wall_request_sheet_cubit.dart'
     as _i658;
 import '../../features/wall_requests/biz/wall_requests_cubit.dart' as _i1007;
+import '../../features/wall_requests/data/wall_requests_repository_impl.dart'
+    as _i221;
 import '../../features/wall_requests/domain/repositories/wall_requests_repository.dart'
     as _i663;
 import '../../features/wallhaven_feed/data/repositories/wallhaven_wallpaper_repository_impl.dart'
@@ -318,6 +320,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i1073.SettingsLocalDataSource>(
     () => _i1073.SettingsLocalDataSource(gh<_i496.LocalStore>()),
+  );
+  gh.lazySingleton<_i663.WallRequestsRepository>(
+    () => _i221.WallRequestsRepositoryImpl(),
   );
   gh.lazySingleton<_i360.BadgeRepository>(() => _i700.BadgeRepositoryImpl());
   gh.lazySingleton<_i1055.AdsRepository>(() => _i418.AdsRepositoryImpl());
