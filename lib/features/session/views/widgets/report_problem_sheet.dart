@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -15,7 +16,31 @@ typedef ScreenshotPicker = Future<Uint8List?> Function();
 
 Future<Uint8List?> _pickFromGallery() async {
   final XFile? file = await ImagePicker().pickImage(source: ImageSource.gallery);
-  return file?.readAsBytes();
+  return file == null ? null : screenshotAsPng(await file.readAsBytes());
+}
+
+const int _maxScreenshotHeight = 2000;
+
+/// Re-encodes a picked image as PNG. That drops metadata such as GPS location, makes the bytes match the
+/// `screenshot.png` attachment name whatever the gallery format was (JPEG, HEIC), and caps the upload size.
+@visibleForTesting
+Future<Uint8List?> screenshotAsPng(Uint8List bytes) async {
+  final ui.Codec codec = await ui.instantiateImageCodec(
+    bytes,
+    targetHeight: _maxScreenshotHeight,
+    allowUpscaling: false,
+  );
+  try {
+    final ui.Image image = (await codec.getNextFrame()).image;
+    try {
+      final ByteData? data = await image.toByteData(format: ui.ImageByteFormat.png);
+      return data?.buffer.asUint8List();
+    } finally {
+      image.dispose();
+    }
+  } finally {
+    codec.dispose();
+  }
 }
 
 /// Opens the report form. A shake passes the [screenshot] it took; other entry points let the user pick one.
