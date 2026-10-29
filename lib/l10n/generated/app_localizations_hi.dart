@@ -10933,4 +10933,7 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count सप्ताह पहले', one: '1 सप्ताह पहले');
     return '$_temp0';
   }
+
+  @override
+  String get wallRequestErrorAccountAge => 'आपका खाता 10 दिन पुराना होने पर अनुरोध और वोट कर सकेगा।';
 }

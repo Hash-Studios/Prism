@@ -10948,4 +10948,7 @@ class AppLocalizationsDe extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'vor $count Wochen', one: 'vor 1 Woche');
     return '$_temp0';
   }
+
+  @override
+  String get wallRequestErrorAccountAge => 'Dein Konto kann Wünsche senden und abstimmen, sobald es 10 Tage alt ist.';
 }

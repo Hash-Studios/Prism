@@ -127,6 +127,28 @@ export function requestIdFrom(raw: unknown): string {
   return raw;
 }
 
+/** A new account cannot request or vote, so a burst of fresh accounts cannot rig a request. */
+export const MIN_ACCOUNT_AGE_MS = 10 * DAY_MS;
+
+/** Seam for tests: account creation time lives in Firebase Auth, outside Firestore. NaN when there is no Auth user. */
+export const wallRequestDeps = {
+  accountCreatedMs: async (uid: string): Promise<number> => {
+    try {
+      return Date.parse((await admin.auth().getUser(uid)).metadata.creationTime);
+    } catch (err) {
+      if ((err as {code?: string}).code === "auth/user-not-found") return NaN;
+      throw err;
+    }
+  },
+};
+
+async function requireAccountAge(uid: string, nowMs: number): Promise<void> {
+  const created = await wallRequestDeps.accountCreatedMs(uid);
+  if (!Number.isFinite(created) || nowMs - created < MIN_ACCOUNT_AGE_MS) {
+    throw new HttpsError("failed-precondition", "account-too-new");
+  }
+}
+
 const requestRef = (id: string) => db.collection(WALL_REQUESTS).doc(id);
 const millis = (value: unknown): number => value instanceof admin.firestore.Timestamp ? value.toMillis() : 0;
 const blockRef = (owner: string, other: string) => db.doc(`usersv2/${owner}/blockedUsers/${other}`);
@@ -235,6 +257,7 @@ export type CreateResult =
  */
 export async function createWallRequest(uid: string, data: unknown, nowMs = Date.now()): Promise<CreateResult> {
   const {text, tags, force} = parseCreateInput(data);
+  await requireAccountAge(uid, nowMs);
   const tokens = requestTokens(text);
   const profile = (await db.collection("profiles").doc(uid).get()).data();
   const day = utcDateString(new Date(nowMs));
@@ -277,6 +300,7 @@ export async function createWallRequest(uid: string, data: unknown, nowMs = Date
 /** Sets the caller's vote to `vote`. A repeat is a no-op, so a retried call never counts twice. */
 export async function setWallRequestVote(uid: string, requestId: string, vote: boolean, nowMs = Date.now()):
   Promise<{voted: boolean; voteCount: number}> {
+  await requireAccountAge(uid, nowMs);
   const ref = requestRef(requestId);
   const voteRef = ref.collection(VOTES).doc(uid);
   const day = utcDateString(new Date(nowMs));

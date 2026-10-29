@@ -17322,6 +17322,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 week ago} other{{count} weeks ago}}'**
   String wallRequestAgeWeeks(int count);
+
+  /// Error when an account younger than 10 days tries to request or vote.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account can request walls and vote once it\'s 10 days old.'**
+  String get wallRequestErrorAccountAge;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

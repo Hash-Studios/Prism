@@ -92,8 +92,8 @@ All callables run in `asia-south1` and `us-central1`.
 
 | Callable | Input | Rules |
 |---|---|---|
-| `createWallRequest` | `text`, `tags`, `force` | Sign-in. An open account. Text checks. At most 3 requests a UTC day. |
-| `setWallRequestVote` | `requestId`, `vote` | Sign-in. Not your own request, not hidden, not filled, no block in either direction. At most 200 vote changes a UTC day. The same value twice is a no-op. |
+| `createWallRequest` | `text`, `tags`, `force` | Sign-in. An open account at least 10 days old. Text checks. At most 3 requests a UTC day. |
+| `setWallRequestVote` | `requestId`, `vote` | Sign-in. An account at least 10 days old. Not your own request, not hidden, not filled, no block in either direction. At most 200 vote changes a UTC day. The same value twice is a no-op. |
 | `listWallRequests` | `tab` | Guests too. Hidden requests show only to admins. Requests of users that the viewer blocked, or that blocked the viewer, do not show. |
 | `setWallRequestHidden` | `requestId`, `hidden` | Admins only. |
 
@@ -114,6 +114,7 @@ Votes go through `setWallRequestVote`, not through client writes. The callable r
 
 ## Safety
 
+- **Account age.** An account must be at least 10 days old to request or vote (`MIN_ACCOUNT_AGE_MS`). The age is the Firebase Auth creation time. A younger account gets the error `account-too-new` and the message "Your account can request walls and vote once it's 10 days old." Together with the per-account limits, this makes a burst of new accounts useless for vote rigging.
 - **Report.** "Report request" uses the existing report flow with the content type `wallRequest`. When 3 reporters with accounts older than 7 days report a request, `onContentReportCreated` hides it.
 - **Hide.** Admins hide or show a request from the row menu. A hidden request leaves every list, Studio and the filled push.
 - **Blocks.** Hidden in both directions in lists, close-request matches, votes, fills and pushes.

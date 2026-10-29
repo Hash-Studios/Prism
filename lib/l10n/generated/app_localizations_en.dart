@@ -10794,4 +10794,7 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count weeks ago', one: '1 week ago');
     return '$_temp0';
   }
+
+  @override
+  String get wallRequestErrorAccountAge => 'Your account can request walls and vote once it\'s 10 days old.';
 }

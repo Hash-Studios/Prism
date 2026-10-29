@@ -11126,6 +11126,9 @@ class AppLocalizationsPt extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Há $count semanas', one: 'Há 1 semana');
     return '$_temp0';
   }
+
+  @override
+  String get wallRequestErrorAccountAge => 'Sua conta poderá fazer pedidos e votar quando tiver 10 dias.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -22248,4 +22251,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Há $count semanas', one: 'Há 1 semana');
     return '$_temp0';
   }
+
+  @override
+  String get wallRequestErrorAccountAge => 'Sua conta poderá fazer pedidos e votar quando tiver 10 dias.';
 }

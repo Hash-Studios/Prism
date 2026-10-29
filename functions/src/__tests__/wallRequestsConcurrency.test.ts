@@ -12,7 +12,11 @@ import {
   WALL_REQUESTS,
   REQUEST_RATE_DAILY,
   VOTE_RATE_DAILY,
+  wallRequestDeps,
 } from "../wallRequests";
+
+// Accounts in these tests are old enough to request and vote unless a test says otherwise.
+wallRequestDeps.accountCreatedMs = async () => 0;
 
 const enabled = !!process.env.FIRESTORE_EMULATOR_HOST;
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");

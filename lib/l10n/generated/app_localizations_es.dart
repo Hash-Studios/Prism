@@ -10938,4 +10938,7 @@ class AppLocalizationsEs extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get wallRequestErrorAccountAge => 'Tu cuenta podrá hacer solicitudes y votar cuando tenga 10 días.';
 }

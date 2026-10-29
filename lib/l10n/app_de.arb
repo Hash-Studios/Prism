@@ -10129,5 +10129,9 @@
         "type": "int"
       }
     }
+  },
+  "wallRequestErrorAccountAge": "Dein Konto kann Wünsche senden und abstimmen, sobald es 10 Tage alt ist.",
+  "@wallRequestErrorAccountAge": {
+    "description": "Error when an account younger than 10 days tries to request or vote."
   }
 }

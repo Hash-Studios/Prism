@@ -96,5 +96,9 @@ void main() {
     expect(wallRequestAge(context, now.subtract(const Duration(hours: 3)), now: now), '3 hours ago');
     expect(wallRequestAge(context, now.subtract(const Duration(days: 2)), now: now), '2 days ago');
     expect(wallRequestAge(context, now.subtract(const Duration(days: 21)), now: now), '3 weeks ago');
+    expect(
+      wallRequestErrorText(context, WallRequestError.accountTooNew),
+      "Your account can request walls and vote once it's 10 days old.",
+    );
   });
 }

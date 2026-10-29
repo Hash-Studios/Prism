@@ -10189,5 +10189,9 @@
         "type": "int"
       }
     }
+  },
+  "wallRequestErrorAccountAge": "आपका खाता 10 दिन पुराना होने पर अनुरोध और वोट कर सकेगा।",
+  "@wallRequestErrorAccountAge": {
+    "description": "Error when an account younger than 10 days tries to request or vote."
   }
 }

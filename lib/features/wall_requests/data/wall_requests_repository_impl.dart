@@ -75,6 +75,7 @@ class WallRequestsRepositoryImpl implements WallRequestsRepository {
     'resource-exhausted' => WallRequestError.dailyLimit,
     'failed-precondition' when e.message == 'own-request' => WallRequestError.ownRequest,
     'failed-precondition' when e.message == 'request-closed' => WallRequestError.closed,
+    'failed-precondition' when e.message == 'account-too-new' => WallRequestError.accountTooNew,
     'not-found' => WallRequestError.missing,
     _ => WallRequestError.unknown,
   };

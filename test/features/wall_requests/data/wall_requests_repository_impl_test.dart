@@ -172,6 +172,7 @@ void main() {
       ('resource-exhausted', 'daily-limit', WallRequestError.dailyLimit),
       ('failed-precondition', 'own-request', WallRequestError.ownRequest),
       ('failed-precondition', 'request-closed', WallRequestError.closed),
+      ('failed-precondition', 'account-too-new', WallRequestError.accountTooNew),
       ('failed-precondition', 'account-closed', WallRequestError.unknown),
       ('not-found', 'request-missing', WallRequestError.missing),
       ('internal', '', WallRequestError.unknown),

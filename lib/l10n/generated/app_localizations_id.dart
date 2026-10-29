@@ -10848,4 +10848,8 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count minggu lalu', one: '1 minggu lalu');
     return '$_temp0';
   }
+
+  @override
+  String get wallRequestErrorAccountAge =>
+      'Akun Anda bisa membuat permintaan dan memberi suara setelah berumur 10 hari.';
 }

@@ -14,9 +14,13 @@ import {
   setWallRequestVote,
   similarity,
   studioRequestPicks,
+  wallRequestDeps,
 } from "../wallRequests";
 import type {Doc} from "./fakeDb";
 import {installFakeDb} from "./fakeDb";
+
+// Accounts in these tests are old enough to request and vote unless a test says otherwise.
+wallRequestDeps.accountCreatedMs = async () => 0;
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = Date.parse("2026-10-29T12:00:00Z");
@@ -906,4 +910,29 @@ test("the maximum request text and four 200-character gallery ids stay under the
     assert.equal(message.data?.wall_ids, ids.join(","));
     assert.ok(Buffer.byteLength(JSON.stringify(message), "utf8") < 4096);
   }
+});
+
+test("accounts younger than 10 days cannot request or vote, and nothing is written", async (t) => {
+  const store = installFakeDb(t, {...requester, "wallRequests/r1": request("dark minimal mountains", "u2")});
+  t.mock.method(wallRequestDeps, "accountCreatedMs", async () => NOW - 9 * DAY);
+  await assert.rejects(createWallRequest("u1", {text: "neon city rain", tags: []}, NOW),
+    {code: "failed-precondition", message: "account-too-new"});
+  await assert.rejects(setWallRequestVote("u1", "r1", true, NOW), {code: "failed-precondition", message: "account-too-new"});
+  assert.deepEqual([...store.keys()].filter((key) => key.startsWith("wallRequests/")), ["wallRequests/r1"]);
+  assert.equal(store.get("wallRequests/r1")?.voteCount, 0);
+});
+
+test("an account exactly 10 days old can request and vote", async (t) => {
+  const store = installFakeDb(t, {...requester, ...accounts("u2"), "wallRequests/r1": request("dark minimal mountains", "u2")});
+  t.mock.method(wallRequestDeps, "accountCreatedMs", async () => NOW - 10 * DAY);
+  assert.equal((await createWallRequest("u1", {text: "neon city rain", tags: []}, NOW)).status, "created");
+  assert.deepEqual(await setWallRequestVote("u1", "r1", true, NOW), {voted: true, voteCount: 1});
+  assert.equal(store.has("wallRequests/r1/votes/u1"), true);
+});
+
+test("a caller without an Auth user cannot request or vote", async (t) => {
+  installFakeDb(t, {...requester, "wallRequests/r1": request("dark minimal mountains", "u2")});
+  t.mock.method(wallRequestDeps, "accountCreatedMs", async () => NaN);
+  await assert.rejects(createWallRequest("u1", {text: "neon city rain", tags: []}, NOW), {message: "account-too-new"});
+  await assert.rejects(setWallRequestVote("u1", "r1", true, NOW), {message: "account-too-new"});
 });

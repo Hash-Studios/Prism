@@ -2864,5 +2864,6 @@
   "wallRequestAgeMinutes": "{count, plural, =1{Há 1 minuto} other{Há {count} minutos}}",
   "wallRequestAgeHours": "{count, plural, =1{Há 1 hora} other{Há {count} horas}}",
   "wallRequestAgeDays": "{count, plural, =1{Há 1 dia} other{Há {count} dias}}",
-  "wallRequestAgeWeeks": "{count, plural, =1{Há 1 semana} other{Há {count} semanas}}"
+  "wallRequestAgeWeeks": "{count, plural, =1{Há 1 semana} other{Há {count} semanas}}",
+  "wallRequestErrorAccountAge": "Sua conta poderá fazer pedidos e votar quando tiver 10 dias."
 }

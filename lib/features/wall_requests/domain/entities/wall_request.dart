@@ -152,7 +152,7 @@ final class WallRequestDuplicate extends CreateWallRequestResult {
 }
 
 /// Server errors the app has copy for. The callables send these codes as the error message.
-enum WallRequestError { textRejected, dailyLimit, ownRequest, closed, missing, signedOut, unknown }
+enum WallRequestError { textRejected, dailyLimit, ownRequest, closed, missing, signedOut, accountTooNew, unknown }
 
 class WallRequestException implements Exception {
   const WallRequestException(this.error);

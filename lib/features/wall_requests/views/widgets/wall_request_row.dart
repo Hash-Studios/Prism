@@ -15,6 +15,7 @@ String wallRequestErrorText(BuildContext context, WallRequestError error) {
     WallRequestError.closed => l10n.wallRequestErrorClosed,
     WallRequestError.missing => l10n.wallRequestErrorGone,
     WallRequestError.signedOut => l10n.wallRequestSignIn,
+    WallRequestError.accountTooNew => l10n.wallRequestErrorAccountAge,
     WallRequestError.unknown => l10n.wallRequestErrorGeneric,
   };
 }
