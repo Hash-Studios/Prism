@@ -174,6 +174,7 @@ class _SuccessContent extends StatelessWidget {
     final Text message = Text(l10n.coreWallpaperSet, maxLines: 2, overflow: TextOverflow.ellipsis);
     final VoidCallback? match = onMatchAccent;
     if (match == null) return message;
+    // Beside the message when both fit, under it when they don't. A long label in a Row took all the width.
     return OverflowBar(
       alignment: MainAxisAlignment.spaceBetween,
       spacing: PrismSpace.xs,
