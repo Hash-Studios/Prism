@@ -192,6 +192,7 @@ void main() {
     expect(aiModelDisplayName('fal-ai/flux/schnell'), 'FLUX.1 schnell');
     expect(aiModelDisplayName('gemini-2.5-flash-image'), 'Gemini 2.5 Flash Image');
     expect(aiModelDisplayName('acme/new-model'), isNull);
+    expect(aiModelDisplayName('fal-ai/flux/schnell-v2'), isNull, reason: 'a longer id is a different model');
     expect(aiModelDisplayName(null), isNull);
   });
 }

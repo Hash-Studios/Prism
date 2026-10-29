@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 /// Moderator-facing text. Not localized on purpose.
 const String kWrongAiLabelDetails = 'Wrong AI label';
 
-/// Walls store the provider's model id, such as `openai/gpt-image-2.5/sunburst/text-to-image`. Keys are id prefixes.
+/// Walls store the provider's model id, such as `openai/gpt-image-2.5/sunburst/text-to-image`. A key matches the whole id or a path above it.
 const Map<String, String> _aiModelNames = <String, String>{
   'openai/gpt-image-2.5': 'GPT Image 2.5',
   'fal-ai/bytedance/seedream/v5/lite': 'Seedream 5 Lite',
@@ -25,7 +25,7 @@ const Map<String, String> _aiModelNames = <String, String>{
 String? aiModelDisplayName(String? modelId) {
   if (modelId == null) return null;
   for (final MapEntry<String, String> entry in _aiModelNames.entries) {
-    if (modelId.startsWith(entry.key)) return entry.value;
+    if (modelId == entry.key || modelId.startsWith('${entry.key}/')) return entry.value;
   }
   return null;
 }

@@ -4,6 +4,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/personalized_feed/views/widgets/paged_chip_sliver.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -37,6 +38,7 @@ class TrendingChipSliver extends StatelessWidget {
         return const SliverToBoxAdapter(child: LoadingCards(useFeedLayout: true));
       }
       final bool failed = state.status == LoadStatus.failure;
+      if (!failed && !showAi && state.walls.isNotEmpty) return const SliverToBoxAdapter(child: AiHiddenFeedState());
       return SliverToBoxAdapter(
         child: GlintState(
           kind: failed ? GlintStateKind.error : GlintStateKind.empty,

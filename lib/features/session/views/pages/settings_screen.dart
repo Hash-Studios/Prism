@@ -442,7 +442,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onChanged: (value) async {
         if (_showAi == value) return;
         setState(() => _showAi = value);
-        if (!await setShowAiWallpapers(_settingsLocal, value)) return;
+        final bool changed;
+        try {
+          changed = await setShowAiWallpapers(_settingsLocal, value);
+        } catch (_) {
+          if (!mounted) return;
+          setState(() => _showAi = AiContentFilter.showsAi(_settingsLocal));
+          toasts.error(context.l10n.wallpaperFeedSaveError);
+          return;
+        }
+        if (!changed) return;
         _trackSettingsToggle(SettingValue.aiWallpapers, value);
         if (!mounted) return;
         context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.refreshRequested());

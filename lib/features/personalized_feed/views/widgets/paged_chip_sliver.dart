@@ -1,8 +1,12 @@
+import 'dart:async';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_loading_more.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
@@ -85,6 +89,7 @@ class PagedChipSliver extends StatelessWidget {
               ),
             );
           }
+          if (!showAi && state.items.isNotEmpty) return const SliverToBoxAdapter(child: AiHiddenFeedState());
           return SliverToBoxAdapter(
             child: GlintState(
               kind: GlintStateKind.empty,
@@ -149,5 +154,21 @@ class PagedChipSliver extends StatelessWidget {
       return FeedLoadingMore(columns: crossAxisCount);
     }
     return const SizedBox(height: PrismFeedLayout.endOfPageSpacerHeight);
+  }
+}
+
+/// The end of a feed whose loaded walls are all AI while AI walls are hidden. The feed screen reloads its tabs when
+/// the setting changes.
+class AiHiddenFeedState extends StatelessWidget {
+  const AiHiddenFeedState({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GlintState(
+      kind: GlintStateKind.empty,
+      title: context.l10n.feedNoHumanWalls,
+      actionLabel: context.l10n.feedShowAiWalls,
+      onAction: () => unawaited(setShowAiWallpapers(getIt<SettingsLocalDataSource>(), true)),
+    );
   }
 }

@@ -87,12 +87,13 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
       final page = providerPage == null
           ? null
           : CategoryFeedPage(
-              items: AiContentFilter.filterFeedItems(
-                AnimeContentFilter.filterFeedItems(
-                  _prependPrism(await prismFirst, providerPage.items),
-                  showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
+              // Hidden AI walls go before the URL dedupe, so a provider copy of the same image still shows.
+              items: AnimeContentFilter.filterFeedItems(
+                _prependPrism(
+                  AiContentFilter.filterFeedItems(await prismFirst, showAi: AiContentFilter.showsAi(_settingsLocal)),
+                  AiContentFilter.filterFeedItems(providerPage.items, showAi: AiContentFilter.showsAi(_settingsLocal)),
                 ),
-                showAi: AiContentFilter.showsAi(_settingsLocal),
+                showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
               ),
               hasMore: providerPage.hasMore,
             );
