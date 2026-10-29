@@ -163,6 +163,7 @@ UNCHANGED_ENGLISH_ALLOWLIST = {
     'notifPushWotdAudienceBody': '{wallTitle}',
     'notifSemanticsRow': '{message}. {time}. {readStatus}',
     'wallpaperAutoRotateNounCategory': '{category}',
+    'wallpaperAutoRotateNounFolder': '{folder}',
     'wallpaperUploadDetailsOptional': 'Details (optional)',
 }
 

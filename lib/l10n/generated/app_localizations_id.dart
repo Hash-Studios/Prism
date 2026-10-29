@@ -10639,4 +10639,61 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get tasteQuizRetakeFailed => 'Wallpaper tidak bisa dimuat. Periksa koneksi kamu dan coba lagi.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Folder';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Folder: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Folder ini memerlukan minimal 2 wallpaper yang bisa diputar. Wallpaper Prism diputar setelah Anda mengunduhnya.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Buka folder';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Pilih folder';
+
+  @override
+  String get wallpaperAutoRotateNoFolders => 'Anda belum punya folder. Simpan wallpaper ke folder, lalu pilih di sini.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return 'Putar $folder?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Wallpaper Anda berubah menjadi salah satu dari folder ini, sesuai jadwal di bawah.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Putar folder ini';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'Putar otomatis nonaktif karena folder $folder telah dihapus.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'Putar otomatis nonaktif karena folder $folder memiliki kurang dari 2 wallpaper.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Putar folder ini';
+
+  @override
+  String get foldersRotating => 'Diputar';
+
+  @override
+  String get foldersRotatingDescription => 'Putar otomatis menggunakan folder ini';
 }

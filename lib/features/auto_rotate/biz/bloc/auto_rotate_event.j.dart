@@ -17,6 +17,12 @@ abstract class AutoRotateEvent with _$AutoRotateEvent {
   const factory AutoRotateEvent.shuffleChanged(bool shuffle) = _ShuffleChanged;
   const factory AutoRotateEvent.sourceChanged(AutoRotateSource source) = _SourceChanged;
   const factory AutoRotateEvent.categoryChanged(String category) = _CategoryChanged;
+  const factory AutoRotateEvent.folderChosen({required String folderId, required String name}) = _FolderChosen;
+
+  /// The folder's walls, name or existence may have changed. [name] is null when the folder is gone from the list.
+  const factory AutoRotateEvent.folderChanged({required String folderId, String? name}) = _FolderChanged;
+  const factory AutoRotateEvent.folderSettled() = _FolderSettled;
+  const factory AutoRotateEvent.folderStopAcknowledged() = _FolderStopAcknowledged;
   const factory AutoRotateEvent.chargingOnlyChanged(bool chargingOnly) = _ChargingOnlyChanged;
   const factory AutoRotateEvent.rotateNowPressed() = _RotateNowPressed;
   const factory AutoRotateEvent.favouritesSettled() = _FavouritesSettled;

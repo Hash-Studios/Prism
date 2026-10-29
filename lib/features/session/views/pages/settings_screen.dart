@@ -353,7 +353,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.autorenew_rounded,
       title: context.l10n.accountAutoRotateWallpapers,
       subtitle: context.l10n.accountChangeWallpaperOnTimer,
-      onTap: () => context.router.push(const AutoRotateRoute()),
+      onTap: () => context.router.push(AutoRotateRoute()),
     ),
     PrismRow(
       icon: Icons.motion_photos_on_outlined,

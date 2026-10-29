@@ -13,6 +13,7 @@ import 'package:Prism/features/auto_rotate/domain/repositories/auto_rotate_repos
 import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_session_listener.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -32,6 +33,8 @@ class _MockSessionBloc extends MockBloc<SessionEvent, SessionState> implements S
 
 class _MockFavouriteWallsBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState>
     implements FavouriteWallsBloc {}
+
+class _MockFoldersBloc extends MockBloc<FoldersEvent, FoldersState> implements FoldersBloc {}
 
 class _FakeAutoRotateRepository implements AutoRotateRepository {
   _FakeAutoRotateRepository({this.config = const AutoRotateConfig()});
@@ -74,6 +77,9 @@ class _FakeAutoRotateRepository implements AutoRotateRepository {
 
   @override
   Future<List<String>?> loadRemoteUrls(AutoRotateSource source, {String? category}) async => const <String>[];
+
+  @override
+  Future<({bool found, List<String> urls})?> loadFolderUrls(String folderId, {required String userId}) async => null;
 
   @override
   Future<Set<WallpaperTarget>> supportedTargets() async => WallpaperTarget.values.toSet();
@@ -552,16 +558,20 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }
 
-Widget _listenerTree(AutoRotateBloc autoRotateBloc, SessionBloc sessionBloc, FavouriteWallsBloc favouriteWallsBloc) =>
-    MultiBlocProvider(
-      providers: [
-        BlocProvider<AutoRotateBloc>.value(value: autoRotateBloc),
-        BlocProvider<SessionBloc>.value(value: sessionBloc),
-        BlocProvider<FavouriteWallsBloc>.value(value: favouriteWallsBloc),
-      ],
-      child: const MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: AutoRotateSessionListener(child: SizedBox()),
-      ),
-    );
+Widget _listenerTree(AutoRotateBloc autoRotateBloc, SessionBloc sessionBloc, FavouriteWallsBloc favouriteWallsBloc) {
+  final _MockFoldersBloc foldersBloc = _MockFoldersBloc();
+  whenListen(foldersBloc, const Stream<FoldersState>.empty(), initialState: FoldersState.initial());
+  return MultiBlocProvider(
+    providers: [
+      BlocProvider<AutoRotateBloc>.value(value: autoRotateBloc),
+      BlocProvider<SessionBloc>.value(value: sessionBloc),
+      BlocProvider<FavouriteWallsBloc>.value(value: favouriteWallsBloc),
+      BlocProvider<FoldersBloc>.value(value: foldersBloc),
+    ],
+    child: const MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: AutoRotateSessionListener(child: SizedBox()),
+    ),
+  );
+}

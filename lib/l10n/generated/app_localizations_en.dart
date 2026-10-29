@@ -10586,4 +10586,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tasteQuizRetakeFailed => 'Couldn\'t load walls. Check your connection and try again.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Folder';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Folder: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'This folder needs at least 2 wallpapers that can rotate. Prism wallpapers rotate after you download them.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Open folder';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Pick a folder';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'You have no folders yet. Save a wallpaper to a folder, then pick it here.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return 'Rotate $folder?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Your wallpaper changes to one from this folder, on the schedule below.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Rotate this folder';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'Auto-rotate is off because the folder $folder was deleted.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'Auto-rotate is off because the folder $folder has fewer than 2 wallpapers.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Rotate this folder';
+
+  @override
+  String get foldersRotating => 'Rotating';
+
+  @override
+  String get foldersRotatingDescription => 'Auto-rotate uses this folder';
 }

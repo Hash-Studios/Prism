@@ -10917,6 +10917,64 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get tasteQuizRetakeFailed =>
       'Não foi possível carregar os papéis de parede. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Pasta';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Pasta: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Esta pasta precisa de pelo menos 2 papéis de parede que possam rotacionar. Os papéis de parede do Prism rotacionam depois que você os baixa.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Abrir pasta';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Escolha uma pasta';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'Você ainda não tem pastas. Salve um papel de parede em uma pasta e depois escolha-a aqui.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return 'Rotacionar $folder?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Seu papel de parede muda para um desta pasta, de acordo com a programação abaixo.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Rotacionar esta pasta';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'A rotação automática está desativada porque a pasta $folder foi excluída.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'A rotação automática está desativada porque a pasta $folder tem menos de 2 papéis de parede.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Rotacionar esta pasta';
+
+  @override
+  String get foldersRotating => 'Rotacionando';
+
+  @override
+  String get foldersRotatingDescription => 'A rotação automática usa esta pasta';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -21830,4 +21888,62 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get tasteQuizRetakeFailed =>
       'Não foi possível carregar os papéis de parede. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Pasta';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Pasta: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Esta pasta precisa de pelo menos 2 papéis de parede que possam rotacionar. Os papéis de parede do Prism rotacionam depois que você os baixa.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Abrir pasta';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Escolha uma pasta';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'Você ainda não tem pastas. Salve um papel de parede em uma pasta e depois escolha-a aqui.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return 'Rotacionar $folder?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Seu papel de parede muda para um desta pasta, de acordo com a programação abaixo.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Rotacionar esta pasta';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'A rotação automática está desativada porque a pasta $folder foi excluída.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'A rotação automática está desativada porque a pasta $folder tem menos de 2 papéis de parede.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Rotacionar esta pasta';
+
+  @override
+  String get foldersRotating => 'Rotacionando';
+
+  @override
+  String get foldersRotatingDescription => 'A rotação automática usa esta pasta';
 }

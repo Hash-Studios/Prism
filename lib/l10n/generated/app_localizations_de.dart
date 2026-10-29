@@ -10738,4 +10738,62 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get tasteQuizRetakeFailed =>
       'Hintergrundbilder konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Ordner';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Ordner: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Dieser Ordner braucht mindestens 2 Hintergrundbilder, die wechseln können. Prism-Hintergrundbilder wechseln, nachdem du sie heruntergeladen hast.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Ordner öffnen';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Ordner auswählen';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'Du hast noch keine Ordner. Speichere ein Hintergrundbild in einem Ordner und wähle ihn dann hier aus.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return '$folder wechseln?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Dein Hintergrundbild wechselt nach dem Zeitplan unten zu einem Bild aus diesem Ordner.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Diesen Ordner wechseln';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'Automatischer Wechsel ist aus, weil der Ordner $folder gelöscht wurde.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'Automatischer Wechsel ist aus, weil der Ordner $folder weniger als 2 Hintergrundbilder hat.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Diesen Ordner wechseln';
+
+  @override
+  String get foldersRotating => 'Wechselt';
+
+  @override
+  String get foldersRotatingDescription => 'Der automatische Wechsel nutzt diesen Ordner';
 }

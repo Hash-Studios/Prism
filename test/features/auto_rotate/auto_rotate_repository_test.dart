@@ -15,6 +15,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/auto_rotate/data/repositories/auto_rotate_repository_impl.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
+import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wotd_past_pick.dart';
@@ -67,6 +68,8 @@ class _MockWalls extends Mock implements PrismWallpaperRepository {}
 
 class _MockWotd extends Mock implements WallOfTheDayRepository {}
 
+class _MockFolders extends Mock implements FoldersRepository {}
+
 class _MockCacheManager extends Mock implements BaseCacheManager {}
 
 PrismWallpaper _wall(String url) => PrismWallpaper(
@@ -91,6 +94,7 @@ void main() {
   late _MockWalls walls;
   late _MockWotd wotd;
   late WallpaperHistoryStore history;
+  late _MockFolders folders;
 
   setUp(() {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -98,7 +102,8 @@ void main() {
     walls = _MockWalls();
     wotd = _MockWotd();
     history = WallpaperHistoryStore(settings);
-    repository = AutoRotateRepositoryImpl(settings, walls, wotd, history);
+    folders = _MockFolders();
+    repository = AutoRotateRepositoryImpl(settings, walls, wotd, history, folders);
     messenger.setMockMessageHandler(
       stopChannel,
       (ByteData? _) async => const StandardMessageCodec().encodeMessage(<Object?>[true]),
@@ -169,7 +174,7 @@ void main() {
     final _PassRecordGateStore gatedStore = _PassRecordGateStore();
     gatedStore.delayPassRecordWrite = true;
     settings = SettingsLocalDataSource(gatedStore);
-    repository = AutoRotateRepositoryImpl(settings, walls, wotd, history);
+    repository = AutoRotateRepositoryImpl(settings, walls, wotd, history, folders);
     final Future<void> save = repository.saveConfig(
       AutoRotateConfig(passUntil: DateTime.utc(2026, 10, 24)),
       ownerId: 'owner-1',
@@ -186,7 +191,7 @@ void main() {
   test('clearing owner one cannot delete owner two’s concurrent pass save', () async {
     final _PassRecordGateStore gatedStore = _PassRecordGateStore();
     settings = SettingsLocalDataSource(gatedStore);
-    repository = AutoRotateRepositoryImpl(settings, walls, wotd, history);
+    repository = AutoRotateRepositoryImpl(settings, walls, wotd, history, folders);
     await settings.set(
       'autoRotate.passRecord',
       jsonEncode(<String, Object?>{'ownerId': 'owner-1', 'untilMs': DateTime.utc(2026, 10, 24).millisecondsSinceEpoch}),
@@ -534,6 +539,7 @@ void main() {
             intervalMinutes: minutes,
             source: source,
             categoryName: 'Cyberpunk',
+            folderId: source == AutoRotateSource.folder ? 'f1' : null,
           );
           await repository.saveConfig(config);
           expect(await repository.loadConfig(), config);

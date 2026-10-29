@@ -98,7 +98,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.adminTelemetry => const FirestoreTelemetryRoute(),
     DeepLinkPageTarget.debugPanel => DebugPanelRoute(tab: query['tab'] ?? 'logs'),
     DeepLinkPageTarget.quickTileSettings => const QuickTileSettingsRoute(),
-    DeepLinkPageTarget.autoRotate => const AutoRotateRoute(),
+    DeepLinkPageTarget.autoRotate => AutoRotateRoute(),
     DeepLinkPageTarget.iosShortcuts => const IosShortcutsGuideRoute(),
     DeepLinkPageTarget.wallpaperHistory => LibraryRoute(initialTab: LibraryTab.history),
     DeepLinkPageTarget.photoPreview => _previewRoute(

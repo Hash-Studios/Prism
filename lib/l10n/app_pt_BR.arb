@@ -2803,5 +2803,20 @@
   "tasteQuizSummaryTag": "Mais papéis de parede de {tag}",
   "tasteQuizSummaryReady": "Seu feed está pronto",
   "tasteQuizRetake": "Refazer Isso ou aquilo",
-  "tasteQuizRetakeFailed": "Não foi possível carregar os papéis de parede. Verifique sua conexão e tente novamente."
+  "tasteQuizRetakeFailed": "Não foi possível carregar os papéis de parede. Verifique sua conexão e tente novamente.",
+  "wallpaperAutoRotateSourceFolder": "Pasta",
+  "wallpaperAutoRotateSourceFolderNamed": "Pasta: {folder}",
+  "wallpaperAutoRotateNounFolder": "{folder}",
+  "wallpaperAutoRotateTooFewFolder": "Esta pasta precisa de pelo menos 2 papéis de parede que possam rotacionar. Os papéis de parede do Prism rotacionam depois que você os baixa.",
+  "wallpaperAutoRotateOpenFolder": "Abrir pasta",
+  "wallpaperAutoRotatePickFolder": "Escolha uma pasta",
+  "wallpaperAutoRotateNoFolders": "Você ainda não tem pastas. Salve um papel de parede em uma pasta e depois escolha-a aqui.",
+  "wallpaperAutoRotateConfirmFolderTitle": "Rotacionar {folder}?",
+  "wallpaperAutoRotateConfirmFolderBody": "Seu papel de parede muda para um desta pasta, de acordo com a programação abaixo.",
+  "wallpaperAutoRotateConfirmFolderAction": "Rotacionar esta pasta",
+  "wallpaperAutoRotateStoppedFolderDeleted": "A rotação automática está desativada porque a pasta {folder} foi excluída.",
+  "wallpaperAutoRotateStoppedFolderEmpty": "A rotação automática está desativada porque a pasta {folder} tem menos de 2 papéis de parede.",
+  "foldersRotateThisFolder": "Rotacionar esta pasta",
+  "foldersRotating": "Rotacionando",
+  "foldersRotatingDescription": "A rotação automática usa esta pasta"
 }

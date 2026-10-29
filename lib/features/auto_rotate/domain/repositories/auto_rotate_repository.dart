@@ -28,6 +28,10 @@ abstract class AutoRotateRepository {
   /// when the list could not be loaded, and an empty list for the other sources.
   Future<List<String>?> loadRemoteUrls(AutoRotateSource source, {String? category});
 
+  /// The rotation sources for a folder of [userId]'s, newest first, after the same safety rules as every other
+  /// source. Null when the list could not be loaded. `found` is false when the folder is gone.
+  Future<({bool found, List<String> urls})?> loadFolderUrls(String folderId, {required String userId});
+
   /// The wallpaper targets this device can set. All of them when the device does not say.
   Future<Set<WallpaperTarget>> supportedTargets();
 

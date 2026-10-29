@@ -16,6 +16,10 @@ import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.da
 import 'package:Prism/features/auto_rotate/views/auto_rotate_entitlement.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
+import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
+import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/views/folders_access.dart';
+import 'package:Prism/features/folders/views/widgets/folder_cover.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -51,6 +55,7 @@ String _sourceLabel(AppLocalizations l10n, AutoRotateSource source) => switch (s
   AutoRotateSource.category => l10n.wallpaperAutoRotateSourceCategory,
   AutoRotateSource.wallOfTheDay => l10n.wallpaperAutoRotateSourceWotd,
   AutoRotateSource.history => l10n.wallpaperAutoRotateSourceHistory,
+  AutoRotateSource.folder => l10n.wallpaperAutoRotateSourceFolder,
 };
 
 String _sourceNoun(AppLocalizations l10n, AutoRotateConfig config) => switch (config.source) {
@@ -59,6 +64,7 @@ String _sourceNoun(AppLocalizations l10n, AutoRotateConfig config) => switch (co
   AutoRotateSource.category => l10n.wallpaperAutoRotateNounCategory(categoryDisplayName(config.categoryName, l10n)),
   AutoRotateSource.wallOfTheDay => l10n.wallpaperAutoRotateNounWotd,
   AutoRotateSource.history => l10n.wallpaperAutoRotateNounHistory,
+  AutoRotateSource.folder => l10n.wallpaperAutoRotateNounFolder(config.folderName),
 };
 
 String _tooFewText(AppLocalizations l10n, AutoRotateSource source) => switch (source) {
@@ -67,6 +73,7 @@ String _tooFewText(AppLocalizations l10n, AutoRotateSource source) => switch (so
   AutoRotateSource.category => l10n.wallpaperAutoRotateTooFewCategory,
   AutoRotateSource.wallOfTheDay => l10n.wallpaperAutoRotateTooFewWotd,
   AutoRotateSource.history => l10n.wallpaperAutoRotateTooFewHistory,
+  AutoRotateSource.folder => l10n.wallpaperAutoRotateTooFewFolder,
 };
 
 List<String> _urlsOf(FavouriteWallsState state) => state.items.map((item) => item.fullUrl).toList(growable: false);
@@ -79,7 +86,11 @@ Future<void> _presentAutoRotatePaywall(BuildContext context) async {
 
 @RoutePage()
 class AutoRotateScreen extends StatefulWidget {
-  const AutoRotateScreen({super.key});
+  const AutoRotateScreen({super.key, this.folderId, this.folderName});
+
+  /// A folder to offer as the source. The user confirms it on the screen.
+  final String? folderId;
+  final String? folderName;
 
   @override
   State<AutoRotateScreen> createState() => _AutoRotateScreenState();
@@ -88,6 +99,9 @@ class AutoRotateScreen extends StatefulWidget {
 class _AutoRotateScreenState extends State<AutoRotateScreen> {
   bool _initializationFailed = false;
   bool _started = false;
+  late ({String id, String name})? _offeredFolder = widget.folderId == null || widget.folderId!.isEmpty
+      ? null
+      : (id: widget.folderId!, name: widget.folderName ?? '');
 
   bool get _isAndroid => defaultTargetPlatform == TargetPlatform.android;
 
@@ -211,7 +225,11 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
                     onPressed: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.toggled(true)),
                   );
                 }
-                return _Controls(state: state);
+                return _Controls(
+                  state: state,
+                  offeredFolder: _offeredFolder,
+                  onOfferClosed: () => setState(() => _offeredFolder = null),
+                );
               },
             ),
     );
@@ -323,9 +341,11 @@ class _ProPromptState extends State<_ProPrompt> {
 }
 
 class _Controls extends StatelessWidget {
-  const _Controls({required this.state});
+  const _Controls({required this.state, this.offeredFolder, required this.onOfferClosed});
 
   final AutoRotateState state;
+  final ({String id, String name})? offeredFolder;
+  final VoidCallback onOfferClosed;
 
   String _statusText(AppLocalizations l10n) {
     if (state.startFailed) return l10n.wallpaperAutoRotateCouldNotStart;
@@ -377,9 +397,40 @@ class _Controls extends StatelessWidget {
     final bool caching = config.enabled && status.isRunning && status.totalCount > 0;
     final int cached = status.cachedCount.clamp(0, status.totalCount);
 
+    final ({String id, String name})? offer = offeredFolder;
+    final bool offerApplied =
+        offer != null && config.source == AutoRotateSource.folder && config.folderId == offer.id && config.enabled;
+
     return ListView(
       padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxxl),
       children: <Widget>[
+        if (offer != null && !offerApplied)
+          Padding(
+            padding: const EdgeInsets.only(bottom: PrismSpace.sm),
+            child: _Notice(
+              title: context.l10n.wallpaperAutoRotateConfirmFolderTitle(offer.name),
+              text: context.l10n.wallpaperAutoRotateConfirmFolderBody,
+              actions: <Widget>[
+                PrismButton(
+                  label: context.l10n.wallpaperAutoRotateConfirmFolderAction,
+                  icon: Icons.autorenew_rounded,
+                  size: PrismButtonSize.compact,
+                  onPressed: () {
+                    bloc
+                      ..add(AutoRotateEvent.folderChosen(folderId: offer.id, name: offer.name))
+                      ..add(const AutoRotateEvent.toggled(true));
+                    onOfferClosed();
+                  },
+                ),
+                PrismButton(
+                  label: context.l10n.wallpaperNotNow,
+                  variant: PrismButtonVariant.ghost,
+                  size: PrismButtonSize.compact,
+                  onPressed: onOfferClosed,
+                ),
+              ],
+            ),
+          ),
         PrismGroup(
           children: <Widget>[
             PrismSwitchRow(
@@ -446,6 +497,12 @@ class _Controls extends StatelessWidget {
                     size: PrismButtonSize.compact,
                     onPressed: () => context.router.push(const DownloadRoute()),
                   ),
+                  AutoRotateSource.folder when config.folderId != null => PrismButton(
+                    label: context.l10n.wallpaperAutoRotateOpenFolder,
+                    variant: PrismButtonVariant.tonal,
+                    size: PrismButtonSize.compact,
+                    onPressed: () => context.router.push(FolderRoute(folderId: config.folderId!)),
+                  ),
                   _ => const SizedBox.shrink(),
                 },
               ],
@@ -483,11 +540,15 @@ class _Controls extends StatelessWidget {
               AutoRotateSource.category: config.source == AutoRotateSource.category
                   ? '${context.l10n.wallpaperAutoRotateSourceCategory}: ${categoryDisplayName(config.categoryName, context.l10n)}'
                   : context.l10n.wallpaperAutoRotateSourceCategory,
+              if (config.source == AutoRotateSource.folder && config.folderName.isNotEmpty)
+                AutoRotateSource.folder: context.l10n.wallpaperAutoRotateSourceFolderNamed(config.folderName),
             },
             config.source,
-            (v) => v == AutoRotateSource.category
-                ? _pickCategory(context, config.categoryName)
-                : bloc.add(AutoRotateEvent.sourceChanged(v)),
+            (v) => switch (v) {
+              AutoRotateSource.category => _pickCategory(context, config.categoryName),
+              AutoRotateSource.folder => _pickFolder(context, config.folderId),
+              _ => bloc.add(AutoRotateEvent.sourceChanged(v)),
+            },
           ),
         ),
         section(
@@ -579,10 +640,50 @@ Future<void> _pickCategory(BuildContext context, String current) async {
   if (picked != null) bloc.add(AutoRotateEvent.categoryChanged(picked));
 }
 
+Future<void> _pickFolder(BuildContext context, String? current) async {
+  final AutoRotateBloc bloc = context.read<AutoRotateBloc>();
+  final FoldersBloc folders = context.read<FoldersBloc>();
+  unawaited(ensureFoldersLoaded(context));
+  final FolderEntity? picked = await showPrismSheet<FolderEntity>(
+    context,
+    builder: (sheetContext) => BlocBuilder<FoldersBloc, FoldersState>(
+      bloc: folders,
+      builder: (context, state) {
+        final AppLocalizations l10n = context.l10n;
+        final bool mine = state.userId.isNotEmpty && state.userId == app_state.prismUser.id;
+        final Widget body = switch (state.status) {
+          LoadStatus.failure when mine => Text(l10n.foldersLoadError, style: PrismTextStyles.body(context)),
+          LoadStatus.success when mine && state.folders.isEmpty => Text(
+            l10n.wallpaperAutoRotateNoFolders,
+            style: PrismTextStyles.body(context),
+          ),
+          LoadStatus.success when mine => PrismGroup(
+            children: <Widget>[
+              for (final FolderEntity folder in state.folders)
+                PrismRow(
+                  leading: FolderCover(covers: folder.covers, size: 44),
+                  title: folder.name,
+                  subtitle: l10n.foldersItemCount(folder.itemCount),
+                  showChevron: false,
+                  trailing: folder.id == current ? const Icon(Icons.check_rounded, size: 20) : null,
+                  onTap: () => Navigator.of(sheetContext).pop(folder),
+                ),
+            ],
+          ),
+          _ => const Center(child: CircularProgressIndicator()),
+        };
+        return PrismSheetBody(title: l10n.wallpaperAutoRotatePickFolder, child: body);
+      },
+    ),
+  );
+  if (picked != null) bloc.add(AutoRotateEvent.folderChosen(folderId: picked.id, name: picked.name));
+}
+
 /// A short message in a card, with optional actions under it.
 class _Notice extends StatelessWidget {
-  const _Notice({required this.text, this.actions = const <Widget>[]});
+  const _Notice({required this.text, this.title, this.actions = const <Widget>[]});
 
+  final String? title;
   final String text;
   final List<Widget> actions;
 
@@ -592,6 +693,10 @@ class _Notice extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          if (title case final String title) ...<Widget>[
+            Text(title, style: PrismTextStyles.cardTitle(context)),
+            const SizedBox(height: PrismSpace.xxs),
+          ],
           Text(text, style: PrismTextStyles.body(context)),
           if (actions.isNotEmpty) ...<Widget>[
             const SizedBox(height: PrismSpace.sm),

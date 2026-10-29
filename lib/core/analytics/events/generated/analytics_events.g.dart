@@ -1455,6 +1455,48 @@ class AutoRotateDisabledEvent extends AnalyticsEvent {
   }
 }
 
+class AutoRotateFolderSetEvent extends AnalyticsEvent {
+  const AutoRotateFolderSetEvent({required this.itemCountBucket});
+
+  final String itemCountBucket;
+
+  @override
+  String get eventName => 'auto_rotate_folder_set';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'item_count_bucket': itemCountBucket};
+  }
+}
+
+class AutoRotateFolderTappedEvent extends AnalyticsEvent {
+  const AutoRotateFolderTappedEvent({required this.itemCountBucket});
+
+  final String itemCountBucket;
+
+  @override
+  String get eventName => 'auto_rotate_folder_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'item_count_bucket': itemCountBucket};
+  }
+}
+
+class AutoRotateStoppedEvent extends AnalyticsEvent {
+  const AutoRotateStoppedEvent({required this.reason});
+
+  final String reason;
+
+  @override
+  String get eventName => 'auto_rotate_stopped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'reason': reason};
+  }
+}
+
 class NavTabSelectedEvent extends AnalyticsEvent {
   const NavTabSelectedEvent({required this.fromTab, required this.toTab});
 

@@ -62,6 +62,9 @@ class _FakeRepository implements AutoRotateRepository {
   Future<List<String>?> loadRemoteUrls(AutoRotateSource source, {String? category}) async => const <String>[];
 
   @override
+  Future<({bool found, List<String> urls})?> loadFolderUrls(String folderId, {required String userId}) async => null;
+
+  @override
   Future<Set<WallpaperTarget>> supportedTargets() async => WallpaperTarget.values.toSet();
 
   @override

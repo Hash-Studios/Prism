@@ -31,6 +31,10 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
         shuffleChanged: (event) => _onConfigChanged(state.config.copyWith(shuffle: event.shuffle), emit),
         sourceChanged: (event) => _onSourceChanged(event, emit),
         categoryChanged: (event) => _onCategoryChanged(event, emit),
+        folderChosen: (event) => _onFolderChosen(event, emit),
+        folderChanged: (event) => _onFolderChanged(event, emit),
+        folderSettled: (event) => _onFolderSettled(emit),
+        folderStopAcknowledged: (event) async => emit(state.copyWith(folderStop: null)),
         chargingOnlyChanged: (event) => _onConfigChanged(state.config.copyWith(chargingOnly: event.chargingOnly), emit),
         rotateNowPressed: (event) => _onRotateNow(event, emit),
         statusRefreshed: (event) => _onStatusRefreshed(emit),
@@ -46,6 +50,9 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
   static const int _maxStatusPolls = 40;
   static const int minWallpapers = 2;
 
+  /// How often opening the app checks the rotating folder again.
+  static const Duration _folderRecheck = Duration(minutes: 15);
+
   @visibleForTesting
   Duration favouritesDebounce = const Duration(seconds: 2);
   @visibleForTesting
@@ -58,6 +65,8 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
   List<String> _downloadUrls = const <String>[];
   List<String> _remoteUrls = const <String>[];
   bool _remoteFailed = false;
+  bool _folderMissing = false;
+  DateTime? _folderCheckedAt;
   bool _favouritesCapped = false;
   bool _downloadsCapped = false;
   List<String>? _appliedUrls;
@@ -65,6 +74,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
   bool _favouritesKnown = false;
   String? _userId;
   Timer? _favouritesTimer;
+  Timer? _folderTimer;
   Timer? _pollTimer;
   Timer? _passTimer;
   int _pollsLeft = _maxStatusPolls;
@@ -78,12 +88,16 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
   bool _isRemote(AutoRotateSource source) =>
       source == AutoRotateSource.category ||
       source == AutoRotateSource.wallOfTheDay ||
-      source == AutoRotateSource.history;
+      source == AutoRotateSource.history ||
+      source == AutoRotateSource.folder;
 
   List<String> _activeUrls(AutoRotateConfig config) => switch (config.source) {
     AutoRotateSource.favourites => _favouriteUrls,
     AutoRotateSource.downloads => _downloadUrls,
-    AutoRotateSource.category || AutoRotateSource.wallOfTheDay || AutoRotateSource.history => _remoteUrls,
+    AutoRotateSource.category ||
+    AutoRotateSource.wallOfTheDay ||
+    AutoRotateSource.history ||
+    AutoRotateSource.folder => _remoteUrls,
   };
 
   /// True when the list for the chosen source could not be loaded. A rotation that already runs keeps its own list.
@@ -113,13 +127,60 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
   Future<bool> _refreshRemote(AutoRotateConfig config) async {
     List<String>? urls;
     try {
-      urls = await _repository.loadRemoteUrls(config.source, category: config.categoryName);
+      urls = config.source == AutoRotateSource.folder
+          ? await _loadFolder(config)
+          : await _repository.loadRemoteUrls(config.source, category: config.categoryName);
     } catch (_) {
       urls = null;
     }
     if (urls == null) return false;
     final Set<String> seen = <String>{};
     _remoteUrls = urls.where(_isRepositorySource).where(seen.add).take(_maxSources).toList(growable: false);
+    return true;
+  }
+
+  Future<List<String>?> _loadFolder(AutoRotateConfig config) async {
+    final String? folderId = config.folderId;
+    final String? userId = _userId;
+    if (folderId == null || userId == null || userId.isEmpty) return null;
+    final loaded = await _repository.loadFolderUrls(folderId, userId: userId);
+    if (loaded == null) return null;
+    _folderMissing = !loaded.found;
+    _folderCheckedAt = clock();
+    return loaded.urls;
+  }
+
+  bool _folderDue(AutoRotateConfig config) =>
+      config.source == AutoRotateSource.folder &&
+      (_folderCheckedAt == null || clock().difference(_folderCheckedAt!) >= _folderRecheck);
+
+  /// The reason to show when a folder rotation stops because the folder has too few walls.
+  AutoRotateStopReason? get _folderTooFew =>
+      state.config.source == AutoRotateSource.folder &&
+          state.isPro &&
+          !state.config.passExpired(clock()) &&
+          !_remoteFailed &&
+          _remoteUrls.length < minWallpapers
+      ? AutoRotateStopReason.folderEmpty
+      : null;
+
+  /// A folder that is gone stops its rotation and falls back to favourites. The other settings stay. True when the
+  /// folder was gone.
+  Future<bool> _dropMissingFolder(Emitter<AutoRotateState> emit) async {
+    if (state.config.source != AutoRotateSource.folder || !_folderMissing) return false;
+    _folderMissing = false;
+    if (state.config.enabled || state.status.isRunning) {
+      await _disable(emit, folderStop: AutoRotateStopReason.folderDeleted);
+    }
+    final AutoRotateConfig next = state.config.copyWith(
+      enabled: false,
+      source: AutoRotateSource.favourites,
+      folderId: () => null,
+      folderName: '',
+    );
+    _remoteUrls = const <String>[];
+    await _repository.saveConfig(next, ownerId: _userId);
+    emit(_snapshot(next));
     return true;
   }
 
@@ -201,6 +262,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
       previous.shuffle != next.shuffle ||
       previous.source != next.source ||
       previous.categoryName != next.categoryName ||
+      previous.folderId != next.folderId ||
       previous.chargingOnly != next.chargingOnly;
 
   AutoRotateState _snapshot(AutoRotateConfig config, {AutoRotateStatus? status, bool? isPro, bool? loaded}) =>
@@ -247,6 +309,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
   @override
   Future<void> close() {
     _favouritesTimer?.cancel();
+    _folderTimer?.cancel();
     _pollTimer?.cancel();
     _passTimer?.cancel();
     return super.close();
@@ -278,13 +341,14 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
       if (config.enabled || status.isRunning || status.lastError != null) await _disable(emit);
       return;
     }
+    if (await _dropMissingFolder(emit)) return;
     if (!config.enabled) {
       if (status.isRunning || status.lastError != null) await _disable(emit);
       return;
     }
     if (_remoteUnavailable(config) && status.isRunning && status.lastError == null) return;
     if (!_canRotate) {
-      await _disable(emit);
+      await _disable(emit, folderStop: _folderTooFew);
     } else if (!status.isRunning && status.lastError != null) {
       await _disable(emit);
     } else if (!status.isRunning || !_urlsMatchApplied(config)) {
@@ -296,6 +360,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
     final bool accountChanged = _entitlementKnown && _userId != event.userId;
     _entitlementKnown = true;
     _userId = event.userId;
+    if (accountChanged) _folderCheckedAt = null;
     if (accountChanged || !event.isPro) {
       _favouriteUrls = const <String>[];
       _favouritesCapped = false;
@@ -312,7 +377,10 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
     if (config.source == AutoRotateSource.downloads) await _refreshDownloads();
     await _loadApplied();
     final AutoRotateStatus status = await _status();
-    if (isPro && config.enabled && !status.isRunning && _isRemote(config.source)) {
+    if (isPro &&
+        config.enabled &&
+        !accountChanged &&
+        ((!status.isRunning && _isRemote(config.source)) || _folderDue(config))) {
       _remoteFailed = !await _refreshRemote(config);
     }
     emit(_snapshot(config, status: status, isPro: isPro, loaded: true));
@@ -322,10 +390,19 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
       if (!isPro && !accountChanged && event.userId.isNotEmpty && (config.enabled || status.isRunning)) {
         emit(state.copyWith(proLapsed: true));
       }
+    } else if (await _dropMissingFolder(emit)) {
+      return;
     } else if (!config.enabled && somethingToStop) {
       await _disable(emit);
     } else if (!status.isRunning && status.lastError != null) {
       await _disable(emit);
+    } else if (config.source == AutoRotateSource.folder) {
+      if (!config.enabled || _remoteUnavailable(config)) return;
+      if (!_canRotate) {
+        await _disable(emit, folderStop: _folderTooFew);
+      } else if (!status.isRunning || !_urlsMatchApplied(config)) {
+        await _start(config, emit);
+      }
     } else if (_favouritesKnown && config.enabled && _canRotate && status.lastError == null && !status.isRunning) {
       await _start(config, emit);
     }
@@ -354,7 +431,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
     if (_remoteUnavailable(state.config) && state.status.isRunning && state.status.lastError == null) return;
     if (state.status.isRunning && _canRotate && _urlsMatchApplied(state.config)) return;
     if (!_canRotate && (state.config.enabled || state.status.isRunning || state.status.lastError != null)) {
-      await _disable(emit);
+      await _disable(emit, folderStop: _folderTooFew);
       return;
     }
     if (!state.status.isRunning && state.status.lastError != null) {
@@ -396,13 +473,58 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
     await _switchSource(next, emit);
   }
 
+  Future<void> _onFolderChosen(_FolderChosen event, Emitter<AutoRotateState> emit) async {
+    final AutoRotateConfig next = state.config.copyWith(
+      source: AutoRotateSource.folder,
+      folderId: () => event.folderId,
+      folderName: event.name,
+    );
+    if (next == state.config) return;
+    await _switchSource(next, emit);
+    if (state.config.source == AutoRotateSource.folder && state.config.folderId == event.folderId) {
+      analytics.track(AutoRotateFolderSetEvent(itemCountBucket: folderCountBucket(_remoteUrls.length)));
+    }
+  }
+
+  Future<void> _onFolderChanged(_FolderChanged event, Emitter<AutoRotateState> emit) async {
+    final AutoRotateConfig config = state.config;
+    if (!state.loaded || config.source != AutoRotateSource.folder || config.folderId != event.folderId) return;
+    final String? name = event.name;
+    if (name != null && name.isNotEmpty && name != config.folderName) {
+      final AutoRotateConfig renamed = config.copyWith(folderName: name);
+      await _repository.saveConfig(renamed, ownerId: _userId);
+      emit(_snapshot(renamed));
+    }
+    _folderTimer?.cancel();
+    _folderTimer = Timer(favouritesDebounce, () {
+      _folderTimer = null;
+      if (!isClosed) add(const AutoRotateEvent.folderSettled());
+    });
+  }
+
+  /// Loads the folder again and applies the new list only when it differs from the one the platform runs.
+  Future<void> _onFolderSettled(Emitter<AutoRotateState> emit) async {
+    final AutoRotateConfig config = state.config;
+    if (!state.loaded || !state.isPro || config.source != AutoRotateSource.folder) return;
+    if (!await _refreshRemote(config)) return;
+    _remoteFailed = false;
+    emit(_snapshot(config));
+    if (await _dropMissingFolder(emit) || !config.enabled) return;
+    if (!_canRotate) {
+      await _disable(emit, folderStop: _folderTooFew);
+    } else if (!state.status.isRunning || !_urlsMatchApplied(config)) {
+      await _start(config, emit);
+    }
+  }
+
   /// Loads the list for [next] first. When it cannot be loaded the old source and its rotation stay as they are.
   Future<void> _switchSource(AutoRotateConfig next, Emitter<AutoRotateState> emit) async {
     if (next.source == AutoRotateSource.downloads) await _refreshDownloads();
     if (_isRemote(next.source)) {
       emit(state.copyWith(loadingSource: true, sourceLoadFailed: false));
-      final bool loaded = await _refreshRemote(next);
+      final bool loaded = await _refreshRemote(next) && !(next.source == AutoRotateSource.folder && _folderMissing);
       if (!loaded) {
+        _folderMissing = false;
         emit(state.copyWith(loadingSource: false, sourceLoadFailed: true));
         return;
       }
@@ -507,7 +629,11 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
     }
   }
 
-  Future<void> _disable(Emitter<AutoRotateState> emit, {bool startFailed = false}) async {
+  Future<void> _disable(
+    Emitter<AutoRotateState> emit, {
+    bool startFailed = false,
+    AutoRotateStopReason? folderStop,
+  }) async {
     final bool wasRunning = state.status.isRunning;
     bool stopped = false;
     try {
@@ -526,9 +652,18 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
             nextRunEpochMs: latestStatus.isRunning ? latestStatus.nextRunEpochMs : state.status.nextRunEpochMs,
             lastError: latestStatus.lastError ?? 'Failed to stop wallpaper rotation.',
           );
-    emit(state.copyWith(config: next, status: status, startFailed: startFailed, starting: false));
+    emit(
+      state.copyWith(
+        config: next,
+        status: status,
+        startFailed: startFailed,
+        starting: false,
+        folderStop: folderStop == null ? state.folderStop : (reason: folderStop, folderName: next.folderName),
+      ),
+    );
     if (wasRunning && stopped) {
       analytics.track(const AutoRotateDisabledEvent());
     }
+    if (folderStop != null) analytics.track(AutoRotateStoppedEvent(reason: folderStop.name));
   }
 }

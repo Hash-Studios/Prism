@@ -10725,4 +10725,62 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get tasteQuizRetakeFailed => 'वॉलपेपर लोड नहीं हो सके। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'फ़ोल्डर';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'फ़ोल्डर: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'इस फ़ोल्डर में कम से कम 2 ऐसे वॉलपेपर होने चाहिए जो रोटेट हो सकें। Prism वॉलपेपर डाउनलोड करने के बाद रोटेट होते हैं।';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'फ़ोल्डर खोलें';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'फ़ोल्डर चुनें';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'अभी आपके पास कोई फ़ोल्डर नहीं है। किसी वॉलपेपर को फ़ोल्डर में सेव करें, फिर उसे यहाँ चुनें।';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return '$folder रोटेट करें?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'आपका वॉलपेपर नीचे दिए शेड्यूल के अनुसार इस फ़ोल्डर के किसी वॉलपेपर में बदल जाएगा।';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'इस फ़ोल्डर को रोटेट करें';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'ऑटो-रोटेशन बंद है क्योंकि फ़ोल्डर $folder हटा दिया गया था।';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'ऑटो-रोटेशन बंद है क्योंकि फ़ोल्डर $folder में 2 से कम वॉलपेपर हैं।';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'इस फ़ोल्डर को रोटेट करें';
+
+  @override
+  String get foldersRotating => 'रोटेट हो रहा है';
+
+  @override
+  String get foldersRotatingDescription => 'ऑटो-रोटेशन इस फ़ोल्डर का उपयोग करता है';
 }
