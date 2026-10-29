@@ -1,0 +1,141 @@
+{
+  "app_source_commit": "bf1740e2badbdd93508cc2d70a36a118067af9da",
+  "capture_source_commit": "f6971c9c6ed029d7eb1ad5faae09049c9921110d",
+  "provenance": "Android Prism_QA_API36 / emulator-5580. App built at bf1740e2badbdd93508cc2d70a36a118067af9da; capture source f6971c9c6ed029d7eb1ad5faae09049c9921110d. App/native/pubspec diff between these commits was reported empty. Warm links were package-targeted VIEW intents; OS association is unproved.",
+  "limitations": "Local demo-prism administrative fixtures; entries were seeded administratively. Readiness and premium use fixture seams. No full upload submission, generation, runtime auth/admission, R2 readiness, production scheduler, real push, purchase, hosted CI or release proof. The known callable auth-context emulator blocker remains unresolved. iOS proof is absent (Linux host). No dark WOTD or light inbox tap-through capture.",
+  "captures": [
+    {
+      "file": "home-light.png",
+      "sha256": "7ec7a49f41ddf738cfb8f840554fe029a4b18f86ea17af9c89f8faadb980bb97",
+      "bytes": 191610,
+      "theme": "light",
+      "visible_text": "Weekly challenge; Local light and shadows"
+    },
+    {
+      "file": "home-dark.png",
+      "sha256": "b9eb65a70a966b2a5f7c167be8630f9b972fa1f5b81b920908b27e7e4f500fbf",
+      "bytes": 304040,
+      "theme": "dark",
+      "visible_text": "Weekly challenge; Local light and shadows"
+    },
+    {
+      "file": "open-light.png",
+      "sha256": "6964d564b0a72f0addce582f8ee427411e142d98af1cd3de02090c8c6d732d02",
+      "bytes": 401482,
+      "theme": "light",
+      "visible_text": "Weekly challenge; Local light and shadows; 1 vote; Vote"
+    },
+    {
+      "file": "open-dark.png",
+      "sha256": "df0bf4f1622aa04c4c67259525e5f7fa1cd715059c59a1ba5426aca448e8c421",
+      "bytes": 399151,
+      "theme": "dark",
+      "visible_text": "Weekly challenge; Local light and shadows; 1 vote; Vote"
+    },
+    {
+      "file": "vote-two.png",
+      "sha256": "6824ef1b417161de3e6c98e189388ad45df23f6ebe4990bd07f4078c47e13e87",
+      "bytes": 403313,
+      "theme": "light",
+      "visible_text": "Local light and shadows; Local fixture 1; qa-creator-a; 2 votes; Remove vote"
+    },
+    {
+      "file": "unvote-one.png",
+      "sha256": "b0e397829a49e973c52f4b595956d6f2024dc978379e17e056e55733d83c100b",
+      "bytes": 401555,
+      "theme": "light",
+      "visible_text": "Local light and shadows; Local fixture 1; qa-creator-a; 1 vote; Vote"
+    },
+    {
+      "file": "warm-history-from-open.png",
+      "sha256": "f26527bc0db20faa2620dda29447377a95e210e7262075a473e0a72968ada621",
+      "bytes": 428397,
+      "theme": "light",
+      "visible_text": "Local QA history; This challenge has ended.; Winner · qa-creator-a; 1 vote"
+    },
+    {
+      "file": "warm-open-from-history.png",
+      "sha256": "a980bf1f03ecfebc523caef3c6f6c02cfef90218e18a29c810c3a4e08ffd892e",
+      "bytes": 401584,
+      "theme": "light",
+      "visible_text": "Local light and shadows; Upload an entry; Create with AI; 1 vote; Vote"
+    },
+    {
+      "file": "ai-light.png",
+      "sha256": "7fcbe4d013104ea165f4b7e39b1c6fece59bb037a2f47213429f2aa0a8150770",
+      "bytes": 242108,
+      "theme": "light",
+      "visible_text": "AI wallpaper; Challenge · Local light and shadows; prefilled Local light and shadows; Earn coins"
+    },
+    {
+      "file": "ai-dark.png",
+      "sha256": "bd7acd25feb2c1107ab20e79dd54fe2d85c740de874cbd1e647047a08f7f088c",
+      "bytes": 242358,
+      "theme": "dark",
+      "visible_text": "AI wallpaper; Challenge · Local light and shadows; prefilled Local light and shadows; Earn coins"
+    },
+    {
+      "file": "upload-light-ready.png",
+      "sha256": "ee0846dbd03ec206e27de67d853d9b0cbbac0b60c96e8b0c043082aa4e3da8d3",
+      "bytes": 257435,
+      "theme": "light",
+      "visible_text": "Upload wallpaper; loaded preview; 250 x 500; Ready to submit; Image and preview are ready; Title Local light and shadows; Upload"
+    },
+    {
+      "file": "upload-dark-ready.png",
+      "sha256": "02271de4025b732675dbee5a1438fdeeaee3434fb71296506203c2a62ce15590",
+      "bytes": 257361,
+      "theme": "dark",
+      "visible_text": "Upload wallpaper; loaded preview; 250 x 500; Ready to submit; Image and preview are ready; Title Local light and shadows; Upload"
+    },
+    {
+      "file": "wotd-light.png",
+      "sha256": "7a311e8891a36d8a5e5ba8e545a43666b3341f2fc5b14e8def056542bf6c9313",
+      "bytes": 336009,
+      "theme": "light",
+      "visible_text": "Wall of the day; by qa-creator-a; Past picks"
+    },
+    {
+      "file": "winner-light.png",
+      "sha256": "b17c31d3a7717108c8a37a1ea77000ef3cd3899910c7f05a26d8210d158aedda",
+      "bytes": 431375,
+      "theme": "light",
+      "visible_text": "Local light and shadows; This challenge has ended.; Winner · qa-creator-a; Local fixture 1; 2 votes"
+    },
+    {
+      "file": "winner-dark.png",
+      "sha256": "8619402706582f0b9ff42efe9c370f686f1c4ee8c8e78d0555e044b163aa521b",
+      "bytes": 429295,
+      "theme": "dark",
+      "visible_text": "Local light and shadows; This challenge has ended.; Winner · qa-creator-a; Local fixture 1; 2 votes"
+    },
+    {
+      "file": "inbox-light.png",
+      "sha256": "1f29e64882c100386a9601fd66922d2346fd1b39682093492e085e1a65e9942f",
+      "bytes": 93598,
+      "theme": "light",
+      "visible_text": "Notifications; Your wallpaper won; 2 notifications · Hide; Local light and shadows.; Local QA history."
+    },
+    {
+      "file": "inbox-dark.png",
+      "sha256": "407eb12f6fb946c37932ca8d9d5d05e9aaa2f9af1134ed1853ec9bd0b2b411c8",
+      "bytes": 93428,
+      "theme": "dark",
+      "visible_text": "Notifications; Your wallpaper won; 2 notifications · Hide; Local light and shadows.; Local QA history."
+    },
+    {
+      "file": "inbox-winner-dark.png",
+      "sha256": "8d7d2e96eb8459bc89b3d32b69a762d1db2f6d357e94950b7990311e9757ea84",
+      "bytes": 429698,
+      "theme": "dark",
+      "visible_text": "Local light and shadows; This challenge has ended.; Winner · qa-creator-a; Local fixture 1; 2 votes"
+    }
+  ],
+  "clip": {
+    "file": "corrected-lifecycle.mp4",
+    "bytes": 5407579,
+    "sha256": "3d8493d0b78dce2a3da6773cc674a7c2a0d65149c58b5eb795a70a0e3f528a27",
+    "duration_seconds": 169.133008,
+    "description": "Continuous, untrimmed 169.133008-second device recording shows Home, entries, vote 1 to 2, restart after local close/publication, WOTD carousel, then closed winner. Local close finalized active qa-wall-0; WOTD publication used historical reserved qa-wall-3 for 2026-10-30. These are separate fixtures, both by qa-creator-a. This clip does not prove that the newly closed winner became WOTD. Shell finalizer operations are outside the video and were corroborated by local backend assertions."
+  }
+}
