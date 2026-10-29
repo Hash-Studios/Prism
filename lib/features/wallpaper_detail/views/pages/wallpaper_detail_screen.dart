@@ -47,6 +47,7 @@ import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/ai_wallpaper/domain/ai_rollout.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
@@ -919,7 +920,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final FeedItemEntity entity = state.entity;
     final WallViewer? viewer = _remixViewer();
     if (viewer == null || entity is! PrismFeedItem) return null;
-    return AiRemixSeed.of(entity.wallpaper, viewer: viewer, aiEnabled: app_state.aiEnabled);
+    return AiRemixSeed.of(
+      entity.wallpaper,
+      viewer: viewer,
+      aiEnabled: aiRolloutEligible(
+        aiEnabled: app_state.aiEnabled,
+        rolloutPercent: app_state.aiRolloutPercent,
+        loggedIn: app_state.prismUser.loggedIn && app_state.prismUser.id.trim().isNotEmpty,
+        userId: app_state.prismUser.id,
+      ),
+    );
   }
 
   WallViewer? _remixViewer() {

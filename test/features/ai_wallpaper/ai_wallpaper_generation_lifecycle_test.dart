@@ -1088,6 +1088,50 @@ void main() {
     expect(refundCalls, 1);
   });
 
+  Future<List<String?>> refineWithSeed(WidgetTester tester, AiGenerationRecord source) async {
+    final _FakeAiGenerationRepository repository = _FakeAiGenerationRepository(
+      source,
+      variation: () async => _record(id: 'variation-1'),
+    );
+    await setUpPage(
+      tester,
+      (name, parameters) async => <String, Object>{
+        'success': true,
+        'changed': true,
+        'currentBalance': 90,
+        'delta': -10,
+        'transactionId': 'reservation-1',
+      },
+      repository: repository,
+      remixSeed: const AiRemixSeed(
+        wallDocId: 'orig_1',
+        title: 'Koi',
+        creatorName: 'Asha',
+        thumbnailUrl: '',
+        prompt: 'neon koi pond at dusk',
+        sourceType: RemixSourceType.user,
+      ),
+    );
+    final Finder refine = find.text('Try another');
+    await tester.ensureVisible(refine);
+    await tester.tap(refine);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Warmer colors');
+    await tester.pump();
+    await tester.tap(find.text('Generate another'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
+    return repository.remixOfValues;
+  }
+
+  testWidgets('a variation of an unlinked history wall does not credit the remix seed', (tester) async {
+    expect(await refineWithSeed(tester, _record()), <String?>[null]);
+  });
+
+  testWidgets('a variation of a result linked to the seed keeps the credit', (tester) async {
+    expect(await refineWithSeed(tester, _record().copyWith(remixOf: 'orig_1')), <String?>['orig_1']);
+  });
+
   testWidgets('successful variation completing after disposal is not rolled back', (tester) async {
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;

@@ -67,7 +67,7 @@ When the balance is under the price, the button reads "Get coins · need N". It 
 
 ### Remix
 
-A remix opens this tab from an approved wallpaper that has a prompt. The prompt, the style and the tier fill in. A chip shows the original. Its x drops the link, and the prompt stays. The app never generates by itself. Normal cost and coin rules apply. The details are in [remix.md](remix.md).
+A remix opens this tab from an approved wallpaper that has a prompt. The prompt and the tier fill in. The style fills in only when the original stores one. Studio walls and older walls store no style, so the current style stays. A chip shows the original. Its x drops the link, and the prompt stays. The app never generates by itself. Normal cost and coin rules apply. The details are in [remix.md](remix.md).
 
 ## Style text in the prompt
 

@@ -146,7 +146,7 @@ void main() {
     expect(_selectedStyleTile('Minimal'), findsOneWidget);
   });
 
-  testWidgets('signing in keeps the edited remix prompt instead of restoring the account draft', (tester) async {
+  testWidgets('switching to another signed-in account drops the remix link and its prompt', (tester) async {
     final _FakeRemixRepository repository = await _pump(tester, _seed());
     repository.restoredPrompt = 'saved prompt for the signed-in account';
     await tester.enterText(
@@ -161,7 +161,23 @@ void main() {
     await tester.pumpAndSettle();
     await refresh;
 
-    expect(_promptText(tester), 'edited remix prompt');
+    expect(find.byType(AiRemixChip), findsNothing);
+    expect(_promptText(tester), 'saved prompt for the signed-in account');
+  });
+
+  testWidgets('the remix chip cannot drop the link while a generation runs', (tester) async {
+    await _pump(tester, _seed());
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: AiRemixChip(seed: _seed(), onDrop: null)),
+      ),
+    );
+    final IconButton close = tester.widget<IconButton>(
+      find.descendant(of: find.byType(AiRemixChip), matching: find.byType(IconButton)),
+    );
+    expect(close.onPressed, isNull);
   });
 
   testWidgets('a 200 character remix prompt is clipped at a word boundary', (tester) async {

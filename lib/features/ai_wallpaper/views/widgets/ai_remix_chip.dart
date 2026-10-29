@@ -4,12 +4,13 @@ import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
-/// Shows the wall a remix starts from, above the prompt field. [onDrop] removes the link and keeps the prompt.
+/// Shows the wall a remix starts from, above the prompt field. [onDrop] removes the link and keeps the prompt. A null
+/// [onDrop] disables the x, for example while a generation runs.
 class AiRemixChip extends StatelessWidget {
   const AiRemixChip({super.key, required this.seed, required this.onDrop});
 
   final AiRemixSeed seed;
-  final VoidCallback onDrop;
+  final VoidCallback? onDrop;
 
   @override
   Widget build(BuildContext context) {
