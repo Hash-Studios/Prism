@@ -11,23 +11,23 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/ios_widget_channel.dart';
 import 'package:Prism/core/platform/pigeon/prism_widget_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
-import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/services.dart';
 
+import '../../features/favourite_walls/support/fav_fixtures.dart';
 import '../../support/fake_firestore_client.dart';
 import '../../support/in_memory_local_store.dart';
-import '../../features/favourite_walls/support/fav_fixtures.dart';
 import '../../support/profile_user_fixture.dart';
 
 class _MockGuestFavouritesStore extends Mock implements GuestFavouritesStore {}
