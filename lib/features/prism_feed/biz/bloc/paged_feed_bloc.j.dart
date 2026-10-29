@@ -30,6 +30,7 @@ abstract class PagedFeedBloc extends Bloc<PagedFeedEvent, PagedFeedState> {
   int _loadVersion = 0;
 
   static const int _maxHiddenPages = 5;
+  static const int _minVisibleItems = 12;
 
   /// Page [page] of the list. Page 1 is a fresh load.
   Future<Result<PersonalizedFeedPage>> loadPage(int page);
@@ -38,18 +39,23 @@ abstract class PagedFeedBloc extends Bloc<PagedFeedEvent, PagedFeedState> {
       getIt.isRegistered<SettingsLocalDataSource>() &&
       AiContentFilter.hidesFeedItem(item, showAi: AiContentFilter.showsAi(getIt<SettingsLocalDataSource>()));
 
-  /// Hidden AI walls can fill whole pages, so a page with nothing visible fetches the next, up to [_maxHiddenPages].
+  /// Hidden AI walls can thin out or empty whole pages. While they leave fewer than [_minVisibleItems] visible walls,
+  /// the request fetches the next page too, up to [_maxHiddenPages] pages. A later page that fails keeps what loaded.
   Future<(Result<PersonalizedFeedPage>, int)> _loadVisiblePage(int first, int loadVersion) async {
+    final Result<PersonalizedFeedPage> firstResult = await loadPage(first);
+    PersonalizedFeedPage? merged = firstResult.data;
+    if (merged == null) return (firstResult, first);
     int page = first;
-    Result<PersonalizedFeedPage> result = await loadPage(page);
-    for (int skipped = 1; skipped < _maxHiddenPages; skipped++) {
-      final PersonalizedFeedPage? loaded = result.data;
-      if (loaded == null || !loaded.hasMore || loadVersion != _loadVersion || isClosed) break;
-      if (loaded.items.any((FeedItemEntity item) => !_hides(item))) break;
+    for (int fetched = 1; fetched < _maxHiddenPages; fetched++) {
+      if (!merged!.hasMore || loadVersion != _loadVersion || isClosed) break;
+      final int hidden = merged.items.where(_hides).length;
+      if (hidden == 0 || merged.items.length - hidden >= _minVisibleItems) break;
+      final PersonalizedFeedPage? next = (await loadPage(page + 1)).data;
+      if (next == null) break;
       page += 1;
-      result = await loadPage(page);
+      merged = PersonalizedFeedPage(items: <FeedItemEntity>[...merged.items, ...next.items], hasMore: next.hasMore);
     }
-    return (result, page);
+    return (Result.success<PersonalizedFeedPage>(merged!), page);
   }
 
   Future<void> _onStarted(_Started event, Emitter<PagedFeedState> emit) async {

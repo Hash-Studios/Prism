@@ -274,7 +274,7 @@ void main() {
     test('a first page of only AI walls loads the next page instead of stalling', () async {
       final bloc = _ScriptedFeedBloc(<int, PersonalizedFeedPage>{
         1: _mixedPage(<String>['ai-1', 'ai-2']),
-        2: _mixedPage(<String>['ai-3', 'human-4']),
+        2: _mixedPage(<String>['ai-3', 'human-4'], hasMore: false),
       });
       addTearDown(bloc.close);
 
@@ -284,7 +284,8 @@ void main() {
 
       expect(bloc.requested, <int>[1, 2]);
       expect(bloc.state.page, 2);
-      expect(bloc.state.items.map((item) => item.id), <String>['ai-3', 'human-4']);
+      expect(bloc.state.items.map((item) => item.id), <String>['ai-1', 'ai-2', 'ai-3', 'human-4']);
+      expect(bloc.state.hasMore, isFalse);
     });
 
     test('fetching more skips AI-only pages, at most five pages per request', () async {
@@ -304,6 +305,38 @@ void main() {
       expect(bloc.requested, <int>[1, 2, 3, 4, 5, 6]);
       expect(bloc.state.page, 6);
       expect(bloc.state.hasMore, isTrue);
+    });
+
+    test('a short first page thinned by AI walls fetches more until it can fill the screen', () async {
+      final bloc = _ScriptedFeedBloc(<int, PersonalizedFeedPage>{
+        1: _mixedPage(<String>['human-1', 'ai-1', 'ai-2']),
+        2: _mixedPage(<String>[for (int i = 0; i < 12; i++) 'human-2-$i', 'ai-3']),
+        3: _mixedPage(<String>['human-3']),
+      });
+      addTearDown(bloc.close);
+
+      bloc.add(const PagedFeedEvent.started());
+      for (int i = 0; i < 4; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1, 2], reason: '13 visible walls after page 2 is enough');
+      expect(bloc.state.page, 2);
+      expect(bloc.state.items, hasLength(16));
+    });
+
+    test('with AI shown, every request loads exactly one page', () async {
+      await AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), true);
+      final bloc = _ScriptedFeedBloc(<int, PersonalizedFeedPage>{
+        1: _mixedPage(<String>['ai-1']),
+        2: _mixedPage(<String>['ai-2']),
+      });
+      addTearDown(bloc.close);
+
+      bloc.add(const PagedFeedEvent.started());
+      await _settle();
+
+      expect(bloc.requested, <int>[1]);
     });
   });
 }

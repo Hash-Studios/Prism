@@ -522,7 +522,7 @@ void main() {
     }
   });
 
-  testWidgets('manually continues past an AI-only page and retries an empty next page after failure', (tester) async {
+  testWidgets('continues past an AI-only page by itself and retries a failed next page', (tester) async {
     final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
     await settings.set('showAiWallpapers', false);
@@ -551,23 +551,17 @@ void main() {
 
     expect(find.byKey(const ValueKey<String>('following-hidden-flag')), findsNothing);
     expect(find.byKey(const ValueKey<String>('following-hidden-metadata')), findsNothing);
-    expect(pageTwoCalls, 0);
+    expect(pageTwoCalls, 1, reason: 'the AI-only first page asks for page 2 by itself');
     expect(find.text('Try again'), findsOneWidget);
 
     await tester.tap(find.text('Try again'));
-    await _settle(tester);
-
-    expect(find.text("Couldn't load more. Try again"), findsOneWidget);
-    expect(pageTwoCalls, 1);
-
-    await tester.tap(find.text("Couldn't load more. Try again"));
     await _settle(tester);
 
     expect(find.byKey(const ValueKey<String>('following-human')), findsOneWidget);
     expect(pageTwoCalls, 2);
   });
 
-  testWidgets('Latest manually continues past an AI-only page when AI is hidden', (tester) async {
+  testWidgets('Latest continues past an AI-only page by itself when AI is hidden', (tester) async {
     final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
     await settings.set('showAiWallpapers', false);
@@ -585,18 +579,11 @@ void main() {
     await _settle(tester);
 
     expect(find.byKey(const ValueKey<String>('latest-hidden-ai')), findsNothing);
-    expect(find.byKey(const ValueKey<String>('latest-human')), findsNothing);
-    expect(find.text('Try again'), findsOneWidget);
-    expect(pageCalls, 1);
-
-    await tester.tap(find.text('Try again'));
-    await _settle(tester);
-
     expect(pageCalls, 2);
     expect(find.byKey(const ValueKey<String>('latest-human')), findsOneWidget);
   });
 
-  testWidgets('an empty successful page does not auto-page across frames or after disposal', (tester) async {
+  testWidgets('hidden pages auto-page at most five pages and never after disposal', (tester) async {
     final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
     await settings.set('showAiWallpapers', false);
@@ -619,13 +606,13 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
 
-    expect(pageTwoCalls, 0);
+    expect(pageTwoCalls, 4, reason: 'page 1 plus four more pages is the cap');
     expect(find.text('Try again'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
     await _settle(tester);
 
-    expect(pageTwoCalls, 0);
+    expect(pageTwoCalls, 4);
   });
 
   testWidgets('blocked creator changes reload the visible mood row walls', (tester) async {
