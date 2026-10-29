@@ -16,6 +16,7 @@ import 'package:Prism/data/collections/provider/collections_without_provider.dar
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -27,6 +28,7 @@ import 'package:mocktail/mocktail.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/fake_feed_cache_local_data_source.dart';
 import '../../support/fake_firestore_client.dart';
+import '../../support/fake_user_block_repository.dart';
 import '../../support/favourite_test_scope.dart';
 import '../../support/in_memory_local_store.dart';
 
@@ -134,9 +136,15 @@ void main() {
     for (int i = 0; i < 4 && firestore.nextPageCalls == 0; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
+    await tester.pump();
+    final int loadingIndicators = find.byType(CircularProgressIndicator).evaluate().length;
+    final int prematureRetries = find.text('Try again').evaluate().length;
+    firestore.releaseNextPage.complete();
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(firestore.nextPageCalls, 1);
+    expect(loadingIndicators, 1, reason: 'the automatic scan stays loading until its page completes');
+    expect(prematureRetries, 0);
     expect(find.text("Couldn't load wallpapers"), findsOneWidget);
     expect(find.text('Try again'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -224,6 +232,120 @@ void main() {
     expect(find.byKey(const ValueKey<String>('human-3')), findsOneWidget);
   });
 
+  testWidgets('See more skips duplicate visible walls until a new wall arrives', (tester) async {
+    final originalWalls = anyCollectionWalls;
+    final originalHasMore = collectionHasMore;
+    final firestore = _DuplicatePagesFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    getIt.registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource());
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(() async {
+      anyCollectionWalls = originalWalls;
+      collectionHasMore = originalHasMore;
+      AnalyticsRuntime.reset();
+      await getIt.reset();
+    });
+    await AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), false);
+    await getCollectionWithName('duplicates');
+    await tester.pumpWidget(
+      const MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(const ValueKey<String>('human-1')), findsOneWidget);
+
+    await tester.tap(find.text('See more'));
+    for (int i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+
+    expect(firestore.nextPageCalls, 2, reason: 'page 2 repeats human-1, so page 3 must load');
+    expect(find.byKey(const ValueKey<String>('human-3')), findsOneWidget);
+  });
+
+  testWidgets('stops paging when the collection changes while See more is in flight', (tester) async {
+    final originalWalls = anyCollectionWalls;
+    final originalHasMore = collectionHasMore;
+    final firestore = _DelayedCollectionSwitchFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    getIt.registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource());
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(() async {
+      anyCollectionWalls = originalWalls;
+      collectionHasMore = originalHasMore;
+      AnalyticsRuntime.reset();
+      await getIt.reset();
+    });
+    await AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), false);
+    await getCollectionWithName('first');
+    await tester.pumpWidget(
+      const MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.text('See more'));
+    for (int i = 0; i < 10 && !firestore.nextPageStarted.isCompleted; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    expect(firestore.nextPageStarted.isCompleted, isTrue);
+
+    await getCollectionWithName('second');
+    firestore.releaseNextPage.complete();
+    for (int i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+
+    expect(firestore.nextPageCalls, 1, reason: 'a stale See more must not page the newly opened collection');
+    expect(anyCollectionWalls.first['id'], 'human-second');
+  });
+
+  testWidgets('when AI walls are shown, See more fetches only one page even if every new creator is blocked', (
+    tester,
+  ) async {
+    final originalWalls = anyCollectionWalls;
+    final originalHasMore = collectionHasMore;
+    final firestore = _BlockedPagesFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    getIt.registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource());
+    final userBlocks = FakeUserBlockRepository.pending()..completeInitial(<String>{'blocked'});
+    getIt.registerSingleton<UserBlockRepository>(userBlocks);
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(() async {
+      anyCollectionWalls = originalWalls;
+      collectionHasMore = originalHasMore;
+      AnalyticsRuntime.reset();
+      await getIt.reset();
+    });
+    await AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), true);
+    await getCollectionWithName('duplicates');
+    await tester.pumpWidget(
+      const MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.ensureVisible(find.text('See more'));
+    await tester.tap(find.text('See more'));
+    for (int i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+
+    expect(firestore.nextPageCalls, 1);
+  });
+
   testWidgets('skips a scheduled hidden-page request after collection contents change', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
@@ -261,6 +383,48 @@ void main() {
 
     expect(firestore.nextPageCalls, 0);
     expect(find.byType(PrismWallTile), findsOneWidget);
+  });
+
+  testWidgets('an invalidated automatic scan can schedule against replacement hidden walls', (tester) async {
+    final originalWalls = anyCollectionWalls;
+    final originalHasMore = collectionHasMore;
+    final firestore = _AiPagesFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    getIt.registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource());
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(() async {
+      anyCollectionWalls = originalWalls;
+      collectionHasMore = originalHasMore;
+      AnalyticsRuntime.reset();
+      await getIt.reset();
+    });
+    await AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), false);
+    await getCollectionWithName('ai');
+    tester.binding.addPostFrameCallback((_) {
+      anyCollectionWalls = List<Map<String, dynamic>>.generate(
+        24,
+        (index) => <String, dynamic>{
+          'id': 'replacement-ai-$index',
+          'isAiGenerated': true,
+          'wallpaper_thumb': 'https://example.test/replacement-ai-$index-thumb.jpg',
+          'wallpaper_url': 'https://example.test/replacement-ai-$index.jpg',
+        },
+      );
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
+    for (int i = 0; i < 10 && firestore.nextPageCalls == 0; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+
+    expect(firestore.nextPageCalls, greaterThan(0));
   });
 
   testWidgets('rebuilds after a scheduled hidden-page request is invalidated by the AI setting', (tester) async {
@@ -677,6 +841,7 @@ class _MockStackRouter extends Mock implements StackRouter {}
 
 class _PagingFailureFirestore extends FakeFirestoreClient {
   int nextPageCalls = 0;
+  final Completer<void> releaseNextPage = Completer<void>();
 
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
@@ -692,6 +857,7 @@ class _PagingFailureFirestore extends FakeFirestoreClient {
       );
     }
     nextPageCalls += 1;
+    await releaseNextPage.future;
     throw StateError('offline');
   }
 }
@@ -730,6 +896,85 @@ class _MixedPagesFirestore extends FakeFirestoreClient {
       return map(<String, dynamic>{
         'id': id,
         if (!human) 'isAiGenerated': true,
+        'wallpaper_thumb': 'https://example.test/$id-thumb.jpg',
+        'wallpaper_url': 'https://example.test/$id.jpg',
+      }, id);
+    });
+  }
+}
+
+/// Page 2 repeats page 1's visible wall. Page 3 has a new visible wall.
+class _DuplicatePagesFirestore extends FakeFirestoreClient {
+  int nextPageCalls = 0;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    final bool isNextPage = spec.sourceTag == 'collections.seeMoreCollectionWithName';
+    final int page = isNextPage ? ++nextPageCalls + 1 : 1;
+    return List<T>.generate(24, (index) {
+      final bool human = index == 0;
+      final String id = page == 2 && human ? 'human-1' : (human ? 'human-$page' : 'ai-$page-$index');
+      return map(<String, dynamic>{
+        'id': id,
+        if (!human) 'isAiGenerated': true,
+        'wallpaper_thumb': 'https://example.test/$id-thumb.jpg',
+        'wallpaper_url': 'https://example.test/$id.jpg',
+      }, id);
+    });
+  }
+}
+
+class _DelayedCollectionSwitchFirestore extends FakeFirestoreClient {
+  final Completer<void> nextPageStarted = Completer<void>();
+  final Completer<void> releaseNextPage = Completer<void>();
+  int nextPageCalls = 0;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    if (spec.sourceTag == 'collections.seeMoreCollectionWithName') {
+      nextPageCalls++;
+      if (nextPageCalls == 1) {
+        nextPageStarted.complete();
+        await releaseNextPage.future;
+      }
+      return List<T>.generate(
+        24,
+        (index) => map(<String, dynamic>{
+          'id': 'ai-next-$index',
+          'isAiGenerated': true,
+          'wallpaper_thumb': 'https://example.test/ai-next-$index-thumb.jpg',
+          'wallpaper_url': 'https://example.test/ai-next-$index.jpg',
+        }, 'ai-next-$index'),
+      );
+    }
+    final String id = spec.filters.any((filter) => filter.value == 'second') ? 'human-second' : 'human-first';
+    return List<T>.generate(24, (index) {
+      final bool human = index == 0;
+      final String wallId = human ? id : 'ai-$id-$index';
+      return map(<String, dynamic>{
+        'id': wallId,
+        if (!human) 'isAiGenerated': true,
+        'wallpaper_thumb': 'https://example.test/$wallId-thumb.jpg',
+        'wallpaper_url': 'https://example.test/$wallId.jpg',
+      }, wallId);
+    });
+  }
+}
+
+class _BlockedPagesFirestore extends FakeFirestoreClient {
+  int nextPageCalls = 0;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    final bool isNextPage = spec.sourceTag == 'collections.seeMoreCollectionWithName';
+    if (isNextPage) nextPageCalls++;
+    return List<T>.generate(24, (index) {
+      final bool initialHuman = !isNextPage && index == 0;
+      final String id = initialHuman ? 'human' : '${isNextPage ? 'blocked' : 'ai'}-$index';
+      return map(<String, dynamic>{
+        'id': id,
+        'creatorUid': initialHuman ? 'owner' : 'blocked',
+        if (!initialHuman) 'isAiGenerated': true,
         'wallpaper_thumb': 'https://example.test/$id-thumb.jpg',
         'wallpaper_url': 'https://example.test/$id.jpg',
       }, id);

@@ -59,6 +59,17 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
       ? anyCollectionWalls
       : anyCollectionWalls.where((wall) => !_isAiWall(wall)).toList(growable: false);
 
+  Set<String> _visibleWallIds() =>
+      _visibleWalls().map((wall) => _wallString(wall, 'id')).where((id) => id.isNotEmpty).toSet();
+
+  bool _preservesLoadedWalls(List<Map<String, dynamic>> previous, List<Map<String, dynamic>> current) {
+    if (identical(previous, current) || current.length < previous.length) return false;
+    for (int index = 0; index < previous.length; index++) {
+      if (!identical(current[index], previous[index])) return false;
+    }
+    return true;
+  }
+
   bool _isAiWall(Map<String, dynamic> wall) =>
       AiContentFilter.isAi(PrismWallDocDto.fromJson(wall).toDomain(docId: _wallString(wall, 'id')));
 
@@ -93,10 +104,19 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
     });
     try {
       // Hidden AI walls can fill whole pages, so keep going until a visible wall arrives.
-      final int visibleBefore = _visibleWalls().length;
+      final bool showAiAtStart = AiContentFilter.showsAi(getIt<SettingsLocalDataSource>());
+      final Set<String> visibleBefore = _visibleWallIds();
       for (int page = 0; page < _maxEmptyPages; page++) {
+        final List<Map<String, dynamic>> previousWalls = anyCollectionWalls;
         await seeMoreCollectionWithName();
-        if (!mounted || !collectionHasMore || _visibleWalls().length > visibleBefore) break;
+        if (!mounted ||
+            showAiAtStart ||
+            AiContentFilter.showsAi(getIt<SettingsLocalDataSource>()) ||
+            !_preservesLoadedWalls(previousWalls, anyCollectionWalls) ||
+            !collectionHasMore ||
+            _visibleWallIds().difference(visibleBefore).isNotEmpty) {
+          break;
+        }
       }
     } catch (error, stackTrace) {
       logger.w('Failed to load more collection walls.', error: error, stackTrace: stackTrace);
@@ -139,6 +159,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
     final List<Map<String, dynamic>> walls = _visibleWalls();
     if (walls.isNotEmpty || !hideAi) _emptyPagesLoaded = 0;
     if (walls.isEmpty && hideAi && loaded.isNotEmpty) {
+      if (seeMoreLoader) return const Center(child: CircularProgressIndicator());
       if (_loadMoreFailed) {
         return PrismInlineState(
           icon: Icons.error_outline_rounded,
@@ -148,10 +169,8 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
         );
       }
       if (collectionHasMore && _emptyPagesLoaded < _maxEmptyPages) {
-        // One automatic scan: _loadMore pages past hidden walls, up to _maxEmptyPages pages.
         if (!seeMoreLoader && !_emptyPageLoadScheduled) {
           _emptyPageLoadScheduled = true;
-          _emptyPagesLoaded = _maxEmptyPages;
           final int settingsRevision = personalizedFeedSettingsRevision.value;
           final List<Map<String, dynamic>> scheduledWalls = loaded;
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -162,7 +181,10 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
               setState(() {});
               return;
             }
-            if (collectionHasMore && !seeMoreLoader) unawaited(_loadMore());
+            if (collectionHasMore && !seeMoreLoader) {
+              _emptyPagesLoaded = _maxEmptyPages;
+              unawaited(_loadMore());
+            }
           });
         }
         return const Center(child: CircularProgressIndicator());

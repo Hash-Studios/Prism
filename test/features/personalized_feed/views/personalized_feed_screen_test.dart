@@ -552,9 +552,9 @@ void main() {
     expect(find.byKey(const ValueKey<String>('following-hidden-flag')), findsNothing);
     expect(find.byKey(const ValueKey<String>('following-hidden-metadata')), findsNothing);
     expect(pageTwoCalls, 1, reason: 'the AI-only first page asks for page 2 by itself');
-    expect(find.text('Try again'), findsOneWidget);
+    expect(find.text("Couldn't load more. Try again"), findsOneWidget);
 
-    await tester.tap(find.text('Try again'));
+    await tester.tap(find.text("Couldn't load more. Try again"));
     await _settle(tester);
 
     expect(find.byKey(const ValueKey<String>('following-human')), findsOneWidget);

@@ -40,10 +40,9 @@ class _UserProfileGridState extends State<UserProfileGrid> {
   bool _emptyPageLoadScheduled = false;
   String? _lastProfileId;
 
-  /// Visible wall count when the user asked for more, while hidden AI walls keep the new pages empty.
-  int? _seeMoreFrom;
+  int? _visibleWallCountAtSeeMore;
   int _seeMorePages = 0;
-  LoadStatus? _lastStatus;
+  String? _seeMoreProfileId;
 
   bool get ownProfile => widget.ownProfile;
 
@@ -70,29 +69,43 @@ class _UserProfileGridState extends State<UserProfileGrid> {
     });
   }
 
-  void _seeMore(PublicProfileBloc bloc, int visible) {
-    _seeMoreFrom = visible;
-    _seeMorePages = 1;
+  void _seeMore(PublicProfileBloc bloc, int visible, bool hideAi) {
+    if (!ownProfile && hideAi) {
+      _visibleWallCountAtSeeMore = visible;
+      _seeMorePages = 1;
+      _seeMoreProfileId = bloc.state.profileId;
+    } else {
+      _clearSeeMore();
+    }
     bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
   }
 
-  /// A requested page that added no visible wall asks for the next one, up to [_maxEmptyPages] pages.
-  void _continueSeeMore(PublicProfileBloc bloc, PublicProfileState state, int visible) {
-    final int? from = _seeMoreFrom;
-    if (from == null || state.isFetchingMoreWalls) return;
-    if (visible > from ||
-        !state.hasMoreWalls ||
-        state.status == LoadStatus.failure ||
-        _seeMorePages >= _maxEmptyPages) {
-      _seeMoreFrom = null;
+  void _continueSeeMore(PublicProfileBloc bloc, PublicProfileState state, bool hideAi) {
+    final int? from = _visibleWallCountAtSeeMore;
+    if (from == null) return;
+    if (ownProfile ||
+        !hideAi ||
+        state.profileId != _seeMoreProfileId ||
+        state.status != LoadStatus.success ||
+        !state.hasMoreWalls) {
+      _clearSeeMore();
+      return;
+    }
+    final List<PublicProfileWallEntity> visibleWalls = state.walls
+        .where((wall) => !wall.isAiGenerated)
+        .toList(growable: false);
+    if (visibleWalls.length > from || _seeMorePages >= _maxEmptyPages) {
+      _clearSeeMore();
       return;
     }
     _seeMorePages += 1;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !bloc.isClosed && !bloc.state.isFetchingMoreWalls) {
-        bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
-      }
-    });
+    bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
+  }
+
+  void _clearSeeMore() {
+    _visibleWallCountAtSeeMore = null;
+    _seeMorePages = 0;
+    _seeMoreProfileId = null;
   }
 
   @override
@@ -107,18 +120,35 @@ class _UserProfileGridState extends State<UserProfileGrid> {
   Widget _buildGrid(BuildContext context, PublicProfileBloc bloc) {
     final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
     final bool hideAi = !ownProfile && !AiContentFilter.showsAi(settings);
-    return BlocBuilder<PublicProfileBloc, PublicProfileState>(
+    return BlocConsumer<PublicProfileBloc, PublicProfileState>(
+      listenWhen: (previous, current) {
+        return current.status == LoadStatus.loading ||
+            (_visibleWallCountAtSeeMore != null &&
+                ((previous.isFetchingMoreWalls && !current.isFetchingMoreWalls) ||
+                    current.profileId != _seeMoreProfileId ||
+                    (current.status != LoadStatus.success && !current.isFetchingMoreWalls)));
+      },
+      listener: (context, state) {
+        if (state.status == LoadStatus.loading) {
+          _emptyPagesLoaded = 0;
+          _clearSeeMore();
+          return;
+        }
+        if (_visibleWallCountAtSeeMore == null) return;
+        if (state.profileId != _seeMoreProfileId ||
+            (state.status == LoadStatus.failure && !state.isFetchingMoreWalls)) {
+          _clearSeeMore();
+          return;
+        }
+        _continueSeeMore(bloc, state, !ownProfile && !AiContentFilter.showsAi(settings));
+      },
       builder: (context, state) {
         if (_lastProfileId != state.profileId) {
           _lastProfileId = state.profileId;
           _emptyPagesLoaded = 0;
-          _seeMoreFrom = null;
+          _clearSeeMore();
           _emptyPageLoadScheduled = false;
-        } else if (state.status == LoadStatus.loading && _lastStatus != LoadStatus.loading) {
-          // A refresh of this same profile starts a new bounded hidden-page scan.
-          _emptyPagesLoaded = 0;
         }
-        _lastStatus = state.status;
         if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.walls.isEmpty)) {
           return const SliverToBoxAdapter(child: LoadingCards());
         }
@@ -126,7 +156,6 @@ class _UserProfileGridState extends State<UserProfileGrid> {
             ? state.walls.where((wall) => !wall.isAiGenerated).toList(growable: false)
             : state.walls;
         final bool failed = state.status == LoadStatus.failure;
-        if (_lastProfileId == state.profileId) _continueSeeMore(bloc, state, walls.length);
         final Widget retryState = GlintState(
           kind: GlintStateKind.error,
           title: context.l10n.accountCouldNotLoadWallpapers,
@@ -211,7 +240,7 @@ class _UserProfileGridState extends State<UserProfileGrid> {
                   if (index == walls.length) {
                     return SeeMoreButton(
                       seeMoreLoader: state.isFetchingMoreWalls,
-                      func: () => _seeMore(bloc, walls.length),
+                      func: () => _seeMore(bloc, walls.length, hideAi),
                     );
                   }
                   final PublicProfileWallEntity wall = walls[index];
