@@ -1,3 +1,4 @@
+// eslint-disable-next-line spaced-comment -- a TypeScript triple-slash directive, needed for Intl.Segmenter.
 /// <reference lib="es2022.intl" />
 import * as admin from "firebase-admin";
 import {createHash} from "node:crypto";
