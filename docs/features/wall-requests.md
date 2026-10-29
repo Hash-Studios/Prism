@@ -151,8 +151,9 @@ Clients cannot write `wallRequests`, its `votes`, `wallRequestRateDaily` or `wal
 
 1. Firestore indexes (`firestore.indexes.json`: 7 `wallRequests` indexes and the `votes.uid` collection group index). Wait until they are built.
 2. Firestore rules.
-3. Cloud Functions: run `make functions-env` first. Then deploy `createWallRequest`, `setWallRequestVote`, `listWallRequests`, `setWallRequestHidden` (new), and `onWallApproved`, `planStudioBatch`, `runStudioBatch`, `processStudioCandidate`, `deleteAccount`, `submitContentReport`, `onContentReportCreated` (changed).
-4. Client release.
+3. Cloud Functions: run `make functions-env` first, then deploy all functions (`make functions-deploy`). New: `createWallRequest`, `setWallRequestVote`, `listWallRequests`, `setWallRequestHidden`. Changed: `onWallApproved`, `planStudioBatch`, `runStudioBatch`, `processStudioCandidate`, `onStudioWallApproved`, `onWallSubmitted`, `onWallModerate`, `awardCoins`, `deleteAccount`, `submitContentReport`, `onContentReportCreated`.
+4. Cloudflare worker (`infra/cloudflare/worker`): the `/requests` routes and the AASA path. Without it, `https://prismwalls.com/requests` links do not open the app.
+5. Client release.
 
 If the client ships first, the requests page shows the error state, and requests cannot be made.
 

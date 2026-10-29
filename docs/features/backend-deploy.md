@@ -319,8 +319,9 @@ The full order is in [wall-requests.md](wall-requests.md#deploy-order).
 
 1. Indexes: 7 `wallRequests` composite indexes and the `votes.uid` collection group index. Wait until they are built.
 2. Rules: the `wallRequests`, `votes` and rate doc matches.
-3. Functions: run `make functions-env`, then deploy the 4 new callables and the 7 changed functions.
-4. Client release.
+3. Functions: run `make functions-env`, then deploy all functions. The list of new and changed functions is in the feature page.
+4. Cloudflare worker: the `/requests` routes and the AASA path.
+5. Client release.
 
 ## Rollback
 

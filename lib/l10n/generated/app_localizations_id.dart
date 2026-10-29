@@ -10815,7 +10815,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get requestPickerEmpty => 'Tidak ada permintaan terbuka yang cocok';
 
   @override
-  String get notifPushWallRequestFilledTitle => 'Permintaan Anda sudah ada';
+  String get notifPushWallRequestFilledTitle => 'Wallpaper permintaan Anda sudah tersedia';
 
   @override
   String notifPushWallRequestFilledBody(String requestText) {

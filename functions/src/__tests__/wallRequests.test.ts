@@ -368,6 +368,22 @@ test("studioRequestPicks scans past 20 ineligible requests", async (t) => {
   assert.deepEqual(picks.map((pick) => pick.requestId), ["zzzEligible"]);
 });
 
+test("studioRequestPicks never reads requests below the vote floor", async (t) => {
+  const seed: Record<string, Doc> = {};
+  for (let i = 0; i < 60; i++) seed[`wallRequests/low${i}`] = request("neon city rain", "u1", {voteCount: i % 3});
+  installFakeDb(t, seed);
+  const read: string[] = [];
+  const picks = await db.runTransaction(async (tx) => studioRequestPicks({
+    get: async (target: Parameters<typeof tx.get>[0]) => {
+      const snap = await tx.get(target as never) as unknown as {docs: Array<{id: string}>};
+      read.push(...snap.docs.map((d) => d.id));
+      return snap;
+    },
+  } as unknown as typeof tx, 3, NOW));
+  assert.deepEqual(picks, []);
+  assert.deepEqual(read, []);
+});
+
 const listSeed: Record<string, Doc> = {
   "wallRequests/a": request("alpha", "u2", {voteCount: 5, createdAt: at(NOW - 2 * DAY)}),
   "wallRequests/b": request("bravo", "u3", {voteCount: 9, createdAt: at(NOW - DAY)}),

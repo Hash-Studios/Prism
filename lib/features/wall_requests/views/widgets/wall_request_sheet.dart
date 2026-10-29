@@ -47,7 +47,10 @@ class WallRequestSheetBody extends StatefulWidget {
 }
 
 class _WallRequestSheetBodyState extends State<WallRequestSheetBody> {
-  late final TextEditingController _text = TextEditingController(text: widget.initialText);
+  // A search query can be longer than a request; maxLength limits only typed input.
+  late final TextEditingController _text = TextEditingController(
+    text: widget.initialText.trim().characters.take(wallRequestMaxLength).toString(),
+  );
   final List<String> _tags = <String>[];
 
   @override

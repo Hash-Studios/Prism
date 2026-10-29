@@ -10074,7 +10074,7 @@
   "@requestPickerEmpty": {
     "description": "Empty state of the request picker."
   },
-  "notifPushWallRequestFilledTitle": "Permintaan Anda sudah ada",
+  "notifPushWallRequestFilledTitle": "Wallpaper permintaan Anda sudah tersedia",
   "@notifPushWallRequestFilledTitle": {
     "description": "Push and inbox title when a wall request is filled."
   },

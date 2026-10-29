@@ -57,7 +57,7 @@ void main() {
   });
 
   /// Opens the sheet from a button, as the app does, and lets it finish its entrance.
-  Future<void> openSheet(WidgetTester tester, {Locale? locale}) async {
+  Future<void> openSheet(WidgetTester tester, {Locale? locale, String initialText = ''}) async {
     tester.view.physicalSize = const Size(800, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -77,7 +77,10 @@ void main() {
                       context,
                       builder: (_) => BlocProvider<WallRequestSheetCubit>.value(
                         value: cubit,
-                        child: const WallRequestSheetBody(source: WallRequestSourceValue.requestsPage),
+                        child: WallRequestSheetBody(
+                          source: WallRequestSourceValue.requestsPage,
+                          initialText: initialText,
+                        ),
                       ),
                     ),
                   );
@@ -173,6 +176,13 @@ void main() {
     await tester.enterText(find.byType(TextField), 'abc');
     await tester.pump();
     expect(submitButton(tester).onPressed, isNotNull);
+  });
+
+  testWidgets('a search query longer than 80 characters is cut to 80', (tester) async {
+    stub(const WallRequestSheetEditing());
+    await openSheet(tester, initialText: '  ${'a' * 100}  ');
+
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, 'a' * 80);
   });
 
   testWidgets('a fourth tag cannot be selected after three', (tester) async {

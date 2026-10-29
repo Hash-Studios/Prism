@@ -55,7 +55,7 @@
     <string name="notif_push_drop_last_call_title">Kesempatan terakhir untuk Drop minggu ini</string>
     <string name="notif_push_drop_last_call_body">%1$s berakhir dalam %2$s jam. Setelah itu, wallpaper tidak tersedia selama sebulan.</string>
     <string name="notif_push_draw_winner_title">Anda memenangkan Prism Draw</string>
-    <string name="notif_push_wall_request_filled_title">Permintaan Anda sudah ada</string>
+    <string name="notif_push_wall_request_filled_title">Wallpaper permintaan Anda sudah tersedia</string>
     <string name="notif_push_wall_request_filled_body">%1$s</string>
     <string name="notif_push_draw_winner_body">Satu bulan Pro dan bingkai Prism menjadi milik Anda.</string>
     <string name="notif_push_gift_received_title">%1$s mengirimkan akses Pro 24 jam kepada Anda</string>

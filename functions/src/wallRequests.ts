@@ -591,6 +591,8 @@ export async function studioRequestPicks(tx: admin.firestore.Transaction, max: n
   const base = db.collection(WALL_REQUESTS)
     .where("status", "==", "open")
     .where("hidden", "==", false)
+    // Requests below the vote floor never qualify, so the scan never reads (and locks) them.
+    .where("voteCount", ">=", MIN_STUDIO_VOTES)
     .orderBy("voteCount", "desc");
   const pageSize = 20;
   let query = base.limit(pageSize);
