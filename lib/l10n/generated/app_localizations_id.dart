@@ -3912,6 +3912,62 @@ class AppLocalizationsId extends AppLocalizations {
   String get aiLiveActivityOpen => 'Buka di Prism';
 
   @override
+  String get aiResultApply => 'Terapkan';
+
+  @override
+  String get aiResultEditPrompt => 'Edit perintah';
+
+  @override
+  String get aiSessionStripLabel => 'Wallpaper dari sesi ini';
+
+  @override
+  String aiSessionTake(int index, int count) {
+    final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String indexString = indexNumberFormat.format(index);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Ambil $indexString dari $countString';
+  }
+
+  @override
+  String get aiFollowUpWatercolour => 'Sebagai cat air';
+
+  @override
+  String get aiFollowUpNight => 'Versi malam';
+
+  @override
+  String get aiFollowUpMinimal => 'Lebih minimalis';
+
+  @override
+  String get aiFollowUpWarmer => 'Lebih hangat';
+
+  @override
+  String get aiFollowUpDepth => 'Tambah kedalaman';
+
+  @override
+  String aiFollowUpCostLabel(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'Setiap versi baru biayanya $costString koin';
+  }
+
+  @override
+  String get aiFollowUpConfirmTitle => 'Buat versi baru?';
+
+  @override
+  String aiFollowUpConfirmBody(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'Versi lanjutan membuat wallpaper baru dari yang ini. Setiap versi biayanya $costString koin.';
+  }
+
+  @override
+  String get aiFollowUpConfirmAction => 'Buat';
+
+  @override
   String get economyAiDailyLimit => 'Anda mencapai batas AI hari ini.';
 
   @override

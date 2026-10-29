@@ -15,6 +15,7 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'taste_quiz_source': TasteQuizSource.values.map((value) => value.wireValue).toList(),
   'quiz_side': QuizSide.values.map((value) => value.wireValue).toList(),
   'binary_result': BinaryResultValue.values.map((value) => value.wireValue).toList(),
+  'ai_apply_from': AiApplyFromValue.values.map((value) => value.wireValue).toList(),
   'ai_style_pick_source': AiStylePickSource.values.map((value) => value.wireValue).toList(),
   'rc_or_fallback': RcOrFallbackValue.values.map((value) => value.wireValue).toList(),
   'live_wallpaper_style': LiveWallpaperStyleValue.values.map((value) => value.wireValue).toList(),
@@ -937,6 +938,50 @@ class AiSubmitSuccessEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'generation_id': generationId};
+  }
+}
+
+class AiResultAppliedEvent extends AnalyticsEvent {
+  const AiResultAppliedEvent({required this.platform, required this.from});
+
+  final String platform;
+  final AiApplyFromValue from;
+
+  @override
+  String get eventName => 'ai_result_applied';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'platform': platform, 'from': from.wireValue};
+  }
+}
+
+class AiFollowUpUsedEvent extends AnalyticsEvent {
+  const AiFollowUpUsedEvent({required this.chipId});
+
+  final String chipId;
+
+  @override
+  String get eventName => 'ai_follow_up_used';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'chip_id': chipId};
+  }
+}
+
+class AiStripSwappedEvent extends AnalyticsEvent {
+  const AiStripSwappedEvent({required this.position, required this.count});
+
+  final int position;
+  final int count;
+
+  @override
+  String get eventName => 'ai_strip_swapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'position': position, 'count': count};
   }
 }
 
