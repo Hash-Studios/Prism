@@ -1271,6 +1271,28 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "remixOf",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
