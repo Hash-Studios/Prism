@@ -10742,7 +10742,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get foldersMakePrivateMessage =>
-      'Solo tu la verás. Su enlace dejará de funcionar y sus seguidores la perderán.';
+      'Solo tú la verás. Su enlace dejará de funcionar y sus seguidores la perderán.';
 
   @override
   String get foldersMadePublic => 'Esta carpeta ahora es pública.';

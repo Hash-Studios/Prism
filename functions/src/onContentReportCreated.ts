@@ -112,6 +112,8 @@ export const onContentReportCreated = onDocumentCreated(
           "onContentReportCreated: could not check the report count.",
           {reportId, targetId, err},
         );
+        // The trigger retries; holdWallAfterReports holds a wall once, so a retry is safe.
+        throw err;
       }
     }
 

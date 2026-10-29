@@ -2810,7 +2810,7 @@
   "foldersMakePublicTitle": "¿Hacer pública esta carpeta?",
   "foldersMakePublicMessage": "Cualquiera en Prism podrá ver su nombre y sus fondos de pantalla, seguirla y abrir su enlace. Los enlaces que compartas conservan su vista previa aunque luego la hagas privada.",
   "foldersMakePrivateTitle": "¿Hacer privada esta carpeta?",
-  "foldersMakePrivateMessage": "Solo tu la verás. Su enlace dejará de funcionar y sus seguidores la perderán.",
+  "foldersMakePrivateMessage": "Solo tú la verás. Su enlace dejará de funcionar y sus seguidores la perderán.",
   "foldersMadePublic": "Esta carpeta ahora es pública.",
   "foldersMadePrivate": "Esta carpeta ahora es privada.",
   "foldersPublicNameRefused": "Cambia el nombre de esta carpeta para hacerla pública.",

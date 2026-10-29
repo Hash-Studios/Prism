@@ -138,13 +138,16 @@ test("sendDueFolderDigests respects the folder alert switch, its token, blocks a
   const send = mockDelivery(t);
   const store = installFakeDb(t, baseSeed());
 
-  store.set("usersv2/b/private/session", {fcmToken: "T", folderAlerts: false, folderAlertsToken: "T"});
+  store.set("usersv2/b/private/session", {fcmToken: "T", fcmTokenBindingVersion: 1, fcmTokenBindingToken: "T",
+    folderAlerts: false, folderAlertsToken: "T"});
   assert.equal(await sendDueFolderDigests(NOW), 0);
 
-  store.set("usersv2/b/private/session", {fcmToken: "T", folderAlerts: true, folderAlertsToken: "OLD"});
+  store.set("usersv2/b/private/session", {fcmToken: "T", fcmTokenBindingVersion: 1, fcmTokenBindingToken: "T",
+    folderAlerts: true, folderAlertsToken: "OLD"});
   assert.equal(await sendDueFolderDigests(NOW), 0);
 
-  store.set("usersv2/b/private/session", {fcmToken: "T", folderAlerts: true, folderAlertsToken: "T"});
+  store.set("usersv2/b/private/session", {fcmToken: "T", fcmTokenBindingVersion: 1, fcmTokenBindingToken: "T",
+    folderAlerts: true, folderAlertsToken: "T"});
   store.set("usersv2/b/blockedUsers/a", {});
   assert.equal(await sendDueFolderDigests(NOW), 0);
   store.delete("usersv2/b/blockedUsers/a");
