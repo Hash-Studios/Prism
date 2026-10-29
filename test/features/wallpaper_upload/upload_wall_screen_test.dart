@@ -12,7 +12,9 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
+import 'package:Prism/features/wallpaper_upload/biz/upload_session.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/features/wallpaper_upload/data/last_submission_defaults_store.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
@@ -38,7 +40,90 @@ class _FailingUploadDraftStore extends UploadDraftStore {
     required String draftId,
     required File selectedFile,
     required SubmissionMetadata metadata,
+    UploadSession? session,
   }) async => throw StateError('disk full');
+}
+
+class _RecordingDraftStore extends UploadDraftStore {
+  final List<String> reads = [];
+
+  @override
+  Future<void> discard({required String owner, required String draftId}) async {}
+
+  @override
+  Future<UploadDraft?> read({required String owner, required String draftId}) async {
+    reads.add(draftId);
+    return null;
+  }
+
+  @override
+  Future<UploadDraft> save({
+    required String owner,
+    required String draftId,
+    required File selectedFile,
+    required SubmissionMetadata metadata,
+    UploadSession? session,
+  }) async => UploadDraft(owner: owner, draftId: draftId, file: selectedFile, metadata: metadata, session: session);
+}
+
+class _SessionDraftStore extends UploadDraftStore {
+  UploadDraft? saved;
+  final sessions = <UploadSession>[];
+
+  @override
+  Future<UploadDraft?> read({required String owner, required String draftId}) async => saved;
+
+  @override
+  Future<UploadDraft> save({
+    required String owner,
+    required String draftId,
+    required File selectedFile,
+    required SubmissionMetadata metadata,
+    UploadSession? session,
+  }) async {
+    if (session != null) sessions.add(session);
+    return saved = UploadDraft(
+      owner: owner,
+      draftId: draftId,
+      file: selectedFile,
+      metadata: metadata,
+      session: session,
+    );
+  }
+
+  @override
+  Future<void> discard({required String owner, required String draftId}) async {}
+}
+
+class _Defaults extends LastSubmissionDefaultsStore {
+  _Defaults({this.failSave = false});
+  final bool failSave;
+
+  @override
+  Future<SubmissionMetadata?> read(String owner) async =>
+      const SubmissionMetadata(category: 'Nature', tags: ['forest']);
+
+  @override
+  Future<void> save(String owner, SubmissionMetadata metadata) async {
+    if (failSave) throw StateError('defaults disk failure');
+  }
+}
+
+class _DirectUploadRouter extends AppRouter {
+  _DirectUploadRouter(this.screen);
+  final Widget screen;
+
+  @override
+  List<AutoRoute> get routes => <AutoRoute>[
+    AutoRoute(
+      path: '/',
+      page: PageInfo('DirectUpload', builder: (_) => screen),
+    ),
+    AutoRoute(
+      path: '/review',
+      page: PageInfo(ReviewRoute.name, builder: (_) => const Scaffold(body: Text('review-stub'))),
+    ),
+  ];
 }
 
 class _DraftStoreFixture {
@@ -150,6 +235,238 @@ void main() {
     addTearDown(() => tester.runAsync(() => root.delete(recursive: true)));
     return _DraftStoreFixture(root);
   }
+
+  testWidgets('last details change only category and tags and a defaults write failure does not fail submission', (
+    tester,
+  ) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    final drafts = _RecordingDraftStore();
+    SubmissionMetadata? submitted;
+    final resumed = UploadDraft(
+      owner: UploadDraftStore.guestOwner,
+      draftId: 'resume',
+      file: image,
+      metadata: const SubmissionMetadata(
+        title: 'Personal title',
+        description: 'Personal description',
+        category: 'General',
+        tags: ['old'],
+        requestId: 'request-1',
+        requestText: 'A requested wall',
+      ),
+      session: const UploadSession(
+        operationId: 'operation-1',
+        logicalId: 'wall-1',
+        rejectedDocId: 'rejected-1',
+        previousReason: 'Fix the border',
+      ),
+    );
+    final router = _DirectUploadRouter(
+      UploadWallScreen(
+        image: image,
+        resumedDraft: resumed,
+        prepareImageForTesting: () async {},
+        draftStoreForTesting: drafts,
+        defaultsStoreForTesting: _Defaults(failSave: true),
+        uploadFileForTesting: ({required isThumbnail}) async => isThumbnail
+            ? const GitHubContent(downloadUrl: 'https://example.test/t', path: 'thumb', sha: 't')
+            : const GitHubContent(downloadUrl: 'https://example.test/w', path: 'wall', sha: 'w'),
+        createRecordWithMetadataForTesting: ({required id, required metadata}) async {
+          expect(id, 'wall-1');
+          submitted = metadata;
+          return wall_store.WallSubmissionResult.submitted;
+        },
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(),
+      ),
+    );
+    await waitForRealIo(
+      tester,
+      () => find.text('Ready to submit').evaluate().isNotEmpty,
+      reason: 'prepare resumed upload',
+    );
+    await tester.ensureVisible(find.text('Use last details'));
+    await tester.tap(find.text('Use last details'));
+    await tester.pump();
+    expect(tester.widget<TextField>(find.widgetWithText(TextField, 'Title')).controller!.text, 'Personal title');
+    expect(
+      tester.widget<TextField>(find.widgetWithText(TextField, 'Description')).controller!.text,
+      'Personal description',
+    );
+    expect(find.text('Fix the border'), findsOneWidget);
+    await tester.ensureVisible(find.text('Upload'));
+    await tester.tap(find.text('Upload'));
+    await waitForRealIo(tester, () => submitted != null, reason: 'submit metadata');
+    await tester.pumpAndSettle();
+    expect(submitted!.title, 'Personal title');
+    expect(submitted!.description, 'Personal description');
+    expect(submitted!.category, 'Nature');
+    expect(submitted!.tags, ['forest']);
+    expect(submitted!.requestId, 'request-1');
+    expect(submitted!.requestText, 'A requested wall');
+    expect(find.text('Retry submit'), findsNothing);
+    expect(find.text('review-stub'), findsOneWidget);
+  });
+
+  testWidgets('response loss preserves operation and file receipts across restart', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    final drafts = _SessionDraftStore();
+    var uploads = 0;
+    var submissions = 0;
+    Widget screen({UploadDraft? resumed}) => UploadWallScreen(
+      image: image,
+      resumedDraft: resumed,
+      resubmission: const ResubmissionSeed(
+        rejectedDocId: 'rejected-1',
+        previousReason: 'Fix border',
+        metadata: SubmissionMetadata(title: 'Dunes'),
+      ),
+      prepareImageForTesting: () async {},
+      draftStoreForTesting: drafts,
+      defaultsStoreForTesting: _Defaults(),
+      uploadFileForTesting: ({required isThumbnail}) async {
+        uploads++;
+        return isThumbnail
+            ? const GitHubContent(downloadUrl: 'https://example.test/t', path: 'thumb', sha: 't')
+            : const GitHubContent(downloadUrl: 'https://example.test/w', path: 'wall', sha: 'w');
+      },
+      createRecordWithMetadataForTesting: ({required id, required metadata}) async {
+        submissions++;
+        if (submissions == 1) throw StateError('response lost');
+        return wall_store.WallSubmissionResult.submitted;
+      },
+    );
+    Future<void> open(Widget child) async {
+      final router = _DirectUploadRouter(child);
+      await tester.pumpWidget(
+        MaterialApp.router(
+          key: UniqueKey(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router.config(),
+        ),
+      );
+    }
+
+    await open(screen());
+    await waitForRealIo(
+      tester,
+      () => find.text('Ready to submit').evaluate().isNotEmpty,
+      reason: 'prepare first attempt',
+    );
+    await tester.tap(find.text('Upload'));
+    await waitForRealIo(tester, () => find.text('Retry submit').evaluate().isNotEmpty, reason: 'first response lost');
+    final saved = drafts.saved!;
+    final first = saved.session!;
+    expect(first.submissionAttempted, isTrue);
+    expect(first.rejectedDocId, 'rejected-1');
+    expect(first.original!.path, 'wall');
+    expect(first.thumbnail!.path, 'thumb');
+    expect(uploads, 2);
+    await open(screen(resumed: saved));
+    await waitForRealIo(
+      tester,
+      () => find.text('Retry submit').evaluate().isNotEmpty,
+      reason: 'restore unresolved attempt',
+    );
+    await tester.ensureVisible(find.text('Retry submit'));
+    await tester.tap(find.text('Retry submit'));
+    await waitForRealIo(tester, () => submissions == 2, reason: 'retry saved attempt');
+    await tester.pumpAndSettle();
+    expect(uploads, 2);
+    final retry = drafts.sessions.last;
+    expect(retry.operationId, first.operationId);
+    expect(retry.logicalId, first.logicalId);
+    expect(retry.rejectedDocId, first.rejectedDocId);
+    expect(retry.original!.sha, first.original!.sha);
+    expect(retry.thumbnail!.sha, first.thumbnail!.sha);
+    expect(find.text('review-stub'), findsOneWidget);
+  });
+
+  testWidgets('identical image bytes use separate drafts for separate rejected submissions', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    final drafts = _RecordingDraftStore();
+    for (final rejectedId in ['rejected-a', 'rejected-b']) {
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: UploadWallScreen(
+            key: ValueKey(rejectedId),
+            image: image,
+            resubmission: ResubmissionSeed(
+              rejectedDocId: rejectedId,
+              previousReason: '',
+              metadata: const SubmissionMetadata(),
+            ),
+            prepareImageForTesting: () async {},
+            draftStoreForTesting: drafts,
+          ),
+        ),
+      );
+      await waitForRealIo(
+        tester,
+        () => drafts.reads.length == (rejectedId == 'rejected-a' ? 1 : 2),
+        reason: 'read lineage-specific draft',
+      );
+      await tester.pump();
+    }
+    expect(drafts.reads[0], isNot(drafts.reads[1]));
+  });
+
+  testWidgets('explicit resumed draft takes precedence over resubmission seed', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    final drafts = _RecordingDraftStore();
+    final resumed = UploadDraft(
+      owner: UploadDraftStore.guestOwner,
+      draftId: 'saved-draft',
+      file: image,
+      metadata: const SubmissionMetadata(title: 'Draft title', description: 'Draft description', tags: ['draft']),
+      session: const UploadSession(
+        operationId: 'saved-operation',
+        logicalId: 'saved-wall',
+        rejectedDocId: 'saved-rejection',
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: UploadWallScreen(
+          image: image,
+          resumedDraft: resumed,
+          resubmission: const ResubmissionSeed(
+            rejectedDocId: 'other-rejection',
+            previousReason: '',
+            metadata: SubmissionMetadata(title: 'Seed title', description: 'Seed description'),
+          ),
+          prepareImageForTesting: () async {},
+          draftStoreForTesting: drafts,
+        ),
+      ),
+    );
+    await waitForRealIo(
+      tester,
+      () => find.text('Ready to submit').evaluate().isNotEmpty,
+      reason: 'resume upload draft',
+    );
+    await tester.ensureVisible(find.widgetWithText(TextField, 'Title'));
+    expect(tester.widget<TextField>(find.widgetWithText(TextField, 'Title')).controller!.text, 'Draft title');
+    expect(
+      tester.widget<TextField>(find.widgetWithText(TextField, 'Description')).controller!.text,
+      'Draft description',
+    );
+    expect(drafts.reads, ['saved-draft']);
+  });
 
   testWidgets('restores a draft and discards only the current owner draft', (tester) async {
     await setViewport(tester);

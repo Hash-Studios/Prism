@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/domain/usecases/wall_metadata_actions.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -90,10 +91,14 @@ class WallMetadataCubit extends Cubit<WallMetadataState> {
     final WallMetadataSnapshot? expected = state.snapshot;
     final PendingWallMetadata? draft = state.draft;
     if (state.busy || state.needsReload || expected == null || draft == null || !state.dirty) return;
-    if (draft.text.title.length > 60 ||
-        draft.text.description.length > 500 ||
-        draft.text.tags.length > 8 ||
-        draft.text.tags.any((tag) => tag.length > 24)) {
+    if (!submissionMetadataIsValid(
+      SubmissionMetadata(
+        title: draft.text.title,
+        description: draft.text.description,
+        category: draft.category,
+        tags: draft.text.tags,
+      ),
+    )) {
       emit(
         WallMetadataState(
           status: WallMetadataStatus.failure,

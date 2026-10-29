@@ -200,6 +200,25 @@ void main() {
     expect((event.hasTitle, event.tagCount, event.category), (true, 2, 'Nature'));
   });
 
+  testWidgets('description and an uncommitted tag reach the submitted metadata', (tester) async {
+    setViewport(tester);
+    SubmissionMetadata? saved;
+    await pumpScreen(
+      tester,
+      await makeImage(tester),
+      save: ({required id, required metadata}) async {
+        saved = metadata;
+        return wall_store.WallSubmissionResult.submitted;
+      },
+    );
+    await tester.enterText(find.widgetWithText(TextField, 'Description'), '  Evening light  ');
+    await tester.enterText(find.widgetWithText(TextField, 'Tags'), '#Dunes');
+    await tester.tap(find.text('Upload'));
+    await tester.pumpAndSettle();
+    expect(saved!.description, 'Evening light');
+    expect(saved!.tags, ['dunes']);
+  });
+
   testWidgets('a tag can be removed and only eight tags are kept', (tester) async {
     setViewport(tester);
     final image = await makeImage(tester);

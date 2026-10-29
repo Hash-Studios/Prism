@@ -161,4 +161,36 @@ void main() {
       ),
     );
   });
+
+  test('the shared validator rejects unsafe text before saving', () async {
+    await cubit.load();
+    cubit.change(const PendingWallMetadata(text: WallTextMetadata(title: 'p0rn')));
+    await cubit.save();
+    expect(cubit.state.failure, WallMetadataFailure.invalid);
+    verifyNever(
+      () => actions.save(
+        any(),
+        any(),
+        expected: any(named: 'expected'),
+        operationId: any(named: 'operationId'),
+      ),
+    );
+  });
+
+  test('character limits count graphemes rather than UTF-16 code units', () async {
+    await cubit.load();
+    final emojiText = PendingWallMetadata(text: WallTextMetadata(title: '🌲' * 60));
+    cubit.change(emojiText);
+    when(
+      () => actions.save(
+        any(),
+        any(),
+        expected: any(named: 'expected'),
+        operationId: any(named: 'operationId'),
+      ),
+    ).thenAnswer((_) async => WallMetadataSnapshot(metadata: emojiText, approved: true, revision: 'rev-2'));
+    await cubit.save();
+    expect(cubit.state.status, WallMetadataStatus.saved);
+    expect(cubit.state.snapshot!.metadata.text.title, emojiText.text.title);
+  });
 }
