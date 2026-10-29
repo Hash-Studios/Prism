@@ -1112,12 +1112,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountReportAProblem => 'Relatar um problema';
 
   @override
-  String accountReportPreviewNotice(String email) {
-    return 'Este relatório inclui a versão do app, o dispositivo e os registros recentes. Ele não contém endereço de e-mail nem tokens de acesso. Leia e compartilhe com $email.';
-  }
-
-  @override
-  String get accountReportProblemSubtitle => 'Compartilhe os registros do app com a equipe do Prism';
+  String get accountReportProblemSubtitle => 'Envie um relatório de bug para a equipe do Prism';
 
   @override
   String get accountReportUser => 'Denunciar usuário';
@@ -1226,9 +1221,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get accountSettings => 'Configurações';
-
-  @override
-  String get accountShare => 'Compartilhar';
 
   @override
   String get accountShareInvite => 'Compartilhar convite';
@@ -3966,6 +3958,62 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get aiLiveActivityOpen => 'Abrir no Prism';
+
+  @override
+  String get aiResultApply => 'Aplicar';
+
+  @override
+  String get aiResultEditPrompt => 'Editar descrição';
+
+  @override
+  String get aiSessionStripLabel => 'Papéis de parede desta sessão';
+
+  @override
+  String aiSessionTake(int index, int count) {
+    final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String indexString = indexNumberFormat.format(index);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Versão $indexString de $countString';
+  }
+
+  @override
+  String get aiFollowUpWatercolour => 'Em aquarela';
+
+  @override
+  String get aiFollowUpNight => 'Versão noturna';
+
+  @override
+  String get aiFollowUpMinimal => 'Mais minimalista';
+
+  @override
+  String get aiFollowUpWarmer => 'Mais quente';
+
+  @override
+  String get aiFollowUpDepth => 'Adicionar profundidade';
+
+  @override
+  String aiFollowUpCostLabel(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'Cada nova versão custa $costString moedas';
+  }
+
+  @override
+  String get aiFollowUpConfirmTitle => 'Criar uma nova versão?';
+
+  @override
+  String aiFollowUpConfirmBody(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'Uma nova versão cria outro papel de parede a partir deste. Cada uma custa $costString moedas.';
+  }
+
+  @override
+  String get aiFollowUpConfirmAction => 'Criar';
 
   @override
   String get economyAiDailyLimit => 'Você atingiu o limite de IA de hoje.';
@@ -11641,6 +11689,82 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallMetadataContextUnavailable => 'Detalhes do reenvio indisponíveis';
+
+  @override
+  String get reportSheetMessage =>
+      'Conte o que deu errado. O Prism nunca adiciona seu e-mail nem tokens de acesso. Confira as capturas de tela antes de enviar.';
+
+  @override
+  String get reportTopicCrashFreeze => 'Falha/travamento';
+
+  @override
+  String get reportTopicWallpaperWontSet => 'O papel de parede não é aplicado';
+
+  @override
+  String get reportTopicLooksBroken => 'Parece quebrado';
+
+  @override
+  String get reportTopicSlow => 'Lento';
+
+  @override
+  String get reportTopicOther => 'Outro';
+
+  @override
+  String get reportNoteHint => 'O que aconteceu? O que você esperava?';
+
+  @override
+  String get reportScreenshotTitle => 'Captura de tela';
+
+  @override
+  String get reportScreenshotEmpty => 'Mostre o que você está vendo.';
+
+  @override
+  String get reportScreenshotAttached => 'Toque para ver. Confira antes de enviar.';
+
+  @override
+  String get reportAddScreenshot => 'Adicionar captura de tela';
+
+  @override
+  String get reportRemoveScreenshot => 'Remover';
+
+  @override
+  String get reportViewScreenshot => 'Ver captura de tela';
+
+  @override
+  String get reportIncludeDiagnostics => 'Incluir informações do dispositivo e registros recentes';
+
+  @override
+  String get reportShowDiagnostics => 'Mostrar o que está incluído';
+
+  @override
+  String get reportHideDiagnostics => 'Ocultar detalhes';
+
+  @override
+  String get reportSend => 'Enviar relatório';
+
+  @override
+  String get reportShareAsFile => 'Compartilhar como arquivo';
+
+  @override
+  String reportSent(String reference) {
+    return 'Obrigado, relatório enviado. Referência $reference';
+  }
+
+  @override
+  String get reportCouldNotSend => 'Não foi possível enviar';
+
+  @override
+  String get reportCouldNotSendBody =>
+      'Verifique sua conexão e tente novamente, ou compartilhe o relatório como arquivo.';
+
+  @override
+  String get reportShareInstead => 'Compartilhar em vez disso';
+
+  @override
+  String get reportShakeToReport => 'Agitar para relatar';
+
+  @override
+  String get reportShakeToReportSubtitle => 'Agite o celular em qualquer tela para relatar um problema';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -12749,12 +12873,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get accountReportAProblem => 'Relatar um problema';
 
   @override
-  String accountReportPreviewNotice(String email) {
-    return 'Este relatório inclui a versão do app, o dispositivo e os registros recentes. Ele não contém endereço de e-mail nem tokens de acesso. Leia e compartilhe com $email.';
-  }
-
-  @override
-  String get accountReportProblemSubtitle => 'Compartilhe os registros do app com a equipe do Prism';
+  String get accountReportProblemSubtitle => 'Envie um relatório de bug para a equipe do Prism';
 
   @override
   String get accountReportUser => 'Denunciar usuário';
@@ -12863,9 +12982,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get accountSettings => 'Configurações';
-
-  @override
-  String get accountShare => 'Compartilhar';
 
   @override
   String get accountShareInvite => 'Compartilhar convite';
@@ -15603,6 +15719,62 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get aiLiveActivityOpen => 'Abrir no Prism';
+
+  @override
+  String get aiResultApply => 'Aplicar';
+
+  @override
+  String get aiResultEditPrompt => 'Editar descrição';
+
+  @override
+  String get aiSessionStripLabel => 'Papéis de parede desta sessão';
+
+  @override
+  String aiSessionTake(int index, int count) {
+    final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String indexString = indexNumberFormat.format(index);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Versão $indexString de $countString';
+  }
+
+  @override
+  String get aiFollowUpWatercolour => 'Em aquarela';
+
+  @override
+  String get aiFollowUpNight => 'Versão noturna';
+
+  @override
+  String get aiFollowUpMinimal => 'Mais minimalista';
+
+  @override
+  String get aiFollowUpWarmer => 'Mais quente';
+
+  @override
+  String get aiFollowUpDepth => 'Adicionar profundidade';
+
+  @override
+  String aiFollowUpCostLabel(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'Cada nova versão custa $costString moedas';
+  }
+
+  @override
+  String get aiFollowUpConfirmTitle => 'Criar uma nova versão?';
+
+  @override
+  String aiFollowUpConfirmBody(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'Uma nova versão cria outro papel de parede a partir deste. Cada uma custa $costString moedas.';
+  }
+
+  @override
+  String get aiFollowUpConfirmAction => 'Criar';
 
   @override
   String get economyAiDailyLimit => 'Você atingiu o limite de IA de hoje.';
@@ -23278,4 +23450,80 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallMetadataContextUnavailable => 'Detalhes do reenvio indisponíveis';
+
+  @override
+  String get reportSheetMessage =>
+      'Conte o que deu errado. O Prism nunca adiciona seu e-mail nem tokens de acesso. Confira as capturas de tela antes de enviar.';
+
+  @override
+  String get reportTopicCrashFreeze => 'Falha/travamento';
+
+  @override
+  String get reportTopicWallpaperWontSet => 'O papel de parede não é aplicado';
+
+  @override
+  String get reportTopicLooksBroken => 'Parece quebrado';
+
+  @override
+  String get reportTopicSlow => 'Lento';
+
+  @override
+  String get reportTopicOther => 'Outro';
+
+  @override
+  String get reportNoteHint => 'O que aconteceu? O que você esperava?';
+
+  @override
+  String get reportScreenshotTitle => 'Captura de tela';
+
+  @override
+  String get reportScreenshotEmpty => 'Mostre o que você está vendo.';
+
+  @override
+  String get reportScreenshotAttached => 'Toque para ver. Confira antes de enviar.';
+
+  @override
+  String get reportAddScreenshot => 'Adicionar captura de tela';
+
+  @override
+  String get reportRemoveScreenshot => 'Remover';
+
+  @override
+  String get reportViewScreenshot => 'Ver captura de tela';
+
+  @override
+  String get reportIncludeDiagnostics => 'Incluir informações do dispositivo e registros recentes';
+
+  @override
+  String get reportShowDiagnostics => 'Mostrar o que está incluído';
+
+  @override
+  String get reportHideDiagnostics => 'Ocultar detalhes';
+
+  @override
+  String get reportSend => 'Enviar relatório';
+
+  @override
+  String get reportShareAsFile => 'Compartilhar como arquivo';
+
+  @override
+  String reportSent(String reference) {
+    return 'Obrigado, relatório enviado. Referência $reference';
+  }
+
+  @override
+  String get reportCouldNotSend => 'Não foi possível enviar';
+
+  @override
+  String get reportCouldNotSendBody =>
+      'Verifique sua conexão e tente novamente, ou compartilhe o relatório como arquivo.';
+
+  @override
+  String get reportShareInstead => 'Compartilhar em vez disso';
+
+  @override
+  String get reportShakeToReport => 'Agitar para relatar';
+
+  @override
+  String get reportShakeToReportSubtitle => 'Agite o celular em qualquer tela para relatar um problema';
 }

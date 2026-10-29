@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/wallpaper/wall_ai_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -16,7 +17,11 @@ WallViewer _viewer({
   bool isPremium = false,
   List<String> premiumCollections = const <String>['space'],
   Set<String> blocked = const <String>{},
-}) => WallViewer(isPremium: isPremium, premiumCollections: premiumCollections, blockedCreatorUids: blocked);
+}) => WallViewer(
+  isPremium: isPremium,
+  premiumCollections: premiumCollections,
+  blockedCreators: KnownBlockedCreators(blocked),
+);
 
 void main() {
   test('cached remix eligibility retains AI source and streak exclusivity', () {
@@ -162,6 +167,23 @@ void main() {
       ];
 
       expect(visibleRemixes(remixes, original: original, viewer: _viewer()).map((wall) => wall.id), ['other-owner']);
+    });
+  });
+
+  group('WallViewer.canFullyView with an unknown block list', () {
+    const WallViewer viewer = WallViewer(
+      isPremium: false,
+      premiumCollections: <String>[],
+      blockedCreators: UnknownBlockedCreators(),
+    );
+
+    test('hides an approved wall that has an author UID', () {
+      expect(viewer.canFullyView(remixWall()), isFalse);
+    });
+
+    test('shows an otherwise identical wall with no author UID or an empty one', () {
+      expect(viewer.canFullyView(remixWall(authorUid: null)), isTrue);
+      expect(viewer.canFullyView(remixWall(authorUid: '')), isTrue);
     });
   });
 

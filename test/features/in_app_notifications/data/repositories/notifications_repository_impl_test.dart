@@ -20,6 +20,7 @@ void main() {
 
     setUp(() {
       directory = Directory.systemTemp.createTempSync('notifications_repository_test');
+      getIt.registerSingleton<UserBlockRepository>(FakeUserBlockRepository.pending()..completeInitial(<String>{}));
       tombstones = NotificationTombstones.withStore(
         DurableJsonStore('notifications_repository_test', directory: directory),
       );
@@ -40,7 +41,7 @@ void main() {
         notification('visible', followerUid: 'visible_uid'),
         notification('legacy-wall', kind: InAppNotificationKind.wallLive),
       ]);
-      getIt.registerSingleton<UserBlockRepository>(blocks);
+      _registerBlocks(blocks);
 
       final repo = NotificationsRepositoryImpl(local, tombstones);
       final result = await repo.fetchNotifications(syncRemote: false);
@@ -50,6 +51,67 @@ void main() {
         'visible',
         'legacy-wall',
       ]);
+    });
+
+    test('an unknown block list fails the fetch and keeps the cached follower notification', () async {
+      final blocks = FakeUserBlockRepository.pending();
+      blocks.timeOutInitialLoad();
+      final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[
+        notification('from-that-uid', followerUid: 'that-uid'),
+      ]);
+      _registerBlocks(blocks);
+
+      final repo = NotificationsRepositoryImpl(local, tombstones);
+      final result = await repo.fetchNotifications(syncRemote: false);
+
+      expect(result.isSuccess, isFalse);
+      expect((await local.readAll()).map((item) => item.id).toList(growable: false), <String>['from-that-uid']);
+    });
+
+    test('a known block list removes the cached follower notification from that uid', () async {
+      final blocks = FakeUserBlockRepository.pending();
+      blocks.completeInitial(<String>{'that-uid'});
+      final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[
+        notification('from-that-uid', followerUid: 'that-uid'),
+      ]);
+      _registerBlocks(blocks);
+
+      final repo = NotificationsRepositoryImpl(local, tombstones);
+      final result = await repo.fetchNotifications(syncRemote: false);
+
+      expect(result.isSuccess, isTrue);
+      expect(result.data, isEmpty);
+      expect((await local.readAll()), isEmpty);
+    });
+
+    test('a write does not return cached follower content while the block list is unknown', () async {
+      final blocks = FakeUserBlockRepository.pending()..timeOutInitialLoad();
+      final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[
+        notification('from-that-uid', followerUid: 'that-uid'),
+      ]);
+      _registerBlocks(blocks);
+      final repo = NotificationsRepositoryImpl(local, tombstones);
+
+      final result = await repo.markAsRead(id: 'from-that-uid');
+
+      expect(result.isSuccess, isFalse);
+      expect((await local.readAll()).single.id, 'from-that-uid');
+    });
+
+    test('a write prunes notifications from newly blocked creators before returning data', () async {
+      final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{'that-uid'});
+      final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[
+        notification('from-that-uid', followerUid: 'that-uid'),
+        notification('visible', followerUid: 'visible-uid'),
+      ]);
+      _registerBlocks(blocks);
+      final repo = NotificationsRepositoryImpl(local, tombstones);
+
+      final result = await repo.markAsRead(id: 'visible');
+
+      expect(result.isSuccess, isTrue);
+      expect(result.data!.map((item) => item.id), <String>['visible']);
+      expect((await local.readAll()).map((item) => item.id), <String>['visible']);
     });
 
     test('lists newest first after every change', () async {
@@ -186,6 +248,11 @@ void main() {
       expect((await repo.restore(items: const <InAppNotificationEntity>[])).failure, isA<ValidationFailure>());
     });
   });
+}
+
+void _registerBlocks(UserBlockRepository blocks) {
+  getIt.unregister<UserBlockRepository>();
+  getIt.registerSingleton<UserBlockRepository>(blocks);
 }
 
 class _FakeNotificationsLocalDataSource extends NotificationsLocalDataSource {

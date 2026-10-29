@@ -15,6 +15,7 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'taste_quiz_source': TasteQuizSource.values.map((value) => value.wireValue).toList(),
   'quiz_side': QuizSide.values.map((value) => value.wireValue).toList(),
   'binary_result': BinaryResultValue.values.map((value) => value.wireValue).toList(),
+  'ai_apply_from': AiApplyFromValue.values.map((value) => value.wireValue).toList(),
   'ai_style_pick_source': AiStylePickSource.values.map((value) => value.wireValue).toList(),
   'rc_or_fallback': RcOrFallbackValue.values.map((value) => value.wireValue).toList(),
   'live_wallpaper_style': LiveWallpaperStyleValue.values.map((value) => value.wireValue).toList(),
@@ -937,6 +938,50 @@ class AiSubmitSuccessEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'generation_id': generationId};
+  }
+}
+
+class AiResultAppliedEvent extends AnalyticsEvent {
+  const AiResultAppliedEvent({required this.platform, required this.from});
+
+  final String platform;
+  final AiApplyFromValue from;
+
+  @override
+  String get eventName => 'ai_result_applied';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'platform': platform, 'from': from.wireValue};
+  }
+}
+
+class AiFollowUpUsedEvent extends AnalyticsEvent {
+  const AiFollowUpUsedEvent({required this.chipId});
+
+  final String chipId;
+
+  @override
+  String get eventName => 'ai_follow_up_used';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'chip_id': chipId};
+  }
+}
+
+class AiStripSwappedEvent extends AnalyticsEvent {
+  const AiStripSwappedEvent({required this.position, required this.count});
+
+  final int position;
+  final int count;
+
+  @override
+  String get eventName => 'ai_strip_swapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'position': position, 'count': count};
   }
 }
 
@@ -2214,30 +2259,71 @@ class PushOpenedEvent extends AnalyticsEvent {
 }
 
 class ReportProblemOpenedEvent extends AnalyticsEvent {
-  const ReportProblemOpenedEvent({required this.source});
+  const ReportProblemOpenedEvent({required this.source, required this.trigger});
 
   final String source;
+  final String trigger;
 
   @override
   String get eventName => 'report_problem_opened';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'source': source};
+    return <String, Object?>{'source': source, 'trigger': trigger};
   }
 }
 
 class ReportProblemSharedEvent extends AnalyticsEvent {
-  const ReportProblemSharedEvent({required this.result});
+  const ReportProblemSharedEvent({
+    required this.result,
+    this.topic,
+    required this.hasScreenshot,
+    required this.trigger,
+  });
 
   final String result;
+  final String? topic;
+  final bool hasScreenshot;
+  final String trigger;
 
   @override
   String get eventName => 'report_problem_shared';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'result': result};
+    return <String, Object?>{
+      'result': result,
+      if (topic != null) 'topic': topic!,
+      'has_screenshot': hasScreenshot ? 1 : 0,
+      'trigger': trigger,
+    };
+  }
+}
+
+class ReportProblemSentEvent extends AnalyticsEvent {
+  const ReportProblemSentEvent({
+    required this.result,
+    required this.topic,
+    required this.hasScreenshot,
+    required this.trigger,
+  });
+
+  final String result;
+  final String topic;
+  final bool hasScreenshot;
+  final String trigger;
+
+  @override
+  String get eventName => 'report_problem_sent';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'result': result,
+      'topic': topic,
+      'has_screenshot': hasScreenshot ? 1 : 0,
+      'trigger': trigger,
+    };
   }
 }
 

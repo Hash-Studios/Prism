@@ -2,6 +2,7 @@ import 'package:Prism/core/firestore/converters/firestore_json_converters.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
@@ -97,7 +98,7 @@ class PrismWallSearch {
         ),
         _ => await _rankedTextMatches(terms, fetchLimit),
       };
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids();
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
       final Map<String, PrismWallpaper> unique = <String, PrismWallpaper>{};
       for (final PrismWallpaper wall in matches) {
         final bool hasColor = colorId == null || (wall.colors?.contains(colorId) ?? false);

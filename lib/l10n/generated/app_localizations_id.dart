@@ -1095,12 +1095,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountReportAProblem => 'Laporkan masalah';
 
   @override
-  String accountReportPreviewNotice(String email) {
-    return 'Laporan ini berisi versi aplikasi, perangkat, dan log terbaru Anda. Tidak ada alamat email atau token masuk. Baca laporan, lalu bagikan kepada $email.';
-  }
-
-  @override
-  String get accountReportProblemSubtitle => 'Bagikan log aplikasi Anda dengan tim Prism';
+  String get accountReportProblemSubtitle => 'Kirim laporan bug ke tim Prism';
 
   @override
   String get accountReportUser => 'Laporkan pengguna';
@@ -1209,9 +1204,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get accountSettings => 'Setelan';
-
-  @override
-  String get accountShare => 'Bagikan';
 
   @override
   String get accountShareInvite => 'Bagikan undangan';
@@ -3910,6 +3902,62 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get aiLiveActivityOpen => 'Buka di Prism';
+
+  @override
+  String get aiResultApply => 'Terapkan';
+
+  @override
+  String get aiResultEditPrompt => 'Edit perintah';
+
+  @override
+  String get aiSessionStripLabel => 'Wallpaper dari sesi ini';
+
+  @override
+  String aiSessionTake(int index, int count) {
+    final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String indexString = indexNumberFormat.format(index);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Versi $indexString dari $countString';
+  }
+
+  @override
+  String get aiFollowUpWatercolour => 'Sebagai cat air';
+
+  @override
+  String get aiFollowUpNight => 'Versi malam';
+
+  @override
+  String get aiFollowUpMinimal => 'Lebih minimalis';
+
+  @override
+  String get aiFollowUpWarmer => 'Lebih hangat';
+
+  @override
+  String get aiFollowUpDepth => 'Tambah kedalaman';
+
+  @override
+  String aiFollowUpCostLabel(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'Setiap versi baru biayanya $costString koin';
+  }
+
+  @override
+  String get aiFollowUpConfirmTitle => 'Buat versi baru?';
+
+  @override
+  String aiFollowUpConfirmBody(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'Versi lanjutan membuat wallpaper baru dari yang ini. Setiap versi biayanya $costString koin.';
+  }
+
+  @override
+  String get aiFollowUpConfirmAction => 'Buat';
 
   @override
   String get economyAiDailyLimit => 'Anda mencapai batas AI hari ini.';
@@ -11360,4 +11408,79 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallMetadataContextUnavailable => 'Detail pengiriman ulang tidak tersedia';
+
+  @override
+  String get reportSheetMessage =>
+      'Ceritakan apa yang salah. Prism tidak pernah menambahkan alamat email atau token masuk Anda. Periksa tangkapan layar sebelum mengirim.';
+
+  @override
+  String get reportTopicCrashFreeze => 'Crash/macet';
+
+  @override
+  String get reportTopicWallpaperWontSet => 'Wallpaper tidak bisa diatur';
+
+  @override
+  String get reportTopicLooksBroken => 'Tampilan rusak';
+
+  @override
+  String get reportTopicSlow => 'Lambat';
+
+  @override
+  String get reportTopicOther => 'Lainnya';
+
+  @override
+  String get reportNoteHint => 'Apa yang terjadi? Apa yang Anda harapkan?';
+
+  @override
+  String get reportScreenshotTitle => 'Tangkapan layar';
+
+  @override
+  String get reportScreenshotEmpty => 'Tunjukkan apa yang Anda lihat.';
+
+  @override
+  String get reportScreenshotAttached => 'Ketuk untuk melihat. Periksa sebelum mengirim.';
+
+  @override
+  String get reportAddScreenshot => 'Tambah tangkapan layar';
+
+  @override
+  String get reportRemoveScreenshot => 'Hapus';
+
+  @override
+  String get reportViewScreenshot => 'Lihat tangkapan layar';
+
+  @override
+  String get reportIncludeDiagnostics => 'Sertakan info perangkat dan log terbaru';
+
+  @override
+  String get reportShowDiagnostics => 'Tampilkan yang disertakan';
+
+  @override
+  String get reportHideDiagnostics => 'Sembunyikan detail';
+
+  @override
+  String get reportSend => 'Kirim laporan';
+
+  @override
+  String get reportShareAsFile => 'Bagikan sebagai file';
+
+  @override
+  String reportSent(String reference) {
+    return 'Terima kasih, laporan terkirim. Referensi $reference';
+  }
+
+  @override
+  String get reportCouldNotSend => 'Tidak dapat mengirim';
+
+  @override
+  String get reportCouldNotSendBody => 'Periksa koneksi Anda lalu coba lagi, atau bagikan laporan sebagai file.';
+
+  @override
+  String get reportShareInstead => 'Bagikan saja';
+
+  @override
+  String get reportShakeToReport => 'Goyang untuk melapor';
+
+  @override
+  String get reportShakeToReportSubtitle => 'Goyangkan ponsel di layar mana pun untuk melaporkan masalah';
 }

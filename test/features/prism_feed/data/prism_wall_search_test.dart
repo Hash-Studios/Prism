@@ -135,6 +135,18 @@ void main() {
 
       expect(walls.map((wall) => wall.id), <String>['two']);
     });
+
+    test('with an unknown block list, a search keeps only the wall without a creator', () async {
+      firestore.onQuery = (spec) => <FakeDocRow>[
+        (id: 'by-creator', data: doc('by-creator', searchTerms: <String>['boat'])..['creatorUid'] = 'creator1'),
+        (id: 'no-creator', data: doc('no-creator', searchTerms: <String>['boat'])..['creatorUid'] = ''),
+      ];
+      search = PrismWallSearch(firestore, FakeUserBlockRepository.pending()..timeOutInitialLoad());
+
+      final walls = await search.search('boat');
+
+      expect(walls.map((wall) => wall.id), <String>['no-creator']);
+    });
   });
 
   group('colour', () {

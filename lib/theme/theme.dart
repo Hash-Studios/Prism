@@ -91,6 +91,21 @@ Color prismSoftInk(ThemeData theme) {
   return reads ? soft : ink;
 }
 
+/// Flutter measures actions unscaled and ignores theme.width when calculating overflow.
+SnackBarThemeData prismSnackBarThemeFor(BuildContext context, SnackBarThemeData base) {
+  final double screenWidth = MediaQuery.sizeOf(context).width;
+  final bool wide = screenWidth > PrismLayout.panelWidth;
+  final EdgeInsets insets = base.insetPadding ?? const EdgeInsets.fromLTRB(15, 5, 15, 10);
+  final double horizontalInset = wide ? (screenWidth - PrismLayout.panelWidth) / 2 : 15;
+  final double fontSize = Theme.of(context).textTheme.labelLarge?.fontSize ?? 14;
+  final double actionScale = MediaQuery.textScalerOf(context).scale(fontSize) / fontSize;
+  return base.copyWith(
+    width: wide ? PrismLayout.panelWidth : null,
+    insetPadding: insets.copyWith(left: horizontalInset, right: horizontalInset),
+    actionOverflowThreshold: (0.25 / actionScale).clamp(0.0, 1.0),
+  );
+}
+
 /// Gives every chip the same look: a pill with a tonal fill of the foreground colour, and the accent fill when
 /// selected. Run it after anything that changes the accent, because it reads the accent from [ThemeData.colorScheme].
 ThemeData withPrismChipTheme(ThemeData base) {

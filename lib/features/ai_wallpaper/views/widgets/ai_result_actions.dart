@@ -4,28 +4,33 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
-/// Under the result: save and try another as buttons, set, share and submit as icons.
+/// The result's actions: Apply as the one primary button, and save, share, submit and try another as icons.
 class AiResultActions extends StatelessWidget {
   const AiResultActions({
     super.key,
-    required this.showSet,
+    required this.showSave,
     required this.showRefine,
     required this.canSubmit,
     required this.sharing,
-    required this.onSet,
+    required this.applying,
+    required this.onApply,
     required this.onSave,
     required this.onShare,
     required this.onRefine,
     required this.onSubmit,
   });
 
-  final bool showSet;
+  /// False on iOS, where Apply already saves to Photos.
+  final bool showSave;
   final bool showRefine;
   final bool canSubmit;
 
   /// True while the share card renders. The share icon shows a spinner and ignores taps.
   final bool sharing;
-  final VoidCallback onSet;
+
+  /// True while Apply gets the wallpaper ready. Apply shows a spinner and ignores taps.
+  final bool applying;
+  final VoidCallback onApply;
   final VoidCallback onSave;
   final VoidCallback onShare;
   final VoidCallback onRefine;
@@ -34,59 +39,93 @@ class AiResultActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
-    return Wrap(
-      spacing: PrismSpace.xs,
-      runSpacing: PrismSpace.xs,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: <Widget>[
-        PrismButton(label: l10n.economyAiSave, onPressed: onSave),
-        if (showRefine)
-          PrismButton(label: l10n.economyAiTryAnother, variant: PrismButtonVariant.tonal, onPressed: onRefine),
-        if (showSet)
-          PrismIconButton(
-            icon: Icons.wallpaper_rounded,
-            tooltip: l10n.economyAiSetAsWallpaper,
-            onPressed: onSet,
-            filled: true,
-          ),
-        Semantics(
-          liveRegion: sharing,
-          label: sharing ? l10n.economyAiPreparingShare : null,
-          child: Stack(
-            alignment: Alignment.center,
-            children: <Widget>[
-              PrismIconButton(
-                icon: Icons.ios_share_rounded,
-                tooltip: l10n.economyAiShare,
-                onPressed: sharing ? null : onShare,
-                filled: true,
-              ),
-              if (sharing)
-                IgnorePointer(
-                  child: SizedBox.square(
-                    dimension: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onSurface),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        if (canSubmit)
-          Semantics(
-            button: true,
-            label: l10n.economyAiSubmitForReview,
-            excludeSemantics: true,
-            onTap: onSubmit,
-            child: PrismIconButton(
-              icon: Icons.upload_rounded,
-              tooltip: l10n.economyAiSubmitForReview,
-              onPressed: onSubmit,
+    final List<Widget> secondary = <Widget>[
+      if (showSave) ...<Widget>[
+        PrismIconButton(icon: Icons.download_rounded, tooltip: l10n.economyAiSave, onPressed: onSave, filled: true),
+        const SizedBox(width: PrismSpace.xs),
+      ],
+      Semantics(
+        liveRegion: sharing,
+        label: sharing ? l10n.economyAiPreparingShare : null,
+        child: Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            PrismIconButton(
+              icon: Icons.ios_share_rounded,
+              tooltip: l10n.economyAiShare,
+              onPressed: sharing ? null : onShare,
               filled: true,
             ),
+            if (sharing)
+              IgnorePointer(
+                child: SizedBox.square(
+                  dimension: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onSurface),
+                ),
+              ),
+          ],
+        ),
+      ),
+      if (canSubmit) ...<Widget>[
+        const SizedBox(width: PrismSpace.xs),
+        Semantics(
+          button: true,
+          label: l10n.economyAiSubmitForReview,
+          excludeSemantics: true,
+          onTap: onSubmit,
+          child: PrismIconButton(
+            icon: Icons.upload_rounded,
+            tooltip: l10n.economyAiSubmitForReview,
+            onPressed: onSubmit,
+            filled: true,
           ),
+        ),
       ],
+      if (showRefine) ...<Widget>[
+        const SizedBox(width: PrismSpace.xs),
+        PrismIconButton(
+          icon: Icons.auto_fix_high_rounded,
+          tooltip: l10n.economyAiTryAnother,
+          onPressed: onRefine,
+          filled: true,
+        ),
+      ],
+    ];
+    final Widget apply = PrismButton(
+      label: l10n.aiResultApply,
+      icon: Icons.wallpaper_rounded,
+      expand: true,
+      loading: applying,
+      onPressed: onApply,
+    );
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints box) {
+        final int icons = 1 + (showSave ? 1 : 0) + (canSubmit ? 1 : 0) + (showRefine ? 1 : 0);
+        final double applyMin = MediaQuery.textScalerOf(context).scale(_applyMinWidth);
+        if (icons * (44 + PrismSpace.xs) + PrismSpace.xs + applyMin <= box.maxWidth) {
+          return Row(
+            children: <Widget>[
+              ...secondary,
+              const SizedBox(width: PrismSpace.sm),
+              Expanded(child: apply),
+            ],
+          );
+        }
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: secondary),
+            const SizedBox(height: PrismSpace.sm),
+            apply,
+          ],
+        );
+      },
     );
   }
+
+  /// Apply's icon, label and padding at 1x text. Narrower than this, Apply takes its own row.
+  static const double _applyMinWidth = 132;
 }
 
 /// Shown when a submission may have gone through but was not confirmed.

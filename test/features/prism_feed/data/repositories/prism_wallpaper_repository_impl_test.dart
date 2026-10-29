@@ -246,6 +246,33 @@ void main() {
       expect((await repo.fetchById('doc-404')).data, isNull);
     });
 
+    test('fetchFeed with an unknown block list is a failure and reads no walls', () async {
+      final firestore = _walls(_buildWallDocs(count: 3));
+      final repo = PrismWallpaperRepositoryImpl(
+        firestore,
+        FakeFeedCacheLocalDataSource(),
+        FakeUserBlockRepository.pending()..timeOutInitialLoad(),
+      );
+
+      final result = await repo.fetchFeed(refresh: true);
+
+      expect(result.isFailure, isTrue);
+      expect(firestore.querySpecs, isEmpty);
+    });
+
+    test('fetchById with an unknown block list hides a wall that has a creator', () async {
+      final repo = PrismWallpaperRepositoryImpl(
+        _walls(_buildWallDocs(count: 1), matchIdField: true),
+        FakeFeedCacheLocalDataSource(),
+        FakeUserBlockRepository.pending()..timeOutInitialLoad(),
+      );
+
+      final result = await repo.fetchById('wall-1');
+
+      expect(result.isFailure, isFalse);
+      expect(result.data, isNull);
+    });
+
     group('failures', () {
       const String offline = '[cloud_firestore/unavailable] The service is currently unavailable.';
 
