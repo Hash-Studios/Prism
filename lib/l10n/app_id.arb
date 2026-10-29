@@ -10100,5 +10100,9 @@
   "settingsSaveViewingHistoryBody": "Menampilkan wallpaper yang Anda buka di Riwayat dan di Beranda. Jika dinonaktifkan, daftar akan dihapus.",
   "@settingsSaveViewingHistoryBody": {
     "description": "Subtitle of the Save viewing history switch."
+  },
+  "historyClearFailed": "Riwayat tidak bisa dihapus. Periksa koneksi Anda lalu coba lagi.",
+  "@historyClearFailed": {
+    "description": "Toast when Clear on the Set and downloaded list cannot reach the account. Nothing was cleared."
   }
 }

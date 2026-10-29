@@ -10163,5 +10163,9 @@
   "settingsSaveViewingHistoryBody": "आपके खोले गए वॉलपेपर इतिहास और होम पर दिखते हैं। इसे बंद करने पर सूची हट जाती है।",
   "@settingsSaveViewingHistoryBody": {
     "description": "Subtitle of the Save viewing history switch."
+  },
+  "historyClearFailed": "इतिहास साफ़ नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
+  "@historyClearFailed": {
+    "description": "Toast when Clear on the Set and downloaded list cannot reach the account. Nothing was cleared."
   }
 }

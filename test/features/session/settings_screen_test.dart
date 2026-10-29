@@ -1148,6 +1148,19 @@ void main() {
       expect(switchOf(tester, 'Save viewing history').value, isTrue);
     });
 
+    testWidgets('Save viewing history follows a change made elsewhere, such as Turn on in History', (tester) async {
+      await pumpSettings(tester);
+      expect(switchOf(tester, 'Save viewing history').value, isTrue);
+
+      await getIt<RecentlyViewedStore>().setEnabled(false);
+      await tester.pump();
+      expect(switchOf(tester, 'Save viewing history').value, isFalse);
+
+      await getIt<RecentlyViewedStore>().setEnabled(true);
+      await tester.pump();
+      expect(switchOf(tester, 'Save viewing history').value, isTrue);
+    });
+
     testWidgets('the cache size counts tinted wallpapers', (tester) async {
       const pathChannel = MethodChannel('plugins.flutter.io/path_provider');
       const downloadsChannel = BasicMessageChannel<Object?>(

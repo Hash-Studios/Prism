@@ -59,7 +59,7 @@ Each item (`AppliedWallpaper`) has: `id`, `source` (`prism`, `wallhaven`, `pexel
 - The **Set again** icon button on a tile opens the set sheet. The sheet always opens, even when a default target is saved. Analytics: `library_history_set_again{provider, target}`. The list reloads after the sheet closes.
 - Opening a tile reloads history when its detail page or download preview returns. Pull to refresh reloads the local history store.
 - Long press a tile to remove it. A snackbar says "Removed from history" and has **Undo**. Screen readers get a "Remove from history" action.
-- **Clear** on **Set and downloaded** opens "Clear history?". **Clear history** confirms. It clears the applied history and the synced history, on the device and in the account. Analytics: `library_history_cleared{count}`.
+- **Clear** on **Set and downloaded** opens "Clear history?". **Clear history** confirms. It clears the applied history and the synced history, on the device and in the account. A signed-in clear reads the account first. When the account cannot be reached (offline), nothing is cleared and a toast says "Couldn't clear history. Check your connection and try again." Analytics: `library_history_cleared{count}`.
 - **Clear** on **Recently viewed** opens "Clear recently viewed?". **Clear recently viewed** confirms. Analytics: `recently_viewed_cleared{count}`.
 - **Cancel** keeps the list in both dialogs.
 - A synced row from another device has no **Set again** button. It has no local file. Tap it to open the detail page, then set it from there.
@@ -101,7 +101,7 @@ Where the app records:
 | Doc fields | `id`, `provider`, `thumb`, `action` (`set` or `download`), `at` (timestamp). The rules refuse all other fields. |
 | Cap | 500 (`syncedHistoryLimit`). When a new write goes over the cap, the client deletes the oldest docs in the same batch. |
 | Device copy | `SettingsLocalDataSource`, key `history.synced.items`. |
-| Restore | Once for each account on each device (`history.synced.restored_for`). It runs at sign-in and at launch for a signed-in user. It reads the newest 500 docs and merges them with the device copy and the applied history. The newest entry of each wallpaper wins. Entries that are only on the device go up to the account. Analytics: `history_restored{count_bucket}` when the account had entries. |
+| Restore | Once for each account on each device (`history.synced.restored_for`). It runs at sign-in and at launch for a signed-in user. It reads all docs of the account (the prune keeps them near 500) and merges them with the device copy and the applied history. The newest entry of each wallpaper wins. Entries that are only on the device go up to the account. Analytics: `history_restored{count_bucket}` when the account had entries. |
 | Sign out | Clears the device copy and the restore flag. The account keeps its history. |
 | Account deletion | `deleteAccount` deletes `usersv2/{uid}/history`. `LocalAccountDataCleaner` clears the device copy. |
 | Offline | A set or download updates the device copy at once. Firestore queues the write. |

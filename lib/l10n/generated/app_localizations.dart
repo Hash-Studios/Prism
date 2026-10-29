@@ -17268,6 +17268,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Shows the wallpapers you open in History and on Home. Turning this off clears the list.'**
   String get settingsSaveViewingHistoryBody;
+
+  /// Toast when Clear on the Set and downloaded list cannot reach the account. Nothing was cleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t clear history. Check your connection and try again.'**
+  String get historyClearFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

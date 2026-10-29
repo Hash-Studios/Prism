@@ -10769,4 +10769,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsSaveViewingHistoryBody =>
       'Shows the wallpapers you open in History and on Home. Turning this off clears the list.';
+
+  @override
+  String get historyClearFailed => 'Couldn\'t clear history. Check your connection and try again.';
 }

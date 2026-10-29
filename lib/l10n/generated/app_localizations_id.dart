@@ -10824,4 +10824,7 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get settingsSaveViewingHistoryBody =>
       'Menampilkan wallpaper yang Anda buka di Riwayat dan di Beranda. Jika dinonaktifkan, daftar akan dihapus.';
+
+  @override
+  String get historyClearFailed => 'Riwayat tidak bisa dihapus. Periksa koneksi Anda lalu coba lagi.';
 }

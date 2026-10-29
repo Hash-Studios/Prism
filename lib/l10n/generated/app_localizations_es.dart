@@ -10908,4 +10908,7 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get settingsSaveViewingHistoryBody =>
       'Muestra los fondos de pantalla que abres en Historial y en Inicio. Si lo desactivas, se borra la lista.';
+
+  @override
+  String get historyClearFailed => 'No se pudo borrar el historial. Revisa tu conexión e inténtalo de nuevo.';
 }

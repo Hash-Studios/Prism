@@ -152,6 +152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _viewedStore.addListener(_onViewedStoreChanged);
     _showAnime = animeEnabledFromCategories(_settingsLocal.get<int>('WHcategories', defaultValue: 100));
     _showSketchy = _settingsLocal.get<int>('WHpurity', defaultValue: 100) == 110;
     final String storedTarget = _settingsLocal.get<String>(PersistenceKeys.defaultApplyTarget, defaultValue: 'ask');
@@ -518,6 +519,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
         },
       ),
   ];
+
+  late final RecentlyViewedStore _viewedStore = getIt<RecentlyViewedStore>();
+
+  @override
+  void dispose() {
+    _viewedStore.removeListener(_onViewedStoreChanged);
+    super.dispose();
+  }
+
+  /// Follows changes made elsewhere, such as Turn on in History.
+  void _onViewedStoreChanged() {
+    if (!mounted || _savingViewingHistory || _saveViewingHistory == _viewedStore.enabled) return;
+    setState(() => _saveViewingHistory = _viewedStore.enabled);
+  }
 
   Future<void> _setViewingHistory(bool value) async {
     final RecentlyViewedStore store = getIt<RecentlyViewedStore>();

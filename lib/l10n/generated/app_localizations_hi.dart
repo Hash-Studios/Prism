@@ -10913,4 +10913,7 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get settingsSaveViewingHistoryBody =>
       'आपके खोले गए वॉलपेपर इतिहास और होम पर दिखते हैं। इसे बंद करने पर सूची हट जाती है।';
+
+  @override
+  String get historyClearFailed => 'इतिहास साफ़ नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
 }

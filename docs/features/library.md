@@ -154,7 +154,9 @@ The History tab has two lists: **Set and downloaded** (iOS: **Downloaded**) and 
 - The **Set again** icon button on a tile opens the set sheet. Analytics: `library_history_set_again{provider, target}`.
 - The list reloads when a tile's detail or download preview returns, and pull to refresh reloads history from local storage.
 - Long press a tile to remove it. A snackbar shows "Removed from history" with **Undo**. Screen readers get a "Remove from history" action.
-- **Clear** in the app bar asks "Clear history?". The **Clear history** button confirms. The text says the wallpapers stay as they are. Analytics: `library_history_cleared{count}`.
+- Each list has its own **Clear** button above the grid. It shows only when the list has items.
+  - **Set and downloaded** asks "Clear history?". The text says the list goes here and in the account, and the wallpapers stay as they are. Analytics: `library_history_cleared{count}`.
+  - **Recently viewed** asks "Clear recently viewed?". Analytics: `recently_viewed_cleared{count}`.
 - Empty state: "No wallpapers yet" with **Browse wallpapers**. The button opens Home.
 
 ### Downloads

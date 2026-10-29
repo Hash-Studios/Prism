@@ -11103,6 +11103,9 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get settingsSaveViewingHistoryBody =>
       'Mostra os papéis de parede que você abre no Histórico e no Início. Desligar isso limpa a lista.';
+
+  @override
+  String get historyClearFailed => 'Não foi possível limpar o histórico. Verifique sua conexão e tente de novo.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -22202,4 +22205,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get settingsSaveViewingHistoryBody =>
       'Mostra os papéis de parede que você abre no Histórico e no Início. Desligar isso limpa a lista.';
+
+  @override
+  String get historyClearFailed => 'Não foi possível limpar o histórico. Verifique sua conexão e tente de novo.';
 }

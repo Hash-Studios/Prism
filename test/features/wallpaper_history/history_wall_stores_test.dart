@@ -296,6 +296,19 @@ void main() {
       expect(store.items(), isEmpty);
     });
 
+    test('an offline clear keeps the device list and the account docs', () async {
+      final SyncedHistoryStore store = SyncedHistoryStore(settings, firestore, ownerId: () => uid);
+      await store.record(_wall('a', _base));
+      await Future<void>.delayed(Duration.zero);
+      firestore.ops.clear();
+      firestore.throwOnQuery = StateError('offline');
+
+      await expectLater(store.clear(), throwsStateError);
+
+      expect(store.items().map((wall) => wall.key), <String>['wallhaven_a']);
+      expect(firestore.ops, isEmpty);
+    });
+
     test('clear supersedes a pending local record without republishing its cache', () async {
       final _GatedSetLocalStore local = _GatedSetLocalStore();
       final SyncedHistoryStore store = SyncedHistoryStore(
@@ -308,6 +321,7 @@ void main() {
       final Future<void> writing = store.record(_wall('pending', _base));
       await Future<void>.delayed(Duration.zero);
       final Future<void> clearing = store.clear();
+      await Future<void>.delayed(Duration.zero);
       expect(store.items(), isEmpty);
       local.gate!.complete();
       await Future.wait(<Future<void>>[writing, clearing]);

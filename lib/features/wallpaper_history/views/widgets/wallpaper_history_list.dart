@@ -15,6 +15,7 @@ import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpap
 import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
 import 'package:Prism/features/wallpaper_history/views/widgets/applied_wallpaper_tile.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -71,7 +72,11 @@ Future<void> confirmClearHistory(BuildContext context, HistorySegment segment) a
     bloc.add(const WallpaperHistoryEvent.viewedCleared());
     unawaited(analytics.track(RecentlyViewedClearedEvent(count: count)));
   } else {
-    bloc.add(const WallpaperHistoryEvent.cleared());
+    final String failed = l10n.historyClearFailed;
+    if (!await bloc.clearSetAndDownloaded()) {
+      toasts.error(failed);
+      return;
+    }
     unawaited(analytics.track(LibraryHistoryClearedEvent(count: count)));
   }
 }

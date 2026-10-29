@@ -188,25 +188,29 @@ class SyncedHistoryStore extends ChangeNotifier {
   }
 
   /// Clears the list here and every doc in the account.
+  /// Clears the list here and every doc in the account. A signed-in clear reads the account first, so an offline
+  /// clear throws and keeps both copies instead of leaving account docs that come back on another phone.
   Future<void> clear() async {
-    _mutationVersion++;
     final String uid = _ownerId();
     final int epoch = _accountEpoch;
+    final List<String> keys = uid.isEmpty
+        ? const <String>[]
+        : await _firestore
+              .query<String>(
+                FirestoreQuerySpec(
+                  collection: collectionFor(uid),
+                  sourceTag: 'wallpaper_history.synced.clear.list',
+                  cachePolicy: FirestoreCachePolicy.serverOnly,
+                ),
+                (_, docId) => docId,
+              )
+              .timeout(_networkTimeout);
+    if (uid.isNotEmpty && !_current(uid, epoch)) return;
+    _mutationVersion++;
     await _list.clear();
     notifyListeners();
-    if (uid.isEmpty || !_current(uid, epoch)) return;
-    final List<String> keys = await _firestore
-        .query<String>(
-          FirestoreQuerySpec(
-            collection: collectionFor(uid),
-            sourceTag: 'wallpaper_history.synced.clear.list',
-            cachePolicy: FirestoreCachePolicy.serverOnly,
-          ),
-          (_, docId) => docId,
-        )
-        .timeout(_networkTimeout);
-    if (!_current(uid, epoch)) return;
-    await _write(uid, epoch: epoch, deletes: keys, sourceTag: 'wallpaper_history.synced.clear');
+    if (uid.isEmpty) return;
+    _send(uid, epoch: epoch, deletes: keys, sourceTag: 'wallpaper_history.synced.clear');
   }
 
   /// Forgets the device copy only, as on sign-out. The account keeps its history.

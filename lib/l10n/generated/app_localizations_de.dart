@@ -10928,4 +10928,8 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get settingsSaveViewingHistoryBody =>
       'Zeigt die Hintergrundbilder, die du öffnest, im Verlauf und auf der Startseite. Wenn du das ausschaltest, wird die Liste gelöscht.';
+
+  @override
+  String get historyClearFailed =>
+      'Der Verlauf konnte nicht gelöscht werden. Prüfe deine Verbindung und versuche es erneut.';
 }

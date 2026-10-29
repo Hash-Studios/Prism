@@ -1,4 +1,5 @@
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart';
@@ -12,6 +13,15 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/in_memory_local_store.dart';
 
 class _Firestore extends Fake implements FirestoreClient {}
+
+class _OfflineFirestore extends Fake implements FirestoreClient {
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) =>
+      Future<List<T>>.error(StateError('offline'));
+
+  @override
+  Future<void> runBatch(Future<void> Function(FirestoreBatch batch) action, {required String sourceTag}) async {}
+}
 
 AppliedWallpaper _item(String id, DateTime at) => AppliedWallpaper(
   id: id,
@@ -54,6 +64,19 @@ void main() {
     store = WallpaperHistoryStore(settings);
     synced = SyncedHistoryStore(settings, _Firestore(), ownerId: () => '');
     viewed = RecentlyViewedStore(settings);
+  });
+
+  test('an offline clear keeps both lists and reports the failure', () async {
+    final SyncedHistoryStore online = SyncedHistoryStore(settings, _OfflineFirestore(), ownerId: () => 'u1');
+    await store.record(_localSet('p1', DateTime.utc(2026, 10, 20, 8)));
+    await online.record(_synced(WallpaperSource.wallhaven, 'w1', DateTime.utc(2026, 10, 20, 9)));
+    final WallpaperHistoryBloc bloc = WallpaperHistoryBloc(store, online, viewed);
+    addTearDown(bloc.close);
+
+    expect(await bloc.clearSetAndDownloaded(), isFalse);
+
+    expect(store.items().map((item) => item.id), <String>['p1']);
+    expect(online.items().map((wall) => wall.key), <String>['wallhaven_w1']);
   });
 
   test('starts with no items', () {

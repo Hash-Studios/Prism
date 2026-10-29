@@ -2855,5 +2855,6 @@
   "pickUpTitle": "Continue de onde parou",
   "pickUpTileLabel": "Abrir papel de parede {index} de {count}",
   "settingsSaveViewingHistory": "Salvar histórico de visualização",
-  "settingsSaveViewingHistoryBody": "Mostra os papéis de parede que você abre no Histórico e no Início. Desligar isso limpa a lista."
+  "settingsSaveViewingHistoryBody": "Mostra os papéis de parede que você abre no Histórico e no Início. Desligar isso limpa a lista.",
+  "historyClearFailed": "Não foi possível limpar o histórico. Verifique sua conexão e tente de novo."
 }

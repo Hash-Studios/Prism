@@ -2855,5 +2855,6 @@
   "pickUpTitle": "Retoma donde lo dejaste",
   "pickUpTileLabel": "Abrir fondo de pantalla {index} de {count}",
   "settingsSaveViewingHistory": "Guardar historial de visualización",
-  "settingsSaveViewingHistoryBody": "Muestra los fondos de pantalla que abres en Historial y en Inicio. Si lo desactivas, se borra la lista."
+  "settingsSaveViewingHistoryBody": "Muestra los fondos de pantalla que abres en Historial y en Inicio. Si lo desactivas, se borra la lista.",
+  "historyClearFailed": "No se pudo borrar el historial. Revisa tu conexión e inténtalo de nuevo."
 }

@@ -80,15 +80,24 @@ class WallpaperHistoryBloc extends Bloc<WallpaperHistoryEvent, WallpaperHistoryS
   }
 
   Future<void> _onCleared(_Cleared event, Emitter<WallpaperHistoryState> emit) async {
-    _removedSynced.clear();
-    _removedSessions.clear();
-    await _store.clear();
+    await clearSetAndDownloaded();
+    emit(_read());
+  }
+
+  /// Clears the account history first, then the sets on this device. False when the account could not be reached;
+  /// both lists stay as they were.
+  Future<bool> clearSetAndDownloaded() async {
     try {
       await _synced.clear();
     } catch (error, stackTrace) {
       logger.w('Account history clear did not reach the server.', error: error, stackTrace: stackTrace);
+      return false;
     }
-    emit(_read());
+    _removedSynced.clear();
+    _removedSessions.clear();
+    await _store.clear();
+    if (!isClosed) add(const WallpaperHistoryEvent.started());
+    return true;
   }
 
   Future<void> _onViewedCleared(_ViewedCleared event, Emitter<WallpaperHistoryState> emit) async {

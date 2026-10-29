@@ -10163,5 +10163,9 @@
   "settingsSaveViewingHistoryBody": "Shows the wallpapers you open in History and on Home. Turning this off clears the list.",
   "@settingsSaveViewingHistoryBody": {
     "description": "Subtitle of the Save viewing history switch."
+  },
+  "historyClearFailed": "Couldn't clear history. Check your connection and try again.",
+  "@historyClearFailed": {
+    "description": "Toast when Clear on the Set and downloaded list cannot reach the account. Nothing was cleared."
   }
 }
