@@ -19,6 +19,7 @@ import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_scr
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -28,14 +29,14 @@ import '../../../../support/in_memory_local_store.dart';
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
 
-FeedItemEntity _wall({int? width, int? height}) => FeedItemEntity.pexels(
-  id: 'pexels-1',
+FeedItemEntity _wall({String id = 'pexels-1', int? width, int? height}) => FeedItemEntity.pexels(
+  id: id,
   wallpaper: PexelsWallpaper(
     core: WallpaperCore(
-      id: 'pexels-1',
+      id: id,
       source: WallpaperSource.pexels,
-      fullUrl: 'https://images.example/full.jpg',
-      thumbnailUrl: 'https://images.example/thumb.jpg',
+      fullUrl: 'https://images.example/$id.jpg',
+      thumbnailUrl: 'https://images.example/$id-thumb.jpg',
       width: width,
       height: height,
     ),
@@ -73,7 +74,10 @@ void main() {
     FeedItemEntity? entity,
     File? localFile,
     bool disableAnimations = false,
+    ValueNotifier<bool>? motionPreference,
   }) async {
+    final ValueNotifier<bool> motion = motionPreference ?? ValueNotifier<bool>(disableAnimations);
+    if (motionPreference == null) addTearDown(motion.dispose);
     final StreamController<WallpaperDetailState> states = StreamController<WallpaperDetailState>();
     addTearDown(states.close);
     final bloc = _MockWallpaperDetailBloc();
@@ -82,9 +86,15 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(disableAnimations: disableAnimations),
-          child: child!,
+        builder: (context, child) => ValueListenableBuilder<bool>(
+          valueListenable: motion,
+          builder: (context, disable, _) => favouriteTestBuilder(
+            context,
+            MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: disable),
+              child: child!,
+            ),
+          ),
         ),
         home: BlocProvider<WallpaperDetailBloc>.value(
           value: bloc,
@@ -114,6 +124,9 @@ void main() {
     final Size midway = card(tester);
     expect(_aspect(midway), greaterThan(_aspect(opened)));
     expect(_aspect(midway), lessThan(16 / 9 - 0.01));
+    final Rect imageRect = tester.getRect(find.byType(WallpaperDetailHero));
+    final Rect backRect = tester.getRect(find.byTooltip('Back'));
+    expect(backRect.left, closeTo(imageRect.left + 4, 1));
 
     await tester.pump(const Duration(milliseconds: 400));
     expect(_aspect(card(tester)), closeTo(16 / 9, 0.01));
@@ -179,5 +192,101 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(card(tester), opened);
+  });
+
+  testWidgets('status bar fade follows the visible card while its shape eases', (tester) async {
+    final FeedItemEntity sizeless = _wall();
+    final List<FeedItemEntity> recommendations = <FeedItemEntity>[
+      for (var i = 0; i < 12; i++) _wall(id: 'recommendation-$i', width: 900, height: 1600),
+    ];
+    final RecommendationState recommendationState = RecommendationState(
+      items: recommendations,
+      status: RecommendationStatus.ready,
+    );
+    final StreamController<WallpaperDetailState> states = await pumpDetail(
+      tester,
+      initial: WallpaperDetailLoaded(
+        recommendations: recommendationState,
+        entity: sizeless,
+        paletteLoading: false,
+        accent: Colors.black,
+      ),
+    );
+    final ScrollPosition position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+    expect(position.maxScrollExtent, greaterThan(370));
+    position.jumpTo(370);
+    await tester.pump();
+
+    states.add(
+      WallpaperDetailLoaded(
+        entity: _wall(width: 1600, height: 900),
+        paletteLoading: false,
+        accent: Colors.black,
+        recommendations: recommendationState,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(card(tester).height, greaterThan(position.pixels));
+
+    final AnimatedOpacity fade = tester.widget<AnimatedOpacity>(
+      find.byKey(const ValueKey<String>('detail-status-fade')),
+    );
+    expect(fade.opacity, 0, reason: 'the card still extends below the status bar during its shape morph');
+    SystemUiOverlayStyle overlay() =>
+        tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(find.byType(AnnotatedRegion<SystemUiOverlayStyle>)).value;
+    expect(overlay().statusBarIconBrightness, Brightness.light);
+
+    await tester.pump(const Duration(milliseconds: 400));
+    final AnimatedOpacity settledFade = tester.widget<AnimatedOpacity>(
+      find.byKey(const ValueKey<String>('detail-status-fade')),
+    );
+    expect(settledFade.opacity, 1, reason: 'the feed is below the now-shorter card');
+    expect(overlay().statusBarIconBrightness, Brightness.dark);
+  });
+
+  testWidgets('a viewport resize eases from the card size already on screen', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final FeedItemEntity landscape = _wall(width: 1600, height: 900);
+    await pumpDetail(
+      tester,
+      initial: WallpaperDetailLoaded(entity: landscape, paletteLoading: false),
+      entity: landscape,
+    );
+    final Size opened = card(tester);
+
+    tester.view.physicalSize = const Size(800, 600);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    final Size midway = card(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+    final Size settled = card(tester);
+
+    expect(midway.width, greaterThan(opened.width));
+    expect(midway.width, lessThan(settled.width));
+    expect(settled.width, greaterThan(opened.width));
+  });
+
+  testWidgets('turning reduce motion on mid-morph takes the current target at once', (tester) async {
+    final ValueNotifier<bool> motionPreference = ValueNotifier<bool>(false);
+    addTearDown(motionPreference.dispose);
+    final StreamController<WallpaperDetailState> states = await pumpDetail(
+      tester,
+      initial: const WallpaperDetailLoading(),
+      motionPreference: motionPreference,
+    );
+    states.add(WallpaperDetailLoaded(entity: _wall(width: 1600, height: 900), paletteLoading: false));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(_aspect(card(tester)), lessThan(16 / 9 - 0.01));
+
+    motionPreference.value = true;
+    await tester.pump();
+    await tester.pump();
+
+    expect(_aspect(card(tester)), closeTo(16 / 9, 0.01));
+    expect(tester.takeException(), isNull);
   });
 }

@@ -86,6 +86,7 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
     if (!sameWall || now.withheld) {
       _shown = false;
       _clearPaintedImages();
+      _reportedSize = null;
     }
     _failed = false;
     _attempt = 0;
@@ -224,6 +225,7 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
       _shown = false;
       _attempt = 0;
       _retries++;
+      _reportedSize = null;
       _resolve();
     });
   }

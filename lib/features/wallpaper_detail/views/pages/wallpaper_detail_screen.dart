@@ -355,6 +355,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   /// The set or save button of the phone preview. The action bar rebuilds it, so it always has the current tint.
   /// The Set button in the action bar. On Android the phone preview opens its Set screen.
   final GlobalKey<SetWallpaperButtonState> _setButtonKey = GlobalKey<SetWallpaperButtonState>();
+  final GlobalKey _cardHeroKey = GlobalKey();
 
   /// iOS only: builds Save to Photos for the phone preview.
   Widget Function(String label)? _saveAction;
@@ -395,6 +396,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   late final AnimationController _shapeMorph = AnimationController(vsync: this, value: 1);
   Size? _morphFrom;
   Size? _cardTarget;
+  Size? _deferredCardTarget;
+  bool _morphPaused = false;
+  Animation<double>? _routeAnimation;
   final Object _recommendationHeroScope = Object();
 
   /// Scroll offsets between which the card is under the status bar icons. Past the end the rows and the feed are under
@@ -403,6 +407,29 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   double _imageStatusEnd = double.infinity;
   bool _imageBehindStatusBar = false;
   bool _feedBehindStatusBar = false;
+
+  void _onRouteAnimationStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed) {
+      _pauseShapeMorph();
+      return;
+    }
+    if (!mounted) return;
+    final Size? deferredTarget = _deferredCardTarget;
+    if (deferredTarget != null) {
+      _deferredCardTarget = null;
+      setState(() => _setCardTarget(deferredTarget));
+    } else if (_morphPaused && _cardTarget != null) {
+      final Size target = _cardTarget!;
+      final Size shown = _cardShown;
+      setState(() => _startShapeMorph(shown, target));
+    }
+  }
+
+  void _pauseShapeMorph() {
+    if (!_shapeMorph.isAnimating) return;
+    _shapeMorph.stop(canceled: false);
+    _morphPaused = true;
+  }
 
   bool _imageUnderStatusBar(double offset) => offset > _imageStatusStart && offset < _imageStatusEnd;
 
@@ -533,6 +560,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final Animation<double>? animation = ModalRoute.of(context)?.animation;
+    if (!identical(animation, _routeAnimation)) {
+      _routeAnimation?.removeStatusListener(_onRouteAnimationStatus);
+      _routeAnimation = animation;
+      _routeAnimation?.addStatusListener(_onRouteAnimationStatus);
+    }
     // A neighbour shown during a drag shows its tile picture and loads only when the feed settles on it.
     if (!_loaded && (_FeedStep.maybeOf(context)?.active ?? true)) {
       _loaded = true;
@@ -542,6 +575,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   @override
   void dispose() {
+    _routeAnimation?.removeStatusListener(_onRouteAnimationStatus);
     _shapeMorph.dispose();
     _shake.dispose();
     _scroll.dispose();
@@ -611,6 +645,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       (state is WallpaperDetailLoading ? state.thumbnailUrl : widget.thumbnailUrl) ?? widget.entity?.thumbnailUrl ?? '',
     );
     final Size card = _cardSize(context, widget.entity?.wallpaperCore);
+    _setCardTarget(card);
     final Widget image;
     if (localFile != null) {
       image = ProgressiveWallpaperImage(
@@ -629,28 +664,26 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     } else {
       image = GlintState(kind: GlintStateKind.loading, title: context.l10n.wallpaperLoadingWallpaper);
     }
-    return Scaffold(
-      body: Stack(
-        children: [
-          SafeArea(
-            top: false,
-            bottom: false,
-            // Scrolls rather than overflowing a short or split-screen window.
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(_cardInset, _statusInset(context), _cardInset, 0),
-                    child: _shapedCard(card, _withHero(image)),
-                  ),
-                  _panelColumn(_buildPendingDetails()),
-                ],
-              ),
+    final Widget content = SafeArea(
+      top: false,
+      bottom: false,
+      // Scrolls rather than overflowing a short or split-screen window.
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(_cardInset, _statusInset(context), _cardInset, 0),
+              child: _shapedCard(_withHero(image)),
             ),
-          ),
-          ..._pinnedChrome(state, card),
-        ],
+            _panelColumn(_buildPendingDetails()),
+          ],
+        ),
       ),
+    );
+    return AnimatedBuilder(
+      animation: _shapeMorph,
+      child: content,
+      builder: (context, child) => Scaffold(body: Stack(children: [child!, ..._pinnedChrome(state, _cardShown)])),
     );
   }
 
@@ -713,7 +746,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     }
     return HeroMode(
       enabled: !context.reduceMotion,
-      child: WallpaperDetailHero(tag: widget.heroTag!, radius: _cardRadius, image: image),
+      child: WallpaperDetailHero(key: _cardHeroKey, tag: widget.heroTag!, radius: _cardRadius, image: image),
     );
   }
 
@@ -769,20 +802,28 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final _FeedStep? feed = _FeedStep.maybeOf(context);
     final theme = Theme.of(context);
     final Size card = _cardSize(context, state.entity.wallpaperCore);
+    _setCardTarget(card);
     final double statusInset = _statusInset(context);
-    // The status bar icons sit about half way down the inset. The card is under them from when its top edge passes
-    // them until its bottom edge does.
-    _imageStatusStart = statusInset / 2;
-    _imageStatusEnd = card.height + statusInset / 2;
-    _imageBehindStatusBar = _scroll.hasClients && _imageUnderStatusBar(_scroll.offset);
-    _feedBehindStatusBar = _scroll.hasClients && _scroll.offset >= _imageStatusEnd;
-    final chromeBackground = _imageBehindStatusBar
-        ? (state.paletteLoading ? theme.primaryColor : state.accent ?? theme.scaffoldBackgroundColor)
-        : theme.scaffoldBackgroundColor;
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: edgeToEdgeOverlayStyle(
-        statusBarIconBrightness: onColor(chromeBackground) == Colors.black ? Brightness.dark : Brightness.light,
-      ),
+    return AnimatedBuilder(
+      animation: _shapeMorph,
+      builder: (context, child) {
+        final Size shownCard = _cardShown;
+        // The status-bar icons sit about half way down the inset. The card is under them from when its top edge
+        // passes them until its bottom edge does. These thresholds follow the visible card through its morph.
+        _imageStatusStart = statusInset / 2;
+        _imageStatusEnd = shownCard.height + statusInset / 2;
+        _imageBehindStatusBar = _scroll.hasClients && _imageUnderStatusBar(_scroll.offset);
+        _feedBehindStatusBar = _scroll.hasClients && _scroll.offset >= _imageStatusEnd;
+        final chromeBackground = _imageBehindStatusBar
+            ? (state.paletteLoading ? theme.primaryColor : state.accent ?? theme.scaffoldBackgroundColor)
+            : theme.scaffoldBackgroundColor;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: edgeToEdgeOverlayStyle(
+            statusBarIconBrightness: onColor(chromeBackground) == Colors.black ? Brightness.dark : Brightness.light,
+          ),
+          child: child!,
+        );
+      },
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         body: Stack(
@@ -813,7 +854,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                             child: Align(
                               alignment: Alignment.topCenter,
                               child: _shapedCard(
-                                card,
                                 _buildImageBody(
                                   context,
                                   state.paletteLoading,
@@ -887,55 +927,70 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 ),
               ),
             ),
-            if (canonicalLoading && feed != null) _feedSwipeOverlay(feed, card, statusInset),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: statusInset + PrismSpace.sm,
-              child: IgnorePointer(
-                child: AnimatedOpacity(
-                  key: const ValueKey<String>('detail-status-fade'),
-                  opacity: _feedBehindStatusBar ? 1 : 0,
-                  duration: context.motion(PrismDurations.fast),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        stops: const [0.6, 1],
-                        colors: [theme.scaffoldBackgroundColor, theme.scaffoldBackgroundColor.withValues(alpha: 0)],
+            if (canonicalLoading && feed != null)
+              AnimatedBuilder(
+                animation: _shapeMorph,
+                builder: (context, _) => _feedSwipeOverlay(feed, _cardShown, statusInset),
+              ),
+            AnimatedBuilder(
+              animation: _shapeMorph,
+              builder: (context, _) {
+                final bool feedBehind = _scroll.hasClients && _scroll.offset >= _cardShown.height + statusInset / 2;
+                return Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: statusInset + PrismSpace.sm,
+                  child: IgnorePointer(
+                    child: AnimatedOpacity(
+                      key: const ValueKey<String>('detail-status-fade'),
+                      opacity: feedBehind ? 1 : 0,
+                      duration: context.motion(PrismDurations.fast),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: const [0.6, 1],
+                            colors: [theme.scaffoldBackgroundColor, theme.scaffoldBackgroundColor.withValues(alpha: 0)],
+                          ),
+                        ),
                       ),
                     ),
                   ),
+                );
+              },
+            ),
+            AnimatedBuilder(
+              animation: _shapeMorph,
+              builder: (context, _) => Stack(
+                children: _pinnedChrome(
+                  state,
+                  _cardShown,
+                  onClock: canonicalLoading
+                      ? null
+                      : () {
+                          final entity = state.entity;
+                          _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
+                          if (!hideSetWallpaperUi) {
+                            unawaited(_setButtonKey.currentState?.openSetScreen(entryPoint: 'wallpaper_preview'));
+                            return;
+                          }
+                          final display = WallpaperDisplaySource.of(entity);
+                          pushClockPreview(
+                            context,
+                            link: widget.localFile?.path ?? display.bestLink,
+                            file: widget.localFile != null,
+                            wallpaperId: entity.id,
+                            wallpaperSource: entity.source,
+                            thumbnailUrl: display.thumbnail,
+                            tint: state.tint,
+                            saveAction: _saveAction,
+                            spatialMapUrl: spatialOf(entity)?.mapUrl,
+                          );
+                        },
                 ),
               ),
-            ),
-            ..._pinnedChrome(
-              state,
-              card,
-              onClock: canonicalLoading
-                  ? null
-                  : () {
-                      final entity = state.entity;
-                      _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
-                      if (!hideSetWallpaperUi) {
-                        unawaited(_setButtonKey.currentState?.openSetScreen(entryPoint: 'wallpaper_preview'));
-                        return;
-                      }
-                      final display = WallpaperDisplaySource.of(entity);
-                      pushClockPreview(
-                        context,
-                        link: widget.localFile?.path ?? display.bestLink,
-                        file: widget.localFile != null,
-                        wallpaperId: entity.id,
-                        wallpaperSource: entity.source,
-                        thumbnailUrl: display.thumbnail,
-                        tint: state.tint,
-                        saveAction: _saveAction,
-                        spatialMapUrl: spatialOf(entity)?.mapUrl,
-                      );
-                    },
             ),
           ],
         ),
@@ -1015,27 +1070,52 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Size get _cardShown {
     final Size? from = _morphFrom;
     final Size target = _cardTarget!;
-    if (from == null) return target;
-    return Size.lerp(from, target, PrismCurves.move.transform(_shapeMorph.value))!;
+    final Size size = from == null ? target : Size.lerp(from, target, PrismCurves.move.transform(_shapeMorph.value))!;
+    final double maxWidth = min(_availableCardWidth(context), PrismLayout.panelWidth);
+    return Size(min(size.width, maxWidth), size.height);
   }
 
-  /// The card box at [target]. When the target changes after the card first showed, the box eases to it from where
-  /// it is. The page under it follows, as it lays out after the card.
-  Widget _shapedCard(Size target, Widget child) {
+  void _setCardTarget(Size target) {
     final Size? previous = _cardTarget;
-    if (previous != target) {
-      final Size? shown = previous == null ? null : _cardShown;
-      _cardTarget = target;
-      _morphFrom = shown;
-      if (shown == null || context.reduceMotion) {
+    if (previous == target) {
+      if (context.reduceMotion && _morphFrom != null) {
+        _shapeMorph.stop(canceled: false);
         _morphFrom = null;
         _shapeMorph.value = 1;
-      } else {
-        _shapeMorph
-          ..duration = PrismDurations.slow
-          ..forward(from: 0);
       }
+      return;
     }
+
+    final AnimationStatus routeStatus = _routeAnimation?.status ?? AnimationStatus.completed;
+    if (previous != null &&
+        !context.reduceMotion &&
+        (routeStatus == AnimationStatus.forward || routeStatus == AnimationStatus.reverse)) {
+      _deferredCardTarget = target;
+      _pauseShapeMorph();
+      return;
+    }
+
+    final Size? shown = previous == null ? null : _cardShown;
+    _startShapeMorph(shown, target);
+  }
+
+  void _startShapeMorph(Size? from, Size target) {
+    _cardTarget = target;
+    _deferredCardTarget = null;
+    _morphPaused = false;
+    if (from == null || context.reduceMotion) {
+      _morphFrom = null;
+      _shapeMorph.value = 1;
+    } else {
+      _morphFrom = from;
+      _shapeMorph
+        ..duration = PrismDurations.slow
+        ..forward(from: 0);
+    }
+  }
+
+  /// The card box at its shown size. The page under it follows as the card eases to its new shape.
+  Widget _shapedCard(Widget child) {
     return AnimatedBuilder(
       animation: _shapeMorph,
       builder: (context, child) => SizedBox.fromSize(size: _cardShown, child: child),
