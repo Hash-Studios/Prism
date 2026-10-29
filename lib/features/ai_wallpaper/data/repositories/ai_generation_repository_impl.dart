@@ -7,6 +7,7 @@ import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
@@ -61,7 +62,12 @@ class AiGenerationRepositoryImpl {
   final Map<String, int> _ownerGenerations = <String, int>{};
   final Map<String, Future<void>> _ownerWriteTails = <String, Future<void>>{};
 
-  FirebaseAuth get _auth => _authOverride ?? FirebaseAuth.instance;
+  User? get _currentUser {
+    final FirebaseAuth? override = _authOverride;
+    if (override != null) return override.currentUser;
+    if (!FirebaseInit.hasDefaultApp) return null;
+    return FirebaseAuth.instance.currentUser;
+  }
 
   int _generationFor(String userId) => _ownerGenerations[userId] ?? 0;
 
@@ -77,7 +83,7 @@ class AiGenerationRepositoryImpl {
   }
 
   User _requireUser() {
-    final user = _auth.currentUser;
+    final user = _currentUser;
     if (user == null) {
       throw AiGenerationApiException(
         message: 'Please sign in to generate wallpapers.',
@@ -394,7 +400,7 @@ class AiGenerationRepositoryImpl {
   }
 
   Future<Map<String, dynamic>> _post(String path, Map<String, dynamic> body, {bool retryOnTimeout = false}) async {
-    final token = await _auth.currentUser?.getIdToken();
+    final token = await _currentUser?.getIdToken();
     if (token == null || token.trim().isEmpty) {
       throw AiGenerationApiException(message: 'Please sign in to continue.', code: 'unauthorized', statusCode: 401);
     }

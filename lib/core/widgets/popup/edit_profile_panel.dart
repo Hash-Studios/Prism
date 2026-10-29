@@ -11,6 +11,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/profile/profile_link_type_label.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
@@ -36,7 +37,8 @@ String uploadFileName(String uid, String basename, {int? epochMs}) =>
 
 /// The photo on the signed-in Firebase user. Google sign-in keeps it equal to the Google account photo.
 @visibleForTesting
-String? Function() signedInAccountPhoto = () => FirebaseAuth.instance.currentUser?.photoURL;
+String? Function() signedInAccountPhoto = () =>
+    FirebaseInit.hasDefaultApp ? FirebaseAuth.instance.currentUser?.photoURL : null;
 
 @RoutePage(name: 'EditProfilePanelRoute')
 class EditProfilePanel extends StatefulWidget {

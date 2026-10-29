@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
@@ -77,21 +79,25 @@ class _AutoRotateSessionListenerState extends State<AutoRotateSessionListener> w
         BlocListener<AutoRotateBloc, AutoRotateState>(
           listenWhen: (previous, current) => !previous.proLapsed && current.proLapsed,
           listener: (context, state) {
-            toasts.info(context.l10n.wallpaperAutoRotateOffEnded);
-            context.read<AutoRotateBloc>().add(const AutoRotateEvent.proLapseAcknowledged());
+            _announce(
+              context,
+              (AppLocalizations messages) => messages.wallpaperAutoRotateOffEnded,
+              const AutoRotateEvent.proLapseAcknowledged(),
+            );
           },
         ),
         BlocListener<AutoRotateBloc, AutoRotateState>(
           listenWhen: (previous, current) => previous.folderStop == null && current.folderStop != null,
           listener: (context, state) {
             final AutoRotateFolderStop stop = state.folderStop!;
-            toasts.info(switch (stop.reason) {
-              AutoRotateStopReason.folderDeleted => context.l10n.wallpaperAutoRotateStoppedFolderDeleted(
-                stop.folderName,
-              ),
-              AutoRotateStopReason.folderEmpty => context.l10n.wallpaperAutoRotateStoppedFolderEmpty(stop.folderName),
-            });
-            context.read<AutoRotateBloc>().add(const AutoRotateEvent.folderStopAcknowledged());
+            _announce(
+              context,
+              (AppLocalizations messages) => switch (stop.reason) {
+                AutoRotateStopReason.folderDeleted => messages.wallpaperAutoRotateStoppedFolderDeleted(stop.folderName),
+                AutoRotateStopReason.folderEmpty => messages.wallpaperAutoRotateStoppedFolderEmpty(stop.folderName),
+              },
+              const AutoRotateEvent.folderStopAcknowledged(),
+            );
           },
         ),
         BlocListener<FoldersBloc, FoldersState>(
@@ -136,6 +142,21 @@ class _AutoRotateSessionListenerState extends State<AutoRotateSessionListener> w
       ],
       child: widget.child,
     );
+  }
+
+  void _announce(BuildContext context, String Function(AppLocalizations messages) text, AutoRotateEvent acknowledge) {
+    unawaited(_showAnnouncement(context, text, acknowledge));
+  }
+
+  Future<void> _showAnnouncement(
+    BuildContext context,
+    String Function(AppLocalizations messages) text,
+    AutoRotateEvent acknowledge,
+  ) async {
+    final AppLocalizations messages = await localizationsFor(context);
+    if (!context.mounted) return;
+    toasts.info(text(messages));
+    context.read<AutoRotateBloc>().add(acknowledge);
   }
 
   String? _rotatingFolderId(BuildContext context) {
