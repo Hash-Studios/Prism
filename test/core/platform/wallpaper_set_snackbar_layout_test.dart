@@ -100,7 +100,15 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(disableAnimations: true, textScaler: TextScaler.linear(textScale)),
-          child: child!,
+          child: Builder(
+            builder: (context) {
+              final ThemeData theme = Theme.of(context);
+              return Theme(
+                data: theme.copyWith(snackBarTheme: prismSnackBarThemeFor(context, theme.snackBarTheme)),
+                child: child!,
+              );
+            },
+          ),
         ),
         home: TabsRouterScope(
           controller: _FakeTabsRouter(),
@@ -133,35 +141,32 @@ void main() {
   }
 
   for (final MapEntry<String, AppLocalizations>(key: String locale, value: AppLocalizations l10n) in _locales.entries) {
-    for (final double textScale in <double>[1.0, 1.3, 1.6]) {
+    for (final double textScale in <double>[1.0, 1.3, 2.0]) {
       for (final bool matchAccent in <bool>[true, false]) {
-        testWidgets(
-          '$locale at text scale $textScale${matchAccent ? ' with Match accent' : ''}: '
-          'the message gets room, stays within 2 lines, and the snackbar clears the nav',
-          (tester) async {
-            await showOnFeed(tester, l10n, textScale: textScale, matchAccent: matchAccent);
+        testWidgets('$locale at text scale $textScale${matchAccent ? ' with Match accent' : ''}: '
+            'the message gets room, stays within 2 lines, and the snackbar clears the nav', (tester) async {
+          await showOnFeed(tester, l10n, textScale: textScale, matchAccent: matchAccent);
 
-            expect(tester.takeException(), isNull);
-            final Rect card = tester.getRect(
-              find.descendant(of: find.byType(SnackBar), matching: find.byType(Material)).first,
-            );
-            final RenderParagraph message = tester.renderObject<RenderParagraph>(find.text(l10n.coreWallpaperSet));
-            expect(message.constraints.maxWidth, greaterThan(card.width / 2), reason: 'message squeezed');
+          expect(tester.takeException(), isNull);
+          final Rect card = tester.getRect(
+            find.descendant(of: find.byType(SnackBar), matching: find.byType(Material)).first,
+          );
+          final RenderParagraph message = tester.renderObject<RenderParagraph>(find.text(l10n.coreWallpaperSet));
+          expect(message.constraints.maxWidth, greaterThan(card.width / 2), reason: 'message squeezed');
 
-            final TextPainter oneLine = TextPainter(
-              text: message.text,
-              textScaler: message.textScaler,
-              textDirection: TextDirection.ltr,
-            )..layout();
-            expect(message.size.height, lessThanOrEqualTo(oneLine.height * 2 + 0.5), reason: 'more than 2 lines');
-            oneLine.dispose();
+          final TextPainter oneLine = TextPainter(
+            text: message.text,
+            textScaler: message.textScaler,
+            textDirection: TextDirection.ltr,
+          )..layout();
+          expect(message.size.height, lessThanOrEqualTo(oneLine.height * 2 + 0.5), reason: 'more than 2 lines');
+          oneLine.dispose();
 
-            final Rect undo = tester.getRect(find.widgetWithText(TextButton, l10n.coreUndo));
-            expect(undo.right, greaterThan(card.center.dx), reason: 'Undo is not on the right');
-            final Rect nav = tester.getRect(find.byType(PrismBottomNav));
-            expect(card.bottom, lessThanOrEqualTo(nav.top - 8), reason: 'snackbar overlaps the bottom nav');
-          },
-        );
+          final Rect undo = tester.getRect(find.widgetWithText(TextButton, l10n.coreUndo));
+          expect(undo.right, greaterThan(card.center.dx), reason: 'Undo is not on the right');
+          final Rect nav = tester.getRect(find.byType(PrismBottomNav));
+          expect(card.bottom, lessThanOrEqualTo(nav.top - 8), reason: 'snackbar overlaps the bottom nav');
+        });
       }
     }
   }

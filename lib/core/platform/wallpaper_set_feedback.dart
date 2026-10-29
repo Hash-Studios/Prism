@@ -13,6 +13,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/core/widgets/animated/glint_toast.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 
@@ -170,15 +171,22 @@ class _SuccessContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Text message = Text(l10n.coreWallpaperSet, maxLines: 2, overflow: TextOverflow.ellipsis);
     final VoidCallback? match = onMatchAccent;
-    if (match == null) return Text(l10n.coreWallpaperSet);
-    return Row(
+    if (match == null) return message;
+    // Beside the message when both fit, under it when they don't. A long label in a Row took all the width.
+    return OverflowBar(
+      alignment: MainAxisAlignment.spaceBetween,
+      spacing: PrismSpace.xs,
       children: <Widget>[
-        Expanded(child: Text(l10n.coreWallpaperSet)),
+        message,
         TextButton(
           onPressed: match,
-          style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.inversePrimary),
-          child: Text(l10n.coreMatchAccent),
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.inversePrimary,
+            padding: EdgeInsets.zero,
+          ),
+          child: Text(l10n.coreMatchAccent, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
       ],
     );

@@ -91,6 +91,13 @@ Color prismSoftInk(ThemeData theme) {
   return reads ? soft : ink;
 }
 
+/// The snackbar theme for the current screen: a centred panel on wide screens, and the action on its own row when
+/// its label is too wide at the user's text size. Flutter measures that label without text scaling.
+SnackBarThemeData prismSnackBarThemeFor(BuildContext context, SnackBarThemeData base) => base.copyWith(
+  width: MediaQuery.sizeOf(context).width > PrismLayout.panelWidth ? PrismLayout.panelWidth : null,
+  actionOverflowThreshold: 0.25 / MediaQuery.textScalerOf(context).scale(1),
+);
+
 /// Gives every chip the same look: a pill with a tonal fill of the foreground colour, and the accent fill when
 /// selected. Run it after anything that changes the accent, because it reads the accent from [ThemeData.colorScheme].
 ThemeData withPrismChipTheme(ThemeData base) {
