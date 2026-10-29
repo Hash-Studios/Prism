@@ -1,6 +1,6 @@
 # Upload
 
-A creator sends wallpapers from the gallery to Prism. A moderator reviews each one before it shows to other people. The creator can add a title, a category and tags, and can send up to ten wallpapers in one go.
+A creator sends wallpapers from the gallery to Prism. A moderator reviews each wallpaper before publication. The creator can add a title, description, category, and tags. A batch can contain up to ten wallpapers.
 
 ## Where to find it
 
@@ -25,7 +25,7 @@ Android and iOS. The user must be signed in.
 | `lib/features/wallpaper_upload/biz/upload_batch.dart` | `UploadBatch`: the queue, the position, the result of each image, and `uploadPickLimit`. |
 | `lib/features/wallpaper_upload/biz/submission_metadata.dart` | `SubmissionMetadata`, the category list, and tag clean-up. |
 | `lib/features/wallpaper_upload/biz/upload_quality.dart` | The size warnings. |
-| `lib/features/wallpaper_upload/views/widgets/submission_metadata_form.dart` | The title, category and tags form. |
+| `lib/features/wallpaper_upload/views/widgets/submission_metadata_form.dart` | The title, description, category and tags form. |
 | `lib/features/wallpaper_upload/views/widgets/upload_batch_stepper.dart` | The "Wallpaper 2 of 3" step with one mark per image. |
 | `lib/features/wallpaper_upload/views/pages/upload_wall_screen.dart` | Prepares the image, uploads two files, saves the wall record. |
 | `lib/data/upload/wallpaper/wallfirestore.dart` | `createRecord` builds the wall record. |
@@ -38,11 +38,11 @@ A new wall gets a 10 character id: capital letters with one digit. Four characte
 
 ### Details (optional)
 
-- The ready step shows **Details (optional)**: a title (60 characters at most), a category and tags.
+- The ready step shows **Details (optional)**. The title limit is 60 characters. The description limit is 500 characters.
 - The category list is **General** plus the 18 categories that the upload classifier writes. **General** is the default. A wall that stays in **General** is filed by the server classifier later. A wall with a chosen category is not changed.
 - A tag is lower case. The app removes `#` and extra spaces. A tag has 24 characters at most. A wall has 8 tags at most. The user adds tags with a comma, the keyboard Done key, or the add button.
 - Every field can stay empty. A blank title is not saved.
-- The record gets `title`, `category` and `tags`. Search and "More like this" read `tags`.
+- The record gets `title`, `desc`, `category`, and `tags`. Search and "More like this" read `tags`.
 - The event `upload_metadata_submitted` has `has_title`, `tag_count` and `category`. It fires once, after the wall saves.
 
 ### Size warnings
@@ -64,13 +64,45 @@ The ready step shows a note, and never blocks the upload, when:
 
 A free user who reaches the weekly limit in a batch sees the normal "Upload limit reached" step. The batch ends there.
 
-### Delete a pending wallpaper
+### Withdraw a pending wallpaper
 
-- In **Review status**, a creator can delete a wall that is still in review.
+- In **Review status**, **Withdraw upload** removes a pending wallpaper after confirmation.
 - The wall record now stores `wallpaper_path`, `wallpaper_sha`, `thumb_path` and `thumb_sha`. On delete, the app also calls `githubDeleteFile` for the two files. The server then gives the weekly upload slot back.
-- A failed file delete does not stop the record delete. The app logs it.
+- If file cleanup fails, the wall record stays in review. The creator can retry.
 - A wall saved before this change has no file details. The app deletes only the record, and the slot stays used.
-- Rejected walls are not changed by this.
+- **Delete from history** removes only a rejected archive.
+
+### Edit submitted details
+
+**Edit details** on a pending upload opens the shared form. Save reads the current wall in a transaction and updates only title, description, category, and tags. A concurrent approval, rejection, or edit refuses the save. The editor keeps unsaved text and offers reload.
+
+The owner of an approved Prism wallpaper can open **Edit details** from wallpaper details. This form omits category. `getWallMetadataForEdit` supplies a server revision. `editWallMetadata` checks that revision and changes only `title`, `desc`, `tags`, and derived `searchTerms`.
+
+The server permits ten changed approved saves per owner per UTC day. No-op saves and identical operation retries do not use another save. A private audit records exact old and new text fields. Admins can inspect edit history and revert the latest applicable edit. Revert does not change the image, category, approval, credit, or rewards.
+
+### Fix a rejected upload
+
+**Fix and resubmit** keeps the previous rejection reason and metadata. If the full original remains retrievable through its URL, the app retrieves it. Otherwise, **Choose image** keeps the editing context. The app never uses the thumbnail as the original. AI source details are not copied or asserted from an archive.
+
+Resubmission uploads fresh original and thumbnail bytes through the normal upload quota path. `submitWallResubmission` verifies those completed uploads and creates a new pending wall. `resubmitOf` points to the immediate rejected document. A private root record limits the original lineage to three lifetime linked admissions. Rejection, withdrawal, and history deletion do not return an attempt. An identical operation retry returns its original result, even after the new wall was deleted.
+
+The limit applies only to callable-admitted linked resubmissions. Existing general-create rules still permit an unrelated upload of the same artwork. The feature is not a universal duplicate-image limit.
+
+The review queue shows a resubmission label and the captured old reason only after an admin callable verifies the private admission record. A raw `resubmitOf` value is not proof. Failed context lookup shows unavailable details.
+
+`rejectWallForReview` reads the current wall and archives its exact server creation time in one transaction. It refuses a changed revision or review state. `undoWallRejection` refuses a changed archive or an admitted child. Undo preserves the previous approval state, but does not restore deleted image files.
+
+### Reuse the last successful details
+
+**Use last details** explicitly copies only category and tags from the last successful submission on this device. The values are scoped to the signed-in owner. Title, description, request, remix, image, and resubmission context stay unchanged. Defaults are not applied automatically over a draft. A defaults write failure does not turn a completed upload into a failed upload.
+
+Drafts preserve description, lineage, operation identity, filenames, and completed file references. A resumed matching draft takes precedence over a rejected seed. Resubmission draft identity includes the rejected source so the same image does not collide with a normal draft or a different lineage.
+
+### Deployment boundary
+
+Deploy rules, indexes, and functions, in that order, before a store build that uses these callables. Each deploy and the store upload require separate explicit approval. No production deployment is part of this implementation.
+
+Pending client text checks are feedback, not a new rules boundary. Existing pending-write rules remain broader than a four-field allowlist. Approved direct owner edits remain denied. Withdrawal keeps the existing files-before-document workflow. It does not make storage cleanup atomic with concurrent approval.
 
 ### AI original image
 
@@ -83,6 +115,11 @@ The wall record no longer holds `aiOriginalImageUrl` (the image without the wate
 | `upload_stage` | `stage`: `ready`, `uploading`, `saving`, `submitted` |
 | `upload_failed` | `reason`: `oversize`, `processing`, `upload`, `weekly_limit`, `submission`, `submission_unconfirmed`, `quota_exceeded` |
 | `upload_metadata_submitted` | `has_title`, `tag_count`, `category` |
+| `wall_pending_edited` | `asset_id`, changed `fields` |
+| `wall_approved_metadata_edited` | `asset_id`, changed `fields` |
+| `wall_resubmitted` | `asset_id`, lifetime `attempt` |
+| `upload_last_details_used` | No fields |
+| `upload_withdrawn` | `asset_id` |
 
 ## Limits
 
@@ -100,3 +137,8 @@ The wall record no longer holds `aiOriginalImageUrl` (the image without the wate
 5. Pick a landscape image or one under 1080 px on the short side. Check the note. Check that you can still submit.
 6. In **Review status**, delete a pending wall that you uploaded after this change. Check that the weekly count goes down and the two files leave the repo.
 7. Run `fvm flutter test test/features/wallpaper_upload test/data/upload test/features/navigation/upload_bottom_panel_test.dart`.
+8. Edit pending details. Before saving, approve or reject the wall from another session. Check that the save refuses the change.
+9. Resubmit a rejected wall with and without its original image. Check that the reason and metadata remain visible.
+10. Admit three linked attempts, including a rejected descendant. Check that a fourth admission fails and an identical retry succeeds.
+11. Edit approved text. Check the detail title, description, tags, search results, audit history, daily limit, and latest-only admin revert.
+12. Use last details after a successful upload. Check that only category and tags change, including after a draft restart.
