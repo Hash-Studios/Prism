@@ -97,6 +97,7 @@ class AiGenerationRepositoryImpl {
     required int coinsSpent,
     int? seed,
     String? chargeTxId,
+    String? remixOf,
   }) async {
     final user = _requireUser();
     final int ownerGeneration = _generationFor(user.uid);
@@ -120,6 +121,7 @@ class AiGenerationRepositoryImpl {
       qualityTier: qualityTier,
       chargeMode: chargeMode,
       coinsSpent: coinsSpent,
+      remixOf: remixOf,
     );
     try {
       await _saveHistoryRecord(record, ownerGeneration);
@@ -136,6 +138,7 @@ class AiGenerationRepositoryImpl {
     String variationPrompt = '',
     double strength = 0.45,
     String? chargeTxId,
+    String? remixOf,
   }) async {
     final user = _requireUser();
     final int ownerGeneration = _generationFor(user.uid);
@@ -160,6 +163,7 @@ class AiGenerationRepositoryImpl {
       chargeMode: chargeMode,
       coinsSpent: coinsSpent,
       parentGenerationId: generationId,
+      remixOf: remixOf,
     );
     try {
       await _saveHistoryRecord(record, ownerGeneration);
@@ -453,6 +457,7 @@ class AiGenerationRepositoryImpl {
     required AiChargeMode chargeMode,
     required int coinsSpent,
     String? parentGenerationId,
+    String? remixOf,
   }) {
     final imageUrls = data['imageUrls'] is Map<String, dynamic>
         ? data['imageUrls'] as Map<String, dynamic>
@@ -492,6 +497,7 @@ class AiGenerationRepositoryImpl {
       coinsSpent: coinsSpent,
       status: 'success',
       parentGenerationId: parentGenerationId,
+      remixOf: remixOf,
     );
   }
 }

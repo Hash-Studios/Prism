@@ -130,6 +130,7 @@ class _FollowUpRepository extends Fake implements AiGenerationRepositoryImpl {
     required int coinsSpent,
     int? seed,
     String? chargeTxId,
+    String? remixOf,
   }) async => _record(id: 'hero-1', quality: heroQuality);
 
   @override
@@ -140,6 +141,7 @@ class _FollowUpRepository extends Fake implements AiGenerationRepositoryImpl {
     String variationPrompt = '',
     double strength = 0.45,
     String? chargeTxId,
+    String? remixOf,
   }) async {
     variations.add((generationId: generationId, variationPrompt: variationPrompt, coinsSpent: coinsSpent));
     final Completer<void>? gate = variationGate;

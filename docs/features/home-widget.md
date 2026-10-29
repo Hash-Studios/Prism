@@ -56,7 +56,14 @@ Code: `android/app/src/main/kotlin/com/hash/prism/WotdWidgetProvider.kt` (widget
 
 ## Limits
 
-- The Kotlin and the layouts were not compiled here and were not run on a device. CI compiles them and runs the JVM unit tests. How the widget looks on a real launcher is not checked.
+- Emulator proof (2026-10-29, API 36, Pixel launcher):
+  - The widget was added from the widget picker.
+  - It loads today's wall. This wall is protected, so the widget shows the preview. `original_url` is empty.
+  - Tap the image. The wall detail screen opens.
+  - Tap "Set" on a protected wall. The app opens at the wall. There is no public original to set.
+  - Day change: seed a fake "yesterday" cache key and image. Then force `APPWIDGET_UPDATE` as root (`adb root`, `am broadcast -n com.hash.prism/.WotdWidgetProvider`). Offline, the widget keeps the cached image. Online, it fetches today's wall.
+  - With no cache and offline, the empty state reads "Today's wallpaper appears here when you are online".
+- The widget uses a fixed dark background (#121212) in light mode, dark mode and every Material You palette. It does not follow the system colours.
 - Android and the launcher decide when the widget updates. A launcher can run the update later than 3 hours, mainly when the battery saver is on.
 - The widget needs the Firebase resources `project_id` and `google_api_key`. A local build without `google-services.json` does not have them. Then the widget uses the cached URL.
 - "Set" changes the home screen wallpaper only. It does not change the lock screen.

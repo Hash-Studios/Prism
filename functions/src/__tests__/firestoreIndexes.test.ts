@@ -104,9 +104,30 @@ test("folder items: account deletion finds them by owner across folders, repair 
   assert.ok(hasIndex("items", [["ownerId", "ASCENDING"], ["addedAt", "DESCENDING"]]));
 });
 
+test("walls have the remix index: remixOf, review, newest first", () => {
+  assert.ok(hasIndex("walls", [["remixOf", "ASCENDING"], ["review", "ASCENDING"], ["createdAt", "DESCENDING"],
+    ["__name__", "DESCENDING"]]));
+});
+
 test("walls have the protected spatial index the app queries: protected asset fields, review, spatial.tier, newest first", () => {
   const protectedFields = ["originalProtected", "wallpaper_url", "wallpaper_path", "wallpaper_sha", "thumb_path", "thumb_sha"]
     .map((field): [string, string] => [field, "ASCENDING"]);
   assert.ok(hasIndex("walls", [...protectedFields, ["review", "ASCENDING"], ["spatial.tier", "ASCENDING"],
     ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]));
+});
+
+test("wall requests have the status and hidden indexes for top, new, filled and the token search", () => {
+  for (const [field, order] of [["voteCount", "DESCENDING"], ["createdAt", "DESCENDING"], ["filledAt", "DESCENDING"]]) {
+    assert.ok(hasIndex("wallRequests", [["status", "ASCENDING"], ["hidden", "ASCENDING"], [field, order]]), field);
+  }
+  assert.ok(config.indexes.some((i) => i.collectionGroup === "wallRequests" &&
+    JSON.stringify(i.fields.map((f) => [f.fieldPath, f.order ?? f.arrayConfig])) ===
+      JSON.stringify([["status", "ASCENDING"], ["hidden", "ASCENDING"], ["tokens", "CONTAINS"]])));
+});
+
+test("wall request votes have a collection group index on uid for account deletion", () => {
+  const override = config.fieldOverrides.find((o) => o.collectionGroup === "votes" && o.fieldPath === "uid") as
+    (Override & {indexes: Array<{order?: string; queryScope: string}>}) | undefined;
+  assert.ok(override);
+  assert.ok(override.indexes.some((i) => i.order === "ASCENDING" && i.queryScope === "COLLECTION_GROUP"));
 });

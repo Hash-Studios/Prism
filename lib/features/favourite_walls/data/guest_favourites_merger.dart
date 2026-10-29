@@ -74,7 +74,9 @@ class GuestFavouritesMerger {
   Map<String, dynamic> _withDates(Map<String, Object?> doc) {
     return <String, dynamic>{
       for (final MapEntry<String, Object?> entry in doc.entries)
-        entry.key: (entry.key == 'createdAt' || entry.key == 'favouritedAt') && entry.value is String
+        entry.key:
+            (entry.key == 'createdAt' || entry.key == 'favouritedAt' || entry.key == 'pinnedAt') &&
+                entry.value is String
             ? DateTime.tryParse(entry.value! as String) ?? entry.value
             : entry.value,
     };

@@ -30,6 +30,12 @@ enums:
     values:
       - hero
       - strip
+  - name: ai_style_pick_source
+    dart_type: AiStylePickSource
+    values:
+      - row
+      - sheet
+      - onboarding
   - name: rc_or_fallback
     dart_type: RcOrFallbackValue
     values:
@@ -351,6 +357,32 @@ enums:
       - rejection
       - win_back
       - drop
+  - name: immersive_toggle_source
+    dart_type: ImmersiveToggleSourceValue
+    values:
+      - tap
+      - semantics
+  - name: favourite_pin_surface
+    dart_type: FavouritePinSurfaceValue
+    values:
+      - library
+      - detail
+  - name: wall_request_source
+    dart_type: WallRequestSourceValue
+    values:
+      - search
+      - requests_page
+  - name: wall_request_filler
+    dart_type: WallRequestFillerValue
+    values:
+      - creator
+      - studio
+  - name: remix_source_type
+    dart_type: RemixSourceType
+    import: package:Prism/features/wall_remix/domain/wall_remix.dart
+    values:
+      - studio
+      - user
 
 events:
   - id: content_report_submit
@@ -818,6 +850,20 @@ events:
       - name: style
         key: style
         type: string
+  - id: ai_style_sheet_opened
+    fields:
+      - name: style
+        key: style
+        type: string
+  - id: ai_style_picked
+    fields:
+      - name: style
+        key: style
+        type: string
+      - name: source
+        key: source
+        type: enum
+        enum: AiStylePickSource
   - id: ai_history_opened
     fields:
       - name: count
@@ -1318,6 +1364,21 @@ events:
         type: string
         required: false
   - id: auto_rotate_disabled
+  - id: auto_rotate_folder_set
+    fields:
+      - name: item_count_bucket
+        key: item_count_bucket
+        type: string
+  - id: auto_rotate_folder_tapped
+    fields:
+      - name: item_count_bucket
+        key: item_count_bucket
+        type: string
+  - id: auto_rotate_stopped
+    fields:
+      - name: reason
+        key: reason
+        type: string
   - id: nav_tab_selected
     fields:
       - name: from_tab
@@ -1988,6 +2049,34 @@ events:
       - name: count
         key: count
         type: int
+  - id: recently_viewed_cleared
+    fields:
+      - name: count
+        key: count
+        type: int
+  - id: viewing_history_toggled
+    fields:
+      - name: value
+        key: value
+        type: bool
+  - id: history_restored
+    fields:
+      - name: count_bucket
+        key: count_bucket
+        type: string
+  - id: pick_up_row_seen
+    fields:
+      - name: count
+        key: count
+        type: int
+  - id: pick_up_tile_opened
+    fields:
+      - name: provider
+        key: provider
+        type: string
+      - name: position
+        key: position
+        type: int
   - id: favourites_exported
     fields:
       - name: count
@@ -2320,3 +2409,101 @@ events:
       - name: tier
         key: tier
         type: string
+  - id: detail_immersive_toggled
+    fields:
+      - name: immersive
+        key: immersive
+        type: bool
+      - name: source
+        key: source
+        type: enum
+        enum: ImmersiveToggleSourceValue
+  - id: detail_immersive_hint_shown
+  - id: favourite_pin_changed
+    fields:
+      - name: pinned
+        key: pinned
+        type: bool
+      - name: surface
+        key: surface
+        type: enum
+        enum: FavouritePinSurfaceValue
+  - id: favourite_pin_limit_hit
+    fields:
+      - name: surface
+        key: surface
+        type: enum
+        enum: FavouritePinSurfaceValue
+  - id: wall_request_sheet_opened
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: WallRequestSourceValue
+  - id: wall_request_created
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: WallRequestSourceValue
+      - name: tag_count
+        key: tag_count
+        type: int
+      - name: forced
+        key: forced
+        type: bool
+  - id: wall_request_duplicate_upvoted
+    fields:
+      - name: exact
+        key: exact
+        type: bool
+  - id: wall_request_vote_toggled
+    fields:
+      - name: voted
+        key: voted
+        type: bool
+      - name: tab
+        key: tab
+        type: string
+  - id: wall_request_filled
+    fields:
+      - name: filled_by
+        key: filled_by
+        type: enum
+        enum: WallRequestFillerValue
+  - id: wall_request_push_opened
+    fields:
+      - name: request_id
+        key: request_id
+        type: string
+  - id: remix_tapped
+    fields:
+      - name: source_wall_type
+        key: source_wall_type
+        type: enum
+        enum: RemixSourceType
+  - id: remix_generated
+    fields:
+      - name: source_wall_type
+        key: source_wall_type
+        type: enum
+        enum: RemixSourceType
+      - name: quality
+        key: quality
+        type: string
+  - id: remix_submitted
+    fields:
+      - name: generation_id
+        key: generation_id
+        type: string
+  - id: remix_link_dropped
+    fields:
+      - name: source_wall_type
+        key: source_wall_type
+        type: enum
+        enum: RemixSourceType
+  - id: remixes_grid_opened
+    fields:
+      - name: count
+        key: count
+        type: int

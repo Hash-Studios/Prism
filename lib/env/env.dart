@@ -15,6 +15,9 @@ class Env {
   // Measurement-only flow driver for profile builds; see lib/core/debug/perf_autodrive.dart.
   static const bool perfAutodrive = bool.fromEnvironment('PRISM_PERF_AUTODRIVE');
 
+  // Debug builds only: loads the AI style samples from http://localhost:8765. See docs/features/ai-wallpaper.md.
+  static const bool aiStyleSamplesLocal = bool.fromEnvironment('AI_STYLE_SAMPLES_LOCAL');
+
   // GitHub
   static const String ghRepoWalls = String.fromEnvironment('GH_REPO_WALLS');
   static const String ghUsername = String.fromEnvironment('GH_USERNAME');

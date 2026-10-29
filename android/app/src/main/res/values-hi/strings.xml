@@ -59,6 +59,8 @@
     <string name="notif_push_drop_last_call_title">इस हफ़्ते के Drop का आख़िरी मौका</string>
     <string name="notif_push_drop_last_call_body">%1$s, %2$s घंटे में समाप्त होगा। इसके बाद एक महीने तक ये वॉलपेपर उपलब्ध नहीं होंगे।</string>
     <string name="notif_push_draw_winner_title">आपने Prism Draw जीत लिया</string>
+    <string name="notif_push_wall_request_filled_title">आपका अनुरोध आ गया है</string>
+    <string name="notif_push_wall_request_filled_body">%1$s</string>
     <string name="notif_push_draw_winner_body">एक महीने का Pro और Prism फ़्रेम अब आपके हैं।</string>
     <string name="notif_push_gift_received_title">%1$s ने आपको 24 घंटे का Pro पास भेजा</string>
     <string name="notif_push_gift_received_body">प्रीमियम कलेक्शन और वॉलपेपर कल तक उपलब्ध हैं।</string>

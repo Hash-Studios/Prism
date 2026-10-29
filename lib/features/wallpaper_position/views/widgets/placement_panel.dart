@@ -67,7 +67,7 @@ class PlacementPanel extends StatelessWidget {
                 children: <Widget>[
                   Text(context.l10n.wallpaperPlacementDim, style: PrismTextStyles.rowTitle(context)),
                   Expanded(
-                    child: Slider(
+                    child: PrismSlider(
                       value: placement.dim,
                       max: WallpaperPlacement.maxDim,
                       divisions: 12,

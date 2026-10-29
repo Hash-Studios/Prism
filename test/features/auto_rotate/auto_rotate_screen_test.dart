@@ -11,6 +11,7 @@ import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.da
 import 'package:Prism/features/auto_rotate/views/pages/auto_rotate_screen.dart';
 import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_session_listener.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
@@ -29,6 +30,8 @@ class _MockAutoRotateBloc extends MockBloc<AutoRotateEvent, AutoRotateState> imp
 class _MockFavouriteWallsBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState>
     implements FavouriteWallsBloc {}
 
+class _MockFoldersBloc extends MockBloc<FoldersEvent, FoldersState> implements FoldersBloc {}
+
 class _MockSessionBloc extends MockBloc<SessionEvent, SessionState> implements SessionBloc {}
 
 class _MockStartupRepository extends Mock implements StartupRepository {}
@@ -36,6 +39,7 @@ class _MockStartupRepository extends Mock implements StartupRepository {}
 void main() {
   late _MockAutoRotateBloc autoRotateBloc;
   late _MockFavouriteWallsBloc favouriteWallsBloc;
+  late _MockFoldersBloc foldersBloc;
   late _MockSessionBloc sessionBloc;
   late _MockStartupRepository startupRepository;
 
@@ -49,6 +53,8 @@ void main() {
     AnalyticsRuntime.instance = FakeAppAnalytics();
     autoRotateBloc = _MockAutoRotateBloc();
     favouriteWallsBloc = _MockFavouriteWallsBloc();
+    foldersBloc = _MockFoldersBloc();
+    whenListen(foldersBloc, const Stream<FoldersState>.empty(), initialState: FoldersState.initial());
     sessionBloc = _MockSessionBloc();
     startupRepository = _MockStartupRepository();
     when(() => favouriteWallsBloc.state).thenReturn(FavouriteWallsState.initial().copyWith(status: LoadStatus.success));
@@ -91,6 +97,7 @@ void main() {
           BlocProvider<AutoRotateBloc>.value(value: autoRotateBloc),
           BlocProvider<FavouriteWallsBloc>.value(value: favouriteWallsBloc),
           BlocProvider<SessionBloc>.value(value: sessionBloc),
+          BlocProvider<FoldersBloc>.value(value: foldersBloc),
         ],
         child: const AutoRotateSessionListener(child: AutoRotateScreen()),
       ),

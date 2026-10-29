@@ -26,6 +26,8 @@ class WallpaperQuickActionRegion extends StatelessWidget {
     this.onShowLessLikeThis,
     this.onResetOriginal,
     this.preview,
+    this.readIsPinned,
+    this.onTogglePin,
   });
 
   final FeedItemEntity item;
@@ -33,6 +35,10 @@ class WallpaperQuickActionRegion extends StatelessWidget {
   final VoidCallback? onShowLessLikeThis;
   final VoidCallback? onResetOriginal;
   final Widget? preview;
+
+  /// Read when the menu opens: whether the wall is pinned, or null to hide Pin.
+  final bool? Function()? readIsPinned;
+  final VoidCallback? onTogglePin;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +50,9 @@ class WallpaperQuickActionRegion extends StatelessWidget {
       showLessLabel: onShowLessLikeThis == null ? null : context.l10n.wallpaperShowLessLikeThis,
       resetOriginalLabel: onResetOriginal == null ? null : context.l10n.wallpaperResetOriginal,
       saveToFolderLabel: context.l10n.foldersSaveToFolder,
+      pinLabel: onTogglePin == null ? null : context.l10n.favouritePin,
+      unpinLabel: context.l10n.favouriteUnpin,
+      readIsPinned: readIsPinned,
       readIsFavourite: () => getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, item.id),
       preview:
           preview ??
@@ -53,7 +62,14 @@ class WallpaperQuickActionRegion extends StatelessWidget {
             borderRadius: PrismWallGrid.tileRadius,
           ),
       onAction: (action) => unawaited(
-        _dispatch(context, item, action, onShowLessLikeThis: onShowLessLikeThis, onResetOriginal: onResetOriginal),
+        _dispatch(
+          context,
+          item,
+          action,
+          onShowLessLikeThis: onShowLessLikeThis,
+          onResetOriginal: onResetOriginal,
+          onTogglePin: onTogglePin,
+        ),
       ),
       child: child,
     );
@@ -66,6 +82,7 @@ Future<void> _dispatch(
   WallpaperQuickAction action, {
   VoidCallback? onShowLessLikeThis,
   VoidCallback? onResetOriginal,
+  VoidCallback? onTogglePin,
 }) async {
   switch (action) {
     case WallpaperQuickAction.favourite:
@@ -89,6 +106,8 @@ Future<void> _dispatch(
       onResetOriginal?.call();
     case WallpaperQuickAction.saveToFolder:
       await showFolderSheet(context, FavouriteWallEntity.fromFeedItem(item));
+    case WallpaperQuickAction.pin:
+      onTogglePin?.call();
   }
 }
 

@@ -29,6 +29,7 @@ import 'package:Prism/features/theme_mode/views/widgets/diwali_decor.dart';
 import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_usecase.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
@@ -40,6 +41,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:quick_actions/quick_actions.dart';
+
+final DateTime _appSessionStartedAt = DateTime.now();
 
 const int _homeTabIndex = 0;
 const int _collectionTabIndex = 3;
@@ -113,6 +116,7 @@ class HomeTabTickerMode extends StatelessWidget {
 }
 
 class _HomeTabPageState extends State<HomeTabPage> {
+  final DateTime _sessionStartedAt = _appSessionStartedAt;
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _isOnline = true;
   bool _hasHandledQuickActionInvocation = false;
@@ -318,7 +322,10 @@ class _HomeTabPageState extends State<HomeTabPage> {
       context.read<FavouriteWallsBloc>().add(FavouriteWallsEvent.synced(userId: update.userId, items: update.items));
     });
     final user = app_state.prismUser;
-    if (user.loggedIn) unawaited(sync.start(user.id));
+    if (user.loggedIn) {
+      unawaited(sync.start(user.id));
+      unawaited(restoreAccountHistory(user.id));
+    }
   }
 
   @override
@@ -340,7 +347,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         body: Stack(
           children: <Widget>[
-            PersonalizedFeedScreen(onTuneTap: _openFeedSettings),
+            PersonalizedFeedScreen(onTuneTap: _openFeedSettings, sessionStartedAt: _sessionStartedAt),
             Padding(
               padding: EdgeInsets.only(top: PersonalizedFeedScreen.headerHeight(context)),
               child: ConnectivityWidget(offline: !_isOnline),

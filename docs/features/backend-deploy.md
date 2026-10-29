@@ -25,7 +25,7 @@ The backend serves Android and iOS. Two items are iOS only:
 
 ## Free and Pro
 
-No change. No step in this release touches coins, premium, or subscription rules. `firestore.rules` is not changed. Do not deploy `firestore:rules` in this release.
+No change. No step in the first release of this guide touches coins, premium, or subscription rules, and that release does not change `firestore.rules`. Later sections that change rules, such as Wall requests, include their own rules step. Follow the order in each section.
 
 ## How it works
 
@@ -313,6 +313,16 @@ node lib/scripts/backfillWallColors.js --apply --start-after=<wallId>   # resume
 
 Options: `--batch=<n>` (1 to 500, default 100), `--force` (recompute walls that already have `colors`). The script reads reviewed walls in document id order. It logs counts and the last id after each batch. It skips walls that already have `colors`, so a second run is safe. It needs Application Default Credentials for project `prism-wallpapers`. I did not run it with `--apply`.
 
+## Wall requests
+
+The full order is in [wall-requests.md](wall-requests.md#deploy-order).
+
+1. Indexes: 7 `wallRequests` composite indexes and the `votes.uid` collection group index. Wait until they are built.
+2. Rules: the `wallRequests`, `votes` and rate doc matches.
+3. Functions: run `make functions-env`, then deploy all functions. The list of new and changed functions is in the feature page.
+4. Cloudflare worker: the `/requests` routes and the AASA path.
+5. Client release.
+
 ## Rollback
 
 | Part | How to roll back | Note |
@@ -389,3 +399,12 @@ Spec: `docs/features/depth-effect.md`. Each step needs the human owner's yes. Do
 6. Backfill: `FAL_API_KEY=<key> node lib/scripts/backfillWallDepth.js --apply`. Resume with `--start-after=<wallId>` from the last logged id.
 
 How to test: after step 3, upload a wall with a person under the clock area. Make sure that its doc gets a `depth` field. Run `firebase functions:log --lines 60` and look for `wallDepth:` warnings.
+
+## Remix
+
+Spec: `docs/features/remix.md`. Each step needs the human owner's yes. Do the steps in this order. Finish all of them before the store build that writes `remixOf`.
+
+1. Rules: `firebase deploy --only firestore:rules --project prism-wallpapers`. The rules refuse client writes of `walls.remixCount` and owner changes of `walls.remixOf`.
+2. Indexes: `firebase deploy --only firestore:indexes --project prism-wallpapers`. New `walls` index: `remixOf` (ascending), `review` (ascending), `createdAt` (descending). Wait until it shows `READY`.
+3. Functions: `make functions-deploy`. New: `onWallRemixWritten`. Changed: `onWallSubmitted`, which removes an invalid `remixOf`.
+4. Client release that writes `remixOf`.

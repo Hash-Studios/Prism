@@ -219,6 +219,16 @@ import '../../features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_use
     as _i398;
 import '../../features/wall_of_the_day/domain/usecases/fetch_wotd_archive_usecase.dart'
     as _i353;
+import '../../features/wall_remix/biz/remix_credit_cubit.dart' as _i1026;
+import '../../features/wall_remix/biz/remixes_cubit.dart' as _i405;
+import '../../features/wall_remix/data/wall_remix_repository.dart' as _i244;
+import '../../features/wall_requests/biz/wall_request_sheet_cubit.dart'
+    as _i658;
+import '../../features/wall_requests/biz/wall_requests_cubit.dart' as _i1007;
+import '../../features/wall_requests/data/wall_requests_repository_impl.dart'
+    as _i221;
+import '../../features/wall_requests/domain/repositories/wall_requests_repository.dart'
+    as _i663;
 import '../../features/wallhaven_feed/data/repositories/wallhaven_wallpaper_repository_impl.dart'
     as _i387;
 import '../../features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart'
@@ -237,6 +247,8 @@ import '../../features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.
     as _i231;
 import '../../features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart'
     as _i62;
+import '../../features/wallpaper_history/data/history_wall_stores.dart'
+    as _i366;
 import '../../features/wallpaper_history/data/wallpaper_history_store.dart'
     as _i121;
 import '../../features/wallpaper_position/biz/bloc/wallpaper_position_bloc.j.dart'
@@ -319,6 +331,9 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i1073.SettingsLocalDataSource>(
     () => _i1073.SettingsLocalDataSource(gh<_i496.LocalStore>()),
   );
+  gh.lazySingleton<_i663.WallRequestsRepository>(
+    () => _i221.WallRequestsRepositoryImpl(),
+  );
   gh.lazySingleton<_i360.BadgeRepository>(() => _i700.BadgeRepositoryImpl());
   gh.lazySingleton<_i1055.AdsRepository>(() => _i418.AdsRepositoryImpl());
   gh.lazySingleton<_i601.CacheMaintenanceService>(
@@ -387,6 +402,12 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i415.BootstrapAppUseCase>(
     () => _i415.BootstrapAppUseCase(gh<_i721.StartupRepository>()),
   );
+  gh.lazySingleton<_i366.SyncedHistoryStore>(
+    () => _i366.SyncedHistoryStore(
+      gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i349.FirestoreClient>(),
+    ),
+  );
   gh.factory<_i638.WallpaperPositionBloc>(
     () => _i638.WallpaperPositionBloc(gh<_i307.WallpaperPositionRepository>()),
   );
@@ -407,6 +428,12 @@ _i174.GetIt initGetIt(
       gh<_i640.FavoritesLocalDataSource>(),
     ),
   );
+  gh.factory<_i658.WallRequestSheetCubit>(
+    () => _i658.WallRequestSheetCubit(gh<_i663.WallRequestsRepository>()),
+  );
+  gh.factory<_i1007.WallRequestsCubit>(
+    () => _i1007.WallRequestsCubit(gh<_i663.WallRequestsRepository>()),
+  );
   gh.lazySingleton<_i312.PexelsWallpaperRepository>(
     () => _i914.PexelsWallpaperRepositoryImpl(
       gh<_i954.FeedCacheLocalDataSource>(),
@@ -414,6 +441,9 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i693.ShopBloc>(
     () => _i693.ShopBloc(gh<_i1073.SettingsLocalDataSource>()),
+  );
+  gh.lazySingleton<_i366.RecentlyViewedStore>(
+    () => _i366.RecentlyViewedStore(gh<_i1073.SettingsLocalDataSource>()),
   );
   gh.lazySingleton<_i121.WallpaperHistoryStore>(
     () => _i121.WallpaperHistoryStore(gh<_i1073.SettingsLocalDataSource>()),
@@ -576,11 +606,14 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i95.SaveInterestsUseCase>(
     () => _i95.SaveInterestsUseCase(gh<_i897.OnboardingV2Repository>()),
   );
-  gh.factory<_i62.WallpaperHistoryBloc>(
-    () => _i62.WallpaperHistoryBloc(gh<_i121.WallpaperHistoryStore>()),
-  );
   gh.lazySingleton<_i289.PrismWallSearch>(
     () => _i289.PrismWallSearch(
+      gh<_i349.FirestoreClient>(),
+      gh<_i112.UserBlockRepository>(),
+    ),
+  );
+  gh.lazySingleton<_i244.WallRemixRepository>(
+    () => _i244.WallRemixRepository(
       gh<_i349.FirestoreClient>(),
       gh<_i112.UserBlockRepository>(),
     ),
@@ -593,6 +626,13 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i886.FetchTrendingUseCase>(
     () => _i886.FetchTrendingUseCase(gh<_i72.TrendingRepository>()),
+  );
+  gh.factory<_i62.WallpaperHistoryBloc>(
+    () => _i62.WallpaperHistoryBloc(
+      gh<_i121.WallpaperHistoryStore>(),
+      gh<_i366.SyncedHistoryStore>(),
+      gh<_i366.RecentlyViewedStore>(),
+    ),
   );
   gh.factory<_i849.DropsBloc>(
     () => _i849.DropsBloc(gh<_i96.DropsRepository>()),
@@ -632,6 +672,12 @@ _i174.GetIt initGetIt(
       gh<_i652.PaletteRepository>(),
       gh<_i364.GetWallpaperSetCountUseCase>(),
     ),
+  );
+  gh.factory<_i1026.RemixCreditCubit>(
+    () => _i1026.RemixCreditCubit(gh<_i244.WallRemixRepository>()),
+  );
+  gh.factory<_i405.RemixesCubit>(
+    () => _i405.RemixesCubit(gh<_i244.WallRemixRepository>()),
   );
   gh.factory<_i733.UserSearchBloc>(
     () => _i733.UserSearchBloc(gh<_i750.SearchUsersUseCase>()),
@@ -727,18 +773,23 @@ _i174.GetIt initGetIt(
     () =>
         _i406.ClearFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()),
   );
+  gh.lazySingleton<_i406.SetFavouritePinUseCase>(
+    () => _i406.SetFavouritePinUseCase(gh<_i643.FavouriteWallsRepository>()),
+  );
+  gh.lazySingleton<_i563.AutoRotateRepository>(
+    () => _i948.AutoRotateRepositoryImpl(
+      gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i727.PrismWallpaperRepository>(),
+      gh<_i489.WallOfTheDayRepository>(),
+      gh<_i121.WallpaperHistoryStore>(),
+      gh<_i847.FoldersRepository>(),
+    ),
+  );
   gh.factory<_i195.CategoryFeedBloc>(
     () => _i195.CategoryFeedBloc(
       gh<_i301.LoadCategoriesUseCase>(),
       gh<_i301.FetchCategoryFeedUseCase>(),
       gh<_i112.UserBlockRepository>(),
-    ),
-  );
-  gh.factory<_i782.FavouriteWallsBloc>(
-    () => _i782.FavouriteWallsBloc(
-      gh<_i406.FetchFavouriteWallsUseCase>(),
-      gh<_i406.ToggleFavouriteWallUseCase>(),
-      gh<_i406.ClearFavouriteWallsUseCase>(),
     ),
   );
   gh.lazySingleton<_i567.PersonalizedFeedRepository>(
@@ -760,14 +811,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i353.FetchWotdArchiveUseCase>(
     () => _i353.FetchWotdArchiveUseCase(gh<_i489.WallOfTheDayRepository>()),
   );
-  gh.lazySingleton<_i563.AutoRotateRepository>(
-    () => _i948.AutoRotateRepositoryImpl(
-      gh<_i1073.SettingsLocalDataSource>(),
-      gh<_i727.PrismWallpaperRepository>(),
-      gh<_i489.WallOfTheDayRepository>(),
-      gh<_i121.WallpaperHistoryStore>(),
-    ),
-  );
   gh.lazySingleton<_i502.FirstWallpaperService>(
     () => _i502.FirstWallpaperService(
       gh<_i563.CategoryFeedRepository>(),
@@ -780,6 +823,14 @@ _i174.GetIt initGetIt(
       gh<_i112.UserBlockRepository>(),
       gh<_i1073.SettingsLocalDataSource>(),
       gh<_i567.PersonalizedFeedRepository>(),
+    ),
+  );
+  gh.factory<_i782.FavouriteWallsBloc>(
+    () => _i782.FavouriteWallsBloc(
+      gh<_i406.FetchFavouriteWallsUseCase>(),
+      gh<_i406.ToggleFavouriteWallUseCase>(),
+      gh<_i406.ClearFavouriteWallsUseCase>(),
+      gh<_i406.SetFavouritePinUseCase>(),
     ),
   );
   gh.factory<_i408.AutoRotateBloc>(

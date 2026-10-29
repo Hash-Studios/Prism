@@ -42,6 +42,7 @@ class SearchGrid extends StatefulWidget {
     this.isLocal = false,
     this.searchId,
     this.trackInitialResults = true,
+    this.footer,
   });
 
   final String query;
@@ -54,6 +55,9 @@ class SearchGrid extends StatefulWidget {
   final bool isLocal;
   final String? searchId;
   final bool trackInitialResults;
+
+  /// Shown under the results, above the bottom bar clearance.
+  final Widget? footer;
 
   @override
   State<SearchGrid> createState() => _SearchGridState();
@@ -284,7 +288,10 @@ class _SearchGridState extends State<SearchGrid> {
                 child: _FromPrismRow(results: widget.prismResults, onOpen: _openPrismWallpaper, session: _impressions),
               ),
             SliverPadding(
-              padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xxs, bottom: PrismSpace.bottomBarClearance),
+              padding: PrismWallGrid.padding.copyWith(
+                top: PrismSpace.xxs,
+                bottom: widget.footer == null ? PrismSpace.bottomBarClearance : PrismSpace.md,
+              ),
               sliver: SliverGrid(
                 gridDelegate: PrismWallGrid.delegate(context, footerHeight: favouriteFooterHeight),
                 delegate: SliverChildBuilderDelegate((context, index) {
@@ -322,6 +329,11 @@ class _SearchGridState extends State<SearchGrid> {
                 }, childCount: _results.length + (showFooter ? 1 : 0)),
               ),
             ),
+            if (widget.footer case final Widget footer)
+              SliverPadding(
+                padding: const EdgeInsets.only(bottom: PrismSpace.bottomBarClearance),
+                sliver: SliverToBoxAdapter(child: footer),
+              ),
           ],
         ),
       ),

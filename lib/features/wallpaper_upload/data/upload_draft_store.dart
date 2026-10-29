@@ -243,7 +243,13 @@ class UploadDraftStore {
         'owner': owner,
         'draftId': draftId,
         'file': file,
-        'metadata': <String, Object?>{'title': metadata.title, 'category': metadata.category, 'tags': metadata.tags},
+        'metadata': <String, Object?>{
+          'title': metadata.title,
+          'category': metadata.category,
+          'tags': metadata.tags,
+          'requestId': metadata.requestId,
+          'requestText': metadata.requestText,
+        },
         'savedAtUtc': DateTime.now().toUtc().toIso8601String(),
       };
 
@@ -276,6 +282,8 @@ class UploadDraftStore {
       title: raw['title'] is String ? raw['title'] as String : '',
       category: raw['category'] is String ? raw['category'] as String : defaultSubmissionCategory,
       tags: rawTags is List ? rawTags.whereType<String>().toList(growable: false) : const <String>[],
+      requestId: raw['requestId'] is String ? raw['requestId'] as String : '',
+      requestText: raw['requestText'] is String ? raw['requestText'] as String : '',
     );
   }
 

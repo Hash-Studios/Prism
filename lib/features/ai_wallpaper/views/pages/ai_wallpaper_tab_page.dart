@@ -32,6 +32,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wallstore;
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
+import 'package:Prism/features/ai_wallpaper/domain/ai_rollout.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_follow_up.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
@@ -45,9 +46,12 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart'
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_pickers.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_preview_stage.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_remix_chip.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_actions.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheets.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_style_sheet.dart';
+import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -75,9 +79,12 @@ List<AiGenerationRecord> mergeAiSubmissionHistory(
 
 @RoutePage(name: 'AiTabRoute')
 class AiWallpaperTabPage extends StatefulWidget {
-  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting, this.shareSheet});
+  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting, this.shareSheet, this.remixSeed});
 
   final AiGenerationRepositoryImpl? repository;
+
+  /// The wall the user tapped Remix on. Its prompt and style fill the form, and a generation links back to it.
+  final AiRemixSeed? remixSeed;
 
   /// Opens the share sheet. Tests replace it.
   final ShareSheetOpen? shareSheet;
@@ -97,6 +104,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   AiStylePreset _selectedStyle = AiStylePreset.abstract;
   AiQualityTier _selectedQualityTier = AiQualityTier.fast;
+  AiRemixSeed? _remixLink;
   List<AiGenerationRecord> _history = <AiGenerationRecord>[];
 
   /// The wallpaper shown full-bleed. Null shows the prompt editor.
@@ -140,6 +148,34 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     super.initState();
     _promptController.addListener(_onPromptChanged);
     _loadHistory();
+    final AiRemixSeed? remixSeed = widget.remixSeed;
+    if (remixSeed != null) _applyRemixSeed(remixSeed);
+  }
+
+  /// Fills the form from [seed]. Runs after [_loadHistory], which resets the prompt owner, so the remix prompt wins.
+  void _applyRemixSeed(AiRemixSeed seed) {
+    _remixLink = seed;
+    final String prompt = seed.prompt.length <= _maxPromptChars ? seed.prompt : _clipPrompt(seed.prompt);
+    _setPrompt(prompt, userInitiated: true, updateSeed: false);
+    if (seed.style != null) _selectedStyle = seed.style!;
+    _selectedQualityTier = remixTier(
+      model: seed.model,
+      balance: CoinsService.instance.balanceNotifier.value,
+      isPro: app_state.prismUser.premium,
+    );
+  }
+
+  String _clipPrompt(String prompt) {
+    final int space = prompt.lastIndexOf(' ', _maxPromptChars);
+    final String cut = prompt.substring(0, space > 0 ? space : _maxPromptChars);
+    return cut.trim();
+  }
+
+  void _dropRemixLink() {
+    final AiRemixSeed? link = _remixLink;
+    if (link == null) return;
+    analytics.track(RemixLinkDroppedEvent(sourceWallType: link.sourceType));
+    setState(() => _remixLink = null);
   }
 
   @override
@@ -172,6 +208,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   void _switchPromptOwner(String owner) {
     if (_promptOwner == owner && (_promptHydrated || _promptLoadingOwner == owner)) return;
+    final String promptBeforeSwitch = _promptController.text;
+    final bool fromGuest = _promptOwner.isEmpty || _promptOwner == 'guest';
     _promptSaveTimer?.cancel();
     _promptOwner = owner;
     _promptLoadingOwner = owner;
@@ -180,6 +218,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     _promptHasUserIntent = false;
     final AppLocalizations? messages = _promptMessages;
     if (messages != null) _setPrompt(AiPromptPools.randomPrompt(messages, _selectedStyle, _random));
+    if (_remixLink != null && fromGuest) {
+      _setPrompt(promptBeforeSwitch, userInitiated: true, updateSeed: false);
+    } else {
+      _remixLink = null;
+    }
     unawaited(_hydratePrompt(owner));
   }
 
@@ -231,20 +274,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     );
   }
 
-  bool get _isRolloutEligible {
-    if (!app_state.aiEnabled) {
-      return false;
-    }
-    final int percent = app_state.aiRolloutPercent.clamp(0, 100);
-    if (percent >= 100) {
-      return true;
-    }
-    if (!_isLoggedIn) {
-      return false;
-    }
-    final int hash = app_state.prismUser.id.codeUnits.fold<int>(0, (prev, unit) => (prev + unit) % 100);
-    return hash < percent;
-  }
+  bool get _isRolloutEligible => aiRolloutEligible(
+    aiEnabled: app_state.aiEnabled,
+    rolloutPercent: app_state.aiRolloutPercent,
+    loggedIn: _isLoggedIn,
+    userId: app_state.prismUser.id,
+  );
 
   void _setPrompt(String prompt, {bool userInitiated = false, bool updateSeed = true}) {
     if (updateSeed) _seededPrompt = prompt;
@@ -277,10 +312,18 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     setState(() => _setPrompt(AiPromptPools.sceneIdea(messages, _selectedStyle, _sceneCursor++), userInitiated: true));
   }
 
-  void _selectStyle(AiStylePreset style) {
+  void _selectStyle(AiStylePreset style, AiStylePickSource source) {
+    analytics.track(AiStylePickedEvent(style: style.apiValue, source: source));
     setState(() => _selectedStyle = style);
     final String typed = _promptController.text.trim();
     if (typed.isEmpty || typed == _seededPrompt.trim()) _shufflePrompt();
+  }
+
+  Future<void> _openStyleSheet() async {
+    if (_loadingGeneration) return;
+    analytics.track(AiStyleSheetOpenedEvent(style: _selectedStyle.apiValue));
+    final AiStylePreset? picked = await showAiStyleSheet(context, selected: _selectedStyle);
+    if (picked != null && mounted && !_loadingGeneration) _selectStyle(picked, AiStylePickSource.sheet);
   }
 
   void _scrollToTop() {
@@ -441,7 +484,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       prompt: prompt,
       style: style,
       qualityTier: qualityTier,
-      request: (AiChargeMode mode, int coinsSpent, String? chargeTxId) => _repository.generate(
+      request: (AiChargeMode mode, int coinsSpent, String? chargeTxId, String? remixOf) => _repository.generate(
         prompt: prompt,
         stylePreset: style,
         qualityTier: qualityTier,
@@ -449,6 +492,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         chargeMode: mode,
         coinsSpent: coinsSpent,
         chargeTxId: chargeTxId,
+        remixOf: remixOf,
       ),
       successEvent: (AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) =>
           AiGenerateSuccessEvent(provider: generated.provider, mode: mode, coinsSpent: coinsSpent),
@@ -483,13 +527,15 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       prompt: prompt,
       style: style,
       qualityTier: qualityTier,
-      request: (AiChargeMode mode, int coinsSpent, String? chargeTxId) => _repository.generateVariation(
-        generationId: latest.id,
-        chargeMode: mode,
-        coinsSpent: coinsSpent,
-        variationPrompt: prompt,
-        chargeTxId: chargeTxId,
-      ),
+      request: (AiChargeMode mode, int coinsSpent, String? chargeTxId, String? remixOf) =>
+          _repository.generateVariation(
+            generationId: latest.id,
+            chargeMode: mode,
+            coinsSpent: coinsSpent,
+            variationPrompt: prompt,
+            chargeTxId: chargeTxId,
+            remixOf: remixOf != null && latest.remixOf == remixOf ? remixOf : null,
+          ),
       successEvent: (AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) =>
           AiVariationUsedEvent(provider: generated.provider, mode: mode, coinsSpent: coinsSpent),
       onSuccess: (_) {
@@ -558,11 +604,13 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     required String prompt,
     required AiStylePreset style,
     required AiQualityTier qualityTier,
-    required Future<AiGenerationRecord> Function(AiChargeMode mode, int coinsSpent, String? chargeTxId) request,
+    required Future<AiGenerationRecord> Function(AiChargeMode mode, int coinsSpent, String? chargeTxId, String? remixOf)
+    request,
     required AnalyticsEvent Function(AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) successEvent,
     required void Function(AiGenerationRecord generated) onSuccess,
   }) async {
     if (!_canStartGeneration()) return;
+    final AiRemixSeed? remixLink = _remixLink;
     final String ownerId = app_state.prismUser.id;
     final int ownerSession = CoinsService.instance.economySession;
     bool ownsSession() =>
@@ -684,6 +732,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         reservation.mode,
         reservation.coinsSpent,
         reservation.transactionId,
+        remixLink?.wallDocId,
       );
       generationSucceeded = true;
 
@@ -740,6 +789,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 generationId: generated.id,
               ),
       );
+      if (remixLink != null && generated.remixOf != null) {
+        analytics.track(
+          RemixGeneratedEvent(sourceWallType: remixLink.sourceType, quality: generated.qualityTier.apiValue),
+        );
+      }
       if (mounted) {
         onSuccess(generated);
         showGlintToast(context);
@@ -974,6 +1028,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 aiModel: record.model,
                 aiPrompt: record.prompt,
                 aiStylePreset: record.stylePreset.apiValue,
+                remixOf: record.remixOf,
               ));
       if (submissionResult == wallstore.WallSubmissionResult.quotaExceeded) {
         return;
@@ -1047,6 +1102,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       if (submissionConfirmed) {
         try {
           await analytics.track(AiSubmitSuccessEvent(generationId: record.id));
+          if (record.remixOf != null) await analytics.track(RemixSubmittedEvent(generationId: record.id));
         } catch (error, stackTrace) {
           logger.w(
             'AI wallpaper submission succeeded but follow-up work failed',
@@ -1109,21 +1165,36 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             ),
             Padding(
               padding: page.copyWith(top: busy ? PrismSpace.xl : PrismSpace.xs),
-              child: AiPromptField(
-                controller: _promptController,
-                focusNode: _promptFocus,
-                maxChars: _maxPromptChars,
-                enabled: !busy,
-                onShuffle: _shufflePrompt,
-                onSceneIdea: _useSceneIdea,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  if (_remixLink != null) ...<Widget>[
+                    AiRemixChip(seed: _remixLink!, onDrop: busy ? null : _dropRemixLink),
+                    const SizedBox(height: PrismSpace.sm),
+                  ],
+                  AiPromptField(
+                    controller: _promptController,
+                    focusNode: _promptFocus,
+                    maxChars: _maxPromptChars,
+                    enabled: !busy,
+                    onShuffle: _shufflePrompt,
+                    onSceneIdea: _useSceneIdea,
+                  ),
+                ],
               ),
             ),
             PrismSectionHeader(
               title: AppLocalizations.of(context).economyAiStyle,
+              actionLabel: AppLocalizations.of(context).economySeeAll,
+              onAction: _openStyleSheet,
               small: true,
-              padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, PrismSpace.sm),
+              padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, PrismSpace.sm),
             ),
-            AiStylePicker(selected: _selectedStyle, enabled: !busy, onSelected: _selectStyle),
+            AiStylePicker(
+              selected: _selectedStyle,
+              enabled: !busy,
+              onSelected: (AiStylePreset style) => _selectStyle(style, AiStylePickSource.row),
+            ),
             PrismSectionHeader(
               title: AppLocalizations.of(context).economyAiQuality,
               small: true,

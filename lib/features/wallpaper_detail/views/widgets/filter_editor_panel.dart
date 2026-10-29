@@ -310,7 +310,7 @@ class FilterEditorPanel extends StatelessWidget {
         Expanded(
           child: Semantics(
             label: label,
-            child: Slider(
+            child: PrismSlider(
               value: value.clamp(min, max),
               min: min,
               max: max,

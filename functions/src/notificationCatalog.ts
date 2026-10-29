@@ -3,6 +3,7 @@ export type NotificationCopy =
   | { kind: "wallApprovedForArtist"; wallTitle: string }
   | { kind: "wallLiveForFollowers"; artistName: string; wallTitle: string }
   | { kind: "wallApprovedForAdmin"; wallTitle: string; artistName: string }
+  | { kind: "wallRemixed"; remixerName: string; wallTitle: string }
   | { kind: "newFollower"; followerName: string }
   | { kind: "streakReminder" }
   | { kind: "wotdForCreator" }
@@ -23,6 +24,7 @@ export type NotificationCopy =
       tags: string;
     }
   | { kind: "folderDigest"; folderName: string; folderCount: number; wallCount: number; tags: string }
+  | { kind: "wallRequestFilled"; requestText: string }
   | { kind: "drawWinner" }
   | { kind: "giftReceived"; senderName: string }
   | { kind: "reportNeedsReview"; contentType: string; reason: string }
@@ -192,6 +194,13 @@ export function renderNotificationCopy(
         `New in ${copy.folderName}`,
       body: copy.tags || "Tap to see them all.",
     };
+  case "wallRequestFilled":
+    return {
+      kind: copy.kind,
+      args: {requestText: copy.requestText},
+      title: "Your request is here",
+      body: copy.requestText,
+    };
   case "drawWinner":
     return {
       kind: copy.kind,
@@ -223,6 +232,15 @@ export function renderNotificationCopy(
       },
       title: "New content report",
       body: "A new content report is ready for review.",
+    };
+  case "wallRemixed":
+    return {
+      kind: copy.kind,
+      args: {remixerName: copy.remixerName, wallTitle: copy.wallTitle},
+      title: "Your wallpaper was remixed",
+      body: copy.wallTitle ?
+        `${copy.remixerName} remixed ${copy.wallTitle}.` :
+        `${copy.remixerName} remixed your wallpaper.`,
     };
   case "wallSubmittedForReview":
     return {
@@ -275,7 +293,7 @@ export function nativeNotificationLocalization(
   message: Pick<RenderedNotificationCopy, "kind" | "args">,
 ): NativeNotificationLocalization | null {
   const kind = message.kind;
-  if (kind === "custom") return null;
+  if (kind === "custom" || kind === "wallRemixed") return null;
 
   const prefix = `notif_push_${kind.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)}`;
   const stringArg = (key: string): string => String(message.args[key] ?? "");
@@ -350,6 +368,9 @@ export function nativeNotificationLocalization(
     tagsBody();
     break;
   }
+  case "wallRequestFilled":
+    bodyArgs = [stringArg("requestText")];
+    break;
   case "reportNeedsReview":
     break;
   case "newContentReport":

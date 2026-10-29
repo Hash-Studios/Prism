@@ -56,7 +56,13 @@ void main() {
       owner: 'account-a',
       draftId: draftId,
       selectedFile: original,
-      metadata: const SubmissionMetadata(title: 'Aurora', category: 'Nature', tags: <String>['night']),
+      metadata: const SubmissionMetadata(
+        title: 'Aurora',
+        category: 'Nature',
+        tags: <String>['night'],
+        requestId: 'r1',
+        requestText: 'Northern lights',
+      ),
     );
     await original.delete();
 
@@ -72,6 +78,8 @@ void main() {
     expect(restored.metadata.title, 'Aurora');
     expect(restored.metadata.category, 'Nature');
     expect(restored.metadata.tags, <String>['night']);
+    expect(restored.metadata.requestId, 'r1');
+    expect(restored.metadata.requestText, 'Northern lights');
     expect(await afterRestart.read(owner: 'account-b', draftId: draftId), isNull);
   });
 

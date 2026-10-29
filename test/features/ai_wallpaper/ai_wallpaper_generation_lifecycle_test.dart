@@ -23,6 +23,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
+import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -97,7 +98,9 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
   final Future<List<AiGenerationRecord>> Function()? history;
   final List<({AiStylePreset style, AiQualityTier quality, int coinsSpent})> requests = [];
   final List<String?> chargeTxIds = <String?>[];
+  final List<String?> remixOfValues = <String?>[];
   final Map<String, String> prompts = <String, String>{};
+  final List<AiGenerationRecord> savedHistoryRecords = <AiGenerationRecord>[];
 
   @override
   Future<String?> loadPrompt({required String userId}) async => prompts[userId];
@@ -106,6 +109,15 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
   Future<void> savePrompt({required String userId, required String prompt}) async {
     prompts[userId] = prompt;
   }
+
+  @override
+  Future<void> saveHistoryRecord(AiGenerationRecord record) async => savedHistoryRecords.add(record);
+
+  @override
+  Future<AiSubmissionMetadata> prefillSubmissionMetadata({
+    required String generationId,
+    required List<String> defaultTags,
+  }) async => (title: 'Remix', description: '', category: 'Nature', tags: defaultTags);
 
   @override
   Future<void> clearForUser(String userId) async {
@@ -130,10 +142,16 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
     required int coinsSpent,
     int? seed,
     String? chargeTxId,
+    String? remixOf,
   }) {
     requests.add((style: stylePreset, quality: qualityTier, coinsSpent: coinsSpent));
     chargeTxIds.add(chargeTxId);
-    return generation!.call();
+    remixOfValues.add(remixOf);
+    return generation!().then((AiGenerationRecord record) {
+      final AiGenerationRecord linked = remixOf == null ? record : record.copyWith(remixOf: remixOf);
+      savedHistoryRecords.add(linked);
+      return linked;
+    });
   }
 
   @override
@@ -144,9 +162,15 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
     String variationPrompt = '',
     double strength = 0.45,
     String? chargeTxId,
+    String? remixOf,
   }) {
     chargeTxIds.add(chargeTxId);
-    return variation!.call();
+    remixOfValues.add(remixOf);
+    return variation!().then((AiGenerationRecord record) {
+      final AiGenerationRecord linked = remixOf == null ? record : record.copyWith(remixOf: remixOf);
+      savedHistoryRecords.add(linked);
+      return linked;
+    });
   }
 }
 
@@ -277,6 +301,7 @@ void main() {
     ConnectivityService? connectivity,
     List<MethodCall>? toastCalls,
     bool disableAnimations = false,
+    AiRemixSeed? remixSeed,
   }) async {
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
@@ -302,7 +327,10 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: MediaQuery(
           data: MediaQueryData.fromView(tester.view).copyWith(disableAnimations: disableAnimations),
-          child: AiWallpaperTabPage(repository: repository ?? _FakeAiGenerationRepository(_record())),
+          child: AiWallpaperTabPage(
+            repository: repository ?? _FakeAiGenerationRepository(_record()),
+            remixSeed: remixSeed,
+          ),
         ),
       ),
     );
@@ -383,6 +411,103 @@ void main() {
       'gen_mlt7o22q_7a9688a037a47de6',
       reason: 'a history refresh does not close the result the user is looking at',
     );
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('generating and submitting while remix linked writes remixOf to the uploaded wall', (tester) async {
+    final FakeFirestoreClient firestore = FakeFirestoreClient();
+    const String generatedId = 'gen_mlt7o22q_7a9688a037a47de6';
+    final AiGenerationRecord generated = _record(id: generatedId);
+    final _FakeAiGenerationRepository repository = _FakeAiGenerationRepository(
+      generated,
+      generation: () async => generated,
+    );
+    await setUpPage(
+      tester,
+      (name, parameters) async => <String, Object>{
+        'success': true,
+        'changed': true,
+        'currentBalance': 90,
+        'delta': -10,
+        'transactionId': 'reservation-1',
+      },
+      repository: repository,
+      firestore: firestore,
+      remixSeed: const AiRemixSeed(
+        wallDocId: 'orig_1',
+        title: 'Koi',
+        creatorName: 'Asha',
+        thumbnailUrl: '',
+        prompt: 'neon koi pond at dusk',
+        sourceType: RemixSourceType.user,
+      ),
+    );
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<AiResultView>(find.byType(AiResultView)).record.remixOf, 'orig_1');
+    expect(repository.remixOfValues, <String?>['orig_1']);
+    expect(repository.savedHistoryRecords, hasLength(1));
+    expect(repository.savedHistoryRecords.single.remixOf, 'orig_1');
+
+    final String submitLabel = AppLocalizations.of(
+      tester.element(find.byType(AiWallpaperTabPage)),
+    ).economyAiSubmitForReview;
+    final Finder submitButton = find.bySemanticsLabel(submitLabel);
+    await tester.ensureVisible(submitButton);
+    await tester.tap(submitButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(submitLabel));
+    await tester.pumpAndSettle();
+
+    final Map<String, dynamic>? uploadedWall = firestore.docs['walls']?.values.single;
+    expect(uploadedWall?['aiGenerationId'], generatedId);
+    expect(uploadedWall?['remixOf'], 'orig_1');
+  });
+
+  testWidgets('a remix link is saved when generation finishes after the owner session changes', (tester) async {
+    final Completer<AiGenerationRecord> generation = Completer<AiGenerationRecord>();
+    final AiGenerationRecord completed = _record(id: 'old-account-generation');
+    final _FakeAiGenerationRepository repository = _FakeAiGenerationRepository(
+      completed,
+      generation: () => generation.future,
+      history: () async => <AiGenerationRecord>[],
+    );
+    await setUpPage(
+      tester,
+      (name, parameters) async => <String, Object>{
+        'success': true,
+        'changed': true,
+        'currentBalance': 90,
+        'delta': -10,
+        'transactionId': 'reservation-1',
+      },
+      repository: repository,
+      remixSeed: const AiRemixSeed(
+        wallDocId: 'orig_1',
+        title: 'Koi',
+        creatorName: 'Asha',
+        thumbnailUrl: '',
+        prompt: 'neon koi pond at dusk',
+        sourceType: RemixSourceType.user,
+      ),
+    );
+
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pump();
+    expect(repository.requests, hasLength(1));
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-2'
+      ..loggedIn = true;
+    CoinsService.instance.resetSession();
+    generation.complete(completed);
+    await tester.pumpAndSettle();
+
+    expect(repository.savedHistoryRecords, hasLength(1));
+    expect(repository.savedHistoryRecords.single.remixOf, 'orig_1');
+    expect(find.byType(AiResultView), findsNothing);
     await tester.pump(const Duration(seconds: 2));
   });
 
@@ -976,6 +1101,51 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(generationCalls, 0);
     expect(refundCalls, 1);
+  });
+
+  Future<List<String?>> refineWithSeed(WidgetTester tester, AiGenerationRecord source) async {
+    final _FakeAiGenerationRepository repository = _FakeAiGenerationRepository(
+      source,
+      variation: () async => _record(id: 'variation-1'),
+    );
+    await setUpPage(
+      tester,
+      (name, parameters) async => <String, Object>{
+        'success': true,
+        'changed': true,
+        'currentBalance': 90,
+        'delta': -10,
+        'transactionId': 'reservation-1',
+      },
+      repository: repository,
+      remixSeed: const AiRemixSeed(
+        wallDocId: 'orig_1',
+        title: 'Koi',
+        creatorName: 'Asha',
+        thumbnailUrl: '',
+        prompt: 'neon koi pond at dusk',
+        sourceType: RemixSourceType.user,
+      ),
+    );
+    await openFirstRecent(tester);
+    final Finder refine = find.byTooltip('Try another');
+    await tester.ensureVisible(refine);
+    await tester.tap(refine);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Warmer colors');
+    await tester.pump();
+    await tester.tap(find.text('Generate another'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
+    return repository.remixOfValues;
+  }
+
+  testWidgets('a variation of an unlinked history wall does not credit the remix seed', (tester) async {
+    expect(await refineWithSeed(tester, _record()), <String?>[null]);
+  });
+
+  testWidgets('a variation of a result linked to the seed keeps the credit', (tester) async {
+    expect(await refineWithSeed(tester, _record().copyWith(remixOf: 'orig_1')), <String?>['orig_1']);
   });
 
   testWidgets('successful variation completing after disposal is not rolled back', (tester) async {

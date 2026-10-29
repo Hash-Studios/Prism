@@ -7,7 +7,8 @@ import {isAdminCaller} from "../adminConfig";
 import {db, REGION, CALLABLE_REGIONS, utcDateString} from "../common";
 import {loadStudioConfig, STUDIO_MAX_CANDIDATES_PER_DAY} from "./config";
 import {type Rng, studioCandidateId} from "./ids";
-import {buildDailyPlan} from "./plan";
+import {buildDailyPlan, requestPlanItem, type StudioPlanItem} from "./plan";
+import {MAX_STUDIO_REQUESTS, studioRequestPicks, WALL_REQUESTS} from "../wallRequests";
 import {STUDIO_SERIES, STUDIO_SUBJECT_COOLDOWN_DAYS} from "./series";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -65,7 +66,14 @@ export async function createStudioRun(request: StudioRunRequest): Promise<Studio
       if (!(at instanceof admin.firestore.Timestamp)) continue;
       if (at.toMillis() >= cutoff) recentSubjectIds.add(doc.id);
     }
-    const plan = buildDailyPlan({series, count: allowed, weights, recentSubjectIds, rng: request.rng ?? Math.random});
+    const rng = request.rng ?? Math.random;
+    // The scheduled run gives up to 3 of its slots to the most voted wall requests.
+    const picks = request.source === "schedule" && !request.seriesId ?
+      await studioRequestPicks(tx, Math.min(MAX_STUDIO_REQUESTS, allowed), nowMs) : [];
+    const plan: StudioPlanItem[] = [
+      ...picks.map((pick) => requestPlanItem(pick, rng)),
+      ...buildDailyPlan({series, count: allowed - picks.length, weights, recentSubjectIds, rng}),
+    ];
     if (plan.length === 0) return {status: "empty_plan", runId, count: 0};
 
     const now = admin.firestore.FieldValue.serverTimestamp();
@@ -78,7 +86,11 @@ export async function createStudioRun(request: StudioRunRequest): Promise<Studio
       tx.create(runRef.collection("candidates").doc(studioCandidateId(runId, index)), {
         ...item, ...size, runId, index, status: "queued", attempts: 0, createdAt: now, updatedAt: now,
       });
-      tx.set(usesRef.doc(item.subjectId), {lastUsedAt: usedAt, seriesId: item.seriesId, lastRunId: runId});
+      if (item.requestId) {
+        tx.update(db.collection(WALL_REQUESTS).doc(item.requestId), {studioRunId: runId, studioQueuedAt: usedAt});
+      } else {
+        tx.set(usesRef.doc(item.subjectId), {lastUsedAt: usedAt, seriesId: item.seriesId, lastRunId: runId});
+      }
     });
     return {status: "created", runId, count: plan.length};
   });

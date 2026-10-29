@@ -9,6 +9,9 @@ abstract class AutoRotateRepository {
   /// Returns false when the platform refused to start the rotation.
   Future<bool> start(AutoRotateConfig config, List<String> imageUrls);
 
+  /// Returns the ordered sources the platform can apply for this list.
+  Future<List<String>> resolveSources(List<String> imageUrls);
+
   /// Returns false when the platform could not stop the rotation.
   Future<bool> stop();
 
@@ -27,6 +30,10 @@ abstract class AutoRotateRepository {
   /// history. The order is stable for the same data, so reopening the app does not restart the rotation. Returns null
   /// when the list could not be loaded, and an empty list for the other sources.
   Future<List<String>?> loadRemoteUrls(AutoRotateSource source, {String? category});
+
+  /// The rotation sources for a folder of [userId]'s, newest first, after the same safety rules as every other
+  /// source. Null when the list could not be loaded. `found` is false when the folder is gone.
+  Future<({bool found, List<String> urls})?> loadFolderUrls(String folderId, {required String userId});
 
   /// The wallpaper targets this device can set. All of them when the device does not say.
   Future<Set<WallpaperTarget>> supportedTargets();

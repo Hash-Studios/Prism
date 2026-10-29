@@ -13,8 +13,9 @@ enum AiQualityTier {
     AiQualityTier.quality => CoinPolicy.aiGenerationQuality,
   };
 
-  /// What the user pays: Pro pays half, rounded up.
-  int costFor({required bool isPro}) => proPrice(coinCost, isPro);
+  /// What the user pays. Like spendCoins, Pro pays half (rounded up) only while the config lists `aiGeneration`.
+  int costFor({required bool isPro}) =>
+      proPrice(coinCost, isPro && EconomyConfig.current.proDiscountActions.contains('aiGeneration'));
 
   String get apiValue => name;
 

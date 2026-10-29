@@ -34,6 +34,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
   late Stream<List<FirestoreDocument>> _pendingWallsStream;
   late Stream<List<FirestoreDocument>> _openReportsStream;
   late Stream<(int, int)> _pendingCountsStream;
+  final Map<String, Future<String?>> _requestTexts = <String, Future<String?>>{};
 
   @override
   void initState() {
@@ -55,7 +56,26 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
 
   void _retryStreams() {
     PrismHaptics.tap();
+    _requestTexts.clear();
     setState(_subscribeStreams);
+  }
+
+  Future<String?> _requestText(String requestId) {
+    final Future<String?>? cached = _requestTexts[requestId];
+    if (cached != null) return cached;
+
+    late final Future<String?> request;
+    request = _repository
+        .requestText(requestId)
+        .then(
+          (String? text) => text,
+          onError: (Object error, StackTrace stackTrace) {
+            if (identical(_requestTexts[requestId], request)) _requestTexts.remove(requestId);
+            Error.throwWithStackTrace(error, stackTrace);
+          },
+        );
+    _requestTexts[requestId] = request;
+    return request;
   }
 
   @override
@@ -118,48 +138,74 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         final String previewUrl = wall.wallpaperThumb;
         final DateTime? createdAt = wall.createdAt;
         final bool reserved = wall.payload['dropReserved'] == true;
-        return ModerationCard(
-          previewUrl: previewUrl,
-          fullUrl: wall.wallpaperUrl.isNotEmpty ? wall.wallpaperUrl : previewUrl,
-          facts: <(String, String)>[
-            (context.l10n.adminWallId, wall.id),
-            (context.l10n.adminBy, wall.by.isNotEmpty ? wall.by : context.l10n.adminUnknown),
-            (context.l10n.adminEmail, wall.email.isNotEmpty ? wall.email : context.l10n.adminUnknown),
-            (
-              context.l10n.adminUploaded,
-              createdAt != null
-                  ? localizedRelativeTime(context.l10n, createdAt, locale: Localizations.localeOf(context))
-                  : context.l10n.adminUnknown,
-            ),
-            (context.l10n.adminDepth, depthTierLabel(context.l10n, wallDepthTier(wall))),
-            if (reserved) (context.l10n.adminDrop, context.l10n.adminReservedForNextDrop),
-          ],
-          reserved: reserved,
-          moderation: wallModeration(wall),
-          onToggleReserve: canReserveForDrop(wall)
-              ? () async {
-                  if (reserved) {
-                    await _repository.undoReserveWallForDrop(wall);
-                    toasts.success(l10n.adminRemovedFromNextDrop);
-                  } else {
-                    await _repository.reserveWallForDrop(wall);
-                    toasts.success(l10n.adminReservedForNextDrop);
-                  }
-                }
-              : null,
-          onApprove: () async {
-            await _repository.approveWall(wall);
-            toasts.success(l10n.adminWallpaperApproved);
-          },
-          onReject: () => _confirmReject(
+        final Object? rawRequestId = wall.payload['requestId'];
+        final String requestId = rawRequestId is String ? rawRequestId : '';
+        if (requestId.isEmpty) return _wallCard(context, wall, previewUrl, createdAt, reserved, null);
+        return FutureBuilder<String?>(
+          future: _requestText(requestId),
+          builder: (BuildContext context, AsyncSnapshot<String?> snapshot) => _wallCard(
             context,
-            onSubmit: (String reason) async {
-              await _repository.rejectWall(wall, reason: reason);
-              toasts.success(l10n.adminWallpaperRejected);
-            },
+            wall,
+            previewUrl,
+            createdAt,
+            reserved,
+            snapshot.connectionState == ConnectionState.done ? snapshot.data ?? l10n.adminUnknown : '…',
           ),
         );
       },
+    );
+  }
+
+  Widget _wallCard(
+    BuildContext context,
+    FirestoreDocument wall,
+    String previewUrl,
+    DateTime? createdAt,
+    bool reserved,
+    String? requestText,
+  ) {
+    final AppLocalizations l10n = context.l10n;
+    return ModerationCard(
+      previewUrl: previewUrl,
+      fullUrl: wall.wallpaperUrl.isNotEmpty ? wall.wallpaperUrl : previewUrl,
+      facts: <(String, String)>[
+        (context.l10n.adminWallId, wall.id),
+        (context.l10n.adminBy, wall.by.isNotEmpty ? wall.by : context.l10n.adminUnknown),
+        (context.l10n.adminEmail, wall.email.isNotEmpty ? wall.email : context.l10n.adminUnknown),
+        (
+          context.l10n.adminUploaded,
+          createdAt != null
+              ? localizedRelativeTime(context.l10n, createdAt, locale: Localizations.localeOf(context))
+              : context.l10n.adminUnknown,
+        ),
+        (context.l10n.adminDepth, depthTierLabel(context.l10n, wallDepthTier(wall))),
+        if (reserved) (context.l10n.adminDrop, context.l10n.adminReservedForNextDrop),
+        if (requestText != null) (context.l10n.adminFillsRequest, requestText),
+      ],
+      reserved: reserved,
+      moderation: wallModeration(wall),
+      onToggleReserve: canReserveForDrop(wall)
+          ? () async {
+              if (reserved) {
+                await _repository.undoReserveWallForDrop(wall);
+                toasts.success(l10n.adminRemovedFromNextDrop);
+              } else {
+                await _repository.reserveWallForDrop(wall);
+                toasts.success(l10n.adminReservedForNextDrop);
+              }
+            }
+          : null,
+      onApprove: () async {
+        await _repository.approveWall(wall);
+        toasts.success(l10n.adminWallpaperApproved);
+      },
+      onReject: () => _confirmReject(
+        context,
+        onSubmit: (String reason) async {
+          await _repository.rejectWall(wall, reason: reason);
+          toasts.success(l10n.adminWallpaperRejected);
+        },
+      ),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
+import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 
 extension WallpaperTargetWire on WallpaperTarget {
   String get wireValue => _snakeCase(name);
@@ -35,6 +36,10 @@ extension AiChargeModeWire on AiChargeMode {
   String get wireValue => value;
 }
 
+extension RemixSourceTypeWire on RemixSourceType {
+  String get wireValue => name;
+}
+
 enum BinaryResultValue {
   success,
   failure;
@@ -45,6 +50,28 @@ enum BinaryResultValue {
 enum AiApplyFromValue {
   hero,
   strip;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum AiStylePickSource {
+  row,
+  sheet,
+  onboarding;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum ImmersiveToggleSourceValue {
+  tap,
+  semantics;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum FavouritePinSurfaceValue {
+  library,
+  detail;
 
   String get wireValue => _snakeCase(name);
 }
@@ -386,6 +413,20 @@ enum PushKindValue {
   rejection,
   winBack,
   drop;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum WallRequestSourceValue {
+  search,
+  requestsPage;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum WallRequestFillerValue {
+  creator,
+  studio;
 
   String get wireValue => _snakeCase(name);
 }

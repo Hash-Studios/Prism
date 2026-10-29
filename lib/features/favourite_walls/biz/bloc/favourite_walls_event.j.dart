@@ -17,6 +17,11 @@ abstract class FavouriteWallsEvent with _$FavouriteWallsEvent {
   const factory FavouriteWallsEvent.queryChanged({required String query}) = _QueryChanged;
   const factory FavouriteWallsEvent.removeRequested({required List<String> wallIds, @Default(0) int operationId}) =
       _RemoveRequested;
+  const factory FavouriteWallsEvent.pinRequested({
+    required String wallId,
+    required bool pinned,
+    @Default(0) int operationId,
+  }) = _PinRequested;
   const factory FavouriteWallsEvent.restoreRequested({
     required List<FavouriteWallEntity> walls,
     @Default(0) int operationId,

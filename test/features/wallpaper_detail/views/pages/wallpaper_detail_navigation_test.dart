@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
@@ -11,6 +12,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
@@ -20,6 +22,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../support/favourite_test_scope.dart';
@@ -45,6 +48,10 @@ class _DetailTestRouter extends AppRouter {
       page: PageInfo('DetailHostRoute', builder: (_) => const Scaffold(body: Text('detail host'))),
     ),
     AutoRoute(path: '/wallpaper-detail', page: WallpaperDetailRoute.page),
+    AutoRoute(
+      path: '/download-wallpaper',
+      page: PageInfo(DownloadWallpaperRoute.name, builder: (_) => const Scaffold(body: Text('download destination'))),
+    ),
   ];
 }
 
@@ -160,7 +167,7 @@ void main() {
     await tester.pumpAndSettle();
     final firstVisit = blocs.single;
     firstVisit.handleEvent = (event) {
-      if (event is CycleAccentColor) {
+      if (event is SelectAccentColor) {
         aState = aState.copyWith(accent: Colors.blue, colorChanged: true);
         firstVisit.states.add(aState);
       } else if (event is LoadRecommendations) {
@@ -173,7 +180,7 @@ void main() {
         firstVisit.states.add(aState);
       }
     };
-    await tester.tapAt(const Offset(195, 280));
+    firstVisit.add(const SelectAccentColor(color: Colors.blue));
     await tester.pumpAndSettle();
     expect((firstVisit.state as WallpaperDetailLoaded).tint, Colors.blue);
     final bTile = find.byKey(ValueKey((WallpaperSource.wallhaven, 'B')));
@@ -345,6 +352,34 @@ void main() {
     await tester.pump();
     expect(find.text("Couldn't load this wallpaper"), findsOneWidget);
     expect(find.text('Wallpaper not found'), findsOneWidget);
+    await disposeRouter(tester);
+  });
+
+  testWidgets('a local-file error replaces immersive detail and restores system bars', (tester) async {
+    final List<String> modes = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'SystemChrome.setEnabledSystemUIMode') modes.add(call.arguments as String);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    final Directory directory = Directory.systemTemp.createTempSync('prism-detail-local-file-');
+    addTearDown(() => directory.deleteSync(recursive: true));
+    final File file = File('${directory.path}/wall.jpg')..writeAsBytesSync(<int>[1]);
+    final FeedItemEntity wall = _prism('LOCAL');
+    initialStates.add(WallpaperDetailLoaded(entity: wall, recommendations: const RecommendationState.exhausted()));
+    final router = await pumpRouter(tester);
+
+    unawaited(router.push(WallpaperDetailRoute(entity: wall, localFile: file)));
+    await tester.pumpAndSettle();
+    await tester.tapAt(tester.getCenter(find.byType(WallpaperQuickActionRegion).first));
+    await tester.pumpAndSettle();
+    expect(modes, <String>['SystemUiMode.immersiveSticky']);
+
+    blocs.single.states.add(const WallpaperDetailError(failure: WallpaperDetailLoadFailure.unavailable));
+    await tester.pumpAndSettle();
+
+    expect(router.current.name, DownloadWallpaperRoute.name);
+    expect(modes, <String>['SystemUiMode.immersiveSticky', 'SystemUiMode.edgeToEdge']);
     await disposeRouter(tester);
   });
 }

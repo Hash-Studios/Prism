@@ -59,6 +59,8 @@
     <string name="notif_push_drop_last_call_title">Última chance de aproveitar o Drop desta semana</string>
     <string name="notif_push_drop_last_call_body">%1$s termina em %2$s h. Os papéis de parede ficarão indisponíveis por um mês depois disso.</string>
     <string name="notif_push_draw_winner_title">Você ganhou o Sorteio Prism</string>
+    <string name="notif_push_wall_request_filled_title">Seu pedido chegou</string>
+    <string name="notif_push_wall_request_filled_body">%1$s</string>
     <string name="notif_push_draw_winner_body">Um mês de Pro e a moldura Prism são seus.</string>
     <string name="notif_push_gift_received_title">%1$s enviou a você um passe Pro de 24 horas</string>
     <string name="notif_push_gift_received_body">Coleções e papéis de parede premium ficarão disponíveis por 24 horas.</string>

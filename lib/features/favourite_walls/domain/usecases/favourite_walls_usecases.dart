@@ -64,3 +64,23 @@ class ClearFavouriteWallsUseCase implements UseCase<bool, ClearFavouriteWallsPar
     return _repository.clearAll(userId: params.userId, wallIds: params.wallIds);
   }
 }
+
+class SetFavouritePinParams {
+  const SetFavouritePinParams({required this.userId, required this.wall, this.pinnedAt});
+
+  final String userId;
+  final FavouriteWallEntity wall;
+  final DateTime? pinnedAt;
+}
+
+@lazySingleton
+class SetFavouritePinUseCase implements UseCase<void, SetFavouritePinParams> {
+  SetFavouritePinUseCase(this._repository);
+
+  final FavouriteWallsRepository _repository;
+
+  @override
+  Future<Result<void>> call(SetFavouritePinParams params) {
+    return _repository.setPinned(userId: params.userId, wall: params.wall, pinnedAt: params.pinnedAt);
+  }
+}

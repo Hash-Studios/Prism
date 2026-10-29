@@ -59,6 +59,8 @@
     <string name="notif_push_drop_last_call_title">Last call on this week\'s Drop</string>
     <string name="notif_push_drop_last_call_body">%1$s ends in %2$s h. Wallpapers are unavailable for a month afterward.</string>
     <string name="notif_push_draw_winner_title">You won the Prism Draw</string>
+    <string name="notif_push_wall_request_filled_title">Your request is here</string>
+    <string name="notif_push_wall_request_filled_body">%1$s</string>
     <string name="notif_push_draw_winner_body">One month of Pro and the Prism frame are yours.</string>
     <string name="notif_push_gift_received_title">%1$s sent you a 24-hour Pro pass</string>
     <string name="notif_push_gift_received_body">Premium collections and premium walls are open until tomorrow.</string>

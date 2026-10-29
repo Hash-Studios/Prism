@@ -30,6 +30,34 @@ class AppLocalizationsEs extends AppLocalizations {
   String get galleryScreenTitle => 'Fondos para ti';
 
   @override
+  String get favouritePin => 'Fijar arriba';
+
+  @override
+  String get favouriteUnpin => 'Desfijar';
+
+  @override
+  String get favouritePinnedToast => 'Fijado arriba en Favoritos';
+
+  @override
+  String get favouriteUnpinnedToast => 'Desfijado';
+
+  @override
+  String get favouritePinnedBadge => 'Fijado';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Puedes fijar hasta $count favoritos. Desfija uno para fijar este fondo de pantalla.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed => 'No se pudo actualizar el fijado. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -4190,6 +4218,13 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get economyAiStyleSheetTitle => 'Elige un estilo';
+
+  @override
+  String get economyAiStyleSheetSubject =>
+      'Cada vista previa muestra la misma escena: un faro en un acantilado al atardecer.';
+
+  @override
   String get economyAiStyleWatercolor => 'Acuarela';
 
   @override
@@ -7641,9 +7676,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperResetOriginal => 'Restablecer original';
 
   @override
-  String get wallpaperAccentResetHint => 'Mantén pulsado para ver acciones, incluida Restablecer original';
-
-  @override
   String get wallpaperAll => 'Todos';
 
   @override
@@ -8684,7 +8716,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticHint =>
-      'Toca para cambiar el color. Mantén pulsado para favoritos, compartir y restablecer. Desplázate para ver los detalles.';
+      'Mantén pulsado para favoritos, compartir y restablecer. Desplázate para ver los detalles.';
 
   @override
   String get wallpaperPreviousInFeed => 'Fondo de pantalla anterior';
@@ -8694,6 +8726,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'Fondo de pantalla';
+
+  @override
+  String get wallpaperImmersiveHint => 'Toca para ocultar los controles';
 
   @override
   String get wallpaperInsufficientCoins => 'No tienes suficientes monedas. Gana monedas en Recompensas.';
@@ -10879,5 +10914,435 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String notifPushFolderDigestTitleMore(String folderName, int count) {
     return 'Nuevo en $folderName y $count más';
+  }
+
+  @override
+  String get historySetAndDownloaded => 'Puesto y descargado';
+
+  @override
+  String get historyDownloaded => 'Descargado';
+
+  @override
+  String get historyRecentlyViewed => 'Vistos recientemente';
+
+  @override
+  String get historySyncedNote => 'Guardado en tu cuenta, así estos vuelven a aparecer en un teléfono nuevo.';
+
+  @override
+  String get historySyncedNoteGuest => 'Inicia sesión para mantenerlos en un teléfono nuevo.';
+
+  @override
+  String get historyActionSet => 'Puesto';
+
+  @override
+  String get historyActionDownloaded => 'Descargado';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action a las $time';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'Esto borra la lista de aquí y de tu cuenta. Tus fondos de pantalla y descargas se mantienen igual.';
+
+  @override
+  String get historyClearViewedTitle => '¿Borrar vistos recientemente?';
+
+  @override
+  String get historyClearViewedBody => 'Esto quita de esta lista y de Inicio los fondos de pantalla que abriste.';
+
+  @override
+  String get historyClearViewedAction => 'Borrar vistos recientemente';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'Los fondos de pantalla que pongas o descargues aparecen aquí para que los encuentres de nuevo.';
+
+  @override
+  String get historyEmptyBodyIos =>
+      'Los fondos de pantalla que descargues aparecen aquí para que los encuentres de nuevo.';
+
+  @override
+  String get historyViewedEmptyTitle => 'Aún no has visto nada';
+
+  @override
+  String get historyViewedEmptyBody =>
+      'Los fondos de pantalla que abras aparecen aquí para que los encuentres de nuevo.';
+
+  @override
+  String get historyViewedOffTitle => 'El historial de visualización está desactivado';
+
+  @override
+  String get historyViewedOffBody =>
+      'Activa Guardar historial de visualización para ver aquí los fondos de pantalla que abras.';
+
+  @override
+  String get historyViewedOffAction => 'Activar';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'Abrir fondo de pantalla, visto a las $time';
+  }
+
+  @override
+  String get pickUpTitle => 'Retoma donde lo dejaste';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return 'Abrir fondo de pantalla $index de $count';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'Guardar historial de visualización';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'Muestra los fondos de pantalla que abres en Historial y en Inicio. Si lo desactivas, se borra la lista.';
+
+  @override
+  String get historyClearFailed => 'No se pudo borrar el historial. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Carpeta';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Carpeta: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Esta carpeta necesita al menos 2 fondos de pantalla que puedan rotar. Los fondos de Prism rotan después de que los descargues.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Abrir carpeta';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Elige una carpeta';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'Aún no tienes carpetas. Guarda un fondo de pantalla en una carpeta y luego elígela aquí.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return '¿Rotar $folder?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Tu fondo de pantalla cambiará a uno de esta carpeta, según el horario de abajo.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Rotar esta carpeta';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'La rotación automática está desactivada porque se eliminó la carpeta $folder.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'La rotación automática está desactivada porque la carpeta $folder tiene menos de 2 fondos de pantalla.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Rotar esta carpeta';
+
+  @override
+  String get foldersRotating => 'Rotando';
+
+  @override
+  String get foldersRotatingDescription => 'La rotación automática usa esta carpeta';
+
+  @override
+  String get wallpaperAccentResetHint => 'Mantén pulsado para ver acciones, incluida Restablecer original';
+
+  @override
+  String get wallRequestsTitle => 'Solicitudes de fondos';
+
+  @override
+  String get wallRequestsTabTop => 'Top';
+
+  @override
+  String get wallRequestsTabNew => 'Nuevas';
+
+  @override
+  String get wallRequestsTabFilled => 'Cumplidas';
+
+  @override
+  String get wallRequestsAsk => 'Pide un fondo';
+
+  @override
+  String get wallRequestsEmptyTopTitle => 'Aún no hay solicitudes';
+
+  @override
+  String get wallRequestsEmptyTopBody => 'Pide el fondo que no encuentras. Otros pueden apoyarlo.';
+
+  @override
+  String get wallRequestsEmptyFilledTitle => 'Aún no hay solicitudes cumplidas';
+
+  @override
+  String get wallRequestsEmptyFilledBody => 'Las solicitudes cumplidas aparecen aquí, con el fondo que las cumplió.';
+
+  @override
+  String get wallRequestsLoadFailed => 'No pudimos cargar las solicitudes';
+
+  @override
+  String get wallRequestsRetry => 'Intentar de nuevo';
+
+  @override
+  String wallRequestVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votos',
+      one: '1 voto',
+      zero: 'Sin votos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestUpvote => 'Apoyar';
+
+  @override
+  String get wallRequestRemoveUpvote => 'Quitar apoyo';
+
+  @override
+  String get wallRequestMine => 'Tu solicitud';
+
+  @override
+  String get wallRequestSomeone => 'Un usuario de Prism';
+
+  @override
+  String wallRequestFilledByCreator(String name) {
+    return 'Cumplida por $name';
+  }
+
+  @override
+  String get wallRequestFilledByStudio => 'Hecha por Prism Studio';
+
+  @override
+  String get wallRequestOpenWall => 'Abrir el fondo';
+
+  @override
+  String get wallRequestMoreActions => 'Más acciones';
+
+  @override
+  String get wallRequestReport => 'Reportar solicitud';
+
+  @override
+  String get wallRequestHide => 'Ocultar solicitud';
+
+  @override
+  String get wallRequestUnhide => 'Mostrar solicitud';
+
+  @override
+  String get wallRequestHiddenLabel => 'Oculta';
+
+  @override
+  String get wallRequestSheetTitle => 'Pide un fondo';
+
+  @override
+  String get wallRequestSheetHint => 'Descríbelo, por ejemplo: montañas oscuras y minimalistas';
+
+  @override
+  String get wallRequestSheetTags => 'Etiquetas, hasta 3';
+
+  @override
+  String get wallRequestSheetSubmit => 'Enviar solicitud';
+
+  @override
+  String get wallRequestSignIn => 'Inicia sesión para pedir fondos y apoyarlos.';
+
+  @override
+  String get wallRequestDuplicateTitle => 'Alguien ya pidió esto';
+
+  @override
+  String get wallRequestDuplicateBody => 'Apóyalo para que los creadores lo vean antes.';
+
+  @override
+  String get wallRequestUpvoteInstead => 'Apoya esta en su lugar';
+
+  @override
+  String get wallRequestCreateAnyway => 'Enviar la mía igual';
+
+  @override
+  String get wallRequestDuplicateMine => 'Ya pediste esto';
+
+  @override
+  String get wallRequestDuplicateVoted => 'Ya apoyaste esto';
+
+  @override
+  String get wallRequestEditText => 'Editar mi solicitud';
+
+  @override
+  String get wallRequestCreated => 'Solicitud enviada. Te avisaremos cuando se cumpla.';
+
+  @override
+  String get wallRequestUpvoted => 'Apoyada. Te avisaremos cuando se cumpla.';
+
+  @override
+  String get wallRequestErrorText => 'Usa de 3 a 80 caracteres y mantén un tono amable.';
+
+  @override
+  String get wallRequestErrorLimit => 'Puedes hacer 3 solicitudes al día. Inténtalo mañana.';
+
+  @override
+  String get wallRequestErrorOwn => 'No puedes apoyar tu propia solicitud.';
+
+  @override
+  String get wallRequestErrorClosed => 'Esta solicitud ya se cumplió.';
+
+  @override
+  String get wallRequestErrorGone => 'Esta solicitud ya no está disponible.';
+
+  @override
+  String get wallRequestErrorGeneric => 'Algo salió mal. Intenta de nuevo.';
+
+  @override
+  String get searchRequestPrompt => '¿No lo encuentras?';
+
+  @override
+  String get searchRequestAction => 'Pídelo';
+
+  @override
+  String get discoverRequestsTitle => 'Solicitudes de fondos';
+
+  @override
+  String get discoverRequestsSubtitle => 'Pide un fondo o apoya uno';
+
+  @override
+  String get uploadFillsRequest => 'Cumple una solicitud';
+
+  @override
+  String get uploadFillsRequestHint => 'Opcional. Elige la solicitud que responde este fondo.';
+
+  @override
+  String get uploadFillsRequestClear => 'Quitar solicitud';
+
+  @override
+  String get requestPickerTitle => '¿Qué solicitud cumple?';
+
+  @override
+  String get requestPickerSearch => 'Buscar solicitudes';
+
+  @override
+  String get requestPickerEmpty => 'No hay solicitudes abiertas que coincidan';
+
+  @override
+  String get notifPushWallRequestFilledTitle => 'Tu solicitud ya está aquí';
+
+  @override
+  String notifPushWallRequestFilledBody(String requestText) {
+    return '$requestText';
+  }
+
+  @override
+  String get wallRequestAgeNow => 'Justo ahora';
+
+  @override
+  String wallRequestAgeMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hace $count minutos',
+      one: 'Hace 1 minuto',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Hace $count horas', one: 'Hace 1 hora');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Hace $count días', one: 'Hace 1 día');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hace $count semanas',
+      one: 'Hace 1 semana',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestErrorAccountAge => 'Tu cuenta podrá hacer solicitudes y votar cuando tenga 10 días.';
+
+  @override
+  String get adminFillsRequest => 'Cumple la solicitud';
+
+  @override
+  String get wallRemixAction => 'Remezclar';
+
+  @override
+  String get wallRemixActionTooltip => 'Remezclar este fondo de pantalla con IA';
+
+  @override
+  String wallRemixingChip(String title, String creator) {
+    return 'Remezclando $title de $creator';
+  }
+
+  @override
+  String get wallRemixDropLinkTooltip => 'Quitar el vínculo de remezcla';
+
+  @override
+  String get wallRemixUntitled => 'Sin título';
+
+  @override
+  String get wallRemixUnknownCreator => 'un creador de Prism';
+
+  @override
+  String get wallRemixesTitle => 'Remezclas';
+
+  @override
+  String wallRemixesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count remezclas', one: '1 remezcla');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRemixOpenRemixLabel(String creator) {
+    return 'Abrir la remezcla de $creator';
+  }
+
+  @override
+  String wallRemixOfLabel(String title, String creator) {
+    return 'Remezcla de $title de $creator';
+  }
+
+  @override
+  String get wallRemixOfTooltip => 'Abrir el fondo de pantalla original';
+
+  @override
+  String get economyAiSubmitPromptNotice => 'Cualquiera puede ver tu prompt y remezclar este fondo de pantalla.';
+
+  @override
+  String get notifPushWallRemixedTitle => 'Remezclaron tu fondo de pantalla';
+
+  @override
+  String notifPushWallRemixedBody(String remixerName, String wallTitle) {
+    return '$remixerName remezcló $wallTitle.';
+  }
+
+  @override
+  String notifPushWallRemixedBodyUntitled(String remixerName) {
+    return '$remixerName remezcló tu fondo de pantalla.';
   }
 }

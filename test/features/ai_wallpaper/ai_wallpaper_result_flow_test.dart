@@ -169,6 +169,7 @@ class _CountingAiGenerationRepository extends Fake implements AiGenerationReposi
     required int coinsSpent,
     int? seed,
     String? chargeTxId,
+    String? remixOf,
   }) async {
     generateCalls++;
     return _take('take-$generateCalls');
@@ -182,6 +183,7 @@ class _CountingAiGenerationRepository extends Fake implements AiGenerationReposi
     String variationPrompt = '',
     double strength = 0.45,
     String? chargeTxId,
+    String? remixOf,
   }) async {
     variationCalls++;
     return _take('variation-$variationCalls');

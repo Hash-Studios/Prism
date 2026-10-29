@@ -11,6 +11,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/wallpaper_detail_route.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -136,6 +137,53 @@ void main() {
     verify(
       () => bloc.add(LoadFromId(wallId: 'wall', source: WallpaperSource.pexels, localFilePath: file.path)),
     ).called(1);
+  });
+
+  testWidgets('a download opens at its own shape and keeps it when the wallpaper loads', (tester) async {
+    getIt.registerSingleton<TasteSignalStore>(TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore())));
+    const FeedItemEntity wide = FeedItemEntity.pexels(
+      id: 'pexels-1',
+      wallpaper: PexelsWallpaper(
+        core: WallpaperCore(
+          id: 'pexels-1',
+          source: WallpaperSource.pexels,
+          fullUrl: 'https://images.example/full.jpg',
+          thumbnailUrl: 'https://images.example/thumb.jpg',
+          width: 1600,
+          height: 900,
+        ),
+      ),
+    );
+    final StreamController<WallpaperDetailState> states = StreamController<WallpaperDetailState>();
+    addTearDown(states.close);
+    final bloc = _MockWallpaperDetailBloc();
+    whenListen(bloc, states.stream, initialState: const WallpaperDetailLoading());
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: BlocProvider<WallpaperDetailBloc>.value(
+          value: bloc,
+          child: WallpaperDetailScreen(
+            wallId: 'pexels-1',
+            source: WallpaperSource.pexels,
+            localFile: File('assets/images/prism.webp'),
+            aspectRatio: 3 / 2,
+            heroTag: 'download-1',
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    final Size loading = tester.getSize(find.byType(WallpaperDetailHero));
+
+    states.add(const WallpaperDetailLoaded(entity: wide, paletteLoading: false));
+    await tester.pump();
+    await tester.pump();
+
+    expect(loading.width / loading.height, closeTo(3 / 2, 0.01));
+    expect(tester.getSize(find.byType(WallpaperDetailHero)), loading);
   });
 
   testWidgets('a downloaded catalogue wallpaper asks for recommendations like any other visit', (tester) async {

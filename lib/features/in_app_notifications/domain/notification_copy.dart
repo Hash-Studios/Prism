@@ -71,6 +71,12 @@ String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
     title: l10n.notifPushNewFollowerTitle,
     body: l10n.notifPushNewFollowerBody(_stringArg(args, 'followerName')),
   ),
+  'wallRemixed' => (
+    title: l10n.notifPushWallRemixedTitle,
+    body: _stringArg(args, 'wallTitle').trim().isEmpty
+        ? l10n.notifPushWallRemixedBodyUntitled(_stringArg(args, 'remixerName'))
+        : l10n.notifPushWallRemixedBody(_stringArg(args, 'remixerName'), _stringArg(args, 'wallTitle')),
+  ),
   'streakReminder' => (title: l10n.notifPushStreakReminderTitle, body: l10n.notifPushStreakReminderBody),
   'wotdForCreator' => (title: l10n.notifPushWotdCreatorTitle, body: l10n.notifPushWotdCreatorBody),
   'wotdForAudience' => (
@@ -105,6 +111,10 @@ String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
     body: l10n.notifPushDropLastCallBody(_stringArg(args, 'dropTitle'), _intArg(args, 'hoursLeft')),
   ),
   'drawWinner' => (title: l10n.notifPushDrawWinnerTitle, body: l10n.notifPushDrawWinnerBody),
+  'wallRequestFilled' => (
+    title: l10n.notifPushWallRequestFilledTitle,
+    body: l10n.notifPushWallRequestFilledBody(_stringArg(args, 'requestText')),
+  ),
   'giftReceived' => (
     title: l10n.notifPushGiftReceivedTitle(_stringArg(args, 'senderName')),
     body: l10n.notifPushGiftReceivedBody,

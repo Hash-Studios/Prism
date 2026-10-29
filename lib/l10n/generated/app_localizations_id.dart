@@ -29,6 +29,34 @@ class AppLocalizationsId extends AppLocalizations {
   String get galleryScreenTitle => 'Wallpaper untuk Anda';
 
   @override
+  String get favouritePin => 'Sematkan ke atas';
+
+  @override
+  String get favouriteUnpin => 'Lepas sematan';
+
+  @override
+  String get favouritePinnedToast => 'Disematkan di atas Favorit';
+
+  @override
+  String get favouriteUnpinnedToast => 'Sematan dilepas';
+
+  @override
+  String get favouritePinnedBadge => 'Disematkan';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda dapat menyematkan hingga $count favorit. Lepas satu sematan untuk menyematkan wallpaper ini.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed => 'Tidak dapat memperbarui sematan. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -4163,6 +4191,13 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get economyAiStyleSheetTitle => 'Pilih gaya';
+
+  @override
+  String get economyAiStyleSheetSubject =>
+      'Setiap pratinjau menampilkan adegan yang sama: mercusuar di tebing saat senja.';
+
+  @override
   String get economyAiStyleWatercolor => 'Cat air';
 
   @override
@@ -7579,9 +7614,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperResetOriginal => 'Kembali ke asli';
 
   @override
-  String get wallpaperAccentResetHint => 'Tahan untuk tindakan, termasuk Kembali ke asli';
-
-  @override
   String get wallpaperAll => 'Semua';
 
   @override
@@ -8602,8 +8634,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperHomeAppName => 'Prism';
 
   @override
-  String get wallpaperImageSemanticHint =>
-      'Ketuk untuk mengganti warna aksen. Tahan untuk favorit, berbagi, dan reset. Gulir untuk detail.';
+  String get wallpaperImageSemanticHint => 'Tahan untuk favorit, berbagi, dan reset. Gulir untuk detail.';
 
   @override
   String get wallpaperPreviousInFeed => 'Wallpaper sebelumnya';
@@ -8613,6 +8644,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'Wallpaper';
+
+  @override
+  String get wallpaperImmersiveHint => 'Ketuk untuk menyembunyikan kontrol';
 
   @override
   String get wallpaperInsufficientCoins => 'Koin tidak cukup. Dapatkan koin di Hadiah.';
@@ -10798,5 +10832,423 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String notifPushFolderDigestTitleMore(String folderName, int count) {
     return 'Baru di $folderName dan $count lainnya';
+  }
+
+  @override
+  String get historySetAndDownloaded => 'Dipasang dan diunduh';
+
+  @override
+  String get historyDownloaded => 'Diunduh';
+
+  @override
+  String get historyRecentlyViewed => 'Baru dilihat';
+
+  @override
+  String get historySyncedNote => 'Disimpan di akun Anda, jadi ini kembali saat Anda pakai ponsel baru.';
+
+  @override
+  String get historySyncedNoteGuest => 'Masuk untuk menyimpan ini di ponsel baru.';
+
+  @override
+  String get historyActionSet => 'Dipasang';
+
+  @override
+  String get historyActionDownloaded => 'Diunduh';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action pukul $time';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'Ini menghapus daftar di sini dan di akun Anda. Wallpaper dan unduhan Anda tetap seperti semula.';
+
+  @override
+  String get historyClearViewedTitle => 'Hapus baru dilihat?';
+
+  @override
+  String get historyClearViewedBody => 'Ini menghapus wallpaper yang Anda buka dari daftar ini dan dari Beranda.';
+
+  @override
+  String get historyClearViewedAction => 'Hapus baru dilihat';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'Wallpaper yang Anda pasang atau unduh muncul di sini, agar mudah Anda temukan lagi.';
+
+  @override
+  String get historyEmptyBodyIos => 'Wallpaper yang Anda unduh muncul di sini, agar mudah Anda temukan lagi.';
+
+  @override
+  String get historyViewedEmptyTitle => 'Belum ada yang dilihat';
+
+  @override
+  String get historyViewedEmptyBody => 'Wallpaper yang Anda buka muncul di sini, agar mudah Anda temukan lagi.';
+
+  @override
+  String get historyViewedOffTitle => 'Riwayat lihat nonaktif';
+
+  @override
+  String get historyViewedOffBody => 'Aktifkan Simpan riwayat lihat untuk melihat wallpaper yang Anda buka di sini.';
+
+  @override
+  String get historyViewedOffAction => 'Aktifkan';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'Buka wallpaper, dilihat pukul $time';
+  }
+
+  @override
+  String get pickUpTitle => 'Lanjutkan dari terakhir';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return 'Buka wallpaper $index dari $count';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'Simpan riwayat lihat';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'Menampilkan wallpaper yang Anda buka di Riwayat dan di Beranda. Jika dinonaktifkan, daftar akan dihapus.';
+
+  @override
+  String get historyClearFailed => 'Riwayat tidak bisa dihapus. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Folder';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Folder: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Folder ini memerlukan minimal 2 wallpaper yang bisa diputar. Wallpaper Prism diputar setelah Anda mengunduhnya.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Buka folder';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Pilih folder';
+
+  @override
+  String get wallpaperAutoRotateNoFolders => 'Anda belum punya folder. Simpan wallpaper ke folder, lalu pilih di sini.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return 'Putar $folder?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Wallpaper Anda berubah menjadi salah satu dari folder ini, sesuai jadwal di bawah.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Putar folder ini';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'Putar otomatis nonaktif karena folder $folder telah dihapus.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'Putar otomatis nonaktif karena folder $folder memiliki kurang dari 2 wallpaper.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Putar folder ini';
+
+  @override
+  String get foldersRotating => 'Diputar';
+
+  @override
+  String get foldersRotatingDescription => 'Putar otomatis menggunakan folder ini';
+
+  @override
+  String get wallpaperAccentResetHint => 'Tahan untuk tindakan, termasuk Kembali ke asli';
+
+  @override
+  String get wallRequestsTitle => 'Permintaan wallpaper';
+
+  @override
+  String get wallRequestsTabTop => 'Teratas';
+
+  @override
+  String get wallRequestsTabNew => 'Terbaru';
+
+  @override
+  String get wallRequestsTabFilled => 'Terpenuhi';
+
+  @override
+  String get wallRequestsAsk => 'Minta wallpaper';
+
+  @override
+  String get wallRequestsEmptyTopTitle => 'Belum ada permintaan';
+
+  @override
+  String get wallRequestsEmptyTopBody => 'Minta wallpaper yang belum Anda temukan. Orang lain bisa mendukungnya.';
+
+  @override
+  String get wallRequestsEmptyFilledTitle => 'Belum ada yang terpenuhi';
+
+  @override
+  String get wallRequestsEmptyFilledBody =>
+      'Permintaan yang terpenuhi akan muncul di sini, beserta wallpaper yang menjawabnya.';
+
+  @override
+  String get wallRequestsLoadFailed => 'Permintaan tidak dapat dimuat';
+
+  @override
+  String get wallRequestsRetry => 'Coba lagi';
+
+  @override
+  String wallRequestVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count suara',
+      one: '1 suara',
+      zero: 'Belum ada suara',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestUpvote => 'Dukung';
+
+  @override
+  String get wallRequestRemoveUpvote => 'Hapus dukungan';
+
+  @override
+  String get wallRequestMine => 'Permintaan Anda';
+
+  @override
+  String get wallRequestSomeone => 'Seorang pengguna Prism';
+
+  @override
+  String wallRequestFilledByCreator(String name) {
+    return 'Dipenuhi oleh $name';
+  }
+
+  @override
+  String get wallRequestFilledByStudio => 'Dibuat oleh Prism Studio';
+
+  @override
+  String get wallRequestOpenWall => 'Buka wallpaper';
+
+  @override
+  String get wallRequestMoreActions => 'Aksi lainnya';
+
+  @override
+  String get wallRequestReport => 'Laporkan permintaan';
+
+  @override
+  String get wallRequestHide => 'Sembunyikan permintaan';
+
+  @override
+  String get wallRequestUnhide => 'Tampilkan permintaan';
+
+  @override
+  String get wallRequestHiddenLabel => 'Disembunyikan';
+
+  @override
+  String get wallRequestSheetTitle => 'Minta wallpaper';
+
+  @override
+  String get wallRequestSheetHint => 'Jelaskan, misalnya gunung gelap yang minimalis';
+
+  @override
+  String get wallRequestSheetTags => 'Tag, maksimal 3';
+
+  @override
+  String get wallRequestSheetSubmit => 'Kirim permintaan';
+
+  @override
+  String get wallRequestSignIn => 'Masuk untuk meminta wallpaper dan mendukungnya.';
+
+  @override
+  String get wallRequestDuplicateTitle => 'Seseorang sudah memintanya';
+
+  @override
+  String get wallRequestDuplicateBody => 'Dukung agar kreator bisa melihatnya lebih cepat.';
+
+  @override
+  String get wallRequestUpvoteInstead => 'Dukung yang ini saja';
+
+  @override
+  String get wallRequestCreateAnyway => 'Tetap kirim permintaan saya';
+
+  @override
+  String get wallRequestDuplicateMine => 'Anda sudah pernah memintanya';
+
+  @override
+  String get wallRequestDuplicateVoted => 'Anda sudah mendukungnya';
+
+  @override
+  String get wallRequestEditText => 'Ubah permintaan saya';
+
+  @override
+  String get wallRequestCreated => 'Permintaan terkirim. Kami akan memberi tahu saat terpenuhi.';
+
+  @override
+  String get wallRequestUpvoted => 'Didukung. Kami akan memberi tahu saat terpenuhi.';
+
+  @override
+  String get wallRequestErrorText => 'Gunakan 3 sampai 80 karakter, dan tetap ramah.';
+
+  @override
+  String get wallRequestErrorLimit => 'Anda bisa membuat 3 permintaan sehari. Coba lagi besok.';
+
+  @override
+  String get wallRequestErrorOwn => 'Anda tidak bisa mendukung permintaan sendiri.';
+
+  @override
+  String get wallRequestErrorClosed => 'Permintaan ini sudah terpenuhi.';
+
+  @override
+  String get wallRequestErrorGone => 'Permintaan ini tidak tersedia lagi.';
+
+  @override
+  String get wallRequestErrorGeneric => 'Terjadi kesalahan. Coba lagi.';
+
+  @override
+  String get searchRequestPrompt => 'Tidak menemukannya?';
+
+  @override
+  String get searchRequestAction => 'Minta';
+
+  @override
+  String get discoverRequestsTitle => 'Permintaan wallpaper';
+
+  @override
+  String get discoverRequestsSubtitle => 'Minta wallpaper, atau dukung salah satu';
+
+  @override
+  String get uploadFillsRequest => 'Memenuhi permintaan';
+
+  @override
+  String get uploadFillsRequestHint => 'Opsional. Pilih permintaan yang dijawab wallpaper ini.';
+
+  @override
+  String get uploadFillsRequestClear => 'Hapus permintaan';
+
+  @override
+  String get requestPickerTitle => 'Permintaan mana yang dipenuhi?';
+
+  @override
+  String get requestPickerSearch => 'Cari permintaan';
+
+  @override
+  String get requestPickerEmpty => 'Tidak ada permintaan terbuka yang cocok';
+
+  @override
+  String get notifPushWallRequestFilledTitle => 'Wallpaper permintaan Anda sudah tersedia';
+
+  @override
+  String notifPushWallRequestFilledBody(String requestText) {
+    return '$requestText';
+  }
+
+  @override
+  String get wallRequestAgeNow => 'Baru saja';
+
+  @override
+  String wallRequestAgeMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count menit lalu', one: '1 menit lalu');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count jam lalu', one: '1 jam lalu');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count hari lalu', one: '1 hari lalu');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count minggu lalu', one: '1 minggu lalu');
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestErrorAccountAge =>
+      'Akun Anda bisa membuat permintaan dan memberi suara setelah berumur 10 hari.';
+
+  @override
+  String get adminFillsRequest => 'Memenuhi permintaan';
+
+  @override
+  String get wallRemixAction => 'Remix';
+
+  @override
+  String get wallRemixActionTooltip => 'Remix wallpaper ini dengan AI';
+
+  @override
+  String wallRemixingChip(String title, String creator) {
+    return 'Me-remix $title oleh $creator';
+  }
+
+  @override
+  String get wallRemixDropLinkTooltip => 'Hapus tautan remix';
+
+  @override
+  String get wallRemixUntitled => 'Tanpa judul';
+
+  @override
+  String get wallRemixUnknownCreator => 'kreator Prism';
+
+  @override
+  String get wallRemixesTitle => 'Remix';
+
+  @override
+  String wallRemixesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count remix');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRemixOpenRemixLabel(String creator) {
+    return 'Buka remix oleh $creator';
+  }
+
+  @override
+  String wallRemixOfLabel(String title, String creator) {
+    return 'Remix dari $title oleh $creator';
+  }
+
+  @override
+  String get wallRemixOfTooltip => 'Buka wallpaper asli';
+
+  @override
+  String get economyAiSubmitPromptNotice => 'Siapa pun dapat melihat prompt Anda dan me-remix wallpaper ini.';
+
+  @override
+  String get notifPushWallRemixedTitle => 'Wallpaper Anda di-remix';
+
+  @override
+  String notifPushWallRemixedBody(String remixerName, String wallTitle) {
+    return '$remixerName me-remix $wallTitle.';
+  }
+
+  @override
+  String notifPushWallRemixedBodyUntitled(String remixerName) {
+    return '$remixerName me-remix wallpaper Anda.';
   }
 }

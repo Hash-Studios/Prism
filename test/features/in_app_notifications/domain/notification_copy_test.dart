@@ -117,6 +117,19 @@ void main() {
     }
   });
 
+  test('a filled wall request shows the request text as the body', () {
+    expect(
+      localizedNotificationCopyData(
+        'wallRequestFilled',
+        const <String, Object?>{'requestText': 'dark minimal mountains'},
+        fallbackTitle: '',
+        fallbackBody: '',
+        l10n: l10n,
+      ),
+      (title: 'Your request is here', body: 'dark minimal mountains'),
+    );
+  });
+
   test('an empty or whitespace WOTD title uses the untitled audience copy', () {
     for (final String wallTitle in <String>['', '   ']) {
       expect(
@@ -130,5 +143,28 @@ void main() {
         (title: l10n.notifPushWotdAudienceTitle, body: l10n.notifPushWotdAudienceBodyUntitled),
       );
     }
+  });
+
+  test('a wall remix names the remixer and the wall', () {
+    final InAppNotificationEntity item = notification(
+      'wall_remixed',
+      title: 'Legacy title',
+      body: 'Legacy body',
+    ).copyWith(copyKind: 'wallRemixed', copyArgs: const <String, Object?>{'remixerName': 'Asha', 'wallTitle': 'Koi'});
+
+    expect(localizedNotificationCopy(item, l10n), (title: l10n.notifPushWallRemixedTitle, body: 'Asha remixed Koi.'));
+  });
+
+  test('a wall remix with an empty wall title uses the untitled copy', () {
+    final InAppNotificationEntity item = notification(
+      'wall_remixed',
+      title: 'Legacy title',
+      body: 'Legacy body',
+    ).copyWith(copyKind: 'wallRemixed', copyArgs: const <String, Object?>{'remixerName': 'Asha', 'wallTitle': '  '});
+
+    expect(localizedNotificationCopy(item, l10n), (
+      title: l10n.notifPushWallRemixedTitle,
+      body: 'Asha remixed your wallpaper.',
+    ));
   });
 }

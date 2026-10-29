@@ -338,6 +338,29 @@ void main() {
     expect(firestore.lastRecord!['aiGenerationId'], 'gen1');
   });
 
+  test('the record carries the wall request it fills, and no requestId when none is set', () async {
+    await wall_store.createRecord(
+      'wall',
+      'Prism',
+      'thumb',
+      'image',
+      '100x100',
+      '1MB',
+      null,
+      'General',
+      'Community',
+      false,
+      requestId: 'req_1',
+      now: () => testNow,
+    );
+    expect(firestore.lastRecord!['requestId'], 'req_1');
+
+    firestore.lastRecord = null;
+    await _submit(now: () => testNow);
+    expect(firestore.lastRecord, isNotNull);
+    expect(firestore.lastRecord, isNot(contains('requestId')));
+  });
+
   test('the record carries the optional title, tags and the repo files of the upload', () async {
     await wall_store.createRecord(
       'wall',

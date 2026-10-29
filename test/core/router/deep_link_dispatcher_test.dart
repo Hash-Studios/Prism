@@ -173,6 +173,43 @@ void main() {
     expect(results().map((event) => event.result), everyElement(EventResultValue.navigated));
   });
 
+  testWidgets('a protected Wall of the Day tile waits for startup and opens its document with no original URL', (
+    tester,
+  ) async {
+    await mount(tester);
+    final Completer<bool> ready = Completer<bool>();
+    dispatcher.dispose();
+    dispatcher = create(whenReady: () => ready.future);
+    const String thumbnail = 'https://example.com/thumb.jpg?width=320&height=240';
+    final Uri link = Uri(
+      scheme: 'prism',
+      host: 'share',
+      queryParameters: <String, String>{'id': 'protected-document', 'source': 'prism', 'url': '', 'thumb': thumbnail},
+    );
+
+    final Future<DeepLinkDispatchResult> result = dispatcher.openUri(
+      const DeepLinkParser().transform(Uri.parse(link.toString())),
+      source: DeepLinkSourceValue.appLinks,
+    );
+    await tester.pumpAndSettle();
+    expect(router.topRoute.name, HomeTabRoute.name);
+
+    ready.complete(true);
+    await tester.pumpAndSettle();
+
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, WallpaperDetailRoute.name);
+    final WallpaperDetailRouteArgs args = router.topRoute.argsAs<WallpaperDetailRouteArgs>();
+    expect(args.wallId, 'protected-document');
+    expect(args.source, WallpaperSource.prism);
+    expect(args.thumbnailUrl, thumbnail);
+    expect(args.analyticsSurface, AnalyticsSurfaceValue.shareWallpaperView);
+    expect(args.entity, isNull);
+    expect(args.localFile, isNull);
+    expect(events.whereType<DeepLinkReceivedEvent>().single.targetType, TargetTypeValue.share);
+    expect(results().single.result, EventResultValue.navigated);
+  });
+
   testWidgets('a gallery push opens the gallery page before its fallback wall link', (tester) async {
     await mount(tester);
     final Future<DeepLinkDispatchResult> result = dispatcher.openPush(<String, dynamic>{

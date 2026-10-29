@@ -82,6 +82,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.folder => FolderRoute(folderId: path['folderId']!),
     DeepLinkPageTarget.mood => MoodRoute(moodId: path['moodId']!),
     DeepLinkPageTarget.gallery => GalleryRoute(ids: query['ids']!, source: query['source'] ?? 'link'),
+    DeepLinkPageTarget.wallRequests => WallRequestsRoute(tab: query['tab'] ?? 'top'),
     DeepLinkPageTarget.uploadInput => _inputRoute(DeepLinkInputWorkflow.uploadWall),
     DeepLinkPageTarget.editWallInput => _inputRoute(DeepLinkInputWorkflow.editWall),
     DeepLinkPageTarget.review => const ReviewRoute(),
@@ -98,7 +99,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.adminTelemetry => const FirestoreTelemetryRoute(),
     DeepLinkPageTarget.debugPanel => DebugPanelRoute(tab: query['tab'] ?? 'logs'),
     DeepLinkPageTarget.quickTileSettings => const QuickTileSettingsRoute(),
-    DeepLinkPageTarget.autoRotate => const AutoRotateRoute(),
+    DeepLinkPageTarget.autoRotate => AutoRotateRoute(),
     DeepLinkPageTarget.iosShortcuts => const IosShortcutsGuideRoute(),
     DeepLinkPageTarget.wallpaperHistory => LibraryRoute(initialTab: LibraryTab.history),
     DeepLinkPageTarget.photoPreview => _previewRoute(

@@ -199,6 +199,10 @@ pattern = "prismwalls.com/gallery*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/requests*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "prismwalls.com/followers*"
 zone_name = "prismwalls.com"
 
@@ -497,6 +501,10 @@ zone_name = "prismwalls.com"
 
 [[routes]]
 pattern = "www.prismwalls.com/gallery*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/requests*"
 zone_name = "prismwalls.com"
 
 [[routes]]
