@@ -372,6 +372,12 @@ enums:
     values:
       - creator
       - studio
+  - name: remix_source_type
+    dart_type: RemixSourceType
+    import: package:Prism/features/wall_remix/domain/wall_remix.dart
+    values:
+      - studio
+      - user
 
 events:
   - id: content_report_submit
@@ -2443,3 +2449,34 @@ events:
       - name: request_id
         key: request_id
         type: string
+  - id: remix_tapped
+    fields:
+      - name: source_wall_type
+        key: source_wall_type
+        type: enum
+        enum: RemixSourceType
+  - id: remix_generated
+    fields:
+      - name: source_wall_type
+        key: source_wall_type
+        type: enum
+        enum: RemixSourceType
+      - name: quality
+        key: quality
+        type: string
+  - id: remix_submitted
+    fields:
+      - name: generation_id
+        key: generation_id
+        type: string
+  - id: remix_link_dropped
+    fields:
+      - name: source_wall_type
+        key: source_wall_type
+        type: enum
+        enum: RemixSourceType
+  - id: remixes_grid_opened
+    fields:
+      - name: count
+        key: count
+        type: int

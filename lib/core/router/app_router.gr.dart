@@ -119,6 +119,7 @@ class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
     AiGenerationRepositoryImpl? repository,
     Future<WallSubmissionResult> Function()? submitForTesting,
     ShareSheetOpen? shareSheet,
+    AiRemixSeed? remixSeed,
     List<PageRouteInfo>? children,
   }) : super(
          AiTabRoute.name,
@@ -127,6 +128,7 @@ class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
            repository: repository,
            submitForTesting: submitForTesting,
            shareSheet: shareSheet,
+           remixSeed: remixSeed,
          ),
          initialChildren: children,
        );
@@ -144,6 +146,7 @@ class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
         repository: args.repository,
         submitForTesting: args.submitForTesting,
         shareSheet: args.shareSheet,
+        remixSeed: args.remixSeed,
       );
     },
   );
@@ -155,6 +158,7 @@ class AiTabRouteArgs {
     this.repository,
     this.submitForTesting,
     this.shareSheet,
+    this.remixSeed,
   });
 
   final Key? key;
@@ -165,9 +169,11 @@ class AiTabRouteArgs {
 
   final ShareSheetOpen? shareSheet;
 
+  final AiRemixSeed? remixSeed;
+
   @override
   String toString() {
-    return 'AiTabRouteArgs{key: $key, repository: $repository, submitForTesting: $submitForTesting, shareSheet: $shareSheet}';
+    return 'AiTabRouteArgs{key: $key, repository: $repository, submitForTesting: $submitForTesting, shareSheet: $shareSheet, remixSeed: $remixSeed}';
   }
 
   @override
@@ -176,11 +182,16 @@ class AiTabRouteArgs {
     if (other is! AiTabRouteArgs) return false;
     return key == other.key &&
         repository == other.repository &&
-        shareSheet == other.shareSheet;
+        shareSheet == other.shareSheet &&
+        remixSeed == other.remixSeed;
   }
 
   @override
-  int get hashCode => key.hashCode ^ repository.hashCode ^ shareSheet.hashCode;
+  int get hashCode =>
+      key.hashCode ^
+      repository.hashCode ^
+      shareSheet.hashCode ^
+      remixSeed.hashCode;
 }
 
 /// generated route for

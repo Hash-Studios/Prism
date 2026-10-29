@@ -11231,4 +11231,62 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get adminFillsRequest => 'Cumple la solicitud';
+
+  @override
+  String get wallRemixAction => 'Remezclar';
+
+  @override
+  String get wallRemixActionTooltip => 'Remezclar este fondo de pantalla con IA';
+
+  @override
+  String wallRemixingChip(String title, String creator) {
+    return 'Remezclando $title de $creator';
+  }
+
+  @override
+  String get wallRemixDropLinkTooltip => 'Quitar el vínculo de remezcla';
+
+  @override
+  String get wallRemixUntitled => 'Sin título';
+
+  @override
+  String get wallRemixUnknownCreator => 'un creador de Prism';
+
+  @override
+  String get wallRemixesTitle => 'Remezclas';
+
+  @override
+  String wallRemixesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count remezclas', one: '1 remezcla');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRemixOpenRemixLabel(String creator) {
+    return 'Abrir la remezcla de $creator';
+  }
+
+  @override
+  String wallRemixOfLabel(String title, String creator) {
+    return 'Remezcla de $title de $creator';
+  }
+
+  @override
+  String get wallRemixOfTooltip => 'Abrir el fondo de pantalla original';
+
+  @override
+  String get economyAiSubmitPromptNotice => 'Cualquiera puede ver tu prompt y remezclar este fondo de pantalla.';
+
+  @override
+  String get notifPushWallRemixedTitle => 'Remezclaron tu fondo de pantalla';
+
+  @override
+  String notifPushWallRemixedBody(String remixerName, String wallTitle) {
+    return '$remixerName remezcló $wallTitle.';
+  }
+
+  @override
+  String notifPushWallRemixedBodyUntitled(String remixerName) {
+    return '$remixerName remezcló tu fondo de pantalla.';
+  }
 }

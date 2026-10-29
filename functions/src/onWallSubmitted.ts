@@ -9,6 +9,7 @@ import {db, findUserByEmail, REGION, str} from "./common";
 import {isStudioWall} from "./studio/isStudioWall";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {authorOf, authorUpdate} from "./wallAuthor";
+import {keepRemixOf, removeRemixOfIfUnchanged} from "./wallRemix";
 
 const GITHUB_RAW_HOST = "raw.githubusercontent.com";
 const studioSecret = defineSecret("STUDIO_SECRET");
@@ -26,8 +27,9 @@ export function isGithubRawUrl(url: unknown): boolean {
 /**
  * Fills `by` and `userPhoto` of a new wall from the owner's profile, because the client writes both. Logs, but does
  * not reject, an image link outside the GitHub raw host. Copies the Worker record of a user AI wall to a server-only
- * receipt, so the approval trigger can prove its owner after the record expires. Then notifies the admins in
- * `config/adminNotifications` when a premium user submits a wall (walls start with review=false).
+ * receipt, so the approval trigger can prove its owner after the record expires. Removes a `remixOf` that does not name
+ * an approved AI original (see keepRemixOf). Then notifies the admins in `config/adminNotifications` when a premium
+ * user submits a wall (walls start with review=false).
  */
 export const onWallSubmitted = onDocumentCreated(
   {
@@ -42,6 +44,16 @@ export const onWallSubmitted = onDocumentCreated(
     }
 
     const wallId = event.params.wallId;
+    if (data.remixOf !== undefined && event.data) {
+      try {
+        if (!(await keepRemixOf(wallId, data)) && await removeRemixOfIfUnchanged(event.data, data.remixOf)) {
+          logger.info("onWallSubmitted: removed an unverified remixOf.", {wallId});
+        }
+      } catch (err) {
+        // onWallRemixWritten checks the link again before it credits anything.
+        logger.warn("onWallSubmitted: remixOf check failed.", {wallId, err});
+      }
+    }
     if (await isStudioWall(wallId, data)) {
       logger.info(
         "onWallSubmitted: Prism Studio wall, no owner sync or admin push.",

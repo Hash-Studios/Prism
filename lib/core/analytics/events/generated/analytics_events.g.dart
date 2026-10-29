@@ -8,6 +8,7 @@ import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
+import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 
 Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'wallpaper_target': WallpaperTarget.values.map((value) => value.wireValue).toList(),
@@ -54,6 +55,7 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'favourite_pin_surface': FavouritePinSurfaceValue.values.map((value) => value.wireValue).toList(),
   'wall_request_source': WallRequestSourceValue.values.map((value) => value.wireValue).toList(),
   'wall_request_filler': WallRequestFillerValue.values.map((value) => value.wireValue).toList(),
+  'remix_source_type': RemixSourceType.values.map((value) => value.wireValue).toList(),
 };
 
 class ContentReportSubmitEvent extends AnalyticsEvent {
@@ -3510,5 +3512,76 @@ class WallRequestPushOpenedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'request_id': requestId};
+  }
+}
+
+class RemixTappedEvent extends AnalyticsEvent {
+  const RemixTappedEvent({required this.sourceWallType});
+
+  final RemixSourceType sourceWallType;
+
+  @override
+  String get eventName => 'remix_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_wall_type': sourceWallType.wireValue};
+  }
+}
+
+class RemixGeneratedEvent extends AnalyticsEvent {
+  const RemixGeneratedEvent({required this.sourceWallType, required this.quality});
+
+  final RemixSourceType sourceWallType;
+  final String quality;
+
+  @override
+  String get eventName => 'remix_generated';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_wall_type': sourceWallType.wireValue, 'quality': quality};
+  }
+}
+
+class RemixSubmittedEvent extends AnalyticsEvent {
+  const RemixSubmittedEvent({required this.generationId});
+
+  final String generationId;
+
+  @override
+  String get eventName => 'remix_submitted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'generation_id': generationId};
+  }
+}
+
+class RemixLinkDroppedEvent extends AnalyticsEvent {
+  const RemixLinkDroppedEvent({required this.sourceWallType});
+
+  final RemixSourceType sourceWallType;
+
+  @override
+  String get eventName => 'remix_link_dropped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_wall_type': sourceWallType.wireValue};
+  }
+}
+
+class RemixesGridOpenedEvent extends AnalyticsEvent {
+  const RemixesGridOpenedEvent({required this.count});
+
+  final int count;
+
+  @override
+  String get eventName => 'remixes_grid_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count': count};
   }
 }

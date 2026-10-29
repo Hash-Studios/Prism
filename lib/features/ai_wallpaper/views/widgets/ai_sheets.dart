@@ -43,9 +43,11 @@ Future<AiSubmissionMetadata?> showAiSubmitSheet(
           onPressed: () => Navigator.of(sheetContext).pop(),
         ),
       ],
-      child: record == null
-          ? null
-          : Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          if (record != null)
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 SizedBox(
@@ -86,6 +88,10 @@ Future<AiSubmissionMetadata?> showAiSubmitSheet(
                 ),
               ],
             ),
+          const SizedBox(height: PrismSpace.md),
+          Text(l10n.economyAiSubmitPromptNotice, style: PrismTextStyles.caption(sheetContext)),
+        ],
+      ),
     ),
   );
 }

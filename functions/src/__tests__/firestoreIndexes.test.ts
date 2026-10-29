@@ -104,6 +104,11 @@ test("folder items: account deletion finds them by owner across folders, repair 
   assert.ok(hasIndex("items", [["ownerId", "ASCENDING"], ["addedAt", "DESCENDING"]]));
 });
 
+test("walls have the remix index: remixOf, review, newest first", () => {
+  assert.ok(hasIndex("walls", [["remixOf", "ASCENDING"], ["review", "ASCENDING"], ["createdAt", "DESCENDING"],
+    ["__name__", "DESCENDING"]]));
+});
+
 test("walls have the protected spatial index the app queries: protected asset fields, review, spatial.tier, newest first", () => {
   const protectedFields = ["originalProtected", "wallpaper_url", "wallpaper_path", "wallpaper_sha", "thumb_path", "thumb_sha"]
     .map((field): [string, string] => [field, "ASCENDING"]);
