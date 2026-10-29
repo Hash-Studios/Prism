@@ -10820,4 +10820,31 @@ class AppLocalizationsId extends AppLocalizations {
   String notifPushWallRequestFilledBody(String requestText) {
     return '$requestText';
   }
+
+  @override
+  String get wallRequestAgeNow => 'Just now';
+
+  @override
+  String wallRequestAgeMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count minutes ago', one: '1 minute ago');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count hours ago', one: '1 hour ago');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count days ago', one: '1 day ago');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count weeks ago', one: '1 week ago');
+    return '$_temp0';
+  }
 }

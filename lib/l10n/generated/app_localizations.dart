@@ -17292,6 +17292,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{requestText}'**
   String notifPushWallRequestFilledBody(String requestText);
+
+  /// Age of a request made less than a minute ago.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get wallRequestAgeNow;
+
+  /// Age of a request in minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 minute ago} other{{count} minutes ago}}'**
+  String wallRequestAgeMinutes(int count);
+
+  /// Age of a request in hours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 hour ago} other{{count} hours ago}}'**
+  String wallRequestAgeHours(int count);
+
+  /// Age of a request in days.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day ago} other{{count} days ago}}'**
+  String wallRequestAgeDays(int count);
+
+  /// Age of a request in weeks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 week ago} other{{count} weeks ago}}'**
+  String wallRequestAgeWeeks(int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

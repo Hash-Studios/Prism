@@ -10149,5 +10149,45 @@
         "type": "String"
       }
     }
+  },
+  "wallRequestAgeNow": "Just now",
+  "@wallRequestAgeNow": {
+    "description": "Age of a request made less than a minute ago."
+  },
+  "wallRequestAgeMinutes": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
+  "@wallRequestAgeMinutes": {
+    "description": "Age of a request in minutes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestAgeHours": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
+  "@wallRequestAgeHours": {
+    "description": "Age of a request in hours.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestAgeDays": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+  "@wallRequestAgeDays": {
+    "description": "Age of a request in days.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestAgeWeeks": "{count, plural, =1{1 week ago} other{{count} weeks ago}}",
+  "@wallRequestAgeWeeks": {
+    "description": "Age of a request in weeks.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }
