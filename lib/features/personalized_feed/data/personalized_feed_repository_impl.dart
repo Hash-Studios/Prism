@@ -278,8 +278,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           entry.generation != _feedGeneration ||
           entry.key != _primeKey() ||
           _now().difference(entry.at) >= _primedTtl ||
-          // Built without Prism walls because the block list was unknown. Rebuild it now that the list is known.
-          (entry.builtWithUnknownBlocks && _userBlockRepository.blockedCreators is KnownBlockedCreators)) {
+          _needsKnownBlocksRebuild(entry)) {
         return Result.error(const UnknownFailure('Primed feed page is no longer current'));
       }
       return Result.success(_excludingBlocked(result.data!));
@@ -288,12 +287,16 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     }
   }
 
+  bool _needsKnownBlocksRebuild(_PrimedPage entry) =>
+      entry.builtWithUnknownBlocks && _userBlockRepository.blockedCreators is KnownBlockedCreators;
+
   _PrimedPage? _matchingPageOne(String key) {
     final _PrimedPage? primed = _primed;
     if (primed != null &&
         primed.key == key &&
         primed.generation == _feedGeneration &&
         _now().difference(primed.at) < _primedTtl &&
+        !_needsKnownBlocksRebuild(primed) &&
         (!primed.completed || !primed.claimed)) {
       return primed;
     }
@@ -301,7 +304,8 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return inFlight != null &&
             inFlight.key == key &&
             inFlight.generation == _feedGeneration &&
-            _now().difference(inFlight.at) < _primedTtl
+            _now().difference(inFlight.at) < _primedTtl &&
+            !_needsKnownBlocksRebuild(inFlight)
         ? inFlight
         : null;
   }
@@ -365,7 +369,18 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           return resolved;
         }
       }
-      return _resolvePageOne(_startPageOne(request, key: retryKey, offer: false));
+      final _PrimedPage started = _startPageOne(request, key: retryKey, offer: false);
+      final Result<PersonalizedFeedPage> result = await _resolvePageOne(started);
+      if (result.isSuccess ||
+          started.generation != _feedGeneration ||
+          started.key != _primeKey() ||
+          _now().difference(started.at) >= _primedTtl ||
+          !_needsKnownBlocksRebuild(started)) {
+        return result;
+      }
+
+      final String recoveryKey = _primeKey();
+      return _resolvePageOne(_startPageOne(request, key: recoveryKey, offer: false));
     }
     return _fetchFresh(request);
   }

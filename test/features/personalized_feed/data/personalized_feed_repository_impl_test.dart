@@ -1506,7 +1506,7 @@ void main() {
 
     int gems(_GatedWallsFirestore f) => f.sourceTags.where((tag) => tag == 'personalized.gems').length;
 
-    test('a page primed while the block list was unknown is rebuilt once the list is known', () async {
+    test('a completed unknown-block prime is discarded and rebuilt once the list is known', () async {
       final _GatedWallsFirestore firestore = _GatedWallsFirestore()..gate.complete();
       final _BlocksLoadedLater blocks = _BlocksLoadedLater();
       app_state.prismUser = _signedInUser();
@@ -1517,10 +1517,39 @@ void main() {
         blocks: blocks,
       );
 
-      await repository.primeFirstPage();
+      final PersonalizedFeedPage? primed = await repository.primeFirstPage();
+      expect(primed, isNotNull);
+      expect(primed!.items, isEmpty);
       blocks.listLoaded = true;
-      await repository.fetch(_firstPage);
+      final PersonalizedFeedPage? rebuilt = await repository.primeFirstPage();
+      final Result<PersonalizedFeedPage> fetched = await repository.fetch(_firstPage);
 
+      expect(rebuilt, isNotNull);
+      expect(rebuilt!.items.map((item) => item.id), unorderedEquals(<String>['visible-doc', 'wall-doc']));
+      expect(fetched.isSuccess, isTrue);
+      expect(fetched.data!.items.map((item) => item.id), unorderedEquals(<String>['visible-doc', 'wall-doc']));
+      expect(gems(firestore), 2);
+    });
+
+    test('a direct refresh rebuilds when its captured unknown block list becomes known in flight', () async {
+      final _GatedWallsFirestore firestore = _GatedWallsFirestore();
+      final _BlocksLoadedLater blocks = _BlocksLoadedLater();
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+
+      final Future<Result<PersonalizedFeedPage>> fetching = repository.fetch(_firstPage);
+      await Future<void>.delayed(Duration.zero);
+      blocks.listLoaded = true;
+      firestore.gate.complete();
+      final Result<PersonalizedFeedPage> fetched = await fetching;
+
+      expect(fetched.isSuccess, isTrue);
+      expect(fetched.data!.items.map((item) => item.id), unorderedEquals(<String>['visible-doc', 'wall-doc']));
       expect(gems(firestore), 2);
     });
 
@@ -1800,6 +1829,71 @@ void main() {
       await Future.wait<Object?>(<Future<Object?>>[prime, first, second]);
 
       expect(gems(env.firestore), 1);
+    });
+
+    for (final bool offerPrime in <bool>[false, true]) {
+      test('concurrent refreshes share one recovery with offerPrime=$offerPrime', () async {
+        final _GatedWallsFirestore firestore = _GatedWallsFirestore();
+        final _BlocksLoadedLater blocks = _BlocksLoadedLater();
+        app_state.prismUser = _signedInUser();
+        final PersonalizedFeedRepository repository = _repository(
+          firestore: firestore,
+          settings: SettingsLocalDataSource(InMemoryLocalStore()),
+          favourites: _CountingFavourites(),
+          blocks: blocks,
+        );
+
+        final Future<PersonalizedFeedPage?>? prime = offerPrime ? repository.primeFirstPage() : null;
+        final Future<Result<PersonalizedFeedPage>> first = repository.fetch(_firstPage);
+        final Future<Result<PersonalizedFeedPage>> second = repository.fetch(_firstPage);
+        await Future<void>.delayed(Duration.zero);
+        blocks.listLoaded = true;
+        firestore.gate.complete();
+        final List<Result<PersonalizedFeedPage>> results = await Future.wait<Result<PersonalizedFeedPage>>(
+          <Future<Result<PersonalizedFeedPage>>>[first, second],
+        );
+
+        if (prime != null) expect(await prime, isNull);
+        for (final Result<PersonalizedFeedPage> result in results) {
+          expect(result.isSuccess, isTrue);
+          expect(result.data!.items.map((item) => item.id), unorderedEquals(<String>['visible-doc', 'wall-doc']));
+        }
+        expect(gems(firestore), 2);
+
+        final Result<PersonalizedFeedPage> next = await repository.fetch(_firstPage);
+
+        expect(next.isSuccess, isTrue);
+        expect(next.data!.items.map((item) => item.id), unorderedEquals(<String>['visible-doc', 'wall-doc']));
+        expect(gems(firestore), 3);
+      });
+    }
+
+    test('a generation change supersedes an in-flight unknown-block prime recovery', () async {
+      final _GatedWallsFirestore firestore = _GatedWallsFirestore();
+      final _BlocksLoadedLater blocks = _BlocksLoadedLater();
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: settings,
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+
+      final Future<PersonalizedFeedPage?> oldPrime = repository.primeFirstPage();
+      await Future<void>.delayed(Duration.zero);
+      blocks.listLoaded = true;
+      await settings.set(app_constants.personalizedFeedMixLocalKey, 'adventurous');
+      final Future<PersonalizedFeedPage?> newPrime = repository.primeFirstPage();
+      firestore.gate.complete();
+      final List<PersonalizedFeedPage?> pages = await Future.wait(<Future<PersonalizedFeedPage?>>[oldPrime, newPrime]);
+      final Result<PersonalizedFeedPage> fetched = await repository.fetch(_firstPage);
+
+      expect(pages.first, isNull);
+      expect(pages.last, isNotNull);
+      expect(fetched.isSuccess, isTrue);
+      expect(fetched.data!.items.map((item) => item.id), unorderedEquals(<String>['visible-doc', 'wall-doc']));
+      expect(gems(firestore), 2);
     });
 
     test('a newly blocked creator is removed from the primed page at delivery', () async {
@@ -2630,6 +2724,83 @@ void main() {
 
       expect(result.isSuccess, isTrue);
       expect(result.data!.items, isEmpty);
+    });
+
+    test('Following without follows completes with a hanging block loader without advancing time', () {
+      fakeAsync((async) {
+        app_state.prismUser = _signedInUser();
+        final _FollowingFirestore firestore = _FollowingFirestore(rows: 3)..followed = const <String>[];
+        final _EmptyBlocks blocks = _EmptyBlocks()..hangOnWait = true;
+        final PersonalizedFeedRepository repository = _repository(
+          firestore: firestore,
+          settings: SettingsLocalDataSource(InMemoryLocalStore()),
+          favourites: _CountingFavourites(),
+          blocks: blocks,
+        );
+        Result<PersonalizedFeedPage>? result;
+        repository.fetchFollowing(page: 1).then((value) => result = value);
+
+        async.flushMicrotasks();
+
+        expect(result?.isSuccess, isTrue);
+        expect(result?.data?.items, isEmpty);
+        expect(result?.data?.hasMore, isFalse);
+        expect(firestore.limits, isEmpty);
+      });
+    });
+
+    test('Following with follows but zero walls completes with a hanging block loader without advancing time', () {
+      fakeAsync((async) {
+        app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
+        final _FollowingFirestore firestore = _FollowingFirestore(rows: 0);
+        final _EmptyBlocks blocks = _EmptyBlocks()..hangOnWait = true;
+        final PersonalizedFeedRepository repository = _repository(
+          firestore: firestore,
+          settings: SettingsLocalDataSource(InMemoryLocalStore()),
+          favourites: _CountingFavourites(),
+          blocks: blocks,
+        );
+        Result<PersonalizedFeedPage>? result;
+        repository.fetchFollowing(page: 1).then((value) => result = value);
+
+        async.flushMicrotasks();
+
+        expect(result?.isSuccess, isTrue);
+        expect(result?.data?.items, isEmpty);
+        expect(result?.data?.hasMore, isFalse);
+        expect(firestore.limits, <int>[12]);
+      });
+    });
+
+    test('an exhausted Following page completes with a hanging block loader without advancing time', () {
+      fakeAsync((async) {
+        app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
+        final _FollowingFirestore firestore = _FollowingFirestore(rows: 3);
+        final _EmptyBlocks blocks = _EmptyBlocks();
+        final PersonalizedFeedRepository repository = _repository(
+          firestore: firestore,
+          settings: SettingsLocalDataSource(InMemoryLocalStore()),
+          favourites: _CountingFavourites(),
+          blocks: blocks,
+        );
+        Result<PersonalizedFeedPage>? first;
+        repository.fetchFollowing(page: 1).then((value) => first = value);
+        async.flushMicrotasks();
+        expect(first?.isSuccess, isTrue);
+        expect(first?.data?.items.map((item) => item.id), <String>['W0', 'W1', 'W2']);
+        expect(first?.data?.hasMore, isFalse);
+        expect(firestore.limits, <int>[12]);
+        blocks.hangOnWait = true;
+
+        Result<PersonalizedFeedPage>? exhausted;
+        repository.fetchFollowing(page: 2).then((value) => exhausted = value);
+        async.flushMicrotasks();
+
+        expect(exhausted?.isSuccess, isTrue);
+        expect(exhausted?.data?.items, isEmpty);
+        expect(exhausted?.data?.hasMore, isFalse);
+        expect(firestore.limits, <int>[12]);
+      });
     });
 
     test('an unknown block list on a later Following page keeps its cursor for the retry', () async {
