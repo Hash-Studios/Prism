@@ -61,12 +61,14 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   static int _nextVisit = 0;
   final String _recommendationSession = '${_nextVisit++}';
   bool _closing = false;
+  int _metadataRefreshGeneration = 0;
 
   Future<void> _onRefreshWallMetadata(RefreshWallMetadata event, Emitter<WallpaperDetailState> emit) async {
     final WallpaperDetailState initial = state;
     if (initial is! WallpaperDetailLoaded || initial.entity is! PrismFeedItem) return;
     final PrismWallpaper wall = (initial.entity as PrismFeedItem).wallpaper;
     if (wall.firestoreDocumentId != event.wallDocId) return;
+    final generation = ++_metadataRefreshGeneration;
     // The returned text is canonical, so update the visible tags/title even if the following read is offline.
     final saved = event.saved;
     if (saved != null) {
@@ -97,7 +99,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
       );
     }
     final result = await _prismRepository.fetchCanonicalByDocumentId(event.wallDocId);
-    if (emit.isDone || _closing) return;
+    if (emit.isDone || _closing || generation != _metadataRefreshGeneration) return;
     final WallpaperDetailState latest = state;
     if (latest is! WallpaperDetailLoaded ||
         latest.entity is! PrismFeedItem ||

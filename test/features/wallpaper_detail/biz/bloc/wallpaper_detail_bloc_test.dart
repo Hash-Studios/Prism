@@ -174,6 +174,25 @@ void main() {
       verifyNever(() => palette.generatePalette(any()));
     });
 
+    test('an older refresh cannot overwrite a newer save on the same wall', () async {
+      await open();
+      final first = Completer<Result<PrismWallpaper?>>();
+      final second = Completer<Result<PrismWallpaper?>>();
+      var calls = 0;
+      when(
+        () => prism.fetchCanonicalByDocumentId('wall_doc.jpg'),
+      ).thenAnswer((_) => calls++ == 0 ? first.future : second.future);
+      bloc.add(const RefreshWallMetadata(wallDocId: 'wall_doc.jpg'));
+      await pumpEventQueue();
+      bloc.add(const RefreshWallMetadata(wallDocId: 'wall_doc.jpg', saved: saved));
+      await pumpEventQueue();
+      second.complete(Result.error(const NetworkFailure('offline')));
+      await pumpEventQueue();
+      first.complete(Result.success(owned));
+      await pumpEventQueue();
+      expect(((bloc.state as WallpaperDetailLoaded).entity as PrismFeedItem).wallpaper.title, 'After');
+    });
+
     test('a pending metadata refresh cannot replace a different detail route', () async {
       await open();
       final read = Completer<Result<PrismWallpaper?>>();
