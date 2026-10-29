@@ -1,5 +1,6 @@
 package com.hash.prism
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.WallpaperManager
 import android.content.Intent
@@ -93,6 +94,8 @@ internal abstract class WallpaperTileService : TileService() {
         if (isLocked) unlockAndRun(action) else action()
     }
 
+    // The Intent overload is the only one below Android 14; the PendingIntent branch covers 14 and newer.
+    @SuppressLint("StartActivityAndCollapseDeprecated")
     private fun openApp(link: String) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link))
             .setPackage(packageName)
