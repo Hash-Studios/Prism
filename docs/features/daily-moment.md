@@ -97,3 +97,9 @@ Account changes clear the visible daily receipt and stop action retries. Late st
 
 The full Functions suite passed with 2,199 tests passed, 16 skipped, and no failures.
 The reviewed Android APK built with both skipped Firebase initialization and the existing dev configuration.
+
+The full local gate passed with `make ci ANALYZE_FLAGS=--no-fatal-infos TEST_FLAGS=--concurrency=6`.
+This uses the same informational-lint policy as CI. The main Flutter suite passed 7,891 tests and skipped six.
+All six isolated callable tests also passed.
+The final APK builds, but another verification run owns the Android emulator lock.
+Signed-in Android proof, iOS proof, and the daily-moment clip remain incomplete.

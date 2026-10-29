@@ -1,3 +1,5 @@
 ts	phase	decision	why	evidence	result
 2026-10-29T18:30:28Z	design	Choose one daily sheet with ordered steps and explicit chest cost	One owner controls steps and dismissal; preserve all reward contracts	docs/features/daily-moment.md	open
 2026-10-29T18:30:28Z	contract	Extend set/save response with atomic quest award receipts	Owner approved option 2; original response could not attribute coins to the action	functions/src/wallStats.ts	open
+2026-10-29T20:15:16.536519+00:00	review	Keep server receipts and fix lifecycle ownership	Independent Astra review found six replay, day and account issues	functions/src/wallStats.ts; lib/features/daily_flow/	regression tests passed
+2026-10-29T20:15:16.536519+00:00	proof	Keep PR in draft pending device proof	Local CI passes; Android needs sign-in and exclusive device access; iOS tools absent	docs/features/daily-moment.md	local gates passed; mobile proof blocked
