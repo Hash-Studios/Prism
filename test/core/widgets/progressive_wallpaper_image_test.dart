@@ -208,6 +208,23 @@ void main() {
     expect(_imageFrom(_thumb), findsNothing);
   });
 
+  testWidgets('reports the full picture size once it paints, never the thumbnail size', (tester) async {
+    final List<Size> sizes = <Size>[];
+    wallCache.gates[_full] = Completer<void>();
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display(), onPictureSize: sizes.add)));
+    await _pumpUntil(tester, () => _painted(tester).contains(_thumb));
+    await tester.pump();
+    // Some sources crop the thumbnail, so its shape is not the wallpaper's.
+    expect(sizes, isEmpty);
+
+    wallCache.gates[_full]!.complete();
+    await _pumpUntil(tester, () => sizes.isNotEmpty);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+
+    expect(sizes, <Size>[const Size(1, 1)]);
+  });
+
   testWidgets('uses the shared thumbnail while checking for an on-device full copy', (tester) async {
     final Completer<File?> deviceLookup = Completer<File?>();
     ProgressiveWallpaperImage.offlineCopyOverride = (_) => deviceLookup.future;

@@ -351,7 +351,7 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
   }
 }
 
-class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
+class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with SingleTickerProviderStateMixin {
   /// The set or save button of the phone preview. The action bar rebuilds it, so it always has the current tint.
   /// The Set button in the action bar. On Android the phone preview opens its Set screen.
   final GlobalKey<SetWallpaperButtonState> _setButtonKey = GlobalKey<SetWallpaperButtonState>();
@@ -387,6 +387,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   final ShakeController _shake = ShakeController();
   final ScrollController _scroll = ScrollController();
+
+  /// Width over height of the full picture once it paints. The card's shape when the wallpaper has no size.
+  double? _pictureAspect;
+
+  /// A card shape learned after the card showed (on load, or from the picture) eases in over this, so it never snaps.
+  late final AnimationController _shapeMorph = AnimationController(vsync: this, value: 1);
+  Size? _morphFrom;
+  Size? _cardTarget;
   final Object _recommendationHeroScope = Object();
 
   /// Scroll offsets between which the card is under the status bar icons. Past the end the rows and the feed are under
@@ -534,6 +542,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   @override
   void dispose() {
+    _shapeMorph.dispose();
     _shake.dispose();
     _scroll.dispose();
     super.dispose();
@@ -607,11 +616,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       image = ProgressiveWallpaperImage(
         display: WallpaperDisplaySource(thumbnail: '', full: localFile.path),
         decodeBox: card,
+        onPictureSize: _onPictureSize,
         errorBuilder: (_, _) =>
             GlintState(kind: GlintStateKind.error, title: context.l10n.wallpaperDownloadedWallpaperUnavailable),
       );
     } else if (thumbnail.isNotEmpty) {
-      image = ProgressiveWallpaperImage(display: _routeDisplay(thumbnail), decodeBox: card);
+      image = ProgressiveWallpaperImage(
+        display: _routeDisplay(thumbnail),
+        decodeBox: card,
+        onPictureSize: _onPictureSize,
+      );
     } else {
       image = GlintState(kind: GlintStateKind.loading, title: context.l10n.wallpaperLoadingWallpaper);
     }
@@ -627,7 +641,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 children: [
                   Padding(
                     padding: EdgeInsets.fromLTRB(_cardInset, _statusInset(context), _cardInset, 0),
-                    child: SizedBox.fromSize(size: card, child: _withHero(image)),
+                    child: _shapedCard(card, _withHero(image)),
                   ),
                   _panelColumn(_buildPendingDetails()),
                 ],
@@ -798,9 +812,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                           sliver: SliverToBoxAdapter(
                             child: Align(
                               alignment: Alignment.topCenter,
-                              child: SizedBox.fromSize(
-                                size: card,
-                                child: _buildImageBody(
+                              child: _shapedCard(
+                                card,
+                                _buildImageBody(
                                   context,
                                   state.paletteLoading,
                                   state,
@@ -957,27 +971,76 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   /// Card size: the wallpaper's own shape across the width, up to [_maxCardShare] of the screen height. A taller
   /// wallpaper fills the card and crops at the top and bottom. The clock preview shows it whole.
+  ///
+  /// As on Pinterest, the shape comes before the pixels: the opener's [WallpaperDetailScreen.aspectRatio], then the
+  /// size on the wallpaper it passed, then the size on the loaded wallpaper, then the painted picture, then 9:16.
   Size _cardSize(BuildContext context, WallpaperCore? core) {
     final viewport = MediaQuery.sizeOf(context);
-    final stableCore = widget.entity?.wallpaperCore ?? core;
-    final width = stableCore?.width;
-    final height = stableCore?.height;
-    final parts = stableCore?.resolution?.toLowerCase().split('x');
-    final hint = widget.aspectRatio;
-    final parsed = hint != null && hint.isFinite && hint > 0
-        ? hint
-        : width != null && height != null && width > 0 && height > 0
-        ? width / height
-        : parts?.length == 2
-        ? (double.tryParse(parts![0]) ?? 0) / (double.tryParse(parts[1]) ?? 1)
-        : 9 / 16;
-    final ratio = parsed.isFinite && parsed > 0 ? parsed : 9 / 16;
+    final ratio =
+        _validAspect(widget.aspectRatio) ??
+        _coreAspect(widget.entity?.wallpaperCore) ??
+        _coreAspect(core) ??
+        _pictureAspect ??
+        9 / 16;
     final maxHeight = viewport.height * _maxCardShare;
     final cardWidth = min(
       min(_availableCardWidth(context), PrismLayout.panelWidth),
       maxHeight * max(ratio, _widestCardAspect),
     );
     return Size(cardWidth, min(cardWidth / ratio, maxHeight));
+  }
+
+  static double? _validAspect(double? ratio) => ratio != null && ratio.isFinite && ratio > 0 ? ratio : null;
+
+  /// Width over height from the wallpaper's size or resolution, or null when it has neither.
+  static double? _coreAspect(WallpaperCore? core) {
+    final width = core?.width;
+    final height = core?.height;
+    if (width != null && height != null && width > 0 && height > 0) return width / height;
+    final parts = core?.resolution?.toLowerCase().split('x');
+    if (parts == null || parts.length != 2) return null;
+    final double? w = double.tryParse(parts[0].trim());
+    final double? h = double.tryParse(parts[1].trim());
+    return w == null || h == null || h == 0 ? null : _validAspect(w / h);
+  }
+
+  void _onPictureSize(Size size) {
+    if (!mounted || size.isEmpty) return;
+    final double aspect = size.width / size.height;
+    final double? known = _pictureAspect;
+    if (known != null && (known - aspect).abs() < 0.01) return;
+    setState(() => _pictureAspect = aspect);
+  }
+
+  Size get _cardShown {
+    final Size? from = _morphFrom;
+    final Size target = _cardTarget!;
+    if (from == null) return target;
+    return Size.lerp(from, target, PrismCurves.move.transform(_shapeMorph.value))!;
+  }
+
+  /// The card box at [target]. When the target changes after the card first showed, the box eases to it from where
+  /// it is. The page under it follows, as it lays out after the card.
+  Widget _shapedCard(Size target, Widget child) {
+    final Size? previous = _cardTarget;
+    if (previous != target) {
+      final Size? shown = previous == null ? null : _cardShown;
+      _cardTarget = target;
+      _morphFrom = shown;
+      if (shown == null || context.reduceMotion) {
+        _morphFrom = null;
+        _shapeMorph.value = 1;
+      } else {
+        _shapeMorph
+          ..duration = PrismDurations.slow
+          ..forward(from: 0);
+      }
+    }
+    return AnimatedBuilder(
+      animation: _shapeMorph,
+      builder: (context, child) => SizedBox.fromSize(size: _cardShown, child: child),
+      child: child,
+    );
   }
 
   /// Placeholders in the shape of the actions and summary while Prism confirms the wallpaper, so nothing jumps when
@@ -1980,12 +2043,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
               pixelSize: wallpaperPixelSize(entity.wallpaperCore),
             ),
             decodeBox: _cardSize(context, entity.wallpaperCore),
+            onPictureSize: _onPictureSize,
             errorBuilder: (_, _) =>
                 GlintState(kind: GlintStateKind.error, title: context.l10n.wallpaperDownloadedWallpaperUnavailable),
           )
         : ProgressiveWallpaperImage(
             display: WallpaperDisplaySource.of(entity),
             decodeBox: _cardSize(context, entity.wallpaperCore),
+            onPictureSize: _onPictureSize,
             errorBuilder: (_, _) =>
                 Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state))),
           );

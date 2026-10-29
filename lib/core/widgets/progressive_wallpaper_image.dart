@@ -23,7 +23,13 @@ const Duration _fullFade = Duration(milliseconds: 280);
 ///
 /// Nothing is painted until a picture decodes, so whatever is under this (a grid tile's Hero) shows through.
 class ProgressiveWallpaperImage extends StatefulWidget {
-  const ProgressiveWallpaperImage({super.key, required this.display, this.decodeBox, this.errorBuilder});
+  const ProgressiveWallpaperImage({
+    super.key,
+    required this.display,
+    this.decodeBox,
+    this.errorBuilder,
+    this.onPictureSize,
+  });
 
   final WallpaperDisplaySource display;
 
@@ -33,6 +39,10 @@ class ProgressiveWallpaperImage extends StatefulWidget {
 
   /// Shown when no picture can load. `retry` loads both pictures again.
   final Widget Function(BuildContext context, VoidCallback retry)? errorBuilder;
+
+  /// Called after a frame with the pixel size of the full picture when it first paints. Its shape is the wallpaper's.
+  /// The thumbnail is never reported: some sources crop it.
+  final ValueChanged<Size>? onPictureSize;
 
   /// Replaces the on-device lookup in tests.
   @visibleForTesting
@@ -58,6 +68,7 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
   int _attempt = 0;
   int _generation = 0;
   int _retries = 0;
+  Size? _reportedSize;
 
   @override
   void initState() {
@@ -241,7 +252,20 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
     return sync || fade == Duration.zero ? child : _fadeIn(child, fade);
   }
 
+  void _reportSize(Widget child) {
+    final ValueChanged<Size>? report = widget.onPictureSize;
+    final ui.Image? image = _rawImage(child)?.image;
+    if (report == null || image == null) return;
+    final Size size = Size(image.width.toDouble(), image.height.toDouble());
+    if (size == _reportedSize) return;
+    _reportedSize = size;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) report(size);
+    });
+  }
+
   Widget _fullFrame(BuildContext context, Widget child, int? frame, bool sync, int generation, ImageProvider image) {
+    if (frame != null) _reportSize(child);
     if (_shown && image == _lastPaintedProvider) return child;
     if (frame == null) return const SizedBox.expand();
     final Duration fade = context.motion(_fullFade);
