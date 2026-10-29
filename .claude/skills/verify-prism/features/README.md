@@ -38,12 +38,15 @@ Each feature file starts with an H1 and one paragraph. It then uses exactly four
 ## Features
 
 - [Onboarding and sign-in](./onboarding-signin.md): `/onboarding/v2`, Google/Apple OAuth, interests, starter pack, first wallpaper.
-- [Home feed](./home-feed.md): Prism/Wallhaven/Pexels tabs, feed settings, notifications bell, wallpaper grid.
-- [Wallpaper detail](./wallpaper-detail.md): download, set as wallpaper, favourite, share, report, edit.
-- [Search](./search.md): wallpaper search, user search, color search.
+- [Home feed](./home-feed.md): For you/Following/Trending/Latest/Popular tabs, Tune your feed, carousel, Moods, hold menu, Collections tab.
+- [Wallpaper detail](./wallpaper-detail.md): favourite, share sheet, edit, save/download, Set screen, phone preview, details, report.
+- [Search](./search.md): wallpaper search, filters, colour filter, discovery, Find creators.
 - [Profile and edit profile](./profile.md): own profile, public profile, followers/following, edit profile.
-- [Coins and streak](./coins-streak.md): streak tab, coin balance, coin transactions, streak shop.
-- [AI wallpaper](./ai-wallpaper.md): AI generation tab, coin spend, download/set result.
+- [Rewards and coins](./rewards.md): Rewards tab, streak, quests, earn and spend tiles, coin history, leaderboard.
+- [AI wallpaper](./ai-wallpaper.md): `/ai` page from Create or Rewards, prompt, style, quality, result actions.
 - [Notifications inbox](./notifications.md): in-app notification list, tap-through routing.
-- [Settings](./settings.md): themes, download quality, toggles, sign-out/delete account.
-- [Deep links](./deep-links.md): `prismwalls.com` share/user/refer/short links, push notification routing.
+- [Settings](./settings.md): grouped rows, themes, toggles, storage, purchases, log out/delete account.
+- [Deep links](./deep-links.md): `prismwalls.com` and `prism://` pages, share/user/refer/short links, push routing.
+- [Library and Folders](./library-folders.md): Library tabs, Folders, Save to folder.
+- [Drops, Shop and Premium](./drops-shop-premium.md): Weekly Drop, drop preview, Shop, Premium page and paywall.
+- [Upload](./upload.md): Create sheet, photo pick, edit, upload screen, review status.
