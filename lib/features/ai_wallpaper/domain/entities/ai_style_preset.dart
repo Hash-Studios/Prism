@@ -40,7 +40,7 @@ enum AiStylePreset {
 
   /// The one place that builds a sample URL. tool/ai_style_samples.mjs uploads to the same keys.
   String sampleUrl(AiStyleSampleSize size) {
-    final String base = kDebugMode && Env.aiStyleSamplesLocal ? _localSampleBaseUrl : _sampleBaseUrl;
+    const String base = kDebugMode && Env.aiStyleSamplesLocal ? _localSampleBaseUrl : _sampleBaseUrl;
     return '$base/style-samples-$sampleVersion-$sampleSlug-${size.name}.webp';
   }
 
