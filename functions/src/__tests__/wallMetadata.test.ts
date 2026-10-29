@@ -5,6 +5,17 @@ import {installFakeDb} from "./fakeDb";
 import {editWallMetadata, getWallMetadataForEdit, listWallMetadataEdits, revertWallMetadata} from "../wallMetadata";
 import * as admin from "firebase-admin";
 
+const forbiddenFields = [
+  "id", "category", "wallpaper_url", "wallpaper_thumb", "wallpaper_provider", "wallpaper_path", "wallpaper_sha",
+  "wallpaper_source_kind", "thumb_path", "thumb_sha", "thumb_source_kind", "resolution", "size", "file_size",
+  "createdAt", "uploadedBy", "by", "email", "creatorUid", "userPhoto", "credit", "coins", "money", "review",
+  "premium", "collections", "dropReserved", "dropWeek", "boostedUntil", "depth", "spatial", "colors",
+  "originalProtected", "originalObjectId", "moderation", "visionLabels", "searchTerms", "remixOf", "remixCount",
+  "resubmitOf", "requestId", "wotd", "wallOfTheDay", "challenge", "challengeId", "is_streak_exclusive",
+  "required_streak_days", "streak_shop_coin_cost", "aiMetadata", "isAiGenerated", "aiPrompt", "aiStylePreset",
+  "aiModel", "origin", "title.x", "tags.0",
+];
+
 test("approved edit is a narrow audited transaction and replay does not charge again", async (t) => {
   const store = installFakeDb(t, {"usersv2/maker": {name: "Maker"}, "walls/w1": {
     creatorUid: "maker", review: true, title: "Before", category: "Nature", coins: 77, collections: ["premium"],
@@ -77,16 +88,7 @@ test("unknown or dotted fields are rejected before any metadata mutation", async
   const loaded = await getWallMetadataForEdit.run({auth, data: {wallDocId: "w1"}} as never);
   const metadata = {title: "Safe", desc: "", tags: []};
   const data = {wallDocId: "w1", expectedRevision: loaded.revision, operationId: "edit", metadata};
-  for (const key of [
-    "id", "category", "wallpaper_url", "wallpaper_thumb", "wallpaper_provider", "wallpaper_path", "wallpaper_sha",
-    "wallpaper_source_kind", "thumb_path", "thumb_sha", "thumb_source_kind", "resolution", "size", "file_size",
-    "createdAt", "uploadedBy", "by", "email", "creatorUid", "userPhoto", "credit", "coins", "money", "review",
-    "premium", "collections", "dropReserved", "dropWeek", "boostedUntil", "depth", "spatial", "colors",
-    "originalProtected", "originalObjectId", "moderation", "visionLabels", "searchTerms", "remixOf", "remixCount",
-    "resubmitOf", "requestId", "wotd", "wallOfTheDay", "challenge", "challengeId", "is_streak_exclusive",
-    "required_streak_days", "streak_shop_coin_cost", "aiMetadata", "isAiGenerated", "aiPrompt", "aiStylePreset",
-    "aiModel", "origin", "title.x", "tags.0",
-  ]) {
+  for (const key of forbiddenFields) {
     await assert.rejects(() => editWallMetadata.run({auth, data: {...data, [key]: true}} as never), {code: "invalid-argument"});
     await assert.rejects(() => editWallMetadata.run({auth, data: {...data, metadata: {...metadata, [key]: true}}} as never),
       {code: "invalid-argument"});
@@ -124,4 +126,31 @@ test("metadata revert refuses unsafe legacy text and a recreated wall incarnatio
   await assert.rejects(() => revertWallMetadata.run({auth: adminAuth, data: {...revert,
     operationId: "undo-recreated", expectedRevision: recreated.revision}} as never), {code: "aborted"});
   assert.equal(store.get("walls/w1")?.title, "Safe");
+});
+
+
+test("admin revert rejects every supplied non-text field and restores only audited text", async (t) => {
+  const wall = {creatorUid: "maker", review: true, title: "Before", desc: "Original", tags: ["old"],
+    category: "Nature", coins: 99, premium: true, dropReserved: true, dropWeek: "next", wotd: true,
+    challengeId: "challenge", credit: "Creator", wallpaper_url: "original", wallpaper_thumb: "thumbnail",
+    collections: ["premium"], originalProtected: true, searchTerms: ["stale"]};
+  const store = installFakeDb(t, {"usersv2/maker": {}, "usersv2/moderator": {}, "walls/w1": wall,
+    "coinTransactions/untouched": {amount: 99}, "wall_of_the_day/untouched": {wallId: "w1"}});
+  const owner = {uid: "maker", token: {}};
+  const auth = {uid: "moderator", token: {admin: true}};
+  const load = () => getWallMetadataForEdit.run({auth: owner, data: {wallDocId: "w1"}} as never);
+  const saved = await editWallMetadata.run({auth: owner, data: {wallDocId: "w1", operationId: "edit",
+    expectedRevision: (await load()).revision, metadata: {title: "After", desc: "Changed", tags: ["new"]}}} as never);
+  const data = {wallDocId: "w1", auditId: saved.auditId, operationId: "revert", expectedRevision: (await load()).revision};
+  const before = {...store.get("walls/w1")};
+  for (const key of [...forbiddenFields, "metadata", "title", "desc", "tags", "before", "after"]) {
+    await assert.rejects(() => revertWallMetadata.run({auth, data: {...data, [key]: {review: false}}} as never),
+      {code: "invalid-argument"});
+    assert.deepEqual(store.get("walls/w1"), before);
+  }
+  await revertWallMetadata.run({auth, data} as never);
+  assert.deepEqual(store.get("walls/w1"), {...wall, searchTerms: ["before", "old", "nature", "original"]});
+  assert.deepEqual(store.get("coinTransactions/untouched"), {amount: 99});
+  assert.deepEqual(store.get("wall_of_the_day/untouched"), {wallId: "w1"});
+  assert.equal([...store.keys()].filter((p) => p.startsWith("wallMetadataEdits/")).length, 2);
 });

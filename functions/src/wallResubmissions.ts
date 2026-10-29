@@ -10,6 +10,7 @@ import {parseFileReference, proveCompletedWallUpload} from "./completedWallUploa
 import {wallSearchTermsFor} from "./wallSearchTerms";
 import {r2Secrets} from "./r2Storage";
 import {authorOf} from "./wallAuthor";
+import {verifiedUidForEmail} from "./authoredContentUid";
 import {ownedThumbnailUrl, stored} from "./ownedAssetDelivery";
 
 export const RESUBMISSION_ROOTS = "wallResubmissionRoots";
@@ -153,6 +154,22 @@ export const submitWallResubmission = onCall({...options, secrets: [githubToken,
     });
   });
 
+async function moderationOwner(tx: admin.firestore.Transaction, data: admin.firestore.DocumentData): Promise<string | null> {
+  const email = typeof data.email === "string" ? data.email.trim() : "";
+  const uid = typeof data.creatorUid === "string" && data.creatorUid ? data.creatorUid :
+    email && !email.includes("/") ? await verifiedUidForEmail(email, tx) : null;
+  if (!uid) return null;
+  const [user, barrier] = await Promise.all([
+    tx.get(db.collection("usersv2").doc(uid)), tx.get(db.collection("creatorDeletionState").doc(uid)),
+  ]);
+  // Removal of anonymous retained walls is admin work; never recreate private state during owner deletion.
+  if (user.data()?.deleted === true || barrier.data()?.closed === true) {
+    if (!email && user.data()?.deleted === true) return null;
+    throw new HttpsError("failed-precondition", "account-closed");
+  }
+  return uid;
+}
+
 async function adminUid(request: CallableRequest<unknown>): Promise<string> {
   const uid = signedIn(request);
   if (!await isAdminCaller(request.auth)) throw new HttpsError("permission-denied", "Only admins can inspect resubmissions.");
@@ -206,7 +223,7 @@ export const undoWallRejection = onCall(options, async (request: CallableRequest
     if (!archive.exists || live.exists || revisionOf(archive) !== expected || !children.empty) {
       throw new HttpsError("aborted", "rejection-changed-or-already-resubmitted");
     }
-    const ownerUid = await activeWallOwner(tx, archive.data()!);
+    const ownerUid = await moderationOwner(tx, archive.data()!);
     const ledger = ledgerSnap.data();
     if (ledger && (ledger.ownerUid !== ownerUid || !await validArchive(tx, archive, ledgerSnap))) throw new HttpsError("aborted", "lineage-identity-mismatch");
     const root = rootSnap.data();
@@ -249,7 +266,7 @@ export const rejectWallForReview = onCall(options, async (request: CallableReque
     if (!wall.exists || wall.data()?.review !== input.expectedReview || archive.exists || revisionOf(wall) !== expected) {
       throw new HttpsError("aborted", "wall-changed");
     }
-    const ownerUid = await activeWallOwner(tx, wall.data()!);
+    const ownerUid = await moderationOwner(tx, wall.data()!);
     const at = admin.firestore.FieldValue.serverTimestamp();
     const result = {wallDocId: id, rejectionOperationId: op};
     tx.create(archiveRef, {...wall.data(), rejectionReason: reason, rejectionOperationId: op,
