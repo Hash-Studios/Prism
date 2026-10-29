@@ -14,6 +14,39 @@
   "galleryEmptyBody": "Sie wurden entfernt oder sind nicht mehr öffentlich.",
   "galleryEmptyTitle": "Diese Hintergrundbilder sind weg",
   "galleryScreenTitle": "Hintergrundbilder für dich",
+  "favouritePin": "Oben anheften",
+  "@favouritePin": {
+    "description": "Hold-menu action on a favourite wallpaper. Keeps it at the top of Favourites."
+  },
+  "favouriteUnpin": "Lösen",
+  "@favouriteUnpin": {
+    "description": "Hold-menu action on a pinned favourite. Returns it to its normal place in Favourites."
+  },
+  "favouritePinnedToast": "Oben in Favoriten angeheftet",
+  "@favouritePinnedToast": {
+    "description": "Confirmation after the user pins a favourite."
+  },
+  "favouriteUnpinnedToast": "Anheftung aufgehoben",
+  "@favouriteUnpinnedToast": {
+    "description": "Confirmation after the user unpins a favourite."
+  },
+  "favouritePinnedBadge": "Angeheftet",
+  "@favouritePinnedBadge": {
+    "description": "Accessibility label of the small pin badge on a pinned favourite tile."
+  },
+  "favouritePinLimit": "{count, plural, other{Du kannst bis zu {count} Favoriten anheften. Löse eine Anheftung, um dieses Hintergrundbild anzuheften.}}",
+  "@favouritePinLimit": {
+    "description": "Shown when the user tries to pin more favourites than the limit.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "favouritePinFailed": "Anheften konnte nicht aktualisiert werden. Prüfe deine Verbindung und versuche es erneut.",
+  "@favouritePinFailed": {
+    "description": "Shown when pinning or unpinning a favourite fails."
+  },
   "wallpaperFavouriteSearchCountHint": "{count, plural, =1{1 Favorit durchsuchen} other{{count} Favoriten durchsuchen}}",
   "@wallpaperFavouriteSearchCountHint": {
     "description": "Hint in the favourites search field. It also tells how many favourites there are.",
@@ -6365,10 +6398,6 @@
     "description": "Wallpaper interface text: wallpaperAccentColorsOriginal."
   },
   "wallpaperResetOriginal": "Zurück zum Original",
-  "wallpaperAccentResetHint": "Gedrückt halten für Aktionen, auch Zurück zum Original",
-  "@wallpaperAccentResetHint": {
-    "description": "Toast hint explaining how to reset the selected wallpaper accent."
-  },
   "wallpaperAll": "Alle",
   "@wallpaperAll": {
     "description": "Filter option to show all wallpaper sources."
@@ -7630,7 +7659,7 @@
   },
   "wallpaperHidePreviewControls": "Steuerelemente ausblenden",
   "@wallpaperHidePreviewControls": {
-    "description": "Accessibility label of the wallpaper preview background: a tap hides the buttons so the whole mock phone screen shows."
+    "description": "Accessibility label and action that hides the buttons: on the wallpaper preview, and on the wallpaper detail screen where it also hides the system bars."
   },
   "wallpaperHistoryBothScreens": "Beide Bildschirme",
   "@wallpaperHistoryBothScreens": {
@@ -7660,7 +7689,7 @@
   "@wallpaperHomeAppName": {
     "description": "Accessible name for the Prism logo."
   },
-  "wallpaperImageSemanticHint": "Tippen, um die Akzentfarbe zu wechseln. Gedrückt halten für Favoriten, Teilen und Zurücksetzen. Für Details scrollen.",
+  "wallpaperImageSemanticHint": "Gedrückt halten für Favoriten, Teilen und Zurücksetzen. Für Details scrollen.",
   "@wallpaperImageSemanticHint": {
     "description": "Accessibility hint describing wallpaper image gestures."
   },
@@ -7669,6 +7698,10 @@
   "wallpaperImageSemanticLabel": "Hintergrundbild",
   "@wallpaperImageSemanticLabel": {
     "description": "Accessibility label for the wallpaper image."
+  },
+  "wallpaperImmersiveHint": "Tippen, um Steuerelemente auszublenden",
+  "@wallpaperImmersiveHint": {
+    "description": "Small hint shown once on the wallpaper detail screen. A tap on the wallpaper hides every button and the system bars."
   },
   "wallpaperInsufficientCoins": "Nicht genug Coins. Verdiene Coins bei „Belohnungen“.",
   "@wallpaperInsufficientCoins": {
@@ -8557,7 +8590,7 @@
   },
   "wallpaperShowPreviewControls": "Steuerelemente einblenden",
   "@wallpaperShowPreviewControls": {
-    "description": "Accessibility label of the wallpaper preview background: a tap shows the buttons again."
+    "description": "Accessibility label and action that shows the buttons again, on the wallpaper preview and on the wallpaper detail screen."
   },
   "wallpaperSignIn": "Anmelden",
   "@wallpaperSignIn": {

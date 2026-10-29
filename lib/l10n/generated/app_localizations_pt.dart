@@ -29,6 +29,34 @@ class AppLocalizationsPt extends AppLocalizations {
   String get galleryScreenTitle => 'Papéis de parede para você';
 
   @override
+  String get favouritePin => 'Fixar no topo';
+
+  @override
+  String get favouriteUnpin => 'Desafixar';
+
+  @override
+  String get favouritePinnedToast => 'Fixado no topo dos Favoritos';
+
+  @override
+  String get favouriteUnpinnedToast => 'Desafixado';
+
+  @override
+  String get favouritePinnedBadge => 'Fixado';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você pode fixar até $count favoritos. Desafixe um para fixar este papel de parede.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed => 'Não foi possível atualizar o fixado. Verifique sua conexão e tente novamente.';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7759,9 +7787,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperResetOriginal => 'Restaurar original';
 
   @override
-  String get wallpaperAccentResetHint => 'Toque e segure para ações, incluindo Restaurar original';
-
-  @override
   String get wallpaperAll => 'Todos';
 
   @override
@@ -8812,8 +8837,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperHomeAppName => 'Prism';
 
   @override
-  String get wallpaperImageSemanticHint =>
-      'Toque para mudar a cor. Segure para favoritos, compartilhar e restaurar. Role para ver detalhes.';
+  String get wallpaperImageSemanticHint => 'Segure para favoritos, compartilhar e restaurar. Role para ver detalhes.';
 
   @override
   String get wallpaperPreviousInFeed => 'Papel de parede anterior';
@@ -8823,6 +8847,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'Papel de parede';
+
+  @override
+  String get wallpaperImmersiveHint => 'Toque para ocultar os controles';
 
   @override
   String get wallpaperInsufficientCoins => 'Não há moedas suficientes. Ganhe moedas em recompensas.';
@@ -10942,6 +10969,34 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get galleryScreenTitle => 'Papéis de parede para você';
 
   @override
+  String get favouritePin => 'Fixar no topo';
+
+  @override
+  String get favouriteUnpin => 'Desafixar';
+
+  @override
+  String get favouritePinnedToast => 'Fixado no topo dos Favoritos';
+
+  @override
+  String get favouriteUnpinnedToast => 'Desafixado';
+
+  @override
+  String get favouritePinnedBadge => 'Fixado';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você pode fixar até $count favoritos. Desafixe um para fixar este papel de parede.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed => 'Não foi possível atualizar o fixado. Verifique sua conexão e tente novamente.';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -18672,9 +18727,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperResetOriginal => 'Restaurar original';
 
   @override
-  String get wallpaperAccentResetHint => 'Toque e segure para ações, incluindo Restaurar original';
-
-  @override
   String get wallpaperAll => 'Todos';
 
   @override
@@ -19725,8 +19777,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperHomeAppName => 'Prism';
 
   @override
-  String get wallpaperImageSemanticHint =>
-      'Toque para mudar a cor. Segure para favoritos, compartilhar e restaurar. Role para ver detalhes.';
+  String get wallpaperImageSemanticHint => 'Segure para favoritos, compartilhar e restaurar. Role para ver detalhes.';
 
   @override
   String get wallpaperPreviousInFeed => 'Papel de parede anterior';
@@ -19736,6 +19787,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperImageSemanticLabel => 'Papel de parede';
+
+  @override
+  String get wallpaperImmersiveHint => 'Toque para ocultar os controles';
 
   @override
   String get wallpaperInsufficientCoins => 'Não há moedas suficientes. Ganhe moedas em recompensas.';

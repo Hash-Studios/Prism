@@ -49,6 +49,8 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'scroll_depth_percent': ScrollDepthPercentValue.values.map((value) => value.wireValue).toList(),
   'link_destination': LinkDestinationValue.values.map((value) => value.wireValue).toList(),
   'push_kind': PushKindValue.values.map((value) => value.wireValue).toList(),
+  'immersive_toggle_source': ImmersiveToggleSourceValue.values.map((value) => value.wireValue).toList(),
+  'favourite_pin_surface': FavouritePinSurfaceValue.values.map((value) => value.wireValue).toList(),
 };
 
 class ContentReportSubmitEvent extends AnalyticsEvent {
@@ -3147,5 +3149,61 @@ class SpatialGuideOpenedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'wall_id': wallId, 'tier': tier};
+  }
+}
+
+class DetailImmersiveToggledEvent extends AnalyticsEvent {
+  const DetailImmersiveToggledEvent({required this.immersive, required this.source});
+
+  final bool immersive;
+  final ImmersiveToggleSourceValue source;
+
+  @override
+  String get eventName => 'detail_immersive_toggled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'immersive': immersive ? 1 : 0, 'source': source.wireValue};
+  }
+}
+
+class DetailImmersiveHintShownEvent extends AnalyticsEvent {
+  const DetailImmersiveHintShownEvent();
+
+  @override
+  String get eventName => 'detail_immersive_hint_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class FavouritePinChangedEvent extends AnalyticsEvent {
+  const FavouritePinChangedEvent({required this.pinned, required this.surface});
+
+  final bool pinned;
+  final FavouritePinSurfaceValue surface;
+
+  @override
+  String get eventName => 'favourite_pin_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'pinned': pinned ? 1 : 0, 'surface': surface.wireValue};
+  }
+}
+
+class FavouritePinLimitHitEvent extends AnalyticsEvent {
+  const FavouritePinLimitHitEvent({required this.surface});
+
+  final FavouritePinSurfaceValue surface;
+
+  @override
+  String get eventName => 'favourite_pin_limit_hit';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'surface': surface.wireValue};
   }
 }
