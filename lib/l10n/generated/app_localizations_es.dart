@@ -1111,12 +1111,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get accountReportAProblem => 'Informar de un problema';
 
   @override
-  String accountReportPreviewNotice(String email) {
-    return 'Este informe incluye la versión de la aplicación, los datos del dispositivo y los registros recientes. No contiene tu correo electrónico ni tokens de inicio de sesión. Léelo y compártelo con $email.';
-  }
-
-  @override
-  String get accountReportProblemSubtitle => 'Compartir los registros de la aplicación con el equipo de Prism';
+  String get accountReportProblemSubtitle => 'Enviar un informe de error al equipo de Prism';
 
   @override
   String get accountReportUser => 'Denunciar usuario';
@@ -1225,9 +1220,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get accountSettings => 'Ajustes';
-
-  @override
-  String get accountShare => 'Compartir';
 
   @override
   String get accountShareInvite => 'Compartir invitación';
@@ -11345,4 +11337,79 @@ class AppLocalizationsEs extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName remezcló tu fondo de pantalla.';
   }
+
+  @override
+  String get reportSheetMessage =>
+      'Cuéntanos qué salió mal. Prism nunca añade tu correo electrónico ni tokens de inicio de sesión. Revisa las capturas antes de enviarlas.';
+
+  @override
+  String get reportTopicCrashFreeze => 'Cierre inesperado/bloqueo';
+
+  @override
+  String get reportTopicWallpaperWontSet => 'El fondo de pantalla no se aplica';
+
+  @override
+  String get reportTopicLooksBroken => 'Se ve mal';
+
+  @override
+  String get reportTopicSlow => 'Lento';
+
+  @override
+  String get reportTopicOther => 'Otro';
+
+  @override
+  String get reportNoteHint => '¿Qué pasó? ¿Qué esperabas que pasara?';
+
+  @override
+  String get reportScreenshotTitle => 'Captura de pantalla';
+
+  @override
+  String get reportScreenshotEmpty => 'Muéstranos lo que ves.';
+
+  @override
+  String get reportScreenshotAttached => 'Toca para verla. Revísala antes de enviar.';
+
+  @override
+  String get reportAddScreenshot => 'Añadir captura';
+
+  @override
+  String get reportRemoveScreenshot => 'Quitar';
+
+  @override
+  String get reportViewScreenshot => 'Ver captura';
+
+  @override
+  String get reportIncludeDiagnostics => 'Incluir datos del dispositivo y registros recientes';
+
+  @override
+  String get reportShowDiagnostics => 'Mostrar qué se incluye';
+
+  @override
+  String get reportHideDiagnostics => 'Ocultar detalles';
+
+  @override
+  String get reportSend => 'Enviar informe';
+
+  @override
+  String get reportShareAsFile => 'Compartir como archivo';
+
+  @override
+  String reportSent(String reference) {
+    return 'Gracias, informe enviado. Referencia $reference';
+  }
+
+  @override
+  String get reportCouldNotSend => 'No se pudo enviar';
+
+  @override
+  String get reportCouldNotSendBody => 'Revisa tu conexión e inténtalo de nuevo, o comparte el informe como archivo.';
+
+  @override
+  String get reportShareInstead => 'Compartir en su lugar';
+
+  @override
+  String get reportShakeToReport => 'Agitar para informar';
+
+  @override
+  String get reportShakeToReportSubtitle => 'Agita el teléfono en cualquier pantalla para informar de un problema';
 }

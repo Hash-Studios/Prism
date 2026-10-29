@@ -70,6 +70,7 @@ import 'package:Prism/features/personalized_feed/domain/repositories/personalize
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
+import 'package:Prism/features/session/views/widgets/shake_to_report_listener.dart';
 import 'package:Prism/features/startup/services/resume_refresh_policy.dart';
 import 'package:Prism/features/startup/startup.dart';
 import 'package:Prism/features/theme_mode/data/theme_mode_migration.dart';
@@ -188,6 +189,7 @@ Future<void> main() async {
 
       const skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
       final SentryConfig sentryConfig = _resolveSentryConfig();
+      MonitoringRuntime.config = sentryConfig;
 
       // Start Firebase early so it can initialize while persistence and monitoring run.
       // StartupRepositoryImpl.bootstrap() also awaits this future before accessing Remote Config.
@@ -910,7 +912,10 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
                   return Theme(
                     data: theme.copyWith(snackBarTheme: prismSnackBarThemeFor(context, theme.snackBarTheme)),
                     child: FolderWriteFailureListener(
-                      child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                      child: ShakeToReportListener(
+                        navigatorKey: _appRouter.navigatorKey,
+                        child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                      ),
                     ),
                   );
                 },

@@ -190,7 +190,7 @@ void main() {
 
       expect(launcher.urls.single, startsWith('mailto:hash.studios.inc@gmail.com'));
       expect(find.text('Report a problem'), findsOneWidget);
-      expect(find.byKey(const Key('report_problem_preview')), findsOneWidget);
+      expect(find.text('Send report'), findsOneWidget);
     });
 
     testWidgets("WHAT'S NEW reopens the changelog popup", (tester) async {

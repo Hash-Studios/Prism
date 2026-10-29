@@ -2259,30 +2259,71 @@ class PushOpenedEvent extends AnalyticsEvent {
 }
 
 class ReportProblemOpenedEvent extends AnalyticsEvent {
-  const ReportProblemOpenedEvent({required this.source});
+  const ReportProblemOpenedEvent({required this.source, required this.trigger});
 
   final String source;
+  final String trigger;
 
   @override
   String get eventName => 'report_problem_opened';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'source': source};
+    return <String, Object?>{'source': source, 'trigger': trigger};
   }
 }
 
 class ReportProblemSharedEvent extends AnalyticsEvent {
-  const ReportProblemSharedEvent({required this.result});
+  const ReportProblemSharedEvent({
+    required this.result,
+    this.topic,
+    required this.hasScreenshot,
+    required this.trigger,
+  });
 
   final String result;
+  final String? topic;
+  final bool hasScreenshot;
+  final String trigger;
 
   @override
   String get eventName => 'report_problem_shared';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'result': result};
+    return <String, Object?>{
+      'result': result,
+      if (topic != null) 'topic': topic!,
+      'has_screenshot': hasScreenshot ? 1 : 0,
+      'trigger': trigger,
+    };
+  }
+}
+
+class ReportProblemSentEvent extends AnalyticsEvent {
+  const ReportProblemSentEvent({
+    required this.result,
+    required this.topic,
+    required this.hasScreenshot,
+    required this.trigger,
+  });
+
+  final String result;
+  final String topic;
+  final bool hasScreenshot;
+  final String trigger;
+
+  @override
+  String get eventName => 'report_problem_sent';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'result': result,
+      'topic': topic,
+      'has_screenshot': hasScreenshot ? 1 : 0,
+      'trigger': trigger,
+    };
   }
 }
 

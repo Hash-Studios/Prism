@@ -34,6 +34,8 @@ import 'package:Prism/features/navigation/views/widgets/personalized_feed_settin
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
+import 'package:Prism/features/session/data/report_problem_service.dart' show ReportTrigger;
+import 'package:Prism/features/session/data/shake_to_report.dart';
 import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
 import 'package:Prism/features/session/views/widgets/settings_account_card.dart';
 import 'package:Prism/features/theme_mode/views/widgets/diwali_decor.dart';
@@ -139,6 +141,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _defaultApplyTarget;
   bool _haptics = PrismHaptics.enabled;
   bool _lowData = LowDataMode.enabled.value;
+  bool _shakeToReport = ShakeToReport.enabled.value;
   bool _saveViewingHistory = getIt<RecentlyViewedStore>().enabled;
   bool _savingViewingHistory = false;
   bool _restoring = false;
@@ -856,7 +859,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitle: context.l10n.accountReportProblemSubtitle,
       onTap: () {
         _trackRow('report_a_problem');
-        unawaited(showReportProblemSheet(context, source: 'settings'));
+        unawaited(showReportProblemSheet(context, source: 'settings', trigger: ReportTrigger.settings));
+      },
+    ),
+    PrismSwitchRow(
+      icon: Icons.vibration_rounded,
+      title: context.l10n.reportShakeToReport,
+      subtitle: context.l10n.reportShakeToReportSubtitle,
+      value: _shakeToReport,
+      onChanged: (value) {
+        setState(() => _shakeToReport = value);
+        unawaited(ShakeToReport.set(value));
       },
     ),
     PrismRow(

@@ -134,6 +134,8 @@
 	<string>Prism needs permission to save wallpapers to your photo library.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Prism needs camera access to let you take a photo for your profile picture.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Prism uses motion to open Report a problem when you shake your phone.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>instagram-stories</string>

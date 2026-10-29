@@ -317,6 +317,8 @@ PODS:
   - SDWebImageWebPCoder (0.15.0):
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.17)
+  - sensors_plus (0.0.1):
+    - Flutter
   - Sentry/HybridSDK (8.58.4)
   - sentry_flutter (9.30.1):
     - Flutter
@@ -367,6 +369,7 @@ DEPENDENCIES:
   - purchases_ui_flutter (from `.symlinks/plugins/purchases_ui_flutter/ios`)
   - quick_actions_ios (from `.symlinks/plugins/quick_actions_ios/ios`)
   - screen_corner_radius (from `.symlinks/plugins/screen_corner_radius/ios`)
+  - sensors_plus (from `.symlinks/plugins/sensors_plus/ios`)
   - sentry_flutter (from `.symlinks/plugins/sentry_flutter/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -484,6 +487,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/quick_actions_ios/ios"
   screen_corner_radius:
     :path: ".symlinks/plugins/screen_corner_radius/ios"
+  sensors_plus:
+    :path: ".symlinks/plugins/sensors_plus/ios"
   sentry_flutter:
     :path: ".symlinks/plugins/sentry_flutter/ios"
   share_plus:
@@ -581,6 +586,7 @@ SPEC CHECKSUMS:
   screen_corner_radius: 64e0abb3920228a5f91c0680fa890222970025bd
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   SDWebImageWebPCoder: 0e06e365080397465cc73a7a9b472d8a3bd0f377
+  sensors_plus: b70a93b69dafdabd26ce4ac3f4d0529ab9acc4ca
   Sentry: 5321d74bdd28d6f6f8beaa1ca06f1fdc746bff49
   sentry_flutter: c89c731736fabbbac53a4714df8ba0d21ba4100d
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
