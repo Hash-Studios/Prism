@@ -13,6 +13,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/coins/coin_pill.dart';
 import 'package:Prism/features/badges/biz/bloc/badges_bloc.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/drops/drops.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
 import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
@@ -121,7 +122,10 @@ void main() {
     await (FontLoader('Fraunces')..addFont(rootBundle.load('assets/fonts/Fraunces-Variable.ttf'))).load();
   });
 
+  setUp(() => DailyMomentConfig.enabledOverride = false);
+
   tearDown(() async {
+    DailyMomentConfig.enabledOverride = null;
     app_state.prismUser = app_constants.createGuestPrismUser();
     svc.streakNotifier.value = StreakStatus.empty;
     svc.xpNotifier.value = XpStatus.empty();

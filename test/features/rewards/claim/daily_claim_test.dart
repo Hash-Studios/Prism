@@ -3,6 +3,7 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/rewards/views/widgets/daily_claim_host.dart';
 import 'package:Prism/features/rewards/views/widgets/daily_claim_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -302,7 +303,14 @@ void main() {
 
   testWidgets('host shows sheet once and consumes claim', (tester) async {
     _tall(tester);
+    DailyMomentConfig.enabledOverride = false;
+    addTearDown(() => DailyMomentConfig.enabledOverride = null);
     await backend.install();
+    backend.onCall = (_, _) async => <String, Object>{
+      ...CoinsTestBackend.claimPayload,
+      'todayLocalKey': DateTime.now().toUtc().toIso8601String().substring(0, 10),
+      'timezoneOffsetMinutes': 0,
+    };
     addTearDown(getIt.reset);
     await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
     await tester.pumpWidget(
@@ -321,9 +329,17 @@ void main() {
   });
 
   testWidgets('guest and next account never see the previous account claim', (tester) async {
+    DailyMomentConfig.enabledOverride = false;
+    addTearDown(() => DailyMomentConfig.enabledOverride = null);
     await backend.install();
+    backend.onCall = (_, _) async => <String, Object>{
+      ...CoinsTestBackend.claimPayload,
+      'todayLocalKey': DateTime.now().toUtc().toIso8601String().substring(0, 10),
+      'timezoneOffsetMinutes': 0,
+    };
     addTearDown(getIt.reset);
     await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
+    expect(CoinsService.instance.pendingClaimForCurrentUser, isNotNull);
     app_state.prismUser = app_constants.createGuestPrismUser();
     await tester.pumpWidget(
       _app(ThemeData.light(), DailyClaimSheetHost(onSeeRewards: () {}, child: const Text('home'))),
@@ -334,6 +350,7 @@ void main() {
 
     await backend.install();
     await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
+    expect(CoinsService.instance.pendingClaimForCurrentUser, isNotNull);
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'other-${backend.userId}'
       ..loggedIn = true;
@@ -345,7 +362,14 @@ void main() {
 
   testWidgets('covered route delays claim until pop and already-claimed never queues', (tester) async {
     _tall(tester);
+    DailyMomentConfig.enabledOverride = false;
+    addTearDown(() => DailyMomentConfig.enabledOverride = null);
     await backend.install();
+    backend.onCall = (_, _) async => <String, Object>{
+      ...CoinsTestBackend.claimPayload,
+      'todayLocalKey': DateTime.now().toUtc().toIso8601String().substring(0, 10),
+      'timezoneOffsetMinutes': 0,
+    };
     addTearDown(getIt.reset);
     final navigator = GlobalKey<NavigatorState>();
     await tester.pumpWidget(
