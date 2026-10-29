@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_session.dart';
-import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -14,7 +14,6 @@ import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/features/wallpaper_upload/biz/upload_session.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
-import 'package:Prism/features/wallpaper_upload/data/last_submission_defaults_store.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
@@ -250,7 +249,6 @@ void main() {
       metadata: const SubmissionMetadata(
         title: 'Personal title',
         description: 'Personal description',
-        category: 'General',
         tags: ['old'],
         requestId: 'request-1',
         requestText: 'A requested wall',
