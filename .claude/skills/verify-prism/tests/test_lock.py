@@ -49,6 +49,18 @@ class LockTest(unittest.TestCase):
         run.assert_not_called()
         self.assertTrue(self.lock.exists())
 
+    def test_doctor_ignores_stale_peer_lock(self):
+        import os, time
+        self.lock.write_text("t3-peer day15\n")
+        old = time.time() - VERIFY.STALE_LOCK_S - 60
+        os.utime(self.lock, (old, old))
+        self.assertIsNone(VERIFY._doctor_lock_problem("ios", VERIFY.lock_owner("ios")))
+        self.assertTrue(self.lock.exists())
+
+    def test_doctor_flags_fresh_peer_lock(self):
+        self.lock.write_text("t3-peer day15\n")
+        self.assertIsNotNone(VERIFY._doctor_lock_problem("ios", VERIFY.lock_owner("ios")))
+
 
 if __name__ == "__main__":
     unittest.main()

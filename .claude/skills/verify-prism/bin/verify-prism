@@ -96,6 +96,22 @@ def lock_owner(platform: str) -> dict[str, str] | None:
     return _parse_kv(raw) or {"pid": "unknown", "raw": raw.strip()[:80]}
 
 
+def lock_is_stale(platform: str) -> bool:
+    try:
+        return time.time() - LOCK[platform].stat().st_mtime > STALE_LOCK_S
+    except FileNotFoundError:
+        return False
+
+
+def _doctor_lock_problem(platform: str, owner: dict[str, str] | None) -> str | None:
+    if lock_is_ours(platform):
+        return None
+    if lock_is_stale(platform):
+        print(f"  note:           lock is over {STALE_LOCK_S // 3600} h old; launch will reclaim it")
+        return None
+    return f"{platform} lock held by another run ({owner}); do not drive or clean up"
+
+
 def lock_is_ours(platform: str) -> bool:
     """True when the lock is free or belongs to the run in our state file."""
     owner = lock_owner(platform)
@@ -239,8 +255,9 @@ def cmd_doctor_ios() -> list[str]:
 
     owner = lock_owner("ios")
     print(f"  lock:           {owner or 'none'}")
-    if not lock_is_ours("ios"):
-        problems.append(f"ios lock held by another run ({owner}); do not drive or clean up")
+    lock_problem = _doctor_lock_problem("ios", owner)
+    if lock_problem:
+        problems.append(lock_problem)
     installed = ios_app_installed(udid) if udid else False
     print(f"  installed:      {installed}")
     print(f"  local build:    {IOS_APP_PATH.is_dir()} ({IOS_APP_PATH})")
@@ -425,8 +442,9 @@ def cmd_doctor_android() -> list[str]:
 
     owner = lock_owner("android")
     print(f"  lock:           {owner or 'none'}")
-    if not lock_is_ours("android"):
-        problems.append(f"android lock held by another run ({owner}); do not drive or clean up")
+    lock_problem = _doctor_lock_problem("android", owner)
+    if lock_problem:
+        problems.append(lock_problem)
 
     installed = False
     if devices.get(serial) == "device":
@@ -507,6 +525,12 @@ def android_dump(serial: str) -> ET.Element:
                 )
                 _die(
                     f"uiautomator dump failed (exit {r.returncode}): {(r.stderr or r.stdout).strip()}.{hint}"
+                )
+            if "ERROR" in r.stdout:
+                # uiautomator exits 0 even when it captures nothing.
+                _die(
+                    f"uiautomator dump failed: {r.stdout.strip()}. Animated screens (the Home carousel) "
+                    "can return a null root; open a still screen, or use snapshot's PNG and --x/--y."
                 )
             r = _run(["adb", "-s", serial, "pull", device_path, str(local)], timeout=30)
             if r.returncode != 0:

@@ -141,7 +141,7 @@ class LockRegressionTest(unittest.TestCase):
                 original_state = self.states[platform].read_text()
 
                 VERIFY.lock_owner(platform)
-                self.assertEqual(VERIFY.cmd_doctor(type("Args", (), {"platform": platform})()), 1)
+                self.assertEqual(VERIFY.cmd_doctor(type("Args", (), {"platform": platform})()), 0)
 
                 self.assertEqual(self.locks[platform].read_text(), original_lock)
                 self.assertEqual(self.states[platform].read_text(), original_state)

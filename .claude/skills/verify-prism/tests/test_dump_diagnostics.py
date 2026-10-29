@@ -16,13 +16,13 @@ LOADER.exec_module(VERIFY)
 
 
 class AndroidDumpDiagnosticsTest(unittest.TestCase):
-    def assert_dump_failure(self, returncode, stderr):
+    def assert_dump_failure(self, returncode, stderr, stdout=""):
         commands = []
 
         def run(cmd, **kwargs):
             commands.append(cmd)
             if "uiautomator" in cmd:
-                return subprocess.CompletedProcess(cmd, returncode, "", stderr)
+                return subprocess.CompletedProcess(cmd, returncode, stdout, stderr)
             return subprocess.CompletedProcess(cmd, 0, "", "")
 
         with (
@@ -58,6 +58,16 @@ class AndroidDumpDiagnosticsTest(unittest.TestCase):
         self.assertNotIn("UiAutomation", message)
         self.assertFalse(any("pull" in cmd for cmd in commands))
         self.assertTrue(any("rm" in cmd for cmd in commands))
+
+    def test_error_text_with_exit_0_is_reported_before_pull(self):
+        failure, commands, output = self.assert_dump_failure(
+            0, "", stdout="ERROR: null root node returned by UiTestAutomationBridge.\n"
+        )
+        message = "".join(call.args[0] for call in output)
+
+        self.assertEqual(failure.code, 1)
+        self.assertIn("null root node", message)
+        self.assertFalse(any("pull" in cmd for cmd in commands))
 
 
 if __name__ == "__main__":

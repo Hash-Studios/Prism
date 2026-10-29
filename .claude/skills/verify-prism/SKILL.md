@@ -121,6 +121,7 @@ Helper commands (repo root), same shape on both platforms via `--platform`:
 - **iOS**: `describe`/`tap`/`type` shell out to `axe describe-ui` / `axe tap --label` / `axe type`. Prefer `--label` (accessibility label) over `-x/-y` coordinates.
 - **Android**: `describe` dumps the `uiautomator` view tree; `tap` matches a node's `text` or `content-desc` and taps its bounds' center; `type` shells out to `adb shell input text` (US keyboard characters only, same limits as `axe type`).
 - **Android UiAutomation is single-client.** While another client is connected (the T3 `agent-device` session, Appium), `describe`, `tap` and `snapshot` fail with `uiautomator dump failed (exit 137)`. Close that session first (`agent-device close`).
+- **Null root.** `uiautomator dump` can print `ERROR: null root node` and exit 0 on animated screens (the Home carousel). The helper now reports that text. Retry, move to a still screen, or tap by `--x/--y` from the snapshot PNG.
 - **Host load.** When the Mac's load average is very high (other sessions building), `screencap` and `uiautomator dump` can time out. Check `uptime` and retry once.
 - Prefer accessibility labels / text from live Dart source (see `features/*.md`) over coordinates or memorized strings; source drifts, re-check with `describe` when a tap misses.
 
