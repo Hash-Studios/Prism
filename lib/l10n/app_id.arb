@@ -3564,7 +3564,7 @@
   "@aiSessionStripLabel": {
     "description": "Screen reader label for the strip of thumbnails made in this session."
   },
-  "aiSessionTake": "Ambil {index} dari {count}",
+  "aiSessionTake": "Versi {index} dari {count}",
   "@aiSessionTake": {
     "description": "Screen reader label for one thumbnail in the session strip.",
     "placeholders": {

@@ -3927,7 +3927,7 @@ class AppLocalizationsId extends AppLocalizations {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
-    return 'Ambil $indexString dari $countString';
+    return 'Versi $indexString dari $countString';
   }
 
   @override
