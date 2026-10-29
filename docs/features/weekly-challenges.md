@@ -1,123 +1,112 @@
 # Weekly challenges
 
-Day 19, ROADMAP G4. This is the pre-code contract and verification plan. The draft PR targets `master` and must contain the state table and UTC timeline before code starts. Do not merge the PR as part of this task.
+Weekly challenges accept new wallpapers for one UTC week. Voting closes Monday at 00:00 UTC. The server waits for pending reviews, selects a winner, and reserves the next free UTC date for Wallpaper of the Day (WOTD).
 
-The user chose to wait for all pending entry reviews after voting closes. The server then picks the winner and reserves the following UTC calendar day. Admission through the existing wall create trigger remains under parent design review. No feature code starts until that review is recorded.
+## Themes and entries
 
-## Theme and entry contract
+The server consumes the ordered `challengeThemes` queue first. If the queue is empty, it selects the top visible, open wall request created during the prior UTC week. Ties use `createdAt` ascending, then document ID ascending. If neither source supplies a theme, the week is skipped. A skipped slot cannot reopen after themes change.
 
-The server reads the ordered `challengeThemes` queue first. A planned seed script supplies six themes. Theme text remains subject to review. The proposed command is `cd functions && node lib/scripts/seedChallengeThemes.js --dry-run`. This script does not exist yet. The command is planned and was not run. Never run a real seed during this implementation task.
+The seed contains six themes: Quiet horizons, Light through glass, Shapes in nature, After the rain, Small worlds, and Night colours. `functions/src/scripts/seedChallengeThemes.ts` creates missing theme records without overwriting existing records.
 
-If the queue has no theme, use the top visible, open wall request created during the prior UTC week. Sort by votes descending, `createdAt` ascending, then document ID ascending. For a November 2 opening, the request window is October 26 00:00 through November 2 00:00 UTC, with the end excluded. Do not reuse the requests page's 30-day window or its bounded Top scan. If neither source supplies a theme, skip the week. Do not open an empty challenge.
+The feed card opens the challenge detail page. **Upload** carries the challenge seed through image selection and the upload draft. **Create with AI** supplies the theme without starting generation or spending coins. Normal upload quotas, moderation, and AI payment rules apply. Challenge context can be removed. Challenge AI submissions use a stable Firestore document ID for retries.
 
-The user chooses **Upload** or **Create with AI**. AI starts with the theme as a seed. It does not generate or spend coins without the user's action. Normal upload, moderation, and AI payment rules apply.
+The wall create payload has an optional `challengeId`. Rules make that field immutable after creation. There is no submission callable or client-written admission slot.
 
-The existing wall create path carries optional `challengeId`. The server retains the link only for the creator's own new wall submitted during `[opensAt, closesAt)`. Trusted snapshot `createTime`, not a client date or trigger delivery time, defines submission time. An edit cannot attach a prior wall. Each user has at most three admitted entries over the challenge's lifetime. Withdrawn and rejected entries still use their places.
+`onChallengeWallSubmitted` is a separate authenticated create trigger in `functions/src/weeklyChallenges.ts`. The existing `onWallSubmitted` trigger retains its original event type and submission effects. The new trigger avoids an event-type replacement migration and isolates challenge admission retries.
 
-### Admission review remains open
+Admission requires the original creator and a trusted snapshot `createTime` within `[opensAt, closesAt)`. Each user has three lifetime places per challenge. Rejection and withdrawal do not refund places. Invalid links, including a fourth entry, are removed asynchronously.
 
-The requested design uses the existing create path and server stripping, like `remixOf`. It does not add a submission callable or client-write admission slots. The proposed rules change allows an optional, immutable `challengeId`. Challenge public data has read-only client access. Private admission and vote records remain protected.
+Admission decisions bind the wall document ID and full creation timestamp. A transaction records the decision and lifetime count together. Retries do not consume another place. An old, changed, or recreated wall cannot inherit admission. Approval delivered before admission is reconciled.
 
-The parent is reviewing whether a create-trigger transaction can enforce admission safely. The review must prove trusted ownership, snapshot `createTime`, atomic count changes, and stripping of the fourth link. It must cover delayed events, retries, concurrent submissions, delete-and-recreate, and changed wall identity. An unverified wall link must never create a public entry, receive votes, or enter winner selection. This design is not settled.
+Only `unknown` and `api_key` event labels can reach Auth UID resolution. Admission requires the exact enabled Auth UID and an email match with the original submission. Missing provenance, explicit system principals, and failed ownership checks cannot admit. There is no email-lookup or emulator identity fallback.
 
 ## State table
 
-All transitions are server-owned. A retry must converge to the same result.
+All transitions are server-owned.
 
 | State | Entry admission | Votes | Transition |
 |---|---|---|---|
-| `scheduled` | Closed | Closed | At Monday 00:00 UTC, open if a theme exists. |
-| `open` | Own new walls only, maximum three per user | Signed-in users can vote on approved entries | At the next Monday 00:00 UTC, close admission and voting. |
-| `voting_closed` | Closed | Closed | Wait for all pending admitted reviews. Late approvals join the result set. Finalize after all reviews settle. |
-| `winner_picked` | Closed | Closed | Store the winner and reserve the following UTC date. Recheck validity before WOTD use. |
-| `archived` | Closed | Closed | Keep the final history after the award date is resolved, including a no-winner outcome. |
+| `scheduled` | In-window creates can be admitted before the open-state update. | Closed | The Monday 00:00 UTC slot opens the week if a theme exists. |
+| `open` | Own new walls, up to three lifetime places. | Approved entries only. | The next Monday 00:00 UTC closes entries and voting. |
+| `voting_closed` | Only delayed decisions for pre-close creates can complete. | Closed | Wait for admission decisions and pending reviews, then finalize. |
+| `winner_picked` | Sealed. | Closed | Reserve the next free UTC date and recheck the winner before publication. |
+| `archived` | Sealed. | Closed | Retain the award outcome, including no winner or a missed reservation. |
 
-No pending review timeout is specified. A review backlog can delay the award. An empty eligible result produces no reservation and uses normal WOTD. The archive record must state that no eligible winner existed.
+`scheduleWeeklyChallenges` runs every 15 minutes. Only the intended Monday 00:00 UTC schedule slot opens a week. Other ticks reconcile existing challenges. Scheduler delivery can be late. A Monday retry older than its week cannot open that week.
+
+The close barrier scans linked pre-close wall incarnations, admission decisions, and entries in a consistent read-only transaction. It waits for missing create-event decisions and pending reviews. Finalization rechecks the revision and wall/account guards before sealing. There is no review timeout. A backlog can delay the award indefinitely.
 
 ## UTC timeline
 
+The examples assume no reservation collision.
+
 | UTC time | Result |
 |---|---|
-| November 2, 2026, 00:00 | Open the example challenge and close the previous week's voting. |
-| November 9, 2026, 00:00 | Close example entries and voting. Freeze vote input. Wait for pending reviews. Open the next challenge if it has a theme. |
-| November 9, after all reviews settle | If every review settles Monday, pick the winner and reserve November 10. |
-| November 10, 2026, 03:30 | Use the valid November 10 reservation for WOTD. Otherwise use normal WOTD. |
-| November 11, 2026, after the last review settles | In the delayed-review example, a Wednesday approval can qualify. Pick the winner Wednesday and reserve November 12. |
-| November 12, 2026, 03:30 | Use the valid November 12 reservation in the delayed-review example. |
+| November 2, 2026, 00:00 | Open the example week if a theme exists. Close the prior week's voting. |
+| November 9, 2026, 00:00 | Close example entries and voting. Wait for pending reviews. The next week can open independently. |
+| November 9, after all reviews settle | Select the winner and reserve November 10. |
+| November 10, 2026, 03:30 | Publish the valid reserved winner as WOTD. |
+| November 11, after all reviews settle | Alternative delayed-review case: select the winner Wednesday and reserve November 12. |
+| November 12, 2026, 03:30 | Publish the delayed-review winner. |
 
-These are two possible review completion times, not two policies. A Wednesday approval cannot win an award finalized Monday. Under the chosen policy, a review still pending Wednesday prevents Monday finalization. Late approvals count, but no vote can be added after Monday 00:00 UTC.
+A review still pending Wednesday prevents Monday finalization. A late approval can qualify, but no votes can be added after Monday 00:00 UTC. A reservation collision moves the award to the next free UTC day.
 
-## Votes, order, and WOTD
+## Votes and awards
 
-Only approved entries are visible in the public challenge list. Pending or rejected content remains private under existing moderation rules. A later approval keeps the original admission and records its first approval server timestamp once. Withdrawal removes public visibility and winner eligibility. Reapproval does not reset the first approval timestamp or restore an admission place.
+Voting requires sign-in. The server rejects self-votes and bilateral blocks. Deterministic UID vote documents allow one vote per user per entry. The daily limit is 200 vote changes per user per UTC day. The transaction samples time on each retry, so retries cannot cross the close or midnight boundary with stale time.
 
-Voting requires sign-in. One deterministic UID vote document represents one user's vote on one entry. Self-votes and votes across a block in either direction fail. The server owns vote documents and counts. Use the requests limit of 200 vote changes per user per UTC day, including its retry and no-op behavior. Do not infer an account-age requirement from requests without a separate decision.
+Top sorts by votes descending, first approval timestamp ascending, then entry ID ascending. New sorts by first approval timestamp descending, then entry ID ascending. Reapproval does not reset first approval. Winner selection follows Top order and requires both `isWotdEligible` and `readyWall`.
 
-Top sorts by votes descending, first approval timestamp ascending, then entry ID ascending. New sorts by first approval timestamp descending, then entry ID ascending. Winner selection follows Top order and takes the first candidate that passes both `isWotdEligible` and `readyWall`. A high vote count alone does not qualify a wall.
+Settlement freezes the candidate ranking. Live displayed counts can decrease after account deletion without changing that ranking or the original selection. Before publication, WOTD rechecks admission, incarnation, approval, withdrawal, account state, and delivery. An unavailable winner falls back through the frozen ranking. Exhausted candidates produce no winner and normal WOTD selection proceeds.
 
-The server reserves a UTC date, not a rolling 24-hour delay. It rechecks the wall incarnation, approval, withdrawal, eligibility, and delivery before use. If the winner was withdrawn, try the next valid candidate from the settled ranking for that date. If no valid reservation remains, use normal WOTD. Retries must not overwrite another date reservation or publish two WOTD picks.
+The WOTD pointer and reservation consumption commit together. An unavailable published award is checked on the 15-minute schedule and can be replaced from the settled ranking. Recovery is intended within 15 minutes, subject to scheduler and delivery delays. A healthy or newer pointer cannot be overwritten by a stale replacement attempt.
 
-## Proposed server data
+The `challenge_winner` badge is implemented with zero coin and XP rewards. Replacement award winners also receive the badge. Winner notices use stable inbox IDs and preference-aware private pushes. Inbox copy is localized in seven locales. Native winner pushes use English fallback for installed clients without the new resource keys. A crash after FCM accepts a push can still cause duplicate delivery.
 
-Collection names below, except `challengeThemes`, are proposed until the admission review finishes.
+## Privacy, navigation, and analytics
 
-| Record | Required data and access |
-|---|---|
-| `challengeThemes/{themeId}` | Ordered server theme queue. Client writes denied. |
-| `weeklyChallenges/{challengeId}` | Theme source and snapshot, UTC bounds, state, result, and finalization time. Public projection only. |
-| Challenge entry | Wall document ID, logical wall ID, snapshot `createTime` with full timestamp precision, owner UID, first approval server timestamp, vote count, and moderation or withdrawal state. Server writes only. |
-| Entry vote at `{uid}` | Deterministic voter UID identity. Server transaction updates the vote and count together. No public voter list. |
-| Per-user admission record | Challenge ID, owner UID, lifetime admitted count, and stable admission identities. Server writes only. Deletion does not reset the count. |
-| Date-keyed WOTD reservation | UTC `YYYY-MM-DD` key, challenge ID, entry ID, wall identity and incarnation, and use state. Server writes only. |
-| Notification record | Stable challenge, event, and recipient key, with separate inbox and push attempt state. Server writes only. |
+Entry, vote, member, and admission records are not publicly readable. `listWeeklyChallenges`, `getWeeklyChallenge`, and `setChallengeVote` provide the client API. Public callable views filter approval, deleted creators, changed incarnations, and bilateral blocks. The client repeats visibility checks when it hydrates wallpapers. Only the caller receives `myAdmittedWallIds`, including their pending, rejected, and withdrawn admissions.
 
-Never trust client-sent owners, counts, approval times, state, or winner data. Keep public projections separate from private user records. Compare the current wall incarnation before each effect. A reused document ID must not inherit an old entry, vote count, or reservation.
+Entry requests scan at most 200 ordered rows per page. Challenge lists return at most 20 records per page. Optional cursors continue both queries. The client follows empty filtered pages and deduplicates entries. It collects all pages before presenting the complete list. Live pagination is not an immutable snapshot. Settlement scans remain complete. Large-cohort workload performance is unverified.
 
-## Inbox and push
+`https://prismwalls.com/challenges/<id>` opens challenge detail. Winner notifications also carry `route: challenge` and `challenge_id`. Detail refreshes after wallpaper navigation and app resume. Vote failures roll back optimistic state and reload when the entry, session, or voting window is no longer valid.
 
-Challenge notices include an inbox item and a preference-aware push. Reuse the existing notification catalog, preference keys, and route mapper. Each event and recipient has a stable key so retries do not create duplicate inbox items. Respect bilateral blocks when a notice concerns another creator. Deep links open the correct challenge and its current closed or archived state.
+`challenge_entered` requires fresh server admission confirmation, not the initial wall save. Durable entry intent supports delayed confirmation. `challenge_shared` requires an actual successful native share result. Copy, save, dismissal, and unsupported share results do not emit completion. Global WOTD topic pushes retain their existing delivery behavior and cannot filter each viewer's blocks.
 
-Firestore can atomically claim a notification effect. It cannot atomically commit with external FCM delivery. A crash after FCM accepts a push but before the server records success can cause a retry duplicate. A claim before send can instead lose delivery after a crash. Stable inbox keys and collapse keys do not guarantee exactly-once external delivery. Record this boundary in the implementation and PR.
+## Release requirements
 
-## Current integration evidence
+The deployment order is rules, indexes, functions, then the reviewed seed, all before a store build. Indexes must be ready before functions and the client use the new queries. Functions include the new `onChallengeWallSubmitted`, `onChallengeWallWritten` moderation reconciliation, challenge callables, `scheduleWeeklyChallenges`, existing approval integrations, and WOTD exports. `onWallSubmitted` does not require an event-type replacement migration. Deploy both new challenge triggers before enabling submissions. Historical creates do not replay when a trigger is added. Check live deployment state separately if an intermediate trigger version was deployed.
 
-| Path | Current behavior or planned integration |
-|---|---|
-| `functions/src/onWallSubmitted.ts` | Existing `walls/{wallId}` create trigger validates and strips `remixOf`. Challenge admission is not implemented. |
-| `functions/src/wallRemix.ts` | Existing ledger and wall incarnation checks provide a reference for retries. |
-| `lib/data/upload/wallpaper/wallfirestore.dart` | Existing wall create payload carries `remixOf` and `requestId`. Proposed `challengeId` belongs in this path. |
-| `functions/src/onWallApproved.ts` | Existing approval effects need challenge integration. |
-| `functions/src/wallRequests.ts` | Existing request visibility and 200 daily vote-change limit. Theme fallback needs the exact prior-week query. |
-| `functions/src/wallOfTheDay.ts` | `isWotdEligible`, private `readyWall`, and the 03:30 UTC scheduler. Reservation integration must retain the delivery check. |
-| `functions/src/notificationHelper.ts`, `functions/src/notificationCatalog.ts` | Existing inbox, push, and copy contracts. |
-| `firestore.rules`, `firestore.indexes.json` | Existing ownership, immutable remix link, and query rules. No challenge security is claimed. |
-| `lib/features/wallpaper_upload/views/pages/upload_wall_screen.dart` | Upload entry point. |
-| `lib/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart` | AI seed and generation route. |
-| `lib/core/router/deep_link_parser.dart`, `lib/core/router/notification_route_mapper.dart` | External link and inbox navigation. |
-| `lib/core/analytics/schema/analytics_events.yaml` | Typed analytics source, regenerated with `make analytics-gen`. |
-| `tool/record_clip.sh` | Existing iOS and Android clip recorder. |
+Deploy the web challenge routes, Worker, and link association files before sharing challenge links. Source contract checks do not prove live association or native link delivery.
 
-## Planned checkpoints and acceptance evidence
+The safe seed preview command, already executed, is:
 
-1. Record the state table and UTC timeline in the draft PR before code. Resolve the parent admission review. Keep one owner per changed file.
-2. Implement backend transitions, admission, votes, moderation, notifications, and date reservations with focused tests. Review rules and indexes with the same contract.
-3. Implement the layered client feature, screens, upload route, and AI route. Use `FirestoreClient` with a `sourceTag`. Widgets do not call repositories.
-4. Add calm copy in all seven locales, `en`, `de`, `es`, `hi`, `id`, `pt`, and `pt_BR`. Follow `.impeccable.md`. Regenerate localization, analytics, and affected generated Dart files. Run `make file-gen` for affected generated sources.
-5. Run the final Astra audit, fix accepted findings, then verify the exact current tree. The audit is planned, not complete.
-6. Obtain local Firebase emulator and device proof. Publish approved QA screenshots on `qa/screenshots` and embed their raw URLs in the PR. Keep the PR against `master`, with no merge.
+```sh
+cd functions
+node lib/scripts/seedChallengeThemes.js --dry-run
+```
 
-The required backend and rules cases include spoofed owner or time, old-wall attachment, fourth entry, concurrent admission, retry count drift, and changed incarnation. Cover exact UTC boundaries, scheduler retries, prior-week fallback ties, absent themes, late approval, pending reviews, and stable first approval. Cover self-votes, bilateral blocks, daily vote changes, withdrawal, rejection, deletion, and zero valid candidates. Cover WOTD eligibility, missing delivery, date conflicts, withdrawn winner fallback, and notification retry boundaries.
+After explicit deployment and seed authorization, the reviewed seed command is:
 
-Required widget and BLoC cases include loading, empty, error, sign-in, Top, New, entry limit, closed state, delayed results, and archived results. Verify upload and AI seed propagation, link removal, stale challenge submission, moderation visibility, vote failure, block filtering, inbox, and deep links.
+```sh
+cd functions
+node lib/scripts/seedChallengeThemes.js --apply
+```
 
-Completion requires `make ci`, the functions build and tests, `make rules-test`, and the required widget and BLoC cases. The functions command is `cd functions && npm ci && npm run build && node --test 'lib/__tests__/*.test.js'`. Device proof requires local emulator data on both iOS Simulator and Android emulator. Capture light and dark screens, upload and AI entry, inbox, deep links, week closure, delayed review settlement, and next-day WOTD. Record clips with `tool/record_clip.sh ios <out.mp4>` and `tool/record_clip.sh android <out.mp4>`. Review documentation against STE before handoff.
+No deployment or real seed has occurred. Deploys, seed application, and store uploads require explicit final authorization. QA screenshot publication on `qa/screenshots` is already authorized.
 
-## Baseline and blockers
+## Evidence and open gates
 
-Baseline preparation installed dependencies. The functions build passed with 2,191 tests passed, 16 skipped, and zero failed. Logs are at `/tmp/prism-challenge-baseline`. These are baseline results, not feature proof. Neither tracked lockfile changed. `make ci` stopped at 313 pre-existing info-level findings before the full Flutter tests. No feature tests or device runs are claimed.
+PR #759 contains the state table and UTC timeline from before implementation. The feature and security review is in `001903fd4`, the additive trigger and link review in `58b4d6758`, and local QA plus warm-navigation fixes in `bf1740e2b`. Later test-only commits classify QA configuration and register empty challenge fixtures in existing Home tests. See [the decision record](weekly-challenges-decisions.tsv).
 
-`docs/DAILY_SHIPS_PLAN.md` is absent. Use `.impeccable.md` and the user's calm-copy requirement. Mobbin fetch is unavailable. This Linux host has no `xcrun` or `axe`, so iOS proof needs a suitable host. Current local Firebase wiring is missing. External AI and GitHub upload need explicit local-only adapters for local proof. A stale emulator lock names another worktree and an absent process. Confirm the owner has finished before takeover. These blockers do not count as passed checks.
+The pushed `35deb06de` passed pre-push checks, including 2,244 Functions tests with 23 skips and rules smoke tests. Later scoped QA review passed 129 Flutter tests, three enabled-QA transport tests, and 12 Node tests. Home fixture review passed 140 tests with seven existing render skips. These results do not establish full current-head CI.
 
-## Planned release order
+The full run at `/tmp/prism-challenge-final-ci-2.log` was interrupted after missing Home fixture registrations caused failures. Its zero shell exit is invalid evidence. The registrations are fixed. A fresh full run is in `/tmp/prism-challenge-final-ci-3.log`; no result is claimed yet.
 
-The release sequence is rules, indexes, functions, then the six-theme seed, all before the store build. Wait for indexes to become ready. Check compatibility with installed clients before rules deploy. Review the seed dry-run output before any real seed. Deploys, a real seed, and store uploads require explicit user authorization. The user has authorized QA screenshot publication for this PR. No deployment or real seed occurred.
+Corrected Android evidence uses the app built at `bf1740e2b`. Later commits change tests only. The corrected run shows Home, the challenge page, votes, both warm navigation directions, loaded upload and AI composers, winners, and inbox in light and dark. WOTD is visible in light. Earlier mistimed screenshots are excluded. The [published evidence index](https://raw.githubusercontent.com/Hash-Studios/Prism/8769d3f7ccc6688b0830d1bfe77b7e9b23f962d0/qa-2026-10-30/weekly-challenges/corrected-20261029T203433Z-401811/evidence-index.json) records hashes and capture scope. Screenshots and the continuous clip are embedded in [PR #759](https://github.com/Hash-Studios/Prism/pull/759).
+
+The continuous clip shows a vote, local closure, and a visible reserved WOTD. Publication selected the historical fixture `qa-wall-3`, not the newly closed winner `qa-wall-0`. It does not prove that this newly selected winner became WOTD. Local backend assertions test finalization and reservation publication separately. Fixtures use administrative entries and readiness overrides. iOS proof is unavailable on this Linux host.
+
+The authenticated Firestore admission probe received `fake-auth-id@gmail.com` from the emulator. Admission rejected it, removed `challengeId`, and created no entry. No identity was remapped. Production CloudEvent UID mapping and successful authenticated upload admission remain unproven.
+
+Composer evidence does not prove upload-byte transport, AI generation, R2 delivery, native purchases or push delivery, or production scheduling. Native share completion and measured native zero-egress remain unproven. Hosted checks, merge, deployment, store release, and live behavior are separate gates. Nothing has been deployed or seeded in production.
