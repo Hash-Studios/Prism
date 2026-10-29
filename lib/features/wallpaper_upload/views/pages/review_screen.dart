@@ -4,6 +4,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/creator_stats/views/widgets/stats_entry_button.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/wall_tile.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -21,7 +22,15 @@ class ReviewScreen extends StatelessWidget {
     return PrismPage(
       title: context.l10n.wallpaperUploadYourUploads,
       onBack: () => Navigator.maybePop(context),
-      body: const _WallReview(),
+      body: const Column(
+        children: [
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: StatsEntryButton(source: 'uploads'),
+          ),
+          Expanded(child: _WallReview()),
+        ],
+      ),
     );
   }
 }

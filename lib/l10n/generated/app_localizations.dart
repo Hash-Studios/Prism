@@ -17970,6 +17970,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{remixerName} remixed your wallpaper.'**
   String notifPushWallRemixedBodyUntitled(String remixerName);
+
+  /// Creator dashboard: statsTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Your stats'**
+  String get statsTitle;
+
+  /// Creator dashboard: statsEntry
+  ///
+  /// In en, this message translates to:
+  /// **'Stats'**
+  String get statsEntry;
+
+  /// Creator dashboard: statsViews
+  ///
+  /// In en, this message translates to:
+  /// **'Views'**
+  String get statsViews;
+
+  /// Creator dashboard: statsSaves
+  ///
+  /// In en, this message translates to:
+  /// **'Saves'**
+  String get statsSaves;
+
+  /// Creator dashboard: statsSets
+  ///
+  /// In en, this message translates to:
+  /// **'Sets'**
+  String get statsSets;
+
+  /// Creator dashboard: statsDownloads
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get statsDownloads;
+
+  /// Creator dashboard: statsShares
+  ///
+  /// In en, this message translates to:
+  /// **'Shares'**
+  String get statsShares;
+
+  /// Creator dashboard: statsFolderAdds
+  ///
+  /// In en, this message translates to:
+  /// **'Folder additions'**
+  String get statsFolderAdds;
+
+  /// Creator dashboard: statsRemixes
+  ///
+  /// In en, this message translates to:
+  /// **'Remixes'**
+  String get statsRemixes;
+
+  /// Creator dashboard: statsLoading
+  ///
+  /// In en, this message translates to:
+  /// **'Loading your stats'**
+  String get statsLoading;
+
+  /// Creator dashboard: statsError
+  ///
+  /// In en, this message translates to:
+  /// **'Your stats could not load. Please try again.'**
+  String get statsError;
+
+  /// Creator dashboard: statsRetry
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get statsRetry;
+
+  /// Creator dashboard: statsEmptyTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Your first wall starts here'**
+  String get statsEmptyTitle;
+
+  /// Creator dashboard: statsEmptyBody
+  ///
+  /// In en, this message translates to:
+  /// **'Upload a wallpaper. Its stats will appear after approval.'**
+  String get statsEmptyBody;
+
+  /// Creator dashboard: statsUpload
+  ///
+  /// In en, this message translates to:
+  /// **'Upload a wallpaper'**
+  String get statsUpload;
+
+  /// Creator dashboard: statsWeekNote
+  ///
+  /// In en, this message translates to:
+  /// **'This week so far compared with last week. Weeks start on Monday, UTC.'**
+  String get statsWeekNote;
+
+  /// Creator dashboard: statsHistoryNote
+  ///
+  /// In en, this message translates to:
+  /// **'Eight weeks, oldest first. A dash means unavailable history. Tracking can begin partway through a week, so recorded weeks may be partial. The current week is incomplete.'**
+  String get statsHistoryNote;
+
+  /// Creator dashboard: statsTopWalls
+  ///
+  /// In en, this message translates to:
+  /// **'Top walls this week'**
+  String get statsTopWalls;
+
+  /// Creator dashboard: statsUntitled
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled wall'**
+  String get statsUntitled;
+
+  /// Creator dashboard: statsCountingNote
+  ///
+  /// In en, this message translates to:
+  /// **'Save totals count current favourites; weekly saves count additions. Remix totals count current credited remixes; weekly remixes count first accepted credits. Folder additions are recorded only from the start of tracking.'**
+  String get statsCountingNote;
+
+  /// Creator dashboard: statsUnavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get statsUnavailable;
+
+  /// Creator dashboard: statsWeeklyTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Your walls this week'**
+  String get statsWeeklyTitle;
+
+  /// Creator dashboard: statsWeeklyBody
+  ///
+  /// In en, this message translates to:
+  /// **'See how your walls did in {week}.'**
+  String statsWeeklyBody(String week);
+
+  /// Creator dashboard: statsWallValue
+  ///
+  /// In en, this message translates to:
+  /// **'{metric}: {value} this week'**
+  String statsWallValue(String metric, String value);
+
+  /// Creator dashboard: statsComparison
+  ///
+  /// In en, this message translates to:
+  /// **'{current} this week · {previous} last week'**
+  String statsComparison(String current, String previous);
+
+  /// Creator dashboard: statsTotal
+  ///
+  /// In en, this message translates to:
+  /// **'Total: {value}'**
+  String statsTotal(String value);
+
+  /// Creator dashboard: statsChange
+  ///
+  /// In en, this message translates to:
+  /// **'{value} compared with last week'**
+  String statsChange(String value);
+
+  /// Creator dashboard: statsUpdated
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {date} UTC'**
+  String statsUpdated(String date);
+
+  /// Creator dashboard: statsChartWeek
+  ///
+  /// In en, this message translates to:
+  /// **'Week of {date}: {value}'**
+  String statsChartWeek(String date, String value);
+
+  /// Creator dashboard: statsChartSummary
+  ///
+  /// In en, this message translates to:
+  /// **'{metric}, eight weeks. {summary}'**
+  String statsChartSummary(String metric, String summary);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

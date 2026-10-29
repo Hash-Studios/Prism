@@ -12,6 +12,7 @@ import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dar
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -21,6 +22,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/fake_user_block_repository.dart';
 import '../../support/profile_user_fixture.dart';
 
 final AppLocalizationsEn _l10n = AppLocalizationsEn();
@@ -73,7 +75,7 @@ void main() {
     AnalyticsRuntime.reset();
   });
 
-  Future<void> pumpProfile(WidgetTester tester, {double width = 390}) async {
+  Future<void> pumpProfile(WidgetTester tester, {double width = 390, String? identifier}) async {
     tester.view.physicalSize = Size(width, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -84,11 +86,36 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
 
         theme: ThemeData(fontFamily: 'Proxima Nova'),
-        home: const ProfileScreen(),
+        home: ProfileScreen(key: ValueKey(identifier), profileIdentifier: identifier),
       ),
     );
     await tester.pump();
   }
+
+  testWidgets('Stats entry follows real own UID and username profile resolution', (tester) async {
+    for (final identifier in <String?>[null, 'u1', 'creator']) {
+      await pumpProfile(tester, identifier: identifier);
+      expect(find.text('Stats'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    }
+    final blocks = FakeUserBlockRepository.pending()..completeInitial({});
+    getIt.registerSingleton<UserBlockRepository>(blocks);
+    await pumpProfile(tester, identifier: 'other-user');
+    profiles.add(_profile([], id: 'other-user'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(ProfileBadgeRow), findsOneWidget);
+    expect(find.text('Stats'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('guests have a sign-in prompt without the private Stats entry', (tester) async {
+    app_state.prismUser = createGuestPrismUser();
+    await pumpProfile(tester);
+    expect(find.text('Stats'), findsNothing);
+    expect(find.textContaining('Sign in'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
 
   for (final width in <double>[390, 360]) {
     for (final hasLinks in <bool>[false, true]) {

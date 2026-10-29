@@ -169,6 +169,7 @@
                 <data android:path="/clock-preview" />
                 <data android:path="/admin-review/image" />
                 <data android:path="/streak" />
+                <data android:path="/creator-stats" />
                 <data android:path="/not-found" />
                 <data android:pathPrefix="/share/" />
                 <data android:pathPrefix="/user/" />
@@ -291,6 +292,7 @@
                 <data android:path="/clock-preview" />
                 <data android:path="/admin-review/image" />
                 <data android:path="/streak" />
+                <data android:path="/creator-stats" />
                 <data android:path="/not-found" />
                 <data android:pathPrefix="/share/" />
                 <data android:pathPrefix="/user/" />
@@ -402,6 +404,7 @@
                 <data android:path="/clock-preview" />
                 <data android:path="/admin-review/image" />
                 <data android:path="/streak" />
+                <data android:path="/creator-stats" />
                 <data android:path="/not-found" />
                 <data android:pathPrefix="/share/" />
                 <data android:pathPrefix="/user/" />
@@ -513,6 +516,7 @@
                 <data android:path="/clock-preview" />
                 <data android:path="/admin-review/image" />
                 <data android:path="/streak" />
+                <data android:path="/creator-stats" />
                 <data android:path="/not-found" />
                 <data android:pathPrefix="/share/" />
                 <data android:pathPrefix="/user/" />
@@ -624,6 +628,7 @@
                 <data android:path="/clock-preview" />
                 <data android:path="/admin-review/image" />
                 <data android:path="/streak" />
+                <data android:path="/creator-stats" />
                 <data android:path="/not-found" />
                 <data android:pathPrefix="/share/" />
                 <data android:pathPrefix="/user/" />

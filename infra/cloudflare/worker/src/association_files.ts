@@ -24,7 +24,7 @@ const APP_LINK_PATHS = [
   '/daily-chest', '/spin-wheel',
   '/photo-preview', '/clock-preview', '/quick-tile-settings',
   '/auto-rotate', '/ios-shortcuts', '/wallpaper-history', '/wallpaper-position', '/live-wallpaper', '/rewards',
-  '/coin-history', '/shop', '/drops', '/drops/*', '/leaderboard', '/draw', '/streak', '/not-found',
+  '/coin-history', '/shop', '/drops', '/drops/*', '/leaderboard', '/draw', '/streak', '/creator-stats', '/not-found',
 ];
 
 const APPLE_ASSOCIATION_PAYLOAD = {

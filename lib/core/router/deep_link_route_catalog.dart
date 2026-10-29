@@ -4,6 +4,7 @@
 /// `deep_link_catalog_resolver.dart`. A successful match always names a concrete route family; there is no wildcard
 /// that turns arbitrary paths into navigation.
 enum DeepLinkPageTarget {
+  creatorStats,
   splash,
   onboarding,
   dashboard,
@@ -94,6 +95,7 @@ final class DeepLinkRouteCatalog {
   DeepLinkRouteMatch? resolve(Uri uri) => match(uri);
 
   static const List<DeepLinkRouteExample> examples = <DeepLinkRouteExample>[
+    DeepLinkRouteExample('/creator-stats', DeepLinkPageTarget.creatorStats),
     DeepLinkRouteExample('/', DeepLinkPageTarget.splash),
     DeepLinkRouteExample('/onboarding/v2', DeepLinkPageTarget.onboarding),
     DeepLinkRouteExample('/dashboard', DeepLinkPageTarget.dashboard),
@@ -450,6 +452,7 @@ final class DeepLinkRouteCatalog {
   }
 
   static const Map<String, DeepLinkPageTarget> _staticTargets = <String, DeepLinkPageTarget>{
+    '/creator-stats': DeepLinkPageTarget.creatorStats,
     '/gallery': DeepLinkPageTarget.gallery,
     '/requests': DeepLinkPageTarget.wallRequests,
     '/onboarding/v2': DeepLinkPageTarget.onboarding,

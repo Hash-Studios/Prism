@@ -11251,4 +11251,112 @@ class AppLocalizationsId extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName me-remix wallpaper Anda.';
   }
+
+  @override
+  String get statsTitle => 'Statistik Anda';
+
+  @override
+  String get statsEntry => 'Statistik';
+
+  @override
+  String get statsViews => 'Dilihat';
+
+  @override
+  String get statsSaves => 'Disimpan';
+
+  @override
+  String get statsSets => 'Diterapkan';
+
+  @override
+  String get statsDownloads => 'Unduhan';
+
+  @override
+  String get statsShares => 'Dibagikan';
+
+  @override
+  String get statsFolderAdds => 'Penambahan folder';
+
+  @override
+  String get statsRemixes => 'Remix';
+
+  @override
+  String get statsLoading => 'Memuat statistik Anda';
+
+  @override
+  String get statsError => 'Statistik Anda tidak dapat dimuat. Coba lagi.';
+
+  @override
+  String get statsRetry => 'Coba lagi';
+
+  @override
+  String get statsEmptyTitle => 'Wallpaper pertama Anda dimulai di sini';
+
+  @override
+  String get statsEmptyBody => 'Unggah wallpaper. Statistiknya muncul setelah disetujui.';
+
+  @override
+  String get statsUpload => 'Unggah wallpaper';
+
+  @override
+  String get statsWeekNote => 'Minggu ini sejauh ini dibanding minggu lalu. Minggu dimulai Senin, UTC.';
+
+  @override
+  String get statsHistoryNote =>
+      'Delapan minggu, yang terlama lebih dulu. Tanda pisah berarti data tidak tersedia. Pelacakan dapat dimulai di tengah minggu, jadi data mingguan bisa tidak lengkap. Minggu ini belum selesai.';
+
+  @override
+  String get statsTopWalls => 'Wallpaper teratas minggu ini';
+
+  @override
+  String get statsUntitled => 'Wallpaper tanpa judul';
+
+  @override
+  String get statsCountingNote =>
+      'Total simpan menghitung favorit saat ini; simpan mingguan menghitung penambahan. Total remix menghitung remix dengan kredit saat ini; remix mingguan menghitung kredit pertama yang diterima. Penambahan folder dicatat sejak pelacakan dimulai.';
+
+  @override
+  String get statsUnavailable => 'Tidak tersedia';
+
+  @override
+  String get statsWeeklyTitle => 'Wallpaper Anda minggu ini';
+
+  @override
+  String statsWeeklyBody(String week) {
+    return 'Lihat hasil wallpaper Anda pada $week.';
+  }
+
+  @override
+  String statsWallValue(String metric, String value) {
+    return '$metric: $value minggu ini';
+  }
+
+  @override
+  String statsComparison(String current, String previous) {
+    return '$current minggu ini · $previous minggu lalu';
+  }
+
+  @override
+  String statsTotal(String value) {
+    return 'Total: $value';
+  }
+
+  @override
+  String statsChange(String value) {
+    return '$value dibanding minggu lalu';
+  }
+
+  @override
+  String statsUpdated(String date) {
+    return 'Diperbarui $date UTC';
+  }
+
+  @override
+  String statsChartWeek(String date, String value) {
+    return 'Minggu mulai $date: $value';
+  }
+
+  @override
+  String statsChartSummary(String metric, String summary) {
+    return '$metric, delapan minggu. $summary';
+  }
 }

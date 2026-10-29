@@ -3056,5 +3056,35 @@
         "type": "String"
       }
     }
-  }
+  },
+  "statsTitle": "Tus estadísticas",
+  "statsEntry": "Estadísticas",
+  "statsViews": "Vistas",
+  "statsSaves": "Guardados",
+  "statsSets": "Aplicaciones",
+  "statsDownloads": "Descargas",
+  "statsShares": "Veces compartido",
+  "statsFolderAdds": "Adiciones a carpetas",
+  "statsRemixes": "Remixes",
+  "statsLoading": "Cargando tus estadísticas",
+  "statsError": "No se pudieron cargar tus estadísticas. Inténtalo de nuevo.",
+  "statsRetry": "Reintentar",
+  "statsEmptyTitle": "Tu primer fondo empieza aquí",
+  "statsEmptyBody": "Sube un fondo. Sus estadísticas aparecerán cuando se apruebe.",
+  "statsUpload": "Subir un fondo",
+  "statsWeekNote": "Esta semana hasta ahora frente a la anterior. Las semanas empiezan el lunes, UTC.",
+  "statsHistoryNote": "Ocho semanas, la más antigua primero. Un guion indica datos no disponibles. El seguimiento puede empezar a mitad de semana, por lo que los datos semanales pueden ser parciales. La semana actual está incompleta.",
+  "statsTopWalls": "Mejores fondos de esta semana",
+  "statsUntitled": "Fondo sin título",
+  "statsCountingNote": "El total de guardados cuenta los favoritos actuales; el dato semanal cuenta las adiciones. El total de remixes cuenta los créditos actuales; el dato semanal cuenta los primeros créditos aceptados. Las adiciones a carpetas se registran desde el inicio del seguimiento.",
+  "statsUnavailable": "No disponible",
+  "statsWeeklyTitle": "Tus fondos esta semana",
+  "statsWeeklyBody": "Consulta los resultados de tus fondos en {week}.",
+  "statsWallValue": "{metric}: {value} esta semana",
+  "statsComparison": "{current} esta semana · {previous} la anterior",
+  "statsTotal": "Total: {value}",
+  "statsChange": "{value} frente a la semana anterior",
+  "statsUpdated": "Actualizado {date} UTC",
+  "statsChartWeek": "Semana del {date}: {value}",
+  "statsChartSummary": "{metric}, ocho semanas. {summary}"
 }

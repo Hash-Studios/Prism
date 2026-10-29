@@ -479,6 +479,55 @@ class CollectionViewRouteArgs {
 }
 
 /// generated route for
+/// [CreatorStatsPage]
+class CreatorStatsRoute extends PageRouteInfo<CreatorStatsRouteArgs> {
+  CreatorStatsRoute({
+    Key? key,
+    String source = 'link',
+    List<PageRouteInfo>? children,
+  }) : super(
+         CreatorStatsRoute.name,
+         args: CreatorStatsRouteArgs(key: key, source: source),
+         initialChildren: children,
+       );
+
+  static const String name = 'CreatorStatsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<CreatorStatsRouteArgs>(
+        orElse: () => const CreatorStatsRouteArgs(),
+      );
+      return CreatorStatsPage(key: args.key, source: args.source);
+    },
+  );
+}
+
+class CreatorStatsRouteArgs {
+  const CreatorStatsRouteArgs({this.key, this.source = 'link'});
+
+  final Key? key;
+
+  final String source;
+
+  @override
+  String toString() {
+    return 'CreatorStatsRouteArgs{key: $key, source: $source}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! CreatorStatsRouteArgs) return false;
+    return key == other.key && source == other.source;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ source.hashCode;
+}
+
+/// generated route for
 /// [DailyChestPage]
 class DailyChestRoute extends PageRouteInfo<DailyChestRouteArgs> {
   DailyChestRoute({

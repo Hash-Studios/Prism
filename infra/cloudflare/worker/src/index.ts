@@ -99,7 +99,7 @@ const APP_PAGE_PATHS = [
   '/admin-review', '/admin-review/swipe', '/admin-review/image', '/admin-firestore-telemetry', '/debug-panel',
   '/daily-chest', '/spin-wheel', '/photo-preview', '/clock-preview', '/quick-tile-settings',
   '/auto-rotate', '/ios-shortcuts', '/wallpaper-history', '/wallpaper-position', '/live-wallpaper', '/rewards',
-  '/coin-history', '/shop', '/drops', '/leaderboard', '/draw', '/streak', '/not-found',
+  '/coin-history', '/shop', '/drops', '/leaderboard', '/draw', '/streak', '/creator-stats', '/not-found',
 ];
 const APP_LINK_PATHS = [
   '/share', '/user', '/fprofile', '/follower-profile', '/profile', '/setup', '/share-setup', '/refer', '/referral',

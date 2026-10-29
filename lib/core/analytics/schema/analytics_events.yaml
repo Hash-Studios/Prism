@@ -2507,3 +2507,19 @@ events:
       - name: count
         key: count
         type: int
+
+  - id: creator_stats_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: creator_stats_metric_switched
+    fields:
+      - name: metric
+        key: metric
+        type: string
+  - id: creator_wall_stats_opened
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string

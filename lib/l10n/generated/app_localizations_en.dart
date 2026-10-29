@@ -11194,4 +11194,112 @@ class AppLocalizationsEn extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName remixed your wallpaper.';
   }
+
+  @override
+  String get statsTitle => 'Your stats';
+
+  @override
+  String get statsEntry => 'Stats';
+
+  @override
+  String get statsViews => 'Views';
+
+  @override
+  String get statsSaves => 'Saves';
+
+  @override
+  String get statsSets => 'Sets';
+
+  @override
+  String get statsDownloads => 'Downloads';
+
+  @override
+  String get statsShares => 'Shares';
+
+  @override
+  String get statsFolderAdds => 'Folder additions';
+
+  @override
+  String get statsRemixes => 'Remixes';
+
+  @override
+  String get statsLoading => 'Loading your stats';
+
+  @override
+  String get statsError => 'Your stats could not load. Please try again.';
+
+  @override
+  String get statsRetry => 'Try again';
+
+  @override
+  String get statsEmptyTitle => 'Your first wall starts here';
+
+  @override
+  String get statsEmptyBody => 'Upload a wallpaper. Its stats will appear after approval.';
+
+  @override
+  String get statsUpload => 'Upload a wallpaper';
+
+  @override
+  String get statsWeekNote => 'This week so far compared with last week. Weeks start on Monday, UTC.';
+
+  @override
+  String get statsHistoryNote =>
+      'Eight weeks, oldest first. A dash means unavailable history. Tracking can begin partway through a week, so recorded weeks may be partial. The current week is incomplete.';
+
+  @override
+  String get statsTopWalls => 'Top walls this week';
+
+  @override
+  String get statsUntitled => 'Untitled wall';
+
+  @override
+  String get statsCountingNote =>
+      'Save totals count current favourites; weekly saves count additions. Remix totals count current credited remixes; weekly remixes count first accepted credits. Folder additions are recorded only from the start of tracking.';
+
+  @override
+  String get statsUnavailable => 'Unavailable';
+
+  @override
+  String get statsWeeklyTitle => 'Your walls this week';
+
+  @override
+  String statsWeeklyBody(String week) {
+    return 'See how your walls did in $week.';
+  }
+
+  @override
+  String statsWallValue(String metric, String value) {
+    return '$metric: $value this week';
+  }
+
+  @override
+  String statsComparison(String current, String previous) {
+    return '$current this week · $previous last week';
+  }
+
+  @override
+  String statsTotal(String value) {
+    return 'Total: $value';
+  }
+
+  @override
+  String statsChange(String value) {
+    return '$value compared with last week';
+  }
+
+  @override
+  String statsUpdated(String date) {
+    return 'Updated $date UTC';
+  }
+
+  @override
+  String statsChartWeek(String date, String value) {
+    return 'Week of $date: $value';
+  }
+
+  @override
+  String statsChartSummary(String metric, String summary) {
+    return '$metric, eight weeks. $summary';
+  }
 }

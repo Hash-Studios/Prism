@@ -162,7 +162,7 @@ void main() {
     });
 
     final Set<String> appPages = _appRouteNames(AppRouter().routes)..remove('SplashWidgetRoute');
-    expect(appPages, hasLength(59));
+    expect(appPages, hasLength(60));
     expect(
       appPages.difference(reachablePages),
       isEmpty,
@@ -496,6 +496,7 @@ Set<String> _appRouteNames(List<AutoRoute> routes) => <String>{
 };
 
 String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (target) {
+  DeepLinkPageTarget.creatorStats => CreatorStatsRoute.name,
   DeepLinkPageTarget.splash || DeepLinkPageTarget.dashboard => 'DashboardRoute',
   DeepLinkPageTarget.onboarding => 'OnboardingV2ShellRoute',
   DeepLinkPageTarget.home => 'HomeTabRoute',
