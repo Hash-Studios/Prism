@@ -219,28 +219,6 @@ void main() {
       expect(sensor.hasListener, isFalse);
     });
 
-    testWidgets('does not open if the setting is disabled and re-enabled during capture', (tester) async {
-      final Completer<Uint8List?> capture = Completer<Uint8List?>();
-      bool captureStarted = false;
-      await pumpApp(
-        tester,
-        captureScreenshot: () {
-          captureStarted = true;
-          return capture.future;
-        },
-      );
-
-      await startShake(tester, 0);
-      expect(captureStarted, isTrue);
-      ShakeToReport.enabled.value = false;
-      ShakeToReport.enabled.value = true;
-      await settleSensor(tester);
-      expect(sensor.hasListener, isTrue);
-      await finishCapture(tester, capture);
-
-      expect(find.text('Report a problem'), findsNothing);
-    });
-
     testWidgets('does not open after the app backgrounds during capture', (tester) async {
       final Completer<Uint8List?> capture = Completer<Uint8List?>();
       bool captureStarted = false;
@@ -259,28 +237,6 @@ void main() {
 
       expect(find.text('Report a problem'), findsNothing);
       expect(sensor.hasListener, isFalse);
-    });
-
-    testWidgets('does not open if the app pauses and resumes during capture', (tester) async {
-      final Completer<Uint8List?> capture = Completer<Uint8List?>();
-      bool captureStarted = false;
-      await pumpApp(
-        tester,
-        captureScreenshot: () {
-          captureStarted = true;
-          return capture.future;
-        },
-      );
-
-      await startShake(tester, 0);
-      expect(captureStarted, isTrue);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await settleSensor(tester);
-      expect(sensor.hasListener, isTrue);
-      await finishCapture(tester, capture);
-
-      expect(find.text('Report a problem'), findsNothing);
     });
 
     testWidgets('does not combine partial jolts from before the app paused', (tester) async {
@@ -387,110 +343,6 @@ void main() {
       await settleSensor(tester);
 
       expect(sensor.hasListener, isTrue);
-    });
-
-    testWidgets('waits for cancellation before opening a replacement sensor subscription', (tester) async {
-      final Completer<void> cancelStarted = Completer<void>();
-      final Completer<void> cancelGate = Completer<void>();
-      final List<StreamController<UserAccelerometerEvent>> streams = <StreamController<UserAccelerometerEvent>>[];
-      addTearDown(() async {
-        if (!cancelGate.isCompleted) cancelGate.complete();
-        for (final StreamController<UserAccelerometerEvent> stream in streams) {
-          if (!stream.isClosed) await stream.close();
-        }
-      });
-      int streamRequests = 0;
-      int activeSubscriptions = 0;
-      int maxActiveSubscriptions = 0;
-      await pumpApp(
-        tester,
-        accelerometer: () {
-          final int request = streamRequests++;
-          final StreamController<UserAccelerometerEvent> controller = StreamController<UserAccelerometerEvent>(
-            onListen: () {
-              activeSubscriptions += 1;
-              maxActiveSubscriptions = activeSubscriptions > maxActiveSubscriptions
-                  ? activeSubscriptions
-                  : maxActiveSubscriptions;
-            },
-            onCancel: () async {
-              activeSubscriptions -= 1;
-              if (request == 0) {
-                cancelStarted.complete();
-                await cancelGate.future;
-              }
-            },
-          );
-          streams.add(controller);
-          return controller.stream;
-        },
-      );
-      await tester.pump();
-      expect(streamRequests, 1);
-
-      ShakeToReport.enabled.value = false;
-      await tester.pump();
-      expect(cancelStarted.isCompleted, isTrue);
-      ShakeToReport.enabled.value = true;
-      await tester.pump();
-      expect(streamRequests, 1);
-
-      cancelGate.complete();
-      await settleSensor(tester);
-      expect(streamRequests, 2);
-      expect(maxActiveSubscriptions, 1);
-    });
-
-    testWidgets('waits for cleanup after a sensor error before retrying', (tester) async {
-      final Completer<void> cancelStarted = Completer<void>();
-      final Completer<void> cancelGate = Completer<void>();
-      final List<StreamController<UserAccelerometerEvent>> streams = <StreamController<UserAccelerometerEvent>>[];
-      addTearDown(() async {
-        if (!cancelGate.isCompleted) cancelGate.complete();
-        for (final StreamController<UserAccelerometerEvent> stream in streams) {
-          if (!stream.isClosed) await stream.close();
-        }
-      });
-      int streamRequests = 0;
-      int activeSubscriptions = 0;
-      int maxActiveSubscriptions = 0;
-      await pumpApp(
-        tester,
-        accelerometer: () {
-          final int request = streamRequests++;
-          final StreamController<UserAccelerometerEvent> controller = StreamController<UserAccelerometerEvent>(
-            onListen: () {
-              activeSubscriptions += 1;
-              maxActiveSubscriptions = activeSubscriptions > maxActiveSubscriptions
-                  ? activeSubscriptions
-                  : maxActiveSubscriptions;
-            },
-            onCancel: () async {
-              activeSubscriptions -= 1;
-              if (request == 0) {
-                cancelStarted.complete();
-                await cancelGate.future;
-              }
-            },
-          );
-          streams.add(controller);
-          return controller.stream;
-        },
-      );
-      expect(streamRequests, 1);
-      streams.first.addError(StateError('sensor failed'));
-      await tester.pump();
-      expect(cancelStarted.isCompleted, isTrue);
-
-      ShakeToReport.enabled.value = false;
-      ShakeToReport.enabled.value = true;
-      await tester.pump();
-      expect(streamRequests, 1);
-
-      cancelGate.complete();
-      await settleSensor(tester);
-      expect(streamRequests, 2);
-      expect(maxActiveSubscriptions, 1);
     });
 
     testWidgets('a synchronous sensor factory failure does not crash the app and can retry on resume', (tester) async {

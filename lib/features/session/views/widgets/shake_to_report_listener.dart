@@ -44,9 +44,6 @@ class _ShakeToReportListenerState extends State<ShakeToReportListener> with Widg
   final ShakeDetector _detector = ShakeDetector();
   StreamSubscription<UserAccelerometerEvent>? _subscription;
   bool _opening = false;
-  bool _startingSubscription = false;
-  Future<void> _pendingCancellation = Future<void>.value();
-  int _listenGeneration = 0;
 
   @override
   void initState() {
@@ -58,91 +55,55 @@ class _ShakeToReportListenerState extends State<ShakeToReportListener> with Widg
 
   @override
   void dispose() {
-    _listenGeneration += 1;
-    _detector.reset();
     WidgetsBinding.instance.removeObserver(this);
     ShakeToReport.enabled.removeListener(_sync);
-    if (_subscription != null) _pendingCancellation = _cancelSubscription();
+    _stop();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) => _sync();
 
-  void _sync() {
-    if (!_shouldListen) {
-      if (_subscription == null && !_startingSubscription) return;
-      _listenGeneration += 1;
-      _detector.reset();
-      if (_subscription != null) _pendingCancellation = _cancelSubscription();
-      return;
-    }
-    if (_subscription != null || _startingSubscription) return;
-    final int generation = ++_listenGeneration;
-    _startingSubscription = true;
-    unawaited(_startSubscription(generation));
+  bool get _shouldListen {
+    final AppLifecycleState? lifecycle = WidgetsBinding.instance.lifecycleState;
+    return ShakeToReport.enabled.value && (lifecycle == null || lifecycle == AppLifecycleState.resumed);
   }
 
-  Future<void> _startSubscription(int generation) async {
+  void _stop() {
+    _detector.reset();
+    unawaited(_subscription?.cancel());
+    _subscription = null;
+  }
+
+  void _sync() {
+    if (!_shouldListen) return _stop();
+    if (_subscription != null) return;
     try {
-      await _pendingCancellation;
-      if (!mounted || generation != _listenGeneration || !_shouldListen) return;
       _subscription = widget.accelerometer().listen(
         (UserAccelerometerEvent e) {
-          if (generation == _listenGeneration && _detector.add(e.x, e.y, e.z, e.timestamp)) {
-            unawaited(_onShake(generation));
-          }
+          if (_detector.add(e.x, e.y, e.z, e.timestamp)) unawaited(_onShake());
         },
         onError: (Object error) {
-          logger.w('Accelerometer stream failed; waiting for a retry trigger.', error: error);
-          if (generation == _listenGeneration) {
-            _detector.reset();
-            _listenGeneration += 1;
-            if (_subscription != null) _pendingCancellation = _cancelSubscription();
-          }
+          logger.w('Accelerometer stream failed; shake to report waits for the next resume or toggle.', error: error);
+          _stop();
         },
+        onDone: () => _subscription = null,
+        cancelOnError: true,
       );
     } catch (error, stackTrace) {
       logger.w('Could not start the accelerometer stream.', error: error, stackTrace: stackTrace);
-    } finally {
-      _startingSubscription = false;
-      if (mounted && generation != _listenGeneration && _shouldListen && _subscription == null) _sync();
     }
   }
 
-  Future<void> _cancelSubscription() async {
-    final Future<void>? cancellation;
-    try {
-      cancellation = _subscription?.cancel();
-    } catch (error, stackTrace) {
-      _subscription = null;
-      logger.w('Could not stop the accelerometer stream.', error: error, stackTrace: stackTrace);
-      return;
-    }
-    _subscription = null;
-    if (cancellation == null) return;
-    try {
-      await cancellation;
-    } catch (error, stackTrace) {
-      logger.w('Could not stop the accelerometer stream.', error: error, stackTrace: stackTrace);
-    }
-  }
-
-  Future<void> _onShake(int generation) async {
+  Future<void> _onShake() async {
     if (_opening || openPrismSheetCount > 0) return;
     final BuildContext? navigatorContext = widget.navigatorKey.currentContext;
     if (navigatorContext == null) return;
     _opening = true;
     try {
       final Uint8List? screenshot = await (widget.captureScreenshot?.call() ?? _capture());
-      if (!mounted ||
-          generation != _listenGeneration ||
-          !ShakeToReport.enabled.value ||
-          !_isForeground ||
-          openPrismSheetCount > 0 ||
-          !navigatorContext.mounted) {
-        return;
-      }
+      // The capture takes a frame or two. The user may have backgrounded the app or opened a sheet meanwhile.
+      if (!mounted || !_shouldListen || openPrismSheetCount > 0 || !navigatorContext.mounted) return;
       await showReportProblemSheet(
         navigatorContext,
         source: 'shake',
@@ -166,13 +127,6 @@ class _ShakeToReportListenerState extends State<ShakeToReportListener> with Widg
       return null;
     }
   }
-
-  bool get _isForeground {
-    final AppLifecycleState? lifecycle = WidgetsBinding.instance.lifecycleState;
-    return lifecycle == null || lifecycle == AppLifecycleState.resumed;
-  }
-
-  bool get _shouldListen => ShakeToReport.enabled.value && _isForeground;
 
   @override
   Widget build(BuildContext context) => RepaintBoundary(key: _boundary, child: widget.child);
