@@ -1,3 +1,4 @@
+import { stylePromptSuffix } from './ai_style_prompt';
 import { verifyFirebaseIdTokenFromRequest } from './firebase_auth';
 
 export interface AiEnvBindings {
@@ -3240,7 +3241,7 @@ class FalProviderAdapter implements AiProviderAdapter {
     const endpoint = `https://fal.run/${params.model}`;
     const known = Object.hasOwn(FAL_MODELS, params.model) ? FAL_MODELS[params.model] : undefined;
     const { width, height } = falRequestSize(params.model, params.targetSize);
-    const prompt = `${params.prompt}, ${params.stylePreset} style`;
+    const prompt = `${params.prompt}, ${stylePromptSuffix(params.stylePreset)}`;
     const requestBody = known?.buildBody(prompt, width, height, params.seed)
       ?? { prompt, image_size: { width, height }, seed: params.seed };
     const providerDeadlineAt = Math.min(
@@ -3328,7 +3329,7 @@ class GeminiProviderAdapter implements AiProviderAdapter {
         },
         body: JSON.stringify({
           contents: [{
-            parts: [{ text: `${params.prompt}, ${params.stylePreset} style` }],
+            parts: [{ text: `${params.prompt}, ${stylePromptSuffix(params.stylePreset)}` }],
           }],
           generationConfig: {
             responseModalities: ['TEXT', 'IMAGE'],

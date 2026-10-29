@@ -892,6 +892,19 @@ test('a balanced variation inherits Seedream default sizing, model and cost', as
   assert.equal(await storage.get(`provider:fal:monthly:${today().slice(0, 7)}`), 0.04);
 });
 
+test('a style without a description adds its name, and 3D render adds what it looks like', async () => {
+  const anime = await generateWith({ stylePreset: 'anime', targetSize: '944x2048' });
+  assert.equal(anime.stats.falRequest.body.prompt, 'A quiet mountain lake, anime style');
+  const render = await generateWith({ stylePreset: '3d render', targetSize: '944x2048' });
+  assert.equal(
+    render.stats.falRequest.body.prompt,
+    'A quiet mountain lake, stylized 3D render, smooth matte clay-like materials, soft global illumination, '
+      + 'rendered CGI look',
+  );
+  const unknown = await generateWith({ stylePreset: 'constructor', targetSize: '944x2048' });
+  assert.equal(unknown.stats.falRequest.body.prompt, 'A quiet mountain lake, constructor style');
+});
+
 test('the fast tier sends Z-Image the requested size and seed', async () => {
   const { stats, body } = await generateWith({ qualityTier: 'fast', targetSize: '944x2048', seed: 7 });
   assert.equal(stats.falRequest.url, 'https://fal.run/fal-ai/z-image/turbo');

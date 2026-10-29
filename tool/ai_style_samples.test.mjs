@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { planSamples, readStyles, remoteExists, sampleUrl } from './ai_style_samples.mjs';
+import { planSamples, promptFor, readStyles, remoteExists, sampleUrl } from './ai_style_samples.mjs';
 
 const dartEnum = await readFile(new URL('../lib/features/ai_wallpaper/domain/entities/ai_style_preset.dart', import.meta.url), 'utf8');
 const styles = readStyles(dartEnum);
@@ -60,4 +60,24 @@ test('remoteExists reads 200 and 404 and refuses anything else', async () => {
   assert.equal(await remoteExists('u', reply(200)), true);
   assert.equal(await remoteExists('u', reply(404)), false);
   await assert.rejects(remoteExists('u', reply(503)), /503/);
+});
+
+test('--replace makes a style again even when its files exist', async () => {
+  const plan = await planSamples({ styles, exists: async () => true, replace: ['3d-render'] });
+  assert.deepEqual(plan.items.filter((i) => !i.exists).map((i) => i.fileName), [
+    'style-samples-v1-3d-render-tile.webp',
+    'style-samples-v1-3d-render-sheet.webp',
+  ]);
+  assert.deepEqual(plan.generate.map((s) => s.slug), ['3d-render']);
+  assert.equal(plan.costUsd, 0.04);
+});
+
+test('the sample prompt uses the worker style text', () => {
+  const style = (slug) => styles.find((s) => s.slug === slug);
+  assert.equal(promptFor(style('anime')), 'a lighthouse on a cliff at dusk, anime style');
+  assert.equal(
+    promptFor(style('3d-render')),
+    'a lighthouse on a cliff at dusk, stylized 3D render, smooth matte clay-like materials, soft global illumination, '
+      + 'rendered CGI look',
+  );
 });
