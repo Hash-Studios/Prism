@@ -6,6 +6,7 @@ import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
@@ -259,6 +260,50 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
       return Result.success(add);
     } catch (error) {
       return Result.error(ServerFailure('Unable to toggle favourite wall: $error'));
+    }
+  }
+
+  @override
+  Future<Result<void>> setPinned({
+    required String userId,
+    required FavouriteWallEntity wall,
+    DateTime? pinnedAt,
+  }) async {
+    final FavouriteWallEntity next = wall.withPinnedAt(pinnedAt);
+    try {
+      if (userId.isEmpty) {
+        await _guestStore.put(wall.id, favouriteWallToDoc(next));
+        return Result.success(null);
+      }
+      await _favoritesLocal.updateWallSnapshot(
+        userId,
+        (current) => <FavouriteWallEntity>[
+          for (final FavouriteWallEntity item in current) item.id == wall.id ? item.withPinnedAt(pinnedAt) : item,
+        ],
+      );
+      // A bundled starter wall lives only on this device.
+      if (_isBundledStarter(wall)) return Result.success(null);
+      try {
+        await _firestoreClient
+            .updateDoc(_collectionPath(userId), wall.id, <String, dynamic>{
+              'pinnedAt': pinnedAt ?? FirestoreSentinels.delete(),
+            }, sourceTag: 'favourite_walls.pin')
+            .timeout(_writeTimeout);
+      } on TimeoutException {
+        logger.w('Favourite pin queued offline for ${wall.id}.', tag: 'Favourites');
+      } catch (error) {
+        await _favoritesLocal.updateWallSnapshot(
+          userId,
+          (current) => <FavouriteWallEntity>[
+            for (final FavouriteWallEntity item in current)
+              item.id == wall.id ? item.withPinnedAt(wall.pinnedAt) : item,
+          ],
+        );
+        rethrow;
+      }
+      return Result.success(null);
+    } catch (error) {
+      return Result.error(ServerFailure('Unable to pin favourite wall: $error'));
     }
   }
 

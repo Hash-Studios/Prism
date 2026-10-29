@@ -38,13 +38,15 @@ service cloud.firestore {
           && email is string && email == authEmail();
     }
 
+    // pinnedAt is optional; when present it is the time the owner pinned the favourite.
     // favouriteWallToDoc stores string ids for every provider, including Pexels numeric ids.
     // Optional media/metadata fields vary by provider and by shipped client version.
     function validFavourite(docId) {
       let data = request.resource.data;
       return data.id is string && data.id == docId
           && data.provider is string
-          && data.provider.lower() in ['prism', 'wall_of_the_day', 'walloftheday', 'wallhaven', 'pexels'];
+          && data.provider.lower() in ['prism', 'wall_of_the_day', 'walloftheday', 'wallhaven', 'pexels']
+          && (!('pinnedAt' in data) || data.pinnedAt is timestamp);
     }
 
     // New profiles start empty: coins, premium and coinState are server-owned.

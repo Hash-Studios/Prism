@@ -5,7 +5,7 @@ import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-enum WallpaperQuickAction { favourite, share, showLess, resetOriginal, saveToFolder }
+enum WallpaperQuickAction { favourite, share, showLess, resetOriginal, saveToFolder, pin }
 
 enum _HoldPhase { idle, entering, open, exiting }
 
@@ -24,6 +24,9 @@ class WallpaperHoldRegion extends StatefulWidget {
     this.readIsFavourite,
     this.unfavouriteLabel,
     this.saveToFolderLabel,
+    this.pinLabel,
+    this.unpinLabel,
+    this.readIsPinned,
   });
 
   final Object identity;
@@ -36,6 +39,11 @@ class WallpaperHoldRegion extends StatefulWidget {
   final bool Function()? readIsFavourite;
   final String? unfavouriteLabel;
   final String? saveToFolderLabel;
+  final String? pinLabel;
+  final String? unpinLabel;
+
+  /// Read when the menu opens. Null hides Pin, as for a wall that is not a favourite.
+  final bool? Function()? readIsPinned;
   final ValueChanged<WallpaperQuickAction> onAction;
 
   @override
@@ -50,6 +58,7 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
   bool _reduceMotion = false;
   int? _pointer;
   bool _saved = false;
+  bool? _pinned;
   ScrollPosition? _scrollPosition;
   FlutterView? _view;
   (Size, double, EdgeInsets, EdgeInsets)? _viewGeometry;
@@ -183,6 +192,7 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
     if (_entry != null || _phase != _HoldPhase.idle) return;
     _reduceMotion = MediaQuery.disableAnimationsOf(context) || MediaQuery.accessibleNavigationOf(context);
     _saved = widget.readIsFavourite?.call() ?? false;
+    _pinned = widget.pinLabel == null ? null : widget.readIsPinned?.call();
     final OverlayState overlay = Overlay.of(context, rootOverlay: true);
     PrismHaptics.impact();
     final RenderBox overlayBox = overlay.context.findRenderObject()! as RenderBox;
@@ -210,6 +220,7 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
       if (widget.showLessLabel != null) WallpaperQuickAction.showLess,
       if (widget.resetOriginalLabel != null) WallpaperQuickAction.resetOriginal,
       if (widget.saveToFolderLabel != null) WallpaperQuickAction.saveToFolder,
+      if (_pinned != null) WallpaperQuickAction.pin,
     ];
     final List<Offset> offsets = <Offset>[
       Offset(0, vertical * 64),
@@ -261,6 +272,7 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
     WallpaperQuickAction.showLess => widget.showLessLabel!,
     WallpaperQuickAction.resetOriginal => widget.resetOriginalLabel!,
     WallpaperQuickAction.saveToFolder => widget.saveToFolderLabel!,
+    WallpaperQuickAction.pin => _pinned == true ? widget.unpinLabel ?? widget.pinLabel! : widget.pinLabel!,
   };
 
   Widget _buildOverlay(Rect lifted, Rect safe, List<WallpaperQuickAction> actions) {
@@ -386,6 +398,7 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
                     WallpaperQuickAction.showLess => Icons.visibility_off_outlined,
                     WallpaperQuickAction.resetOriginal => Icons.restart_alt_rounded,
                     WallpaperQuickAction.saveToFolder => Icons.create_new_folder_rounded,
+                    WallpaperQuickAction.pin => _pinned == true ? Icons.push_pin_rounded : Icons.push_pin_outlined,
                   }, color: action == _hovered ? cs.onPrimary : cs.onSurface),
                 ),
               ),

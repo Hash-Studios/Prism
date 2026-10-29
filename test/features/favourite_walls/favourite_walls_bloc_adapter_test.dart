@@ -23,6 +23,8 @@ class _MockToggle extends Mock implements ToggleFavouriteWallUseCase {}
 
 class _MockClear extends Mock implements ClearFavouriteWallsUseCase {}
 
+class _MockSetFavouritePinUseCase extends Mock implements SetFavouritePinUseCase {}
+
 void main() {
   setUpFavouriteCounts();
   late _MockFetch fetch;
@@ -53,7 +55,7 @@ void main() {
   tearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
   Future<void> pumpAdapter(WidgetTester tester) async {
-    bloc = FavouriteWallsBloc(fetch, toggle, clear);
+    bloc = FavouriteWallsBloc(fetch, toggle, clear, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
     await tester.pumpWidget(
       BlocProvider<FavouriteWallsBloc>.value(
@@ -174,7 +176,7 @@ void main() {
 
   testWidgets('getDataBase gives null, not an empty list, when the load failed', (tester) async {
     when(() => fetch(any())).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
-    bloc = FavouriteWallsBloc(fetch, toggle, clear);
+    bloc = FavouriteWallsBloc(fetch, toggle, clear, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
     await tester.pumpWidget(
       BlocProvider<FavouriteWallsBloc>.value(

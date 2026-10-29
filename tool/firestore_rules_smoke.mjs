@@ -239,6 +239,29 @@ const cases = [
     }, Bu), 200],
     [`${provider} favourite delete allowed`, () => req('DELETE', `usersv2/b/images/${provider}`, null, Bu), 200],
   ]),
+  ['favourite with pinnedAt timestamp allowed', () => req('PATCH', 'usersv2/b/images/pinned-wall', {
+    id: { stringValue: 'pinned-wall' }, provider: { stringValue: 'Prism' }, pinnedAt: ts(),
+  }, Bu), 200],
+  ['favourite pin update (mask pinnedAt) allowed', () => req('PATCH', 'usersv2/b/images/pinned-wall', {
+    pinnedAt: { timestampValue: new Date().toISOString() },
+  }, Bu, ['pinnedAt']), 200],
+  ['favourite unpin (field removed via mask) allowed', () => req('PATCH', 'usersv2/b/images/pinned-wall', {}, Bu, ['pinnedAt']), 200],
+  ['favourite pinnedAt string rejected', () => req('PATCH', 'usersv2/b/images/pinned-bad', {
+    id: { stringValue: 'pinned-bad' }, provider: { stringValue: 'Prism' }, pinnedAt: { stringValue: '2026-10-29' },
+  }, Bu), 403],
+  ['favourite pinnedAt null rejected', () => req('PATCH', 'usersv2/b/images/pinned-bad2', {
+    id: { stringValue: 'pinned-bad2' }, provider: { stringValue: 'Prism' }, pinnedAt: { nullValue: null },
+  }, Bu), 403],
+  ['favourite pinnedAt number rejected', () => req('PATCH', 'usersv2/b/images/pinned-bad3', {
+    id: { stringValue: 'pinned-bad3' }, provider: { stringValue: 'Prism' }, pinnedAt: { integerValue: '1' },
+  }, Bu), 403],
+  ['other user cannot pin someone else favourite', () => req('PATCH', 'usersv2/b/images/pinned-wall', {
+    pinnedAt: ts(),
+  }, A, ['pinnedAt']), 403],
+  ['old client favourite without pinnedAt still allowed', () => req('PATCH', 'usersv2/b/images/old-client', {
+    id: { stringValue: 'old-client' }, provider: { stringValue: 'Prism' }, url: { stringValue: 'https://example.com/w.jpg' },
+    thumb: { stringValue: 'https://example.com/t.jpg' }, favouritedAt: ts(),
+  }, Bu), 200],
   ['guest reads redacted public metadata', () => req('GET', 'walls/protected'), 200],
   ['guest reads a reviewed legacy wall (3.7.0 read rule restored)', () => req('GET', 'walls/w9'), 200],
   ['guest reads a reviewed wall that only claims protection (read tightening ships later)', () => req('GET', 'walls/leaked'), 200],

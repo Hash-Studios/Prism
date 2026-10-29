@@ -34,6 +34,8 @@ class _MockToggleFavouriteWallUseCase extends Mock implements ToggleFavouriteWal
 
 class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWallsUseCase {}
 
+class _MockSetFavouritePinUseCase extends Mock implements SetFavouritePinUseCase {}
+
 void main() {
   setUpFavouriteCounts();
 
@@ -128,7 +130,7 @@ void main() {
 
   testWidgets('does not track favourite status when the save fails', (tester) async {
     when(() => toggleUseCase(any())).thenAnswer((_) async => Result.error(const ServerFailure('write failed')));
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
 
     await tapFavourite(tester, bloc);
@@ -138,7 +140,7 @@ void main() {
 
   testWidgets('tracks favourite status when the save succeeds', (tester) async {
     when(() => toggleUseCase(any())).thenAnswer((_) async => Result.success(true));
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
 
     await tapFavourite(tester, bloc);
@@ -202,7 +204,7 @@ void main() {
       await favorites.setWallFavourite('user_1', 'wall_1', true);
       return Result.success(true);
     });
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
 
     await tapFavourite(tester, bloc);
@@ -220,7 +222,7 @@ void main() {
       await favorites.setWallFavourite('user_1', 'wall_1', false);
       return Result.success(false);
     });
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
     var callbackCount = 0;
 
@@ -234,7 +236,7 @@ void main() {
 
   testWidgets('a new favourite is tracked with isFavourite true and shows a Glint', (tester) async {
     when(() => toggleUseCase(any())).thenAnswer((_) async => Result.success(true));
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
     await pumpButton(tester, bloc);
 
@@ -249,7 +251,7 @@ void main() {
 
   testWidgets('a second tap within 300 ms is ignored', (tester) async {
     when(() => toggleUseCase(any())).thenAnswer((_) async => Result.success(true));
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
     await pumpButton(tester, bloc);
 
@@ -267,7 +269,7 @@ void main() {
       await favorites.setWallFavourite('user_1', 'wall_1', true);
       return Result.success(true);
     });
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
     var callbackCount = 0;
 
@@ -282,7 +284,7 @@ void main() {
       await favorites.setWallFavourite('user_1', 'wall_1', true);
       return Result.success(true);
     });
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
 
     await tapFavourite(tester, bloc, onFavourited: () => throw StateError('callback failed'));
@@ -340,7 +342,7 @@ void main() {
 
   testWidgets('a failed save shows an error toast', (tester) async {
     when(() => toggleUseCase(any())).thenAnswer((_) async => Result.error(const ServerFailure('write failed')));
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
 
     await tapFavourite(tester, bloc);
@@ -351,7 +353,7 @@ void main() {
 
   testWidgets('trash mode keeps the screen open when the removal fails', (tester) async {
     when(() => toggleUseCase(any())).thenAnswer((_) async => Result.error(const ServerFailure('write failed')));
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
 
     await pumpOnTop(tester, bloc, trash: true);
@@ -361,7 +363,7 @@ void main() {
 
   testWidgets('trash mode closes the screen after the removal succeeds', (tester) async {
     when(() => toggleUseCase(any())).thenAnswer((_) async => Result.success(false));
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
 
     await pumpOnTop(tester, bloc, trash: true);
@@ -383,7 +385,7 @@ void main() {
 
     testWidgets('the heart saves without asking for a sign-in', (tester) async {
       getIt.registerSingleton<GuestFavouritesStore>(memoryGuestStore());
-      final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+      final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
       addTearDown(bloc.close);
 
       await tapFavourite(tester, bloc);
@@ -402,7 +404,7 @@ void main() {
       await guests.put('a', <String, dynamic>{'id': 'a'});
       await guests.put('b', <String, dynamic>{'id': 'b'});
       await guests.put('wall_1', <String, dynamic>{'id': 'wall_1'});
-      final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+      final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
       addTearDown(bloc.close);
 
       await tapFavourite(tester, bloc);
@@ -416,7 +418,7 @@ void main() {
       await guests.put('a', <String, dynamic>{'id': 'a'});
       await guests.put('b', <String, dynamic>{'id': 'b'});
       await guests.put('wall_1', <String, dynamic>{'id': 'wall_1'});
-      final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+      final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
       addTearDown(bloc.close);
 
       await tapFavourite(tester, bloc, onFavourited: () => throw StateError('callback failed'));
@@ -432,7 +434,7 @@ void main() {
       getIt.registerSingleton<GuestFavouritesStore>(guests);
       await guests.put('a', <String, dynamic>{'id': 'a'});
       await guests.put('wall_1', <String, dynamic>{'id': 'wall_1'});
-      final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+      final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
       addTearDown(bloc.close);
 
       await tapFavourite(tester, bloc);
@@ -448,7 +450,7 @@ void main() {
       await favorites.setWallFavourite('user_1', 'wall_1', true);
       return Result.success(true);
     });
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
     await pumpButton(tester, bloc);
     expect(tester.widget<FavoriteIcon>(find.byType(FavoriteIcon)).isFavorite, isFalse);

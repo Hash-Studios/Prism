@@ -20,6 +20,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     this._fetchFavouriteWallsUseCase,
     this._toggleFavouriteWallUseCase,
     this._clearFavouriteWallsUseCase,
+    this._setFavouritePinUseCase,
   ) : super(FavouriteWallsState.initial()) {
     on<_Started>((event, emit) => _serial(() => _onStarted(event, emit)));
     on<_Synced>(_onSynced);
@@ -31,11 +32,13 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     on<_QueryChanged>((event, emit) => emit(state.copyWith(query: event.query)));
     on<_RemoveRequested>((event, emit) => _serial(() => _onRemoveRequested(event, emit)));
     on<_RestoreRequested>((event, emit) => _serial(() => _onRestoreRequested(event, emit)));
+    on<_PinRequested>((event, emit) => _serial(() => _onPinRequested(event, emit)));
   }
 
   final FetchFavouriteWallsUseCase _fetchFavouriteWallsUseCase;
   final ToggleFavouriteWallUseCase _toggleFavouriteWallUseCase;
   final ClearFavouriteWallsUseCase _clearFavouriteWallsUseCase;
+  final SetFavouritePinUseCase _setFavouritePinUseCase;
 
   Future<void> _queueTail = Future<void>.value();
 
@@ -213,9 +216,10 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     final List<FavouriteWallEntity> restored = <FavouriteWallEntity>[];
     for (final FavouriteWallEntity original in event.walls) {
       if (_containsWall(original.id) || restored.any((item) => item.id == original.id)) continue;
-      final FavouriteWallEntity wall = original.withFavouritedAt(
-        original.favouritedAt ?? original.createdAt ?? DateTime.now().toUtc(),
-      );
+      // A removed favourite lost its pin, so the undo brings it back unpinned.
+      final FavouriteWallEntity wall = original
+          .withFavouritedAt(original.favouritedAt ?? original.createdAt ?? DateTime.now().toUtc())
+          .withPinnedAt(null);
       final result = await _toggleFavouriteWallUseCase(
         ToggleFavouriteWallParams(userId: state.userId, wall: wall, currentlyFavourited: false),
       );
@@ -233,4 +237,57 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
       ),
     );
   }
+
+  Future<void> _onPinRequested(_PinRequested event, Emitter<FavouriteWallsState> emit) async {
+    final FavouriteWallEntity? wall = state.items.where((item) => item.id == event.wallId).firstOrNull;
+    if (wall == null) {
+      emit(
+        state.copyWith(
+          actionStatus: ActionStatus.failure,
+          completedOperationId: event.operationId,
+          failure: const ValidationFailure('This wall is not a favourite.'),
+        ),
+      );
+      return;
+    }
+    if (wall.pinned == event.pinned) {
+      emit(state.copyWith(actionStatus: ActionStatus.success, completedOperationId: event.operationId, failure: null));
+      return;
+    }
+    if (event.pinned && state.pinnedCount >= maxPinnedFavourites) {
+      emit(
+        state.copyWith(
+          actionStatus: ActionStatus.failure,
+          completedOperationId: event.operationId,
+          failure: const FavouritePinLimitFailure(),
+        ),
+      );
+      return;
+    }
+    emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
+    final DateTime? pinnedAt = event.pinned ? DateTime.now().toUtc() : null;
+    final result = await _setFavouritePinUseCase(
+      SetFavouritePinParams(userId: state.userId, wall: wall, pinnedAt: pinnedAt),
+    );
+    result.fold(
+      onSuccess: (_) => emit(
+        state.copyWith(
+          actionStatus: ActionStatus.success,
+          items: <FavouriteWallEntity>[
+            for (final FavouriteWallEntity item in state.items) item.id == wall.id ? item.withPinnedAt(pinnedAt) : item,
+          ],
+          completedOperationId: event.operationId,
+          failure: null,
+        ),
+      ),
+      onFailure: (failure) => emit(
+        state.copyWith(actionStatus: ActionStatus.failure, completedOperationId: event.operationId, failure: failure),
+      ),
+    );
+  }
+}
+
+/// The user already pinned [maxPinnedFavourites] walls.
+class FavouritePinLimitFailure extends ValidationFailure {
+  const FavouritePinLimitFailure() : super('Pinned favourites are at the limit.');
 }

@@ -44,6 +44,7 @@ abstract class FavouriteWallDocDto with _$FavouriteWallDocDto {
     @FirestoreStringListConverter() @Default(<String>[]) List<String> collections,
     @FirestoreDateTimeConverter() DateTime? createdAt,
     @FirestoreDateTimeConverter() DateTime? favouritedAt,
+    @FirestoreDateTimeConverter() DateTime? pinnedAt,
     @JsonKey(name: 'depth') @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> depth,
     @JsonKey(name: 'spatial') @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> spatial,
   }) = _FavouriteWallDocDto;
