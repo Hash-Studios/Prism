@@ -1559,6 +1559,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   void _setCardTarget(Size target) {
     final Size? previous = _cardTarget;
     if (previous == target) {
+      // A target deferred earlier in this route animation is stale once the shown target is back.
+      _deferredCardTarget = null;
       if (context.reduceMotion && _morphFrom != null) {
         _shapeMorph.stop(canceled: false);
         _morphFrom = null;

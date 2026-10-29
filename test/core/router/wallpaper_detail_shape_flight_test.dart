@@ -205,6 +205,34 @@ void main() {
       expect(tester.takeException(), isNull);
     }, variant: TargetPlatformVariant({platform}));
 
+    testWidgets('$platform a size that returns to the shown one during entry leaves no stale morph', (tester) async {
+      final (:states, :router) = await open(tester, idOnly: true, initial: const WallpaperDetailLoading());
+      await tester.pump(const Duration(milliseconds: 40));
+      expect(router.detail!.animation!.status, AnimationStatus.forward);
+      final opened = _card(tester);
+      states.add(_loaded(_wall(width: 1600, height: 900)));
+      await tester.pump();
+      await tester.pump();
+      // A later state with no size computes the shown target again before the route settles.
+      states.add(_loaded(_wall()));
+      await tester.pump();
+      await tester.pump();
+      while (router.detail!.animation!.isAnimating) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      await tester.pump();
+      expect(
+        tester.binding.transientCallbackCount,
+        0,
+        reason: 'the dropped 16:9 target must not start a morph after the route settles',
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(_card(tester), opened);
+      await tester.pumpAndSettle();
+      expect(_card(tester), opened);
+      expect(tester.takeException(), isNull);
+    }, variant: TargetPlatformVariant({platform}));
+
     for (final useFeed in [false, true]) {
       final routeKind = useFeed ? 'feed' : 'single';
       testWidgets('$platform $routeKind size learned during entry waits until the Hero lands before easing', (
