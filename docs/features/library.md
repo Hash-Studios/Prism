@@ -130,7 +130,9 @@ Quick tile: `FavouriteQuickTileListener` pushes the favourite URLs to the tile a
   - 4 or more covers: a 2x2 grid.
 - A tap opens the folder page (`FolderRoute`). The folder page records `folder_opened{source: library}` when it opens from the Library.
 - **New folder** (app bar, or the empty state button) asks for a name and creates an empty folder with `createFolderFromLibrary`. It tracks `folder_created{source: library, with_wall: false}`. If the create fails, the toast "Could not update the folder. Try again." shows.
-- Each card has one label for screen readers: the folder name and the count. The cover is hidden from screen readers.
+- Each card has one label for screen readers: the folder name and the count. A public folder adds "Public". The cover is hidden from screen readers.
+- A public folder card shows a globe icon next to the count.
+- **Folders you follow** shows below the user's folders when the user follows at least one public folder. The list loads again when the user comes back from a folder page. Public folders are in [folders.md](folders.md).
 
 States:
 

@@ -16956,6 +16956,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t load walls. Check your connection and try again.'**
   String get tasteQuizRetakeFailed;
+
+  /// Label on a folder that others can see.
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get foldersPublic;
+
+  /// Folder menu action that lets others see the folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Make public'**
+  String get foldersMakePublic;
+
+  /// Folder menu action that hides the folder from others.
+  ///
+  /// In en, this message translates to:
+  /// **'Make private'**
+  String get foldersMakePrivate;
+
+  /// Title of the dialog before a folder becomes public.
+  ///
+  /// In en, this message translates to:
+  /// **'Make this folder public?'**
+  String get foldersMakePublicTitle;
+
+  /// One line that says what others see when a folder is public.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone on Prism can see its name and wallpapers, follow it and open its link. Links you share keep their preview even if you make it private later.'**
+  String get foldersMakePublicMessage;
+
+  /// Title of the dialog before a public folder becomes private.
+  ///
+  /// In en, this message translates to:
+  /// **'Make this folder private?'**
+  String get foldersMakePrivateTitle;
+
+  /// One line that says what happens when a public folder becomes private.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you will see it. Its link stops working and its followers lose it.'**
+  String get foldersMakePrivateMessage;
+
+  /// Toast after a folder becomes public.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is now public.'**
+  String get foldersMadePublic;
+
+  /// Toast after a folder becomes private.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is now private.'**
+  String get foldersMadePrivate;
+
+  /// Toast when the folder name cannot be shown to others.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename this folder to make it public.'**
+  String get foldersPublicNameRefused;
+
+  /// Toast when a moderator hid the folder.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder was hidden after reports, so it cannot be public.'**
+  String get foldersHiddenRefused;
+
+  /// Toast when the daily limit for folder changes is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'You changed folders too many times today. Try again tomorrow.'**
+  String get foldersLimitRefused;
+
+  /// Button that follows a public folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get foldersFollow;
+
+  /// Button state when the user follows a public folder. Tap to unfollow.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get foldersFollowing;
+
+  /// Number of people who follow a public folder.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No followers} =1{1 follower} other{{count} followers}}'**
+  String foldersFollowerCount(int count);
+
+  /// Owner line on a public folder page.
+  ///
+  /// In en, this message translates to:
+  /// **'By {name}'**
+  String foldersByOwner(String name);
+
+  /// Action and tooltip that shares a public folder link.
+  ///
+  /// In en, this message translates to:
+  /// **'Share folder'**
+  String get foldersShare;
+
+  /// Menu action that reports a public folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Report folder'**
+  String get foldersReport;
+
+  /// Title when a shared folder cannot be shown.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is private or no longer exists'**
+  String get foldersUnavailableTitle;
+
+  /// Body when a shared folder cannot be shown.
+  ///
+  /// In en, this message translates to:
+  /// **'The owner may have made it private or deleted it.'**
+  String get foldersUnavailableBody;
+
+  /// Toast when following or unfollowing a folder fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the follow. Try again.'**
+  String get foldersFollowFailed;
+
+  /// Heading of the public folders the user follows, in the Library.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders you follow'**
+  String get foldersYouFollow;
+
+  /// Title when a public folder has no wallpapers others can see.
+  ///
+  /// In en, this message translates to:
+  /// **'No wallpapers here yet'**
+  String get foldersPublicEmptyTitle;
+
+  /// Body when a public folder has no wallpapers others can see.
+  ///
+  /// In en, this message translates to:
+  /// **'New wallpapers show here when the owner adds them.'**
+  String get foldersPublicEmptyBody;
+
+  /// Notification setting for new wallpapers in followed folders.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders you follow'**
+  String get notifSettingFolders;
+
+  /// Description of the followed folders notification setting.
+  ///
+  /// In en, this message translates to:
+  /// **'New wallpapers in folders you follow, once a day'**
+  String get notifSettingFoldersDescription;
+
+  /// Title of the daily push for new wallpapers in one followed folder.
+  ///
+  /// In en, this message translates to:
+  /// **'New in {folderName}'**
+  String notifPushFolderDigestTitleOne(String folderName);
+
+  /// Title of the daily push for new wallpapers in several followed folders.
+  ///
+  /// In en, this message translates to:
+  /// **'New in {folderName} and {count} more'**
+  String notifPushFolderDigestTitleMore(String folderName, int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

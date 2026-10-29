@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {db, CALLABLE_REGIONS, REGION} from "./common";
+import {removeAllFolderFollows, removeOwnerPublicFolders} from "./publicFolders";
 
 const USERS = "usersv2";
 const PROFILES = "profiles";
@@ -72,7 +73,7 @@ function stableJson(value: unknown): string {
 }
 
 /** Re-read the private source inside the transaction so delayed events cannot restore stale profile data. */
-export async function syncPublicProfile(uid: string): Promise<void> {
+export async function syncPublicProfile(uid: string): Promise<boolean> {
   const sourceRef = db.collection(USERS).doc(uid);
   const profileRef = db.collection(PROFILES).doc(uid);
   const deletionBarrierRef = db.collection("creatorDeletionState").doc(uid);
@@ -94,11 +95,18 @@ export async function syncPublicProfile(uid: string): Promise<void> {
     return false;
   });
   if (removeGraph) await removeUidFollowGraph(uid);
+  return removeGraph;
 }
 
 export const projectUserProfile = onDocumentWritten(
-  {document: "usersv2/{uid}", region: REGION},
-  async (event) => syncPublicProfile(event.params.uid),
+  {document: "usersv2/{uid}", region: REGION, retry: true},
+  async (event) => {
+    const shouldCleanFolders = await syncPublicProfile(event.params.uid);
+    if (shouldCleanFolders) {
+      await removeOwnerPublicFolders(event.params.uid);
+      await removeAllFolderFollows(event.params.uid);
+    }
+  },
 );
 
 type EdgeResult = "created" | "removed" | "unchanged";

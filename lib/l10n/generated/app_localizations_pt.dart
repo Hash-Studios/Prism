@@ -10917,6 +10917,110 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get tasteQuizRetakeFailed =>
       'Não foi possível carregar os papéis de parede. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get foldersPublic => 'Pública';
+
+  @override
+  String get foldersMakePublic => 'Tornar pública';
+
+  @override
+  String get foldersMakePrivate => 'Tornar privada';
+
+  @override
+  String get foldersMakePublicTitle => 'Tornar esta pasta pública?';
+
+  @override
+  String get foldersMakePublicMessage =>
+      'Qualquer pessoa no Prism poderá ver o nome e os papéis de parede, seguir a pasta e abrir o link dela. Os links que você compartilhar mantêm a prévia mesmo se você tornar a pasta privada depois.';
+
+  @override
+  String get foldersMakePrivateTitle => 'Tornar esta pasta privada?';
+
+  @override
+  String get foldersMakePrivateMessage =>
+      'Só você vai vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
+
+  @override
+  String get foldersMadePublic => 'Esta pasta agora é pública.';
+
+  @override
+  String get foldersMadePrivate => 'Esta pasta agora é privada.';
+
+  @override
+  String get foldersPublicNameRefused => 'Renomeie esta pasta para torná-la pública.';
+
+  @override
+  String get foldersHiddenRefused => 'Esta pasta foi ocultada após denúncias, por isso não pode ser pública.';
+
+  @override
+  String get foldersLimitRefused => 'Você mudou as pastas muitas vezes hoje. Tente novamente amanhã.';
+
+  @override
+  String get foldersFollow => 'Seguir';
+
+  @override
+  String get foldersFollowing => 'Seguindo';
+
+  @override
+  String foldersFollowerCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString seguidores',
+      one: '1 seguidor',
+      zero: 'Nenhum seguidor',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersByOwner(String name) {
+    return 'Por $name';
+  }
+
+  @override
+  String get foldersShare => 'Compartilhar pasta';
+
+  @override
+  String get foldersReport => 'Denunciar pasta';
+
+  @override
+  String get foldersUnavailableTitle => 'Esta pasta é privada ou não existe mais';
+
+  @override
+  String get foldersUnavailableBody => 'O dono pode ter tornado a pasta privada ou excluído.';
+
+  @override
+  String get foldersFollowFailed => 'Não foi possível atualizar o seguimento. Tente novamente.';
+
+  @override
+  String get foldersYouFollow => 'Pastas que você segue';
+
+  @override
+  String get foldersPublicEmptyTitle => 'Ainda não há papéis de parede aqui';
+
+  @override
+  String get foldersPublicEmptyBody => 'Os novos papéis de parede aparecem aqui quando o dono os adiciona.';
+
+  @override
+  String get notifSettingFolders => 'Pastas que você segue';
+
+  @override
+  String get notifSettingFoldersDescription => 'Novos papéis de parede nas pastas que você segue, uma vez por dia';
+
+  @override
+  String notifPushFolderDigestTitleOne(String folderName) {
+    return 'Novidade em $folderName';
+  }
+
+  @override
+  String notifPushFolderDigestTitleMore(String folderName, int count) {
+    return 'Novidades em $folderName e mais $count';
+  }
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -21830,4 +21934,108 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get tasteQuizRetakeFailed =>
       'Não foi possível carregar os papéis de parede. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get foldersPublic => 'Pública';
+
+  @override
+  String get foldersMakePublic => 'Tornar pública';
+
+  @override
+  String get foldersMakePrivate => 'Tornar privada';
+
+  @override
+  String get foldersMakePublicTitle => 'Tornar esta pasta pública?';
+
+  @override
+  String get foldersMakePublicMessage =>
+      'Qualquer pessoa no Prism poderá ver o nome e os papéis de parede, seguir a pasta e abrir o link dela. Os links que você compartilhar mantêm a prévia mesmo se você tornar a pasta privada depois.';
+
+  @override
+  String get foldersMakePrivateTitle => 'Tornar esta pasta privada?';
+
+  @override
+  String get foldersMakePrivateMessage =>
+      'Só você vai vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
+
+  @override
+  String get foldersMadePublic => 'Esta pasta agora é pública.';
+
+  @override
+  String get foldersMadePrivate => 'Esta pasta agora é privada.';
+
+  @override
+  String get foldersPublicNameRefused => 'Renomeie esta pasta para torná-la pública.';
+
+  @override
+  String get foldersHiddenRefused => 'Esta pasta foi ocultada após denúncias, por isso não pode ser pública.';
+
+  @override
+  String get foldersLimitRefused => 'Você mudou as pastas muitas vezes hoje. Tente novamente amanhã.';
+
+  @override
+  String get foldersFollow => 'Seguir';
+
+  @override
+  String get foldersFollowing => 'Seguindo';
+
+  @override
+  String foldersFollowerCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString seguidores',
+      one: '1 seguidor',
+      zero: 'Nenhum seguidor',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersByOwner(String name) {
+    return 'Por $name';
+  }
+
+  @override
+  String get foldersShare => 'Compartilhar pasta';
+
+  @override
+  String get foldersReport => 'Denunciar pasta';
+
+  @override
+  String get foldersUnavailableTitle => 'Esta pasta é privada ou não existe mais';
+
+  @override
+  String get foldersUnavailableBody => 'O dono pode ter tornado a pasta privada ou excluído.';
+
+  @override
+  String get foldersFollowFailed => 'Não foi possível atualizar o seguimento. Tente novamente.';
+
+  @override
+  String get foldersYouFollow => 'Pastas que você segue';
+
+  @override
+  String get foldersPublicEmptyTitle => 'Ainda não há papéis de parede aqui';
+
+  @override
+  String get foldersPublicEmptyBody => 'Os novos papéis de parede aparecem aqui quando o dono os adiciona.';
+
+  @override
+  String get notifSettingFolders => 'Pastas que você segue';
+
+  @override
+  String get notifSettingFoldersDescription => 'Novos papéis de parede nas pastas que você segue, uma vez por dia';
+
+  @override
+  String notifPushFolderDigestTitleOne(String folderName) {
+    return 'Novidade em $folderName';
+  }
+
+  @override
+  String notifPushFolderDigestTitleMore(String folderName, int count) {
+    return 'Novidades em $folderName e mais $count';
+  }
 }

@@ -124,6 +124,24 @@ class FcmTokenService {
     }
   }
 
+  /// Stores the "Folders you follow" switch where the folder digest reads it.
+  Future<void> saveFolderAlerts({required String userId, required bool enabled, FirestoreClient? client}) async {
+    if (userId.trim().isEmpty) return;
+    try {
+      await _trackWrite(
+        () => (client ?? firestoreClient).setDoc(
+          '${FirebaseCollections.usersV2}/$userId/private',
+          'session',
+          <String, dynamic>{'folderAlerts': enabled},
+          merge: true,
+          sourceTag: 'fcm_token.folder_alerts',
+        ),
+      );
+    } catch (e, st) {
+      logger.w('FcmTokenService: failed to save folder alerts.', error: e, stackTrace: st);
+    }
+  }
+
   /// Stores the Recommendations switch where the win-back and campaign pushes read it.
   Future<void> saveMarketingPushes({required String userId, required bool enabled, FirestoreClient? client}) async {
     if (userId.trim().isEmpty) return;
@@ -307,7 +325,9 @@ class FcmTokenService {
         settings?.isOpen != true ||
         settings!.get<bool>(NotificationPrefKeys.posts, defaultValue: true) &&
             settings.get<bool>(NotificationPrefKeys.followers, defaultValue: true);
-    final String marker = '$userId|$token|digest_v2|posts:$postAlerts';
+    final bool folderAlerts =
+        settings?.isOpen != true || settings!.get<bool>(NotificationPrefKeys.folders, defaultValue: true);
+    final String marker = '$userId|$token|digest_v2|posts:$postAlerts|folders:$folderAlerts';
     final bool track = settings != null && settings.isOpen;
     if (track && settings.get<String>(_syncedTokenKey, defaultValue: '') == marker) return;
     await (client ?? firestoreClient).setDoc(
@@ -323,6 +343,9 @@ class FcmTokenService {
         // so an older build that rebinds the account keeps its topic pushes.
         'postAlerts': postAlerts,
         'postAlertsToken': token,
+        // The folder digest goes only to a device whose token carries the switch, like the follow digest.
+        'folderAlerts': folderAlerts,
+        'folderAlertsToken': token,
       },
       merge: true,
       sourceTag: 'fcm_token.sync',

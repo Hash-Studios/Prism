@@ -17,7 +17,9 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
+import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
@@ -149,6 +151,31 @@ Finder _tagIn(String title, String tag) => find.descendant(
   matching: find.text(tag),
 );
 
+class _NoPublicFolders implements PublicFoldersRepository {
+  @override
+  Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
+
+  @override
+  Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(<String>[]);
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async =>
+      Result.success(<PublicFolderEntity>[]);
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchFollowedFolders(String userId) async =>
+      Result.success(<PublicFolderEntity>[]);
+
+  @override
+  Future<Result<bool>> isFollowing(String folderId, String userId) async => Result.success(false);
+
+  @override
+  Future<Result<void>> setFollowing(String folderId, {required bool following}) async => Result.success<void>(null);
+
+  @override
+  Future<Result<bool>> setPublic(String folderId, {required bool isPublic}) async => Result.success(isPublic);
+}
+
 void main() {
   setUpFavouriteCounts();
 
@@ -246,7 +273,7 @@ void main() {
     final _FakeFoldersRepository repo = _FakeFoldersRepository(
       folders: <FolderEntity>[_folder('blue', 'Blue'), _folder('calm', 'Calm')],
     );
-    final FoldersBloc bloc = FoldersBloc(repo);
+    final FoldersBloc bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     await openSheet(tester, bloc, wall);
 
@@ -272,7 +299,7 @@ void main() {
         folderItemKey(wall): <String>{'blue'},
       },
     );
-    final FoldersBloc bloc = FoldersBloc(repo);
+    final FoldersBloc bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     await openSheet(tester, bloc, wall);
 
@@ -291,7 +318,7 @@ void main() {
   testWidgets('typing a name and tapping the create button adds a New row, saved as a new folder', (tester) async {
     final FavouriteWallEntity wall = _wall();
     final _FakeFoldersRepository repo = _FakeFoldersRepository();
-    final FoldersBloc bloc = FoldersBloc(repo);
+    final FoldersBloc bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     await openSheet(tester, bloc, wall);
 
@@ -313,7 +340,7 @@ void main() {
   ) async {
     final FavouriteWallEntity wall = _wall(category: 'Nature', colors: <String>['blue']);
     final _FakeFoldersRepository repo = _FakeFoldersRepository();
-    final FoldersBloc bloc = FoldersBloc(repo);
+    final FoldersBloc bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     await openSheet(tester, bloc, wall);
 
@@ -335,7 +362,7 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
     final FavouriteWallEntity wall = _wall();
     final _FakeFoldersRepository repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')]);
-    final FoldersBloc bloc = FoldersBloc(repo);
+    final FoldersBloc bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     await openSheet(tester, bloc, wall);
 
@@ -351,7 +378,7 @@ void main() {
       folders: <FolderEntity>[_folder('blue', 'Blue')],
       gate: gate,
     );
-    final FoldersBloc bloc = FoldersBloc(repo);
+    final FoldersBloc bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     await openSheet(tester, bloc, wall);
 
@@ -365,7 +392,7 @@ void main() {
 
   testWidgets('failed folder loading keeps Done disabled until retry succeeds', (tester) async {
     final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')])..failLoad = true;
-    final bloc = FoldersBloc(repo);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     await openSheet(tester, bloc, _wall());
 
@@ -381,7 +408,7 @@ void main() {
 
   testWidgets('an open picker closes and discards its draft when the account changes', (tester) async {
     final repo = _FakeFoldersRepository();
-    final bloc = FoldersBloc(repo);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     await openSheet(tester, bloc, _wall());
     await tester.enterText(find.byType(TextField), 'Private draft');
@@ -401,7 +428,7 @@ void main() {
   testWidgets('switching accounts during the first load closes the original picker', (tester) async {
     final gate = Completer<void>();
     final repo = _FakeFoldersRepository()..loadGate = gate;
-    final bloc = FoldersBloc(repo);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     await openSheet(tester, bloc, _wall());
 
@@ -419,7 +446,7 @@ void main() {
   ) async {
     final gate = Completer<void>();
     final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')])..saveGate = gate;
-    final bloc = FoldersBloc(repo);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     await openSheet(tester, bloc, _wall());
     await tester.tap(find.text('Blue'));
@@ -439,7 +466,7 @@ void main() {
   testWidgets('a failed favourite stops the folder save', (tester) async {
     when(() => toggleUseCase(any())).thenAnswer((_) async => Result.error(const NetworkFailure('offline')));
     final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')]);
-    final bloc = FoldersBloc(repo);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     await openSheet(tester, bloc, _wall());
     await tester.tap(find.text('Blue'));
@@ -453,7 +480,7 @@ void main() {
   testWidgets('opening a picker during an existing folder load waits and then loads membership', (tester) async {
     final gate = Completer<void>();
     final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')])..loadGate = gate;
-    final bloc = FoldersBloc(repo);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     final started = bloc.run((id) => FoldersEvent.started(userId: 'u1', operationId: id));
     await tester.pump();
@@ -469,7 +496,7 @@ void main() {
 
   testWidgets('clear then a new account closes only the picker, not the page beneath it', (tester) async {
     final repo = _FakeFoldersRepository();
-    final bloc = FoldersBloc(repo);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     await openSheet(tester, bloc, _wall());
 
@@ -487,7 +514,7 @@ void main() {
 
   testWidgets('an account clear during Done dismissal does not pop the page beneath the picker', (tester) async {
     final repo = _FakeFoldersRepository();
-    final bloc = FoldersBloc(repo);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     await openSheet(tester, bloc, _wall());
     await tester.tap(find.text('Done'));

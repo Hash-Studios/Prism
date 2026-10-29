@@ -16,6 +16,7 @@ class FolderEntity {
     required this.updatedAt,
     required this.itemCount,
     required this.covers,
+    this.isPublic = false,
   });
 
   final String id;
@@ -28,15 +29,20 @@ class FolderEntity {
   /// Up to [folderMaxCovers] thumbnail URLs, newest first.
   final List<String> covers;
 
-  FolderEntity copyWith({String? name, DateTime? updatedAt, int? itemCount, List<String>? covers}) => FolderEntity(
-    id: id,
-    ownerId: ownerId,
-    name: name ?? this.name,
-    createdAt: createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    itemCount: itemCount ?? this.itemCount,
-    covers: covers ?? this.covers,
-  );
+  /// Others can see the folder. Only the server sets it, through the setFolderPublic callable.
+  final bool isPublic;
+
+  FolderEntity copyWith({String? name, DateTime? updatedAt, int? itemCount, List<String>? covers, bool? isPublic}) =>
+      FolderEntity(
+        id: id,
+        ownerId: ownerId,
+        name: name ?? this.name,
+        createdAt: createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        itemCount: itemCount ?? this.itemCount,
+        covers: covers ?? this.covers,
+        isPublic: isPublic ?? this.isPublic,
+      );
 
   FolderEntity withItemAdded(String thumbnailUrl, DateTime at) => copyWith(
     updatedAt: at,

@@ -71,6 +71,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
   late bool _posts = _readPref(NotificationPrefKeys.posts);
   late bool _recommendations = _readPref(NotificationPrefKeys.recommendations);
   late bool _streakReminders = _readPref(NotificationPrefKeys.streakReminders);
+  late bool _folders = _readPref(NotificationPrefKeys.folders);
 
   bool? _permissionGranted;
 
@@ -223,6 +224,14 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
                     : null,
               ),
               _toggle(
+                icon: Icons.folder_special_rounded,
+                title: context.l10n.notifSettingFolders,
+                subtitle: context.l10n.notifSettingFoldersDescription,
+                value: _folders,
+                needsSignIn: true,
+                onChanged: (bool value) => _change(value, () => _setFolders(value), needsSignIn: true),
+              ),
+              _toggle(
                 icon: Icons.lightbulb_rounded,
                 title: context.l10n.notifSettingRecommendations,
                 subtitle: context.l10n.notifSettingRecommendationsDescription,
@@ -282,6 +291,13 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
     setState(() => _posts = value);
     analytics.track(NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.posts, value: value));
     unawaited(FcmTokenService.instance.savePostAlerts(userId: app_state.prismUser.id, enabled: value));
+  }
+
+  Future<void> _setFolders(bool value) async {
+    await _settingsLocal.set(NotificationPrefKeys.folders, value);
+    setState(() => _folders = value);
+    analytics.track(NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.folders, value: value));
+    unawaited(FcmTokenService.instance.saveFolderAlerts(userId: app_state.prismUser.id, enabled: value));
   }
 
   Future<void> _setWotd(bool value) async {

@@ -10639,4 +10639,108 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get tasteQuizRetakeFailed => 'Wallpaper tidak bisa dimuat. Periksa koneksi kamu dan coba lagi.';
+
+  @override
+  String get foldersPublic => 'Publik';
+
+  @override
+  String get foldersMakePublic => 'Jadikan publik';
+
+  @override
+  String get foldersMakePrivate => 'Jadikan privat';
+
+  @override
+  String get foldersMakePublicTitle => 'Jadikan folder ini publik?';
+
+  @override
+  String get foldersMakePublicMessage =>
+      'Semua orang di Prism bisa melihat nama dan wallpaper-nya, mengikutinya, dan membuka tautannya. Tautan yang Anda bagikan tetap menampilkan pratinjaunya meski nanti Anda menjadikannya pribadi.';
+
+  @override
+  String get foldersMakePrivateTitle => 'Jadikan folder ini privat?';
+
+  @override
+  String get foldersMakePrivateMessage =>
+      'Hanya Anda yang bisa melihatnya. Tautannya berhenti berfungsi dan pengikutnya kehilangan folder ini.';
+
+  @override
+  String get foldersMadePublic => 'Folder ini sekarang publik.';
+
+  @override
+  String get foldersMadePrivate => 'Folder ini sekarang privat.';
+
+  @override
+  String get foldersPublicNameRefused => 'Ganti nama folder ini agar bisa dijadikan publik.';
+
+  @override
+  String get foldersHiddenRefused => 'Folder ini disembunyikan setelah ada laporan, jadi tidak bisa dijadikan publik.';
+
+  @override
+  String get foldersLimitRefused => 'Anda sudah terlalu sering mengubah folder hari ini. Coba lagi besok.';
+
+  @override
+  String get foldersFollow => 'Ikuti';
+
+  @override
+  String get foldersFollowing => 'Diikuti';
+
+  @override
+  String foldersFollowerCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString pengikut',
+      one: '1 pengikut',
+      zero: 'Belum ada pengikut',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersByOwner(String name) {
+    return 'Oleh $name';
+  }
+
+  @override
+  String get foldersShare => 'Bagikan folder';
+
+  @override
+  String get foldersReport => 'Laporkan folder';
+
+  @override
+  String get foldersUnavailableTitle => 'Folder ini privat atau sudah tidak ada';
+
+  @override
+  String get foldersUnavailableBody => 'Pemilik mungkin telah menjadikannya privat atau menghapusnya.';
+
+  @override
+  String get foldersFollowFailed => 'Tidak dapat memperbarui status mengikuti. Coba lagi.';
+
+  @override
+  String get foldersYouFollow => 'Folder yang Anda ikuti';
+
+  @override
+  String get foldersPublicEmptyTitle => 'Belum ada wallpaper di sini';
+
+  @override
+  String get foldersPublicEmptyBody => 'Wallpaper baru akan muncul di sini saat pemilik menambahkannya.';
+
+  @override
+  String get notifSettingFolders => 'Folder yang Anda ikuti';
+
+  @override
+  String get notifSettingFoldersDescription => 'Wallpaper baru di folder yang Anda ikuti, sehari sekali';
+
+  @override
+  String notifPushFolderDigestTitleOne(String folderName) {
+    return 'Baru di $folderName';
+  }
+
+  @override
+  String notifPushFolderDigestTitleMore(String folderName, int count) {
+    return 'Baru di $folderName dan $count lainnya';
+  }
 }

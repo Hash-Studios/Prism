@@ -35,6 +35,7 @@ FolderEntity folderFromDoc(Map<String, dynamic> data, String id) {
     updatedAt: parseDateTime(data['updatedAt']) ?? now,
     itemCount: count is num ? math.max(0, count.toInt()) : 0,
     covers: covers is List ? covers.whereType<String>().take(folderMaxCovers).toList() : const <String>[],
+    isPublic: data['public'] == true,
   );
 }
 
