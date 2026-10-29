@@ -345,6 +345,16 @@ enums:
       - rejection
       - win_back
       - drop
+  - name: wall_request_source
+    dart_type: WallRequestSourceValue
+    values:
+      - search
+      - requests_page
+  - name: wall_request_filler
+    dart_type: WallRequestFillerValue
+    values:
+      - creator
+      - studio
 
 events:
   - id: content_report_submit
@@ -2257,4 +2267,46 @@ events:
         type: string
       - name: tier
         key: tier
+        type: string
+  - id: wall_request_sheet_opened
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: WallRequestSourceValue
+  - id: wall_request_created
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: WallRequestSourceValue
+      - name: tag_count
+        key: tag_count
+        type: int
+      - name: forced
+        key: forced
+        type: bool
+  - id: wall_request_duplicate_upvoted
+    fields:
+      - name: exact
+        key: exact
+        type: bool
+  - id: wall_request_vote_toggled
+    fields:
+      - name: voted
+        key: voted
+        type: bool
+      - name: tab
+        key: tab
+        type: string
+  - id: wall_request_filled
+    fields:
+      - name: filled_by
+        key: filled_by
+        type: enum
+        enum: WallRequestFillerValue
+  - id: wall_request_push_opened
+    fields:
+      - name: request_id
+        key: request_id
         type: string

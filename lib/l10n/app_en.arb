@@ -9910,5 +9910,244 @@
   "tasteQuizRetakeFailed": "Couldn't load walls. Check your connection and try again.",
   "@tasteQuizRetakeFailed": {
     "description": "Toast when the walls for a quiz retake do not load."
+  },
+  "wallRequestsTitle": "Wall requests",
+  "@wallRequestsTitle": {
+    "description": "Title of the wall requests page."
+  },
+  "wallRequestsTabTop": "Top",
+  "@wallRequestsTabTop": {
+    "description": "Tab with the most upvoted open requests of the last 30 days."
+  },
+  "wallRequestsTabNew": "New",
+  "@wallRequestsTabNew": {
+    "description": "Tab with the newest open requests."
+  },
+  "wallRequestsTabFilled": "Filled",
+  "@wallRequestsTabFilled": {
+    "description": "Tab with requests that a wall filled."
+  },
+  "wallRequestsAsk": "Request a wall",
+  "@wallRequestsAsk": {
+    "description": "Button that opens the request sheet."
+  },
+  "wallRequestsEmptyTopTitle": "No requests yet",
+  "@wallRequestsEmptyTopTitle": {
+    "description": "Empty Top or New tab title."
+  },
+  "wallRequestsEmptyTopBody": "Ask for the wall you can't find. Others can upvote it.",
+  "@wallRequestsEmptyTopBody": {
+    "description": "Empty Top or New tab body."
+  },
+  "wallRequestsEmptyFilledTitle": "Nothing filled yet",
+  "@wallRequestsEmptyFilledTitle": {
+    "description": "Empty Filled tab title."
+  },
+  "wallRequestsEmptyFilledBody": "Filled requests show up here with the wall that answered them.",
+  "@wallRequestsEmptyFilledBody": {
+    "description": "Empty Filled tab body."
+  },
+  "wallRequestsLoadFailed": "Couldn't load requests",
+  "@wallRequestsLoadFailed": {
+    "description": "Error state title on the requests page."
+  },
+  "wallRequestsRetry": "Try again",
+  "@wallRequestsRetry": {
+    "description": "Retry button on the requests page."
+  },
+  "wallRequestVotes": "{count, plural, =0{No votes} =1{1 vote} other{{count} votes}}",
+  "@wallRequestVotes": {
+    "description": "Vote count on a request row.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestUpvote": "Upvote",
+  "@wallRequestUpvote": {
+    "description": "Tooltip and label of the upvote button."
+  },
+  "wallRequestRemoveUpvote": "Remove upvote",
+  "@wallRequestRemoveUpvote": {
+    "description": "Tooltip of the upvote button when the user already upvoted."
+  },
+  "wallRequestMine": "Your request",
+  "@wallRequestMine": {
+    "description": "Label on the user's own request row."
+  },
+  "wallRequestSomeone": "A Prism user",
+  "@wallRequestSomeone": {
+    "description": "Requester name when the profile has no name."
+  },
+  "wallRequestFilledByCreator": "Filled by {name}",
+  "@wallRequestFilledByCreator": {
+    "description": "Label on a filled request; name is the creator.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRequestFilledByStudio": "Made by Prism Studio",
+  "@wallRequestFilledByStudio": {
+    "description": "Label on a request that Prism Studio filled."
+  },
+  "wallRequestOpenWall": "Open the wall",
+  "@wallRequestOpenWall": {
+    "description": "Semantics label of the filled wall thumbnail."
+  },
+  "wallRequestMoreActions": "More actions",
+  "@wallRequestMoreActions": {
+    "description": "Tooltip of the row menu button."
+  },
+  "wallRequestReport": "Report request",
+  "@wallRequestReport": {
+    "description": "Row menu action that reports a request."
+  },
+  "wallRequestHide": "Hide request",
+  "@wallRequestHide": {
+    "description": "Admin row menu action that hides a request."
+  },
+  "wallRequestUnhide": "Show request",
+  "@wallRequestUnhide": {
+    "description": "Admin row menu action that shows a hidden request again."
+  },
+  "wallRequestHiddenLabel": "Hidden",
+  "@wallRequestHiddenLabel": {
+    "description": "Admin label on a hidden request."
+  },
+  "wallRequestSheetTitle": "Request a wall",
+  "@wallRequestSheetTitle": {
+    "description": "Title of the request sheet."
+  },
+  "wallRequestSheetHint": "Describe it, like dark minimal mountains",
+  "@wallRequestSheetHint": {
+    "description": "Hint in the request text field."
+  },
+  "wallRequestSheetTags": "Tags, up to 3",
+  "@wallRequestSheetTags": {
+    "description": "Label above the tag chips in the request sheet."
+  },
+  "wallRequestSheetSubmit": "Request it",
+  "@wallRequestSheetSubmit": {
+    "description": "Submit button of the request sheet."
+  },
+  "wallRequestSignIn": "Sign in to request walls and upvote them.",
+  "@wallRequestSignIn": {
+    "description": "Shown in the sheet or a toast to a signed-out user."
+  },
+  "wallRequestDuplicateTitle": "Someone asked for this already",
+  "@wallRequestDuplicateTitle": {
+    "description": "Title when a close open request exists."
+  },
+  "wallRequestDuplicateBody": "Upvote it so creators see it sooner.",
+  "@wallRequestDuplicateBody": {
+    "description": "Body when a close open request exists."
+  },
+  "wallRequestUpvoteInstead": "Upvote this instead",
+  "@wallRequestUpvoteInstead": {
+    "description": "Button that upvotes the close request instead of making a new one."
+  },
+  "wallRequestCreateAnyway": "Request mine anyway",
+  "@wallRequestCreateAnyway": {
+    "description": "Button that makes a new request although a close one exists."
+  },
+  "wallRequestDuplicateMine": "You asked for this already",
+  "@wallRequestDuplicateMine": {
+    "description": "Title when the close request is the user's own."
+  },
+  "wallRequestDuplicateVoted": "You upvoted this already",
+  "@wallRequestDuplicateVoted": {
+    "description": "Title when the user already upvoted the close request."
+  },
+  "wallRequestEditText": "Edit my request",
+  "@wallRequestEditText": {
+    "description": "Button that goes back to the text field from the duplicate card."
+  },
+  "wallRequestCreated": "Request sent. We'll tell you when it's filled.",
+  "@wallRequestCreated": {
+    "description": "Toast after a request is made."
+  },
+  "wallRequestUpvoted": "Upvoted. We'll tell you when it's filled.",
+  "@wallRequestUpvoted": {
+    "description": "Toast after the user upvotes the close request."
+  },
+  "wallRequestErrorText": "Use 3 to 80 characters, and keep it friendly.",
+  "@wallRequestErrorText": {
+    "description": "Error when the server refuses the request text."
+  },
+  "wallRequestErrorLimit": "You can make 3 requests a day. Try again tomorrow.",
+  "@wallRequestErrorLimit": {
+    "description": "Error at the daily request limit."
+  },
+  "wallRequestErrorOwn": "You can't upvote your own request.",
+  "@wallRequestErrorOwn": {
+    "description": "Error when the user upvotes their own request."
+  },
+  "wallRequestErrorClosed": "This request is already filled.",
+  "@wallRequestErrorClosed": {
+    "description": "Error when the user votes on a filled request."
+  },
+  "wallRequestErrorGone": "This request isn't available anymore.",
+  "@wallRequestErrorGone": {
+    "description": "Error when the request is hidden or deleted."
+  },
+  "wallRequestErrorGeneric": "Something went wrong. Try again.",
+  "@wallRequestErrorGeneric": {
+    "description": "Error for any other failure."
+  },
+  "searchRequestPrompt": "Can't find it?",
+  "@searchRequestPrompt": {
+    "description": "Line above the request button in an empty search."
+  },
+  "searchRequestAction": "Request it",
+  "@searchRequestAction": {
+    "description": "Button in an empty search that opens the request sheet with the query."
+  },
+  "discoverRequestsTitle": "Wall requests",
+  "@discoverRequestsTitle": {
+    "description": "Discover row that opens the requests page."
+  },
+  "discoverRequestsSubtitle": "Ask for a wall, or upvote one",
+  "@discoverRequestsSubtitle": {
+    "description": "Subtitle of the Discover row for wall requests."
+  },
+  "uploadFillsRequest": "Fills a request",
+  "@uploadFillsRequest": {
+    "description": "Upload form row that links the wall to a request."
+  },
+  "uploadFillsRequestHint": "Optional. Pick the request this wall answers.",
+  "@uploadFillsRequestHint": {
+    "description": "Subtitle of the upload row when no request is picked."
+  },
+  "uploadFillsRequestClear": "Remove request",
+  "@uploadFillsRequestClear": {
+    "description": "Tooltip of the button that removes the picked request."
+  },
+  "requestPickerTitle": "Which request does it fill?",
+  "@requestPickerTitle": {
+    "description": "Title of the request picker in the upload flow."
+  },
+  "requestPickerSearch": "Search requests",
+  "@requestPickerSearch": {
+    "description": "Hint of the search field in the request picker."
+  },
+  "requestPickerEmpty": "No open requests match",
+  "@requestPickerEmpty": {
+    "description": "Empty state of the request picker."
+  },
+  "notifPushWallRequestFilledTitle": "Your request is here",
+  "@notifPushWallRequestFilledTitle": {
+    "description": "Push and inbox title when a wall request is filled."
+  },
+  "notifPushWallRequestFilledBody": "{requestText}",
+  "@notifPushWallRequestFilledBody": {
+    "description": "Push and inbox body when a wall request is filled: the request text.",
+    "placeholders": {
+      "requestText": {
+        "type": "String"
+      }
+    }
   }
 }

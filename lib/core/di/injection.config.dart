@@ -214,6 +214,11 @@ import '../../features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_use
     as _i398;
 import '../../features/wall_of_the_day/domain/usecases/fetch_wotd_archive_usecase.dart'
     as _i353;
+import '../../features/wall_requests/biz/wall_request_sheet_cubit.dart'
+    as _i658;
+import '../../features/wall_requests/biz/wall_requests_cubit.dart' as _i1007;
+import '../../features/wall_requests/domain/repositories/wall_requests_repository.dart'
+    as _i663;
 import '../../features/wallhaven_feed/data/repositories/wallhaven_wallpaper_repository_impl.dart'
     as _i387;
 import '../../features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart'
@@ -401,6 +406,12 @@ _i174.GetIt initGetIt(
       gh<_i672.GuestFavouritesStore>(),
       gh<_i640.FavoritesLocalDataSource>(),
     ),
+  );
+  gh.factory<_i658.WallRequestSheetCubit>(
+    () => _i658.WallRequestSheetCubit(gh<_i663.WallRequestsRepository>()),
+  );
+  gh.factory<_i1007.WallRequestsCubit>(
+    () => _i1007.WallRequestsCubit(gh<_i663.WallRequestsRepository>()),
   );
   gh.lazySingleton<_i312.PexelsWallpaperRepository>(
     () => _i914.PexelsWallpaperRepositoryImpl(
