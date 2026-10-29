@@ -745,6 +745,15 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i406.SetFavouritePinUseCase>(
     () => _i406.SetFavouritePinUseCase(gh<_i643.FavouriteWallsRepository>()),
   );
+  gh.lazySingleton<_i563.AutoRotateRepository>(
+    () => _i948.AutoRotateRepositoryImpl(
+      gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i727.PrismWallpaperRepository>(),
+      gh<_i489.WallOfTheDayRepository>(),
+      gh<_i121.WallpaperHistoryStore>(),
+      gh<_i847.FoldersRepository>(),
+    ),
+  );
   gh.factory<_i195.CategoryFeedBloc>(
     () => _i195.CategoryFeedBloc(
       gh<_i301.LoadCategoriesUseCase>(),
@@ -770,14 +779,6 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i353.FetchWotdArchiveUseCase>(
     () => _i353.FetchWotdArchiveUseCase(gh<_i489.WallOfTheDayRepository>()),
-  );
-  gh.lazySingleton<_i563.AutoRotateRepository>(
-    () => _i948.AutoRotateRepositoryImpl(
-      gh<_i1073.SettingsLocalDataSource>(),
-      gh<_i727.PrismWallpaperRepository>(),
-      gh<_i489.WallOfTheDayRepository>(),
-      gh<_i121.WallpaperHistoryStore>(),
-    ),
   );
   gh.lazySingleton<_i502.FirstWallpaperService>(
     () => _i502.FirstWallpaperService(

@@ -1301,6 +1301,21 @@ events:
         type: string
         required: false
   - id: auto_rotate_disabled
+  - id: auto_rotate_folder_set
+    fields:
+      - name: item_count_bucket
+        key: item_count_bucket
+        type: string
+  - id: auto_rotate_folder_tapped
+    fields:
+      - name: item_count_bucket
+        key: item_count_bucket
+        type: string
+  - id: auto_rotate_stopped
+    fields:
+      - name: reason
+        key: reason
+        type: string
   - id: nav_tab_selected
     fields:
       - name: from_tab

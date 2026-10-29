@@ -2863,5 +2863,20 @@
   "pickUpTileLabel": "Abrir fondo de pantalla {index} de {count}",
   "settingsSaveViewingHistory": "Guardar historial de visualización",
   "settingsSaveViewingHistoryBody": "Muestra los fondos de pantalla que abres en Historial y en Inicio. Si lo desactivas, se borra la lista.",
-  "historyClearFailed": "No se pudo borrar el historial. Revisa tu conexión e inténtalo de nuevo."
+  "historyClearFailed": "No se pudo borrar el historial. Revisa tu conexión e inténtalo de nuevo.",
+  "wallpaperAutoRotateSourceFolder": "Carpeta",
+  "wallpaperAutoRotateSourceFolderNamed": "Carpeta: {folder}",
+  "wallpaperAutoRotateNounFolder": "{folder}",
+  "wallpaperAutoRotateTooFewFolder": "Esta carpeta necesita al menos 2 fondos de pantalla que puedan rotar. Los fondos de Prism rotan después de que los descargues.",
+  "wallpaperAutoRotateOpenFolder": "Abrir carpeta",
+  "wallpaperAutoRotatePickFolder": "Elige una carpeta",
+  "wallpaperAutoRotateNoFolders": "Aún no tienes carpetas. Guarda un fondo de pantalla en una carpeta y luego elígela aquí.",
+  "wallpaperAutoRotateConfirmFolderTitle": "¿Rotar {folder}?",
+  "wallpaperAutoRotateConfirmFolderBody": "Tu fondo de pantalla cambiará a uno de esta carpeta, según el horario de abajo.",
+  "wallpaperAutoRotateConfirmFolderAction": "Rotar esta carpeta",
+  "wallpaperAutoRotateStoppedFolderDeleted": "La rotación automática está desactivada porque se eliminó la carpeta {folder}.",
+  "wallpaperAutoRotateStoppedFolderEmpty": "La rotación automática está desactivada porque la carpeta {folder} tiene menos de 2 fondos de pantalla.",
+  "foldersRotateThisFolder": "Rotar esta carpeta",
+  "foldersRotating": "Rotando",
+  "foldersRotatingDescription": "La rotación automática usa esta carpeta"
 }

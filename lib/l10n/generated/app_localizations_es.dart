@@ -10939,4 +10939,62 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get historyClearFailed => 'No se pudo borrar el historial. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Carpeta';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Carpeta: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Esta carpeta necesita al menos 2 fondos de pantalla que puedan rotar. Los fondos de Prism rotan después de que los descargues.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Abrir carpeta';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Elige una carpeta';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'Aún no tienes carpetas. Guarda un fondo de pantalla en una carpeta y luego elígela aquí.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return '¿Rotar $folder?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Tu fondo de pantalla cambiará a uno de esta carpeta, según el horario de abajo.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Rotar esta carpeta';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'La rotación automática está desactivada porque se eliminó la carpeta $folder.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'La rotación automática está desactivada porque la carpeta $folder tiene menos de 2 fondos de pantalla.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Rotar esta carpeta';
+
+  @override
+  String get foldersRotating => 'Rotando';
+
+  @override
+  String get foldersRotatingDescription => 'La rotación automática usa esta carpeta';
 }

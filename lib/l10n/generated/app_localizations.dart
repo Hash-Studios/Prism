@@ -17316,6 +17316,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t clear history. Check your connection and try again.'**
   String get historyClearFailed;
+
+  /// Auto-rotate source chip that rotates the walls of one of the user's folders.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder'**
+  String get wallpaperAutoRotateSourceFolder;
+
+  /// Auto-rotate source chip when a folder is chosen. folder is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder: {folder}'**
+  String wallpaperAutoRotateSourceFolderNamed(String folder);
+
+  /// How the mix line names a folder source. folder is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'{folder}'**
+  String wallpaperAutoRotateNounFolder(String folder);
+
+  /// Shown when the chosen folder has fewer than 2 wallpapers that auto-rotate can use.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder needs at least 2 wallpapers that can rotate. Prism wallpapers rotate after you download them.'**
+  String get wallpaperAutoRotateTooFewFolder;
+
+  /// Button that opens the chosen folder from the auto-rotate screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open folder'**
+  String get wallpaperAutoRotateOpenFolder;
+
+  /// Title of the sheet that lists the user's folders for auto-rotate.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a folder'**
+  String get wallpaperAutoRotatePickFolder;
+
+  /// Empty state of the auto-rotate folder picker.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no folders yet. Save a wallpaper to a folder, then pick it here.'**
+  String get wallpaperAutoRotateNoFolders;
+
+  /// Title of the card that asks the user to confirm a folder as the auto-rotate source. folder is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate {folder}?'**
+  String wallpaperAutoRotateConfirmFolderTitle(String folder);
+
+  /// Body of the card that asks the user to confirm a folder as the auto-rotate source.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallpaper changes to one from this folder, on the schedule below.'**
+  String get wallpaperAutoRotateConfirmFolderBody;
+
+  /// Button that makes the folder the auto-rotate source and turns auto-rotate on.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate this folder'**
+  String get wallpaperAutoRotateConfirmFolderAction;
+
+  /// Toast when auto-rotate stopped because its folder was deleted. folder is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate is off because the folder {folder} was deleted.'**
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder);
+
+  /// Toast when auto-rotate stopped because its folder has too few usable wallpapers. folder is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate is off because the folder {folder} has fewer than 2 wallpapers.'**
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder);
+
+  /// Folder page menu item that opens auto-rotate with this folder chosen. Android only.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate this folder'**
+  String get foldersRotateThisFolder;
+
+  /// Small label on a folder page when auto-rotate uses this folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotating'**
+  String get foldersRotating;
+
+  /// Tooltip and screen reader label of the Rotating label on a folder page.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate uses this folder'**
+  String get foldersRotatingDescription;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
