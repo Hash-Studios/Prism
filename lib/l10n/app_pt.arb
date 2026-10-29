@@ -2946,13 +2946,13 @@
   "wallRequestErrorAccountAge": "Sua conta poderá fazer pedidos e votar quando tiver 10 dias.",
   "adminFillsRequest": "Atende o pedido",
   "accountShowAiWallpapers": "Mostrar papéis de parede gerados por IA",
-  "accountShowAiWallpapersSubtitle": "Desative para ver apenas papéis de parede feitos por pessoas",
-  "accountShowAiWallpapersFootnote": "Ocultar papéis de parede de IA nunca oculta os seus próprios envios nem os seus favoritos.",
+  "accountShowAiWallpapersSubtitle": "Desative para ver só papéis de parede feitos por pessoas",
+  "accountShowAiWallpapersFootnote": "Ocultar papéis de parede de IA nunca oculta seus próprios envios nem seus favoritos.",
   "wallpaperFeedHideAi": "Ocultar IA",
   "wallpaperAiGenerated": "Gerado por IA",
   "wallpaperAiMadeWith": "Feito com {model}",
   "wallpaperAiMadeWithUnknown": "Feito com IA",
-  "wallpaperAiReportWrongLabel": "Denunciar etiqueta errada",
+  "wallpaperAiReportWrongLabel": "Denunciar rótulo errado",
   "feedNoHumanWalls": "Ainda não há papéis de parede feitos por pessoas aqui",
   "feedShowAiWalls": "Mostrar papéis de parede de IA"
 }

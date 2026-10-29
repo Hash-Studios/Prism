@@ -47,6 +47,10 @@ class _FailingHttpClient implements HttpClient {
 
 void main() {
   setUpFavouriteCounts();
+  setUp(() => getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore())));
+  tearDown(() async {
+    if (getIt.isRegistered<SettingsLocalDataSource>()) await getIt.unregister<SettingsLocalDataSource>();
+  });
 
   Future<void> pumpAiHiddenGrid(WidgetTester tester, List<Map<String, dynamic>> walls) async {
     final originalWalls = anyCollectionWalls;

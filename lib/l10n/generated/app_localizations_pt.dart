@@ -11420,11 +11420,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountShowAiWallpapers => 'Mostrar papéis de parede gerados por IA';
 
   @override
-  String get accountShowAiWallpapersSubtitle => 'Desative para ver apenas papéis de parede feitos por pessoas';
+  String get accountShowAiWallpapersSubtitle => 'Desative para ver só papéis de parede feitos por pessoas';
 
   @override
   String get accountShowAiWallpapersFootnote =>
-      'Ocultar papéis de parede de IA nunca oculta os seus próprios envios nem os seus favoritos.';
+      'Ocultar papéis de parede de IA nunca oculta seus próprios envios nem seus favoritos.';
 
   @override
   String get wallpaperFeedHideAi => 'Ocultar IA';
@@ -11441,7 +11441,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperAiMadeWithUnknown => 'Feito com IA';
 
   @override
-  String get wallpaperAiReportWrongLabel => 'Denunciar etiqueta errada';
+  String get wallpaperAiReportWrongLabel => 'Denunciar rótulo errado';
 
   @override
   String get feedNoHumanWalls => 'Ainda não há papéis de parede feitos por pessoas aqui';

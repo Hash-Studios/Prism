@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
@@ -32,6 +33,7 @@ import '../../support/fake_app_analytics.dart';
 import '../../support/fake_user_block_repository.dart';
 import '../../support/favourite_test_scope.dart';
 import '../../support/profile_user_fixture.dart';
+import '../../support/in_memory_local_store.dart';
 
 class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
 
@@ -118,6 +120,10 @@ const PublicProfileEntity _ana = PublicProfileEntity(
 
 void main() {
   setUpFavouriteCounts();
+  setUp(() => getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore())));
+  tearDown(() async {
+    if (getIt.isRegistered<SettingsLocalDataSource>()) await getIt.unregister<SettingsLocalDataSource>();
+  });
   late _MockPublicProfileBloc bloc;
   late _FakeProfileRepository repository;
   late FakeUserBlockRepository blocks;
