@@ -28,7 +28,7 @@ export const HEIGHT = 1920;
 // only before upload: an uploaded file is skipped, and its URL is cached as immutable. To replace uploaded samples,
 // bump VERSION and AiStylePreset.sampleVersion together.
 export const DEFAULT_SEED = 20261029;
-export const SEED_OVERRIDES = {};
+export const SEED_OVERRIDES = { 'mesh-gradient': 20261030, '3d-render': 20261030 };
 export const SIZES = { tile: { width: 288, height: 360 }, sheet: { width: 540, height: 960 } };
 
 const API_BASE = 'https://prismwalls.com/api/ai';
