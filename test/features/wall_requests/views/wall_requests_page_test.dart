@@ -190,7 +190,9 @@ void main() {
       MaterialApp.router(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        routerConfig: router.config(deepLinkBuilder: (_) => DeepLink(<PageRouteInfo>[WallRequestsRoute(tab: 'filled')])),
+        routerConfig: router.config(
+          deepLinkBuilder: (_) => DeepLink(<PageRouteInfo>[WallRequestsRoute(tab: 'filled')]),
+        ),
       ),
     );
     await tester.pump();
