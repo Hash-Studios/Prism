@@ -11540,13 +11540,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get dailyMomentChestTitle => 'Baú diário';
 
   @override
-  String get dailyMomentSpinTitle => 'Rodada grátis';
+  String get dailyMomentSpinTitle => 'Giro grátis';
 
   @override
-  String get dailyMomentUnavailable => 'Esta recompensa já não está disponível hoje.';
+  String get dailyMomentUnavailable => 'Esta recompensa não está mais disponível hoje.';
 
   @override
-  String get dailyMomentError => 'Não foi possível carregar a recompensa. Tenta novamente.';
+  String get dailyMomentError => 'Não foi possível carregar a recompensa. Tente novamente.';
 
   @override
   String dailyMomentStreakReceipt(int coins, int days) {
@@ -11554,7 +11554,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get dailyMomentCosmetic => 'Item cosmético adicionado à tua coleção';
+  String get dailyMomentCosmetic => 'Item cosmético adicionado à sua coleção';
 
   @override
   String dailyMomentReward(int coins) {
@@ -11562,10 +11562,10 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get dailyMomentChestBody => 'Abre o baú de hoje quando quiseres.';
+  String get dailyMomentChestBody => 'Abra o baú de hoje quando quiser.';
 
   @override
-  String get dailyMomentSpinBody => 'A tua rodada grátis está pronta.';
+  String get dailyMomentSpinBody => 'Seu giro grátis está pronto.';
 
   @override
   String dailyMomentBalance(int coins) {
@@ -11590,7 +11590,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get dailyMomentSpinAction => 'Rodar grátis';
+  String get dailyMomentSpinAction => 'Girar grátis';
 
   @override
   String get dailyMomentClose => 'Fechar momento diário';
@@ -11617,7 +11617,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get dailyMomentChestLeft => 'Baú diário disponível';
 
   @override
-  String get dailyMomentSpinLeft => 'Rodada grátis disponível';
+  String get dailyMomentSpinLeft => 'Giro grátis disponível';
 
   @override
   String get dailyMomentStreakLeft => 'Sequência diária disponível';

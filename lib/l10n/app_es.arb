@@ -3058,138 +3058,31 @@
     }
   },
   "dailyMomentTitle": "Momento diario",
-  "@dailyMomentTitle": {
-    "description": "Daily moment: Title."
-  },
   "dailyMomentStreakTitle": "Racha diaria",
-  "@dailyMomentStreakTitle": {
-    "description": "Daily moment: StreakTitle."
-  },
   "dailyMomentChestTitle": "Cofre diario",
-  "@dailyMomentChestTitle": {
-    "description": "Daily moment: ChestTitle."
-  },
   "dailyMomentSpinTitle": "Giro gratis",
-  "@dailyMomentSpinTitle": {
-    "description": "Daily moment: SpinTitle."
-  },
   "dailyMomentUnavailable": "Esta recompensa ya no está disponible hoy.",
-  "@dailyMomentUnavailable": {
-    "description": "Daily moment: Unavailable."
-  },
   "dailyMomentError": "No se pudo cargar la recompensa. Inténtalo de nuevo.",
-  "@dailyMomentError": {
-    "description": "Daily moment: Error."
-  },
   "dailyMomentStreakReceipt": "{coins} monedas ganadas · racha de {days} días",
-  "@dailyMomentStreakReceipt": {
-    "description": "Daily moment: StreakReceipt.",
-    "placeholders": {
-      "coins": {
-        "type": "int"
-      },
-      "days": {
-        "type": "int"
-      }
-    }
-  },
   "dailyMomentCosmetic": "Objeto añadido a tu colección",
-  "@dailyMomentCosmetic": {
-    "description": "Daily moment: Cosmetic."
-  },
   "dailyMomentReward": "{coins} monedas ganadas",
-  "@dailyMomentReward": {
-    "description": "Daily moment: Reward.",
-    "placeholders": {
-      "coins": {
-        "type": "int"
-      }
-    }
-  },
   "dailyMomentChestBody": "Abre el cofre de hoy cuando quieras.",
-  "@dailyMomentChestBody": {
-    "description": "Daily moment: ChestBody."
-  },
   "dailyMomentSpinBody": "Tu giro gratis está listo.",
-  "@dailyMomentSpinBody": {
-    "description": "Daily moment: SpinBody."
-  },
   "dailyMomentBalance": "Saldo: {coins} monedas",
-  "@dailyMomentBalance": {
-    "description": "Daily moment: Balance.",
-    "placeholders": {
-      "coins": {
-        "type": "int"
-      }
-    }
-  },
   "dailyMomentDone": "Listo",
-  "@dailyMomentDone": {
-    "description": "Daily moment: Done."
-  },
   "dailyMomentRetry": "Reintentar",
-  "@dailyMomentRetry": {
-    "description": "Daily moment: Retry."
-  },
   "dailyMomentContinue": "Continuar",
-  "@dailyMomentContinue": {
-    "description": "Daily moment: Continue."
-  },
   "dailyMomentOpenFree": "Abrir cofre gratis",
-  "@dailyMomentOpenFree": {
-    "description": "Daily moment: OpenFree."
-  },
   "dailyMomentOpenChest": "Abrir por {coins} monedas",
-  "@dailyMomentOpenChest": {
-    "description": "Daily moment: OpenChest.",
-    "placeholders": {
-      "coins": {
-        "type": "int"
-      }
-    }
-  },
   "dailyMomentSpinAction": "Girar gratis",
-  "@dailyMomentSpinAction": {
-    "description": "Daily moment: SpinAction."
-  },
   "dailyMomentClose": "Cerrar momento diario",
-  "@dailyMomentClose": {
-    "description": "Daily moment: Close."
-  },
   "dailyMomentToday": "Hoy",
-  "@dailyMomentToday": {
-    "description": "Daily moment: Today."
-  },
   "dailyMomentReady": "Las recompensas diarias están listas",
-  "@dailyMomentReady": {
-    "description": "Daily moment: Ready."
-  },
   "dailyMomentComplete": "Hoy está completo",
-  "@dailyMomentComplete": {
-    "description": "Daily moment: Complete."
-  },
   "dailyMomentResume": "Continuar momento diario",
-  "@dailyMomentResume": {
-    "description": "Daily moment: Resume."
-  },
   "dailyMomentMore": "Más",
-  "@dailyMomentMore": {
-    "description": "Daily moment: More."
-  },
   "dailyMomentQuests": "Misiones",
-  "@dailyMomentQuests": {
-    "description": "Daily moment: Quests."
-  },
   "dailyMomentChestLeft": "Cofre diario disponible",
-  "@dailyMomentChestLeft": {
-    "description": "Daily moment: ChestLeft."
-  },
   "dailyMomentSpinLeft": "Giro gratis disponible",
-  "@dailyMomentSpinLeft": {
-    "description": "Daily moment: SpinLeft."
-  },
-  "dailyMomentStreakLeft": "Racha diaria disponible",
-  "@dailyMomentStreakLeft": {
-    "description": "Daily moment: StreakLeft."
-  }
+  "dailyMomentStreakLeft": "Racha diaria disponible"
 }

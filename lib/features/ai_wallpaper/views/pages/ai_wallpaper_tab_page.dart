@@ -52,8 +52,8 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_actions.dart
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheets.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_style_sheet.dart';
-import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -1286,6 +1286,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         app_state.aiSubmitEnabled &&
         !_submitting &&
         !_unconfirmedSubmissionIds.contains(hero.id);
+    final bool hasUploadAward = DailyMomentConfig.enabled && (_uploadAwards[hero.id] ?? 0) > 0;
+    final bool hasUnconfirmedSubmission = _unconfirmedSubmissionIds.contains(hero.id);
     return AiResultView(
       key: const ValueKey<String>('result'),
       record: hero,
@@ -1298,18 +1300,24 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       onSelectTake: _selectTake,
       onFollowUp: _runFollowUp,
       trailing: const CoinBalanceChip(sourceTag: 'ai_gen_page', showStreak: false),
-      notice: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          if (DailyMomentConfig.enabled && (_uploadAwards[hero.id] ?? 0) > 0)
-            Text(
-              context.l10n.economyCoinsEarned(_uploadAwards[hero.id]!),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.primary),
-            ),
-          if (_unconfirmedSubmissionIds.contains(hero.id))
-            AiUnconfirmedNotice(onCheck: () => context.router.push(const ReviewRoute())),
-        ],
-      ),
+      notice: hasUploadAward || hasUnconfirmedSubmission
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (hasUploadAward)
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      context.l10n.economyCoinsEarned(_uploadAwards[hero.id]!),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.primary),
+                    ),
+                  ),
+                if (hasUnconfirmedSubmission) AiUnconfirmedNotice(onCheck: () => context.router.push(ReviewRoute())),
+              ],
+            )
+          : null,
       actions: AiResultActions(
         showSave: !hideSetWallpaperUi,
         showRefine: app_state.aiVariationsEnabled,

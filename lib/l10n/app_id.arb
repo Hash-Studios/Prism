@@ -10690,138 +10690,31 @@
     }
   },
   "dailyMomentTitle": "Momen harian",
-  "@dailyMomentTitle": {
-    "description": "Daily moment: Title."
-  },
   "dailyMomentStreakTitle": "Runtun harian",
-  "@dailyMomentStreakTitle": {
-    "description": "Daily moment: StreakTitle."
-  },
   "dailyMomentChestTitle": "Peti harian",
-  "@dailyMomentChestTitle": {
-    "description": "Daily moment: ChestTitle."
-  },
   "dailyMomentSpinTitle": "Putaran gratis",
-  "@dailyMomentSpinTitle": {
-    "description": "Daily moment: SpinTitle."
-  },
   "dailyMomentUnavailable": "Hadiah ini tidak lagi tersedia hari ini.",
-  "@dailyMomentUnavailable": {
-    "description": "Daily moment: Unavailable."
-  },
   "dailyMomentError": "Hadiah tidak dapat dimuat. Coba lagi.",
-  "@dailyMomentError": {
-    "description": "Daily moment: Error."
-  },
   "dailyMomentStreakReceipt": "{coins} koin diperoleh · runtun {days} hari",
-  "@dailyMomentStreakReceipt": {
-    "description": "Daily moment: StreakReceipt.",
-    "placeholders": {
-      "coins": {
-        "type": "int"
-      },
-      "days": {
-        "type": "int"
-      }
-    }
-  },
   "dailyMomentCosmetic": "Item kosmetik ditambahkan ke koleksi",
-  "@dailyMomentCosmetic": {
-    "description": "Daily moment: Cosmetic."
-  },
   "dailyMomentReward": "{coins} koin diperoleh",
-  "@dailyMomentReward": {
-    "description": "Daily moment: Reward.",
-    "placeholders": {
-      "coins": {
-        "type": "int"
-      }
-    }
-  },
   "dailyMomentChestBody": "Buka peti hari ini saat kamu siap.",
-  "@dailyMomentChestBody": {
-    "description": "Daily moment: ChestBody."
-  },
   "dailyMomentSpinBody": "Putaran gratismu siap.",
-  "@dailyMomentSpinBody": {
-    "description": "Daily moment: SpinBody."
-  },
   "dailyMomentBalance": "Saldo: {coins} koin",
-  "@dailyMomentBalance": {
-    "description": "Daily moment: Balance.",
-    "placeholders": {
-      "coins": {
-        "type": "int"
-      }
-    }
-  },
   "dailyMomentDone": "Selesai",
-  "@dailyMomentDone": {
-    "description": "Daily moment: Done."
-  },
   "dailyMomentRetry": "Coba lagi",
-  "@dailyMomentRetry": {
-    "description": "Daily moment: Retry."
-  },
   "dailyMomentContinue": "Lanjutkan",
-  "@dailyMomentContinue": {
-    "description": "Daily moment: Continue."
-  },
   "dailyMomentOpenFree": "Buka peti gratis",
-  "@dailyMomentOpenFree": {
-    "description": "Daily moment: OpenFree."
-  },
   "dailyMomentOpenChest": "Buka dengan {coins} koin",
-  "@dailyMomentOpenChest": {
-    "description": "Daily moment: OpenChest.",
-    "placeholders": {
-      "coins": {
-        "type": "int"
-      }
-    }
-  },
   "dailyMomentSpinAction": "Putar gratis",
-  "@dailyMomentSpinAction": {
-    "description": "Daily moment: SpinAction."
-  },
   "dailyMomentClose": "Tutup momen harian",
-  "@dailyMomentClose": {
-    "description": "Daily moment: Close."
-  },
   "dailyMomentToday": "Hari ini",
-  "@dailyMomentToday": {
-    "description": "Daily moment: Today."
-  },
   "dailyMomentReady": "Hadiah harian sudah siap",
-  "@dailyMomentReady": {
-    "description": "Daily moment: Ready."
-  },
   "dailyMomentComplete": "Hari ini sudah selesai",
-  "@dailyMomentComplete": {
-    "description": "Daily moment: Complete."
-  },
   "dailyMomentResume": "Lanjutkan momen harian",
-  "@dailyMomentResume": {
-    "description": "Daily moment: Resume."
-  },
   "dailyMomentMore": "Lainnya",
-  "@dailyMomentMore": {
-    "description": "Daily moment: More."
-  },
   "dailyMomentQuests": "Misi",
-  "@dailyMomentQuests": {
-    "description": "Daily moment: Quests."
-  },
   "dailyMomentChestLeft": "Peti harian tersedia",
-  "@dailyMomentChestLeft": {
-    "description": "Daily moment: ChestLeft."
-  },
   "dailyMomentSpinLeft": "Putaran gratis tersedia",
-  "@dailyMomentSpinLeft": {
-    "description": "Daily moment: SpinLeft."
-  },
-  "dailyMomentStreakLeft": "Runtun harian tersedia",
-  "@dailyMomentStreakLeft": {
-    "description": "Daily moment: StreakLeft."
-  }
+  "dailyMomentStreakLeft": "Runtun harian tersedia"
 }
