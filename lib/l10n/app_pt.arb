@@ -3012,6 +3012,5 @@
   "wallMetadataAbsent": "Não definido",
   "wallMetadataResubmitted": "Reenviado · tentativa {attempt} de 3",
   "wallMetadataPreviousReason": "Motivo da rejeição anterior",
-  "wallMetadataContextUnavailable": "Detalhes do reenvio indisponíveis",
-  "@wallMetadataResubmitted": {"placeholders": {"attempt": {"type": "int"}}}
+  "wallMetadataContextUnavailable": "Detalhes do reenvio indisponíveis"
 }
