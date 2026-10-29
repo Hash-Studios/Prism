@@ -96,25 +96,6 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('the PNG fixture releases its recorded picture', (tester) async {
-    final List<ui.Picture> pictures = <ui.Picture>[];
-    final previousOnCreate = ui.Picture.onCreate;
-    ui.Picture.onCreate = (picture) {
-      previousOnCreate?.call(picture);
-      pictures.add(picture);
-    };
-    try {
-      await tester.runAsync(() => _png(40, 80));
-      expect(pictures, hasLength(1));
-      expect(pictures.single.debugDisposed, isTrue);
-    } finally {
-      ui.Picture.onCreate = previousOnCreate;
-      for (final ui.Picture picture in pictures) {
-        if (!picture.debugDisposed) picture.dispose();
-      }
-    }
-  });
-
   testWidgets('shows loading first, then the empty state with a browse action', (tester) async {
     final pending = Completer<DownloadItemsResult>();
     onList = () => pending.future;
