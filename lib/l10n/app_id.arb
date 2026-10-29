@@ -14,6 +14,39 @@
   "galleryEmptyBody": "Wallpaper ini telah dihapus atau tidak lagi publik.",
   "galleryEmptyTitle": "Wallpaper ini sudah tidak ada",
   "galleryScreenTitle": "Wallpaper untuk Anda",
+  "favouritePin": "Sematkan ke atas",
+  "@favouritePin": {
+    "description": "Hold-menu action on a favourite wallpaper. Keeps it at the top of Favourites."
+  },
+  "favouriteUnpin": "Lepas sematan",
+  "@favouriteUnpin": {
+    "description": "Hold-menu action on a pinned favourite. Returns it to its normal place in Favourites."
+  },
+  "favouritePinnedToast": "Disematkan di atas Favorit",
+  "@favouritePinnedToast": {
+    "description": "Confirmation after the user pins a favourite."
+  },
+  "favouriteUnpinnedToast": "Sematan dilepas",
+  "@favouriteUnpinnedToast": {
+    "description": "Confirmation after the user unpins a favourite."
+  },
+  "favouritePinnedBadge": "Disematkan",
+  "@favouritePinnedBadge": {
+    "description": "Accessibility label of the small pin badge on a pinned favourite tile."
+  },
+  "favouritePinLimit": "{count, plural, other{Anda dapat menyematkan hingga {count} favorit. Lepas satu sematan untuk menyematkan wallpaper ini.}}",
+  "@favouritePinLimit": {
+    "description": "Shown when the user tries to pin more favourites than the limit.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "favouritePinFailed": "Tidak dapat memperbarui sematan. Periksa koneksi Anda lalu coba lagi.",
+  "@favouritePinFailed": {
+    "description": "Shown when pinning or unpinning a favourite fails."
+  },
   "wallpaperFavouriteSearchCountHint": "{count, plural, other{Cari di {count} favorit}}",
   "@wallpaperFavouriteSearchCountHint": {
     "description": "Hint in the favourites search field. It also tells how many favourites there are.",
@@ -6588,10 +6621,6 @@
     "description": "Wallpaper interface text: wallpaperAccentColorsOriginal."
   },
   "wallpaperResetOriginal": "Kembali ke asli",
-  "wallpaperAccentResetHint": "Tahan untuk tindakan, termasuk Kembali ke asli",
-  "@wallpaperAccentResetHint": {
-    "description": "Toast hint explaining how to reset the selected wallpaper accent."
-  },
   "wallpaperAll": "Semua",
   "@wallpaperAll": {
     "description": "Filter option to show all wallpaper sources."
@@ -7853,7 +7882,7 @@
   },
   "wallpaperHidePreviewControls": "Sembunyikan kontrol",
   "@wallpaperHidePreviewControls": {
-    "description": "Accessibility label of the wallpaper preview background: a tap hides the buttons so the whole mock phone screen shows."
+    "description": "Accessibility label and action that hides the buttons: on the wallpaper preview, and on the wallpaper detail screen where it also hides the system bars."
   },
   "wallpaperHistoryBothScreens": "Kedua layar",
   "@wallpaperHistoryBothScreens": {
@@ -7883,7 +7912,7 @@
   "@wallpaperHomeAppName": {
     "description": "Accessible name for the Prism logo."
   },
-  "wallpaperImageSemanticHint": "Ketuk untuk mengganti warna aksen. Tahan untuk favorit, berbagi, dan reset. Gulir untuk detail.",
+  "wallpaperImageSemanticHint": "Tahan untuk favorit, berbagi, dan reset. Gulir untuk detail.",
   "@wallpaperImageSemanticHint": {
     "description": "Accessibility hint describing wallpaper image gestures."
   },
@@ -7892,6 +7921,10 @@
   "wallpaperImageSemanticLabel": "Wallpaper",
   "@wallpaperImageSemanticLabel": {
     "description": "Accessibility label for the wallpaper image."
+  },
+  "wallpaperImmersiveHint": "Ketuk untuk menyembunyikan kontrol",
+  "@wallpaperImmersiveHint": {
+    "description": "Small hint shown once on the wallpaper detail screen. A tap on the wallpaper hides every button and the system bars."
   },
   "wallpaperInsufficientCoins": "Koin tidak cukup. Dapatkan koin di Hadiah.",
   "@wallpaperInsufficientCoins": {
@@ -8780,7 +8813,7 @@
   },
   "wallpaperShowPreviewControls": "Tampilkan kontrol",
   "@wallpaperShowPreviewControls": {
-    "description": "Accessibility label of the wallpaper preview background: a tap shows the buttons again."
+    "description": "Accessibility label and action that shows the buttons again, on the wallpaper preview and on the wallpaper detail screen."
   },
   "wallpaperSignIn": "Masuk",
   "@wallpaperSignIn": {

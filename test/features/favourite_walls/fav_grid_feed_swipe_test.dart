@@ -27,6 +27,8 @@ class _MockToggleFavouriteWallUseCase extends Mock implements ToggleFavouriteWal
 
 class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWallsUseCase {}
 
+class _MockSetFavouritePinUseCase extends Mock implements SetFavouritePinUseCase {}
+
 class _MockStackRouter extends Mock implements StackRouter {}
 
 void main() {
@@ -66,7 +68,12 @@ void main() {
   });
 
   FavouriteWallsBloc createBloc() {
-    bloc = FavouriteWallsBloc(fetchUseCase, _MockToggleFavouriteWallUseCase(), _MockClearFavouriteWallsUseCase());
+    bloc = FavouriteWallsBloc(
+      fetchUseCase,
+      _MockToggleFavouriteWallUseCase(),
+      _MockClearFavouriteWallsUseCase(),
+      _MockSetFavouritePinUseCase(),
+    );
     addTearDown(bloc.close);
     return bloc;
   }

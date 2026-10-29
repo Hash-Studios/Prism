@@ -19,6 +19,8 @@ class _MockToggleFavouriteWallUseCase extends Mock implements ToggleFavouriteWal
 
 class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWallsUseCase {}
 
+class _MockSetFavouritePinUseCase extends Mock implements SetFavouritePinUseCase {}
+
 void main() {
   setUpAll(() {
     registerFallbackValue(const FetchFavouriteWallsParams(userId: 'user_1'));
@@ -54,7 +56,7 @@ void main() {
 
   blocTest<FavouriteWallsBloc, FavouriteWallsState>(
     'loads favourites for user and toggles item',
-    build: () => FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase),
+    build: () => FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase()),
     act: (bloc) => bloc
       ..add(const FavouriteWallsEvent.started(userId: 'user_1'))
       ..add(
@@ -70,7 +72,8 @@ void main() {
     },
   );
 
-  FavouriteWallsBloc build() => FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+  FavouriteWallsBloc build() =>
+      FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
 
   ToggleFavouriteWallParams lastToggle() =>
       verify(() => toggleUseCase(captureAny())).captured.last as ToggleFavouriteWallParams;
@@ -228,7 +231,7 @@ void main() {
 
   test('toggled walls get favouritedAt so recently added puts the latest first', () async {
     when(() => fetchUseCase(any())).thenAnswer((_) async => Result.success(const <FavouriteWallEntity>[]));
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase)
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase())
       ..add(const FavouriteWallsEvent.started(userId: 'user_1'));
     await bloc.stream.firstWhere((s) => s.status == LoadStatus.success);
 
@@ -252,7 +255,7 @@ void main() {
       if (storedParams.length == 1) await firstWrite.future;
       return Result.success(true);
     });
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase)
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase())
       ..add(const FavouriteWallsEvent.started(userId: 'user_1'));
     await bloc.stream.firstWhere((s) => s.status == LoadStatus.success);
 
@@ -281,7 +284,7 @@ void main() {
       storedParams = invocation.positionalArguments.single as ToggleFavouriteWallParams;
       return Result.success(true);
     });
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase)
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase())
       ..add(const FavouriteWallsEvent.started(userId: 'user_1'));
     await bloc.stream.firstWhere((s) => s.status == LoadStatus.success);
 
@@ -301,7 +304,7 @@ void main() {
       return Result.success(true);
     });
     final DateTime originalStamp = DateTime.utc(2024, 2, 3);
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase)
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase())
       ..add(const FavouriteWallsEvent.started(userId: 'user_1'));
     await bloc.stream.firstWhere((s) => s.status == LoadStatus.success);
 
@@ -324,7 +327,7 @@ void main() {
       storedParams = invocation.positionalArguments.single as ToggleFavouriteWallParams;
       return Result.success(true);
     });
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase)
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase())
       ..add(const FavouriteWallsEvent.started(userId: 'user_1'));
     await bloc.stream.firstWhere((s) => s.status == LoadStatus.success);
     final DateTime oldDate = DateTime.utc(2021, 2, 3);
@@ -343,7 +346,7 @@ void main() {
     when(() => fetchUseCase(any())).thenAnswer(
       (_) async => Result.success(<FavouriteWallEntity>[prismFav('recent', createdAt: DateTime.utc(2026)), oldWall]),
     );
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase)
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase())
       ..add(const FavouriteWallsEvent.started(userId: 'user_1'));
     await bloc.stream.firstWhere((s) => s.status == LoadStatus.success);
 

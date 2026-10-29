@@ -30,6 +30,35 @@ class AppLocalizationsDe extends AppLocalizations {
   String get galleryScreenTitle => 'Hintergrundbilder für dich';
 
   @override
+  String get favouritePin => 'Oben anheften';
+
+  @override
+  String get favouriteUnpin => 'Lösen';
+
+  @override
+  String get favouritePinnedToast => 'Oben in Favoriten angeheftet';
+
+  @override
+  String get favouriteUnpinnedToast => 'Anheftung aufgehoben';
+
+  @override
+  String get favouritePinnedBadge => 'Angeheftet';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du kannst bis zu $count Favoriten anheften. Löse eine Anheftung, um dieses Hintergrundbild anzuheften.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed =>
+      'Anheften konnte nicht aktualisiert werden. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7583,9 +7612,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperResetOriginal => 'Zurück zum Original';
 
   @override
-  String get wallpaperAccentResetHint => 'Gedrückt halten für Aktionen, auch Zurück zum Original';
-
-  @override
   String get wallpaperAll => 'Alle';
 
   @override
@@ -8635,7 +8661,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticHint =>
-      'Tippen, um die Akzentfarbe zu wechseln. Gedrückt halten für Favoriten, Teilen und Zurücksetzen. Für Details scrollen.';
+      'Gedrückt halten für Favoriten, Teilen und Zurücksetzen. Für Details scrollen.';
 
   @override
   String get wallpaperPreviousInFeed => 'Vorheriges Hintergrundbild';
@@ -8645,6 +8671,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'Hintergrundbild';
+
+  @override
+  String get wallpaperImmersiveHint => 'Tippen, um Steuerelemente auszublenden';
 
   @override
   String get wallpaperInsufficientCoins => 'Nicht genug Coins. Verdiene Coins bei „Belohnungen“.';

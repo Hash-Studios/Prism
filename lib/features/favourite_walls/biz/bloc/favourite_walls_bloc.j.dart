@@ -20,6 +20,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     this._fetchFavouriteWallsUseCase,
     this._toggleFavouriteWallUseCase,
     this._clearFavouriteWallsUseCase,
+    this._setFavouritePinUseCase,
   ) : super(FavouriteWallsState.initial()) {
     on<_Started>((event, emit) => _serial(() => _onStarted(event, emit)));
     on<_Synced>(_onSynced);
@@ -31,13 +32,16 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     on<_QueryChanged>((event, emit) => emit(state.copyWith(query: event.query)));
     on<_RemoveRequested>((event, emit) => _serial(() => _onRemoveRequested(event, emit)));
     on<_RestoreRequested>((event, emit) => _serial(() => _onRestoreRequested(event, emit)));
+    on<_PinRequested>((event, emit) => _serial(() => _onPinRequested(event, emit)));
   }
 
   final FetchFavouriteWallsUseCase _fetchFavouriteWallsUseCase;
   final ToggleFavouriteWallUseCase _toggleFavouriteWallUseCase;
   final ClearFavouriteWallsUseCase _clearFavouriteWallsUseCase;
+  final SetFavouritePinUseCase _setFavouritePinUseCase;
 
   Future<void> _queueTail = Future<void>.value();
+  int _accountGeneration = 0;
 
   /// Loads and mutations share one queue, so a refresh cannot interleave with a removal or an undo.
   Future<void> _serial(Future<void> Function() action) async {
@@ -70,6 +74,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   }
 
   Future<void> _onStarted(_Started event, Emitter<FavouriteWallsState> emit) async {
+    if (state.userId != event.userId) _accountGeneration++;
     emit(
       state.copyWith(
         status: LoadStatus.loading,
@@ -82,6 +87,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   }
 
   void _onSynced(_Synced event, Emitter<FavouriteWallsState> emit) {
+    if (state.userId != event.userId) _accountGeneration++;
     emit(
       state.copyWith(
         status: LoadStatus.success,
@@ -126,7 +132,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     final bool currentlyFavourited = event.desired == null ? _containsWall(event.wall.id) : !event.desired!;
     final FavouriteWallEntity wall = currentlyFavourited
         ? event.wall
-        : event.wall.withFavouritedAt(DateTime.now().toUtc());
+        : event.wall.withFavouritedAt(DateTime.now().toUtc()).withPinnedAt(null);
     final result = await _toggleFavouriteWallUseCase(
       ToggleFavouriteWallParams(userId: state.userId, wall: wall, currentlyFavourited: currentlyFavourited),
     );
@@ -213,9 +219,10 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     final List<FavouriteWallEntity> restored = <FavouriteWallEntity>[];
     for (final FavouriteWallEntity original in event.walls) {
       if (_containsWall(original.id) || restored.any((item) => item.id == original.id)) continue;
-      final FavouriteWallEntity wall = original.withFavouritedAt(
-        original.favouritedAt ?? original.createdAt ?? DateTime.now().toUtc(),
-      );
+      // A removed favourite lost its pin, so the undo brings it back unpinned.
+      final FavouriteWallEntity wall = original
+          .withFavouritedAt(original.favouritedAt ?? original.createdAt ?? DateTime.now().toUtc())
+          .withPinnedAt(null);
       final result = await _toggleFavouriteWallUseCase(
         ToggleFavouriteWallParams(userId: state.userId, wall: wall, currentlyFavourited: false),
       );
@@ -233,4 +240,67 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
       ),
     );
   }
+
+  Future<void> _onPinRequested(_PinRequested event, Emitter<FavouriteWallsState> emit) async {
+    final String userId = state.userId;
+    final int accountGeneration = _accountGeneration;
+    final FavouriteWallEntity? wall = state.items.where((item) => item.id == event.wallId).firstOrNull;
+    if (wall == null) {
+      emit(
+        state.copyWith(
+          actionStatus: ActionStatus.failure,
+          completedOperationId: event.operationId,
+          failure: const ValidationFailure('This wall is not a favourite.'),
+        ),
+      );
+      return;
+    }
+    if (wall.pinned == event.pinned) {
+      emit(state.copyWith(actionStatus: ActionStatus.success, completedOperationId: event.operationId, failure: null));
+      return;
+    }
+    if (event.pinned && state.pinnedCount >= maxPinnedFavourites) {
+      emit(
+        state.copyWith(
+          actionStatus: ActionStatus.failure,
+          completedOperationId: event.operationId,
+          failure: const FavouritePinLimitFailure(),
+        ),
+      );
+      return;
+    }
+    emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
+    final DateTime? pinnedAt = event.pinned ? DateTime.now().toUtc() : null;
+    final result = await _setFavouritePinUseCase(SetFavouritePinParams(userId: userId, wall: wall, pinnedAt: pinnedAt));
+    if (userId != state.userId || accountGeneration != _accountGeneration) {
+      emit(
+        state.copyWith(
+          actionStatus: ActionStatus.failure,
+          completedOperationId: event.operationId,
+          failure: const ValidationFailure('The account changed during this pin update.'),
+        ),
+      );
+      return;
+    }
+    result.fold(
+      onSuccess: (_) => emit(
+        state.copyWith(
+          actionStatus: ActionStatus.success,
+          items: <FavouriteWallEntity>[
+            for (final FavouriteWallEntity item in state.items) item.id == wall.id ? item.withPinnedAt(pinnedAt) : item,
+          ],
+          completedOperationId: event.operationId,
+          failure: null,
+        ),
+      ),
+      onFailure: (failure) => emit(
+        state.copyWith(actionStatus: ActionStatus.failure, completedOperationId: event.operationId, failure: failure),
+      ),
+    );
+  }
+}
+
+/// The user already pinned [maxPinnedFavourites] walls.
+class FavouritePinLimitFailure extends ValidationFailure {
+  const FavouritePinLimitFailure() : super('Pinned favourites are at the limit.');
 }
