@@ -29,6 +29,7 @@ import 'package:Prism/features/theme_mode/views/widgets/diwali_decor.dart';
 import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_usecase.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
@@ -318,7 +319,10 @@ class _HomeTabPageState extends State<HomeTabPage> {
       context.read<FavouriteWallsBloc>().add(FavouriteWallsEvent.synced(userId: update.userId, items: update.items));
     });
     final user = app_state.prismUser;
-    if (user.loggedIn) unawaited(sync.start(user.id));
+    if (user.loggedIn) {
+      unawaited(sync.start(user.id));
+      unawaited(restoreAccountHistory(user.id));
+    }
   }
 
   @override

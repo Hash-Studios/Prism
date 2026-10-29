@@ -9847,5 +9847,29 @@
   "tasteQuizRetakeFailed": "Wallpaper tidak bisa dimuat. Periksa koneksi kamu dan coba lagi.",
   "@tasteQuizRetakeFailed": {
     "description": "Toast when the walls for a quiz retake do not load."
-  }
+  },
+  "historySetAndDownloaded": "Dipasang dan diunduh",
+  "historyDownloaded": "Diunduh",
+  "historyRecentlyViewed": "Baru dilihat",
+  "historySyncedNote": "Disimpan di akun Anda, jadi ini kembali saat Anda pakai ponsel baru.",
+  "historySyncedNoteGuest": "Masuk untuk menyimpan ini di ponsel baru.",
+  "historyActionSet": "Dipasang",
+  "historyActionDownloaded": "Diunduh",
+  "historySyncedTileLabel": "{action} pukul {time}",
+  "historyClearSyncedBody": "Ini menghapus daftar di sini dan di akun Anda. Wallpaper dan unduhan Anda tetap seperti semula.",
+  "historyClearViewedTitle": "Hapus baru dilihat?",
+  "historyClearViewedBody": "Ini menghapus wallpaper yang Anda buka dari daftar ini dan dari Beranda.",
+  "historyClearViewedAction": "Hapus baru dilihat",
+  "historyEmptyBodyAndroid": "Wallpaper yang Anda pasang atau unduh muncul di sini, agar mudah Anda temukan lagi.",
+  "historyEmptyBodyIos": "Wallpaper yang Anda unduh muncul di sini, agar mudah Anda temukan lagi.",
+  "historyViewedEmptyTitle": "Belum ada yang dilihat",
+  "historyViewedEmptyBody": "Wallpaper yang Anda buka muncul di sini, agar mudah Anda temukan lagi.",
+  "historyViewedOffTitle": "Riwayat lihat nonaktif",
+  "historyViewedOffBody": "Aktifkan Simpan riwayat lihat untuk melihat wallpaper yang Anda buka di sini.",
+  "historyViewedOffAction": "Aktifkan",
+  "historyViewedTileLabel": "Buka wallpaper, dilihat pukul {time}",
+  "pickUpTitle": "Lanjutkan dari terakhir",
+  "pickUpTileLabel": "Buka wallpaper {index} dari {count}",
+  "settingsSaveViewingHistory": "Simpan riwayat lihat",
+  "settingsSaveViewingHistoryBody": "Menampilkan wallpaper yang Anda buka di Riwayat dan di Beranda. Jika dinonaktifkan, daftar akan dihapus."
 }

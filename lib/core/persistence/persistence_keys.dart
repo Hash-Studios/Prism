@@ -49,6 +49,14 @@ class PersistenceKeys {
   // JSON list of applied wallpapers, newest first. Owned by wallpaper_history.
   static const String wallpaperHistoryItems = 'wallpaper.history.items';
 
+  // Recently viewed walls on this device, newest first, and the Save viewing history setting.
+  static const String viewedHistoryItems = 'history.viewed.items';
+  static const String viewedHistoryEnabled = 'history.viewed.enabled';
+
+  // Local copy of usersv2/{uid}/history, and the account it was last restored for on this device.
+  static const String syncedHistoryItems = 'history.synced.items';
+  static const String syncedHistoryRestoredFor = 'history.synced.restored_for';
+
   // JSON list of recent search queries, newest first.
   static const String recentSearches = 'search.recent';
 

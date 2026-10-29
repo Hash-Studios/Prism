@@ -10917,6 +10917,88 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get tasteQuizRetakeFailed =>
       'Não foi possível carregar os papéis de parede. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get historySetAndDownloaded => 'Definido e baixado';
+
+  @override
+  String get historyDownloaded => 'Baixado';
+
+  @override
+  String get historyRecentlyViewed => 'Vistos recentemente';
+
+  @override
+  String get historySyncedNote => 'Salvo na sua conta, então eles voltam em um celular novo.';
+
+  @override
+  String get historySyncedNoteGuest => 'Entre para manter esses itens em um celular novo.';
+
+  @override
+  String get historyActionSet => 'Definido';
+
+  @override
+  String get historyActionDownloaded => 'Baixado';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action às $time';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'Isso remove a lista aqui e na sua conta. Seus papéis de parede e downloads continuam como estão.';
+
+  @override
+  String get historyClearViewedTitle => 'Limpar vistos recentemente?';
+
+  @override
+  String get historyClearViewedBody => 'Isso remove da lista e do Início os papéis de parede que você abriu.';
+
+  @override
+  String get historyClearViewedAction => 'Limpar vistos recentemente';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'Os papéis de parede que você define ou baixa aparecem aqui, para você encontrar de novo.';
+
+  @override
+  String get historyEmptyBodyIos => 'Os papéis de parede que você baixa aparecem aqui, para você encontrar de novo.';
+
+  @override
+  String get historyViewedEmptyTitle => 'Nada visto ainda';
+
+  @override
+  String get historyViewedEmptyBody => 'Os papéis de parede que você abre aparecem aqui, para você encontrar de novo.';
+
+  @override
+  String get historyViewedOffTitle => 'O histórico de visualização está desativado';
+
+  @override
+  String get historyViewedOffBody =>
+      'Ative Salvar histórico de visualização para ver aqui os papéis de parede que você abrir.';
+
+  @override
+  String get historyViewedOffAction => 'Ativar';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'Abrir papel de parede, visto às $time';
+  }
+
+  @override
+  String get pickUpTitle => 'Continue de onde parou';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return 'Abrir papel de parede $index de $count';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'Salvar histórico de visualização';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'Mostra os papéis de parede que você abre no Histórico e no Início. Desligar isso limpa a lista.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -21830,4 +21912,86 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get tasteQuizRetakeFailed =>
       'Não foi possível carregar os papéis de parede. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get historySetAndDownloaded => 'Definido e baixado';
+
+  @override
+  String get historyDownloaded => 'Baixado';
+
+  @override
+  String get historyRecentlyViewed => 'Vistos recentemente';
+
+  @override
+  String get historySyncedNote => 'Salvo na sua conta, então eles voltam em um celular novo.';
+
+  @override
+  String get historySyncedNoteGuest => 'Entre para manter esses itens em um celular novo.';
+
+  @override
+  String get historyActionSet => 'Definido';
+
+  @override
+  String get historyActionDownloaded => 'Baixado';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action às $time';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'Isso remove a lista aqui e na sua conta. Seus papéis de parede e downloads continuam como estão.';
+
+  @override
+  String get historyClearViewedTitle => 'Limpar vistos recentemente?';
+
+  @override
+  String get historyClearViewedBody => 'Isso remove da lista e do Início os papéis de parede que você abriu.';
+
+  @override
+  String get historyClearViewedAction => 'Limpar vistos recentemente';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'Os papéis de parede que você define ou baixa aparecem aqui, para você encontrar de novo.';
+
+  @override
+  String get historyEmptyBodyIos => 'Os papéis de parede que você baixa aparecem aqui, para você encontrar de novo.';
+
+  @override
+  String get historyViewedEmptyTitle => 'Nada visto ainda';
+
+  @override
+  String get historyViewedEmptyBody => 'Os papéis de parede que você abre aparecem aqui, para você encontrar de novo.';
+
+  @override
+  String get historyViewedOffTitle => 'O histórico de visualização está desativado';
+
+  @override
+  String get historyViewedOffBody =>
+      'Ative Salvar histórico de visualização para ver aqui os papéis de parede que você abrir.';
+
+  @override
+  String get historyViewedOffAction => 'Ativar';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'Abrir papel de parede, visto às $time';
+  }
+
+  @override
+  String get pickUpTitle => 'Continue de onde parou';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return 'Abrir papel de parede $index de $count';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'Salvar histórico de visualização';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'Mostra os papéis de parede que você abre no Histórico e no Início. Desligar isso limpa a lista.';
 }

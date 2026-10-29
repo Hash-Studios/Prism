@@ -9850,5 +9850,29 @@
   "tasteQuizRetakeFailed": "Hintergrundbilder konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
   "@tasteQuizRetakeFailed": {
     "description": "Toast when the walls for a quiz retake do not load."
-  }
+  },
+  "historySetAndDownloaded": "Gesetzt und heruntergeladen",
+  "historyDownloaded": "Heruntergeladen",
+  "historyRecentlyViewed": "Zuletzt angesehen",
+  "historySyncedNote": "In deinem Konto gespeichert, damit sie auf einem neuen Handy wieder da sind.",
+  "historySyncedNoteGuest": "Melde dich an, damit sie auf einem neuen Handy bleiben.",
+  "historyActionSet": "Gesetzt",
+  "historyActionDownloaded": "Heruntergeladen",
+  "historySyncedTileLabel": "{action} um {time}",
+  "historyClearSyncedBody": "Die Liste wird hier und in deinem Konto entfernt. Deine Hintergrundbilder und Downloads bleiben erhalten.",
+  "historyClearViewedTitle": "Zuletzt angesehene löschen?",
+  "historyClearViewedBody": "Die Hintergrundbilder, die du geöffnet hast, werden aus dieser Liste und von der Startseite entfernt.",
+  "historyClearViewedAction": "Zuletzt angesehene löschen",
+  "historyEmptyBodyAndroid": "Hintergrundbilder, die du setzt oder herunterlädst, erscheinen hier, damit du sie wiederfindest.",
+  "historyEmptyBodyIos": "Hintergrundbilder, die du herunterlädst, erscheinen hier, damit du sie wiederfindest.",
+  "historyViewedEmptyTitle": "Noch nichts angesehen",
+  "historyViewedEmptyBody": "Hintergrundbilder, die du öffnest, erscheinen hier, damit du sie wiederfindest.",
+  "historyViewedOffTitle": "Ansichtsverlauf ist aus",
+  "historyViewedOffBody": "Schalte Ansichtsverlauf speichern ein, um die Hintergrundbilder zu sehen, die du hier öffnest.",
+  "historyViewedOffAction": "Einschalten",
+  "historyViewedTileLabel": "Hintergrundbild öffnen, angesehen um {time}",
+  "pickUpTitle": "Dort weitermachen, wo du aufgehört hast",
+  "pickUpTileLabel": "Hintergrundbild {index} von {count} öffnen",
+  "settingsSaveViewingHistory": "Ansichtsverlauf speichern",
+  "settingsSaveViewingHistoryBody": "Zeigt die Hintergrundbilder, die du öffnest, im Verlauf und auf der Startseite. Wenn du das ausschaltest, wird die Liste gelöscht."
 }

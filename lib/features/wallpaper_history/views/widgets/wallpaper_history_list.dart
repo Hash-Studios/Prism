@@ -4,12 +4,15 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
+import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
 import 'package:Prism/features/wallpaper_history/views/widgets/applied_wallpaper_tile.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -47,35 +50,69 @@ String historyDayLabel(AppLocalizations l10n, DateTime day, DateTime now) {
       : DateFormat.yMMMEd(l10n.localeName).format(day);
 }
 
-/// Asks first, then clears the history in the nearest [WallpaperHistoryBloc].
-Future<void> confirmClearHistory(BuildContext context) async {
+enum HistorySegment { setAndDownloaded, viewed }
+
+/// Asks first, then clears one list in the nearest [WallpaperHistoryBloc].
+Future<void> confirmClearHistory(BuildContext context, HistorySegment segment) async {
   final WallpaperHistoryBloc bloc = context.read<WallpaperHistoryBloc>();
-  final int count = bloc.state.items.length;
+  final AppLocalizations l10n = context.l10n;
+  final bool viewed = segment == HistorySegment.viewed;
+  final int count = viewed ? bloc.state.viewed.length : bloc.state.items.length;
   final bool confirmed = await showPrismConfirm(
     context,
-    title: context.l10n.wallpaperClearHistoryTitle,
-    message: context.l10n.wallpaperClearHistoryBody,
-    confirmLabel: context.l10n.wallpaperClearHistoryAction,
+    title: viewed ? l10n.historyClearViewedTitle : l10n.wallpaperClearHistoryTitle,
+    message: viewed ? l10n.historyClearViewedBody : l10n.historyClearSyncedBody,
+    confirmLabel: viewed ? l10n.historyClearViewedAction : l10n.wallpaperClearHistoryAction,
     destructive: true,
   );
   if (!confirmed) return;
   PrismHaptics.tap();
-  bloc.add(const WallpaperHistoryEvent.cleared());
-  unawaited(analytics.track(LibraryHistoryClearedEvent(count: count)));
+  if (viewed) {
+    bloc.add(const WallpaperHistoryEvent.viewedCleared());
+    unawaited(analytics.track(RecentlyViewedClearedEvent(count: count)));
+  } else {
+    bloc.add(const WallpaperHistoryEvent.cleared());
+    unawaited(analytics.track(LibraryHistoryClearedEvent(count: count)));
+  }
 }
 
-/// The Library's History tab: the wallpapers the user set, grouped by day. A tap opens the wall; the button on each
-/// tile sets it again.
-class WallpaperHistoryList extends StatelessWidget {
-  const WallpaperHistoryList({super.key, this.now});
+/// A recently viewed wall as a tile row. It opens the detail screen.
+AppliedWallpaper _viewedRow(HistoryWall wall) => AppliedWallpaper(
+  id: 'viewed:${wall.key}',
+  source: wall.source.wireValue,
+  thumbnailUrl: wall.thumbnailUrl,
+  fullUrl: '',
+  target: HistoryAction.view.name,
+  appliedAt: wall.at,
+  wallpaperId: wall.id,
+);
+
+/// The Library's History tab: walls set or downloaded (synced to the account), and walls viewed on this device. Both
+/// are grouped by day. A tap opens the wall; on Android the button on a set tile sets it again.
+class WallpaperHistoryList extends StatefulWidget {
+  const WallpaperHistoryList({super.key, this.now, this.canSetWallpaper, this.signedIn});
 
   /// Replaces the clock, for tests.
   final DateTime Function()? now;
 
-  static const Set<WallpaperSource> _catalogSources = <WallpaperSource>{
-    WallpaperSource.prism,
-    WallpaperSource.wallhaven,
-    WallpaperSource.pexels,
+  /// Replaces the platform check, for tests. iOS cannot set wallpapers, so its first list is Downloaded.
+  final bool? canSetWallpaper;
+
+  /// Replaces the signed-in check, for tests.
+  final bool? signedIn;
+
+  @override
+  State<WallpaperHistoryList> createState() => _WallpaperHistoryListState();
+}
+
+class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
+  HistorySegment _segment = HistorySegment.setAndDownloaded;
+
+  bool get _canSet => widget.canSetWallpaper ?? !hideSetWallpaperUi;
+
+  String _segmentLabel(AppLocalizations l10n, HistorySegment segment) => switch (segment) {
+    HistorySegment.setAndDownloaded => _canSet ? l10n.historySetAndDownloaded : l10n.historyDownloaded,
+    HistorySegment.viewed => l10n.historyRecentlyViewed,
   };
 
   static File? _localFile(String path) {
@@ -108,7 +145,7 @@ class WallpaperHistoryList extends StatelessWidget {
     final StackRouter router = context.router;
     final WallpaperSource source = WallpaperSourceX.fromWire(item.source);
     final String id = item.wallpaperId ?? '';
-    if (id.isNotEmpty && _catalogSources.contains(source)) {
+    if (id.isNotEmpty && HistoryWall.catalogSources.contains(source)) {
       PrismHaptics.tap();
       await router.push(WallpaperDetailRoute(wallId: id, source: source, thumbnailUrl: item.thumbnailUrl));
     } else {
@@ -139,47 +176,138 @@ class WallpaperHistoryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<AppliedWallpaper> items = context.select((WallpaperHistoryBloc bloc) => bloc.state.items);
+    final WallpaperHistoryState state = context.select((WallpaperHistoryBloc bloc) => bloc.state);
+    return Column(
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(PrismWallGrid.margin, PrismSpace.sm, PrismWallGrid.margin, 0),
+          child: PrismSegmented<HistorySegment>(
+            values: HistorySegment.values,
+            selected: _segment,
+            labelOf: (segment) => _segmentLabel(context.l10n, segment),
+            onChanged: (segment) {
+              if (segment == _segment) return;
+              PrismHaptics.selection();
+              setState(() => _segment = segment);
+            },
+          ),
+        ),
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: context.motion(PrismDurations.fast),
+            switchInCurve: PrismCurves.enter,
+            switchOutCurve: PrismCurves.enter,
+            child: KeyedSubtree(
+              key: ValueKey<HistorySegment>(_segment),
+              child: switch (_segment) {
+                HistorySegment.setAndDownloaded => _list(
+                  context,
+                  rows: state.items,
+                  note: (widget.signedIn ?? app_state.prismUser.loggedIn)
+                      ? context.l10n.historySyncedNote
+                      : context.l10n.historySyncedNoteGuest,
+                  empty: GlintState(
+                    kind: GlintStateKind.empty,
+                    title: context.l10n.wallpaperHistoryEmptyTitle,
+                    body: _canSet ? context.l10n.historyEmptyBodyAndroid : context.l10n.historyEmptyBodyIos,
+                    actionLabel: context.l10n.wallpaperBrowseWallpapers,
+                    onAction: () => _browse(context),
+                  ),
+                ),
+                HistorySegment.viewed => _list(
+                  context,
+                  rows: state.viewed.map(_viewedRow).toList(growable: false),
+                  empty: state.viewingHistoryOn
+                      ? GlintState(
+                          kind: GlintStateKind.empty,
+                          title: context.l10n.historyViewedEmptyTitle,
+                          body: context.l10n.historyViewedEmptyBody,
+                          actionLabel: context.l10n.wallpaperBrowseWallpapers,
+                          onAction: () => _browse(context),
+                        )
+                      : GlintState(
+                          kind: GlintStateKind.empty,
+                          title: context.l10n.historyViewedOffTitle,
+                          body: context.l10n.historyViewedOffBody,
+                          actionLabel: context.l10n.historyViewedOffAction,
+                          onAction: () {
+                            PrismHaptics.tap();
+                            context.read<WallpaperHistoryBloc>().add(const WallpaperHistoryEvent.viewingTurnedOn());
+                            unawaited(analytics.track(const ViewingHistoryToggledEvent(value: true)));
+                          },
+                        ),
+                ),
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _browse(BuildContext context) =>
+      context.router.navigate(const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()]));
+
+  Widget _list(BuildContext context, {required List<AppliedWallpaper> rows, required Widget empty, String? note}) {
     final WallpaperHistoryBloc bloc = context.read<WallpaperHistoryBloc>();
     Future<void> refresh() async {
       bloc.add(const WallpaperHistoryEvent.started());
     }
 
-    if (items.isEmpty) {
+    final Widget header = Padding(
+      padding: const EdgeInsets.fromLTRB(
+        PrismWallGrid.margin + PrismSpace.xxs,
+        PrismSpace.xs,
+        PrismWallGrid.margin - PrismSpace.xs,
+        0,
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(child: note == null ? const SizedBox.shrink() : Text(note, style: PrismTextStyles.caption(context))),
+          if (rows.isNotEmpty)
+            PrismButton(
+              key: ValueKey<String>('history-clear-${_segment.name}'),
+              label: context.l10n.wallpaperClear,
+              variant: PrismButtonVariant.ghost,
+              size: PrismButtonSize.compact,
+              onPressed: () => unawaited(confirmClearHistory(context, _segment)),
+            ),
+        ],
+      ),
+    );
+    if (rows.isEmpty) {
       return RefreshIndicator(
         onRefresh: refresh,
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Center(
-                child: GlintState(
-                  kind: GlintStateKind.empty,
-                  title: context.l10n.wallpaperHistoryEmptyTitle,
-                  body: context.l10n.wallpaperHistoryEmptyBody,
-                  actionLabel: context.l10n.wallpaperBrowseWallpapers,
-                  onAction: () =>
-                      context.router.navigate(const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()])),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: <Widget>[
+            SliverToBoxAdapter(child: header),
+            // Centred in the space left, and free to grow taller than it at large text sizes.
+            SliverLayoutBuilder(
+              builder: (context, constraints) => SliverToBoxAdapter(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.remainingPaintExtent),
+                  child: Center(child: empty),
                 ),
               ),
             ),
-          ),
+          ],
         ),
       );
     }
     final Set<String> currentIds = <String>{
-      ?currentWallpaperFor(items, 'home')?.id,
-      ?currentWallpaperFor(items, 'lock')?.id,
+      ?currentWallpaperFor(rows, 'home')?.id,
+      ?currentWallpaperFor(rows, 'lock')?.id,
     };
-    final DateTime today = (now ?? DateTime.now)();
+    final DateTime today = (widget.now ?? DateTime.now)();
     final double footer = appliedWallpaperFooterHeight(context);
     return RefreshIndicator(
       onRefresh: refresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: <Widget>[
-          for (final HistoryDay group in groupHistoryByDay(items)) ...<Widget>[
+          SliverToBoxAdapter(child: header),
+          for (final HistoryDay group in groupHistoryByDay(rows)) ...<Widget>[
             SliverToBoxAdapter(
               child: PrismSectionHeader(
                 title: historyDayLabel(context.l10n, group.day, today),
@@ -199,13 +327,14 @@ class WallpaperHistoryList extends StatelessWidget {
                 itemCount: group.items.length,
                 itemBuilder: (context, index) {
                   final AppliedWallpaper item = group.items[index];
+                  final bool local = item.fullUrl.isNotEmpty;
                   return AppliedWallpaperTile(
                     key: ValueKey<String>(item.id),
                     item: item,
                     isCurrent: currentIds.contains(item.id),
                     onTap: () => unawaited(_open(context, item)),
-                    onSetAgain: () => unawaited(_setAgain(context, item)),
-                    onRemove: () => _remove(context, item),
+                    onSetAgain: local ? () => unawaited(_setAgain(context, item)) : null,
+                    onRemove: _segment == HistorySegment.viewed ? null : () => _remove(context, item),
                   );
                 },
               ),

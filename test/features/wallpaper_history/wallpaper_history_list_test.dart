@@ -4,6 +4,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -11,8 +12,10 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
+import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
 import 'package:Prism/features/wallpaper_history/views/widgets/applied_wallpaper_tile.dart';
 import 'package:Prism/features/wallpaper_history/views/widgets/wallpaper_history_list.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -31,6 +34,8 @@ import '../../support/in_memory_local_store.dart';
 
 class _MockStackRouter extends Mock implements StackRouter {}
 
+class _Firestore extends Fake implements FirestoreClient {}
+
 final DateTime fixedNow = DateTime(2026, 10, 28, 15);
 
 AppliedWallpaper item(String id, DateTime at, {String target = 'home', String? wallpaperId}) => AppliedWallpaper(
@@ -48,6 +53,8 @@ void main() {
 
   late FakeAppAnalytics analytics;
   late WallpaperHistoryStore store;
+  late RecentlyViewedStore viewed;
+  late SyncedHistoryStore synced;
   WallpaperHistoryBloc? bloc;
 
   setUpAll(() async {
@@ -58,7 +65,10 @@ void main() {
   setUp(() {
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
-    store = WallpaperHistoryStore(SettingsLocalDataSource(InMemoryLocalStore()));
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    store = WallpaperHistoryStore(settings);
+    viewed = RecentlyViewedStore(settings);
+    synced = SyncedHistoryStore(settings, _Firestore(), ownerId: () => '');
   });
 
   tearDown(() async {
@@ -73,14 +83,16 @@ void main() {
     }
   }
 
-  Widget app({Widget? extra, StackRouter? router}) {
+  Widget app({Widget? extra, StackRouter? router, bool canSetWallpaper = true, bool signedIn = false}) {
     Widget home = BlocProvider.value(
       value: bloc!,
       child: Scaffold(
         body: Column(
           children: <Widget>[
             ?extra,
-            Expanded(child: WallpaperHistoryList(now: () => fixedNow)),
+            Expanded(
+              child: WallpaperHistoryList(now: () => fixedNow, canSetWallpaper: canSetWallpaper, signedIn: signedIn),
+            ),
           ],
         ),
       ),
@@ -95,9 +107,19 @@ void main() {
     );
   }
 
-  Future<void> pumpList(WidgetTester tester, {Widget? extra, StackRouter? router}) async {
-    bloc = WallpaperHistoryBloc(store)..add(const WallpaperHistoryEvent.started());
-    await tester.pumpWidget(app(extra: extra, router: router));
+  Future<void> pumpList(
+    WidgetTester tester, {
+    Widget? extra,
+    StackRouter? router,
+    bool canSetWallpaper = true,
+    bool signedIn = false,
+  }) async {
+    // Tall enough that every tile of a day group is built, the grid is lazy.
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    bloc = WallpaperHistoryBloc(store, synced, viewed)..add(const WallpaperHistoryEvent.started());
+    await tester.pumpWidget(app(extra: extra, router: router, canSetWallpaper: canSetWallpaper, signedIn: signedIn));
     await tester.pump();
   }
 
@@ -302,8 +324,10 @@ void main() {
     await pumpList(
       tester,
       extra: Builder(
-        builder: (context) =>
-            TextButton(onPressed: () => confirmClearHistory(context), child: const Text('Start clear')),
+        builder: (context) => TextButton(
+          onPressed: () => confirmClearHistory(context, HistorySegment.setAndDownloaded),
+          child: const Text('Start clear'),
+        ),
       ),
     );
 
@@ -311,7 +335,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Clear history?'), findsOneWidget);
-    expect(find.text('This removes the list of wallpapers you set. Your wallpapers stay as they are.'), findsOneWidget);
+    expect(
+      find.text('This removes the list here and in your account. Your wallpapers and downloads stay as they are.'),
+      findsOneWidget,
+    );
     await tester.tap(find.text('Clear history'));
     await tester.pump(const Duration(milliseconds: 500));
 
@@ -324,8 +351,10 @@ void main() {
     await pumpList(
       tester,
       extra: Builder(
-        builder: (context) =>
-            TextButton(onPressed: () => confirmClearHistory(context), child: const Text('Start clear')),
+        builder: (context) => TextButton(
+          onPressed: () => confirmClearHistory(context, HistorySegment.setAndDownloaded),
+          child: const Text('Start clear'),
+        ),
       ),
     );
 
@@ -423,5 +452,144 @@ void main() {
     expect(opened.single.wallpaperId, 'prism-1');
     expect(opened.single.wallpaperSource, WallpaperSource.prism);
     expect(opened.single.thumbnailUrl, '/missing/preview.jpg');
+  });
+
+  HistoryWall viewedWall(String id, DateTime at) => HistoryWall.tryCreate(
+    id: id,
+    source: WallpaperSource.prism,
+    thumbnailUrl: 'https://example.com/$id-thumb.jpg',
+    action: HistoryAction.view,
+    at: at,
+  )!;
+
+  HistoryWall syncedWall(String id, DateTime at) => HistoryWall.tryCreate(
+    id: id,
+    source: WallpaperSource.wallhaven,
+    thumbnailUrl: 'https://example.com/$id-thumb.jpg',
+    action: HistoryAction.download,
+    at: at,
+  )!;
+
+  Future<void> openSegment(WidgetTester tester, String label) async {
+    await tester.tap(find.text(label));
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  group('segments', () {
+    testWidgets('Android shows the Set and downloaded and Recently viewed segments', (tester) async {
+      await pumpList(tester);
+
+      expect(find.text('Set and downloaded'), findsOneWidget);
+      expect(find.text('Recently viewed'), findsOneWidget);
+    });
+
+    testWidgets('a local set tile shows the Set again button', (tester) async {
+      await recordAll(<AppliedWallpaper>[item('a', DateTime(2026, 10, 28, 14))]);
+      await pumpList(tester);
+
+      expect(find.byTooltip('Set again'), findsOneWidget);
+    });
+
+    testWidgets('a synced-only download row shows Downloaded and no Set again button', (tester) async {
+      await synced.record(syncedWall('w1', DateTime(2026, 10, 28, 14)));
+      await pumpList(tester);
+
+      expect(find.text('Downloaded'), findsOneWidget);
+      expect(find.byTooltip('Set again'), findsNothing);
+    });
+
+    testWidgets('iOS labels the first segment Downloaded', (tester) async {
+      await pumpList(tester, canSetWallpaper: false);
+
+      expect(find.text('Downloaded'), findsOneWidget);
+      expect(find.text('Set and downloaded'), findsNothing);
+    });
+
+    testWidgets('a signed-in user sees the account note', (tester) async {
+      await pumpList(tester, signedIn: true);
+
+      expect(find.text('Saved to your account, so these come back on a new phone.'), findsOneWidget);
+      expect(find.text('Sign in to keep these on a new phone.'), findsNothing);
+    });
+
+    testWidgets('a guest sees the sign-in note', (tester) async {
+      await pumpList(tester);
+
+      expect(find.text('Sign in to keep these on a new phone.'), findsOneWidget);
+      expect(find.text('Saved to your account, so these come back on a new phone.'), findsNothing);
+    });
+
+    testWidgets('Recently viewed shows viewed walls grouped under Today', (tester) async {
+      await viewed.record(viewedWall('v1', DateTime(2026, 10, 28, 9)));
+      await pumpList(tester);
+
+      await openSegment(tester, 'Recently viewed');
+
+      expect(find.text('Today'), findsOneWidget);
+      expect(find.byType(AppliedWallpaperTile), findsOneWidget);
+    });
+
+    testWidgets('Recently viewed with nothing viewed shows the empty state', (tester) async {
+      await pumpList(tester);
+
+      await openSegment(tester, 'Recently viewed');
+
+      expect(find.text('Nothing viewed yet'), findsOneWidget);
+    });
+
+    testWidgets('Recently viewed with viewing history off offers Turn on, which turns it on', (tester) async {
+      await viewed.setEnabled(false);
+      await pumpList(tester);
+
+      await openSegment(tester, 'Recently viewed');
+      expect(find.text('Viewing history is off'), findsOneWidget);
+
+      await tester.tap(find.text('Turn on'));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(viewed.enabled, isTrue);
+    });
+
+    testWidgets('clearing Recently viewed asks first, Cancel keeps the items', (tester) async {
+      await viewed.record(viewedWall('v1', DateTime(2026, 10, 28, 9)));
+      await pumpList(tester);
+      await openSegment(tester, 'Recently viewed');
+
+      await tester.tap(find.byKey(const ValueKey<String>('history-clear-viewed')));
+      await tester.pumpAndSettle();
+      expect(find.text('Clear recently viewed?'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(bloc!.state.viewed, hasLength(1));
+    });
+
+    testWidgets('confirming Clear recently viewed empties the list', (tester) async {
+      await viewed.record(viewedWall('v1', DateTime(2026, 10, 28, 9)));
+      await pumpList(tester);
+      await openSegment(tester, 'Recently viewed');
+
+      await tester.tap(find.byKey(const ValueKey<String>('history-clear-viewed')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Clear recently viewed'));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Nothing viewed yet'), findsOneWidget);
+      expect(viewed.items(), isEmpty);
+    });
+
+    testWidgets('confirming Clear history on the first segment empties the list', (tester) async {
+      await recordAll(<AppliedWallpaper>[item('a', DateTime(2026, 10, 28, 14))]);
+      await pumpList(tester);
+
+      await tester.tap(find.byKey(const ValueKey<String>('history-clear-setAndDownloaded')));
+      await tester.pumpAndSettle();
+      expect(find.text('Clear history?'), findsOneWidget);
+      await tester.tap(find.text('Clear history'));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(bloc!.state.items, isEmpty);
+      expect(find.text('No wallpapers yet'), findsOneWidget);
+    });
   });
 }

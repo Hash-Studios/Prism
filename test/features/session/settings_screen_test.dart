@@ -16,6 +16,7 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_row.dart';
@@ -30,6 +31,8 @@ import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/session/views/pages/settings_screen.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
+import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/main.dart' as app_main;
@@ -126,6 +129,7 @@ void main() {
     });
     await getIt.reset();
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+    getIt.registerSingleton<RecentlyViewedStore>(RecentlyViewedStore(getIt<SettingsLocalDataSource>()));
     final cacheMaintenance = _MockCacheMaintenanceService();
     when(cacheMaintenance.retainedAssetBytes).thenAnswer((_) async => 0);
     getIt.registerSingleton<CacheMaintenanceService>(cacheMaintenance);
@@ -1086,6 +1090,33 @@ void main() {
       expect(LowDataMode.enabled.value, isTrue);
       expect(getIt<SettingsLocalDataSource>().get<bool>(LowDataMode.settingsKey, defaultValue: false), isTrue);
       expect(switchOf(tester, 'Data saver').value, isTrue);
+    });
+
+    testWidgets('Save viewing history is on by default, and turning it off clears the recent list', (tester) async {
+      await getIt<RecentlyViewedStore>().record(
+        HistoryWall.tryCreate(
+          id: 'v1',
+          source: WallpaperSource.prism,
+          thumbnailUrl: 'https://example.com/v1-thumb.jpg',
+          action: HistoryAction.view,
+          at: DateTime(2026, 10, 28, 9),
+        )!,
+      );
+      await pumpSettings(tester);
+
+      expect(switchOf(tester, 'Save viewing history').value, isTrue);
+      await tester.tap(find.text('Save viewing history'));
+      await tester.pump();
+
+      expect(getIt<RecentlyViewedStore>().enabled, isFalse);
+      expect(getIt<RecentlyViewedStore>().items(), isEmpty);
+      expect(switchOf(tester, 'Save viewing history').value, isFalse);
+
+      await tester.tap(find.text('Save viewing history'));
+      await tester.pump();
+
+      expect(getIt<RecentlyViewedStore>().enabled, isTrue);
+      expect(switchOf(tester, 'Save viewing history').value, isTrue);
     });
 
     testWidgets('the cache size counts tinted wallpapers', (tester) async {

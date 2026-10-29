@@ -19,6 +19,7 @@ import 'package:Prism/features/leaderboard/data/repositories/leaderboard_reposit
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/logger/logger.dart';
@@ -66,6 +67,8 @@ class LocalAccountDataCleaner {
     (name: 'guest favourites', run: (_) => getIt<GuestFavouritesStore>().clear()),
     (name: 'downloaded wallpaper index', run: (String userId) => getIt<DownloadedWallIndex>().clearOwner(userId)),
     (name: 'wallpaper history', run: (_) => getIt<WallpaperHistoryStore>().clear()),
+    (name: 'recently viewed', run: (_) => getIt<RecentlyViewedStore>().clear()),
+    (name: 'synced history copy', run: (_) => getIt<SyncedHistoryStore>().clearLocal()),
     (name: 'feed cache', run: (_) => getIt<FeedCacheLocalDataSource>().clearAllFeedCaches()),
     (
       name: 'user blocks',

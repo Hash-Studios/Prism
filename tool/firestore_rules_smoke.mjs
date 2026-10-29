@@ -73,6 +73,7 @@ const str = (v) => ({ stringValue: v });
 const ts = () => ({ timestampValue: new Date().toISOString() });
 const folderFields = (owner, name = 'Blue walls', extra = {}) => ({ ownerId: str(owner), name: str(name), createdAt: ts(), updatedAt: ts(), itemCount: { integerValue: '0' }, covers: arr([]), ...extra });
 const itemFields = (owner, id = 'abc', provider = 'WallHaven') => ({ id: str(id), provider: str(provider), ownerId: str(owner), addedAt: ts(), url: str('https://example.com/f.jpg'), thumb: str('https://example.com/t.jpg') });
+const historyFields = (id = 'abc', provider = 'wallhaven', extra = {}) => ({ id: str(id), provider: str(provider), thumb: str('https://th.wallhaven.cc/small/ab/abc.jpg'), action: str('set'), at: ts(), ...extra });
 const ownerFilter = (uid) => ({ fieldFilter: { field: { fieldPath: 'ownerId' }, op: 'EQUAL', value: { stringValue: uid } } });
 const newestFirst = (field, limit) => ({ orderBy: [{ field: { fieldPath: field }, direction: 'DESCENDING' }], ...(limit ? { limit } : {}) });
 const commitDocs = async (auth, docs) => {
@@ -570,6 +571,25 @@ const cases = [
   ['deleting account cannot update an item', () => req('PATCH', 'folders/fb/items/wallhaven_abc', { thumb: str('https://example.com/late.jpg') }, Bu, ['thumb']), 403],
   ['deleting account can still remove its items', () => req('DELETE', 'folders/fb/items/wallhaven_abc', null, Bu), 200],
   ['deleting account can still remove its folders', () => req('DELETE', 'folders/atomic', null, Bu), 200],
+  ['owner writes a history entry', () => req('PATCH', 'usersv2/b/history/wallhaven_abc', historyFields(), Bu), 200],
+  ['owner reads own history', () => req('GET', 'usersv2/b/history/wallhaven_abc', null, Bu), 200],
+  ['owner lists own history', () => runCollectionQuery(Bu, 'history', 'usersv2/b'), 200],
+  ['stranger cannot read history', () => req('GET', 'usersv2/b/history/wallhaven_abc', null, C), 403],
+  ['stranger cannot list history', () => runCollectionQuery(C, 'history', 'usersv2/b'), 403],
+  ['signed-out user cannot read history', () => req('GET', 'usersv2/b/history/wallhaven_abc'), 403],
+  ['stranger cannot write history', () => req('PATCH', 'usersv2/b/history/wallhaven_x', historyFields('x'), C), 403],
+  ['stranger cannot delete history', () => req('DELETE', 'usersv2/b/history/wallhaven_abc', null, C), 403],
+  ['history extra field is refused', () => req('PATCH', 'usersv2/b/history/wallhaven_extra', historyFields('extra', 'wallhaven', { target: str('home') }), Bu), 403],
+  ['history original url is refused', () => req('PATCH', 'usersv2/b/history/prism_url', historyFields('url', 'prism', { url: str('https://img.prismwalls.com/o.jpg') }), Bu), 403],
+  ['history full url field is refused', () => req('PATCH', 'usersv2/b/history/prism_full', historyFields('full', 'prism', { fullUrl: str('https://img.prismwalls.com/o.jpg') }), Bu), 403],
+  ['history signed thumb is refused', () => req('PATCH', 'usersv2/b/history/prism_signed', historyFields('signed', 'prism', { thumb: str('https://r2.example.com/o.jpg?X-Amz-Signature=abc') }), Bu), 403],
+  ['history non-https thumb is refused', () => req('PATCH', 'usersv2/b/history/prism_local', historyFields('local', 'prism', { thumb: str('file:///data/x.jpg') }), Bu), 403],
+  ['history long thumb is refused', () => req('PATCH', 'usersv2/b/history/prism_long', historyFields('long', 'prism', { thumb: str(`https://x.com/${'a'.repeat(1100)}`) }), Bu), 403],
+  ['history key must match provider and id', () => req('PATCH', 'usersv2/b/history/wallhaven_other', historyFields('abc'), Bu), 403],
+  ['history unknown provider is refused', () => req('PATCH', 'usersv2/b/history/local_abc', historyFields('abc', 'local'), Bu), 403],
+  ['history unknown action is refused', () => req('PATCH', 'usersv2/b/history/wallhaven_view', historyFields('view', 'wallhaven', { action: str('view') }), Bu), 403],
+  ['history missing time is refused', () => req('PATCH', 'usersv2/b/history/wallhaven_notime', (({ at, ...rest }) => rest)(historyFields('notime')), Bu), 403],
+  ['owner deletes own history entry', () => req('DELETE', 'usersv2/b/history/wallhaven_abc', null, Bu), 200],
 ];
 await seed();
 let bad = 0;

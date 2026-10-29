@@ -1,6 +1,6 @@
 # Library: Favourites, Folders, Downloads and History
 
-The **Library** is one screen with tabs. It holds the wallpapers the user keeps. **Favourites** are saved in the user account. **Folders** group the wallpapers the user saves. **Downloads** are image files on the device. **History** lists the wallpapers the user set (Android only). Favourites and Downloads support multi-select with bulk actions.
+The **Library** is one screen with tabs. It holds the wallpapers the user keeps. **Favourites** are saved in the user account. **Folders** group the wallpapers the user saves. **Downloads** are image files on the device. **History** lists the wallpapers the user set or downloaded, and the wallpapers the user opened. Favourites and Downloads support multi-select with bulk actions.
 
 ## Where to find it
 
@@ -10,14 +10,14 @@ The **Library** is one screen with tabs. It holds the wallpapers the user keeps.
 - Settings > **Wallpaper history** opens the Library on the **History** tab.
 - The Auto-rotate screen links to Favourites and Downloads.
 - A local download notification opens `DownloadScreen`.
-- Route argument: `LibraryRoute(initialTab: LibraryTab.downloads)` opens another tab first. If the tab is not on the device (History on iOS), the Library opens **Favourites**.
+- Route argument: `LibraryRoute(initialTab: LibraryTab.downloads)` opens another tab first.
 
 ## Platforms
 
 | Platform | Tabs | Favourites | Folders | Downloads | History |
 |---|---|---|---|---|---|
-| Android | Favourites, Folders, Downloads, History | Full. The **Set** action shows in multi-select. | Full. | Full. Delete uses MediaStore on Android 10 (API 29) and later. Older versions delete the file. One selected file can be set as the wallpaper. | Full. |
-| iOS | Favourites, Folders, Downloads | Full. `hideSetWallpaperUi` hides the **Set** action. | Full. | Full. Delete removes the app copy. No **Set** action. | Not shown. `/wallpaper-history` and `/library?tab=history` open Favourites. |
+| Android | Favourites, Folders, Downloads, History | Full. The **Set** action shows in multi-select. | Full. | Full. Delete uses MediaStore on Android 10 (API 29) and later. Older versions delete the file. One selected file can be set as the wallpaper. | **Set and downloaded** and **Recently viewed**. |
+| iOS | Favourites, Folders, Downloads, History | Full. `hideSetWallpaperUi` hides the **Set** action. | Full. | Full. Delete removes the app copy. No **Set** action. | **Downloaded** and **Recently viewed**. No **Set again**. |
 
 ## Free and Pro
 
@@ -60,7 +60,7 @@ The Library has no premium or coin gate.
 - Each tab keeps its state and scroll position when the user swipes away.
 - The tab action:
   - **Folders**: a **New folder** icon button. It shows for a signed-in user only.
-  - **History**: a **Clear** button. It shows when the history has items.
+  - **History**: no app bar action. Each list has its own **Clear** button.
   - **Favourites** and **Downloads**: no action.
 - Analytics: `library_tab_viewed{tab}` records the tab that opens and each tab change. The values are `favourites`, `folders`, `downloads` and `history`.
 - **Favourites** and **Downloads** are the same widgets as the old screens (`FavouriteGrid` and `DownloadsBody`). The old screens and the hub do not differ in behaviour.
@@ -143,7 +143,7 @@ States:
 
 ### History
 
-The History tab shows the wallpapers the user set. The data and the rules are in [wallpaper-history.md](wallpaper-history.md).
+The History tab has two lists: **Set and downloaded** (iOS: **Downloaded**) and **Recently viewed**. The data and the rules are in [wallpaper-history.md](wallpaper-history.md).
 
 - The list is grouped by day: **Today**, **Yesterday**, then a date.
 - Each tile shows the image, the screen that got the wallpaper, and the time.

@@ -40,6 +40,7 @@ import 'package:Prism/features/theme_mode/views/widgets/diwali_decor.dart';
 import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -138,6 +139,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _defaultApplyTarget;
   bool _haptics = PrismHaptics.enabled;
   bool _lowData = LowDataMode.enabled.value;
+  bool _saveViewingHistory = getIt<RecentlyViewedStore>().enabled;
   bool _restoring = false;
   bool _adPrivacyChoices = false;
   bool _iosShortcuts = false;
@@ -464,6 +466,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() => _lowData = value);
         unawaited(LowDataMode.set(value));
         unawaited(analytics.track(DataSaverToggledEvent(value: value)));
+      },
+    ),
+    PrismSwitchRow(
+      icon: Icons.manage_history_rounded,
+      title: context.l10n.settingsSaveViewingHistory,
+      subtitle: context.l10n.settingsSaveViewingHistoryBody,
+      value: _saveViewingHistory,
+      onChanged: (value) {
+        setState(() => _saveViewingHistory = value);
+        unawaited(getIt<RecentlyViewedStore>().setEnabled(value));
+        unawaited(analytics.track(ViewingHistoryToggledEvent(value: value)));
       },
     ),
     PrismRow(

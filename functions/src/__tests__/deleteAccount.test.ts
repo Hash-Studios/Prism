@@ -118,7 +118,7 @@ test("deleting an account removes every per-user doc, anonymizes, then deletes t
   const log = fake(t);
   await call();
   for (const path of [
-    "recursive:usersv2/u1/blockedUsers", "recursive:usersv2/u1/private",
+    "recursive:usersv2/u1/blockedUsers", "recursive:usersv2/u1/private", "recursive:usersv2/u1/history",
     "delete:referralStats/u1", "delete:subscriptionSync/u1", "delete:githubUploadStats/u1",
     "delete:badgeCheckRate/u1", "delete:coinAdRateDaily/d1", "delete:coinTransactions/d1",
     "delete:aiGenerations/d1", "delete:draftSetups/d1",

@@ -19,6 +19,7 @@ import 'package:Prism/env/env.dart';
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_favourites_store.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -417,7 +418,7 @@ class GoogleAuth {
     }
   }
 
-  /// Taste signals, feed impressions and applied-wallpaper history belong to the user, not the device.
+  /// Taste signals, feed impressions, applied and viewed history belong to the user, not the device.
   Future<void> _clearPersonalization(SignInSession operation) async {
     if (!operation.isCurrent) return;
     if (getIt.isRegistered<TasteSignalStore>()) {
@@ -441,6 +442,23 @@ class GoogleAuth {
         await getIt<WallpaperHistoryStore>().clear();
       } catch (e, st) {
         logger.w('Wallpaper history clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+      }
+    }
+    if (!operation.isCurrent) return;
+    // The account keeps its synced history. Only this device's copies go.
+    if (getIt.isRegistered<RecentlyViewedStore>()) {
+      try {
+        await getIt<RecentlyViewedStore>().clear();
+      } catch (e, st) {
+        logger.w('Recently viewed clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+      }
+    }
+    if (!operation.isCurrent) return;
+    if (getIt.isRegistered<SyncedHistoryStore>()) {
+      try {
+        await getIt<SyncedHistoryStore>().clearLocal();
+      } catch (e, st) {
+        logger.w('Synced history clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
       }
     }
     if (!operation.isCurrent) return;

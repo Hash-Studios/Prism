@@ -9910,5 +9910,29 @@
   "tasteQuizRetakeFailed": "वॉलपेपर लोड नहीं हो सके। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
   "@tasteQuizRetakeFailed": {
     "description": "Toast when the walls for a quiz retake do not load."
-  }
+  },
+  "historySetAndDownloaded": "सेट और डाउनलोड किए गए",
+  "historyDownloaded": "डाउनलोड किया गया",
+  "historyRecentlyViewed": "हाल में देखे गए",
+  "historySyncedNote": "आपके खाते में सेव है, ताकि नए फ़ोन पर भी ये वापस दिखें।",
+  "historySyncedNoteGuest": "इन्हें नए फ़ोन पर रखने के लिए साइन इन करें।",
+  "historyActionSet": "सेट किया गया",
+  "historyActionDownloaded": "डाउनलोड किया गया",
+  "historySyncedTileLabel": "{action}, {time} पर",
+  "historyClearSyncedBody": "यह यहाँ और आपके खाते से सूची हटा देता है। आपके वॉलपेपर और डाउनलोड जैसे हैं वैसे ही रहेंगे।",
+  "historyClearViewedTitle": "हाल में देखे गए हटाएँ?",
+  "historyClearViewedBody": "यह आपके खोले गए वॉलपेपर इस सूची और होम से हटा देता है।",
+  "historyClearViewedAction": "हाल में देखे गए हटाएँ",
+  "historyEmptyBodyAndroid": "जो वॉलपेपर आप सेट या डाउनलोड करते हैं, वे यहाँ दिखते हैं, ताकि आप उन्हें दोबारा ढूँढ सकें।",
+  "historyEmptyBodyIos": "जो वॉलपेपर आप डाउनलोड करते हैं, वे यहाँ दिखते हैं, ताकि आप उन्हें दोबारा ढूँढ सकें।",
+  "historyViewedEmptyTitle": "अभी तक कुछ नहीं देखा गया",
+  "historyViewedEmptyBody": "जो वॉलपेपर आप खोलते हैं, वे यहाँ दिखते हैं, ताकि आप उन्हें दोबारा ढूँढ सकें।",
+  "historyViewedOffTitle": "देखने का इतिहास बंद है",
+  "historyViewedOffBody": "जो वॉलपेपर आप यहाँ खोलते हैं, उन्हें देखने के लिए देखने का इतिहास सहेजें चालू करें।",
+  "historyViewedOffAction": "चालू करें",
+  "historyViewedTileLabel": "वॉलपेपर खोलें, {time} पर देखा गया",
+  "pickUpTitle": "जहाँ छोड़ा था, वहीं से जारी रखें",
+  "pickUpTileLabel": "{count} में से {index} वॉलपेपर खोलें",
+  "settingsSaveViewingHistory": "देखने का इतिहास सहेजें",
+  "settingsSaveViewingHistoryBody": "आपके खोले गए वॉलपेपर इतिहास और होम पर दिखते हैं। इसे बंद करने पर सूची हट जाती है।"
 }

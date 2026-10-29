@@ -16956,6 +16956,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t load walls. Check your connection and try again.'**
   String get tasteQuizRetakeFailed;
+
+  /// History tab segment on Android: walls the user set as wallpaper or downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Set and downloaded'**
+  String get historySetAndDownloaded;
+
+  /// History tab segment on iOS, where the app cannot set wallpapers: walls the user downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get historyDownloaded;
+
+  /// History tab segment: walls the user opened recently on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently viewed'**
+  String get historyRecentlyViewed;
+
+  /// One line above the Set and downloaded list for a signed-in user.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your account, so these come back on a new phone.'**
+  String get historySyncedNote;
+
+  /// One line above the Set and downloaded list for a signed-out user.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to keep these on a new phone.'**
+  String get historySyncedNoteGuest;
+
+  /// Label under a history tile: the user set this wall as wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Set'**
+  String get historyActionSet;
+
+  /// Label under a history tile: the user downloaded this wall.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get historyActionDownloaded;
+
+  /// Screen reader label of a history tile from the account. action is Set or Downloaded, time is when.
+  ///
+  /// In en, this message translates to:
+  /// **'{action} at {time}'**
+  String historySyncedTileLabel(String action, String time);
+
+  /// Body of the confirm dialog before clearing the Set and downloaded list.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the list here and in your account. Your wallpapers and downloads stay as they are.'**
+  String get historyClearSyncedBody;
+
+  /// Title of the confirm dialog before clearing the recently viewed list.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear recently viewed?'**
+  String get historyClearViewedTitle;
+
+  /// Body of the confirm dialog before clearing the recently viewed list.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the wallpapers you opened from this list and from Home.'**
+  String get historyClearViewedBody;
+
+  /// Confirm button that clears the recently viewed list.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear recently viewed'**
+  String get historyClearViewedAction;
+
+  /// Empty state body of the Set and downloaded list on Android.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpapers you set or download show up here, so you can find them again.'**
+  String get historyEmptyBodyAndroid;
+
+  /// Empty state body of the Downloaded list on iOS.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpapers you download show up here, so you can find them again.'**
+  String get historyEmptyBodyIos;
+
+  /// Empty state title of the recently viewed list.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing viewed yet'**
+  String get historyViewedEmptyTitle;
+
+  /// Empty state body of the recently viewed list.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpapers you open show up here, so you can find them again.'**
+  String get historyViewedEmptyBody;
+
+  /// Empty state title of the recently viewed list when the Save viewing history setting is off.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewing history is off'**
+  String get historyViewedOffTitle;
+
+  /// Empty state body of the recently viewed list when the setting is off.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on Save viewing history to see the wallpapers you open here.'**
+  String get historyViewedOffBody;
+
+  /// Button in the recently viewed empty state that turns on the Save viewing history setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get historyViewedOffAction;
+
+  /// Screen reader label of a recently viewed tile. time is when it was viewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Open wallpaper, viewed at {time}'**
+  String historyViewedTileLabel(String time);
+
+  /// Title of the Home row that shows walls the user opened recently but did not save, set or download.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick up where you left off'**
+  String get pickUpTitle;
+
+  /// Screen reader label of a tile in the Pick up where you left off row.
+  ///
+  /// In en, this message translates to:
+  /// **'Open wallpaper {index} of {count}'**
+  String pickUpTileLabel(int index, int count);
+
+  /// Settings switch. On: the app remembers the walls the user opens on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Save viewing history'**
+  String get settingsSaveViewingHistory;
+
+  /// Subtitle of the Save viewing history switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows the wallpapers you open in History and on Home. Turning this off clears the list.'**
+  String get settingsSaveViewingHistoryBody;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -226,6 +226,9 @@ class WallpaperService {
       if (recordTarget != null && getIt.isRegistered<SystemColorSchemesSource>()) {
         unawaited(getIt<SystemColorSchemesSource>().refreshAfterWallpaperSet());
       }
+      if (recordHistory && recordTarget != null) {
+        unawaited(_recordSynced(wallpaperId, wallpaperSource, historyThumbnail ?? thumbnailUrl));
+      }
       if (!canRecord || recordTarget == null) return mapped;
       final String? id = await _record(
         recordedSource,
@@ -397,6 +400,23 @@ class WallpaperService {
     } catch (error, stackTrace) {
       logger.w('WallpaperService: could not record history', error: error, stackTrace: stackTrace);
       return null;
+    }
+  }
+
+  /// Adds a set catalogue wall to the account history. Local files and walls without a public thumbnail stay out.
+  static Future<void> _recordSynced(String? wallpaperId, WallpaperSource? source, String? thumbnailUrl) async {
+    final HistoryWall? wall = HistoryWall.tryCreate(
+      id: wallpaperId,
+      source: source,
+      thumbnailUrl: thumbnailUrl,
+      action: HistoryAction.set,
+      at: DateTime.now(),
+    );
+    if (wall == null || !getIt.isRegistered<SyncedHistoryStore>()) return;
+    try {
+      await getIt<SyncedHistoryStore>().record(wall);
+    } catch (error, stackTrace) {
+      logger.w('WallpaperService: could not sync history', error: error, stackTrace: stackTrace);
     }
   }
 
