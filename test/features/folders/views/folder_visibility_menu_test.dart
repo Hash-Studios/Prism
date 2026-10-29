@@ -172,7 +172,12 @@ void main() {
     await _settle(tester);
 
     expect(find.text('Make this folder public?'), findsOneWidget);
-    expect(find.text('Anyone on Prism can see its name and wallpapers, follow it and open its link.'), findsOneWidget);
+    expect(
+      find.text(
+        'Anyone on Prism can see its name and wallpapers, follow it and open its link. Links you share keep their preview even if you make it private later.',
+      ),
+      findsOneWidget,
+    );
 
     await tester.tap(find.widgetWithText(PrismButton, 'Make public'));
     await _settle(tester);

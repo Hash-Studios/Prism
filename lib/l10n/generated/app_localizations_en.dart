@@ -10601,7 +10601,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get foldersMakePublicMessage =>
-      'Anyone on Prism can see its name and wallpapers, follow it and open its link.';
+      'Anyone on Prism can see its name and wallpapers, follow it and open its link. Links you share keep their preview even if you make it private later.';
 
   @override
   String get foldersMakePrivateTitle => 'Make this folder private?';

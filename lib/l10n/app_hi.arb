@@ -9927,7 +9927,7 @@
   "@foldersMakePublicTitle": {
     "description": "Title of the dialog before a folder becomes public."
   },
-  "foldersMakePublicMessage": "Prism पर कोई भी इसका नाम और वॉलपेपर देख सकेगा, इसे फ़ॉलो कर सकेगा और इसका लिंक खोल सकेगा।",
+  "foldersMakePublicMessage": "Prism पर कोई भी इसका नाम और वॉलपेपर देख सकेगा, इसे फ़ॉलो कर सकेगा और इसका लिंक खोल सकेगा। आपके शेयर किए गए लिंक का प्रीव्यू बना रहेगा, भले ही आप बाद में इसे प्राइवेट कर दें।",
   "@foldersMakePublicMessage": {
     "description": "One line that says what others see when a folder is public."
   },

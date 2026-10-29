@@ -10753,7 +10753,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get foldersMakePublicMessage =>
-      'Alle in Prism können seinen Namen und die Hintergrundbilder sehen, ihm folgen und seinen Link öffnen.';
+      'Alle in Prism können seinen Namen und die Hintergrundbilder sehen, ihm folgen und seinen Link öffnen. Geteilte Links behalten ihre Vorschau, auch wenn du ihn später privat machst.';
 
   @override
   String get foldersMakePrivateTitle => 'Diesen Ordner privat machen?';

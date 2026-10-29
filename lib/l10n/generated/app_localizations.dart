@@ -16984,7 +16984,7 @@ abstract class AppLocalizations {
   /// One line that says what others see when a folder is public.
   ///
   /// In en, this message translates to:
-  /// **'Anyone on Prism can see its name and wallpapers, follow it and open its link.'**
+  /// **'Anyone on Prism can see its name and wallpapers, follow it and open its link. Links you share keep their preview even if you make it private later.'**
   String get foldersMakePublicMessage;
 
   /// Title of the dialog before a public folder becomes private.

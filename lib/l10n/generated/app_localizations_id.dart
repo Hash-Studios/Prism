@@ -10654,7 +10654,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get foldersMakePublicMessage =>
-      'Semua orang di Prism bisa melihat nama dan wallpaper-nya, mengikutinya, dan membuka tautannya.';
+      'Semua orang di Prism bisa melihat nama dan wallpaper-nya, mengikutinya, dan membuka tautannya. Tautan yang Anda bagikan tetap menampilkan pratinjaunya meski nanti Anda menjadikannya pribadi.';
 
   @override
   String get foldersMakePrivateTitle => 'Jadikan folder ini privat?';

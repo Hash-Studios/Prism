@@ -10735,7 +10735,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get foldersMakePublicMessage =>
-      'Cualquiera en Prism podrá ver su nombre y sus fondos de pantalla, seguirla y abrir su enlace.';
+      'Cualquiera en Prism podrá ver su nombre y sus fondos de pantalla, seguirla y abrir su enlace. Los enlaces que compartas conservan su vista previa aunque luego la hagas privada.';
 
   @override
   String get foldersMakePrivateTitle => '¿Hacer privada esta carpeta?';

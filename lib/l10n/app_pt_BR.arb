@@ -2808,7 +2808,7 @@
   "foldersMakePublic": "Tornar pública",
   "foldersMakePrivate": "Tornar privada",
   "foldersMakePublicTitle": "Tornar esta pasta pública?",
-  "foldersMakePublicMessage": "Qualquer pessoa no Prism poderá ver o nome e os papéis de parede, seguir a pasta e abrir o link dela.",
+  "foldersMakePublicMessage": "Qualquer pessoa no Prism poderá ver o nome e os papéis de parede, seguir a pasta e abrir o link dela. Os links que você compartilhar mantêm a prévia mesmo se você tornar a pasta privada depois.",
   "foldersMakePrivateTitle": "Tornar esta pasta privada?",
   "foldersMakePrivateMessage": "Só você vai vê-la. O link deixa de funcionar e os seguidores perdem o acesso.",
   "foldersMadePublic": "Esta pasta agora é pública.",

@@ -10932,7 +10932,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get foldersMakePublicMessage =>
-      'Qualquer pessoa no Prism poderá ver o nome e os papéis de parede, seguir a pasta e abrir o link dela.';
+      'Qualquer pessoa no Prism poderá ver o nome e os papéis de parede, seguir a pasta e abrir o link dela. Os links que você compartilhar mantêm a prévia mesmo se você tornar a pasta privada depois.';
 
   @override
   String get foldersMakePrivateTitle => 'Tornar esta pasta privada?';
@@ -21949,7 +21949,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get foldersMakePublicMessage =>
-      'Qualquer pessoa no Prism poderá ver o nome e os papéis de parede, seguir a pasta e abrir o link dela.';
+      'Qualquer pessoa no Prism poderá ver o nome e os papéis de parede, seguir a pasta e abrir o link dela. Os links que você compartilhar mantêm a prévia mesmo se você tornar a pasta privada depois.';
 
   @override
   String get foldersMakePrivateTitle => 'Tornar esta pasta privada?';

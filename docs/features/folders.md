@@ -185,13 +185,13 @@ Do these steps in this order. No backfill is necessary, because every folder sta
 - Prism has no suspension state. A disabled Firebase Auth user counts as suspended at the next sync, follow or digest. No event starts a sync when Auth disables a user. A moderator can hide the folders at once with `setFolderHidden`.
 - Wallhaven and Pexels wallpapers do not show in public folders.
 - A wall that becomes eligible again (for example, approved after a hold) shows in a public folder at the next sync of that folder.
-- A short link keeps the name and image it had when it was made. When the folder goes private or is deleted, the link preview still shows them. The app shows the private state. This is an open product decision.
+- A short link keeps the name and image it had when it was made. When the folder goes private or is deleted, the link preview still shows them, and the app shows the private state. The Make public dialog tells the owner this.
 - Premium walls do not show in public folders. The projection uses the free gallery gate, the same gate as the folder page and the push.
 - Making a folder private removes its followers. Making it public again starts at 0 followers.
 
 ## How to test
 
-1. Sign in as user A. Open a folder with at least 2 Prism wallpapers. Open the overflow menu. Tap **Make public**. Make sure the dialog says "Anyone on Prism can see its name and wallpapers, follow it and open its link."
+1. Sign in as user A. Open a folder with at least 2 Prism wallpapers. Open the overflow menu. Tap **Make public**. Make sure the dialog says "Anyone on Prism can see its name and wallpapers, follow it and open its link. Links you share keep their preview even if you make it private later."
 2. Tap **Make public**. Make sure the toast "This folder is now public." shows and the header shows **Public**.
 3. Sign in as user B on a second device. Open A's profile. Make sure the **Folders** row shows the folder.
 4. Open the folder. Make sure the header shows "By <A>", the count and "No followers". Tap **Follow**. Make sure the button changes to **Following** and the count changes to "1 follower".

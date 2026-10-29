@@ -9867,7 +9867,7 @@
   "@foldersMakePublicTitle": {
     "description": "Title of the dialog before a folder becomes public."
   },
-  "foldersMakePublicMessage": "Alle in Prism können seinen Namen und die Hintergrundbilder sehen, ihm folgen und seinen Link öffnen.",
+  "foldersMakePublicMessage": "Alle in Prism können seinen Namen und die Hintergrundbilder sehen, ihm folgen und seinen Link öffnen. Geteilte Links behalten ihre Vorschau, auch wenn du ihn später privat machst.",
   "@foldersMakePublicMessage": {
     "description": "One line that says what others see when a folder is public."
   },

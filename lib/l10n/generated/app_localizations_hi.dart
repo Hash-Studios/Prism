@@ -10740,7 +10740,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get foldersMakePublicMessage =>
-      'Prism पर कोई भी इसका नाम और वॉलपेपर देख सकेगा, इसे फ़ॉलो कर सकेगा और इसका लिंक खोल सकेगा।';
+      'Prism पर कोई भी इसका नाम और वॉलपेपर देख सकेगा, इसे फ़ॉलो कर सकेगा और इसका लिंक खोल सकेगा। आपके शेयर किए गए लिंक का प्रीव्यू बना रहेगा, भले ही आप बाद में इसे प्राइवेट कर दें।';
 
   @override
   String get foldersMakePrivateTitle => 'क्या इस फ़ोल्डर को निजी करें?';
