@@ -37,12 +37,15 @@ class SubmitResubmission {
     if (app_state.prismUser.id == ownerUid && app_state.prismUser.loggedIn) {
       try {
         if (!app_state.prismUser.premium) {
-          await UploadQuota.incrementWeeklyUploads();
+          await UploadQuota.incrementWeeklyUploads(ownerUid: ownerUid, operationId: operationId);
+          if (app_state.prismUser.id != ownerUid || !app_state.prismUser.loggedIn) return admission;
           app_state.prismUser.uploadsThisWeek = UploadQuota.currentUploadsThisWeek();
           app_state.prismUser.uploadsWeekStart = UploadQuota.storedWeekStart;
           await app_state.persistPrismUser();
         }
-        await CoinsService.instance.maybeAwardFirstWallpaperUpload();
+        if (app_state.prismUser.id == ownerUid && app_state.prismUser.loggedIn) {
+          await CoinsService.instance.maybeAwardFirstWallpaperUpload();
+        }
       } catch (error, stackTrace) {
         logger.w('Resubmission completed but local success hooks failed', error: error, stackTrace: stackTrace);
       }

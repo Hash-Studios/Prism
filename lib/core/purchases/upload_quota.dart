@@ -10,6 +10,7 @@ class UploadQuota {
   static const int freeUploadsPerWeek = 3;
   static const String _weekStartPrefKey = 'uploadsWeekStart';
   static const String _weeklyCountPrefKey = 'uploadsThisWeek';
+  static Future<void> _writeTail = Future<void>.value();
   static SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
   static String get storedWeekStart => _settings.get<String>(_weekStartPrefKey, defaultValue: '').trim();
@@ -54,10 +55,45 @@ class UploadQuota {
     return (freeUploadsPerWeek - used).clamp(0, freeUploadsPerWeek);
   }
 
-  static Future<int> incrementWeeklyUploads({DateTime? now}) async {
-    final DateTime target = now ?? DateTime.now();
-    final int used = _readCountForCurrentWeek(target) + 1;
-    await _settings.set(_weeklyCountPrefKey, used);
-    return used;
+  static Future<int> incrementWeeklyUploads({DateTime? now, String? ownerUid, String? operationId}) {
+    final settings = _settings;
+    final target = now ?? DateTime.now();
+    final result = _writeTail.then((_) async {
+      final week = _weekKey(target);
+      final storedWeek = settings.get<String>(_weekStartPrefKey, defaultValue: '');
+      var used = storedWeek == week ? settings.get<int>(_weeklyCountPrefKey, defaultValue: 0) : 0;
+      final receiptKey = ownerUid == null || operationId == null ? null : 'uploadQuotaOperations/$ownerUid';
+      final receipts = receiptKey == null
+          ? <String, Object?>{}
+          : Map<String, Object?>.from(settings.get<Map>(receiptKey, defaultValue: const <String, Object?>{}));
+      final receipt = receipts[operationId];
+      if (receipt is Map && (receipt['done'] == true || receipt['week'] != week)) return used;
+      final next = receipt is Map ? (receipt['count'] as int) : used + 1;
+      if (receiptKey != null && receipt == null) {
+        receipts[operationId!] = <String, Object?>{'week': week, 'count': next};
+        await settings.set(receiptKey, receipts);
+      }
+      // A durable target makes a crash between the counter write and its acknowledgement replay-safe.
+      if (storedWeek != week) {
+        await settings.set(_weeklyCountPrefKey, 0);
+        await settings.set(_weekStartPrefKey, week);
+      }
+      used = used > next ? used : next;
+      await settings.set(_weeklyCountPrefKey, used);
+      if (receiptKey != null) {
+        receipts[operationId!] = <String, Object?>{'week': week, 'count': next, 'done': true};
+        await settings.set(receiptKey, receipts);
+      }
+      return used;
+    });
+    _writeTail = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    return result;
+  }
+
+  static Future<void> clearOperationsForUser(String ownerUid) {
+    final settings = _settings;
+    final result = _writeTail.then((_) => settings.delete('uploadQuotaOperations/$ownerUid'));
+    _writeTail = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    return result;
   }
 }
