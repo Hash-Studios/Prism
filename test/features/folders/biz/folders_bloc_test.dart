@@ -9,7 +9,9 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
+import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeFoldersRepository implements FoldersRepository {
@@ -153,7 +155,7 @@ FolderEntity folder(String id, {int count = 0, List<String> covers = const <Stri
     );
 
 FoldersBloc _blocFor(_FakeFoldersRepository repo) {
-  final FoldersBloc bloc = FoldersBloc(repo);
+  final FoldersBloc bloc = FoldersBloc(repo, _NoPublicFolders());
   addTearDown(repo.writeFailureController.close);
   addTearDown(bloc.close);
   return bloc;
@@ -161,6 +163,31 @@ FoldersBloc _blocFor(_FakeFoldersRepository repo) {
 
 Future<bool> _started(FoldersBloc bloc, {String userId = 'u1'}) =>
     bloc.run((id) => FoldersEvent.started(userId: userId, operationId: id));
+
+class _NoPublicFolders implements PublicFoldersRepository {
+  @override
+  Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
+
+  @override
+  Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(<String>[]);
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async =>
+      Result.success(<PublicFolderEntity>[]);
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchFollowedFolders(String userId) async =>
+      Result.success(<PublicFolderEntity>[]);
+
+  @override
+  Future<Result<bool>> isFollowing(String folderId, String userId) async => Result.success(false);
+
+  @override
+  Future<Result<void>> setFollowing(String folderId, {required bool following}) async => Result.success<void>(null);
+
+  @override
+  Future<Result<bool>> setPublic(String folderId, {required bool isPublic}) async => Result.success(isPublic);
+}
 
 void main() {
   test('sign-out between completed Save steps does not start the next write', () async {
@@ -372,6 +399,14 @@ void main() {
     expect(repo.calls, isEmpty);
     expect(bloc.state.folder('a')?.itemCount, 2);
     expect(bloc.state.folder('a')?.covers, <String>[thumb('w1'), thumb('w2')]);
+
+    repo.failItems = false;
+    expect(await bloc.run((id) => FoldersEvent.itemRemoved(folderId: 'a', wall: wall('w1'), operationId: id)), isTrue);
+    expect(repo.items['a']?.map((item) => item.id).toList(), <String>['w2']);
+    expect(bloc.state.folder('a')?.itemCount, 1);
+    expect(bloc.state.folder('a')?.covers, <String>[thumb('w2')]);
+    expect(bloc.state.items.containsKey('a'), isFalse);
+    expect(repo.fetchItemLimits, <int?>[folderMaxCovers + 1, folderMaxCovers + 1]);
   });
 
   test('opening a removed folder clears previously loaded items and membership', () async {
@@ -550,6 +585,95 @@ void main() {
     expect(repo.calls, <String>['removeItem:a:4:${thumb('w2')},${thumb('w3')},${thumb('w4')},${thumb('w5')}']);
   });
 
+  test('saveRequested removes an externally added wall despite a cached empty folder', () async {
+    final _FakeFoldersRepository repo = _FakeFoldersRepository()..folders = <FolderEntity>[folder('a')];
+    final FoldersBloc bloc = _blocFor(repo);
+    await _started(bloc);
+    await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'a', operationId: id));
+    expect(bloc.state.items['a'], isEmpty);
+
+    repo.items['a'] = <FavouriteWallEntity>[wall('w1')];
+    await bloc.run((id) => FoldersEvent.membershipRequested(wall: wall('w1'), operationId: id));
+    expect(bloc.state.membership[folderItemKey(wall('w1'))], <String>{'a'});
+
+    expect(
+      await bloc.run(
+        (id) => FoldersEvent.saveRequested(wall: wall('w1'), folderIds: const <String>{}, operationId: id),
+      ),
+      isTrue,
+    );
+
+    expect(repo.items['a'], isEmpty);
+    expect(repo.calls, <String>['removeItem:a:0:']);
+    expect(repo.fetchItemLimits, <int?>[null, folderMaxCovers + 1]);
+    expect(bloc.state.membership[folderItemKey(wall('w1'))], isEmpty);
+    expect(bloc.state.items['a'], isEmpty);
+    expect(bloc.state.folder('a')?.itemCount, 0);
+  });
+
+  test('removing an externally added wall preserves the full opened item cache', () async {
+    final List<FavouriteWallEntity> originalItems = <FavouriteWallEntity>[
+      wall('w1'),
+      wall('w2'),
+      wall('w3'),
+      wall('w4'),
+      wall('w5'),
+      wall('w6'),
+    ];
+    final _FakeFoldersRepository repo = _FakeFoldersRepository()
+      ..folders = <FolderEntity>[folder('a', count: originalItems.length)]
+      ..items = <String, List<FavouriteWallEntity>>{'a': originalItems};
+    final FoldersBloc bloc = _blocFor(repo);
+    await _started(bloc);
+    await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'a', operationId: id));
+    expect(bloc.state.items['a']?.map((item) => item.id).toList(), <String>['w1', 'w2', 'w3', 'w4', 'w5', 'w6']);
+    expect(repo.fetchItemLimits, <int?>[null]);
+
+    final FavouriteWallEntity addedWall = wall('new');
+    repo.items['a'] = <FavouriteWallEntity>[addedWall, ...originalItems];
+    await bloc.run((id) => FoldersEvent.membershipRequested(wall: addedWall, operationId: id));
+    expect(bloc.state.membership[folderItemKey(addedWall)], <String>{'a'});
+
+    expect(
+      await bloc.run((id) => FoldersEvent.saveRequested(wall: addedWall, folderIds: const <String>{}, operationId: id)),
+      isTrue,
+    );
+
+    expect(repo.fetchItemLimits, <int?>[null, folderMaxCovers + 1]);
+    expect(repo.items['a']?.map((item) => item.id).toList(), <String>['w1', 'w2', 'w3', 'w4', 'w5', 'w6']);
+    expect(bloc.state.folder('a')?.covers, <String>[thumb('w1'), thumb('w2'), thumb('w3'), thumb('w4')]);
+    expect(bloc.state.items['a']?.map((item) => item.id).toList(), <String>['w1', 'w2', 'w3', 'w4', 'w5', 'w6']);
+  });
+
+  test('saveRequested evicts stale state when the folder vanishes during the cover read', () async {
+    final _FakeFoldersRepository repo = _FakeFoldersRepository()
+      ..folders = <FolderEntity>[
+        folder('a', count: 1, covers: <String>[thumb('w1')]),
+      ]
+      ..items = <String, List<FavouriteWallEntity>>{
+        'a': <FavouriteWallEntity>[wall('w1')],
+      };
+    final FoldersBloc bloc = _blocFor(repo);
+    await _started(bloc);
+    await bloc.run((id) => FoldersEvent.membershipRequested(wall: wall('w1'), operationId: id));
+    expect(bloc.state.membership[folderItemKey(wall('w1'))], <String>{'a'});
+
+    repo.folders = <FolderEntity>[];
+    expect(
+      await bloc.run(
+        (id) => FoldersEvent.saveRequested(wall: wall('w1'), folderIds: const <String>{}, operationId: id),
+      ),
+      isFalse,
+    );
+
+    expect(bloc.state.failure, isA<ValidationFailure>());
+    expect(repo.calls, isEmpty);
+    expect(bloc.state.folder('a'), isNull);
+    expect(bloc.state.items.containsKey('a'), isFalse);
+    expect(bloc.state.itemsStatus['a'], LoadStatus.success);
+    expect(bloc.state.membership[folderItemKey(wall('w1'))], isEmpty);
+  });
+
   test('covers stay at 4, newest first, and a re-added thumb is not duplicated', () async {
     final _FakeFoldersRepository repo = _FakeFoldersRepository()
       ..folders = <FolderEntity>[
@@ -612,6 +736,30 @@ void main() {
     expect(bloc.state.folder('a'), isNotNull);
     expect(bloc.state.items.containsKey('ghost'), isFalse);
     expect(bloc.state.itemsStatus['ghost'], LoadStatus.success);
+  });
+
+  test('opening a missing folder clears cached items and memberships after a list refresh', () async {
+    final _FakeFoldersRepository repo = _FakeFoldersRepository()
+      ..folders = <FolderEntity>[folder('a', count: 1)]
+      ..items = <String, List<FavouriteWallEntity>>{
+        'a': <FavouriteWallEntity>[wall('w1')],
+      };
+    final FoldersBloc bloc = _blocFor(repo);
+    await _started(bloc);
+    await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'a', operationId: id));
+    await bloc.run((id) => FoldersEvent.membershipRequested(wall: wall('w1'), operationId: id));
+
+    repo.folders = <FolderEntity>[];
+    await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'b', operationId: id));
+    expect(bloc.state.folder('a'), isNull);
+    expect(bloc.state.items['a'], hasLength(1));
+    expect(bloc.state.membership[folderItemKey(wall('w1'))], <String>{'a'});
+
+    expect(await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'a', operationId: id)), isTrue);
+
+    expect(bloc.state.items.containsKey('a'), isFalse);
+    expect(bloc.state.itemsStatus['a'], LoadStatus.success);
+    expect(bloc.state.membership[folderItemKey(wall('w1'))], isEmpty);
   });
 
   test('itemRemoved from an opened folder updates items, count and covers without a limited fetch', () async {

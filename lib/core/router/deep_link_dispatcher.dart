@@ -89,6 +89,9 @@ class DeepLinkDispatcher {
     if (data['route']?.toString() == 'wall_of_the_day') {
       _record(WotdOpenedFromPushEvent(wallId: (data['wall_id']?.toString() ?? '').trim()));
     }
+    if (data['notification_kind']?.toString() == 'folder_digest') {
+      _record(FolderPushOpenedEvent(folderCount: int.tryParse(data['folder_count']?.toString() ?? '') ?? 1));
+    }
     // A gallery push still carries the lead wall's link for builds without the gallery page.
     final Uri? gallery = NotificationRouteMapper.galleryLinkFor(data);
     if (gallery != null) {

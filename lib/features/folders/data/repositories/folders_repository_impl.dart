@@ -35,6 +35,7 @@ FolderEntity folderFromDoc(Map<String, dynamic> data, String id) {
     updatedAt: parseDateTime(data['updatedAt']) ?? now,
     itemCount: count is num ? math.max(0, count.toInt()) : 0,
     covers: covers is List ? covers.whereType<String>().take(folderMaxCovers).toList() : const <String>[],
+    isPublic: data['public'] == true,
   );
 }
 
@@ -106,26 +107,21 @@ class FoldersRepositoryImpl implements FoldersRepository {
       _guard('load folder items', () async {
         if (userId.isEmpty) return null;
         try {
-          final rows = await _firestoreClient.query<({FavouriteWallEntity wall, DateTime addedAt})>(
+          return await _firestoreClient.query<FavouriteWallEntity>(
             FirestoreQuerySpec(
               collection: FirebaseCollections.folderItems(folderId),
               sourceTag: 'folders.fetch_items',
               filters: <FirestoreFilter>[
                 FirestoreFilter(field: 'ownerId', op: FirestoreFilterOp.isEqualTo, value: userId),
               ],
+              orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'addedAt', descending: true)],
+              limit: limit,
             ),
-            (data, docId) => (
-              wall: mapFavouriteWallDoc(
-                FavouriteWallDocDto.fromJson(data),
-                parseString(data['wallpaperDocumentId'], fallback: parseString(data['id'], fallback: docId)),
-              ),
-              addedAt: parseDateTime(data['addedAt']) ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+            (data, docId) => mapFavouriteWallDoc(
+              FavouriteWallDocDto.fromJson(data),
+              parseString(data['wallpaperDocumentId'], fallback: parseString(data['id'], fallback: docId)),
             ),
           );
-          // The owner filter is required by the item rules. Sorting here avoids an extra composite index.
-          rows.sort((a, b) => b.addedAt.compareTo(a.addedAt));
-          final items = rows.map((row) => row.wall);
-          return (limit == null ? items : items.take(limit)).toList();
         } catch (error) {
           // The rules refuse reads of a folder that is gone or belongs to someone else.
           if (mapFirestoreError(error).code == 'permission-denied') return null;

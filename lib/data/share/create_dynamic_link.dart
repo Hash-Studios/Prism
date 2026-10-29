@@ -292,6 +292,23 @@ Future<void> createUserDynamicLink(
   }
 }
 
+/// A short link to a public folder. The preview shows the folder name and its 4-wall share image when the server
+/// has made one. Falls back to the canonical URL when the short-link service is down.
+Future<String> createFolderLink({
+  required String folderId,
+  required String name,
+  required String description,
+  String shareImage = '',
+}) => _buildShareableLink(
+  type: 'page',
+  canonicalUri: Uri.https(_shareDomain, '/folder/$folderId'),
+  preview: <String, dynamic>{
+    'title': name,
+    'description': description,
+    if (shareImage.isNotEmpty) 'image_source_url': shareImage,
+  },
+);
+
 /// Creates the invite link. The preview reads "Name invited you to Prism" and shows the inviter's photo.
 Future<String> createSharingPrismLink(
   String userID, {

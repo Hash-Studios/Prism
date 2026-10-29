@@ -258,6 +258,7 @@ enums:
       - in_app
       - recommendations
       - streak_reminders
+      - folders
   - name: deep_link_source
     dart_type: DeepLinkSourceValue
     values:
@@ -1885,6 +1886,40 @@ events:
         type: string
       - name: item_count
         key: item_count
+        type: int
+  - id: folder_visibility_changed
+    fields:
+      - name: is_public
+        key: is_public
+        type: bool
+      - name: source
+        key: source
+        type: string
+  - id: public_folder_viewed
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: item_count
+        key: item_count
+        type: int
+  - id: folder_follow_changed
+    fields:
+      - name: following
+        key: following
+        type: bool
+      - name: source
+        key: source
+        type: string
+  - id: folder_shared
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: folder_push_opened
+    fields:
+      - name: folder_count
+        key: folder_count
         type: int
   - id: mood_chip_tapped
     fields:

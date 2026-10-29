@@ -36,10 +36,10 @@ export interface Digest {
   wallCount: number;
 }
 
-/** UTC offsets (minutes, 15 minute steps, -12:00 to +14:00) where it is 19:00 local at `nowMs`. */
-export function offsetsAtDigestTime(nowMs: number): number[] {
+/** UTC offsets (minutes, 15 minute steps, -12:00 to +14:00) where it is `localMinute` (19:00 by default) at `nowMs`. */
+export function offsetsAtDigestTime(nowMs: number, localMinute = DIGEST_MINUTE): number[] {
   const utcMinutes = Math.round(((nowMs / 60_000) % 1440) / OFFSET_STEP) * OFFSET_STEP;
-  const base = (((DIGEST_MINUTE - utcMinutes) % 1440) + 1440) % 1440;
+  const base = (((localMinute - utcMinutes) % 1440) + 1440) % 1440;
   return [base, base - 1440].filter((offset) => offset >= -720 && offset <= 840);
 }
 
@@ -154,19 +154,31 @@ async function deliverable(digest: Digest, offsets: number[]):
   };
 }
 
-/** Claims the follower's local day. A second run that day, or a retry after a send, finds the claim and stops. */
-async function claimDay(uid: string, day: string): Promise<{previous: unknown} | null> {
-  const ref = db.doc(`usersv2/${uid}/private/followDigest`);
+/** Claims the local day. Folder digests also fence recipient and owner deletion in the same transaction. */
+export async function claimDay(
+  uid: string, day: string, marker = "followDigest", ownerIds?: string[],
+): Promise<{previous: unknown} | null> {
+  const ref = db.doc(`usersv2/${uid}/private/${marker}`);
   return db.runTransaction(async (tx) => {
     const data = (await tx.get(ref)).data();
     if (isLocalDay(data?.day) && data.day >= day) return null;
+    if (ownerIds) {
+      const open = await Promise.all([...new Set([uid, ...ownerIds])].map(async (accountId) => {
+        const [account, barrier] = await Promise.all([
+          tx.get(db.doc(`usersv2/${accountId}`)), tx.get(db.doc(`creatorDeletionState/${accountId}`)),
+        ]);
+        return account.exists && account.data()?.deleted !== true && barrier.data()?.closed !== true &&
+          (accountId !== uid || account.data()?.loggedIn !== false);
+      }));
+      if (open.some((value) => !value)) return null;
+    }
     tx.set(ref, {day, at: admin.firestore.FieldValue.serverTimestamp()});
     return {previous: data?.day ?? null};
   });
 }
 
-async function releaseDay(uid: string, day: string, previous: unknown): Promise<void> {
-  const ref = db.doc(`usersv2/${uid}/private/followDigest`);
+export async function releaseDay(uid: string, day: string, previous: unknown, marker = "followDigest"): Promise<void> {
+  const ref = db.doc(`usersv2/${uid}/private/${marker}`);
   await db.runTransaction(async (tx) => {
     if ((await tx.get(ref)).data()?.day !== day) return;
     tx.set(ref, {day: previous ?? admin.firestore.FieldValue.delete()}, {merge: true});

@@ -255,6 +255,12 @@ service cloud.firestore {
         allow read, write: if isOwner(userId) || isConfiguredAdmin();
       }
 
+      // Public folders this user follows. Written only by the setFolderFollow callable.
+      match /followedFolders/{folderId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
       // Block list: owner can read; writes only via Cloud Functions (Admin SDK).
       match /blockedUsers/{blockedId} {
         allow read: if isOwner(userId);
@@ -349,6 +355,30 @@ service cloud.firestore {
       }
     }
 
+    // Public folders: the server projection of a folder its owner made public (functions/src/publicFolders.ts).
+    // Only the Admin SDK writes it. A block in either direction hides it, and items need a live header.
+    match /publicFolders/{folderId} {
+      function notBlocked(ownerId) {
+        return !exists(/databases/$(database)/documents/usersv2/$(ownerId)/blockedUsers/$(request.auth.uid))
+            && !exists(/databases/$(database)/documents/usersv2/$(request.auth.uid)/blockedUsers/$(ownerId));
+      }
+
+      allow read: if isSignedIn() && notBlocked(resource.data.ownerId);
+      allow write: if false;
+
+      match /items/{itemKey} {
+        allow read: if isSignedIn()
+            && exists(/databases/$(database)/documents/publicFolders/$(folderId))
+            && notBlocked(get(/databases/$(database)/documents/publicFolders/$(folderId)).data.ownerId);
+        allow write: if false;
+      }
+
+      // Each user reads their own follows in usersv2/{uid}/followedFolders.
+      match /followers/{followerUid} {
+        allow read, write: if false;
+      }
+    }
+
     // Public profile documents contain only the server-projected profile allowlist.
     // Writes use the Admin SDK, which bypasses these client rules.
     match /profiles/{uid} {
@@ -435,6 +465,15 @@ service cloud.firestore {
     }
 
     match /userBlockRateByTarget/{docId} {
+      allow read, write: if false;
+    }
+
+    // Public folder rate limits (Cloud Functions only).
+    match /folderVisibilityRateDaily/{docId} {
+      allow read, write: if false;
+    }
+
+    match /folderFollowRateDaily/{docId} {
       allow read, write: if false;
     }
 
