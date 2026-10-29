@@ -56,10 +56,10 @@ void main() {
       aiGenerationId: 'generation-1',
       remixOf: remixOf,
     );
-    final List<dynamic> captured = verify(
+    final Object? captured = verify(
       () => firestoreClient.addDoc(any(), captureAny(), sourceTag: any(named: 'sourceTag')),
-    ).captured;
-    return captured.single as Map<String, dynamic>;
+    ).captured.single;
+    return captured! as Map<String, dynamic>;
   }
 
   test('a linked submission writes remixOf to the wall record', () async {
