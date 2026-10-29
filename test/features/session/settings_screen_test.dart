@@ -1052,7 +1052,12 @@ void main() {
       await tester.tap(find.text('Report a problem'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Tell us what went wrong. Reports have no email address or sign-in tokens.'), findsOneWidget);
+      expect(
+        find.text(
+          'Tell us what went wrong. Prism never adds your email address or sign-in tokens. Check any screenshot before you send it.',
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Crash/freeze'), findsOneWidget);
       expect(find.text('Send report'), findsOneWidget);
     });

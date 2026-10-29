@@ -551,6 +551,7 @@ void main() {
       await tester.pump();
       final Switch diagnostics = tester.widget<Switch>(find.byType(Switch));
       expect(diagnostics.value, isTrue);
+      await tester.ensureVisible(find.byType(Switch));
       await tester.tap(find.byType(Switch), warnIfMissed: false);
       await tester.pump();
       expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);

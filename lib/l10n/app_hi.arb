@@ -10671,7 +10671,7 @@
       }
     }
   },
-  "reportSheetMessage": "हमें बताएं कि क्या गड़बड़ हुई। रिपोर्ट में ईमेल पता या साइन-इन टोकन नहीं होते।",
+  "reportSheetMessage": "हमें बताएं कि क्या गड़बड़ हुई। Prism कभी आपका ईमेल पता या साइन-इन टोकन नहीं जोड़ता। भेजने से पहले स्क्रीनशॉट जांच लें।",
   "@reportSheetMessage": {
     "description": "Intro text in the report a problem sheet."
   },

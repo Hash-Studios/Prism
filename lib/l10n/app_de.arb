@@ -10605,7 +10605,7 @@
       }
     }
   },
-  "reportSheetMessage": "Sag uns, was schiefgelaufen ist. Berichte enthalten keine E-Mail-Adresse und keine Anmeldetokens.",
+  "reportSheetMessage": "Sag uns, was schiefgelaufen ist. Prism fügt nie deine E-Mail-Adresse oder Anmeldetokens hinzu. Prüfe Screenshots, bevor du sie sendest.",
   "@reportSheetMessage": {
     "description": "Intro text in the report a problem sheet."
   },

@@ -10602,7 +10602,7 @@
       }
     }
   },
-  "reportSheetMessage": "Ceritakan apa yang salah. Laporan tidak berisi alamat email atau token masuk.",
+  "reportSheetMessage": "Ceritakan apa yang salah. Prism tidak pernah menambahkan alamat email atau token masuk Anda. Periksa tangkapan layar sebelum mengirim.",
   "@reportSheetMessage": {
     "description": "Intro text in the report a problem sheet."
   },

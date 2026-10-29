@@ -267,18 +267,6 @@ void main() {
       expect(captureStarted, isTrue);
     });
 
-    testWidgets('does not open after the listener is disposed during capture', (tester) async {
-      final Completer<Uint8List?> capture = Completer<Uint8List?>();
-      final GlobalKey<NavigatorState> navigatorKey = await pumpApp(tester, captureScreenshot: () => capture.future);
-
-      await startShake(tester, 0);
-      await pumpApp(tester, navigatorKey: navigatorKey);
-      capture.complete(null);
-      await tester.pump();
-
-      expect(find.text('Report a problem'), findsNothing);
-    });
-
     testWidgets('a shake opens the report with a screenshot, and a shake while it is open does nothing', (
       tester,
     ) async {

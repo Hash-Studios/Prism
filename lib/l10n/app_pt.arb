@@ -2958,7 +2958,7 @@
   "notifPushWallRemixedTitle": "Seu papel de parede foi remixado",
   "notifPushWallRemixedBody": "{remixerName} remixou {wallTitle}.",
   "notifPushWallRemixedBodyUntitled": "{remixerName} remixou seu papel de parede.",
-  "reportSheetMessage": "Conte o que deu errado. Os relatórios não têm endereço de e-mail nem tokens de acesso.",
+  "reportSheetMessage": "Conte o que deu errado. O Prism nunca adiciona seu e-mail nem tokens de acesso. Confira as capturas de tela antes de enviar.",
   "reportTopicCrashFreeze": "Falha/travamento",
   "reportTopicWallpaperWontSet": "O papel de parede não é aplicado",
   "reportTopicLooksBroken": "Parece quebrado",

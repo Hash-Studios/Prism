@@ -10671,7 +10671,7 @@
       }
     }
   },
-  "reportSheetMessage": "Tell us what went wrong. Reports have no email address or sign-in tokens.",
+  "reportSheetMessage": "Tell us what went wrong. Prism never adds your email address or sign-in tokens. Check any screenshot before you send it.",
   "@reportSheetMessage": {
     "description": "Intro text in the report a problem sheet."
   },

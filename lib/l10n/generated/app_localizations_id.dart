@@ -11189,7 +11189,8 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get reportSheetMessage => 'Ceritakan apa yang salah. Laporan tidak berisi alamat email atau token masuk.';
+  String get reportSheetMessage =>
+      'Ceritakan apa yang salah. Prism tidak pernah menambahkan alamat email atau token masuk Anda. Periksa tangkapan layar sebelum mengirim.';
 
   @override
   String get reportTopicCrashFreeze => 'Crash/macet';

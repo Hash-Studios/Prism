@@ -11132,7 +11132,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get reportSheetMessage => 'Tell us what went wrong. Reports have no email address or sign-in tokens.';
+  String get reportSheetMessage =>
+      'Tell us what went wrong. Prism never adds your email address or sign-in tokens. Check any screenshot before you send it.';
 
   @override
   String get reportTopicCrashFreeze => 'Crash/freeze';

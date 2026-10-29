@@ -11284,7 +11284,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get reportSheetMessage =>
-      'Cuéntanos qué salió mal. Los informes no incluyen tu correo electrónico ni tokens de inicio de sesión.';
+      'Cuéntanos qué salió mal. Prism nunca añade tu correo electrónico ni tokens de inicio de sesión. Revisa las capturas antes de enviarlas.';
 
   @override
   String get reportTopicCrashFreeze => 'Cierre inesperado/bloqueo';

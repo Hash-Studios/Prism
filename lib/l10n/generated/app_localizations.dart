@@ -17884,7 +17884,7 @@ abstract class AppLocalizations {
   /// Intro text in the report a problem sheet.
   ///
   /// In en, this message translates to:
-  /// **'Tell us what went wrong. Reports have no email address or sign-in tokens.'**
+  /// **'Tell us what went wrong. Prism never adds your email address or sign-in tokens. Check any screenshot before you send it.'**
   String get reportSheetMessage;
 
   /// Report topic chip: app crashed or froze.

@@ -3042,7 +3042,7 @@
       }
     }
   },
-  "reportSheetMessage": "Cuéntanos qué salió mal. Los informes no incluyen tu correo electrónico ni tokens de inicio de sesión.",
+  "reportSheetMessage": "Cuéntanos qué salió mal. Prism nunca añade tu correo electrónico ni tokens de inicio de sesión. Revisa las capturas antes de enviarlas.",
   "reportTopicCrashFreeze": "Cierre inesperado/bloqueo",
   "reportTopicWallpaperWontSet": "El fondo de pantalla no se aplica",
   "reportTopicLooksBroken": "Se ve mal",

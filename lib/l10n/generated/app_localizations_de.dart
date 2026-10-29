@@ -11298,7 +11298,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get reportSheetMessage =>
-      'Sag uns, was schiefgelaufen ist. Berichte enthalten keine E-Mail-Adresse und keine Anmeldetokens.';
+      'Sag uns, was schiefgelaufen ist. Prism fügt nie deine E-Mail-Adresse oder Anmeldetokens hinzu. Prüfe Screenshots, bevor du sie sendest.';
 
   @override
   String get reportTopicCrashFreeze => 'Absturz/Einfrieren';

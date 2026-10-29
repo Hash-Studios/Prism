@@ -11468,7 +11468,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get reportSheetMessage =>
-      'Conte o que deu errado. Os relatórios não têm endereço de e-mail nem tokens de acesso.';
+      'Conte o que deu errado. O Prism nunca adiciona seu e-mail nem tokens de acesso. Confira as capturas de tela antes de enviar.';
 
   @override
   String get reportTopicCrashFreeze => 'Falha/travamento';
@@ -23005,7 +23005,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get reportSheetMessage =>
-      'Conte o que deu errado. Os relatórios não têm endereço de e-mail nem tokens de acesso.';
+      'Conte o que deu errado. O Prism nunca adiciona seu e-mail nem tokens de acesso. Confira as capturas de tela antes de enviar.';
 
   @override
   String get reportTopicCrashFreeze => 'Falha/travamento';

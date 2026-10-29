@@ -11276,7 +11276,8 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get reportSheetMessage => 'हमें बताएं कि क्या गड़बड़ हुई। रिपोर्ट में ईमेल पता या साइन-इन टोकन नहीं होते।';
+  String get reportSheetMessage =>
+      'हमें बताएं कि क्या गड़बड़ हुई। Prism कभी आपका ईमेल पता या साइन-इन टोकन नहीं जोड़ता। भेजने से पहले स्क्रीनशॉट जांच लें।';
 
   @override
   String get reportTopicCrashFreeze => 'क्रैश/फ़्रीज़';
