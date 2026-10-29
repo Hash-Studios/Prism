@@ -11,7 +11,7 @@ class FakeUserBlockRepository implements UserBlockRepository {
   final BehaviorSubject<BlockedCreators> _controller = BehaviorSubject<BlockedCreators>.seeded(
     const UnknownBlockedCreators(),
   );
-  final Completer<BlockedCreators> _initialLoad = Completer<BlockedCreators>();
+  Completer<BlockedCreators> _initialLoad = Completer<BlockedCreators>();
 
   Set<String> _cached = <String>{};
   List<BlockedUserListRow> blockedRows = const <BlockedUserListRow>[];
@@ -33,6 +33,7 @@ class FakeUserBlockRepository implements UserBlockRepository {
 
   void emitUnknown() {
     _hasLoaded = false;
+    _initialLoad = Completer<BlockedCreators>();
     _controller.add(const UnknownBlockedCreators());
   }
 

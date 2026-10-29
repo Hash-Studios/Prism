@@ -68,8 +68,12 @@ class _FirstFilterGated extends FakeUserBlockRepository {
   Future<BlockedCreators> loadBlockedCreators() {
     if (!started.isCompleted) {
       started.complete();
-      return gate.future;
+      return gate.future.then((blocked) {
+        if (blocked case KnownBlockedCreators(:final uids)) completeInitial(uids);
+        return blocked;
+      });
     }
+    completeInitial(<String>{});
     return Future<BlockedCreators>.value(KnownBlockedCreators(<String>{}));
   }
 }
@@ -581,6 +585,63 @@ void main() {
       await getCollectionWithName('space');
 
       expect(anyCollectionWalls.map((wall) => wall['id']), <String>['no-creator-wall']);
+    });
+
+    test('a missing block repository hides saved creator walls', () async {
+      final FakeFeedCacheLocalDataSource cache = FakeFeedCacheLocalDataSource();
+      cache.snapshots['collections/walls.space'] = FeedSnapshot(
+        payload: OfflineSnapshotCodec.encodeCollectionWalls(
+          items: <Map<String, dynamic>>[
+            <String, dynamic>{'id': 'creator-wall', 'creatorUid': 'creator-uid'},
+            <String, dynamic>{'id': 'no-creator-wall'},
+          ],
+          lastDocId: 'no-creator-wall-doc',
+          hasMore: false,
+        ),
+        cachedAtUtc: DateTime.now().toUtc(),
+        ttlHours: 24,
+      );
+      await getIt.unregister<UserBlockRepository>();
+      await getIt.unregister<FeedCacheLocalDataSource>();
+      getIt.registerSingleton<FeedCacheLocalDataSource>(cache);
+      firestore.queryError = StateError('offline');
+
+      await getCollectionWithName('space');
+
+      expect(anyCollectionWalls.map((wall) => wall['id']), <String>['no-creator-wall']);
+    });
+
+    test('an unknown block snapshot does not overwrite saved walls with filtered results', () async {
+      final FakeFeedCacheLocalDataSource cache = FakeFeedCacheLocalDataSource();
+      cache.snapshots['collections/walls.space'] = FeedSnapshot(
+        payload: OfflineSnapshotCodec.encodeCollectionWalls(
+          items: <Map<String, dynamic>>[_wall('saved')],
+          lastDocId: 'saved-doc',
+          hasMore: false,
+          preserveLastItemsCount: 1,
+        ),
+        cachedAtUtc: DateTime.now().toUtc(),
+        ttlHours: 24,
+      );
+      final FakeUserBlockRepository unknown = FakeUserBlockRepository.pending()..timeOutInitialLoad();
+      await getIt.unregister<UserBlockRepository>();
+      getIt.registerSingleton<UserBlockRepository>(unknown);
+      await getIt.unregister<FeedCacheLocalDataSource>();
+      getIt.registerSingleton<FeedCacheLocalDataSource>(cache);
+      firestore.onQuery = (_) => <FakeDocRow>[(id: 'fresh-doc', data: _wall('fresh'))];
+
+      await getCollectionWithName('space');
+
+      final saved = OfflineSnapshotCodec.decodeCollectionWalls(cache.snapshots['collections/walls.space'])!;
+      expect(saved.items.single['id'], 'saved');
+      expect(saved.lastDocId, 'saved-doc');
+
+      await getIt.unregister<UserBlockRepository>();
+      getIt.registerSingleton<UserBlockRepository>(FakeUserBlockRepository.pending()..completeInitial(<String>{}));
+      firestore.queryError = StateError('offline');
+      await getCollectionWithName('space');
+
+      expect(anyCollectionWalls.map((wall) => wall['id']), <String>['saved']);
     });
   });
 

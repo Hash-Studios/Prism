@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:Prism/core/constants/app_constants.dart';
-import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
@@ -19,15 +19,15 @@ import 'package:Prism/features/category_feed/domain/entities/category_feed_page.
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
-import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_feed_cache_local_data_source.dart';
-import '../../support/in_memory_local_store.dart';
 import '../../support/fake_user_block_repository.dart';
+import '../../support/in_memory_local_store.dart';
 
 class _MockPrism extends Mock implements PrismWallpaperRepository {}
 
@@ -335,6 +335,51 @@ void main() {
       expect(result.data!.items.map((item) => item.id), <String>['p1', 'p2', 'a']);
       expect(result.data!.items.take(2).every((item) => item is PrismFeedItem), isTrue);
       expect(result.data!.hasMore, isTrue);
+    });
+
+    test('an unknown block list does not overwrite the saved category page', () async {
+      final FakeUserBlockRepository blocks = FakeUserBlockRepository.pending()..timeOutInitialLoad();
+      getIt.registerSingleton<UserBlockRepository>(blocks);
+      addTearDown(getIt.reset);
+      final FeedSnapshot saved = FeedSnapshot(
+        payload: <String, Object?>{
+          'items': <Map<String, Object?>>[encodeFeedItem(WallhavenFeedItem(id: 'saved', wallpaper: _wall('saved')))],
+        },
+        cachedAtUtc: DateTime.now().toUtc(),
+        ttlHours: 6,
+      );
+      cache.snapshots['category/wallhaven.search.nature.100.100.portrait'] = saved;
+      when(
+        () => prism.fetchByCategory('Nature'),
+      ).thenAnswer((_) async => Result.success(<PrismWallpaper>[prismWall('p1')]));
+
+      await repository.fetchCategoryFeed(category: nature, refresh: true);
+
+      expect(cache.snapshots['category/wallhaven.search.nature.100.100.portrait'], same(saved));
+    });
+
+    test('a page started while blocks are unknown cannot overwrite the cache after recovery', () async {
+      final FakeUserBlockRepository blocks = FakeUserBlockRepository.pending();
+      getIt.registerSingleton<UserBlockRepository>(blocks);
+      addTearDown(getIt.reset);
+      final FeedSnapshot saved = FeedSnapshot(
+        payload: <String, Object?>{
+          'items': <Map<String, Object?>>[encodeFeedItem(WallhavenFeedItem(id: 'saved', wallpaper: _wall('saved')))],
+        },
+        cachedAtUtc: DateTime.now().toUtc(),
+        ttlHours: 6,
+      );
+      cache.snapshots['category/wallhaven.search.nature.100.100.portrait'] = saved;
+      final Completer<Result<List<PrismWallpaper>>> pendingPrism = Completer<Result<List<PrismWallpaper>>>();
+      when(() => prism.fetchByCategory('Nature')).thenAnswer((_) => pendingPrism.future);
+
+      final Future<Result<CategoryFeedPage>> result = repository.fetchCategoryFeed(category: nature, refresh: true);
+      await Future<void>.delayed(Duration.zero);
+      blocks.completeInitial(<String>{});
+      pendingPrism.complete(Result.success(<PrismWallpaper>[prismWall('p1')]));
+      await result;
+
+      expect(cache.snapshots['category/wallhaven.search.nature.100.100.portrait'], same(saved));
     });
 
     test('a wall that is in both lists shows once, in its Prism place', () async {

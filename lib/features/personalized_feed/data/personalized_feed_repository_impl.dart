@@ -544,7 +544,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
       // Pages 1 and 2 fill the cap, so later pages would only rewrite the same items.
-      if (request.refresh || request.page <= 2) {
+      if (blocked is KnownBlockedCreators && (request.refresh || request.page <= 2)) {
         await _writeCachedItems(scope: cacheScope, cachedItems: merged.take(_cacheCap).toList(growable: false));
       }
       if (!isCurrentSession() || !isCurrentPrime() || !isCurrentGeneration()) {

@@ -2312,6 +2312,25 @@ void main() {
       expect(_itemIds((await repository.readCached())!.items), <String>['wh']);
     });
 
+    test('an unknown block list does not overwrite the saved mixed feed', () async {
+      app_state.prismUser = _signedInUser();
+      final _MemoryFeedCache cache = _MemoryFeedCache()
+        ..snapshot = snapshot(<FeedItemEntity>[_prismItem('prism'), _wallhavenItem('wallhaven')]);
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: cache,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+      final Object? originalItems = (cache.snapshot!.payload! as Map)['items'];
+
+      await repository.fetch(_firstPage);
+
+      expect(identical((cache.snapshot!.payload! as Map)['items'], originalItems), isTrue);
+      expect((cache.snapshot!.payload! as Map)['items'], hasLength(2));
+    });
+
     test('marks a snapshot older than the cache lifetime as stale', () async {
       app_state.prismUser = _signedInUser();
       final PersonalizedFeedRepository repository = _repository(

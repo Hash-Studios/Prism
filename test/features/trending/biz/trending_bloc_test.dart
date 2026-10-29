@@ -163,7 +163,7 @@ void main() {
       verify(() => fetch(any())).called(1);
     });
 
-    test('an unknown block list keeps the walls, and a later known list still removes their walls', () async {
+    test('an unknown block list hides creator walls, and recovery reloads the list', () async {
       when(() => fetch(any())).thenAnswer(
         (_) async => TrendingFetch.success(<PrismWallpaper>[_wall('a', uid: 'bad-uid'), _wall('b', uid: 'ok-uid')]),
       );
@@ -174,12 +174,38 @@ void main() {
       blocks.emitUnknown();
       await settle();
 
-      expect(bloc.state.walls.map((wall) => wall.id), <String>['a', 'b']);
+      expect(bloc.state.walls, isEmpty);
 
       blocks.completeInitial(<String>{'bad-uid'});
       await settle();
+      await settle();
 
       expect(bloc.state.walls.map((wall) => wall.id), <String>['b']);
+      verify(() => fetch(any())).called(2);
+    });
+
+    test('recovery during a load makes one bounded follow-up fetch', () async {
+      final Completer<TrendingFetch> pending = Completer<TrendingFetch>();
+      int calls = 0;
+      when(() => fetch(any())).thenAnswer((_) {
+        calls++;
+        if (calls == 1) return pending.future;
+        return Future.value(TrendingFetch.success(<PrismWallpaper>[_wall('restored', uid: 'creator')]));
+      });
+      bloc.add(const TrendingEvent.started());
+      await settle();
+      blocks.emitUnknown();
+      await settle();
+      blocks.timeOutInitialLoad();
+      blocks.completeInitial(<String>{});
+      await settle();
+
+      pending.complete(TrendingFetch.success(<PrismWallpaper>[_wall('restored', uid: 'creator')]));
+      await settle();
+      await settle();
+
+      expect(bloc.state.walls.map((wall) => wall.id), <String>['restored']);
+      expect(calls, 2);
     });
 
     test('also hides their walls in a load that was already running', () async {

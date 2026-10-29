@@ -246,6 +246,172 @@ void main() {
     expect(result.data, isNull);
   });
 
+  test('an unknown block list hides today without invalidating its saved snapshot', () async {
+    final DateTime day = DateTime.now().toUtc();
+    firestoreClient.docs[FirebaseCollections.wallOfTheDay]!['current'] = <String, dynamic>{
+      'wallId': 'wall-doc-1',
+      'date': day,
+    };
+    when(
+      () => prismRepository.fetchByDocumentId('wall-doc-1'),
+    ).thenAnswer((_) async => Result.success(_wall('logical-id', documentId: 'wall-doc-1')));
+    final FakeFeedCacheLocalDataSource cache = FakeFeedCacheLocalDataSource();
+    final FakeUserBlockRepository blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+    final WallOfTheDayRepositoryImpl writer = WallOfTheDayRepositoryImpl(
+      firestoreClient,
+      prismRepository,
+      blocks,
+      feedCacheLocal: cache,
+    );
+    expect((await writer.fetchToday()).data, isNotNull);
+    final Object? savedSnapshot = cache.snapshots['wotd/today']!.payload;
+
+    final FakeUserBlockRepository unknown = FakeUserBlockRepository.pending()..timeOutInitialLoad();
+    final WallOfTheDayRepositoryImpl hidden = WallOfTheDayRepositoryImpl(
+      firestoreClient,
+      prismRepository,
+      unknown,
+      feedCacheLocal: cache,
+    );
+    expect((await hidden.fetchToday()).data, isNull);
+    expect(cache.snapshots['wotd/today']!.payload, same(savedSnapshot));
+
+    unknown.completeInitial(<String>{});
+    final WallOfTheDayRepositoryImpl offline = WallOfTheDayRepositoryImpl(
+      _OfflinePointerFirestoreClient(),
+      prismRepository,
+      unknown,
+      feedCacheLocal: cache,
+    );
+    expect((await offline.fetchToday()).data?.wallId, 'logical-id');
+  });
+
+  test('a block snapshot becoming unknown during wall lookup preserves the today snapshot', () async {
+    final DateTime day = DateTime.now().toUtc();
+    firestoreClient.docs[FirebaseCollections.wallOfTheDay]!['current'] = <String, dynamic>{
+      'wallId': 'wall-doc-1',
+      'date': day,
+    };
+    when(
+      () => prismRepository.fetchByDocumentId('wall-doc-1'),
+    ).thenAnswer((_) async => Result.success(_wall('logical-id', documentId: 'wall-doc-1')));
+    final FakeFeedCacheLocalDataSource cache = FakeFeedCacheLocalDataSource();
+    final FakeUserBlockRepository blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+    await WallOfTheDayRepositoryImpl(firestoreClient, prismRepository, blocks, feedCacheLocal: cache).fetchToday();
+    final Object? savedSnapshot = cache.snapshots['wotd/today']!.payload;
+
+    final Completer<void> wallLookupStarted = Completer<void>();
+    final Completer<PrismWallpaper?> wallLookup = Completer<PrismWallpaper?>();
+    when(() => prismRepository.fetchByDocumentId('wall-doc-1')).thenAnswer((_) {
+      wallLookupStarted.complete();
+      return wallLookup.future.then((wallpaper) => Result.success<PrismWallpaper?>(wallpaper));
+    });
+    final Future<Result<WallOfTheDayEntity?>> pending = WallOfTheDayRepositoryImpl(
+      firestoreClient,
+      prismRepository,
+      blocks,
+      feedCacheLocal: cache,
+    ).fetchToday();
+    await wallLookupStarted.future;
+    blocks.emitUnknown();
+    wallLookup.complete(null);
+
+    expect((await pending).data, isNull);
+    expect(cache.snapshots['wotd/today']!.payload, same(savedSnapshot));
+
+    blocks.completeInitial(<String>{});
+    expect(
+      (await WallOfTheDayRepositoryImpl(
+        _OfflinePointerFirestoreClient(),
+        prismRepository,
+        blocks,
+        feedCacheLocal: cache,
+      ).fetchToday()).data?.wallId,
+      'logical-id',
+    );
+  });
+
+  test('an unknown block list hides the archive without replacing its saved snapshot', () async {
+    final FakeFeedCacheLocalDataSource cache = FakeFeedCacheLocalDataSource();
+    final FakeDocRow row = (
+      id: '2026-01-04',
+      data: <String, dynamic>{'wallId': 'doc-a', 'date': DateTime.utc(2026, 1, 4)},
+    );
+    when(
+      () => prismRepository.fetchByDocumentId('doc-a'),
+    ).thenAnswer((_) async => Result.success(_wall('wall-a', documentId: 'doc-a')));
+    final FakeUserBlockRepository known = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+    await WallOfTheDayRepositoryImpl(
+      _WotdMetadataFirestoreClient(onQuery: (_) => <FakeDocRow>[row]),
+      prismRepository,
+      known,
+      feedCacheLocal: cache,
+    ).fetchRecent();
+    final Object? savedSnapshot = cache.snapshots['wotd/archive']!.payload;
+
+    final FakeUserBlockRepository unknown = FakeUserBlockRepository.pending()..timeOutInitialLoad();
+    final Result<List<WotdPastPick>> hidden = await WallOfTheDayRepositoryImpl(
+      _WotdMetadataFirestoreClient(),
+      prismRepository,
+      unknown,
+      feedCacheLocal: cache,
+    ).fetchRecent();
+    expect(hidden.data, isEmpty);
+    expect(cache.snapshots['wotd/archive']!.payload, same(savedSnapshot));
+
+    final Result<List<WotdPastPick>> offline = await WallOfTheDayRepositoryImpl(
+      _WotdMetadataFirestoreClient()..queryError = FirestoreError(code: 'unavailable', message: 'offline'),
+      prismRepository,
+      known,
+      feedCacheLocal: cache,
+    ).fetchRecent();
+    expect(offline.data?.single.wallpaper.id, 'wall-a');
+  });
+
+  test('a block snapshot becoming unknown during archive query preserves its saved snapshot', () async {
+    final FakeFeedCacheLocalDataSource cache = FakeFeedCacheLocalDataSource();
+    final FakeDocRow row = (
+      id: '2026-01-04',
+      data: <String, dynamic>{'wallId': 'doc-a', 'date': DateTime.utc(2026, 1, 4)},
+    );
+    when(
+      () => prismRepository.fetchByDocumentId('doc-a'),
+    ).thenAnswer((_) async => Result.success(_wall('wall-a', documentId: 'doc-a')));
+    final FakeUserBlockRepository blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+    await WallOfTheDayRepositoryImpl(
+      _WotdMetadataFirestoreClient(onQuery: (_) => <FakeDocRow>[row]),
+      prismRepository,
+      blocks,
+      feedCacheLocal: cache,
+    ).fetchRecent();
+    final Object? savedSnapshot = cache.snapshots['wotd/archive']!.payload;
+
+    when(() => prismRepository.fetchByDocumentId('doc-a')).thenAnswer((_) async => Result.success(null));
+    final _ControlledWotdMetadataClient controlled = _ControlledWotdMetadataClient();
+    final Future<Result<List<WotdPastPick>>> pending = WallOfTheDayRepositoryImpl(
+      controlled,
+      prismRepository,
+      blocks,
+      feedCacheLocal: cache,
+    ).fetchRecent();
+    await Future<void>.delayed(Duration.zero);
+    blocks.emitUnknown();
+    controlled.emitServer!(<FakeDocRow>[row]);
+
+    expect((await pending).data, isEmpty);
+    expect(cache.snapshots['wotd/archive']!.payload, same(savedSnapshot));
+
+    blocks.completeInitial(<String>{});
+    controlled.queryError = FirestoreError(code: 'unavailable', message: 'offline');
+    final Result<List<WotdPastPick>> offline = await WallOfTheDayRepositoryImpl(
+      controlled,
+      prismRepository,
+      blocks,
+      feedCacheLocal: cache,
+    ).fetchRecent();
+    expect(offline.data?.single.wallpaper.id, 'wall-a');
+  });
+
   test('a cached yesterday pointer retains yesterday and a missing date never becomes today', () async {
     final yesterday = DateTime.now().toUtc().subtract(const Duration(days: 1));
     firestoreClient.docs[FirebaseCollections.wallOfTheDay]!['current'] = <String, dynamic>{

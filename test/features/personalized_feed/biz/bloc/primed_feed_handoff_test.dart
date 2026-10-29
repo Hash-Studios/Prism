@@ -203,7 +203,7 @@ void main() {
     final bloc = PersonalizedFeedBloc(
       FetchPersonalizedFeedUseCase(env.repository),
       env.repository,
-      FakeUserBlockRepository.pending(),
+      FakeUserBlockRepository.pending()..completeInitial(<String>{}),
       _EmptyDrops(),
     );
     addTearDown(bloc.close);
@@ -230,7 +230,7 @@ void main() {
     final bloc = PersonalizedFeedBloc(
       FetchPersonalizedFeedUseCase(env.repository),
       env.repository,
-      FakeUserBlockRepository.pending(),
+      FakeUserBlockRepository.pending()..completeInitial(<String>{}),
       _EmptyDrops(),
     );
     addTearDown(bloc.close);

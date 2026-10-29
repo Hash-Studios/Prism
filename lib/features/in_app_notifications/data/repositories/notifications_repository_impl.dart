@@ -49,6 +49,10 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
     ({String ownerId, int localGeneration, int tombstoneGeneration}) session,
   ) async {
     if (!_isCurrent(session)) return _sessionChanged();
+    if (!await pruneBlockedNotificationsCache(notificationsLocal: _notificationsLocal)) {
+      return Result.error(const ServerFailure('Unable to read notifications: blocked accounts did not load'));
+    }
+    if (!_isCurrent(session)) return _sessionChanged();
     return _successIfCurrent(session, await _readAll(session));
   }
 

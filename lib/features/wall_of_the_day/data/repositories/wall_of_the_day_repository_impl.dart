@@ -53,6 +53,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
   @override
   Future<Result<WallOfTheDayEntity?>> fetchToday() async {
     final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
+    if (blocked is! KnownBlockedCreators) return Result.success(null);
     try {
       final WallOfTheDayFirestorePointer? pointer = await _firestoreClient.getById<WallOfTheDayFirestorePointer>(
         FirebaseCollections.wallOfTheDay,
@@ -62,6 +63,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
         sourceTag: 'wotd.fetchToday.pointer',
       );
 
+      if (_userBlockRepository.blockedCreators != blocked) return Result.success(null);
       if (pointer == null || pointer.wallDocumentId.isEmpty || pointer.featuredAt == null) {
         await _invalidateToday();
         return Result.success(null);
@@ -79,8 +81,10 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
       }
 
       final wallResult = await _prismWallpaperRepository.fetchByDocumentId(pointer.wallDocumentId);
+      if (_userBlockRepository.blockedCreators != blocked) return Result.success(null);
       return await wallResult.fold<Future<Result<WallOfTheDayEntity?>>>(
         onSuccess: (wallpaper) async {
+          if (_userBlockRepository.blockedCreators != blocked) return Result.success(null);
           if (wallpaper == null || !hasPrismPreview(wallpaper) || wallpaper.review != true) {
             await _invalidateToday();
             return Result.success(null);
@@ -97,15 +101,18 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
             authorUid: wallpaper.core.authorUid,
           );
           await _rememberToday(featuredUtc, pointer.wallDocumentId, wallpaper);
+          if (_userBlockRepository.blockedCreators != blocked) return Result.success(null);
           return Result.success(_visibleForCaller(entity, wallpaper.core.authorUid, blocked));
         },
         onFailure: (failure) async {
+          if (_userBlockRepository.blockedCreators != blocked) return Result.success(null);
           if (_isTransientFailure(failure)) {
             final WallOfTheDayEntity? local = await _readCachedToday(
               featuredUtc,
               blocked,
               wallDocumentId: pointer.wallDocumentId,
             );
+            if (_userBlockRepository.blockedCreators != blocked) return Result.success(null);
             if (local != null) return Result.success(local);
           } else {
             await _invalidateToday();
@@ -114,8 +121,10 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
         },
       );
     } catch (e) {
+      if (_userBlockRepository.blockedCreators != blocked) return Result.success(null);
       final bool transient = _isTransientError(e);
       final WallOfTheDayEntity? local = transient ? await _readCachedToday(DateTime.now().toUtc(), blocked) : null;
+      if (_userBlockRepository.blockedCreators != blocked) return Result.success(null);
       if (!transient) await _invalidateToday();
       return local == null
           ? Result.error(ServerFailure("Could not load today's wallpaper: $e", code: mapFirestoreError(e).code))
@@ -130,7 +139,8 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
   Future<Result<List<WotdPastPick>>> fetchRecent({int limit = 30}) async {
     bool blockSnapshotReady = false;
     try {
-      await _userBlockRepository.loadBlockedCreators();
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
+      if (blocked is! KnownBlockedCreators) return Result.success(const <WotdPastPick>[]);
       blockSnapshotReady = true;
       final query = await _queryRecentRows(
         FirestoreQuerySpec(
@@ -142,6 +152,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
         ),
         (data, docId) => (docId: docId, data: data),
       );
+      if (_userBlockRepository.blockedCreators != blocked) return Result.success(const <WotdPastPick>[]);
       final rows = query.rows;
       if (!query.authoritative) {
         final List<WotdPastPick>? cached = await _readArchive();
@@ -151,6 +162,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
         }
       }
       final List<Result<WotdPastPick?>> resolved = await Future.wait(rows.map(_resolvePick));
+      if (_userBlockRepository.blockedCreators != blocked) return Result.success(const <WotdPastPick>[]);
       final Failure? firstFailure = resolved.map((result) => result.failure).nonNulls.firstOrNull;
       if (!query.authoritative && firstFailure == null && resolved.every((result) => result.data == null)) {
         return Result.error(const ServerFailure("Couldn't load past picks. Check your connection and try again."));
@@ -159,7 +171,9 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
         final List<Failure> failures = resolved.map((result) => result.failure).nonNulls.toList(growable: false);
         final List<WotdPastPick>? cached = await _readArchive();
         final List<WotdPastPick>? reconciled = cached == null ? null : _reconcileArchiveRows(rows, resolved, cached);
-        if (query.authoritative && reconciled != null) await _writeArchive(reconciled);
+        if (query.authoritative && reconciled != null && _userBlockRepository.blockedCreators == blocked) {
+          await _writeArchive(reconciled);
+        }
         if (failures.every(_isTransientFailure)) {
           if (reconciled != null) {
             if (reconciled.isNotEmpty || resolved.any((result) => result.isSuccess && result.data != null)) {
@@ -177,7 +191,9 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
         }
       }
       final List<WotdPastPick> picks = resolved.map((result) => result.data).nonNulls.toList(growable: false);
-      if (query.authoritative && firstFailure == null) await _writeArchive(picks);
+      if (query.authoritative && firstFailure == null && _userBlockRepository.blockedCreators == blocked) {
+        await _writeArchive(picks);
+      }
       return Result.success(_visiblePicks(picks));
     } catch (error, stackTrace) {
       logger.e('[WallOfTheDayRepository] fetchRecent failed', error: error, stackTrace: stackTrace);
