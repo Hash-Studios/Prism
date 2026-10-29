@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
@@ -13,16 +15,32 @@ import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/fake_app_analytics.dart';
 import '../../../../support/in_memory_local_store.dart';
 
 const String _channelPrefix = 'dev.flutter.pigeon.Prism.PrismMediaHostApi';
+
+class _MockStackRouter extends Mock implements StackRouter {}
+
+/// A real [width] x [height] PNG, so the tile decodes it like a download.
+Future<Uint8List> _png(int width, int height) async {
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  Canvas(recorder).drawRect(Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()), Paint()..color = Colors.teal);
+  final ui.Picture picture = recorder.endRecording();
+  final ui.Image image = await picture.toImage(width, height);
+  picture.dispose();
+  final ByteData bytes = (await image.toByteData(format: ui.ImageByteFormat.png))!;
+  image.dispose();
+  return bytes.buffer.asUint8List();
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -369,5 +387,49 @@ void main() {
     final Color? color = tester.widget<Text>(find.text('1 download · 3 B')).style?.color;
     expect(color, Colors.orange);
     expect(color, isNot(theme.hintColor));
+  });
+
+  group('opening a download', () {
+    testWidgets('reads the shape of a decoded picture and nothing before it decodes', (tester) async {
+      final Uint8List bytes = (await tester.runAsync(() => _png(40, 80)))!;
+      final MemoryImage picture = MemoryImage(bytes);
+      expect(decodedAspectRatio(picture), isNull);
+
+      await tester.runAsync(() => precacheImage(picture, tester.binding.rootElement!));
+      expect(decodedAspectRatio(picture), 0.5);
+    });
+
+    testWidgets('passes the tile shape to the detail, so its card opens at the final size', (tester) async {
+      final Uint8List bytes = (await tester.runAsync(() => _png(160, 90)))!;
+      final File file = File('${dir.path}/wide.png')..writeAsBytesSync(bytes);
+      await index.remember(link: 'https://example.com/wide.png', id: 'wide', source: WallpaperSource.wallhaven);
+      onList = () async => DownloadItemsResult(success: true, items: <String>[file.path]);
+      final _MockStackRouter router = _MockStackRouter();
+      registerFallbackValue(DownloadWallpaperRoute(source: WallpaperSource.downloaded, file: file));
+      when(() => router.push(any())).thenAnswer((_) async => null);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: StackRouterScope(controller: router, stateHash: 0, child: DownloadScreen()),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      final ImageProvider tile = tester.widget<Image>(find.byType(Image)).image;
+      for (var i = 0; i < 50 && decodedAspectRatio(tile) == null; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+        await tester.pump();
+      }
+
+      await tester.tap(find.byKey(ValueKey<String>(file.path)));
+      await tester.pump();
+
+      final WallpaperDetailRoute route =
+          verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
+      expect(route.args!.aspectRatio, closeTo(16 / 9, 0.01));
+      expect(route.args!.localFile?.path, file.path);
+    });
   });
 }
