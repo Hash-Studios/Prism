@@ -363,6 +363,7 @@ void main() {
     await _onPlatform(TargetPlatform.android, () async {
       OfflineAssetStore.testOverride = _FakeAssetStore(heroFile);
       await _pumpPage(tester, _CountingAiGenerationRepository());
+      tester.view.physicalSize = const Size(320, 2200);
       await _typePrompt(tester, 'A glass lighthouse at dawn');
       await _generate(tester);
 
@@ -371,6 +372,75 @@ void main() {
       expect(tester.getRect(find.descendant(of: result, matching: find.text('Edit prompt'))).bottom, lessThan(60));
       expect(tester.getSize(coins).height, 44);
       expect(tester.getRect(coins).top, lessThan(60));
+      expect(tester.getRect(coins).right, lessThanOrEqualTo(tester.view.physicalSize.width));
+    });
+  });
+
+  testWidgets('result transition fades and scales while compose is excluded, then restores on close', (tester) async {
+    await _onPlatform(TargetPlatform.android, () async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      try {
+        OfflineAssetStore.testOverride = _FakeAssetStore(heroFile);
+        await _pumpPage(tester, _CountingAiGenerationRepository());
+        const String prompt = 'A glass lighthouse at dawn';
+        await _typePrompt(tester, prompt);
+        final SemanticsFinder promptSemantics = find.semantics.byValue(prompt);
+        expect(promptSemantics, findsOne);
+        final Finder generate = find.text('Generate');
+        await tester.ensureVisible(generate);
+        await tester.tap(generate);
+        await waitForRealIo(
+          tester,
+          () => find.byType(AiResultView).evaluate().isNotEmpty,
+          reason: 'the generated result to enter the page',
+          pumpDuration: const Duration(milliseconds: 16),
+        );
+        await tester.pump(const Duration(milliseconds: 80));
+
+        final Finder result = find.byType(AiResultView);
+        expect(result, findsOneWidget);
+        final double enteringOpacity = tester
+            .widget<FadeTransition>(find.ancestor(of: result, matching: find.byType(FadeTransition)).first)
+            .opacity
+            .value;
+        final double enteringScale = tester
+            .widget<ScaleTransition>(find.ancestor(of: result, matching: find.byType(ScaleTransition)).first)
+            .scale
+            .value;
+        expect(enteringOpacity, greaterThan(0));
+        expect(enteringOpacity, lessThan(1));
+        expect(enteringScale, greaterThan(0.96));
+        expect(enteringScale, lessThan(1));
+        expect(find.byType(AiPromptField).hitTestable(), findsNothing);
+        expect(promptSemantics, findsNothing);
+
+        await tester.pump(const Duration(milliseconds: 200));
+        await tester.tap(find.text('Edit prompt'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 80));
+
+        expect(result, findsOneWidget);
+        final double exitingOpacity = tester
+            .widget<FadeTransition>(find.ancestor(of: result, matching: find.byType(FadeTransition)).first)
+            .opacity
+            .value;
+        final double exitingScale = tester
+            .widget<ScaleTransition>(find.ancestor(of: result, matching: find.byType(ScaleTransition)).first)
+            .scale
+            .value;
+        expect(exitingOpacity, greaterThan(0));
+        expect(exitingOpacity, lessThan(1));
+        expect(exitingScale, greaterThan(0.96));
+        expect(exitingScale, lessThan(1));
+
+        await tester.pump(const Duration(milliseconds: 400));
+        expect(find.byType(AiResultView), findsNothing);
+        expect(find.byType(AiPromptField).hitTestable(), findsOneWidget);
+        expect(promptSemantics, findsOne);
+        await tester.pump(const Duration(seconds: 2));
+      } finally {
+        semantics.dispose();
+      }
     });
   });
 
