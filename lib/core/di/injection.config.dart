@@ -742,6 +742,9 @@ _i174.GetIt initGetIt(
     () =>
         _i406.ClearFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()),
   );
+  gh.lazySingleton<_i406.SetFavouritePinUseCase>(
+    () => _i406.SetFavouritePinUseCase(gh<_i643.FavouriteWallsRepository>()),
+  );
   gh.lazySingleton<_i563.AutoRotateRepository>(
     () => _i948.AutoRotateRepositoryImpl(
       gh<_i1073.SettingsLocalDataSource>(),
@@ -756,13 +759,6 @@ _i174.GetIt initGetIt(
       gh<_i301.LoadCategoriesUseCase>(),
       gh<_i301.FetchCategoryFeedUseCase>(),
       gh<_i112.UserBlockRepository>(),
-    ),
-  );
-  gh.factory<_i782.FavouriteWallsBloc>(
-    () => _i782.FavouriteWallsBloc(
-      gh<_i406.FetchFavouriteWallsUseCase>(),
-      gh<_i406.ToggleFavouriteWallUseCase>(),
-      gh<_i406.ClearFavouriteWallsUseCase>(),
     ),
   );
   gh.lazySingleton<_i567.PersonalizedFeedRepository>(
@@ -796,6 +792,14 @@ _i174.GetIt initGetIt(
       gh<_i112.UserBlockRepository>(),
       gh<_i1073.SettingsLocalDataSource>(),
       gh<_i567.PersonalizedFeedRepository>(),
+    ),
+  );
+  gh.factory<_i782.FavouriteWallsBloc>(
+    () => _i782.FavouriteWallsBloc(
+      gh<_i406.FetchFavouriteWallsUseCase>(),
+      gh<_i406.ToggleFavouriteWallUseCase>(),
+      gh<_i406.ClearFavouriteWallsUseCase>(),
+      gh<_i406.SetFavouritePinUseCase>(),
     ),
   );
   gh.factory<_i408.AutoRotateBloc>(

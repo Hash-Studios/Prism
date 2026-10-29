@@ -256,6 +256,29 @@ const cases = [
     }, Bu), 200],
     [`${provider} favourite delete allowed`, () => req('DELETE', `usersv2/b/images/${provider}`, null, Bu), 200],
   ]),
+  ['favourite with pinnedAt timestamp allowed', () => req('PATCH', 'usersv2/b/images/pinned-wall', {
+    id: { stringValue: 'pinned-wall' }, provider: { stringValue: 'Prism' }, pinnedAt: ts(),
+  }, Bu), 200],
+  ['favourite pin update (mask pinnedAt) allowed', () => req('PATCH', 'usersv2/b/images/pinned-wall', {
+    pinnedAt: { timestampValue: new Date().toISOString() },
+  }, Bu, ['pinnedAt']), 200],
+  ['favourite unpin (field removed via mask) allowed', () => req('PATCH', 'usersv2/b/images/pinned-wall', {}, Bu, ['pinnedAt']), 200],
+  ['favourite pinnedAt string rejected', () => req('PATCH', 'usersv2/b/images/pinned-bad', {
+    id: { stringValue: 'pinned-bad' }, provider: { stringValue: 'Prism' }, pinnedAt: { stringValue: '2026-10-29' },
+  }, Bu), 403],
+  ['favourite pinnedAt null rejected', () => req('PATCH', 'usersv2/b/images/pinned-bad2', {
+    id: { stringValue: 'pinned-bad2' }, provider: { stringValue: 'Prism' }, pinnedAt: { nullValue: null },
+  }, Bu), 403],
+  ['favourite pinnedAt number rejected', () => req('PATCH', 'usersv2/b/images/pinned-bad3', {
+    id: { stringValue: 'pinned-bad3' }, provider: { stringValue: 'Prism' }, pinnedAt: { integerValue: '1' },
+  }, Bu), 403],
+  ['other user cannot pin someone else favourite', () => req('PATCH', 'usersv2/b/images/pinned-wall', {
+    pinnedAt: ts(),
+  }, A, ['pinnedAt']), 403],
+  ['old client favourite without pinnedAt still allowed', () => req('PATCH', 'usersv2/b/images/old-client', {
+    id: { stringValue: 'old-client' }, provider: { stringValue: 'Prism' }, url: { stringValue: 'https://example.com/w.jpg' },
+    thumb: { stringValue: 'https://example.com/t.jpg' }, favouritedAt: ts(),
+  }, Bu), 200],
   ['guest reads redacted public metadata', () => req('GET', 'walls/protected'), 200],
   ['guest reads a reviewed legacy wall (3.7.0 read rule restored)', () => req('GET', 'walls/w9'), 200],
   ['guest reads a reviewed wall that only claims protection (read tightening ships later)', () => req('GET', 'walls/leaked'), 200],
@@ -560,6 +583,7 @@ const cases = [
   ['item spatial must be a map', () => req('PATCH', 'folders/fb/items/prism_spatialstr', { ...itemFields('b', 'spatialstr', 'Prism'), spatial: str('scene') }, Bu), 403],
   ['changing an item ownerId is refused', () => req('PATCH', 'folders/fb/items/wallhaven_abc', { ownerId: str('c') }, Bu, ['ownerId']), 403],
   ['item with an extra field is refused', () => req('PATCH', 'folders/fb/items/wallhaven_extra', { ...itemFields('b', 'extra'), public: { booleanValue: true } }, Bu), 403],
+  ['folder item cannot include a favourite pin timestamp', () => req('PATCH', 'folders/fb/items/wallhaven_pinned', { ...itemFields('b', 'pinned'), pinnedAt: ts() }, Bu), 403],
   ['item in a missing folder is refused', () => req('PATCH', 'folders/missing/items/wallhaven_abc', itemFields('b'), Bu), 403],
   ['owner updates own seeded folder count', () => req('PATCH', 'folders/fb', { itemCount: { integerValue: '1' }, covers: arr(['https://example.com/t.jpg']), updatedAt: ts() }, Bu, ['itemCount', 'covers', 'updatedAt']), 200],
   ['owner creates a folder and first item atomically', () => commitDocs(Bu, [

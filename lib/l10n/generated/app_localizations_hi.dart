@@ -29,6 +29,34 @@ class AppLocalizationsHi extends AppLocalizations {
   String get galleryScreenTitle => 'आपके लिए वॉलपेपर';
 
   @override
+  String get favouritePin => 'सबसे ऊपर पिन करें';
+
+  @override
+  String get favouriteUnpin => 'पिन हटाएँ';
+
+  @override
+  String get favouritePinnedToast => 'पसंदीदा में सबसे ऊपर पिन किया गया';
+
+  @override
+  String get favouriteUnpinnedToast => 'पिन हटाया गया';
+
+  @override
+  String get favouritePinnedBadge => 'पिन किया गया';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आप अधिकतम $count पसंदीदा पिन कर सकते हैं। यह वॉलपेपर पिन करने के लिए कोई एक अनपिन करें।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed => 'पिन अपडेट नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7629,9 +7657,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperResetOriginal => 'मूल पर रीसेट करें';
 
   @override
-  String get wallpaperAccentResetHint => 'मूल पर रीसेट सहित कार्रवाइयों के लिए दबाकर रखें';
-
-  @override
   String get wallpaperAll => 'सभी';
 
   @override
@@ -8653,8 +8678,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperHomeAppName => 'Prism';
 
   @override
-  String get wallpaperImageSemanticHint =>
-      'रंग बदलने के लिए टैप करें। पसंदीदा, शेयर और रीसेट के लिए दबाकर रखें। विवरण के लिए स्क्रॉल करें।';
+  String get wallpaperImageSemanticHint => 'पसंदीदा, शेयर और रीसेट के लिए दबाकर रखें। विवरण के लिए स्क्रॉल करें।';
 
   @override
   String get wallpaperPreviousInFeed => 'पिछला वॉलपेपर';
@@ -8664,6 +8688,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'वॉलपेपर';
+
+  @override
+  String get wallpaperImmersiveHint => 'नियंत्रण छिपाने के लिए टैप करें';
 
   @override
   String get wallpaperInsufficientCoins => 'कॉइन कम हैं। इनाम में कॉइन कमाएँ।';

@@ -27,6 +27,7 @@ import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actio
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_pin_toggle.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_tile_image.dart';
 import 'package:Prism/features/library/data/favourites_export.dart';
 import 'package:Prism/features/library/views/widgets/library_toolbar.dart';
@@ -494,6 +495,15 @@ class _FavouriteGridState extends State<FavouriteGrid> {
           ? _tileImage(context, walls, index, wall, cs, isSelected, dark)
           : WallpaperQuickActionRegion(
               item: wall.toFeedItem(),
+              readIsPinned: () => isFavouritePinned(context, wall.id),
+              onTogglePin: () => unawaited(
+                toggleFavouritePin(
+                  context,
+                  wall.id,
+                  pin: !isFavouritePinned(context, wall.id),
+                  surface: FavouritePinSurfaceValue.library,
+                ),
+              ),
               child: _tileImage(context, walls, index, wall, cs, isSelected, dark),
             ),
     );
@@ -566,6 +576,26 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                               ? context.l10n.wallpaperFavouriteWaitingSync
                               : context.l10n.wallpaperFavouriteNotSynced,
                           style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (wall.pinned && !isSelected)
+                  PositionedDirectional(
+                    end: PrismSpace.xs,
+                    top: PrismSpace.xs,
+                    child: Semantics(
+                      label: context.l10n.favouritePinnedBadge,
+                      child: ExcludeSemantics(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: cs.surfaceContainerHigh.withValues(alpha: 0.94),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(PrismSpace.xxs + 1),
+                            child: Icon(Icons.push_pin_rounded, size: 14, color: cs.onSurface),
+                          ),
                         ),
                       ),
                     ),

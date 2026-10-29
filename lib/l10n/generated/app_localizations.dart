@@ -141,6 +141,48 @@ abstract class AppLocalizations {
   /// **'Walls for you'**
   String get galleryScreenTitle;
 
+  /// Hold-menu action on a favourite wallpaper. Keeps it at the top of Favourites.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin to top'**
+  String get favouritePin;
+
+  /// Hold-menu action on a pinned favourite. Returns it to its normal place in Favourites.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get favouriteUnpin;
+
+  /// Confirmation after the user pins a favourite.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned to the top of Favourites'**
+  String get favouritePinnedToast;
+
+  /// Confirmation after the user unpins a favourite.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpinned'**
+  String get favouriteUnpinnedToast;
+
+  /// Accessibility label of the small pin badge on a pinned favourite tile.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned'**
+  String get favouritePinnedBadge;
+
+  /// Shown when the user tries to pin more favourites than the limit.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, other{You can pin up to {count} favourites. Unpin one to pin this wallpaper.}}'**
+  String favouritePinLimit(int count);
+
+  /// Shown when pinning or unpinning a favourite fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to update the pin. Check your connection and try again.'**
+  String get favouritePinFailed;
+
   /// Hint in the favourites search field. It also tells how many favourites there are.
   ///
   /// In en, this message translates to:
@@ -11647,12 +11689,6 @@ abstract class AppLocalizations {
   /// **'Reset to original'**
   String get wallpaperResetOriginal;
 
-  /// Toast hint explaining how to reset the selected wallpaper accent.
-  ///
-  /// In en, this message translates to:
-  /// **'Hold for actions, including Reset to original'**
-  String get wallpaperAccentResetHint;
-
   /// Filter option to show all wallpaper sources.
   ///
   /// In en, this message translates to:
@@ -13249,7 +13285,7 @@ abstract class AppLocalizations {
   /// **'Got it. You\'ll see fewer like this.'**
   String get wallpaperGotItFewerLikeThis;
 
-  /// Accessibility label of the wallpaper preview background: a tap hides the buttons so the whole mock phone screen shows.
+  /// Accessibility label and action that hides the buttons: on the wallpaper preview, and on the wallpaper detail screen where it also hides the system bars.
   ///
   /// In en, this message translates to:
   /// **'Hide controls'**
@@ -13300,7 +13336,7 @@ abstract class AppLocalizations {
   /// Accessibility hint describing wallpaper image gestures.
   ///
   /// In en, this message translates to:
-  /// **'Tap to cycle accent color. Hold for favourite, share, and reset actions. Scroll for details.'**
+  /// **'Hold for favourite, share, and reset actions. Scroll for details.'**
   String get wallpaperImageSemanticHint;
 
   /// Accessibility action on the wallpaper detail card that shows the previous wallpaper of the feed it was opened from.
@@ -13320,6 +13356,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wallpaper'**
   String get wallpaperImageSemanticLabel;
+
+  /// Small hint shown once on the wallpaper detail screen. A tap on the wallpaper hides every button and the system bars.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to hide controls'**
+  String get wallpaperImmersiveHint;
 
   /// Message shown when the user lacks coins for an auto-rotate pass.
   ///
@@ -14473,7 +14515,7 @@ abstract class AppLocalizations {
   /// **'Show less like this'**
   String get wallpaperShowLessLikeThis;
 
-  /// Accessibility label of the wallpaper preview background: a tap shows the buttons again.
+  /// Accessibility label and action that shows the buttons again, on the wallpaper preview and on the wallpaper detail screen.
   ///
   /// In en, this message translates to:
   /// **'Show controls'**

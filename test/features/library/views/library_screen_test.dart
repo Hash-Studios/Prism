@@ -40,6 +40,8 @@ class _MockToggleFavouriteWallUseCase extends Mock implements ToggleFavouriteWal
 
 class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWallsUseCase {}
 
+class _MockSetFavouritePinUseCase extends Mock implements SetFavouritePinUseCase {}
+
 class _Firestore extends Fake implements FirestoreClient {}
 
 class _LibraryRouter extends AppRouter {
@@ -124,7 +126,12 @@ void main() {
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     // Built inside the test body so the bloc runs on the fake-async clock the tester pumps.
-    bloc = FavouriteWallsBloc(fetch, _MockToggleFavouriteWallUseCase(), _MockClearFavouriteWallsUseCase());
+    bloc = FavouriteWallsBloc(
+      fetch,
+      _MockToggleFavouriteWallUseCase(),
+      _MockClearFavouriteWallsUseCase(),
+      _MockSetFavouritePinUseCase(),
+    );
     Widget home = BlocProvider<FavouriteWallsBloc>.value(
       value: bloc,
       child: LibraryScreen(initialTab: initialTab),
@@ -146,7 +153,12 @@ void main() {
     final dispatcher = DeepLinkDispatcher(router: router, whenReady: () async => true);
     addTearDown(dispatcher.dispose);
     addTearDown(router.dispose);
-    bloc = FavouriteWallsBloc(fetch, _MockToggleFavouriteWallUseCase(), _MockClearFavouriteWallsUseCase());
+    bloc = FavouriteWallsBloc(
+      fetch,
+      _MockToggleFavouriteWallUseCase(),
+      _MockClearFavouriteWallsUseCase(),
+      _MockSetFavouritePinUseCase(),
+    );
     await tester.pumpWidget(
       BlocProvider<FavouriteWallsBloc>.value(
         value: bloc,

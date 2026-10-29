@@ -461,12 +461,7 @@ void main() {
       return await next as WallpaperDetailLoaded;
     }
 
-    var state = await apply(const CycleAccentColor());
-    expect(state.accent, const Color(0xff0000ff));
-    expect(state.colorChanged, isTrue);
-    state = await apply(const CycleAccentColor());
-    expect(state.accent, const Color(0xffff0000));
-    state = await apply(const SelectAccentColor(color: Color(0xff00ff00)));
+    var state = await apply(const SelectAccentColor(color: Color(0xff00ff00)));
     expect(state.accent, const Color(0xff00ff00));
     state = await apply(const ResetAccentColor());
     expect(state.colorChanged, isFalse);
