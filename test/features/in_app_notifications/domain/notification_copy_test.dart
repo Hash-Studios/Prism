@@ -117,6 +117,19 @@ void main() {
     }
   });
 
+  test('a filled wall request shows the request text as the body', () {
+    expect(
+      localizedNotificationCopyData(
+        'wallRequestFilled',
+        const <String, Object?>{'requestText': 'dark minimal mountains'},
+        fallbackTitle: '',
+        fallbackBody: '',
+        l10n: l10n,
+      ),
+      (title: 'Your request is here', body: 'dark minimal mountains'),
+    );
+  });
+
   test('an empty or whitespace WOTD title uses the untitled audience copy', () {
     for (final String wallTitle in <String>['', '   ']) {
       expect(

@@ -10,6 +10,7 @@ from pathlib import Path
 # Exact English/German matches that are valid as written. Keep entries keyed by
 # message ID: a general same-English exception would hide untranslated copy.
 UNCHANGED_ENGLISH_ALLOWLIST = {
+    'notifPushWallRequestFilledBody': '{requestText}',
     # Product, platform, and service names.
     'appTitle': 'Prism',
     'accountAppName': 'Prism Wallpapers',
@@ -240,7 +241,8 @@ def check():
         if format_placeholders(en_android[key]) != format_placeholders(de_android[key]):
             errors.append(f'Android {key}: positional placeholders differ')
         if en_android[key] == de_android[key] and key not in {
-            'app_name', 'wotd_widget_label', 'notif_push_wotd_for_audience_body', 'notif_push_follow_digest_body'
+            'app_name', 'wotd_widget_label', 'notif_push_wotd_for_audience_body', 'notif_push_follow_digest_body',
+            'notif_push_wall_request_filled_body',
         }:
             errors.append(f'Android {key}: meaningful English text is unchanged')
 
@@ -260,7 +262,8 @@ def check():
             continue
         if english is not None and format_placeholders(english) != format_placeholders(german):
             ios_errors.append(f'{key}: positional placeholders differ')
-        if english == german and key not in ('notif_push_wotd_for_audience_body', 'notif_push_follow_digest_body'):
+        if english == german and key not in (
+            'notif_push_wotd_for_audience_body', 'notif_push_follow_digest_body', 'notif_push_wall_request_filled_body'):
             ios_errors.append(f'{key}: meaningful English text is unchanged')
     errors.extend(f'iOS {error}' for error in ios_errors)
 

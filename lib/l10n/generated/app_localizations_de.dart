@@ -10740,180 +10740,182 @@ class AppLocalizationsDe extends AppLocalizations {
       'Hintergrundbilder konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.';
 
   @override
-  String get wallRequestsTitle => 'Wall requests';
+  String get wallRequestsTitle => 'Wallpaper-Wünsche';
 
   @override
-  String get wallRequestsTabTop => 'Top';
+  String get wallRequestsTabTop => 'Beliebt';
 
   @override
-  String get wallRequestsTabNew => 'New';
+  String get wallRequestsTabNew => 'Neu';
 
   @override
-  String get wallRequestsTabFilled => 'Filled';
+  String get wallRequestsTabFilled => 'Erfüllt';
 
   @override
-  String get wallRequestsAsk => 'Request a wall';
+  String get wallRequestsAsk => 'Wallpaper wünschen';
 
   @override
-  String get wallRequestsEmptyTopTitle => 'No requests yet';
+  String get wallRequestsEmptyTopTitle => 'Noch keine Wünsche';
 
   @override
-  String get wallRequestsEmptyTopBody => 'Ask for the wall you can\'t find. Others can upvote it.';
+  String get wallRequestsEmptyTopBody =>
+      'Frag nach dem Wallpaper, das du nicht findest. Andere können dafür abstimmen.';
 
   @override
-  String get wallRequestsEmptyFilledTitle => 'Nothing filled yet';
+  String get wallRequestsEmptyFilledTitle => 'Noch nichts erfüllt';
 
   @override
-  String get wallRequestsEmptyFilledBody => 'Filled requests show up here with the wall that answered them.';
+  String get wallRequestsEmptyFilledBody =>
+      'Erfüllte Wünsche erscheinen hier, zusammen mit dem Wallpaper, das sie erfüllt hat.';
 
   @override
-  String get wallRequestsLoadFailed => 'Couldn\'t load requests';
+  String get wallRequestsLoadFailed => 'Wünsche konnten nicht geladen werden';
 
   @override
-  String get wallRequestsRetry => 'Try again';
+  String get wallRequestsRetry => 'Erneut versuchen';
 
   @override
   String wallRequestVotes(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count votes',
-      one: '1 vote',
-      zero: 'No votes',
+      other: '$count Stimmen',
+      one: '1 Stimme',
+      zero: 'Keine Stimmen',
     );
     return '$_temp0';
   }
 
   @override
-  String get wallRequestUpvote => 'Upvote';
+  String get wallRequestUpvote => 'Unterstützen';
 
   @override
-  String get wallRequestRemoveUpvote => 'Remove upvote';
+  String get wallRequestRemoveUpvote => 'Unterstützung entfernen';
 
   @override
-  String get wallRequestMine => 'Your request';
+  String get wallRequestMine => 'Dein Wunsch';
 
   @override
-  String get wallRequestSomeone => 'A Prism user';
+  String get wallRequestSomeone => 'Ein Prism-Nutzer';
 
   @override
   String wallRequestFilledByCreator(String name) {
-    return 'Filled by $name';
+    return 'Erfüllt von $name';
   }
 
   @override
-  String get wallRequestFilledByStudio => 'Made by Prism Studio';
+  String get wallRequestFilledByStudio => 'Von Prism Studio gemacht';
 
   @override
-  String get wallRequestOpenWall => 'Open the wall';
+  String get wallRequestOpenWall => 'Wallpaper öffnen';
 
   @override
-  String get wallRequestMoreActions => 'More actions';
+  String get wallRequestMoreActions => 'Weitere Aktionen';
 
   @override
-  String get wallRequestReport => 'Report request';
+  String get wallRequestReport => 'Wunsch melden';
 
   @override
-  String get wallRequestHide => 'Hide request';
+  String get wallRequestHide => 'Wunsch ausblenden';
 
   @override
-  String get wallRequestUnhide => 'Show request';
+  String get wallRequestUnhide => 'Wunsch einblenden';
 
   @override
-  String get wallRequestHiddenLabel => 'Hidden';
+  String get wallRequestHiddenLabel => 'Ausgeblendet';
 
   @override
-  String get wallRequestSheetTitle => 'Request a wall';
+  String get wallRequestSheetTitle => 'Wallpaper wünschen';
 
   @override
-  String get wallRequestSheetHint => 'Describe it, like dark minimal mountains';
+  String get wallRequestSheetHint => 'Beschreib es, z. B. dunkle, schlichte Berge';
 
   @override
-  String get wallRequestSheetTags => 'Tags, up to 3';
+  String get wallRequestSheetTags => 'Tags, bis zu 3';
 
   @override
-  String get wallRequestSheetSubmit => 'Request it';
+  String get wallRequestSheetSubmit => 'Wunsch senden';
 
   @override
-  String get wallRequestSignIn => 'Sign in to request walls and upvote them.';
+  String get wallRequestSignIn => 'Melde dich an, um Wallpaper zu wünschen und zu unterstützen.';
 
   @override
-  String get wallRequestDuplicateTitle => 'Someone asked for this already';
+  String get wallRequestDuplicateTitle => 'Das hat schon jemand gewünscht';
 
   @override
-  String get wallRequestDuplicateBody => 'Upvote it so creators see it sooner.';
+  String get wallRequestDuplicateBody => 'Unterstütze es, damit Creator es früher sehen.';
 
   @override
-  String get wallRequestUpvoteInstead => 'Upvote this instead';
+  String get wallRequestUpvoteInstead => 'Stattdessen unterstützen';
 
   @override
-  String get wallRequestCreateAnyway => 'Request mine anyway';
+  String get wallRequestCreateAnyway => 'Trotzdem meinen senden';
 
   @override
-  String get wallRequestDuplicateMine => 'You asked for this already';
+  String get wallRequestDuplicateMine => 'Das hast du schon gewünscht';
 
   @override
-  String get wallRequestDuplicateVoted => 'You upvoted this already';
+  String get wallRequestDuplicateVoted => 'Das hast du schon unterstützt';
 
   @override
-  String get wallRequestEditText => 'Edit my request';
+  String get wallRequestEditText => 'Meinen Wunsch bearbeiten';
 
   @override
-  String get wallRequestCreated => 'Request sent. We\'ll tell you when it\'s filled.';
+  String get wallRequestCreated => 'Wunsch gesendet. Wir sagen dir Bescheid, wenn er erfüllt ist.';
 
   @override
-  String get wallRequestUpvoted => 'Upvoted. We\'ll tell you when it\'s filled.';
+  String get wallRequestUpvoted => 'Unterstützt. Wir sagen dir Bescheid, wenn er erfüllt ist.';
 
   @override
-  String get wallRequestErrorText => 'Use 3 to 80 characters, and keep it friendly.';
+  String get wallRequestErrorText => 'Nutze 3 bis 80 Zeichen und bleib freundlich.';
 
   @override
-  String get wallRequestErrorLimit => 'You can make 3 requests a day. Try again tomorrow.';
+  String get wallRequestErrorLimit => 'Du kannst pro Tag 3 Wünsche senden. Versuch es morgen erneut.';
 
   @override
-  String get wallRequestErrorOwn => 'You can\'t upvote your own request.';
+  String get wallRequestErrorOwn => 'Du kannst deinen eigenen Wunsch nicht unterstützen.';
 
   @override
-  String get wallRequestErrorClosed => 'This request is already filled.';
+  String get wallRequestErrorClosed => 'Dieser Wunsch ist schon erfüllt.';
 
   @override
-  String get wallRequestErrorGone => 'This request isn\'t available anymore.';
+  String get wallRequestErrorGone => 'Dieser Wunsch ist nicht mehr verfügbar.';
 
   @override
-  String get wallRequestErrorGeneric => 'Something went wrong. Try again.';
+  String get wallRequestErrorGeneric => 'Etwas ist schiefgelaufen. Versuch es erneut.';
 
   @override
-  String get searchRequestPrompt => 'Can\'t find it?';
+  String get searchRequestPrompt => 'Nicht gefunden?';
 
   @override
-  String get searchRequestAction => 'Request it';
+  String get searchRequestAction => 'Wunsch senden';
 
   @override
-  String get discoverRequestsTitle => 'Wall requests';
+  String get discoverRequestsTitle => 'Wallpaper-Wünsche';
 
   @override
-  String get discoverRequestsSubtitle => 'Ask for a wall, or upvote one';
+  String get discoverRequestsSubtitle => 'Wallpaper wünschen oder einen Wunsch unterstützen';
 
   @override
-  String get uploadFillsRequest => 'Fills a request';
+  String get uploadFillsRequest => 'Erfüllt einen Wunsch';
 
   @override
-  String get uploadFillsRequestHint => 'Optional. Pick the request this wall answers.';
+  String get uploadFillsRequestHint => 'Optional. Wähle den Wunsch, den dieses Wallpaper erfüllt.';
 
   @override
-  String get uploadFillsRequestClear => 'Remove request';
+  String get uploadFillsRequestClear => 'Wunsch entfernen';
 
   @override
-  String get requestPickerTitle => 'Which request does it fill?';
+  String get requestPickerTitle => 'Welchen Wunsch erfüllt es?';
 
   @override
-  String get requestPickerSearch => 'Search requests';
+  String get requestPickerSearch => 'Wünsche durchsuchen';
 
   @override
-  String get requestPickerEmpty => 'No open requests match';
+  String get requestPickerEmpty => 'Keine offenen Wünsche gefunden';
 
   @override
-  String get notifPushWallRequestFilledTitle => 'Your request is here';
+  String get notifPushWallRequestFilledTitle => 'Dein Wunsch ist da';
 
   @override
   String notifPushWallRequestFilledBody(String requestText) {
@@ -10921,29 +10923,29 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get wallRequestAgeNow => 'Just now';
+  String get wallRequestAgeNow => 'Gerade eben';
 
   @override
   String wallRequestAgeMinutes(int count) {
-    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count minutes ago', one: '1 minute ago');
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'vor $count Minuten', one: 'vor 1 Minute');
     return '$_temp0';
   }
 
   @override
   String wallRequestAgeHours(int count) {
-    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count hours ago', one: '1 hour ago');
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'vor $count Stunden', one: 'vor 1 Stunde');
     return '$_temp0';
   }
 
   @override
   String wallRequestAgeDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count days ago', one: '1 day ago');
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'vor $count Tagen', one: 'vor 1 Tag');
     return '$_temp0';
   }
 
   @override
   String wallRequestAgeWeeks(int count) {
-    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count weeks ago', one: '1 week ago');
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'vor $count Wochen', one: 'vor 1 Woche');
     return '$_temp0';
   }
 }

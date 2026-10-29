@@ -55,6 +55,8 @@
     <string name="notif_push_drop_last_call_title">Última oportunidad para el Drop de esta semana</string>
     <string name="notif_push_drop_last_call_body">%1$s termina en %2$s h. Después, los fondos no estarán disponibles durante un mes.</string>
     <string name="notif_push_draw_winner_title">Has ganado el sorteo de Prism</string>
+    <string name="notif_push_wall_request_filled_title">Tu solicitud ya está aquí</string>
+    <string name="notif_push_wall_request_filled_body">%1$s</string>
     <string name="notif_push_draw_winner_body">Un mes de Pro y el marco de Prism son tuyos.</string>
     <string name="notif_push_gift_received_title">%1$s te envió un pase Pro de 24 horas</string>
     <string name="notif_push_gift_received_body">Las colecciones prémium y los fondos prémium estarán disponibles hasta mañana.</string>

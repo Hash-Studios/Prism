@@ -55,6 +55,8 @@
     <string name="notif_push_drop_last_call_title">Letzte Chance für den aktuellen Drop</string>
     <string name="notif_push_drop_last_call_body">%1$s endet in %2$s Std. Danach sind die Hintergrundbilder einen Monat lang nicht verfügbar.</string>
     <string name="notif_push_draw_winner_title">Du hast die Prism-Verlosung gewonnen</string>
+    <string name="notif_push_wall_request_filled_title">Dein Wunsch ist da</string>
+    <string name="notif_push_wall_request_filled_body">%1$s</string>
     <string name="notif_push_draw_winner_body">Ein Monat Pro und der Prism-Rahmen gehören dir.</string>
     <string name="notif_push_gift_received_title">%1$s hat dir einen 24-Stunden-Pro-Pass gesendet</string>
     <string name="notif_push_gift_received_body">Premium-Sammlungen und Premium-Hintergrundbilder sind bis morgen freigeschaltet.</string>

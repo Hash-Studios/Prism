@@ -10919,180 +10919,180 @@ class AppLocalizationsPt extends AppLocalizations {
       'Não foi possível carregar os papéis de parede. Verifique sua conexão e tente novamente.';
 
   @override
-  String get wallRequestsTitle => 'Wall requests';
+  String get wallRequestsTitle => 'Pedidos de papel de parede';
 
   @override
   String get wallRequestsTabTop => 'Top';
 
   @override
-  String get wallRequestsTabNew => 'New';
+  String get wallRequestsTabNew => 'Novos';
 
   @override
-  String get wallRequestsTabFilled => 'Filled';
+  String get wallRequestsTabFilled => 'Atendidos';
 
   @override
-  String get wallRequestsAsk => 'Request a wall';
+  String get wallRequestsAsk => 'Pedir um papel de parede';
 
   @override
-  String get wallRequestsEmptyTopTitle => 'No requests yet';
+  String get wallRequestsEmptyTopTitle => 'Ainda não há pedidos';
 
   @override
-  String get wallRequestsEmptyTopBody => 'Ask for the wall you can\'t find. Others can upvote it.';
+  String get wallRequestsEmptyTopBody => 'Peça o papel de parede que não encontra. Outros podem apoiá-lo.';
 
   @override
-  String get wallRequestsEmptyFilledTitle => 'Nothing filled yet';
+  String get wallRequestsEmptyFilledTitle => 'Ainda nada foi atendido';
 
   @override
-  String get wallRequestsEmptyFilledBody => 'Filled requests show up here with the wall that answered them.';
+  String get wallRequestsEmptyFilledBody => 'Os pedidos atendidos aparecem aqui, com o papel de parede que os atendeu.';
 
   @override
-  String get wallRequestsLoadFailed => 'Couldn\'t load requests';
+  String get wallRequestsLoadFailed => 'Não foi possível carregar os pedidos';
 
   @override
-  String get wallRequestsRetry => 'Try again';
+  String get wallRequestsRetry => 'Tentar de novo';
 
   @override
   String wallRequestVotes(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count votes',
-      one: '1 vote',
-      zero: 'No votes',
+      other: '$count votos',
+      one: '1 voto',
+      zero: 'Sem votos',
     );
     return '$_temp0';
   }
 
   @override
-  String get wallRequestUpvote => 'Upvote';
+  String get wallRequestUpvote => 'Apoiar';
 
   @override
-  String get wallRequestRemoveUpvote => 'Remove upvote';
+  String get wallRequestRemoveUpvote => 'Remover apoio';
 
   @override
-  String get wallRequestMine => 'Your request';
+  String get wallRequestMine => 'O seu pedido';
 
   @override
-  String get wallRequestSomeone => 'A Prism user';
+  String get wallRequestSomeone => 'Um utilizador do Prism';
 
   @override
   String wallRequestFilledByCreator(String name) {
-    return 'Filled by $name';
+    return 'Atendido por $name';
   }
 
   @override
-  String get wallRequestFilledByStudio => 'Made by Prism Studio';
+  String get wallRequestFilledByStudio => 'Feito pelo Prism Studio';
 
   @override
-  String get wallRequestOpenWall => 'Open the wall';
+  String get wallRequestOpenWall => 'Abrir o papel de parede';
 
   @override
-  String get wallRequestMoreActions => 'More actions';
+  String get wallRequestMoreActions => 'Mais ações';
 
   @override
-  String get wallRequestReport => 'Report request';
+  String get wallRequestReport => 'Denunciar pedido';
 
   @override
-  String get wallRequestHide => 'Hide request';
+  String get wallRequestHide => 'Ocultar pedido';
 
   @override
-  String get wallRequestUnhide => 'Show request';
+  String get wallRequestUnhide => 'Mostrar pedido';
 
   @override
-  String get wallRequestHiddenLabel => 'Hidden';
+  String get wallRequestHiddenLabel => 'Oculto';
 
   @override
-  String get wallRequestSheetTitle => 'Request a wall';
+  String get wallRequestSheetTitle => 'Pedir um papel de parede';
 
   @override
-  String get wallRequestSheetHint => 'Describe it, like dark minimal mountains';
+  String get wallRequestSheetHint => 'Descreva-o, por exemplo: montanhas escuras e minimalistas';
 
   @override
-  String get wallRequestSheetTags => 'Tags, up to 3';
+  String get wallRequestSheetTags => 'Etiquetas, até 3';
 
   @override
-  String get wallRequestSheetSubmit => 'Request it';
+  String get wallRequestSheetSubmit => 'Enviar pedido';
 
   @override
-  String get wallRequestSignIn => 'Sign in to request walls and upvote them.';
+  String get wallRequestSignIn => 'Inicie sessão para pedir papéis de parede e apoiá-los.';
 
   @override
-  String get wallRequestDuplicateTitle => 'Someone asked for this already';
+  String get wallRequestDuplicateTitle => 'Alguém já pediu isto';
 
   @override
-  String get wallRequestDuplicateBody => 'Upvote it so creators see it sooner.';
+  String get wallRequestDuplicateBody => 'Apoie-o para que os criadores o vejam mais cedo.';
 
   @override
-  String get wallRequestUpvoteInstead => 'Upvote this instead';
+  String get wallRequestUpvoteInstead => 'Apoiar este em vez disso';
 
   @override
-  String get wallRequestCreateAnyway => 'Request mine anyway';
+  String get wallRequestCreateAnyway => 'Enviar o meu mesmo assim';
 
   @override
-  String get wallRequestDuplicateMine => 'You asked for this already';
+  String get wallRequestDuplicateMine => 'Já pediu isto';
 
   @override
-  String get wallRequestDuplicateVoted => 'You upvoted this already';
+  String get wallRequestDuplicateVoted => 'Já apoiou isto';
 
   @override
-  String get wallRequestEditText => 'Edit my request';
+  String get wallRequestEditText => 'Editar o meu pedido';
 
   @override
-  String get wallRequestCreated => 'Request sent. We\'ll tell you when it\'s filled.';
+  String get wallRequestCreated => 'Pedido enviado. Avisamos quando for atendido.';
 
   @override
-  String get wallRequestUpvoted => 'Upvoted. We\'ll tell you when it\'s filled.';
+  String get wallRequestUpvoted => 'Apoiado. Avisamos quando for atendido.';
 
   @override
-  String get wallRequestErrorText => 'Use 3 to 80 characters, and keep it friendly.';
+  String get wallRequestErrorText => 'Use de 3 a 80 caracteres e seja simpático.';
 
   @override
-  String get wallRequestErrorLimit => 'You can make 3 requests a day. Try again tomorrow.';
+  String get wallRequestErrorLimit => 'Pode fazer 3 pedidos por dia. Tente amanhã.';
 
   @override
-  String get wallRequestErrorOwn => 'You can\'t upvote your own request.';
+  String get wallRequestErrorOwn => 'Não pode apoiar o seu próprio pedido.';
 
   @override
-  String get wallRequestErrorClosed => 'This request is already filled.';
+  String get wallRequestErrorClosed => 'Este pedido já foi atendido.';
 
   @override
-  String get wallRequestErrorGone => 'This request isn\'t available anymore.';
+  String get wallRequestErrorGone => 'Este pedido já não está disponível.';
 
   @override
-  String get wallRequestErrorGeneric => 'Something went wrong. Try again.';
+  String get wallRequestErrorGeneric => 'Algo correu mal. Tente de novo.';
 
   @override
-  String get searchRequestPrompt => 'Can\'t find it?';
+  String get searchRequestPrompt => 'Não o encontra?';
 
   @override
-  String get searchRequestAction => 'Request it';
+  String get searchRequestAction => 'Peça-o';
 
   @override
-  String get discoverRequestsTitle => 'Wall requests';
+  String get discoverRequestsTitle => 'Pedidos de papel de parede';
 
   @override
-  String get discoverRequestsSubtitle => 'Ask for a wall, or upvote one';
+  String get discoverRequestsSubtitle => 'Peça um papel de parede ou apoie um';
 
   @override
-  String get uploadFillsRequest => 'Fills a request';
+  String get uploadFillsRequest => 'Atende um pedido';
 
   @override
-  String get uploadFillsRequestHint => 'Optional. Pick the request this wall answers.';
+  String get uploadFillsRequestHint => 'Opcional. Escolha o pedido a que este papel de parede responde.';
 
   @override
-  String get uploadFillsRequestClear => 'Remove request';
+  String get uploadFillsRequestClear => 'Remover pedido';
 
   @override
-  String get requestPickerTitle => 'Which request does it fill?';
+  String get requestPickerTitle => 'Que pedido este papel de parede atende?';
 
   @override
-  String get requestPickerSearch => 'Search requests';
+  String get requestPickerSearch => 'Pesquisar pedidos';
 
   @override
-  String get requestPickerEmpty => 'No open requests match';
+  String get requestPickerEmpty => 'Nenhum pedido aberto corresponde';
 
   @override
-  String get notifPushWallRequestFilledTitle => 'Your request is here';
+  String get notifPushWallRequestFilledTitle => 'O seu pedido chegou';
 
   @override
   String notifPushWallRequestFilledBody(String requestText) {
@@ -11100,29 +11100,29 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get wallRequestAgeNow => 'Just now';
+  String get wallRequestAgeNow => 'Agora mesmo';
 
   @override
   String wallRequestAgeMinutes(int count) {
-    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count minutes ago', one: '1 minute ago');
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Há $count minutos', one: 'Há 1 minuto');
     return '$_temp0';
   }
 
   @override
   String wallRequestAgeHours(int count) {
-    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count hours ago', one: '1 hour ago');
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Há $count horas', one: 'Há 1 hora');
     return '$_temp0';
   }
 
   @override
   String wallRequestAgeDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count days ago', one: '1 day ago');
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Há $count dias', one: 'Há 1 dia');
     return '$_temp0';
   }
 
   @override
   String wallRequestAgeWeeks(int count) {
-    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count weeks ago', one: '1 week ago');
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Há $count semanas', one: 'Há 1 semana');
     return '$_temp0';
   }
 }
@@ -22038,4 +22038,213 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get tasteQuizRetakeFailed =>
       'Não foi possível carregar os papéis de parede. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get wallRequestsTitle => 'Pedidos de papel de parede';
+
+  @override
+  String get wallRequestsTabTop => 'Top';
+
+  @override
+  String get wallRequestsTabNew => 'Novos';
+
+  @override
+  String get wallRequestsTabFilled => 'Atendidos';
+
+  @override
+  String get wallRequestsAsk => 'Pedir um papel de parede';
+
+  @override
+  String get wallRequestsEmptyTopTitle => 'Nenhum pedido ainda';
+
+  @override
+  String get wallRequestsEmptyTopBody =>
+      'Peça o papel de parede que você não encontra. Outras pessoas podem apoiar o pedido.';
+
+  @override
+  String get wallRequestsEmptyFilledTitle => 'Nada atendido ainda';
+
+  @override
+  String get wallRequestsEmptyFilledBody => 'Os pedidos atendidos aparecem aqui, com o papel de parede que os atendeu.';
+
+  @override
+  String get wallRequestsLoadFailed => 'Não foi possível carregar os pedidos';
+
+  @override
+  String get wallRequestsRetry => 'Tentar novamente';
+
+  @override
+  String wallRequestVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votos',
+      one: '1 voto',
+      zero: 'Nenhum voto',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestUpvote => 'Apoiar';
+
+  @override
+  String get wallRequestRemoveUpvote => 'Remover apoio';
+
+  @override
+  String get wallRequestMine => 'Seu pedido';
+
+  @override
+  String get wallRequestSomeone => 'Um usuário do Prism';
+
+  @override
+  String wallRequestFilledByCreator(String name) {
+    return 'Atendido por $name';
+  }
+
+  @override
+  String get wallRequestFilledByStudio => 'Feito pelo Prism Studio';
+
+  @override
+  String get wallRequestOpenWall => 'Abrir o papel de parede';
+
+  @override
+  String get wallRequestMoreActions => 'Mais ações';
+
+  @override
+  String get wallRequestReport => 'Denunciar pedido';
+
+  @override
+  String get wallRequestHide => 'Ocultar pedido';
+
+  @override
+  String get wallRequestUnhide => 'Mostrar pedido';
+
+  @override
+  String get wallRequestHiddenLabel => 'Oculto';
+
+  @override
+  String get wallRequestSheetTitle => 'Pedir um papel de parede';
+
+  @override
+  String get wallRequestSheetHint => 'Descreva, por exemplo: montanhas escuras e minimalistas';
+
+  @override
+  String get wallRequestSheetTags => 'Tags, até 3';
+
+  @override
+  String get wallRequestSheetSubmit => 'Enviar pedido';
+
+  @override
+  String get wallRequestSignIn => 'Entre para pedir papéis de parede e apoiá-los.';
+
+  @override
+  String get wallRequestDuplicateTitle => 'Alguém já pediu isso';
+
+  @override
+  String get wallRequestDuplicateBody => 'Apoie o pedido para que os criadores vejam mais rápido.';
+
+  @override
+  String get wallRequestUpvoteInstead => 'Apoiar este em vez disso';
+
+  @override
+  String get wallRequestCreateAnyway => 'Enviar o meu mesmo assim';
+
+  @override
+  String get wallRequestDuplicateMine => 'Você já pediu isso';
+
+  @override
+  String get wallRequestDuplicateVoted => 'Você já apoiou isso';
+
+  @override
+  String get wallRequestEditText => 'Editar meu pedido';
+
+  @override
+  String get wallRequestCreated => 'Pedido enviado. Avisamos quando for atendido.';
+
+  @override
+  String get wallRequestUpvoted => 'Apoiado. Avisamos quando for atendido.';
+
+  @override
+  String get wallRequestErrorText => 'Use de 3 a 80 caracteres e seja gentil.';
+
+  @override
+  String get wallRequestErrorLimit => 'Você pode fazer 3 pedidos por dia. Tente amanhã.';
+
+  @override
+  String get wallRequestErrorOwn => 'Você não pode apoiar o seu próprio pedido.';
+
+  @override
+  String get wallRequestErrorClosed => 'Este pedido já foi atendido.';
+
+  @override
+  String get wallRequestErrorGone => 'Este pedido não está mais disponível.';
+
+  @override
+  String get wallRequestErrorGeneric => 'Algo deu errado. Tente novamente.';
+
+  @override
+  String get searchRequestPrompt => 'Não encontrou?';
+
+  @override
+  String get searchRequestAction => 'Peça';
+
+  @override
+  String get discoverRequestsTitle => 'Pedidos de papel de parede';
+
+  @override
+  String get discoverRequestsSubtitle => 'Peça um papel de parede ou apoie um pedido';
+
+  @override
+  String get uploadFillsRequest => 'Atende a um pedido';
+
+  @override
+  String get uploadFillsRequestHint => 'Opcional. Escolha o pedido que este papel de parede atende.';
+
+  @override
+  String get uploadFillsRequestClear => 'Remover pedido';
+
+  @override
+  String get requestPickerTitle => 'Qual pedido ele atende?';
+
+  @override
+  String get requestPickerSearch => 'Pesquisar pedidos';
+
+  @override
+  String get requestPickerEmpty => 'Nenhum pedido aberto corresponde';
+
+  @override
+  String get notifPushWallRequestFilledTitle => 'Seu pedido chegou';
+
+  @override
+  String notifPushWallRequestFilledBody(String requestText) {
+    return '$requestText';
+  }
+
+  @override
+  String get wallRequestAgeNow => 'Agora mesmo';
+
+  @override
+  String wallRequestAgeMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Há $count minutos', one: 'Há 1 minuto');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Há $count horas', one: 'Há 1 hora');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Há $count dias', one: 'Há 1 dia');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Há $count semanas', one: 'Há 1 semana');
+    return '$_temp0';
+  }
 }

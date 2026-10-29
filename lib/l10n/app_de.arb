@@ -9850,5 +9850,284 @@
   "tasteQuizRetakeFailed": "Hintergrundbilder konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
   "@tasteQuizRetakeFailed": {
     "description": "Toast when the walls for a quiz retake do not load."
+  },
+  "wallRequestsTitle": "Wallpaper-Wünsche",
+  "@wallRequestsTitle": {
+    "description": "Title of the wall requests page."
+  },
+  "wallRequestsTabTop": "Beliebt",
+  "@wallRequestsTabTop": {
+    "description": "Tab with the most upvoted open requests of the last 30 days."
+  },
+  "wallRequestsTabNew": "Neu",
+  "@wallRequestsTabNew": {
+    "description": "Tab with the newest open requests."
+  },
+  "wallRequestsTabFilled": "Erfüllt",
+  "@wallRequestsTabFilled": {
+    "description": "Tab with requests that a wall filled."
+  },
+  "wallRequestsAsk": "Wallpaper wünschen",
+  "@wallRequestsAsk": {
+    "description": "Button that opens the request sheet."
+  },
+  "wallRequestsEmptyTopTitle": "Noch keine Wünsche",
+  "@wallRequestsEmptyTopTitle": {
+    "description": "Empty Top or New tab title."
+  },
+  "wallRequestsEmptyTopBody": "Frag nach dem Wallpaper, das du nicht findest. Andere können dafür abstimmen.",
+  "@wallRequestsEmptyTopBody": {
+    "description": "Empty Top or New tab body."
+  },
+  "wallRequestsEmptyFilledTitle": "Noch nichts erfüllt",
+  "@wallRequestsEmptyFilledTitle": {
+    "description": "Empty Filled tab title."
+  },
+  "wallRequestsEmptyFilledBody": "Erfüllte Wünsche erscheinen hier, zusammen mit dem Wallpaper, das sie erfüllt hat.",
+  "@wallRequestsEmptyFilledBody": {
+    "description": "Empty Filled tab body."
+  },
+  "wallRequestsLoadFailed": "Wünsche konnten nicht geladen werden",
+  "@wallRequestsLoadFailed": {
+    "description": "Error state title on the requests page."
+  },
+  "wallRequestsRetry": "Erneut versuchen",
+  "@wallRequestsRetry": {
+    "description": "Retry button on the requests page."
+  },
+  "wallRequestVotes": "{count, plural, =0{Keine Stimmen} =1{1 Stimme} other{{count} Stimmen}}",
+  "@wallRequestVotes": {
+    "description": "Vote count on a request row.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestUpvote": "Unterstützen",
+  "@wallRequestUpvote": {
+    "description": "Tooltip and label of the upvote button."
+  },
+  "wallRequestRemoveUpvote": "Unterstützung entfernen",
+  "@wallRequestRemoveUpvote": {
+    "description": "Tooltip of the upvote button when the user already upvoted."
+  },
+  "wallRequestMine": "Dein Wunsch",
+  "@wallRequestMine": {
+    "description": "Label on the user's own request row."
+  },
+  "wallRequestSomeone": "Ein Prism-Nutzer",
+  "@wallRequestSomeone": {
+    "description": "Requester name when the profile has no name."
+  },
+  "wallRequestFilledByCreator": "Erfüllt von {name}",
+  "@wallRequestFilledByCreator": {
+    "description": "Label on a filled request; name is the creator.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRequestFilledByStudio": "Von Prism Studio gemacht",
+  "@wallRequestFilledByStudio": {
+    "description": "Label on a request that Prism Studio filled."
+  },
+  "wallRequestOpenWall": "Wallpaper öffnen",
+  "@wallRequestOpenWall": {
+    "description": "Semantics label of the filled wall thumbnail."
+  },
+  "wallRequestMoreActions": "Weitere Aktionen",
+  "@wallRequestMoreActions": {
+    "description": "Tooltip of the row menu button."
+  },
+  "wallRequestReport": "Wunsch melden",
+  "@wallRequestReport": {
+    "description": "Row menu action that reports a request."
+  },
+  "wallRequestHide": "Wunsch ausblenden",
+  "@wallRequestHide": {
+    "description": "Admin row menu action that hides a request."
+  },
+  "wallRequestUnhide": "Wunsch einblenden",
+  "@wallRequestUnhide": {
+    "description": "Admin row menu action that shows a hidden request again."
+  },
+  "wallRequestHiddenLabel": "Ausgeblendet",
+  "@wallRequestHiddenLabel": {
+    "description": "Admin label on a hidden request."
+  },
+  "wallRequestSheetTitle": "Wallpaper wünschen",
+  "@wallRequestSheetTitle": {
+    "description": "Title of the request sheet."
+  },
+  "wallRequestSheetHint": "Beschreib es, z. B. dunkle, schlichte Berge",
+  "@wallRequestSheetHint": {
+    "description": "Hint in the request text field."
+  },
+  "wallRequestSheetTags": "Tags, bis zu 3",
+  "@wallRequestSheetTags": {
+    "description": "Label above the tag chips in the request sheet."
+  },
+  "wallRequestSheetSubmit": "Wunsch senden",
+  "@wallRequestSheetSubmit": {
+    "description": "Submit button of the request sheet."
+  },
+  "wallRequestSignIn": "Melde dich an, um Wallpaper zu wünschen und zu unterstützen.",
+  "@wallRequestSignIn": {
+    "description": "Shown in the sheet or a toast to a signed-out user."
+  },
+  "wallRequestDuplicateTitle": "Das hat schon jemand gewünscht",
+  "@wallRequestDuplicateTitle": {
+    "description": "Title when a close open request exists."
+  },
+  "wallRequestDuplicateBody": "Unterstütze es, damit Creator es früher sehen.",
+  "@wallRequestDuplicateBody": {
+    "description": "Body when a close open request exists."
+  },
+  "wallRequestUpvoteInstead": "Stattdessen unterstützen",
+  "@wallRequestUpvoteInstead": {
+    "description": "Button that upvotes the close request instead of making a new one."
+  },
+  "wallRequestCreateAnyway": "Trotzdem meinen senden",
+  "@wallRequestCreateAnyway": {
+    "description": "Button that makes a new request although a close one exists."
+  },
+  "wallRequestDuplicateMine": "Das hast du schon gewünscht",
+  "@wallRequestDuplicateMine": {
+    "description": "Title when the close request is the user's own."
+  },
+  "wallRequestDuplicateVoted": "Das hast du schon unterstützt",
+  "@wallRequestDuplicateVoted": {
+    "description": "Title when the user already upvoted the close request."
+  },
+  "wallRequestEditText": "Meinen Wunsch bearbeiten",
+  "@wallRequestEditText": {
+    "description": "Button that goes back to the text field from the duplicate card."
+  },
+  "wallRequestCreated": "Wunsch gesendet. Wir sagen dir Bescheid, wenn er erfüllt ist.",
+  "@wallRequestCreated": {
+    "description": "Toast after a request is made."
+  },
+  "wallRequestUpvoted": "Unterstützt. Wir sagen dir Bescheid, wenn er erfüllt ist.",
+  "@wallRequestUpvoted": {
+    "description": "Toast after the user upvotes the close request."
+  },
+  "wallRequestErrorText": "Nutze 3 bis 80 Zeichen und bleib freundlich.",
+  "@wallRequestErrorText": {
+    "description": "Error when the server refuses the request text."
+  },
+  "wallRequestErrorLimit": "Du kannst pro Tag 3 Wünsche senden. Versuch es morgen erneut.",
+  "@wallRequestErrorLimit": {
+    "description": "Error at the daily request limit."
+  },
+  "wallRequestErrorOwn": "Du kannst deinen eigenen Wunsch nicht unterstützen.",
+  "@wallRequestErrorOwn": {
+    "description": "Error when the user upvotes their own request."
+  },
+  "wallRequestErrorClosed": "Dieser Wunsch ist schon erfüllt.",
+  "@wallRequestErrorClosed": {
+    "description": "Error when the user votes on a filled request."
+  },
+  "wallRequestErrorGone": "Dieser Wunsch ist nicht mehr verfügbar.",
+  "@wallRequestErrorGone": {
+    "description": "Error when the request is hidden or deleted."
+  },
+  "wallRequestErrorGeneric": "Etwas ist schiefgelaufen. Versuch es erneut.",
+  "@wallRequestErrorGeneric": {
+    "description": "Error for any other failure."
+  },
+  "searchRequestPrompt": "Nicht gefunden?",
+  "@searchRequestPrompt": {
+    "description": "Line above the request button in an empty search."
+  },
+  "searchRequestAction": "Wunsch senden",
+  "@searchRequestAction": {
+    "description": "Button in an empty search that opens the request sheet with the query."
+  },
+  "discoverRequestsTitle": "Wallpaper-Wünsche",
+  "@discoverRequestsTitle": {
+    "description": "Discover row that opens the requests page."
+  },
+  "discoverRequestsSubtitle": "Wallpaper wünschen oder einen Wunsch unterstützen",
+  "@discoverRequestsSubtitle": {
+    "description": "Subtitle of the Discover row for wall requests."
+  },
+  "uploadFillsRequest": "Erfüllt einen Wunsch",
+  "@uploadFillsRequest": {
+    "description": "Upload form row that links the wall to a request."
+  },
+  "uploadFillsRequestHint": "Optional. Wähle den Wunsch, den dieses Wallpaper erfüllt.",
+  "@uploadFillsRequestHint": {
+    "description": "Subtitle of the upload row when no request is picked."
+  },
+  "uploadFillsRequestClear": "Wunsch entfernen",
+  "@uploadFillsRequestClear": {
+    "description": "Tooltip of the button that removes the picked request."
+  },
+  "requestPickerTitle": "Welchen Wunsch erfüllt es?",
+  "@requestPickerTitle": {
+    "description": "Title of the request picker in the upload flow."
+  },
+  "requestPickerSearch": "Wünsche durchsuchen",
+  "@requestPickerSearch": {
+    "description": "Hint of the search field in the request picker."
+  },
+  "requestPickerEmpty": "Keine offenen Wünsche gefunden",
+  "@requestPickerEmpty": {
+    "description": "Empty state of the request picker."
+  },
+  "notifPushWallRequestFilledTitle": "Dein Wunsch ist da",
+  "@notifPushWallRequestFilledTitle": {
+    "description": "Push and inbox title when a wall request is filled."
+  },
+  "notifPushWallRequestFilledBody": "{requestText}",
+  "@notifPushWallRequestFilledBody": {
+    "description": "Push and inbox body when a wall request is filled: the request text.",
+    "placeholders": {
+      "requestText": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRequestAgeNow": "Gerade eben",
+  "@wallRequestAgeNow": {
+    "description": "Age of a request made less than a minute ago."
+  },
+  "wallRequestAgeMinutes": "{count, plural, =1{vor 1 Minute} other{vor {count} Minuten}}",
+  "@wallRequestAgeMinutes": {
+    "description": "Age of a request in minutes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestAgeHours": "{count, plural, =1{vor 1 Stunde} other{vor {count} Stunden}}",
+  "@wallRequestAgeHours": {
+    "description": "Age of a request in hours.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestAgeDays": "{count, plural, =1{vor 1 Tag} other{vor {count} Tagen}}",
+  "@wallRequestAgeDays": {
+    "description": "Age of a request in days.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestAgeWeeks": "{count, plural, =1{vor 1 Woche} other{vor {count} Wochen}}",
+  "@wallRequestAgeWeeks": {
+    "description": "Age of a request in weeks.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }
