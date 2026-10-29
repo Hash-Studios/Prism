@@ -46,6 +46,7 @@ import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/trending/domain/usecases/fetch_trending_usecase.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
+import 'package:Prism/features/weekly_challenges/biz/weekly_challenges_cubit.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
@@ -55,6 +56,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../support/empty_weekly_challenges_repository.dart';
 import '../support/fake_app_analytics.dart';
 import '../support/fake_user_block_repository.dart';
 import '../support/in_memory_local_store.dart';
@@ -216,6 +218,7 @@ class _Home {
     AnalyticsRuntime.instance = FakeAppAnalytics();
     app_state.prismUser = _signedInUser();
     _stubData();
+    getIt.registerFactory<WeeklyChallengesCubit>(() => WeeklyChallengesCubit(const EmptyWeeklyChallengesRepository()));
     getIt
       ..registerFactory<PersonalizedFeedBloc>(
         () => PersonalizedFeedBloc(
