@@ -15,6 +15,7 @@ import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.d
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
+import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
@@ -39,6 +40,8 @@ class _MockFoldersBloc extends MockBloc<FoldersEvent, FoldersState> implements F
 class _MockSessionBloc extends MockBloc<SessionEvent, SessionState> implements SessionBloc {}
 
 class _MockStartupRepository extends Mock implements StartupRepository {}
+
+class _MockPublicFoldersRepository extends Mock implements PublicFoldersRepository {}
 
 class _RetryFoldersRepository implements FoldersRepository {
   int fetchCount = 0;
@@ -221,7 +224,7 @@ void main() {
 
   testWidgets('the folder picker retries a failed load and then shows the empty state', (tester) async {
     final _RetryFoldersRepository repository = _RetryFoldersRepository();
-    final FoldersBloc folders = FoldersBloc(repository);
+    final FoldersBloc folders = FoldersBloc(repository, _MockPublicFoldersRepository());
     addTearDown(folders.close);
     await pumpScreenWithFolders(tester, folders);
     app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';

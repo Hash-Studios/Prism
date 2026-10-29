@@ -73,6 +73,7 @@ The fallback (default `fallbackToInbox: true`) opens the inbox. If `route` is no
 | Wall of the Day | Time zone topic for the daily pick. Works for signed-out users. |
 | Followers | Alerts for new followers. Needs sign-in. |
 | Posts | Alerts for new work from followed creators. Needs sign-in. Off when Followers is off. |
+| Folders you follow | The daily "New in <folder>" push. Needs sign-in. Saved as `folderAlerts` in `usersv2/{uid}/private/session`. The token sync also writes `folderAlertsToken`. |
 | Recommendations | Topic `recommendations`. A signed-in user also saves it as `marketingPushes` in `usersv2/{uid}/private/session`, next to `followerAlerts`. Win-back pushes skip a user with `marketingPushes == false`. A switch turned off before sign-in is saved on the next token sync. |
 | Streak reminders | Evening reminder around 8 PM local. Needs sign-in. |
 
@@ -219,6 +220,10 @@ Scoreboard data at the time of the change (2026-10-17 to 2026-10-28):
 - `wotd` had 1,916 sends and 13 taps.
 
 Topic sends count once per message, not once per device. The data does not show that per-upload pushes work better for users who follow one creator. So every build with the digest gets it.
+
+### Folder digest
+
+`sendFolderDigests` sends "New in <folder>" at 13:00 local time, once per follower and local day. It needs `folderAlerts == true` and `folderAlertsToken` equal to `fcmToken` in `private/session`. The **Folders you follow** switch writes `folderAlerts`. The push has one image, like the follow digest. The details are in [folders.md](folders.md).
 
 ### Notification copy and adding a language
 

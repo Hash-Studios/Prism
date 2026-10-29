@@ -148,7 +148,7 @@ no-shape-parse-guard:
 
 guard-test:
 	@bash tool/search_guard_test.sh
-	@python3 -m unittest tool.release_tools_test tool.release_workflows_test tool.ios_ci_signing_test
+	@python3 -m unittest tool.release_tools_test tool.release_workflows_test tool.ios_ci_signing_test tool.app_size_workflow_test
 
 .PHONY: notification-contract-fixture-test
 notification-contract-fixture-test: ensure-fvm
@@ -247,9 +247,9 @@ gradle-reset:
 size-android: ensure-fvm
 	@mkdir -p build/size/local
 	@./tool/write_firebase_options_stub.sh
-	@$(FLUTTER) build apk --release --target-platform=$(APP_SIZE_TARGET_PLATFORM) --obfuscate --split-debug-info=build/size/local/symbols --dart-define=SKIP_FIREBASE_INIT=true --analyze-size > build/size/local/build.log 2>&1
+	@$(FLUTTER) build apk --release --target-platform=$(APP_SIZE_TARGET_PLATFORM) --obfuscate --split-debug-info=build/size/local/symbols --dart-define=SKIP_FIREBASE_INIT=true > build/size/local/build.log 2>&1
 	@cp build/app/outputs/flutter-apk/app-release.apk build/size/local/app-release.apk
-	@echo "APK + size analysis log written to build/size/local"
+	@echo "APK + build log written to build/size/local"
 
 sentry-size-upload:
 	@DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) AAB_PATH=$(SENTRY_SIZE_AAB) ./tool/sentry_size_upload.sh

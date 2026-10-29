@@ -13,7 +13,9 @@ import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.da
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
+import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/pages/folder_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
@@ -125,6 +127,31 @@ FolderEntity _folder(String id, String name, {int itemCount = 0}) => FolderEntit
   covers: const <String>[],
 );
 
+class _NoPublicFolders implements PublicFoldersRepository {
+  @override
+  Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
+
+  @override
+  Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(<String>[]);
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async =>
+      Result.success(<PublicFolderEntity>[]);
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchFollowedFolders(String userId) async =>
+      Result.success(<PublicFolderEntity>[]);
+
+  @override
+  Future<Result<bool>> isFollowing(String folderId, String userId) async => Result.success(false);
+
+  @override
+  Future<Result<void>> setFollowing(String folderId, {required bool following}) async => Result.success<void>(null);
+
+  @override
+  Future<Result<bool>> setPublic(String folderId, {required bool isPublic}) async => Result.success(isPublic);
+}
+
 void main() {
   tearDown(() {
     app_state.prismUser = app_constants.createGuestPrismUser();
@@ -142,7 +169,7 @@ void main() {
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     addTearDown(() => getIt.unregister<ConnectivityService>());
     final repo = _FakeFoldersRepository()..failLoad = true;
-    final bloc = FoldersBloc(repo);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     await tester.pumpWidget(
       MaterialApp(
@@ -174,19 +201,26 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     addTearDown(() => getIt.unregister<ConnectivityService>());
-    final repo = _FakeFoldersRepository();
-    final bloc = FoldersBloc(repo);
+    // Both accounts have a folder with this id, so the page loads it as the owner each time.
+    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work')]);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
+    final _MockStackRouter router = _MockStackRouter();
+    when(() => router.stack).thenReturn(const <AutoRoutePage<dynamic>>[]);
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: kLightTheme,
-        home: BlocProvider<FoldersBloc>.value(
-          value: bloc,
-          child: BlocProvider<AutoRotateBloc>.value(
-            value: _rotationBloc(),
-            child: const FolderScreen(folderId: 'work'),
+        home: StackRouterScope(
+          controller: router,
+          stateHash: 0,
+          child: BlocProvider<FoldersBloc>.value(
+            value: bloc,
+            child: BlocProvider<AutoRotateBloc>.value(
+              value: _rotationBloc(),
+              child: const FolderScreen(folderId: 'work'),
+            ),
           ),
         ),
       ),
@@ -210,7 +244,7 @@ void main() {
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     addTearDown(() => getIt.unregister<ConnectivityService>());
     final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work'), _folder('trips', 'Trips')]);
-    final bloc = FoldersBloc(repo);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     final _MockStackRouter router = _MockStackRouter();
     when(() => router.stack).thenReturn(const <AutoRoutePage<dynamic>>[]);
@@ -259,7 +293,7 @@ void main() {
       'work': <FavouriteWallEntity>[wall],
       'trips': <FavouriteWallEntity>[wall],
     };
-    final bloc = FoldersBloc(repo);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     final _MockStackRouter router = _MockStackRouter();
     when(() => router.stack).thenReturn(const <AutoRoutePage<dynamic>>[]);
@@ -302,7 +336,7 @@ void main() {
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     addTearDown(() => getIt.unregister<ConnectivityService>());
     final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work')]);
-    final bloc = FoldersBloc(repo);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     final _MockStackRouter router = _MockStackRouter();
     when(() => router.stack).thenReturn(const <AutoRoutePage<dynamic>>[]);

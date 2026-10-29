@@ -52,6 +52,10 @@
     <string name="notif_push_follow_digest_title_group">%1$s और %2$s अन्य ने %3$s नए वॉलपेपर पोस्ट किए</string>
     <string name="notif_push_follow_digest_body">%1$s</string>
     <string name="notif_push_follow_digest_body_untitled">सभी देखने के लिए टैप करें।</string>
+    <string name="notif_push_folder_digest_title_one">%1$s में नया</string>
+    <string name="notif_push_folder_digest_title_more">%1$s और %2$s अन्य में नया</string>
+    <string name="notif_push_folder_digest_body">%1$s</string>
+    <string name="notif_push_folder_digest_body_untitled">सभी देखने के लिए टैप करें।</string>
     <string name="notif_push_drop_last_call_title">इस हफ़्ते के Drop का आख़िरी मौका</string>
     <string name="notif_push_drop_last_call_body">%1$s, %2$s घंटे में समाप्त होगा। इसके बाद एक महीने तक ये वॉलपेपर उपलब्ध नहीं होंगे।</string>
     <string name="notif_push_draw_winner_title">आपने Prism Draw जीत लिया</string>

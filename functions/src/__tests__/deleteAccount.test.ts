@@ -4,6 +4,7 @@ import * as admin from "firebase-admin";
 import {db} from "../common";
 import {deleteAccount} from "../deleteAccount";
 import {claimUsername} from "../claimUsername";
+import * as publicFolders from "../publicFolders";
 import {installFakeDb} from "./fakeDb";
 
 type Options = {
@@ -11,6 +12,7 @@ type Options = {
   failDelete?: boolean;
   failFirstDelete?: boolean;
   failUpdate?: boolean;
+  failFolderFollows?: boolean;
   slowQueries?: boolean;
   authError?: string;
   authEmail?: string;
@@ -98,6 +100,13 @@ function fake(t: TestContext, options: Options = {}) {
       log.push("close");
     },
   }));
+  t.mock.method(publicFolders, "removeOwnerPublicFolders", async (uid: string) => {
+    log.push(`publicFolders:${uid}`);
+  });
+  t.mock.method(publicFolders, "removeAllFolderFollows", async (uid: string) => {
+    log.push(`folderFollows:${uid}`);
+    if (options.failFolderFollows) throw new Error("folder follow cleanup failed");
+  });
   t.mock.method(admin.auth(), "deleteUser", async () => {
     log.push("auth");
     if (options.authError) throw Object.assign(new Error("gone"), {code: options.authError});
@@ -283,6 +292,27 @@ test("creator deletion barrier and anonymized wall receipts precede recursive pr
   assert.ok(log.includes("delete:creatorMembers/d1"));
   assert.ok(log.includes("query:creatorMemberRateDaily.memberUid==u1"));
   assert.ok(log.includes("delete:creatorMemberRateDaily/d1"));
+});
+
+test("public folders and folder follows go after the deletion barrier and before private state", async (t) => {
+  const log = fake(t);
+  await call();
+  const barrier = log.indexOf("barrier:creatorDeletionState/u1");
+  const projections = log.indexOf("publicFolders:u1");
+  const follows = log.indexOf("folderFollows:u1");
+  assert.ok(barrier >= 0 && projections > barrier && follows > barrier);
+  assert.ok(follows < log.indexOf("recursive:usersv2/u1/followedFolders"));
+  assert.ok(log.indexOf("recursive:usersv2/u1/private") < log.indexOf("anonymize"));
+});
+
+test("failed folder-follow cleanup stops deletion before private state is removed", async (t) => {
+  const log = fake(t, {failFolderFollows: true});
+  await assert.rejects(call, /folder follow cleanup failed/);
+  assert.ok(log.includes("publicFolders:u1"));
+  assert.ok(log.includes("folderFollows:u1"));
+  assert.ok(!log.includes("recursive:usersv2/u1/followedFolders"));
+  assert.ok(!log.includes("anonymize"));
+  assert.ok(!log.includes("auth"));
 });
 
 test("a failed update throws before the profile is anonymized or the auth user removed", async (t) => {

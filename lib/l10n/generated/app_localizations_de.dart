@@ -10740,6 +10740,111 @@ class AppLocalizationsDe extends AppLocalizations {
       'Hintergrundbilder konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.';
 
   @override
+  String get foldersPublic => 'Öffentlich';
+
+  @override
+  String get foldersMakePublic => 'Öffentlich machen';
+
+  @override
+  String get foldersMakePrivate => 'Privat machen';
+
+  @override
+  String get foldersMakePublicTitle => 'Diesen Ordner öffentlich machen?';
+
+  @override
+  String get foldersMakePublicMessage =>
+      'Alle in Prism können seinen Namen und die Hintergrundbilder sehen, ihm folgen und seinen Link öffnen. Geteilte Links behalten ihre Vorschau, auch wenn du ihn später privat machst.';
+
+  @override
+  String get foldersMakePrivateTitle => 'Diesen Ordner privat machen?';
+
+  @override
+  String get foldersMakePrivateMessage =>
+      'Nur du siehst ihn. Sein Link funktioniert nicht mehr und seine Follower verlieren ihn.';
+
+  @override
+  String get foldersMadePublic => 'Dieser Ordner ist jetzt öffentlich.';
+
+  @override
+  String get foldersMadePrivate => 'Dieser Ordner ist jetzt privat.';
+
+  @override
+  String get foldersPublicNameRefused => 'Benenne diesen Ordner um, damit er öffentlich werden kann.';
+
+  @override
+  String get foldersHiddenRefused =>
+      'Dieser Ordner wurde nach Meldungen ausgeblendet, daher kann er nicht öffentlich sein.';
+
+  @override
+  String get foldersLimitRefused => 'Du hast Ordner heute zu oft geändert. Versuche es morgen erneut.';
+
+  @override
+  String get foldersFollow => 'Folgen';
+
+  @override
+  String get foldersFollowing => 'Gefolgt';
+
+  @override
+  String foldersFollowerCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Follower',
+      one: '1 Follower',
+      zero: 'Keine Follower',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersByOwner(String name) {
+    return 'Von $name';
+  }
+
+  @override
+  String get foldersShare => 'Ordner teilen';
+
+  @override
+  String get foldersReport => 'Ordner melden';
+
+  @override
+  String get foldersUnavailableTitle => 'Dieser Ordner ist privat oder existiert nicht mehr';
+
+  @override
+  String get foldersUnavailableBody => 'Der Besitzer hat ihn vielleicht privat gemacht oder gelöscht.';
+
+  @override
+  String get foldersFollowFailed => 'Das Folgen konnte nicht aktualisiert werden. Versuche es erneut.';
+
+  @override
+  String get foldersYouFollow => 'Ordner, denen du folgst';
+
+  @override
+  String get foldersPublicEmptyTitle => 'Hier gibt es noch keine Hintergrundbilder';
+
+  @override
+  String get foldersPublicEmptyBody => 'Neue Hintergrundbilder erscheinen hier, sobald der Besitzer sie hinzufügt.';
+
+  @override
+  String get notifSettingFolders => 'Ordner, denen du folgst';
+
+  @override
+  String get notifSettingFoldersDescription => 'Neue Hintergrundbilder in Ordnern, denen du folgst, einmal am Tag';
+
+  @override
+  String notifPushFolderDigestTitleOne(String folderName) {
+    return 'Neu in $folderName';
+  }
+
+  @override
+  String notifPushFolderDigestTitleMore(String folderName, int count) {
+    return 'Neu in $folderName und $count weiteren';
+  }
+
+  @override
   String get wallpaperAutoRotateSourceFolder => 'Ordner';
 
   @override

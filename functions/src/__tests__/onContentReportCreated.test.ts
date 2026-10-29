@@ -115,3 +115,20 @@ test("a user report is pushed to the admins and holds nothing", async (t) => {
     push_kind: "moderation",
   });
 });
+
+test("a transient reporter lookup error fails the wall check so the trigger retries it", async (t) => {
+  const reports = {r1: report("a"), r2: report("b"), r3: report("c")};
+  const {store, pushes} = setup(t, reports, {a: 30, b: 30, c: 30});
+  let fail = true;
+  t.mock.method(admin.auth(), "getUser", async () => {
+    if (fail) throw Object.assign(new Error("deadline exceeded"), {code: "auth/internal-error"});
+    return {metadata: {creationTime: new Date(NOW.getTime() - 30 * DAY).toUTCString()}} as never;
+  });
+  await assert.rejects(fire("r3", reports.r3), /deadline exceeded/);
+  assert.equal(store.get("walls/w1")?.review, true);
+  assert.equal(pushes.length, 0);
+  fail = false;
+  await fire("r3", reports.r3);
+  assert.equal(store.get("walls/w1")?.heldForReview, true);
+  assert.equal(pushes.length, 1);
+});

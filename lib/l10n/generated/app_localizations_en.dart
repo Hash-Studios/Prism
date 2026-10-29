@@ -10588,6 +10588,109 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tasteQuizRetakeFailed => 'Couldn\'t load walls. Check your connection and try again.';
 
   @override
+  String get foldersPublic => 'Public';
+
+  @override
+  String get foldersMakePublic => 'Make public';
+
+  @override
+  String get foldersMakePrivate => 'Make private';
+
+  @override
+  String get foldersMakePublicTitle => 'Make this folder public?';
+
+  @override
+  String get foldersMakePublicMessage =>
+      'Anyone on Prism can see its name and wallpapers, follow it and open its link. Links you share keep their preview even if you make it private later.';
+
+  @override
+  String get foldersMakePrivateTitle => 'Make this folder private?';
+
+  @override
+  String get foldersMakePrivateMessage => 'Only you will see it. Its link stops working and its followers lose it.';
+
+  @override
+  String get foldersMadePublic => 'This folder is now public.';
+
+  @override
+  String get foldersMadePrivate => 'This folder is now private.';
+
+  @override
+  String get foldersPublicNameRefused => 'Rename this folder to make it public.';
+
+  @override
+  String get foldersHiddenRefused => 'This folder was hidden after reports, so it cannot be public.';
+
+  @override
+  String get foldersLimitRefused => 'You changed folders too many times today. Try again tomorrow.';
+
+  @override
+  String get foldersFollow => 'Follow';
+
+  @override
+  String get foldersFollowing => 'Following';
+
+  @override
+  String foldersFollowerCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString followers',
+      one: '1 follower',
+      zero: 'No followers',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersByOwner(String name) {
+    return 'By $name';
+  }
+
+  @override
+  String get foldersShare => 'Share folder';
+
+  @override
+  String get foldersReport => 'Report folder';
+
+  @override
+  String get foldersUnavailableTitle => 'This folder is private or no longer exists';
+
+  @override
+  String get foldersUnavailableBody => 'The owner may have made it private or deleted it.';
+
+  @override
+  String get foldersFollowFailed => 'Could not update the follow. Try again.';
+
+  @override
+  String get foldersYouFollow => 'Folders you follow';
+
+  @override
+  String get foldersPublicEmptyTitle => 'No wallpapers here yet';
+
+  @override
+  String get foldersPublicEmptyBody => 'New wallpapers show here when the owner adds them.';
+
+  @override
+  String get notifSettingFolders => 'Folders you follow';
+
+  @override
+  String get notifSettingFoldersDescription => 'New wallpapers in folders you follow, once a day';
+
+  @override
+  String notifPushFolderDigestTitleOne(String folderName) {
+    return 'New in $folderName';
+  }
+
+  @override
+  String notifPushFolderDigestTitleMore(String folderName, int count) {
+    return 'New in $folderName and $count more';
+  }
+
+  @override
   String get wallpaperAutoRotateSourceFolder => 'Folder';
 
   @override

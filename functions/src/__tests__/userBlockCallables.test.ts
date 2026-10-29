@@ -3,6 +3,7 @@ import test from "node:test";
 import * as admin from "firebase-admin";
 
 import {blockUser, unblockUser, buildBlockContentReportDoc, isSameTargetCooldownActive} from "../userBlockCallables";
+import * as publicFolders from "../publicFolders";
 import {installFakeDb} from "./fakeDb";
 
 test("keeps the same-target cooldown for repeated block actions", () => {
@@ -74,6 +75,64 @@ test("blockUser also removes the UID edges in both directions and fixes follower
   assert.equal(store.get("profiles/caller")?.followerCount, 0);
   assert.equal(store.get("profiles/blocked")?.followerCount, 0);
   assert.equal(store.get("usersv2/caller/blockedUsers/blocked")?.blockedEmail, "b@x.com");
+});
+
+test("blockUser removes folder follows in both directions and repairs both counts", async (t) => {
+  const store = installFakeDb(t, {
+    "usersv2/caller": {email: "caller@x.com"}, "usersv2/blocked": {email: "b@x.com"},
+    "publicFolders/blocked-folder": {ownerId: "blocked", followerCount: 1},
+    "publicFolders/blocked-folder/followers/caller": {uid: "caller"},
+    "usersv2/caller/followedFolders/blocked-folder": {ownerId: "blocked"},
+    "publicFolders/caller-folder": {ownerId: "caller", followerCount: 1},
+    "publicFolders/caller-folder/followers/blocked": {uid: "blocked"},
+    "usersv2/blocked/followedFolders/caller-folder": {ownerId: "caller"},
+  });
+  await blockUser.run(call());
+
+  for (const path of ["publicFolders/blocked-folder/followers/caller",
+    "usersv2/caller/followedFolders/blocked-folder", "publicFolders/caller-folder/followers/blocked",
+    "usersv2/blocked/followedFolders/caller-folder"]) {
+    assert.equal(store.has(path), false, path);
+  }
+  assert.equal(store.get("publicFolders/blocked-folder")?.followerCount, 0);
+  assert.equal(store.get("publicFolders/caller-folder")?.followerCount, 0);
+});
+
+test("a failed folder-follow cleanup is reported and a cooldown retry repairs it", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const cleanupFolderFollows = publicFolders.removeFolderFollowsBetween;
+  const store = installFakeDb(t, {
+    "usersv2/caller": {email: "caller@x.com"}, "usersv2/blocked": {email: "b@x.com"},
+    "userBlockRateByTarget/caller_blocked": {lastAt: admin.firestore.Timestamp.fromDate(NOW)},
+    "userBlockRateDaily/caller_2026-01-10": {day: "2026-01-10", count: 1},
+    "usersv2/caller/blockedUsers/blocked": {blockedUid: "blocked"},
+    "contentReports/already-filed": {reason: "blocked"},
+    "publicFolders/blocked-folder": {ownerId: "blocked", followerCount: 1},
+    "publicFolders/blocked-folder/followers/caller": {uid: "caller"},
+    "usersv2/caller/followedFolders/blocked-folder": {ownerId: "blocked"},
+    "publicFolders/caller-folder": {ownerId: "caller", followerCount: 1},
+    "publicFolders/caller-folder/followers/blocked": {uid: "blocked"},
+    "usersv2/blocked/followedFolders/caller-folder": {ownerId: "caller"},
+  });
+  let attempts = 0;
+  t.mock.method(publicFolders, "removeFolderFollowsBetween", async (caller: string, blocked: string) => {
+    attempts++;
+    if (attempts === 1) throw new Error("transient write failure");
+    await cleanupFolderFollows(caller, blocked);
+  });
+
+  await assert.rejects(() => blockUser.run(call()), {code: "internal"});
+  assert.deepEqual(await blockUser.run(call()), {ok: true});
+  assert.equal(attempts, 2);
+  for (const path of ["publicFolders/blocked-folder/followers/caller",
+    "usersv2/caller/followedFolders/blocked-folder", "publicFolders/caller-folder/followers/blocked",
+    "usersv2/blocked/followedFolders/caller-folder"]) {
+    assert.equal(store.has(path), false, path);
+  }
+  assert.equal(store.get("publicFolders/blocked-folder")?.followerCount, 0);
+  assert.equal(store.get("publicFolders/caller-folder")?.followerCount, 0);
+  assert.equal(store.get("userBlockRateDaily/caller_2026-01-10")?.count, 1);
+  assert.equal([...store.keys()].filter((path) => path.startsWith("contentReports/")).length, 1);
 });
 
 const NOW = new Date("2026-01-10T12:00:00Z");

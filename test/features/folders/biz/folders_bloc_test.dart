@@ -9,7 +9,9 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
+import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeFoldersRepository implements FoldersRepository {
@@ -153,7 +155,7 @@ FolderEntity folder(String id, {int count = 0, List<String> covers = const <Stri
     );
 
 FoldersBloc _blocFor(_FakeFoldersRepository repo) {
-  final FoldersBloc bloc = FoldersBloc(repo);
+  final FoldersBloc bloc = FoldersBloc(repo, _NoPublicFolders());
   addTearDown(repo.writeFailureController.close);
   addTearDown(bloc.close);
   return bloc;
@@ -161,6 +163,31 @@ FoldersBloc _blocFor(_FakeFoldersRepository repo) {
 
 Future<bool> _started(FoldersBloc bloc, {String userId = 'u1'}) =>
     bloc.run((id) => FoldersEvent.started(userId: userId, operationId: id));
+
+class _NoPublicFolders implements PublicFoldersRepository {
+  @override
+  Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
+
+  @override
+  Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(<String>[]);
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async =>
+      Result.success(<PublicFolderEntity>[]);
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchFollowedFolders(String userId) async =>
+      Result.success(<PublicFolderEntity>[]);
+
+  @override
+  Future<Result<bool>> isFollowing(String folderId, String userId) async => Result.success(false);
+
+  @override
+  Future<Result<void>> setFollowing(String folderId, {required bool following}) async => Result.success<void>(null);
+
+  @override
+  Future<Result<bool>> setPublic(String folderId, {required bool isPublic}) async => Result.success(isPublic);
+}
 
 void main() {
   test('sign-out between completed Save steps does not start the next write', () async {

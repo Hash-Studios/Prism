@@ -4,6 +4,7 @@ import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
 import {sendToUserByEmail} from "./notificationHelper";
 import {db, REGION} from "./common";
+import {hideFolder} from "./publicFolders";
 
 interface ReportDoc {
   contentType?: string;
@@ -16,7 +17,7 @@ interface ReportDoc {
 const HOLD_REPORTER_COUNT = 3;
 const MIN_REPORTER_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** Number of reporters, each counted once, whose account is older than 7 days. A failed lookup does not count. */
+/** Counts distinct reporters older than 7 days. Missing accounts do not count; transient lookup errors retry. */
 async function countTrustedReporters(
   reporterUids: Set<string>,
   nowMs: number,
@@ -31,6 +32,8 @@ async function countTrustedReporters(
         trusted += 1;
       }
     } catch (err) {
+      if ((err as {code?: string}).code !== "auth/user-not-found" &&
+        (err as Error).message !== "auth/user-not-found") throw err;
       logger.warn(
         "onContentReportCreated: could not read a reporter account.",
         {reporterUid: uid, err},
@@ -40,15 +43,12 @@ async function countTrustedReporters(
   return trusted;
 }
 
-/**
- * Takes an approved wall back to review when 3 different reporters, with accounts older than 7 days, reported it.
- * An admin re-approves it from the review screen. Returns true when this call held the wall.
- */
-async function holdWallAfterReports(wallId: string): Promise<boolean> {
+/** True when 3 different reporters, with accounts older than 7 days, reported the target. */
+async function reportedByTrustedUsers(contentType: string, targetId: string): Promise<boolean> {
   const reports = await db
     .collection("contentReports")
-    .where("contentType", "==", "wall")
-    .where("targetFirestoreDocId", "==", wallId)
+    .where("contentType", "==", contentType)
+    .where("targetFirestoreDocId", "==", targetId)
     .get();
   const reporters = new Set<string>();
   for (const report of reports.docs) {
@@ -56,12 +56,15 @@ async function holdWallAfterReports(wallId: string): Promise<boolean> {
     if (uid) reporters.add(uid);
   }
   if (reporters.size < HOLD_REPORTER_COUNT) return false;
-  if (
-    (await countTrustedReporters(reporters, Date.now())) < HOLD_REPORTER_COUNT
-  ) {
-    return false;
-  }
+  return (await countTrustedReporters(reporters, Date.now())) >= HOLD_REPORTER_COUNT;
+}
 
+/**
+ * Takes an approved wall back to review when trusted users reported it.
+ * An admin re-approves it from the review screen. Returns true when this call held the wall.
+ */
+async function holdWallAfterReports(wallId: string): Promise<boolean> {
+  if (!(await reportedByTrustedUsers("wall", wallId))) return false;
   const wallRef = db.collection("walls").doc(wallId);
   return db.runTransaction(async (tx) => {
     const wall = await tx.get(wallRef);
@@ -82,6 +85,7 @@ export const onContentReportCreated = onDocumentCreated(
   {
     document: "contentReports/{reportId}",
     region: REGION,
+    retry: true,
   },
   async (event) => {
     const data = event.data?.data() as ReportDoc | undefined;
@@ -108,6 +112,24 @@ export const onContentReportCreated = onDocumentCreated(
           "onContentReportCreated: could not check the report count.",
           {reportId, targetId, err},
         );
+        // The trigger retries; holdWallAfterReports holds a wall once, so a retry is safe.
+        throw err;
+      }
+    }
+
+    // A reported public folder is hidden the same way. An admin shows it again with setFolderHidden.
+    if (contentType === "folder" && targetId.length > 0) {
+      try {
+        if (await reportedByTrustedUsers("folder", targetId)) {
+          await hideFolder(targetId, true);
+          logger.warn("onContentReportCreated: public folder hidden after reports.", {reportId, targetId});
+        }
+      } catch (err) {
+        const code = (err as {code?: string | number}).code;
+        if (code !== "not-found" && code !== "NOT_FOUND" && code !== 5) {
+          logger.error("onContentReportCreated: could not check the folder reports.", {reportId, targetId, err});
+          throw err;
+        }
       }
     }
 

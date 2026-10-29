@@ -59,6 +59,13 @@ void main() {
     expect((action as PageLinkIntent).path, '/user/alice');
   });
 
+  test('parses canonical folder path link', () {
+    final DeepLinkActionEntity action = parser.parse(Uri.parse('https://prismwalls.com/folder/AbC123_x-9'));
+
+    expect(action, isA<PageLinkIntent>());
+    expect((action as PageLinkIntent).path, '/folder/AbC123_x-9');
+  });
+
   test('parses legacy user alias link', () {
     final DeepLinkActionEntity action = parser.parse(Uri.parse('https://prismwalls.com/fprofile?username=bob'));
 

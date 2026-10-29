@@ -2539,6 +2539,79 @@ class FolderOpenedEvent extends AnalyticsEvent {
   }
 }
 
+class FolderVisibilityChangedEvent extends AnalyticsEvent {
+  const FolderVisibilityChangedEvent({required this.isPublic, required this.source});
+
+  final bool isPublic;
+  final String source;
+
+  @override
+  String get eventName => 'folder_visibility_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'is_public': isPublic ? 1 : 0, 'source': source};
+  }
+}
+
+class PublicFolderViewedEvent extends AnalyticsEvent {
+  const PublicFolderViewedEvent({required this.source, required this.itemCount});
+
+  final String source;
+  final int itemCount;
+
+  @override
+  String get eventName => 'public_folder_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'item_count': itemCount};
+  }
+}
+
+class FolderFollowChangedEvent extends AnalyticsEvent {
+  const FolderFollowChangedEvent({required this.following, required this.source});
+
+  final bool following;
+  final String source;
+
+  @override
+  String get eventName => 'folder_follow_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'following': following ? 1 : 0, 'source': source};
+  }
+}
+
+class FolderSharedEvent extends AnalyticsEvent {
+  const FolderSharedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'folder_shared';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class FolderPushOpenedEvent extends AnalyticsEvent {
+  const FolderPushOpenedEvent({required this.folderCount});
+
+  final int folderCount;
+
+  @override
+  String get eventName => 'folder_push_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'folder_count': folderCount};
+  }
+}
+
 class MoodChipTappedEvent extends AnalyticsEvent {
   const MoodChipTappedEvent({required this.moodId, required this.position});
 
