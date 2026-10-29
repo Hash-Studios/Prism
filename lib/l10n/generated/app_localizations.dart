@@ -17328,6 +17328,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your account can request walls and vote once it\'s 10 days old.'**
   String get wallRequestErrorAccountAge;
+
+  /// Admin review card label: the text of the request this wall says it fills.
+  ///
+  /// In en, this message translates to:
+  /// **'Fills request'**
+  String get adminFillsRequest;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

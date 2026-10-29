@@ -10951,4 +10951,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallRequestErrorAccountAge => 'Dein Konto kann Wünsche senden und abstimmen, sobald es 10 Tage alt ist.';
+
+  @override
+  String get adminFillsRequest => 'Erfüllt Wunsch';
 }

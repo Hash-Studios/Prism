@@ -164,7 +164,7 @@ If the client ships first, the requests page shows the error state, and requests
 - Each tab shows at most 50 requests. There is no paging.
 - The filled push reads all protected walls once to find similar walls. This is the same read as the Wall of the Day pick.
 - A failed push still uses the user's daily request push.
-- Admins see the request id on a wall, not the request text, in the review screens.
+- The admin review card shows "Fills request" with the text read from the request doc, so the admin checks that the wall matches before approving. The swipe review screen does not show it. A filled request cannot be reopened; an admin can hide it.
 - Desktop, Gaming and Pastel categories are not part of this feature. See issue #574.
 
 ## How to test

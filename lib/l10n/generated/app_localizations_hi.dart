@@ -10936,4 +10936,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallRequestErrorAccountAge => 'आपका खाता 10 दिन पुराना होने पर अनुरोध और वोट कर सकेगा।';
+
+  @override
+  String get adminFillsRequest => 'अनुरोध पूरा करता है';
 }

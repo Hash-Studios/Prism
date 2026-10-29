@@ -10130,5 +10130,6 @@
   "wallRequestErrorAccountAge": "Akun Anda bisa membuat permintaan dan memberi suara setelah berumur 10 hari.",
   "@wallRequestErrorAccountAge": {
     "description": "Error when an account younger than 10 days tries to request or vote."
-  }
+  },
+  "adminFillsRequest": "Memenuhi permintaan"
 }

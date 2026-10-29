@@ -71,6 +71,18 @@ class AdminModerationRepository {
   }
 
   /// onWallApproved writes the artist's inbox entry and push, so approval adds none here.
+  /// The text of the request a pending wall says it fills, so the admin can check the match before approving.
+  /// The creator writes `requestId` on the wall, so the text comes from the request itself.
+  Future<String?> requestText(String requestId) async {
+    if (requestId.isEmpty || requestId.contains('/')) return null;
+    return _client.getById<String?>(
+      FirebaseCollections.wallRequests,
+      requestId,
+      (Map<String, dynamic> data, String _) => data['text'] is String ? data['text'] as String : null,
+      sourceTag: 'admin_review.request_text',
+    );
+  }
+
   /// A creator can write any `collections` or streak value on a pending wall. Approval therefore files the wall under
   /// `community` and removes the streak fields, unless the admin passes values.
   Future<void> approveWall(

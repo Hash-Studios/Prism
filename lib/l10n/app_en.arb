@@ -10193,5 +10193,9 @@
   "wallRequestErrorAccountAge": "Your account can request walls and vote once it's 10 days old.",
   "@wallRequestErrorAccountAge": {
     "description": "Error when an account younger than 10 days tries to request or vote."
+  },
+  "adminFillsRequest": "Fills request",
+  "@adminFillsRequest": {
+    "description": "Admin review card label: the text of the request this wall says it fills."
   }
 }

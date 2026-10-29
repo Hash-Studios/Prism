@@ -10941,4 +10941,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallRequestErrorAccountAge => 'Tu cuenta podrá hacer solicitudes y votar cuando tenga 10 días.';
+
+  @override
+  String get adminFillsRequest => 'Cumple la solicitud';
 }

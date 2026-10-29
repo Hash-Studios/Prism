@@ -10797,4 +10797,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallRequestErrorAccountAge => 'Your account can request walls and vote once it\'s 10 days old.';
+
+  @override
+  String get adminFillsRequest => 'Fills request';
 }

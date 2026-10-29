@@ -41,6 +41,10 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
   Future<void> Function()? approveAction;
   Future<void> Function()? rejectAction;
   bool wallWasRemoved = true;
+  final Map<String, String> requestTexts = <String, String>{};
+
+  @override
+  Future<String?> requestText(String requestId) async => requestTexts[requestId];
 
   @override
   Stream<List<FirestoreDocument>> watchPendingWalls() {
@@ -212,6 +216,23 @@ void main() {
 
     expect(find.bySemanticsLabel('Depth: Menu'), findsOneWidget);
     expect(find.bySemanticsLabel('Depth: Not checked'), findsOneWidget);
+    semantics.dispose();
+  });
+
+  testWidgets('a wall that fills a request shows the request text from the request itself', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()
+      ..requestTexts['r1'] = 'lofi capybara astronaut'
+      ..wallsList = const <FirestoreDocument>[
+        FirestoreDocument('wall-a', <String, dynamic>{'review': false, 'requestId': 'r1'}),
+        FirestoreDocument('wall-b', <String, dynamic>{'review': false, 'requestId': 'gone'}),
+        FirestoreDocument('wall-c', <String, dynamic>{'review': false}),
+      ];
+    await pumpReviewScreen(tester, repository);
+
+    expect(find.bySemanticsLabel('Fills request: lofi capybara astronaut'), findsOneWidget);
+    expect(find.bySemanticsLabel('Fills request: Unknown'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Fills request')), findsNWidgets(2));
     semantics.dispose();
   });
 

@@ -10852,4 +10852,7 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get wallRequestErrorAccountAge =>
       'Akun Anda bisa membuat permintaan dan memberi suara setelah berumur 10 hari.';
+
+  @override
+  String get adminFillsRequest => 'Memenuhi permintaan';
 }
