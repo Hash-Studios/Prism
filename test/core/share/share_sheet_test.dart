@@ -128,7 +128,11 @@ void _mockChannels(WidgetTester tester, {List<MethodCall>? toastCalls}) {
   });
 }
 
-Future<void> _openSheet(WidgetTester tester, ShareSheetServices services) async {
+Future<void> _openSheet(WidgetTester tester, ShareSheetServices services, {bool disableAnimations = false}) async {
+  if (disableAnimations) {
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+  }
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -701,6 +705,37 @@ void main() {
     expect(fake.copied, <String>[_link]);
     semantics.dispose();
   });
+
+  testWidgets('tapping a format with reduced motion selects it while the preview is still loading', (tester) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(400, 900);
+    addTearDown(tester.view.reset);
+    _mockChannels(tester);
+    final Completer<File> pending = Completer<File>();
+    final _Fake fake = _Fake(await _writeCards(tester))..pendingRender = pending.future;
+
+    await _openSheet(tester, fake.services, disableAnimations: true);
+    expect(_formatSemantics('Story'), findsOneWidget);
+    expect(tester.widget<Semantics>(_formatSemantics('Story')).properties.selected, isTrue);
+    expect(tester.widget<Semantics>(_formatSemantics('Post')).properties.selected, isFalse);
+
+    await tester.tapAt(_rightFormatPeek(tester));
+    await _settle(tester);
+
+    expect(tester.widget<Semantics>(_formatSemantics('Post')).properties.selected, isTrue);
+    expect(find.byKey(const ValueKey<String>('share-preview-post')), findsNothing);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post]);
+  });
+}
+
+Finder _formatSemantics(String label) =>
+    find.byWidgetPredicate((Widget widget) => widget is Semantics && widget.properties.label == label);
+
+/// A point on the card that peeks in from the right. The format label sits off screen.
+Offset _rightFormatPeek(WidgetTester tester) {
+  final Rect pages = tester.getRect(_pages());
+  return Offset(pages.right - 4, pages.top + pages.height * 0.35);
 }
 
 Future<void> _closeSheet(WidgetTester tester) async {

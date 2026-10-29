@@ -896,10 +896,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       // The card grows from the top of the page, so the page scrolls back to it.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_scroll.hasClients || _scroll.offset <= 0) return;
-        final Duration duration = context.motion(PrismDurations.base);
-        duration == Duration.zero
-            ? _scroll.jumpTo(0)
-            : unawaited(_scroll.animateTo(0, duration: duration, curve: PrismCurves.enter));
+        unawaited(_scroll.animateOrJump(0, duration: context.motion(PrismDurations.base), curve: PrismCurves.enter));
       });
     }
     _immersive = immersive;
