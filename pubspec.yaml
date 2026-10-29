@@ -83,6 +83,7 @@ dependencies:
   smooth_sheets: ^1.1.2
   timeago: ^3.0.2
   url_launcher: ^6.3.2
+  sensors_plus: ^7.1.1
 
 dev_dependencies:
   analyzer: ^10.0.1
