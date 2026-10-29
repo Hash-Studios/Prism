@@ -18,6 +18,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -248,6 +249,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     _settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: ''),
     _settingsLocal.get<String>(OnboardingV2Keys.selectedInterests, defaultValue: ''),
     AnimeContentFilter.showsAnime(_settingsLocal),
+    AiContentFilter.showsAi(_settingsLocal),
   ].join('|');
 
   @override
@@ -502,12 +504,14 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
       final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
+      final bool showAi = AiContentFilter.showsAi(_settingsLocal);
       final List<RankingCandidate> candidates = pools
           .expand((pool) => pool)
           .where(
             (c) =>
                 !BlockedCreatorsFilter.hidesFeedItem(c.item, blocked) &&
-                !AnimeContentFilter.hidesFeedItem(c.item, showAnime: showAnime),
+                !AnimeContentFilter.hidesFeedItem(c.item, showAnime: showAnime) &&
+                !AiContentFilter.hidesFeedItem(c.item, showAi: showAi),
           )
           .toList(growable: false);
       for (final RankingCandidate candidate in candidates) {
@@ -867,9 +871,12 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       _followingChunks = chunks;
       return Result.success(
         PersonalizedFeedPage(
-          items: AnimeContentFilter.filterFeedItems(
-            BlockedCreatorsFilter.filterFeedItems(_dedupeByCanonicalKey(rows), blocked),
-            showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
+          items: AiContentFilter.filterFeedItems(
+            AnimeContentFilter.filterFeedItems(
+              BlockedCreatorsFilter.filterFeedItems(_dedupeByCanonicalKey(rows), blocked),
+              showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
+            ),
+            showAi: AiContentFilter.showsAi(_settingsLocal),
           ),
           hasMore: chunks.any((chunk) => chunk.buffer.isNotEmpty || chunk.hasMore),
         ),
@@ -939,9 +946,12 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
       return Result.success(
         PersonalizedFeedPage(
-          items: AnimeContentFilter.filterFeedItems(
-            BlockedCreatorsFilter.filterFeedItems(<FeedItemEntity>[for (final String id in ids) ?byId[id]], blocked),
-            showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
+          items: AiContentFilter.filterFeedItems(
+            AnimeContentFilter.filterFeedItems(
+              BlockedCreatorsFilter.filterFeedItems(<FeedItemEntity>[for (final String id in ids) ?byId[id]], blocked),
+              showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
+            ),
+            showAi: AiContentFilter.showsAi(_settingsLocal),
           ),
           hasMore: false,
         ),
@@ -1160,12 +1170,14 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     // older builds may also hold anime Prism walls.
     final bool sameFilters = (payload['filters'] ?? '100.100') == _contentFilters();
     final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
+    final bool showAi = AiContentFilter.showsAi(_settingsLocal);
     final List<FeedItemEntity> items = rawItems
         .whereType<Map>()
         .map((entry) => decodeFeedItem(toJsonMap(entry)))
         .whereType<FeedItemEntity>()
         .where((item) => sameFilters || item is! WallhavenFeedItem)
         .where((item) => !AnimeContentFilter.hidesFeedItem(item, showAnime: showAnime))
+        .where((item) => !AiContentFilter.hidesFeedItem(item, showAi: showAi))
         .toList(growable: false);
     final Map<String, int> recentShows = _impressions.recentShows(DateTime.now().toUtc());
     return (

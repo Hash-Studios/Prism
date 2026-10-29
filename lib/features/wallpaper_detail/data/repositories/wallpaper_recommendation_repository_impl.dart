@@ -4,6 +4,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/data/feed_cache/pagination_session.dart';
 import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
@@ -84,8 +85,11 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
     final kind = visit.kind;
     final blocked = await blocks().getBlockedCreatorUids(waitForInitialLoad: true);
     final showAnime = AnimeContentFilter.showsAnime(settings());
-    List<FeedItemEntity> visible(List<FeedItemEntity> rows) =>
-        AnimeContentFilter.filterFeedItems(BlockedCreatorsFilter.filterFeedItems(rows, blocked), showAnime: showAnime);
+    final showAi = AiContentFilter.showsAi(settings());
+    List<FeedItemEntity> visible(List<FeedItemEntity> rows) => AiContentFilter.filterFeedItems(
+      AnimeContentFilter.filterFeedItems(BlockedCreatorsFilter.filterFeedItems(rows, blocked), showAnime: showAnime),
+      showAi: showAi,
+    );
     try {
       visit.ensureActive();
       final page = switch (current) {

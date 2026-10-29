@@ -10,6 +10,7 @@ import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -156,6 +157,7 @@ Map<String, dynamic> _prismDoc(
   String? depthTier,
   String? spatialTier,
   String? category,
+  bool ai = false,
 }) => <String, dynamic>{
   'id': id,
   'wallpaper_url': 'https://prism/$id.jpg',
@@ -168,6 +170,7 @@ Map<String, dynamic> _prismDoc(
   'depth': ?(depthTier == null ? null : <String, dynamic>{'tier': depthTier}),
   'spatial': ?(spatialTier == null ? null : <String, dynamic>{'tier': spatialTier}),
   'category': ?category,
+  'isAiGenerated': ai,
 };
 
 void main() {
@@ -462,6 +465,27 @@ void main() {
 
       await SettingsLocalDataSource(store).set('WHcategories', 110);
       expect((await service.search('girl')).prismResults.map((wall) => wall.id), unorderedEquals(<String>['p1', 'p2']));
+    });
+
+    test('AI Prism walls are hidden while the AI setting is off', () async {
+      final store = InMemoryLocalStore();
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.terms'
+            ? <FakeDocRow>[(id: 'd1', data: _prismDoc('p1', ai: true)), (id: 'd2', data: _prismDoc('p2'))]
+            : const <FakeDocRow>[],
+      );
+      final service = _service(
+        wallhaven: Result.success(<WallhavenWallpaper>[_wallhaven('a')]),
+        store: store,
+        firestore: firestore,
+      );
+
+      expect((await service.search('girl')).prismResults.map((wall) => wall.id), unorderedEquals(<String>['p1', 'p2']));
+
+      await AiContentFilter.setShowsAi(SettingsLocalDataSource(store), false);
+      final hidden = await service.search('girl');
+      expect(hidden.prismResults.map((wall) => wall.id), <String>['p2']);
+      expect(hidden.results.map((wall) => wall.id), <String>['a']);
     });
 
     test('a failed search is not cached', () async {
@@ -835,6 +859,22 @@ void main() {
       expect(page.isLocal, isFalse);
       expect((wallhaven.calls, pexels.calls), (0, 0));
       expect(firestore.querySpecs.single.sourceTag, 'PrismWallSearch.depth');
+    });
+
+    test('AI Prism walls drop out of the depth results while the AI setting is off', () async {
+      final store = InMemoryLocalStore();
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => <FakeDocRow>[
+          (id: 'd1', data: _prismDoc('ai1', depthTier: 'auto', ai: true)),
+          (id: 'd2', data: _prismDoc('auto1', depthTier: 'auto')),
+        ],
+      );
+      final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[]), store: store, firestore: firestore);
+
+      expect((await service.search('', filters: depthOnly)).results.map((wall) => wall.id), <String>['ai1', 'auto1']);
+
+      await AiContentFilter.setShowsAi(SettingsLocalDataSource(store), false);
+      expect((await service.search('', filters: depthOnly)).results.map((wall) => wall.id), <String>['auto1']);
     });
 
     test('a depth browse asks Prism search for 48 walls and a text query keeps 12', () async {

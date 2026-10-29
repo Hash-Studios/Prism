@@ -4,7 +4,9 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -35,7 +37,11 @@ class _MockFavouriteWallsBloc extends MockBloc<FavouriteWallsEvent, FavouriteWal
 void main() {
   setUpFavouriteCounts();
   setUpAll(() => registerFallbackValue(const CategoryFeedEvent.started()));
-  setUp(() => getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore())));
+  late SettingsLocalDataSource settings;
+  setUp(() {
+    getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
+    settings = getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+  });
   tearDown(getIt.reset);
 
   const item = FeedItemEntity.prism(
@@ -215,6 +221,24 @@ void main() {
     expect(find.widgetWithText(GlintState, 'No wallpapers here yet'), findsOneWidget);
     await tester.tap(find.text('Refresh'));
     await tester.pump();
+    verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
+  });
+
+  testWidgets('with AI walls hidden, an empty feed offers to show them again', (tester) async {
+    await AiContentFilter.setShowsAi(settings, false);
+    final bloc = streamedBloc(
+      CategoryFeedState.initial().copyWith(status: LoadStatus.success, selectedCategory: space, hasMore: false),
+    );
+
+    await tester.pumpWidget(host(bloc));
+    await tester.pump();
+
+    expect(find.text('No human-made walls here yet'), findsOneWidget);
+    expect(find.text('No wallpapers here yet'), findsNothing);
+    await tester.tap(find.text('Show AI walls'));
+    await tester.pump();
+    await tester.pump();
+    expect(AiContentFilter.showsAi(settings), isTrue);
     verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
   });
 

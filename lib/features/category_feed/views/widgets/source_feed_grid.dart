@@ -5,8 +5,11 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
@@ -16,6 +19,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/widgets/category_feed_refresh.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -74,6 +78,8 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
     }
   }
 
+  SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
+
   void _loadMore() => context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.fetchMoreRequested());
 
   @override
@@ -88,6 +94,19 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
         return const LoadingCards();
       }
       final bool failed = state.status == LoadStatus.failure;
+      if (state.status == LoadStatus.success && !state.hasMore && !AiContentFilter.showsAi(_settings)) {
+        return Center(
+          child: PrismInlineState(
+            icon: Icons.auto_awesome_rounded,
+            title: context.l10n.feedNoHumanWalls,
+            actionLabel: context.l10n.feedShowAiWalls,
+            onAction: () async {
+              await setShowAiWallpapers(_settings, true);
+              if (mounted) unawaited(_refresh());
+            },
+          ),
+        );
+      }
       return RefreshableGlintState(
         kind: failed ? GlintStateKind.error : GlintStateKind.empty,
         title: failed ? context.l10n.wallpaperFeedWallsLoadError : context.l10n.wallpaperCategoryFeedEmptyTitle,

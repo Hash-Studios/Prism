@@ -7,6 +7,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/prism_preview.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -157,12 +158,14 @@ class MoodRepositoryImpl implements MoodRepository {
 
   List<PrismWallpaper> _visible(List<PrismWallpaper> walls, Set<String> blocked) {
     final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
+    final bool showAi = AiContentFilter.showsAi(_settingsLocal);
     return walls
         .where(
           (wall) =>
               hasPrismPreview(wall) &&
               !BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked) &&
-              (showAnime || !AnimeContentFilter.isAnime(wall)),
+              (showAnime || !AnimeContentFilter.isAnime(wall)) &&
+              (showAi || !AiContentFilter.isAi(wall)),
         )
         .toList(growable: false);
   }

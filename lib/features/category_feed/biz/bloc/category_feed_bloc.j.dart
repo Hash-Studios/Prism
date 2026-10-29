@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
+import 'package:Prism/features/category_feed/domain/entities/category_feed_page.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/domain/usecases/category_feed_usecases.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
@@ -37,6 +39,8 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
   final UserBlockRepository _userBlockRepository;
   StreamSubscription<Set<String>>? _blockedCreatorsSub;
   int _generation = 0;
+
+  static const int _maxEmptyPages = 5;
 
   void _onBlockedCreatorsChanged(_BlockedCreatorsChanged event, Emitter<CategoryFeedState> emit) {
     if (event.blocked.isEmpty) return;
@@ -75,7 +79,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
       ),
     );
 
-    final result = await _fetchCategoryFeedUseCase(FetchCategoryFeedParams(category: event.category, refresh: true));
+    final result = await _fetchPage(event.category, refresh: true, generation: generation);
     if (generation != _generation || emit.isDone) return;
 
     result.fold(
@@ -112,7 +116,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
     final int generation = _generation;
     emit(state.copyWith(isFetchingMore: true, actionStatus: ActionStatus.inProgress));
 
-    final result = await _fetchCategoryFeedUseCase(FetchCategoryFeedParams(category: selected, refresh: false));
+    final result = await _fetchPage(selected, refresh: false, generation: generation);
     if (generation != _generation || emit.isDone) return;
 
     result.fold(
@@ -136,6 +140,24 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
       onFailure: (failure) =>
           emit(state.copyWith(actionStatus: ActionStatus.failure, isFetchingMore: false, failure: failure)),
     );
+  }
+
+  /// Hidden AI or anime walls can empty a whole page, so an empty page with more behind it fetches the next one.
+  /// It stops after [_maxEmptyPages] empty pages in a row.
+  Future<Result<CategoryFeedPage>> _fetchPage(
+    CategoryEntity category, {
+    required bool refresh,
+    required int generation,
+  }) async {
+    Result<CategoryFeedPage> result = await _fetchCategoryFeedUseCase(
+      FetchCategoryFeedParams(category: category, refresh: refresh),
+    );
+    for (int empty = 1; empty < _maxEmptyPages; empty++) {
+      final CategoryFeedPage? page = result.data;
+      if (page == null || page.items.isNotEmpty || !page.hasMore || generation != _generation || isClosed) break;
+      result = await _fetchCategoryFeedUseCase(FetchCategoryFeedParams(category: category, refresh: false));
+    }
+    return result;
   }
 
   Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<CategoryFeedState> emit) async {
