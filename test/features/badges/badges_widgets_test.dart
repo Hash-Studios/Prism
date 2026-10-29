@@ -10,6 +10,7 @@ import 'package:Prism/features/badges/domain/repositories/badge_repository.dart'
 import 'package:Prism/features/badges/views/widgets/badge_celebrate_host.dart';
 import 'package:Prism/features/badges/views/widgets/badge_celebrate_sheet.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/rewards/views/widgets/daily_claim_host.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/foundation.dart';
@@ -177,8 +178,16 @@ void main() {
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
+    DailyMomentConfig.enabledOverride = false;
+    addTearDown(() => DailyMomentConfig.enabledOverride = null);
     final backend = CoinsTestBackend();
     await backend.install();
+    final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
+    backend.onCall = (_, _) async => <String, Object>{
+      ...CoinsTestBackend.claimPayload,
+      'todayLocalKey': today,
+      'timezoneOffsetMinutes': 0,
+    };
     addTearDown(() async {
       CoinsService.instance.consumeLastClaim();
       app_state.prismUser = app_constants.createGuestPrismUser();
@@ -219,7 +228,11 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Collector'), findsOneWidget);
-    backend.onCall = (_, _) async => <String, Object>{...CoinsTestBackend.claimPayload, 'todayLocalKey': '2026-10-01'};
+    CoinsService.instance.resetSession();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = '${backend.userId}-second'
+      ..loggedIn = true
+      ..coins = 100;
     await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
