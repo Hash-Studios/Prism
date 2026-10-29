@@ -56,7 +56,7 @@ A fill is done once. If a second wall names the same request, the request keeps 
 
 ### Filled push
 
-When the filled wall has its protected original, the requester and every voter get one push: "Your request is here" and the request text. The push opens the gallery page with the filled wall first and up to 3 walls like it.
+When the filled wall has its protected original, the requester and every voter get one push: "Your request is here" and the request text. The push opens the gallery page with the filled wall first and up to 3 walls like it. `wall_ids` holds logical wall ids, as for the other gallery pushes. `wall_id` is the doc id, so a build without the gallery page opens the filled wall. If no wall is like it, the push opens the filled wall.
 
 | Rule | Detail |
 |---|---|
@@ -79,7 +79,8 @@ When the filled wall has its protected original, the requester and every voter g
 | `status` | `open` or `filled`. |
 | `hidden` | True when an admin or 3 trusted reports hid the request. |
 | `voteCount` | Kept by the vote transaction. |
-| `filledWallId`, `filledWallThumb`, `filledBy`, `fillerUid`, `fillerName`, `filledAt` | Set by the fill. |
+| `filledWallId`, `filledWallThumb`, `filledBy`, `fillerUid`, `fillerName`, `filledAt` | Set by the fill. `filledWallId` is the wall doc id. |
+| `filledWallLogicalId` | The `id` field of the filled wall. The app opens the wall with it. For an upload, the doc id is the file name and differs from this id. |
 | `studioRunId`, `studioQueuedAt` | Set when a Studio run took the request. |
 | `notifiedAt` | Set when the filled push starts. |
 
