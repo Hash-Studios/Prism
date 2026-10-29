@@ -154,8 +154,9 @@ void main() {
     await tester.pumpWidget(_listenerTree(autoRotateBloc, sessionBloc, favouriteWallsBloc));
     await tester.pump();
 
-    verify(() => autoRotateBloc.add(const AutoRotateEvent.entitlementChanged(isPro: true, userId: 'account-a')))
-        .called(1);
+    verify(
+      () => autoRotateBloc.add(const AutoRotateEvent.entitlementChanged(isPro: true, userId: 'account-a')),
+    ).called(1);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('late pass restore updates the signed-in owner entitlement', (tester) async {
@@ -213,8 +214,9 @@ void main() {
 
     await tester.pumpWidget(_listenerTree(autoRotateBloc, sessionBloc, favouriteWallsBloc));
     await tester.pump();
-    verify(() => autoRotateBloc.add(const AutoRotateEvent.entitlementChanged(isPro: false, userId: 'account-a')))
-        .called(1);
+    verify(
+      () => autoRotateBloc.add(const AutoRotateEvent.entitlementChanged(isPro: false, userId: 'account-a')),
+    ).called(1);
     CoinsService.instance.setPassesForTest(Passes.empty);
     await tester.pump();
 
@@ -344,8 +346,9 @@ void main() {
     );
     await tester.pump();
 
-    verify(() => autoRotateBloc.add(const AutoRotateEvent.entitlementChanged(isPro: true, userId: 'account-b')))
-        .called(1);
+    verify(
+      () => autoRotateBloc.add(const AutoRotateEvent.entitlementChanged(isPro: true, userId: 'account-b')),
+    ).called(1);
     await states.close();
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
@@ -404,8 +407,9 @@ void main() {
     );
     await tester.pump();
 
-    verify(() => autoRotateBloc.add(const AutoRotateEvent.favouritesChanged(<String>['https://example.test/a.jpg'])))
-        .called(1);
+    verify(
+      () => autoRotateBloc.add(const AutoRotateEvent.favouritesChanged(<String>['https://example.test/a.jpg'])),
+    ).called(1);
     await favourites.close();
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
