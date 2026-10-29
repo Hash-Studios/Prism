@@ -41,6 +41,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   final SetFavouritePinUseCase _setFavouritePinUseCase;
 
   Future<void> _queueTail = Future<void>.value();
+  int _accountGeneration = 0;
 
   /// Loads and mutations share one queue, so a refresh cannot interleave with a removal or an undo.
   Future<void> _serial(Future<void> Function() action) async {
@@ -73,6 +74,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   }
 
   Future<void> _onStarted(_Started event, Emitter<FavouriteWallsState> emit) async {
+    if (state.userId != event.userId) _accountGeneration++;
     emit(
       state.copyWith(
         status: LoadStatus.loading,
@@ -85,6 +87,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   }
 
   void _onSynced(_Synced event, Emitter<FavouriteWallsState> emit) {
+    if (state.userId != event.userId) _accountGeneration++;
     emit(
       state.copyWith(
         status: LoadStatus.success,
@@ -129,7 +132,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     final bool currentlyFavourited = event.desired == null ? _containsWall(event.wall.id) : !event.desired!;
     final FavouriteWallEntity wall = currentlyFavourited
         ? event.wall
-        : event.wall.withFavouritedAt(DateTime.now().toUtc());
+        : event.wall.withFavouritedAt(DateTime.now().toUtc()).withPinnedAt(null);
     final result = await _toggleFavouriteWallUseCase(
       ToggleFavouriteWallParams(userId: state.userId, wall: wall, currentlyFavourited: currentlyFavourited),
     );
@@ -239,6 +242,8 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   }
 
   Future<void> _onPinRequested(_PinRequested event, Emitter<FavouriteWallsState> emit) async {
+    final String userId = state.userId;
+    final int accountGeneration = _accountGeneration;
     final FavouriteWallEntity? wall = state.items.where((item) => item.id == event.wallId).firstOrNull;
     if (wall == null) {
       emit(
@@ -266,9 +271,17 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     }
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
     final DateTime? pinnedAt = event.pinned ? DateTime.now().toUtc() : null;
-    final result = await _setFavouritePinUseCase(
-      SetFavouritePinParams(userId: state.userId, wall: wall, pinnedAt: pinnedAt),
-    );
+    final result = await _setFavouritePinUseCase(SetFavouritePinParams(userId: userId, wall: wall, pinnedAt: pinnedAt));
+    if (userId != state.userId || accountGeneration != _accountGeneration) {
+      emit(
+        state.copyWith(
+          actionStatus: ActionStatus.failure,
+          completedOperationId: event.operationId,
+          failure: const ValidationFailure('The account changed during this pin update.'),
+        ),
+      );
+      return;
+    }
     result.fold(
       onSuccess: (_) => emit(
         state.copyWith(

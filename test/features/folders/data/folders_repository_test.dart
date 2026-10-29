@@ -121,6 +121,24 @@ void main() {
     expect(item.data?['wallpaperDocumentId'], 'source-document');
   });
 
+  test('pinned favourites omit pinnedAt from folder items on both write paths', () async {
+    final client = _Client()
+      ..onQuery = (_) => <FakeDocRow>[
+        (id: 'prism_wall', data: {'id': 'wall', 'provider': 'Prism'}),
+      ];
+    final repository = FoldersRepositoryImpl(client);
+    final fetched = await repository.fetchItems('a', userId: 'u1');
+    final wall = fetched.data!.single.withPinnedAt(DateTime.utc(2026));
+
+    await repository.createFolder(_folder(), firstWall: wall);
+    final createItem = client.batches.single.batch.writes.last;
+    expect(createItem.data, isNot(contains('pinnedAt')));
+
+    await repository.addItem(_folder(), wall);
+    final addItem = client.batches.last.batch.writes.first;
+    expect(addItem.data, isNot(contains('pinnedAt')));
+  });
+
   test('item reads filter on item ownership and preserve newest-first limit', () async {
     final client = _Client()
       ..onQuery = (_) => <FakeDocRow>[

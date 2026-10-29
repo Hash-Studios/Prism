@@ -566,6 +566,7 @@ const cases = [
   ['item spatial must be a map', () => req('PATCH', 'folders/fb/items/prism_spatialstr', { ...itemFields('b', 'spatialstr', 'Prism'), spatial: str('scene') }, Bu), 403],
   ['changing an item ownerId is refused', () => req('PATCH', 'folders/fb/items/wallhaven_abc', { ownerId: str('c') }, Bu, ['ownerId']), 403],
   ['item with an extra field is refused', () => req('PATCH', 'folders/fb/items/wallhaven_extra', { ...itemFields('b', 'extra'), public: { booleanValue: true } }, Bu), 403],
+  ['folder item cannot include a favourite pin timestamp', () => req('PATCH', 'folders/fb/items/wallhaven_pinned', { ...itemFields('b', 'pinned'), pinnedAt: ts() }, Bu), 403],
   ['item in a missing folder is refused', () => req('PATCH', 'folders/missing/items/wallhaven_abc', itemFields('b'), Bu), 403],
   ['owner updates own seeded folder count', () => req('PATCH', 'folders/fb', { itemCount: { integerValue: '1' }, covers: arr(['https://example.com/t.jpg']), updatedAt: ts() }, Bu, ['itemCount', 'covers', 'updatedAt']), 200],
   ['owner creates a folder and first item atomically', () => commitDocs(Bu, [

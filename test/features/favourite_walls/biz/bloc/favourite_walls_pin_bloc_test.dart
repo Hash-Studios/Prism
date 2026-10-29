@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -150,18 +152,20 @@ void main() {
       expect(bloc.state.items, isEmpty);
     });
 
-    test('favouriting the wall again from a fresh entity brings it back unpinned', () async {
-      final FavouriteWallsBloc bloc = await loaded(<FavouriteWallEntity>[
-        prismFav('a').withPinnedAt(DateTime.utc(2026)),
-      ]);
-      bloc.add(FavouriteWallsEvent.toggleRequested(wall: prismFav('a'), desired: false, operationId: 1));
+    test('favouriting a removed pinned wall from a stale entity brings it back unpinned', () async {
+      final FavouriteWallEntity stalePinnedWall = prismFav('a').withPinnedAt(DateTime.utc(2026));
+      final FavouriteWallsBloc bloc = await loaded(<FavouriteWallEntity>[stalePinnedWall]);
+      bloc.add(FavouriteWallsEvent.toggleRequested(wall: stalePinnedWall, desired: false, operationId: 1));
       await bloc.stream.firstWhere((state) => state.completedOperationId == 1);
 
-      bloc.add(FavouriteWallsEvent.toggleRequested(wall: prismFav('a'), desired: true, operationId: 2));
+      bloc.add(FavouriteWallsEvent.toggleRequested(wall: stalePinnedWall, desired: true, operationId: 2));
       await bloc.stream.firstWhere((state) => state.completedOperationId == 2);
 
       expect(bloc.state.items.map((wall) => wall.id), <String>['a']);
       expect(bloc.state.items.single.pinned, isFalse);
+      final ToggleFavouriteWallParams added =
+          verify(() => toggleUseCase(captureAny())).captured.last as ToggleFavouriteWallParams;
+      expect(added.wall.pinned, isFalse);
     });
   });
 
@@ -197,6 +201,94 @@ void main() {
     expect(lastPin().wall.id, 'a');
     expect(bloc.state.actionStatus, ActionStatus.failure);
     expect(bloc.state.failure, isA<ServerFailure>());
+    expect(bloc.state.items.single.pinned, isFalse);
+  });
+
+  test('a sync during a pin write keeps that pin intent and accepts another wall unpin', () async {
+    final FavouriteWallEntity first = prismFav('first');
+    final FavouriteWallEntity second = prismFav('second');
+    final FavouriteWallsBloc bloc = await loaded(<FavouriteWallEntity>[first, second]);
+    final Completer<Result<void>> secondWrite = Completer<Result<void>>();
+    final Completer<void> secondWriteStarted = Completer<void>();
+    var writeCount = 0;
+    when(() => setPinUseCase(any())).thenAnswer((_) {
+      writeCount++;
+      if (writeCount == 2) {
+        secondWriteStarted.complete();
+        return secondWrite.future;
+      }
+      return Future<Result<void>>.value(Result.success(null));
+    });
+
+    bloc.add(const FavouriteWallsEvent.pinRequested(wallId: 'first', pinned: true, operationId: 1));
+    await bloc.stream.firstWhere((state) => state.completedOperationId == 1);
+
+    bloc.add(const FavouriteWallsEvent.pinRequested(wallId: 'second', pinned: true, operationId: 2));
+    await secondWriteStarted.future;
+    bloc.add(FavouriteWallsEvent.synced(userId: 'user_1', items: <FavouriteWallEntity>[first, second]));
+    await bloc.stream.firstWhere((state) => state.items.every((wall) => !wall.pinned));
+    secondWrite.complete(Result.success(null));
+    await bloc.stream.firstWhere((state) => state.completedOperationId == 2);
+
+    expect(bloc.state.items.singleWhere((wall) => wall.id == 'first').pinned, isFalse);
+    expect(bloc.state.items.singleWhere((wall) => wall.id == 'second').pinned, isTrue);
+  });
+
+  test('a synced 12th pin makes a queued 13th pin fail without a second write', () async {
+    final List<FavouriteWallEntity> initial = manyPinned().take(maxPinnedFavourites - 1).toList()
+      ..addAll(<FavouriteWallEntity>[prismFav('twelfth'), prismFav('thirteenth')]);
+    final FavouriteWallsBloc bloc = await loaded(initial);
+    final Completer<Result<void>> twelfthWrite = Completer<Result<void>>();
+    final Completer<void> twelfthWriteStarted = Completer<void>();
+    var writeCount = 0;
+    when(() => setPinUseCase(any())).thenAnswer((_) {
+      writeCount++;
+      if (writeCount > 1) return Future<Result<void>>.value(Result.success(null));
+      twelfthWriteStarted.complete();
+      return twelfthWrite.future;
+    });
+
+    bloc.add(const FavouriteWallsEvent.pinRequested(wallId: 'twelfth', pinned: true, operationId: 1));
+    await twelfthWriteStarted.future;
+    bloc.add(
+      FavouriteWallsEvent.synced(
+        userId: 'user_1',
+        items: <FavouriteWallEntity>[
+          ...initial.take(maxPinnedFavourites - 1),
+          prismFav('twelfth').withPinnedAt(DateTime.utc(2026)),
+          prismFav('thirteenth'),
+        ],
+      ),
+    );
+    await bloc.stream.firstWhere((state) => state.pinnedCount == maxPinnedFavourites);
+    bloc.add(const FavouriteWallsEvent.pinRequested(wallId: 'thirteenth', pinned: true, operationId: 2));
+    twelfthWrite.complete(Result.success(null));
+    await bloc.stream.firstWhere((state) => state.completedOperationId == 2);
+
+    expect(bloc.state.failure, isA<FavouritePinLimitFailure>());
+    expect(bloc.state.pinnedCount, maxPinnedFavourites);
+    expect(writeCount, 1);
+  });
+
+  test('a pin write completing after A to B to A sync does not pin the new A session', () async {
+    final FavouriteWallsBloc bloc = await loaded(<FavouriteWallEntity>[prismFav('shared-id')]);
+    final Completer<Result<void>> pendingWrite = Completer<Result<void>>();
+    final Completer<void> writeStarted = Completer<void>();
+    when(() => setPinUseCase(any())).thenAnswer((_) {
+      writeStarted.complete();
+      return pendingWrite.future;
+    });
+
+    bloc.add(const FavouriteWallsEvent.pinRequested(wallId: 'shared-id', pinned: true, operationId: 1));
+    await writeStarted.future;
+    bloc.add(FavouriteWallsEvent.synced(userId: 'user_2', items: <FavouriteWallEntity>[prismFav('shared-id')]));
+    await bloc.stream.firstWhere((state) => state.userId == 'user_2');
+    bloc.add(FavouriteWallsEvent.synced(userId: 'user_1', items: <FavouriteWallEntity>[prismFav('shared-id')]));
+    await bloc.stream.firstWhere((state) => state.userId == 'user_1' && state.items.single.pinned == false);
+    pendingWrite.complete(Result.success(null));
+    await bloc.stream.firstWhere((state) => state.completedOperationId == 1);
+
+    expect(bloc.state.userId, 'user_1');
     expect(bloc.state.items.single.pinned, isFalse);
   });
 }

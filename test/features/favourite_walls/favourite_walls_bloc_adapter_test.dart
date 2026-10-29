@@ -9,6 +9,7 @@ import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.d
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_pin_toggle.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -191,6 +192,55 @@ void main() {
     );
 
     expect(await adapter.getDataBase(), isNull);
+  });
+
+  testWidgets('pin state stays unknown until the current user favourites load completes', (tester) async {
+    final Completer<Result<List<FavouriteWallEntity>>> pendingFetch = Completer<Result<List<FavouriteWallEntity>>>();
+    final FavouriteWallEntity pinned = prismFav('a').withPinnedAt(DateTime.utc(2026));
+    late BuildContext buildContext;
+    when(() => fetch(any())).thenAnswer((_) => pendingFetch.future);
+    bloc = FavouriteWallsBloc(fetch, toggle, clear, _MockSetFavouritePinUseCase());
+    addTearDown(bloc.close);
+    await tester.pumpWidget(
+      BlocProvider<FavouriteWallsBloc>.value(
+        value: bloc,
+        child: Builder(
+          builder: (BuildContext context) {
+            buildContext = context;
+            adapter = context.favouriteWallsAdapter(listen: false);
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+
+    final Future<List<FavouriteWallEntity>?> loading = adapter.getDataBase();
+    await tester.pump();
+    expect(bloc.state.status, LoadStatus.loading);
+    expect(currentFavouritePinState(buildContext, 'a'), isNull);
+    pendingFetch.complete(Result.success(<FavouriteWallEntity>[pinned]));
+
+    await loading;
+    expect(currentFavouritePinState(buildContext, 'a'), isTrue);
+  });
+
+  testWidgets('a pinned item stays pinned while a refresh keeps the existing list visible', (tester) async {
+    final FavouriteWallEntity pinned = prismFav('a').withPinnedAt(DateTime.utc(2026));
+    server = <FavouriteWallEntity>[pinned];
+    await pumpAdapter(tester);
+    final BuildContext context = tester.element(find.byType(SizedBox).first);
+    final Completer<Result<List<FavouriteWallEntity>>> pendingFetch = Completer<Result<List<FavouriteWallEntity>>>();
+    when(() => fetch(any())).thenAnswer((_) => pendingFetch.future);
+
+    bloc.add(const FavouriteWallsEvent.refreshRequested());
+    await tester.pump();
+    expect(bloc.state.status, LoadStatus.loading);
+    expect(bloc.state.items.single.pinned, isTrue);
+    expect(isFavouritePinned(context, 'a'), isTrue);
+
+    pendingFetch.complete(Result.success(<FavouriteWallEntity>[pinned]));
+    await tester.pump();
+    expect(bloc.state.status, LoadStatus.success);
   });
 
   testWidgets('a tap with desired true does not remove a favourite the list already holds', (tester) async {

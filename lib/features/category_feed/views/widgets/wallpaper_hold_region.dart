@@ -228,6 +228,7 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
       Offset(direction * 64, -vertical * 16),
       Offset(-direction * 50, vertical * 40),
       Offset(-direction * 64, -vertical * 16),
+      Offset(0, -vertical * 64),
     ];
     _centres = <WallpaperQuickAction, Offset>{for (int i = 0; i < actions.length; i++) actions[i]: anchor + offsets[i]};
     // Bound every frame of the tilt and scale, not just the unpainted layout rect.

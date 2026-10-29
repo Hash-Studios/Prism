@@ -89,7 +89,7 @@ Map<String, dynamic> _$FavouriteWallDocDtoToJson(_FavouriteWallDocDto instance) 
   'collections': const FirestoreStringListConverter().toJson(instance.collections),
   'createdAt': const FirestoreDateTimeConverter().toJson(instance.createdAt),
   'favouritedAt': const FirestoreDateTimeConverter().toJson(instance.favouritedAt),
-  'pinnedAt': const FirestoreDateTimeConverter().toJson(instance.pinnedAt),
+  'pinnedAt': ?const FirestoreDateTimeConverter().toJson(instance.pinnedAt),
   'depth': const FirestoreJsonMapConverter().toJson(instance.depth),
   'spatial': const FirestoreJsonMapConverter().toJson(instance.spatial),
 };

@@ -21,6 +21,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/utils/localized_relative_time.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
@@ -48,7 +49,9 @@ import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
+import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_pin_toggle.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/wallpaper_stats_row.dart';
@@ -190,11 +193,16 @@ class _DetailImmersion extends StatefulWidget {
 
 class _DetailImmersionState extends State<_DetailImmersion>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  static int _nextOwnerId = 0;
+  static int? _immersiveOwnerId;
+
   late final AnimationController _controller = AnimationController(vsync: this, duration: PrismDurations.base);
   late final Animation<double> _progress = CurvedAnimation(parent: _controller, curve: PrismCurves.enter);
   late final Animation<double> _controls = ReverseAnimation(_progress);
   bool _on = false;
-  bool _barsHidden = false;
+  bool _restoreNeeded = false;
+  int _stateGeneration = 0;
+  int? _ownerId;
 
   @override
   void initState() {
@@ -219,7 +227,8 @@ class _DetailImmersionState extends State<_DetailImmersion>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _showBars(true);
+    if (_immersiveOwnerId == _ownerId) _immersiveOwnerId = null;
+    unawaited(_showBars(true));
     _controller.dispose();
     super.dispose();
   }
@@ -234,21 +243,43 @@ class _DetailImmersionState extends State<_DetailImmersion>
   void _set(bool on, {bool rebuild = true}) {
     if (on == _on) return;
     _on = on;
+    _stateGeneration++;
+    if (on) {
+      _ownerId = ++_nextOwnerId;
+      _immersiveOwnerId = _ownerId;
+      _restoreNeeded = true;
+    } else {
+      if (_immersiveOwnerId == _ownerId) _immersiveOwnerId = null;
+      _ownerId = null;
+    }
     if (rebuild) setState(() {});
     _controller.duration = context.motion(PrismDurations.base);
     on ? _controller.forward() : _controller.reverse();
-    _showBars(!on);
+    unawaited(_showBars(!on));
   }
 
-  void _showBars(bool show) {
-    if (show != _barsHidden) return;
-    _barsHidden = !show;
-    unawaited(
-      SystemChrome.setEnabledSystemUIMode(show ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky).catchError(
-        (Object error, StackTrace stackTrace) =>
-            logger.w('Unable to change the system UI mode.', error: error, stackTrace: stackTrace),
-      ),
-    );
+  Future<void> _showBars(bool show) async {
+    if (!show && _immersiveOwnerId != _ownerId) return;
+    if (show && _immersiveOwnerId != null && _immersiveOwnerId != _ownerId) return;
+    if (show && !_restoreNeeded) return;
+    final int generation = _stateGeneration;
+    final int attempts = show ? 2 : 1;
+    for (int attempt = 0; attempt < attempts; attempt++) {
+      if (generation != _stateGeneration) return;
+      if (!show && _immersiveOwnerId != _ownerId) return;
+      if (show && _immersiveOwnerId != null && _immersiveOwnerId != _ownerId) return;
+      try {
+        await SystemChrome.setEnabledSystemUIMode(show ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky);
+        if (show && generation == _stateGeneration) _restoreNeeded = false;
+        return;
+      } catch (error, stackTrace) {
+        logger.w(
+          'Unable to change the system UI mode${attempt + 1 == attempts ? '.' : ', retrying.'}',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
   }
 
   @override
@@ -679,6 +710,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   bool _openRecorded = false;
   bool _loaded = false;
+  String? _favouriteLoadRequestedUserId;
   String? _offlinePreviewKey;
   Future<File?>? _offlinePreviewFuture;
 
@@ -774,6 +806,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       });
     }
     _immersive = immersive;
+    if ((_FeedStep.maybeOf(context)?.active ?? true) && _favouriteLoadRequestedUserId != app_state.prismUser.id) {
+      _favouriteLoadRequestedUserId = app_state.prismUser.id;
+      _loadFavouritesForPinMenu();
+    }
     // A neighbour shown during a drag shows its tile picture and loads only when the feed settles on it.
     if (!_loaded && (_FeedStep.maybeOf(context)?.active ?? true)) {
       _loaded = true;
@@ -803,6 +839,22 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           localFilePath: widget.localFile?.path,
         ),
       );
+    }
+  }
+
+  void _loadFavouritesForPinMenu() {
+    final FavouriteWallsBloc? bloc = context.read<FavouriteWallsBloc?>();
+    if (bloc == null || (bloc.state.status == LoadStatus.success && bloc.state.userId == app_state.prismUser.id)) {
+      return;
+    }
+    unawaited(_loadFavourites());
+  }
+
+  Future<void> _loadFavourites() async {
+    try {
+      await context.favouriteWallsAdapter(listen: false).getDataBase();
+    } catch (error, stackTrace) {
+      logger.w('Unable to load favourites for the detail pin menu.', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -849,7 +901,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   Widget build(BuildContext context) {
     return BlocListener<WallpaperDetailBloc, WallpaperDetailState>(
       listener: (context, state) {
-        if (state is WallpaperDetailError) _Immersion.read(context)?.exit();
+        if (state is WallpaperDetailError && (_FeedStep.maybeOf(context)?.active ?? true)) {
+          _Immersion.read(context)?.exit();
+        }
         if (state is WallpaperDetailError &&
             widget.localFile?.existsSync() == true &&
             ModalRoute.of(context)?.isCurrent == true) {
@@ -2291,14 +2345,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             onResetOriginal: () => _handleAccentLongPress(context, state),
             preview: ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(_cardRadius)), child: image),
             readIsPinned: () => _favouritePinState(entity),
-            onTogglePin: () => unawaited(
-              toggleFavouritePin(
-                context,
-                entity.id,
-                pin: !isFavouritePinned(context, entity.id),
-                surface: FavouritePinSurfaceValue.detail,
-              ),
-            ),
+            onTogglePin: () {
+              final bool? pinned = _favouritePinState(entity);
+              if (pinned == null) return;
+              unawaited(toggleFavouritePin(context, entity.id, pin: !pinned, surface: FavouritePinSurfaceValue.detail));
+            },
             child: _cardSemantics(
               feed,
               child: _FeedDragSurface(
@@ -2353,7 +2404,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   /// Whether the favourite [entity] is pinned, or null when it is not a favourite, so the hold menu shows no Pin.
   bool? _favouritePinState(FeedItemEntity entity) {
     if (!getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, entity.id)) return null;
-    return isFavouritePinned(context, entity.id);
+    final FavouriteWallsBloc? bloc = context.read<FavouriteWallsBloc?>();
+    if (bloc == null) return null;
+    final bool? pinned = currentFavouritePinState(context, entity.id);
+    if (pinned == null &&
+        (bloc.state.status == LoadStatus.initial ||
+            bloc.state.status == LoadStatus.failure ||
+            bloc.state.userId != app_state.prismUser.id)) {
+      _loadFavouritesForPinMenu();
+    }
+    return pinned;
   }
 
   /// The card's picture: thumbnail first, then the best image the user may see. The spinner lives outside this subtree.
