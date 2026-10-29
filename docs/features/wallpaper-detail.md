@@ -35,7 +35,7 @@ Opening and closing (`lib/core/router/wallpaper_detail_route.dart`):
 - From a grid tile, the card is a Hero that flies from the tile. The page grows out of the tile with it over 240 ms, and a scrim of up to 30 percent dims the page behind. While the page grows, taps outside it do nothing, so a second tap cannot open another page.
 - The card shows the tile's decoded picture until its own picture is ready, so it never flashes blank.
 - With no tile (a deep link, for example) the page fades in. When the device asks for less motion, the page opens in place without a flight.
-- Back during the opening shrinks the page back into its tile. After the opening, Back fades the page out on Android. On iOS the page slides out, and the native edge swipe from the left works.
+- Back during the opening shrinks the page back into its tile. After the opening, Back fades the page out on Android. On iOS the page slides out, and the native edge swipe from the left works, unless the wall is immersive.
 
 While Prism confirms a Prism wallpaper that a feed passed in, the card shows its thumbnail only. Placeholders hold the place of the actions and the summary, and nothing under the card takes taps. **Back** works. The clock shows when the wallpaper is ready.
 
@@ -48,9 +48,9 @@ Action row (`WallpaperActionBar`):
 
 Colour variations:
 
-- Tap the card to cycle through the palette. Each tap tints the whole wallpaper with the hue of the next colour (`ColorFiltered` with `BlendMode.hue`, over the image), and the card gives a short press. The change slides in about 220 ms, or at once when the device asks for less motion. The slide blends the two colours in HSL space and the hue takes the short way round (`lerpHueTint`), so it never fades through grey. The first tap shows the hint "Hold for actions, including Reset to original".
+- Tap a swatch to tint the whole wallpaper with its hue (`ColorFiltered` with `BlendMode.hue`, over the image). The change slides in about 220 ms, or at once when the device asks for less motion. The slide blends the two colours in HSL space and the hue takes the short way round (`lerpHueTint`), so it never fades through grey. A tap on the card does not change the colour. It toggles immersive mode.
 - Hold the card for its menu: **Favourite** (or **Unfavourite**), **Share link**, and **Reset to original**. Reset to original brings back the untouched wallpaper. The menu is the shared hold menu of the grids (`WallpaperQuickActionRegion`).
-- The swatch row under the actions shows the original first, then one round swatch per palette colour (up to 5). Each swatch is the wallpaper thumbnail with that hue, and a ring marks the one in use. Tap a swatch to pick it. It plays the selection haptic, like a tap on the card. Long press a swatch to copy its hex code.
+- The swatch row under the actions shows the original first, then one round swatch per palette colour (up to 5). Each swatch is the wallpaper thumbnail with that hue, and a ring marks the one in use. Tap a swatch to pick it. It plays the selection haptic. Long press a swatch to copy its hex code.
 - At first, the wallpaper stays original. It only changes after you pick a colour.
 - Set, Download (Save on iOS) and Edit use the tinted image. Set and Edit get `prepareSource`, which calls `renderTintedWallpaper` (`wallpaper_tint_renderer.dart`). It draws the full wallpaper with the same hue blend and returns a PNG path. Download gets a `DownloadVariant` with the key `tint-<rrggbb>` and the same `prepare`. Each colour is its own purchase, and a finished tinted download is remembered in `DownloadedWallIndex` under `variant.identityOf(url)`, not under the wallpaper link. The identity is a plain file name, `<base>_<key>.png`. Every character of the base outside `A-Z a-z 0-9 . _ -` becomes `_` (a decoded `#` or `?` in the link would otherwise start a fragment or query when the name is parsed again) and the base is cut so the name stays within the 200 bytes the native side accepts. With the original showing, the buttons use the wallpaper as before.
 - A tinted file opened from Library > Downloads is that variation. When the file name ends in `_tint-<rrggbb>` (and an optional ` (n)` copy suffix) and no new colour is picked, Download (Save on iOS) gets a `DownloadVariant` with that key whose `prepare` returns the file itself. So the pill reads Saved, and Download again copies the tinted file, not the original. Edit opens any local file as it is. A colour picked on top renders from the local file, as a new variation.
@@ -144,6 +144,42 @@ Remix (AI wallpapers with a prompt):
 
 The details are in [remix.md](remix.md).
 
+### Immersive mode
+
+A single tap on the wallpaper card hides every control. The hidden controls are the back and preview buttons, the action bar and the colour swatches. The summary and details rows, the chips and the recommendations hide too. The system bars hide as well. On Android, the app uses `SystemUiMode.immersiveSticky`. On iOS, the status bar and the home indicator hide.
+
+- The card grows to the full screen and loses its rounded corners. The same decoded picture stays on screen. The image decodes for the full screen size, so the change does not load or decode the image again.
+- The change takes 240 ms on the Prism ease-out curve (`PrismCurves.enter`). With reduced motion, the change is instant.
+- Another tap shows every control again. On Android, the back button and the back gesture do the same. The first back press only leaves immersive mode. It does not close the screen. On iOS, the edge swipe back is off while the wall is immersive.
+- A sideways swipe moves to the next or previous wall of the feed. The next wall is also immersive.
+- A pinch zooms the wall up to 4x while immersive. The wall springs back when the fingers lift. There is no pinch zoom outside immersive mode, where the card is part of a scrolling page.
+- A touch that pinches, swipes the feed or scrolls the page is never a tap.
+- Immersive mode ends when one of these happens. The system bars show again.
+  - The route closes.
+  - A route or a sheet opens on top.
+  - The app goes to the background (hidden or paused). A short "inactive" state, such as Control Centre, does not count.
+  - A load error shows.
+  When the app resumes, the screen shows the normal layout.
+- The first detail screen that a user opens shows the hint "Tap to hide controls" for 3 seconds. The hint shows once per install. Its settings key is `wallpaper_detail.immersive_hint_shown`.
+- Screen readers hear a "Hide controls" or "Show controls" action on the wallpaper. The default activate action also toggles immersive mode. Hidden controls leave the semantics tree.
+- A long press still opens the hold menu. When the wall is a favourite, the menu also has "Pin to top" or "Unpin".
+- Analytics: `detail_immersive_toggled{immersive, source}`, where `immersive` is a bool and `source` is `tap` or `semantics`. `detail_immersive_hint_shown` records the hint.
+- Code: `_DetailImmersion` in `lib/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart` owns the immersive state and the system UI mode for the route. The feed browser shares it. `_FeedDragSurface` owns the tap, the feed drag and the pinch.
+- The Lock Screen and Home Screen preview (`clock_overlay.dart`) also hides its controls on a tap, on the same ease-out curve. Its fade is 160 ms, because nothing in it moves. It keeps the system status bar on purpose, because a real Lock Screen shows it.
+
+The table compares each gesture before and after the change.
+
+| Gesture | Before | Now |
+|---|---|---|
+| Tap on wall | Cycles the tint through the palette, with a short press shrink | Toggles immersive mode |
+| Double tap | Nothing | Nothing |
+| Long press | Opens the hold menu | Opens the hold menu, with "Pin to top" or "Unpin" for favourites |
+| Pinch | Nothing | Zooms the wall up to 4x while immersive, then springs back |
+| Swipe up or down | Scrolls the page to the actions and details | Same, locked while immersive |
+| Swipe left or right | Moves to the next or previous wall of the feed | Same, and the next wall is also immersive |
+| Back | Closes the screen | Leaves immersive mode first, then closes the screen |
+| Tap on the summary row or chevron | Opens or closes the details | Same |
+
 ## Limits
 
 - The share link preview title is the wallpaper title, else "Wallpaper by <creator>". If the creator is unknown it is "Wallpaper by Prism creator" for Prism walls and "Wallpaper on Prism" for others.
@@ -173,7 +209,7 @@ The details are in [remix.md](remix.md).
 12. Report a wallpaper. Make sure the snackbar offers **Also block this creator**.
 13. Turn on airplane mode. Open a share link to a wallpaper that is not cached. Make sure the screen shows the thumbnail, a plain message, and **Try again**.
 14. Turn on airplane mode. Tap Share. Make sure an error toast shows and nothing is copied. Tap Favourite. Make sure the error toast shows.
-15. Tap the card. Make sure the whole wallpaper changes hue. Tap again. Make sure the next colour shows. Hold the card and pick **Reset to original**. Make sure the original comes back.
+15. Tap the card. Make sure the controls hide and the wallpaper fills the screen. Tap again. Make sure the controls show. Pick a swatch. Make sure the whole wallpaper changes hue. Hold the card and pick **Reset to original**. Make sure the original comes back.
 16. Make sure each swatch shows the wallpaper in its own colour. Pick a swatch. Make sure the wallpaper changes. Long press a swatch. Make sure the hex code is copied.
 17. With a colour picked, tap Set, then Download (or Save on iOS), then Edit. Make sure each one uses the tinted wallpaper. Tap the clock icon. Make sure the preview shows the same hue.
 18. Open a Prism wallpaper that has a category from Library > Downloads. Make sure the grid is titled **More like this** and shows walls of that category.

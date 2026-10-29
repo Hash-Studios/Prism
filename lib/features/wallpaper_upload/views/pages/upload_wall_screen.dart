@@ -14,10 +14,12 @@ import 'package:Prism/data/upload/upload_failure.dart';
 import 'package:Prism/data/upload/upload_id.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/env/env.dart';
+import 'package:Prism/features/wall_requests/domain/entities/wall_request.dart';
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_quality.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/features/wallpaper_upload/views/widgets/fills_request_row.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/submission_metadata_form.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_batch_stepper.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_checks_card.dart';
@@ -453,6 +455,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               thumbSha: thumbSha,
               thumbSourceKind: thumbSourceKind,
               docId: _wallDocId ??= 'wall_${_fileName ?? id}',
+              requestId: _metadata.requestId,
             );
       if (result == wall_store.WallSubmissionResult.quotaExceeded && _submissionUnresolved) {
         setState(() {
@@ -847,7 +850,17 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 SubmissionMetadataForm(
                   initial: _metadata,
                   onChanged: (SubmissionMetadata value) {
-                    _metadata = value;
+                    _metadata = value.copyWith(requestId: _metadata.requestId, requestText: _metadata.requestText);
+                    unawaited(_persistDraft().then<void>((_) {}));
+                  },
+                ),
+                const SizedBox(height: PrismSpace.md),
+                FillsRequestRow(
+                  requestText: _metadata.requestText,
+                  onChanged: (WallRequest? request) {
+                    setState(() {
+                      _metadata = _metadata.copyWith(requestId: request?.id ?? '', requestText: request?.text ?? '');
+                    });
                     unawaited(_persistDraft().then<void>((_) {}));
                   },
                 ),

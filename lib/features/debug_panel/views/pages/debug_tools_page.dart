@@ -264,7 +264,7 @@ class _AnimationSpeedCard extends StatelessWidget {
               Text('${speedFormat.format(speed)}×', style: PrismTextStyles.rowTitle(context)),
             ],
           ),
-          Slider(
+          PrismSlider(
             value: speed,
             min: 0.1,
             max: 10.0,

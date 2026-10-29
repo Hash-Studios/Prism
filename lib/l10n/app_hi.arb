@@ -14,6 +14,39 @@
   "galleryEmptyBody": "इन्हें हटा दिया गया है या ये अब सार्वजनिक नहीं हैं।",
   "galleryEmptyTitle": "ये वॉलपेपर अब नहीं हैं",
   "galleryScreenTitle": "आपके लिए वॉलपेपर",
+  "favouritePin": "सबसे ऊपर पिन करें",
+  "@favouritePin": {
+    "description": "Hold-menu action on a favourite wallpaper. Keeps it at the top of Favourites."
+  },
+  "favouriteUnpin": "पिन हटाएँ",
+  "@favouriteUnpin": {
+    "description": "Hold-menu action on a pinned favourite. Returns it to its normal place in Favourites."
+  },
+  "favouritePinnedToast": "पसंदीदा में सबसे ऊपर पिन किया गया",
+  "@favouritePinnedToast": {
+    "description": "Confirmation after the user pins a favourite."
+  },
+  "favouriteUnpinnedToast": "पिन हटाया गया",
+  "@favouriteUnpinnedToast": {
+    "description": "Confirmation after the user unpins a favourite."
+  },
+  "favouritePinnedBadge": "पिन किया गया",
+  "@favouritePinnedBadge": {
+    "description": "Accessibility label of the small pin badge on a pinned favourite tile."
+  },
+  "favouritePinLimit": "{count, plural, other{आप अधिकतम {count} पसंदीदा पिन कर सकते हैं। यह वॉलपेपर पिन करने के लिए कोई एक अनपिन करें।}}",
+  "@favouritePinLimit": {
+    "description": "Shown when the user tries to pin more favourites than the limit.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "favouritePinFailed": "पिन अपडेट नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
+  "@favouritePinFailed": {
+    "description": "Shown when pinning or unpinning a favourite fails."
+  },
   "wallpaperFavouriteSearchCountHint": "{count, plural, =1{1 पसंदीदा में खोजें} other{{count} पसंदीदा में खोजें}}",
   "@wallpaperFavouriteSearchCountHint": {
     "description": "Hint in the favourites search field. It also tells how many favourites there are.",
@@ -3428,6 +3461,14 @@
       }
     }
   },
+  "economyAiStyleSheetTitle": "स्टाइल चुनें",
+  "@economyAiStyleSheetTitle": {
+    "description": "Title of the sheet that shows a large preview of every AI wallpaper style."
+  },
+  "economyAiStyleSheetSubject": "हर प्रीव्यू में एक ही दृश्य है: शाम के समय एक चट्टान पर एक लाइटहाउस।",
+  "@economyAiStyleSheetSubject": {
+    "description": "Line under the style sheet title. Every style preview shows this one scene."
+  },
   "economyAiStyleWatercolor": "वॉटरकलर",
   "economyAiStyleSpace": "अंतरिक्ष",
   "economyAiStyleSynthwave": "सिंथवेव",
@@ -6361,10 +6402,6 @@
     "description": "Wallpaper interface text: wallpaperAccentColorsOriginal."
   },
   "wallpaperResetOriginal": "मूल पर रीसेट करें",
-  "wallpaperAccentResetHint": "मूल पर रीसेट सहित कार्रवाइयों के लिए दबाकर रखें",
-  "@wallpaperAccentResetHint": {
-    "description": "Toast hint explaining how to reset the selected wallpaper accent."
-  },
   "wallpaperAll": "सभी",
   "@wallpaperAll": {
     "description": "Filter option to show all wallpaper sources."
@@ -7626,7 +7663,7 @@
   },
   "wallpaperHidePreviewControls": "नियंत्रण छिपाएँ",
   "@wallpaperHidePreviewControls": {
-    "description": "Accessibility label of the wallpaper preview background: a tap hides the buttons so the whole mock phone screen shows."
+    "description": "Accessibility label and action that hides the buttons: on the wallpaper preview, and on the wallpaper detail screen where it also hides the system bars."
   },
   "wallpaperHistoryBothScreens": "दोनों स्क्रीन",
   "@wallpaperHistoryBothScreens": {
@@ -7656,7 +7693,7 @@
   "@wallpaperHomeAppName": {
     "description": "Accessible name for the Prism logo."
   },
-  "wallpaperImageSemanticHint": "रंग बदलने के लिए टैप करें। पसंदीदा, शेयर और रीसेट के लिए दबाकर रखें। विवरण के लिए स्क्रॉल करें।",
+  "wallpaperImageSemanticHint": "पसंदीदा, शेयर और रीसेट के लिए दबाकर रखें। विवरण के लिए स्क्रॉल करें।",
   "@wallpaperImageSemanticHint": {
     "description": "Accessibility hint describing wallpaper image gestures."
   },
@@ -7671,6 +7708,10 @@
   "wallpaperImageSemanticLabel": "वॉलपेपर",
   "@wallpaperImageSemanticLabel": {
     "description": "Accessibility label for the wallpaper image."
+  },
+  "wallpaperImmersiveHint": "नियंत्रण छिपाने के लिए टैप करें",
+  "@wallpaperImmersiveHint": {
+    "description": "Small hint shown once on the wallpaper detail screen. A tap on the wallpaper hides every button and the system bars."
   },
   "wallpaperInsufficientCoins": "कॉइन कम हैं। इनाम में कॉइन कमाएँ।",
   "@wallpaperInsufficientCoins": {
@@ -8559,7 +8600,7 @@
   },
   "wallpaperShowPreviewControls": "नियंत्रण दिखाएँ",
   "@wallpaperShowPreviewControls": {
-    "description": "Accessibility label of the wallpaper preview background: a tap shows the buttons again."
+    "description": "Accessibility label and action that shows the buttons again, on the wallpaper preview and on the wallpaper detail screen."
   },
   "wallpaperSignIn": "साइन इन करें",
   "@wallpaperSignIn": {
@@ -10046,6 +10087,503 @@
         "type": "int"
       }
     }
+  },
+  "historySetAndDownloaded": "सेट और डाउनलोड किए गए",
+  "@historySetAndDownloaded": {
+    "description": "History tab segment on Android: walls the user set as wallpaper or downloaded."
+  },
+  "historyDownloaded": "डाउनलोड किया गया",
+  "@historyDownloaded": {
+    "description": "History tab segment on iOS, where the app cannot set wallpapers: walls the user downloaded."
+  },
+  "historyRecentlyViewed": "हाल में देखे गए",
+  "@historyRecentlyViewed": {
+    "description": "History tab segment: walls the user opened recently on this device."
+  },
+  "historySyncedNote": "आपके खाते में सेव है, ताकि नए फ़ोन पर भी ये वापस दिखें।",
+  "@historySyncedNote": {
+    "description": "One line above the Set and downloaded list for a signed-in user."
+  },
+  "historySyncedNoteGuest": "इन्हें नए फ़ोन पर रखने के लिए साइन इन करें।",
+  "@historySyncedNoteGuest": {
+    "description": "One line above the Set and downloaded list for a signed-out user."
+  },
+  "historyActionSet": "सेट किया गया",
+  "@historyActionSet": {
+    "description": "Label under a history tile: the user set this wall as wallpaper."
+  },
+  "historyActionDownloaded": "डाउनलोड किया गया",
+  "@historyActionDownloaded": {
+    "description": "Label under a history tile: the user downloaded this wall."
+  },
+  "historySyncedTileLabel": "{action}, {time} पर",
+  "@historySyncedTileLabel": {
+    "description": "Screen reader label of a history tile from the account. action is Set or Downloaded, time is when.",
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "historyClearSyncedBody": "यह यहाँ और आपके खाते से सूची हटा देता है। आपके वॉलपेपर और डाउनलोड जैसे हैं वैसे ही रहेंगे।",
+  "@historyClearSyncedBody": {
+    "description": "Body of the confirm dialog before clearing the Set and downloaded list."
+  },
+  "historyClearViewedTitle": "हाल में देखे गए हटाएँ?",
+  "@historyClearViewedTitle": {
+    "description": "Title of the confirm dialog before clearing the recently viewed list."
+  },
+  "historyClearViewedBody": "यह आपके खोले गए वॉलपेपर इस सूची और होम से हटा देता है।",
+  "@historyClearViewedBody": {
+    "description": "Body of the confirm dialog before clearing the recently viewed list."
+  },
+  "historyClearViewedAction": "हाल में देखे गए हटाएँ",
+  "@historyClearViewedAction": {
+    "description": "Confirm button that clears the recently viewed list."
+  },
+  "historyEmptyBodyAndroid": "जो वॉलपेपर आप सेट या डाउनलोड करते हैं, वे यहाँ दिखते हैं, ताकि आप उन्हें दोबारा ढूँढ सकें।",
+  "@historyEmptyBodyAndroid": {
+    "description": "Empty state body of the Set and downloaded list on Android."
+  },
+  "historyEmptyBodyIos": "जो वॉलपेपर आप डाउनलोड करते हैं, वे यहाँ दिखते हैं, ताकि आप उन्हें दोबारा ढूँढ सकें।",
+  "@historyEmptyBodyIos": {
+    "description": "Empty state body of the Downloaded list on iOS."
+  },
+  "historyViewedEmptyTitle": "अभी तक कुछ नहीं देखा गया",
+  "@historyViewedEmptyTitle": {
+    "description": "Empty state title of the recently viewed list."
+  },
+  "historyViewedEmptyBody": "जो वॉलपेपर आप खोलते हैं, वे यहाँ दिखते हैं, ताकि आप उन्हें दोबारा ढूँढ सकें।",
+  "@historyViewedEmptyBody": {
+    "description": "Empty state body of the recently viewed list."
+  },
+  "historyViewedOffTitle": "देखने का इतिहास बंद है",
+  "@historyViewedOffTitle": {
+    "description": "Empty state title of the recently viewed list when the Save viewing history setting is off."
+  },
+  "historyViewedOffBody": "जो वॉलपेपर आप यहाँ खोलते हैं, उन्हें देखने के लिए देखने का इतिहास सहेजें चालू करें।",
+  "@historyViewedOffBody": {
+    "description": "Empty state body of the recently viewed list when the setting is off."
+  },
+  "historyViewedOffAction": "चालू करें",
+  "@historyViewedOffAction": {
+    "description": "Button in the recently viewed empty state that turns on the Save viewing history setting."
+  },
+  "historyViewedTileLabel": "वॉलपेपर खोलें, {time} पर देखा गया",
+  "@historyViewedTileLabel": {
+    "description": "Screen reader label of a recently viewed tile. time is when it was viewed.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "pickUpTitle": "जहाँ छोड़ा था, वहीं से जारी रखें",
+  "@pickUpTitle": {
+    "description": "Title of the Home row that shows walls the user opened recently but did not save, set or download."
+  },
+  "pickUpTileLabel": "{count} में से {index} वॉलपेपर खोलें",
+  "@pickUpTileLabel": {
+    "description": "Screen reader label of a tile in the Pick up where you left off row.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsSaveViewingHistory": "देखने का इतिहास सहेजें",
+  "@settingsSaveViewingHistory": {
+    "description": "Settings switch. On: the app remembers the walls the user opens on this device."
+  },
+  "settingsSaveViewingHistoryBody": "आपके खोले गए वॉलपेपर इतिहास और होम पर दिखते हैं। इसे बंद करने पर सूची हट जाती है।",
+  "@settingsSaveViewingHistoryBody": {
+    "description": "Subtitle of the Save viewing history switch."
+  },
+  "historyClearFailed": "इतिहास साफ़ नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
+  "@historyClearFailed": {
+    "description": "Toast when Clear on the Set and downloaded list cannot reach the account. Nothing was cleared."
+  },
+  "wallpaperAutoRotateSourceFolder": "फ़ोल्डर",
+  "@wallpaperAutoRotateSourceFolder": {
+    "description": "Auto-rotate source chip that rotates the walls of one of the user's folders."
+  },
+  "wallpaperAutoRotateSourceFolderNamed": "फ़ोल्डर: {folder}",
+  "@wallpaperAutoRotateSourceFolderNamed": {
+    "description": "Auto-rotate source chip when a folder is chosen. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateNounFolder": "{folder}",
+  "@wallpaperAutoRotateNounFolder": {
+    "description": "How the mix line names a folder source. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateTooFewFolder": "इस फ़ोल्डर में कम से कम 2 ऐसे वॉलपेपर होने चाहिए जो रोटेट हो सकें। Prism वॉलपेपर डाउनलोड करने के बाद रोटेट होते हैं।",
+  "@wallpaperAutoRotateTooFewFolder": {
+    "description": "Shown when the chosen folder has fewer than 2 wallpapers that auto-rotate can use."
+  },
+  "wallpaperAutoRotateOpenFolder": "फ़ोल्डर खोलें",
+  "@wallpaperAutoRotateOpenFolder": {
+    "description": "Button that opens the chosen folder from the auto-rotate screen."
+  },
+  "wallpaperAutoRotatePickFolder": "फ़ोल्डर चुनें",
+  "@wallpaperAutoRotatePickFolder": {
+    "description": "Title of the sheet that lists the user's folders for auto-rotate."
+  },
+  "wallpaperAutoRotateNoFolders": "अभी आपके पास कोई फ़ोल्डर नहीं है। किसी वॉलपेपर को फ़ोल्डर में सेव करें, फिर उसे यहाँ चुनें।",
+  "@wallpaperAutoRotateNoFolders": {
+    "description": "Empty state of the auto-rotate folder picker."
+  },
+  "wallpaperAutoRotateConfirmFolderTitle": "{folder} रोटेट करें?",
+  "@wallpaperAutoRotateConfirmFolderTitle": {
+    "description": "Title of the card that asks the user to confirm a folder as the auto-rotate source. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateConfirmFolderBody": "आपका वॉलपेपर नीचे दिए शेड्यूल के अनुसार इस फ़ोल्डर के किसी वॉलपेपर में बदल जाएगा।",
+  "@wallpaperAutoRotateConfirmFolderBody": {
+    "description": "Body of the card that asks the user to confirm a folder as the auto-rotate source."
+  },
+  "wallpaperAutoRotateConfirmFolderAction": "इस फ़ोल्डर को रोटेट करें",
+  "@wallpaperAutoRotateConfirmFolderAction": {
+    "description": "Button that makes the folder the auto-rotate source and turns auto-rotate on."
+  },
+  "wallpaperAutoRotateStoppedFolderDeleted": "ऑटो-रोटेशन बंद है क्योंकि फ़ोल्डर {folder} हटा दिया गया था।",
+  "@wallpaperAutoRotateStoppedFolderDeleted": {
+    "description": "Toast when auto-rotate stopped because its folder was deleted. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateStoppedFolderEmpty": "ऑटो-रोटेशन बंद है क्योंकि फ़ोल्डर {folder} में 2 से कम वॉलपेपर हैं।",
+  "@wallpaperAutoRotateStoppedFolderEmpty": {
+    "description": "Toast when auto-rotate stopped because its folder has too few usable wallpapers. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersRotateThisFolder": "इस फ़ोल्डर को रोटेट करें",
+  "@foldersRotateThisFolder": {
+    "description": "Folder page menu item that opens auto-rotate with this folder chosen. Android only."
+  },
+  "foldersRotating": "रोटेट हो रहा है",
+  "@foldersRotating": {
+    "description": "Small label on a folder page when auto-rotate uses this folder."
+  },
+  "foldersRotatingDescription": "ऑटो-रोटेशन इस फ़ोल्डर का उपयोग करता है",
+  "@foldersRotatingDescription": {
+    "description": "Tooltip and screen reader label of the Rotating label on a folder page."
+  },
+  "wallpaperAccentResetHint": "मूल पर रीसेट सहित कार्रवाइयों के लिए दबाकर रखें",
+  "@wallpaperAccentResetHint": {
+    "description": "Toast hint explaining how to reset the selected wallpaper accent."
+  },
+  "wallRequestsTitle": "वॉलपेपर अनुरोध",
+  "@wallRequestsTitle": {
+    "description": "Title of the wall requests page."
+  },
+  "wallRequestsTabTop": "टॉप",
+  "@wallRequestsTabTop": {
+    "description": "Tab with the most upvoted open requests of the last 30 days."
+  },
+  "wallRequestsTabNew": "नए",
+  "@wallRequestsTabNew": {
+    "description": "Tab with the newest open requests."
+  },
+  "wallRequestsTabFilled": "पूरे हुए",
+  "@wallRequestsTabFilled": {
+    "description": "Tab with requests that a wall filled."
+  },
+  "wallRequestsAsk": "वॉलपेपर माँगें",
+  "@wallRequestsAsk": {
+    "description": "Button that opens the request sheet."
+  },
+  "wallRequestsEmptyTopTitle": "अभी कोई अनुरोध नहीं",
+  "@wallRequestsEmptyTopTitle": {
+    "description": "Empty Top or New tab title."
+  },
+  "wallRequestsEmptyTopBody": "जो वॉलपेपर नहीं मिल रहा, उसके लिए पूछें। दूसरे उसे सपोर्ट कर सकते हैं।",
+  "@wallRequestsEmptyTopBody": {
+    "description": "Empty Top or New tab body."
+  },
+  "wallRequestsEmptyFilledTitle": "अभी कुछ पूरा नहीं हुआ",
+  "@wallRequestsEmptyFilledTitle": {
+    "description": "Empty Filled tab title."
+  },
+  "wallRequestsEmptyFilledBody": "पूरे हुए अनुरोध, उन्हें पूरा करने वाले वॉलपेपर के साथ यहाँ दिखेंगे।",
+  "@wallRequestsEmptyFilledBody": {
+    "description": "Empty Filled tab body."
+  },
+  "wallRequestsLoadFailed": "अनुरोध लोड नहीं हो सके",
+  "@wallRequestsLoadFailed": {
+    "description": "Error state title on the requests page."
+  },
+  "wallRequestsRetry": "फिर कोशिश करें",
+  "@wallRequestsRetry": {
+    "description": "Retry button on the requests page."
+  },
+  "wallRequestVotes": "{count, plural, =0{कोई वोट नहीं} =1{1 वोट} other{{count} वोट}}",
+  "@wallRequestVotes": {
+    "description": "Vote count on a request row.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestUpvote": "सपोर्ट करें",
+  "@wallRequestUpvote": {
+    "description": "Tooltip and label of the upvote button."
+  },
+  "wallRequestRemoveUpvote": "सपोर्ट हटाएँ",
+  "@wallRequestRemoveUpvote": {
+    "description": "Tooltip of the upvote button when the user already upvoted."
+  },
+  "wallRequestMine": "आपका अनुरोध",
+  "@wallRequestMine": {
+    "description": "Label on the user's own request row."
+  },
+  "wallRequestSomeone": "एक Prism उपयोगकर्ता",
+  "@wallRequestSomeone": {
+    "description": "Requester name when the profile has no name."
+  },
+  "wallRequestFilledByCreator": "{name} ने पूरा किया",
+  "@wallRequestFilledByCreator": {
+    "description": "Label on a filled request; name is the creator.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRequestFilledByStudio": "Prism Studio का बनाया हुआ",
+  "@wallRequestFilledByStudio": {
+    "description": "Label on a request that Prism Studio filled."
+  },
+  "wallRequestOpenWall": "वॉलपेपर खोलें",
+  "@wallRequestOpenWall": {
+    "description": "Semantics label of the filled wall thumbnail."
+  },
+  "wallRequestMoreActions": "और विकल्प",
+  "@wallRequestMoreActions": {
+    "description": "Tooltip of the row menu button."
+  },
+  "wallRequestReport": "अनुरोध की रिपोर्ट करें",
+  "@wallRequestReport": {
+    "description": "Row menu action that reports a request."
+  },
+  "wallRequestHide": "अनुरोध छिपाएँ",
+  "@wallRequestHide": {
+    "description": "Admin row menu action that hides a request."
+  },
+  "wallRequestUnhide": "अनुरोध दिखाएँ",
+  "@wallRequestUnhide": {
+    "description": "Admin row menu action that shows a hidden request again."
+  },
+  "wallRequestHiddenLabel": "छिपा हुआ",
+  "@wallRequestHiddenLabel": {
+    "description": "Admin label on a hidden request."
+  },
+  "wallRequestSheetTitle": "वॉलपेपर माँगें",
+  "@wallRequestSheetTitle": {
+    "description": "Title of the request sheet."
+  },
+  "wallRequestSheetHint": "बताएँ, जैसे गहरे और सादे पहाड़",
+  "@wallRequestSheetHint": {
+    "description": "Hint in the request text field."
+  },
+  "wallRequestSheetTags": "टैग, अधिकतम 3",
+  "@wallRequestSheetTags": {
+    "description": "Label above the tag chips in the request sheet."
+  },
+  "wallRequestSheetSubmit": "अनुरोध भेजें",
+  "@wallRequestSheetSubmit": {
+    "description": "Submit button of the request sheet."
+  },
+  "wallRequestSignIn": "वॉलपेपर माँगने और सपोर्ट करने के लिए साइन इन करें।",
+  "@wallRequestSignIn": {
+    "description": "Shown in the sheet or a toast to a signed-out user."
+  },
+  "wallRequestDuplicateTitle": "यह पहले ही माँगा जा चुका है",
+  "@wallRequestDuplicateTitle": {
+    "description": "Title when a close open request exists."
+  },
+  "wallRequestDuplicateBody": "इसे सपोर्ट करें, ताकि क्रिएटर इसे जल्दी देखें।",
+  "@wallRequestDuplicateBody": {
+    "description": "Body when a close open request exists."
+  },
+  "wallRequestUpvoteInstead": "इसके बजाय सपोर्ट करें",
+  "@wallRequestUpvoteInstead": {
+    "description": "Button that upvotes the close request instead of making a new one."
+  },
+  "wallRequestCreateAnyway": "फिर भी मेरा अनुरोध भेजें",
+  "@wallRequestCreateAnyway": {
+    "description": "Button that makes a new request although a close one exists."
+  },
+  "wallRequestDuplicateMine": "आपने यह पहले ही माँगा है",
+  "@wallRequestDuplicateMine": {
+    "description": "Title when the close request is the user's own."
+  },
+  "wallRequestDuplicateVoted": "आपने यह पहले ही सपोर्ट किया है",
+  "@wallRequestDuplicateVoted": {
+    "description": "Title when the user already upvoted the close request."
+  },
+  "wallRequestEditText": "मेरा अनुरोध बदलें",
+  "@wallRequestEditText": {
+    "description": "Button that goes back to the text field from the duplicate card."
+  },
+  "wallRequestCreated": "अनुरोध भेज दिया गया। पूरा होने पर हम आपको बताएँगे।",
+  "@wallRequestCreated": {
+    "description": "Toast after a request is made."
+  },
+  "wallRequestUpvoted": "सपोर्ट किया गया। पूरा होने पर हम आपको बताएँगे।",
+  "@wallRequestUpvoted": {
+    "description": "Toast after the user upvotes the close request."
+  },
+  "wallRequestErrorText": "3 से 80 अक्षर लिखें, और भाषा दोस्ताना रखें।",
+  "@wallRequestErrorText": {
+    "description": "Error when the server refuses the request text."
+  },
+  "wallRequestErrorLimit": "आप एक दिन में 3 अनुरोध कर सकते हैं। कल फिर कोशिश करें।",
+  "@wallRequestErrorLimit": {
+    "description": "Error at the daily request limit."
+  },
+  "wallRequestErrorOwn": "आप अपने अनुरोध को सपोर्ट नहीं कर सकते।",
+  "@wallRequestErrorOwn": {
+    "description": "Error when the user upvotes their own request."
+  },
+  "wallRequestErrorClosed": "यह अनुरोध पहले ही पूरा हो चुका है।",
+  "@wallRequestErrorClosed": {
+    "description": "Error when the user votes on a filled request."
+  },
+  "wallRequestErrorGone": "यह अनुरोध अब उपलब्ध नहीं है।",
+  "@wallRequestErrorGone": {
+    "description": "Error when the request is hidden or deleted."
+  },
+  "wallRequestErrorGeneric": "कुछ गड़बड़ हो गई। फिर कोशिश करें।",
+  "@wallRequestErrorGeneric": {
+    "description": "Error for any other failure."
+  },
+  "searchRequestPrompt": "नहीं मिला?",
+  "@searchRequestPrompt": {
+    "description": "Line above the request button in an empty search."
+  },
+  "searchRequestAction": "अनुरोध करें",
+  "@searchRequestAction": {
+    "description": "Button in an empty search that opens the request sheet with the query."
+  },
+  "discoverRequestsTitle": "वॉलपेपर अनुरोध",
+  "@discoverRequestsTitle": {
+    "description": "Discover row that opens the requests page."
+  },
+  "discoverRequestsSubtitle": "वॉलपेपर माँगें, या किसी को सपोर्ट करें",
+  "@discoverRequestsSubtitle": {
+    "description": "Subtitle of the Discover row for wall requests."
+  },
+  "uploadFillsRequest": "एक अनुरोध पूरा करता है",
+  "@uploadFillsRequest": {
+    "description": "Upload form row that links the wall to a request."
+  },
+  "uploadFillsRequestHint": "वैकल्पिक। वह अनुरोध चुनें जिसका यह वॉलपेपर जवाब है।",
+  "@uploadFillsRequestHint": {
+    "description": "Subtitle of the upload row when no request is picked."
+  },
+  "uploadFillsRequestClear": "अनुरोध हटाएँ",
+  "@uploadFillsRequestClear": {
+    "description": "Tooltip of the button that removes the picked request."
+  },
+  "requestPickerTitle": "यह किस अनुरोध को पूरा करता है?",
+  "@requestPickerTitle": {
+    "description": "Title of the request picker in the upload flow."
+  },
+  "requestPickerSearch": "अनुरोध खोजें",
+  "@requestPickerSearch": {
+    "description": "Hint of the search field in the request picker."
+  },
+  "requestPickerEmpty": "कोई खुला अनुरोध नहीं मिला",
+  "@requestPickerEmpty": {
+    "description": "Empty state of the request picker."
+  },
+  "notifPushWallRequestFilledTitle": "आपका अनुरोध आ गया है",
+  "@notifPushWallRequestFilledTitle": {
+    "description": "Push and inbox title when a wall request is filled."
+  },
+  "notifPushWallRequestFilledBody": "{requestText}",
+  "@notifPushWallRequestFilledBody": {
+    "description": "Push and inbox body when a wall request is filled: the request text.",
+    "placeholders": {
+      "requestText": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRequestAgeNow": "अभी-अभी",
+  "@wallRequestAgeNow": {
+    "description": "Age of a request made less than a minute ago."
+  },
+  "wallRequestAgeMinutes": "{count, plural, =1{1 मिनट पहले} other{{count} मिनट पहले}}",
+  "@wallRequestAgeMinutes": {
+    "description": "Age of a request in minutes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestAgeHours": "{count, plural, =1{1 घंटा पहले} other{{count} घंटे पहले}}",
+  "@wallRequestAgeHours": {
+    "description": "Age of a request in hours.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestAgeDays": "{count, plural, =1{1 दिन पहले} other{{count} दिन पहले}}",
+  "@wallRequestAgeDays": {
+    "description": "Age of a request in days.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestAgeWeeks": "{count, plural, =1{1 सप्ताह पहले} other{{count} सप्ताह पहले}}",
+  "@wallRequestAgeWeeks": {
+    "description": "Age of a request in weeks.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestErrorAccountAge": "आपका खाता 10 दिन पुराना होने पर अनुरोध और वोट कर सकेगा।",
+  "@wallRequestErrorAccountAge": {
+    "description": "Error when an account younger than 10 days tries to request or vote."
+  },
+  "adminFillsRequest": "अनुरोध पूरा करता है",
+  "@adminFillsRequest": {
+    "description": "Admin review card label: the text of the request this wall says it fills."
   },
   "wallRemixAction": "रीमिक्स",
   "@wallRemixAction": {

@@ -141,6 +141,48 @@ abstract class AppLocalizations {
   /// **'Walls for you'**
   String get galleryScreenTitle;
 
+  /// Hold-menu action on a favourite wallpaper. Keeps it at the top of Favourites.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin to top'**
+  String get favouritePin;
+
+  /// Hold-menu action on a pinned favourite. Returns it to its normal place in Favourites.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get favouriteUnpin;
+
+  /// Confirmation after the user pins a favourite.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned to the top of Favourites'**
+  String get favouritePinnedToast;
+
+  /// Confirmation after the user unpins a favourite.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpinned'**
+  String get favouriteUnpinnedToast;
+
+  /// Accessibility label of the small pin badge on a pinned favourite tile.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned'**
+  String get favouritePinnedBadge;
+
+  /// Shown when the user tries to pin more favourites than the limit.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, other{You can pin up to {count} favourites. Unpin one to pin this wallpaper.}}'**
+  String favouritePinLimit(int count);
+
+  /// Shown when pinning or unpinning a favourite fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to update the pin. Check your connection and try again.'**
+  String get favouritePinFailed;
+
   /// Hint in the favourites search field. It also tells how many favourites there are.
   ///
   /// In en, this message translates to:
@@ -7203,6 +7245,18 @@ abstract class AppLocalizations {
   /// **'Style: {style}'**
   String economyAiStyleSemantics(String style);
 
+  /// Title of the sheet that shows a large preview of every AI wallpaper style.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a style'**
+  String get economyAiStyleSheetTitle;
+
+  /// Line under the style sheet title. Every style preview shows this one scene.
+  ///
+  /// In en, this message translates to:
+  /// **'Every preview shows the same scene: a lighthouse on a cliff at dusk.'**
+  String get economyAiStyleSheetSubject;
+
   /// No description provided for @economyAiStyleWatercolor.
   ///
   /// In en, this message translates to:
@@ -11647,12 +11701,6 @@ abstract class AppLocalizations {
   /// **'Reset to original'**
   String get wallpaperResetOriginal;
 
-  /// Toast hint explaining how to reset the selected wallpaper accent.
-  ///
-  /// In en, this message translates to:
-  /// **'Hold for actions, including Reset to original'**
-  String get wallpaperAccentResetHint;
-
   /// Filter option to show all wallpaper sources.
   ///
   /// In en, this message translates to:
@@ -13249,7 +13297,7 @@ abstract class AppLocalizations {
   /// **'Got it. You\'ll see fewer like this.'**
   String get wallpaperGotItFewerLikeThis;
 
-  /// Accessibility label of the wallpaper preview background: a tap hides the buttons so the whole mock phone screen shows.
+  /// Accessibility label and action that hides the buttons: on the wallpaper preview, and on the wallpaper detail screen where it also hides the system bars.
   ///
   /// In en, this message translates to:
   /// **'Hide controls'**
@@ -13300,7 +13348,7 @@ abstract class AppLocalizations {
   /// Accessibility hint describing wallpaper image gestures.
   ///
   /// In en, this message translates to:
-  /// **'Tap to cycle accent color. Hold for favourite, share, and reset actions. Scroll for details.'**
+  /// **'Hold for favourite, share, and reset actions. Scroll for details.'**
   String get wallpaperImageSemanticHint;
 
   /// Accessibility action on the wallpaper detail card that shows the previous wallpaper of the feed it was opened from.
@@ -13320,6 +13368,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wallpaper'**
   String get wallpaperImageSemanticLabel;
+
+  /// Small hint shown once on the wallpaper detail screen. A tap on the wallpaper hides every button and the system bars.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to hide controls'**
+  String get wallpaperImmersiveHint;
 
   /// Message shown when the user lacks coins for an auto-rotate pass.
   ///
@@ -14473,7 +14527,7 @@ abstract class AppLocalizations {
   /// **'Show less like this'**
   String get wallpaperShowLessLikeThis;
 
-  /// Accessibility label of the wallpaper preview background: a tap shows the buttons again.
+  /// Accessibility label and action that shows the buttons again, on the wallpaper preview and on the wallpaper detail screen.
   ///
   /// In en, this message translates to:
   /// **'Show controls'**
@@ -17124,6 +17178,630 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New in {folderName} and {count} more'**
   String notifPushFolderDigestTitleMore(String folderName, int count);
+
+  /// History tab segment on Android: walls the user set as wallpaper or downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Set and downloaded'**
+  String get historySetAndDownloaded;
+
+  /// History tab segment on iOS, where the app cannot set wallpapers: walls the user downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get historyDownloaded;
+
+  /// History tab segment: walls the user opened recently on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently viewed'**
+  String get historyRecentlyViewed;
+
+  /// One line above the Set and downloaded list for a signed-in user.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your account, so these come back on a new phone.'**
+  String get historySyncedNote;
+
+  /// One line above the Set and downloaded list for a signed-out user.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to keep these on a new phone.'**
+  String get historySyncedNoteGuest;
+
+  /// Label under a history tile: the user set this wall as wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Set'**
+  String get historyActionSet;
+
+  /// Label under a history tile: the user downloaded this wall.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get historyActionDownloaded;
+
+  /// Screen reader label of a history tile from the account. action is Set or Downloaded, time is when.
+  ///
+  /// In en, this message translates to:
+  /// **'{action} at {time}'**
+  String historySyncedTileLabel(String action, String time);
+
+  /// Body of the confirm dialog before clearing the Set and downloaded list.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the list here and in your account. Your wallpapers and downloads stay as they are.'**
+  String get historyClearSyncedBody;
+
+  /// Title of the confirm dialog before clearing the recently viewed list.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear recently viewed?'**
+  String get historyClearViewedTitle;
+
+  /// Body of the confirm dialog before clearing the recently viewed list.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the wallpapers you opened from this list and from Home.'**
+  String get historyClearViewedBody;
+
+  /// Confirm button that clears the recently viewed list.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear recently viewed'**
+  String get historyClearViewedAction;
+
+  /// Empty state body of the Set and downloaded list on Android.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpapers you set or download show up here, so you can find them again.'**
+  String get historyEmptyBodyAndroid;
+
+  /// Empty state body of the Downloaded list on iOS.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpapers you download show up here, so you can find them again.'**
+  String get historyEmptyBodyIos;
+
+  /// Empty state title of the recently viewed list.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing viewed yet'**
+  String get historyViewedEmptyTitle;
+
+  /// Empty state body of the recently viewed list.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpapers you open show up here, so you can find them again.'**
+  String get historyViewedEmptyBody;
+
+  /// Empty state title of the recently viewed list when the Save viewing history setting is off.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewing history is off'**
+  String get historyViewedOffTitle;
+
+  /// Empty state body of the recently viewed list when the setting is off.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on Save viewing history to see the wallpapers you open here.'**
+  String get historyViewedOffBody;
+
+  /// Button in the recently viewed empty state that turns on the Save viewing history setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get historyViewedOffAction;
+
+  /// Screen reader label of a recently viewed tile. time is when it was viewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Open wallpaper, viewed at {time}'**
+  String historyViewedTileLabel(String time);
+
+  /// Title of the Home row that shows walls the user opened recently but did not save, set or download.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick up where you left off'**
+  String get pickUpTitle;
+
+  /// Screen reader label of a tile in the Pick up where you left off row.
+  ///
+  /// In en, this message translates to:
+  /// **'Open wallpaper {index} of {count}'**
+  String pickUpTileLabel(int index, int count);
+
+  /// Settings switch. On: the app remembers the walls the user opens on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Save viewing history'**
+  String get settingsSaveViewingHistory;
+
+  /// Subtitle of the Save viewing history switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows the wallpapers you open in History and on Home. Turning this off clears the list.'**
+  String get settingsSaveViewingHistoryBody;
+
+  /// Toast when Clear on the Set and downloaded list cannot reach the account. Nothing was cleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t clear history. Check your connection and try again.'**
+  String get historyClearFailed;
+
+  /// Auto-rotate source chip that rotates the walls of one of the user's folders.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder'**
+  String get wallpaperAutoRotateSourceFolder;
+
+  /// Auto-rotate source chip when a folder is chosen. folder is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder: {folder}'**
+  String wallpaperAutoRotateSourceFolderNamed(String folder);
+
+  /// How the mix line names a folder source. folder is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'{folder}'**
+  String wallpaperAutoRotateNounFolder(String folder);
+
+  /// Shown when the chosen folder has fewer than 2 wallpapers that auto-rotate can use.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder needs at least 2 wallpapers that can rotate. Prism wallpapers rotate after you download them.'**
+  String get wallpaperAutoRotateTooFewFolder;
+
+  /// Button that opens the chosen folder from the auto-rotate screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open folder'**
+  String get wallpaperAutoRotateOpenFolder;
+
+  /// Title of the sheet that lists the user's folders for auto-rotate.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a folder'**
+  String get wallpaperAutoRotatePickFolder;
+
+  /// Empty state of the auto-rotate folder picker.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no folders yet. Save a wallpaper to a folder, then pick it here.'**
+  String get wallpaperAutoRotateNoFolders;
+
+  /// Title of the card that asks the user to confirm a folder as the auto-rotate source. folder is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate {folder}?'**
+  String wallpaperAutoRotateConfirmFolderTitle(String folder);
+
+  /// Body of the card that asks the user to confirm a folder as the auto-rotate source.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallpaper changes to one from this folder, on the schedule below.'**
+  String get wallpaperAutoRotateConfirmFolderBody;
+
+  /// Button that makes the folder the auto-rotate source and turns auto-rotate on.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate this folder'**
+  String get wallpaperAutoRotateConfirmFolderAction;
+
+  /// Toast when auto-rotate stopped because its folder was deleted. folder is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate is off because the folder {folder} was deleted.'**
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder);
+
+  /// Toast when auto-rotate stopped because its folder has too few usable wallpapers. folder is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate is off because the folder {folder} has fewer than 2 wallpapers.'**
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder);
+
+  /// Folder page menu item that opens auto-rotate with this folder chosen. Android only.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate this folder'**
+  String get foldersRotateThisFolder;
+
+  /// Small label on a folder page when auto-rotate uses this folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotating'**
+  String get foldersRotating;
+
+  /// Tooltip and screen reader label of the Rotating label on a folder page.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate uses this folder'**
+  String get foldersRotatingDescription;
+
+  /// Toast hint explaining how to reset the selected wallpaper accent.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold for actions, including Reset to original'**
+  String get wallpaperAccentResetHint;
+
+  /// Title of the wall requests page.
+  ///
+  /// In en, this message translates to:
+  /// **'Wall requests'**
+  String get wallRequestsTitle;
+
+  /// Tab with the most upvoted open requests of the last 30 days.
+  ///
+  /// In en, this message translates to:
+  /// **'Top'**
+  String get wallRequestsTabTop;
+
+  /// Tab with the newest open requests.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get wallRequestsTabNew;
+
+  /// Tab with requests that a wall filled.
+  ///
+  /// In en, this message translates to:
+  /// **'Filled'**
+  String get wallRequestsTabFilled;
+
+  /// Button that opens the request sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Request a wall'**
+  String get wallRequestsAsk;
+
+  /// Empty Top or New tab title.
+  ///
+  /// In en, this message translates to:
+  /// **'No requests yet'**
+  String get wallRequestsEmptyTopTitle;
+
+  /// Empty Top or New tab body.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask for the wall you can\'t find. Others can upvote it.'**
+  String get wallRequestsEmptyTopBody;
+
+  /// Empty Filled tab title.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing filled yet'**
+  String get wallRequestsEmptyFilledTitle;
+
+  /// Empty Filled tab body.
+  ///
+  /// In en, this message translates to:
+  /// **'Filled requests show up here with the wall that answered them.'**
+  String get wallRequestsEmptyFilledBody;
+
+  /// Error state title on the requests page.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load requests'**
+  String get wallRequestsLoadFailed;
+
+  /// Retry button on the requests page.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get wallRequestsRetry;
+
+  /// Vote count on a request row.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No votes} =1{1 vote} other{{count} votes}}'**
+  String wallRequestVotes(int count);
+
+  /// Tooltip and label of the upvote button.
+  ///
+  /// In en, this message translates to:
+  /// **'Upvote'**
+  String get wallRequestUpvote;
+
+  /// Tooltip of the upvote button when the user already upvoted.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove upvote'**
+  String get wallRequestRemoveUpvote;
+
+  /// Label on the user's own request row.
+  ///
+  /// In en, this message translates to:
+  /// **'Your request'**
+  String get wallRequestMine;
+
+  /// Requester name when the profile has no name.
+  ///
+  /// In en, this message translates to:
+  /// **'A Prism user'**
+  String get wallRequestSomeone;
+
+  /// Label on a filled request; name is the creator.
+  ///
+  /// In en, this message translates to:
+  /// **'Filled by {name}'**
+  String wallRequestFilledByCreator(String name);
+
+  /// Label on a request that Prism Studio filled.
+  ///
+  /// In en, this message translates to:
+  /// **'Made by Prism Studio'**
+  String get wallRequestFilledByStudio;
+
+  /// Semantics label of the filled wall thumbnail.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the wall'**
+  String get wallRequestOpenWall;
+
+  /// Tooltip of the row menu button.
+  ///
+  /// In en, this message translates to:
+  /// **'More actions'**
+  String get wallRequestMoreActions;
+
+  /// Row menu action that reports a request.
+  ///
+  /// In en, this message translates to:
+  /// **'Report request'**
+  String get wallRequestReport;
+
+  /// Admin row menu action that hides a request.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide request'**
+  String get wallRequestHide;
+
+  /// Admin row menu action that shows a hidden request again.
+  ///
+  /// In en, this message translates to:
+  /// **'Show request'**
+  String get wallRequestUnhide;
+
+  /// Admin label on a hidden request.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden'**
+  String get wallRequestHiddenLabel;
+
+  /// Title of the request sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Request a wall'**
+  String get wallRequestSheetTitle;
+
+  /// Hint in the request text field.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe it, like dark minimal mountains'**
+  String get wallRequestSheetHint;
+
+  /// Label above the tag chips in the request sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Tags, up to 3'**
+  String get wallRequestSheetTags;
+
+  /// Submit button of the request sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Request it'**
+  String get wallRequestSheetSubmit;
+
+  /// Shown in the sheet or a toast to a signed-out user.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to request walls and upvote them.'**
+  String get wallRequestSignIn;
+
+  /// Title when a close open request exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone asked for this already'**
+  String get wallRequestDuplicateTitle;
+
+  /// Body when a close open request exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Upvote it so creators see it sooner.'**
+  String get wallRequestDuplicateBody;
+
+  /// Button that upvotes the close request instead of making a new one.
+  ///
+  /// In en, this message translates to:
+  /// **'Upvote this instead'**
+  String get wallRequestUpvoteInstead;
+
+  /// Button that makes a new request although a close one exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Request mine anyway'**
+  String get wallRequestCreateAnyway;
+
+  /// Title when the close request is the user's own.
+  ///
+  /// In en, this message translates to:
+  /// **'You asked for this already'**
+  String get wallRequestDuplicateMine;
+
+  /// Title when the user already upvoted the close request.
+  ///
+  /// In en, this message translates to:
+  /// **'You upvoted this already'**
+  String get wallRequestDuplicateVoted;
+
+  /// Button that goes back to the text field from the duplicate card.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit my request'**
+  String get wallRequestEditText;
+
+  /// Toast after a request is made.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent. We\'ll tell you when it\'s filled.'**
+  String get wallRequestCreated;
+
+  /// Toast after the user upvotes the close request.
+  ///
+  /// In en, this message translates to:
+  /// **'Upvoted. We\'ll tell you when it\'s filled.'**
+  String get wallRequestUpvoted;
+
+  /// Error when the server refuses the request text.
+  ///
+  /// In en, this message translates to:
+  /// **'Use 3 to 80 characters, and keep it friendly.'**
+  String get wallRequestErrorText;
+
+  /// Error at the daily request limit.
+  ///
+  /// In en, this message translates to:
+  /// **'You can make 3 requests a day. Try again tomorrow.'**
+  String get wallRequestErrorLimit;
+
+  /// Error when the user upvotes their own request.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t upvote your own request.'**
+  String get wallRequestErrorOwn;
+
+  /// Error when the user votes on a filled request.
+  ///
+  /// In en, this message translates to:
+  /// **'This request is already filled.'**
+  String get wallRequestErrorClosed;
+
+  /// Error when the request is hidden or deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'This request isn\'t available anymore.'**
+  String get wallRequestErrorGone;
+
+  /// Error for any other failure.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get wallRequestErrorGeneric;
+
+  /// Line above the request button in an empty search.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t find it?'**
+  String get searchRequestPrompt;
+
+  /// Button in an empty search that opens the request sheet with the query.
+  ///
+  /// In en, this message translates to:
+  /// **'Request it'**
+  String get searchRequestAction;
+
+  /// Discover row that opens the requests page.
+  ///
+  /// In en, this message translates to:
+  /// **'Wall requests'**
+  String get discoverRequestsTitle;
+
+  /// Subtitle of the Discover row for wall requests.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask for a wall, or upvote one'**
+  String get discoverRequestsSubtitle;
+
+  /// Upload form row that links the wall to a request.
+  ///
+  /// In en, this message translates to:
+  /// **'Fills a request'**
+  String get uploadFillsRequest;
+
+  /// Subtitle of the upload row when no request is picked.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional. Pick the request this wall answers.'**
+  String get uploadFillsRequestHint;
+
+  /// Tooltip of the button that removes the picked request.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove request'**
+  String get uploadFillsRequestClear;
+
+  /// Title of the request picker in the upload flow.
+  ///
+  /// In en, this message translates to:
+  /// **'Which request does it fill?'**
+  String get requestPickerTitle;
+
+  /// Hint of the search field in the request picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Search requests'**
+  String get requestPickerSearch;
+
+  /// Empty state of the request picker.
+  ///
+  /// In en, this message translates to:
+  /// **'No open requests match'**
+  String get requestPickerEmpty;
+
+  /// Push and inbox title when a wall request is filled.
+  ///
+  /// In en, this message translates to:
+  /// **'Your request is here'**
+  String get notifPushWallRequestFilledTitle;
+
+  /// Push and inbox body when a wall request is filled: the request text.
+  ///
+  /// In en, this message translates to:
+  /// **'{requestText}'**
+  String notifPushWallRequestFilledBody(String requestText);
+
+  /// Age of a request made less than a minute ago.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get wallRequestAgeNow;
+
+  /// Age of a request in minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 minute ago} other{{count} minutes ago}}'**
+  String wallRequestAgeMinutes(int count);
+
+  /// Age of a request in hours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 hour ago} other{{count} hours ago}}'**
+  String wallRequestAgeHours(int count);
+
+  /// Age of a request in days.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day ago} other{{count} days ago}}'**
+  String wallRequestAgeDays(int count);
+
+  /// Age of a request in weeks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 week ago} other{{count} weeks ago}}'**
+  String wallRequestAgeWeeks(int count);
+
+  /// Error when an account younger than 10 days tries to request or vote.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account can request walls and vote once it\'s 10 days old.'**
+  String get wallRequestErrorAccountAge;
+
+  /// Admin review card label: the text of the request this wall says it fills.
+  ///
+  /// In en, this message translates to:
+  /// **'Fills request'**
+  String get adminFillsRequest;
 
   /// Short label of the button that opens the AI tab with this wallpaper's prompt.
   ///

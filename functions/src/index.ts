@@ -51,3 +51,9 @@ export {processStudioCandidate} from "./studio/process";
 export {planStudioBatch, runStudioBatch} from "./studio/planRun";
 export {onStudioWallApproved} from "./studio/telegram";
 export {wallpaperPreview} from "./wallpaperPreview";
+export {
+  createWallRequestCallable as createWallRequest,
+  setWallRequestVoteCallable as setWallRequestVote,
+  listWallRequestsCallable as listWallRequests,
+  setWallRequestHiddenCallable as setWallRequestHidden,
+} from "./wallRequests";

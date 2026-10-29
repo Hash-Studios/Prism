@@ -29,6 +29,7 @@ enum DeepLinkPageTarget {
   folder,
   mood,
   gallery,
+  wallRequests,
   uploadInput,
   editWallInput,
   review,
@@ -131,6 +132,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkRouteExample('/folder/abc123', DeepLinkPageTarget.folder),
     DeepLinkRouteExample('/mood/dreamy', DeepLinkPageTarget.mood),
     DeepLinkRouteExample('/gallery?ids=a1,b2', DeepLinkPageTarget.gallery),
+    DeepLinkRouteExample('/requests?tab=filled', DeepLinkPageTarget.wallRequests),
     DeepLinkRouteExample('/upload-wall', DeepLinkPageTarget.uploadInput),
     DeepLinkRouteExample('/edit-wall', DeepLinkPageTarget.editWallInput),
     DeepLinkRouteExample('/review', DeepLinkPageTarget.review),
@@ -203,6 +205,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkPageTarget.library: <String>{'tab'},
     DeepLinkPageTarget.collectionView: <String>{'collectionName', 'name'},
     DeepLinkPageTarget.gallery: <String>{'ids', 'source'},
+    DeepLinkPageTarget.wallRequests: <String>{'tab'},
     DeepLinkPageTarget.followers: <String>{'user', 'identifier'},
     DeepLinkPageTarget.following: <String>{'user', 'identifier'},
     DeepLinkPageTarget.wallpaperPositionInput: <String>{'wallpaperId', 'source', 'provider', 'entryPoint'},
@@ -448,6 +451,7 @@ final class DeepLinkRouteCatalog {
 
   static const Map<String, DeepLinkPageTarget> _staticTargets = <String, DeepLinkPageTarget>{
     '/gallery': DeepLinkPageTarget.gallery,
+    '/requests': DeepLinkPageTarget.wallRequests,
     '/onboarding/v2': DeepLinkPageTarget.onboarding,
     '/dashboard': DeepLinkPageTarget.dashboard,
     '/dashboard/home': DeepLinkPageTarget.home,

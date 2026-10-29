@@ -59,8 +59,11 @@ class OnboardingLayout {
   // AI generation step content (below the two-line headline at stepTitleY=100)
   static const double aiChipX = 27;
   static const double aiChipY = 216;
+  static const double aiStyleRowY = 282;
   static const double aiPreviewX = 27;
-  static const double aiPreviewY = 298;
+
+  /// Gap between the style row and the preview, in logical pixels. The row keeps its height on every screen.
+  static const double aiStyleRowGap = 12;
 
   static const double softenedBlurSigma = 100;
 }

@@ -12,6 +12,8 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
+import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
@@ -25,10 +27,11 @@ import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-enum _FolderMenuAction { visibility, rename, delete }
+enum _FolderMenuAction { rotate, visibility, rename, delete }
 
 /// One folder. The owner sees and edits their folder. Anyone else sees its public projection, read-only, or a calm
 /// "private or no longer exists" state.
@@ -181,6 +184,9 @@ class _FolderScreenState extends State<FolderScreen> {
     final FoldersBloc bloc = context.read<FoldersBloc>();
     final AppLocalizations l10n = context.l10n;
     switch (action) {
+      case _FolderMenuAction.rotate:
+        unawaited(analytics.track(AutoRotateFolderTappedEvent(itemCountBucket: folderCountBucket(folder.itemCount))));
+        unawaited(context.router.push(AutoRotateRoute(folderId: folder.id, folderName: folder.name)));
       case _FolderMenuAction.visibility:
         await _setPublic(folder, isPublic: !folder.isPublic);
       case _FolderMenuAction.rename:
@@ -319,9 +325,40 @@ class _FolderScreenState extends State<FolderScreen> {
             state.itemsStatus[widget.folderId] == LoadStatus.success) {
           return PublicFolderView(folderId: widget.folderId);
         }
+        final bool android = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+        final bool rotating =
+            android &&
+            folder != null &&
+            context.select<AutoRotateBloc, bool>(
+              (bloc) =>
+                  bloc.state.config.enabled &&
+                  bloc.state.config.source == AutoRotateSource.folder &&
+                  bloc.state.config.folderId == widget.folderId,
+            );
         return PrismPage(
           title: folder?.name ?? context.l10n.foldersTitle,
           maxContentWidth: double.infinity,
+          headerBottom: rotating
+              ? Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Tooltip(
+                      message: context.l10n.foldersRotatingDescription,
+                      excludeFromSemantics: true,
+                      child: Semantics(
+                        label: context.l10n.foldersRotatingDescription,
+                        excludeSemantics: true,
+                        child: PrismTag(
+                          label: context.l10n.foldersRotating,
+                          icon: Icons.autorenew_rounded,
+                          tone: PrismTone.accent,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              : null,
           actions: <Widget>[
             const OfflineChip(),
             if (folder != null)
@@ -330,6 +367,11 @@ class _FolderScreenState extends State<FolderScreen> {
                 icon: const Icon(Icons.more_vert_rounded),
                 onSelected: (action) => unawaited(_onMenu(action, folder)),
                 itemBuilder: (context) => <PopupMenuEntry<_FolderMenuAction>>[
+                  if (android)
+                    PopupMenuItem<_FolderMenuAction>(
+                      value: _FolderMenuAction.rotate,
+                      child: Text(context.l10n.foldersRotateThisFolder),
+                    ),
                   PopupMenuItem<_FolderMenuAction>(
                     value: _FolderMenuAction.visibility,
                     child: Text(folder.isPublic ? context.l10n.foldersMakePrivate : context.l10n.foldersMakePublic),

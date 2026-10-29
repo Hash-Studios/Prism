@@ -58,6 +58,7 @@ class SearchDiscoveryWidget extends StatelessWidget {
             child: PrismGroup(
               children: <Widget>[
                 const _FindCreatorsRow(),
+                const _WallRequestsRow(),
                 if (onDepthPressed != null) _DepthEffectRow(onPressed: onDepthPressed!),
                 if (onSpatialPressed != null) _SpatialSceneRow(onPressed: onSpatialPressed!),
               ],
@@ -153,6 +154,23 @@ class _FindCreatorsRow extends StatelessWidget {
       onTap: () {
         PrismHaptics.tap();
         context.router.push(const UserSearchRoute());
+      },
+    );
+  }
+}
+
+class _WallRequestsRow extends StatelessWidget {
+  const _WallRequestsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return PrismRow(
+      icon: Icons.lightbulb_outline_rounded,
+      title: context.l10n.discoverRequestsTitle,
+      subtitle: context.l10n.discoverRequestsSubtitle,
+      onTap: () {
+        PrismHaptics.tap();
+        context.router.push(WallRequestsRoute());
       },
     );
   }

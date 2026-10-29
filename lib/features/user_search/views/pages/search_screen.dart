@@ -19,6 +19,8 @@ import 'package:Prism/features/user_search/views/widgets/prism_search_field.dart
 import 'package:Prism/features/user_search/views/widgets/search_discovery_widget.dart';
 import 'package:Prism/features/user_search/views/widgets/search_filter_sheet.dart';
 import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
+import 'package:Prism/features/user_search/views/widgets/search_request_prompt.dart';
+import 'package:Prism/features/wall_requests/views/widgets/wall_request_sheet.dart';
 import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -355,6 +357,17 @@ class _SearchScreenState extends State<SearchScreen> {
               : filtered
               ? context.l10n.accountNoWallpapersForFilters(activeFilters.join(' '))
               : context.l10n.accountNoWallpapersFound;
+          if (!filtered && _submittedQuery.isNotEmpty) {
+            return GlintState(
+              kind: GlintStateKind.empty,
+              title: emptyTitle,
+              body: context.l10n.searchRequestPrompt,
+              actionLabel: context.l10n.searchRequestAction,
+              onAction: () => unawaited(
+                showWallRequestSheet(context, source: WallRequestSourceValue.search, initialText: _submittedQuery),
+              ),
+            );
+          }
           return GlintState(
             kind: GlintStateKind.empty,
             title: emptyTitle,
@@ -373,6 +386,9 @@ class _SearchScreenState extends State<SearchScreen> {
           prismResults: page.prismResults,
           filters: _filters,
           isLocal: page.isLocal,
+          footer: _submittedQuery.isNotEmpty && page.results.length + page.prismResults.length <= 5
+              ? SearchRequestPrompt(query: _submittedQuery)
+              : null,
         );
       },
     );

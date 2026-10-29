@@ -471,6 +471,44 @@ test("generation off at processing time fails the candidate before calling the w
   assert.equal(calls.length, 0);
 });
 
+test("a hidden, deleted, or filled request rejects its queued candidate before generation", async (t) => {
+  const openRequest = {status: "open", hidden: false};
+  for (const scenario of [
+    {name: "hidden", request: {...openRequest, hidden: true}},
+    {name: "deleted", request: undefined},
+    {name: "filled", request: {...openRequest, status: "filled"}},
+  ]) {
+    await t.test(scenario.name, async (child) => {
+      const {calls, run, cand, store} = setup(child, {seed: {
+        [CAND_PATH]: candidate({seriesId: "request", requestId: "r1"}),
+        ...(scenario.request ? {"wallRequests/r1": scenario.request} : {}),
+      }});
+      await run();
+      assert.equal(cand().status, "rejected");
+      assert.equal(cand().lastError, "request_unavailable");
+      assert.deepEqual(cand().reasons, ["request_unavailable"]);
+      assert.equal(calls.some((call) => call.method === "POST"), false);
+      assert.equal(walls(store).length, 0);
+    });
+  }
+});
+
+test("a request hidden after generation cannot publish a wall", async (t) => {
+  const {calls, run, cand, store} = setup(t, {seed: {
+    [CAND_PATH]: candidate({seriesId: "request", requestId: "r1"}),
+    "wallRequests/r1": {status: "open", hidden: false},
+  }, beforePut: (docs, key) => {
+    if (key === `ai/studio/${CAND}.jpg`) docs.set("wallRequests/r1", {status: "open", hidden: true});
+  }});
+  await run();
+  assert.equal(cand().status, "rejected");
+  assert.equal(cand().lastError, "request_unavailable");
+  assert.deepEqual(cand().reasons, ["request_unavailable"]);
+  assert.equal(calls.some((call) => call.method === "POST"), true);
+  assert.equal(walls(store).length, 0);
+  assert.deepEqual(cand().cleanupKeys, []);
+});
+
 test("thumbnails match the app's FlutterImageCompress(minWidth 400) result; size reads like the app", () => {
   assert.deepEqual(thumbSize(1440, 3200), {width: 486, height: 1080});
   assert.deepEqual(thumbSize(300, 600), {width: 300, height: 600});
@@ -485,6 +523,7 @@ const studioWall = (extra: Doc = {}): Doc => ({
 test("isStudioWall needs origin studio and a candidate that points back at the wall", async (t) => {
   installFakeDb(t, {[CAND_PATH]: candidate({wallId: "WALL1AAAAA"})});
   assert.equal(await isStudioWall("WALL1AAAAA", studioWall()), true);
+  assert.equal(await isStudioWall("WALL1AAAAA", studioWall({email: "attacker@example.com"})), false);
   assert.equal(await isStudioWall("OTHER1AAAA", studioWall()), false);
   assert.equal(await isStudioWall("WALL1AAAAA", studioWall({origin: "app"})), false);
   assert.equal(await isStudioWall("WALL1AAAAA", studioWall({studioRunId: "../x"})), false);
@@ -563,6 +602,16 @@ test("onWallApproved sends no pushes for a Studio wall", async (t) => {
   const {store, send} = walls2(t, studioWall());
   await onWallApproved.run(await approvalEvent(store));
   assert.equal(send.mock.callCount(), 0);
+});
+
+test("a recreated Studio wall under another email cannot bypass blocked-requester fill checks", async (t) => {
+  const {store} = walls2(t, studioWall({email: "attacker@example.com", creatorUid: "attacker", requestId: "r1"}));
+  store.set("usersv2/requester", {email: "requester@example.com", loggedIn: true});
+  store.set("wallRequests/r1", {status: "open", hidden: false, requesterUid: "requester", text: "Dark mountains"});
+  store.set("usersv2/attacker/blockedUsers/requester", {});
+  await onWallApproved.run(await approvalEvent(store));
+  assert.equal(store.get("wallRequests/r1")?.status, "open");
+  assert.equal(store.get("wallRequests/r1")?.notifiedAt, undefined);
 });
 
 test("onWallApproved stops before notification when the candidate read fails", async (t) => {

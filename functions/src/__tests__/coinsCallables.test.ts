@@ -20,6 +20,7 @@ import {
 } from "../coinsCallables";
 import {DEFAULT_ECONOMY, ECONOMY_CONFIG_DOC, parseEconomy, resetEconomyCache, weekKey} from "../economy";
 import {buildQuestState} from "../questCatalog";
+import {STUDIO_ACCOUNT} from "../studio/account";
 import {installFakeDb} from "./fakeDb";
 
 // No economy config doc unless a test seeds one: callables run on DEFAULT_ECONOMY.
@@ -512,13 +513,13 @@ const firstUploadRequest = (email: string) => ({
 test("awardCoins firstWallpaperUpload: an approved wall with verified Studio provenance is not upload evidence", async (t) => {
   const store: Store = new Map([
     ["usersv2/user-1", userDoc()],
-    ["walls/STUDIO1234", {email: "studio@example.com", review: true, origin: "studio",
+    ["walls/STUDIO1234", {email: STUDIO_ACCOUNT.email, review: true, origin: "studio",
       studioRunId: "d20261012", studioCandidateId: "d20261012-0"}],
     ["studioRuns/d20261012/candidates/d20261012-0", {wallId: "STUDIO1234"}],
   ]);
   mockStore(t, store, {wallEvidence: true});
 
-  const result = await awardCoins.run(firstUploadRequest("studio@example.com"));
+  const result = await awardCoins.run(firstUploadRequest(STUDIO_ACCOUNT.email));
   assert.equal(result.success, false);
   assert.equal(result.reason, "first_upload_no_wall");
   assert.equal(store.get("usersv2/user-1")?.coins, 0);
@@ -527,12 +528,12 @@ test("awardCoins firstWallpaperUpload: an approved wall with verified Studio pro
 test("awardCoins firstWallpaperUpload: a Studio provenance read failure awards no coins", async (t) => {
   const store: Store = new Map([
     ["usersv2/user-1", userDoc()],
-    ["walls/STUDIO1234", {email: "studio@example.com", review: true, origin: "studio",
+    ["walls/STUDIO1234", {email: STUDIO_ACCOUNT.email, review: true, origin: "studio",
       studioRunId: "d20261012", studioCandidateId: "d20261012-0"}],
   ]);
   mockStore(t, store, {wallEvidence: true, candidateReadFails: true});
 
-  await assert.rejects(awardCoins.run(firstUploadRequest("studio@example.com")), /candidate read failed/);
+  await assert.rejects(awardCoins.run(firstUploadRequest(STUDIO_ACCOUNT.email)), /candidate read failed/);
   assert.equal(store.get("usersv2/user-1")?.coins, 0);
 });
 

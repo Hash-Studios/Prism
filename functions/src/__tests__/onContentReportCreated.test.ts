@@ -132,3 +132,26 @@ test("a transient reporter lookup error fails the wall check so the trigger retr
   assert.equal(store.get("walls/w1")?.heldForReview, true);
   assert.equal(pushes.length, 1);
 });
+
+test("3 trusted reporters hide a wall request, with the reason recorded", async (t) => {
+  const requestReport = (reporterUid: string) => report(reporterUid, {contentType: "wallRequest", targetFirestoreDocId: "q1"});
+  const reports = {r1: requestReport("a"), r2: requestReport("b"), r3: requestReport("c")};
+  const {store} = setup(t, reports, {a: 30, b: 30, c: 30});
+  store.set("wallRequests/q1", {status: "open", hidden: false});
+  await fire("r3", reports.r3);
+  const request = store.get("wallRequests/q1");
+  assert.equal(request?.hidden, true);
+  assert.equal(request?.hiddenBy, "reports");
+  assert.ok(request?.hiddenAt instanceof admin.firestore.Timestamp);
+  assert.equal(store.get("walls/w1")?.review, true);
+});
+
+test("2 trusted reporters do not hide a wall request", async (t) => {
+  const requestReport = (reporterUid: string) => report(reporterUid, {contentType: "wallRequest", targetFirestoreDocId: "q1"});
+  const reports = {r1: requestReport("a"), r2: requestReport("b")};
+  const {store} = setup(t, reports, {a: 30, b: 30});
+  store.set("wallRequests/q1", {status: "open", hidden: false});
+  await fire("r2", reports.r2);
+  assert.equal(store.get("wallRequests/q1")?.hidden, false);
+  assert.equal(store.get("wallRequests/q1")?.hiddenBy, undefined);
+});

@@ -7,6 +7,7 @@ import 'package:Prism/core/persistence/data_sources/notifications_local_data_sou
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/ios_widget_channel.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notification_tombstones.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
@@ -19,6 +20,7 @@ import 'package:Prism/features/leaderboard/data/repositories/leaderboard_reposit
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/logger/logger.dart';
@@ -33,6 +35,7 @@ class LocalAccountDataCleaner {
   final List<LocalClearStep> _steps;
 
   Future<void> clearForUser(String userId) async {
+    WallpaperService.invalidatePendingHistoryWrites();
     for (final LocalClearStep step in _steps) {
       try {
         await step.run(userId);
@@ -66,6 +69,8 @@ class LocalAccountDataCleaner {
     (name: 'guest favourites', run: (_) => getIt<GuestFavouritesStore>().clear()),
     (name: 'downloaded wallpaper index', run: (String userId) => getIt<DownloadedWallIndex>().clearOwner(userId)),
     (name: 'wallpaper history', run: (_) => getIt<WallpaperHistoryStore>().clear()),
+    (name: 'recently viewed', run: (_) => getIt<RecentlyViewedStore>().clear()),
+    (name: 'synced history copy', run: (_) => getIt<SyncedHistoryStore>().clearLocal()),
     (name: 'feed cache', run: (_) => getIt<FeedCacheLocalDataSource>().clearAllFeedCaches()),
     (
       name: 'user blocks',

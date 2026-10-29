@@ -196,4 +196,19 @@ void main() {
       });
     });
   });
+
+  test('requestText reads the text of the linked request and refuses bad ids', () async {
+    final FakeFirestoreClient client = FakeFirestoreClient(
+      docs: <String, Map<String, Map<String, dynamic>>>{
+        'wallRequests': <String, Map<String, dynamic>>{
+          'r1': <String, dynamic>{'text': 'lofi capybara astronaut', 'requesterUid': 'u1'},
+        },
+      },
+    );
+    final AdminModerationRepository repository = AdminModerationRepository(client);
+    expect(await repository.requestText('r1'), 'lofi capybara astronaut');
+    expect(await repository.requestText('missing'), isNull);
+    expect(await repository.requestText(''), isNull);
+    expect(await repository.requestText('a/b'), isNull);
+  });
 }

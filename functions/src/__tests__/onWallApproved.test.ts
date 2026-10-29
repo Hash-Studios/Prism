@@ -54,6 +54,38 @@ test("approval notices retry transient failures", () => {
   assert.equal(onWallApproved.__endpoint.eventTrigger?.retry, true);
 });
 
+test("approving a wall fills the open request it was made for, and the filled push is sent", async (t) => {
+  const {store, event} = fixture(t);
+  store.set("walls/w1", {...store.get("walls/w1"), requestId: "r1"});
+  store.set("usersv2/requester", {email: "requester@example.com", loggedIn: true});
+  store.set("wallRequests/r1", {status: "open", hidden: false, text: "Valorant Jett", tags: [], tokens: ["jett", "valorant"],
+    requesterUid: "requester", voteCount: 3, createdAt: admin.firestore.Timestamp.fromMillis(Date.now())});
+  await onWallApproved.run(await event());
+  assert.equal(store.get("wallRequests/r1")?.status, "filled");
+  assert.equal(store.get("wallRequests/r1")?.filledWallId, "w1");
+  assert.ok(store.get("wallRequests/r1")?.notifiedAt);
+});
+
+test("an owned request fill waits for the protected-original event, then notifies once", async (t) => {
+  const {store, event, protect} = fixture(t, true);
+  store.set("walls/w1", {...store.get("walls/w1"), requestId: "r1"});
+  store.set("usersv2/requester", {email: "requester@example.com", loggedIn: true});
+  store.set("wallRequests/r1", {status: "open", hidden: false, text: "Valorant Jett", tags: [], tokens: ["jett", "valorant"],
+    requesterUid: "requester", voteCount: 3, createdAt: admin.firestore.Timestamp.fromMillis(Date.now())});
+
+  await onWallApproved.run(await event());
+  assert.equal(store.get("wallRequests/r1")?.status, "filled");
+  assert.equal(store.get("wallRequests/r1")?.notifiedAt, undefined);
+
+  protect();
+  const protectedEvent = await event({review: true, originalProtected: false});
+  await onWallApproved.run(protectedEvent);
+  const notifiedAt = store.get("wallRequests/r1")?.notifiedAt;
+  assert.ok(notifiedAt);
+  await onWallApproved.run(protectedEvent);
+  assert.equal(store.get("wallRequests/r1")?.notifiedAt, notifiedAt);
+});
+
 test("a signed-out artist keeps the approval in the inbox but gets no push; followers still do", async (t) => {
   const {topics, tags, inbox, event} = fixture(t, false, true);
   await onWallApproved.run(await event());

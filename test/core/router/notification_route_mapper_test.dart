@@ -322,6 +322,19 @@ void main() {
       expect(openedKinds(), <PushKindValue?>[PushKindValue.follower]);
     });
 
+    test('a wall request filled push records the request it fills', () {
+      mapper.trackPushOpened(<String, dynamic>{
+        'route': 'wall',
+        'wall_id': 'w1',
+        'notification_kind': 'wall_request_filled',
+        'request_id': 'req_1',
+      });
+
+      expect(analyticsSink.events.whereType<WallRequestPushOpenedEvent>().map((event) => event.requestId), <String>[
+        'req_1',
+      ]);
+    });
+
     test('measured tap hook receives the explicit push kind without Firebase access', () async {
       final List<(String, bool)> measuredTaps = <(String, bool)>[];
       NotificationRouteMapper.onMeasuredTap = (String kind, {bool gallery = false}) async =>

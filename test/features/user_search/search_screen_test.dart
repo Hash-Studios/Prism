@@ -176,7 +176,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text(AppLocalizationsEn().accountNoWallpapersFoundForQuery('zzz')), findsOneWidget);
-    expect(find.text('Try a shorter or a different word.'), findsOneWidget);
+    expect(find.text("Can't find it?"), findsOneWidget);
+    expect(find.text('Request it'), findsOneWidget);
   });
 
   testWidgets('a failed search shows an error and retries the same query', (tester) async {

@@ -16,6 +16,8 @@ class _MockToggle extends Mock implements ToggleFavouriteWallUseCase {}
 
 class _MockClear extends Mock implements ClearFavouriteWallsUseCase {}
 
+class _MockSetFavouritePinUseCase extends Mock implements SetFavouritePinUseCase {}
+
 void main() {
   late _MockFetch fetch;
   late _MockToggle toggle;
@@ -43,7 +45,7 @@ void main() {
   });
 
   Future<FavouriteWallsBloc> loaded() async {
-    final bloc = FavouriteWallsBloc(fetch, toggle, clear);
+    final bloc = FavouriteWallsBloc(fetch, toggle, clear, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
     bloc.add(const FavouriteWallsEvent.started(userId: 'u'));
     await bloc.stream.firstWhere((state) => state.status == LoadStatus.success);

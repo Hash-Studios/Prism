@@ -67,6 +67,9 @@ class NotificationRouteMapper {
 
   /// Records that the user opened a push. Call it once per tap.
   void trackPushOpened(Map<String, dynamic> data) {
+    if (data['notification_kind'] == 'wall_request_filled') {
+      unawaited(analytics.track(WallRequestPushOpenedEvent(requestId: data['request_id']?.toString() ?? '')));
+    }
     final PushKindValue? kind = pushKindFor(data);
     if (kind == null) return;
     unawaited(analytics.track(PushOpenedEvent(kind: kind)));

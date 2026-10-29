@@ -30,6 +30,35 @@ class AppLocalizationsDe extends AppLocalizations {
   String get galleryScreenTitle => 'Hintergrundbilder für dich';
 
   @override
+  String get favouritePin => 'Oben anheften';
+
+  @override
+  String get favouriteUnpin => 'Lösen';
+
+  @override
+  String get favouritePinnedToast => 'Oben in Favoriten angeheftet';
+
+  @override
+  String get favouriteUnpinnedToast => 'Anheftung aufgehoben';
+
+  @override
+  String get favouritePinnedBadge => 'Angeheftet';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du kannst bis zu $count Favoriten anheften. Löse eine Anheftung, um dieses Hintergrundbild anzuheften.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed =>
+      'Anheften konnte nicht aktualisiert werden. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -4142,6 +4171,13 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get economyAiStyleSheetTitle => 'Wähle einen Stil';
+
+  @override
+  String get economyAiStyleSheetSubject =>
+      'Jede Vorschau zeigt dieselbe Szene: ein Leuchtturm auf einer Klippe in der Dämmerung.';
+
+  @override
   String get economyAiStyleWatercolor => 'Aquarell';
 
   @override
@@ -7583,9 +7619,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperResetOriginal => 'Zurück zum Original';
 
   @override
-  String get wallpaperAccentResetHint => 'Gedrückt halten für Aktionen, auch Zurück zum Original';
-
-  @override
   String get wallpaperAll => 'Alle';
 
   @override
@@ -8635,7 +8668,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticHint =>
-      'Tippen, um die Akzentfarbe zu wechseln. Gedrückt halten für Favoriten, Teilen und Zurücksetzen. Für Details scrollen.';
+      'Gedrückt halten für Favoriten, Teilen und Zurücksetzen. Für Details scrollen.';
 
   @override
   String get wallpaperPreviousInFeed => 'Vorheriges Hintergrundbild';
@@ -8645,6 +8678,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'Hintergrundbild';
+
+  @override
+  String get wallpaperImmersiveHint => 'Tippen, um Steuerelemente auszublenden';
 
   @override
   String get wallpaperInsufficientCoins => 'Nicht genug Coins. Verdiene Coins bei „Belohnungen“.';
@@ -10843,6 +10879,372 @@ class AppLocalizationsDe extends AppLocalizations {
   String notifPushFolderDigestTitleMore(String folderName, int count) {
     return 'Neu in $folderName und $count weiteren';
   }
+
+  @override
+  String get historySetAndDownloaded => 'Gesetzt und heruntergeladen';
+
+  @override
+  String get historyDownloaded => 'Heruntergeladen';
+
+  @override
+  String get historyRecentlyViewed => 'Zuletzt angesehen';
+
+  @override
+  String get historySyncedNote => 'In deinem Konto gespeichert, damit sie auf einem neuen Handy wieder da sind.';
+
+  @override
+  String get historySyncedNoteGuest => 'Melde dich an, damit sie auf einem neuen Handy bleiben.';
+
+  @override
+  String get historyActionSet => 'Gesetzt';
+
+  @override
+  String get historyActionDownloaded => 'Heruntergeladen';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action um $time';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'Die Liste wird hier und in deinem Konto entfernt. Deine Hintergrundbilder und Downloads bleiben erhalten.';
+
+  @override
+  String get historyClearViewedTitle => 'Zuletzt angesehene löschen?';
+
+  @override
+  String get historyClearViewedBody =>
+      'Die Hintergrundbilder, die du geöffnet hast, werden aus dieser Liste und von der Startseite entfernt.';
+
+  @override
+  String get historyClearViewedAction => 'Zuletzt angesehene löschen';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'Hintergrundbilder, die du setzt oder herunterlädst, erscheinen hier, damit du sie wiederfindest.';
+
+  @override
+  String get historyEmptyBodyIos =>
+      'Hintergrundbilder, die du herunterlädst, erscheinen hier, damit du sie wiederfindest.';
+
+  @override
+  String get historyViewedEmptyTitle => 'Noch nichts angesehen';
+
+  @override
+  String get historyViewedEmptyBody =>
+      'Hintergrundbilder, die du öffnest, erscheinen hier, damit du sie wiederfindest.';
+
+  @override
+  String get historyViewedOffTitle => 'Ansichtsverlauf ist aus';
+
+  @override
+  String get historyViewedOffBody =>
+      'Schalte Ansichtsverlauf speichern ein, um die Hintergrundbilder zu sehen, die du hier öffnest.';
+
+  @override
+  String get historyViewedOffAction => 'Einschalten';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'Hintergrundbild öffnen, angesehen um $time';
+  }
+
+  @override
+  String get pickUpTitle => 'Dort weitermachen, wo du aufgehört hast';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return 'Hintergrundbild $index von $count öffnen';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'Ansichtsverlauf speichern';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'Zeigt die Hintergrundbilder, die du öffnest, im Verlauf und auf der Startseite. Wenn du das ausschaltest, wird die Liste gelöscht.';
+
+  @override
+  String get historyClearFailed =>
+      'Der Verlauf konnte nicht gelöscht werden. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Ordner';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Ordner: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Dieser Ordner braucht mindestens 2 Hintergrundbilder, die wechseln können. Prism-Hintergrundbilder wechseln, nachdem du sie heruntergeladen hast.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Ordner öffnen';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Ordner auswählen';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'Du hast noch keine Ordner. Speichere ein Hintergrundbild in einem Ordner und wähle ihn dann hier aus.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return '$folder wechseln?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Dein Hintergrundbild wechselt nach dem Zeitplan unten zu einem Bild aus diesem Ordner.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Diesen Ordner wechseln';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'Automatischer Wechsel ist aus, weil der Ordner $folder gelöscht wurde.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'Automatischer Wechsel ist aus, weil der Ordner $folder weniger als 2 Hintergrundbilder hat.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Diesen Ordner wechseln';
+
+  @override
+  String get foldersRotating => 'Wechselt';
+
+  @override
+  String get foldersRotatingDescription => 'Der automatische Wechsel nutzt diesen Ordner';
+
+  @override
+  String get wallpaperAccentResetHint => 'Gedrückt halten für Aktionen, auch Zurück zum Original';
+
+  @override
+  String get wallRequestsTitle => 'Wallpaper-Wünsche';
+
+  @override
+  String get wallRequestsTabTop => 'Beliebt';
+
+  @override
+  String get wallRequestsTabNew => 'Neu';
+
+  @override
+  String get wallRequestsTabFilled => 'Erfüllt';
+
+  @override
+  String get wallRequestsAsk => 'Wallpaper wünschen';
+
+  @override
+  String get wallRequestsEmptyTopTitle => 'Noch keine Wünsche';
+
+  @override
+  String get wallRequestsEmptyTopBody =>
+      'Frag nach dem Wallpaper, das du nicht findest. Andere können dafür abstimmen.';
+
+  @override
+  String get wallRequestsEmptyFilledTitle => 'Noch nichts erfüllt';
+
+  @override
+  String get wallRequestsEmptyFilledBody =>
+      'Erfüllte Wünsche erscheinen hier, zusammen mit dem Wallpaper, das sie erfüllt hat.';
+
+  @override
+  String get wallRequestsLoadFailed => 'Wünsche konnten nicht geladen werden';
+
+  @override
+  String get wallRequestsRetry => 'Erneut versuchen';
+
+  @override
+  String wallRequestVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Stimmen',
+      one: '1 Stimme',
+      zero: 'Keine Stimmen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestUpvote => 'Unterstützen';
+
+  @override
+  String get wallRequestRemoveUpvote => 'Unterstützung entfernen';
+
+  @override
+  String get wallRequestMine => 'Dein Wunsch';
+
+  @override
+  String get wallRequestSomeone => 'Ein Prism-Nutzer';
+
+  @override
+  String wallRequestFilledByCreator(String name) {
+    return 'Erfüllt von $name';
+  }
+
+  @override
+  String get wallRequestFilledByStudio => 'Von Prism Studio gemacht';
+
+  @override
+  String get wallRequestOpenWall => 'Wallpaper öffnen';
+
+  @override
+  String get wallRequestMoreActions => 'Weitere Aktionen';
+
+  @override
+  String get wallRequestReport => 'Wunsch melden';
+
+  @override
+  String get wallRequestHide => 'Wunsch ausblenden';
+
+  @override
+  String get wallRequestUnhide => 'Wunsch einblenden';
+
+  @override
+  String get wallRequestHiddenLabel => 'Ausgeblendet';
+
+  @override
+  String get wallRequestSheetTitle => 'Wallpaper wünschen';
+
+  @override
+  String get wallRequestSheetHint => 'Beschreib es, z. B. dunkle, schlichte Berge';
+
+  @override
+  String get wallRequestSheetTags => 'Tags, bis zu 3';
+
+  @override
+  String get wallRequestSheetSubmit => 'Wunsch senden';
+
+  @override
+  String get wallRequestSignIn => 'Melde dich an, um Wallpaper zu wünschen und zu unterstützen.';
+
+  @override
+  String get wallRequestDuplicateTitle => 'Das hat schon jemand gewünscht';
+
+  @override
+  String get wallRequestDuplicateBody => 'Unterstütze es, damit Creator es früher sehen.';
+
+  @override
+  String get wallRequestUpvoteInstead => 'Stattdessen unterstützen';
+
+  @override
+  String get wallRequestCreateAnyway => 'Trotzdem meinen senden';
+
+  @override
+  String get wallRequestDuplicateMine => 'Das hast du schon gewünscht';
+
+  @override
+  String get wallRequestDuplicateVoted => 'Das hast du schon unterstützt';
+
+  @override
+  String get wallRequestEditText => 'Meinen Wunsch bearbeiten';
+
+  @override
+  String get wallRequestCreated => 'Wunsch gesendet. Wir sagen dir Bescheid, wenn er erfüllt ist.';
+
+  @override
+  String get wallRequestUpvoted => 'Unterstützt. Wir sagen dir Bescheid, wenn er erfüllt ist.';
+
+  @override
+  String get wallRequestErrorText => 'Nutze 3 bis 80 Zeichen und bleib freundlich.';
+
+  @override
+  String get wallRequestErrorLimit => 'Du kannst pro Tag 3 Wünsche senden. Versuch es morgen erneut.';
+
+  @override
+  String get wallRequestErrorOwn => 'Du kannst deinen eigenen Wunsch nicht unterstützen.';
+
+  @override
+  String get wallRequestErrorClosed => 'Dieser Wunsch ist schon erfüllt.';
+
+  @override
+  String get wallRequestErrorGone => 'Dieser Wunsch ist nicht mehr verfügbar.';
+
+  @override
+  String get wallRequestErrorGeneric => 'Etwas ist schiefgelaufen. Versuch es erneut.';
+
+  @override
+  String get searchRequestPrompt => 'Nicht gefunden?';
+
+  @override
+  String get searchRequestAction => 'Wunsch senden';
+
+  @override
+  String get discoverRequestsTitle => 'Wallpaper-Wünsche';
+
+  @override
+  String get discoverRequestsSubtitle => 'Wallpaper wünschen oder einen Wunsch unterstützen';
+
+  @override
+  String get uploadFillsRequest => 'Erfüllt einen Wunsch';
+
+  @override
+  String get uploadFillsRequestHint => 'Optional. Wähle den Wunsch, den dieses Wallpaper erfüllt.';
+
+  @override
+  String get uploadFillsRequestClear => 'Wunsch entfernen';
+
+  @override
+  String get requestPickerTitle => 'Welchen Wunsch erfüllt es?';
+
+  @override
+  String get requestPickerSearch => 'Wünsche durchsuchen';
+
+  @override
+  String get requestPickerEmpty => 'Keine offenen Wünsche gefunden';
+
+  @override
+  String get notifPushWallRequestFilledTitle => 'Dein Wunsch ist da';
+
+  @override
+  String notifPushWallRequestFilledBody(String requestText) {
+    return '$requestText';
+  }
+
+  @override
+  String get wallRequestAgeNow => 'Gerade eben';
+
+  @override
+  String wallRequestAgeMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'vor $count Minuten', one: 'vor 1 Minute');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'vor $count Stunden', one: 'vor 1 Stunde');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'vor $count Tagen', one: 'vor 1 Tag');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'vor $count Wochen', one: 'vor 1 Woche');
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestErrorAccountAge => 'Dein Konto kann Wünsche senden und abstimmen, sobald es 10 Tage alt ist.';
+
+  @override
+  String get adminFillsRequest => 'Erfüllt Wunsch';
 
   @override
   String get wallRemixAction => 'Remixen';

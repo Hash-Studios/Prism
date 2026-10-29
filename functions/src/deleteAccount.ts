@@ -6,6 +6,7 @@ import {closeCreatorProgressForDeletion} from "./creatorProgressDeletion";
 import {verifiedEmailForUid} from "./wallAuthor";
 import {removeUidFollowGraph} from "./profiles";
 import {FOLDERS, FOLDER_ITEMS, isFolderItemPath} from "./folders";
+import {removeWallRequestsForAccount, REQUEST_RATE_DAILY, VOTE_RATE_DAILY} from "./wallRequests";
 import {FOLLOWED_FOLDERS, removeAllFolderFollows, removeOwnerPublicFolders} from "./publicFolders";
 
 const USERS = "usersv2";
@@ -20,7 +21,9 @@ const DELETED_NAME = "Deleted Account";
 /** Docs keyed by the bare uid. The last two are legacy collections. */
 const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens"];
 /** Docs keyed `<uid>_<day>`. */
-const UID_PREFIX_KEYED = ["coinAdRateDaily", "coinRefundDaily", "contentReportRateDaily", "userBlockRateDaily"];
+const UID_PREFIX_KEYED = [
+  "coinAdRateDaily", "coinRefundDaily", "contentReportRateDaily", "userBlockRateDaily", REQUEST_RATE_DAILY, VOTE_RATE_DAILY,
+];
 /** Public docs that carry the caller's email: they stay, with the creator details blanked. */
 const SCRUBBED_BY_EMAIL = ["walls", "setups"];
 /** Docs that carry the caller's email and are deleted. */
@@ -105,6 +108,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   // Close rewards before deleting private state, including cross-user member receipts.
   await closeCreatorProgressForDeletion(callerUid);
   await removeUidFollowGraph(callerUid);
+  await removeWallRequestsForAccount(callerUid);
   // The deletion barrier is closed, so no sync can project these folders again.
   await removeOwnerPublicFolders(callerUid);
   await removeAllFolderFollows(callerUid);
@@ -114,6 +118,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await db.recursiveDelete(userRef.collection("setups"));
   await db.recursiveDelete(userRef.collection(BLOCKED_USERS));
   await db.recursiveDelete(userRef.collection("private"));
+  await db.recursiveDelete(userRef.collection("history"));
   await db.recursiveDelete(userRef.collection(FOLLOWED_FOLDERS));
   // Items are found by owner, not through their folder, so items whose folder is already gone are deleted too.
   // The owner filter keeps another owner's items in a reused folder id. Items go before their folders.

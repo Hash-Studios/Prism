@@ -1,4 +1,9 @@
+import 'package:Prism/env/env.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+/// The stored sizes of each style sample: a 4:5 row tile (288x360) and a 9:16 sheet preview (540x960).
+enum AiStyleSampleSize { tile, sheet }
 
 enum AiStylePreset {
   anime('anime', 'Anime', <Color>[Color(0xFFFF6B9D), Color(0xFF7C4DFF)]),
@@ -20,6 +25,24 @@ enum AiStylePreset {
   final String apiValue;
   final String label;
   final List<Color> swatchColors;
+
+  /// Bump with the version in tool/ai_style_samples.mjs when the samples are made again.
+  static const String sampleVersion = 'v1';
+
+  // The worker's studio route stores uploads only as flat `ai/studio/<name>` keys, so the version goes in the name.
+  static const String _sampleBaseUrl = 'https://prismwalls.com/api/ai/assets/ai/studio';
+
+  // Debug builds with AI_STYLE_SAMPLES_LOCAL only. Debug builds allow cleartext to localhost.
+  static const String _localSampleBaseUrl = 'http://localhost:8765';
+
+  /// [apiValue] as a key part: 'mesh gradient' is 'mesh-gradient'. tool/ai_style_samples.mjs uses the same rule.
+  String get sampleSlug => apiValue.replaceAll(RegExp('[^a-z0-9]+'), '-');
+
+  /// The one place that builds a sample URL. tool/ai_style_samples.mjs uploads to the same keys.
+  String sampleUrl(AiStyleSampleSize size) {
+    const String base = kDebugMode && Env.aiStyleSamplesLocal ? _localSampleBaseUrl : _sampleBaseUrl;
+    return '$base/style-samples-$sampleVersion-$sampleSlug-${size.name}.webp';
+  }
 
   static String _key(String value) => value.trim().toLowerCase().replaceAll(RegExp('[ _]'), '');
 

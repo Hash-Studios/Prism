@@ -1,3 +1,4 @@
+import { stylePromptSuffix } from './ai_style_prompt';
 import { verifyFirebaseIdTokenFromRequest } from './firebase_auth';
 
 export interface AiEnvBindings {
@@ -1107,7 +1108,7 @@ async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Res
     return aiError('invalid_request', 400, 'A free trial uses the fast tier');
   }
 
-  if (!isPromptSafe(parsed.prompt)) {
+  if (!isPromptSafe(`${parsed.prompt}, ${stylePromptSuffix(parsed.stylePreset)}`)) {
     return aiError('unsafe_prompt', 422, 'Prompt rejected by safety policy');
   }
 
@@ -1206,7 +1207,7 @@ async function handleVariation(request: Request, env: AiEnvBindings, parentGener
   const mergedPrompt = variationPrompt.length === 0
     ? original.prompt
     : `${original.prompt}. Variation request (${strength.toFixed(2)}): ${variationPrompt}`;
-  if (!isPromptSafe(mergedPrompt)) {
+  if (!isPromptSafe(`${mergedPrompt}, ${stylePromptSuffix(original.stylePreset)}`)) {
     return aiError('unsafe_prompt', 422, 'Variation prompt rejected by safety policy');
   }
 
@@ -3240,7 +3241,7 @@ class FalProviderAdapter implements AiProviderAdapter {
     const endpoint = `https://fal.run/${params.model}`;
     const known = Object.hasOwn(FAL_MODELS, params.model) ? FAL_MODELS[params.model] : undefined;
     const { width, height } = falRequestSize(params.model, params.targetSize);
-    const prompt = `${params.prompt}, ${params.stylePreset} style`;
+    const prompt = `${params.prompt}, ${stylePromptSuffix(params.stylePreset)}`;
     const requestBody = known?.buildBody(prompt, width, height, params.seed)
       ?? { prompt, image_size: { width, height }, seed: params.seed };
     const providerDeadlineAt = Math.min(
@@ -3328,7 +3329,7 @@ class GeminiProviderAdapter implements AiProviderAdapter {
         },
         body: JSON.stringify({
           contents: [{
-            parts: [{ text: `${params.prompt}, ${params.stylePreset} style` }],
+            parts: [{ text: `${params.prompt}, ${stylePromptSuffix(params.stylePreset)}` }],
           }],
           generationConfig: {
             responseModalities: ['TEXT', 'IMAGE'],

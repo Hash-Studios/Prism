@@ -24,6 +24,7 @@ export type NotificationCopy =
       tags: string;
     }
   | { kind: "folderDigest"; folderName: string; folderCount: number; wallCount: number; tags: string }
+  | { kind: "wallRequestFilled"; requestText: string }
   | { kind: "drawWinner" }
   | { kind: "giftReceived"; senderName: string }
   | { kind: "reportNeedsReview"; contentType: string; reason: string }
@@ -193,6 +194,13 @@ export function renderNotificationCopy(
         `New in ${copy.folderName}`,
       body: copy.tags || "Tap to see them all.",
     };
+  case "wallRequestFilled":
+    return {
+      kind: copy.kind,
+      args: {requestText: copy.requestText},
+      title: "Your request is here",
+      body: copy.requestText,
+    };
   case "drawWinner":
     return {
       kind: copy.kind,
@@ -360,6 +368,9 @@ export function nativeNotificationLocalization(
     tagsBody();
     break;
   }
+  case "wallRequestFilled":
+    bodyArgs = [stringArg("requestText")];
+    break;
   case "reportNeedsReview":
     break;
   case "newContentReport":

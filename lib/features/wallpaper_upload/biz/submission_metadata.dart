@@ -21,14 +21,37 @@ String? normalizeSubmissionTag(String raw) {
 
 /// Optional details a creator adds to a wallpaper before review. Every field can stay empty.
 class SubmissionMetadata {
-  const SubmissionMetadata({this.title = '', this.category = defaultSubmissionCategory, this.tags = const <String>[]});
+  const SubmissionMetadata({
+    this.title = '',
+    this.category = defaultSubmissionCategory,
+    this.tags = const <String>[],
+    this.requestId = '',
+    this.requestText = '',
+  });
 
   final String title;
   final String category;
   final List<String> tags;
 
+  /// The wall request this upload fills, or empty when it fills none.
+  final String requestId;
+
+  /// The text of [requestId], kept so the upload form can show it without a lookup.
+  final String requestText;
+
   bool get hasTitle => title.trim().isNotEmpty;
 
-  SubmissionMetadata copyWith({String? title, String? category, List<String>? tags}) =>
-      SubmissionMetadata(title: title ?? this.title, category: category ?? this.category, tags: tags ?? this.tags);
+  SubmissionMetadata copyWith({
+    String? title,
+    String? category,
+    List<String>? tags,
+    String? requestId,
+    String? requestText,
+  }) => SubmissionMetadata(
+    title: title ?? this.title,
+    category: category ?? this.category,
+    tags: tags ?? this.tags,
+    requestId: requestId ?? this.requestId,
+    requestText: requestText ?? this.requestText,
+  );
 }

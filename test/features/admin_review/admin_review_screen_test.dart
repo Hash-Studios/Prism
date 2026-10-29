@@ -27,6 +27,7 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
     'review': false,
   });
   int wallStreamCalls = 0;
+  int requestTextCalls = 0;
   int approvals = 0;
   int rejections = 0;
   final List<String> reserved = <String>[];
@@ -36,15 +37,29 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
   bool failFirstWallStream = false;
   Stream<List<FirestoreDocument>>? reportsStream;
   Stream<List<FirestoreDocument>>? wallsStream;
+  List<Stream<List<FirestoreDocument>>>? wallsStreamSequence;
   List<FirestoreDocument>? wallsList;
   List<FirestoreDocument>? reportsList;
   Future<void> Function()? approveAction;
   Future<void> Function()? rejectAction;
   bool wallWasRemoved = true;
+  bool failFirstRequestText = false;
+  final Map<String, String> requestTexts = <String, String>{};
+  final Map<String, Completer<String?>> requestTextCompleters = <String, Completer<String?>>{};
+
+  @override
+  Future<String?> requestText(String requestId) async {
+    requestTextCalls++;
+    if (failFirstRequestText && requestTextCalls == 1) throw StateError('offline');
+    final Completer<String?>? completer = requestTextCompleters[requestId];
+    if (completer != null) return completer.future;
+    return requestTexts[requestId];
+  }
 
   @override
   Stream<List<FirestoreDocument>> watchPendingWalls() {
     wallStreamCalls++;
+    if (wallsStreamSequence != null) return wallsStreamSequence![wallStreamCalls - 1];
     if (wallsStream != null) return wallsStream!;
     if (wallsList != null) return Stream<List<FirestoreDocument>>.value(wallsList!);
     if (failFirstWallStream && wallStreamCalls == 1) {
@@ -182,6 +197,140 @@ void main() {
     expect(find.text('wall-1'), findsOneWidget);
   });
 
+  testWidgets('retrying the pending list retries a failed request-text read', (WidgetTester tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final StreamController<List<FirestoreDocument>> firstWalls = StreamController<List<FirestoreDocument>>.broadcast();
+    addTearDown(firstWalls.close);
+    final StreamController<List<FirestoreDocument>> retryWalls = StreamController<List<FirestoreDocument>>.broadcast();
+    addTearDown(retryWalls.close);
+    const FirestoreDocument requestWall = FirestoreDocument('wall-a', <String, dynamic>{
+      'review': false,
+      'requestId': 'r1',
+    });
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()
+      ..failFirstRequestText = true
+      ..requestTexts['r1'] = 'lofi capybara astronaut'
+      ..wallsStreamSequence = <Stream<List<FirestoreDocument>>>[
+        firstWalls.stream,
+        firstWalls.stream,
+        retryWalls.stream,
+        retryWalls.stream,
+      ];
+
+    await tester.pumpWidget(app(AdminReviewScreen(repository: repository)));
+    firstWalls.add(const <FirestoreDocument>[requestWall]);
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Fills request: Unknown'), findsOneWidget);
+    expect(repository.requestTextCalls, 1);
+
+    firstWalls.addError(StateError('offline'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.text('Could not load pending wallpapers.'), findsOneWidget);
+    await tester.tap(find.text('Try again'));
+    await tester.pump();
+    retryWalls.add(const <FirestoreDocument>[requestWall]);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('Fills request: lofi capybara astronaut'), findsOneWidget);
+    expect(repository.requestTextCalls, 2);
+    semantics.dispose();
+  });
+
+  testWidgets('a later pending-list emission retries a failed request-text read', (WidgetTester tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final StreamController<List<FirestoreDocument>> walls = StreamController<List<FirestoreDocument>>.broadcast();
+    addTearDown(walls.close);
+    const FirestoreDocument requestWall = FirestoreDocument('wall-a', <String, dynamic>{
+      'review': false,
+      'requestId': 'r1',
+    });
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()
+      ..failFirstRequestText = true
+      ..requestTexts['r1'] = 'lofi capybara astronaut'
+      ..wallsStream = walls.stream;
+
+    await tester.pumpWidget(app(AdminReviewScreen(repository: repository)));
+    walls.add(const <FirestoreDocument>[requestWall]);
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Fills request: Unknown'), findsOneWidget);
+    expect(repository.requestTextCalls, 1);
+
+    walls.add(const <FirestoreDocument>[
+      requestWall,
+      FirestoreDocument('wall-b', <String, dynamic>{'review': false}),
+    ]);
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('Fills request: lofi capybara astronaut'), findsOneWidget);
+    expect(repository.requestTextCalls, 2);
+    semantics.dispose();
+  });
+
+  testWidgets('reuses a successful request-text read when the pending list rebuilds', (WidgetTester tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final StreamController<List<FirestoreDocument>> walls = StreamController<List<FirestoreDocument>>.broadcast();
+    addTearDown(walls.close);
+    const FirestoreDocument requestWall = FirestoreDocument('wall-a', <String, dynamic>{
+      'review': false,
+      'requestId': 'r1',
+    });
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()
+      ..requestTexts['r1'] = 'lofi capybara astronaut'
+      ..wallsStream = walls.stream;
+
+    await tester.pumpWidget(app(AdminReviewScreen(repository: repository)));
+    walls.add(const <FirestoreDocument>[requestWall]);
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Fills request: lofi capybara astronaut'), findsOneWidget);
+
+    walls.add(const <FirestoreDocument>[requestWall]);
+    await tester.pumpAndSettle();
+
+    expect(repository.requestTextCalls, 1);
+    expect(find.bySemanticsLabel('Fills request: lofi capybara astronaut'), findsOneWidget);
+    semantics.dispose();
+  });
+
+  testWidgets('a changed request ID hides old text and ignores its delayed completion', (WidgetTester tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final StreamController<List<FirestoreDocument>> walls = StreamController<List<FirestoreDocument>>.broadcast();
+    addTearDown(walls.close);
+    final Completer<String?> oldRequest = Completer<String?>();
+    final Completer<String?> newRequest = Completer<String?>();
+    const FirestoreDocument oldWall = FirestoreDocument('wall-a', <String, dynamic>{
+      'review': false,
+      'requestId': 'r1',
+    });
+    const FirestoreDocument newWall = FirestoreDocument('wall-a', <String, dynamic>{
+      'review': false,
+      'requestId': 'r2',
+    });
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()
+      ..requestTextCompleters['r1'] = oldRequest
+      ..requestTextCompleters['r2'] = newRequest
+      ..wallsStream = walls.stream;
+
+    await tester.pumpWidget(app(AdminReviewScreen(repository: repository)));
+    walls.add(const <FirestoreDocument>[oldWall]);
+    await tester.pump();
+    walls.add(const <FirestoreDocument>[newWall]);
+    await tester.pump();
+
+    oldRequest.complete('stale request text');
+    await tester.pump();
+    expect(find.bySemanticsLabel('Fills request: stale request text'), findsNothing);
+    expect(repository.requestTextCalls, 2);
+
+    newRequest.complete('current request text');
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Fills request: current request text'), findsOneWidget);
+    expect(find.bySemanticsLabel('Fills request: stale request text'), findsNothing);
+    semantics.dispose();
+  });
+
   testWidgets('pending wallpaper card shows its creator details and both actions', (WidgetTester tester) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
     final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository();
@@ -212,6 +361,23 @@ void main() {
 
     expect(find.bySemanticsLabel('Depth: Menu'), findsOneWidget);
     expect(find.bySemanticsLabel('Depth: Not checked'), findsOneWidget);
+    semantics.dispose();
+  });
+
+  testWidgets('a wall that fills a request shows the request text from the request itself', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()
+      ..requestTexts['r1'] = 'lofi capybara astronaut'
+      ..wallsList = const <FirestoreDocument>[
+        FirestoreDocument('wall-a', <String, dynamic>{'review': false, 'requestId': 'r1'}),
+        FirestoreDocument('wall-b', <String, dynamic>{'review': false, 'requestId': 'gone'}),
+        FirestoreDocument('wall-c', <String, dynamic>{'review': false}),
+      ];
+    await pumpReviewScreen(tester, repository);
+
+    expect(find.bySemanticsLabel('Fills request: lofi capybara astronaut'), findsOneWidget);
+    expect(find.bySemanticsLabel('Fills request: Unknown'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Fills request')), findsNWidgets(2));
     semantics.dispose();
   });
 
