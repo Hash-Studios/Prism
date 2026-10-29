@@ -42,6 +42,7 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart'
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_pickers.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_preview_stage.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_remix_chip.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_actions.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheets.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -96,6 +97,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   AiStylePreset _selectedStyle = AiStylePreset.abstract;
   AiQualityTier _selectedQualityTier = AiQualityTier.fast;
+  AiRemixSeed? _remixLink;
   List<AiGenerationRecord> _history = <AiGenerationRecord>[];
   AiGenerationRecord? _latest;
   final Map<String, AiGenerationRecord> _confirmedSubmissionRecords = <String, AiGenerationRecord>{};
@@ -131,6 +133,34 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     super.initState();
     _promptController.addListener(_onPromptChanged);
     _loadHistory();
+    final AiRemixSeed? remixSeed = widget.remixSeed;
+    if (remixSeed != null) _applyRemixSeed(remixSeed);
+  }
+
+  /// Fills the form from [seed]. Runs after [_loadHistory], which resets the prompt owner, so the remix prompt wins.
+  void _applyRemixSeed(AiRemixSeed seed) {
+    _remixLink = seed;
+    final String prompt = seed.prompt.length <= _maxPromptChars ? seed.prompt : _clipPrompt(seed.prompt);
+    _setPrompt(prompt, userInitiated: true);
+    if (seed.style != null) _selectedStyle = seed.style!;
+    _selectedQualityTier = remixTier(
+      model: seed.model,
+      balance: CoinsService.instance.balanceNotifier.value,
+      isPro: app_state.prismUser.premium,
+    );
+  }
+
+  String _clipPrompt(String prompt) {
+    final int space = prompt.lastIndexOf(' ', _maxPromptChars);
+    final String cut = prompt.substring(0, space > 0 ? space : _maxPromptChars);
+    return cut.trim();
+  }
+
+  void _dropRemixLink() {
+    final AiRemixSeed? link = _remixLink;
+    if (link == null) return;
+    analytics.track(RemixLinkDroppedEvent(sourceWallType: link.sourceType));
+    setState(() => _remixLink = null);
   }
 
   @override
@@ -481,6 +511,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     required void Function(AiGenerationRecord generated) onSuccess,
   }) async {
     if (!_canStartGeneration()) return;
+    final AiRemixSeed? remixLink = _remixLink;
     final String ownerId = app_state.prismUser.id;
     final int ownerSession = CoinsService.instance.economySession;
     bool ownsSession() =>
@@ -598,11 +629,14 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           chargeTransactionId: reservation.transactionId,
         ),
       );
-      final AiGenerationRecord generated = await request(
+      final AiGenerationRecord completed = await request(
         reservation.mode,
         reservation.coinsSpent,
         reservation.transactionId,
       );
+      final AiGenerationRecord generated = remixLink == null
+          ? completed
+          : completed.copyWith(remixOf: remixLink.wallDocId);
       generationSucceeded = true;
 
       // The repository handles persistence of the completed remote result for its original owner. Do not publish
@@ -655,6 +689,21 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 generationId: generated.id,
               ),
       );
+      if (remixLink != null) {
+        try {
+          await _repository.saveHistoryRecord(generated);
+        } catch (error, stackTrace) {
+          logger.w(
+            'AI remix generation succeeded but its link could not be saved',
+            tag: 'ai_wallpaper',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
+        analytics.track(
+          RemixGeneratedEvent(sourceWallType: remixLink.sourceType, quality: generated.qualityTier.apiValue),
+        );
+      }
       if (mounted) {
         onSuccess(generated);
         showGlintToast(context);
@@ -869,6 +918,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 aiModel: record.model,
                 aiPrompt: record.prompt,
                 aiStylePreset: record.stylePreset.apiValue,
+                remixOf: record.remixOf,
               ));
       if (submissionResult == wallstore.WallSubmissionResult.quotaExceeded) {
         return;
@@ -941,6 +991,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       if (submissionConfirmed) {
         try {
           await analytics.track(AiSubmitSuccessEvent(generationId: record.id));
+          if (record.remixOf != null) await analytics.track(RemixSubmittedEvent(generationId: record.id));
         } catch (error, stackTrace) {
           logger.w(
             'AI wallpaper submission succeeded but follow-up work failed',
@@ -1031,13 +1082,22 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             ],
             Padding(
               padding: page.copyWith(top: current == null && !busy ? PrismSpace.xs : PrismSpace.xl),
-              child: AiPromptField(
-                controller: _promptController,
-                focusNode: _promptFocus,
-                maxChars: _maxPromptChars,
-                enabled: !busy,
-                onShuffle: _shufflePrompt,
-                onSceneIdea: _useSceneIdea,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  if (_remixLink != null) ...<Widget>[
+                    AiRemixChip(seed: _remixLink!, onDrop: _dropRemixLink),
+                    const SizedBox(height: PrismSpace.sm),
+                  ],
+                  AiPromptField(
+                    controller: _promptController,
+                    focusNode: _promptFocus,
+                    maxChars: _maxPromptChars,
+                    enabled: !busy,
+                    onShuffle: _shufflePrompt,
+                    onSceneIdea: _useSceneIdea,
+                  ),
+                ],
               ),
             ),
             PrismSectionHeader(
