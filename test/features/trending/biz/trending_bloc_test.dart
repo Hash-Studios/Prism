@@ -163,6 +163,25 @@ void main() {
       verify(() => fetch(any())).called(1);
     });
 
+    test('an unknown block list keeps the walls, and a later known list still removes their walls', () async {
+      when(() => fetch(any())).thenAnswer(
+        (_) async => TrendingFetch.success(<PrismWallpaper>[_wall('a', uid: 'bad-uid'), _wall('b', uid: 'ok-uid')]),
+      );
+      bloc.add(const TrendingEvent.started());
+      await settle();
+      expect(bloc.state.walls.map((wall) => wall.id), <String>['a', 'b']);
+
+      blocks.emitUnknown();
+      await settle();
+
+      expect(bloc.state.walls.map((wall) => wall.id), <String>['a', 'b']);
+
+      blocks.completeInitial(<String>{'bad-uid'});
+      await settle();
+
+      expect(bloc.state.walls.map((wall) => wall.id), <String>['b']);
+    });
+
     test('also hides their walls in a load that was already running', () async {
       final Completer<TrendingFetch> pending = Completer<TrendingFetch>();
       when(() => fetch(any())).thenAnswer((_) => pending.future);

@@ -11,6 +11,7 @@ import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -127,10 +128,10 @@ class _EmptyFavourites extends Fake implements FavouriteWallsRepository {
 
 class _EmptyBlocks extends Fake implements UserBlockRepository {
   @override
-  Set<String> get cachedBlockedCreatorUids => <String>{};
+  BlockedCreators get blockedCreators => KnownBlockedCreators(const <String>{});
 
   @override
-  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) async => <String>{};
+  Future<BlockedCreators> loadBlockedCreators() async => KnownBlockedCreators(const <String>{});
 }
 
 class _NoopOfflineCatalog extends OfflineWallpaperCatalog {

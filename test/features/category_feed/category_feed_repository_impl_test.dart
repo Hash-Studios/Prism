@@ -5,6 +5,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -84,12 +85,11 @@ WallhavenWallpaper _wall(String id, {String? email}) => WallhavenWallpaper(
 class _DelayedUserBlockRepository extends FakeUserBlockRepository {
   _DelayedUserBlockRepository() : super.pending();
 
-  final Completer<Set<String>> snapshot = Completer<Set<String>>();
+  final Completer<BlockedCreators> snapshot = Completer<BlockedCreators>();
   final Completer<void> initialLoadRequested = Completer<void>();
 
   @override
-  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) {
-    if (!waitForInitialLoad) return super.getBlockedCreatorUids();
+  Future<BlockedCreators> loadBlockedCreators() {
     if (!initialLoadRequested.isCompleted) initialLoadRequested.complete();
     return snapshot.future;
   }
@@ -242,9 +242,44 @@ void main() {
     pending.then((_) => completed = true);
     await blocks.initialLoadRequested.future;
     expect(completed, isFalse);
-    blocks.snapshot.complete(<String>{'blocked-uid'});
+    blocks.snapshot.complete(KnownBlockedCreators(<String>{'blocked-uid'}));
 
     expect((await pending).isFailure, isTrue);
+  });
+
+  test('an unknown block list drops cached Prism creators and keeps cached Wallhaven items', () async {
+    final FakeUserBlockRepository blocks = FakeUserBlockRepository.pending()..timeOutInitialLoad();
+    getIt.registerSingleton<UserBlockRepository>(blocks);
+    addTearDown(getIt.reset);
+    cache.snapshots['category/wallhaven.search.cyberpunk.100.100.portrait'] = FeedSnapshot(
+      payload: <String, Object?>{
+        'items': <Map<String, Object?>>[
+          encodeFeedItem(
+            PrismFeedItem(
+              id: 'blocked',
+              wallpaper: PrismWallpaper(
+                core: WallpaperCore(
+                  id: 'blocked',
+                  source: WallpaperSource.prism,
+                  fullUrl: 'https://prism.test/blocked.jpg',
+                  thumbnailUrl: 'https://prism.test/blocked-thumb.jpg',
+                  authorUid: 'blocked-uid',
+                ),
+              ),
+            ),
+          ),
+          encodeFeedItem(WallhavenFeedItem(id: 'wh', wallpaper: _wall('wh'))),
+        ],
+        'hasMore': false,
+      },
+      cachedAtUtc: DateTime.now().toUtc(),
+      ttlHours: 6,
+    );
+    offline = true;
+
+    final Result<CategoryFeedPage> result = await repository.fetchCategoryFeed(category: _cyberpunk, refresh: true);
+
+    expect(result.data!.items.map((item) => item.id), <String>['wh']);
   });
 
   test('the snapshot scope changes with the Wallhaven categories and purity filters', () async {

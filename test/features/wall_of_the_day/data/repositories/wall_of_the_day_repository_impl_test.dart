@@ -8,6 +8,7 @@ import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -139,15 +140,13 @@ class _ControlledWotdMetadataClient extends FakeFirestoreClient {
 class _DelayedBlockRepository extends FakeUserBlockRepository {
   _DelayedBlockRepository() : super.pending();
 
-  final Completer<Set<String>> snapshot = Completer<Set<String>>();
+  final Completer<BlockedCreators> snapshot = Completer<BlockedCreators>();
 
   @override
-  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) => waitForInitialLoad
-      ? snapshot.future.then((blocked) {
-          completeInitial(blocked);
-          return blocked;
-        })
-      : super.getBlockedCreatorUids();
+  Future<BlockedCreators> loadBlockedCreators() => snapshot.future.then((blocked) {
+    if (blocked case KnownBlockedCreators(:final uids)) completeInitial(uids);
+    return blocked;
+  });
 }
 
 PrismWallpaper _wall(
@@ -227,6 +226,24 @@ void main() {
     final repo = WallOfTheDayRepositoryImpl(firestoreClient, prismRepository, blocks);
 
     expect((await repo.fetchToday()).data, isNull);
+  });
+
+  test('an unknown block list hides a current pick whose creator is not known yet', () async {
+    final day = DateTime.now().toUtc();
+    firestoreClient.docs[FirebaseCollections.wallOfTheDay]!['current'] = <String, dynamic>{
+      'wallId': 'wall-doc-1',
+      'date': day,
+    };
+    when(
+      () => prismRepository.fetchByDocumentId('wall-doc-1'),
+    ).thenAnswer((_) async => Result.success(_wall('logical-id', documentId: 'wall-doc-1', authorUid: 'creator-uid')));
+    final blocks = FakeUserBlockRepository.pending()..timeOutInitialLoad();
+    final repo = WallOfTheDayRepositoryImpl(firestoreClient, prismRepository, blocks);
+
+    final result = await repo.fetchToday();
+
+    expect(result.isFailure, isFalse);
+    expect(result.data, isNull);
   });
 
   test('a cached yesterday pointer retains yesterday and a missing date never becomes today', () async {
@@ -397,7 +414,7 @@ void main() {
     );
     final Future<Result<WallOfTheDayEntity?>> pending = restarted.fetchToday();
     await Future<void>.delayed(Duration.zero);
-    blocks.snapshot.complete(<String>{'blocked-uid'});
+    blocks.snapshot.complete(KnownBlockedCreators(<String>{'blocked-uid'}));
 
     expect((await pending).data, isNull);
   });
@@ -1428,7 +1445,7 @@ void main() {
       );
       await Future<void>.delayed(Duration.zero);
       expect(completed, isFalse);
-      hydratedBlocks.snapshot.complete(<String>{'creator-uid'});
+      hydratedBlocks.snapshot.complete(KnownBlockedCreators(<String>{'creator-uid'}));
 
       expect((await pending).data, isEmpty);
       expect(((cache.snapshots['wotd/archive']!.payload! as Map<String, dynamic>)['picks'] as List), hasLength(1));

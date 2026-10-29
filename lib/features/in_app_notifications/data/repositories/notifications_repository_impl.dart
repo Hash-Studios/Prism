@@ -56,10 +56,9 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   Future<Result<List<InAppNotificationEntity>>> fetchNotifications({required bool syncRemote}) async {
     final session = _captureSession();
     try {
-      if (syncRemote) {
-        await syncInAppNotificationsFromRemote(force: true);
-      } else {
-        await pruneBlockedNotificationsCache(waitForInitialLoad: true, notificationsLocal: _notificationsLocal);
+      if (syncRemote) await syncInAppNotificationsFromRemote(force: true);
+      if (!await pruneBlockedNotificationsCache(notificationsLocal: _notificationsLocal)) {
+        return Result.error(const ServerFailure('Unable to fetch notifications: blocked accounts did not load'));
       }
       return _successIfCurrent(session, await _readAll(session));
     } catch (error) {

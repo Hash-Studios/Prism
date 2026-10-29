@@ -114,6 +114,40 @@ void main() {
     verify(() => fetchUseCase(any())).called(1);
   });
 
+  test('an unknown block list keeps the items, and a later known list still removes the blocked creator', () async {
+    when(() => fetchUseCase(any())).thenAnswer(
+      (_) async => Result.success(
+        PersonalizedFeedPage(
+          items: <FeedItemEntity>[
+            _prismItem('1', authorUid: 'blocked-uid'),
+            _prismItem('2', authorUid: 'kept-uid'),
+          ],
+          hasMore: false,
+        ),
+      ),
+    );
+    final blockRepo = FakeUserBlockRepository.pending();
+    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, blockRepo, dropsRepository);
+    addTearDown(bloc.close);
+
+    bloc.add(const PersonalizedFeedEvent.started());
+    await Future<void>.delayed(Duration.zero);
+    expect(bloc.state.items.map((e) => e.id), <String>['1', '2']);
+
+    blockRepo.completeInitial(<String>{});
+    await Future<void>.delayed(Duration.zero);
+    blockRepo.emitUnknown();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(bloc.state.items.map((e) => e.id), <String>['1', '2']);
+
+    blockRepo.completeInitial(<String>{'blocked-uid'});
+    await Future<void>.delayed(Duration.zero);
+
+    expect(bloc.state.items.map((e) => e.id), <String>['2']);
+    verify(() => fetchUseCase(any())).called(1);
+  });
+
   test('less like this removes the item and reports it to the repository', () async {
     final FeedItemEntity item1 = _prismItem('1', authorUid: 'a-uid');
     when(() => fetchUseCase(any())).thenAnswer(

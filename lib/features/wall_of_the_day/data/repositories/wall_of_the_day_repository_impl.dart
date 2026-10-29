@@ -7,6 +7,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
@@ -51,7 +52,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
 
   @override
   Future<Result<WallOfTheDayEntity?>> fetchToday() async {
-    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+    final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
     try {
       final WallOfTheDayFirestorePointer? pointer = await _firestoreClient.getById<WallOfTheDayFirestorePointer>(
         FirebaseCollections.wallOfTheDay,
@@ -129,7 +130,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
   Future<Result<List<WotdPastPick>>> fetchRecent({int limit = 30}) async {
     bool blockSnapshotReady = false;
     try {
-      await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      await _userBlockRepository.loadBlockedCreators();
       blockSnapshotReady = true;
       final query = await _queryRecentRows(
         FirestoreQuerySpec(
@@ -191,7 +192,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
       const <String>{'unavailable', 'deadline-exceeded', 'network-request-failed', 'no-app'}.contains(failure.code);
 
   List<WotdPastPick> _visiblePicks(List<WotdPastPick> picks) {
-    final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorUids;
+    final BlockedCreators blocked = _userBlockRepository.blockedCreators;
     return picks
         .where((pick) => !BlockedCreatorsFilter.hidesCreatorUid(pick.wallpaper.core.authorUid, blocked))
         .toList(growable: false);
@@ -293,7 +294,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
 
   Future<WallOfTheDayEntity?> _readCachedToday(
     DateTime todayUtc,
-    Set<String>? blocked, {
+    BlockedCreators? blocked, {
     String? wallDocumentId,
   }) async {
     try {
@@ -314,7 +315,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
       return _visibleForCaller(
         entity,
         item.wallpaper.core.authorUid,
-        blocked ?? await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true),
+        blocked ?? await _userBlockRepository.loadBlockedCreators(),
       );
     } catch (error) {
       logger.w('[WallOfTheDayRepository] today snapshot read failed: $error');
@@ -409,7 +410,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
   }
 
   /// Hides the pick if its creator is on the caller's blocked list.
-  WallOfTheDayEntity? _visibleForCaller(WallOfTheDayEntity? entity, String? authorUid, Set<String> blocked) {
+  WallOfTheDayEntity? _visibleForCaller(WallOfTheDayEntity? entity, String? authorUid, BlockedCreators blocked) {
     if (entity == null) {
       return null;
     }

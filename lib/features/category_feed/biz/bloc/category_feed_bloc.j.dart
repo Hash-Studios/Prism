@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/usecase/usecase.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
@@ -11,6 +12,7 @@ import 'package:Prism/features/user_blocks/domain/repositories/user_block_reposi
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
+import 'package:rxdart/rxdart.dart';
 
 part 'category_feed_event.j.dart';
 part 'category_feed_state.j.dart';
@@ -27,20 +29,21 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
     on<_BlockedCreatorsChanged>(_onBlockedCreatorsChanged);
     // Blocking a creator removes their walls from the home feed at once (App Review 1.2).
     _blockedCreatorsSub = _userBlockRepository
-        .watchBlockedCreatorUids()
+        .watchBlockedCreators()
         .skip(1)
-        .listen((blocked) => add(CategoryFeedEvent.blockedCreatorsChanged(blocked: blocked)));
+        .whereType<KnownBlockedCreators>()
+        .listen((blocked) => add(CategoryFeedEvent.blockedCreatorsChanged(blocked: blocked.uids)));
   }
 
   final LoadCategoriesUseCase _loadCategoriesUseCase;
   final FetchCategoryFeedUseCase _fetchCategoryFeedUseCase;
   final UserBlockRepository _userBlockRepository;
-  StreamSubscription<Set<String>>? _blockedCreatorsSub;
+  StreamSubscription<KnownBlockedCreators>? _blockedCreatorsSub;
   int _generation = 0;
 
   void _onBlockedCreatorsChanged(_BlockedCreatorsChanged event, Emitter<CategoryFeedState> emit) {
     if (event.blocked.isEmpty) return;
-    final filtered = BlockedCreatorsFilter.filterFeedItems(state.items, event.blocked);
+    final filtered = BlockedCreatorsFilter.filterFeedItems(state.items, KnownBlockedCreators(event.blocked));
     if (filtered.length != state.items.length) emit(state.copyWith(items: filtered));
   }
 

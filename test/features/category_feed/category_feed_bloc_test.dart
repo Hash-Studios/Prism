@@ -189,6 +189,45 @@ void main() {
     verify(() => fetch(any())).called(1);
   });
 
+  test('an unknown block list keeps the home feed, and a later known list still removes the blocked creator', () async {
+    final load = _MockLoadCategoriesUseCase();
+    final fetch = _MockFetchCategoryFeedUseCase();
+    when(() => load(any())).thenAnswer((_) async => Result.success(const <CategoryEntity>[_home]));
+    when(() => fetch(any())).thenAnswer(
+      (_) async => Result.success(
+        CategoryFeedPage(
+          items: <FeedItemEntity>[
+            _prismItem('1', authorUid: 'blocked-uid'),
+            _prismItem('2', authorUid: 'kept-uid'),
+          ],
+          hasMore: false,
+        ),
+      ),
+    );
+    final blockRepo = FakeUserBlockRepository.pending();
+    final bloc = CategoryFeedBloc(load, fetch, blockRepo);
+    addTearDown(bloc.close);
+
+    bloc.add(const CategoryFeedEvent.started());
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(bloc.state.items.map((e) => e.id), <String>['1', '2']);
+
+    blockRepo.completeInitial(<String>{});
+    await Future<void>.delayed(Duration.zero);
+    blockRepo.emitUnknown();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(bloc.state.items.map((e) => e.id), <String>['1', '2']);
+
+    blockRepo.completeInitial(<String>{'blocked-uid'});
+    await Future<void>.delayed(Duration.zero);
+
+    expect(bloc.state.items.map((e) => e.id), <String>['2']);
+    verify(() => fetch(any())).called(1);
+  });
+
   test('refreshRequested refetches the selected category, and fetchMoreRequested pages it', () async {
     final load = _MockLoadCategoriesUseCase();
     final fetch = _MockFetchCategoryFeedUseCase();

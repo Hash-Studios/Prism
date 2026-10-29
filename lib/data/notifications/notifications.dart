@@ -7,6 +7,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/data/notifications/notification_tombstones.dart';
@@ -82,9 +83,9 @@ Future<List<Map<String, dynamic>>> _fetchNotificationsSince({
   );
 }
 
-bool _isNotificationFromBlockedCreator(InAppNotificationEntity e, Set<String> blockedUids) {
+bool _isNotificationFromBlockedCreator(InAppNotificationEntity e, BlockedCreators blocked) {
   final String uid = e.followerUid?.trim() ?? '';
-  if (uid.isNotEmpty) return blockedUids.contains(uid);
+  if (uid.isNotEmpty) return blocked.blocks(uid);
   final String route = (e.route ?? e.pageName).toLowerCase();
   final String copyKind = e.copyKind?.toLowerCase() ?? '';
   final bool followerNotification =
@@ -95,32 +96,29 @@ bool _isNotificationFromBlockedCreator(InAppNotificationEntity e, Set<String> bl
   return followerNotification;
 }
 
-List<InAppNotificationEntity> _filterBlockedActors(List<InAppNotificationEntity> entities, Set<String> blockedUids) {
-  if (blockedUids.isEmpty) {
+List<InAppNotificationEntity> _filterBlockedActors(
+  List<InAppNotificationEntity> entities,
+  KnownBlockedCreators blocked,
+) {
+  if (blocked.uids.isEmpty) {
     return entities;
   }
   return entities
-      .where((InAppNotificationEntity e) => !_isNotificationFromBlockedCreator(e, blockedUids))
+      .where((InAppNotificationEntity e) => !_isNotificationFromBlockedCreator(e, blocked))
       .toList(growable: false);
 }
 
-Future<Set<String>> _blockedCreatorUids() async {
-  return getIt<UserBlockRepository>().getBlockedCreatorUids(waitForInitialLoad: true);
-}
-
-Future<void> pruneBlockedNotificationsCache({
-  bool waitForInitialLoad = false,
-  NotificationsLocalDataSource? notificationsLocal,
-}) async {
+/// Removes cached notifications from blocked creators. Returns false, and keeps the cache, while the block list is
+/// unknown, because the cache may still hold their notifications.
+Future<bool> pruneBlockedNotificationsCache({NotificationsLocalDataSource? notificationsLocal}) async {
   final NotificationsLocalDataSource local = notificationsLocal ?? getIt<NotificationsLocalDataSource>();
   final String owner = local.ownerId;
   final int generation = local.ownerGeneration;
-  final Set<String> blocked = await _blockedCreatorUids();
-  if (local.ownerId != owner || local.ownerGeneration != generation) return;
-  if (blocked.isEmpty) {
-    return;
-  }
+  final BlockedCreators blocked = await getIt<UserBlockRepository>().loadBlockedCreators();
+  if (blocked is! KnownBlockedCreators) return false;
+  if (local.ownerId != owner || local.ownerGeneration != generation || blocked.uids.isEmpty) return true;
   await local.removeWhere((InAppNotificationEntity item) => _isNotificationFromBlockedCreator(item, blocked));
+  return true;
 }
 
 DateTime _createdAtFrom(Object? value) {
@@ -242,10 +240,11 @@ Future<bool> _syncInAppNotificationsFromRemoteBody({
 
     final DateTime nowUtc = DateTime.now().toUtc();
     final DateTime? lastFetchTime = await notificationsLocal.lastFetchAtUtc();
-    final Set<String> blocked = await _blockedCreatorUids();
-    if (!isCurrentSession()) return false;
+    final BlockedCreators blocked = await getIt<UserBlockRepository>().loadBlockedCreators();
+    // An unknown list would drop every follower notification from the cache for good. Sync again later.
+    if (!isCurrentSession() || blocked is! KnownBlockedCreators) return false;
 
-    if (blocked.isNotEmpty) {
+    if (blocked.uids.isNotEmpty) {
       await notificationsLocal.removeWhere(
         (InAppNotificationEntity item) => _isNotificationFromBlockedCreator(item, blocked),
       );

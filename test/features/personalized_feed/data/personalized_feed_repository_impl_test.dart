@@ -15,6 +15,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -522,36 +523,36 @@ class _EmptyBlocks extends Fake implements UserBlockRepository {
   Set<String> loaded = <String>{};
 
   @override
-  Set<String> get cachedBlockedCreatorUids {
+  BlockedCreators get blockedCreators {
     if (failCachedRead) {
       failCachedRead = false;
       throw StateError('blocked list unavailable');
     }
-    return cached;
+    return KnownBlockedCreators(cached);
   }
 
   @override
-  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) async {
+  Future<BlockedCreators> loadBlockedCreators() async {
     if (loadDelay > Duration.zero) {
       await Future<void>.delayed(loadDelay);
-      return loaded;
+      return KnownBlockedCreators(loaded);
     }
-    if (hangOnWait && waitForInitialLoad) {
-      return Completer<Set<String>>().future;
+    if (hangOnWait) {
+      return Completer<BlockedCreators>().future;
     }
     if (failNext) {
       failNext = false;
       throw StateError('offline');
     }
-    return cached;
+    return KnownBlockedCreators(cached);
   }
 }
 
 class _PendingBlocks extends _EmptyBlocks {
-  final Completer<Set<String>> initial = Completer<Set<String>>();
+  final Completer<BlockedCreators> initial = Completer<BlockedCreators>();
 
   @override
-  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) => initial.future;
+  Future<BlockedCreators> loadBlockedCreators() => initial.future;
 }
 
 class _FailingFavourites extends Fake implements FavouriteWallsRepository {
@@ -2174,7 +2175,7 @@ void main() {
       });
       await Future<void>.delayed(Duration.zero);
       expect(returned, isFalse);
-      blocks.initial.complete(<String>{'blocked-uid'});
+      blocks.initial.complete(KnownBlockedCreators(<String>{'blocked-uid'}));
 
       final page = await pending;
       expect(page!.items.any((item) => item.id == 'blocked'), isFalse);
@@ -2295,6 +2296,20 @@ void main() {
       );
 
       expect(_itemIds((await repository.readCached())!.items), <String>['keep']);
+    });
+
+    test('an unknown block list drops cached Prism creators and keeps cached Wallhaven items', () async {
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: _MemoryFeedCache()
+          ..snapshot = snapshot(<FeedItemEntity>[_prismItem('drop', authorUid: 'blocked-uid'), _wallhavenItem('wh')]),
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+
+      expect(_itemIds((await repository.readCached())!.items), <String>['wh']);
     });
 
     test('marks a snapshot older than the cache lifetime as stale', () async {
@@ -2807,7 +2822,15 @@ class _BlockingBlocks extends _EmptyBlocks {
   }
 
   @override
-  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) async => cached;
+  Future<BlockedCreators> loadBlockedCreators() async => KnownBlockedCreators(cached);
+}
+
+class _UnknownBlocks extends _EmptyBlocks {
+  @override
+  BlockedCreators get blockedCreators => const UnknownBlockedCreators();
+
+  @override
+  Future<BlockedCreators> loadBlockedCreators() async => const UnknownBlockedCreators();
 }
 
 class _FollowingGraphFirestore extends _EmptyFirestore {

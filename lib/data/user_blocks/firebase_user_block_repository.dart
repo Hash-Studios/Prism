@@ -7,6 +7,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
@@ -25,7 +26,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   }
 
   static const Duration _timeout = Duration(seconds: 25);
-  static const Duration _initialLoadTimeout = Duration(seconds: 3);
+  static const Duration _initialLoadTimeout = Duration(seconds: 10);
   static const String _subcollection = 'blockedUsers';
 
   final SessionRepository _session;
@@ -40,9 +41,10 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   late final StreamSubscription<PrismUsersV2> _sessionSubscription;
   StreamSubscription<Set<String>>? _blockedUidsSubscription;
 
-  final BehaviorSubject<Set<String>> _blockedUidsSubject = BehaviorSubject<Set<String>>.seeded(<String>{});
-  Completer<Set<String>> _initialLoadCompleter = Completer<Set<String>>();
-  bool _hasLoadedBlockedCreatorUids = false;
+  final BehaviorSubject<BlockedCreators> _blockedCreatorsSubject = BehaviorSubject<BlockedCreators>.seeded(
+    const UnknownBlockedCreators(),
+  );
+  Completer<BlockedCreators> _initialLoadCompleter = Completer<BlockedCreators>();
   String? _activeUserId;
   bool _disposed = false;
   Future<void>? _disposeFuture;
@@ -61,7 +63,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     while (_lifecycleTasks.isNotEmpty) {
       await Future.wait<void>(List<Future<void>>.of(_lifecycleTasks));
     }
-    await _blockedUidsSubject.close();
+    await _blockedCreatorsSubject.close();
   }
 
   void _trackLifecycle(Future<void> task) {
@@ -89,18 +91,17 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   }
 
   @override
-  Set<String> get cachedBlockedCreatorUids => _blockedUidsSubject.value;
+  BlockedCreators get blockedCreators => _blockedCreatorsSubject.value;
 
   @override
-  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) async {
-    if (!waitForInitialLoad || _hasLoadedBlockedCreatorUids) {
-      return _blockedUidsSubject.value;
-    }
-    return _initialLoadCompleter.future.timeout(_initialLoadTimeout, onTimeout: () => _blockedUidsSubject.value);
+  Future<BlockedCreators> loadBlockedCreators() async {
+    final BlockedCreators current = _blockedCreatorsSubject.value;
+    if (current is KnownBlockedCreators) return current;
+    return _initialLoadCompleter.future.timeout(_initialLoadTimeout, onTimeout: () => _blockedCreatorsSubject.value);
   }
 
   @override
-  Stream<Set<String>> watchBlockedCreatorUids() => _blockedUidsSubject.stream;
+  Stream<BlockedCreators> watchBlockedCreators() => _blockedCreatorsSubject.stream;
 
   @override
   Future<void> clearForUser(String userId) async {
@@ -136,7 +137,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     }
 
     _beginPendingInitialLoad();
-    _blockedUidsSubject.add(const <String>{});
+    _blockedCreatorsSubject.add(const UnknownBlockedCreators());
     _trackLifecycle(_loadLocalBlocks(nextUserId));
     _blockedUidsSubscription = _watchBlockedUids(nextUserId).listen(
       (uids) {
@@ -203,19 +204,20 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   }
 
   void _beginPendingInitialLoad() {
-    _hasLoadedBlockedCreatorUids = false;
     if (_initialLoadCompleter.isCompleted) {
-      _initialLoadCompleter = Completer<Set<String>>();
+      _initialLoadCompleter = Completer<BlockedCreators>();
     }
   }
 
   void _publishSnapshot(Set<String> blockedUids, {bool completeInitialLoad = true}) {
-    final Set<String> normalized = Set<String>.unmodifiable(blockedUids);
-    _blockedUidsSubject.add(normalized);
-    if (completeInitialLoad) _hasLoadedBlockedCreatorUids = true;
-    if (completeInitialLoad && !_initialLoadCompleter.isCompleted) {
-      _initialLoadCompleter.complete(normalized);
-    }
+    if (!completeInitialLoad && _blockedCreatorsSubject.value is UnknownBlockedCreators) return;
+    final KnownBlockedCreators known = KnownBlockedCreators(blockedUids);
+    _blockedCreatorsSubject.add(known);
+    if (!_initialLoadCompleter.isCompleted) _initialLoadCompleter.complete(known);
+  }
+
+  void _publishOptimistic(Set<String> Function(Set<String> uids) update) {
+    if (_blockedCreatorsSubject.value case KnownBlockedCreators(:final uids)) _publishSnapshot(update(uids));
   }
 
   String _blockedUsersPath(String userId) => '${FirebaseCollections.usersV2}/$userId/$_subcollection';
@@ -319,7 +321,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
       final operation = await _saveBlockIntent(uid, tid, desired: true);
       operationId = operation['operationId']! as String;
       if (_activeUserId == uid && _session.currentUser.id == uid) {
-        _publishSnapshot(<String>{..._blockedUidsSubject.value, tid});
+        _publishOptimistic((uids) => <String>{...uids, tid});
       }
     } catch (error) {
       return Result.error(ServerFailure('Could not save block locally: $error'));
@@ -364,7 +366,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
       final operation = await _saveBlockIntent(uid, tid, desired: false);
       operationId = operation['operationId']! as String;
       if (_activeUserId == uid && _session.currentUser.id == uid) {
-        _publishSnapshot(_blockedUidsSubject.value.where((item) => item != tid).toSet());
+        _publishOptimistic((uids) => uids.where((item) => item != tid).toSet());
       }
       final bool sent = await _sendBlockIntentIfCurrent(uid, tid, operationId, () async {
         final cf.HttpsCallable callable = appFunctions.httpsCallable(

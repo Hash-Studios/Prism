@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -19,6 +20,7 @@ import 'package:Prism/logger/logger.dart';
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
+import 'package:rxdart/rxdart.dart';
 
 part 'personalized_feed_event.j.dart';
 part 'personalized_feed_state.j.dart';
@@ -45,9 +47,10 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     // Blocking a creator removes their items from the on-screen feed instantly,
     // without waiting for the next fetch. skip(1) ignores the initial snapshot.
     _blockedCreatorsSub = _userBlockRepository
-        .watchBlockedCreatorUids()
+        .watchBlockedCreators()
         .skip(1)
-        .listen((blocked) => add(PersonalizedFeedEvent.blockedCreatorsChanged(blocked: blocked)));
+        .whereType<KnownBlockedCreators>()
+        .listen((blocked) => add(PersonalizedFeedEvent.blockedCreatorsChanged(blocked: blocked.uids)));
     _dropsWereEnabled = EconomyConfig.notifier.value.flags.dropsEnabled;
     EconomyConfig.notifier.addListener(_onEconomyConfigChanged);
   }
@@ -58,7 +61,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
   final DropsRepository _dropsRepository;
   late bool _dropsWereEnabled;
   int _liveDropRequest = 0;
-  StreamSubscription<Set<String>>? _blockedCreatorsSub;
+  StreamSubscription<KnownBlockedCreators>? _blockedCreatorsSub;
   int _loadVersion = 0;
   Future<void> _lessLikeThisInFlight = Future<void>.value();
   final Set<String> _pendingSeen = <String>{};
@@ -69,7 +72,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     if (event.blocked.isEmpty) {
       return;
     }
-    final filtered = BlockedCreatorsFilter.filterFeedItems(state.items, event.blocked);
+    final filtered = BlockedCreatorsFilter.filterFeedItems(state.items, KnownBlockedCreators(event.blocked));
     if (filtered.length != state.items.length) {
       emit(state.copyWith(items: filtered));
     }

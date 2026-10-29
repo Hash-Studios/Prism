@@ -315,7 +315,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     if (!getIt.isRegistered<UserBlockRepository>()) {
       return CategoryFeedPage(items: items, hasMore: payload['hasMore'] == true);
     }
-    final blocked = await getIt<UserBlockRepository>().getBlockedCreatorUids(waitForInitialLoad: true);
+    final blocked = await getIt<UserBlockRepository>().loadBlockedCreators();
     final visibleItems = items.where((item) => !BlockedCreatorsFilter.hidesFeedItem(item, blocked)).toList();
     return visibleItems.isEmpty ? null : CategoryFeedPage(items: visibleItems, hasMore: payload['hasMore'] == true);
   }

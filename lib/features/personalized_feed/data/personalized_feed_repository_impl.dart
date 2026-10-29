@@ -15,6 +15,7 @@ import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -202,7 +203,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   Future<PersonalizedFeedPage?> _readCachedPage(String scope, {Future<FeedSnapshot?>? snapshot}) async {
     final _CachedFeed? cached = await _readCached(
       scope: scope,
-      blocked: () => _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true),
+      blocked: () => _userBlockRepository.loadBlockedCreators(),
       snapshot: snapshot,
     );
     if (cached == null || cached.items.isEmpty) {
@@ -391,7 +392,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       int successfulSources = 0;
       final List<Object> sourceFailures = <Object>[];
       // Overlaps the pools. Awaited before ranking, so blocked creators never slip in.
-      final Future<Set<String>> blockedFuture = _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      final Future<BlockedCreators> blockedFuture = _userBlockRepository.loadBlockedCreators();
       blockedFuture.ignore();
       // Fresh and gems need nothing from the bootstrap, so they start now.
       final Future<List<RankingCandidate>> freshPool = _pool(
@@ -497,7 +498,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
 
-      final Set<String> blocked = await blockedFuture;
+      final BlockedCreators blocked = await blockedFuture;
       if (!isCurrentSession() || !isCurrentPrime() || !isCurrentGeneration()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
@@ -603,7 +604,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   }
 
   PersonalizedFeedPage _excludingBlocked(PersonalizedFeedPage page) {
-    final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorUids;
+    final BlockedCreators blocked = _userBlockRepository.blockedCreators;
     final List<FeedItemEntity> items = page.items
         .where((item) => !BlockedCreatorsFilter.hidesFeedItem(item, blocked))
         .toList(growable: false);
@@ -862,7 +863,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         });
         rows.add(available.first.buffer.removeAt(0));
       }
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
       if (!isCurrent()) return Result.error(const UnknownFailure('Following request was invalidated'));
       _followingChunks = chunks;
       return Result.success(
@@ -936,7 +937,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       final Map<String, FeedItemEntity> byId = <String, FeedItemEntity>{
         for (final FeedItemEntity item in chunks.expand((chunk) => chunk)) item.id.toUpperCase(): item,
       };
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
       return Result.success(
         PersonalizedFeedPage(
           items: AnimeContentFilter.filterFeedItems(
@@ -1135,15 +1136,12 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   }
 
   Future<List<FeedItemEntity>> _readCachedItems({required String scope}) async =>
-      (await _readCached(
-        scope: scope,
-        blocked: () => _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true),
-      ))?.items ??
+      (await _readCached(scope: scope, blocked: () => _userBlockRepository.loadBlockedCreators()))?.items ??
       const <FeedItemEntity>[];
 
   Future<_CachedFeed?> _readCached({
     required String scope,
-    required Future<Set<String>> Function() blocked,
+    required Future<BlockedCreators> Function() blocked,
     Future<FeedSnapshot?>? snapshot,
   }) async {
     final saved = await (snapshot ?? _feedCacheLocal.read(source: 'personalized', scope: scope));
@@ -1155,7 +1153,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     if (rawItems is! List) {
       return null;
     }
-    final Set<String> blockedUids = await blocked();
+    final BlockedCreators blockedUids = await blocked();
     // A cache written under other content filters may hold Wallhaven items the user now excludes. Caches from
     // older builds may also hold anime Prism walls.
     final bool sameFilters = (payload['filters'] ?? '100.100') == _contentFilters();

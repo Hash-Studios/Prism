@@ -52,6 +52,37 @@ void main() {
       ]);
     });
 
+    test('an unknown block list fails the fetch and keeps the cached follower notification', () async {
+      final blocks = FakeUserBlockRepository.pending();
+      blocks.timeOutInitialLoad();
+      final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[
+        notification('from-that-uid', followerUid: 'that-uid'),
+      ]);
+      getIt.registerSingleton<UserBlockRepository>(blocks);
+
+      final repo = NotificationsRepositoryImpl(local, tombstones);
+      final result = await repo.fetchNotifications(syncRemote: false);
+
+      expect(result.isSuccess, isFalse);
+      expect((await local.readAll()).map((item) => item.id).toList(growable: false), <String>['from-that-uid']);
+    });
+
+    test('a known block list removes the cached follower notification from that uid', () async {
+      final blocks = FakeUserBlockRepository.pending();
+      blocks.completeInitial(<String>{'that-uid'});
+      final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[
+        notification('from-that-uid', followerUid: 'that-uid'),
+      ]);
+      getIt.registerSingleton<UserBlockRepository>(blocks);
+
+      final repo = NotificationsRepositoryImpl(local, tombstones);
+      final result = await repo.fetchNotifications(syncRemote: false);
+
+      expect(result.isSuccess, isTrue);
+      expect(result.data, isEmpty);
+      expect((await local.readAll()), isEmpty);
+    });
+
     test('lists newest first after every change', () async {
       final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[
         notification('old', createdAt: DateTime.utc(2024)),
