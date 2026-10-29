@@ -211,7 +211,7 @@ void main() {
     expect(client.writes, hasLength(1));
     expect(client.writes.single.data?['notificationLocalizationVersion'], 2);
     expect(client.writes.single.data?['notificationLocalizationToken'], 'same-token');
-    expect(settings.get<String>('fcmTokenSynced'), 'uid1|same-token|digest_v2|posts:true');
+    expect(settings.get<String>('fcmTokenSynced'), 'uid1|same-token|digest_v2|posts:true|folders:true');
   });
 
   test('writes localization version two with the current token', () async {
@@ -384,6 +384,8 @@ void main() {
       'fcmTokenBindingToken': 'refreshed-token',
       'postAlerts': true,
       'postAlertsToken': 'refreshed-token',
+      'folderAlerts': true,
+      'folderAlertsToken': 'refreshed-token',
     });
   });
 

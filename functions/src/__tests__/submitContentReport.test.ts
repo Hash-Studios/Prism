@@ -87,11 +87,11 @@ test("a wall request report resolves the request collection", async (t) => {
   assert.equal(store.get(`contentReports/${result.reportId}`)?.targetCollection, "wallRequests");
 });
 
-test("a wall request report for a missing request is not found, and a folder report is invalid", async (t) => {
+test("a wall request report for a missing request is not found, and an unknown type is invalid", async (t) => {
   const store = setup(t);
   const before = [...store.entries()];
   await assert.rejects(() => submitContentReport.run(request({contentType: "wallRequest", targetFirestoreDocId: "missing"})),
     {code: "not-found"});
-  await assert.rejects(() => submitContentReport.run(request({contentType: "folder"})), {code: "invalid-argument"});
+  await assert.rejects(() => submitContentReport.run(request({contentType: "board"})), {code: "invalid-argument"});
   assert.deepEqual([...store.entries()], before);
 });

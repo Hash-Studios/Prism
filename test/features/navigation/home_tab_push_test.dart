@@ -248,6 +248,8 @@ void main() {
       'fcmTokenBindingToken': 'initial-token',
       'postAlerts': true,
       'postAlertsToken': 'initial-token',
+      'folderAlerts': true,
+      'folderAlertsToken': 'initial-token',
     });
     expect(subscribed, contains('user_loc_v1'));
     expect(subscribed, isNot(contains('u_u1_loc_v1')));
@@ -265,6 +267,8 @@ void main() {
       'fcmTokenBindingToken': 'refreshed-token',
       'postAlerts': true,
       'postAlertsToken': 'refreshed-token',
+      'folderAlerts': true,
+      'folderAlertsToken': 'refreshed-token',
     });
     expect(subscribed, contains('user_loc_v1'));
     expect(subscribed, isNot(contains('u_u1_loc_v1')));

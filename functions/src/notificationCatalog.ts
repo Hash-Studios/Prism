@@ -22,6 +22,7 @@ export type NotificationCopy =
       wallCount: number;
       tags: string;
     }
+  | { kind: "folderDigest"; folderName: string; folderCount: number; wallCount: number; tags: string }
   | { kind: "wallRequestFilled"; requestText: string }
   | { kind: "drawWinner" }
   | { kind: "giftReceived"; senderName: string }
@@ -184,6 +185,14 @@ export function renderNotificationCopy(
       title: followDigestTitle(copy),
       body: copy.tags || "Tap to see them all.",
     };
+  case "folderDigest":
+    return {
+      kind: copy.kind,
+      args: {folderName: copy.folderName, folderCount: copy.folderCount, wallCount: copy.wallCount, tags: copy.tags},
+      title: copy.folderCount > 1 ? `New in ${copy.folderName} and ${copy.folderCount - 1} more` :
+        `New in ${copy.folderName}`,
+      body: copy.tags || "Tap to see them all.",
+    };
   case "wallRequestFilled":
     return {
       kind: copy.kind,
@@ -339,6 +348,13 @@ export function nativeNotificationLocalization(
       pair: [stringArg("artistName"), stringArg("secondArtistName"), walls],
       group: [stringArg("artistName"), String(creators - 1), walls],
     }[shape];
+    tagsBody();
+    break;
+  }
+  case "folderDigest": {
+    const folders = Number(message.args.folderCount ?? 0);
+    titleSuffix = folders > 1 ? "_more" : "_one";
+    titleArgs = folders > 1 ? [stringArg("folderName"), String(folders - 1)] : [stringArg("folderName")];
     tagsBody();
     break;
   }

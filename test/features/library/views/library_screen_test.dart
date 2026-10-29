@@ -1,6 +1,7 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
@@ -14,6 +15,7 @@ import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_u
 import 'package:Prism/features/library/views/pages/library_screen.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
 import 'package:Prism/features/wallpaper_history/views/widgets/applied_wallpaper_tile.dart';
@@ -37,6 +39,10 @@ class _MockFetchFavouriteWallsUseCase extends Mock implements FetchFavouriteWall
 class _MockToggleFavouriteWallUseCase extends Mock implements ToggleFavouriteWallUseCase {}
 
 class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWallsUseCase {}
+
+class _MockSetFavouritePinUseCase extends Mock implements SetFavouritePinUseCase {}
+
+class _Firestore extends Fake implements FirestoreClient {}
 
 class _LibraryRouter extends AppRouter {
   @override
@@ -69,10 +75,19 @@ void main() {
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
     connectivity = FakeConnectivityService();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
     getIt
       ..registerSingleton<ConnectivityService>(connectivity)
-      ..registerSingleton<WallpaperHistoryStore>(WallpaperHistoryStore(SettingsLocalDataSource(InMemoryLocalStore())))
-      ..registerFactory<WallpaperHistoryBloc>(() => WallpaperHistoryBloc(getIt<WallpaperHistoryStore>()));
+      ..registerSingleton<WallpaperHistoryStore>(WallpaperHistoryStore(settings))
+      ..registerSingleton<RecentlyViewedStore>(RecentlyViewedStore(settings))
+      ..registerSingleton<SyncedHistoryStore>(SyncedHistoryStore(settings, _Firestore(), ownerId: () => ''))
+      ..registerFactory<WallpaperHistoryBloc>(
+        () => WallpaperHistoryBloc(
+          getIt<WallpaperHistoryStore>(),
+          getIt<SyncedHistoryStore>(),
+          getIt<RecentlyViewedStore>(),
+        ),
+      );
     fetch = _MockFetchFavouriteWallsUseCase();
     when(() => fetch(any())).thenAnswer((_) async => Result.success(const <FavouriteWallEntity>[]));
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(
@@ -111,7 +126,12 @@ void main() {
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     // Built inside the test body so the bloc runs on the fake-async clock the tester pumps.
-    bloc = FavouriteWallsBloc(fetch, _MockToggleFavouriteWallUseCase(), _MockClearFavouriteWallsUseCase());
+    bloc = FavouriteWallsBloc(
+      fetch,
+      _MockToggleFavouriteWallUseCase(),
+      _MockClearFavouriteWallsUseCase(),
+      _MockSetFavouritePinUseCase(),
+    );
     Widget home = BlocProvider<FavouriteWallsBloc>.value(
       value: bloc,
       child: LibraryScreen(initialTab: initialTab),
@@ -133,7 +153,12 @@ void main() {
     final dispatcher = DeepLinkDispatcher(router: router, whenReady: () async => true);
     addTearDown(dispatcher.dispose);
     addTearDown(router.dispose);
-    bloc = FavouriteWallsBloc(fetch, _MockToggleFavouriteWallUseCase(), _MockClearFavouriteWallsUseCase());
+    bloc = FavouriteWallsBloc(
+      fetch,
+      _MockToggleFavouriteWallUseCase(),
+      _MockClearFavouriteWallsUseCase(),
+      _MockSetFavouritePinUseCase(),
+    );
     await tester.pumpWidget(
       BlocProvider<FavouriteWallsBloc>.value(
         value: bloc,
@@ -183,29 +208,24 @@ void main() {
     expect(find.text('No favourites yet'), findsOneWidget);
   });
 
-  testWidgets('iOS has no History tab, because it cannot set a wallpaper', (tester) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    try {
-      await pumpLibrary(tester);
+  for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {
+    testWidgets('the History tab is shown on ${platform.name}', (tester) async {
+      debugDefaultTargetPlatformOverride = platform;
+      try {
+        await pumpLibrary(tester);
 
-      expect(tester.widgetList<Tab>(find.byType(Tab)).map((tab) => tab.text), <String>[
-        'Favourites',
-        'Folders',
-        'Downloads',
-      ]);
-    } finally {
-      debugDefaultTargetPlatformOverride = null;
-    }
-  });
-
-  test('libraryTabs drops History when the device cannot set a wallpaper', () {
-    expect(libraryTabs(canSetWallpaper: false), <LibraryTab>[
-      LibraryTab.favourites,
-      LibraryTab.folders,
-      LibraryTab.downloads,
-    ]);
-    expect(libraryTabs(canSetWallpaper: true), LibraryTab.values);
-  });
+        expect(find.widgetWithText(Tab, 'History'), findsOneWidget);
+        expect(tester.widgetList<Tab>(find.byType(Tab)).map((tab) => tab.text), <String>[
+          'Favourites',
+          'Folders',
+          'Downloads',
+          'History',
+        ]);
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+  }
 
   testWidgets('opening tracks the initial tab once, and each later tab change is tracked', (tester) async {
     await pumpLibrary(tester);
@@ -235,7 +255,7 @@ void main() {
     await pumpLibrary(tester, initialTab: LibraryTab.history);
 
     expect(find.text('No wallpapers yet'), findsOneWidget);
-    expect(find.byKey(const ValueKey<String>('library-clear-history')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('history-clear-setAndDownloaded')), findsNothing);
     expect(tabNames(), <String>['history']);
   });
 
@@ -254,7 +274,7 @@ void main() {
     await pumpLibrary(tester, initialTab: LibraryTab.history);
     expect(find.byType(AppliedWallpaperTile), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey<String>('library-clear-history')));
+    await tester.tap(find.byKey(const ValueKey<String>('history-clear-setAndDownloaded')));
     await settle(tester);
     await tester.tap(find.text('Clear history'));
     await settle(tester);
@@ -278,7 +298,7 @@ void main() {
     );
     await pumpLibrary(tester, initialTab: LibraryTab.history);
 
-    await tester.tap(find.byKey(const ValueKey<String>('library-clear-history')));
+    await tester.tap(find.byKey(const ValueKey<String>('history-clear-setAndDownloaded')));
     await settle(tester);
     expect(find.text('Clear history?'), findsOneWidget);
     await tester.tap(find.byTooltip('Close'));
@@ -296,12 +316,12 @@ void main() {
     await tapTab(tester, 'Folders');
     await settle(tester);
     expect(find.byKey(const ValueKey<String>('library-new-folder')), findsNothing);
-    expect(find.byKey(const ValueKey<String>('library-clear-history')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('history-clear-setAndDownloaded')), findsNothing);
 
     await tapTab(tester, 'Downloads');
     await settle(tester);
     expect(find.byKey(const ValueKey<String>('library-new-folder')), findsNothing);
-    expect(find.byKey(const ValueKey<String>('library-clear-history')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('history-clear-setAndDownloaded')), findsNothing);
   });
 
   // The expected colours come from the same helpers the screen uses, so the test catches a swapped colour.
@@ -385,14 +405,12 @@ void main() {
     expect(tabBarIndex(tester), 3);
   });
 
-  testWidgets('on iOS, prism://library?tab=history falls back to Favourites and tab=downloads is index 2', (
-    tester,
-  ) async {
+  testWidgets('on iOS, prism://library?tab=history opens History and tab=downloads is index 2', (tester) async {
     final host = await pumpDeepLinkHost(tester);
 
     await openLink(tester, host.dispatcher, 'prism://library?tab=history');
     expect(host.router.topRoute.args, const LibraryRouteArgs(initialTab: LibraryTab.history));
-    expect(tabBarIndex(tester), 0);
+    expect(tabBarIndex(tester), 3);
 
     await openLink(tester, host.dispatcher, 'prism://library?tab=downloads');
     expect(host.router.topRoute.args, const LibraryRouteArgs(initialTab: LibraryTab.downloads));

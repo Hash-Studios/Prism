@@ -94,6 +94,12 @@ String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
     title: _followDigestTitle(args, l10n),
     body: _stringArg(args, 'tags').trim().isEmpty ? l10n.notifPushFollowDigestBodyUntitled : _stringArg(args, 'tags'),
   ),
+  'folderDigest' => (
+    title: _intArg(args, 'folderCount') > 1
+        ? l10n.notifPushFolderDigestTitleMore(_stringArg(args, 'folderName'), _intArg(args, 'folderCount') - 1)
+        : l10n.notifPushFolderDigestTitleOne(_stringArg(args, 'folderName')),
+    body: _stringArg(args, 'tags').trim().isEmpty ? l10n.notifPushFollowDigestBodyUntitled : _stringArg(args, 'tags'),
+  ),
   'dropLastCall' => (
     title: l10n.notifPushDropLastCallTitle,
     body: l10n.notifPushDropLastCallBody(_stringArg(args, 'dropTitle'), _intArg(args, 'hoursLeft')),

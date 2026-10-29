@@ -38,13 +38,15 @@ service cloud.firestore {
           && email is string && email == authEmail();
     }
 
+    // pinnedAt is optional; when present it is the time the owner pinned the favourite.
     // favouriteWallToDoc stores string ids for every provider, including Pexels numeric ids.
     // Optional media/metadata fields vary by provider and by shipped client version.
     function validFavourite(docId) {
       let data = request.resource.data;
       return data.id is string && data.id == docId
           && data.provider is string
-          && data.provider.lower() in ['prism', 'wall_of_the_day', 'walloftheday', 'wallhaven', 'pexels'];
+          && data.provider.lower() in ['prism', 'wall_of_the_day', 'walloftheday', 'wallhaven', 'pexels']
+          && (!('pinnedAt' in data) || data.pinnedAt is timestamp);
     }
 
     // New profiles start empty: coins, premium and coinState are server-owned.
@@ -253,6 +255,12 @@ service cloud.firestore {
         allow read, write: if isOwner(userId) || isConfiguredAdmin();
       }
 
+      // Public folders this user follows. Written only by the setFolderFollow callable.
+      match /followedFolders/{folderId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
       // Block list: owner can read; writes only via Cloud Functions (Admin SDK).
       match /blockedUsers/{blockedId} {
         allow read: if isOwner(userId);
@@ -267,6 +275,37 @@ service cloud.firestore {
 
       match /setups/{docId} {
         allow read, create, update, delete: if isOwner(userId) || isConfiguredAdmin();
+      }
+
+      // Walls the user set or downloaded, so they come back on a new phone. The thumbnail is the only link:
+      // no original URL, and no signed link. The client keeps at most 500 and deletes the oldest; deleteAccount
+      // removes the rest.
+      function validHistoryEntry(key) {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['id', 'provider', 'thumb', 'action', 'at'])
+            && data.keys().hasAll(['id', 'provider', 'thumb', 'action', 'at'])
+            && data.id is string && data.id.size() > 0 && data.id.size() <= 128
+            && data.provider in ['prism', 'wallhaven', 'pexels']
+            && key == data.provider + '_' + data.id
+            && data.thumb is string && data.thumb.size() <= 1024
+            && data.thumb.matches('https://[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*/[^#]*')
+            && !data.thumb.matches('(?i).*[?&](signature|googleaccessid|sig|x-amz-[a-z0-9-]+|x-goog-[a-z0-9-]+)(=[^&#]*)?(&|#|$).*')
+            && !data.thumb.matches('(?i).*[?&][^=&]*%[^=&]*=.*')
+            && data.action in ['set', 'download']
+            && data.at is timestamp;
+      }
+
+      function historyParentOpen(userId) {
+        let parent = /databases/$(database)/documents/usersv2/$(userId);
+        let deletionBarrier = /databases/$(database)/documents/creatorDeletionState/$(userId);
+        return exists(parent)
+            && get(parent).data.get('deleted', false) != true
+            && (!exists(deletionBarrier) || get(deletionBarrier).data.get('closed', false) != true);
+      }
+
+      match /history/{key} {
+        allow read, delete: if isOwner(userId) && historyParentOpen(userId);
+        allow create, update: if isOwner(userId) && historyParentOpen(userId) && validHistoryEntry(key);
       }
     }
 
@@ -344,6 +383,30 @@ service cloud.firestore {
             && resource.data.ownerId == request.auth.uid
             && getAfter(/databases/$(database)/documents/folders/$(folderId)).data.ownerId == request.auth.uid
             && validFolderItem(itemKey);
+      }
+    }
+
+    // Public folders: the server projection of a folder its owner made public (functions/src/publicFolders.ts).
+    // Only the Admin SDK writes it. A block in either direction hides it, and items need a live header.
+    match /publicFolders/{folderId} {
+      function notBlocked(ownerId) {
+        return !exists(/databases/$(database)/documents/usersv2/$(ownerId)/blockedUsers/$(request.auth.uid))
+            && !exists(/databases/$(database)/documents/usersv2/$(request.auth.uid)/blockedUsers/$(ownerId));
+      }
+
+      allow read: if isSignedIn() && notBlocked(resource.data.ownerId);
+      allow write: if false;
+
+      match /items/{itemKey} {
+        allow read: if isSignedIn()
+            && exists(/databases/$(database)/documents/publicFolders/$(folderId))
+            && notBlocked(get(/databases/$(database)/documents/publicFolders/$(folderId)).data.ownerId);
+        allow write: if false;
+      }
+
+      // Each user reads their own follows in usersv2/{uid}/followedFolders.
+      match /followers/{followerUid} {
+        allow read, write: if false;
       }
     }
 
@@ -453,6 +516,15 @@ service cloud.firestore {
     }
 
     match /userBlockRateByTarget/{docId} {
+      allow read, write: if false;
+    }
+
+    // Public folder rate limits (Cloud Functions only).
+    match /folderVisibilityRateDaily/{docId} {
+      allow read, write: if false;
+    }
+
+    match /folderFollowRateDaily/{docId} {
       allow read, write: if false;
     }
 

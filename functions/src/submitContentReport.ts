@@ -31,18 +31,20 @@ function normalizeTargetDocId(raw: unknown): string {
   return t;
 }
 
-type ContentType = "wall" | "setup" | "user" | "wallRequest";
+type ContentType = "wall" | "setup" | "user" | "folder" | "wallRequest";
 
 const COLLECTION_BY_CONTENT_TYPE: Record<ContentType, string> = {
   wall: "walls",
   setup: "setups",
   user: "usersv2",
+  // Only a public folder can be reported, so the target is its projection.
+  folder: "publicFolders",
   wallRequest: "wallRequests",
 };
 
 function normalizeContentType(raw: unknown): ContentType {
   if (typeof raw !== "string" || !Object.prototype.hasOwnProperty.call(COLLECTION_BY_CONTENT_TYPE, raw)) {
-    throw new HttpsError("invalid-argument", "contentType must be 'wall', 'setup', 'user', or 'wallRequest'.");
+    throw new HttpsError("invalid-argument", "contentType must be 'wall', 'setup', 'user', 'folder', or 'wallRequest'.");
   }
   return raw as ContentType;
 }

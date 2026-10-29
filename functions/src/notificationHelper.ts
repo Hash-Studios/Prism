@@ -218,6 +218,15 @@ export function fcmMessage(
       wallCount: Number(payload.message.args.wallCount ?? 0),
       tags: bounded(payload.message.args.tags, 120),
     }),
+  } : payload.message?.kind === "folderDigest" ? {
+    ...payload,
+    ...notificationCopyPayload({
+      kind: "folderDigest",
+      folderName: bounded(payload.message.args.folderName, 80),
+      folderCount: Number(payload.message.args.folderCount ?? 0),
+      wallCount: Number(payload.message.args.wallCount ?? 0),
+      tags: bounded(payload.message.args.tags, 120),
+    }),
   } : payload.message?.kind === "wotdForAudience" ? {
     ...payload,
     ...notificationCopyPayload({
@@ -369,6 +378,8 @@ export interface PushRecipient {
   loggedOut?: boolean;
   /** When set, deliver only if this exact post-alert token is still enabled in the private session. */
   postAlertsToken?: string;
+  /** When set, deliver only if this exact folder-alert token is still enabled in the private session. */
+  folderAlertsToken?: string;
   /** Deprecated legacy token input. Kept for caller compatibility; never used for delivery. */
   legacyToken?: unknown;
 }
@@ -394,6 +405,7 @@ export async function userPushTokens(
   uid: string,
   legacyToken: unknown,
   expectedPostAlertsToken?: string,
+  expectedFolderAlertsToken?: string,
 ): Promise<UserPushToken[]> {
   let session: Record<string, unknown> | undefined;
   try {
@@ -402,13 +414,15 @@ export async function userPushTokens(
     ).data();
   } catch (err) {
     logger.warn("Could not read the session FCM token.", {uid, err});
-    if (expectedPostAlertsToken) throw err;
+    if (expectedPostAlertsToken || expectedFolderAlertsToken) throw err;
   }
   const sessionToken = pickFcmToken(session?.fcmToken, legacyToken);
   if (expectedPostAlertsToken && (session?.postAlerts !== true ||
     session?.postAlertsToken !== expectedPostAlertsToken || sessionToken !== expectedPostAlertsToken ||
     session?.notificationLocalizationVersion !== 2 ||
     session?.notificationLocalizationToken !== expectedPostAlertsToken)) return [];
+  if (expectedFolderAlertsToken && (session?.folderAlerts !== true ||
+    session?.folderAlertsToken !== expectedFolderAlertsToken || sessionToken !== expectedFolderAlertsToken)) return [];
   if (sessionToken) {
     if (
       session?.fcmTokenBindingVersion !== FCM_TOKEN_BINDING_VERSION ||
@@ -426,10 +440,17 @@ export async function userPushTokens(
   return [];
 }
 
-async function userCanReceivePersonalPush(uid: string, throwOnReadError = false): Promise<boolean> {
+async function userCanReceivePersonalPush(
+  uid: string, throwOnReadError = false, checkDeletion = false,
+): Promise<boolean> {
   try {
-    const user = (await database.doc(`usersv2/${uid}`).get()).data();
-    return Boolean(user) && user?.loggedIn !== false;
+    const [account, barrier] = await Promise.all([
+      database.doc(`usersv2/${uid}`).get(),
+      checkDeletion ? database.doc(`creatorDeletionState/${uid}`).get() : Promise.resolve(undefined),
+    ]);
+    const user = account.data();
+    return Boolean(user) && user?.loggedIn !== false &&
+      (!checkDeletion || (user?.deleted !== true && barrier?.data()?.closed !== true));
   } catch (err) {
     logger.warn("Could not confirm the personal push recipient account.", {uid, err});
     if (throwOnReadError) throw err;
@@ -457,6 +478,14 @@ export async function sendToUser(
   pushEnabled = true,
 ): Promise<boolean> {
   const inboxPayload = {...payload, fcmTarget: undefined};
+  if (recipient.folderAlertsToken) {
+    if (!recipient.uid || !pushEnabled || recipient.loggedOut) return true;
+    const [open, tokens] = await Promise.all([
+      userCanReceivePersonalPush(recipient.uid, true, true),
+      userPushTokens(recipient.uid, recipient.legacyToken, recipient.postAlertsToken, recipient.folderAlertsToken),
+    ]);
+    if (!open || tokens.length === 0) return true;
+  }
   await sendNotification(inboxPayload);
   if (!pushEnabled || recipient.loggedOut) return true;
 
@@ -480,14 +509,15 @@ export async function sendToUser(
     });
     return true;
   }
-  if (!(await userCanReceivePersonalPush(recipient.uid, Boolean(recipient.postAlertsToken)))) return true;
+  if (!(await userCanReceivePersonalPush(recipient.uid, Boolean(recipient.postAlertsToken || recipient.folderAlertsToken),
+    Boolean(recipient.folderAlertsToken)))) return true;
   const collapseKey = payload.collapseKey ?? personalCollapseKey(payload);
   const targets: Array<{
     fcmTarget: NonNullable<NotificationPayload["fcmTarget"]>;
     nativeLocalization?: boolean;
     nativeLocalizationVersion?: 1 | 2;
   }> = [
-    ...(await userPushTokens(recipient.uid, recipient.legacyToken, recipient.postAlertsToken)).map(
+    ...(await userPushTokens(recipient.uid, recipient.legacyToken, recipient.postAlertsToken, recipient.folderAlertsToken)).map(
       ({token, nativeLocalization, nativeLocalizationVersion}) => ({
         fcmTarget: {token},
         nativeLocalization,
@@ -508,7 +538,7 @@ export async function sendToUser(
     ),
   );
   if (targets.length === 0) {
-    return recipient.postAlertsToken ? true : sendInboxNudge(recipient.uid, payload.data.route);
+    return recipient.postAlertsToken || recipient.folderAlertsToken ? true : sendInboxNudge(recipient.uid, payload.data.route);
   }
   return results.some(Boolean);
 }

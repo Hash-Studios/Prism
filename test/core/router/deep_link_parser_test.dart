@@ -59,6 +59,13 @@ void main() {
     expect((action as PageLinkIntent).path, '/user/alice');
   });
 
+  test('parses canonical folder path link', () {
+    final DeepLinkActionEntity action = parser.parse(Uri.parse('https://prismwalls.com/folder/AbC123_x-9'));
+
+    expect(action, isA<PageLinkIntent>());
+    expect((action as PageLinkIntent).path, '/folder/AbC123_x-9');
+  });
+
   test('parses legacy user alias link', () {
     final DeepLinkActionEntity action = parser.parse(Uri.parse('https://prismwalls.com/fprofile?username=bob'));
 
@@ -206,5 +213,15 @@ void main() {
       expect(parser.parse(Uri.parse('https://prismwalls.com/')), isA<PageLinkIntent>());
       expect(parser.parse(Uri.parse('https://prismwalls.com/l')), isA<UnknownIntent>());
     });
+  });
+
+  test('the Wall of the Day tile link for a protected wall opens that wall', () {
+    final ShareLinkIntent share =
+        parser.parse(Uri.parse('prism://share?id=protected-doc&source=prism&url&thumb=preview')) as ShareLinkIntent;
+
+    expect(share.wallId, 'protected-doc');
+    expect(share.source, WallpaperSource.prism);
+    expect(share.wallpaperUrl, '');
+    expect(share.thumbnailUrl, 'preview');
   });
 }

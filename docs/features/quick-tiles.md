@@ -111,14 +111,24 @@ The tile state updates when the user opens the shade (`onStartListening`) and af
 
 Before, the cache was cleared on cold start, before favourites loaded. The tile then had an empty list. Now `FavouriteQuickTileListener` clears the cache only when the user logs out or switches account. It writes the list only when the user is signed in and favourites have loaded for that user.
 
+### Wall of the Day tile and protected walls
+
+Most Prism walls now have no public original. Their `url` is empty. Before this fix, the tile stayed unavailable for these walls, even after the user opened Prism.
+
+Now, when the user downloaded today's wall, the app stores the original under the key `wotd:<wall document id>`. This is the same key that iOS uses. The tile then sets that file.
+
+When the user did not download today's wall, the tile opens Prism at today's wall. The app stores a `prism://share` link for the wall in `quick_tile.wotd.open_link`. The tile opens only links that start with `prism://share?`. A public URL or a downloaded original clears the link, and the tile sets the wallpaper again.
+
+`WallpaperTileService` is the shared base class. It is not a fourth tile. Prism has three tiles.
+
 ## Limits
 
-- "Add to Quick Settings", the tile messages and the work-finishing change were not compiled and were not run on a device. CI compiles the Kotlin. A person must test them on an Android 13 or newer device.
-
-- The Kotlin changes were not compiled and were not run on a device or emulator. This covers `WallpaperTileService.kt`, `MyTileService.kt`, `WotdTileService.kt`, and `FavsTileService.kt`. Treat these parts as untested:
-  - the Unavailable state and subtitle
-  - the Wallhaven `categories` and `ratios=portrait` query
-  - the Pexels `page` and `large2x` change
+- Emulator proof (2026-10-29, API 36):
+  - The tiles were added with `cmd statusbar add-tile`. They were tapped with `cmd statusbar click-tile`.
+  - Random Favourite sets a favourite on home and lock. The tile shows active while it works.
+  - Shuffle shows unavailable with "Open Prism to set up" until the Quick tiles screen seeds a category. Then it sets a Pexels wall.
+  - Offline, Shuffle and Random Favourite show "No connection. Try again." They keep the wallpaper.
+  - A toast shown while the shade is open is hidden by the system. It shows after the shade closes.
 - The Dart parts have tests: defaults seeding, the category mirror, and the favourites listener.
 - The Wall of the Day tile needs the app to cache the URL first. Open Prism once a day.
 - The Random Favourite tile needs a signed-in user with favourites.

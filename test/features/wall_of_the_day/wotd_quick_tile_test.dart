@@ -80,6 +80,7 @@ void main() {
   late OfflineAssetFixture fixture;
 
   setUp(() async {
+    SharedPreferences.resetStatic();
     fixture = await OfflineAssetFixture.create(cacheMissByDefault: true);
     fixture.install();
   });
@@ -183,6 +184,96 @@ void main() {
     SharedPreferences.resetStatic();
   }
 
+  Future<void> verifyAndroidProtectedHandoff(WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      PersistenceKeys.quickTileWotdTarget: 'both',
+      PersistenceKeys.quickTileWotdUrl: 'https://example.com/old.jpg',
+    });
+    app_state.prismUser = profileUser(id: 'alice');
+    addTearDown(() => app_state.prismUser = profileUser(id: '', loggedIn: false));
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final index = DownloadedWallIndex(SettingsLocalDataSource(InMemoryLocalStore()), ownerId: () => 'alice');
+    getIt.registerSingleton<DownloadedWallIndex>(index);
+    // Reset before the handoff test registers its own index.
+    final now = DateTime.now().toUtc();
+    final day = DateTime.utc(now.year, now.month, now.day);
+    final wall = WallOfTheDayEntity(
+      wallId: 'logical-id',
+      url: '',
+      thumbnailUrl: 'preview',
+      photographer: 'Ana',
+      wallDocumentId: 'protected-doc',
+      featuredDayUtc: day,
+    );
+    final bloc = _MockWotdBloc();
+    whenListen(
+      bloc,
+      const Stream<WotdState>.empty(),
+      initialState: WotdState.initial().copyWith(status: LoadStatus.success, entity: wall),
+    );
+    final session = _MockSessionBloc();
+    final states = StreamController<SessionState>();
+    whenListen(
+      session,
+      states.stream,
+      initialState: SessionState.initial().copyWith(
+        session: const SessionEntity(userId: 'alice', loggedIn: true, premium: false, subscriptionTier: 'free'),
+      ),
+    );
+    final file = File('${fixture.directory.path}/PrismDownloads/acquired.png');
+    file.parent.createSync(recursive: true);
+    file.writeAsBytesSync((await fixture.createImage('original.png')).readAsBytesSync());
+    var listed = <String>[];
+    const channel = BasicMessageChannel<Object?>(
+      'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
+      PrismMediaHostApi.pigeonChannelCodec,
+    );
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockDecodedMessageHandler<Object?>(
+      channel,
+      (_) async => <Object?>[DownloadItemsResult(success: true, items: listed)],
+    );
+    addTearDown(() => messenger.setMockDecodedMessageHandler<Object?>(channel, null));
+    await tester.pumpWidget(
+      _withWotdAndSession(bloc, const WotdQuickTileListener(child: SizedBox.shrink()), sessionBloc: session),
+    );
+    final prefs = await SharedPreferences.getInstance();
+    await waitForRealIo(
+      tester,
+      () => prefs.getString('quick_tile.wotd.url') == '',
+      reason: 'protected WOTD quick-tile URL persistence',
+    );
+    expect(
+      prefs.getString(QuickTileConfigService.wotdOpenLinkKey),
+      'prism://share?id=protected-doc&source=prism&url&thumb=preview',
+    );
+    listed = [file.path];
+    await index.remember(link: 'https://expired.example/acquired.png', id: 'logical-id', source: WallpaperSource.prism);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await waitForRealIo(
+      tester,
+      () => prefs.getString('quick_tile.wotd.retained') != null,
+      reason: 'protected original acquisition handoff mirror',
+    );
+    expect(jsonDecode(prefs.getString('offline.native_asset_paths')!), <String, String>{
+      'wotd:protected-doc': file.path,
+    });
+    final retainedMetadata = jsonDecode(prefs.getString('quick_tile.wotd.retained')!) as Map<String, Object?>;
+    expect(retainedMetadata['assetKey'], 'wotd:protected-doc');
+    expect(prefs.getString('quick_tile.wotd.url'), '');
+    expect(prefs.getString(QuickTileConfigService.wotdOpenLinkKey), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await states.close();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    var drained = false;
+    NativeAssetPathsStore.replaceGroup('category', const <String, String>{}).then((_) => drained = true);
+    await waitForRealIo(tester, () => drained, reason: 'protected handoff mirror drained');
+    debugDefaultTargetPlatformOverride = null;
+    await getIt.reset();
+  }
+
   Future<void> verifyOriginalAcquisitionHandoff(WidgetTester tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{
       PersistenceKeys.quickTileWotdTarget: 'both',
@@ -195,7 +286,8 @@ void main() {
     final index = DownloadedWallIndex(SettingsLocalDataSource(InMemoryLocalStore()), ownerId: () => 'alice');
     getIt.registerSingleton<DownloadedWallIndex>(index);
     addTearDown(() => getIt.reset());
-    final day = DateTime.utc(2026, 8, 24);
+    final now = DateTime.now().toUtc();
+    final day = DateTime.utc(now.year, now.month, now.day);
     final wall = WallOfTheDayEntity(
       wallId: 'logical-id',
       url: '',
@@ -268,6 +360,14 @@ void main() {
       reason: 'sign-out clears retained metadata',
     );
     expect(prefs.getString('${NativeAssetPathsStore.preferenceKey}.wotd'), '{}');
+    await prefs.setString(QuickTileConfigService.wotdOpenLinkKey, 'sentinel');
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await waitForRealIo(
+      tester,
+      () => prefs.getString(QuickTileConfigService.wotdOpenLinkKey) != 'sentinel',
+      reason: 'lifecycle refresh after sign-out does not restore the protected-wall link',
+    );
+    expect(prefs.getString(QuickTileConfigService.wotdOpenLinkKey), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     await states.close();
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
@@ -276,6 +376,170 @@ void main() {
     NativeAssetPathsStore.replaceGroup('category', const <String, String>{}).then((_) => drained = true);
     await waitForRealIo(tester, () => drained, reason: 'handoff mirror drained');
     debugDefaultTargetPlatformOverride = null;
+  }
+
+  Future<void> verifyProtectedLinkRequiresCurrentDayAndSession(WidgetTester tester, String scenario) async {
+    Future<void> verifyWall({required DateTime day, required bool loggedIn, required String reason}) async {
+      app_state.prismUser = loggedIn ? profileUser(id: 'alice') : profileUser(id: '', loggedIn: false);
+      if (loggedIn) {
+        await getIt.reset();
+        getIt.registerSingleton<DownloadedWallIndex>(
+          DownloadedWallIndex(SettingsLocalDataSource(InMemoryLocalStore()), ownerId: () => 'alice'),
+        );
+      }
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        PersistenceKeys.quickTileWotdTarget: 'both',
+        PersistenceKeys.quickTileWotdUrl: 'https://example.com/old.jpg',
+        QuickTileConfigService.wotdOpenLinkKey: 'prism://share?id=old&source=prism&url&thumb=preview',
+      });
+      final WallOfTheDayEntity wall = WallOfTheDayEntity(
+        wallId: 'protected-wall',
+        url: '',
+        thumbnailUrl: 'preview',
+        photographer: 'Ana',
+        wallDocumentId: 'protected-doc',
+        featuredDayUtc: day,
+      );
+      final bloc = _MockWotdBloc();
+      whenListen(
+        bloc,
+        const Stream<WotdState>.empty(),
+        initialState: WotdState.initial().copyWith(status: LoadStatus.success, entity: wall),
+      );
+      final SessionState initialSession = loggedIn
+          ? SessionState.initial().copyWith(
+              session: const SessionEntity(userId: 'alice', loggedIn: true, premium: false, subscriptionTier: 'free'),
+            )
+          : SessionState.initial();
+      final session = _MockSessionBloc();
+      whenListen(session, const Stream<SessionState>.empty(), initialState: initialSession);
+      await tester.pumpWidget(
+        _withWotdAndSession(bloc, const WotdQuickTileListener(child: SizedBox.shrink()), sessionBloc: session),
+      );
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await waitForRealIo(
+        tester,
+        () => prefs.getString(PersistenceKeys.quickTileWotdUrl) == '',
+        reason: '$reason WOTD URL clear',
+      );
+      expect(prefs.getString(QuickTileConfigService.wotdOpenLinkKey), isNull, reason: reason);
+      await tester.pumpWidget(const SizedBox.shrink());
+      var drained = false;
+      NativeAssetPathsStore.replaceGroup('category', const <String, String>{}).then((_) => drained = true);
+      await waitForRealIo(tester, () => drained, reason: '$reason native mirror drained');
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
+      if (loggedIn) await getIt.reset();
+    }
+
+    if (scenario == 'cold-signout' || scenario == 'cold-failure') {
+      final bool signedInFailure = scenario == 'cold-failure';
+      app_state.prismUser = signedInFailure ? profileUser(id: 'alice') : profileUser(id: '', loggedIn: false);
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        PersistenceKeys.quickTileWotdTarget: 'both',
+        QuickTileConfigService.wotdOpenLinkKey: 'prism://share?id=old&source=prism&url&thumb=preview',
+      });
+      final _MockWotdBloc loadingBloc = _MockWotdBloc();
+      whenListen(
+        loadingBloc,
+        const Stream<WotdState>.empty(),
+        initialState: WotdState.initial().copyWith(status: signedInFailure ? LoadStatus.failure : LoadStatus.initial),
+      );
+      final session = _MockSessionBloc();
+      whenListen(
+        session,
+        const Stream<SessionState>.empty(),
+        initialState: signedInFailure
+            ? SessionState.initial().copyWith(
+                session: const SessionEntity(userId: 'alice', loggedIn: true, premium: false, subscriptionTier: 'free'),
+              )
+            : SessionState.initial(),
+      );
+      await tester.pumpWidget(
+        _withWotdAndSession(loadingBloc, const WotdQuickTileListener(child: SizedBox.shrink()), sessionBloc: session),
+      );
+      final SharedPreferences loadingPrefs = await SharedPreferences.getInstance();
+      await waitForRealIo(
+        tester,
+        () => loadingPrefs.getString(QuickTileConfigService.wotdOpenLinkKey) == null,
+        reason: '$scenario clears a stale protected-wall link',
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      var loadingMirrorDrained = false;
+      NativeAssetPathsStore.replaceGroup('category', const <String, String>{}).then((_) => loadingMirrorDrained = true);
+      await waitForRealIo(tester, () => loadingMirrorDrained, reason: '$scenario mirror drained');
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
+      return;
+    }
+
+    final now = DateTime.now().toUtc();
+    if (scenario == 'signedout-wall') {
+      await verifyWall(
+        day: DateTime.utc(now.year, now.month, now.day),
+        loggedIn: false,
+        reason: 'initial signed-out protected wall',
+      );
+      return;
+    }
+    if (scenario == 'stale-day') {
+      await verifyWall(
+        day: DateTime.utc(now.year, now.month, now.day - 1),
+        loggedIn: true,
+        reason: 'stale-day protected wall',
+      );
+      return;
+    }
+
+    app_state.prismUser = profileUser(id: 'alice');
+    getIt.registerSingleton<DownloadedWallIndex>(
+      DownloadedWallIndex(SettingsLocalDataSource(InMemoryLocalStore()), ownerId: () => 'alice'),
+    );
+    SharedPreferences.setMockInitialValues(<String, Object>{PersistenceKeys.quickTileWotdTarget: 'both'});
+    final WallOfTheDayEntity wall = WallOfTheDayEntity(
+      wallId: 'protected-wall',
+      url: '',
+      thumbnailUrl: 'preview',
+      photographer: 'Ana',
+      wallDocumentId: 'protected-doc',
+      featuredDayUtc: DateTime.utc(now.year, now.month, now.day),
+    );
+    final _MockWotdBloc bloc = _MockWotdBloc();
+    final StreamController<WotdState> states = StreamController<WotdState>();
+    whenListen(
+      bloc,
+      states.stream,
+      initialState: WotdState.initial().copyWith(status: LoadStatus.success, entity: wall),
+    );
+    final session = _MockSessionBloc();
+    whenListen(
+      session,
+      const Stream<SessionState>.empty(),
+      initialState: SessionState.initial().copyWith(
+        session: const SessionEntity(userId: 'alice', loggedIn: true, premium: false, subscriptionTier: 'free'),
+      ),
+    );
+    await tester.pumpWidget(
+      _withWotdAndSession(bloc, const WotdQuickTileListener(child: SizedBox.shrink()), sessionBloc: session),
+    );
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await waitForRealIo(
+      tester,
+      () => prefs.getString(QuickTileConfigService.wotdOpenLinkKey)?.startsWith('prism://share?') == true,
+      reason: 'protected wall link before authoritative WOTD failure',
+    );
+    states.add(WotdState.initial().copyWith(status: LoadStatus.failure));
+    await tester.pump();
+    await waitForRealIo(
+      tester,
+      () => prefs.getString(QuickTileConfigService.wotdOpenLinkKey) == null,
+      reason: 'authoritative empty WOTD failure clears the protected-wall link',
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    await states.close();
+    var failureMirrorDrained = false;
+    NativeAssetPathsStore.replaceGroup('category', const <String, String>{}).then((_) => failureMirrorDrained = true);
+    await waitForRealIo(tester, () => failureMirrorDrained, reason: 'failed WOTD mirror drained');
+    await getIt.reset();
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
   }
 
   Future<void> verifyPendingLookupDisposal(WidgetTester tester) async {
@@ -292,7 +556,17 @@ void main() {
       const Stream<WotdState>.empty(),
       initialState: WotdState.initial().copyWith(status: LoadStatus.success, entity: _wall),
     );
-    await tester.pumpWidget(_withWotdAndSession(bloc, const WotdQuickTileListener(child: SizedBox.shrink())));
+    final _MockSessionBloc session = _MockSessionBloc();
+    whenListen(
+      session,
+      const Stream<SessionState>.empty(),
+      initialState: SessionState.initial().copyWith(
+        session: const SessionEntity(userId: 'alice', loggedIn: true, premium: false, subscriptionTier: 'free'),
+      ),
+    );
+    await tester.pumpWidget(
+      _withWotdAndSession(bloc, const WotdQuickTileListener(child: SizedBox.shrink()), sessionBloc: session),
+    );
     await waitForRealIo(tester, () => gated.readStarted.isCompleted, reason: 'pending retained lookup');
     await tester.pumpWidget(const SizedBox.shrink());
     gated.releaseRead.complete();
@@ -306,6 +580,11 @@ void main() {
 
   testWidgets('WOTD mirror follows state, disposal, original acquisition handoff and logout', (tester) async {
     await verifySessionClearFailureRecovery(tester);
+    await verifyProtectedLinkRequiresCurrentDayAndSession(tester, 'cold-signout');
+    await verifyProtectedLinkRequiresCurrentDayAndSession(tester, 'cold-failure');
+    await verifyProtectedLinkRequiresCurrentDayAndSession(tester, 'signedout-wall');
+    await verifyProtectedLinkRequiresCurrentDayAndSession(tester, 'stale-day');
+    await verifyProtectedLinkRequiresCurrentDayAndSession(tester, 'authoritative-failure');
     SharedPreferences.setMockInitialValues(<String, Object>{
       PersistenceKeys.quickTileWotdTarget: 'both',
       PersistenceKeys.quickTileWotdUrl: 'https://example.com/old.jpg',
@@ -317,7 +596,17 @@ void main() {
       final _MockWotdBloc bloc = _MockWotdBloc();
       final StreamController<WotdState> states = StreamController<WotdState>();
       whenListen(bloc, states.stream, initialState: WotdState.initial().copyWith(status: LoadStatus.loading));
-      await tester.pumpWidget(_withWotdAndSession(bloc, const WotdQuickTileListener(child: SizedBox.shrink())));
+      final _MockSessionBloc session = _MockSessionBloc();
+      whenListen(
+        session,
+        const Stream<SessionState>.empty(),
+        initialState: SessionState.initial().copyWith(
+          session: const SessionEntity(userId: 'alice', loggedIn: true, premium: false, subscriptionTier: 'free'),
+        ),
+      );
+      await tester.pumpWidget(
+        _withWotdAndSession(bloc, const WotdQuickTileListener(child: SizedBox.shrink()), sessionBloc: session),
+      );
       states.add(WotdState.initial().copyWith(status: LoadStatus.success, entity: _wall));
       await tester.pump();
       await waitForRealIo(tester, () => gatedStore.readStarted.isCompleted, reason: 'initial WOTD asset read');
@@ -445,6 +734,7 @@ void main() {
       await sessionStates.close();
     }
     await verifyPendingLookupDisposal(tester);
+    await verifyAndroidProtectedHandoff(tester);
     await verifyOriginalAcquisitionHandoff(tester);
   });
 }

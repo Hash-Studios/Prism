@@ -141,6 +141,48 @@ abstract class AppLocalizations {
   /// **'Walls for you'**
   String get galleryScreenTitle;
 
+  /// Hold-menu action on a favourite wallpaper. Keeps it at the top of Favourites.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin to top'**
+  String get favouritePin;
+
+  /// Hold-menu action on a pinned favourite. Returns it to its normal place in Favourites.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get favouriteUnpin;
+
+  /// Confirmation after the user pins a favourite.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned to the top of Favourites'**
+  String get favouritePinnedToast;
+
+  /// Confirmation after the user unpins a favourite.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpinned'**
+  String get favouriteUnpinnedToast;
+
+  /// Accessibility label of the small pin badge on a pinned favourite tile.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned'**
+  String get favouritePinnedBadge;
+
+  /// Shown when the user tries to pin more favourites than the limit.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, other{You can pin up to {count} favourites. Unpin one to pin this wallpaper.}}'**
+  String favouritePinLimit(int count);
+
+  /// Shown when pinning or unpinning a favourite fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to update the pin. Check your connection and try again.'**
+  String get favouritePinFailed;
+
   /// Hint in the favourites search field. It also tells how many favourites there are.
   ///
   /// In en, this message translates to:
@@ -7203,6 +7245,18 @@ abstract class AppLocalizations {
   /// **'Style: {style}'**
   String economyAiStyleSemantics(String style);
 
+  /// Title of the sheet that shows a large preview of every AI wallpaper style.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a style'**
+  String get economyAiStyleSheetTitle;
+
+  /// Line under the style sheet title. Every style preview shows this one scene.
+  ///
+  /// In en, this message translates to:
+  /// **'Every preview shows the same scene: a lighthouse on a cliff at dusk.'**
+  String get economyAiStyleSheetSubject;
+
   /// No description provided for @economyAiStyleWatercolor.
   ///
   /// In en, this message translates to:
@@ -11647,12 +11701,6 @@ abstract class AppLocalizations {
   /// **'Reset to original'**
   String get wallpaperResetOriginal;
 
-  /// Toast hint explaining how to reset the selected wallpaper accent.
-  ///
-  /// In en, this message translates to:
-  /// **'Hold for actions, including Reset to original'**
-  String get wallpaperAccentResetHint;
-
   /// Filter option to show all wallpaper sources.
   ///
   /// In en, this message translates to:
@@ -13249,7 +13297,7 @@ abstract class AppLocalizations {
   /// **'Got it. You\'ll see fewer like this.'**
   String get wallpaperGotItFewerLikeThis;
 
-  /// Accessibility label of the wallpaper preview background: a tap hides the buttons so the whole mock phone screen shows.
+  /// Accessibility label and action that hides the buttons: on the wallpaper preview, and on the wallpaper detail screen where it also hides the system bars.
   ///
   /// In en, this message translates to:
   /// **'Hide controls'**
@@ -13300,7 +13348,7 @@ abstract class AppLocalizations {
   /// Accessibility hint describing wallpaper image gestures.
   ///
   /// In en, this message translates to:
-  /// **'Tap to cycle accent color. Hold for favourite, share, and reset actions. Scroll for details.'**
+  /// **'Hold for favourite, share, and reset actions. Scroll for details.'**
   String get wallpaperImageSemanticHint;
 
   /// Accessibility action on the wallpaper detail card that shows the previous wallpaper of the feed it was opened from.
@@ -13320,6 +13368,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wallpaper'**
   String get wallpaperImageSemanticLabel;
+
+  /// Small hint shown once on the wallpaper detail screen. A tap on the wallpaper hides every button and the system bars.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to hide controls'**
+  String get wallpaperImmersiveHint;
 
   /// Message shown when the user lacks coins for an auto-rotate pass.
   ///
@@ -14473,7 +14527,7 @@ abstract class AppLocalizations {
   /// **'Show less like this'**
   String get wallpaperShowLessLikeThis;
 
-  /// Accessibility label of the wallpaper preview background: a tap shows the buttons again.
+  /// Accessibility label and action that shows the buttons again, on the wallpaper preview and on the wallpaper detail screen.
   ///
   /// In en, this message translates to:
   /// **'Show controls'**
@@ -16956,6 +17010,420 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t load walls. Check your connection and try again.'**
   String get tasteQuizRetakeFailed;
+
+  /// Label on a folder that others can see.
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get foldersPublic;
+
+  /// Folder menu action that lets others see the folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Make public'**
+  String get foldersMakePublic;
+
+  /// Folder menu action that hides the folder from others.
+  ///
+  /// In en, this message translates to:
+  /// **'Make private'**
+  String get foldersMakePrivate;
+
+  /// Title of the dialog before a folder becomes public.
+  ///
+  /// In en, this message translates to:
+  /// **'Make this folder public?'**
+  String get foldersMakePublicTitle;
+
+  /// One line that says what others see when a folder is public.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone on Prism can see its name and wallpapers, follow it and open its link. Links you share keep their preview even if you make it private later.'**
+  String get foldersMakePublicMessage;
+
+  /// Title of the dialog before a public folder becomes private.
+  ///
+  /// In en, this message translates to:
+  /// **'Make this folder private?'**
+  String get foldersMakePrivateTitle;
+
+  /// One line that says what happens when a public folder becomes private.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you will see it. Its link stops working and its followers lose it.'**
+  String get foldersMakePrivateMessage;
+
+  /// Toast after a folder becomes public.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is now public.'**
+  String get foldersMadePublic;
+
+  /// Toast after a folder becomes private.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is now private.'**
+  String get foldersMadePrivate;
+
+  /// Toast when the folder name cannot be shown to others.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename this folder to make it public.'**
+  String get foldersPublicNameRefused;
+
+  /// Toast when a moderator hid the folder.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder was hidden after reports, so it cannot be public.'**
+  String get foldersHiddenRefused;
+
+  /// Toast when the daily limit for folder changes is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'You changed folders too many times today. Try again tomorrow.'**
+  String get foldersLimitRefused;
+
+  /// Button that follows a public folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get foldersFollow;
+
+  /// Button state when the user follows a public folder. Tap to unfollow.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get foldersFollowing;
+
+  /// Number of people who follow a public folder.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No followers} =1{1 follower} other{{count} followers}}'**
+  String foldersFollowerCount(int count);
+
+  /// Owner line on a public folder page.
+  ///
+  /// In en, this message translates to:
+  /// **'By {name}'**
+  String foldersByOwner(String name);
+
+  /// Action and tooltip that shares a public folder link.
+  ///
+  /// In en, this message translates to:
+  /// **'Share folder'**
+  String get foldersShare;
+
+  /// Menu action that reports a public folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Report folder'**
+  String get foldersReport;
+
+  /// Title when a shared folder cannot be shown.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is private or no longer exists'**
+  String get foldersUnavailableTitle;
+
+  /// Body when a shared folder cannot be shown.
+  ///
+  /// In en, this message translates to:
+  /// **'The owner may have made it private or deleted it.'**
+  String get foldersUnavailableBody;
+
+  /// Toast when following or unfollowing a folder fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the follow. Try again.'**
+  String get foldersFollowFailed;
+
+  /// Heading of the public folders the user follows, in the Library.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders you follow'**
+  String get foldersYouFollow;
+
+  /// Title when a public folder has no wallpapers others can see.
+  ///
+  /// In en, this message translates to:
+  /// **'No wallpapers here yet'**
+  String get foldersPublicEmptyTitle;
+
+  /// Body when a public folder has no wallpapers others can see.
+  ///
+  /// In en, this message translates to:
+  /// **'New wallpapers show here when the owner adds them.'**
+  String get foldersPublicEmptyBody;
+
+  /// Notification setting for new wallpapers in followed folders.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders you follow'**
+  String get notifSettingFolders;
+
+  /// Description of the followed folders notification setting.
+  ///
+  /// In en, this message translates to:
+  /// **'New wallpapers in folders you follow, once a day'**
+  String get notifSettingFoldersDescription;
+
+  /// Title of the daily push for new wallpapers in one followed folder.
+  ///
+  /// In en, this message translates to:
+  /// **'New in {folderName}'**
+  String notifPushFolderDigestTitleOne(String folderName);
+
+  /// Title of the daily push for new wallpapers in several followed folders.
+  ///
+  /// In en, this message translates to:
+  /// **'New in {folderName} and {count} more'**
+  String notifPushFolderDigestTitleMore(String folderName, int count);
+
+  /// History tab segment on Android: walls the user set as wallpaper or downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Set and downloaded'**
+  String get historySetAndDownloaded;
+
+  /// History tab segment on iOS, where the app cannot set wallpapers: walls the user downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get historyDownloaded;
+
+  /// History tab segment: walls the user opened recently on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently viewed'**
+  String get historyRecentlyViewed;
+
+  /// One line above the Set and downloaded list for a signed-in user.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your account, so these come back on a new phone.'**
+  String get historySyncedNote;
+
+  /// One line above the Set and downloaded list for a signed-out user.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to keep these on a new phone.'**
+  String get historySyncedNoteGuest;
+
+  /// Label under a history tile: the user set this wall as wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Set'**
+  String get historyActionSet;
+
+  /// Label under a history tile: the user downloaded this wall.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get historyActionDownloaded;
+
+  /// Screen reader label of a history tile from the account. action is Set or Downloaded, time is when.
+  ///
+  /// In en, this message translates to:
+  /// **'{action} at {time}'**
+  String historySyncedTileLabel(String action, String time);
+
+  /// Body of the confirm dialog before clearing the Set and downloaded list.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the list here and in your account. Your wallpapers and downloads stay as they are.'**
+  String get historyClearSyncedBody;
+
+  /// Title of the confirm dialog before clearing the recently viewed list.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear recently viewed?'**
+  String get historyClearViewedTitle;
+
+  /// Body of the confirm dialog before clearing the recently viewed list.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the wallpapers you opened from this list and from Home.'**
+  String get historyClearViewedBody;
+
+  /// Confirm button that clears the recently viewed list.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear recently viewed'**
+  String get historyClearViewedAction;
+
+  /// Empty state body of the Set and downloaded list on Android.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpapers you set or download show up here, so you can find them again.'**
+  String get historyEmptyBodyAndroid;
+
+  /// Empty state body of the Downloaded list on iOS.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpapers you download show up here, so you can find them again.'**
+  String get historyEmptyBodyIos;
+
+  /// Empty state title of the recently viewed list.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing viewed yet'**
+  String get historyViewedEmptyTitle;
+
+  /// Empty state body of the recently viewed list.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpapers you open show up here, so you can find them again.'**
+  String get historyViewedEmptyBody;
+
+  /// Empty state title of the recently viewed list when the Save viewing history setting is off.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewing history is off'**
+  String get historyViewedOffTitle;
+
+  /// Empty state body of the recently viewed list when the setting is off.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on Save viewing history to see the wallpapers you open here.'**
+  String get historyViewedOffBody;
+
+  /// Button in the recently viewed empty state that turns on the Save viewing history setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get historyViewedOffAction;
+
+  /// Screen reader label of a recently viewed tile. time is when it was viewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Open wallpaper, viewed at {time}'**
+  String historyViewedTileLabel(String time);
+
+  /// Title of the Home row that shows walls the user opened recently but did not save, set or download.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick up where you left off'**
+  String get pickUpTitle;
+
+  /// Screen reader label of a tile in the Pick up where you left off row.
+  ///
+  /// In en, this message translates to:
+  /// **'Open wallpaper {index} of {count}'**
+  String pickUpTileLabel(int index, int count);
+
+  /// Settings switch. On: the app remembers the walls the user opens on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Save viewing history'**
+  String get settingsSaveViewingHistory;
+
+  /// Subtitle of the Save viewing history switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows the wallpapers you open in History and on Home. Turning this off clears the list.'**
+  String get settingsSaveViewingHistoryBody;
+
+  /// Toast when Clear on the Set and downloaded list cannot reach the account. Nothing was cleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t clear history. Check your connection and try again.'**
+  String get historyClearFailed;
+
+  /// Auto-rotate source chip that rotates the walls of one of the user's folders.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder'**
+  String get wallpaperAutoRotateSourceFolder;
+
+  /// Auto-rotate source chip when a folder is chosen. folder is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder: {folder}'**
+  String wallpaperAutoRotateSourceFolderNamed(String folder);
+
+  /// How the mix line names a folder source. folder is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'{folder}'**
+  String wallpaperAutoRotateNounFolder(String folder);
+
+  /// Shown when the chosen folder has fewer than 2 wallpapers that auto-rotate can use.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder needs at least 2 wallpapers that can rotate. Prism wallpapers rotate after you download them.'**
+  String get wallpaperAutoRotateTooFewFolder;
+
+  /// Button that opens the chosen folder from the auto-rotate screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open folder'**
+  String get wallpaperAutoRotateOpenFolder;
+
+  /// Title of the sheet that lists the user's folders for auto-rotate.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a folder'**
+  String get wallpaperAutoRotatePickFolder;
+
+  /// Empty state of the auto-rotate folder picker.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no folders yet. Save a wallpaper to a folder, then pick it here.'**
+  String get wallpaperAutoRotateNoFolders;
+
+  /// Title of the card that asks the user to confirm a folder as the auto-rotate source. folder is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate {folder}?'**
+  String wallpaperAutoRotateConfirmFolderTitle(String folder);
+
+  /// Body of the card that asks the user to confirm a folder as the auto-rotate source.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallpaper changes to one from this folder, on the schedule below.'**
+  String get wallpaperAutoRotateConfirmFolderBody;
+
+  /// Button that makes the folder the auto-rotate source and turns auto-rotate on.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate this folder'**
+  String get wallpaperAutoRotateConfirmFolderAction;
+
+  /// Toast when auto-rotate stopped because its folder was deleted. folder is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate is off because the folder {folder} was deleted.'**
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder);
+
+  /// Toast when auto-rotate stopped because its folder has too few usable wallpapers. folder is the folder name the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate is off because the folder {folder} has fewer than 2 wallpapers.'**
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder);
+
+  /// Folder page menu item that opens auto-rotate with this folder chosen. Android only.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate this folder'**
+  String get foldersRotateThisFolder;
+
+  /// Small label on a folder page when auto-rotate uses this folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotating'**
+  String get foldersRotating;
+
+  /// Tooltip and screen reader label of the Rotating label on a folder page.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate uses this folder'**
+  String get foldersRotatingDescription;
+
+  /// Toast hint explaining how to reset the selected wallpaper accent.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold for actions, including Reset to original'**
+  String get wallpaperAccentResetHint;
 
   /// Title of the wall requests page.
   ///

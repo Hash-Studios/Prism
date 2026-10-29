@@ -40,6 +40,7 @@ import 'package:Prism/features/theme_mode/views/widgets/diwali_decor.dart';
 import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -138,6 +139,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _defaultApplyTarget;
   bool _haptics = PrismHaptics.enabled;
   bool _lowData = LowDataMode.enabled.value;
+  bool _saveViewingHistory = getIt<RecentlyViewedStore>().enabled;
+  bool _savingViewingHistory = false;
   bool _restoring = false;
   bool _adPrivacyChoices = false;
   bool _iosShortcuts = false;
@@ -149,6 +152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _viewedStore.addListener(_onViewedStoreChanged);
     _showAnime = animeEnabledFromCategories(_settingsLocal.get<int>('WHcategories', defaultValue: 100));
     _showSketchy = _settingsLocal.get<int>('WHpurity', defaultValue: 100) == 110;
     final String storedTarget = _settingsLocal.get<String>(PersistenceKeys.defaultApplyTarget, defaultValue: 'ask');
@@ -353,7 +357,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.autorenew_rounded,
       title: context.l10n.accountAutoRotateWallpapers,
       subtitle: context.l10n.accountChangeWallpaperOnTimer,
-      onTap: () => context.router.push(const AutoRotateRoute()),
+      onTap: () => context.router.push(AutoRotateRoute()),
     ),
     PrismRow(
       icon: Icons.motion_photos_on_outlined,
@@ -466,6 +470,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         unawaited(analytics.track(DataSaverToggledEvent(value: value)));
       },
     ),
+    PrismSwitchRow(
+      icon: Icons.manage_history_rounded,
+      title: context.l10n.settingsSaveViewingHistory,
+      subtitle: context.l10n.settingsSaveViewingHistoryBody,
+      value: _saveViewingHistory,
+      onChanged: _savingViewingHistory ? null : _setViewingHistory,
+    ),
     PrismRow(
       icon: Icons.cleaning_services_rounded,
       title: context.l10n.accountClearCacheTitle,
@@ -508,6 +519,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
         },
       ),
   ];
+
+  late final RecentlyViewedStore _viewedStore = getIt<RecentlyViewedStore>();
+
+  @override
+  void dispose() {
+    _viewedStore.removeListener(_onViewedStoreChanged);
+    super.dispose();
+  }
+
+  /// Follows changes made elsewhere, such as Turn on in History.
+  void _onViewedStoreChanged() {
+    if (!mounted || _savingViewingHistory || _saveViewingHistory == _viewedStore.enabled) return;
+    setState(() => _saveViewingHistory = _viewedStore.enabled);
+  }
+
+  Future<void> _setViewingHistory(bool value) async {
+    final RecentlyViewedStore store = getIt<RecentlyViewedStore>();
+    setState(() => _savingViewingHistory = true);
+    try {
+      await store.setEnabled(value);
+      unawaited(analytics.track(ViewingHistoryToggledEvent(value: value)));
+    } catch (error, stackTrace) {
+      logger.w('Saving viewing history preference failed.', error: error, stackTrace: stackTrace);
+      if (mounted) toasts.error(context.l10n.coreSomethingWentWrong);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _saveViewingHistory = store.enabled;
+          _savingViewingHistory = false;
+        });
+      }
+    }
+  }
 
   Future<void> _clearCache() async {
     final AppLocalizations l10n = context.l10n;

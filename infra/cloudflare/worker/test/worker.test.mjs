@@ -851,7 +851,7 @@ test('a balanced variation inherits Seedream default sizing, model and cost', as
   const kv = aiKv(5);
   await kv.put('ai:gen:gen-balanced-parent', JSON.stringify({
     generationId: 'gen-balanced-parent', userId: 'alice', prompt: 'A quiet mountain lake',
-    stylePreset: 'minimal', qualityTier: 'balanced', width: 1880, height: 4080,
+    stylePreset: '3d render', qualityTier: 'balanced', width: 1880, height: 4080,
   }));
   const storage = new MemoryStorage();
   const env = aiEnv(kv, new AiQuotaCoordinator({ storage }));
@@ -882,6 +882,11 @@ test('a balanced variation inherits Seedream default sizing, model and cost', as
   assert.equal(body.qualityTier, 'balanced');
   assert.equal(body.seed, null);
   assert.equal(stats.falRequest.url, 'https://fal.run/fal-ai/bytedance/seedream/v5/lite/text-to-image');
+  assert.equal(
+    stats.falRequest.body.prompt,
+    'A quiet mountain lake. Variation request (0.45): warmer light, stylized 3D render, smooth matte clay-like '
+      + 'materials, soft global illumination, rendered CGI look',
+  );
   assert.deepEqual(stats.falRequest.body.image_size, { width: 1880, height: 4080 });
   assert.equal('seed' in stats.falRequest.body, false);
   const record = JSON.parse(await kv.get(`ai:gen:${body.generationId}`));
@@ -890,6 +895,32 @@ test('a balanced variation inherits Seedream default sizing, model and cost', as
   assert.equal(record.estimatedCostUsd, 0.04);
   assert.equal(await storage.get(`provider:fal:daily:${today()}`), 0.04);
   assert.equal(await storage.get(`provider:fal:monthly:${today().slice(0, 7)}`), 0.04);
+});
+
+test('a style without a description adds its name, and 3D render adds what it looks like', async () => {
+  const anime = await generateWith({ stylePreset: 'anime', targetSize: '944x2048' });
+  assert.equal(anime.stats.falRequest.body.prompt, 'A quiet mountain lake, anime style');
+  const render = await generateWith({ stylePreset: '  3D Render  ', targetSize: '944x2048' });
+  assert.equal(
+    render.stats.falRequest.body.prompt,
+    'A quiet mountain lake, stylized 3D render, smooth matte clay-like materials, soft global illumination, '
+      + 'rendered CGI look',
+  );
+  const unknown = await generateWith({ stylePreset: 'constructor', targetSize: '944x2048' });
+  assert.equal(unknown.stats.falRequest.body.prompt, 'A quiet mountain lake, constructor style');
+  for (const stylePreset of ['__proto__', 'toString']) {
+    const builtInLikeName = await generateWith({ stylePreset, targetSize: '944x2048' });
+    assert.equal(builtInLikeName.stats.falRequest.body.prompt, `A quiet mountain lake, ${stylePreset} style`);
+  }
+  const bounded = await generateWith({ prompt: 'p'.repeat(200), stylePreset: 's'.repeat(50) });
+  assert.equal(bounded.stats.falRequest.body.prompt.length, 208);
+  assert.equal(bounded.stats.falRequest.body.prompt, `${'p'.repeat(160)}, ${'s'.repeat(40)} style`);
+  const boundedRender = await generateWith({ prompt: 'p'.repeat(200), stylePreset: '3d render' });
+  assert.equal(boundedRender.stats.falRequest.body.prompt.length, 259);
+  assert.equal(
+    boundedRender.stats.falRequest.body.prompt,
+    `${'p'.repeat(160)}, stylized 3D render, smooth matte clay-like materials, soft global illumination, rendered CGI look`,
+  );
 });
 
 test('the fast tier sends Z-Image the requested size and seed', async () => {
@@ -1750,8 +1781,13 @@ test('with the charge flag on, each user gets one free trial that replays withou
   const alice = await makeToken({ sub: 'alice' });
   const restore = mockFal({ stats, firestore: () => { throw new Error('a free trial must not read the coin ledger'); } });
   try {
-    const first = await postGeneration(env, { freeTrial: true }, alice);
+    const first = await postGeneration(env, { freeTrial: true, stylePreset: '3d render' }, alice);
     assert.equal(first.status, 200);
+    assert.equal(
+      stats.falRequest.body.prompt,
+      'A quiet mountain lake, stylized 3D render, smooth matte clay-like materials, soft global illumination, '
+        + 'rendered CGI look',
+    );
     const firstBody = await first.json();
     const replay = await postGeneration(env, { freeTrial: true, prompt: 'A second wallpaper' }, alice);
     assert.equal(replay.status, 200);
@@ -2110,6 +2146,86 @@ test('prompt blocklist matches whole words only and keeps multi-word terms', asy
   } finally {
     restore();
   }
+});
+
+test('unsafe style text is rejected for generation, free trials, and variations before provider work', async () => {
+  const kv = aiKv(5);
+  await kv.put('ai:gen:unsafe-style-parent', JSON.stringify({
+    generationId: 'unsafe-style-parent',
+    userId: 'alice',
+    prompt: 'A quiet mountain lake',
+    stylePreset: 'child porn',
+    qualityTier: 'fast',
+    width: 1080,
+    height: 1920,
+  }));
+  const env = aiEnv(kv, new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const stats = {};
+  const restore = mockFal({ stats });
+  try {
+    const regular = await postGeneration(env, { stylePreset: 'child porn' });
+    assert.equal(regular.status, 422);
+    assert.equal((await regular.json()).error, 'unsafe_prompt');
+
+    const trial = await postGeneration(
+      env,
+      { freeTrial: true, stylePreset: 'child porn' },
+      await makeToken({ sub: 'alice' }),
+    );
+    assert.equal(trial.status, 422);
+    assert.equal((await trial.json()).error, 'unsafe_prompt');
+
+    const token = await makeToken({ sub: 'alice' });
+    const variation = await worker.fetch(new Request(
+      'https://prismwalls.com/api/ai/generations/unsafe-style-parent/variations', {
+        method: 'POST',
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ variationPrompt: 'warmer light' }),
+      }), env, { waitUntil() {} });
+    assert.equal(variation.status, 422);
+    assert.equal((await variation.json()).error, 'unsafe_prompt');
+  } finally {
+    restore();
+  }
+  assert.equal(stats.fal ?? 0, 0);
+});
+
+test('the style description stays attached when generation falls back from Fal to Gemini', async () => {
+  const kv = aiKv(5);
+  await kv.put('ai:routing:active', JSON.stringify({
+    hardUserDailyCap: 5,
+    fallbackOrder: ['fal', 'gemini'],
+    providers: { gemini: { enabled: true, weight: 0 } },
+  }));
+  const env = aiEnv(kv, new AiQuotaCoordinator({ storage: new MemoryStorage() }), {
+    GEMINI_API_KEY: 'test-gemini-key',
+  });
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    calls.push(url);
+    if (url.startsWith('https://fal.run/')) return new Response('boom', { status: 500 });
+    if (url.startsWith('https://generativelanguage.googleapis.com/')) {
+      const request = JSON.parse(init.body);
+      assert.equal(
+        request.contents[0].parts[0].text,
+        'A quiet mountain lake, stylized 3D render, smooth matte clay-like materials, soft global illumination, '
+          + 'rendered CGI look',
+      );
+      return Response.json({ candidates: [{ content: { parts: [{
+        inlineData: { data: Buffer.alloc(4096).toString('base64'), mimeType: 'image/png' },
+      }] } }] });
+    }
+    throw new Error(`unexpected fetch ${url}`);
+  };
+  try {
+    const response = await postGeneration(env, { stylePreset: '  3D RENDER  ' });
+    assert.equal(response.status, 200);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  assert.deepEqual(calls.map((url) => url.startsWith('https://fal.run/') ? 'fal' : 'gemini'), ['fal', 'gemini']);
 });
 
 test('share page escapes titles once for text and attributes', async () => {
@@ -2595,6 +2711,103 @@ test('when the new card fails to render, an old link keeps its old image with a 
   } finally {
     restore();
   }
+});
+
+const FOLDER_IMAGE = `https://img.prismwalls.com/push-gallery/v1/${'d'.repeat(64)}.jpg`;
+const FOLDER_ENV = { ...RENDER_ENV, R2_PREVIEW_BASE_URL: 'https://img.prismwalls.com' };
+
+test('folder page links keep their push-gallery share image as og:image and skip the browser card', async () => {
+  const env = workerEnv(FOLDER_ENV);
+  const response = await postLink(env, {
+    type: 'page',
+    canonical_url: 'https://prismwalls.com/folder/AbC123',
+    preview: { title: 'Sunset Set', description: '12 wallpapers by Maya', image_source_url: FOLDER_IMAGE },
+  });
+  assert.equal(response.status, 201);
+  const { code, og_image_url: ogImageUrl } = await response.json();
+  assert.equal(ogImageUrl, FOLDER_IMAGE);
+  assert.equal(JSON.parse(await env.LINKS_KV.get(code)).preview.image_source_url, FOLDER_IMAGE);
+
+  const crawler = await (await getShare('WhatsApp/2.23', `/l/${code}`, env)).text();
+  assert.match(crawler, /og:title" content="Sunset Set"/);
+  assert.ok(crawler.includes(`<meta property="og:image" content="${FOLDER_IMAGE}" />`));
+  assert.match(crawler, /og:image:width" content="1200"/);
+  assert.match(crawler, /og:image:height" content="545"/);
+});
+
+test('folder page links without an allowed preview image use the Prism icon, not a missing browser card', async () => {
+  const env = workerEnv(FOLDER_ENV);
+  const response = await postLink(env, {
+    type: 'page',
+    canonical_url: 'https://prismwalls.com/folder/AbC123',
+    preview: { title: 'Night', description: '12 wallpapers', image_source_url: 'https://example.com/private.jpg' },
+  });
+  assert.equal(response.status, 201);
+  const { code } = await response.json();
+  const crawler = await (await getShare('WhatsApp/2.23', `/l/${code}`, env)).text();
+  assert.ok(crawler.includes('og:image" content="https://raw.githubusercontent.com/Hash-Studios/Prism/master/assets/icon/ios.png"'));
+  assert.doesNotMatch(crawler, new RegExp(`/og/${code}\\.jpg`));
+});
+
+test('folder page links keep only a push-gallery share image from the configured R2 base', async () => {
+  const env = workerEnv(FOLDER_ENV);
+  const hash = 'd'.repeat(64);
+  for (const image of [
+    `https://evil.example.com/push-gallery/v1/${hash}.jpg`,
+    'https://img.prismwalls.com/push-gallery/v1/../x.jpg',
+    `${FOLDER_IMAGE}?token=secret`,
+    `${FOLDER_IMAGE}#fragment`,
+    `https://user:pass@img.prismwalls.com/push-gallery/v1/${hash}.jpg`,
+    `https://img.prismwalls.com:8443/push-gallery/v1/${hash}.jpg`,
+    `http://img.prismwalls.com/push-gallery/v1/${hash}.jpg`,
+    `https://img.prismwalls.com/previews/${hash}.img`,
+    `https://img.prismwalls.com/push-gallery/v1/${hash}.png`,
+    `https://img.prismwalls.com/push-gallery/v1/${'D'.repeat(64)}.jpg`,
+  ]) {
+    const response = await postLink(env, {
+      type: 'page',
+      canonical_url: 'https://prismwalls.com/folder/AbC123',
+      preview: { title: 'Sunset Set', image_source_url: image },
+    });
+    assert.equal(response.status, 201, image);
+    const record = JSON.parse(await env.LINKS_KV.get((await response.json()).code));
+    assert.equal(record.preview.image_source_url, '', image);
+  }
+});
+
+test('folder page links schedule no browser card while other page links still do', async () => {
+  const { calls, restore } = mockOgRender();
+  try {
+    const env = workerEnv(FOLDER_ENV);
+    const folderTasks = [];
+    const folder = await postLink(env, {
+      type: 'page',
+      canonical_url: 'https://prismwalls.com/folder/AbC123',
+      preview: { title: 'Sunset Set', image_source_url: FOLDER_IMAGE },
+    }, {}, { waitUntil: (task) => folderTasks.push(task) });
+    assert.equal(folder.status, 201);
+    assert.equal(folderTasks.length, 0);
+    assert.equal(calls.renders.length, 0);
+
+    const dropTasks = [];
+    const drops = await postLink(env, { type: 'page', payload: { path: '/drops/week-42' } },
+      {}, { waitUntil: (task) => dropTasks.push(task) });
+    assert.equal(drops.status, 201);
+    assert.equal(dropTasks.length, 1);
+    await Promise.all(dropTasks);
+    assert.equal(calls.renders.length, 1);
+  } finally {
+    restore();
+  }
+});
+
+test('a folder landing without a short code shows a generic title and hides the folder id', async () => {
+  const body = await (await getShare(ANDROID_UA, '/folder/AbC123')).text();
+  assert.match(body, /<title>A folder on Prism<\/title>/);
+  assert.match(body, /og:title" content="A folder on Prism"/);
+  assert.match(body, /Open this folder in Prism\./);
+  assert.doesNotMatch(body, /<title>[^<]*AbC123/);
+  assert.doesNotMatch(body, /og:title" content="[^"]*AbC123/);
 });
 
 test('profile and invite cards read names from old titles and never query wallpaper counts', async () => {

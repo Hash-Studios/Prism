@@ -2,30 +2,39 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
+import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
+import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/folders_access.dart';
 import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
+import 'package:Prism/features/folders/views/widgets/public_folder_view.dart';
 import 'package:Prism/features/library/views/widgets/offline_chip.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-enum _FolderMenuAction { rename, delete }
+enum _FolderMenuAction { rotate, visibility, rename, delete }
 
-/// The walls in one of the user's folders. Owner only: the rules refuse anyone else.
+/// One folder. The owner sees and edits their folder. Anyone else sees its public projection, read-only, or a calm
+/// "private or no longer exists" state.
 @RoutePage()
 class FolderScreen extends StatefulWidget {
   const FolderScreen({super.key, @PathParam('folderId') required this.folderId});
@@ -52,6 +61,7 @@ class _FolderScreenState extends State<FolderScreen> {
     // The router can reuse this page for another folder, for example a link opened from a folder.
     if (oldWidget.folderId == widget.folderId) return;
     _tracked = false;
+    _projection = null;
     unawaited(_load());
   }
 
@@ -133,10 +143,52 @@ class _FolderScreenState extends State<FolderScreen> {
     ok ? toasts.success(l10n.foldersRemoved) : toasts.error(l10n.foldersUpdateFailed);
   }
 
+  Future<void> _setPublic(FolderEntity folder, {required bool isPublic}) async {
+    final FoldersBloc bloc = context.read<FoldersBloc>();
+    final AppLocalizations l10n = context.l10n;
+    final bool confirmed = await showPrismConfirm(
+      context,
+      title: isPublic ? l10n.foldersMakePublicTitle : l10n.foldersMakePrivateTitle,
+      message: isPublic ? l10n.foldersMakePublicMessage : l10n.foldersMakePrivateMessage,
+      confirmLabel: isPublic ? l10n.foldersMakePublic : l10n.foldersMakePrivate,
+    );
+    if (!confirmed || !mounted || app_state.prismUser.id != folder.ownerId || bloc.state.userId != folder.ownerId) {
+      return;
+    }
+    final bool ok = await bloc.run(
+      (id) => FoldersEvent.visibilityRequested(folderId: folder.id, isPublic: isPublic, operationId: id),
+    );
+    if (!mounted) return;
+    if (ok) {
+      unawaited(analytics.track(FolderVisibilityChangedEvent(isPublic: isPublic, source: 'folder_menu')));
+      toasts.success(isPublic ? l10n.foldersMadePublic : l10n.foldersMadePrivate);
+      setState(() => _projection = null);
+      return;
+    }
+    final Object? failure = bloc.state.failure;
+    toasts.error(switch (failure is PublicFolderFailure ? failure.refusal : null) {
+      PublicFolderRefusal.name => l10n.foldersPublicNameRefused,
+      PublicFolderRefusal.hidden => l10n.foldersHiddenRefused,
+      PublicFolderRefusal.limit => l10n.foldersLimitRefused,
+      _ => l10n.foldersUpdateFailed,
+    });
+  }
+
+  /// The projection of the user's own public folder, for its follower count and share image.
+  Future<Result<PublicFolderEntity?>>? _projection;
+
+  Future<Result<PublicFolderEntity?>> _projectionOf(FolderEntity folder) =>
+      _projection ??= getIt<PublicFoldersRepository>().fetchFolder(folder.id);
+
   Future<void> _onMenu(_FolderMenuAction action, FolderEntity folder) async {
     final FoldersBloc bloc = context.read<FoldersBloc>();
     final AppLocalizations l10n = context.l10n;
     switch (action) {
+      case _FolderMenuAction.rotate:
+        unawaited(analytics.track(AutoRotateFolderTappedEvent(itemCountBucket: folderCountBucket(folder.itemCount))));
+        unawaited(context.router.push(AutoRotateRoute(folderId: folder.id, folderName: folder.name)));
+      case _FolderMenuAction.visibility:
+        await _setPublic(folder, isPublic: !folder.isPublic);
       case _FolderMenuAction.rename:
         final String? name = await showFolderNameSheet(
           context,
@@ -181,6 +233,25 @@ class _FolderScreenState extends State<FolderScreen> {
     final AppLocalizations l10n = context.l10n;
     if (app_state.prismUser.id.isEmpty) return SignInPrompt(feature: l10n.foldersSignInFeature);
     if (state.userId != app_state.prismUser.id) return const LoadingCards();
+    final Widget grid = _grid(context, state, folder);
+    if (folder == null || !folder.isPublic || state.itemsStatus[widget.folderId] != LoadStatus.success) return grid;
+    return Column(
+      children: <Widget>[
+        FutureBuilder<Result<PublicFolderEntity?>>(
+          future: _projectionOf(folder),
+          builder: (context, snapshot) {
+            final PublicFolderEntity? projection = snapshot.data?.data;
+            if (projection == null) return const SizedBox.shrink();
+            return PublicFolderHeader(folder: projection, following: false, source: 'owner_folder', markPublic: true);
+          },
+        ),
+        Expanded(child: grid),
+      ],
+    );
+  }
+
+  Widget _grid(BuildContext context, FoldersState state, FolderEntity? folder) {
+    final AppLocalizations l10n = context.l10n;
     final LoadStatus? status = state.itemsStatus[widget.folderId];
     final List<FavouriteWallEntity>? walls = state.items[widget.folderId];
     if (state.status == LoadStatus.failure || status == LoadStatus.failure) {
@@ -247,9 +318,47 @@ class _FolderScreenState extends State<FolderScreen> {
         final FolderEntity? folder = state.userId == app_state.prismUser.id && state.userId.isNotEmpty
             ? state.folder(widget.folderId)
             : null;
+        // Not one of the user's folders: show its public projection, if it has one.
+        if (folder == null &&
+            app_state.prismUser.id.isNotEmpty &&
+            state.userId == app_state.prismUser.id &&
+            state.itemsStatus[widget.folderId] == LoadStatus.success) {
+          return PublicFolderView(folderId: widget.folderId);
+        }
+        final bool android = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+        final bool rotating =
+            android &&
+            folder != null &&
+            context.select<AutoRotateBloc, bool>(
+              (bloc) =>
+                  bloc.state.config.enabled &&
+                  bloc.state.config.source == AutoRotateSource.folder &&
+                  bloc.state.config.folderId == widget.folderId,
+            );
         return PrismPage(
           title: folder?.name ?? context.l10n.foldersTitle,
           maxContentWidth: double.infinity,
+          headerBottom: rotating
+              ? Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Tooltip(
+                      message: context.l10n.foldersRotatingDescription,
+                      excludeFromSemantics: true,
+                      child: Semantics(
+                        label: context.l10n.foldersRotatingDescription,
+                        excludeSemantics: true,
+                        child: PrismTag(
+                          label: context.l10n.foldersRotating,
+                          icon: Icons.autorenew_rounded,
+                          tone: PrismTone.accent,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              : null,
           actions: <Widget>[
             const OfflineChip(),
             if (folder != null)
@@ -258,6 +367,15 @@ class _FolderScreenState extends State<FolderScreen> {
                 icon: const Icon(Icons.more_vert_rounded),
                 onSelected: (action) => unawaited(_onMenu(action, folder)),
                 itemBuilder: (context) => <PopupMenuEntry<_FolderMenuAction>>[
+                  if (android)
+                    PopupMenuItem<_FolderMenuAction>(
+                      value: _FolderMenuAction.rotate,
+                      child: Text(context.l10n.foldersRotateThisFolder),
+                    ),
+                  PopupMenuItem<_FolderMenuAction>(
+                    value: _FolderMenuAction.visibility,
+                    child: Text(folder.isPublic ? context.l10n.foldersMakePrivate : context.l10n.foldersMakePublic),
+                  ),
                   PopupMenuItem<_FolderMenuAction>(
                     value: _FolderMenuAction.rename,
                     child: Text(context.l10n.foldersRename),

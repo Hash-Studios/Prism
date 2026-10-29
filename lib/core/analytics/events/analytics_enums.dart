@@ -42,6 +42,28 @@ enum BinaryResultValue {
   String get wireValue => _snakeCase(name);
 }
 
+enum AiStylePickSource {
+  row,
+  sheet,
+  onboarding;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum ImmersiveToggleSourceValue {
+  tap,
+  semantics;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum FavouritePinSurfaceValue {
+  library,
+  detail;
+
+  String get wireValue => _snakeCase(name);
+}
+
 enum RcOrFallbackValue {
   rcAttempt,
   fallbackOnly,
@@ -272,7 +294,8 @@ enum NotificationPreferenceValue {
   posts,
   inApp,
   recommendations,
-  streakReminders;
+  streakReminders,
+  folders;
 
   String get wireValue => _snakeCase(name);
 }

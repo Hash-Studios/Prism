@@ -16,6 +16,8 @@ void main() {
     VoidCallback? onTap,
     bool showLess = true,
     bool resetOriginal = false,
+    bool saveToFolder = false,
+    bool? isPinned,
     Object identity = 'wall',
     Size tileSize = const Size(160, 200),
     double textScale = 1,
@@ -39,6 +41,10 @@ void main() {
                 shareLabel: 'Share',
                 showLessLabel: showLess ? 'See less' : null,
                 resetOriginalLabel: resetOriginal ? 'Reset to original variation' : null,
+                saveToFolderLabel: saveToFolder ? 'Save to folder' : null,
+                pinLabel: isPinned == null ? null : 'Pin to top',
+                unpinLabel: 'Unpin',
+                readIsPinned: isPinned == null ? null : () => isPinned,
                 onAction: actions.add,
                 preview: const ColoredBox(key: ValueKey('preview'), color: Colors.blue),
                 child: GestureDetector(
@@ -244,6 +250,22 @@ void main() {
       expect(find.byIcon(Icons.ios_share_rounded), findsNothing);
     });
   }
+
+  testWidgets('pin is a reachable sixth hold action', (tester) async {
+    final actions = <WallpaperQuickAction>[];
+    await pumpRegion(tester, actions, resetOriginal: true, saveToFolder: true, isPinned: false);
+    final gesture = await hold(tester);
+    final Finder pin = find.bySemanticsLabel('Pin to top');
+    expect(pin, findsOneWidget);
+    await gesture.moveTo(tester.getCenter(pin));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 180));
+    await tester.pump();
+    expect(actions, <WallpaperQuickAction>[WallpaperQuickAction.pin]);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('release outside and pointer cancellation never dispatch', (tester) async {
     final actions = <WallpaperQuickAction>[];

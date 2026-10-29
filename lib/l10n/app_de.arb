@@ -14,6 +14,39 @@
   "galleryEmptyBody": "Sie wurden entfernt oder sind nicht mehr öffentlich.",
   "galleryEmptyTitle": "Diese Hintergrundbilder sind weg",
   "galleryScreenTitle": "Hintergrundbilder für dich",
+  "favouritePin": "Oben anheften",
+  "@favouritePin": {
+    "description": "Hold-menu action on a favourite wallpaper. Keeps it at the top of Favourites."
+  },
+  "favouriteUnpin": "Lösen",
+  "@favouriteUnpin": {
+    "description": "Hold-menu action on a pinned favourite. Returns it to its normal place in Favourites."
+  },
+  "favouritePinnedToast": "Oben in Favoriten angeheftet",
+  "@favouritePinnedToast": {
+    "description": "Confirmation after the user pins a favourite."
+  },
+  "favouriteUnpinnedToast": "Anheftung aufgehoben",
+  "@favouriteUnpinnedToast": {
+    "description": "Confirmation after the user unpins a favourite."
+  },
+  "favouritePinnedBadge": "Angeheftet",
+  "@favouritePinnedBadge": {
+    "description": "Accessibility label of the small pin badge on a pinned favourite tile."
+  },
+  "favouritePinLimit": "{count, plural, other{Du kannst bis zu {count} Favoriten anheften. Löse eine Anheftung, um dieses Hintergrundbild anzuheften.}}",
+  "@favouritePinLimit": {
+    "description": "Shown when the user tries to pin more favourites than the limit.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "favouritePinFailed": "Anheften konnte nicht aktualisiert werden. Prüfe deine Verbindung und versuche es erneut.",
+  "@favouritePinFailed": {
+    "description": "Shown when pinning or unpinning a favourite fails."
+  },
   "wallpaperFavouriteSearchCountHint": "{count, plural, =1{1 Favorit durchsuchen} other{{count} Favoriten durchsuchen}}",
   "@wallpaperFavouriteSearchCountHint": {
     "description": "Hint in the favourites search field. It also tells how many favourites there are.",
@@ -3432,6 +3465,8 @@
       }
     }
   },
+  "economyAiStyleSheetTitle": "Wähle einen Stil",
+  "economyAiStyleSheetSubject": "Jede Vorschau zeigt dieselbe Szene: ein Leuchtturm auf einer Klippe in der Dämmerung.",
   "economyAiStyleWatercolor": "Aquarell",
   "economyAiStyleSpace": "Weltraum",
   "economyAiStyleSynthwave": "Synthwave",
@@ -6365,10 +6400,6 @@
     "description": "Wallpaper interface text: wallpaperAccentColorsOriginal."
   },
   "wallpaperResetOriginal": "Zurück zum Original",
-  "wallpaperAccentResetHint": "Gedrückt halten für Aktionen, auch Zurück zum Original",
-  "@wallpaperAccentResetHint": {
-    "description": "Toast hint explaining how to reset the selected wallpaper accent."
-  },
   "wallpaperAll": "Alle",
   "@wallpaperAll": {
     "description": "Filter option to show all wallpaper sources."
@@ -7630,7 +7661,7 @@
   },
   "wallpaperHidePreviewControls": "Steuerelemente ausblenden",
   "@wallpaperHidePreviewControls": {
-    "description": "Accessibility label of the wallpaper preview background: a tap hides the buttons so the whole mock phone screen shows."
+    "description": "Accessibility label and action that hides the buttons: on the wallpaper preview, and on the wallpaper detail screen where it also hides the system bars."
   },
   "wallpaperHistoryBothScreens": "Beide Bildschirme",
   "@wallpaperHistoryBothScreens": {
@@ -7660,7 +7691,7 @@
   "@wallpaperHomeAppName": {
     "description": "Accessible name for the Prism logo."
   },
-  "wallpaperImageSemanticHint": "Tippen, um die Akzentfarbe zu wechseln. Gedrückt halten für Favoriten, Teilen und Zurücksetzen. Für Details scrollen.",
+  "wallpaperImageSemanticHint": "Gedrückt halten für Favoriten, Teilen und Zurücksetzen. Für Details scrollen.",
   "@wallpaperImageSemanticHint": {
     "description": "Accessibility hint describing wallpaper image gestures."
   },
@@ -7669,6 +7700,10 @@
   "wallpaperImageSemanticLabel": "Hintergrundbild",
   "@wallpaperImageSemanticLabel": {
     "description": "Accessibility label for the wallpaper image."
+  },
+  "wallpaperImmersiveHint": "Tippen, um Steuerelemente auszublenden",
+  "@wallpaperImmersiveHint": {
+    "description": "Small hint shown once on the wallpaper detail screen. A tap on the wallpaper hides every button and the system bars."
   },
   "wallpaperInsufficientCoins": "Nicht genug Coins. Verdiene Coins bei „Belohnungen“.",
   "@wallpaperInsufficientCoins": {
@@ -8557,7 +8592,7 @@
   },
   "wallpaperShowPreviewControls": "Steuerelemente einblenden",
   "@wallpaperShowPreviewControls": {
-    "description": "Accessibility label of the wallpaper preview background: a tap shows the buttons again."
+    "description": "Accessibility label and action that shows the buttons again, on the wallpaper preview and on the wallpaper detail screen."
   },
   "wallpaperSignIn": "Anmelden",
   "@wallpaperSignIn": {
@@ -9850,6 +9885,352 @@
   "tasteQuizRetakeFailed": "Hintergrundbilder konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
   "@tasteQuizRetakeFailed": {
     "description": "Toast when the walls for a quiz retake do not load."
+  },
+  "foldersPublic": "Öffentlich",
+  "@foldersPublic": {
+    "description": "Label on a folder that others can see."
+  },
+  "foldersMakePublic": "Öffentlich machen",
+  "@foldersMakePublic": {
+    "description": "Folder menu action that lets others see the folder."
+  },
+  "foldersMakePrivate": "Privat machen",
+  "@foldersMakePrivate": {
+    "description": "Folder menu action that hides the folder from others."
+  },
+  "foldersMakePublicTitle": "Diesen Ordner öffentlich machen?",
+  "@foldersMakePublicTitle": {
+    "description": "Title of the dialog before a folder becomes public."
+  },
+  "foldersMakePublicMessage": "Alle in Prism können seinen Namen und die Hintergrundbilder sehen, ihm folgen und seinen Link öffnen. Geteilte Links behalten ihre Vorschau, auch wenn du ihn später privat machst.",
+  "@foldersMakePublicMessage": {
+    "description": "One line that says what others see when a folder is public."
+  },
+  "foldersMakePrivateTitle": "Diesen Ordner privat machen?",
+  "@foldersMakePrivateTitle": {
+    "description": "Title of the dialog before a public folder becomes private."
+  },
+  "foldersMakePrivateMessage": "Nur du siehst ihn. Sein Link funktioniert nicht mehr und seine Follower verlieren ihn.",
+  "@foldersMakePrivateMessage": {
+    "description": "One line that says what happens when a public folder becomes private."
+  },
+  "foldersMadePublic": "Dieser Ordner ist jetzt öffentlich.",
+  "@foldersMadePublic": {
+    "description": "Toast after a folder becomes public."
+  },
+  "foldersMadePrivate": "Dieser Ordner ist jetzt privat.",
+  "@foldersMadePrivate": {
+    "description": "Toast after a folder becomes private."
+  },
+  "foldersPublicNameRefused": "Benenne diesen Ordner um, damit er öffentlich werden kann.",
+  "@foldersPublicNameRefused": {
+    "description": "Toast when the folder name cannot be shown to others."
+  },
+  "foldersHiddenRefused": "Dieser Ordner wurde nach Meldungen ausgeblendet, daher kann er nicht öffentlich sein.",
+  "@foldersHiddenRefused": {
+    "description": "Toast when a moderator hid the folder."
+  },
+  "foldersLimitRefused": "Du hast Ordner heute zu oft geändert. Versuche es morgen erneut.",
+  "@foldersLimitRefused": {
+    "description": "Toast when the daily limit for folder changes is reached."
+  },
+  "foldersFollow": "Folgen",
+  "@foldersFollow": {
+    "description": "Button that follows a public folder."
+  },
+  "foldersFollowing": "Gefolgt",
+  "@foldersFollowing": {
+    "description": "Button state when the user follows a public folder. Tap to unfollow."
+  },
+  "foldersFollowerCount": "{count, plural, =0{Keine Follower} =1{1 Follower} other{{count} Follower}}",
+  "@foldersFollowerCount": {
+    "description": "Number of people who follow a public folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersByOwner": "Von {name}",
+  "@foldersByOwner": {
+    "description": "Owner line on a public folder page.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersShare": "Ordner teilen",
+  "@foldersShare": {
+    "description": "Action and tooltip that shares a public folder link."
+  },
+  "foldersReport": "Ordner melden",
+  "@foldersReport": {
+    "description": "Menu action that reports a public folder."
+  },
+  "foldersUnavailableTitle": "Dieser Ordner ist privat oder existiert nicht mehr",
+  "@foldersUnavailableTitle": {
+    "description": "Title when a shared folder cannot be shown."
+  },
+  "foldersUnavailableBody": "Der Besitzer hat ihn vielleicht privat gemacht oder gelöscht.",
+  "@foldersUnavailableBody": {
+    "description": "Body when a shared folder cannot be shown."
+  },
+  "foldersFollowFailed": "Das Folgen konnte nicht aktualisiert werden. Versuche es erneut.",
+  "@foldersFollowFailed": {
+    "description": "Toast when following or unfollowing a folder fails."
+  },
+  "foldersYouFollow": "Ordner, denen du folgst",
+  "@foldersYouFollow": {
+    "description": "Heading of the public folders the user follows, in the Library."
+  },
+  "foldersPublicEmptyTitle": "Hier gibt es noch keine Hintergrundbilder",
+  "@foldersPublicEmptyTitle": {
+    "description": "Title when a public folder has no wallpapers others can see."
+  },
+  "foldersPublicEmptyBody": "Neue Hintergrundbilder erscheinen hier, sobald der Besitzer sie hinzufügt.",
+  "@foldersPublicEmptyBody": {
+    "description": "Body when a public folder has no wallpapers others can see."
+  },
+  "notifSettingFolders": "Ordner, denen du folgst",
+  "@notifSettingFolders": {
+    "description": "Notification setting for new wallpapers in followed folders."
+  },
+  "notifSettingFoldersDescription": "Neue Hintergrundbilder in Ordnern, denen du folgst, einmal am Tag",
+  "@notifSettingFoldersDescription": {
+    "description": "Description of the followed folders notification setting."
+  },
+  "notifPushFolderDigestTitleOne": "Neu in {folderName}",
+  "@notifPushFolderDigestTitleOne": {
+    "description": "Title of the daily push for new wallpapers in one followed folder.",
+    "placeholders": {
+      "folderName": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushFolderDigestTitleMore": "Neu in {folderName} und {count} weiteren",
+  "@notifPushFolderDigestTitleMore": {
+    "description": "Title of the daily push for new wallpapers in several followed folders.",
+    "placeholders": {
+      "folderName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "historySetAndDownloaded": "Gesetzt und heruntergeladen",
+  "@historySetAndDownloaded": {
+    "description": "History tab segment on Android: walls the user set as wallpaper or downloaded."
+  },
+  "historyDownloaded": "Heruntergeladen",
+  "@historyDownloaded": {
+    "description": "History tab segment on iOS, where the app cannot set wallpapers: walls the user downloaded."
+  },
+  "historyRecentlyViewed": "Zuletzt angesehen",
+  "@historyRecentlyViewed": {
+    "description": "History tab segment: walls the user opened recently on this device."
+  },
+  "historySyncedNote": "In deinem Konto gespeichert, damit sie auf einem neuen Handy wieder da sind.",
+  "@historySyncedNote": {
+    "description": "One line above the Set and downloaded list for a signed-in user."
+  },
+  "historySyncedNoteGuest": "Melde dich an, damit sie auf einem neuen Handy bleiben.",
+  "@historySyncedNoteGuest": {
+    "description": "One line above the Set and downloaded list for a signed-out user."
+  },
+  "historyActionSet": "Gesetzt",
+  "@historyActionSet": {
+    "description": "Label under a history tile: the user set this wall as wallpaper."
+  },
+  "historyActionDownloaded": "Heruntergeladen",
+  "@historyActionDownloaded": {
+    "description": "Label under a history tile: the user downloaded this wall."
+  },
+  "historySyncedTileLabel": "{action} um {time}",
+  "@historySyncedTileLabel": {
+    "description": "Screen reader label of a history tile from the account. action is Set or Downloaded, time is when.",
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "historyClearSyncedBody": "Die Liste wird hier und in deinem Konto entfernt. Deine Hintergrundbilder und Downloads bleiben erhalten.",
+  "@historyClearSyncedBody": {
+    "description": "Body of the confirm dialog before clearing the Set and downloaded list."
+  },
+  "historyClearViewedTitle": "Zuletzt angesehene löschen?",
+  "@historyClearViewedTitle": {
+    "description": "Title of the confirm dialog before clearing the recently viewed list."
+  },
+  "historyClearViewedBody": "Die Hintergrundbilder, die du geöffnet hast, werden aus dieser Liste und von der Startseite entfernt.",
+  "@historyClearViewedBody": {
+    "description": "Body of the confirm dialog before clearing the recently viewed list."
+  },
+  "historyClearViewedAction": "Zuletzt angesehene löschen",
+  "@historyClearViewedAction": {
+    "description": "Confirm button that clears the recently viewed list."
+  },
+  "historyEmptyBodyAndroid": "Hintergrundbilder, die du setzt oder herunterlädst, erscheinen hier, damit du sie wiederfindest.",
+  "@historyEmptyBodyAndroid": {
+    "description": "Empty state body of the Set and downloaded list on Android."
+  },
+  "historyEmptyBodyIos": "Hintergrundbilder, die du herunterlädst, erscheinen hier, damit du sie wiederfindest.",
+  "@historyEmptyBodyIos": {
+    "description": "Empty state body of the Downloaded list on iOS."
+  },
+  "historyViewedEmptyTitle": "Noch nichts angesehen",
+  "@historyViewedEmptyTitle": {
+    "description": "Empty state title of the recently viewed list."
+  },
+  "historyViewedEmptyBody": "Hintergrundbilder, die du öffnest, erscheinen hier, damit du sie wiederfindest.",
+  "@historyViewedEmptyBody": {
+    "description": "Empty state body of the recently viewed list."
+  },
+  "historyViewedOffTitle": "Ansichtsverlauf ist aus",
+  "@historyViewedOffTitle": {
+    "description": "Empty state title of the recently viewed list when the Save viewing history setting is off."
+  },
+  "historyViewedOffBody": "Schalte Ansichtsverlauf speichern ein, um die Hintergrundbilder zu sehen, die du hier öffnest.",
+  "@historyViewedOffBody": {
+    "description": "Empty state body of the recently viewed list when the setting is off."
+  },
+  "historyViewedOffAction": "Einschalten",
+  "@historyViewedOffAction": {
+    "description": "Button in the recently viewed empty state that turns on the Save viewing history setting."
+  },
+  "historyViewedTileLabel": "Hintergrundbild öffnen, angesehen um {time}",
+  "@historyViewedTileLabel": {
+    "description": "Screen reader label of a recently viewed tile. time is when it was viewed.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "pickUpTitle": "Dort weitermachen, wo du aufgehört hast",
+  "@pickUpTitle": {
+    "description": "Title of the Home row that shows walls the user opened recently but did not save, set or download."
+  },
+  "pickUpTileLabel": "Hintergrundbild {index} von {count} öffnen",
+  "@pickUpTileLabel": {
+    "description": "Screen reader label of a tile in the Pick up where you left off row.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsSaveViewingHistory": "Ansichtsverlauf speichern",
+  "@settingsSaveViewingHistory": {
+    "description": "Settings switch. On: the app remembers the walls the user opens on this device."
+  },
+  "settingsSaveViewingHistoryBody": "Zeigt die Hintergrundbilder, die du öffnest, im Verlauf und auf der Startseite. Wenn du das ausschaltest, wird die Liste gelöscht.",
+  "@settingsSaveViewingHistoryBody": {
+    "description": "Subtitle of the Save viewing history switch."
+  },
+  "historyClearFailed": "Der Verlauf konnte nicht gelöscht werden. Prüfe deine Verbindung und versuche es erneut.",
+  "@historyClearFailed": {
+    "description": "Toast when Clear on the Set and downloaded list cannot reach the account. Nothing was cleared."
+  },
+  "wallpaperAutoRotateSourceFolder": "Ordner",
+  "@wallpaperAutoRotateSourceFolder": {
+    "description": "Auto-rotate source chip that rotates the walls of one of the user's folders."
+  },
+  "wallpaperAutoRotateSourceFolderNamed": "Ordner: {folder}",
+  "@wallpaperAutoRotateSourceFolderNamed": {
+    "description": "Auto-rotate source chip when a folder is chosen. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateNounFolder": "{folder}",
+  "@wallpaperAutoRotateNounFolder": {
+    "description": "How the mix line names a folder source. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateTooFewFolder": "Dieser Ordner braucht mindestens 2 Hintergrundbilder, die wechseln können. Prism-Hintergrundbilder wechseln, nachdem du sie heruntergeladen hast.",
+  "@wallpaperAutoRotateTooFewFolder": {
+    "description": "Shown when the chosen folder has fewer than 2 wallpapers that auto-rotate can use."
+  },
+  "wallpaperAutoRotateOpenFolder": "Ordner öffnen",
+  "@wallpaperAutoRotateOpenFolder": {
+    "description": "Button that opens the chosen folder from the auto-rotate screen."
+  },
+  "wallpaperAutoRotatePickFolder": "Ordner auswählen",
+  "@wallpaperAutoRotatePickFolder": {
+    "description": "Title of the sheet that lists the user's folders for auto-rotate."
+  },
+  "wallpaperAutoRotateNoFolders": "Du hast noch keine Ordner. Speichere ein Hintergrundbild in einem Ordner und wähle ihn dann hier aus.",
+  "@wallpaperAutoRotateNoFolders": {
+    "description": "Empty state of the auto-rotate folder picker."
+  },
+  "wallpaperAutoRotateConfirmFolderTitle": "{folder} wechseln?",
+  "@wallpaperAutoRotateConfirmFolderTitle": {
+    "description": "Title of the card that asks the user to confirm a folder as the auto-rotate source. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateConfirmFolderBody": "Dein Hintergrundbild wechselt nach dem Zeitplan unten zu einem Bild aus diesem Ordner.",
+  "@wallpaperAutoRotateConfirmFolderBody": {
+    "description": "Body of the card that asks the user to confirm a folder as the auto-rotate source."
+  },
+  "wallpaperAutoRotateConfirmFolderAction": "Diesen Ordner wechseln",
+  "@wallpaperAutoRotateConfirmFolderAction": {
+    "description": "Button that makes the folder the auto-rotate source and turns auto-rotate on."
+  },
+  "wallpaperAutoRotateStoppedFolderDeleted": "Automatischer Wechsel ist aus, weil der Ordner {folder} gelöscht wurde.",
+  "@wallpaperAutoRotateStoppedFolderDeleted": {
+    "description": "Toast when auto-rotate stopped because its folder was deleted. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateStoppedFolderEmpty": "Automatischer Wechsel ist aus, weil der Ordner {folder} weniger als 2 Hintergrundbilder hat.",
+  "@wallpaperAutoRotateStoppedFolderEmpty": {
+    "description": "Toast when auto-rotate stopped because its folder has too few usable wallpapers. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersRotateThisFolder": "Diesen Ordner wechseln",
+  "@foldersRotateThisFolder": {
+    "description": "Folder page menu item that opens auto-rotate with this folder chosen. Android only."
+  },
+  "foldersRotating": "Wechselt",
+  "@foldersRotating": {
+    "description": "Small label on a folder page when auto-rotate uses this folder."
+  },
+  "foldersRotatingDescription": "Der automatische Wechsel nutzt diesen Ordner",
+  "@foldersRotatingDescription": {
+    "description": "Tooltip and screen reader label of the Rotating label on a folder page."
+  },
+  "wallpaperAccentResetHint": "Gedrückt halten für Aktionen, auch Zurück zum Original",
+  "@wallpaperAccentResetHint": {
+    "description": "Toast hint explaining how to reset the selected wallpaper accent."
   },
   "wallRequestsTitle": "Wallpaper-Wünsche",
   "@wallRequestsTitle": {

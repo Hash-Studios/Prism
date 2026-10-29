@@ -20,6 +20,11 @@ async function profileHasNoEmail(path, auth) {
   const body = await r.json();
   return r.status === 200 && body.fields && !('email' in body.fields) ? 200 : -1;
 }
+async function projectionHasNoUrl(path, auth) {
+  const r = await fetch(`${B}/${path}`, { headers: { Authorization: `Bearer ${auth}` } });
+  const body = await r.json();
+  return r.status === 200 && body.fields && !('url' in body.fields) ? 200 : 500;
+}
 async function transformFollowers(uid, operation, emails, auth) {
   const r = await fetch(`${B}:commit`, {
     method: 'POST', headers: { Authorization: `Bearer ${auth}`, 'Content-Type': 'application/json' },
@@ -79,6 +84,7 @@ const requestFields = (owner, extra = {}) => ({
   createdAt: ts(), ...extra,
 });
 const fieldEquals = (field, value) => ({ fieldFilter: { field: { fieldPath: field }, op: 'EQUAL', value } });
+const historyFields = (id = 'abc', provider = 'wallhaven', extra = {}) => ({ id: str(id), provider: str(provider), thumb: str('https://th.wallhaven.cc/small/ab/abc.jpg'), action: str('set'), at: ts(), ...extra });
 const ownerFilter = (uid) => ({ fieldFilter: { field: { fieldPath: 'ownerId' }, op: 'EQUAL', value: { stringValue: uid } } });
 const newestFirst = (field, limit) => ({ orderBy: [{ field: { fieldPath: field }, direction: 'DESCENDING' }], ...(limit ? { limit } : {}) });
 const commitDocs = async (auth, docs) => {
@@ -104,6 +110,7 @@ const seed = () => Promise.all([
   req('PATCH', 'usersv2/target', { followers: arr(['a@x.com']), name: { stringValue: 't' } }, 'owner'),
   req('PATCH', 'admin_users/admin@x.com', { ok: { booleanValue: true } }, 'owner'),
   req('PATCH', 'usersv2/b', { id: { stringValue: 'b' }, coins: { integerValue: '10' }, premium: { booleanValue: false } }, 'owner'),
+  req('PATCH', 'usersv2/history-owner', { id: str('history-owner'), coins: { integerValue: '0' }, premium: { booleanValue: false } }, HistoryOwner),
   req('PATCH', 'walls/w8', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false } }, 'owner'),
   req('PATCH', 'walls/w9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
   req('PATCH', 'walls/protected', { ...publicWall, wallpaper_thumb: { stringValue: 'https://example.com/preview.jpg' } }, 'owner'),
@@ -154,10 +161,20 @@ const seed = () => Promise.all([
   req('PATCH', 'folders/reused', folderFields('b'), 'owner'),
   req('PATCH', 'folders/reused/items/wallhaven_private', itemFields('b', 'private'), 'owner'),
   req('PATCH', 'folders/absent/items/wallhaven_orphan', itemFields('b', 'orphan'), 'owner'),
+  req('PATCH', 'folders/pf1', folderFields('a', 'Night', { public: { booleanValue: true }, itemCount: { integerValue: '1' }, covers: arr(['https://img.prismwalls.com/previews/x.img']) }), 'owner'),
+  req('PATCH', 'folders/pf1/items/prism_w1', itemFields('a', 'w1', 'Prism'), 'owner'),
+  req('PATCH', 'publicFolders/pf1', { ownerId: str('a'), name: str('Night'), itemCount: { integerValue: '1' }, covers: arr(['https://img.prismwalls.com/previews/x.img']), followerCount: { integerValue: '0' }, updatedAt: ts() }, 'owner'),
+  req('PATCH', 'publicFolders/pf1/items/prism_w1', { id: str('w1'), provider: str('Prism'), thumb: str('https://img.prismwalls.com/previews/x.img'), wallpaperDocumentId: str('W1') }, 'owner'),
+  req('PATCH', 'publicFolders/pf1/followers/b', { uid: str('b') }, 'owner'),
+  req('PATCH', 'usersv2/b/followedFolders/pf1', { folderId: str('pf1'), ownerId: str('a') }, 'owner'),
+  req('PATCH', 'usersv2/c/blockedUsers/a', { blockedAt: ts() }, 'owner'),
+  req('PATCH', 'usersv2/a/blockedUsers/dblock', { blockedAt: ts() }, 'owner'),
+  req('PATCH', 'publicFolders/orphan/items/prism_w1', { id: str('w1'), provider: str('Prism'), thumb: str('https://img.prismwalls.com/previews/x.img'), wallpaperDocumentId: str('W1') }, 'owner'),
 ]);
-const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), ADM = tok('adm', 'admin@x.com');
+const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), HistoryOwner = tok('history-owner', 'history-owner@x.com'), ADM = tok('adm', 'admin@x.com');
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
 const C = tok('c', 'c@x.com');
+const D = tok('dblock', 'dblock@x.com');
 const themeFields = {
   mode: str('dark'), lightThemeId: str('kLFrost White'), lightAccent: { integerValue: '4293228183' },
   darkThemeId: str('kDOlive'), darkAccent: { integerValue: '4278190080' }, changedAt: { integerValue: '1793000000000' },
@@ -267,6 +284,29 @@ const cases = [
     }, Bu), 200],
     [`${provider} favourite delete allowed`, () => req('DELETE', `usersv2/b/images/${provider}`, null, Bu), 200],
   ]),
+  ['favourite with pinnedAt timestamp allowed', () => req('PATCH', 'usersv2/b/images/pinned-wall', {
+    id: { stringValue: 'pinned-wall' }, provider: { stringValue: 'Prism' }, pinnedAt: ts(),
+  }, Bu), 200],
+  ['favourite pin update (mask pinnedAt) allowed', () => req('PATCH', 'usersv2/b/images/pinned-wall', {
+    pinnedAt: { timestampValue: new Date().toISOString() },
+  }, Bu, ['pinnedAt']), 200],
+  ['favourite unpin (field removed via mask) allowed', () => req('PATCH', 'usersv2/b/images/pinned-wall', {}, Bu, ['pinnedAt']), 200],
+  ['favourite pinnedAt string rejected', () => req('PATCH', 'usersv2/b/images/pinned-bad', {
+    id: { stringValue: 'pinned-bad' }, provider: { stringValue: 'Prism' }, pinnedAt: { stringValue: '2026-10-29' },
+  }, Bu), 403],
+  ['favourite pinnedAt null rejected', () => req('PATCH', 'usersv2/b/images/pinned-bad2', {
+    id: { stringValue: 'pinned-bad2' }, provider: { stringValue: 'Prism' }, pinnedAt: { nullValue: null },
+  }, Bu), 403],
+  ['favourite pinnedAt number rejected', () => req('PATCH', 'usersv2/b/images/pinned-bad3', {
+    id: { stringValue: 'pinned-bad3' }, provider: { stringValue: 'Prism' }, pinnedAt: { integerValue: '1' },
+  }, Bu), 403],
+  ['other user cannot pin someone else favourite', () => req('PATCH', 'usersv2/b/images/pinned-wall', {
+    pinnedAt: ts(),
+  }, A, ['pinnedAt']), 403],
+  ['old client favourite without pinnedAt still allowed', () => req('PATCH', 'usersv2/b/images/old-client', {
+    id: { stringValue: 'old-client' }, provider: { stringValue: 'Prism' }, url: { stringValue: 'https://example.com/w.jpg' },
+    thumb: { stringValue: 'https://example.com/t.jpg' }, favouritedAt: ts(),
+  }, Bu), 200],
   ['guest reads redacted public metadata', () => req('GET', 'walls/protected'), 200],
   ['guest reads a reviewed legacy wall (3.7.0 read rule restored)', () => req('GET', 'walls/w9'), 200],
   ['guest reads a reviewed wall that only claims protection (read tightening ships later)', () => req('GET', 'walls/leaked'), 200],
@@ -571,6 +611,7 @@ const cases = [
   ['item spatial must be a map', () => req('PATCH', 'folders/fb/items/prism_spatialstr', { ...itemFields('b', 'spatialstr', 'Prism'), spatial: str('scene') }, Bu), 403],
   ['changing an item ownerId is refused', () => req('PATCH', 'folders/fb/items/wallhaven_abc', { ownerId: str('c') }, Bu, ['ownerId']), 403],
   ['item with an extra field is refused', () => req('PATCH', 'folders/fb/items/wallhaven_extra', { ...itemFields('b', 'extra'), public: { booleanValue: true } }, Bu), 403],
+  ['folder item cannot include a favourite pin timestamp', () => req('PATCH', 'folders/fb/items/wallhaven_pinned', { ...itemFields('b', 'pinned'), pinnedAt: ts() }, Bu), 403],
   ['item in a missing folder is refused', () => req('PATCH', 'folders/missing/items/wallhaven_abc', itemFields('b'), Bu), 403],
   ['owner updates own seeded folder count', () => req('PATCH', 'folders/fb', { itemCount: { integerValue: '1' }, covers: arr(['https://example.com/t.jpg']), updatedAt: ts() }, Bu, ['itemCount', 'covers', 'updatedAt']), 200],
   ['owner creates a folder and first item atomically', () => commitDocs(Bu, [
@@ -591,11 +632,16 @@ const cases = [
   ['previous item owner cannot delete in a recreated folder owned by another user', () => req('DELETE', 'folders/reused/items/wallhaven_private', null, Bu), 403],
   ['orphan item cannot be read while its parent is absent', () => req('GET', 'folders/absent/items/wallhaven_orphan', null, Bu), 403],
   ['previous item owner can delete an orphan with no parent', () => req('DELETE', 'folders/absent/items/wallhaven_orphan', null, Bu), 200],
+  ['owner creates history before account deletion barrier', () => req('PATCH', 'usersv2/b/history/wallhaven_barrierupdate', historyFields('barrierupdate'), Bu), 200],
   ['account deletion closes the folder write barrier', () => req('PATCH', 'creatorDeletionState/b', { closed: { booleanValue: true } }, 'owner'), 200],
   ['deleting account cannot create more folders', () => req('PATCH', 'folders/after-close', folderFields('b'), Bu), 403],
   ['deleting account cannot update a folder', () => req('PATCH', 'folders/fb', { name: str('Too late') }, Bu, ['name']), 403],
   ['deleting account cannot create an item', () => req('PATCH', 'folders/fb/items/prism_late', itemFields('b', 'late', 'Prism'), Bu), 403],
   ['deleting account cannot update an item', () => req('PATCH', 'folders/fb/items/wallhaven_abc', { thumb: str('https://example.com/late.jpg') }, Bu, ['thumb']), 403],
+  ['deleting account cannot write history after recursive cleanup', () => req('PATCH', 'usersv2/b/history/wallhaven_late', historyFields('late'), Bu), 403],
+  ['deleting account cannot update history after recursive cleanup', () => req('PATCH', 'usersv2/b/history/wallhaven_barrierupdate', historyFields('barrierupdate', 'wallhaven', { action: str('download') }), Bu, ['action']), 403],
+  ['deleting account cannot read history after recursive cleanup', () => req('GET', 'usersv2/b/history/wallhaven_barrierupdate', null, Bu), 403],
+  ['deleting account cannot delete history after recursive cleanup', () => req('DELETE', 'usersv2/b/history/wallhaven_barrierupdate', null, Bu), 403],
   ['deleting account can still remove its items', () => req('DELETE', 'folders/fb/items/wallhaven_abc', null, Bu), 200],
   ['deleting account can still remove its folders', () => req('DELETE', 'folders/atomic', null, Bu), 200],
   ['guest cannot read a wall request directly', () => req('GET', 'wallRequests/open', null), 403],
@@ -632,6 +678,71 @@ const cases = [
   ['owner cannot read a wall request push claim', () => req('GET', 'usersv2/b/private/wallRequestPush', null, Bu), 403],
   ['owner cannot write a wall request push claim', () => req('PATCH', 'usersv2/b/private/wallRequestPush', { requestId: str('request-2') }, Bu, ['requestId']), 403],
   ['owner cannot delete a wall request push claim', () => req('DELETE', 'usersv2/b/private/wallRequestPush', null, Bu), 403],
+  ['owner writes a history entry', () => req('PATCH', 'usersv2/history-owner/history/wallhaven_abc', historyFields(), HistoryOwner), 200],
+  ['owner reads own history', () => req('GET', 'usersv2/history-owner/history/wallhaven_abc', null, HistoryOwner), 200],
+  ['owner lists own history', () => runCollectionQuery(HistoryOwner, 'history', 'usersv2/history-owner'), 200],
+  ['stranger cannot read history', () => req('GET', 'usersv2/history-owner/history/wallhaven_abc', null, C), 403],
+  ['stranger cannot list history', () => runCollectionQuery(C, 'history', 'usersv2/history-owner'), 403],
+  ['signed-out user cannot read history', () => req('GET', 'usersv2/history-owner/history/wallhaven_abc'), 403],
+  ['stranger cannot write history', () => req('PATCH', 'usersv2/history-owner/history/wallhaven_x', historyFields('x'), C), 403],
+  ['stranger cannot delete history', () => req('DELETE', 'usersv2/history-owner/history/wallhaven_abc', null, C), 403],
+  ['history extra field is refused', () => req('PATCH', 'usersv2/history-owner/history/wallhaven_extra', historyFields('extra', 'wallhaven', { target: str('home') }), HistoryOwner), 403],
+  ['history original url is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_url', historyFields('url', 'prism', { url: str('https://img.prismwalls.com/o.jpg') }), HistoryOwner), 403],
+  ['history full url field is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_full', historyFields('full', 'prism', { fullUrl: str('https://img.prismwalls.com/o.jpg') }), HistoryOwner), 403],
+  ['history signed thumb is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_signed', historyFields('signed', 'prism', { thumb: str('https://r2.example.com/o.jpg?X-Amz-Signature=abc') }), HistoryOwner), 403],
+  ['history encoded signed query key is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_encoded', historyFields('encoded', 'prism', { thumb: str('https://cdn.example.com/thumb.jpg?%73ignature=secret') }), HistoryOwner), 403],
+  ['history X-Amz parameter is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_amz', historyFields('amz', 'prism', { thumb: str('https://cdn.example.com/thumb.jpg?X-Amz-Date=20261029') }), HistoryOwner), 403],
+  ['history non-https thumb is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_local', historyFields('local', 'prism', { thumb: str('file:///data/x.jpg') }), HistoryOwner), 403],
+  ['history long thumb is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_long', historyFields('long', 'prism', { thumb: str(`https://x.com/${'a'.repeat(1100)}`) }), HistoryOwner), 403],
+  ['history key must match provider and id', () => req('PATCH', 'usersv2/history-owner/history/wallhaven_other', historyFields('abc'), HistoryOwner), 403],
+  ['history unknown provider is refused', () => req('PATCH', 'usersv2/history-owner/history/local_abc', historyFields('abc', 'local'), HistoryOwner), 403],
+  ['history unknown action is refused', () => req('PATCH', 'usersv2/history-owner/history/wallhaven_view', historyFields('view', 'wallhaven', { action: str('view') }), HistoryOwner), 403],
+  ['history missing time is refused', () => req('PATCH', 'usersv2/history-owner/history/wallhaven_notime', (({ at, ...rest }) => rest)(historyFields('notime')), HistoryOwner), 403],
+  ['owner deletes own history entry', () => req('DELETE', 'usersv2/history-owner/history/wallhaven_abc', null, HistoryOwner), 200],
+  ['history permits public Pexels thumbnail resizing query', () => req('PATCH', 'usersv2/history-owner/history/pexels_123', historyFields('123', 'pexels', { thumb: str('https://images.pexels.com/photos/123/preview.jpeg?auto=compress&cs=tinysrgb&w=640') }), HistoryOwner), 200],
+  ['history X-Goog signed thumbnail is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_google_sig', historyFields('google_sig', 'prism', { thumb: str('https://cdn.example.com/thumb.jpg?X-Goog-Signature=secret') }), HistoryOwner), 403],
+  ['history generic signed thumbnail is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_generic_sig', historyFields('generic_sig', 'prism', { thumb: str('https://cdn.example.com/thumb.jpg?signature=secret') }), HistoryOwner), 403],
+  ['history Google access id is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_google_id', historyFields('google_id', 'prism', { thumb: str('https://cdn.example.com/thumb.jpg?GoogleAccessId=secret') }), HistoryOwner), 403],
+  ['history short signature is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_sig', historyFields('sig', 'prism', { thumb: str('https://cdn.example.com/thumb.jpg?sig=secret') }), HistoryOwner), 403],
+  ['history thumbnail with userinfo is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_userinfo', historyFields('userinfo', 'prism', { thumb: str('https://user@cdn.example.com/thumb.jpg') }), HistoryOwner), 403],
+  ['history thumbnail with malformed host is refused', () => req('PATCH', 'usersv2/history-owner/history/prism_badhost', historyFields('badhost', 'prism', { thumb: str('https://./thumb.jpg') }), HistoryOwner), 403],
+  ['history write is refused without a parent user', () => req('PATCH', 'usersv2/orphan/history/wallhaven_x', historyFields('x'), tok('orphan', 'orphan@x.com')), 403],
+  ['history read is refused without a parent user', () => req('GET', 'usersv2/orphan/history/wallhaven_x', null, tok('orphan', 'orphan@x.com')), 403],
+  ['history list is refused without a parent user', () => runCollectionQuery(tok('orphan', 'orphan@x.com'), 'history', 'usersv2/orphan'), 403],
+  ['admin marks history owner deleted', () => req('PATCH', 'usersv2/history-owner', { deleted: { booleanValue: true } }, ADM, ['deleted']), 200],
+  ['late history write is refused after account deletion', () => req('PATCH', 'usersv2/history-owner/history/wallhaven_late', historyFields('late'), HistoryOwner), 403],
+  ['deleted account cannot read history', () => req('GET', 'usersv2/history-owner/history/pexels_123', null, HistoryOwner), 403],
+  ['deleted account cannot list history', () => runCollectionQuery(HistoryOwner, 'history', 'usersv2/history-owner'), 403],
+  ['deleted account cannot delete history', () => req('DELETE', 'usersv2/history-owner/history/pexels_123', null, HistoryOwner), 403],
+  ['stranger cannot get a private folder', () => req('GET', 'folders/pf1', null, Bu), 403],
+  ['stranger cannot list a private folder items', () => runCollectionQuery(Bu, 'items', 'folders/pf1'), 403],
+  ['signed-out user cannot get a public folder', () => req('GET', 'publicFolders/pf1'), 403],
+  ['stranger can get a public folder', () => req('GET', 'publicFolders/pf1', null, Bu), 200],
+  ['stranger can get a public folder item', () => req('GET', 'publicFolders/pf1/items/prism_w1', null, Bu), 200],
+  ['user blocked by the owner cannot get a public folder', () => req('GET', 'publicFolders/pf1', null, C), 403],
+  ['user blocked by the owner cannot get a public folder item', () => req('GET', 'publicFolders/pf1/items/prism_w1', null, C), 403],
+  ['user blocked by the owner cannot list public folder items', () => runCollectionQuery(C, 'items', 'publicFolders/pf1'), 403],
+  ['owner-blocked user cannot get a public folder', () => req('GET', 'publicFolders/pf1', null, D), 403],
+  ['owner-blocked user cannot get a public folder item', () => req('GET', 'publicFolders/pf1/items/prism_w1', null, D), 403],
+  ['owner-blocked user cannot list public folder items', () => runCollectionQuery(D, 'items', 'publicFolders/pf1'), 403],
+  ['stranger cannot read an item under a missing public folder header', () => req('GET', 'publicFolders/orphan/items/prism_w1', null, Bu), 403],
+  ['stranger cannot list items under a missing public folder header', () => runCollectionQuery(Bu, 'items', 'publicFolders/orphan'), 403],
+  ['owner cannot write a public folder projection', () => req('PATCH', 'publicFolders/pf1', { name: str('x') }, A, ['name']), 403],
+  ['owner cannot write a public folder item projection', () => req('PATCH', 'publicFolders/pf1/items/prism_w1', { thumb: str('x') }, A, ['thumb']), 403],
+  ['stranger cannot write a public folder follower', () => req('PATCH', 'publicFolders/pf1/followers/b', { uid: str('b') }, Bu), 403],
+  ['stranger cannot write a followed folder edge', () => req('PATCH', 'usersv2/b/followedFolders/pf1', { folderId: str('pf1') }, Bu), 403],
+  ['client cannot write root public folder repair state', () => req('PATCH', 'publicFolderState/pf1', { folderId: str('pf1') }, A), 403],
+  ['owner cannot delete a public folder projection', () => req('DELETE', 'publicFolders/pf1', null, A), 403],
+  ['owner cannot create a public folder projection', () => req('PATCH', 'publicFolders/new1', { ownerId: str('a'), name: str('New') }, A), 403],
+  ['public folder followers are not readable', () => req('GET', 'publicFolders/pf1/followers/b', null, Bu), 403],
+  ['follower can read own followed folder edge', () => req('GET', 'usersv2/b/followedFolders/pf1', null, Bu), 200],
+  ['other user cannot read a followed folder edge', () => req('GET', 'usersv2/b/followedFolders/pf1', null, A), 403],
+  ['public folder header carries no url field', () => projectionHasNoUrl('publicFolders/pf1', Bu), 200],
+  ['public folder item carries no url field', () => projectionHasNoUrl('publicFolders/pf1/items/prism_w1', Bu), 200],
+  ['owner cannot set public on a private folder', () => req('PATCH', 'folders/pf1', { public: { booleanValue: false } }, A, ['public']), 403],
+  ['stranger can list public folders by owner', () => runQuery(Bu, [ownerFilter('a')], 'publicFolders', '', newestFirst('updatedAt')), 200],
+  ['blocked user cannot list public folders by owner', () => runQuery(C, [ownerFilter('a')], 'publicFolders', '', newestFirst('updatedAt')), 403],
+  ['owner-blocked user cannot list public folders by owner', () => runQuery(D, [ownerFilter('a')], 'publicFolders', '', newestFirst('updatedAt')), 403],
 ];
 await seed();
 let bad = 0;

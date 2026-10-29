@@ -185,18 +185,64 @@ class AiTabRouteArgs {
 
 /// generated route for
 /// [AutoRotateScreen]
-class AutoRotateRoute extends PageRouteInfo<void> {
-  const AutoRotateRoute({List<PageRouteInfo>? children})
-    : super(AutoRotateRoute.name, initialChildren: children);
+class AutoRotateRoute extends PageRouteInfo<AutoRotateRouteArgs> {
+  AutoRotateRoute({
+    Key? key,
+    String? folderId,
+    String? folderName,
+    List<PageRouteInfo>? children,
+  }) : super(
+         AutoRotateRoute.name,
+         args: AutoRotateRouteArgs(
+           key: key,
+           folderId: folderId,
+           folderName: folderName,
+         ),
+         initialChildren: children,
+       );
 
   static const String name = 'AutoRotateRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const AutoRotateScreen();
+      final args = data.argsAs<AutoRotateRouteArgs>(
+        orElse: () => const AutoRotateRouteArgs(),
+      );
+      return AutoRotateScreen(
+        key: args.key,
+        folderId: args.folderId,
+        folderName: args.folderName,
+      );
     },
   );
+}
+
+class AutoRotateRouteArgs {
+  const AutoRotateRouteArgs({this.key, this.folderId, this.folderName});
+
+  final Key? key;
+
+  final String? folderId;
+
+  final String? folderName;
+
+  @override
+  String toString() {
+    return 'AutoRotateRouteArgs{key: $key, folderId: $folderId, folderName: $folderName}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! AutoRotateRouteArgs) return false;
+    return key == other.key &&
+        folderId == other.folderId &&
+        folderName == other.folderName;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ folderId.hashCode ^ folderName.hashCode;
 }
 
 /// generated route for
@@ -2224,6 +2270,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
         AnalyticsSurfaceValue.wallpaperScreen,
     String? heroTag,
     File? localFile,
+    double? aspectRatio,
     String? requestId,
     WallpaperFeed? feed,
     List<PageRouteInfo>? children,
@@ -2238,6 +2285,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
            analyticsSurface: analyticsSurface,
            heroTag: heroTag,
            localFile: localFile,
+           aspectRatio: aspectRatio,
            requestId: requestId,
            feed: feed,
          ),
@@ -2262,6 +2310,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
           analyticsSurface: args.analyticsSurface,
           heroTag: args.heroTag,
           localFile: args.localFile,
+          aspectRatio: args.aspectRatio,
           requestId: args.requestId,
           feed: args.feed,
         ),
@@ -2280,6 +2329,7 @@ class WallpaperDetailRouteArgs {
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
     this.heroTag,
     this.localFile,
+    this.aspectRatio,
     this.requestId,
     this.feed,
   });
@@ -2300,13 +2350,15 @@ class WallpaperDetailRouteArgs {
 
   final File? localFile;
 
+  final double? aspectRatio;
+
   final String? requestId;
 
   final WallpaperFeed? feed;
 
   @override
   String toString() {
-    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile, requestId: $requestId, feed: $feed}';
+    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile, aspectRatio: $aspectRatio, requestId: $requestId, feed: $feed}';
   }
 
   @override
@@ -2321,6 +2373,7 @@ class WallpaperDetailRouteArgs {
         analyticsSurface == other.analyticsSurface &&
         heroTag == other.heroTag &&
         localFile == other.localFile &&
+        aspectRatio == other.aspectRatio &&
         requestId == other.requestId &&
         feed == other.feed;
   }
@@ -2335,6 +2388,7 @@ class WallpaperDetailRouteArgs {
       analyticsSurface.hashCode ^
       heroTag.hashCode ^
       localFile.hashCode ^
+      aspectRatio.hashCode ^
       requestId.hashCode ^
       feed.hashCode;
 }

@@ -1,6 +1,6 @@
 # Library: Favourites, Folders, Downloads and History
 
-The **Library** is one screen with tabs. It holds the wallpapers the user keeps. **Favourites** are saved in the user account. **Folders** group the wallpapers the user saves. **Downloads** are image files on the device. **History** lists the wallpapers the user set (Android only). Favourites and Downloads support multi-select with bulk actions.
+The **Library** is one screen with tabs. It holds the wallpapers the user keeps. **Favourites** are saved in the user account. **Folders** group the wallpapers the user saves. **Downloads** are image files on the device. **History** lists the wallpapers the user set or downloaded, and the wallpapers the user opened. Favourites and Downloads support multi-select with bulk actions.
 
 ## Where to find it
 
@@ -10,14 +10,14 @@ The **Library** is one screen with tabs. It holds the wallpapers the user keeps.
 - Settings > **Wallpaper history** opens the Library on the **History** tab.
 - The Auto-rotate screen links to Favourites and Downloads.
 - A local download notification opens `DownloadScreen`.
-- Route argument: `LibraryRoute(initialTab: LibraryTab.downloads)` opens another tab first. If the tab is not on the device (History on iOS), the Library opens **Favourites**.
+- Route argument: `LibraryRoute(initialTab: LibraryTab.downloads)` opens another tab first.
 
 ## Platforms
 
 | Platform | Tabs | Favourites | Folders | Downloads | History |
 |---|---|---|---|---|---|
-| Android | Favourites, Folders, Downloads, History | Full. The **Set** action shows in multi-select. | Full. | Full. Delete uses MediaStore on Android 10 (API 29) and later. Older versions delete the file. One selected file can be set as the wallpaper. | Full. |
-| iOS | Favourites, Folders, Downloads | Full. `hideSetWallpaperUi` hides the **Set** action. | Full. | Full. Delete removes the app copy. No **Set** action. | Not shown. `/wallpaper-history` and `/library?tab=history` open Favourites. |
+| Android | Favourites, Folders, Downloads, History | Full. The **Set** action shows in multi-select. | Full. | Full. Delete uses MediaStore on Android 10 (API 29) and later. Older versions delete the file. One selected file can be set as the wallpaper. | **Set and downloaded** and **Recently viewed**. |
+| iOS | Favourites, Folders, Downloads, History | Full. `hideSetWallpaperUi` hides the **Set** action. | Full. | Full. Delete removes the app copy. No **Set** action. | **Downloaded** and **Recently viewed**. No **Set again**. |
 
 ## Free and Pro
 
@@ -60,7 +60,7 @@ The Library has no premium or coin gate.
 - Each tab keeps its state and scroll position when the user swipes away.
 - The tab action:
   - **Folders**: a **New folder** icon button. It shows for a signed-in user only.
-  - **History**: a **Clear** button. It shows when the history has items.
+  - **History**: no app bar action. Each list has its own **Clear** button.
   - **Favourites** and **Downloads**: no action.
 - Analytics: `library_tab_viewed{tab}` records the tab that opens and each tab change. The values are `favourites`, `folders`, `downloads` and `history`.
 - **Favourites** and **Downloads** are the same widgets as the old screens (`FavouriteGrid` and `DownloadsBody`). The old screens and the hub do not differ in behaviour.
@@ -92,7 +92,7 @@ Actions:
 - **Set** uses the first selected wall. With more than one wall selected, the header shows "Set uses the first one you picked".
 - **Share**: one wall shares a link. More than one wall shares the full image URLs, one per line. On failure the toast is "Could not share. Try again."
 
-**Clear all favourites**: a dialog asks "Clear N favourites?" with the text "This removes them from your account." (a guest reads "This removes them from this device."). After **Clear all**, the bloc reads the server list first and removes what the server holds. A snackbar shows "Cleared N favourites" with **Undo**. **Undo** adds back the list as it was before the clear (`restoreRequested`). If the clear fails, the toast is "Couldn't clear favourites. Try again."
+**Clear all favourites**: a dialog asks "Clear N favourites?" with the text "This removes them from your account." (a guest reads "This removes them from this device."). After **Clear all**, the bloc reads the server list first and removes what the server holds. A snackbar shows "Cleared N favourites" with **Undo**. **Undo** adds back the list as it was before the clear, but the pins do not come back (`restoreRequested`). If the clear fails, the toast is "Couldn't clear favourites. Try again."
 
 **Export favourites**: the action writes `prism-favourites-YYYY-MM-DD.json` to the temp directory and opens the system share sheet with the file. The file has `app`, `exportedAt`, `count` and `favourites`. Each item is the same map that Prism saves in the Firestore doc of the favourite (dates are ISO 8601 strings). The log tag is `favourite_walls.export`. The event is `favourites_exported{count}`. With no favourites, the toast is "No favourites to export yet." and nothing is shared. If the write or the share fails, the toast is "Couldn't export favourites. Try again."
 
@@ -118,6 +118,28 @@ Legacy favourites: a favourite that older app versions wrote and the app cannot 
 
 Quick tile: `FavouriteQuickTileListener` pushes the favourite URLs to the tile after a successful load. It pushes an empty list only on logout or account switch.
 
+#### Pinned favourites
+
+A user pins a favourite from its hold menu. The hold menu opens with a long press in the Favourites tab. On the detail screen, the hold menu has the action when the wall is a favourite. The action reads "Pin to top" or "Unpin".
+
+A user can pin up to 12 favourites (`maxPinnedFavourites`). At the limit, the message "You can pin up to 12 favourites. Unpin one to pin this wallpaper." shows.
+
+Pinned walls show first, in the order that the user pinned them. The chosen sort orders the other walls. The source filter and the search apply to pinned walls too. A pinned wall has a small pin badge. Screen readers read "Pinned".
+
+A pin is an optional `pinnedAt` timestamp on the favourite doc, `usersv2/{uid}/images/{id}`. Unpin deletes the field. Pins sync to other devices through the existing favourites listener. Guests keep pins in the guest store on the device.
+
+Removing a favourite deletes its doc, so the pin goes too. An undo of a removal, including Clear all, brings the wall back unpinned. Folder items never store `pinnedAt`.
+
+Older app versions ignore `pinnedAt`. An older client that saves the same favourite again writes the doc without it. The pin is lost on that wall only.
+
+Before you ship a build that writes `pinnedAt`, deploy the Firestore rules. The `validFavourite` rule allows `pinnedAt` only as a timestamp.
+
+```sh
+firebase deploy --only firestore:rules --project prism-wallpapers
+```
+
+Analytics: `favourite_pin_changed{pinned, surface}`, where `surface` is `library` or `detail`, and `favourite_pin_limit_hit{surface}`.
+
 ### Folders
 
 - The grid has at least 2 columns. A card is at most 200 px wide, so a wider screen gets more columns.
@@ -130,7 +152,9 @@ Quick tile: `FavouriteQuickTileListener` pushes the favourite URLs to the tile a
   - 4 or more covers: a 2x2 grid.
 - A tap opens the folder page (`FolderRoute`). The folder page records `folder_opened{source: library}` when it opens from the Library.
 - **New folder** (app bar, or the empty state button) asks for a name and creates an empty folder with `createFolderFromLibrary`. It tracks `folder_created{source: library, with_wall: false}`. If the create fails, the toast "Could not update the folder. Try again." shows.
-- Each card has one label for screen readers: the folder name and the count. The cover is hidden from screen readers.
+- Each card has one label for screen readers: the folder name and the count. A public folder adds "Public". The cover is hidden from screen readers.
+- A public folder card shows a globe icon next to the count.
+- **Folders you follow** shows below the user's folders when the user follows at least one public folder. The list loads again when the user comes back from a folder page. Public folders are in [folders.md](folders.md).
 
 States:
 
@@ -143,7 +167,7 @@ States:
 
 ### History
 
-The History tab shows the wallpapers the user set. The data and the rules are in [wallpaper-history.md](wallpaper-history.md).
+The History tab has two lists: **Set and downloaded** (iOS: **Downloaded**) and **Recently viewed**. The data and the rules are in [wallpaper-history.md](wallpaper-history.md).
 
 - The list is grouped by day: **Today**, **Yesterday**, then a date.
 - Each tile shows the image, the screen that got the wallpaper, and the time.
@@ -152,7 +176,9 @@ The History tab shows the wallpapers the user set. The data and the rules are in
 - The **Set again** icon button on a tile opens the set sheet. Analytics: `library_history_set_again{provider, target}`.
 - The list reloads when a tile's detail or download preview returns, and pull to refresh reloads history from local storage.
 - Long press a tile to remove it. A snackbar shows "Removed from history" with **Undo**. Screen readers get a "Remove from history" action.
-- **Clear** in the app bar asks "Clear history?". The **Clear history** button confirms. The text says the wallpapers stay as they are. Analytics: `library_history_cleared{count}`.
+- Each list has its own **Clear** button above the grid. It shows only when the list has items.
+  - **Set and downloaded** asks "Clear history?". The text says the list goes here and in the account, and the wallpapers stay as they are. Analytics: `library_history_cleared{count}`.
+  - **Recently viewed** asks "Clear recently viewed?". Analytics: `recently_viewed_cleared{count}`.
 - Empty state: "No wallpapers yet" with **Browse wallpapers**. The button opens Home.
 
 ### Downloads
@@ -193,7 +219,7 @@ Saving:
 - If Firestore refuses the write (for example `permission-denied`), the repository puts the local heart back and the toast "Couldn't update favourites. Try again." shows.
 - Clear all uses the same rule for each batch.
 - The heart ignores a second tap for 300 ms. A new favourite shows a short Glint (`GlintMood.love`). Reduce motion turns the Glint off.
-- Every new favourite stores `favouritedAt`. The lists sort by `favouritedAt`, then by `createdAt` for older docs. A new favourite from any source shows first. `FavStatusChangedEvent` has `isFavourite`.
+- Every new favourite stores `favouritedAt`. The lists sort by `favouritedAt`, then by `createdAt` for older docs. A new favourite from any source shows first, after any pinned walls. `FavStatusChangedEvent` has `isFavourite`.
 - **Clear favourite walls** first reads the favourites from the server. If that read fails, it stops with a failure and removes nothing. It clears what the server holds, not the list on the device. Undo uses `FavouriteWallsAdapter.restoreWalls(walls)` (event `restoreRequested`).
 
 Guest favourites:

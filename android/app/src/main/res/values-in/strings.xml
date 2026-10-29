@@ -52,6 +52,10 @@
     <string name="notif_push_follow_digest_title_group">%1$s dan %2$s lainnya memposting %3$s wallpaper baru</string>
     <string name="notif_push_follow_digest_body">%1$s</string>
     <string name="notif_push_follow_digest_body_untitled">Ketuk untuk melihat semuanya.</string>
+    <string name="notif_push_folder_digest_title_one">Baru di %1$s</string>
+    <string name="notif_push_folder_digest_title_more">Baru di %1$s dan %2$s lainnya</string>
+    <string name="notif_push_folder_digest_body">%1$s</string>
+    <string name="notif_push_folder_digest_body_untitled">Ketuk untuk melihat semuanya.</string>
     <string name="notif_push_drop_last_call_title">Kesempatan terakhir untuk Drop minggu ini</string>
     <string name="notif_push_drop_last_call_body">%1$s berakhir dalam %2$s jam. Setelah itu, wallpaper tidak tersedia selama sebulan.</string>
     <string name="notif_push_draw_winner_title">Anda memenangkan Prism Draw</string>

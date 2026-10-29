@@ -52,6 +52,10 @@
     <string name="notif_push_follow_digest_title_group">%1$s y %2$s más publicaron %3$s fondos nuevos</string>
     <string name="notif_push_follow_digest_body">%1$s</string>
     <string name="notif_push_follow_digest_body_untitled">Toca para verlas todas.</string>
+    <string name="notif_push_folder_digest_title_one">Novedades en %1$s</string>
+    <string name="notif_push_folder_digest_title_more">Novedades en %1$s y %2$s más</string>
+    <string name="notif_push_folder_digest_body">%1$s</string>
+    <string name="notif_push_folder_digest_body_untitled">Toca para verlas todas.</string>
     <string name="notif_push_drop_last_call_title">Última oportunidad para el Drop de esta semana</string>
     <string name="notif_push_drop_last_call_body">%1$s termina en %2$s h. Después, los fondos no estarán disponibles durante un mes.</string>
     <string name="notif_push_draw_winner_title">Has ganado el sorteo de Prism</string>

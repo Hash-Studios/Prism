@@ -30,6 +30,35 @@ class AppLocalizationsDe extends AppLocalizations {
   String get galleryScreenTitle => 'Hintergrundbilder für dich';
 
   @override
+  String get favouritePin => 'Oben anheften';
+
+  @override
+  String get favouriteUnpin => 'Lösen';
+
+  @override
+  String get favouritePinnedToast => 'Oben in Favoriten angeheftet';
+
+  @override
+  String get favouriteUnpinnedToast => 'Anheftung aufgehoben';
+
+  @override
+  String get favouritePinnedBadge => 'Angeheftet';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du kannst bis zu $count Favoriten anheften. Löse eine Anheftung, um dieses Hintergrundbild anzuheften.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed =>
+      'Anheften konnte nicht aktualisiert werden. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
   String wallpaperFavouriteSearchCountHint(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -4142,6 +4171,13 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get economyAiStyleSheetTitle => 'Wähle einen Stil';
+
+  @override
+  String get economyAiStyleSheetSubject =>
+      'Jede Vorschau zeigt dieselbe Szene: ein Leuchtturm auf einer Klippe in der Dämmerung.';
+
+  @override
   String get economyAiStyleWatercolor => 'Aquarell';
 
   @override
@@ -7583,9 +7619,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperResetOriginal => 'Zurück zum Original';
 
   @override
-  String get wallpaperAccentResetHint => 'Gedrückt halten für Aktionen, auch Zurück zum Original';
-
-  @override
   String get wallpaperAll => 'Alle';
 
   @override
@@ -8635,7 +8668,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticHint =>
-      'Tippen, um die Akzentfarbe zu wechseln. Gedrückt halten für Favoriten, Teilen und Zurücksetzen. Für Details scrollen.';
+      'Gedrückt halten für Favoriten, Teilen und Zurücksetzen. Für Details scrollen.';
 
   @override
   String get wallpaperPreviousInFeed => 'Vorheriges Hintergrundbild';
@@ -8645,6 +8678,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'Hintergrundbild';
+
+  @override
+  String get wallpaperImmersiveHint => 'Tippen, um Steuerelemente auszublenden';
 
   @override
   String get wallpaperInsufficientCoins => 'Nicht genug Coins. Verdiene Coins bei „Belohnungen“.';
@@ -10738,6 +10774,261 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get tasteQuizRetakeFailed =>
       'Hintergrundbilder konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String get foldersPublic => 'Öffentlich';
+
+  @override
+  String get foldersMakePublic => 'Öffentlich machen';
+
+  @override
+  String get foldersMakePrivate => 'Privat machen';
+
+  @override
+  String get foldersMakePublicTitle => 'Diesen Ordner öffentlich machen?';
+
+  @override
+  String get foldersMakePublicMessage =>
+      'Alle in Prism können seinen Namen und die Hintergrundbilder sehen, ihm folgen und seinen Link öffnen. Geteilte Links behalten ihre Vorschau, auch wenn du ihn später privat machst.';
+
+  @override
+  String get foldersMakePrivateTitle => 'Diesen Ordner privat machen?';
+
+  @override
+  String get foldersMakePrivateMessage =>
+      'Nur du siehst ihn. Sein Link funktioniert nicht mehr und seine Follower verlieren ihn.';
+
+  @override
+  String get foldersMadePublic => 'Dieser Ordner ist jetzt öffentlich.';
+
+  @override
+  String get foldersMadePrivate => 'Dieser Ordner ist jetzt privat.';
+
+  @override
+  String get foldersPublicNameRefused => 'Benenne diesen Ordner um, damit er öffentlich werden kann.';
+
+  @override
+  String get foldersHiddenRefused =>
+      'Dieser Ordner wurde nach Meldungen ausgeblendet, daher kann er nicht öffentlich sein.';
+
+  @override
+  String get foldersLimitRefused => 'Du hast Ordner heute zu oft geändert. Versuche es morgen erneut.';
+
+  @override
+  String get foldersFollow => 'Folgen';
+
+  @override
+  String get foldersFollowing => 'Gefolgt';
+
+  @override
+  String foldersFollowerCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Follower',
+      one: '1 Follower',
+      zero: 'Keine Follower',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersByOwner(String name) {
+    return 'Von $name';
+  }
+
+  @override
+  String get foldersShare => 'Ordner teilen';
+
+  @override
+  String get foldersReport => 'Ordner melden';
+
+  @override
+  String get foldersUnavailableTitle => 'Dieser Ordner ist privat oder existiert nicht mehr';
+
+  @override
+  String get foldersUnavailableBody => 'Der Besitzer hat ihn vielleicht privat gemacht oder gelöscht.';
+
+  @override
+  String get foldersFollowFailed => 'Das Folgen konnte nicht aktualisiert werden. Versuche es erneut.';
+
+  @override
+  String get foldersYouFollow => 'Ordner, denen du folgst';
+
+  @override
+  String get foldersPublicEmptyTitle => 'Hier gibt es noch keine Hintergrundbilder';
+
+  @override
+  String get foldersPublicEmptyBody => 'Neue Hintergrundbilder erscheinen hier, sobald der Besitzer sie hinzufügt.';
+
+  @override
+  String get notifSettingFolders => 'Ordner, denen du folgst';
+
+  @override
+  String get notifSettingFoldersDescription => 'Neue Hintergrundbilder in Ordnern, denen du folgst, einmal am Tag';
+
+  @override
+  String notifPushFolderDigestTitleOne(String folderName) {
+    return 'Neu in $folderName';
+  }
+
+  @override
+  String notifPushFolderDigestTitleMore(String folderName, int count) {
+    return 'Neu in $folderName und $count weiteren';
+  }
+
+  @override
+  String get historySetAndDownloaded => 'Gesetzt und heruntergeladen';
+
+  @override
+  String get historyDownloaded => 'Heruntergeladen';
+
+  @override
+  String get historyRecentlyViewed => 'Zuletzt angesehen';
+
+  @override
+  String get historySyncedNote => 'In deinem Konto gespeichert, damit sie auf einem neuen Handy wieder da sind.';
+
+  @override
+  String get historySyncedNoteGuest => 'Melde dich an, damit sie auf einem neuen Handy bleiben.';
+
+  @override
+  String get historyActionSet => 'Gesetzt';
+
+  @override
+  String get historyActionDownloaded => 'Heruntergeladen';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action um $time';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'Die Liste wird hier und in deinem Konto entfernt. Deine Hintergrundbilder und Downloads bleiben erhalten.';
+
+  @override
+  String get historyClearViewedTitle => 'Zuletzt angesehene löschen?';
+
+  @override
+  String get historyClearViewedBody =>
+      'Die Hintergrundbilder, die du geöffnet hast, werden aus dieser Liste und von der Startseite entfernt.';
+
+  @override
+  String get historyClearViewedAction => 'Zuletzt angesehene löschen';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'Hintergrundbilder, die du setzt oder herunterlädst, erscheinen hier, damit du sie wiederfindest.';
+
+  @override
+  String get historyEmptyBodyIos =>
+      'Hintergrundbilder, die du herunterlädst, erscheinen hier, damit du sie wiederfindest.';
+
+  @override
+  String get historyViewedEmptyTitle => 'Noch nichts angesehen';
+
+  @override
+  String get historyViewedEmptyBody =>
+      'Hintergrundbilder, die du öffnest, erscheinen hier, damit du sie wiederfindest.';
+
+  @override
+  String get historyViewedOffTitle => 'Ansichtsverlauf ist aus';
+
+  @override
+  String get historyViewedOffBody =>
+      'Schalte Ansichtsverlauf speichern ein, um die Hintergrundbilder zu sehen, die du hier öffnest.';
+
+  @override
+  String get historyViewedOffAction => 'Einschalten';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'Hintergrundbild öffnen, angesehen um $time';
+  }
+
+  @override
+  String get pickUpTitle => 'Dort weitermachen, wo du aufgehört hast';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return 'Hintergrundbild $index von $count öffnen';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'Ansichtsverlauf speichern';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'Zeigt die Hintergrundbilder, die du öffnest, im Verlauf und auf der Startseite. Wenn du das ausschaltest, wird die Liste gelöscht.';
+
+  @override
+  String get historyClearFailed =>
+      'Der Verlauf konnte nicht gelöscht werden. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Ordner';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Ordner: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Dieser Ordner braucht mindestens 2 Hintergrundbilder, die wechseln können. Prism-Hintergrundbilder wechseln, nachdem du sie heruntergeladen hast.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Ordner öffnen';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Ordner auswählen';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'Du hast noch keine Ordner. Speichere ein Hintergrundbild in einem Ordner und wähle ihn dann hier aus.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return '$folder wechseln?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Dein Hintergrundbild wechselt nach dem Zeitplan unten zu einem Bild aus diesem Ordner.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Diesen Ordner wechseln';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'Automatischer Wechsel ist aus, weil der Ordner $folder gelöscht wurde.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'Automatischer Wechsel ist aus, weil der Ordner $folder weniger als 2 Hintergrundbilder hat.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Diesen Ordner wechseln';
+
+  @override
+  String get foldersRotating => 'Wechselt';
+
+  @override
+  String get foldersRotatingDescription => 'Der automatische Wechsel nutzt diesen Ordner';
+
+  @override
+  String get wallpaperAccentResetHint => 'Gedrückt halten für Aktionen, auch Zurück zum Original';
 
   @override
   String get wallRequestsTitle => 'Wallpaper-Wünsche';

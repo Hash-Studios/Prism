@@ -8,6 +8,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
+import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
@@ -18,7 +19,7 @@ part 'folders_bloc.j.freezed.dart';
 
 @injectable
 class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
-  FoldersBloc(this._repository) : super(FoldersState.initial()) {
+  FoldersBloc(this._repository, this._publicRepository) : super(FoldersState.initial()) {
     on<FoldersEvent>(_serial);
     _writeFailures = _repository.writeFailures.listen((failure) {
       if (!isClosed && failure.ownerId == _session.userId && failure.revision > _session.writeBoundary) {
@@ -28,6 +29,7 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
   }
 
   final FoldersRepository _repository;
+  final PublicFoldersRepository _publicRepository;
 
   static int _lastOperationId = 0;
   _FolderSession _session = _FolderSession('', 0);
@@ -99,6 +101,8 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
           await _onCreateRequested(event, emit, session);
         case _RenameRequested():
           await _onRenameRequested(event, emit, session);
+        case _VisibilityRequested():
+          await _onVisibilityRequested(event, emit, session);
         case _DeleteRequested():
           await _onDeleteRequested(event, emit, session);
         case _SaveRequested():
@@ -139,6 +143,13 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
 
   List<FolderEntity> _replace(FolderEntity folder) =>
       _sorted(<FolderEntity>[folder, ...state.folders.where((other) => other.id != folder.id)]);
+
+  FoldersState _forgetFolder(String id) => state.copyWith(
+    folders: state.folders.where((folder) => folder.id != id).toList(),
+    items: <String, List<FavouriteWallEntity>>{...state.items}..remove(id),
+    itemsStatus: <String, LoadStatus>{...state.itemsStatus, id: LoadStatus.success},
+    membership: state.membership.map((key, ids) => MapEntry(key, ids.toSet()..remove(id))),
+  );
 
   Map<String, Set<String>> _withMembership(String itemKey, String folderId, {required bool member}) {
     final Set<String>? known = state.membership[itemKey];
@@ -188,6 +199,12 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
       if (folders.data case final List<FolderEntity> list) {
         emit(state.copyWith(status: LoadStatus.success, folders: _sorted(list)));
       }
+      // Still not in the list: the folder is someone else's or gone. The page shows its public projection, if any.
+      if (state.folder(id) == null) {
+        emit(_forgetFolder(id));
+        _finish(emit, event.operationId);
+        return;
+      }
     }
     final Result<List<FavouriteWallEntity>?> result = await session.wait(
       _repository.fetchItems(id, userId: state.userId),
@@ -199,17 +216,12 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
     }
     final List<FavouriteWallEntity>? items = result.data;
     emit(
-      state.copyWith(
-        // Null means the folder is gone or not the user's.
-        folders: items == null ? state.folders.where((folder) => folder.id != id).toList() : state.folders,
-        items: items == null
-            ? (<String, List<FavouriteWallEntity>>{...state.items}..remove(id))
-            : <String, List<FavouriteWallEntity>>{...state.items, id: items},
-        membership: items == null
-            ? state.membership.map((key, ids) => MapEntry(key, ids.toSet()..remove(id)))
-            : state.membership,
-        itemsStatus: <String, LoadStatus>{...state.itemsStatus, id: LoadStatus.success},
-      ),
+      items == null
+          ? _forgetFolder(id)
+          : state.copyWith(
+              items: <String, List<FavouriteWallEntity>>{...state.items, id: items},
+              itemsStatus: <String, LoadStatus>{...state.itemsStatus, id: LoadStatus.success},
+            ),
     );
     _finish(emit, event.operationId);
   }
@@ -305,6 +317,24 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
     _finish(emit, event.operationId, failure: result.failure);
   }
 
+  Future<void> _onVisibilityRequested(
+    _VisibilityRequested event,
+    Emitter<FoldersState> emit,
+    _FolderSession session,
+  ) async {
+    final FolderEntity? folder = state.folder(event.folderId);
+    if (folder == null) {
+      _finish(emit, event.operationId, failure: const ValidationFailure('Cannot change this folder.'));
+      return;
+    }
+    final Result<bool> result = await session.wait(_publicRepository.setPublic(folder.id, isPublic: event.isPublic));
+    final FolderEntity? current = state.folder(event.folderId);
+    if (result.isSuccess && current != null) {
+      emit(state.copyWith(folders: _replace(current.copyWith(isPublic: result.data))));
+    }
+    _finish(emit, event.operationId, failure: result.failure);
+  }
+
   Future<void> _onDeleteRequested(_DeleteRequested event, Emitter<FoldersState> emit, _FolderSession session) async {
     final String id = event.folderId;
     final Result<void> result = await session.wait(
@@ -363,20 +393,26 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
     if (folder == null) return const ValidationFailure('This folder is gone.');
     final String key = folderItemKey(wall);
     final List<FavouriteWallEntity>? loaded = state.items[folderId];
-    if (loaded != null && !loaded.any((item) => folderItemKey(item) == key)) return null;
-    if (loaded == null) {
+    final bool loadedContainsItem = loaded?.any((item) => folderItemKey(item) == key) ?? false;
+    if (!loadedContainsItem) {
       final membership = await session.wait(_repository.foldersContaining(<String>[folderId], key));
       if (membership.failure case final failure?) return failure;
-      if (!membership.data!.contains(folderId)) return null;
+      if (!membership.data!.contains(folderId)) {
+        emit(state.copyWith(membership: _withMembership(key, folderId, member: false)));
+        return null;
+      }
     }
-    List<FavouriteWallEntity>? newest = loaded;
+    List<FavouriteWallEntity>? newest = loadedContainsItem ? loaded : null;
     if (newest == null) {
       final result = await session.wait(
         _repository.fetchItems(folderId, userId: state.userId, limit: folderMaxCovers + 1),
       );
       if (result.failure case final failure?) return failure;
       newest = result.data;
-      if (newest == null) return const ValidationFailure('This folder is gone.');
+      if (newest == null) {
+        emit(_forgetFolder(folderId));
+        return const ValidationFailure('This folder is gone.');
+      }
     }
     final List<String> covers = newest
         .where((item) => folderItemKey(item) != key)
@@ -388,7 +424,7 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
     emit(
       state.copyWith(
         folders: _replace(next),
-        items: loaded == null
+        items: loaded == null || !loadedContainsItem
             ? state.items
             : <String, List<FavouriteWallEntity>>{
                 ...state.items,

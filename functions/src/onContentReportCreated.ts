@@ -4,6 +4,7 @@ import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
 import {sendToUserByEmail} from "./notificationHelper";
 import {db, REGION} from "./common";
+import {hideFolder} from "./publicFolders";
 
 interface ReportDoc {
   contentType?: string;
@@ -16,7 +17,7 @@ interface ReportDoc {
 const HOLD_REPORTER_COUNT = 3;
 const MIN_REPORTER_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** Number of reporters, each counted once, whose account is older than 7 days. A failed lookup does not count. */
+/** Counts distinct reporters older than 7 days. Missing accounts do not count; transient lookup errors retry. */
 async function countTrustedReporters(
   reporterUids: Set<string>,
   nowMs: number,
@@ -31,6 +32,8 @@ async function countTrustedReporters(
         trusted += 1;
       }
     } catch (err) {
+      if ((err as {code?: string}).code !== "auth/user-not-found" &&
+        (err as Error).message !== "auth/user-not-found") throw err;
       logger.warn(
         "onContentReportCreated: could not read a reporter account.",
         {reporterUid: uid, err},
@@ -41,7 +44,7 @@ async function countTrustedReporters(
 }
 
 /** True when 3 different reporters, with accounts older than 7 days, reported the target. */
-async function reachedHoldThreshold(contentType: string, targetId: string): Promise<boolean> {
+async function reportedByTrustedUsers(contentType: string, targetId: string): Promise<boolean> {
   const reports = await db
     .collection("contentReports")
     .where("contentType", "==", contentType)
@@ -57,11 +60,11 @@ async function reachedHoldThreshold(contentType: string, targetId: string): Prom
 }
 
 /**
- * Takes an approved wall back to review when it reached the report threshold. An admin re-approves it from the review
- * screen. Returns true when this call held the wall.
+ * Takes an approved wall back to review when trusted users reported it.
+ * An admin re-approves it from the review screen. Returns true when this call held the wall.
  */
 async function holdWallAfterReports(wallId: string): Promise<boolean> {
-  if (!(await reachedHoldThreshold("wall", wallId))) return false;
+  if (!(await reportedByTrustedUsers("wall", wallId))) return false;
   const wallRef = db.collection("walls").doc(wallId);
   return db.runTransaction(async (tx) => {
     const wall = await tx.get(wallRef);
@@ -75,9 +78,9 @@ async function holdWallAfterReports(wallId: string): Promise<boolean> {
   });
 }
 
-/** Hides a wall request that reached the report threshold. An admin can show it again. */
+/** Hides a wall request that trusted users reported. An admin can show it again. Returns true when this call hid it. */
 async function hideRequestAfterReports(requestId: string): Promise<boolean> {
-  if (!(await reachedHoldThreshold("wallRequest", requestId))) return false;
+  if (!(await reportedByTrustedUsers("wallRequest", requestId))) return false;
   const ref = db.collection("wallRequests").doc(requestId);
   return db.runTransaction(async (tx) => {
     const request = await tx.get(ref);
@@ -94,6 +97,7 @@ export const onContentReportCreated = onDocumentCreated(
   {
     document: "contentReports/{reportId}",
     region: REGION,
+    retry: true,
   },
   async (event) => {
     const data = event.data?.data() as ReportDoc | undefined;
@@ -107,13 +111,11 @@ export const onContentReportCreated = onDocumentCreated(
     const reason = (data.reason ?? "").toString();
     const reporterUid = (data.reporterUid ?? "").toString();
 
-    const hold = contentType === "wall" ? holdWallAfterReports :
-      contentType === "wallRequest" ? hideRequestAfterReports : null;
-    if (hold && targetId.length > 0) {
+    if (contentType === "wall" && targetId.length > 0) {
       try {
-        if (await hold(targetId)) {
+        if (await holdWallAfterReports(targetId)) {
           logger.warn(
-            "onContentReportCreated: content held after reports.",
+            "onContentReportCreated: wall held for review after reports.",
             {reportId, targetId},
           );
         }
@@ -122,6 +124,36 @@ export const onContentReportCreated = onDocumentCreated(
           "onContentReportCreated: could not check the report count.",
           {reportId, targetId, err},
         );
+        // The trigger retries; holdWallAfterReports holds a wall once, so a retry is safe.
+        throw err;
+      }
+    }
+
+    // A reported public folder is hidden the same way. An admin shows it again with setFolderHidden.
+    if (contentType === "folder" && targetId.length > 0) {
+      try {
+        if (await reportedByTrustedUsers("folder", targetId)) {
+          await hideFolder(targetId, true);
+          logger.warn("onContentReportCreated: public folder hidden after reports.", {reportId, targetId});
+        }
+      } catch (err) {
+        const code = (err as {code?: string | number}).code;
+        if (code !== "not-found" && code !== "NOT_FOUND" && code !== 5) {
+          logger.error("onContentReportCreated: could not check the folder reports.", {reportId, targetId, err});
+          throw err;
+        }
+      }
+    }
+
+    if (contentType === "wallRequest" && targetId.length > 0) {
+      try {
+        if (await hideRequestAfterReports(targetId)) {
+          logger.warn("onContentReportCreated: wall request hidden after reports.", {reportId, targetId});
+        }
+      } catch (err) {
+        logger.error("onContentReportCreated: could not check the request reports.", {reportId, targetId, err});
+        // hideRequestAfterReports hides a request once, so a retry is safe.
+        throw err;
       }
     }
 

@@ -14,6 +14,7 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'taste_quiz_source': TasteQuizSource.values.map((value) => value.wireValue).toList(),
   'quiz_side': QuizSide.values.map((value) => value.wireValue).toList(),
   'binary_result': BinaryResultValue.values.map((value) => value.wireValue).toList(),
+  'ai_style_pick_source': AiStylePickSource.values.map((value) => value.wireValue).toList(),
   'rc_or_fallback': RcOrFallbackValue.values.map((value) => value.wireValue).toList(),
   'live_wallpaper_style': LiveWallpaperStyleValue.values.map((value) => value.wireValue).toList(),
   'paywall_result': PaywallResultValue.values.map((value) => value.wireValue).toList(),
@@ -49,6 +50,8 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'scroll_depth_percent': ScrollDepthPercentValue.values.map((value) => value.wireValue).toList(),
   'link_destination': LinkDestinationValue.values.map((value) => value.wireValue).toList(),
   'push_kind': PushKindValue.values.map((value) => value.wireValue).toList(),
+  'immersive_toggle_source': ImmersiveToggleSourceValue.values.map((value) => value.wireValue).toList(),
+  'favourite_pin_surface': FavouritePinSurfaceValue.values.map((value) => value.wireValue).toList(),
   'wall_request_source': WallRequestSourceValue.values.map((value) => value.wireValue).toList(),
   'wall_request_filler': WallRequestFillerValue.values.map((value) => value.wireValue).toList(),
 };
@@ -696,6 +699,35 @@ class AiPromptShuffledEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'style': style};
+  }
+}
+
+class AiStyleSheetOpenedEvent extends AnalyticsEvent {
+  const AiStyleSheetOpenedEvent({required this.style});
+
+  final String style;
+
+  @override
+  String get eventName => 'ai_style_sheet_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'style': style};
+  }
+}
+
+class AiStylePickedEvent extends AnalyticsEvent {
+  const AiStylePickedEvent({required this.style, required this.source});
+
+  final String style;
+  final AiStylePickSource source;
+
+  @override
+  String get eventName => 'ai_style_picked';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'style': style, 'source': source.wireValue};
   }
 }
 
@@ -1454,6 +1486,48 @@ class AutoRotateDisabledEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return const <String, Object?>{};
+  }
+}
+
+class AutoRotateFolderSetEvent extends AnalyticsEvent {
+  const AutoRotateFolderSetEvent({required this.itemCountBucket});
+
+  final String itemCountBucket;
+
+  @override
+  String get eventName => 'auto_rotate_folder_set';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'item_count_bucket': itemCountBucket};
+  }
+}
+
+class AutoRotateFolderTappedEvent extends AnalyticsEvent {
+  const AutoRotateFolderTappedEvent({required this.itemCountBucket});
+
+  final String itemCountBucket;
+
+  @override
+  String get eventName => 'auto_rotate_folder_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'item_count_bucket': itemCountBucket};
+  }
+}
+
+class AutoRotateStoppedEvent extends AnalyticsEvent {
+  const AutoRotateStoppedEvent({required this.reason});
+
+  final String reason;
+
+  @override
+  String get eventName => 'auto_rotate_stopped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'reason': reason};
   }
 }
 
@@ -2499,6 +2573,79 @@ class FolderOpenedEvent extends AnalyticsEvent {
   }
 }
 
+class FolderVisibilityChangedEvent extends AnalyticsEvent {
+  const FolderVisibilityChangedEvent({required this.isPublic, required this.source});
+
+  final bool isPublic;
+  final String source;
+
+  @override
+  String get eventName => 'folder_visibility_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'is_public': isPublic ? 1 : 0, 'source': source};
+  }
+}
+
+class PublicFolderViewedEvent extends AnalyticsEvent {
+  const PublicFolderViewedEvent({required this.source, required this.itemCount});
+
+  final String source;
+  final int itemCount;
+
+  @override
+  String get eventName => 'public_folder_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'item_count': itemCount};
+  }
+}
+
+class FolderFollowChangedEvent extends AnalyticsEvent {
+  const FolderFollowChangedEvent({required this.following, required this.source});
+
+  final bool following;
+  final String source;
+
+  @override
+  String get eventName => 'folder_follow_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'following': following ? 1 : 0, 'source': source};
+  }
+}
+
+class FolderSharedEvent extends AnalyticsEvent {
+  const FolderSharedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'folder_shared';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class FolderPushOpenedEvent extends AnalyticsEvent {
+  const FolderPushOpenedEvent({required this.folderCount});
+
+  final int folderCount;
+
+  @override
+  String get eventName => 'folder_push_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'folder_count': folderCount};
+  }
+}
+
 class MoodChipTappedEvent extends AnalyticsEvent {
   const MoodChipTappedEvent({required this.moodId, required this.position});
 
@@ -2599,6 +2746,77 @@ class LibraryHistoryClearedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'count': count};
+  }
+}
+
+class RecentlyViewedClearedEvent extends AnalyticsEvent {
+  const RecentlyViewedClearedEvent({required this.count});
+
+  final int count;
+
+  @override
+  String get eventName => 'recently_viewed_cleared';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count': count};
+  }
+}
+
+class ViewingHistoryToggledEvent extends AnalyticsEvent {
+  const ViewingHistoryToggledEvent({required this.value});
+
+  final bool value;
+
+  @override
+  String get eventName => 'viewing_history_toggled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'value': value ? 1 : 0};
+  }
+}
+
+class HistoryRestoredEvent extends AnalyticsEvent {
+  const HistoryRestoredEvent({required this.countBucket});
+
+  final String countBucket;
+
+  @override
+  String get eventName => 'history_restored';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count_bucket': countBucket};
+  }
+}
+
+class PickUpRowSeenEvent extends AnalyticsEvent {
+  const PickUpRowSeenEvent({required this.count});
+
+  final int count;
+
+  @override
+  String get eventName => 'pick_up_row_seen';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count': count};
+  }
+}
+
+class PickUpTileOpenedEvent extends AnalyticsEvent {
+  const PickUpTileOpenedEvent({required this.provider, required this.position});
+
+  final String provider;
+  final int position;
+
+  @override
+  String get eventName => 'pick_up_tile_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'provider': provider, 'position': position};
   }
 }
 
@@ -3149,6 +3367,62 @@ class SpatialGuideOpenedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'wall_id': wallId, 'tier': tier};
+  }
+}
+
+class DetailImmersiveToggledEvent extends AnalyticsEvent {
+  const DetailImmersiveToggledEvent({required this.immersive, required this.source});
+
+  final bool immersive;
+  final ImmersiveToggleSourceValue source;
+
+  @override
+  String get eventName => 'detail_immersive_toggled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'immersive': immersive ? 1 : 0, 'source': source.wireValue};
+  }
+}
+
+class DetailImmersiveHintShownEvent extends AnalyticsEvent {
+  const DetailImmersiveHintShownEvent();
+
+  @override
+  String get eventName => 'detail_immersive_hint_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class FavouritePinChangedEvent extends AnalyticsEvent {
+  const FavouritePinChangedEvent({required this.pinned, required this.surface});
+
+  final bool pinned;
+  final FavouritePinSurfaceValue surface;
+
+  @override
+  String get eventName => 'favourite_pin_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'pinned': pinned ? 1 : 0, 'surface': surface.wireValue};
+  }
+}
+
+class FavouritePinLimitHitEvent extends AnalyticsEvent {
+  const FavouritePinLimitHitEvent({required this.surface});
+
+  final FavouritePinSurfaceValue surface;
+
+  @override
+  String get eventName => 'favourite_pin_limit_hit';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'surface': surface.wireValue};
   }
 }
 

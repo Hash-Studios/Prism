@@ -23,6 +23,8 @@ abstract class FavouriteWallsState with _$FavouriteWallsState {
     items: <FavouriteWallEntity>[],
   );
 
+  int get pinnedCount => items.where((wall) => wall.pinned).length;
+
   bool get hasActiveFilter => sourceFilter != null || query.trim().isNotEmpty;
 
   List<FavouriteWallEntity> get visibleItems =>

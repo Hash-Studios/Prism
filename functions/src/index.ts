@@ -36,6 +36,8 @@ export {snapshotLeaderboard} from "./leaderboard";
 export {checkBadges} from "./badges";
 export {deleteAccount} from "./deleteAccount";
 export {onFolderItemWritten, onFolderWritten} from "./folders";
+export {onWallPublicGateChanged, setFolderFollow, setFolderHidden, setFolderPublic} from "./publicFolders";
+export {sendFolderDigests} from "./folderDigest";
 export {syncSubscription, reconcileSubscriptions} from "./syncSubscription";
 export {resolveOriginalAccess} from "./originalAccess";
 
