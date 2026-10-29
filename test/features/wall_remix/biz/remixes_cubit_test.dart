@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wall_remix/biz/remixes_cubit.dart';
@@ -34,11 +35,22 @@ class _ScriptedRepository extends WallRemixRepository {
   Future<PrismWallpaper?> fetchApprovedWall(String docId) => onFetchApproved(docId);
 
   @override
-  Future<Set<String>> blockedCreatorUids({bool waitForInitialLoad = true}) async => const <String>{};
+  Future<BlockedCreators> loadBlockedCreators() async => KnownBlockedCreators(const <String>{});
 }
 
-WallViewer _viewer({Set<String> blocked = const <String>{}}) =>
-    WallViewer(isPremium: true, premiumCollections: const <String>['space'], blockedCreatorUids: blocked);
+WallViewer _viewer({Set<String> blocked = const <String>{}}) => WallViewer(
+  isPremium: true,
+  premiumCollections: const <String>['space'],
+  blockedCreators: KnownBlockedCreators(blocked),
+);
+
+/// Serves the same fakes but reports the block list as not loaded.
+class _UnknownBlocksRepository extends _ScriptedRepository {
+  _UnknownBlocksRepository({required super.onFetchRemixes, required super.onFetchApproved});
+
+  @override
+  Future<BlockedCreators> loadBlockedCreators() async => const UnknownBlockedCreators();
+}
 
 List<PrismWallpaper> _page(String prefix, int count, {required String authorUid}) => <PrismWallpaper>[
   for (int i = 0; i < count; i++)
@@ -75,6 +87,26 @@ void main() {
     expect(loaded.remixes.map((PrismWallpaper wall) => wall.id), <String>['c1', 'c2']);
     expect(loaded.total, 30);
     expect(repository.cursors, <String?>[null, 'blocked-23']);
+  });
+
+  test('drops every remix with an author UID when the block list is unknown', () async {
+    // The original needs no author UID: with an unknown block list, a wall that has one is never viewable.
+    final PrismWallpaper ownerless = remixWall(id: 'orig', docId: 'doc-orig', remixCount: 30, authorUid: null);
+    final _UnknownBlocksRepository repository = _UnknownBlocksRepository(
+      onFetchRemixes: (String docId, String? cursor) async => <PrismWallpaper>[
+        remixWall(id: 'uid-wall', docId: 'uid-wall-doc', authorName: 'Uma', authorUid: 'uid-uma'),
+        remixWall(id: 'no-uid', docId: 'no-uid-doc', authorName: 'Anon', authorUid: null),
+      ],
+      onFetchApproved: (String docId) async => ownerless,
+    );
+    final RemixesCubit cubit = RemixesCubit(repository);
+    addTearDown(cubit.close);
+
+    await cubit.load(ownerless);
+
+    final RemixesState state = cubit.state;
+    expect(state, isA<RemixesLoaded>());
+    expect((state as RemixesLoaded).remixes.map((PrismWallpaper wall) => wall.id), <String>['no-uid']);
   });
 
   test('emits empty when there are no remixes', () async {

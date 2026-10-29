@@ -8,6 +8,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/wallpaper/wall_ai_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -51,7 +52,11 @@ const String _originalDocId = '1JMSVHNOLV';
 const String _originalTitle = 'Rose Arch · Sunrise';
 const String _prompt = 'a garden arch covered in climbing roses, warm sunrise light, soft mist, quiet path';
 const String _model = 'openai/gpt-image-2.5/sunburst/text-to-image';
-const WallViewer _viewer = WallViewer(isPremium: false, premiumCollections: <String>[], blockedCreatorUids: <String>{});
+final WallViewer _viewer = WallViewer(
+  isPremium: false,
+  premiumCollections: <String>[],
+  blockedCreators: KnownBlockedCreators(<String>{}),
+);
 
 class _QaRouter extends Mock implements StackRouter {}
 
@@ -82,7 +87,7 @@ class _QaRemixRepository extends WallRemixRepository {
   Future<PrismWallpaper?> fetchApprovedWall(String docId) async => original;
 
   @override
-  Future<Set<String>> blockedCreatorUids({bool waitForInitialLoad = true}) async => const <String>{};
+  Future<BlockedCreators> loadBlockedCreators() async => KnownBlockedCreators(const <String>{});
 }
 
 class _QaAiRepository extends Fake implements AiGenerationRepositoryImpl {

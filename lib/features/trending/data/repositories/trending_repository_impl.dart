@@ -6,6 +6,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
@@ -64,7 +65,7 @@ class TrendingRepositoryImpl implements TrendingRepository {
       );
       final List<String> ids = _wallIds(doc?['wallIds']);
       final List<PrismWallpaper> walls = await _loadWalls(ids);
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
       final List<PrismWallpaper> visible = _visible(walls, blocked);
       await _writeCache(walls);
       return TrendingFetch.success(visible);
@@ -107,7 +108,7 @@ class TrendingRepositoryImpl implements TrendingRepository {
     return <PrismWallpaper>[for (final String id in ids) ?byId[id]];
   }
 
-  List<PrismWallpaper> _visible(List<PrismWallpaper> walls, Set<String> blocked) {
+  List<PrismWallpaper> _visible(List<PrismWallpaper> walls, BlockedCreators blocked) {
     final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
     return walls
         .where(
@@ -150,7 +151,7 @@ class TrendingRepositoryImpl implements TrendingRepository {
           .whereType<PrismFeedItem>()
           .map((item) => item.wallpaper)
           .toList(growable: false);
-      final blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      final blocked = await _userBlockRepository.loadBlockedCreators();
       return _visible(walls, blocked);
     } catch (error) {
       logger.w('[TrendingRepository] cache read failed: $error');

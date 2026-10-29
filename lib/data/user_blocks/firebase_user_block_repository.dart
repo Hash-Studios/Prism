@@ -7,6 +7,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
@@ -25,7 +26,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   }
 
   static const Duration _timeout = Duration(seconds: 25);
-  static const Duration _initialLoadTimeout = Duration(seconds: 3);
+  static const Duration _initialLoadTimeout = Duration(seconds: 10);
   static const String _subcollection = 'blockedUsers';
 
   final SessionRepository _session;
@@ -40,9 +41,12 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   late final StreamSubscription<PrismUsersV2> _sessionSubscription;
   StreamSubscription<Set<String>>? _blockedUidsSubscription;
 
-  final BehaviorSubject<Set<String>> _blockedUidsSubject = BehaviorSubject<Set<String>>.seeded(<String>{});
-  Completer<Set<String>> _initialLoadCompleter = Completer<Set<String>>();
-  bool _hasLoadedBlockedCreatorUids = false;
+  final BehaviorSubject<BlockedCreators> _blockedCreatorsSubject = BehaviorSubject<BlockedCreators>.seeded(
+    const UnknownBlockedCreators(),
+  );
+  Completer<BlockedCreators> _initialLoadCompleter = Completer<BlockedCreators>();
+  Future<BlockedCreators>? _initialLoadFuture;
+  int _sessionGeneration = 0;
   String? _activeUserId;
   bool _disposed = false;
   Future<void>? _disposeFuture;
@@ -52,6 +56,8 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   Future<void> _dispose() async {
     _disposed = true;
     _activeUserId = null;
+    _sessionGeneration++;
+    if (!_initialLoadCompleter.isCompleted) _initialLoadCompleter.complete(const UnknownBlockedCreators());
     for (final Completer<void> cancellation in _retryCancellation.values) {
       if (!cancellation.isCompleted) cancellation.complete();
     }
@@ -61,7 +67,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     while (_lifecycleTasks.isNotEmpty) {
       await Future.wait<void>(List<Future<void>>.of(_lifecycleTasks));
     }
-    await _blockedUidsSubject.close();
+    await _blockedCreatorsSubject.close();
   }
 
   void _trackLifecycle(Future<void> task) {
@@ -89,18 +95,21 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   }
 
   @override
-  Set<String> get cachedBlockedCreatorUids => _blockedUidsSubject.value;
+  BlockedCreators get blockedCreators => _blockedCreatorsSubject.value;
 
   @override
-  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) async {
-    if (!waitForInitialLoad || _hasLoadedBlockedCreatorUids) {
-      return _blockedUidsSubject.value;
-    }
-    return _initialLoadCompleter.future.timeout(_initialLoadTimeout, onTimeout: () => _blockedUidsSubject.value);
+  Future<BlockedCreators> loadBlockedCreators() async {
+    final BlockedCreators current = _blockedCreatorsSubject.value;
+    if (current is KnownBlockedCreators) return current;
+    if (_disposed) return const UnknownBlockedCreators();
+    return _initialLoadFuture ??= _initialLoadCompleter.future.timeout(
+      _initialLoadTimeout,
+      onTimeout: () => _blockedCreatorsSubject.value,
+    );
   }
 
   @override
-  Stream<Set<String>> watchBlockedCreatorUids() => _blockedUidsSubject.stream;
+  Stream<BlockedCreators> watchBlockedCreators() => _blockedCreatorsSubject.stream;
 
   @override
   Future<void> clearForUser(String userId) async {
@@ -121,6 +130,8 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     if (_activeUserId == nextUserId) {
       return;
     }
+    final int generation = ++_sessionGeneration;
+    if (_activeUserId != null) _beginPendingInitialLoad();
     final String? previousUserId = _activeUserId;
     _activeUserId = nextUserId;
     if (previousUserId != null) {
@@ -135,28 +146,36 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
       return;
     }
 
-    _beginPendingInitialLoad();
-    _blockedUidsSubject.add(const <String>{});
-    _trackLifecycle(_loadLocalBlocks(nextUserId));
+    _blockedCreatorsSubject.add(const UnknownBlockedCreators());
+    _trackLifecycle(_loadLocalBlocks(nextUserId, generation));
     _blockedUidsSubscription = _watchBlockedUids(nextUserId).listen(
       (uids) {
-        if (_activeUserId != nextUserId || _session.currentUser.id != nextUserId) return;
+        if (!_isCurrentSession(nextUserId, generation)) return;
         if (!_disposed) {
-          _trackLifecycle(_publishMergedSnapshot(nextUserId, serverUids: uids));
+          _trackLifecycle(_publishMergedSnapshot(nextUserId, generation, serverUids: uids));
           _startPendingBlockRetry(nextUserId);
         }
       },
       onError: (Object error, StackTrace stackTrace) {
         logger.w('Blocked users stream failed; keeping the last known set.', tag: 'UserBlocks', error: error);
-        if (!_disposed) _trackLifecycle(_publishMergedSnapshot(nextUserId, completeInitialLoadWhenUnavailable: true));
+        if (_isCurrentSession(nextUserId, generation)) {
+          _trackLifecycle(_publishMergedSnapshot(nextUserId, generation, completeInitialLoadWhenUnavailable: true));
+        }
       },
     );
   }
 
-  Future<void> _loadLocalBlocks(String userId) async {
+  bool _isCurrentSession(String userId, int generation) =>
+      !_disposed &&
+      _sessionGeneration == generation &&
+      _activeUserId == userId &&
+      _session.currentUser.loggedIn &&
+      _session.currentUser.id == userId;
+
+  Future<void> _loadLocalBlocks(String userId, int generation) async {
     try {
-      await _publishMergedSnapshot(userId);
-      if (_disposed || _activeUserId != userId || _session.currentUser.id != userId) return;
+      await _publishMergedSnapshot(userId, generation);
+      if (!_isCurrentSession(userId, generation)) return;
       _startPendingBlockRetry(userId);
     } catch (error, stackTrace) {
       logger.w('Could not read local blocked users.', tag: 'UserBlocks', error: error, stackTrace: stackTrace);
@@ -164,23 +183,19 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   }
 
   Future<void> _publishMergedSnapshot(
-    String userId, {
+    String userId,
+    int generation, {
     Set<String>? serverUids,
     bool completeInitialLoadWhenUnavailable = false,
-  }) async {
+  }) => _serializeBlockOwner(userId, () async {
+    if (!_isCurrentSession(userId, generation) || _clearingBlockUsers.contains(userId)) return;
     if (serverUids != null) {
-      if (_clearingBlockUsers.contains(userId)) return;
-      await _serializeBlockOwner(userId, () async {
-        if (_clearingBlockUsers.contains(userId)) return;
-        await _localBlocks.write('$userId::server_uids_v2', UserBlockSnapshotCodec.encodeUids(serverUids));
-      });
+      await _localBlocks.write('$userId::server_uids_v2', UserBlockSnapshotCodec.encodeUids(serverUids));
     }
-    if (_disposed || _clearingBlockUsers.contains(userId)) return;
     final records = await _localBlocks.readAll();
-    if (_disposed || _activeUserId != userId || _session.currentUser.id != userId) return;
-    final savedServerUids = await _localBlocks.read('$userId::server_uids_v2');
-    final savedServerRows = await _localBlocks.read('$userId::server_rows');
-    if (_disposed || _activeUserId != userId || _session.currentUser.id != userId) return;
+    if (!_isCurrentSession(userId, generation) || _clearingBlockUsers.contains(userId)) return;
+    final savedServerUids = records['$userId::server_uids_v2'];
+    final savedServerRows = records['$userId::server_rows'];
     final bool hasKnownServerSnapshot = serverUids != null || savedServerUids != null || savedServerRows != null;
     final Set<String> uids = <String>{
       ...serverUids ??
@@ -199,23 +214,25 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
         uids.remove(targetId);
       }
     }
+    if (!_isCurrentSession(userId, generation) || _clearingBlockUsers.contains(userId)) return;
     _publishSnapshot(uids, completeInitialLoad: hasKnownServerSnapshot || completeInitialLoadWhenUnavailable);
-  }
+  });
 
   void _beginPendingInitialLoad() {
-    _hasLoadedBlockedCreatorUids = false;
-    if (_initialLoadCompleter.isCompleted) {
-      _initialLoadCompleter = Completer<Set<String>>();
-    }
+    if (!_initialLoadCompleter.isCompleted) _initialLoadCompleter.complete(const UnknownBlockedCreators());
+    _initialLoadCompleter = Completer<BlockedCreators>();
+    _initialLoadFuture = null;
   }
 
   void _publishSnapshot(Set<String> blockedUids, {bool completeInitialLoad = true}) {
-    final Set<String> normalized = Set<String>.unmodifiable(blockedUids);
-    _blockedUidsSubject.add(normalized);
-    if (completeInitialLoad) _hasLoadedBlockedCreatorUids = true;
-    if (completeInitialLoad && !_initialLoadCompleter.isCompleted) {
-      _initialLoadCompleter.complete(normalized);
-    }
+    if (!completeInitialLoad && _blockedCreatorsSubject.value is UnknownBlockedCreators) return;
+    final KnownBlockedCreators known = KnownBlockedCreators(blockedUids);
+    _blockedCreatorsSubject.add(known);
+    if (!_initialLoadCompleter.isCompleted) _initialLoadCompleter.complete(known);
+  }
+
+  void _publishOptimistic(Set<String> Function(Set<String> uids) update) {
+    if (_blockedCreatorsSubject.value case KnownBlockedCreators(:final uids)) _publishSnapshot(update(uids));
   }
 
   String _blockedUsersPath(String userId) => '${FirebaseCollections.usersV2}/$userId/$_subcollection';
@@ -276,14 +293,20 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     String userId,
     String targetId,
     String operationId,
+    int generation,
     Future<void> Function() send,
   ) => _serializeBlockSend<bool>(userId, () async {
     final bool isCurrent = await _serializeBlockOwner(userId, () async {
       final current = await _localBlocks.read('$userId::$targetId');
-      return current?['operationId'] == operationId && _activeUserId == userId && _session.currentUser.id == userId;
+      return current?['operationId'] == operationId &&
+          current?['status'] == 'pending' &&
+          _isCurrentSession(userId, generation);
     });
-    if (!isCurrent) return false;
+    if (!isCurrent || !_isCurrentSession(userId, generation) || _clearingBlockUsers.contains(userId)) return false;
     await send();
+    if (_isCurrentSession(userId, generation)) {
+      await _updateBlockIntent(userId, targetId, operationId, status: 'synced');
+    }
     return true;
   });
 
@@ -312,20 +335,21 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     if (tid.isEmpty) {
       return Result.error(const ValidationFailure('Invalid user.'));
     }
-    final String uid = _session.currentUser.id.trim();
+    final int generation = _sessionGeneration;
+    final String uid = _session.currentUser.loggedIn ? _session.currentUser.id.trim() : '';
     if (uid.isEmpty) return Result.error(const ValidationFailure('Sign in to block users.'));
     late String operationId;
     try {
       final operation = await _saveBlockIntent(uid, tid, desired: true);
       operationId = operation['operationId']! as String;
-      if (_activeUserId == uid && _session.currentUser.id == uid) {
-        _publishSnapshot(<String>{..._blockedUidsSubject.value, tid});
+      if (_isCurrentSession(uid, generation)) {
+        _publishOptimistic((uids) => <String>{...uids, tid});
       }
     } catch (error) {
       return Result.error(ServerFailure('Could not save block locally: $error'));
     }
     try {
-      final bool sent = await _sendBlockIntentIfCurrent(uid, tid, operationId, () async {
+      final bool sent = await _sendBlockIntentIfCurrent(uid, tid, operationId, generation, () async {
         final cf.HttpsCallable callable = appFunctions.httpsCallable(
           'blockUser',
           options: cf.HttpsCallableOptions(timeout: _timeout),
@@ -334,7 +358,6 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
       });
       if (!sent) return Result.error(const ServerFailure('Pending sync: A newer block choice is waiting to sync.'));
       if (_clearingBlockUsers.contains(uid)) return Result.error(const ServerFailure('Account was deleted.'));
-      if (_session.currentUser.id == uid) await _updateBlockIntent(uid, tid, operationId, status: 'synced');
       return Result.success<void>(null);
     } on cf.FirebaseFunctionsException catch (e) {
       if (_isPermanentBlockFailure(e)) {
@@ -357,16 +380,17 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     if (tid.isEmpty) {
       return Result.error(const ValidationFailure('Invalid user.'));
     }
-    final String uid = _session.currentUser.id.trim();
+    final int generation = _sessionGeneration;
+    final String uid = _session.currentUser.loggedIn ? _session.currentUser.id.trim() : '';
     if (uid.isEmpty) return Result.error(const ValidationFailure('Sign in to unblock users.'));
     late String operationId;
     try {
       final operation = await _saveBlockIntent(uid, tid, desired: false);
       operationId = operation['operationId']! as String;
-      if (_activeUserId == uid && _session.currentUser.id == uid) {
-        _publishSnapshot(_blockedUidsSubject.value.where((item) => item != tid).toSet());
+      if (_isCurrentSession(uid, generation)) {
+        _publishOptimistic((uids) => uids.where((item) => item != tid).toSet());
       }
-      final bool sent = await _sendBlockIntentIfCurrent(uid, tid, operationId, () async {
+      final bool sent = await _sendBlockIntentIfCurrent(uid, tid, operationId, generation, () async {
         final cf.HttpsCallable callable = appFunctions.httpsCallable(
           'unblockUser',
           options: cf.HttpsCallableOptions(timeout: _timeout),
@@ -375,7 +399,6 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
       });
       if (!sent) return Result.error(const ServerFailure('Pending sync: A newer unblock choice is waiting to sync.'));
       if (_clearingBlockUsers.contains(uid)) return Result.error(const ServerFailure('Account was deleted.'));
-      if (_session.currentUser.id == uid) await _updateBlockIntent(uid, tid, operationId, status: 'synced');
       return Result.success<void>(null);
     } on cf.FirebaseFunctionsException catch (e) {
       if (_isPermanentBlockFailure(e)) {
@@ -402,6 +425,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
 
   Future<void> _retryPendingBlocks(String userId) async {
     if (_disposed || !_retryingBlockUsers.add(userId)) return;
+    final int generation = _sessionGeneration;
     final Completer<void> cancellation = Completer<void>();
     _retryCancellation[userId] = cancellation;
     var delay = const Duration(seconds: 2);
@@ -432,14 +456,13 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
           final String operationId = operation['operationId']?.toString() ?? '';
           try {
             final String callableName = operation['desired'] == true ? 'blockUser' : 'unblockUser';
-            final bool sent = await _sendBlockIntentIfCurrent(userId, targetId, operationId, () async {
+            final bool sent = await _sendBlockIntentIfCurrent(userId, targetId, operationId, generation, () async {
               await appFunctions.httpsCallable(callableName, options: cf.HttpsCallableOptions(timeout: _timeout)).call(
                 <String, dynamic>{'targetUserId': targetId},
               );
             });
             if (!sent) continue;
             if (cancellation.isCompleted || _activeUserId != userId || _session.currentUser.id != userId) return;
-            await _updateBlockIntent(userId, targetId, operationId, status: 'synced');
           } on cf.FirebaseFunctionsException catch (error) {
             final bool rejected = error.code == 'permission-denied' || error.code == 'invalid-argument';
             await _updateBlockIntent(
@@ -467,6 +490,13 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
 
   @override
   Future<Result<List<BlockedUserListRow>>> fetchBlockedUsersList() async {
+    final int generation = _sessionGeneration;
+    bool sameSession(String userId) =>
+        !_disposed &&
+        generation == _sessionGeneration &&
+        !_clearingBlockUsers.contains(userId) &&
+        _session.currentUser.loggedIn &&
+        _session.currentUser.id == userId;
     final String id = _session.currentUser.id.trim();
     if (!_session.currentUser.loggedIn || id.isEmpty) {
       return Result.success(<BlockedUserListRow>[]);
@@ -493,19 +523,20 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
         }
         return cb != null ? 1 : 0;
       });
-      if (_session.currentUser.id != id) {
+      if (!sameSession(id)) {
         return Result.error(const ServerFailure('Account changed while loading blocks.'));
       }
       final serverRows = docs.map((doc) => doc.$1).toList(growable: false);
-      await _serializeBlockOwner(
-        id,
-        () => _localBlocks.write('$id::server_rows', UserBlockSnapshotCodec.encodeRows(serverRows)),
-      );
-      if (_session.currentUser.id != id) {
+      await _serializeBlockOwner(id, () async {
+        if (sameSession(id)) {
+          await _localBlocks.write('$id::server_rows', UserBlockSnapshotCodec.encodeRows(serverRows));
+        }
+      });
+      if (!sameSession(id)) {
         return Result.error(const ServerFailure('Account changed while loading blocks.'));
       }
       final records = await _localBlocks.readAll();
-      if (_session.currentUser.id != id) {
+      if (!sameSession(id)) {
         return Result.error(const ServerFailure('Account changed while loading blocks.'));
       }
       final Map<String, BlockedUserListRow> rows = <String, BlockedUserListRow>{
@@ -529,14 +560,14 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
       }
       return Result.success(rows.values.toList(growable: false));
     } catch (e) {
-      if (_session.currentUser.id == id) {
+      if (sameSession(id)) {
         try {
           final records = await _localBlocks.readAll();
-          if (_session.currentUser.id != id) {
+          if (!sameSession(id)) {
             return Result.error(const ServerFailure('Account changed while loading blocks.'));
           }
           final saved = await _localBlocks.read('$id::server_rows');
-          if (_session.currentUser.id != id) {
+          if (!sameSession(id)) {
             return Result.error(const ServerFailure('Account changed while loading blocks.'));
           }
           final pending = records.entries.where(

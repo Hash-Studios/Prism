@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 
 import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -74,7 +75,7 @@ void main() {
   test('find and search hide Prism items from the current blocked set', () async {
     final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
       store: DurableJsonStore('catalog', directory: directory),
-      blockedUids: () => <String>{'blocked-uid'},
+      blockedUids: () => KnownBlockedCreators(<String>{'blocked-uid'}),
     );
     final FeedItemEntity blocked = PrismFeedItem(
       id: 'blocked',
@@ -96,8 +97,46 @@ void main() {
     expect(await catalog.search('forest'), isEmpty);
   });
 
+  test('find and search hide every Prism item while the block list is unknown', () async {
+    final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
+      store: DurableJsonStore('catalog', directory: directory),
+      blockedUids: () => const UnknownBlockedCreators(),
+    );
+    await catalog.remember(<FeedItemEntity>[
+      PrismFeedItem(
+        id: 'prism',
+        wallpaper: PrismWallpaper(
+          core: WallpaperCore(
+            id: 'prism',
+            source: WallpaperSource.prism,
+            fullUrl: 'https://example.test/prism.jpg',
+            thumbnailUrl: 'https://example.test/prism-thumb.jpg',
+            authorUid: 'creator-uid',
+          ),
+          title: 'shared forest',
+        ),
+      ),
+      WallhavenFeedItem(
+        id: 'wallhaven',
+        wallpaper: WallhavenWallpaper(
+          core: WallpaperCore(
+            id: 'wallhaven',
+            source: WallpaperSource.wallhaven,
+            fullUrl: 'https://wallhaven.test/wallhaven.jpg',
+            thumbnailUrl: 'https://wallhaven.test/thumb.jpg',
+          ),
+          tags: <String>['shared forest'],
+        ),
+      ),
+    ]);
+
+    expect(await catalog.find(WallpaperSource.prism, 'prism'), isNull);
+    expect((await catalog.find(WallpaperSource.wallhaven, 'wallhaven'))?.id, 'wallhaven');
+    expect((await catalog.search('forest')).map((item) => item.id), <String>['wallhaven']);
+  });
+
   test('find and search wait for the current block snapshot before exposing catalog items', () async {
-    final Completer<Set<String>> blockSnapshot = Completer<Set<String>>();
+    final Completer<BlockedCreators> blockSnapshot = Completer<BlockedCreators>();
     final catalog = OfflineWallpaperCatalog(
       store: DurableJsonStore('catalog', directory: directory),
       blockedUids: () => blockSnapshot.future,
@@ -122,7 +161,7 @@ void main() {
     final Future<FeedItemEntity?> find = catalog.find(WallpaperSource.prism, 'blocked');
     final Future<List<FeedItemEntity>> search = catalog.search('forest');
     await Future<void>.delayed(Duration.zero);
-    blockSnapshot.complete(<String>{'blocked-uid'});
+    blockSnapshot.complete(KnownBlockedCreators(<String>{'blocked-uid'}));
 
     expect(await find, isNull);
     expect(await search, isEmpty);
