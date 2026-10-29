@@ -7,7 +7,6 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart' as floating;
 
-/// The bar's default offset, the pill height, and a gap.
 const double _snackBarBottomInset = 10 + 56 + PrismSpace.xs;
 
 /// Hosts the tab content with the floating pill and create button above it. The bar hides while the user scrolls
@@ -80,11 +79,12 @@ class BottomBar extends StatelessWidget {
       ),
       iconTooltip: context.l10n.navigationScrollToTop,
       icon: (width, height) => Icon(JamIcons.arrow_up, color: theme.colorScheme.secondary, size: 16),
-      // The tab Scaffolds do not know about the pill, so lift their floating snackbars above it.
       body: Theme(
         data: theme.copyWith(
           snackBarTheme: theme.snackBarTheme.copyWith(
-            insetPadding: const EdgeInsets.fromLTRB(15, 5, 15, _snackBarBottomInset),
+            insetPadding: (theme.snackBarTheme.insetPadding ?? const EdgeInsets.fromLTRB(15, 5, 15, 10)).copyWith(
+              bottom: _snackBarBottomInset,
+            ),
           ),
         ),
         child: child ?? const SizedBox.shrink(),
