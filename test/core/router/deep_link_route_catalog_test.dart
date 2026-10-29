@@ -162,7 +162,7 @@ void main() {
     });
 
     final Set<String> appPages = _appRouteNames(AppRouter().routes)..remove('SplashWidgetRoute');
-    expect(appPages, hasLength(59));
+    expect(appPages, hasLength(60));
     expect(
       appPages.difference(reachablePages),
       isEmpty,
@@ -514,6 +514,7 @@ String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (targe
   DeepLinkPageTarget.uploadInput ||
   DeepLinkPageTarget.editWallInput => 'DeepLinkInputRoute',
   DeepLinkPageTarget.ai => 'AiTabRoute',
+  DeepLinkPageTarget.weeklyChallenge => 'WeeklyChallengeRoute',
   DeepLinkPageTarget.wallpaperDetail => 'WallpaperDetailRoute',
   DeepLinkPageTarget.wotdArchive => 'WotdArchiveRoute',
   DeepLinkPageTarget.editProfile => 'EditProfilePanelRoute',

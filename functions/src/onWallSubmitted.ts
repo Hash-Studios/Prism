@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import {onDocumentCreated} from "firebase-functions/v2/firestore";
+import {onDocumentCreatedWithAuthContext} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {defineSecret} from "firebase-functions/params";
 import {parseAiSource, saveAiGenerationReceipt} from "./aiWallSource";
@@ -9,6 +9,7 @@ import {db, findUserByEmail, REGION, str} from "./common";
 import {isStudioWall} from "./studio/isStudioWall";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {authorOf, authorUpdate} from "./wallAuthor";
+import {admitChallengeWall} from "./weeklyChallenges";
 import {keepRemixOf, removeRemixOfIfUnchanged} from "./wallRemix";
 
 const GITHUB_RAW_HOST = "raw.githubusercontent.com";
@@ -31,11 +32,12 @@ export function isGithubRawUrl(url: unknown): boolean {
  * an approved AI original (see keepRemixOf). Then notifies the admins in `config/adminNotifications` when a premium
  * user submits a wall (walls start with review=false).
  */
-export const onWallSubmitted = onDocumentCreated(
+export const onWallSubmitted = onDocumentCreatedWithAuthContext(
   {
     document: "walls/{wallId}",
     region: REGION,
     secrets: [studioSecret],
+    retry: true,
   },
   async (event) => {
     const data = event.data?.data();
@@ -44,6 +46,7 @@ export const onWallSubmitted = onDocumentCreated(
     }
 
     const wallId = event.params.wallId;
+    if (event.data) await admitChallengeWall(event.data, event.authId, event.authType);
     if (data.remixOf !== undefined && event.data) {
       try {
         if (!(await keepRemixOf(wallId, data)) && await removeRemixOfIfUnchanged(event.data, data.remixOf)) {

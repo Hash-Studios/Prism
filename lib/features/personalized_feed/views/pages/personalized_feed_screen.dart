@@ -39,6 +39,7 @@ import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
 import 'package:Prism/features/wallpaper_history/views/widgets/pick_up_row.dart';
+import 'package:Prism/features/weekly_challenges/views/widgets/weekly_challenge_card.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -545,6 +546,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                   ),
           ),
         ),
+        if (!loadingFirstPage)
+          SliverToBoxAdapter(child: WeeklyChallengeCard(key: ValueKey('challenge-$_moodRowsRevision'))),
         if (!loadingFirstPage) SliverToBoxAdapter(child: MoodChipRow(moods: moods)),
         ..._forYouGridSlivers(context, state, visibleItems, moods, crossAxisCount, tileMemCacheHeight),
       ],

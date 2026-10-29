@@ -248,6 +248,8 @@ class UploadDraftStore {
           'category': metadata.category,
           'tags': metadata.tags,
           'requestId': metadata.requestId,
+          'challengeId': metadata.challengeId,
+          'challengeTheme': metadata.challengeTheme,
           'requestText': metadata.requestText,
         },
         'savedAtUtc': DateTime.now().toUtc().toIso8601String(),
@@ -283,6 +285,8 @@ class UploadDraftStore {
       category: raw['category'] is String ? raw['category'] as String : defaultSubmissionCategory,
       tags: rawTags is List ? rawTags.whereType<String>().toList(growable: false) : const <String>[],
       requestId: raw['requestId'] is String ? raw['requestId'] as String : '',
+      challengeId: raw['challengeId'] is String ? raw['challengeId'] as String : '',
+      challengeTheme: raw['challengeTheme'] is String ? raw['challengeTheme'] as String : '',
       requestText: raw['requestText'] is String ? raw['requestText'] as String : '',
     );
   }

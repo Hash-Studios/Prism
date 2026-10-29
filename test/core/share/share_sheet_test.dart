@@ -128,7 +128,7 @@ void _mockChannels(WidgetTester tester, {List<MethodCall>? toastCalls}) {
   });
 }
 
-Future<void> _openSheet(WidgetTester tester, ShareSheetServices services) async {
+Future<void> _openSheet(WidgetTester tester, ShareSheetServices services, {VoidCallback? onShared}) async {
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -138,7 +138,7 @@ Future<void> _openSheet(WidgetTester tester, ShareSheetServices services) async 
         builder: (BuildContext context) => Scaffold(
           body: Center(
             child: TextButton(
-              onPressed: () => showShareSheet(context, _content, 'wall_detail', services: services),
+              onPressed: () => showShareSheet(context, _content, 'wall_detail', services: services, onShared: onShared),
               child: const Text('open'),
             ),
           ),
@@ -306,6 +306,20 @@ void main() {
     expect(event.result, EventResultValue.failure);
     expect(_target(ShareTargetValue.saveImage), findsOneWidget);
   });
+
+  for (final status in ShareResultStatus.values) {
+    testWidgets('share callback requires observed success: $status', (tester) async {
+      _mockChannels(tester);
+      final cards = await _writeCards(tester);
+      final fake = _Fake(cards)..shareResult = ShareResult('', status);
+      int observed = 0;
+      await _openSheet(tester, fake.services, onShared: () => observed++);
+      expect(observed, 0);
+      await tester.tap(_target(ShareTargetValue.more));
+      await _settle(tester);
+      expect(observed, status == ShareResultStatus.success ? 1 : 0);
+    });
+  }
 
   testWidgets('More shares the rendered story with the link and tracks success', (tester) async {
     tester.view

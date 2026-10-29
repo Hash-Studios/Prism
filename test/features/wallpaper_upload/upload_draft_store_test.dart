@@ -62,6 +62,8 @@ void main() {
         tags: <String>['night'],
         requestId: 'r1',
         requestText: 'Northern lights',
+        challengeId: '2026-10-26',
+        challengeTheme: 'Quiet oceans',
       ),
     );
     await original.delete();
@@ -80,6 +82,8 @@ void main() {
     expect(restored.metadata.tags, <String>['night']);
     expect(restored.metadata.requestId, 'r1');
     expect(restored.metadata.requestText, 'Northern lights');
+    expect(restored.metadata.challengeId, '2026-10-26');
+    expect(restored.metadata.challengeTheme, 'Quiet oceans');
     expect(await afterRestart.read(owner: 'account-b', draftId: draftId), isNull);
   });
 

@@ -1,4 +1,5 @@
 import 'package:Prism/data/categories/categories.dart';
+import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
 
 const String defaultSubmissionCategory = 'General';
 const int maxSubmissionTitleLength = 60;
@@ -27,6 +28,8 @@ class SubmissionMetadata {
     this.tags = const <String>[],
     this.requestId = '',
     this.requestText = '',
+    this.challengeId = '',
+    this.challengeTheme = '',
   });
 
   final String title;
@@ -38,6 +41,10 @@ class SubmissionMetadata {
 
   /// The text of [requestId], kept so the upload form can show it without a lookup.
   final String requestText;
+  final String challengeId;
+  final String challengeTheme;
+  ChallengeSeed? get challengeSeed =>
+      challengeId.isEmpty ? null : ChallengeSeed(id: challengeId, theme: challengeTheme);
 
   bool get hasTitle => title.trim().isNotEmpty;
 
@@ -47,11 +54,15 @@ class SubmissionMetadata {
     List<String>? tags,
     String? requestId,
     String? requestText,
+    String? challengeId,
+    String? challengeTheme,
   }) => SubmissionMetadata(
     title: title ?? this.title,
     category: category ?? this.category,
     tags: tags ?? this.tags,
     requestId: requestId ?? this.requestId,
     requestText: requestText ?? this.requestText,
+    challengeId: challengeId ?? this.challengeId,
+    challengeTheme: challengeTheme ?? this.challengeTheme,
   );
 }

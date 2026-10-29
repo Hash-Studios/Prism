@@ -1251,6 +1251,42 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('challenge seed prefills upload metadata and can be removed independently', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    SubmissionMetadata? submitted;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: UploadWallScreen(
+          image: image,
+          prepareImageForTesting: () async {},
+          challengeSeed: const ChallengeSeed(id: '2026-10-26', theme: 'Quiet oceans'),
+          uploadFileForTesting: ({required isThumbnail}) async =>
+              GitHubContent(downloadUrl: 'https://example.com/image.png', path: 'image.png', sha: 'sha'),
+          createRecordWithMetadataForTesting: ({required id, required metadata}) async {
+            submitted = metadata;
+            return wall_store.WallSubmissionResult.quotaExceeded;
+          },
+        ),
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.pump();
+    expect(find.text('Quiet oceans'), findsOneWidget);
+    await tester.scrollUntilVisible(find.byTooltip('Remove challenge'), 200, scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.byTooltip('Remove challenge'));
+    await tester.pump();
+    expect(find.byTooltip('Remove challenge'), findsNothing);
+    await tester.ensureVisible(find.text('Upload'));
+    await tester.tap(find.text('Upload'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(submitted?.challengeId, '');
+    expect(submitted?.title, 'Quiet oceans');
+  });
+
   testWidgets('ready state shows the preview facts, the checklist and one Upload button', (tester) async {
     await setViewport(tester);
     final image = await makeImage(tester);

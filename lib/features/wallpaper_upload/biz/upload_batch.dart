@@ -1,6 +1,6 @@
 import 'dart:io';
-
 import 'package:Prism/core/purchases/upload_quota.dart';
+import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
 import 'package:Prism/l10n/l10n.dart';
 
 /// Most images one Prism Pro batch can hold.
@@ -14,12 +14,13 @@ enum UploadItemOutcome { pending, submitted, skipped, failed }
 
 /// A queue of picked images that go through the single-upload screens one after the other.
 class UploadBatch {
-  UploadBatch(List<File> files)
+  UploadBatch(List<File> files, {this.challengeSeed})
     : assert(files.isNotEmpty),
       files = List<File>.unmodifiable(files),
       outcomes = List<UploadItemOutcome>.filled(files.length, UploadItemOutcome.pending);
 
   final List<File> files;
+  ChallengeSeed? challengeSeed;
   final List<UploadItemOutcome> outcomes;
   int index = 0;
 
