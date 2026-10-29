@@ -8,6 +8,7 @@ import {isStudioWall} from "./studio/isStudioWall";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {getOwnedWallDelivery, ownedAssetStorageEnabled, ownedThumbnailUrl} from "./ownedAssetDelivery";
 import {fileWallInCollection} from "./wallCollections";
+import {fillRequestFromWall, notifyRequestFilled} from "./wallRequests";
 import {
   emailHash,
   emailToTopic,
@@ -56,7 +57,11 @@ export const onWallApproved = onDocumentUpdated(
     if (!sameWallIncarnation(expected, current) || current.data()?.review !== true) return;
     // Approval sets collections to community, so the category collection is added after it.
     if (!wasApproved) await fileWallInCollection(expected.ref);
-    if (await isStudioWall(wallId, current.data() ?? {})) {
+    const studio = await isStudioWall(wallId, current.data() ?? {});
+    const requestId = await fillRequestFromWall(wallId, current.data() ?? {}, studio);
+    // The push waits for the protected original, so the wall it opens is one every client lists.
+    if (requestId && (!owned || current.data()?.originalProtected === true)) await notifyRequestFilled(requestId);
+    if (studio) {
       logger.info("onWallApproved: Prism Studio wall, no pushes.", {wallId});
       return;
     }

@@ -6,6 +6,7 @@ import {closeCreatorProgressForDeletion} from "./creatorProgressDeletion";
 import {verifiedEmailForUid} from "./wallAuthor";
 import {removeUidFollowGraph} from "./profiles";
 import {FOLDERS, FOLDER_ITEMS, isFolderItemPath} from "./folders";
+import {removeWallRequestsForAccount, REQUEST_RATE_DAILY, VOTE_RATE_DAILY} from "./wallRequests";
 
 const USERS = "usersv2";
 const COIN_TRANSACTIONS = "coinTransactions";
@@ -19,7 +20,9 @@ const DELETED_NAME = "Deleted Account";
 /** Docs keyed by the bare uid. The last two are legacy collections. */
 const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens"];
 /** Docs keyed `<uid>_<day>`. */
-const UID_PREFIX_KEYED = ["coinAdRateDaily", "coinRefundDaily", "contentReportRateDaily", "userBlockRateDaily"];
+const UID_PREFIX_KEYED = [
+  "coinAdRateDaily", "coinRefundDaily", "contentReportRateDaily", "userBlockRateDaily", REQUEST_RATE_DAILY, VOTE_RATE_DAILY,
+];
 /** Public docs that carry the caller's email: they stay, with the creator details blanked. */
 const SCRUBBED_BY_EMAIL = ["walls", "setups"];
 /** Docs that carry the caller's email and are deleted. */
@@ -104,6 +107,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   // Close rewards before deleting private state, including cross-user member receipts.
   await closeCreatorProgressForDeletion(callerUid);
   await removeUidFollowGraph(callerUid);
+  await removeWallRequestsForAccount(callerUid);
 
   // 1. Favourite/private subcollections — same set the client wipes in delete_account_service.dart.
   await db.recursiveDelete(userRef.collection("images"));

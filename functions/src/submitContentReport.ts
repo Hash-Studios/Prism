@@ -31,17 +31,20 @@ function normalizeTargetDocId(raw: unknown): string {
   return t;
 }
 
-const COLLECTION_BY_CONTENT_TYPE: Record<"wall" | "setup" | "user", string> = {
+type ContentType = "wall" | "setup" | "user" | "wallRequest";
+
+const COLLECTION_BY_CONTENT_TYPE: Record<ContentType, string> = {
   wall: "walls",
   setup: "setups",
   user: "usersv2",
+  wallRequest: "wallRequests",
 };
 
-function normalizeContentType(raw: unknown): "wall" | "setup" | "user" {
-  if (raw !== "wall" && raw !== "setup" && raw !== "user") {
-    throw new HttpsError("invalid-argument", "contentType must be 'wall', 'setup', or 'user'.");
+function normalizeContentType(raw: unknown): ContentType {
+  if (typeof raw !== "string" || !Object.prototype.hasOwnProperty.call(COLLECTION_BY_CONTENT_TYPE, raw)) {
+    throw new HttpsError("invalid-argument", "contentType must be 'wall', 'setup', 'user', or 'wallRequest'.");
   }
-  return raw;
+  return raw as ContentType;
 }
 
 function normalizeReason(raw: unknown): string {

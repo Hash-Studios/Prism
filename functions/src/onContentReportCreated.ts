@@ -40,15 +40,12 @@ async function countTrustedReporters(
   return trusted;
 }
 
-/**
- * Takes an approved wall back to review when 3 different reporters, with accounts older than 7 days, reported it.
- * An admin re-approves it from the review screen. Returns true when this call held the wall.
- */
-async function holdWallAfterReports(wallId: string): Promise<boolean> {
+/** True when 3 different reporters, with accounts older than 7 days, reported the target. */
+async function reachedHoldThreshold(contentType: string, targetId: string): Promise<boolean> {
   const reports = await db
     .collection("contentReports")
-    .where("contentType", "==", "wall")
-    .where("targetFirestoreDocId", "==", wallId)
+    .where("contentType", "==", contentType)
+    .where("targetFirestoreDocId", "==", targetId)
     .get();
   const reporters = new Set<string>();
   for (const report of reports.docs) {
@@ -56,12 +53,15 @@ async function holdWallAfterReports(wallId: string): Promise<boolean> {
     if (uid) reporters.add(uid);
   }
   if (reporters.size < HOLD_REPORTER_COUNT) return false;
-  if (
-    (await countTrustedReporters(reporters, Date.now())) < HOLD_REPORTER_COUNT
-  ) {
-    return false;
-  }
+  return (await countTrustedReporters(reporters, Date.now())) >= HOLD_REPORTER_COUNT;
+}
 
+/**
+ * Takes an approved wall back to review when it reached the report threshold. An admin re-approves it from the review
+ * screen. Returns true when this call held the wall.
+ */
+async function holdWallAfterReports(wallId: string): Promise<boolean> {
+  if (!(await reachedHoldThreshold("wall", wallId))) return false;
   const wallRef = db.collection("walls").doc(wallId);
   return db.runTransaction(async (tx) => {
     const wall = await tx.get(wallRef);
@@ -71,6 +71,18 @@ async function holdWallAfterReports(wallId: string): Promise<boolean> {
       heldForReview: true,
       heldAt: admin.firestore.FieldValue.serverTimestamp(),
     });
+    return true;
+  });
+}
+
+/** Hides a wall request that reached the report threshold. An admin can show it again. */
+async function hideRequestAfterReports(requestId: string): Promise<boolean> {
+  if (!(await reachedHoldThreshold("wallRequest", requestId))) return false;
+  const ref = db.collection("wallRequests").doc(requestId);
+  return db.runTransaction(async (tx) => {
+    const request = await tx.get(ref);
+    if (!request.exists || request.data()?.hidden === true) return false;
+    tx.update(ref, {hidden: true, hiddenBy: "reports", hiddenAt: admin.firestore.FieldValue.serverTimestamp()});
     return true;
   });
 }
@@ -95,11 +107,13 @@ export const onContentReportCreated = onDocumentCreated(
     const reason = (data.reason ?? "").toString();
     const reporterUid = (data.reporterUid ?? "").toString();
 
-    if (contentType === "wall" && targetId.length > 0) {
+    const hold = contentType === "wall" ? holdWallAfterReports :
+      contentType === "wallRequest" ? hideRequestAfterReports : null;
+    if (hold && targetId.length > 0) {
       try {
-        if (await holdWallAfterReports(targetId)) {
+        if (await hold(targetId)) {
           logger.warn(
-            "onContentReportCreated: wall held for review after reports.",
+            "onContentReportCreated: content held after reports.",
             {reportId, targetId},
           );
         }

@@ -73,6 +73,12 @@ const str = (v) => ({ stringValue: v });
 const ts = () => ({ timestampValue: new Date().toISOString() });
 const folderFields = (owner, name = 'Blue walls', extra = {}) => ({ ownerId: str(owner), name: str(name), createdAt: ts(), updatedAt: ts(), itemCount: { integerValue: '0' }, covers: arr([]), ...extra });
 const itemFields = (owner, id = 'abc', provider = 'WallHaven') => ({ id: str(id), provider: str(provider), ownerId: str(owner), addedAt: ts(), url: str('https://example.com/f.jpg'), thumb: str('https://example.com/t.jpg') });
+const requestFields = (owner, extra = {}) => ({
+  text: str('Dark minimal mountains'), tags: arr(['Dark']), requesterUid: str(owner), requesterName: str('B'),
+  requesterPhoto: str(''), status: str('open'), hidden: { booleanValue: false }, voteCount: { integerValue: '1' },
+  createdAt: ts(), ...extra,
+});
+const fieldEquals = (field, value) => ({ fieldFilter: { field: { fieldPath: field }, op: 'EQUAL', value } });
 const ownerFilter = (uid) => ({ fieldFilter: { field: { fieldPath: 'ownerId' }, op: 'EQUAL', value: { stringValue: uid } } });
 const newestFirst = (field, limit) => ({ orderBy: [{ field: { fieldPath: field }, direction: 'DESCENDING' }], ...(limit ? { limit } : {}) });
 const commitDocs = async (auth, docs) => {
@@ -137,6 +143,9 @@ const seed = () => Promise.all([
   req('PATCH', 'creatorMemberRateDaily/b_2026-10-18', { memberUid: { stringValue: 'b' } }, 'owner'),
   req('PATCH', 'usersv2/b/private/economy/creatorMembers/a', { memberUid: { stringValue: 'a' } }, 'owner'),
   req('PATCH', 'folders/fb', folderFields('b'), 'owner'),
+  req('PATCH', 'wallRequests/open', requestFields('b'), 'owner'),
+  req('PATCH', 'wallRequests/hidden', requestFields('b', { hidden: { booleanValue: true } }), 'owner'),
+  req('PATCH', 'wallRequests/open/votes/c', { uid: str('c'), createdAt: ts() }, 'owner'),
   req('PATCH', 'folders/fb/items/wallhaven_abc', itemFields('b'), 'owner'),
   req('PATCH', 'folders/reused', folderFields('b'), 'owner'),
   req('PATCH', 'folders/reused/items/wallhaven_private', itemFields('b', 'private'), 'owner'),
@@ -570,6 +579,29 @@ const cases = [
   ['deleting account cannot update an item', () => req('PATCH', 'folders/fb/items/wallhaven_abc', { thumb: str('https://example.com/late.jpg') }, Bu, ['thumb']), 403],
   ['deleting account can still remove its items', () => req('DELETE', 'folders/fb/items/wallhaven_abc', null, Bu), 200],
   ['deleting account can still remove its folders', () => req('DELETE', 'folders/atomic', null, Bu), 200],
+  ['guest reads a visible wall request', () => req('GET', 'wallRequests/open', null), 200],
+  ['stranger reads a visible wall request', () => req('GET', 'wallRequests/open', null, C), 200],
+  ['stranger cannot read a hidden wall request', () => req('GET', 'wallRequests/hidden', null, C), 403],
+  ['guest cannot read a hidden wall request', () => req('GET', 'wallRequests/hidden', null), 403],
+  ['requester reads own hidden wall request', () => req('GET', 'wallRequests/hidden', null, Bu), 200],
+  ['admin reads a hidden wall request', () => req('GET', 'wallRequests/hidden', null, ADM), 200],
+  ['guest lists visible open wall requests', () => runQuery(null, [fieldEquals('status', str('open')), fieldEquals('hidden', { booleanValue: false })], 'wallRequests'), 200],
+  ['stranger cannot list wall requests without the hidden filter', () => runQuery(C, [fieldEquals('status', str('open'))], 'wallRequests'), 403],
+  ['user cannot create a wall request directly', () => req('PATCH', 'wallRequests/direct', requestFields('c'), C), 403],
+  ['user cannot set voteCount on a wall request', () => req('PATCH', 'wallRequests/open', { voteCount: { integerValue: '99' } }, C, ['voteCount']), 403],
+  ['requester cannot set voteCount on own request', () => req('PATCH', 'wallRequests/open', { voteCount: { integerValue: '99' } }, Bu, ['voteCount']), 403],
+  ['requester cannot set status on own request', () => req('PATCH', 'wallRequests/open', { status: str('filled') }, Bu, ['status']), 403],
+  ['requester cannot unhide own request', () => req('PATCH', 'wallRequests/hidden', { hidden: { booleanValue: false } }, Bu, ['hidden']), 403],
+  ['stranger cannot edit another user request', () => req('PATCH', 'wallRequests/open', { text: str('Changed') }, C, ['text']), 403],
+  ['stranger cannot delete another user request', () => req('DELETE', 'wallRequests/open', null, C), 403],
+  ['requester cannot delete own request directly', () => req('DELETE', 'wallRequests/open', null, Bu), 403],
+  ['voter reads own vote', () => req('GET', 'wallRequests/open/votes/c', null, C), 200],
+  ['requester cannot read another user vote', () => req('GET', 'wallRequests/open/votes/c', null, Bu), 403],
+  ['user cannot vote directly', () => req('PATCH', 'wallRequests/open/votes/a', { uid: str('a'), createdAt: ts() }, A), 403],
+  ['voter cannot write a second vote over the first', () => req('PATCH', 'wallRequests/open/votes/c', { uid: str('c'), createdAt: ts() }, C), 403],
+  ['voter cannot add a vote under another id', () => req('PATCH', 'wallRequests/open/votes/c2', { uid: str('c'), createdAt: ts() }, C), 403],
+  ['voter cannot remove a vote directly', () => req('DELETE', 'wallRequests/open/votes/c', null, C), 403],
+  ['user cannot read wall request rate docs', () => req('GET', 'wallRequestRateDaily/c_2026-10-29', null, C), 403],
 ];
 await seed();
 let bad = 0;

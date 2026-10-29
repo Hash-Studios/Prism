@@ -343,7 +343,8 @@ function wallRecord(params: {
     size: humanSize(rendered.wall.length),
     title: str(candidate.title),
     category: str(candidate.category),
-    desc: `${series?.name ?? "Prism Studio"} by Prism Studio`,
+    desc: !series && candidate.requestId ? "Made for a wall request by Prism Studio" :
+      `${series?.name ?? "Prism Studio"} by Prism Studio`,
     review: false,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     collections: ["community"],
@@ -356,6 +357,7 @@ function wallRecord(params: {
     seriesId: str(candidate.seriesId),
     studioCandidateId: params.candidateId,
     studioRunId: params.runId,
+    ...(str(candidate.requestId) ? {requestId: str(candidate.requestId)} : {}),
     ...(params.depth ? {depth: params.depth} : {}),
   };
 }
