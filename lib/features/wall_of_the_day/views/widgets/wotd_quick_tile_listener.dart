@@ -119,6 +119,18 @@ class _WotdQuickTileListenerState extends State<WotdQuickTileListener> with Widg
           wallDocumentId: documentId,
           featuredDayUtc: day,
           retainedAssetKey: selected.isEmpty ? null : assetKey,
+          openLink: url.isEmpty && documentId != null && entity != null
+              ? Uri(
+                  scheme: 'prism',
+                  host: 'share',
+                  queryParameters: <String, String>{
+                    'id': documentId,
+                    'source': 'prism',
+                    'url': '',
+                    'thumb': entity.thumbnailUrl,
+                  },
+                ).toString()
+              : null,
           isCurrent: current,
         ),
       );

@@ -21,4 +21,18 @@ internal class WotdTileServiceTest {
         assertNull(WotdTileService.tileSource("", "not json"))
         assertNull(WotdTileService.tileSource(null, """{"assetKey":"https://img.example.com/other.jpg"}"""))
     }
+
+    @Test fun protectedWallWithNoDownloadOpensTodaysWallInPrism() {
+        val link = "prism://share?id=doc&source=prism&url=&thumb=https%3A%2F%2Fimg.example.com%2Fp.img"
+        assertEquals(link, WotdTileService.openLink(null, " $link "))
+    }
+
+    @Test fun aWallpaperTheTileCanSetWinsOverTheLink() {
+        assertNull(WotdTileService.openLink("wotd:doc", "prism://share?id=doc&source=prism"))
+    }
+
+    @Test fun onlyPrismShareLinksAreOpened() {
+        assertNull(WotdTileService.openLink(null, "https://evil.example.com/x"))
+        assertNull(WotdTileService.openLink(null, null))
+    }
 }

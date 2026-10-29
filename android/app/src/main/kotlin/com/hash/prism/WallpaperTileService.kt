@@ -1,11 +1,14 @@
 package com.hash.prism
 
+import android.app.PendingIntent
 import android.app.WallpaperManager
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Build
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.net.Uri
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import android.util.Log
@@ -63,6 +66,9 @@ internal abstract class WallpaperTileService : TileService() {
 
     internal open fun isConfigured(prefs: SharedPreferences): Boolean = true
 
+    /** A Prism link to open instead of setting a wallpaper, when the tile has nothing it can set. */
+    internal open fun appLink(prefs: SharedPreferences): String? = null
+
     override fun onStartListening() {
         super.onStartListening()
         updateTile()
@@ -71,7 +77,21 @@ internal abstract class WallpaperTileService : TileService() {
     override fun onClick() {
         super.onClick()
         if (destroyed || applying) return
-        if (isLocked) unlockAndRun { applyWallpaper() } else applyWallpaper()
+        val link = appLink(applicationContext.getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE))
+        val action = if (link != null) ({ openApp(link) }) else ({ applyWallpaper() })
+        if (isLocked) unlockAndRun(action) else action()
+    }
+
+    private fun openApp(link: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link))
+            .setPackage(packageName)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startActivityAndCollapse(PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
+        } else {
+            @Suppress("DEPRECATION")
+            startActivityAndCollapse(intent)
+        }
     }
 
     private fun applyWallpaper() {

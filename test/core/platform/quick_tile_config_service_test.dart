@@ -49,6 +49,18 @@ void main() {
     expect(calls, <String>['getAll']);
   });
 
+  test('a public Wall of the Day URL clears the link the tile opens for a protected wall', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    const String link = 'prism://share?id=doc&source=prism&url=&thumb=preview';
+    await QuickTileConfigService.pushWotdUrl('', openLink: link);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString(QuickTileConfigService.wotdOpenLinkKey), link);
+
+    await QuickTileConfigService.pushWotdUrl('https://img.example.com/public.jpg');
+    expect(prefs.getString(QuickTileConfigService.wotdOpenLinkKey), isNull);
+    expect(prefs.getString(PersistenceKeys.quickTileWotdUrl), 'https://img.example.com/public.jpg');
+  });
+
   test('invalid native targets do not become both home and lock', () async {
     for (final target in <String>['', 'invalid', 'HOME']) {
       SharedPreferences.setMockInitialValues(<String, Object>{

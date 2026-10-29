@@ -242,6 +242,10 @@ void main() {
       () => prefs.getString('quick_tile.wotd.url') == '',
       reason: 'protected WOTD quick-tile URL persistence',
     );
+    expect(
+      prefs.getString(QuickTileConfigService.wotdOpenLinkKey),
+      'prism://share?id=protected-doc&source=prism&url&thumb=preview',
+    );
     listed = [file.path];
     await index.remember(link: 'https://expired.example/acquired.png', id: 'logical-id', source: WallpaperSource.prism);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);

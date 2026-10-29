@@ -68,15 +68,25 @@ class QuickTileConfigService {
 
   static const String wotdRetainedKey = 'quick_tile.wotd.retained';
 
+  /// A `prism://share` link to today's wall. The tile opens it when it has no wallpaper it can set.
+  static const String wotdOpenLinkKey = 'quick_tile.wotd.open_link';
+
   /// Caches the WOTD URL and optional retained asset metadata for the native tile.
   static Future<void> pushWotdUrl(
     String url, {
     String? wallDocumentId,
     DateTime? featuredDayUtc,
     String? retainedAssetKey,
+    String? openLink,
     bool Function()? isCurrent,
   }) async {
     final prefs = await SharedPreferences.getInstance();
+    if (isCurrent?.call() == false) return;
+    if (openLink != null && openLink.isNotEmpty) {
+      await _setString(prefs, wotdOpenLinkKey, openLink);
+    } else if (!await prefs.remove(wotdOpenLinkKey)) {
+      throw StateError('Wall of the Day link could not be cleared');
+    }
     if (isCurrent?.call() == false) return;
     if (wallDocumentId != null && wallDocumentId.isNotEmpty && featuredDayUtc != null && retainedAssetKey != null) {
       final utc = featuredDayUtc.toUtc();

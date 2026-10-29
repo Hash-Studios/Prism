@@ -117,7 +117,7 @@ Most Prism walls now have no public original. Their `url` is empty. Before this 
 
 Now, when the user downloaded today's wall, the app stores the original under the key `wotd:<wall document id>`. This is the same key that iOS uses. The tile then sets that file.
 
-When the user did not download today's wall, the tile stays unavailable. This is an open decision. See the PR.
+When the user did not download today's wall, the tile opens Prism at today's wall. The app stores a `prism://share` link for the wall in `quick_tile.wotd.open_link`. The tile opens only links that start with `prism://share?`. A public URL or a downloaded original clears the link, and the tile sets the wallpaper again.
 
 `WallpaperTileService` is the shared base class. It is not a fourth tile. Prism has three tiles.
 
