@@ -272,7 +272,14 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
   }) async {
     try {
       if (userId.isEmpty) {
-        await _guestStore.put(wall.id, favouriteWallToDoc(wall.withPinnedAt(pinnedAt)));
+        // Only the pin changes. The wall in the list can carry hydrated links that differ from the stored doc.
+        final Map<String, Object?>? stored = (await _guestStore.readAll())[wall.id];
+        if (stored == null) throw const ServerFailure('Cannot pin a wall that is not a favourite.');
+        await _guestStore.put(wall.id, <String, dynamic>{
+          for (final MapEntry<String, Object?> entry in stored.entries)
+            if (entry.key != 'pinnedAt') entry.key: entry.value,
+          if (pinnedAt != null) 'pinnedAt': pinnedAt,
+        });
         return Result.success(null);
       }
       // A bundled starter wall lives only on this device.

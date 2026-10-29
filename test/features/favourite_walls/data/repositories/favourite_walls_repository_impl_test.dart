@@ -1135,21 +1135,53 @@ void main() {
       expect(firestore.writes, isEmpty);
     });
 
-    test('a guest pin writes the doc with pinnedAt to the guest store and never calls Firestore', () async {
+    test('a guest pin changes only pinnedAt on the stored doc and never calls Firestore', () async {
       final stamp = DateTime.utc(2026, 10, 29, 9);
       final firestore = _PinWriteFirestore();
       final store = tempGuestStore();
+      await store.put('g1', <String, dynamic>{
+        'id': 'g1',
+        'provider': 'Pexels',
+        'url': 'https://example.com/stored.jpg',
+        'thumb': 'https://example.com/stored-thumb.jpg',
+      });
       final repository = FavouriteWallsRepositoryImpl(firestore, _local(), store, EmptyCanonicalWallpaperRepository());
 
-      final Result<void> result = await repository.setPinned(userId: '', wall: pexelsFav('g1'), pinnedAt: stamp);
+      final Result<void> pinned = await repository.setPinned(userId: '', wall: pexelsFav('g1'), pinnedAt: stamp);
 
-      expect(result.isSuccess, isTrue, reason: result.failure?.message);
+      expect(pinned.isSuccess, isTrue, reason: pinned.failure?.message);
       expect(firestore.writes, isEmpty);
       expect(firestore.sourceTags, isEmpty);
-      final Map<String, Map<String, Object?>> saved = await store.readAll();
-      expect(saved.keys, <String>['g1']);
-      final FavouriteWallEntity stored = mapFavouriteWallDoc(FavouriteWallDocDto.fromJson(saved['g1']!), 'g1');
-      expect(stored.pinnedAt, stamp);
+      Map<String, Object?> saved = (await store.readAll())['g1']!;
+      expect(saved['url'], 'https://example.com/stored.jpg');
+      expect(saved['thumb'], 'https://example.com/stored-thumb.jpg');
+      expect(mapFavouriteWallDoc(FavouriteWallDocDto.fromJson(saved), 'g1').pinnedAt, stamp);
+
+      final Result<void> unpinned = await repository.setPinned(userId: '', wall: pexelsFav('g1').withPinnedAt(stamp));
+
+      expect(unpinned.isSuccess, isTrue, reason: unpinned.failure?.message);
+      saved = (await store.readAll())['g1']!;
+      expect(saved.containsKey('pinnedAt'), isFalse);
+      expect(saved['url'], 'https://example.com/stored.jpg');
+    });
+
+    test('a guest pin of a wall missing from the guest store fails and writes nothing', () async {
+      final store = tempGuestStore();
+      final repository = FavouriteWallsRepositoryImpl(
+        _PinWriteFirestore(),
+        _local(),
+        store,
+        EmptyCanonicalWallpaperRepository(),
+      );
+
+      final Result<void> result = await repository.setPinned(
+        userId: '',
+        wall: pexelsFav('gone'),
+        pinnedAt: DateTime.utc(2026),
+      );
+
+      expect(result.isSuccess, isFalse);
+      expect(await store.readAll(), isEmpty);
     });
   });
 }
