@@ -4107,6 +4107,13 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get economyAiStyleSheetTitle => 'Pilih gaya';
+
+  @override
+  String get economyAiStyleSheetSubject =>
+      'Setiap pratinjau menampilkan adegan yang sama: mercusuar di tebing saat senja.';
+
+  @override
   String get economyAiStyleWatercolor => 'Cat air';
 
   @override

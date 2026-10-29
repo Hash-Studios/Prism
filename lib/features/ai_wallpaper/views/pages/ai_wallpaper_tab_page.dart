@@ -43,6 +43,7 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_preview_stage.dart'
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_actions.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheets.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_style_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -264,10 +265,18 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     setState(() => _setPrompt(AiPromptPools.sceneIdea(messages, _selectedStyle, _sceneCursor++), userInitiated: true));
   }
 
-  void _selectStyle(AiStylePreset style) {
+  void _selectStyle(AiStylePreset style, AiStylePickSource source) {
+    analytics.track(AiStylePickedEvent(style: style.apiValue, source: source));
     setState(() => _selectedStyle = style);
     final String typed = _promptController.text.trim();
     if (typed.isEmpty || typed == _seededPrompt.trim()) _shufflePrompt();
+  }
+
+  Future<void> _openStyleSheet() async {
+    if (_loadingGeneration) return;
+    analytics.track(AiStyleSheetOpenedEvent(style: _selectedStyle.apiValue));
+    final AiStylePreset? picked = await showAiStyleSheet(context, selected: _selectedStyle);
+    if (picked != null && mounted && !_loadingGeneration) _selectStyle(picked, AiStylePickSource.sheet);
   }
 
   void _scrollToTop() {
@@ -1038,10 +1047,16 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             ),
             PrismSectionHeader(
               title: AppLocalizations.of(context).economyAiStyle,
+              actionLabel: AppLocalizations.of(context).economySeeAll,
+              onAction: _openStyleSheet,
               small: true,
-              padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, PrismSpace.sm),
+              padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, PrismSpace.sm),
             ),
-            AiStylePicker(selected: _selectedStyle, enabled: !busy, onSelected: _selectStyle),
+            AiStylePicker(
+              selected: _selectedStyle,
+              enabled: !busy,
+              onSelected: (AiStylePreset style) => _selectStyle(style, AiStylePickSource.row),
+            ),
             PrismSectionHeader(
               title: AppLocalizations.of(context).economyAiQuality,
               small: true,

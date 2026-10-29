@@ -1342,6 +1342,161 @@ void main() {
     );
   });
 
+  group('aiStyleSelected', () {
+    setUp(() {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+      when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenAnswer((_) async => _aiRecord());
+    });
+
+    Future<void> reachAiGenerate(OnboardingV2Bloc bloc) async {
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+      bloc.add(const OnboardingV2Event.interestsSkipped());
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+      bloc.add(const OnboardingV2Event.starterPackSkipped());
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.aiGenerate);
+    }
+
+    List<Map<String, Object?>> pickedStyles() =>
+        analytics.events.where((e) => e.eventName == 'ai_style_picked').map((e) => e.toWireParameters()).toList();
+
+    test('a new style replaces the prompt and tracks the pick', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc);
+
+      // Move off anime first so the synthwave pick is always a change, whatever style the step started with.
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.anime));
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.synthwave));
+      final state = await bloc.stream.firstWhere((s) => s.aiData.stylePreset == AiStylePreset.synthwave);
+
+      expect(state.aiData.status, AiGenerateStatus.idle);
+      expect(
+        OnboardingV2Config.aiOnboardingPrompts(AppLocalizationsEn(), AiStylePreset.synthwave),
+        contains(state.aiData.prompt),
+      );
+      expect(pickedStyles().last, <String, Object?>{'style': 'synthwave', 'source': 'onboarding'});
+    });
+
+    test('picking the current style tracks the pick but emits nothing', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc);
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.synthwave));
+      await Future<void>.delayed(Duration.zero);
+      expect(bloc.state.aiData.stylePreset, AiStylePreset.synthwave);
+
+      final emitted = <OnboardingV2State>[];
+      final sub = bloc.stream.listen(emitted.add);
+      addTearDown(sub.cancel);
+      final before = bloc.state.aiData;
+      final trackedBefore = pickedStyles().length;
+
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.synthwave));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(emitted, isEmpty);
+      expect(bloc.state.aiData, before);
+      expect(pickedStyles().length, trackedBefore + 1);
+      expect(pickedStyles().last, <String, Object?>{'style': 'synthwave', 'source': 'onboarding'});
+    });
+
+    test('while generating, a style pick changes nothing and is not tracked', () async {
+      final pending = Completer<AiGenerationRecord>();
+      when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenAnswer((_) => pending.future);
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc);
+
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((s) => s.aiData.status == AiGenerateStatus.loading);
+      final before = bloc.state.aiData;
+      final trackedBefore = pickedStyles().length;
+      final emitted = <OnboardingV2State>[];
+      final sub = bloc.stream.listen(emitted.add);
+      addTearDown(sub.cancel);
+
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.synthwave));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(emitted, isEmpty);
+      expect(bloc.state.aiData, before);
+      expect(bloc.state.aiData.status, AiGenerateStatus.loading);
+      expect(pickedStyles().length, trackedBefore);
+    });
+
+    test('after success, a style pick changes nothing', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc);
+
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((s) => s.aiData.status == AiGenerateStatus.success);
+      final before = bloc.state.aiData;
+      final trackedBefore = pickedStyles().length;
+      final emitted = <OnboardingV2State>[];
+      final sub = bloc.stream.listen(emitted.add);
+      addTearDown(sub.cancel);
+
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.synthwave));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(emitted, isEmpty);
+      expect(bloc.state.aiData, before);
+      expect(bloc.state.aiData.status, AiGenerateStatus.success);
+      expect(pickedStyles().length, trackedBefore);
+    });
+
+    test('after failure, a new style is accepted and the status goes back to idle', () async {
+      when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenThrow(Exception('offline'));
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc);
+
+      // Pick anime first, so the failed run and the synthwave pick below use different styles.
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.anime));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((s) => s.aiData.status == AiGenerateStatus.failure);
+
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.synthwave));
+      final state = await bloc.stream.firstWhere((s) => s.aiData.stylePreset == AiStylePreset.synthwave);
+
+      expect(state.aiData.status, AiGenerateStatus.idle);
+      expect(
+        OnboardingV2Config.aiOnboardingPrompts(AppLocalizationsEn(), AiStylePreset.synthwave),
+        contains(state.aiData.prompt),
+      );
+    });
+  });
+
   test('stepping back walks the steps in reverse and then exits instead of showing auth', () async {
     app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
     final bloc = buildBloc();

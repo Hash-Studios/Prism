@@ -86,6 +86,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     on<_AiGenerationRequested>(_onAiGenerationRequested);
     on<_AiGenerationCompleted>(_onAiGenerationCompleted);
     on<_AiGenerationStepContinued>(_onAiGenerationStepContinued);
+    on<_AiStyleSelected>(_onAiStyleSelected);
   }
 
   final FetchStarterPackUseCase _fetchStarterPackUseCase;
@@ -786,11 +787,23 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     emit(state.copyWith(step: OnboardingV2Step.firstWallpaper, navRequest: null));
   }
 
+  /// A new style takes a prompt written for it. The trial runs once, so the style is fixed from the request on.
+  Future<void> _onAiStyleSelected(_AiStyleSelected event, Emitter<OnboardingV2State> emit) async {
+    bool locked() =>
+        const <AiGenerateStatus>{AiGenerateStatus.loading, AiGenerateStatus.success}.contains(state.aiData.status);
+    if (locked()) return;
+    unawaited(analytics.track(AiStylePickedEvent(style: event.style.apiValue, source: AiStylePickSource.onboarding)));
+    if (event.style == state.aiData.stylePreset) return;
+    final OnboardingAiData aiData = await _promptForStyle(event.style);
+    if (locked()) return;
+    emit(state.copyWith(aiData: aiData, navRequest: null));
+  }
+
   void _trackStepCompleted(String step) => unawaited(analytics.track(OnboardingStepCompletedEvent(step: step)));
 
   /// Picks a style and prompt based on the user's selected interest categories.
   /// Falls back to a random style from the curated pool if no keyword matches.
-  Future<OnboardingAiData> _promptForInterests(List<String> selectedInterests) async {
+  Future<OnboardingAiData> _promptForInterests(List<String> selectedInterests) {
     AiStylePreset? matchedStyle;
 
     outer:
@@ -805,7 +818,10 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     }
 
     const styles = OnboardingV2Config.aiOnboardingStyles;
-    final style = matchedStyle ?? styles[_random.nextInt(styles.length)];
+    return _promptForStyle(matchedStyle ?? styles[_random.nextInt(styles.length)]);
+  }
+
+  Future<OnboardingAiData> _promptForStyle(AiStylePreset style) async {
     final AppLocalizations l10n = await _loadLocalizations();
     final prompts = OnboardingV2Config.aiOnboardingPrompts(l10n, style);
     final prompt = prompts.isNotEmpty

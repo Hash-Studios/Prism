@@ -14,6 +14,7 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'taste_quiz_source': TasteQuizSource.values.map((value) => value.wireValue).toList(),
   'quiz_side': QuizSide.values.map((value) => value.wireValue).toList(),
   'binary_result': BinaryResultValue.values.map((value) => value.wireValue).toList(),
+  'ai_style_pick_source': AiStylePickSource.values.map((value) => value.wireValue).toList(),
   'rc_or_fallback': RcOrFallbackValue.values.map((value) => value.wireValue).toList(),
   'live_wallpaper_style': LiveWallpaperStyleValue.values.map((value) => value.wireValue).toList(),
   'paywall_result': PaywallResultValue.values.map((value) => value.wireValue).toList(),
@@ -694,6 +695,35 @@ class AiPromptShuffledEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'style': style};
+  }
+}
+
+class AiStyleSheetOpenedEvent extends AnalyticsEvent {
+  const AiStyleSheetOpenedEvent({required this.style});
+
+  final String style;
+
+  @override
+  String get eventName => 'ai_style_sheet_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'style': style};
+  }
+}
+
+class AiStylePickedEvent extends AnalyticsEvent {
+  const AiStylePickedEvent({required this.style, required this.source});
+
+  final String style;
+  final AiStylePickSource source;
+
+  @override
+  String get eventName => 'ai_style_picked';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'style': style, 'source': source.wireValue};
   }
 }
 

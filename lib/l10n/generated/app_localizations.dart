@@ -7203,6 +7203,18 @@ abstract class AppLocalizations {
   /// **'Style: {style}'**
   String economyAiStyleSemantics(String style);
 
+  /// Title of the sheet that shows a large preview of every AI wallpaper style.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a style'**
+  String get economyAiStyleSheetTitle;
+
+  /// Line under the style sheet title. Every style preview shows this one scene.
+  ///
+  /// In en, this message translates to:
+  /// **'Every preview shows the same scene: a lighthouse on a cliff at dusk.'**
+  String get economyAiStyleSheetSubject;
+
   /// No description provided for @economyAiStyleWatercolor.
   ///
   /// In en, this message translates to:

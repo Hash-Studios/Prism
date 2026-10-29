@@ -20,6 +20,9 @@ class Env {
   static const String ghUsername = String.fromEnvironment('GH_USERNAME');
   static const String r2PreviewBaseUrl = String.fromEnvironment('R2_PREVIEW_BASE_URL');
 
+  // Debug builds only: serves the AI style samples from a local folder. See docs/features/ai-wallpaper.md.
+  static const String aiStyleSamplesDebugBaseUrl = String.fromEnvironment('AI_STYLE_SAMPLES_DEBUG_BASE_URL');
+
   // RevenueCat
   static const String rcApiKey = String.fromEnvironment('RC_API_KEY');
   static const String rcAndroidApiKey = String.fromEnvironment('RC_ANDROID_API_KEY');

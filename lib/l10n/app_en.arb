@@ -3440,6 +3440,14 @@
       }
     }
   },
+  "economyAiStyleSheetTitle": "Choose a style",
+  "@economyAiStyleSheetTitle": {
+    "description": "Title of the sheet that shows a large preview of every AI wallpaper style."
+  },
+  "economyAiStyleSheetSubject": "Every preview shows the same scene: a lighthouse on a cliff at dusk.",
+  "@economyAiStyleSheetSubject": {
+    "description": "Line under the style sheet title. Every style preview shows this one scene."
+  },
   "economyAiStyleWatercolor": "Watercolor",
   "economyAiStyleSpace": "Space",
   "economyAiStyleSynthwave": "Synthwave",

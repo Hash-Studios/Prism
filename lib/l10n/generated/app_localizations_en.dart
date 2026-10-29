@@ -4098,6 +4098,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get economyAiStyleSheetTitle => 'Choose a style';
+
+  @override
+  String get economyAiStyleSheetSubject => 'Every preview shows the same scene: a lighthouse on a cliff at dusk.';
+
+  @override
   String get economyAiStyleWatercolor => 'Watercolor';
 
   @override

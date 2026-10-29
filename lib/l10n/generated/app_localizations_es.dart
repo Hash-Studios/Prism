@@ -4134,6 +4134,13 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get economyAiStyleSheetTitle => 'Elige un estilo';
+
+  @override
+  String get economyAiStyleSheetSubject =>
+      'Cada vista previa muestra la misma escena: un faro en un acantilado al atardecer.';
+
+  @override
   String get economyAiStyleWatercolor => 'Acuarela';
 
   @override

@@ -4122,6 +4122,12 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get economyAiStyleSheetTitle => 'स्टाइल चुनें';
+
+  @override
+  String get economyAiStyleSheetSubject => 'हर प्रीव्यू में एक ही दृश्य है: शाम के समय एक चट्टान पर एक लाइटहाउस।';
+
+  @override
   String get economyAiStyleWatercolor => 'वॉटरकलर';
 
   @override

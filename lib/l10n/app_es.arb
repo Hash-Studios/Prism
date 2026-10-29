@@ -1373,6 +1373,8 @@
   "economyAiStyleMinimal": "Minimalista",
   "economyAiStyleNature": "Naturaleza",
   "economyAiStyleSemantics": "Estilo: {style}",
+  "economyAiStyleSheetTitle": "Elige un estilo",
+  "economyAiStyleSheetSubject": "Cada vista previa muestra la misma escena: un faro en un acantilado al atardecer.",
   "economyAiStyleWatercolor": "Acuarela",
   "economyAiStyleSpace": "Espacio",
   "economyAiStyleSynthwave": "Synthwave",
