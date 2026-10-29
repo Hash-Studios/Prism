@@ -63,6 +63,17 @@ SheetOffsetDrivenAnimation _flushAnimation(SheetController controller, {required
       endOffset: _FlushOffset(end: true, fromFit: fromFit),
     );
 
+/// Keeps one padding edge inside the space the sheet viewport has left.
+///
+/// The sheet subtracts this padding from the viewport when it builds the content constraints. A keyboard, a status
+/// bar, or a zero-size parent can ask for more space than the viewport has, and the content height goes negative.
+double _insetWithin(double inset, double limit) {
+  if (!inset.isFinite || inset <= 0) return 0;
+  if (limit.isInfinite) return inset;
+  if (!limit.isFinite || limit <= 0) return 0;
+  return math.min(inset, limit);
+}
+
 /// Opens a Prism bottom sheet. Build the inside with [PrismSheetBody], which draws the handle, the close button,
 /// the title and the sticky actions.
 ///
@@ -166,9 +177,17 @@ class _PrismSheetViewportState extends State<_PrismSheetViewport> {
         final double inset = lerpDouble(PrismBottomSheet.inset, 0, _flush.value)!;
         return Padding(
           padding: EdgeInsets.fromLTRB(inset, 0, inset, inset),
-          child: SheetViewport(
-            padding: EdgeInsets.only(top: view.top + PrismBottomSheet.topInset, bottom: keyboard),
-            child: widget.child,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Clamp here, where the viewport size is known. smooth_sheets subtracts this padding from the
+              // viewport to get the content max height, and a negative result fails layout.
+              final double top = _insetWithin(view.top + PrismBottomSheet.topInset, constraints.maxHeight);
+              final double bottom = _insetWithin(keyboard, constraints.maxHeight - top);
+              return SheetViewport(
+                padding: EdgeInsets.only(top: top, bottom: bottom),
+                child: widget.child,
+              );
+            },
           ),
         );
       },
