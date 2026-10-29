@@ -2984,6 +2984,30 @@ void main() {
       expect((await repository.fetchPopular()).isFailure, isTrue);
     });
 
+    test('fails an unknown mixed page, then restores its ordered walls once blocks load', () async {
+      final _PopularFirestore firestore = _PopularFirestore(
+        popularIds: <String>['CREATORLESS', 'BLOCKED', 'VISIBLE'],
+        walls: <String>['CREATORLESS', 'BLOCKED', 'VISIBLE'],
+        creatorUids: <String, String>{'BLOCKED': 'blocked-uid', 'VISIBLE': 'visible-uid'},
+      );
+      final _BlocksLoadedLater blocks = _BlocksLoadedLater();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+
+      final firstResult = await repository.fetchPopular();
+      expect(firstResult.isFailure, isTrue);
+      expect(firstResult.data, isNull);
+
+      blocks.listLoaded = true;
+      final retryResult = await repository.fetchPopular();
+      expect(retryResult.data!.items.map((item) => item.id), <String>['CREATORLESS', 'BLOCKED', 'VISIBLE']);
+      expect(retryResult.data!.hasMore, isFalse);
+    });
+
     test('keeps walls without a creator while the block list is unknown', () async {
       final _PopularFirestore firestore = _PopularFirestore(popularIds: <String>['AAA'], walls: <String>['AAA']);
       final PersonalizedFeedRepository repository = _repository(
@@ -3011,6 +3035,81 @@ void main() {
 
       expect(result.data!.items.map((item) => item.id), <String>['BBB', 'AAA']);
       expect(firestore.sourceTags, contains('popular.stats'));
+    });
+
+    test('falls back when the popular document has an empty wallIds list', () async {
+      final _PopularFirestore firestore = _PopularFirestore(
+        popularDocExists: true,
+        statsIds: <String>['AAA'],
+        walls: <String>['AAA'],
+      );
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      expect((await repository.fetchPopular()).data!.items.map((item) => item.id), <String>['AAA']);
+      expect(firestore.sourceTags, contains('popular.stats'));
+    });
+
+    test('fails unknown stats fallback rows that have creators', () async {
+      final _PopularFirestore firestore = _PopularFirestore(
+        statsIds: <String>['AAA'],
+        walls: <String>['AAA'],
+        creatorUid: 'creator-uid',
+      );
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+
+      final result = await repository.fetchPopular();
+      expect(result.isFailure, isTrue);
+      expect(result.data, isNull);
+    });
+
+    test('keeps creatorless stats fallback rows when blocks are unknown', () async {
+      final _PopularFirestore firestore = _PopularFirestore(statsIds: <String>['AAA'], walls: <String>['AAA']);
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+
+      expect((await repository.fetchPopular()).data!.items.map((item) => item.id), <String>['AAA']);
+    });
+
+    test('returns an empty page when popular and stats are empty even if blocks are unknown', () async {
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _PopularFirestore(),
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+
+      final result = await repository.fetchPopular();
+      expect(result.data!.items, isEmpty);
+      expect(result.data!.hasMore, isFalse);
+    });
+
+    test('hides only blocked creators from a known mixed page', () async {
+      final _PopularFirestore firestore = _PopularFirestore(
+        popularIds: <String>['CREATORLESS', 'BLOCKED', 'VISIBLE'],
+        walls: <String>['CREATORLESS', 'BLOCKED', 'VISIBLE'],
+        creatorUids: <String, String>{'BLOCKED': 'blocked-uid', 'VISIBLE': 'visible-uid'},
+      );
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _BlockingBlocks(<String>{'blocked-uid'}),
+      );
+
+      expect((await repository.fetchPopular()).data!.items.map((item) => item.id), <String>['CREATORLESS', 'VISIBLE']);
     });
 
     test('falls back when the popular list cannot be read', () async {
@@ -3280,14 +3379,18 @@ class _PopularFirestore extends _EmptyFirestore {
     this.popularIds = const <String>[],
     this.statsIds = const <String>[],
     this.popularFails = false,
+    this.popularDocExists = false,
     this.walls = const <String>[],
     this.creatorUid,
+    this.creatorUids = const <String, String>{},
   });
 
   final String? creatorUid;
+  final Map<String, String> creatorUids;
   final List<String> popularIds;
   final List<String> statsIds;
   final bool popularFails;
+  final bool popularDocExists;
   final List<String> walls;
   final List<String> sourceTags = <String>[];
   final List<int> whereInSizes = <int>[];
@@ -3304,7 +3407,7 @@ class _PopularFirestore extends _EmptyFirestore {
     if (popularFails) {
       throw StateError('permission-denied');
     }
-    return popularIds.isEmpty ? null : map(<String, dynamic>{'wallIds': popularIds}, id);
+    return popularIds.isEmpty && !popularDocExists ? null : map(<String, dynamic>{'wallIds': popularIds}, id);
   }
 
   @override
@@ -3327,7 +3430,7 @@ class _PopularFirestore extends _EmptyFirestore {
             'wallpaper_provider': 'prism',
             'review': true,
             'email': 'creator@example.com',
-            'creatorUid': ?creatorUid,
+            'creatorUid': ?(creatorUids[id] ?? creatorUid),
           }, 'doc-$id'),
     ];
   }
