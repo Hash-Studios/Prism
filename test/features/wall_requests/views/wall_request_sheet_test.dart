@@ -57,13 +57,14 @@ void main() {
   });
 
   /// Opens the sheet from a button, as the app does, and lets it finish its entrance.
-  Future<void> openSheet(WidgetTester tester) async {
+  Future<void> openSheet(WidgetTester tester, {Locale? locale}) async {
     tester.view.physicalSize = const Size(800, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       MaterialApp(
+        locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
@@ -131,6 +132,33 @@ void main() {
 
     verify(() => cubit.upvoteInstead()).called(1);
   });
+
+  const List<(Locale, String)> accountAgeCopy = <(Locale, String)>[
+    (Locale('en'), "Your account can request walls and vote once it's 10 days old."),
+    (Locale('de'), 'Dein Konto kann Wünsche senden und abstimmen, sobald es 10 Tage alt ist.'),
+    (Locale('es'), 'Tu cuenta podrá hacer solicitudes y votar cuando tenga 10 días.'),
+    (Locale('hi'), 'आपका खाता 10 दिन पुराना होने पर अनुरोध और वोट कर सकेगा।'),
+    (Locale('id'), 'Akun Anda bisa membuat permintaan dan memberi suara setelah berumur 10 hari.'),
+    (Locale('pt'), 'Sua conta poderá fazer pedidos e votar quando tiver 10 dias.'),
+    (Locale('pt', 'BR'), 'Sua conta poderá fazer pedidos e votar quando tiver 10 dias.'),
+  ];
+  for (final (Locale locale, String copy) in accountAgeCopy) {
+    for (final bool duplicate in <bool>[false, true]) {
+      testWidgets('$locale shows the account-age error on the ${duplicate ? 'duplicate' : 'form'} sheet', (
+        tester,
+      ) async {
+        stub(
+          duplicate
+              ? WallRequestSheetDuplicate(_request(), exact: false, error: WallRequestError.accountTooNew)
+              : const WallRequestSheetEditing(error: WallRequestError.accountTooNew),
+        );
+        await openSheet(tester, locale: locale);
+
+        expect(find.text(copy), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
 
   testWidgets('the submit button needs at least 3 characters', (tester) async {
     stub(const WallRequestSheetEditing());

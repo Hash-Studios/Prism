@@ -16,6 +16,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -160,6 +161,43 @@ void main() {
     await tester.pump();
 
     verify(() => cubit.load(WallRequestTab.top)).called(2);
+  });
+
+  testWidgets('a rejected row upvote shows the localized account-age error', (tester) async {
+    app_state.prismUser.loggedIn = true;
+    final WallRequest request = _request();
+    final WallRequestsState loaded = _state(
+      tabs: <WallRequestTab, WallRequestsTabState>{
+        WallRequestTab.top: WallRequestsTabLoaded(<WallRequest>[request]),
+      },
+    );
+    final List<String> messages = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('PonnamKarthik/fluttertoast'),
+      (MethodCall call) async {
+        if (call.method == 'showToast') messages.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+        return true;
+      },
+    );
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('PonnamKarthik/fluttertoast'),
+        null,
+      );
+    });
+    stub(loaded);
+    when(() => cubit.toggleVote(request, WallRequestTab.top)).thenAnswer((_) async {
+      states.add(WallRequestsState(tabs: loaded.tabs, error: WallRequestError.accountTooNew));
+    });
+    await pumpPage(tester);
+
+    await tester.tap(find.byTooltip('Upvote'));
+    await tester.pump();
+    verify(() => cubit.toggleVote(request, WallRequestTab.top)).called(1);
+    await tester.pump();
+
+    expect(messages, <String>["Your account can request walls and vote once it's 10 days old."]);
+    await tester.pump(const Duration(seconds: 2));
   });
 
   testWidgets('tapping a filled wall opens the real gallery route with its single logical id', (tester) async {

@@ -4,6 +4,7 @@ import * as admin from "firebase-admin";
 import {db} from "../common";
 import {
   createWallRequest,
+  createWallRequestCallable,
   fillRequestFromWall,
   listWallRequests,
   notifyRequestFilled,
@@ -11,6 +12,7 @@ import {
   publicRequestText,
   removeWallRequestsForAccount,
   requestTokens,
+  setWallRequestVoteCallable,
   setWallRequestVote,
   similarity,
   studioRequestPicks,
@@ -20,6 +22,7 @@ import type {Doc} from "./fakeDb";
 import {installFakeDb} from "./fakeDb";
 
 // Accounts in these tests are old enough to request and vote unless a test says otherwise.
+const accountCreatedMs = wallRequestDeps.accountCreatedMs;
 wallRequestDeps.accountCreatedMs = async () => 0;
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -913,13 +916,23 @@ test("the maximum request text and four 200-character gallery ids stay under the
 });
 
 test("accounts younger than 10 days cannot request or vote, and nothing is written", async (t) => {
-  const store = installFakeDb(t, {...requester, "wallRequests/r1": request("dark minimal mountains", "u2")});
+  const store = installFakeDb(t, {
+    ...requester,
+    "wallRequests/r1": request("dark minimal mountains", "u2"),
+    "wallRequests/r1/votes/u1": {uid: "u1"},
+  });
+  const existingRequest = store.get("wallRequests/r1");
+  assert.ok(existingRequest);
+  existingRequest.voteCount = 1;
+  const before = [...store.entries()];
   t.mock.method(wallRequestDeps, "accountCreatedMs", async () => NOW - 9 * DAY);
-  await assert.rejects(createWallRequest("u1", {text: "neon city rain", tags: []}, NOW),
+  await assert.rejects(createWallRequest("u1", {text: "dark minimal mountains", tags: []}, NOW),
     {code: "failed-precondition", message: "account-too-new"});
   await assert.rejects(setWallRequestVote("u1", "r1", true, NOW), {code: "failed-precondition", message: "account-too-new"});
-  assert.deepEqual([...store.keys()].filter((key) => key.startsWith("wallRequests/")), ["wallRequests/r1"]);
-  assert.equal(store.get("wallRequests/r1")?.voteCount, 0);
+  await assert.rejects(setWallRequestVote("u1", "r1", false, NOW), {code: "failed-precondition", message: "account-too-new"});
+  assert.equal(store.get("wallRequests/r1")?.voteCount, 1);
+  assert.equal(store.has("wallRequests/r1/votes/u1"), true);
+  assert.deepEqual([...store.entries()], before);
 });
 
 test("an account exactly 10 days old can request and vote", async (t) => {
@@ -935,4 +948,59 @@ test("a caller without an Auth user cannot request or vote", async (t) => {
   t.mock.method(wallRequestDeps, "accountCreatedMs", async () => NaN);
   await assert.rejects(createWallRequest("u1", {text: "neon city rain", tags: []}, NOW), {message: "account-too-new"});
   await assert.rejects(setWallRequestVote("u1", "r1", true, NOW), {message: "account-too-new"});
+});
+
+test("invalid and too-young creation times fail closed for requests and votes", async (t) => {
+  installFakeDb(t, {...requester, "wallRequests/r1": request("dark minimal mountains", "u2")});
+  const accountAge = t.mock.method(wallRequestDeps, "accountCreatedMs", async () => NaN);
+  for (const created of [NaN, Infinity, -Infinity, NOW + 1, NOW - 10 * DAY + 1]) {
+    accountAge.mock.mockImplementation(async () => created);
+    await assert.rejects(createWallRequest("u1", {text: "neon city rain", tags: []}, NOW),
+      {code: "failed-precondition", message: "account-too-new"});
+    await assert.rejects(setWallRequestVote("u1", "r1", true, NOW),
+      {code: "failed-precondition", message: "account-too-new"});
+  }
+});
+
+test("Auth user-not-found maps to account-too-new but other Auth failures propagate", async (t) => {
+  installFakeDb(t, {...requester, "wallRequests/r1": request("dark minimal mountains", "u2")});
+  t.mock.method(wallRequestDeps, "accountCreatedMs", accountCreatedMs);
+  const getUser = t.mock.method(admin.auth(), "getUser", async () => {
+    throw Object.assign(new Error("missing user"), {code: "auth/user-not-found"});
+  });
+  await assert.rejects(createWallRequest("u1", {text: "neon city rain", tags: []}, NOW),
+    {code: "failed-precondition", message: "account-too-new"});
+  assert.equal(getUser.mock.callCount(), 1);
+  getUser.mock.mockImplementation(async () => ({metadata: {creationTime: "not a date"}} as never));
+  await assert.rejects(setWallRequestVote("u1", "r1", true, NOW),
+    {code: "failed-precondition", message: "account-too-new"});
+  assert.equal(getUser.mock.callCount(), 2);
+  getUser.mock.mockImplementation(async () => {
+    throw Object.assign(new Error("Auth unavailable"), {code: "auth/internal-error"});
+  });
+  await assert.rejects(createWallRequest("u1", {text: "neon city rain", tags: []}, NOW),
+    {code: "auth/internal-error", message: "Auth unavailable"});
+  assert.equal(getUser.mock.callCount(), 3);
+});
+
+test("the callable uses server time and checks account age before Firestore", async (t) => {
+  installFakeDb(t, requester);
+  t.mock.method(wallRequestDeps, "accountCreatedMs", accountCreatedMs);
+  t.mock.method(Date, "now", () => NOW);
+  t.mock.method(admin.auth(), "getUser", async () => ({
+    metadata: {creationTime: new Date(NOW - 9 * DAY).toISOString()},
+  }) as never);
+  const collection = t.mock.method(db, "collection", () => {
+    throw new Error("Firestore must not be read for an account that is too new");
+  });
+
+  await assert.rejects(createWallRequestCallable.run({
+    auth: {uid: "u1", token: {}},
+    data: {text: "neon city rain", nowMs: NOW + 100 * DAY},
+  } as never), {code: "failed-precondition", message: "account-too-new"});
+  await assert.rejects(setWallRequestVoteCallable.run({
+    auth: {uid: "u1", token: {}},
+    data: {requestId: "r1", vote: true, nowMs: NOW + 100 * DAY},
+  } as never), {code: "failed-precondition", message: "account-too-new"});
+  assert.equal(collection.mock.callCount(), 0);
 });
