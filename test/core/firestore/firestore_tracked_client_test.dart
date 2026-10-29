@@ -258,9 +258,8 @@ void main() {
   });
 
   test('watchQuery surfaces a stream failure as FirestoreError and records it', () async {
-    when(
-      () => collection.snapshots(includeMetadataChanges: false),
-    ).thenAnswer((_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(_permissionDenied()));
+    when(() => collection.snapshots(includeMetadataChanges: false))
+        .thenAnswer((_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(_permissionDenied()));
 
     final Stream<List<String>> stream = client.watchQuery<String>(
       const FirestoreQuerySpec(collection: 'walls', sourceTag: 'test.watch', isStream: true),
@@ -308,6 +307,28 @@ void main() {
     expect(event.sourceTag, 'test.set');
     expect(event.docId, 'a');
     expect(event.success, isTrue);
+  });
+
+  test('permission-denied names the operation, collection and source tag without document ids', () async {
+    when(() => firestore.collection('usersv2/user-1/history')).thenReturn(collection);
+    when(() => collection.doc('secret-doc')).thenReturn(doc);
+    when(() => doc.get()).thenThrow(_permissionDenied());
+
+    await expectLater(
+      client.getById<String>('usersv2/user-1/history', 'secret-doc', (data, id) => id, sourceTag: 'history.read'),
+      throwsA(
+        isA<FirestoreError>()
+            .having((error) => error.code, 'code', 'permission-denied')
+            .having((error) => error.operation, 'operation', 'docGet')
+            .having((error) => error.collection, 'collection', 'usersv2/{id}/history')
+            .having((error) => error.sourceTag, 'sourceTag', 'history.read')
+            .having((error) => error.toString(), 'message', contains('operation: docGet'))
+            .having((error) => error.toString(), 'message', contains('collection: usersv2/{id}/history'))
+            .having((error) => error.toString(), 'message', contains('sourceTag: history.read'))
+            .having((error) => error.toString(), 'message', isNot(contains('user-1')))
+            .having((error) => error.toString(), 'message', isNot(contains('secret-doc'))),
+      ),
+    );
   });
 
   test('updateDoc maps a failure to FirestoreError and emits failure telemetry', () async {

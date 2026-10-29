@@ -163,7 +163,15 @@ service cloud.firestore {
       // Reviewed walls stay readable while 3.7.0 clients are installed: they read unconverted walls and the original URL.
       // Tighten this to review == true && originalProtected == true && wallpaper_url == '' (and the four provenance
       // fields == '') once 3.7.0 share is low. 3.8.0 clients already filter to protected walls on their side.
-      allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
+      // A missing wall has no resource. Reading resource.data there is a null-value error, so a get or a
+      // document-id query is permission-denied instead of empty. resource == null matches only that missing
+      // document. An existing unreviewed wall still fails wallReadable(), and a list with no review or owner
+      // constraint stays denied.
+      function wallReadable() {
+        return resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
+      }
+      allow get: if resource == null || wallReadable();
+      allow list: if resource == null || wallReadable();
       // Admins re-create a rejected wall when they undo the rejection.
       allow create: if isConfiguredAdmin()
           || (isSignedIn()
