@@ -124,6 +124,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   bool? _pendingCompletionDidPurchase;
   int _saveAttemptId = 0;
   int _completionAttemptId = 0;
+  int _aiStyleSelectionAttemptId = 0;
   bool _paywallHandled = false;
 
   /// The quiz runs at most once per onboarding, so going back and forward never records the picks twice.
@@ -727,6 +728,8 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   Future<void> _onAiGenerationRequested(_AiGenerationRequested event, Emitter<OnboardingV2State> emit) async {
+    if (state.aiData.status == AiGenerateStatus.loading) return;
+    _aiStyleSelectionAttemptId++;
     emit(state.copyWith(aiData: state.aiData.copyWith(status: AiGenerateStatus.loading), navRequest: null));
 
     try {
@@ -792,10 +795,11 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     bool locked() =>
         const <AiGenerateStatus>{AiGenerateStatus.loading, AiGenerateStatus.success}.contains(state.aiData.status);
     if (locked()) return;
+    final int selectionAttemptId = ++_aiStyleSelectionAttemptId;
     unawaited(analytics.track(AiStylePickedEvent(style: event.style.apiValue, source: AiStylePickSource.onboarding)));
     if (event.style == state.aiData.stylePreset) return;
     final OnboardingAiData aiData = await _promptForStyle(event.style);
-    if (locked()) return;
+    if (locked() || selectionAttemptId != _aiStyleSelectionAttemptId) return;
     emit(state.copyWith(aiData: aiData, navRequest: null));
   }
 
