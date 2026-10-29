@@ -9,7 +9,7 @@ import {db, findUserByEmail, REGION, str} from "./common";
 import {isStudioWall} from "./studio/isStudioWall";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {authorOf, authorUpdate} from "./wallAuthor";
-import {keepRemixOf} from "./wallRemix";
+import {keepRemixOf, removeRemixOfIfUnchanged} from "./wallRemix";
 
 const GITHUB_RAW_HOST = "raw.githubusercontent.com";
 const studioSecret = defineSecret("STUDIO_SECRET");
@@ -44,9 +44,10 @@ export const onWallSubmitted = onDocumentCreated(
     }
 
     const wallId = event.params.wallId;
-    if (data.remixOf !== undefined && !(await keepRemixOf(wallId, data))) {
-      await event.data?.ref.update({remixOf: admin.firestore.FieldValue.delete()});
-      logger.info("onWallSubmitted: removed an unverified remixOf.", {wallId});
+    if (data.remixOf !== undefined && !(await keepRemixOf(wallId, data)) && event.data) {
+      if (await removeRemixOfIfUnchanged(event.data, data.remixOf)) {
+        logger.info("onWallSubmitted: removed an unverified remixOf.", {wallId});
+      }
     }
     if (await isStudioWall(wallId, data)) {
       logger.info(

@@ -8,15 +8,19 @@ import 'package:Prism/features/wall_remix/data/wall_remix_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// The viewer as it is now: the signed-in user's premium state, the startup premium collections and the blocked
 /// creators. Throws when the blocked creators cannot be read.
-Future<WallViewer> currentWallViewer(WallRemixRepository repository) async => WallViewer(
-  isPremium: app_state.prismUser.premium,
-  premiumCollections: app_state.premiumCollections,
-  blockedCreatorUids: await repository.blockedCreatorUids(),
-);
+Future<WallViewer> currentWallViewer(WallRemixRepository repository) async {
+  final Set<String> blockedCreatorUids = await repository.blockedCreatorUids();
+  return WallViewer(
+    isPremium: app_state.prismUser.premium,
+    premiumCollections: app_state.premiumCollections,
+    blockedCreatorUids: blockedCreatorUids,
+  );
+}
 
 /// A line under the detail panel that names the wall a remix started from. It shows nothing while it loads, when the
 /// original is missing or withheld from this viewer, or when the lookup fails.
@@ -33,6 +37,7 @@ class RemixCreditRow extends StatefulWidget {
 
 class _RemixCreditRowState extends State<RemixCreditRow> {
   PrismWallpaper? _original;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -40,16 +45,34 @@ class _RemixCreditRowState extends State<RemixCreditRow> {
     _load();
   }
 
+  @override
+  void didUpdateWidget(covariant RemixCreditRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.remixOfDocId != widget.remixOfDocId ||
+        oldWidget.repository != widget.repository ||
+        !_sameViewer(oldWidget.viewer, widget.viewer)) {
+      _original = null;
+      _load();
+    }
+  }
+
   Future<void> _load() async {
+    final int generation = ++_loadGeneration;
     final WallRemixRepository repository = widget.repository ?? getIt<WallRemixRepository>();
     try {
       final WallViewer viewer = widget.viewer ?? await currentWallViewer(repository);
       final PrismWallpaper? wall = await repository.fetchApprovedWall(widget.remixOfDocId);
-      if (!mounted) return;
-      setState(() => _original = wall != null && viewer.canFullyView(wall) ? wall : null);
+      if (!mounted || generation != _loadGeneration) return;
+      setState(() => _original = wall != null && wall.aiSource != null && viewer.canFullyView(wall) ? wall : null);
     } catch (_) {
-      if (mounted) setState(() => _original = null);
+      if (mounted && generation == _loadGeneration) setState(() => _original = null);
     }
+  }
+
+  @override
+  void dispose() {
+    _loadGeneration++;
+    super.dispose();
   }
 
   @override
@@ -106,3 +129,11 @@ class _RemixCreditRowState extends State<RemixCreditRow> {
 }
 
 String? _nonBlank(String? value) => value == null || value.trim().isEmpty ? null : value.trim();
+
+bool _sameViewer(WallViewer? first, WallViewer? second) =>
+    identical(first, second) ||
+    (first != null &&
+        second != null &&
+        first.isPremium == second.isPremium &&
+        listEquals(first.premiumCollections, second.premiumCollections) &&
+        setEquals(first.blockedCreatorUids, second.blockedCreatorUids));

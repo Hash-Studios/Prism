@@ -34,6 +34,7 @@ class _RecordingAnalytics extends FakeAppAnalytics {
 
 class _FakeRemixRepository extends Fake implements AiGenerationRepositoryImpl {
   int generateCalls = 0;
+  String? restoredPrompt;
 
   @override
   Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) async =>
@@ -44,7 +45,7 @@ class _FakeRemixRepository extends Fake implements AiGenerationRepositoryImpl {
       const <AiGenerationRecord>[];
 
   @override
-  Future<String?> loadPrompt({required String userId}) async => null;
+  Future<String?> loadPrompt({required String userId}) async => restoredPrompt;
 
   @override
   Future<void> savePrompt({required String userId, required String prompt}) async {}
@@ -59,6 +60,7 @@ class _FakeRemixRepository extends Fake implements AiGenerationRepositoryImpl {
     required int coinsSpent,
     int? seed,
     String? chargeTxId,
+    String? remixOf,
   }) {
     generateCalls++;
     throw StateError('generate must not run on open');
@@ -129,6 +131,37 @@ void main() {
     expect(_promptText(tester), 'neon koi pond at dusk');
     expect(_selectedStyleTile('Abstract'), findsOneWidget);
     expect(_selectedStyleTile('Watercolor'), findsNothing);
+  });
+
+  testWidgets('changing style keeps the remix prompt', (tester) async {
+    await _pump(tester, _seed());
+    final Finder natureStyle = find.byWidgetPredicate(
+      (Widget widget) => widget is Semantics && (widget.properties.label ?? '').contains('Minimal'),
+    );
+    await tester.ensureVisible(natureStyle);
+    await tester.tap(natureStyle);
+    await tester.pumpAndSettle();
+
+    expect(_promptText(tester), 'neon koi pond at dusk');
+    expect(_selectedStyleTile('Minimal'), findsOneWidget);
+  });
+
+  testWidgets('signing in keeps the edited remix prompt instead of restoring the account draft', (tester) async {
+    final _FakeRemixRepository repository = await _pump(tester, _seed());
+    repository.restoredPrompt = 'saved prompt for the signed-in account';
+    await tester.enterText(
+      find.descendant(of: find.byType(AiPromptField), matching: find.byType(TextField)),
+      'edited remix prompt',
+    );
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-2'
+      ..loggedIn = true;
+
+    final Future<void> refresh = tester.state<RefreshIndicatorState>(find.byType(RefreshIndicator)).show();
+    await tester.pumpAndSettle();
+    await refresh;
+
+    expect(_promptText(tester), 'edited remix prompt');
   });
 
   testWidgets('a 200 character remix prompt is clipped at a word boundary', (tester) async {

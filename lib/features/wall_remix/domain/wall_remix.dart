@@ -89,11 +89,16 @@ List<PrismWallpaper> visibleRemixes(
   required PrismWallpaper original,
   required WallViewer viewer,
 }) {
+  if (original.aiSource == null || !viewer.canFullyView(original)) return const <PrismWallpaper>[];
   final String ownerEmail = (original.core.authorEmail ?? '').trim().toLowerCase();
+  final String ownerUid = (original.core.authorUid ?? '').trim();
   return remixes
       .where((PrismWallpaper wall) {
         final String email = (wall.core.authorEmail ?? '').trim().toLowerCase();
-        return viewer.canFullyView(wall) && (ownerEmail.isEmpty || email != ownerEmail);
+        final String uid = (wall.core.authorUid ?? '').trim();
+        final bool isOriginalOwner =
+            (ownerUid.isNotEmpty && uid == ownerUid) || (ownerEmail.isNotEmpty && email == ownerEmail);
+        return viewer.canFullyView(wall) && !isOriginalOwner;
       })
       .toList(growable: false);
 }

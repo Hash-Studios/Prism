@@ -141,7 +141,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   void _applyRemixSeed(AiRemixSeed seed) {
     _remixLink = seed;
     final String prompt = seed.prompt.length <= _maxPromptChars ? seed.prompt : _clipPrompt(seed.prompt);
-    _setPrompt(prompt, userInitiated: true);
+    _setPrompt(prompt, userInitiated: true, updateSeed: false);
     if (seed.style != null) _selectedStyle = seed.style!;
     _selectedQualityTier = remixTier(
       model: seed.model,
@@ -193,6 +193,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   void _switchPromptOwner(String owner) {
     if (_promptOwner == owner && (_promptHydrated || _promptLoadingOwner == owner)) return;
+    final String promptBeforeSwitch = _promptController.text;
     _promptSaveTimer?.cancel();
     _promptOwner = owner;
     _promptLoadingOwner = owner;
@@ -201,6 +202,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     _promptHasUserIntent = false;
     final AppLocalizations? messages = _promptMessages;
     if (messages != null) _setPrompt(AiPromptPools.randomPrompt(messages, _selectedStyle, _random));
+    final AiRemixSeed? remixSeed = _remixLink;
+    if (remixSeed != null) {
+      _setPrompt(promptBeforeSwitch, userInitiated: true, updateSeed: false);
+    }
     unawaited(_hydratePrompt(owner));
   }
 
@@ -447,7 +452,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       prompt: prompt,
       style: style,
       qualityTier: qualityTier,
-      request: (AiChargeMode mode, int coinsSpent, String? chargeTxId) => _repository.generate(
+      request: (AiChargeMode mode, int coinsSpent, String? chargeTxId, String? remixOf) => _repository.generate(
         prompt: prompt,
         stylePreset: style,
         qualityTier: qualityTier,
@@ -455,6 +460,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         chargeMode: mode,
         coinsSpent: coinsSpent,
         chargeTxId: chargeTxId,
+        remixOf: remixOf,
       ),
       successEvent: (AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) =>
           AiGenerateSuccessEvent(provider: generated.provider, mode: mode, coinsSpent: coinsSpent),
@@ -489,13 +495,15 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       prompt: prompt,
       style: style,
       qualityTier: qualityTier,
-      request: (AiChargeMode mode, int coinsSpent, String? chargeTxId) => _repository.generateVariation(
-        generationId: latest.id,
-        chargeMode: mode,
-        coinsSpent: coinsSpent,
-        variationPrompt: prompt,
-        chargeTxId: chargeTxId,
-      ),
+      request: (AiChargeMode mode, int coinsSpent, String? chargeTxId, String? remixOf) =>
+          _repository.generateVariation(
+            generationId: latest.id,
+            chargeMode: mode,
+            coinsSpent: coinsSpent,
+            variationPrompt: prompt,
+            chargeTxId: chargeTxId,
+            remixOf: remixOf,
+          ),
       successEvent: (AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) =>
           AiVariationUsedEvent(provider: generated.provider, mode: mode, coinsSpent: coinsSpent),
       onSuccess: (_) => _variationController.clear(),
@@ -506,7 +514,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     required String prompt,
     required AiStylePreset style,
     required AiQualityTier qualityTier,
-    required Future<AiGenerationRecord> Function(AiChargeMode mode, int coinsSpent, String? chargeTxId) request,
+    required Future<AiGenerationRecord> Function(AiChargeMode mode, int coinsSpent, String? chargeTxId, String? remixOf)
+    request,
     required AnalyticsEvent Function(AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) successEvent,
     required void Function(AiGenerationRecord generated) onSuccess,
   }) async {
@@ -629,14 +638,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           chargeTransactionId: reservation.transactionId,
         ),
       );
-      final AiGenerationRecord completed = await request(
+      final AiGenerationRecord generated = await request(
         reservation.mode,
         reservation.coinsSpent,
         reservation.transactionId,
+        remixLink?.wallDocId,
       );
-      final AiGenerationRecord generated = remixLink == null
-          ? completed
-          : completed.copyWith(remixOf: remixLink.wallDocId);
       generationSucceeded = true;
 
       // The repository handles persistence of the completed remote result for its original owner. Do not publish
@@ -690,16 +697,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
               ),
       );
       if (remixLink != null) {
-        try {
-          await _repository.saveHistoryRecord(generated);
-        } catch (error, stackTrace) {
-          logger.w(
-            'AI remix generation succeeded but its link could not be saved',
-            tag: 'ai_wallpaper',
-            error: error,
-            stackTrace: stackTrace,
-          );
-        }
         analytics.track(
           RemixGeneratedEvent(sourceWallType: remixLink.sourceType, quality: generated.qualityTier.apiValue),
         );

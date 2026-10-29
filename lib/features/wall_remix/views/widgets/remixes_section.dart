@@ -13,6 +13,7 @@ import 'package:Prism/features/wall_remix/views/widgets/remix_credit_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// The approved remixes of [original] by other creators, as a row of tiles that opens the detail screen and swipes
@@ -33,7 +34,9 @@ class _RemixesSectionState extends State<RemixesSection> {
   static const double _tileHeight = 160;
 
   List<PrismWallpaper> _visible = const <PrismWallpaper>[];
+  PrismWallpaper? _verifiedOriginal;
   bool _tracked = false;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -41,22 +44,54 @@ class _RemixesSectionState extends State<RemixesSection> {
     _load();
   }
 
+  @override
+  void didUpdateWidget(covariant RemixesSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.original, widget.original) ||
+        oldWidget.repository != widget.repository ||
+        !_sameViewer(oldWidget.viewer, widget.viewer)) {
+      _visible = const <PrismWallpaper>[];
+      _verifiedOriginal = null;
+      _tracked = false;
+      _load();
+    }
+  }
+
   Future<void> _load() async {
+    final int generation = ++_loadGeneration;
     final WallRemixRepository repository = widget.repository ?? getIt<WallRemixRepository>();
     try {
       final WallViewer viewer = widget.viewer ?? await currentWallViewer(repository);
       final String docId = widget.original.firestoreDocumentId?.trim() ?? '';
+      final PrismWallpaper? original = await repository.fetchApprovedWall(docId);
+      if (!mounted || generation != _loadGeneration) return;
+      if (original == null || !viewer.canFullyView(original)) {
+        setState(() {
+          _verifiedOriginal = null;
+          _visible = const <PrismWallpaper>[];
+        });
+        return;
+      }
       final List<PrismWallpaper> rows = await repository.fetchRemixes(docId);
-      if (!mounted) return;
-      final List<PrismWallpaper> visible = visibleRemixes(rows, original: widget.original, viewer: viewer);
-      setState(() => _visible = visible);
+      if (!mounted || generation != _loadGeneration) return;
+      final List<PrismWallpaper> visible = visibleRemixes(rows, original: original, viewer: viewer);
+      setState(() {
+        _verifiedOriginal = original;
+        _visible = visible;
+      });
       if (visible.isNotEmpty && !_tracked) {
         _tracked = true;
         analytics.track(RemixesGridOpenedEvent(count: visible.length));
       }
     } catch (_) {
-      if (mounted) setState(() => _visible = const <PrismWallpaper>[]);
+      if (mounted && generation == _loadGeneration) setState(() => _visible = const <PrismWallpaper>[]);
     }
+  }
+
+  @override
+  void dispose() {
+    _loadGeneration++;
+    super.dispose();
   }
 
   void _open(BuildContext context, int index) {
@@ -85,7 +120,7 @@ class _RemixesSectionState extends State<RemixesSection> {
     if (_visible.isEmpty) return const SizedBox.shrink();
     final AppLocalizations l10n = context.l10n;
     final ColorScheme cs = Theme.of(context).colorScheme;
-    final int total = max(widget.original.remixCount, _visible.length);
+    final int total = max(_verifiedOriginal?.remixCount ?? 0, _visible.length);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -159,3 +194,11 @@ class _RemixesSectionState extends State<RemixesSection> {
 }
 
 String? _nonBlank(String? value) => value == null || value.trim().isEmpty ? null : value.trim();
+
+bool _sameViewer(WallViewer? first, WallViewer? second) =>
+    identical(first, second) ||
+    (first != null &&
+        second != null &&
+        first.isPremium == second.isPremium &&
+        listEquals(first.premiumCollections, second.premiumCollections) &&
+        setEquals(first.blockedCreatorUids, second.blockedCreatorUids));

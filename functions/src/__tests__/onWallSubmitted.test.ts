@@ -4,6 +4,7 @@ import * as admin from "firebase-admin";
 import {db} from "../common";
 import {aiCommunityId} from "../aiWallSource";
 import {isGithubRawUrl, onWallSubmitted} from "../onWallSubmitted";
+import {removeRemixOfIfUnchanged} from "../wallRemix";
 import {type Doc, installFakeDb} from "./fakeDb";
 
 const RAW = "https://raw.githubusercontent.com/owner/walls/main";
@@ -26,20 +27,13 @@ function setup(t: TestContext, owner: Doc | null, wall: Doc) {
   return {store, pushes};
 }
 
-const fire = (store: Map<string, Doc>) => onWallSubmitted.run({
-  params: {wallId: "w1"},
-  data: {
-    data: () => store.get("walls/w1"),
-    ref: {update: async (update: Doc) => {
-      const next: Doc = {...store.get("walls/w1")};
-      for (const [key, value] of Object.entries(update)) {
-        if ((value as {__op?: string}).__op === "delete") delete next[key];
-        else next[key] = value;
-      }
-      store.set("walls/w1", next);
-    }},
-  },
-} as unknown as Parameters<typeof onWallSubmitted.run>[0]);
+const fire = async (store: Map<string, Doc>) => {
+  const snapshot = await db.doc("walls/w1").get();
+  return onWallSubmitted.run({
+    params: {wallId: "w1"},
+    data: {...snapshot, data: () => store.get("walls/w1")},
+  } as unknown as Parameters<typeof onWallSubmitted.run>[0]);
+};
 
 const wall = (extra: Doc = {}): Doc => ({
   email: "maker@example.com", by: "Fake Admin", userPhoto: "https://evil.example/p.png", review: false,
@@ -220,8 +214,10 @@ const unverifiedRemixes: Array<[string, Doc, Doc | null]> = [
   ["a remixOf to an original that is not approved", remixWall("orig"), remixOriginal({review: false})],
   ["a remixOf to an original that is not AI generated", remixWall("orig"), remixOriginal({isAiGenerated: false})],
   ["a remixOf to an original without an AI prompt", remixWall("orig"), remixOriginal({aiPrompt: "  "})],
+  ["a remixOf to an original with a non-string prompt", remixWall("orig"), remixOriginal({aiPrompt: {text: "neon dunes"}})],
   ["a remixOf with a slash", remixWall("a/b"), remixOriginal()],
   ["a remixOf longer than 64 characters", remixWall("x".repeat(70)), remixOriginal()],
+  ["a remixOf with a non-string value", remixWall("unused", {remixOf: 42}), remixOriginal()],
   ["a remixOf on a wall that is not AI generated", wall({remixOf: "orig"}), remixOriginal()],
 ];
 
@@ -233,3 +229,46 @@ for (const [name, remix, original] of unverifiedRemixes) {
     assert.equal("remixOf" in (store.get("walls/w1") ?? {}), false);
   });
 }
+
+test("removing a stale invalid link does not delete a replacement wall's link", async (t) => {
+  const {store} = setup(t, {name: "Maker"}, remixWall("gone"));
+  const expected = await db.doc("walls/w1").get();
+  store.delete("walls/w1");
+  store.set("walls/w1", remixWall("gone", {title: "Replacement wall"}));
+
+  assert.equal(await removeRemixOfIfUnchanged(expected as Parameters<typeof removeRemixOfIfUnchanged>[0], "gone"), false);
+  assert.equal(store.get("walls/w1")?.remixOf, "gone");
+  assert.equal(store.get("walls/w1")?.title, "Replacement wall");
+});
+
+test("submission removes a link that closes a longer remix loop", async (t) => {
+  const {store} = setup(t, {name: "Maker"}, remixWall("orig"));
+  store.set("walls/orig", remixOriginal({remixOf: "middle"}));
+  store.set("walls/middle", remixOriginal({remixOf: "w1"}));
+
+  await fire(store);
+
+  assert.equal("remixOf" in (store.get("walls/w1") ?? {}), false);
+});
+
+test("submission keeps a valid remix link through a long acyclic chain", async (t) => {
+  const {store} = setup(t, {name: "Maker"}, remixWall("node0"));
+  for (let index = 0; index < 65; index++) {
+    store.set(`walls/node${index}`, remixOriginal({remixOf: `node${index + 1}`}));
+  }
+  store.set("walls/node65", remixOriginal());
+
+  await fire(store);
+
+  assert.equal(store.get("walls/w1")?.remixOf, "node0");
+});
+
+test("submission keeps a link if its original is approved before sanitization commits", async (t) => {
+  const {store} = setup(t, {name: "Maker"}, remixWall("orig"));
+  store.set("walls/orig", remixOriginal({review: false}));
+  const expected = await db.doc("walls/w1").get();
+  store.set("walls/orig", remixOriginal({review: true}));
+
+  assert.equal(await removeRemixOfIfUnchanged(expected as Parameters<typeof removeRemixOfIfUnchanged>[0], "orig"), false);
+  assert.equal(store.get("walls/w1")?.remixOf, "orig");
+});

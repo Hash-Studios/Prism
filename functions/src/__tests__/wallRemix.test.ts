@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
-import {onWallRemixWritten} from "../wallRemix";
+import {onWallRemixWritten, sendRemixNotice, syncRemixCredit} from "../wallRemix";
 import {type Doc, installFakeDb} from "./fakeDb";
 
 const original = (extra: Doc = {}): Doc => ({
@@ -63,6 +63,30 @@ test("replaying the approval event keeps one credit and one inbox notice", async
   assert.deepEqual(inbox(store), ["notifications/remix_remix"]);
 });
 
+test("a stale approval event after withdrawal cannot restore a credit or send another notice", async (t) => {
+  const {store} = setup(t);
+  await change(store, "walls/remix", remix({review: true}));
+  await change(store, "walls/remix", remix({review: false}));
+
+  await fire("remix", remix({review: false}), remix({review: true}));
+
+  assert.equal(store.get("walls/orig")?.remixCount, 0);
+  assert.equal(store.has("wallRemixes/remix"), false);
+  assert.deepEqual(inbox(store), ["notifications/remix_remix"]);
+});
+
+test("a stale approval event after deletion cannot restore a credit or send another notice", async (t) => {
+  const {store} = setup(t);
+  await change(store, "walls/remix", remix({review: true}));
+  await change(store, "walls/remix", undefined);
+
+  await fire("remix", remix({review: false}), remix({review: true}));
+
+  assert.equal(store.get("walls/orig")?.remixCount, 0);
+  assert.equal(store.has("wallRemixes/remix"), false);
+  assert.deepEqual(inbox(store), ["notifications/remix_remix"]);
+});
+
 test("withdrawing a remix gives its credit back, and re-approving does not notify again", async (t) => {
   const {store} = setup(t);
   await change(store, "walls/remix", remix({review: true}));
@@ -114,6 +138,16 @@ test("the remix count never goes below zero", async (t) => {
   assert.equal(store.has("wallRemixes/remix"), false);
 });
 
+test("changing only remixCount does not alter ledgers or notices", async (t) => {
+  const {store} = setup(t);
+  await change(store, "walls/remix", remix({review: true}));
+  const before = [...store.entries()];
+
+  await fire("orig", original({remixCount: 1}), original({remixCount: 4}));
+
+  assert.deepEqual([...store.entries()], before);
+});
+
 test("moving an approved remix to another original moves its credit", async (t) => {
   const {store} = setup(t, {"walls/orig2": original({email: "other@example.com"})});
   await change(store, "walls/remix", remix({review: true}));
@@ -121,4 +155,160 @@ test("moving an approved remix to another original moves its credit", async (t) 
   assert.equal(store.get("walls/orig")?.remixCount, 0);
   assert.equal(store.get("walls/orig2")?.remixCount, 1);
   assert.equal(store.get("wallRemixes/remix")?.originalId, "orig2");
+});
+
+test("withdrawing the original removes credits for its approved remixes", async (t) => {
+  const {store} = setup(t);
+  await change(store, "walls/remix", remix({review: true}));
+
+  await change(store, "walls/orig", original({review: false}));
+
+  assert.equal(store.get("walls/orig")?.remixCount, 0);
+  assert.equal(store.has("wallRemixes/remix"), false);
+});
+
+test("deleting the original clears credits and does not leave them for a recreated wall", async (t) => {
+  const {store} = setup(t);
+  await change(store, "walls/remix", remix({review: true}));
+
+  await change(store, "walls/orig", undefined);
+  assert.equal(store.has("wallRemixes/remix"), false);
+
+  await change(store, "walls/orig", original());
+  assert.equal(store.get("walls/orig")?.remixCount, 1);
+  assert.equal(store.get("wallRemixes/remix")?.originalId, "orig");
+});
+
+test("recreating the original before its delete event restores its count", async (t) => {
+  const {store} = setup(t);
+  await change(store, "walls/remix", remix({review: true}));
+
+  store.delete("walls/orig");
+  store.set("walls/orig", original());
+  await fire("orig", undefined, original());
+
+  assert.equal(store.get("walls/orig")?.remixCount, 1);
+  assert.equal(store.get("wallRemixes/remix")?.originalId, "orig");
+});
+
+test("does not credit or notify a remix whose original points back to it", async (t) => {
+  const {store} = setup(t, {"walls/orig": original({remixOf: "remix"})});
+
+  await change(store, "walls/remix", remix({review: true}));
+
+  assert.equal(store.get("walls/orig")?.remixCount, 0);
+  assert.equal(store.has("wallRemixes/remix"), false);
+  assert.deepEqual(inbox(store), []);
+});
+
+test("does not credit a remix when a longer original chain points back to it", async (t) => {
+  const {store} = setup(t, {
+    "walls/orig": original({remixOf: "middle"}),
+    "walls/middle": original({remixOf: "remix"}),
+  });
+
+  await change(store, "walls/remix", remix({review: true}));
+
+  assert.equal(store.get("walls/orig")?.remixCount, 0);
+  assert.equal(store.has("wallRemixes/remix"), false);
+  assert.deepEqual(inbox(store), []);
+});
+
+test("does not credit an original with a non-string prompt", async (t) => {
+  const {store} = setup(t, {"walls/orig": original({aiPrompt: {text: "neon dunes"}})});
+
+  await change(store, "walls/remix", remix({review: true}));
+
+  assert.equal(store.get("walls/orig")?.remixCount, 0);
+  assert.equal(store.has("wallRemixes/remix"), false);
+  assert.deepEqual(inbox(store), []);
+});
+
+test("approving an original reconciles existing remixes and sends their pending notice", async (t) => {
+  const {store} = setup(t, {"walls/orig": original({review: false})});
+  await change(store, "walls/remix", remix({review: true}));
+  assert.equal(store.get("walls/orig")?.remixCount, 0);
+
+  await change(store, "walls/orig", original({review: true}));
+
+  assert.equal(store.get("walls/orig")?.remixCount, 1);
+  assert.deepEqual(inbox(store), ["notifications/remix_remix"]);
+});
+
+test("admin retargeting an original reconciles every descendant in a new cycle", async (t) => {
+  const {store} = setup(t, {
+    "walls/middle": remix({email: "middle@example.com", review: false, remixOf: "orig", title: "Middle", aiPrompt: "middle prompt"}),
+    "walls/third": remix({email: "third@example.com", review: false, remixOf: "middle", title: "Third", aiPrompt: "third prompt"}),
+  });
+  await change(store, "walls/middle", remix({email: "middle@example.com", review: true, remixOf: "orig", title: "Middle", aiPrompt: "middle prompt"}));
+  await change(store, "walls/third", remix({email: "third@example.com", review: true, remixOf: "middle", title: "Third", aiPrompt: "third prompt"}));
+  assert.equal(store.get("walls/orig")?.remixCount, 1);
+  assert.equal(store.get("walls/middle")?.remixCount, 1);
+
+  await change(store, "walls/orig", original({remixOf: "third"}));
+
+  assert.equal(store.get("walls/orig")?.remixCount, 0);
+  assert.equal(store.get("walls/middle")?.remixCount, 0);
+  assert.equal(store.get("walls/third")?.remixCount ?? 0, 0);
+  assert.equal(store.has("wallRemixes/middle"), false);
+  assert.equal(store.has("wallRemixes/third"), false);
+});
+
+test("a whitespace-padded matching owner email is not credited", async (t) => {
+  const {store} = setup(t, {"walls/remix": remix({email: " Artist@Example.com ", review: false})});
+
+  await change(store, "walls/remix", remix({email: " Artist@Example.com ", review: true}));
+
+  assert.equal(store.get("walls/orig")?.remixCount, 0);
+  assert.equal(store.has("wallRemixes/remix"), false);
+  assert.deepEqual(inbox(store), []);
+});
+
+test("does not send a pending notice after an admin retargets the remix", async (t) => {
+  const {store} = setup(t, {"walls/orig2": original({email: "other@example.com"})});
+  store.set("walls/remix", remix({review: true}));
+  const notice = await syncRemixCredit("remix");
+  assert.ok(notice);
+  store.set("walls/remix", remix({review: true, remixOf: "orig2"}));
+
+  await sendRemixNotice(notice);
+
+  assert.deepEqual(inbox(store), []);
+  assert.equal(store.get("wallRemixNotices/remix")?.sent, false);
+});
+
+test("a failed inbox write leaves the marker ready for retry", async (t) => {
+  const {store} = setup(t);
+  const set = store.set.bind(store);
+  let failInboxWrite = true;
+  Object.defineProperty(store, "set", {
+    configurable: true,
+    writable: true,
+    value: (path: string, data: Doc) => {
+      if (path.startsWith("notifications/") && failInboxWrite) {
+        failInboxWrite = false;
+        throw new Error("temporary inbox write failure");
+      }
+      return set(path, data);
+    },
+  });
+
+  await assert.rejects(change(store, "walls/remix", remix({review: true})), /temporary inbox write failure/);
+  assert.equal(store.get("wallRemixNotices/remix")?.sent, false);
+  assert.deepEqual(inbox(store), []);
+
+  await fire("remix", remix(), remix({review: true}));
+  assert.equal(store.get("wallRemixNotices/remix")?.sent, true);
+  assert.deepEqual(inbox(store), ["notifications/remix_remix"]);
+});
+
+test("walls without remixes get no remixCount write", async (t) => {
+  const {store} = setup(t, {"walls/plain": {email: "a@example.com", review: false}});
+  await change(store, "walls/plain", {email: "a@example.com", review: true});
+  assert.equal("remixCount" in (store.get("walls/plain") ?? {}), false);
+
+  const fresh = {email: "a@example.com", review: false, isAiGenerated: true, aiPrompt: "glass koi"};
+  await change(store, "walls/fresh", fresh);
+  await change(store, "walls/fresh", {...fresh, review: true});
+  assert.equal("remixCount" in (store.get("walls/fresh") ?? {}), false);
 });

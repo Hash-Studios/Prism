@@ -32,6 +32,7 @@ class WallRemixRepository {
             ],
             orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
             limit: remixLimit,
+            cachePolicy: FirestoreCachePolicy.serverOnly,
           ),
           (data, docId) => PrismWallDocDto.fromJson(data).toDomain(docId: docId),
         )
@@ -51,6 +52,7 @@ class WallRemixRepository {
               const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
             ],
             limit: 1,
+            cachePolicy: FirestoreCachePolicy.serverOnly,
           ),
           (data, id) => PrismWallDocDto.fromJson(data).toDomain(docId: id),
         )
@@ -58,5 +60,8 @@ class WallRemixRepository {
     return rows.isEmpty ? null : rows.single;
   }
 
-  Future<Set<String>> blockedCreatorUids() => _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+  Future<Set<String>> blockedCreatorUids({bool waitForInitialLoad = true}) =>
+      _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: waitForInitialLoad);
+
+  Stream<Set<String>> watchBlockedCreatorUids() => _userBlockRepository.watchBlockedCreatorUids();
 }

@@ -1,5 +1,12 @@
+import 'dart:convert';
+
 import 'package:Prism/core/wallpaper/wall_ai_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
+import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,6 +19,32 @@ WallViewer _viewer({
 }) => WallViewer(isPremium: isPremium, premiumCollections: premiumCollections, blockedCreatorUids: blocked);
 
 void main() {
+  test('cached remix eligibility retains AI source and streak exclusivity', () {
+    const FeedItemEntity item = FeedItemEntity.prism(
+      id: 'p-streak',
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(id: 'p-streak', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+        review: true,
+        isStreakExclusive: true,
+        requiredStreakDays: 14,
+        streakShopCoinCost: 30,
+        firestoreDocumentId: 'doc-p-streak',
+        aiSource: WallAiSource(prompt: 'a koi pond'),
+        remixCount: 2,
+      ),
+    );
+    final Map<String, dynamic> cache = jsonDecode(jsonEncode(encodeFeedItem(item))) as Map<String, dynamic>;
+
+    final PrismWallpaper wallpaper = (decodeFeedItem(cache)! as PrismFeedItem).wallpaper;
+
+    expect(wallpaper.isStreakExclusive, isTrue);
+    expect(wallpaper.requiredStreakDays, 14);
+    expect(wallpaper.streakShopCoinCost, 30);
+    expect(wallpaper.aiSource?.prompt, 'a koi pond');
+    expect(wallpaper.remixCount, 2);
+    expect(AiRemixSeed.of(wallpaper, viewer: _viewer(isPremium: true), aiEnabled: true), isNull);
+  });
+
   group('AiRemixSeed.of', () {
     test('returns a seed for an approved user AI wall with a prompt and doc id', () {
       final seed = AiRemixSeed.of(remixWall(), viewer: _viewer(), aiEnabled: true);
@@ -112,6 +145,23 @@ void main() {
       final visible = visibleRemixes(remixes, original: original, viewer: _viewer(isPremium: true));
 
       expect(visible.map((w) => w.id), ['premium']);
+    });
+
+    test('hides all remixes when the original itself is withheld from the viewer', () {
+      final original = remixWall(id: 'orig', docId: 'doc-orig', collections: const <String>['space']);
+      final remixes = [remixWall(id: 'r1', docId: 'd1', authorEmail: 'creator@example.com')];
+
+      expect(visibleRemixes(remixes, original: original, viewer: _viewer()), isEmpty);
+    });
+
+    test('drops a remix by the original owner when email is missing but uid matches', () {
+      final original = remixWall(id: 'orig', docId: 'doc-orig', authorUid: 'owner-uid');
+      final remixes = [
+        remixWall(id: 'same-owner', docId: 'same', authorUid: 'owner-uid'),
+        remixWall(id: 'other-owner', docId: 'other', authorUid: 'creator-uid'),
+      ];
+
+      expect(visibleRemixes(remixes, original: original, viewer: _viewer()).map((wall) => wall.id), ['other-owner']);
     });
   });
 

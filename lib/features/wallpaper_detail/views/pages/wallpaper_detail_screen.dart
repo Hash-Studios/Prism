@@ -78,6 +78,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
@@ -352,6 +353,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   /// Creators the viewer has blocked. Null until they load.
   Set<String>? _blockedCreatorUids;
+  Set<String>? _pendingBlockedCreatorUids;
+  StreamSubscription<Set<String>>? _blockedCreatorSubscription;
+  bool _blockedCreatorReadCompleted = false;
 
   /// iOS only: builds Save to Photos for the phone preview.
   Widget Function(String label)? _saveAction;
@@ -520,12 +524,25 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     unawaited(_loadBlockedCreators());
   }
 
-  /// Loads the creators the viewer has blocked. The Remix action stays hidden until they are known, and when they
-  /// cannot be read.
+  /// Loads the current blocked creators and keeps the view in step with the live block set.
   Future<void> _loadBlockedCreators() async {
     try {
-      final Set<String> uids = await getIt<WallRemixRepository>().blockedCreatorUids();
-      if (mounted) setState(() => _blockedCreatorUids = uids);
+      final WallRemixRepository repository = getIt<WallRemixRepository>();
+      _blockedCreatorSubscription = repository.watchBlockedCreatorUids().listen((Set<String> uids) {
+        if (!mounted) return;
+        if (!_blockedCreatorReadCompleted) {
+          _pendingBlockedCreatorUids = uids;
+          return;
+        }
+        if (setEquals(_blockedCreatorUids, uids)) return;
+        setState(() => _blockedCreatorUids = uids);
+      }, onError: (Object _) {});
+      await repository.blockedCreatorUids();
+      final Set<String> latest = await repository.blockedCreatorUids(waitForInitialLoad: false);
+      if (!mounted) return;
+      final Set<String> uids = _pendingBlockedCreatorUids ?? latest;
+      _blockedCreatorReadCompleted = true;
+      setState(() => _blockedCreatorUids = uids);
     } catch (_) {
       // Keep the Remix action hidden.
     }
@@ -533,17 +550,19 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   /// The Remix seed of [state]'s wall, or null when the viewer must not see the Remix action on it.
   AiRemixSeed? _remixSeedOf(WallpaperDetailLoaded state) {
-    final Set<String>? blocked = _blockedCreatorUids;
     final FeedItemEntity entity = state.entity;
-    if (blocked == null || entity is! PrismFeedItem) return null;
-    return AiRemixSeed.of(
-      entity.wallpaper,
-      viewer: WallViewer(
-        isPremium: app_state.prismUser.premium,
-        premiumCollections: app_state.premiumCollections,
-        blockedCreatorUids: blocked,
-      ),
-      aiEnabled: app_state.aiEnabled,
+    final WallViewer? viewer = _remixViewer();
+    if (viewer == null || entity is! PrismFeedItem) return null;
+    return AiRemixSeed.of(entity.wallpaper, viewer: viewer, aiEnabled: app_state.aiEnabled);
+  }
+
+  WallViewer? _remixViewer() {
+    final Set<String>? blockedCreatorUids = _blockedCreatorUids;
+    if (blockedCreatorUids == null) return null;
+    return WallViewer(
+      isPremium: app_state.prismUser.premium,
+      premiumCollections: app_state.premiumCollections,
+      blockedCreatorUids: blockedCreatorUids,
     );
   }
 
@@ -559,6 +578,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   @override
   void dispose() {
+    unawaited(_blockedCreatorSubscription?.cancel());
     _shake.dispose();
     _scroll.dispose();
     super.dispose();
@@ -1894,17 +1914,21 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         ),
       if (tags.isNotEmpty) padded(WallpaperTagChips(tags: tags, onTagTap: (tag) => openTagSearch(context, tag))),
       // The remix rows size themselves: they take no padding when they show nothing.
-      if (entity case PrismFeedItem(:final wallpaper) when wallpaper.remixOf != null)
+      if (entity case PrismFeedItem(:final wallpaper)
+          when wallpaper.aiSource != null &&
+              wallpaper.remixOf != null &&
+              wallpaper.remixOf!.trim().isNotEmpty &&
+              wallpaper.remixOf!.trim() != wallpaper.firestoreDocumentId?.trim())
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: _sheetHPad),
-          child: RemixCreditRow(remixOfDocId: wallpaper.remixOf!),
+          child: RemixCreditRow(remixOfDocId: wallpaper.remixOf!, viewer: _remixViewer()),
         ),
       if (entity case PrismFeedItem(
         :final wallpaper,
       ) when wallpaper.aiSource != null && wallpaper.remixCount > 0 && wallpaper.firestoreDocumentId != null)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: _sheetHPad),
-          child: RemixesSection(original: wallpaper),
+          child: RemixesSection(original: wallpaper, viewer: _remixViewer()),
         ),
       if (depthTier != null && showsDepthEffect(depthTier)) padded(DepthEffectRow(tier: depthTier)),
       if (spatial != null && showsSpatialScene(spatial.tier))
