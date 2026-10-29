@@ -6,33 +6,28 @@ import {editWallMetadata, getWallMetadataForEdit, listWallMetadataEdits, revertW
 import * as admin from "firebase-admin";
 
 test("approved edit is a narrow audited transaction and replay does not charge again", async (t) => {
-  let feature: Record<string, {run: (request: unknown) => Promise<Record<string, unknown>>}> | undefined;
-  try {
-    feature = require("../wallMetadata");
-  } catch {/* Feature not implemented yet. */}
-  assert.ok(feature, "metadata callables are missing");
   const store = installFakeDb(t, {"usersv2/maker": {name: "Maker"}, "walls/w1": {
     creatorUid: "maker", review: true, title: "Before", category: "Nature", coins: 77, collections: ["premium"],
     wallpaper_url: "asset", visionLabels: ["Tree"],
   }});
   const auth = {uid: "maker", token: {}};
-  const get = () => feature!.getWallMetadataForEdit.run({auth, data: {wallDocId: "w1"}} as never);
+  const get = () => getWallMetadataForEdit.run({auth, data: {wallDocId: "w1"}} as never);
   const loaded = await get();
   const data = {wallDocId: "w1", operationId: "one", expectedRevision: loaded.revision,
     metadata: {title: "After", desc: "Calm", tags: ["Forest"]}};
   const before = {...store.get("walls/w1")};
-  const result = await feature.editWallMetadata.run({auth, data} as never);
-  assert.deepEqual(await feature.editWallMetadata.run({auth, data} as never), result);
+  const result = await editWallMetadata.run({auth, data} as never);
+  assert.deepEqual(await editWallMetadata.run({auth, data} as never), result);
   assert.deepEqual(store.get("walls/w1"), {...before, title: "After", desc: "Calm", tags: ["forest"],
     searchTerms: ["after", "forest", "nature", "calm", "tree"]});
   assert.equal([...store.keys()].filter((p) => p.startsWith("wallMetadataEdits/")).length, 1);
   assert.equal([...store.values()].filter((d) => d.count === 1).length, 1);
-  await assert.rejects(() => feature!.editWallMetadata.run({auth, data: {...data, metadata: {...data.metadata, title: "Other"}}} as never),
+  await assert.rejects(() => editWallMetadata.run({auth, data: {...data, metadata: {...data.metadata, title: "Other"}}} as never),
     {code: "already-exists"});
   const ref = db.doc("walls/w1");
   await ref.update({title: "ABA"});
   await ref.update({title: "After"});
-  await assert.rejects(() => feature!.editWallMetadata.run({auth, data: {...data, operationId: "two"}} as never), {code: "aborted"});
+  await assert.rejects(() => editWallMetadata.run({auth, data: {...data, operationId: "two"}} as never), {code: "aborted"});
 });
 
 test("metadata callables refuse unauthenticated, foreign, pending, closed and conflicting UID callers", async (t) => {
@@ -82,7 +77,16 @@ test("unknown or dotted fields are rejected before any metadata mutation", async
   const loaded = await getWallMetadataForEdit.run({auth, data: {wallDocId: "w1"}} as never);
   const metadata = {title: "Safe", desc: "", tags: []};
   const data = {wallDocId: "w1", expectedRevision: loaded.revision, operationId: "edit", metadata};
-  for (const key of ["review", "category", "coins", "premium", "dropWeek", "collections", "wallpaper_url", "creatorUid", "requestId", "title.x"]) {
+  for (const key of [
+    "id", "category", "wallpaper_url", "wallpaper_thumb", "wallpaper_provider", "wallpaper_path", "wallpaper_sha",
+    "wallpaper_source_kind", "thumb_path", "thumb_sha", "thumb_source_kind", "resolution", "size", "file_size",
+    "createdAt", "uploadedBy", "by", "email", "creatorUid", "userPhoto", "credit", "coins", "money", "review",
+    "premium", "collections", "dropReserved", "dropWeek", "boostedUntil", "depth", "spatial", "colors",
+    "originalProtected", "originalObjectId", "moderation", "visionLabels", "searchTerms", "remixOf", "remixCount",
+    "resubmitOf", "requestId", "wotd", "wallOfTheDay", "challenge", "challengeId", "is_streak_exclusive",
+    "required_streak_days", "streak_shop_coin_cost", "aiMetadata", "isAiGenerated", "aiPrompt", "aiStylePreset",
+    "aiModel", "origin", "title.x", "tags.0",
+  ]) {
     await assert.rejects(() => editWallMetadata.run({auth, data: {...data, [key]: true}} as never), {code: "invalid-argument"});
     await assert.rejects(() => editWallMetadata.run({auth, data: {...data, metadata: {...metadata, [key]: true}}} as never),
       {code: "invalid-argument"});
