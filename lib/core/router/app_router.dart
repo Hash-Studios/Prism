@@ -63,6 +63,7 @@ import 'package:Prism/features/user_blocks/views/blocked_accounts_screen.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
 import 'package:Prism/features/wall_of_the_day/views/pages/wotd_archive_page.dart';
+import 'package:Prism/features/wall_remix/domain/wall_remix.dart' show AiRemixSeed;
 import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_wallpaper_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
