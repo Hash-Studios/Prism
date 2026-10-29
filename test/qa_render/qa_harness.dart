@@ -67,7 +67,7 @@ Future<void> loadFonts() async {
   await (FontLoader('Fraunces')..addFont(rootBundle.load('assets/fonts/Fraunces-Variable.ttf'))).load();
   await (FontLoader('JamIcons')..addFont(rootBundle.load('assets/fonts/JamIcons.ttf'))).load();
   final String flutterRoot =
-      Platform.environment['FLUTTER_ROOT'] ?? '${Platform.environment['HOME']}/fvm/versions/3.47.5';
+      Platform.environment['FLUTTER_ROOT'] ?? '${Platform.environment['HOME']}/fvm/versions/3.47.8';
   final Uint8List materialIcons = File(
     '$flutterRoot/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
   ).readAsBytesSync();
