@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
@@ -194,5 +197,56 @@ void main() {
     } finally {
       semantics.dispose();
     }
+  });
+
+  group('AI walls hidden', () {
+    final walls = <PublicProfileWallEntity>[
+      const PublicProfileWallEntity(id: 'ai-1', isAiGenerated: true, wallpaperUrl: 'https://example.com/ai.jpg'),
+      const PublicProfileWallEntity(id: 'human-1', wallpaperUrl: 'https://example.com/human.jpg'),
+    ];
+
+    Future<void> hideAi() => AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), false);
+
+    int tileCount(WidgetTester tester) =>
+        (tester.widget<SliverGrid>(find.byType(SliverGrid)).delegate as SliverChildBuilderDelegate).childCount!;
+
+    testWidgets("drops AI walls from another user's profile", (tester) async {
+      await hideAi();
+      await pumpGrid(
+        tester,
+        PublicProfileState.initial().copyWith(status: LoadStatus.success, walls: walls, hasMoreWalls: false),
+      );
+
+      expect(tileCount(tester), 1);
+    });
+
+    testWidgets("keeps AI walls on the signed-in user's own profile", (tester) async {
+      await hideAi();
+      await pumpGrid(
+        tester,
+        PublicProfileState.initial().copyWith(status: LoadStatus.success, walls: walls, hasMoreWalls: false),
+        ownProfile: true,
+      );
+
+      expect(tileCount(tester), 2);
+    });
+
+    testWidgets('shows the empty state with a switch back on when only AI walls are left', (tester) async {
+      await hideAi();
+      await pumpGrid(
+        tester,
+        PublicProfileState.initial().copyWith(
+          status: LoadStatus.success,
+          walls: walls.take(1).toList(),
+          hasMoreWalls: false,
+        ),
+      );
+
+      expect(find.text('No human-made walls here yet'), findsOneWidget);
+      await tester.tap(find.text('Show AI walls'));
+      await tester.pump();
+      expect(AiContentFilter.showsAi(getIt<SettingsLocalDataSource>()), isTrue);
+      verify(() => bloc.add(const PublicProfileEvent.refreshRequested())).called(1);
+    });
   });
 }

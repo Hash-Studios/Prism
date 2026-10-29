@@ -21,6 +21,12 @@ abstract class WallDocDto with _$WallDocDto {
     @FirestoreStringListConverter() @Default(<String>[]) List<String> collections,
     @FirestoreDateTimeConverter() DateTime? createdAt,
     @Default(false) bool review,
+    @Default(false) bool isAiGenerated,
+    @FirestoreStringConverter() @Default('') String aiModel,
+    @JsonKey(name: 'aiMetadata')
+    @FirestoreJsonMapConverter()
+    @Default(<String, Object?>{})
+    Map<String, Object?> aiMetadata,
     @JsonKey(name: 'depth') @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> depth,
     @JsonKey(name: 'spatial') @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> spatial,
   }) = _WallDocDto;

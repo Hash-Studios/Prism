@@ -1,5 +1,6 @@
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/biz/favourite_counts_cubit.dart';
 import 'package:Prism/features/favourite_walls/domain/repositories/favourite_counts_repository.dart';
@@ -20,9 +21,14 @@ void setUpFavouriteCounts({Map<String, PrismWallpaperStats> counts = const {}}) 
     final cubit = _CountsCubit();
     whenListen(cubit, const Stream<Map<String, PrismWallpaperStats>>.empty(), initialState: counts);
     getIt.registerSingleton<FavouriteCountsCubit>(cubit, dispose: (cubit) => cubit.close());
+    // The wall grids read the AI setting; the default is "show".
+    if (!getIt.isRegistered<SettingsLocalDataSource>()) {
+      getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+    }
   });
   tearDown(() async {
     if (getIt.isRegistered<FavouriteCountsCubit>()) await getIt.unregister<FavouriteCountsCubit>();
+    if (getIt.isRegistered<SettingsLocalDataSource>()) await getIt.unregister<SettingsLocalDataSource>();
     if (getIt.isRegistered<FavoritesLocalDataSource>()) await getIt.unregister<FavoritesLocalDataSource>();
   });
 }

@@ -6,6 +6,8 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
@@ -45,6 +47,59 @@ class _FailingHttpClient implements HttpClient {
 
 void main() {
   setUpFavouriteCounts();
+
+  Future<void> pumpAiHiddenGrid(WidgetTester tester, List<Map<String, dynamic>> walls) async {
+    final originalWalls = anyCollectionWalls;
+    final originalHasMore = collectionHasMore;
+    anyCollectionWalls = walls;
+    collectionHasMore = false;
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(() {
+      anyCollectionWalls = originalWalls;
+      collectionHasMore = originalHasMore;
+      AnalyticsRuntime.reset();
+    });
+    await AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), false);
+    await tester.pumpWidget(
+      const MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: CollectionViewGrid()),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  Map<String, dynamic> wall(String id, [Map<String, dynamic> extra = const <String, dynamic>{}]) => <String, dynamic>{
+    'id': id,
+    'wallpaper_thumb': 'https://example.test/$id-thumb.jpg',
+    'wallpaper_url': 'https://example.test/$id.jpg',
+    ...extra,
+  };
+
+  testWidgets('hides AI walls, flagged or with metadata only, and leaves no gap', (tester) async {
+    await pumpAiHiddenGrid(tester, <Map<String, dynamic>>[
+      wall('ai-flag', <String, dynamic>{'isAiGenerated': true}),
+      wall('ai-meta', <String, dynamic>{
+        'aiMetadata': <String, dynamic>{'prompt': 'a fox'},
+      }),
+      wall('human'),
+    ]);
+
+    expect(find.byType(PrismWallTile), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('human')), findsOneWidget);
+  });
+
+  testWidgets('shows the no human walls state when only AI walls are left', (tester) async {
+    await pumpAiHiddenGrid(tester, <Map<String, dynamic>>[
+      wall('ai-flag', <String, dynamic>{'isAiGenerated': true}),
+    ]);
+
+    expect(find.text('No human-made walls here yet'), findsOneWidget);
+    expect(find.byType(PrismWallTile), findsNothing);
+    expect(find.text('Show AI walls'), findsOneWidget);
+  });
   testWidgets('a refresh failing after disposal does not read localization from the old context', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;

@@ -4,9 +4,12 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_utils.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
@@ -16,6 +19,7 @@ import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -35,7 +39,10 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
   final ScrollMilestoneTracker _scrollMilestoneTracker = ScrollMilestoneTracker();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
 
+  static const int _maxEmptyPages = 5;
+
   bool seeMoreLoader = false;
+  int _emptyPagesLoaded = 0;
   bool _loadMoreFailed = false;
 
   Object? _wallValue(Map<String, dynamic> wall, String key) => wall[key];
@@ -46,6 +53,14 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
     id: wallId,
     wallpaper: PrismWallDocDto.fromJson(wall).toDomain(docId: wallId),
   );
+
+  bool _isAiWall(Map<String, dynamic> wall) =>
+      AiContentFilter.isAi(PrismWallDocDto.fromJson(wall).toDomain(docId: _wallString(wall, 'id')));
+
+  Future<void> _showAiAgain() async {
+    await setShowAiWallpapers(getIt<SettingsLocalDataSource>(), true);
+    if (mounted) await _refresh();
+  }
 
   Future<void> _refresh() async {
     PrismHaptics.impact();
@@ -97,7 +112,39 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> walls = anyCollectionWalls;
+    return ValueListenableBuilder<int>(
+      valueListenable: personalizedFeedSettingsRevision,
+      builder: (context, _, _) => _buildGrid(context),
+    );
+  }
+
+  Widget _buildGrid(BuildContext context) {
+    final bool hideAi = !AiContentFilter.showsAi(getIt<SettingsLocalDataSource>());
+    final List<Map<String, dynamic>> loaded = anyCollectionWalls;
+    final List<Map<String, dynamic>> walls = hideAi
+        ? loaded.where((wall) => !_isAiWall(wall)).toList(growable: false)
+        : loaded;
+    if (walls.isNotEmpty || !hideAi) _emptyPagesLoaded = 0;
+    if (walls.isEmpty && hideAi && loaded.isNotEmpty) {
+      if (collectionHasMore && _emptyPagesLoaded < _maxEmptyPages) {
+        // A page that hides every wall asks for the next one, up to _maxEmptyPages times.
+        if (!seeMoreLoader && !_loadMoreFailed) {
+          _emptyPagesLoaded += 1;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) unawaited(_loadMore());
+          });
+        }
+        return const Center(child: CircularProgressIndicator());
+      }
+      return Center(
+        child: PrismInlineState(
+          icon: Icons.auto_awesome_rounded,
+          title: context.l10n.feedNoHumanWalls,
+          actionLabel: context.l10n.feedShowAiWalls,
+          onAction: _showAiAgain,
+        ),
+      );
+    }
     if (walls.isEmpty && !collectionHasMore) {
       return GlintState(
         kind: GlintStateKind.empty,
