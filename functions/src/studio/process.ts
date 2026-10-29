@@ -3,6 +3,7 @@ import {defineSecret} from "firebase-functions/params";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {db, int, REGION, str, utcDateString} from "../common";
+import {WALL_REQUESTS} from "../wallRequests";
 import {falKey, type WallDepth, wallDepthFor} from "../wallDepth";
 import {loadStudioConfig, type StudioIdentity} from "./config";
 import {annotateWithVision, duplicateCheck, type KnownSignature, runGates, type VisionAnnotate} from "./gates";
@@ -208,6 +209,28 @@ async function updateOwnedCandidate(
   });
 }
 
+function isOpenVisibleRequest(data: admin.firestore.DocumentData | undefined): boolean {
+  return data?.status === "open" && data.hidden !== true;
+}
+
+async function rejectUnavailableRequest(
+  ref: admin.firestore.DocumentReference,
+  attempts: number,
+  candidate: admin.firestore.DocumentData,
+): Promise<boolean> {
+  const workerKey = str((candidate.worker as admin.firestore.DocumentData | undefined)?.key);
+  const outputKeys = Array.isArray(candidate.outputAssetKeys) ?
+    candidate.outputAssetKeys.filter((key): key is string => typeof key === "string") : [];
+  const saved = await updateOwnedCandidate(ref, attempts, {
+    status: "rejected",
+    reasons: ["request_unavailable"],
+    lastError: "request_unavailable",
+    cleanupKeys: [...outputKeys, workerKey].filter(Boolean),
+    outputAssetKeys: admin.firestore.FieldValue.delete(),
+  });
+  return saved;
+}
+
 /** The final wallpaper (same size, mozjpeg, no metadata) and the thumbnail the app would make. */
 export async function renderWallpaper(bytes: Buffer): Promise<{wall: Buffer; thumb: Buffer; width: number; height: number}> {
   const sharp = (await import("sharp")).default;
@@ -270,7 +293,7 @@ async function publishWall(params: {
   rng: Rng;
   day: string;
   dropReserves: number;
-}): Promise<string | null | "duplicate"> {
+}): Promise<string | null | "duplicate" | "request_unavailable"> {
   const {ref, attempts, wall, signature, rng} = params;
   const reservesRef = db.collection("studioDropReserves").doc(params.day);
   for (let i = 0; i < PUBLISH_TRIES; i++) {
@@ -280,6 +303,21 @@ async function publishWall(params: {
       const current = (await tx.get(ref)).data();
       if (current?.status !== "generating" || current.attempts !== attempts) return "lost";
       if ((await tx.get(wallRef)).exists) return "taken";
+      const requestId = str(wall.requestId);
+      if (requestId && !isOpenVisibleRequest((await tx.get(db.collection(WALL_REQUESTS).doc(requestId))).data())) {
+        const workerKey = str((params.candidateUpdate.worker as admin.firestore.DocumentData | undefined)?.key);
+        tx.update(ref, {
+          ...params.candidateUpdate,
+          status: "rejected",
+          reasons: ["request_unavailable"],
+          lastError: "request_unavailable",
+          gates: {passed: false, reasons: ["request_unavailable"], details: {}},
+          cleanupKeys: [...params.outputAssetKeys, workerKey].filter(Boolean),
+          outputAssetKeys: admin.firestore.FieldValue.delete(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        return "request_unavailable";
+      }
       const signatureIndexRef = db.doc("studioState/signatureIndex");
       const signatureIndex = (await tx.get(signatureIndexRef)).data();
       const signatures = await tx.get(db.collection("studioSignatures").select("signature", "wallId"));
@@ -312,6 +350,7 @@ async function publishWall(params: {
       return "published";
     });
     if (outcome === "published") return wallId;
+    if (outcome === "request_unavailable") return "request_unavailable";
     if (outcome === "duplicate") return "duplicate";
     if (outcome === "lost") return null;
   }
@@ -385,6 +424,11 @@ export async function processCandidate(runId: string, candidateId: string, deps:
     if (!config.generationEnabled || config.identity === null) {
       throw new PermanentError("disabled", "Studio generation is off in studioConfig/current.");
     }
+    const requestId = str(candidate.requestId);
+    if (requestId && !isOpenVisibleRequest((await db.collection(WALL_REQUESTS).doc(requestId).get()).data())) {
+      if (await rejectUnavailableRequest(ref, attempts, candidate)) await cleanupPendingAssets(ref, deps);
+      return;
+    }
     image = await generate(deps, candidateId, candidate);
     if (!await updateOwnedCandidate(ref, attempts, {worker: image})) return;
     const bytes = await download(image.imageUrl);
@@ -431,6 +475,10 @@ export async function processCandidate(runId: string, candidateId: string, deps:
       return;
     }
     if (wallId === "duplicate") {
+      await cleanupPendingAssets(ref, deps);
+      return;
+    }
+    if (wallId === "request_unavailable") {
       await cleanupPendingAssets(ref, deps);
       return;
     }

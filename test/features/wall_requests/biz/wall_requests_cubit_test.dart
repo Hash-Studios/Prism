@@ -215,6 +215,70 @@ void main() {
         expect(row.voteCount, 4, reason: tab.name);
       }
     });
+
+    test('a rejected vote restores only vote fields after a newer row arrives', () async {
+      final Completer<int> server = Completer<int>();
+      when(() => repository.list(WallRequestTab.top)).thenAnswer((_) async => <WallRequest>[_request()]);
+      when(() => repository.setVote('r1', vote: true)).thenAnswer((_) => server.future);
+      final WallRequestsCubit cubit = WallRequestsCubit(repository);
+      addTearDown(cubit.close);
+      await cubit.load(WallRequestTab.top);
+
+      final Future<void> vote = cubit.toggleVote(_request(), WallRequestTab.top);
+      when(
+        () => repository.list(WallRequestTab.top),
+      ).thenAnswer((_) async => <WallRequest>[_request(status: WallRequestStatus.filled)]);
+      await cubit.load(WallRequestTab.top);
+      server.completeError(const WallRequestException(WallRequestError.closed));
+      await vote;
+
+      final WallRequest row = _row(cubit.state, WallRequestTab.top, 'r1');
+      expect(row.isFilled, isTrue);
+      expect(row.voted, isFalse);
+      expect(row.voteCount, 3);
+    });
+
+    test('a refresh started before a vote cannot overwrite its optimistic vote', () async {
+      final Completer<List<WallRequest>> refresh = Completer<List<WallRequest>>();
+      final Completer<int> server = Completer<int>();
+      when(() => repository.list(WallRequestTab.top)).thenAnswer((_) async => <WallRequest>[_request()]);
+      when(() => repository.setVote('r1', vote: true)).thenAnswer((_) => server.future);
+      final WallRequestsCubit cubit = WallRequestsCubit(repository);
+      addTearDown(cubit.close);
+      await cubit.load(WallRequestTab.top);
+
+      when(() => repository.list(WallRequestTab.top)).thenAnswer((_) => refresh.future);
+      final Future<void> refreshing = cubit.load(WallRequestTab.top);
+      final Future<void> voting = cubit.toggleVote(_request(), WallRequestTab.top);
+      refresh.complete(<WallRequest>[_request()]);
+      await refreshing;
+
+      final WallRequest optimistic = _row(cubit.state, WallRequestTab.top, 'r1');
+      expect(optimistic.voted, isTrue);
+      expect(optimistic.voteCount, 4);
+      server.complete(4);
+      await voting;
+    });
+
+    test('ignores another tap while a request vote is pending', () async {
+      final Completer<int> server = Completer<int>();
+      when(() => repository.list(WallRequestTab.top)).thenAnswer((_) async => <WallRequest>[_request()]);
+      when(() => repository.setVote('r1', vote: true)).thenAnswer((_) => server.future);
+      final WallRequestsCubit cubit = WallRequestsCubit(repository);
+      addTearDown(cubit.close);
+      await cubit.load(WallRequestTab.top);
+
+      final Future<void> vote = cubit.toggleVote(_request(), WallRequestTab.top);
+      await cubit.toggleVote(_request(voted: true, voteCount: 4), WallRequestTab.top);
+
+      verify(() => repository.setVote('r1', vote: true)).called(1);
+      verifyNever(() => repository.setVote('r1', vote: false));
+      server.complete(4);
+      await vote;
+      final WallRequest row = _row(cubit.state, WallRequestTab.top, 'r1');
+      expect(row.voted, isTrue);
+      expect(row.voteCount, 4);
+    });
   });
 
   group('setHidden', () {
@@ -229,6 +293,46 @@ void main() {
 
       expect(_row(cubit.state, WallRequestTab.top, 'r1').hidden, isTrue);
       expect(cubit.state.error, isNull);
+    });
+
+    test('a refresh started before a hide cannot overwrite its successful result', () async {
+      final Completer<List<WallRequest>> refresh = Completer<List<WallRequest>>();
+      final Completer<void> hidden = Completer<void>();
+      when(() => repository.list(WallRequestTab.top)).thenAnswer((_) async => <WallRequest>[_request()]);
+      when(() => repository.setHidden('r1', hidden: true)).thenAnswer((_) => hidden.future);
+      final WallRequestsCubit cubit = WallRequestsCubit(repository);
+      addTearDown(cubit.close);
+      await cubit.load(WallRequestTab.top);
+
+      when(() => repository.list(WallRequestTab.top)).thenAnswer((_) => refresh.future);
+      final Future<void> refreshing = cubit.load(WallRequestTab.top);
+      final Future<void> hiding = cubit.setHidden(_request(), hidden: true);
+      hidden.complete();
+      await hiding;
+      refresh.complete(<WallRequest>[_request()]);
+      await refreshing;
+
+      expect(_row(cubit.state, WallRequestTab.top, 'r1').hidden, isTrue);
+    });
+
+    test('a delayed hide response does not restore stale vote fields', () async {
+      final Completer<void> hidden = Completer<void>();
+      when(() => repository.list(WallRequestTab.top)).thenAnswer((_) async => <WallRequest>[_request()]);
+      when(() => repository.setHidden('r1', hidden: true)).thenAnswer((_) => hidden.future);
+      when(() => repository.setVote('r1', vote: true)).thenAnswer((_) async => 4);
+      final WallRequestsCubit cubit = WallRequestsCubit(repository);
+      addTearDown(cubit.close);
+      await cubit.load(WallRequestTab.top);
+
+      final Future<void> hide = cubit.setHidden(_request(), hidden: true);
+      await cubit.toggleVote(_request(), WallRequestTab.top);
+      hidden.complete();
+      await hide;
+
+      final WallRequest row = _row(cubit.state, WallRequestTab.top, 'r1');
+      expect(row.hidden, isTrue);
+      expect(row.voted, isTrue);
+      expect(row.voteCount, 4);
     });
   });
 }

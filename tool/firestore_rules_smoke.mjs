@@ -138,6 +138,10 @@ const seed = () => Promise.all([
   req('PATCH', 'drawTickets/2026-W42_b', { uid: { stringValue: 'b' }, count: { integerValue: '1' } }, 'owner'),
   req('PATCH', 'leaderboards/current', { weekKey: { stringValue: '2026-W42' } }, 'owner'),
   req('PATCH', 'usersv2/b/private/economy', { rev: { integerValue: '1' } }, 'owner'),
+  req('PATCH', 'usersv2/b/private/wallRequestPush', { day: str('2026-10-29'), requestId: str('request-1') }, 'owner'),
+  req('PATCH', 'wallRequestKeyLocks/key', { updatedAt: ts() }, 'owner'),
+  req('PATCH', 'wallRequestRateDaily/c_2026-10-29', { uid: str('c'), day: str('2026-10-29'), count: { integerValue: '1' } }, 'owner'),
+  req('PATCH', 'wallRequestVoteRateDaily/c_2026-10-29', { uid: str('c'), day: str('2026-10-29'), count: { integerValue: '1' } }, 'owner'),
   req('PATCH', 'creatorWallCredits/test-wall', { creatorUid: { stringValue: 'b' } }, 'owner'),
   req('PATCH', 'creatorDeletionState/b', { closed: { booleanValue: false } }, 'owner'),
   req('PATCH', 'creatorMemberRateDaily/b_2026-10-18', { memberUid: { stringValue: 'b' } }, 'owner'),
@@ -188,6 +192,21 @@ const cases = [
   ['stranger cannot list usersv2', () => runCollectionQuery(Bu, 'usersv2'), 403],
   ['stranger cannot add own email to followers', () => req('PATCH', 'usersv2/a', { followers: arr(['c@x.com', 'b@x.com']) }, Bu, ['followers']), 403],
   ['owner cannot write own following array', () => req('PATCH', 'usersv2/a', { following: arr(['b@x.com']) }, A, ['following']), 403],
+  ['owner can create a pending wall linked to a request', () => req('PATCH', 'walls/request-link', {
+    email: str('b@x.com'), review: { booleanValue: false }, requestId: str('request-1'),
+  }, Bu), 200],
+  ['owner cannot create an already approved linked wall', () => req('PATCH', 'walls/request-link-approved', {
+    email: str('b@x.com'), review: { booleanValue: true }, requestId: str('request-1'),
+  }, Bu), 403],
+  ['owner cannot self-approve a wall linked to a request', () => req('PATCH', 'walls/request-link', {
+    review: { booleanValue: true },
+  }, Bu, ['review']), 403],
+  ['admin can approve the linked wall', () => req('PATCH', 'walls/request-link', {
+    review: { booleanValue: true },
+  }, ADM, ['review']), 200],
+  ['owner cannot change requestId after approval', () => req('PATCH', 'walls/request-link', {
+    requestId: str('request-2'),
+  }, Bu, ['requestId']), 403],
   ['owner cannot set creatorUid on wall create', () => req('PATCH', 'walls/forged-creator', { email: str('b@x.com'), review: { booleanValue: false }, creatorUid: str('a') }, Bu), 403],
   ['owner cannot change creatorUid on wall update', () => req('PATCH', 'walls/w8', { creatorUid: str('a') }, Bu, ['creatorUid']), 403],
   ['admin may set creatorUid on a wall', () => req('PATCH', 'walls/admin-creator', { email: str('b@x.com'), review: { booleanValue: false }, creatorUid: str('b') }, ADM), 200],
@@ -602,6 +621,15 @@ const cases = [
   ['voter cannot add a vote under another id', () => req('PATCH', 'wallRequests/open/votes/c2', { uid: str('c'), createdAt: ts() }, C), 403],
   ['voter cannot remove a vote directly', () => req('DELETE', 'wallRequests/open/votes/c', null, C), 403],
   ['user cannot read wall request rate docs', () => req('GET', 'wallRequestRateDaily/c_2026-10-29', null, C), 403],
+  ['user cannot write wall request rate docs', () => req('PATCH', 'wallRequestRateDaily/c_2026-10-29', { count: { integerValue: '2' } }, C, ['count']), 403],
+  ['user cannot read wall request vote rate docs', () => req('GET', 'wallRequestVoteRateDaily/c_2026-10-29', null, C), 403],
+  ['user cannot write wall request vote rate docs', () => req('PATCH', 'wallRequestVoteRateDaily/c_2026-10-29', { count: { integerValue: '2' } }, C, ['count']), 403],
+  ['user cannot read a wall request key lock', () => req('GET', 'wallRequestKeyLocks/key', null, C), 403],
+  ['user cannot write a wall request key lock', () => req('PATCH', 'wallRequestKeyLocks/key', { updatedAt: ts() }, C, ['updatedAt']), 403],
+  ['user cannot delete a wall request key lock', () => req('DELETE', 'wallRequestKeyLocks/key', null, C), 403],
+  ['owner cannot read a wall request push claim', () => req('GET', 'usersv2/b/private/wallRequestPush', null, Bu), 403],
+  ['owner cannot write a wall request push claim', () => req('PATCH', 'usersv2/b/private/wallRequestPush', { requestId: str('request-2') }, Bu, ['requestId']), 403],
+  ['owner cannot delete a wall request push claim', () => req('DELETE', 'usersv2/b/private/wallRequestPush', null, Bu), 403],
 ];
 await seed();
 let bad = 0;

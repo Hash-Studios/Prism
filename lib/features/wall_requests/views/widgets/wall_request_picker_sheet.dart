@@ -56,7 +56,7 @@ class _WallRequestPickerBodyState extends State<WallRequestPickerBody> {
       final Set<String> seen = <String>{};
       final List<WallRequest> merged = <WallRequest>[
         for (final WallRequest request in lists.expand((List<WallRequest> list) => list))
-          if (seen.add(request.id)) request,
+          if (request.status == WallRequestStatus.open && !request.hidden && seen.add(request.id)) request,
       ];
       if (!mounted) return;
       setState(() {

@@ -31,18 +31,24 @@ class _FakeRepository implements WallRequestsRepository {
   Future<void> setHidden(String requestId, {required bool hidden}) => throw UnimplementedError();
 }
 
-WallRequest _request(String id, String text, {int votes = 1}) => WallRequest(
+WallRequest _request(
+  String id,
+  String text, {
+  int votes = 1,
+  WallRequestStatus status = WallRequestStatus.open,
+  bool hidden = false,
+}) => WallRequest(
   id: id,
   text: text,
   tags: const <String>[],
   voteCount: votes,
-  status: WallRequestStatus.open,
+  status: status,
   createdAt: DateTime(2026, 10, 28),
   requesterName: '',
   requesterPhoto: '',
   mine: false,
   voted: false,
-  hidden: false,
+  hidden: hidden,
 );
 
 void main() {
@@ -108,6 +114,24 @@ void main() {
     expect(find.byType(PrismRow), findsOneWidget);
     expect(find.text('quiet forest lake'), findsOneWidget);
     expect(find.text('neon city rain'), findsNothing);
+  });
+
+  testWidgets('does not offer hidden or filled requests to uploaders', (tester) async {
+    repository = _FakeRepository(
+      top: <WallRequest>[
+        mountains,
+        _request('hidden', 'hidden wall', hidden: true),
+        _request('filled', 'filled wall', status: WallRequestStatus.filled),
+      ],
+      newest: const <WallRequest>[],
+    );
+    await getIt.reset();
+    getIt.registerSingleton<WallRequestsRepository>(repository);
+    await openPicker(tester, (_) {});
+
+    expect(find.text('dark minimal mountains'), findsOneWidget);
+    expect(find.text('hidden wall'), findsNothing);
+    expect(find.text('filled wall'), findsNothing);
   });
 
   testWidgets('tapping a row pops with that request', (tester) async {

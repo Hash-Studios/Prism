@@ -49,14 +49,28 @@ class WallRequestsCubit extends Cubit<WallRequestsState> {
 
   final WallRequestsRepository _repository;
   final Map<WallRequestTab, int> _loads = <WallRequestTab, int>{};
+  final Map<String, int> _requestVoteVersions = <String, int>{};
+  final Map<String, int> _requestHiddenVersions = <String, int>{};
+  final Set<String> _pendingVotes = <String>{};
+  int _voteVersion = 0;
+  int _hiddenVersion = 0;
 
   Future<void> load(WallRequestTab tab) async {
     final int version = (_loads[tab] ?? 0) + 1;
+    final int voteVersionAtStart = _voteVersion;
+    final int hiddenVersionAtStart = _hiddenVersion;
     _loads[tab] = version;
     if (state.tab(tab) is! WallRequestsTabLoaded) _setTab(tab, const WallRequestsTabLoading());
     try {
       final List<WallRequest> requests = await _repository.list(tab);
-      if (_loads[tab] == version) _setTab(tab, WallRequestsTabLoaded(requests));
+      if (_loads[tab] == version) {
+        _setTab(
+          tab,
+          WallRequestsTabLoaded(
+            _preserveRecentHidden(_preserveRecentVotes(requests, voteVersionAtStart), hiddenVersionAtStart),
+          ),
+        );
+      }
     } catch (error, stackTrace) {
       logger.w('[WallRequestsCubit] load failed', error: error, stackTrace: stackTrace);
       if (_loads[tab] == version) _setTab(tab, const WallRequestsTabFailed());
@@ -64,27 +78,30 @@ class WallRequestsCubit extends Cubit<WallRequestsState> {
   }
 
   Future<void> toggleVote(WallRequest request, WallRequestTab from) async {
-    if (!request.canVote) return;
-    final bool vote = !request.voted;
-    _replace(request.copyWith(voted: vote, voteCount: request.voteCount + (vote ? 1 : -1)));
+    final WallRequest current = _currentRequest(request.id) ?? request;
+    if (!current.canVote || !_pendingVotes.add(current.id)) return;
+    final bool vote = !current.voted;
+    _replaceVote(current.id, voted: vote, voteCount: current.voteCount + (vote ? 1 : -1));
     try {
-      final int count = await _repository.setVote(request.id, vote: vote);
-      _replace(request.copyWith(voted: vote, voteCount: count));
+      final int count = await _repository.setVote(current.id, vote: vote);
+      _replaceVote(current.id, voted: vote, voteCount: count);
       analytics.track(WallRequestVoteToggledEvent(voted: vote, tab: from.wire));
     } on WallRequestException catch (e) {
-      _replace(request);
+      _replaceVote(current.id, voted: current.voted, voteCount: current.voteCount);
       _emitError(e.error);
     } catch (error, stackTrace) {
       logger.w('[WallRequestsCubit] vote failed', error: error, stackTrace: stackTrace);
-      _replace(request);
+      _replaceVote(current.id, voted: current.voted, voteCount: current.voteCount);
       _emitError(WallRequestError.unknown);
+    } finally {
+      _pendingVotes.remove(current.id);
     }
   }
 
   Future<void> setHidden(WallRequest request, {required bool hidden}) async {
     try {
       await _repository.setHidden(request.id, hidden: hidden);
-      _replace(request.copyWith(hidden: hidden));
+      _replaceHidden(request.id, hidden: hidden);
     } on WallRequestException catch (e) {
       _emitError(e.error);
     } catch (error, stackTrace) {
@@ -104,8 +121,46 @@ class WallRequestsCubit extends Cubit<WallRequestsState> {
     );
   }
 
+  WallRequest? _currentRequest(String id) {
+    for (final WallRequestsTabState tab in state.tabs.values) {
+      if (tab is! WallRequestsTabLoaded) continue;
+      for (final WallRequest request in tab.requests) {
+        if (request.id == id) return request;
+      }
+    }
+    return null;
+  }
+
   /// The same request can show in Top and New, so every tab gets the change.
-  void _replace(WallRequest request) {
+  void _replaceVote(String id, {required bool voted, required int voteCount}) {
+    _requestVoteVersions[id] = ++_voteVersion;
+    _updateRequest(id, (WallRequest request) => request.copyWith(voted: voted, voteCount: voteCount));
+  }
+
+  List<WallRequest> _preserveRecentVotes(List<WallRequest> requests, int versionAtStart) => requests
+      .map((WallRequest request) {
+        if (!_pendingVotes.contains(request.id) && (_requestVoteVersions[request.id] ?? 0) <= versionAtStart) {
+          return request;
+        }
+        final WallRequest? current = _currentRequest(request.id);
+        return current == null ? request : request.copyWith(voted: current.voted, voteCount: current.voteCount);
+      })
+      .toList(growable: false);
+
+  List<WallRequest> _preserveRecentHidden(List<WallRequest> requests, int versionAtStart) => requests
+      .map((WallRequest request) {
+        if ((_requestHiddenVersions[request.id] ?? 0) <= versionAtStart) return request;
+        final WallRequest? current = _currentRequest(request.id);
+        return current == null ? request : request.copyWith(hidden: current.hidden);
+      })
+      .toList(growable: false);
+
+  void _replaceHidden(String id, {required bool hidden}) {
+    _requestHiddenVersions[id] = ++_hiddenVersion;
+    _updateRequest(id, (WallRequest request) => request.copyWith(hidden: hidden));
+  }
+
+  void _updateRequest(String id, WallRequest Function(WallRequest) update) {
     if (isClosed) return;
     emit(
       WallRequestsState(
@@ -113,7 +168,7 @@ class WallRequestsCubit extends Cubit<WallRequestsState> {
           if (value is! WallRequestsTabLoaded) return MapEntry<WallRequestTab, WallRequestsTabState>(tab, value);
           return MapEntry<WallRequestTab, WallRequestsTabState>(
             tab,
-            WallRequestsTabLoaded(value.requests.map((WallRequest r) => r.id == request.id ? request : r).toList()),
+            WallRequestsTabLoaded(value.requests.map((WallRequest r) => r.id == id ? update(r) : r).toList()),
           );
         }),
         error: state.error,

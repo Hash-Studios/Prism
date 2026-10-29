@@ -13,6 +13,7 @@ import {
   requestTokens,
   setWallRequestVote,
   similarity,
+  studioRequestPicks,
 } from "../wallRequests";
 import type {Doc} from "./fakeDb";
 import {installFakeDb} from "./fakeDb";
@@ -62,8 +63,13 @@ test("publicRequestText rejects length, hidden characters, blocked words and fil
   assert.equal(publicRequestText("ab"), null);
   assert.equal(publicRequestText("a".repeat(81)), null);
   assert.equal(publicRequestText("dark‮ minimal"), null);
+  assert.equal(publicRequestText("dark\tminimal"), null);
+  assert.equal(publicRequestText("dark\nminimal"), null);
   assert.equal(publicRequestText("p0rn walls"), null);
   assert.equal(publicRequestText("N1GGA"), null);
+  assert.equal(publicRequestText("boooobs walls"), null);
+  assert.equal(publicRequestText("fagggot walls"), null);
+  assert.equal(publicRequestText("Niger landscape"), "Niger landscape");
   assert.equal(publicRequestText("wallpaper please"), null);
 });
 
@@ -96,6 +102,7 @@ const requester = {
   "usersv2/u1": {name: "U One", email: "u1@x.com"},
   "profiles/u1": {name: "Una", profilePhoto: "p.jpg"},
 };
+const accounts = (...uids: string[]): Record<string, Doc> => Object.fromEntries(uids.map((uid) => [`usersv2/${uid}`, {}]));
 
 test("createWallRequest writes the request with the requester's profile", async (t) => {
   const store = installFakeDb(t, requester);
@@ -143,6 +150,54 @@ test("createWallRequest returns the exact duplicate and writes nothing, even wit
   assert.equal(forced.request.id, "r0");
   assert.equal(forced.status === "duplicate" && forced.exact, true);
   assert.deepEqual([...store.keys()].filter((key) => key.startsWith("wallRequests/")), ["wallRequests/r0"]);
+});
+
+test("concurrent exact creates serialize to one request and one daily charge", async (t) => {
+  const store = installFakeDb(t, {
+    ...accounts("u1", "u2"),
+  });
+  const results = await Promise.all([
+    createWallRequest("u1", {text: "dark minimal mountains"}, NOW),
+    createWallRequest("u2", {text: "Mountains dark minimal"}, NOW),
+  ]);
+  assert.deepEqual(results.map((result) => result.status).sort(), ["created", "duplicate"]);
+  assert.equal([...store.keys()].filter((path) => path.startsWith("wallRequests/") && !path.includes("/votes/")).length, 1);
+  assert.equal([...store.values()].filter((doc) => doc.uid === "u1" || doc.uid === "u2")
+    .reduce((sum, doc) => sum + (typeof doc.count === "number" ? doc.count : 0), 0), 1);
+});
+
+test("an exact match beyond the first 30 close requests still wins", async (t) => {
+  const seed: Record<string, Doc> = {...requester};
+  for (let i = 0; i < 31; i++) {
+    seed[`wallRequests/near${i}`] = request("dark minimal mountains night", `u${i + 2}`, {voteCount: 31 - i});
+  }
+  seed["wallRequests/exact"] = request("dark minimal mountains", "u99");
+  installFakeDb(t, seed);
+  const result = await createWallRequest("u1", {text: "dark minimal mountains"}, NOW);
+  assert.equal(result.status, "duplicate");
+  assert.equal(result.status === "duplicate" && result.exact, true);
+  assert.equal(result.request.id, "exact");
+});
+
+test("a filled exact request does not block a new open request", async (t) => {
+  const store = installFakeDb(t, {
+    ...requester,
+    "wallRequests/filled": request("dark minimal mountains", "u2", {status: "filled"}),
+  });
+  const result = await createWallRequest("u1", {text: "dark minimal mountains"}, NOW);
+  assert.equal(result.status, "created");
+  assert.equal(store.get(`wallRequests/${result.request.id}`)?.status, "open");
+});
+
+test("forced requests distinguish different tokens after the twentieth token", async (t) => {
+  const common = Array.from({length: 20}, (_, i) => `b${String.fromCharCode(97 + i)}`);
+  const store = installFakeDb(t, {
+    ...requester,
+    "wallRequests/r0": request([...common, "bu"].join(" "), "u2"),
+  });
+  const result = await createWallRequest("u1", {text: [...common, "bv"].join(" "), force: true}, NOW);
+  assert.equal(result.status, "created");
+  assert.equal(store.get("wallRequests/r0")?.key, [...common, "bu"].join(" "));
 });
 
 test("createWallRequest returns a similar request as a non-exact duplicate unless forced", async (t) => {
@@ -193,8 +248,20 @@ test("createWallRequest refuses a deleted account and an account in deletion", a
   await assert.rejects(createWallRequest("u1", {text: "dark minimal mountains"}, NOW), {code: "failed-precondition"});
 });
 
+test("createWallRequest rejects deletion started after the preflight reads", async (t) => {
+  const store = installFakeDb(t, requester);
+  const transact = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    store.set("creatorDeletionState/u1", {closed: true});
+    return transact(callback);
+  });
+
+  await assert.rejects(createWallRequest("u1", {text: "dark minimal mountains"}, NOW), {code: "failed-precondition"});
+  assert.equal([...store.keys()].some((path) => path.startsWith("wallRequests/")), false);
+});
+
 test("setWallRequestVote sets, repeats and removes one vote", async (t) => {
-  const store = installFakeDb(t, {"wallRequests/r1": request("dark minimal mountains", "u2")});
+  const store = installFakeDb(t, {...accounts("u1", "u2"), "wallRequests/r1": request("dark minimal mountains", "u2")});
   assert.deepEqual(await setWallRequestVote("u1", "r1", true, NOW), {voted: true, voteCount: 1});
   assert.equal(store.has("wallRequests/r1/votes/u1"), true);
 
@@ -209,31 +276,37 @@ test("setWallRequestVote sets, repeats and removes one vote", async (t) => {
 });
 
 test("setWallRequestVote refuses own, hidden, filled and blocked requests", async (t) => {
-  installFakeDb(t, {"wallRequests/r1": request("dark minimal mountains", "u2")});
+  installFakeDb(t, {...accounts("u1", "u2"), "wallRequests/r1": request("dark minimal mountains", "u2")});
   await assert.rejects(setWallRequestVote("u2", "r1", true, NOW), {code: "failed-precondition"});
 
-  installFakeDb(t, {"wallRequests/r1": request("dark minimal mountains", "u2", {hidden: true})});
+  installFakeDb(t, {...accounts("u1", "u2"), "wallRequests/r1": request("dark minimal mountains", "u2", {hidden: true})});
   await assert.rejects(setWallRequestVote("u1", "r1", true, NOW), {code: "not-found"});
 
-  installFakeDb(t, {"wallRequests/r1": request("dark minimal mountains", "u2", {status: "filled"})});
+  installFakeDb(t, {...accounts("u1", "u2"), "wallRequests/r1": request("dark minimal mountains", "u2", {status: "filled"})});
   await assert.rejects(setWallRequestVote("u1", "r1", true, NOW), {code: "failed-precondition"});
 
   installFakeDb(t, {
     "wallRequests/r1": request("dark minimal mountains", "u2"),
+    ...accounts("u1", "u2"),
     "usersv2/u1/blockedUsers/u2": {},
   });
   await assert.rejects(setWallRequestVote("u1", "r1", true, NOW), {code: "not-found"});
 
   installFakeDb(t, {
     "wallRequests/r1": request("dark minimal mountains", "u2"),
+    ...accounts("u1", "u2"),
     "usersv2/u2/blockedUsers/u1": {},
   });
   await assert.rejects(setWallRequestVote("u1", "r1", true, NOW), {code: "not-found"});
 });
 
 test("setWallRequestVote keeps the count equal to the vote docs under concurrent votes", async (t) => {
-  const store = installFakeDb(t, {"wallRequests/r1": request("dark minimal mountains", "u2")});
   const voters = Array.from({length: 20}, (_, i) => `v${i}`);
+  const newcomers = Array.from({length: 5}, (_, i) => `n${i}`);
+  const store = installFakeDb(t, {
+    ...accounts("u2", ...voters, ...newcomers),
+    "wallRequests/r1": request("dark minimal mountains", "u2"),
+  });
   await Promise.all(voters.map((uid) => setWallRequestVote(uid, "r1", true, NOW)));
   assert.equal(store.get("wallRequests/r1")?.voteCount, 20);
   assert.equal(votesOf(store, "r1").length, 20);
@@ -249,11 +322,43 @@ test("setWallRequestVote keeps the count equal to the vote docs under concurrent
 test("setWallRequestVote allows 200 vote changes a UTC day and refuses the 201st", async (t) => {
   const store = installFakeDb(t, {
     "wallRequests/r1": request("dark minimal mountains", "u2"),
+    ...accounts("u1", "u2"),
     [`wallRequestVoteRateDaily/u1_${TODAY}`]: {day: TODAY, count: 200},
   });
   await assert.rejects(setWallRequestVote("u1", "r1", true, NOW), {code: "resource-exhausted"});
   assert.equal(store.has("wallRequests/r1/votes/u1"), false);
   assert.equal(store.get("wallRequests/r1")?.voteCount, 0);
+});
+
+test("setWallRequestVote refuses a deleted voter and a requester being deleted", async (t) => {
+  installFakeDb(t, {
+    ...accounts("u1", "u2"),
+    "wallRequests/r1": request("dark minimal mountains", "u2"),
+    "usersv2/u1": {deleted: true},
+    "creatorDeletionState/u1": {closed: true},
+  });
+  await assert.rejects(setWallRequestVote("u1", "r1", true, NOW), {code: "failed-precondition"});
+
+  installFakeDb(t, {
+    ...accounts("u1", "u2"),
+    "wallRequests/r1": request("dark minimal mountains", "u2"),
+    "creatorDeletionState/u2": {closed: true},
+  });
+  await assert.rejects(setWallRequestVote("u1", "r1", true, NOW), {code: "not-found"});
+});
+
+test("studioRequestPicks scans past 20 ineligible requests", async (t) => {
+  const seed: Record<string, Doc> = {};
+  for (let i = 0; i < 20; i++) {
+    seed[`wallRequests/stale${i}`] = request("dark minimal mountains", "u1", {
+      voteCount: 40 - i,
+      createdAt: at(NOW - 31 * DAY),
+    });
+  }
+  seed["wallRequests/zzzEligible"] = request("dark minimal mountains", "u1", {voteCount: 3});
+  installFakeDb(t, seed);
+  const picks = await db.runTransaction((tx) => studioRequestPicks(tx, 1, NOW));
+  assert.deepEqual(picks.map((pick) => pick.requestId), ["zzzEligible"]);
 });
 
 const listSeed: Record<string, Doc> = {
@@ -369,6 +474,24 @@ test("fillRequestFromWall does not fill when the requester blocked the creator",
   assert.equal(store.get("wallRequests/r1")?.status, "open");
 });
 
+test("fillRequestFromWall does not fill when the creator blocked the requester", async (t) => {
+  const store = installFakeDb(t, {...fillSeed(), "usersv2/c1/blockedUsers/u2": {}});
+  assert.equal(await fillRequestFromWall("w1", {requestId: "r1", creatorUid: "c1", by: "Cee"}, false), null);
+  assert.equal(store.get("wallRequests/r1")?.status, "open");
+});
+
+test("fillRequestFromWall rejects a block added after the precheck", async (t) => {
+  const store = installFakeDb(t, fillSeed());
+  const transact = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    store.set("usersv2/u2/blockedUsers/c1", {});
+    return transact(callback);
+  });
+
+  assert.equal(await fillRequestFromWall("w1", {requestId: "r1", creatorUid: "c1", by: "Cee"}, false), null);
+  assert.equal(store.get("wallRequests/r1")?.status, "open");
+});
+
 test("fillRequestFromWall for a studio wall names Prism Studio as the filler", async (t) => {
   const store = installFakeDb(t, fillSeed());
   assert.equal(await fillRequestFromWall("w1", {requestId: "r1", by: "Cee"}, true), "r1");
@@ -417,6 +540,19 @@ test("notifyRequestFilled keeps the inbox entry without a push when Posts is off
   assert.equal(store.has("notifications/wall_request_r1_u4"), true);
 });
 
+test("notifyRequestFilled preserves a newer UTC push claim when an older fill resumes late", async (t) => {
+  const store = installFakeDb(t, {
+    ...notifySeed(),
+    "usersv2/u1/private/wallRequestPush": {day: "2026-10-30", requestId: "newer"},
+  });
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {}}));
+  const messages = captureMessages(t);
+  await notifyRequestFilled("r1", NOW);
+  assert.equal(store.get("usersv2/u1/private/wallRequestPush")?.day, "2026-10-30");
+  assert.equal(store.has("notifications/wall_request_r1_u1"), true);
+  assert.equal(messages.some((message) => message.token === "tok-u1"), false);
+});
+
 test("notifyRequestFilled gives nothing to a user who blocks the requester", async (t) => {
   const store = installFakeDb(t, notifySeed());
   t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {}}));
@@ -432,6 +568,62 @@ test("notifyRequestFilled sends nothing for a hidden filled request", async (t) 
   const messages = captureMessages(t);
   assert.deepEqual(await notifyRequestFilled("r1", NOW), {sent: 0, inbox: 0, skipped: 0});
   assert.equal(messages.length, 0);
+});
+
+test("notifyRequestFilled refuses text that no longer passes public checks", async (t) => {
+  const store = installFakeDb(t, notifySeed({text: "dark\tminimal"}));
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {}}));
+  const messages = captureMessages(t);
+  assert.deepEqual(await notifyRequestFilled("r1", NOW), {sent: 0, inbox: 0, skipped: 0});
+  assert.equal(store.get("wallRequests/r1")?.notifiedAt, undefined);
+  assert.equal(messages.length, 0);
+});
+
+test("notifyRequestFilled skips recipients if the request is hidden during gallery lookup", async (t) => {
+  const store = installFakeDb(t, notifySeed());
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => {
+    store.set("wallRequests/r1", {...(store.get("wallRequests/r1") ?? {}), hidden: true});
+    return {parameters: {}};
+  });
+  const messages = captureMessages(t);
+  await notifyRequestFilled("r1", NOW);
+  assert.equal([...store.keys()].some((path) => path.startsWith("notifications/wall_request_r1_")), false);
+  assert.equal(messages.length, 0);
+});
+
+test("notifyRequestFilled rechecks Posts after claiming the daily push slot", async (t) => {
+  const store = installFakeDb(t, notifySeed());
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {}}));
+  const transact = db.runTransaction.bind(db);
+  let calls = 0;
+  t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    const result = await transact(callback);
+    calls++;
+    if (calls === 2) {
+      store.set("usersv2/u1/private/session", {
+        fcmToken: "tok-u1", fcmTokenBindingVersion: 1, fcmTokenBindingToken: "tok-u1", postAlerts: false,
+      });
+    }
+    return result;
+  });
+  const messages = captureMessages(t);
+  await notifyRequestFilled("r1", NOW);
+  assert.equal(store.get("usersv2/u1/private/wallRequestPush")?.day, TODAY);
+  assert.equal(store.has("notifications/wall_request_r1_u1"), true);
+  assert.equal(messages.some((message) => message.token === "tok-u1"), false);
+});
+
+test("notifyRequestFilled does not recreate a private push claim for an account being deleted", async (t) => {
+  const store = installFakeDb(t, {
+    ...notifySeed(),
+    "creatorDeletionState/u2": {closed: true},
+  });
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {}}));
+  const messages = captureMessages(t);
+  await notifyRequestFilled("r1", NOW);
+  assert.equal(store.has("usersv2/u2/private/wallRequestPush"), false);
+  assert.equal(store.has("notifications/wall_request_r1_u2"), false);
+  assert.equal(messages.some((message) => message.token === "tok-u2"), false);
 });
 
 test("removeWallRequestsForAccount deletes own requests and takes own votes off others", async (t) => {

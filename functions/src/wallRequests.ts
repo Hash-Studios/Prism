@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import {createHash} from "node:crypto";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {isAdminCaller} from "./adminConfig";
@@ -68,6 +69,8 @@ const BLOCKED_WORDS = new Set([
   "nigger", "nigga", "faggot", "fag", "retard", "kike", "chink", "spic", "tranny", "porn", "porno", "nude", "nudes",
   "naked", "nsfw", "hentai", "sex", "sexy", "xxx", "boobs", "tits", "dick", "cock", "pussy", "cum", "rape", "milf",
 ]);
+const BLOCKED_WORD_PATTERNS = [...BLOCKED_WORDS].map((word) =>
+  new RegExp(`^${[...word].map((character) => `${character}+`).join("")}$`));
 const LEET: Record<string, string> = {"0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s"};
 
 function words(text: string): string[] {
@@ -77,12 +80,12 @@ function words(text: string): string[] {
 function hasBlockedWord(text: string): boolean {
   const plain = words(text);
   const unleet = words(text.toLowerCase().replace(/[013457@$]/g, (c) => LEET[c]));
-  return [...plain, ...unleet].some((w) => BLOCKED_WORDS.has(w) || BLOCKED_WORDS.has(w.replace(/(.)\1+/g, "$1")));
+  return [...plain, ...unleet].some((w) => BLOCKED_WORDS.has(w) || BLOCKED_WORD_PATTERNS.some((pattern) => pattern.test(w)));
 }
 
 /** Sorted unique words that carry meaning. Two requests with the same tokens ask for the same wall. */
 export function requestTokens(text: string): string[] {
-  return [...new Set(words(text).filter((w) => !STOP_WORDS.has(w)))].sort().slice(0, 20);
+  return [...new Set(words(text).filter((w) => !STOP_WORDS.has(w)))].sort();
 }
 
 /**
@@ -91,8 +94,9 @@ export function requestTokens(text: string): string[] {
  */
 export function publicRequestText(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
+  if (HIDDEN_CHARACTERS.test(raw)) return null;
   const text = raw.replace(/\s+/g, " ").trim();
-  if (text.length < MIN_TEXT_LENGTH || text.length > MAX_TEXT_LENGTH || HIDDEN_CHARACTERS.test(text)) return null;
+  if (text.length < MIN_TEXT_LENGTH || text.length > MAX_TEXT_LENGTH) return null;
   if (hasBlockedWord(text) || requestTokens(text).length === 0) return null;
   return text;
 }
@@ -154,10 +158,10 @@ function toView(doc: admin.firestore.DocumentSnapshot, viewer: string, voted: bo
 }
 
 /** The caller may write: signed in, account not deleted and not in account deletion. */
-async function openAccount(uid: string): Promise<admin.firestore.DocumentData> {
+async function openAccount(tx: admin.firestore.Transaction, uid: string): Promise<admin.firestore.DocumentData> {
   const [user, barrier] = await Promise.all([
-    db.collection("usersv2").doc(uid).get(),
-    db.collection("creatorDeletionState").doc(uid).get(),
+    tx.get(db.collection("usersv2").doc(uid)),
+    tx.get(db.collection("creatorDeletionState").doc(uid)),
   ]);
   const data = user.data();
   if (!data || data.deleted === true || barrier.data()?.closed === true) {
@@ -166,22 +170,45 @@ async function openAccount(uid: string): Promise<admin.firestore.DocumentData> {
   return data;
 }
 
+async function accountIsOpen(tx: admin.firestore.Transaction, uid: string): Promise<boolean> {
+  const [user, barrier] = await Promise.all([
+    tx.get(db.collection("usersv2").doc(uid)),
+    tx.get(db.collection("creatorDeletionState").doc(uid)),
+  ]);
+  return user.exists && user.data()?.deleted !== true && barrier.data()?.closed !== true;
+}
+
 /** Open, visible requests whose words overlap `tokens`, best match first. Requests of blocked users are left out. */
-async function closestOpenRequest(uid: string, tokens: string[]):
+async function closestOpenRequest(tx: admin.firestore.Transaction, uid: string, tokens: string[]):
   Promise<{doc: admin.firestore.QueryDocumentSnapshot; exact: boolean} | null> {
-  const snap = await db.collection(WALL_REQUESTS)
-    .where("status", "==", "open")
-    .where("hidden", "==", false)
-    .where("tokens", "array-contains-any", tokens.slice(0, 10))
-    .limit(30)
-    .get();
+  const queries = [db.collection(WALL_REQUESTS).where("key", "==", tokens.join(" "))];
+  for (let i = 0; i < tokens.length; i += 10) {
+    queries.push(db.collection(WALL_REQUESTS)
+      .where("status", "==", "open")
+      .where("hidden", "==", false)
+      .where("tokens", "array-contains-any", tokens.slice(i, i + 10))
+      .limit(30));
+  }
+  const snapshots = await Promise.all(queries.map((query) => tx.get(query)));
+  const docs = new Map<string, admin.firestore.QueryDocumentSnapshot>();
+  for (const snapshot of snapshots) {
+    for (const doc of snapshot.docs) docs.set(doc.id, doc);
+  }
   const key = tokens.join(" ");
-  const scored = snap.docs
+  const scored = [...docs.values()]
+    .filter((doc) => doc.data()?.status === "open" && doc.data()?.hidden !== true)
     .map((doc) => ({doc, score: similarity(tokens, Array.isArray(doc.data().tokens) ? doc.data().tokens : [])}))
     .filter(({score}) => score >= SIMILAR_SCORE)
     .sort((a, b) => b.score - a.score || (b.doc.data().voteCount ?? 0) - (a.doc.data().voteCount ?? 0));
   for (const {doc} of scored) {
-    if (await blockedEitherWay(uid, str(doc.data().requesterUid))) continue;
+    const requesterUid = str(doc.data().requesterUid);
+    if (requesterUid && requesterUid !== uid) {
+      const [mine, theirs] = await Promise.all([
+        tx.get(blockRef(uid, requesterUid)),
+        tx.get(blockRef(requesterUid, uid)),
+      ]);
+      if (mine.exists || theirs.exists) continue;
+    }
     return {doc, exact: str(doc.data().key) === key};
   }
   return null;
@@ -197,27 +224,27 @@ export type CreateResult =
  */
 export async function createWallRequest(uid: string, data: unknown, nowMs = Date.now()): Promise<CreateResult> {
   const {text, tags, force} = parseCreateInput(data);
-  const user = await openAccount(uid);
   const tokens = requestTokens(text);
-  const match = await closestOpenRequest(uid, tokens);
-  if (match) {
-    const mine = match.doc.data().requesterUid === uid;
-    if (!force || match.exact || mine) {
-      const voted = (await match.doc.ref.collection(VOTES).doc(uid).get()).exists;
-      return {status: "duplicate", exact: match.exact, request: toView(match.doc, uid, voted)};
-    }
-  }
   const profile = (await db.collection("profiles").doc(uid).get()).data();
   const day = utcDateString(new Date(nowMs));
   const rateRef = db.collection(REQUEST_RATE_DAILY).doc(`${uid}_${day}`);
+  const key = tokens.join(" ");
+  const lockRef = db.collection("wallRequestKeyLocks").doc(createHash("sha256").update(key).digest("hex"));
   const ref = db.collection(WALL_REQUESTS).doc();
   const now = admin.firestore.Timestamp.fromMillis(nowMs);
-  await db.runTransaction(async (tx) => {
-    const used = readDailyCount(await tx.get(rateRef), day);
+  const result = await db.runTransaction(async (tx) => {
+    const [user, rate] = await Promise.all([openAccount(tx, uid), tx.get(rateRef)]);
+    await tx.get(lockRef);
+    const match = await closestOpenRequest(tx, uid, tokens);
+    if (match && (!force || match.exact || match.doc.data()?.requesterUid === uid)) {
+      const voted = (await tx.get(match.doc.ref.collection(VOTES).doc(uid))).exists;
+      return {status: "duplicate" as const, exact: match.exact, request: toView(match.doc, uid, voted)};
+    }
+    const used = readDailyCount(rate, day);
     if (used >= MAX_REQUESTS_PER_DAY) throw new HttpsError("resource-exhausted", "daily-limit");
     tx.create(ref, {
       text,
-      key: tokens.join(" "),
+      key,
       tokens,
       tags,
       requesterUid: uid,
@@ -229,8 +256,11 @@ export async function createWallRequest(uid: string, data: unknown, nowMs = Date
       createdAt: now,
     });
     tx.set(rateRef, {day, count: used + 1, uid, updatedAt: now});
+    tx.set(lockRef, {updatedAt: now});
+    return {status: "created" as const, ref};
   });
-  return {status: "created", request: toView(await ref.get(), uid, false)};
+  if (result.status === "duplicate") return result;
+  return {status: "created", request: toView(await result.ref.get(), uid, false)};
 }
 
 /** Sets the caller's vote to `vote`. A repeat is a no-op, so a retried call never counts twice. */
@@ -241,10 +271,19 @@ export async function setWallRequestVote(uid: string, requestId: string, vote: b
   const day = utcDateString(new Date(nowMs));
   const rateRef = db.collection(VOTE_RATE_DAILY).doc(`${uid}_${day}`);
   return db.runTransaction(async (tx) => {
-    const [request, existing, rate] = await Promise.all([tx.get(ref), tx.get(voteRef), tx.get(rateRef)]);
+    const [request, existing, rate, user, barrier] = await Promise.all([
+      tx.get(ref), tx.get(voteRef), tx.get(rateRef), tx.get(db.collection("usersv2").doc(uid)),
+      tx.get(db.collection("creatorDeletionState").doc(uid)),
+    ]);
+    if (!user.exists || user.data()?.deleted === true || barrier.data()?.closed === true) {
+      throw new HttpsError("failed-precondition", "account-closed");
+    }
     const data = request.data();
     if (!data || data.hidden === true) throw new HttpsError("not-found", "request-missing");
     const requester = str(data.requesterUid);
+    if (requester && !(await accountIsOpen(tx, requester))) {
+      throw new HttpsError("not-found", "request-missing");
+    }
     if (requester === uid) throw new HttpsError("failed-precondition", "own-request");
     const [mine, theirs] = await Promise.all([tx.get(blockRef(uid, requester)), tx.get(blockRef(requester, uid))]);
     if (mine.exists || theirs.exists) throw new HttpsError("not-found", "request-missing");
@@ -314,20 +353,24 @@ export async function fillRequestFromWall(wallId: string, wall: admin.firestore.
   const requestId = str(wall.requestId);
   if (!DOC_ID.test(requestId)) return null;
   const ref = requestRef(requestId);
-  const before = (await ref.get()).data();
-  if (!before || before.hidden === true) return null;
   let fillerUid = "";
   if (!studio) {
     fillerUid = str(wall.creatorUid) || (str(wall.email) ? (await findUserByEmail(str(wall.email)))?.id ?? "" : "");
-    if (await blockedEitherWay(fillerUid, str(before.requesterUid))) {
-      logger.info("wallRequests: filler and requester block each other, not filled.", {requestId, wallId});
-      return null;
-    }
   }
   const thumb = str(wall.wallpaper_thumb);
   return db.runTransaction(async (tx) => {
     const data = (await tx.get(ref)).data();
     if (!data || data.hidden === true) return null;
+    const requesterUid = str(data.requesterUid);
+    const [barrier, user, mine, theirs] = await Promise.all([
+      requesterUid ? tx.get(db.collection("creatorDeletionState").doc(requesterUid)) : Promise.resolve({data: () => undefined}),
+      requesterUid ? tx.get(db.collection("usersv2").doc(requesterUid)) : Promise.resolve({data: () => undefined}),
+      !studio && fillerUid && requesterUid ? tx.get(blockRef(fillerUid, requesterUid)) : Promise.resolve({exists: false}),
+      !studio && fillerUid && requesterUid ? tx.get(blockRef(requesterUid, fillerUid)) : Promise.resolve({exists: false}),
+    ]);
+    if (barrier.data()?.closed === true || user.data()?.deleted === true || mine.exists || theirs.exists) {
+      return null;
+    }
     if (data.status === "filled") {
       if (data.filledWallId !== wallId) return null;
       if (data.filledWallThumb !== thumb) tx.update(ref, {filledWallThumb: thumb});
@@ -362,13 +405,35 @@ async function galleryIds(wallId: string): Promise<string[]> {
   }
 }
 
-/** Claims the user's request push for the UTC day. False when a request push already went out that day. */
-async function claimPushDay(uid: string, day: string, requestId: string): Promise<boolean> {
+/** Claims the user's request push for the UTC day when the account and delivery conditions still allow it. */
+async function claimPushDay(uid: string, day: string, requestId: string, requesterUid: string, fillerUid: string):
+  Promise<"claimed" | "unavailable" | "closed" | "blocked"> {
   const ref = db.doc(`usersv2/${uid}/private/wallRequestPush`);
+  const request = requestRef(requestId);
   return db.runTransaction(async (tx) => {
-    if ((await tx.get(ref)).data()?.day === day) return false;
+    const [claim, user, barrier, session, current, requesterBlocksUser, userBlocksRequester,
+      fillerBlocksUser, userBlocksFiller] = await Promise.all([
+      tx.get(ref), tx.get(db.collection("usersv2").doc(uid)),
+      tx.get(db.collection("creatorDeletionState").doc(uid)),
+      tx.get(db.doc(`usersv2/${uid}/private/session`)),
+      tx.get(request),
+      requesterUid ? tx.get(blockRef(requesterUid, uid)) : Promise.resolve({exists: false}),
+      requesterUid ? tx.get(blockRef(uid, requesterUid)) : Promise.resolve({exists: false}),
+      fillerUid ? tx.get(blockRef(fillerUid, uid)) : Promise.resolve({exists: false}),
+      fillerUid ? tx.get(blockRef(uid, fillerUid)) : Promise.resolve({exists: false}),
+    ]);
+    if (!user.exists || user.data()?.deleted === true || barrier.data()?.closed === true) return "closed";
+    if (!current.exists || current.data()?.status !== "filled" || current.data()?.hidden === true ||
+      publicRequestText(current.data()?.text) === null || requesterBlocksUser.exists || userBlocksRequester.exists ||
+      fillerBlocksUser.exists || userBlocksFiller.exists) return "blocked";
+    const claimedDay = claim.data()?.day;
+    const alreadyClaimedToday = typeof claimedDay === "string" && /^\d{4}-\d{2}-\d{2}$/.test(claimedDay) &&
+      claimedDay >= day;
+    if (session.data()?.postAlerts === false || user.data()?.loggedIn === false || alreadyClaimedToday) {
+      return "unavailable";
+    }
     tx.set(ref, {day, requestId, at: admin.firestore.FieldValue.serverTimestamp()});
-    return true;
+    return "claimed";
   });
 }
 
@@ -379,13 +444,19 @@ async function notifyOne(uid: string, request: admin.firestore.DocumentData, pay
   const user = (await db.doc(`usersv2/${uid}`).get()).data();
   const email = str(user?.email);
   if (!user || !email || user.deleted === true) return "skipped";
-  const requester = str(request.requesterUid);
-  if (await blockedEitherWay(uid, requester) || await blockedEitherWay(uid, str(request.fillerUid))) return "skipped";
+  const claim = await claimPushDay(uid, day, requestId, str(request.requesterUid), str(request.fillerUid));
+  if (claim === "closed") return "skipped";
+  if (claim === "blocked") return "skipped";
   const session = (await db.doc(`usersv2/${uid}/private/session`).get()).data();
-  // The Posts switch is the opt-out: a request push is a new wall the user asked to see.
-  const push = session?.postAlerts !== false && user.loggedIn !== false && await claimPushDay(uid, day, requestId);
+  const push = claim === "claimed" && session?.postAlerts !== false;
   await sendToUser({...payload, modifier: email, docId: `wall_request_${requestId}_${uid}`},
-    {uid, email, loggedOut: user.loggedIn === false, legacyToken: user.fcmToken}, push);
+    {
+      uid,
+      email,
+      loggedOut: user.loggedIn === false,
+      legacyToken: user.fcmToken,
+      ...(typeof session?.postAlertsToken === "string" ? {postAlertsToken: session.postAlertsToken} : {}),
+    }, push);
   return push ? "sent" : "inbox";
 }
 
@@ -416,11 +487,21 @@ function filledPayload(requestId: string, text: string, ids: string[], thumb: st
 export async function notifyRequestFilled(requestId: string, nowMs = Date.now()):
   Promise<Record<Recipient, number>> {
   const ref = requestRef(requestId);
-  const request = await db.runTransaction(async (tx) => {
+  const request: admin.firestore.DocumentData | null = await db.runTransaction(async (tx):
+    Promise<admin.firestore.DocumentData | null> => {
     const data = (await tx.get(ref)).data();
-    if (!data || data.status !== "filled" || data.hidden === true || data.notifiedAt != null) return null;
+    const text = publicRequestText(data?.text);
+    if (!data || data.status !== "filled" || data.hidden === true || data.notifiedAt != null || text === null) return null;
+    const requesterUid = str(data.requesterUid);
+    if (requesterUid) {
+      const [user, barrier] = await Promise.all([
+        tx.get(db.collection("usersv2").doc(requesterUid)),
+        tx.get(db.collection("creatorDeletionState").doc(requesterUid)),
+      ]);
+      if (!user.exists || user.data()?.deleted === true || barrier.data()?.closed === true) return null;
+    }
     tx.update(ref, {notifiedAt: admin.firestore.FieldValue.serverTimestamp()});
-    return data;
+    return {...data, text};
   });
   const counts: Record<Recipient, number> = {sent: 0, inbox: 0, skipped: 0};
   if (!request) return counts;
@@ -456,20 +537,29 @@ export interface StudioRequestPick {
 export async function studioRequestPicks(tx: admin.firestore.Transaction, max: number, nowMs: number):
   Promise<StudioRequestPick[]> {
   if (max <= 0) return [];
-  const snap = await tx.get(db.collection(WALL_REQUESTS)
+  const base = db.collection(WALL_REQUESTS)
     .where("status", "==", "open")
     .where("hidden", "==", false)
-    .orderBy("voteCount", "desc")
-    .limit(20));
-  return snap.docs.flatMap((doc) => {
-    const d = doc.data();
-    const text = publicRequestText(d.text);
-    const fresh = millis(d.createdAt) >= nowMs - TOP_WINDOW_MS;
-    const queuedRecently = millis(d.studioQueuedAt) > nowMs - STUDIO_RETRY_MS;
-    if (text === null || !fresh || queuedRecently || (d.voteCount ?? 0) < MIN_STUDIO_VOTES) return [];
-    const tags = Array.isArray(d.tags) ? d.tags.filter((t): t is string => REQUEST_TAGS.has(t)) : [];
-    return [{requestId: doc.id, text, tags}];
-  }).slice(0, max);
+    .orderBy("voteCount", "desc");
+  const pageSize = 20;
+  let query = base.limit(pageSize);
+  const picks: StudioRequestPick[] = [];
+  while (picks.length < max) {
+    const snap = await tx.get(query);
+    for (const doc of snap.docs) {
+      const d = doc.data();
+      const text = publicRequestText(d.text);
+      const fresh = millis(d.createdAt) >= nowMs - TOP_WINDOW_MS;
+      const queuedRecently = millis(d.studioQueuedAt) > nowMs - STUDIO_RETRY_MS;
+      if (text === null || !fresh || queuedRecently || (d.voteCount ?? 0) < MIN_STUDIO_VOTES) continue;
+      const tags = Array.isArray(d.tags) ? d.tags.filter((t): t is string => REQUEST_TAGS.has(t)) : [];
+      picks.push({requestId: doc.id, text, tags});
+      if (picks.length >= max) break;
+    }
+    if (picks.length >= max || snap.docs.length < pageSize) break;
+    query = base.startAfter(snap.docs[snap.docs.length - 1]).limit(pageSize);
+  }
+  return picks;
 }
 
 /** Deletes the user's requests with their votes, and takes the user's votes off other requests. */
