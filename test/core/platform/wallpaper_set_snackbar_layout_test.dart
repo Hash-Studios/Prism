@@ -82,6 +82,7 @@ void main() {
     AppLocalizations l10n, {
     required double textScale,
     required bool matchAccent,
+    required VoidCallback onMatchAccent,
   }) async {
     tester.view
       ..devicePixelRatio = 2.625
@@ -123,7 +124,7 @@ void main() {
                       _successWithUndo(),
                       l10n: l10n,
                       target: WallpaperTarget.home,
-                      onMatchAccent: matchAccent ? () {} : null,
+                      onMatchAccent: matchAccent ? onMatchAccent : null,
                       track: false,
                     ),
                     child: const Text('go'),
@@ -145,7 +146,14 @@ void main() {
       for (final bool matchAccent in <bool>[true, false]) {
         testWidgets('$locale at text scale $textScale${matchAccent ? ' with Match accent' : ''}: '
             'the message gets room, stays within 2 lines, and the snackbar clears the nav', (tester) async {
-          await showOnFeed(tester, l10n, textScale: textScale, matchAccent: matchAccent);
+          var matchCalls = 0;
+          await showOnFeed(
+            tester,
+            l10n,
+            textScale: textScale,
+            matchAccent: matchAccent,
+            onMatchAccent: () => matchCalls++,
+          );
 
           expect(tester.takeException(), isNull);
           final Rect card = tester.getRect(
@@ -164,8 +172,23 @@ void main() {
 
           final Rect undo = tester.getRect(find.widgetWithText(TextButton, l10n.coreUndo));
           expect(undo.right, greaterThan(card.center.dx), reason: 'Undo is not on the right');
+          expect(card.inflate(0.5).contains(undo.topLeft) && card.inflate(0.5).contains(undo.bottomRight), isTrue);
+          expect(undo.size.shortestSide, greaterThanOrEqualTo(kMinInteractiveDimension));
           final Rect nav = tester.getRect(find.byType(PrismBottomNav));
           expect(card.bottom, lessThanOrEqualTo(nav.top - 8), reason: 'snackbar overlaps the bottom nav');
+          final Finder matchButton = find.widgetWithText(TextButton, l10n.coreMatchAccent);
+          if (matchAccent) {
+            final Rect match = tester.getRect(matchButton);
+            expect(card.inflate(0.5).contains(match.topLeft) && card.inflate(0.5).contains(match.bottomRight), isTrue);
+            expect(match.size.shortestSide, greaterThanOrEqualTo(kMinInteractiveDimension));
+            await tester.tap(matchButton);
+            await tester.pumpAndSettle();
+            expect(matchCalls, 1);
+            expect(find.byType(SnackBar), findsNothing);
+          } else {
+            expect(matchButton, findsNothing);
+            expect(matchCalls, 0);
+          }
         });
       }
     }
