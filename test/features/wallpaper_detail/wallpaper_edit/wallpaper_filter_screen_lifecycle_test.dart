@@ -7,6 +7,7 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
+import 'package:Prism/core/widgets/prism/prism_slider.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
@@ -157,7 +158,10 @@ void main() {
     final slider = tester.widget<Slider>(sliderFinder);
     expect(slider.onChanged, isNull);
     expect(find.text('Lightness is unavailable on this device.'), findsOneWidget);
-    expect(tester.getSemantics(sliderFinder).label, contains('Lightness'));
+    expect(
+      tester.getSemantics(find.descendant(of: row, matching: find.byType(PrismSlider))).label,
+      contains('Lightness'),
+    );
   }, skip: ui.ImageFilter.isShaderFilterSupported);
 
   testWidgets('adjustment callbacks keep edits from the same build', (tester) async {
