@@ -83,8 +83,8 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/local_notification.dart';
 import 'package:Prism/notifications/notification_signals.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -909,11 +909,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
                 builder: (context, child) {
                   app_state.notchSize = MediaQuery.paddingOf(context).top;
                   final ThemeData theme = Theme.of(context);
-                  final bool wide = MediaQuery.sizeOf(context).width > PrismLayout.panelWidth;
                   return Theme(
-                    data: theme.copyWith(
-                      snackBarTheme: theme.snackBarTheme.copyWith(width: wide ? PrismLayout.panelWidth : null),
-                    ),
+                    data: theme.copyWith(snackBarTheme: prismSnackBarThemeFor(context, theme.snackBarTheme)),
                     child: FolderWriteFailureListener(
                       child: ShakeToReportListener(
                         navigatorKey: _appRouter.navigatorKey,
