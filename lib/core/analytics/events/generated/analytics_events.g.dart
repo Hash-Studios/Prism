@@ -2703,6 +2703,77 @@ class LibraryHistoryClearedEvent extends AnalyticsEvent {
   }
 }
 
+class RecentlyViewedClearedEvent extends AnalyticsEvent {
+  const RecentlyViewedClearedEvent({required this.count});
+
+  final int count;
+
+  @override
+  String get eventName => 'recently_viewed_cleared';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count': count};
+  }
+}
+
+class ViewingHistoryToggledEvent extends AnalyticsEvent {
+  const ViewingHistoryToggledEvent({required this.value});
+
+  final bool value;
+
+  @override
+  String get eventName => 'viewing_history_toggled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'value': value ? 1 : 0};
+  }
+}
+
+class HistoryRestoredEvent extends AnalyticsEvent {
+  const HistoryRestoredEvent({required this.countBucket});
+
+  final String countBucket;
+
+  @override
+  String get eventName => 'history_restored';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count_bucket': countBucket};
+  }
+}
+
+class PickUpRowSeenEvent extends AnalyticsEvent {
+  const PickUpRowSeenEvent({required this.count});
+
+  final int count;
+
+  @override
+  String get eventName => 'pick_up_row_seen';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count': count};
+  }
+}
+
+class PickUpTileOpenedEvent extends AnalyticsEvent {
+  const PickUpTileOpenedEvent({required this.provider, required this.position});
+
+  final String provider;
+  final int position;
+
+  @override
+  String get eventName => 'pick_up_tile_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'provider': provider, 'position': position};
+  }
+}
+
 class FavouritesExportedEvent extends AnalyticsEvent {
   const FavouritesExportedEvent({required this.count});
 

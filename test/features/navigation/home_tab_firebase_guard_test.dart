@@ -15,6 +15,7 @@ import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notification
 import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
+import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -113,27 +114,35 @@ void main() {
     final favourites = _FavouritesBloc();
     when(() => favourites.state).thenReturn(FavouriteWallsState.initial());
 
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+    final Widget home = MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
 
-        home: MultiBlocProvider(
-          providers: [
-            BlocProvider<AdsBloc>.value(value: ads),
-            BlocProvider<InAppNotificationsBloc>.value(value: notifications),
-            BlocProvider<FavouriteWallsBloc>.value(value: favourites),
-            BlocProvider<WotdBloc>.value(value: wotd),
-          ],
-          child: const HomeTabPage(),
-        ),
+      home: MultiBlocProvider(
+        providers: [
+          BlocProvider<AdsBloc>.value(value: ads),
+          BlocProvider<InAppNotificationsBloc>.value(value: notifications),
+          BlocProvider<FavouriteWallsBloc>.value(value: favourites),
+          BlocProvider<WotdBloc>.value(value: wotd),
+        ],
+        child: const HomeTabPage(),
       ),
     );
+    await tester.pumpWidget(home);
     await tester.pump();
     await tester.pump();
 
     expect(messagingCalls, isEmpty);
     expect(tester.takeException(), isNull);
+    final DateTime? sessionStart = tester
+        .widget<PersonalizedFeedScreen>(find.byType(PersonalizedFeedScreen))
+        .sessionStartedAt;
+    expect(sessionStart, isNotNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpWidget(home);
+    await tester.pump();
+    expect(tester.widget<PersonalizedFeedScreen>(find.byType(PersonalizedFeedScreen)).sessionStartedAt, sessionStart);
     await tester.pumpWidget(const SizedBox());
   }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS}));
 }

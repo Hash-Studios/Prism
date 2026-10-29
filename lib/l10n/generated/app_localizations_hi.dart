@@ -10836,4 +10836,90 @@ class AppLocalizationsHi extends AppLocalizations {
   String notifPushFolderDigestTitleMore(String folderName, int count) {
     return '$folderName में नया और $count और';
   }
+
+  @override
+  String get historySetAndDownloaded => 'सेट और डाउनलोड किए गए';
+
+  @override
+  String get historyDownloaded => 'डाउनलोड किया गया';
+
+  @override
+  String get historyRecentlyViewed => 'हाल में देखे गए';
+
+  @override
+  String get historySyncedNote => 'आपके खाते में सेव है, ताकि नए फ़ोन पर भी ये वापस दिखें।';
+
+  @override
+  String get historySyncedNoteGuest => 'इन्हें नए फ़ोन पर रखने के लिए साइन इन करें।';
+
+  @override
+  String get historyActionSet => 'सेट किया गया';
+
+  @override
+  String get historyActionDownloaded => 'डाउनलोड किया गया';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action, $time पर';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'यह यहाँ और आपके खाते से सूची हटा देता है। आपके वॉलपेपर और डाउनलोड जैसे हैं वैसे ही रहेंगे।';
+
+  @override
+  String get historyClearViewedTitle => 'हाल में देखे गए हटाएँ?';
+
+  @override
+  String get historyClearViewedBody => 'यह आपके खोले गए वॉलपेपर इस सूची और होम से हटा देता है।';
+
+  @override
+  String get historyClearViewedAction => 'हाल में देखे गए हटाएँ';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'जो वॉलपेपर आप सेट या डाउनलोड करते हैं, वे यहाँ दिखते हैं, ताकि आप उन्हें दोबारा ढूँढ सकें।';
+
+  @override
+  String get historyEmptyBodyIos =>
+      'जो वॉलपेपर आप डाउनलोड करते हैं, वे यहाँ दिखते हैं, ताकि आप उन्हें दोबारा ढूँढ सकें।';
+
+  @override
+  String get historyViewedEmptyTitle => 'अभी तक कुछ नहीं देखा गया';
+
+  @override
+  String get historyViewedEmptyBody => 'जो वॉलपेपर आप खोलते हैं, वे यहाँ दिखते हैं, ताकि आप उन्हें दोबारा ढूँढ सकें।';
+
+  @override
+  String get historyViewedOffTitle => 'देखने का इतिहास बंद है';
+
+  @override
+  String get historyViewedOffBody =>
+      'जो वॉलपेपर आप यहाँ खोलते हैं, उन्हें देखने के लिए देखने का इतिहास सहेजें चालू करें।';
+
+  @override
+  String get historyViewedOffAction => 'चालू करें';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'वॉलपेपर खोलें, $time पर देखा गया';
+  }
+
+  @override
+  String get pickUpTitle => 'जहाँ छोड़ा था, वहीं से जारी रखें';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return '$count में से $index वॉलपेपर खोलें';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'देखने का इतिहास सहेजें';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'आपके खोले गए वॉलपेपर इतिहास और होम पर दिखते हैं। इसे बंद करने पर सूची हट जाती है।';
+
+  @override
+  String get historyClearFailed => 'इतिहास साफ़ नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
 }
