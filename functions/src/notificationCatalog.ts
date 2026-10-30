@@ -1,5 +1,6 @@
 /** English notification copy is the compatibility fallback for old clients and unsupported locales. */
 export type NotificationCopy =
+  | { kind: "challengeWinner"; theme: string }
   | { kind: "wallApprovedForArtist"; wallTitle: string }
   | { kind: "wallLiveForFollowers"; artistName: string; wallTitle: string }
   | { kind: "wallApprovedForAdmin"; wallTitle: string; artistName: string }
@@ -68,6 +69,9 @@ export function renderNotificationCopy(
   copy: NotificationCopy,
 ): RenderedNotificationCopy {
   switch (copy.kind) {
+  case "challengeWinner":
+    return {kind: copy.kind, args: {theme: copy.theme}, title: "You won the weekly challenge",
+      body: `Your wallpaper won “${copy.theme}”. See the results.`};
   case "wallApprovedForArtist":
     return {
       kind: copy.kind,
@@ -293,7 +297,7 @@ export function nativeNotificationLocalization(
   message: Pick<RenderedNotificationCopy, "kind" | "args">,
 ): NativeNotificationLocalization | null {
   const kind = message.kind;
-  if (kind === "custom" || kind === "wallRemixed") return null;
+  if (kind === "custom" || kind === "wallRemixed" || kind === "challengeWinner") return null;
 
   const prefix = `notif_push_${kind.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)}`;
   const stringArg = (key: string): string => String(message.args[key] ?? "");

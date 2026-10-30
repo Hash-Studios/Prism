@@ -78,6 +78,7 @@ import 'package:Prism/features/wallpaper_upload/views/pages/edit_wall_screen.dar
 import 'package:Prism/features/wallpaper_upload/views/pages/review_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/review_photo_preview.dart';
+import 'package:Prism/features/weekly_challenges/views/pages/weekly_challenge_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -195,6 +196,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/mood/:moodId', page: MoodRoute.page),
     AutoRoute(path: '/gallery', page: GalleryRoute.page),
     AutoRoute(path: '/requests', page: WallRequestsRoute.page),
+    AutoRoute(path: '/challenges/:challengeId', page: WeeklyChallengeRoute.page),
     AutoRoute(path: '/user/:identifier', page: ProfileRoute.page),
     AutoRoute(path: '/followers', page: FollowersRoute.page),
     AutoRoute(path: '/following', page: FollowingListRoute.page),

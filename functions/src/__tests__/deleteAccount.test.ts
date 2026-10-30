@@ -38,7 +38,9 @@ function fake(t: TestContext, options: Options = {}) {
       ["u1_2026-10-29", "u1_2026-10-28"] : ["d1"];
     return ids.map((id) => ({
       id, data: () => collection === "boosts" ? {wallId: "w9"} : {},
-      ref: {path: `${collection}/${id}`, collection: (name: string) => query(`${collection}/${id}/${name}`)},
+      ref: {path: `${collection}/${id}`, delete: async () => {
+        log.push(`delete:${collection}/${id}`);
+      }, collection: (name: string) => query(`${collection}/${id}/${name}`)},
     }));
   };
   const query = (collection: string, filters: Array<[string, string, unknown]> = []) => {
@@ -144,6 +146,7 @@ test("deleting an account removes every per-user doc, anonymizes, then deletes t
     assert.ok(log.includes(path), path);
   }
   for (const path of [
+    "query:challengeVotes.uid==u1", "query:challengeVoteRateDaily.uid==u1", "delete:challengeVoteRateDaily/d1",
     "query:wallRequests.requesterUid==u1", "recursive:wallRequests/d1", "query:votes.uid==u1",
     "query:wallRequestRateDaily.__name__>=u1_", "query:wallRequestVoteRateDaily.__name__>=u1_",
     "query:wallRequestRateDaily.__name__<u1_\uf8ff", "query:wallRequestVoteRateDaily.__name__<u1_\uf8ff",

@@ -13,6 +13,8 @@ import 'package:Prism/core/analytics/providers/noop_analytics_provider.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/bloc_debug_observer.dart';
 import 'package:Prism/core/debug/debug_flags.dart';
+import 'package:Prism/core/debug/local_qa_adapters.dart';
+import 'package:Prism/core/debug/local_qa_runtime.dart';
 import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/core/debug/perf_autodrive.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
@@ -161,7 +163,12 @@ int _colorValueFromPrefs(dynamic rawValue, {required int fallback}) {
 Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
-      WidgetsFlutterBinding.ensureInitialized();
+      if (Env.localQa) {
+        LocalQaRuntime.installNetworkPolicy();
+        LocalQaWidgetsBinding();
+      } else {
+        WidgetsFlutterBinding.ensureInitialized();
+      }
       PerformanceProbe.mark('startup.binding_ready');
       if (!kReleaseMode) {
         HttpsCallable.perfSink = (String name, int ms, bool ok) =>
@@ -188,13 +195,17 @@ Future<void> main() async {
       };
       installFlutterFrameworkErrorHandler();
 
-      const skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
+      const skipFirebaseInit = Env.skipFirebaseInit;
       final SentryConfig sentryConfig = _resolveSentryConfig();
       MonitoringRuntime.config = sentryConfig;
 
       // Start Firebase early so it can initialize while persistence and monitoring run.
       // StartupRepositoryImpl.bootstrap() also awaits this future before accessing Remote Config.
-      if (!skipFirebaseInit) {
+      if (Env.localQa) {
+        // Await directly: failure must stop QA before DI or the real router starts.
+        await LocalQaRuntime.initializeFirebase();
+        FirebaseInit.setFuture(Future<bool>.value(true));
+      } else if (!skipFirebaseInit) {
         FirebaseInit.setFuture(
           PerformanceProbe.measure(
             'startup',
@@ -233,12 +244,16 @@ Future<void> main() async {
       await PerformanceProbe.measure(
         'startup',
         'persistence_and_monitoring',
-        () => Future.wait(<Future<Object?>>[PersistenceBootstrap.initialize(), _initializeMonitoring(sentryConfig)]),
+        () => Future.wait(<Future<Object?>>[
+          if (Env.localQa) LocalQaRuntime.initializePersistence() else PersistenceBootstrap.initialize(),
+          if (!Env.localQa) _initializeMonitoring(sentryConfig),
+        ]),
       );
 
       // Defer MobileAds and Analytics to after first frame. Resolves firebaseInitialized
       // lazily once Firebase background init completes.
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (Env.localQa) return;
         unawaited(PurchasesService.instance.configureEarly());
         unawaited(
           FirebaseInit.readyFuture.then(
@@ -292,6 +307,7 @@ Future<void> main() async {
 
       PerformanceProbe.mark('startup.before_di');
       configureDependencies();
+      if (Env.localQa) await LocalQaRuntime.installDependenciesAndSession();
       PerformanceProbe.mark('startup.di_ready');
       // The session repository has loaded persisted identity; set private notification stores before runApp reads them.
       final persistedUser = app_state.prismUser;
@@ -528,6 +544,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   DateTime? _lastCoinSyncAt;
 
   Future<bool> _restoreLoginStatus() async {
+    if (Env.localQa) return LocalQaRuntime.validateSession();
     if (!await FirebaseInit.readyFuture) return app_state.prismUser.loggedIn;
     final bool value = await globalGoogleAuth.isSignedIn();
     if (!value) {
@@ -634,6 +651,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _syncCoinEconomy({required String sourceTag}) async {
+    if (Env.localQa) return;
     if (_coinSyncInFlight) {
       return;
     }
@@ -718,6 +736,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _listenForPushMessages() async {
+    if (Env.localQa) return;
     // Wait for Firebase to be ready before touching any Firebase APIs.
     final bool firebaseReady = await FirebaseInit.readyFuture;
     if (!firebaseReady) return;
@@ -799,6 +818,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _refreshWotdTopics() async {
+    if (Env.localQa) return;
     try {
       if (!await FirebaseInit.readyFuture) return;
       await refreshWotdTopics(FirebaseMessaging.instance, getIt<SettingsLocalDataSource>());

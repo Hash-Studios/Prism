@@ -7,6 +7,12 @@ enums:
       - streak
       - chest
       - spin
+  - name: challenge_entry_source
+    dart_type: ChallengeEntrySource
+    import: package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart
+    values:
+      - upload
+      - ai
   - name: wallpaper_target
     dart_type: WallpaperTarget
     import: package:Prism/core/platform/wallpaper_service.dart
@@ -2562,3 +2568,37 @@ events:
         key: step
         type: enum
         enum: DailyMomentStepValue
+  - id: challenge_viewed
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+  - id: challenge_entered
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+      - name: source
+        key: source
+        type: enum
+        enum: ChallengeEntrySource
+  - id: challenge_voted
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+  - id: challenge_unvoted
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+  - id: challenge_shared
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+  - id: challenge_winner_viewed
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string

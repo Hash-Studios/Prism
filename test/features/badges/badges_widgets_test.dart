@@ -64,6 +64,7 @@ Future<void> _openBadge(WidgetTester tester, EarnedBadge badge, {double textScal
 void main() {
   test('catalog matches the server badge ids', () {
     expect(badgeCatalog.map((b) => b.id), <String>[
+      'challenge_winner',
       'week_warrior',
       'streak_master',
       'creator',

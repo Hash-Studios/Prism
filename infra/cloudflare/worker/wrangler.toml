@@ -275,6 +275,10 @@ pattern = "prismwalls.com/mood/*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/challenges/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "prismwalls.com/leaderboard*"
 zone_name = "prismwalls.com"
 
@@ -580,6 +584,10 @@ zone_name = "prismwalls.com"
 
 [[routes]]
 pattern = "www.prismwalls.com/mood/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/challenges/*"
 zone_name = "prismwalls.com"
 
 [[routes]]

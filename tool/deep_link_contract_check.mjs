@@ -36,8 +36,9 @@ const aasaPaths = new Set(quotedValues(arrayBody(associations, 'APP_LINK_PATHS')
 
 const dynamicWorkerRoots = new Set([
   '/share', '/user', '/fprofile', '/follower-profile', '/profile', '/setup', '/share-setup', '/refer', '/referral',
-  '/l', '/drops', '/collection', '/category', '/wallpaper', '/folder', '/mood',
+  '/l', '/drops', '/collection', '/category', '/wallpaper', '/folder', '/mood', '/challenges',
 ]);
+if (!workerRoots.has('/challenges')) fail('worker landing dispatch misses challenge links');
 const pathFits = (path, roots, dynamicRoots) => {
   if (roots.has(path)) return true;
   return [...dynamicRoots].some((rootPath) => path.startsWith(`${rootPath}/`));
