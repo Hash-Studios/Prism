@@ -105,6 +105,42 @@ abstract class AppLocalizations {
     Locale('pt', 'BR'),
   ];
 
+  /// Label identifying a rewarded advertisement.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad'**
+  String get economyAd;
+
+  /// Offer for the currently quoted rewarded ad amount.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch ad for {reward} coins'**
+  String economyWatchAdForCoins(int reward);
+
+  /// Coins missing for the selected purchase.
+  ///
+  /// In en, this message translates to:
+  /// **'You need {count} more coins.'**
+  String economyCoinsMissing(int count);
+
+  /// Estimated remaining shortfall after the quoted ad reward.
+  ///
+  /// In en, this message translates to:
+  /// **'You may still need {count} coins after the ad'**
+  String economyCoinsRemainAfterAd(int count);
+
+  /// Disclosure of the shop's automatic purchase after a credited ad.
+  ///
+  /// In en, this message translates to:
+  /// **'If the reward covers the price, this item will be purchased automatically.'**
+  String get economyAdAutomaticPurchase;
+
+  /// A completed ad reward is awaiting server verification.
+  ///
+  /// In en, this message translates to:
+  /// **'Your ad reward is awaiting verification. Coins will appear once it is confirmed.'**
+  String get economyAdVerificationPending;
+
   /// Title of the empty Folders tab in the Library.
   ///
   /// In en, this message translates to:

@@ -7,6 +7,8 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/coin_pill.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/ads/data/ad_experiment_config.dart';
+import 'package:Prism/features/ads/views/widgets/experimental_inline_ad.dart';
 import 'package:Prism/features/badges/views/widgets/rewards_badges_section.dart';
 import 'package:Prism/features/drops/drops.dart';
 import 'package:Prism/features/quests/quests.dart';
@@ -153,6 +155,11 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
                 gap,
                 BalanceCard(onSeeUses: () => _scrollTo(_spendKey)),
                 KeyedSubtree(key: _earnKey, child: const RewardsEarnSection()),
+                ExperimentalInlineAd(
+                  format: AdExperimentFormat.banner,
+                  active: widget.showBack || (_tabWasActive ?? false),
+                  availableWidth: MediaQuery.sizeOf(context).width - 2 * PrismSpace.page,
+                ),
                 KeyedSubtree(
                   key: _spendKey,
                   child: RewardsSpendSection(

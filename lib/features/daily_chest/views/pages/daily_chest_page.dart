@@ -290,6 +290,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
 
   Future<void> _getCoins(DailyChestStatus status) => showGetCoinsSheet(
     context,
+    cost: status.price,
     message: context.l10n.economyChestNeedCoins(status.price, _balance),
     sourceTag: 'coins.daily_chest.rewarded_ad',
     upsellSource: 'daily_chest_rewarded_ad',

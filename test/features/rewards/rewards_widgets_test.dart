@@ -455,7 +455,7 @@ void main() {
       // Earn coins sits above Use your coins, which the link just scrolled to.
       await tester.scrollUntilVisible(find.text('Earn coins'), -200, scrollable: find.byType(Scrollable).first);
       await tester.pump();
-      expect(find.text('Watch a video'), findsOneWidget);
+      expect(find.text('Ad'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.scrollUntilVisible(
         find.text(AppLocalizationsEn().economyCollectionUnlockedAtDays(7)),

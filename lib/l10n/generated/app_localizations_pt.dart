@@ -11,6 +11,31 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get economyAd => 'Anúncio';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    return 'Assistir a anúncio por $reward moedas';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    return 'Faltam $count moedas.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    return 'Você ainda pode precisar de $count moedas após o anúncio';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase => 'Se a recompensa cobrir o preço, este item será comprado automaticamente.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Sua recompensa está aguardando verificação. As moedas aparecerão após a confirmação.';
+
+  @override
   String get foldersLibraryEmptyTitle => 'Nenhuma pasta ainda';
 
   @override
@@ -11635,6 +11660,31 @@ class AppLocalizationsPt extends AppLocalizations {
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
 class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
+
+  @override
+  String get economyAd => 'Anúncio';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    return 'Assistir a anúncio por $reward moedas';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    return 'Faltam $count moedas.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    return 'Você ainda pode precisar de $count moedas após o anúncio';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase => 'Se a recompensa cobrir o preço, este item será comprado automaticamente.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Sua recompensa está aguardando verificação. As moedas aparecerão após a confirmação.';
 
   @override
   String get foldersLibraryEmptyTitle => 'Nenhuma pasta ainda';

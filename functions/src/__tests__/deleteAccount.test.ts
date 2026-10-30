@@ -390,6 +390,32 @@ test("SV-S12 releases all deleted UID reservations, permits reuse and never remo
   assert.equal(store.get("usernames/oldname")?.uid, "u2");
 });
 
+test("account deletion removes reward sessions and locks but retains minimal Google replay records", async (t) => {
+  fake(t, {email: ""});
+  const store = installFakeDb(t, {
+    "usersv2/u1": {coins: 20},
+    "rewardedAdSessions/session": {uid: "u1", status: "settled", transactionId: "ssv_session"},
+    "rewardedAdUsers/u1": {sessionId: "session", showBeforeMs: 100},
+    "rewardedAdGoogleTransactions/google": {sessionId: "session"},
+    "coinTransactions/ssv_session": {userId: "u1", delta: 20},
+  });
+  const empty = {where: () => empty, get: async () => ({docs: []})};
+  t.mock.method(db, "collectionGroup", () => empty);
+  t.mock.method(db, "bulkWriter", () => ({
+    set: (ref: admin.firestore.DocumentReference, data: admin.firestore.DocumentData) => ref.set(data),
+    update: (ref: admin.firestore.DocumentReference, data: admin.firestore.UpdateData<admin.firestore.DocumentData>) => ref.update(data),
+    delete: (ref: admin.firestore.DocumentReference) => ref.delete(),
+    close: async () => undefined,
+  }));
+  await call();
+  assert.equal(store.get("creatorDeletionState/u1")?.closed, true);
+  assert.equal(store.get("usersv2/u1")?.deleted, true);
+  assert.equal(store.has("coinTransactions/ssv_session"), false);
+  assert.equal(store.has("rewardedAdSessions/session"), false);
+  assert.equal(store.has("rewardedAdUsers/u1"), false);
+  assert.equal(store.get("rewardedAdGoogleTransactions/google")?.sessionId, "session");
+});
+
 test("SV-S12 rechecks reservation ownership after the cleanup query", async (t) => {
   fake(t, {email: ""});
   const store = installFakeDb(t, {

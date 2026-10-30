@@ -15,6 +15,8 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/ads/data/ad_experiment_config.dart';
+import 'package:Prism/features/ads/views/widgets/experimental_inline_ad.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/moods/biz/moods_cubit.dart';
@@ -54,6 +56,13 @@ const List<int> _moodRowGridRows = <int>[4, 12];
 
 /// Grid rows before the "Pick up where you left off" row.
 const int _pickUpGridRows = 2;
+
+@visibleForTesting
+int? forYouAdIndex(int itemCount, int columns) {
+  if (columns <= 0) return null;
+  final int index = 14 * columns;
+  return itemCount >= index + columns ? index : null;
+}
 
 /// Splits the For you grid into chunks. Each chunk is a range of tiles, and [rowAfter] is the mood row that follows it.
 @visibleForTesting
@@ -604,52 +613,61 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       crossAxisCount,
       rowMoods,
     );
-    final List<List<FeedItemEntity>?> chunkItems = chunks.length == 1
-        ? const <List<FeedItemEntity>?>[null]
-        : <List<FeedItemEntity>?>[
-            for (final (int start, int end, MoodList? _) in chunks) visibleItems.sublist(start, end),
-          ];
-    Widget grid(int start, int end, List<FeedItemEntity>? gridItems) => SliverPadding(
-      padding: PrismFeedLayout.gridPadding,
-      sliver: SliverGrid(
-        gridDelegate: PrismWallGrid.delegate(
-          context,
-          footerHeight: favouriteFooterHeight,
-          columns: crossAxisCount,
-          spacing: PrismFeedLayout.gridSpacing,
+    Widget grid(int start, int end) {
+      final gridItems = start == 0 && end == visibleItems.length ? null : visibleItems.sublist(start, end);
+      return SliverPadding(
+        padding: PrismFeedLayout.gridPadding,
+        sliver: SliverGrid(
+          gridDelegate: PrismWallGrid.delegate(
+            context,
+            footerHeight: favouriteFooterHeight,
+            columns: crossAxisCount,
+            spacing: PrismFeedLayout.gridSpacing,
+          ),
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final FeedItemEntity item = visibleItems[start + index];
+            return KeyedSubtree(
+              key: ValueKey<String>(item.id),
+              child: FeedWallTile(
+                item: item,
+                index: start + index,
+                crossAxisCount: crossAxisCount,
+                memCacheHeight: tileMemCacheHeight,
+                onShowLessLikeThis: () => _lessLikeThis(item),
+                onVisible: () =>
+                    _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(item)])),
+                feed: visibleItems,
+                gridItems: gridItems,
+              ),
+            );
+          }, childCount: end - start),
         ),
-        delegate: SliverChildBuilderDelegate((context, index) {
-          final FeedItemEntity item = visibleItems[start + index];
-          return KeyedSubtree(
-            key: ValueKey<String>(item.id),
-            child: FeedWallTile(
-              item: item,
-              index: start + index,
-              crossAxisCount: crossAxisCount,
-              memCacheHeight: tileMemCacheHeight,
-              onShowLessLikeThis: () => _lessLikeThis(item),
-              onVisible: () =>
-                  _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(item)])),
-              feed: visibleItems,
-              gridItems: gridItems,
-            ),
-          );
-        }, childCount: end - start),
-      ),
-    );
+      );
+    }
+
     // The pick-up row sits after the second grid row, so the feed still starts on the first screen.
     final List<HistoryWall> pickUp = pickUpWallsForSession(now: _sessionStart);
     final int? pickUpAt = pickUp.isEmpty || visibleItems.isEmpty
         ? null
         : math.min(_pickUpGridRows * crossAxisCount, chunks.first.$2);
+    // Leave two wallpaper rows after the second mood row and content after the ad.
+    final int? adAt = forYouAdIndex(visibleItems.length, crossAxisCount);
+    List<Widget> gridWithAd(int start, int end) => <Widget>[
+      if (adAt != null && start < adAt && adAt < end) ...<Widget>[
+        grid(start, adAt),
+        const SliverToBoxAdapter(child: ExperimentalInlineAd(format: AdExperimentFormat.native, active: true)),
+        grid(adAt, end),
+      ] else
+        grid(start, end),
+    ];
     return <Widget>[
       for (int i = 0; i < chunks.length; i++) ...<Widget>[
         if (i == 0 && pickUpAt != null) ...<Widget>[
-          grid(chunks[i].$1, pickUpAt, chunkItems[i]),
+          ...gridWithAd(chunks[i].$1, pickUpAt),
           SliverToBoxAdapter(child: PickUpRow(walls: pickUp)),
-          if (pickUpAt < chunks[i].$2) grid(pickUpAt, chunks[i].$2, chunkItems[i]),
+          if (pickUpAt < chunks[i].$2) ...gridWithAd(pickUpAt, chunks[i].$2),
         ] else
-          grid(chunks[i].$1, chunks[i].$2, chunkItems[i]),
+          ...gridWithAd(chunks[i].$1, chunks[i].$2),
         if (chunks[i].$3 case final MoodList rowAfter)
           SliverToBoxAdapter(
             child: MoodRow(

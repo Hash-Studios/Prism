@@ -1,4 +1,16 @@
 {
+  "economyAd": "विज्ञापन",
+  "@economyAd": {"description": "Label identifying a rewarded advertisement."},
+  "economyWatchAdForCoins": "{reward} सिक्कों के लिए विज्ञापन देखें",
+  "@economyWatchAdForCoins": {"description": "Offer for the currently quoted rewarded ad amount.", "placeholders": {"reward": {"type": "int"}}},
+  "economyCoinsMissing": "आपको {count} और सिक्के चाहिए।",
+  "@economyCoinsMissing": {"description": "Coins missing for the selected purchase.", "placeholders": {"count": {"type": "int"}}},
+  "economyCoinsRemainAfterAd": "विज्ञापन के बाद भी आपको {count} सिक्के चाहिए हो सकते हैं",
+  "@economyCoinsRemainAfterAd": {"description": "Estimated remaining shortfall after the quoted ad reward.", "placeholders": {"count": {"type": "int"}}},
+  "economyAdAutomaticPurchase": "अगर इनाम कीमत पूरी करता है, तो यह आइटम अपने आप खरीदा जाएगा।",
+  "@economyAdAutomaticPurchase": {"description": "Disclosure of the shop's automatic purchase after a credited ad."},
+  "economyAdVerificationPending": "आपके विज्ञापन इनाम की पुष्टि बाकी है। पुष्टि होने पर सिक्के दिखेंगे।",
+  "@economyAdVerificationPending": {"description": "A completed ad reward is awaiting server verification."},
   "foldersLibraryEmptyTitle": "अभी कोई फ़ोल्डर नहीं",
   "@foldersLibraryEmptyTitle": {
     "description": "Title of the empty Folders tab in the Library."

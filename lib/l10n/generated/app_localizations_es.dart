@@ -11,6 +11,31 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get economyAd => 'Anuncio';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    return 'Ver anuncio por $reward monedas';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    return 'Te faltan $count monedas.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    return 'Puede que aún necesites $count monedas después del anuncio';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase => 'Si la recompensa cubre el precio, el artículo se comprará automáticamente.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Tu recompensa está pendiente de verificación. Las monedas aparecerán cuando se confirme.';
+
+  @override
   String get foldersLibraryEmptyTitle => 'Aún no hay carpetas';
 
   @override

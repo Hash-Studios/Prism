@@ -200,155 +200,353 @@ void main() {
     });
   });
 
-  group('rewarded ad awards', () {
-    for (final bool committedReply in <bool>[false, true]) {
-      test(
-        'an ad ${committedReply ? 'committed reply' : 'unknown outcome'} after sign-out stays with its owner',
-        () async {
-          final originalUser = app_state.prismUser;
-          final String ownerId = app_state.prismUser.id;
-          final Completer<Object?> response = Completer<Object?>();
-          final Completer<void> started = Completer<void>();
-          String? requestId;
-          backend.onCall = (_, parameters) {
-            requestId = parameters['requestId'] as String;
-            started.complete();
-            return response.future;
-          };
-
-          final Future<CoinMutationResult> award = service.award(CoinEarnAction.rewardedAd);
-          await started.future;
-          app_state.prismUser = app_constants.createGuestPrismUser()
-            ..id = 'other-user'
-            ..loggedIn = true
-            ..coins = 70;
-          service.resetSession();
-          if (committedReply) {
-            response.complete(<String, Object>{..._refunded, 'adsRemaining': 2});
-          } else {
-            response.completeError(FirebaseFunctionsException(code: 'unavailable', message: 'lost reply'));
+  group('rewarded ad sessions', () {
+    for (final pendingOperation in ['begin', 'reconcile']) {
+      test('new owner can begin while old owner $pendingOperation remains pending', () async {
+        final oldOwner = app_state.prismUser;
+        final newOwnerId = '${oldOwner.id}-new';
+        final oldKey = 'verifiedRewardSession_v1.${oldOwner.id}';
+        final reply = Completer<Object?>();
+        final started = Completer<void>();
+        if (pendingOperation == 'reconcile') {
+          await getIt<SettingsLocalDataSource>().set(
+            oldKey,
+            jsonEncode([
+              {'userId': oldOwner.id, 'requestId': 'old-request', 'placement': 'old'},
+            ]),
+          );
+        }
+        backend.onCall = (name, parameters) {
+          started.complete();
+          return reply.future;
+        };
+        final Future<Object?> oldCall = pendingOperation == 'begin'
+            ? service.beginRewardedSession('old')
+            : service.reconcileRewardedSession();
+        await started.future;
+        app_state.prismUser = app_constants.createGuestPrismUser()
+          ..id = newOwnerId
+          ..loggedIn = true
+          ..coins = 70;
+        service.resetSession();
+        if (pendingOperation == 'reconcile') {
+          await getIt<SettingsLocalDataSource>().set(
+            'verifiedRewardSession_v1.$newOwnerId',
+            jsonEncode([
+              {'userId': newOwnerId, 'requestId': 'new-request', 'placement': 'new'},
+            ]),
+          );
+        }
+        final newReply = Completer<Object?>();
+        final newStarted = Completer<void>();
+        var calls = 0;
+        backend.onCall = (name, parameters) {
+          if (name == 'getRewardedSession') {
+            expect(parameters, {'requestId': 'new-request'});
+            return Future<Object?>.value({
+              'version': 1,
+              'sessionId': 'new-session',
+              'status': 'reserved',
+              'rewardCoins': 10,
+              'currentBalance': 70,
+              'adsRemaining': 3,
+            });
           }
-
-          expect((await award).reason, 'not_logged_in');
-          expect(stored(_queueKey), isNotEmpty);
-          final entries = (jsonDecode(stored(_queueKey)) as List<Object?>).cast<Map<String, Object?>>();
-          expect(entries.single['userId'], ownerId);
-          expect(entries.single['requestId'], requestId);
-          expect(entries.single['kind'], 'reward');
-          expect(app_state.prismUser.coins, 70);
-          expect(service.balanceNotifier.value, 70);
-          expect(service.adsRemainingToday, isNull);
-
-          backend.onCall = (_, _) => throw StateError('the other account must not retry this reward');
-          await service.retryPendingRefunds();
-          expect(stored(_queueKey), contains(ownerId));
-
-          app_state.prismUser = originalUser;
-          service.resetSession();
-          final List<String> retried = <String>[];
-          backend.onCall = (name, parameters) async {
-            if (name == 'reconcileRankRewards') return <String, Object>{};
-            retried.add(parameters['requestId'] as String);
-            return <String, Object>{..._refunded, 'currentBalance': 110, 'delta': 10};
-          };
-          await service.retryPendingRefunds();
-          expect(retried, <String>[requestId!]);
-          expect(stored(_queueKey), isEmpty);
-          expect(app_state.prismUser.coins, 110);
-        },
-      );
+          expect(name, 'beginRewardedSession');
+          calls++;
+          newStarted.complete();
+          return newReply.future;
+        };
+        final newCall = service.beginRewardedSession('new');
+        await newStarted.future;
+        reply.complete({
+          'version': 1,
+          'status': 'settled',
+          'sessionId': 'old-session',
+          'currentBalance': 110,
+          'rewardCoins': 10,
+        });
+        await oldCall;
+        final duplicate = service.beginRewardedSession('duplicate');
+        newReply.complete({
+          'version': 1,
+          'status': 'reserved',
+          'sessionId': 'new-session',
+          'userId': newOwnerId,
+          'customData': 'token',
+          'adUnitId': 'unit',
+          'rewardCoins': 10,
+          'showBeforeMs': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch,
+        });
+        expect((await newCall)?.sessionId, 'new-session');
+        expect((await duplicate)?.sessionId, 'new-session');
+        expect(calls, 1);
+        expect(app_state.prismUser.coins, 70);
+        expect(service.confirmedRewardCoins('old-session'), 0);
+        expect(stored(oldKey), isNotEmpty);
+      });
     }
 
-    test('a rewarded ad award carries a requestId and is retried once with the same id', () async {
-      final requestIds = <String>[];
+    test('lost begin recovers through reserved status and replay then server expiry without credit', () async {
+      final owner = app_state.prismUser.id;
+      final calls = <String>[];
+      final requests = <Map<String, dynamic>>[];
+      var expired = false;
       backend.onCall = (name, parameters) async {
-        if (name == 'reconcileRankRewards') return <String, Object>{};
-        requestIds.add(parameters['requestId'] as String);
-        if (requestIds.length == 1) throw FirebaseFunctionsException(code: 'deadline-exceeded', message: 'slow');
-        return <String, Object>{
-          'success': true,
-          'changed': true,
-          'previousBalance': 100,
-          'currentBalance': 110,
-          'delta': 10,
+        calls.add(name);
+        if (name == 'getRewardedSession') {
+          // The real status contract does not return presentation tokens or a user ID.
+          expect(parameters, {'requestId': requests.first['requestId']});
+          return {
+            'version': 1,
+            'sessionId': 'session',
+            'status': expired ? 'expired' : 'reserved',
+            'rewardCoins': 10,
+            'currentBalance': 100,
+            'adsRemaining': 3,
+          };
+        }
+        expect(name, 'beginRewardedSession');
+        requests.add(Map<String, dynamic>.of(parameters));
+        if (requests.length == 1) throw FirebaseFunctionsException(code: 'unavailable', message: 'lost');
+        return {
+          'version': 1,
+          'status': 'reserved',
+          'sessionId': 'session',
+          'userId': owner,
+          'customData': 'signed-token',
+          'adUnitId': 'unit',
+          'rewardCoins': 10,
           'adsRemaining': 3,
+          'showBeforeMs': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch,
         };
       };
-
-      final result = await service.award(CoinEarnAction.rewardedAd);
-
-      expect(requestIds, hasLength(2));
-      expect(requestIds[0], requestIds[1]);
-      expect(requestIds[0], matches(RegExp(r'^[A-Za-z0-9_-]{8,64}$')));
-      expect(result.changed, isTrue);
-      expect(result.adsRemaining, 3);
-      expect(service.adsRemainingToday, 3);
-      expect(stored(_queueKey), isEmpty);
+      expect(await service.beginRewardedSession('original'), isNull);
+      service.resetSession();
+      final recovered = await service.beginRewardedSession('replacement');
+      expect(recovered?.customData, 'signed-token');
+      expect(recovered?.placement, 'original');
+      expect(requests.last, requests.first);
+      expect(service.confirmedRewardCoins('session'), 0);
+      expect(app_state.prismUser.coins, 100);
+      // Simulate another lost begin whose reservation expires before replay.
+      await getIt<SettingsLocalDataSource>().set(
+        'verifiedRewardSession_v1.$owner',
+        jsonEncode([
+          {'userId': owner, 'requestId': requests.first['requestId'], 'placement': 'original'},
+        ]),
+      );
+      expired = true;
+      expect(await service.reconcileRewardedSession(), isFalse);
+      expect(stored('verifiedRewardSession_v1.$owner'), isEmpty);
+      expect(service.confirmedRewardCoins('session'), 0);
+      expect(app_state.prismUser.coins, 100);
+      expect(calls, ['beginRewardedSession', 'getRewardedSession', 'beginRewardedSession', 'getRewardedSession']);
     });
 
-    test('other awards do not carry a requestId', () async {
-      final calls = <Map<String, dynamic>>[];
-      backend.onCall = (name, parameters) async {
-        if (name == 'reconcileRankRewards') return <String, Object>{};
-        calls.add(parameters);
+    test('receipt-free rewarded awards never call the server', () async {
+      final calls = <String>[];
+      backend.onCall = (name, _) async {
+        calls.add(name);
         return _refunded;
       };
-
-      await service.award(CoinEarnAction.dailyLogin);
-
-      expect(calls.single.containsKey('requestId'), isFalse);
+      final result = await service.award(CoinEarnAction.rewardedAd);
+      expect(result.reason, 'verified_session_required');
+      expect(calls, isEmpty);
     });
 
-    test('an ad reward with no reply after both attempts is queued and credited on retry', () async {
-      final requestIds = <String>[];
+    test('unknown begin survives restart and queries the same request without minting', () async {
+      String? request;
       backend.onCall = (name, parameters) {
-        requestIds.add(parameters['requestId'] as String);
-        return Future<dynamic>.error(FirebaseFunctionsException(code: 'unavailable', message: 'offline'));
+        expect(name, 'beginRewardedSession');
+        request = parameters['requestId'] as String;
+        expect(stored('verifiedRewardSession_v1.${app_state.prismUser.id}'), contains(request));
+        throw FirebaseFunctionsException(code: 'unavailable', message: 'lost response');
       };
-
-      final result = await service.award(CoinEarnAction.rewardedAd);
-
-      expect(requestIds, hasLength(2));
-      expect(result.unknownOutcomeTransactionId, 'award_${app_state.prismUser.id}_${requestIds.first}');
-      final entries = (jsonDecode(stored(_queueKey)) as List<Object?>).cast<Map<String, Object?>>();
-      expect(entries.single['kind'], 'reward');
-      expect(entries.single['requestId'], requestIds.first);
-
-      final retried = <String>[];
+      expect(await service.beginRewardedSession('download'), isNull);
+      service.resetSession();
+      final calls = <String>[];
       backend.onCall = (name, parameters) async {
-        if (name == 'reconcileRankRewards') return <String, Object>{};
-        retried.add(parameters['requestId'] as String);
-        return <String, Object>{
-          'success': true,
-          'changed': true,
-          'previousBalance': 100,
+        calls.add(name);
+        expect(parameters, {'requestId': request});
+        return {
+          'version': 1,
+          'sessionId': 'session',
+          'status': 'settled',
+          'rewardCoins': 10,
           'currentBalance': 110,
-          'delta': 10,
+          'adsRemaining': 3,
+          'transactionId': 'ssv-tx',
         };
       };
-      await service.retryPendingRefunds();
-
-      expect(retried, <String>[requestIds.first]);
+      expect(await service.reconcileRewardedSession(), isTrue);
       expect(app_state.prismUser.coins, 110);
-      expect(stored(_queueKey), isEmpty);
-      expect(toastMessages, contains('Your ad reward was added.'));
+      expect(service.adsRemainingToday, 3);
+      expect(await service.reconcileRewardedSession(), isFalse);
+      expect(calls, ['getRewardedSession']);
     });
 
-    test('a daily-limit reply is not queued', () async {
-      backend.onCall = (name, parameters) async => <String, Object>{
-        'success': true,
-        'changed': false,
-        'previousBalance': 100,
-        'currentBalance': 100,
-        'delta': 0,
-        'reason': 'rewarded_ad_limit',
-        'adsRemaining': 0,
+    test('session replies cannot credit a changed owner and remain recoverable', () async {
+      backend.onCall = (name, parameters) async => {
+        'version': 1,
+        'status': 'reserved',
+        'sessionId': 'session',
+        'userId': app_state.prismUser.id,
+        'customData': 'signed-token',
+        'adUnitId': 'server-unit',
+        'showBeforeMs': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch,
+        'callbackBeforeMs': DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch,
+        'rewardCoins': 10,
+        'adsRemaining': 3,
       };
+      final original = app_state.prismUser;
+      expect(await service.beginRewardedSession('download'), isNotNull);
+      final reply = Completer<Object?>();
+      final started = Completer<void>();
+      backend.onCall = (name, parameters) {
+        started.complete();
+        return reply.future;
+      };
+      final query = service.reconcileRewardedSession();
+      await started.future;
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'other'
+        ..loggedIn = true
+        ..coins = 70;
+      service.resetSession();
+      reply.complete({
+        'version': 1,
+        'sessionId': 'session',
+        'status': 'settled',
+        'rewardCoins': 10,
+        'currentBalance': 110,
+        'adsRemaining': 3,
+      });
+      expect(await query, isFalse);
+      expect(app_state.prismUser.coins, 70);
+      app_state.prismUser = original;
+      service.resetSession();
+      expect(stored('verifiedRewardSession_v1.${original.id}'), isNotEmpty);
+    });
 
-      final result = await service.award(CoinEarnAction.rewardedAd);
+    test('retrying an unknown begin reuses the original persisted ID and placement', () async {
+      final requests = <Map<String, dynamic>>[];
+      backend.onCall = (name, parameters) async {
+        if (name == 'getRewardedSession') throw FirebaseFunctionsException(code: 'not-found', message: 'not committed');
+        requests.add(parameters);
+        if (requests.length == 1) throw FirebaseFunctionsException(code: 'unavailable', message: 'lost begin');
+        return {
+          'version': 1,
+          'status': 'reserved',
+          'sessionId': 'session',
+          'userId': app_state.prismUser.id,
+          'customData': 'token',
+          'adUnitId': 'server-unit',
+          'rewardCoins': 10,
+          'adsRemaining': 3,
+          'showBeforeMs': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch,
+        };
+      };
+      expect(await service.beginRewardedSession('first_placement'), isNull);
+      expect(await service.beginRewardedSession('another_placement'), isNotNull);
+      expect(requests, hasLength(2));
+      expect(requests.first, requests.last);
+    });
 
-      expect(result.reason, 'rewarded_ad_limit');
-      expect(service.adsRemainingToday, 0);
+    test('an older shown session stays recoverable without blocking a new reservation', () async {
+      final owner = app_state.prismUser.id;
+      final key = 'verifiedRewardSession_v1.$owner';
+      await getIt<SettingsLocalDataSource>().set(
+        key,
+        jsonEncode([
+          {
+            'userId': owner,
+            'requestId': 'old-request',
+            'sessionId': 'old-session',
+            'placement': 'download',
+            'shown': true,
+            'showBeforeMs': DateTime.now().subtract(const Duration(minutes: 1)).millisecondsSinceEpoch,
+            'callbackBeforeMs': DateTime.now().add(const Duration(hours: 24)).millisecondsSinceEpoch,
+          },
+        ]),
+      );
+      backend.onCall = (name, parameters) async {
+        if (name == 'getRewardedSession') {
+          return {
+            'version': 1,
+            'sessionId': 'old-session',
+            'status': 'reserved',
+            'currentBalance': 100,
+            'rewardCoins': 10,
+            'adsRemaining': 3,
+          };
+        }
+        expect(name, 'beginRewardedSession');
+        return {
+          'version': 1,
+          'status': 'reserved',
+          'sessionId': 'new-session',
+          'userId': owner,
+          'customData': 'new-token',
+          'adUnitId': 'server-unit',
+          'rewardCoins': 7,
+          'adsRemaining': 2,
+          'showBeforeMs': DateTime.now().add(const Duration(minutes: 10)).millisecondsSinceEpoch,
+        };
+      };
+      final session = await service.beginRewardedSession('another_placement');
+      expect(session?.sessionId, 'new-session');
+      expect(jsonDecode(stored(key)) as List<Object?>, hasLength(2));
+      backend.onCall = (name, parameters) async => {
+        'version': 1,
+        'sessionId': parameters['sessionId'],
+        'status': parameters['sessionId'] == 'new-session' ? 'settled' : 'reserved',
+        'rewardCoins': 7,
+        'currentBalance': 107,
+        'adsRemaining': 2,
+      };
+      expect(await service.reconcileRewardedSession(), isTrue);
+      expect(service.confirmedRewardCoins('new-session'), 7);
+      expect(service.lastConfirmedRewardCoins, 7);
+      final retained = (jsonDecode(stored(key)) as List<Object?>).cast<Map<String, dynamic>>();
+      expect(retained.single['sessionId'], 'old-session');
+    });
+
+    test('unavailable reasons are not stored as accepted pending rewards', () async {
+      for (final reason in ['daily_limit', 'cooldown', 'disabled', 'active_session']) {
+        backend.onCall = (name, parameters) async => {
+          'version': 1,
+          'status': 'unavailable',
+          'reason': reason,
+          'adsRemaining': 0,
+        };
+        expect(await service.beginRewardedSession('download'), isNull);
+        expect(service.rewardedSessionUnavailableReason, reason);
+        expect(stored('verifiedRewardSession_v1.${app_state.prismUser.id}'), isEmpty);
+      }
+    });
+
+    test('legacy receipt-free pending rewards are discarded, never replayed', () async {
+      getIt.registerSingleton<FirestoreClient>(CoinsTestFirestore()..userData = <String, dynamic>{'coins': 100});
+      addTearDown(() => getIt.unregister<FirestoreClient>());
+      await getIt<SettingsLocalDataSource>().set(
+        _queueKey,
+        jsonEncode([
+          {
+            'userId': app_state.prismUser.id,
+            'kind': 'reward',
+            'requestId': 'old-sdk-claim',
+            'atMs': DateTime.now().millisecondsSinceEpoch,
+          },
+        ]),
+      );
+      final calls = <String>[];
+      backend.onCall = (name, parameters) async {
+        calls.add(name);
+        return {};
+      };
+      await service.retryPendingRefunds();
+      expect(calls, isNot(contains('awardCoins')));
       expect(stored(_queueKey), isEmpty);
     });
 

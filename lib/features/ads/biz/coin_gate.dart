@@ -1,12 +1,12 @@
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/biz/bloc/ads_bloc.j.dart';
 import 'package:Prism/features/ads/biz/coin_gate_port.dart';
-import 'package:Prism/features/ads/biz/rewarded_ad_flow.dart';
+import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -220,8 +220,36 @@ class CoinGateSpec {
 class CoinGate {
   CoinGate(this._port, {AppLocalizations? l10n}) : _l10n = l10n ?? AppLocalizationsEn();
 
-  factory CoinGate.forContext(BuildContext context) =>
-      CoinGate(AppCoinGatePort(() => context.read<AdsBloc>()), l10n: context.l10n);
+  factory CoinGate.forContext(BuildContext context) => CoinGate(
+    AppCoinGatePort(
+      () => context.read<AdsBloc>(),
+      isPresentationCurrent: () => context.mounted,
+      confirmRewardQuote: (rewardCoins) async {
+        if (!context.mounted) return false;
+        return await showPrismSheet<bool>(
+              context,
+              builder: (sheetContext) => PrismSheetBody(
+                title: sheetContext.l10n.economyWatchAdForCoins(rewardCoins),
+                actions: <Widget>[
+                  PrismButton(
+                    label: sheetContext.l10n.economyWatchAdForCoins(rewardCoins),
+                    expand: true,
+                    onPressed: () => Navigator.of(sheetContext).pop(true),
+                  ),
+                  PrismButton(
+                    label: sheetContext.l10n.coreCancel,
+                    expand: true,
+                    variant: PrismButtonVariant.tonal,
+                    onPressed: () => Navigator.of(sheetContext).pop(false),
+                  ),
+                ],
+              ),
+            ) ??
+            false;
+      },
+    ),
+    l10n: context.l10n,
+  );
 
   final CoinGatePort _port;
   final AppLocalizations _l10n;
@@ -352,32 +380,14 @@ class CoinGate {
     required bool Function() isMounted,
     bool creditAfterUnmount = true,
     String? adErrorMessage,
+    void Function(int creditedCoins)? onCredited,
   }) async {
     if (!isMounted()) {
       return false;
     }
-    final RewardedAdResult watched;
-    try {
-      watched = await _port.watchRewardedAdResult();
-    } catch (error, stackTrace) {
-      _port.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
-      if (isMounted()) {
-        _port.showError(adFailureMessage(_l10n, null));
-      }
-      return false;
-    }
-    if (!watched.earned) {
-      if (isMounted()) {
-        _port.showError(adFailureMessage(_l10n, watched.failure));
-      }
-      return false;
-    }
-    if (!creditAfterUnmount && !isMounted()) {
-      return false;
-    }
     final CoinMutationResult credit;
     try {
-      credit = await _port.award(CoinEarnAction.rewardedAd, sourceTag: sourceTag);
+      credit = await _port.watchVerifiedReward(sourceTag);
     } catch (error, stackTrace) {
       _port.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
       if (isMounted()) {
@@ -386,6 +396,7 @@ class CoinGate {
       return false;
     }
     if (!credit.changed) {
+      if (credit.reason == 'reward_quote_cancelled') return false;
       if (isMounted()) {
         if (credit.unknownOutcomeTransactionId.isNotEmpty) {
           _port.showInfo(rewardPendingMessage(_l10n));
@@ -397,13 +408,9 @@ class CoinGate {
     }
     if (isMounted()) {
       try {
-        await _port.recordRewardedAdWatch(source: upsellSource);
+        onCredited?.call(credit.delta);
       } catch (error, stackTrace) {
         _port.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
-        if (isMounted()) {
-          _port.showError(adErrorMessage ?? _l10n.economyAdCreditFailure);
-        }
-        return false;
       }
     }
     return true;
@@ -564,10 +571,16 @@ String adFailureMessage(AppLocalizations l10n, AdFailureReason? reason) => switc
   _ => l10n.economyAdNotCompleted,
 };
 
-String rewardPendingMessage(AppLocalizations l10n) => l10n.economyAdRewardPending;
+String rewardPendingMessage(AppLocalizations l10n) => l10n.economyAdVerificationPending;
 
 /// What to tell the user when a watched ad did not add coins.
 String creditFailureMessage(AppLocalizations l10n, CoinMutationResult credit) => switch (credit.reason) {
   'rewarded_ad_limit' => l10n.economyAdDailyLimit,
+  'ad_not_completed' => l10n.economyAdNotCompleted,
+  'ad_timeout' => l10n.economyAdNotCompleted,
+  'ad_other' => l10n.economyAdNotCompleted,
+  'ad_consent' => l10n.economyAdsOffPrivacy,
+  'ad_noFill' => l10n.economyAdUnavailable,
+  'ad_offline' => l10n.economyAdOffline,
   _ => l10n.economyAdCreditFailure,
 };

@@ -1842,6 +1842,32 @@ events:
       - name: value
         key: value
         type: bool
+  - id: ad_journey
+    fields:
+      - name: placement
+        key: placement
+        type: string
+      - name: watch_id
+        key: watch_id
+        type: string
+      - name: format
+        key: format
+        type: string
+      - name: outcome
+        key: outcome
+        type: string
+      - name: paid_value_micros
+        key: paid_value_micros
+        type: double
+        required: false
+      - name: currency
+        key: currency
+        type: string
+        required: false
+      - name: precision
+        key: precision
+        type: string
+        required: false
   - id: ad_load_result
     fields:
       - name: result

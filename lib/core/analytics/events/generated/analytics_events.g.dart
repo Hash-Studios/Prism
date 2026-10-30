@@ -2383,6 +2383,42 @@ class DataSaverToggledEvent extends AnalyticsEvent {
   }
 }
 
+class AdJourneyEvent extends AnalyticsEvent {
+  const AdJourneyEvent({
+    required this.placement,
+    required this.watchId,
+    required this.format,
+    required this.outcome,
+    this.paidValueMicros,
+    this.currency,
+    this.precision,
+  });
+
+  final String placement;
+  final String watchId;
+  final String format;
+  final String outcome;
+  final double? paidValueMicros;
+  final String? currency;
+  final String? precision;
+
+  @override
+  String get eventName => 'ad_journey';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'placement': placement,
+      'watch_id': watchId,
+      'format': format,
+      'outcome': outcome,
+      if (paidValueMicros != null) 'paid_value_micros': paidValueMicros!,
+      if (currency != null) 'currency': currency!,
+      if (precision != null) 'precision': precision!,
+    };
+  }
+}
+
 class AdLoadResultEvent extends AnalyticsEvent {
   const AdLoadResultEvent({required this.result, this.reason});
 

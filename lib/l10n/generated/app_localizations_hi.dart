@@ -11,6 +11,30 @@ class AppLocalizationsHi extends AppLocalizations {
   AppLocalizationsHi([String locale = 'hi']) : super(locale);
 
   @override
+  String get economyAd => 'विज्ञापन';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    return '$reward सिक्कों के लिए विज्ञापन देखें';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    return 'आपको $count और सिक्के चाहिए।';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    return 'विज्ञापन के बाद भी आपको $count सिक्के चाहिए हो सकते हैं';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase => 'अगर इनाम कीमत पूरी करता है, तो यह आइटम अपने आप खरीदा जाएगा।';
+
+  @override
+  String get economyAdVerificationPending => 'आपके विज्ञापन इनाम की पुष्टि बाकी है। पुष्टि होने पर सिक्के दिखेंगे।';
+
+  @override
   String get foldersLibraryEmptyTitle => 'अभी कोई फ़ोल्डर नहीं';
 
   @override

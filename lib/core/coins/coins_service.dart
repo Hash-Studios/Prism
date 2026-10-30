@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -31,12 +32,13 @@ import 'package:Prism/core/purchases/subscription_tier.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
+import 'package:Prism/features/ads/domain/entities/rewarded_session.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/rewards/domain/creator_progress.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cloud_functions/cloud_functions.dart';
@@ -914,6 +916,225 @@ class CoinsService with WidgetsBindingObserver {
     }
   }
 
+  String get _rewardSessionKey => 'verifiedRewardSession_v1.${app_state.prismUser.id}';
+  int confirmedRewardCoins(String sessionId) =>
+      _settings.get<int>('settledRewardSession.${app_state.prismUser.id}.$sessionId', defaultValue: 0);
+  bool rewardSessionSettled(String sessionId) => confirmedRewardCoins(sessionId) > 0;
+  Future<bool>? _rewardReconciliation;
+  Future<RewardedSession?>? _rewardBeginning;
+  (String, int)? _rewardBeginningOwner;
+  (String, int)? _rewardReconciliationOwner;
+  String? rewardedSessionUnavailableReason;
+  int? _lastConfirmedRewardCoins;
+  String? _lastConfirmedRewardOwner;
+  int? get lastConfirmedRewardCoins =>
+      _canMutateCoins() && _lastConfirmedRewardOwner == app_state.prismUser.id ? _lastConfirmedRewardCoins : null;
+
+  List<Map<String, dynamic>> _readRewardSessions(String owner) {
+    final String raw = _settings.get<String>('verifiedRewardSession_v1.$owner', defaultValue: '');
+    if (raw.isEmpty) return <Map<String, dynamic>>[];
+    final Object? decoded = jsonDecode(raw);
+    final List<Object?> entries = decoded is List ? decoded.cast<Object?>() : <Object?>[decoded];
+    return entries.map(toJsonMap).where((entry) => entry['userId'] == owner).toList();
+  }
+
+  Future<void> _editRewardSessions(String owner, void Function(List<Map<String, dynamic>>) edit) =>
+      _withRefundQueueLock(() async {
+        final entries = _readRewardSessions(owner);
+        edit(entries);
+        final String key = 'verifiedRewardSession_v1.$owner';
+        if (entries.isEmpty) {
+          await _settings.delete(key);
+        } else {
+          await _settings.set(key, jsonEncode(entries));
+        }
+      });
+
+  RewardedSession _reservedSession(Map<String, dynamic> data) => RewardedSession(
+    sessionId: data['sessionId'] as String,
+    userId: data['userId'] as String,
+    customData: data['customData'] as String,
+    adUnitId: data['adUnitId'] as String,
+    showBeforeMs: parseIntOr(data['showBeforeMs']),
+    watchId: data['requestId'] as String,
+    rewardCoins: parseIntOr(data['rewardCoins']),
+    callbackBeforeMs: parseIntOr(data['callbackBeforeMs']),
+    adsRemaining: parseIntOr(data['adsRemaining']),
+    placement: data['placement'] as String,
+  );
+
+  Future<void> markRewardedSessionShown(RewardedSession session) async {
+    if (!_canMutateCoins() || app_state.prismUser.id != session.userId) throw StateError('Reward owner changed');
+    await _editRewardSessions(session.userId, (entries) {
+      for (final entry in entries) {
+        if (entry['sessionId'] == session.sessionId) entry['shown'] = true;
+      }
+    });
+  }
+
+  Future<RewardedSession?> beginRewardedSession(String placement) {
+    final owner = (app_state.prismUser.id, _economySessionGeneration);
+    final active = _rewardBeginning;
+    if (active != null && _rewardBeginningOwner == owner) return active;
+    final future = _beginRewardedSession(placement);
+    _rewardBeginning = future;
+    _rewardBeginningOwner = owner;
+    return future.whenComplete(() {
+      if (identical(_rewardBeginning, future)) _rewardBeginning = null;
+    });
+  }
+
+  Future<RewardedSession?> _beginRewardedSession(String placement) async {
+    rewardedSessionUnavailableReason = null;
+    if (!_canMutateCoins()) return null;
+    final String owner = app_state.prismUser.id;
+    final int generation = _economySessionGeneration;
+    if (_readRewardSessions(owner).isNotEmpty) await reconcileRewardedSession();
+    if (!_isCurrentOwner(owner, generation)) return null;
+    final entries = _readRewardSessions(owner);
+    final int now = DateTime.now().millisecondsSinceEpoch;
+    for (final entry in entries) {
+      if (entry['sessionId'] != null && parseIntOr(entry['showBeforeMs']) > now) {
+        if (entry['shown'] != true && entry['customData'] is String && entry['adUnitId'] is String) {
+          return _reservedSession(entry);
+        }
+        rewardedSessionUnavailableReason = 'active_session';
+        return null;
+      }
+    }
+    Map<String, dynamic>? unknown;
+    for (final entry in entries) {
+      if (entry['sessionId'] == null) {
+        unknown = entry;
+        break;
+      }
+    }
+    final String requestId = unknown?['requestId']?.toString() ?? _newRequestId();
+    final String requestedPlacement = unknown?['placement']?.toString() ?? placement;
+    final String tag = requestedPlacement.trim().isEmpty ? 'rewarded_ad' : requestedPlacement.trim();
+    final String boundedTag = tag.length > 120 ? tag.substring(0, 120) : tag;
+    final pending = <String, dynamic>{'userId': owner, 'requestId': requestId, 'placement': boundedTag};
+    await _editRewardSessions(owner, (entries) {
+      if (!entries.any((entry) => entry['requestId'] == requestId)) entries.add(pending);
+    });
+    if (!_isCurrentOwner(owner, generation)) return null;
+    startPendingRetryWatch();
+    try {
+      final response = await appFunctions
+          .httpsCallable('beginRewardedSession')
+          .call(<String, dynamic>{
+            'requestId': requestId,
+            'placement': boundedTag,
+            'platform': Platform.isIOS ? 'ios' : 'android',
+          })
+          .timeout(const Duration(seconds: 20));
+      final data = toJsonMap(response.data);
+      if (!_isCurrentOwner(owner, generation) || data['version'] != 1) return null;
+      _noteAdsRemaining(data['adsRemaining'] as int?);
+      if (data['status'] == 'unavailable') {
+        rewardedSessionUnavailableReason = data['reason']?.toString();
+        await _editRewardSessions(owner, (entries) => entries.removeWhere((entry) => entry['requestId'] == requestId));
+        return null;
+      }
+      if (data['status'] != 'reserved' ||
+          data['userId'] != owner ||
+          (data['sessionId'] as String? ?? '').isEmpty ||
+          (data['customData'] as String? ?? '').isEmpty ||
+          (data['adUnitId'] as String? ?? '').isEmpty ||
+          parseIntOr(data['rewardCoins']) <= 0) {
+        return null;
+      }
+      final reservation = <String, dynamic>{...pending, ...data};
+      await _editRewardSessions(owner, (entries) {
+        entries.removeWhere((entry) => entry['requestId'] == requestId);
+        entries.add(reservation);
+      });
+      return _isCurrentOwner(owner, generation) ? _reservedSession(reservation) : null;
+    } catch (_) {
+      // Retrying begin uses this same persisted ID. Queries never mint a reward.
+      return null;
+    }
+  }
+
+  Future<bool> reconcileRewardedSession() {
+    final owner = (app_state.prismUser.id, _economySessionGeneration);
+    final active = _rewardReconciliation;
+    if (active != null && _rewardReconciliationOwner == owner) return active;
+    final future = _reconcileRewardedSessions();
+    _rewardReconciliation = future;
+    _rewardReconciliationOwner = owner;
+    return future.whenComplete(() {
+      if (identical(_rewardReconciliation, future)) _rewardReconciliation = null;
+    });
+  }
+
+  Future<bool> _reconcileRewardedSessions() async {
+    if (!_canMutateCoins()) return false;
+    final String owner = app_state.prismUser.id;
+    final int generation = _economySessionGeneration;
+    bool settled = false;
+    for (final pending in _readRewardSessions(owner)) {
+      if (!_isCurrentOwner(owner, generation)) break;
+      try {
+        final int balanceGeneration = _balanceMutationGeneration;
+        final response = await appFunctions
+            .httpsCallable('getRewardedSession')
+            .call(<String, dynamic>{
+              if (pending['sessionId'] != null)
+                'sessionId': pending['sessionId']
+              else
+                'requestId': pending['requestId'],
+            })
+            .timeout(const Duration(seconds: 20));
+        final data = toJsonMap(response.data);
+        if (!_isCurrentOwner(owner, generation) || data['version'] != 1) break;
+        final String sessionId = data['sessionId']?.toString() ?? '';
+        if (sessionId.isEmpty || (pending['sessionId'] != null && pending['sessionId'] != sessionId)) continue;
+        final String status = data['status']?.toString() ?? '';
+        if ((status != 'settled' && status != 'expired') || data['currentBalance'] is! num) continue;
+        final int rewardCoins = parseIntOr(data['rewardCoins']);
+        if (status == 'settled' && rewardCoins <= 0) continue;
+        final bool firstSettlement = !rewardSessionSettled(sessionId);
+        if (status == 'settled') await _settings.set('settledRewardSession.$owner.$sessionId', rewardCoins);
+        if (!_isCurrentOwner(owner, generation)) break;
+        await _editRewardSessions(
+          owner,
+          (entries) => entries.removeWhere((entry) => entry['requestId'] == pending['requestId']),
+        );
+        if (!_isCurrentOwner(owner, generation)) break;
+        if (_balanceMutationGeneration == balanceGeneration) {
+          applyServerBalance(parseIntOr(data['currentBalance']), ownerId: owner);
+        } else {
+          unawaited(refreshBalance().catchError((Object _) => app_state.prismUser.coins));
+        }
+        _noteAdsRemaining(data['adsRemaining'] as int?);
+        if (status == 'settled') {
+          settled = true;
+          _lastConfirmedRewardCoins = rewardCoins;
+          _lastConfirmedRewardOwner = owner;
+          if (firstSettlement) {
+            _noteAdWatched();
+            _markBonusQuestDone(QuestEvent.watchAd);
+          }
+        }
+        unawaited(
+          analytics.track(
+            AdJourneyEvent(
+              placement: pending['placement']?.toString() ?? 'rewarded_ad',
+              watchId: pending['requestId']?.toString() ?? '',
+              format: 'rewarded',
+              outcome: status,
+            ),
+          ),
+        );
+      } catch (_) {
+        // Keep this entry and continue recovering other sessions.
+      }
+    }
+    _schedulePendingRetry();
+    return settled;
+  }
+
   Future<CoinMutationResult> award(
     CoinEarnAction action, {
     String sourceTag = 'coins.award',
@@ -922,6 +1143,13 @@ class CoinsService with WidgetsBindingObserver {
     String? transactionId,
     String? requestId,
   }) async {
+    if (action == CoinEarnAction.rewardedAd) {
+      return CoinMutationResult.noChange(
+        balance: app_state.prismUser.coins,
+        success: false,
+        reason: 'verified_session_required',
+      );
+    }
     if (!_canMutateCoins()) {
       return _notLoggedIn;
     }
@@ -943,21 +1171,8 @@ class CoinsService with WidgetsBindingObserver {
       transactionId: transactionId,
       requestId: requestId,
     );
-    if (action == CoinEarnAction.rewardedAd) {
-      final String prefix = '$_awardTransactionPrefix${userId}_';
-      if (result.unknownOutcomeTransactionId.startsWith(prefix)) {
-        await _rememberPendingReward(result.unknownOutcomeTransactionId.substring(prefix.length), userId: userId);
-      }
-    }
     if (!_isCurrentOwner(userId, generation)) return _notLoggedIn;
     _applyLocalBalance(result.currentBalance, delta: result.delta);
-    if (action == CoinEarnAction.rewardedAd) {
-      _noteAdsRemaining(result.adsRemaining);
-      if (result.changed) {
-        _noteAdWatched();
-        _markBonusQuestDone(QuestEvent.watchAd);
-      }
-    }
     if (result.changed) {
       _logEarn(
         action: action,
@@ -1340,12 +1555,6 @@ class CoinsService with WidgetsBindingObserver {
     if (entries.length != before) await _writePendingEntries(entries);
   });
 
-  Future<void> _rememberPendingReward(String requestId, {String? userId}) => _rememberPending(
-    key: requestId,
-    userId: userId,
-    entry: <String, dynamic>{'kind': 'reward', 'requestId': requestId},
-  );
-
   Future<void> _rememberPending({required String key, required Map<String, dynamic> entry, String? userId}) {
     final String ownerId = userId ?? app_state.prismUser.id;
     if (key.isEmpty || ownerId.isEmpty || (userId == null && !_canMutateCoins())) return Future<void>.value();
@@ -1377,8 +1586,7 @@ class CoinsService with WidgetsBindingObserver {
     }
   }
 
-  /// Retries refunds and ad rewards that could not reach the server. The server only refunds debits younger than 10
-  /// minutes. It keeps a reward request for good, so a reward retries for 24 hours.
+  /// Retries refunds and queries verified sessions. Legacy SDK-only claims are discarded, never replayed.
   Future<void> retryPendingRefunds() async {
     if (!_canMutateCoins() || _pendingRetryInFlight) return;
     _pendingRetryInFlight = true;
@@ -1391,16 +1599,19 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   Future<void> _retryPendingEntries() async {
+    await reconcileRewardedSession();
     await refundAbandonedDownload();
     final String userId = app_state.prismUser.id;
     final int nowMs = DateTime.now().millisecondsSinceEpoch;
     final List<Map<String, dynamic>> snapshot = <Map<String, dynamic>>[];
     await _withRefundQueueLock(() async => snapshot.addAll(_readPendingEntries()));
     final Set<String> resolvedKeys = <String>{};
+    bool discardedReceiptFreeReward = false;
     for (final Map<String, dynamic> entry in snapshot) {
       final String entryUser = entry['userId']?.toString() ?? '';
       final String key = _entryKey(entry);
       final bool isReward = _isRewardEntry(entry);
+      if (isReward && entryUser == userId) discardedReceiptFreeReward = true;
       final int atMs = parseIntOr(entry['atMs']);
       final Duration window = isReward ? _pendingRewardWindow : _refundWindow;
       if (key.isEmpty || nowMs - atMs > window.inMilliseconds) {
@@ -1411,11 +1622,10 @@ class CoinsService with WidgetsBindingObserver {
       if (app_state.prismUser.id != userId || !_canMutateCoins()) break;
       final CoinMutationResult result;
       if (isReward) {
-        result = await award(CoinEarnAction.rewardedAd, sourceTag: 'coins.reward.retry', requestId: key);
-        if (result.changed) {
-          final AppLocalizations l10n = await loadDeviceAppLocalizations();
-          toasts.success(l10n.coreWallpaperSavedToast);
-        }
+        // Legacy SDK-only claims have no verification receipt and must never mint coins.
+        resolvedKeys.add(key);
+        discardedReceiptFreeReward = true;
+        continue;
       } else {
         final CoinSpendAction action =
             CoinSpendAction.values.asNameMap()[entry['action']?.toString()] ?? CoinSpendAction.aiGeneration;
@@ -1447,11 +1657,24 @@ class CoinsService with WidgetsBindingObserver {
       latest.removeWhere((Map<String, dynamic> e) => _entryKey(e).isEmpty || resolvedKeys.contains(_entryKey(e)));
       await _writePendingEntries(latest);
     });
+    if (discardedReceiptFreeReward && app_state.prismUser.id == userId) {
+      try {
+        await refreshBalance();
+      } catch (error, stackTrace) {
+        logCoinError(sourceTag: 'coins.legacy_reward.refresh', error: error, stackTrace: stackTrace);
+      }
+    }
   }
 
   void _schedulePendingRetry() {
+    if (_readPendingEntries().isEmpty &&
+        !_hasAbandonedDownloads() &&
+        _settings.get<String>(_rewardSessionKey, defaultValue: '').isEmpty) {
+      _pendingRetryTimer?.cancel();
+      _pendingRetryTimer = null;
+      return;
+    }
     if (_pendingRetryTimer?.isActive ?? false) return;
-    if (_readPendingEntries().isEmpty && !_hasAbandonedDownloads()) return;
     _pendingRetryTimer = Timer(pendingRetryInterval, () {
       _pendingRetryTimer = null;
       unawaited(retryPendingRefunds());
