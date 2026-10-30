@@ -11,6 +11,41 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get economyAd => 'Anúncio';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Assistir a anúncio por $rewardString moedas';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Faltam $countString moedas.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Você ainda pode precisar de $countString moedas após o anúncio';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'Se o seu saldo após a recompensa cobrir o preço, este item será comprado automaticamente.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Sua recompensa está aguardando verificação. As moedas aparecerão após a confirmação.';
+
+  @override
   String get foldersLibraryEmptyTitle => 'Nenhuma pasta ainda';
 
   @override
@@ -11748,6 +11783,41 @@ class AppLocalizationsPt extends AppLocalizations {
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
 class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
+
+  @override
+  String get economyAd => 'Anúncio';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Assistir a anúncio por $rewardString moedas';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Faltam $countString moedas.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Você ainda pode precisar de $countString moedas após o anúncio';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'Se o seu saldo após a recompensa cobrir o preço, este item será comprado automaticamente.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Sua recompensa está aguardando verificação. As moedas aparecerão após a confirmação.';
 
   @override
   String get foldersLibraryEmptyTitle => 'Nenhuma pasta ainda';

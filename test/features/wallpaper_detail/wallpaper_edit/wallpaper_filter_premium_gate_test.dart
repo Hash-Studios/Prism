@@ -14,11 +14,10 @@ import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/usecase/usecase.dart';
-import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/ads/biz/bloc/ads_bloc.j.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
-import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
+import 'package:Prism/features/ads/data/repositories/ads_repository_impl.dart';
+import 'package:Prism/features/ads/domain/repositories/ads_repository.dart';
 import 'package:Prism/features/ads/domain/usecases/ads_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -30,6 +29,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:google_mobile_ads/src/ad_instance_manager.dart' show AdMessageCodec;
 import 'package:mocktail/mocktail.dart';
 
 import '../../../support/fake_app_analytics.dart';
@@ -482,16 +483,54 @@ void main() {
     source.writeAsBytesSync((await tester.runAsync(_smallPng))!);
     final _MockCreateRewardedAdUseCase createAd = _MockCreateRewardedAdUseCase();
     final _MockShowRewardedAdUseCase showAd = _MockShowRewardedAdUseCase();
-    when(() => createAd(const NoParams())).thenAnswer(
-      (_) async =>
-          Result.success(const AdsEntity(rewardEarned: false, loadingAd: false, adLoaded: true, adFailed: false)),
-    );
-    when(() => showAd(const NoParams())).thenAnswer(
-      (_) async =>
-          Result.success(const AdsEntity(rewardEarned: true, loadingAd: false, adLoaded: false, adFailed: false)),
-    );
     final AdsBloc adsBloc = AdsBloc(createAd, showAd);
     addTearDown(adsBloc.close);
+    getIt.registerSingleton<AdsRepository>(AdsRepositoryImpl());
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    const adsChannel = 'plugins.flutter.io/google_mobile_ads';
+    final adsCodec = StandardMethodCodec(AdMessageCodec());
+    final nativeMethods = <String>[];
+    Future<void> adEvent(int id, String event, {RewardItem? reward}) async {
+      final done = Completer<void>();
+      messenger.handlePlatformMessage(
+        adsChannel,
+        adsCodec.encodeMethodCall(
+          MethodCall('onAdEvent', <String, Object?>{
+            'adId': id,
+            'eventName': event,
+            if (reward != null) 'rewardItem': reward,
+          }),
+        ),
+        (_) => done.complete(),
+      );
+      await done.future;
+    }
+
+    messenger.setMockMessageHandler(adsChannel, (message) async {
+      final call = adsCodec.decodeMethodCall(message);
+      nativeMethods.add(call.method);
+      if (call.method == 'MobileAds#initialize') {
+        return adsCodec.encodeSuccessEnvelope(InitializationStatus(<String, AdapterStatus>{}));
+      }
+      if (call.method == 'setServerSideVerificationOptions') {
+        final options = (call.arguments as Map)['serverSideVerificationOptions'] as ServerSideVerificationOptions;
+        expect(options.userId, 'test');
+        expect(options.customData, 'signed-token');
+      }
+      if (call.method == 'loadRewardedAd') {
+        scheduleMicrotask(() => adEvent((call.arguments as Map)['adId'] as int, 'onAdLoaded'));
+      }
+      if (call.method == 'showAdWithoutView') {
+        final id = (call.arguments as Map)['adId'] as int;
+        scheduleMicrotask(() async {
+          await adEvent(id, 'onRewardedAdUserEarnedReward', reward: RewardItem(999, 'untrusted'));
+          expect(CoinsService.instance.balanceNotifier.value, 0);
+          await adEvent(id, 'onAdDismissedFullScreenContent');
+        });
+      }
+      return const StandardMethodCodec().encodeSuccessEnvelope(null);
+    });
+    addTearDown(() => messenger.setMockMessageHandler(adsChannel, null));
     app_state.prismUser.coins = 0;
     CoinsService.instance.balanceNotifier.value = 0;
     final FakeAppAnalytics testAnalytics = FakeAppAnalytics();
@@ -499,6 +538,7 @@ void main() {
 
     final List<String> spendTags = <String>[];
     final List<String> awardTags = <String>[];
+    final sessionCalls = <String>[];
     final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       _toastChannel,
@@ -516,8 +556,8 @@ void main() {
           <String, Object?>{
             'success': false,
             'changed': false,
-            'previousBalance': 0,
-            'currentBalance': 0,
+            'previousBalance': spendTags.length == 1 ? 0 : 10,
+            'currentBalance': spendTags.length == 1 ? 0 : 10,
             'delta': 0,
             'insufficientBalance': true,
           },
@@ -525,8 +565,38 @@ void main() {
       }
       if (call['functionName'] == 'awardCoins') {
         awardTags.add(parameters['sourceTag']! as String);
+        fail('Receipt-free awards must not be used');
+      }
+      if (call['functionName'] == 'beginRewardedSession') {
+        sessionCalls.add('begin');
+        expect(parameters['placement'], 'coins.filter.download.watch_and_retry.rewarded_ad');
         return _codec.encodeMessage(<Object?>[
-          <String, Object?>{'success': true, 'changed': true, 'previousBalance': 0, 'currentBalance': 10, 'delta': 10},
+          <String, Object?>{
+            'version': 1,
+            'status': 'reserved',
+            'sessionId': 'filter-session',
+            'userId': 'test',
+            'customData': 'signed-token',
+            'adUnitId': 'server-unit',
+            'rewardCoins': CoinsService.instance.adsRewardNow,
+            'showBeforeMs': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch,
+            'callbackBeforeMs': DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch,
+            'adsRemaining': 3,
+          },
+        ]);
+      }
+      if (call['functionName'] == 'getRewardedSession') {
+        sessionCalls.add('status');
+        expect(parameters['sessionId'], 'filter-session');
+        return _codec.encodeMessage(<Object?>[
+          <String, Object?>{
+            'version': 1,
+            'status': 'settled',
+            'sessionId': 'filter-session',
+            'rewardCoins': 10,
+            'currentBalance': 10,
+            'adsRemaining': 3,
+          },
         ]);
       }
       fail('Unexpected callable: ${call['functionName']}');
@@ -542,7 +612,14 @@ void main() {
     await _waitForText(tester, 'Need coins for premium filter');
 
     expect(spendTags, <String>['coins.filter.download.spend', 'coins.filter.download.watch_and_retry.retry.spend']);
-    expect(awardTags, <String>['coins.filter.download.watch_and_retry.rewarded_ad']);
+    expect(awardTags, isEmpty);
+    expect(sessionCalls, <String>['begin', 'status']);
+    expect(CoinsService.instance.confirmedRewardCoins('filter-session'), 10);
+    expect(CoinsService.instance.balanceNotifier.value, 10);
+    expect(
+      nativeMethods.indexOf('setServerSideVerificationOptions'),
+      lessThan(nativeMethods.indexOf('showAdWithoutView')),
+    );
     expect(
       testAnalytics.events.whereType<CoinPremiumFilterSpendAttemptEvent>().map((event) => event.sourceTag),
       <String>['coins.filter.download', 'coins.filter.download.watch_and_retry.retry'],
@@ -555,7 +632,7 @@ void main() {
       testAnalytics.events.whereType<CoinFilterWatchAndRetryUsedEvent>().single.sourceTag,
       'coins.filter.download.watch_and_retry',
     );
-    expect(settings.get<int>('paywall_ad_watch_count', defaultValue: 0), 1);
+    expect(settings.get<int>('settledRewardSession.test.filter-session', defaultValue: 0), 10);
     await tester.pump(const Duration(seconds: 2));
     expect(tester.takeException(), isNull);
   });

@@ -101,7 +101,11 @@ class _CollectionsGridState extends State<CollectionsGrid> {
         ),
         if (prompt.missing > 0 && prompt.canWatchAd)
           CoinGateOption(
-            label: context.l10n.wallpaperPreviewWatchAdUnlock(watchAdOptionLabel(context.l10n)),
+            label: [
+              context.l10n.economyWatchAdForCoins(CoinsService.instance.adsRewardNow),
+              if (prompt.missing > CoinsService.instance.adsRewardNow)
+                context.l10n.economyCoinsRemainAfterAd(prompt.missing - CoinsService.instance.adsRewardNow),
+            ].join('. '),
             value: CoinGateChoice.watchAd,
           ),
         CoinGateOption(label: context.l10n.wallpaperSeePrismPro, value: CoinGateChoice.upgrade, outlined: true),

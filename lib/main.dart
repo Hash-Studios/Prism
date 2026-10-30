@@ -58,6 +58,7 @@ import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
+import 'package:Prism/features/ads/data/ad_sdk.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_session_listener.dart';
 import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
@@ -98,7 +99,6 @@ import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -379,7 +379,7 @@ Future<void> _setIfChanged(SettingsLocalDataSource settings, String key, Object 
 Future<void> _deferredStartup({required bool firebaseInitialized}) async {
   unawaited(
     AdConsent.instance.ensure().then((bool canRequestAds) {
-      if (canRequestAds) unawaited(MobileAds.instance.initialize());
+      if (canRequestAds) unawaited(initializeMobileAds());
     }),
   );
   await _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);

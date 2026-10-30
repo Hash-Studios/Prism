@@ -1,4 +1,16 @@
 {
+  "economyAd": "Iklan",
+  "@economyAd": {"description": "Label identifying a rewarded advertisement."},
+  "economyWatchAdForCoins": "Tonton iklan untuk {reward} koin",
+  "@economyWatchAdForCoins": {"description": "Currently quoted rewarded ad amount.", "placeholders": {"reward": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsMissing": "Kamu membutuhkan {count} koin lagi.",
+  "@economyCoinsMissing": {"description": "Coins missing for the selected purchase.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsRemainAfterAd": "Kamu mungkin masih membutuhkan {count} koin setelah iklan",
+  "@economyCoinsRemainAfterAd": {"description": "Estimated remaining shortfall after the quoted ad reward.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyAdAutomaticPurchase": "Jika saldo setelah hadiah mencukupi harga, item ini akan dibeli secara otomatis.",
+  "@economyAdAutomaticPurchase": {"description": "Disclosure of automatic purchase after a credited ad."},
+  "economyAdVerificationPending": "Hadiah iklanmu sedang diverifikasi. Koin akan muncul setelah dikonfirmasi.",
+  "@economyAdVerificationPending": {"description": "Ad reward awaiting server verification."},
   "foldersLibraryEmptyTitle": "Belum ada folder",
   "@foldersLibraryEmptyTitle": {
     "description": "Title of the empty Folders tab in the Library."

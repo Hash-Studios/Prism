@@ -11,6 +11,41 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
+  String get economyAd => 'Iklan';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Tonton iklan untuk $rewardString koin';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Kamu membutuhkan $countString koin lagi.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Kamu mungkin masih membutuhkan $countString koin setelah iklan';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'Jika saldo setelah hadiah mencukupi harga, item ini akan dibeli secara otomatis.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Hadiah iklanmu sedang diverifikasi. Koin akan muncul setelah dikonfirmasi.';
+
+  @override
   String get foldersLibraryEmptyTitle => 'Belum ada folder';
 
   @override
