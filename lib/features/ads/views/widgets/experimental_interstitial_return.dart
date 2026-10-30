@@ -100,6 +100,11 @@ class _ExperimentalInterstitialReturnState extends State<ExperimentalInterstitia
     final generation = _generation;
     if (widget.android == null && !Platform.isAndroid && !Platform.isIOS) return;
     if (!await _service.permits(AdExperimentFormat.interstitial, active: true, action: true)) return;
+    try {
+      await _service.initializeAds();
+    } catch (_) {
+      return;
+    }
     final config = _service.config;
     final id = config.unitId(AdExperimentFormat.interstitial, android: widget.android ?? Platform.isAndroid);
     final bucket = await _service.bucket();

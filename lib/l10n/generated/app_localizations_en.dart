@@ -15,21 +15,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String economyWatchAdForCoins(int reward) {
-    return 'Watch ad for $reward coins';
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Watch ad for $rewardString coins';
   }
 
   @override
   String economyCoinsMissing(int count) {
-    return 'You need $count more coins.';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'You need $countString more coins.';
   }
 
   @override
   String economyCoinsRemainAfterAd(int count) {
-    return 'You may still need $count coins after the ad';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'You may still need $countString coins after the ad';
   }
 
   @override
-  String get economyAdAutomaticPurchase => 'If the reward covers the price, this item will be purchased automatically.';
+  String get economyAdAutomaticPurchase =>
+      'If your balance after the reward covers the price, this item will be purchased automatically.';
 
   @override
   String get economyAdVerificationPending =>

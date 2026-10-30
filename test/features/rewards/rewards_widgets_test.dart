@@ -12,6 +12,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/coins/coin_pill.dart';
+import 'package:Prism/features/ads/views/widgets/experimental_inline_ad.dart';
 import 'package:Prism/features/badges/biz/bloc/badges_bloc.dart';
 import 'package:Prism/features/drops/drops.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
@@ -457,6 +458,14 @@ void main() {
       await tester.pump();
       expect(find.text('Ad'), findsOneWidget);
       expect(tester.takeException(), isNull);
+      tester.view.physicalSize = const Size(1024, 1366);
+      await tester.pump();
+      final banner = tester.widget<ExperimentalInlineAd>(find.byType(ExperimentalInlineAd));
+      expect(banner.availableWidth, lessThanOrEqualTo(640));
+      expect(banner.availableWidth, greaterThan(0));
+      expect(tester.takeException(), isNull);
+      tester.view.physicalSize = const Size(320, 568);
+      await tester.pump();
       await tester.scrollUntilVisible(
         find.text(AppLocalizationsEn().economyCollectionUnlockedAtDays(7)),
         200,

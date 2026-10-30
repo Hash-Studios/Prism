@@ -155,10 +155,12 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
                 gap,
                 BalanceCard(onSeeUses: () => _scrollTo(_spendKey)),
                 KeyedSubtree(key: _earnKey, child: const RewardsEarnSection()),
-                ExperimentalInlineAd(
-                  format: AdExperimentFormat.banner,
-                  active: widget.showBack || (_tabWasActive ?? false),
-                  availableWidth: MediaQuery.sizeOf(context).width - 2 * PrismSpace.page,
+                LayoutBuilder(
+                  builder: (context, constraints) => ExperimentalInlineAd(
+                    format: AdExperimentFormat.banner,
+                    active: widget.showBack || (_tabWasActive ?? false),
+                    availableWidth: constraints.maxWidth,
+                  ),
                 ),
                 KeyedSubtree(
                   key: _spendKey,

@@ -1013,7 +1013,12 @@ class CoinsService with WidgetsBindingObserver {
     final String requestedPlacement = unknown?['placement']?.toString() ?? placement;
     final String tag = requestedPlacement.trim().isEmpty ? 'rewarded_ad' : requestedPlacement.trim();
     final String boundedTag = tag.length > 120 ? tag.substring(0, 120) : tag;
-    final pending = <String, dynamic>{'userId': owner, 'requestId': requestId, 'placement': boundedTag};
+    final pending = <String, dynamic>{
+      'userId': owner,
+      'requestId': requestId,
+      'placement': boundedTag,
+      'createdAtMs': unknown?['createdAtMs'] ?? now,
+    };
     await _editRewardSessions(owner, (entries) {
       if (!entries.any((entry) => entry['requestId'] == requestId)) entries.add(pending);
     });
@@ -1127,6 +1132,20 @@ class CoinsService with WidgetsBindingObserver {
             ),
           ),
         );
+      } on FirebaseFunctionsException catch (error) {
+        if (error.code == 'not-found' && pending['sessionId'] == null && _isCurrentOwner(owner, generation)) {
+          final now = DateTime.now().millisecondsSinceEpoch;
+          final createdAt = pending['createdAtMs'];
+          await _editRewardSessions(owner, (entries) {
+            if (createdAt is int && now - createdAt >= const Duration(hours: 24).inMilliseconds) {
+              entries.removeWhere((entry) => entry['requestId'] == pending['requestId']);
+            } else if (createdAt is! int) {
+              for (final entry in entries) {
+                if (entry['requestId'] == pending['requestId']) entry['createdAtMs'] = now;
+              }
+            }
+          });
+        }
       } catch (_) {
         // Keep this entry and continue recovering other sessions.
       }

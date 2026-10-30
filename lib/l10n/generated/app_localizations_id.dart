@@ -15,22 +15,31 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String economyWatchAdForCoins(int reward) {
-    return 'Tonton iklan untuk $reward koin';
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Tonton iklan untuk $rewardString koin';
   }
 
   @override
   String economyCoinsMissing(int count) {
-    return 'Kamu membutuhkan $count koin lagi.';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Kamu membutuhkan $countString koin lagi.';
   }
 
   @override
   String economyCoinsRemainAfterAd(int count) {
-    return 'Kamu mungkin masih membutuhkan $count koin setelah iklan';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Kamu mungkin masih membutuhkan $countString koin setelah iklan';
   }
 
   @override
   String get economyAdAutomaticPurchase =>
-      'Jika hadiah cukup untuk membayar harga, item ini akan dibeli secara otomatis.';
+      'Jika saldo setelah hadiah mencukupi harga, item ini akan dibeli secara otomatis.';
 
   @override
   String get economyAdVerificationPending =>

@@ -15,22 +15,31 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String economyWatchAdForCoins(int reward) {
-    return 'Anzeige für $reward Münzen ansehen';
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Anzeige für $rewardString Münzen ansehen';
   }
 
   @override
   String economyCoinsMissing(int count) {
-    return 'Dir fehlen noch $count Münzen.';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Dir fehlen noch $countString Münzen.';
   }
 
   @override
   String economyCoinsRemainAfterAd(int count) {
-    return 'Nach der Anzeige fehlen dir möglicherweise noch $count Münzen';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Nach der Anzeige fehlen dir möglicherweise noch $countString Münzen';
   }
 
   @override
   String get economyAdAutomaticPurchase =>
-      'Wenn die Belohnung den Preis deckt, wird dieser Artikel automatisch gekauft.';
+      'Wenn dein Guthaben nach der Belohnung den Preis deckt, wird dieser Artikel automatisch gekauft.';
 
   @override
   String get economyAdVerificationPending =>

@@ -344,6 +344,41 @@ void main() {
       expect(calls, ['beginRewardedSession', 'getRewardedSession', 'beginRewardedSession', 'getRewardedSession']);
     });
 
+    test('old uncommitted reward requests expire only after a not-found response', () async {
+      final owner = app_state.prismUser.id;
+      final key = 'verifiedRewardSession_v1.$owner';
+      await getIt<SettingsLocalDataSource>().set(
+        key,
+        jsonEncode([
+          {
+            'userId': owner,
+            'requestId': 'old',
+            'placement': 'download',
+            'createdAtMs': DateTime.now().subtract(const Duration(hours: 25)).millisecondsSinceEpoch,
+          },
+          {
+            'userId': owner,
+            'requestId': 'recent',
+            'placement': 'download',
+            'createdAtMs': DateTime.now().millisecondsSinceEpoch,
+          },
+          {'userId': owner, 'requestId': 'legacy', 'placement': 'download'},
+        ]),
+      );
+      backend.onCall = (name, _) async {
+        expect(name, 'getRewardedSession');
+        throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
+      };
+      await service.reconcileRewardedSession();
+      expect(stored(key), contains('old'));
+      backend.onCall = (name, _) async => throw FirebaseFunctionsException(code: 'not-found', message: 'missing');
+      await service.reconcileRewardedSession();
+      final entries = jsonDecode(stored(key)) as List;
+      expect(entries.map((entry) => (entry as Map)['requestId']), ['recent', 'legacy']);
+      expect((entries.last as Map)['createdAtMs'], isA<int>());
+      expect(app_state.prismUser.coins, 100);
+    });
+
     test('receipt-free rewarded awards never call the server', () async {
       final calls = <String>[];
       backend.onCall = (name, _) async {

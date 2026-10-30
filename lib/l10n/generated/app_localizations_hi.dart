@@ -15,21 +15,31 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String economyWatchAdForCoins(int reward) {
-    return '$reward सिक्कों के लिए विज्ञापन देखें';
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return '$rewardString सिक्कों के लिए विज्ञापन देखें';
   }
 
   @override
   String economyCoinsMissing(int count) {
-    return 'आपको $count और सिक्के चाहिए।';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'आपको $countString और सिक्के चाहिए।';
   }
 
   @override
   String economyCoinsRemainAfterAd(int count) {
-    return 'विज्ञापन के बाद भी आपको $count सिक्के चाहिए हो सकते हैं';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'विज्ञापन के बाद भी आपको $countString सिक्के चाहिए हो सकते हैं';
   }
 
   @override
-  String get economyAdAutomaticPurchase => 'अगर इनाम कीमत पूरी करता है, तो यह आइटम अपने आप खरीदा जाएगा।';
+  String get economyAdAutomaticPurchase =>
+      'अगर इनाम मिलने के बाद आपका बैलेंस कीमत पूरी करता है, तो यह आइटम अपने आप खरीदा जाएगा।';
 
   @override
   String get economyAdVerificationPending => 'आपके विज्ञापन इनाम की पुष्टि बाकी है। पुष्टि होने पर सिक्के दिखेंगे।';

@@ -9,6 +9,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/data/ad_experiment_config.dart';
 import 'package:Prism/features/ads/data/ad_experiment_policy.dart';
+import 'package:Prism/features/ads/data/ad_sdk.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -145,7 +146,10 @@ class AdExperimentService with WidgetsBindingObserver {
     }
   }
 
+  Future<void> initializeAds() => initializeMobileAds();
+
   Future<bool> permits(AdExperimentFormat format, {required bool active, bool action = false}) async {
+    if (!active || !config.enabled(format)) return false;
     try {
       await start();
       await _lifecycleWrites;

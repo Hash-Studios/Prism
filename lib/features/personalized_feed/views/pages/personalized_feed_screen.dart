@@ -655,7 +655,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     List<Widget> gridWithAd(int start, int end) => <Widget>[
       if (adAt != null && start < adAt && adAt < end) ...<Widget>[
         grid(start, adAt),
-        const SliverToBoxAdapter(child: ExperimentalInlineAd(format: AdExperimentFormat.native, active: true)),
+        const DeferredAdSliver(child: ExperimentalInlineAd(format: AdExperimentFormat.native, active: true)),
         grid(adAt, end),
       ] else
         grid(start, end),

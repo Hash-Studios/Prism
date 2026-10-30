@@ -25,6 +25,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
+import '../../support/wait_for_real_io.dart';
 
 class _ThrowingConsent extends AdConsent {
   @override
@@ -238,7 +239,7 @@ void main() {
           'showBeforeMs': DateTime.now().add(const Duration(minutes: 10)).millisecondsSinceEpoch,
         };
       }
-      expect(name, 'getRewardedSession');
+      expectSync(name, 'getRewardedSession');
       return {
         'version': 1,
         'sessionId': 'session',
@@ -278,6 +279,79 @@ void main() {
     expect(CoinsService.instance.balanceNotifier.value, 107);
     expect(CoinsService.instance.confirmedRewardCoins('session'), 7);
     expect(disposedIds.where((value) => value == id), hasLength(1));
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('delayed SSV settlement after dismissal completes the verified watch', (tester) async {
+    final owner = app_state.prismUser;
+    final backend = CoinsTestBackend();
+    await backend.install();
+    CoinsService.instance.resetSession();
+    getIt.registerSingleton<AdsRepository>(repository);
+    addTearDown(() async {
+      app_state.prismUser = owner;
+      await getIt.reset();
+    });
+    bool verified = false;
+    int begins = 0;
+    backend.onCall = (name, parameters) async {
+      if (name == 'beginRewardedSession') {
+        begins++;
+        return {
+          'version': 1,
+          'status': 'reserved',
+          'sessionId': 'session',
+          'userId': app_state.prismUser.id,
+          'customData': 'token',
+          'adUnitId': 'server-unit',
+          'rewardCoins': 7,
+          'adsRemaining': 3,
+          'showBeforeMs': DateTime.now().add(const Duration(minutes: 10)).millisecondsSinceEpoch,
+        };
+      }
+      expectSync(name, 'getRewardedSession');
+      return {
+        'version': 1,
+        'sessionId': 'session',
+        'status': verified ? 'settled' : 'reserved',
+        'rewardCoins': 7,
+        'currentBalance': verified ? 107 : 100,
+        'adsRemaining': 3,
+      };
+    };
+    final quotes = <int>[];
+    final port = AppCoinGatePort(
+      () => throw StateError('No UI bloc should be required'),
+      confirmRewardQuote: (coins) async {
+        quotes.add(coins);
+        return true;
+      },
+    );
+    CoinMutationResult? uiResult;
+    port.watchVerifiedReward('download').then((value) => uiResult = value);
+    await tester.pump();
+    final id = loadIds.single;
+    await adEvent(id, 'onAdLoaded');
+    await tester.pump();
+    expect(nativeMethods, contains('showAdWithoutView'));
+    expect(quotes, [7]);
+    await adEvent(id, 'onRewardedAdUserEarnedReward', reward: RewardItem(7, 'coins'));
+    await adEvent(id, 'onAdDismissedFullScreenContent');
+    await tester.pump();
+    expect(uiResult, isNull);
+    verified = true;
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pump();
+    await waitForRealIo(
+      tester,
+      () => uiResult != null,
+      reason: 'delayed signed reward',
+      pumpDuration: const Duration(milliseconds: 100),
+    );
+    expect(begins, 1);
+    expect(uiResult?.changed, isTrue);
+    expect(uiResult?.delta, 7);
+    expect(CoinsService.instance.balanceNotifier.value, 107);
     await tester.pump(const Duration(seconds: 2));
   });
 

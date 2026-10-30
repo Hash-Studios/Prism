@@ -15,21 +15,31 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String economyWatchAdForCoins(int reward) {
-    return 'Assistir a anúncio por $reward moedas';
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Assistir a anúncio por $rewardString moedas';
   }
 
   @override
   String economyCoinsMissing(int count) {
-    return 'Faltam $count moedas.';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Faltam $countString moedas.';
   }
 
   @override
   String economyCoinsRemainAfterAd(int count) {
-    return 'Você ainda pode precisar de $count moedas após o anúncio';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Você ainda pode precisar de $countString moedas após o anúncio';
   }
 
   @override
-  String get economyAdAutomaticPurchase => 'Se a recompensa cobrir o preço, este item será comprado automaticamente.';
+  String get economyAdAutomaticPurchase =>
+      'Se o seu saldo após a recompensa cobrir o preço, este item será comprado automaticamente.';
 
   @override
   String get economyAdVerificationPending =>
@@ -11666,21 +11676,31 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String economyWatchAdForCoins(int reward) {
-    return 'Assistir a anúncio por $reward moedas';
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Assistir a anúncio por $rewardString moedas';
   }
 
   @override
   String economyCoinsMissing(int count) {
-    return 'Faltam $count moedas.';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Faltam $countString moedas.';
   }
 
   @override
   String economyCoinsRemainAfterAd(int count) {
-    return 'Você ainda pode precisar de $count moedas após o anúncio';
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Você ainda pode precisar de $countString moedas após o anúncio';
   }
 
   @override
-  String get economyAdAutomaticPurchase => 'Se a recompensa cobrir o preço, este item será comprado automaticamente.';
+  String get economyAdAutomaticPurchase =>
+      'Se o seu saldo após a recompensa cobrir o preço, este item será comprado automaticamente.';
 
   @override
   String get economyAdVerificationPending =>

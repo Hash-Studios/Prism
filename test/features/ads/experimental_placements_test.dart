@@ -10,6 +10,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class _EligibleService extends AdExperimentService {
+  Future<void> readiness = Future<void>.value();
+  @override
+  Future<void> initializeAds() => readiness;
+
   bool allowed = true;
   Completer<bool>? eligibility;
   _EligibleService() {
@@ -94,6 +98,65 @@ void main() {
     service.eligibility!.complete(true);
     await tester.pump();
     expect(requests, 0);
+  });
+
+  testWidgets('deep ad slot does not request until scrolling approaches it', (tester) async {
+    final service = _EligibleService();
+    int requests = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CustomScrollView(
+            slivers: [
+              const SliverToBoxAdapter(child: SizedBox(height: 3000)),
+              DeferredAdSliver(
+                child: ExperimentalInlineAd(
+                  format: AdExperimentFormat.banner,
+                  active: true,
+                  android: true,
+                  service: service,
+                  loadAd: (_) async {
+                    requests++;
+                  },
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 1000)),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(requests, 0);
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -2800));
+    await tester.pump();
+    expect(requests, 1);
+  });
+
+  testWidgets('placement waits for SDK initialization before requesting', (tester) async {
+    final ready = Completer<void>();
+    final service = _EligibleService()..readiness = ready.future;
+    int requests = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ExperimentalInlineAd(
+            format: AdExperimentFormat.banner,
+            active: true,
+            android: true,
+            service: service,
+            loadAd: (_) async {
+              requests++;
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(requests, 0);
+    ready.complete();
+    await tester.pump();
+    expect(requests, 1);
   });
 
   testWidgets('SDK no-fill collapses an active banner', (tester) async {

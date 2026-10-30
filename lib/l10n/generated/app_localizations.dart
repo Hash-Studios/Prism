@@ -132,7 +132,7 @@ abstract class AppLocalizations {
   /// Disclosure of the shop's automatic purchase after a credited ad.
   ///
   /// In en, this message translates to:
-  /// **'If the reward covers the price, this item will be purchased automatically.'**
+  /// **'If your balance after the reward covers the price, this item will be purchased automatically.'**
   String get economyAdAutomaticPurchase;
 
   /// A completed ad reward is awaiting server verification.

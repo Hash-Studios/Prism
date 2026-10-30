@@ -43,6 +43,14 @@ void main() {
     }
   });
 
+  test('disabled placements do not start persistence', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{'ad_experiment.session': 'invalid'});
+    final service = AdExperimentService();
+    expect(await service.permits(AdExperimentFormat.native, active: true), isFalse);
+    expect(await service.permits(AdExperimentFormat.native, active: false), isFalse);
+    expect((await SharedPreferences.getInstance()).getString('ad_experiment.session'), 'invalid');
+  });
+
   test('holdout and unknown eligibility fail closed', () {
     expect(permits(), isTrue);
     expect(permits(bucket: 19), isFalse);

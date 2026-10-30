@@ -109,6 +109,15 @@ class AppCoinGatePort implements CoinGatePort {
       Future<CoinMutationResult> finishFullscreen() async {
         final shown = await repository.showRewardedAd();
         await CoinsService.instance.reconcileRewardedSession();
+        final deadline = DateTime.now().add(const Duration(seconds: 10));
+        while (shown.data?.rewardPending == true &&
+            app_state.prismUser.id == session.userId &&
+            !CoinsService.instance.rewardSessionSettled(session.sessionId) &&
+            DateTime.now().isBefore(deadline)) {
+          await Future<void>.delayed(const Duration(seconds: 2));
+          if (app_state.prismUser.id != session.userId) break;
+          await CoinsService.instance.reconcileRewardedSession();
+        }
         final bool settled =
             app_state.prismUser.id == session.userId && CoinsService.instance.rewardSessionSettled(session.sessionId);
         final int rewardCoins = settled ? CoinsService.instance.confirmedRewardCoins(session.sessionId) : 0;

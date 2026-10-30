@@ -134,6 +134,11 @@ class _ExperimentalInlineAdState extends State<ExperimentalInlineAd> with Widget
     final service = _service;
     if (widget.android == null && !Platform.isAndroid && !Platform.isIOS) return;
     if (!await service.permits(widget.format, active: true)) return;
+    try {
+      await service.initializeAds();
+    } catch (_) {
+      return;
+    }
     final config = service.config;
     final id = config.unitId(widget.format, android: widget.android ?? Platform.isAndroid);
     if (id.isEmpty) return;
@@ -264,4 +269,25 @@ class _ExperimentalInlineAdState extends State<ExperimentalInlineAd> with Widget
       ],
     );
   }
+}
+
+class DeferredAdSliver extends StatefulWidget {
+  const DeferredAdSliver({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  State<DeferredAdSliver> createState() => _DeferredAdSliverState();
+}
+
+class _DeferredAdSliverState extends State<DeferredAdSliver> {
+  bool _reached = false;
+
+  @override
+  Widget build(BuildContext context) => SliverLayoutBuilder(
+    builder: (context, constraints) {
+      _reached = _reached || (constraints.remainingCacheExtent > 0 && constraints.scrollOffset == 0);
+      return SliverToBoxAdapter(child: _reached ? widget.child : const SizedBox.shrink());
+    },
+  );
 }
