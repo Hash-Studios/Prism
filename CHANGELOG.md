@@ -1,5 +1,15 @@
 ## Changelog
 
+### v3.16.0
+- Remix AI wallpapers and explore creations inspired by the original
+- Choose whether AI wallpapers appear in your feeds and search
+- See AI labels and the model used on wallpaper details
+- Explore AI results full screen, apply them and refine them with follow-up ideas
+- Shake your phone to report a problem, with an optional screenshot
+- Your wallpaper target is remembered the next time you tap Set
+- Clearer wallpaper confirmations and better shared folder previews
+- Security and stability fixes
+
 ### v3.15.0
 - Make a folder public, follow other people's folders and share them
 - Ask for a wallpaper, vote for other requests, and get a push when yours is filled
