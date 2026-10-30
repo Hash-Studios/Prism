@@ -159,6 +159,15 @@ class LocalQaMessenger implements BinaryMessenger {
   @override
   Future<ByteData?>? send(String channel, ByteData? message) {
     if (_blocked.any(channel.startsWith)) {
+      if (channel.startsWith('dev.flutter.pigeon.')) {
+        return Future<ByteData?>.value(
+          const StandardMessageCodec().encodeMessage(<Object?>[
+            'local-qa-disabled',
+            'This native service is disabled in local QA.',
+            null,
+          ]),
+        );
+      }
       return Future<ByteData?>.value(
         const StandardMethodCodec().encodeErrorEnvelope(
           code: 'local-qa-disabled',
