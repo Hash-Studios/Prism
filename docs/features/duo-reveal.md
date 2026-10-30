@@ -149,6 +149,18 @@ The Astra final review found no new confirmed defects and made no code changes.
 - Share card: the production renderer produced a 1080 x 1920 PNG from the local geometry fixture. It shows folded above unfolded and the Get it on Prism CTA. This proves the renderer, not native share-sheet export.
 - Reveal clip: an actual iOS app interaction was recorded with the device-panel `agent-device` command. The conversion settings from `tool/record_clip.sh` produced a 1080 x 1920, 5.03-second clip. That script did not perform the capture.
 
+### Local web proof
+
+The empty exported route and two injected local geometry fixtures passed live browser DOM checks at 390 and 1440 pixels.
+Labels, loaded image dimensions, Prism/store URLs, responsive grids, and absence of horizontal overflow were checked.
+The actual empty export has `noindex, follow`, is absent from the sitemap, and keeps the production manifest empty.
+The parent inspected the fixture server, DOM evidence, and four screenshots, then reran all three SSR tests successfully.
+
+Direct route capture timed out. The four published web screenshots therefore use the actual `DuoGallery` SSR and existing CSS in a standalone HTML renderer.
+The populated fixture replaces only the exported empty gallery; scripts are removed so empty production hydration cannot replace the fixture.
+Viewport-height CSS is frozen to the tested height for full-document rendering. Local diagrams deliberately fail the production publication validator.
+This is static SSR visual proof, not hydrated-route or approved-production-content proof. The browser tabs and local server were closed.
+
 ### Open proof gates
 
 - Live dev AI generation needs an owner-authenticated QA session and a way to exercise the changed worker. Fresh QA devices are signed out, and the app endpoint is currently the production URL. No auth bypass or request to the old deployed worker was used as substitute proof.
