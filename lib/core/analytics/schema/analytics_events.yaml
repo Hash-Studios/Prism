@@ -235,6 +235,7 @@ enums:
   - name: share_format
     dart_type: ShareFormatValue
     values:
+      - duo_reveal
       - story
       - post
       - clean
@@ -2067,6 +2068,43 @@ events:
       - name: position
         key: position
         type: int
+  - id: duo_preview_opened
+    fields:
+      - name: content_id
+        key: content_id
+        type: string
+      - name: source
+        key: source
+        type: string
+      - name: preset_id
+        key: preset_id
+        type: string
+  - id: duo_fold_toggled
+    fields:
+      - name: content_id
+        key: content_id
+        type: string
+      - name: unfolded
+        key: unfolded
+        type: bool
+  - id: duo_ai_generated
+    fields:
+      - name: generation_id
+        key: generation_id
+        type: string
+      - name: quality_tier
+        key: quality_tier
+        type: string
+  - id: duo_share_card_made
+    fields:
+      - name: content_id
+        key: content_id
+        type: string
+  - id: duo_row_opened
+    fields:
+      - name: source
+        key: source
+        type: string
   - id: mood_row_seen
     fields:
       - name: mood_id

@@ -23,6 +23,7 @@ import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.da
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/features/weekly_challenges/biz/challenge_admission_tracker.dart';
 import 'package:Prism/features/weekly_challenges/biz/confirm_challenge_submission.dart';
@@ -138,11 +139,13 @@ AiGenerationRecord _record({
   String userId = 'user-1',
   String imageUrl = '',
   String watermarkedImageUrl = '',
+  String? format,
 }) => AiGenerationRecord(
   id: id,
   userId: userId,
   createdAt: DateTime.utc(2026),
   prompt: 'A quiet mountain lake',
+  format: format,
   stylePreset: AiStylePreset.nature,
   qualityTier: AiQualityTier.fast,
   provider: 'test',
@@ -471,6 +474,88 @@ void main() {
     expect(analytics.events.whereType<InviteShareTappedEvent>(), hasLength(2));
     expect(analytics.events.whereType<InviteShareResultEvent>(), isEmpty);
   });
+
+  testWidgets('Duo apply opens the preview and preserves existing apply analytics', (tester) async {
+    tester.view.physicalSize = const Size(600, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    final analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(
+          repository: _FakeAiGenerationRepository(_record(format: 'duo-reveal'), Completer<AiSubmissionMetadata>()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _openRecent(tester);
+    Navigator.of(tester.element(find.byType(ClockOverlay))).pop();
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Apply'));
+    await tester.tap(find.text('Apply'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ClockOverlay, skipOffstage: false), findsOneWidget);
+    expect(analytics.events.whereType<AiResultAppliedEvent>().map((event) => event.platform), <String>['ios']);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('Duo AI share opens the Duo card sheet rather than reopening preview', (tester) async {
+    tester.view.physicalSize = const Size(600, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    var shareCalls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(
+          repository: _FakeAiGenerationRepository(
+            _record(
+              format: 'duo-reveal',
+              imageUrl: 'https://cdn/full.png',
+              watermarkedImageUrl: 'https://cdn/watermarked.png',
+            ),
+            Completer<AiSubmissionMetadata>(),
+          ),
+          shareSheet: (_, content, sourceContext) async {
+            shareCalls++;
+            expect(content.duoReveal, isTrue);
+            expect(content.contentId, 'generation-1');
+            expect(content.imageUrl, 'https://cdn/watermarked.png');
+            expect(content.foldedLabel, 'Folded');
+            expect(content.unfoldedLabel, 'Unfolded');
+            expect(content.cta, 'Get it on Prism');
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _openRecent(tester);
+    expect(find.byType(ClockOverlay), findsOneWidget);
+    Navigator.of(tester.element(find.byType(ClockOverlay))).pop();
+    await tester.pumpAndSettle();
+    final Finder shareButton = find.byTooltip('Share');
+    await tester.ensureVisible(shareButton);
+    await tester.tap(shareButton);
+    await tester.pumpAndSettle();
+    expect(shareCalls, 1);
+    expect(find.byType(ClockOverlay), findsNothing);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('AI share failure records failure and restores the action', (tester) async {
     final analytics = FakeAppAnalytics();

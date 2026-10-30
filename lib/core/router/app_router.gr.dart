@@ -294,6 +294,8 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
     Widget Function(String)? saveAction,
     SetScreenRequest? request,
     String? spatialMapUrl,
+    bool duoReveal = false,
+    bool allowDuo = false,
     List<PageRouteInfo>? children,
   }) : super(
          ClockPreviewRoute.name,
@@ -308,6 +310,8 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
            saveAction: saveAction,
            request: request,
            spatialMapUrl: spatialMapUrl,
+           duoReveal: duoReveal,
+           allowDuo: allowDuo,
          ),
          initialChildren: children,
        );
@@ -329,6 +333,8 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
         saveAction: args.saveAction,
         request: args.request,
         spatialMapUrl: args.spatialMapUrl,
+        duoReveal: args.duoReveal,
+        allowDuo: args.allowDuo,
       );
     },
   );
@@ -346,6 +352,8 @@ class ClockPreviewRouteArgs {
     this.saveAction,
     this.request,
     this.spatialMapUrl,
+    this.duoReveal = false,
+    this.allowDuo = false,
   });
 
   final Key? key;
@@ -368,9 +376,13 @@ class ClockPreviewRouteArgs {
 
   final String? spatialMapUrl;
 
+  final bool duoReveal;
+
+  final bool allowDuo;
+
   @override
   String toString() {
-    return 'ClockPreviewRouteArgs{key: $key, link: $link, file: $file, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource, thumbnailUrl: $thumbnailUrl, tint: $tint, saveAction: $saveAction, request: $request, spatialMapUrl: $spatialMapUrl}';
+    return 'ClockPreviewRouteArgs{key: $key, link: $link, file: $file, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource, thumbnailUrl: $thumbnailUrl, tint: $tint, saveAction: $saveAction, request: $request, spatialMapUrl: $spatialMapUrl, duoReveal: $duoReveal, allowDuo: $allowDuo}';
   }
 
   @override
@@ -385,7 +397,9 @@ class ClockPreviewRouteArgs {
         thumbnailUrl == other.thumbnailUrl &&
         tint == other.tint &&
         request == other.request &&
-        spatialMapUrl == other.spatialMapUrl;
+        spatialMapUrl == other.spatialMapUrl &&
+        duoReveal == other.duoReveal &&
+        allowDuo == other.allowDuo;
   }
 
   @override
@@ -398,7 +412,9 @@ class ClockPreviewRouteArgs {
       thumbnailUrl.hashCode ^
       tint.hashCode ^
       request.hashCode ^
-      spatialMapUrl.hashCode;
+      spatialMapUrl.hashCode ^
+      duoReveal.hashCode ^
+      allowDuo.hashCode;
 }
 
 /// generated route for

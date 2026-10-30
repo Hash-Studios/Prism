@@ -102,6 +102,142 @@
   },
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "en",
+  "duoTitle": "Duo reveal",
+  "@duoTitle": {
+    "description": "Shared title for Prism Duo reveal wallpapers."
+  },
+  "duoAiFormatLabel": "Create a Duo reveal",
+  "@duoAiFormatLabel": {
+    "description": "AI composition format switch. Normal quality and coin prices still apply."
+  },
+  "duoPresetNotice": "Prism previews the right side when folded. Align the saved original manually and check both views in the system wallpaper preview. This is a Prism preset, not an automatic iOS crop.",
+  "@duoPresetNotice": {
+    "description": "Shared notice explaining the user-approved Prism crop preset, not an Apple crop claim."
+  },
+  "duoFoldedPromptLabel": "Folded view",
+  "@duoFoldedPromptLabel": {
+    "description": "Visible label for the 1 to 160 character subject visible in the right-side crop."
+  },
+  "duoFoldedPromptExample": "A sleepy cat beside a window",
+  "@duoFoldedPromptExample": {
+    "description": "Brief example for the folded-view prompt, not its label."
+  },
+  "duoRevealedPromptLabel": "Unfolded reveal",
+  "@duoRevealedPromptLabel": {
+    "description": "Visible label for the 1 to 160 character scene revealed by the wider canvas."
+  },
+  "duoRevealedPromptExample": "A tiny spaceship outside the window",
+  "@duoRevealedPromptExample": {
+    "description": "Brief example for the unfolded-view prompt, not its label."
+  },
+  "duoPromptValidation": "Describe both views using 1 to 160 characters each.",
+  "@duoPromptValidation": {
+    "description": "Validation before a Duo AI generation. Both trimmed prompts must contain 1 to 160 characters."
+  },
+  "duoMoodBody": "One wallpaper. A wider reveal.",
+  "@duoMoodBody": {
+    "description": "One-line Home mood row description for Duo reveal wallpapers."
+  },
+  "duoDeviceName": "iPhone Duo",
+  "@duoDeviceName": {
+    "description": "Duo device preview selector. Product name remains unchanged."
+  },
+  "duoPhoneDevice": "Phone",
+  "@duoPhoneDevice": {
+    "description": "Standard phone preview selector."
+  },
+  "duoFold": "Fold",
+  "@duoFold": {
+    "description": "Button and accessibility label to fold the Duo preview."
+  },
+  "duoUnfold": "Unfold",
+  "@duoUnfold": {
+    "description": "Button and accessibility label to unfold the Duo preview."
+  },
+  "duoFolded": "Folded",
+  "@duoFolded": {
+    "description": "Label above the folded view on a share card."
+  },
+  "duoUnfolded": "Unfolded",
+  "@duoUnfolded": {
+    "description": "Label above the unfolded view on a share card."
+  },
+  "duoAndroidCropNotice": "Prism previews the right side when folded. Android may crop it differently. Check the system wallpaper preview before applying.",
+  "@duoAndroidCropNotice": {
+    "description": "Android Duo preview caveat. Standard Home, Lock and Both targets remain available."
+  },
+  "duoGetOnPrism": "Get it on Prism",
+  "@duoGetOnPrism": {
+    "description": "Call to action printed on the exported Duo reveal share card."
+  },
+  "duoGuideTitle": "Set up your Duo reveal",
+  "@duoGuideTitle": {
+    "description": "Title of setup guide shown only after a successful iOS Photos save."
+  },
+  "duoGuideOpen": "Open the saved original in Photos, tap Share, then Use as Wallpaper.",
+  "@duoGuideOpen": {
+    "description": "First of three Duo wallpaper setup steps."
+  },
+  "duoGuideAlign": "Align the full image manually so the folded view shows the right side.",
+  "@duoGuideAlign": {
+    "description": "Second of three steps. Manual alignment, not an automatic Apple crop."
+  },
+  "duoGuideCheck": "Check both folded and unfolded views in the system preview, then add the wallpaper.",
+  "@duoGuideCheck": {
+    "description": "Third of three steps. User must check both system previews."
+  },
+  "duoWebTitle": "iPhone Duo wallpapers | Prism",
+  "@duoWebTitle": {
+    "description": "Duo website browser and search title"
+  },
+  "duoWebDescription": "One wallpaper, a hidden second scene. Explore original Duo reveal wallpapers in Prism.",
+  "@duoWebDescription": {
+    "description": "Duo website metadata description"
+  },
+  "duoWebHeading": "One wallpaper. A wider story.",
+  "@duoWebHeading": {
+    "description": "Duo website heading"
+  },
+  "duoWebIntro": "A quiet scene when folded. A second story when unfolded. Preview both views of each original wallpaper.",
+  "@duoWebIntro": {
+    "description": "Duo website introduction"
+  },
+  "duoWebEmpty": "The first Duo collection is in review.",
+  "@duoWebEmpty": {
+    "description": "Empty approved Duo website collection"
+  },
+  "duoWebEmptyBody": "Explore Prism while each wallpaper is checked in both views.",
+  "@duoWebEmptyBody": {
+    "description": "Empty Duo website next step"
+  },
+  "duoWebFolded": "Folded preview",
+  "@duoWebFolded": {
+    "description": "Website folded preview caption"
+  },
+  "duoWebUnfolded": "Unfolded original",
+  "@duoWebUnfolded": {
+    "description": "Website unfolded preview caption"
+  },
+  "duoWebPresetNotice": "These previews use Prism's right-side preset, not an automatic Apple crop. Save the full original, align it manually, and check both folded and unfolded views in the system wallpaper preview.",
+  "@duoWebPresetNotice": {
+    "description": "Website notice about the approved Prism crop"
+  },
+  "duoWebOpenPrism": "Open in Prism",
+  "@duoWebOpenPrism": {
+    "description": "Website wallpaper deep link action"
+  },
+  "duoWebExplore": "Explore Prism",
+  "@duoWebExplore": {
+    "description": "Website homepage action"
+  },
+  "duoWebAppStore": "Download on the App Store",
+  "@duoWebAppStore": {
+    "description": "Website App Store link"
+  },
+  "duoWebPlayStore": "Get it on Google Play",
+  "@duoWebPlayStore": {
+    "description": "Website Google Play link"
+  },
   "economyExportFailedLabel": "Export failed",
   "@economyExportFailedLabel": {
     "description": "Failed filter export action inserted before refund status."

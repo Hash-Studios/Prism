@@ -84,6 +84,9 @@ void main() {
 
   group('fetchMoods', () {
     test('keeps the stored order and skips unknown moods and entries without ids', () async {
+      walls = <String, Map<String, dynamic>>{
+        for (final String id in <String>['A', 'B', '0CFI', 'ab12']) id: _wall(id),
+      };
       client.docs['moods'] = <String, Map<String, dynamic>>{
         'current': <String, dynamic>{
           'moods': <Object?>[
@@ -113,9 +116,11 @@ void main() {
       expect(moods.map((list) => list.mood), <WallMood>[WallMood.minimal, WallMood.dreamy]);
       expect(moods.first.wallIds, <String>['A', 'B']);
       expect(moods.last.wallIds, <String>['0CFI', 'ab12']);
+      expect(client.querySpecs, isEmpty);
     });
 
     test('caps hand-edited mood ids at the server limit of 60', () async {
+      walls = <String, Map<String, dynamic>>{for (int i = 0; i < 75; i++) 'ID$i': _wall('ID$i')};
       client.docs['moods'] = <String, Map<String, dynamic>>{
         'current': <String, dynamic>{
           'moods': <Object?>[
@@ -135,6 +140,31 @@ void main() {
 
     test('returns an empty list when the doc is missing', () async {
       expect(await repository.fetchMoods(), isEmpty);
+    });
+
+    test('hides the Duo chip when all walls are missing or filtered', () async {
+      client.docs['moods'] = <String, Map<String, dynamic>>{
+        'current': <String, dynamic>{
+          'moods': <Object?>[
+            <String, Object?>{
+              'id': 'duo_reveal',
+              'wallIds': <String>['MISSING', 'BLOCKED', 'AI'],
+            },
+          ],
+        },
+      };
+      blocks.completeInitial(<String>{'blocked'});
+      await settings.set('showAiWallpapers', false);
+      walls = <String, Map<String, dynamic>>{
+        'BLOCKED': _wall('BLOCKED', creatorUid: 'blocked'),
+        'AI': <String, dynamic>{
+          ..._wall('AI'),
+          'aiMetadata': <String, Object?>{'prompt': 'cat'},
+        },
+      };
+      expect(await repository.fetchMoods(), isEmpty);
+      walls['MISSING'] = _wall('MISSING');
+      expect((await repository.fetchMoods()).single.wallIds, <String>['MISSING']);
     });
   });
 

@@ -10,9 +10,9 @@ import '../../../support/fake_app_analytics.dart';
 import 'mood_test_support.dart';
 
 const List<MoodList> _allMoods = <MoodList>[
-  MoodList(mood: WallMood.dreamy, wallIds: <String>[]),
-  MoodList(mood: WallMood.spatialReady, wallIds: <String>[]),
-  MoodList(mood: WallMood.depthReady, wallIds: <String>[]),
+  MoodList(mood: WallMood.dreamy, wallIds: <String>['wall']),
+  MoodList(mood: WallMood.spatialReady, wallIds: <String>['wall']),
+  MoodList(mood: WallMood.depthReady, wallIds: <String>['wall']),
 ];
 
 Future<void> _pumpChips(WidgetTester tester, {required int? iosMajor}) async {

@@ -125,6 +125,113 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
+  String get duoTitle => 'Duo का खुलता नज़ारा';
+
+  @override
+  String get duoAiFormatLabel => 'Duo का खुलता नज़ारा बनाएँ';
+
+  @override
+  String get duoPresetNotice =>
+      'Prism मुड़े हुए फ़ोन के लिए दाईं ओर का हिस्सा दिखाता है। सहेजे गए मूल चित्र को खुद सही जगह पर जमाएँ और सिस्टम के वॉलपेपर प्रीव्यू में दोनों दृश्य जाँचें। यह Prism की तय सेटिंग है, iOS की अपने-आप होने वाली क्रॉपिंग नहीं।';
+
+  @override
+  String get duoFoldedPromptLabel => 'मुड़े हुए फ़ोन का दृश्य';
+
+  @override
+  String get duoFoldedPromptExample => 'खिड़की के पास एक उनींदी बिल्ली';
+
+  @override
+  String get duoRevealedPromptLabel => 'खोलने पर दिखने वाला नज़ारा';
+
+  @override
+  String get duoRevealedPromptExample => 'खिड़की के बाहर एक नन्हा अंतरिक्ष यान';
+
+  @override
+  String get duoPromptValidation => 'दोनों दृश्यों का वर्णन करें, हर एक के लिए 1 से 160 अक्षर लिखें।';
+
+  @override
+  String get duoMoodBody => 'एक वॉलपेपर। खोलने पर दिखे और भी बहुत कुछ।';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'फ़ोन';
+
+  @override
+  String get duoFold => 'मोड़ें';
+
+  @override
+  String get duoUnfold => 'खोलें';
+
+  @override
+  String get duoFolded => 'मुड़ा हुआ';
+
+  @override
+  String get duoUnfolded => 'खुला हुआ';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'Prism मुड़े हुए फ़ोन के लिए दाईं ओर का हिस्सा दिखाता है। Android इसे अलग तरह से क्रॉप कर सकता है। लगाने से पहले सिस्टम का वॉलपेपर प्रीव्यू जाँचें।';
+
+  @override
+  String get duoGetOnPrism => 'Prism पर पाएँ';
+
+  @override
+  String get duoGuideTitle => 'Duo का खुलता नज़ारा सेट करें';
+
+  @override
+  String get duoGuideOpen =>
+      'सहेजे गए मूल चित्र को Photos में खोलें, शेयर करें पर टैप करें, फिर वॉलपेपर के रूप में इस्तेमाल करें चुनें।';
+
+  @override
+  String get duoGuideAlign => 'पूरे चित्र को खुद सही जगह पर जमाएँ ताकि मुड़े हुए फ़ोन पर दाईं ओर का हिस्सा दिखे।';
+
+  @override
+  String get duoGuideCheck => 'सिस्टम प्रीव्यू में मुड़े और खुले हुए, दोनों दृश्य जाँचें, फिर वॉलपेपर जोड़ें।';
+
+  @override
+  String get duoWebTitle => 'iPhone Duo के लिए वॉलपेपर | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'एक वॉलपेपर, जिसमें छिपा है दूसरा नज़ारा। Prism में Duo के लिए बने मौलिक वॉलपेपर देखें।';
+
+  @override
+  String get duoWebHeading => 'एक वॉलपेपर। खुलती जाए कहानी।';
+
+  @override
+  String get duoWebIntro => 'मोड़ने पर एक शांत नज़ारा। खोलने पर एक और कहानी। हर मौलिक वॉलपेपर के दोनों दृश्य देखें।';
+
+  @override
+  String get duoWebEmpty => 'पहले Duo संग्रह की समीक्षा चल रही है।';
+
+  @override
+  String get duoWebEmptyBody => 'जब तक हम हर वॉलपेपर के दोनों दृश्य जाँच रहे हैं, Prism पर और वॉलपेपर देखें।';
+
+  @override
+  String get duoWebFolded => 'मुड़े हुए फ़ोन का प्रीव्यू';
+
+  @override
+  String get duoWebUnfolded => 'खुले हुए फ़ोन का मूल चित्र';
+
+  @override
+  String get duoWebPresetNotice =>
+      'ये प्रीव्यू Prism की दाईं ओर वाली तय सेटिंग इस्तेमाल करते हैं, Apple की अपने-आप होने वाली क्रॉपिंग नहीं। पूरा मूल चित्र सहेजें, उसे खुद सही जगह पर जमाएँ और सिस्टम के वॉलपेपर प्रीव्यू में मुड़े और खुले हुए, दोनों दृश्य जाँचें।';
+
+  @override
+  String get duoWebOpenPrism => 'Prism में खोलें';
+
+  @override
+  String get duoWebExplore => 'Prism देखें';
+
+  @override
+  String get duoWebAppStore => 'App Store से डाउनलोड करें';
+
+  @override
+  String get duoWebPlayStore => 'Google Play पर पाएँ';
+
+  @override
   String get economyExportFailedLabel => 'एक्सपोर्ट नहीं हो सका';
 
   @override

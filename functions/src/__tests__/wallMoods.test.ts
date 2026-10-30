@@ -21,6 +21,19 @@ const eligible = (over: admin.firestore.DocumentData = {}): admin.firestore.Docu
   ...over,
 });
 
+test("Duo needs one approved eligible tagged wall, while ordinary moods still need twelve", () => {
+  assert.equal(matchesMood(mood("duo_reveal"), {tags: [" DUO-Reveal "]}), true);
+  assert.equal(matchesMood(mood("duo_reveal"), {tags: ["duo"]}), true);
+  assert.equal(matchesMood(mood("duo_reveal"), {tags: ["not-duo"]}), false);
+  assert.equal(matchesMood(mood("duo_reveal"), {}), false);
+  assert.deepEqual(moodLists([], []), []);
+  assert.deepEqual(moodLists([{id: "doc", data: eligible({id: "DUO", tags: ["duo"], spatial: {tier: "great"}})}], []),
+    [{id: "duo_reveal", wallIds: ["DUO"]}]);
+  for (const overrides of [{review: false}, {originalProtected: false}, {dropReserved: true}, {collections: ["paid"]}]) {
+    assert.deepEqual(moodLists([{id: "doc", data: eligible({id: "DUO", tags: ["duo"], ...overrides})}], ["paid"]), []);
+  }
+});
+
 test("dreamy matches a pastel sky wall and rejects a near miss and a wall with missing fields", () => {
   const rule = mood("dreamy");
   assert.equal(matchesMood(rule, {colors: ["pink", "white"], visionLabels: ["Sunset"]}), true);
@@ -201,10 +214,14 @@ test("refreshMoods queries protected walls and writes only the eligible logical 
     ...Array.from({length: 12}, (_, i) => [`walls/doc${i}`, protectedWall(`W${i}`)] as const),
     ["walls/unprotected", protectedWall("UNPROTECTED", {originalProtected: false})],
     ["walls/publicOriginal", protectedWall("PUBLIC", {wallpaper_url: "https://example.com/original.jpg"})],
+    ["walls/duo", protectedWall("DUO", {spatial: null, tags: ["duo-reveal"]})],
   ]);
   const store = installFakeDb(t, seed);
   t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {}}));
 
-  assert.deepEqual(await refreshMoods(), {spatial_ready: 12});
-  assert.deepEqual(store.get("moods/current")?.moods, [{id: "spatial_ready", wallIds: Array.from({length: 12}, (_, i) => `W${i}`).sort()}]);
+  assert.deepEqual(await refreshMoods(), {duo_reveal: 1, spatial_ready: 12});
+  assert.deepEqual(store.get("moods/current")?.moods, [
+    {id: "duo_reveal", wallIds: ["DUO"]},
+    {id: "spatial_ready", wallIds: Array.from({length: 12}, (_, i) => `W${i}`).sort()},
+  ]);
 });

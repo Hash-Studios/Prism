@@ -83,7 +83,16 @@ class MoodRepositoryImpl implements MoodRepository {
       if (ids.isEmpty || moods.any((list) => list.mood == mood)) continue;
       moods.add(MoodList(mood: mood, wallIds: ids));
     }
-    return moods;
+    final MoodList? duo = moods.firstWhereOrNull((list) => list.mood == WallMood.duoReveal);
+    if (duo == null) return moods;
+    final List<PrismWallpaper> visible = await fetchMoodWalls(duo.wallIds, keepOrder: true);
+    return <MoodList>[
+      for (final MoodList list in moods)
+        if (list.mood != WallMood.duoReveal)
+          list
+        else if (visible.isNotEmpty)
+          MoodList(mood: list.mood, wallIds: visible.map((wall) => wall.id).toList(growable: false)),
+    ];
   }
 
   @override
@@ -91,6 +100,7 @@ class MoodRepositoryImpl implements MoodRepository {
     return Stream<void>.multi((controller) {
       BlockedCreators blocked = _userBlockRepository.blockedCreators;
       bool showAi = AiContentFilter.showsAi(_settingsLocal);
+      bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
       final StreamSubscription<BlockedCreators> subscription = _userBlockRepository.watchBlockedCreators().listen(
         (next) {
           if (next == blocked) return;
@@ -102,8 +112,10 @@ class MoodRepositoryImpl implements MoodRepository {
       );
       void onSettingsChanged() {
         final bool nextShowAi = AiContentFilter.showsAi(_settingsLocal);
-        if (nextShowAi == showAi) return;
+        final bool nextShowAnime = AnimeContentFilter.showsAnime(_settingsLocal);
+        if (nextShowAi == showAi && nextShowAnime == showAnime) return;
         showAi = nextShowAi;
+        showAnime = nextShowAnime;
         controller.add(null);
       }
 

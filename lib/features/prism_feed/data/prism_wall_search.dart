@@ -68,6 +68,7 @@ class PrismWallSearch {
     bool spatialOnly = false,
   }) async {
     final String trimmed = query.trim();
+    final bool duo = const <String>{'duo', 'duo-reveal', 'duo reveal'}.contains(trimmed.toLowerCase());
     final bool browseOnly = trimmed.isEmpty && (colorId != null || depthOnly || spatialOnly);
     if (trimmed.length < _minQueryLength && !browseOnly) {
       return const <PrismWallpaper>[];
@@ -96,7 +97,19 @@ class PrismWallSearch {
           FirestoreFilter(field: 'colors', op: FirestoreFilterOp.arrayContains, value: colorId),
           _toWall,
         ),
-        _ => await _rankedTextMatches(terms, fetchLimit),
+        _ =>
+          duo
+              ? await _run(
+                  'duo',
+                  fetchLimit,
+                  const FirestoreFilter(
+                    field: 'tags',
+                    op: FirestoreFilterOp.arrayContainsAny,
+                    value: <String>['duo', 'duo-reveal'],
+                  ),
+                  _toWall,
+                )
+              : await _rankedTextMatches(terms, fetchLimit),
       };
       final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
       final Map<String, PrismWallpaper> unique = <String, PrismWallpaper>{};

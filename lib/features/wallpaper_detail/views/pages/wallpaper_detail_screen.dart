@@ -1496,6 +1496,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                             tint: state.tint,
                             saveAction: _saveAction,
                             spatialMapUrl: spatialOf(entity)?.mapUrl,
+                            duoReveal: isDuoWallpaper(entity),
+                            allowDuo: isLandscapeWallpaper(entity.wallpaperCore),
                           );
                         },
                 ),
@@ -2343,6 +2345,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               )
             : null,
         depthTier: depthTierOf(entity),
+        duoReveal: isDuoWallpaper(entity),
         spatialTier: spatialOf(entity)?.tier,
         sourceContext: _getSourceContext(state),
         requestId: widget.requestId,
@@ -2375,6 +2378,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         entryPoint: 'wallpaper_detail',
         requestId: widget.requestId,
         previewTint: tint,
+        duoReveal: isDuoWallpaper(entity),
+        allowDuo: isLandscapeWallpaper(entity.wallpaperCore),
         notes: wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context)),
         onMatchAccent: _matchAccentAction(context, state),
         onSet: () => _onWallpaperSet(entity),
@@ -2446,6 +2451,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             thumbUrl: entity.thumbnailUrl,
             creator: entity.wallpaperCore.authorName,
             palette: _sharePalette(entity),
+            duoReveal: isDuoWallpaper(entity),
             createLink: (id, source, url, thumbUrl) => createDynamicLink(
               id,
               source,
