@@ -20,6 +20,7 @@ import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_quality.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/fills_request_row.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/submission_metadata_form.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_batch_stepper.dart';
@@ -80,10 +81,10 @@ class UploadWallScreen extends StatefulWidget {
   final Future<void> Function({required String path, required String sha})? deleteFileForTesting;
 
   @visibleForTesting
-  final Future<wall_store.WallSubmissionResult> Function()? createRecordForTesting;
+  final Future<WallSubmissionResult> Function()? createRecordForTesting;
 
   @visibleForTesting
-  final Future<wall_store.WallSubmissionResult> Function({required String id, required SubmissionMetadata metadata})?
+  final Future<WallSubmissionResult> Function({required String id, required SubmissionMetadata metadata})?
   createRecordWithMetadataForTesting;
 
   @visibleForTesting
@@ -489,7 +490,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               requestId: _metadata.requestId,
               challengeId: _metadata.challengeId,
             );
-      if (result == wall_store.WallSubmissionResult.quotaExceeded && _submissionUnresolved) {
+      if (result == WallSubmissionResult.quotaExceeded && _submissionUnresolved) {
         setState(() {
           _stage = _UploadStage.failedSubmission;
           _errorMessage = context.l10n.wallpaperUploadSubmissionUnconfirmed;
@@ -498,7 +499,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         return;
       }
       _submissionUnresolved = false;
-      if (result == wall_store.WallSubmissionResult.quotaExceeded) {
+      if (result == WallSubmissionResult.quotaExceeded) {
         _submissionAttempted = false;
         final deleted = await _deleteFile();
         if (!mounted) return;

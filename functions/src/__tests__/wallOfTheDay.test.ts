@@ -4,6 +4,7 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import type {ScheduledEvent} from "firebase-functions/v2/scheduler";
 import {db} from "../common";
+import {isWotdEligible, parseCollectionList} from "../wallEligibility";
 import * as delivery from "../ownedAssetDelivery";
 import * as drops from "../drops";
 import * as pushGallery from "../pushGallery";
@@ -11,9 +12,7 @@ import {resetEconomyCache} from "../economy";
 import {installFakeDb} from "./fakeDb";
 import {
   commitWotdPick,
-  isWotdEligible,
   offsetsAtNineLocal,
-  parseCollectionList,
   sendWallOfTheDayBuckets,
   wallOfTheDay,
   wotdBucketTopic,

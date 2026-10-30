@@ -3,9 +3,8 @@ import 'dart:async';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/logger/logger.dart';
-
-enum WallSubmissionResult { submitted, quotaExceeded }
 
 Future<void> _freeSubmissionTail = Future<void>.value();
 

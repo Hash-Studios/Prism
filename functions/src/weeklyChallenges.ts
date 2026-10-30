@@ -2,12 +2,10 @@ import {createHash} from "node:crypto";
 import * as admin from "firebase-admin";
 import {onDocumentCreatedWithAuthContext, onDocumentWritten} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions";
-import {onSchedule} from "firebase-functions/v2/scheduler";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {CALLABLE_REGIONS, db, int, REGION, str} from "./common";
 import {publicRequestText} from "./wallRequests";
-import {isWotdEligible, pickWallOfTheDay, premiumCollections, readyWall} from "./wallOfTheDay";
-import {r2Secrets} from "./r2Storage";
+import {isWotdEligible, premiumCollections, readyWall} from "./wallEligibility";
 import {sendToUser} from "./notificationHelper";
 import {notificationCopyPayload} from "./notificationCatalog";
 
@@ -495,18 +493,17 @@ export async function challengeAwardAvailable(tx: Tx, day: string, wallId: strin
   return !!entry && !!await visible(tx, entry);
 }
 
-export async function refreshPublishedChallengeAward(now: number): Promise<void> {
+export async function publishedChallengeAwardNeedsRefresh(now: number): Promise<boolean> {
   const reservation = (await reservationRef(dateKey(now)).get()).data();
-  if (reservation?.state !== "consumed") return;
+  if (reservation?.state !== "consumed") return false;
   const current = (await db.doc("wall_of_the_day/current").get()).data();
-  if (!current || current.wallId !== reservation.wallId || dateKey(millis(current.date)) !== dateKey(now)) return;
+  if (!current || current.wallId !== reservation.wallId || dateKey(millis(current.date)) !== dateKey(now)) return false;
   const entry = (await entryRef(reservation.challengeId, reservation.entryId).get()).data();
   const wall = entry ? await db.runTransaction((tx) => visible(tx, entry), {readOnly: true}) : null;
-  if (wall && await challengeIo.ready(wall.id, await challengeIo.premium(), wall.data())) return;
-  await pickWallOfTheDay(now);
+  return !(wall && await challengeIo.ready(wall.id, await challengeIo.premium(), wall.data()));
 }
 
-export async function runChallengeSchedule(slot: number, now?: number): Promise<void> {
+export async function runChallengeLifecycle(slot: number, recoverAward: (now: number) => Promise<void>, now?: number): Promise<void> {
   if (!Number.isFinite(slot)) throw new Error("Invalid challenge scheduler slot");
   const errors: unknown[] = [];
   const attempt = async (operation: string, work: () => Promise<void>): Promise<void> => {
@@ -551,12 +548,9 @@ export async function runChallengeSchedule(slot: number, now?: number): Promise<
       });
     }
   });
-  await attempt("published award recovery", () => refreshPublishedChallengeAward(now ?? Date.now()));
+  await attempt("published award recovery", () => recoverAward(now ?? Date.now()));
   if (errors.length) throw Object.assign(new Error("Weekly challenge scheduling failed"), {errors});
 }
-export const scheduleWeeklyChallenges = onSchedule({schedule: "*/15 * * * *", timeZone: "UTC", region: REGION,
-  retryCount: 3, secrets: r2Secrets}, async (event) => runChallengeSchedule(Date.parse(event.scheduleTime)));
-
 export async function notifyChallengeWinner(challengeId: string): Promise<void> {
   const c = (await challenges().doc(challengeId).get()).data();
   if (!c?.winnerEntryId) return;
