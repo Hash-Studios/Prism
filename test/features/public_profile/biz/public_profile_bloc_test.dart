@@ -339,6 +339,56 @@ void main() {
   );
 
   blocTest<PublicProfileBloc, PublicProfileState>(
+    'a failed next page exposes an error instead of silently retrying an empty filtered profile',
+    build: () {
+      when(() => walls(any())).thenAnswer((_) async => Result.error<_Walls>(const UnknownFailure('offline')));
+      return buildBloc();
+    },
+    seed: () => loading.copyWith(status: LoadStatus.success, walls: [_wall('ai')], hasMoreWalls: true),
+    act: (bloc) => bloc.add(const PublicProfileEvent.fetchMoreWallsRequested()),
+    expect: () => <Matcher>[
+      isA<PublicProfileState>().having((s) => s.isFetchingMoreWalls, 'isFetchingMoreWalls', isTrue),
+      isA<PublicProfileState>()
+          .having((s) => s.status, 'status', LoadStatus.failure)
+          .having((s) => s.isFetchingMoreWalls, 'isFetchingMoreWalls', isFalse)
+          .having((s) => s.walls.map((w) => w.id), 'walls', <String>['ai'])
+          .having((s) => s.hasMoreWalls, 'hasMoreWalls', isTrue),
+    ],
+  );
+
+  blocTest<PublicProfileBloc, PublicProfileState>(
+    'a successful next-page retry clears the prior page failure',
+    build: () {
+      var calls = 0;
+      when(() => walls(any())).thenAnswer((_) async {
+        calls++;
+        return calls == 1
+            ? Result.error<_Walls>(const UnknownFailure('offline'))
+            : Result.success<_Walls>((items: <PublicProfileWallEntity>[_wall('next')], hasMore: false));
+      });
+      return buildBloc();
+    },
+    seed: () =>
+        loading.copyWith(status: LoadStatus.success, profileId: 'user', walls: [_wall('ai')], hasMoreWalls: true),
+    act: (bloc) async {
+      bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
+    },
+    expect: () => <Matcher>[
+      isA<PublicProfileState>().having((s) => s.isFetchingMoreWalls, 'fetching first page', isTrue),
+      isA<PublicProfileState>()
+          .having((s) => s.status, 'failed page status', LoadStatus.failure)
+          .having((s) => s.isFetchingMoreWalls, 'first page complete', isFalse),
+      isA<PublicProfileState>().having((s) => s.isFetchingMoreWalls, 'fetching retry', isTrue),
+      isA<PublicProfileState>()
+          .having((s) => s.status, 'retry status', LoadStatus.success)
+          .having((s) => s.isFetchingMoreWalls, 'retry complete', isFalse)
+          .having((s) => s.walls.map((wall) => wall.id), 'walls', <String>['ai', 'next']),
+    ],
+  );
+
+  blocTest<PublicProfileBloc, PublicProfileState>(
     'fetchMoreWalls does nothing once the last page is in',
     build: buildBloc,
     seed: () => loading.copyWith(hasMoreWalls: false),

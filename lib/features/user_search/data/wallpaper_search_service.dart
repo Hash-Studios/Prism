@@ -7,6 +7,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
@@ -110,13 +111,16 @@ class WallpaperSearchService {
     },
   ]);
 
-  /// Drops walls from blocked creators, and anime Prism walls when the user hides anime.
+  /// Drops walls from blocked creators, and anime or AI Prism walls when the user hides them.
   Future<WallpaperSearchPage> _withoutHidden(WallpaperSearchPage page) async {
     final BlockedCreators blocked = await _blockedUids();
     final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
-    if (blocked == KnownBlockedCreators(const <String>{}) && showAnime) return page;
-    List<FeedItemEntity> visible(List<FeedItemEntity> items) =>
-        AnimeContentFilter.filterFeedItems(BlockedCreatorsFilter.filterFeedItems(items, blocked), showAnime: showAnime);
+    final bool showAi = AiContentFilter.showsAi(_settingsLocal);
+    if (blocked == KnownBlockedCreators(const <String>{}) && showAnime && showAi) return page;
+    List<FeedItemEntity> visible(List<FeedItemEntity> items) => AiContentFilter.filterFeedItems(
+      AnimeContentFilter.filterFeedItems(BlockedCreatorsFilter.filterFeedItems(items, blocked), showAnime: showAnime),
+      showAi: showAi,
+    );
     return (
       provider: page.provider,
       results: visible(page.results),

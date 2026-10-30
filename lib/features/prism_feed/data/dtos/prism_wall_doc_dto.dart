@@ -30,16 +30,16 @@ abstract class PrismWallDocDto with _$PrismWallDocDto {
     @FirestoreJsonMapConverter()
     @Default(<String, Object?>{})
     Map<String, Object?> aiMetadata,
+    @FirestoreTrueConverter() @Default(false) bool isAiGenerated,
+    @FirestoreStrictStringConverter() @Default('') String aiModel,
     @JsonKey(name: 'is_streak_exclusive') @Default(false) bool isStreakExclusive,
     @JsonKey(name: 'required_streak_days') int? requiredStreakDays,
     @JsonKey(name: 'streak_shop_coin_cost') int? streakShopCoinCost,
     @FirestoreDateTimeConverter() DateTime? boostedUntil,
     @JsonKey(name: 'depth') @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> depth,
     @JsonKey(name: 'spatial') @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> spatial,
-    @Default(false) bool isAiGenerated,
     @FirestoreStringConverter() @Default('') String aiPrompt,
     @FirestoreStringConverter() @Default('') String aiStylePreset,
-    @FirestoreStringConverter() @Default('') String aiModel,
     @FirestoreStringConverter() @Default('') String origin,
     @FirestoreStringConverter() @Default('') String remixOf,
     int? remixCount,

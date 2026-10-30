@@ -154,7 +154,7 @@ Future<void> _loadCollectionPage({
   try {
     rows = hasSnapshot ? await request.timeout(_offlineQueryTimeout) : await request;
   } catch (_) {
-    if (generation != _collectionGeneration || hasSnapshot) return;
+    if (generation != _collectionGeneration || (hasSnapshot && replace)) return;
     rethrow;
   }
   if (generation != _collectionGeneration) return;

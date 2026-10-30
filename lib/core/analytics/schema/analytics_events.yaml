@@ -128,6 +128,7 @@ enums:
     dart_type: SettingValue
     values:
       - anime_wallpapers
+      - ai_wallpapers
       - sketchy_wallpapers
       - recommendations_notifications
       - haptics
@@ -1795,10 +1796,37 @@ events:
       - name: source
         key: source
         type: string
+      - name: trigger
+        key: trigger
+        type: string
   - id: report_problem_shared
     fields:
       - name: result
         key: result
+        type: string
+      - name: topic
+        key: topic
+        type: string
+        required: false
+      - name: has_screenshot
+        key: has_screenshot
+        type: bool
+      - name: trigger
+        key: trigger
+        type: string
+  - id: report_problem_sent
+    fields:
+      - name: result
+        key: result
+        type: string
+      - name: topic
+        key: topic
+        type: string
+      - name: has_screenshot
+        key: has_screenshot
+        type: bool
+      - name: trigger
+        key: trigger
         type: string
   - id: rate_prompt_shown
     fields:

@@ -116,17 +116,31 @@ class _MockPagedFeedBloc extends MockBloc<PagedFeedEvent, PagedFeedState> implem
 class _MockNotificationsBloc extends MockBloc<InAppNotificationsEvent, InAppNotificationsState>
     implements InAppNotificationsBloc {}
 
-FeedItemEntity _item(String id, {List<String>? collections}) => FeedItemEntity.prism(
+FeedItemEntity _item(
+  String id, {
+  List<String>? collections,
+  bool isAiGenerated = false,
+  Map<String, Object?>? aiMetadata,
+}) => FeedItemEntity.prism(
   id: id,
   wallpaper: PrismWallpaper(
     core: WallpaperCore(id: id, source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: '', authorEmail: '$id@x.com'),
     collections: collections,
+    isAiGenerated: isAiGenerated,
+    aiMetadata: aiMetadata,
   ),
 );
 
-PrismWallpaper _wall(String id, {DateTime? boostedUntil}) => PrismWallpaper(
+PrismWallpaper _wall(
+  String id, {
+  DateTime? boostedUntil,
+  bool isAiGenerated = false,
+  Map<String, Object?>? aiMetadata,
+}) => PrismWallpaper(
   core: WallpaperCore(id: id, source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: '', authorEmail: '$id@x.com'),
   boostedUntil: boostedUntil,
+  isAiGenerated: isAiGenerated,
+  aiMetadata: aiMetadata,
 );
 
 PersonalizedFeedPage _page(
@@ -402,6 +416,203 @@ void main() {
     await _settle(tester);
 
     expect(moodRepository.fetchedWallIds, hasLength(2));
+  });
+
+  testWidgets('For you filters stale AI flag and metadata from its carousel and grid', (tester) async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    await settings.set('showAiWallpapers', false);
+    when(() => fetchUseCase(any())).thenAnswer(
+      (_) async => Result.success(
+        PersonalizedFeedPage(
+          items: <FeedItemEntity>[
+            _item('for-you-flagged', isAiGenerated: true),
+            _item('for-you-metadata', aiMetadata: const <String, Object?>{'model': 'legacy'}),
+            for (int i = 0; i < 6; i++) _item('for-you-human-$i'),
+          ],
+          hasMore: false,
+        ),
+      ),
+    );
+
+    await pumpScreen(tester);
+
+    final FeedCarousel carousel = tester.widget<FeedCarousel>(find.byType(FeedCarousel));
+    expect(carousel.previewWalls.map((item) => item.id), <String>[
+      'for-you-human-0',
+      'for-you-human-1',
+      'for-you-human-2',
+      'for-you-human-3',
+    ]);
+    expect(find.byKey(const ValueKey<String>('for-you-human-4')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('for-you-flagged')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('for-you-metadata')), findsNothing);
+  });
+
+  testWidgets('hiding AI immediately removes mixed cached content from every loaded tab', (tester) async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    await setShowAiWallpapers(settings, true);
+    PersonalizedFeedPage mixedPage(String prefix) => PersonalizedFeedPage(
+      items: <FeedItemEntity>[
+        _item('$prefix-human'),
+        _item('$prefix-flagged', isAiGenerated: true),
+        _item('$prefix-metadata', aiMetadata: const <String, Object?>{'model': 'legacy'}),
+      ],
+      hasMore: false,
+    );
+
+    when(() => feedRepository.fetchFollowing(page: any(named: 'page'))).thenAnswer((_) async {
+      if (!settings.get<bool>('showAiWallpapers', defaultValue: true)) {
+        return Result.error(const NetworkFailure('offline'));
+      }
+      return Result.success(mixedPage('following'));
+    });
+    when(() => feedRepository.fetchPopular()).thenAnswer((_) async {
+      if (!settings.get<bool>('showAiWallpapers', defaultValue: true)) {
+        return Result.error(const NetworkFailure('offline'));
+      }
+      return Result.success(mixedPage('popular'));
+    });
+    when(() => prismRepository.fetchFeed(refresh: any(named: 'refresh'))).thenAnswer((_) async {
+      if (!settings.get<bool>('showAiWallpapers', defaultValue: true)) {
+        return Result.error(const NetworkFailure('offline'));
+      }
+      return Result.success(<PrismWallpaper>[
+        _wall('latest-human'),
+        _wall('latest-flagged', isAiGenerated: true),
+        _wall('latest-metadata', aiMetadata: const <String, Object?>{'model': 'legacy'}),
+      ]);
+    });
+    when(() => fetchTrending(any())).thenAnswer((_) async {
+      if (!settings.get<bool>('showAiWallpapers', defaultValue: true)) {
+        return TrendingFetch.error(const NetworkFailure('offline'));
+      }
+      return TrendingFetch.success(<PrismWallpaper>[
+        _wall('trending-human'),
+        _wall('trending-flagged', isAiGenerated: true),
+        _wall('trending-metadata', aiMetadata: const <String, Object?>{'model': 'legacy'}),
+      ]);
+    });
+
+    await pumpScreen(tester);
+    for (final String label in <String>['Latest', 'Following', 'Popular', 'Trending']) {
+      await tapTab(tester, label);
+      await _settle(tester);
+      final String prefix = label.toLowerCase();
+      expect(find.byKey(ValueKey<String>('$prefix-human')), findsOneWidget);
+      expect(find.byKey(ValueKey<String>('$prefix-flagged')), findsOneWidget);
+      expect(find.byKey(ValueKey<String>('$prefix-metadata')), findsOneWidget);
+    }
+
+    await setShowAiWallpapers(settings, false);
+    await _settle(tester);
+
+    for (final (String label, String prefix) in <(String, String)>[
+      ('Latest', 'latest'),
+      ('Following', 'following'),
+      ('Popular', 'popular'),
+      ('Trending', 'trending'),
+    ]) {
+      await tapTab(tester, label);
+      await _settle(tester);
+      expect(find.byKey(ValueKey<String>('$prefix-human')), findsOneWidget, reason: '$label keeps human content');
+      expect(find.byKey(ValueKey<String>('$prefix-flagged')), findsNothing, reason: '$label hides the AI flag');
+      expect(find.byKey(ValueKey<String>('$prefix-metadata')), findsNothing, reason: '$label hides AI metadata');
+    }
+  });
+
+  testWidgets('continues past an AI-only page by itself and retries a failed next page', (tester) async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    await settings.set('showAiWallpapers', false);
+    int pageTwoCalls = 0;
+    when(() => feedRepository.fetchFollowing(page: any(named: 'page'))).thenAnswer((invocation) async {
+      final int page = invocation.namedArguments[#page] as int;
+      if (page == 1) {
+        return Result.success(
+          PersonalizedFeedPage(
+            items: <FeedItemEntity>[
+              _item('following-hidden-flag', isAiGenerated: true),
+              _item('following-hidden-metadata', aiMetadata: const <String, Object?>{'model': 'legacy'}),
+            ],
+            hasMore: true,
+          ),
+        );
+      }
+      pageTwoCalls++;
+      if (pageTwoCalls == 1) return Result.error(const NetworkFailure('offline'));
+      return Result.success(PersonalizedFeedPage(items: <FeedItemEntity>[_item('following-human')], hasMore: false));
+    });
+
+    await pumpScreen(tester);
+    await tapTab(tester, 'Following');
+    await _settle(tester);
+
+    expect(find.byKey(const ValueKey<String>('following-hidden-flag')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('following-hidden-metadata')), findsNothing);
+    expect(pageTwoCalls, 1, reason: 'the AI-only first page asks for page 2 by itself');
+    expect(find.text("Couldn't load more. Try again"), findsOneWidget);
+
+    await tester.tap(find.text("Couldn't load more. Try again"));
+    await _settle(tester);
+
+    expect(find.byKey(const ValueKey<String>('following-human')), findsOneWidget);
+    expect(pageTwoCalls, 2);
+  });
+
+  testWidgets('Latest continues past an AI-only page by itself when AI is hidden', (tester) async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    await settings.set('showAiWallpapers', false);
+    int pageCalls = 0;
+    when(() => prismRepository.fetchFeed(refresh: any(named: 'refresh'))).thenAnswer((invocation) async {
+      pageCalls++;
+      final bool isFirstPage = invocation.namedArguments[#refresh] as bool;
+      if (isFirstPage) return Result.success(<PrismWallpaper>[_wall('latest-hidden-ai', isAiGenerated: true)]);
+      return Result.success(<PrismWallpaper>[_wall('latest-human')]);
+    });
+    when(() => prismRepository.hasMore).thenAnswer((_) => pageCalls == 1);
+
+    await pumpScreen(tester);
+    await tapTab(tester, 'Latest');
+    await _settle(tester);
+
+    expect(find.byKey(const ValueKey<String>('latest-hidden-ai')), findsNothing);
+    expect(pageCalls, 2);
+    expect(find.byKey(const ValueKey<String>('latest-human')), findsOneWidget);
+  });
+
+  testWidgets('hidden pages auto-page at most five pages and never after disposal', (tester) async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    await settings.set('showAiWallpapers', false);
+    int pageTwoCalls = 0;
+    when(() => feedRepository.fetchFollowing(page: any(named: 'page'))).thenAnswer((invocation) async {
+      final int page = invocation.namedArguments[#page] as int;
+      if (page == 1) {
+        return Result.success(
+          PersonalizedFeedPage(items: <FeedItemEntity>[_item('following-hidden', isAiGenerated: true)], hasMore: true),
+        );
+      }
+      pageTwoCalls++;
+      return Result.success(PersonalizedFeedPage(items: <FeedItemEntity>[], hasMore: true));
+    });
+
+    await pumpScreen(tester);
+    await tapTab(tester, 'Following');
+    await _settle(tester);
+    for (int i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(pageTwoCalls, 4, reason: 'page 1 plus four more pages is the cap');
+    expect(find.text('Try again'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await _settle(tester);
+
+    expect(pageTwoCalls, 4);
   });
 
   testWidgets('blocked creator changes reload the visible mood row walls', (tester) async {

@@ -8,12 +8,15 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/prism_preview.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
+import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart'
+    show personalizedFeedSettingsRevision;
 import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
@@ -88,6 +91,7 @@ class MoodRepositoryImpl implements MoodRepository {
   Stream<void> watchVisibilityChanges() {
     return Stream<void>.multi((controller) {
       BlockedCreators blocked = _userBlockRepository.blockedCreators;
+      bool showAi = AiContentFilter.showsAi(_settingsLocal);
       final StreamSubscription<BlockedCreators> subscription = _userBlockRepository.watchBlockedCreators().listen(
         (next) {
           if (next == blocked) return;
@@ -97,10 +101,21 @@ class MoodRepositoryImpl implements MoodRepository {
         onError: controller.addError,
         onDone: controller.close,
       );
+      void onSettingsChanged() {
+        final bool nextShowAi = AiContentFilter.showsAi(_settingsLocal);
+        if (nextShowAi == showAi) return;
+        showAi = nextShowAi;
+        controller.add(null);
+      }
+
+      personalizedFeedSettingsRevision.addListener(onSettingsChanged);
       controller
         ..onPause = subscription.pause
         ..onResume = subscription.resume
-        ..onCancel = subscription.cancel;
+        ..onCancel = () async {
+          personalizedFeedSettingsRevision.removeListener(onSettingsChanged);
+          await subscription.cancel();
+        };
     }, isBroadcast: true);
   }
 
@@ -158,12 +173,14 @@ class MoodRepositoryImpl implements MoodRepository {
 
   List<PrismWallpaper> _visible(List<PrismWallpaper> walls, BlockedCreators blocked) {
     final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
+    final bool showAi = AiContentFilter.showsAi(_settingsLocal);
     return walls
         .where(
           (wall) =>
               hasPrismPreview(wall) &&
               !BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked) &&
-              (showAnime || !AnimeContentFilter.isAnime(wall)),
+              (showAnime || !AnimeContentFilter.isAnime(wall)) &&
+              (showAi || !AiContentFilter.isAi(wall)),
         )
         .toList(growable: false);
   }

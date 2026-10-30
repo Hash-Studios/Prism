@@ -12,7 +12,7 @@ import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/core/widgets/popup/contri_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/views/widgets/prism_list.dart';
-import 'package:Prism/features/session/data/report_problem_service.dart' show supportEmail;
+import 'package:Prism/features/session/data/report_problem_service.dart' show ReportTrigger, supportEmail;
 import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -229,7 +229,7 @@ class _AboutScreenState extends State<AboutScreen> {
                 subject: context.l10n.accountFeedbackSubject,
               ),
               onLaunchFailed: (BuildContext context) =>
-                  unawaited(showReportProblemSheet(context, source: 'about_feedback')),
+                  unawaited(showReportProblemSheet(context, source: 'about_feedback', trigger: ReportTrigger.menu)),
             ),
             ActionButton(
               icon: Icons.refresh_rounded,

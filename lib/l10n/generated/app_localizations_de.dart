@@ -1115,12 +1115,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get accountReportAProblem => 'Problem melden';
 
   @override
-  String accountReportPreviewNotice(String email) {
-    return 'Dieser Bericht enthält deine App-Version, dein Gerät und aktuelle Protokolle. Er enthält weder deine E-Mail-Adresse noch Anmeldetokens. Lies ihn durch und teile ihn anschließend mit $email.';
-  }
-
-  @override
-  String get accountReportProblemSubtitle => 'Teile deine App-Protokolle mit dem Prism-Team';
+  String get accountReportProblemSubtitle => 'Sende einen Fehlerbericht an das Prism-Team';
 
   @override
   String get accountReportUser => 'Person melden';
@@ -1229,9 +1224,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get accountSettings => 'Einstellungen';
-
-  @override
-  String get accountShare => 'Teilen';
 
   @override
   String get accountShareInvite => 'Einladung teilen';
@@ -11359,6 +11351,115 @@ class AppLocalizationsDe extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName hat dein Hintergrundbild geremixt.';
   }
+
+  @override
+  String get reportSheetMessage =>
+      'Sag uns, was schiefgelaufen ist. Prism fügt nie deine E-Mail-Adresse oder Anmeldetokens hinzu. Prüfe Screenshots, bevor du sie sendest.';
+
+  @override
+  String get reportTopicCrashFreeze => 'Absturz/Einfrieren';
+
+  @override
+  String get reportTopicWallpaperWontSet => 'Hintergrundbild lässt sich nicht setzen';
+
+  @override
+  String get reportTopicLooksBroken => 'Sieht kaputt aus';
+
+  @override
+  String get reportTopicSlow => 'Langsam';
+
+  @override
+  String get reportTopicOther => 'Sonstiges';
+
+  @override
+  String get reportNoteHint => 'Was ist passiert? Was hast du erwartet?';
+
+  @override
+  String get reportScreenshotTitle => 'Screenshot';
+
+  @override
+  String get reportScreenshotEmpty => 'Zeig uns, was du siehst.';
+
+  @override
+  String get reportScreenshotAttached => 'Zum Ansehen tippen. Prüfe ihn vor dem Senden.';
+
+  @override
+  String get reportAddScreenshot => 'Screenshot hinzufügen';
+
+  @override
+  String get reportRemoveScreenshot => 'Entfernen';
+
+  @override
+  String get reportViewScreenshot => 'Screenshot ansehen';
+
+  @override
+  String get reportIncludeDiagnostics => 'Geräteinfos und aktuelle Protokolle einschließen';
+
+  @override
+  String get reportShowDiagnostics => 'Zeigen, was enthalten ist';
+
+  @override
+  String get reportHideDiagnostics => 'Details ausblenden';
+
+  @override
+  String get reportSend => 'Bericht senden';
+
+  @override
+  String get reportShareAsFile => 'Als Datei teilen';
+
+  @override
+  String reportSent(String reference) {
+    return 'Danke, Bericht gesendet. Referenz $reference';
+  }
+
+  @override
+  String get reportCouldNotSend => 'Senden fehlgeschlagen';
+
+  @override
+  String get reportCouldNotSendBody =>
+      'Prüfe deine Verbindung und versuche es erneut, oder teile den Bericht als Datei.';
+
+  @override
+  String get reportShareInstead => 'Stattdessen teilen';
+
+  @override
+  String get reportShakeToReport => 'Schütteln zum Melden';
+
+  @override
+  String get reportShakeToReportSubtitle => 'Schüttle dein Handy auf jedem Bildschirm, um ein Problem zu melden';
+
+  @override
+  String get accountShowAiWallpapers => 'KI-generierte Hintergrundbilder anzeigen';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'Ausschalten, um nur von Menschen gemachte Walls zu sehen';
+
+  @override
+  String get accountShowAiWallpapersFootnote =>
+      'Wenn du KI-Hintergrundbilder ausblendest, bleiben deine eigenen Uploads und Favoriten sichtbar.';
+
+  @override
+  String get wallpaperFeedHideAi => 'KI ausblenden';
+
+  @override
+  String get wallpaperAiGenerated => 'KI-generiert';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return 'Erstellt mit $model';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'Mit KI erstellt';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'Falsches Label melden';
+
+  @override
+  String get feedNoHumanWalls => 'Hier gibt es noch keine von Menschen gemachten Walls';
+
+  @override
+  String get feedShowAiWalls => 'KI-Walls anzeigen';
 
   @override
   String get dailyMomentTitle => 'Täglicher Moment';

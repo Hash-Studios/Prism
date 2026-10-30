@@ -5,7 +5,9 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
@@ -14,6 +16,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/prefetch_tiles.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
@@ -73,11 +76,17 @@ class _SearchGridState extends State<SearchGrid> {
   int _loadGeneration = 0;
   late WallpaperImpressionSession _impressions = WallpaperImpressionSession(requestId: widget.searchId);
 
+  bool get _showAi =>
+      !getIt.isRegistered<SettingsLocalDataSource>() || AiContentFilter.showsAi(getIt<SettingsLocalDataSource>());
+  List<FeedItemEntity> get _visibleResults => AiContentFilter.filterFeedItems(_results, showAi: _showAi);
+  List<FeedItemEntity> get _visiblePrismResults =>
+      AiContentFilter.filterFeedItems(widget.prismResults, showAi: _showAi);
+
   bool get _hasExternalResults => !widget.isLocal && widget.provider != SearchProviderValue.prism;
 
   int get _queryLength => widget.query.trim().length;
 
-  int get _resultCount => _results.length + widget.prismResults.length;
+  int get _resultCount => _visibleResults.length + _visiblePrismResults.length;
 
   void _trackResultsLoaded({required int page, required EventResultValue result, String? reason}) {
     analytics.track(
@@ -105,6 +114,11 @@ class _SearchGridState extends State<SearchGrid> {
   }
 
   EventResultValue get _loadedResult => _resultCount > 0 ? EventResultValue.success : EventResultValue.empty;
+
+  void _onFeedSettingsChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
 
   Future<void> _requestNextPage() async {
     if (seeMoreLoader || !_hasMore) {
@@ -159,11 +173,18 @@ class _SearchGridState extends State<SearchGrid> {
   @override
   void initState() {
     super.initState();
+    personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _prefetch(_results, firstScreen: true);
+      _prefetch(_visibleResults, firstScreen: true);
       if (widget.trackInitialResults) _trackResultsLoaded(page: 1, result: _loadedResult);
     });
+  }
+
+  @override
+  void dispose() {
+    personalizedFeedSettingsRevision.removeListener(_onFeedSettingsChanged);
+    super.dispose();
   }
 
   Future<void> refreshList() async {
@@ -215,14 +236,15 @@ class _SearchGridState extends State<SearchGrid> {
         feed: WallpaperFeed(
           grid: grid,
           tiles: [
-            for (final (i, wall) in _results.indexed) (item: wall, index: i, heroTag: prismHeroTag(this, i, wall.id)),
+            for (final (i, wall) in _visibleResults.indexed)
+              (item: wall, index: i, heroTag: prismHeroTag(this, i, wall.id)),
           ],
         ),
       ),
     );
   }
 
-  void _openPrismWallpaper(BuildContext grid, FeedItemEntity wallpaper, int index) {
+  void _openPrismWallpaper(BuildContext grid, FeedItemEntity wallpaper, int index, List<FeedItemEntity> results) {
     analytics.track(
       SearchResultOpenedEvent(
         provider: SearchProviderValue.prism,
@@ -238,12 +260,11 @@ class _SearchGridState extends State<SearchGrid> {
         entity: wallpaper,
         analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
         requestId: widget.searchId,
-        heroTag: prismHeroTag(widget.prismResults, index, wallpaper.id),
+        heroTag: prismHeroTag(results, index, wallpaper.id),
         feed: WallpaperFeed(
           grid: grid,
           tiles: [
-            for (final (i, wall) in widget.prismResults.indexed)
-              (item: wall, index: i, heroTag: prismHeroTag(widget.prismResults, i, wall.id)),
+            for (final (i, wall) in results.indexed) (item: wall, index: i, heroTag: prismHeroTag(results, i, wall.id)),
           ],
         ),
       ),
@@ -253,7 +274,9 @@ class _SearchGridState extends State<SearchGrid> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    final bool showFooter = _hasMore && _results.length >= 24;
+    final List<FeedItemEntity> results = _visibleResults;
+    final List<FeedItemEntity> prismResults = _visiblePrismResults;
+    final bool showFooter = _hasMore && results.length >= 24;
     final int columns = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
     final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns);
     return RefreshIndicator(
@@ -283,9 +306,13 @@ class _SearchGridState extends State<SearchGrid> {
                   child: Text(context.l10n.accountSavedOnThisDevice, style: Theme.of(context).textTheme.labelMedium),
                 ),
               ),
-            if (widget.prismResults.isNotEmpty)
+            if (prismResults.isNotEmpty)
               SliverToBoxAdapter(
-                child: _FromPrismRow(results: widget.prismResults, onOpen: _openPrismWallpaper, session: _impressions),
+                child: _FromPrismRow(
+                  results: prismResults,
+                  onOpen: (grid, wallpaper, index) => _openPrismWallpaper(grid, wallpaper, index, prismResults),
+                  session: _impressions,
+                ),
               ),
             SliverPadding(
               padding: PrismWallGrid.padding.copyWith(
@@ -295,10 +322,10 @@ class _SearchGridState extends State<SearchGrid> {
               sliver: SliverGrid(
                 gridDelegate: PrismWallGrid.delegate(context, footerHeight: favouriteFooterHeight),
                 delegate: SliverChildBuilderDelegate((context, index) {
-                  if (showFooter && index == _results.length) {
+                  if (showFooter && index == results.length) {
                     return SeeMoreButton(seeMoreLoader: seeMoreLoader, failed: _loadMoreFailed, func: _requestNextPage);
                   }
-                  final FeedItemEntity wallpaper = _results[index];
+                  final FeedItemEntity wallpaper = results[index];
                   return WallpaperImpression(
                     itemId: wallpaper.id,
                     provider: wallpaper.source.name,
@@ -326,7 +353,7 @@ class _SearchGridState extends State<SearchGrid> {
                       ),
                     ),
                   );
-                }, childCount: _results.length + (showFooter ? 1 : 0)),
+                }, childCount: results.length + (showFooter ? 1 : 0)),
               ),
             ),
             if (widget.footer case final Widget footer)

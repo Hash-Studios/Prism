@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/data/repositories/ads_repository_impl.dart';
 import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
+import 'package:Prism/logger/app_logger.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -66,6 +68,7 @@ void main() {
     loadIds = [];
     disposedIds = [];
     throwLoad = false;
+    InMemoryLogSink.instance.clear();
     messenger.setMockMessageHandler(channel, (ByteData? message) async {
       final call = codec.decodeMethodCall(message);
       final method = call.method;
@@ -195,6 +198,25 @@ void main() {
       expect((await pending).data?.adFailed, isTrue);
       expect(loadIds.length, (request + 1) * 4);
     }
+  });
+
+  testWidgets('only the final SDK failure warns with its domain, code and message', (tester) async {
+    final pending = repository.createRewardedAd();
+    await tester.pump();
+    for (int attempt = 0; attempt < 3; attempt++) {
+      await adEvent(
+        loadIds.last,
+        'onAdFailedToLoad',
+        error: LoadAdError(1, 'com.google.admob', 'No ad to show.', null),
+      );
+      expect(InMemoryLogSink.instance.records.where((record) => record.level == AppLogLevel.warn), isEmpty);
+      await tester.pump(const Duration(seconds: 2));
+    }
+    await adEvent(loadIds.last, 'onAdFailedToLoad', error: LoadAdError(1, 'com.google.admob', 'No ad to show.', null));
+    expect((await pending).data?.adFailed, isTrue);
+    final warning = InMemoryLogSink.instance.records.where((record) => record.level == AppLogLevel.warn).single;
+    expect(warning.tag, 'Ads');
+    expect(warning.fields, {'domain': 'com.google.admob', 'code': 1, 'message': 'No ad to show.'});
   });
 
   testWidgets('consent exceptions terminate the request and allow a later retry', (tester) async {

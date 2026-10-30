@@ -7,6 +7,7 @@ import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -310,7 +311,7 @@ void main() {
       hasPrismWalls: true,
     );
 
-    PrismWallpaper prismWall(String id, {String? url, List<String>? tags}) => PrismWallpaper(
+    PrismWallpaper prismWall(String id, {String? url, List<String>? tags, bool ai = false}) => PrismWallpaper(
       core: WallpaperCore(
         id: id,
         source: WallpaperSource.prism,
@@ -318,6 +319,7 @@ void main() {
         thumbnailUrl: 't',
       ),
       tags: tags,
+      isAiGenerated: ai,
     );
 
     setUp(() {
@@ -479,6 +481,56 @@ void main() {
       final cached = await repository.fetchCategoryFeed(category: community, refresh: true);
 
       expect(cached.data!.items.map((item) => item.id), <String>['p2']);
+    });
+
+    test('AI Prism walls stay out while the AI setting is off', () async {
+      when(
+        () => prism.fetchByCategory('Nature'),
+      ).thenAnswer((_) async => Result.success(<PrismWallpaper>[prismWall('p1', ai: true), prismWall('p2')]));
+
+      final shown = await repository.fetchCategoryFeed(category: nature, refresh: true);
+      expect(shown.data!.items.map((item) => item.id), <String>['p1', 'p2', 'a']);
+
+      await AiContentFilter.setShowsAi(SettingsLocalDataSource(store), false);
+      final hidden = await repository.fetchCategoryFeed(category: nature, refresh: true);
+      expect(hidden.data!.items.map((item) => item.id), <String>['p2', 'a']);
+    });
+
+    test('a hidden AI Prism wall does not swallow the provider wall that shares its image URL', () async {
+      when(
+        () => prism.fetchByCategory('Nature'),
+      ).thenAnswer((_) async => Result.success(<PrismWallpaper>[prismWall('p1', url: 'https://w/a.jpg', ai: true)]));
+      await AiContentFilter.setShowsAi(SettingsLocalDataSource(store), false);
+
+      final result = await repository.fetchCategoryFeed(category: nature, refresh: true);
+
+      expect(result.data!.items.map((item) => item.id), <String>['a']);
+    });
+
+    test('a snapshot saved while AI was on drops AI walls once it is off', () async {
+      const CategoryEntity community = CategoryEntity(
+        name: 'Community',
+        source: WallpaperSource.prism,
+        searchType: CategorySearchType.search,
+        image: '',
+        image2: '',
+      );
+      bool prismOffline = false;
+      when(() => prism.hasMore).thenReturn(false);
+      when(() => prism.fetchFeed(refresh: any(named: 'refresh'))).thenAnswer(
+        (_) async => prismOffline
+            ? Result.error<List<PrismWallpaper>>(const ServerFailure('503'))
+            : Result.success(<PrismWallpaper>[prismWall('p1', ai: true), prismWall('p2')]),
+      );
+      await repository.fetchCategoryFeed(category: community, refresh: true);
+      prismOffline = true;
+
+      final shown = await repository.fetchCategoryFeed(category: community, refresh: true);
+      expect(shown.data!.items.map((item) => item.id), <String>['p1', 'p2']);
+
+      await AiContentFilter.setShowsAi(SettingsLocalDataSource(store), false);
+      final hidden = await repository.fetchCategoryFeed(category: community, refresh: true);
+      expect(hidden.data!.items.map((item) => item.id), <String>['p2']);
     });
 
     test('getCategories marks the classifier names and adds an AMOLED tile', () async {

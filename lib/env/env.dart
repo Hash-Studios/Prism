@@ -28,6 +28,9 @@ class Env {
   static const String rcAndroidApiKey = String.fromEnvironment('RC_ANDROID_API_KEY');
   static const String rcIosApiKey = String.fromEnvironment('RC_IOS_API_KEY');
 
+  // AdMob
+  static const String admobIosRewardedAdUnitId = String.fromEnvironment('ADMOB_IOS_REWARDED_AD_UNIT_ID');
+
   // Pexels
   static const String pexelsApiKey = String.fromEnvironment('PEXELS_API_KEY');
 

@@ -62,6 +62,10 @@ void main() {
       bool confirmed = true,
       bool emitPurchase = false,
       bool loginFails = false,
+      bool includeV3 = true,
+      bool offeringsFail = false,
+      void Function(MethodCall)? onPaywallCall,
+      String legacyOffering = 'v3_default',
     }) async {
       final backend = CoinsTestBackend();
       await backend.install();
@@ -92,8 +96,8 @@ void main() {
         'allExpirationDates': <String, Object?>{},
         'requestDate': '',
       };
-      const offering = <String, Object?>{
-        'identifier': 'test-offering',
+      final offering = <String, Object?>{
+        'identifier': legacyOffering,
         'serverDescription': '',
         'metadata': <String, Object?>{},
         'availablePackages': <Object?>[],
@@ -117,8 +121,12 @@ void main() {
           case 'getCurrentOfferingForPlacement':
             return offering;
           case 'getOfferings':
+            if (offeringsFail) throw PlatformException(code: 'offerings_failed');
             return <String, Object?>{
-              'all': <String, Object?>{'test-offering': offering},
+              'all': <String, Object?>{
+                legacyOffering: offering,
+                if (includeV3) 'v3_default': <String, Object?>{...offering, 'identifier': 'v3_default'},
+              },
               'current': offering,
             };
           case 'getCustomerInfo':
@@ -128,6 +136,7 @@ void main() {
         }
       });
       messenger.setMockMethodCallHandler(paywallChannel, (call) async {
+        onPaywallCall?.call(call);
         if (emitPurchase) {
           final id = (call.arguments as Map<Object?, Object?>)['presentationId'];
           final channel = 'com.revenuecat.purchasesui/PresentedPaywall/$id';
@@ -145,7 +154,7 @@ void main() {
           await emit('onPurchaseStarted', <String, Object?>{
             'identifier': 'annual',
             'packageType': 'ANNUAL',
-            'presentedOfferingContext': <String, Object?>{'offeringIdentifier': 'test-offering'},
+            'presentedOfferingContext': <String, Object?>{'offeringIdentifier': 'v3_default'},
             'product': <String, Object?>{
               'identifier': 'prism_pro_yearly',
               'description': '',
@@ -380,6 +389,63 @@ void main() {
         await AnalyticsRuntime.instance.flush();
         expect(fakeAnalytics.events.whereType<PaywallResultEvent>(), hasLength(1));
         expect(toasts, isEmpty);
+      });
+    }
+
+    test('v3 overrides the legacy placement and current offering', () async {
+      String? selectedOffering;
+      await installPaywall(
+        legacyOffering: 'default',
+        onPaywallCall: (call) {
+          selectedOffering = (call.arguments as Map)['offeringIdentifier'] as String?;
+        },
+        present: () async => 'CANCELLED',
+      );
+
+      expect(
+        await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test'),
+        PaywallResultValue.cancelled,
+      );
+      expect(selectedOffering, 'v3_default');
+    });
+
+    test('an offerings fetch failure never uses the legacy placement offering', () async {
+      var presented = false;
+      await installPaywall(
+        offeringsFail: true,
+        legacyOffering: 'default',
+        present: () async {
+          presented = true;
+          return 'PURCHASED';
+        },
+      );
+
+      expect(
+        await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test'),
+        PaywallResultValue.noOffering,
+      );
+      expect(presented, isFalse);
+    });
+
+    for (final legacyOffering in <String>['default', 'ultra', 'other-offering']) {
+      test('missing v3 never presents $legacyOffering from placement or current offering', () async {
+        var presented = false;
+        await installPaywall(
+          includeV3: false,
+          legacyOffering: legacyOffering,
+          present: () async {
+            presented = true;
+            return 'PURCHASED';
+          },
+        );
+
+        final result = await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
+        await AnalyticsRuntime.instance.flush();
+
+        expect(result, PaywallResultValue.noOffering);
+        expect(presented, isFalse);
+        expect(toasts, hasLength(1));
+        expect(fakeAnalytics.events.whereType<PaywallResultEvent>().single.result, PaywallResultValue.noOffering);
       });
     }
 
