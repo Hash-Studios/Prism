@@ -145,12 +145,11 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         _impressions.revision != impressionRevision) {
       return;
     }
-    await _impressions.hide(PersonalizedRankingService.canonicalKey(item), now);
+    await _impressions.hide(item.canonicalKey, now);
   }
 
   @override
-  Future<void> undoLessLikeThis(FeedItemEntity item) =>
-      _impressions.unhide(PersonalizedRankingService.canonicalKey(item));
+  Future<void> undoLessLikeThis(FeedItemEntity item) => _impressions.unhide(item.canonicalKey);
 
   @override
   Future<void> recordShown(Iterable<String> keys) =>
@@ -212,14 +211,14 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       return PersonalizedFeedPage(
         items: starters.take(_cachedPageSize).toList(growable: false),
         hasMore: false,
-        usedKeys: starters.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
+        usedKeys: starters.map((item) => item.canonicalKey).toList(growable: false),
       );
     }
     final List<FeedItemEntity> items = cached.items.take(_cachedPageSize).toList(growable: false);
     return PersonalizedFeedPage(
       items: items,
       hasMore: true,
-      usedKeys: items.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
+      usedKeys: items.map((item) => item.canonicalKey).toList(growable: false),
       isStale: DateTime.now().toUtc().difference(cached.cachedAt) > const Duration(hours: _cacheTtlHours),
     );
   }
@@ -546,10 +545,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         candidates: candidates,
         profile: profile,
         recentShows: _impressions.recentShows(now),
-        excludedKeys: <String>{
-          ...request.seenKeys,
-          ...request.existingItems.map(PersonalizedRankingService.canonicalKey),
-        },
+        excludedKeys: <String>{...request.seenKeys, ...request.existingItems.map((item) => item.canonicalKey)},
         mix: mix,
         random: _random,
         now: now,
@@ -608,17 +604,17 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       if (fallbackItems.isNotEmpty) {
         final Set<String> excluded = <String>{
           ...request.seenKeys,
-          ...request.existingItems.map(PersonalizedRankingService.canonicalKey),
+          ...request.existingItems.map((item) => item.canonicalKey),
         };
         final List<FeedItemEntity> unseenCachedItems = fallbackItems
-            .where((item) => !excluded.contains(PersonalizedRankingService.canonicalKey(item)))
+            .where((item) => !excluded.contains(item.canonicalKey))
             .toList(growable: false);
         if (unseenCachedItems.isNotEmpty || fallbackItems.every(BundledWallpapers.isStarter)) {
           return Result.success(
             PersonalizedFeedPage(
               items: unseenCachedItems,
               hasMore: !fallbackItems.every(BundledWallpapers.isStarter),
-              usedKeys: unseenCachedItems.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
+              usedKeys: unseenCachedItems.map((item) => item.canonicalKey).toList(growable: false),
             ),
           );
         }
@@ -636,7 +632,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return PersonalizedFeedPage(
       items: items,
       hasMore: page.hasMore,
-      usedKeys: items.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
+      usedKeys: items.map((item) => item.canonicalKey).toList(growable: false),
       isStale: page.isStale,
     );
   }
@@ -1161,17 +1157,15 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     for (final row in rows) {
       final wall = row.dto.toDomain(docId: row.docId);
       final item = PrismFeedItem(id: wall.id, wallpaper: wall);
-      dedupe[PersonalizedRankingService.canonicalKey(item)] = item;
+      dedupe[item.canonicalKey] = item;
     }
     return dedupe.values.toList(growable: false);
   }
 
   List<FeedItemEntity> _mergeCachedAndNew(List<FeedItemEntity> cachedItems, List<FeedItemEntity> newItems) {
-    final merged = <String, FeedItemEntity>{
-      for (final item in cachedItems) PersonalizedRankingService.canonicalKey(item): item,
-    };
+    final merged = <String, FeedItemEntity>{for (final item in cachedItems) item.canonicalKey: item};
     for (final item in newItems) {
-      merged[PersonalizedRankingService.canonicalKey(item)] = item;
+      merged[item.canonicalKey] = item;
     }
     return merged.values.toList(growable: false);
   }
@@ -1212,10 +1206,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return (
       cachedAt: saved.cachedAtUtc,
       items: BlockedCreatorsFilter.filterFeedItems(items, blockedUids)
-          .where(
-            (item) =>
-                (recentShows[PersonalizedRankingService.canonicalKey(item)] ?? 0) < FeedImpressionStore.hiddenShows,
-          )
+          .where((item) => (recentShows[item.canonicalKey] ?? 0) < FeedImpressionStore.hiddenShows)
           .toList(growable: false),
     );
   }

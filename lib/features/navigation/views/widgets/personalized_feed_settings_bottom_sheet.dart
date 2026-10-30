@@ -6,6 +6,7 @@ import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
@@ -25,16 +26,6 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-final ValueNotifier<int> personalizedFeedSettingsRevision = ValueNotifier<int>(0);
-
-/// Stores the one AI setting that the Settings switch, the Tune sheet chip and the empty feed action share. The caller
-/// refreshes any feed bloc it holds.
-Future<bool> setShowAiWallpapers(SettingsLocalDataSource settings, bool value, {bool notify = true}) async {
-  if (!await AiContentFilter.setShowsAi(settings, value)) return false;
-  if (notify) personalizedFeedSettingsRevision.value += 1;
-  return true;
-}
 
 Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context) async {
   final SettingsLocalDataSource settingsLocal = getIt<SettingsLocalDataSource>();

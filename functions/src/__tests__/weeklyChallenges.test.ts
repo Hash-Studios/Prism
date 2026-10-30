@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
+import {refreshPublishedChallengeAward, runChallengeSchedule} from "../challengeScheduler";
 import * as wotd from "../wallOfTheDay";
 import {sendToUser} from "../notificationHelper";
 import {onWallSubmitted} from "../onWallSubmitted";
@@ -9,8 +10,8 @@ import {installFakeDb, type Doc} from "./fakeDb";
 import {
   onChallengeWallSubmitted, admitChallengeWall, admissionIdentity, challengeIo, compareTimestamp, dateKey, fallbackTheme, finalizeChallenge,
   getChallenge, getWeeklyChallenge, listWeeklyChallenges, mondayAt, notifyChallengeWinner, openChallengeSlot,
-  reconcileChallengeWall, reservedChallengePick, runChallengeSchedule, scanClosedChallenge, setChallengeVote,
-  voteChallenge, commitChallengeReservation, removeChallengeVotesForAccount, refreshPublishedChallengeAward,
+  reconcileChallengeWall, reservedChallengePick, scanClosedChallenge, setChallengeVote,
+  voteChallenge, commitChallengeReservation, removeChallengeVotesForAccount,
 } from "../weeklyChallenges";
 
 const at = (n: number) => admin.firestore.Timestamp.fromMillis(n);
