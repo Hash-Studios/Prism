@@ -10820,5 +10820,72 @@
   "wallpaperAiMadeWithUnknown": "Dibuat dengan AI",
   "wallpaperAiReportWrongLabel": "Laporkan label salah",
   "feedNoHumanWalls": "Belum ada wallpaper buatan manusia di sini",
-  "feedShowAiWalls": "Tampilkan wallpaper AI"
+  "feedShowAiWalls": "Tampilkan wallpaper AI",
+  "challengeTitle": "Tantangan mingguan",
+  "challengeRules": "Maksimal 3 karya, ditinjau sebelum ditampilkan.",
+  "challengeVotingRules": "Pilih karya kreator lain hingga {date} UTC.",
+  "@challengeVotingRules": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeUpload": "Unggah karya",
+  "challengeAi": "Buat dengan AI",
+  "challengeTop": "Teratas",
+  "challengeNew": "Terbaru",
+  "challengePast": "Tantangan sebelumnya",
+  "challengeEmpty": "Karya yang disetujui akan muncul di sini.",
+  "challengeWaiting": "Pemungutan suara ditutup. Kami menunggu tinjauan karya sebelum memilih pemenang.",
+  "challengeClosed": "Tantangan ini telah berakhir.",
+  "challengeScheduled": "Tantangan ini belum dibuka.",
+  "challengeNoWinner": "Tidak ada pemenang untuk tantangan ini.",
+  "challengeWinner": "Pemenang · {name}",
+  "@challengeWinner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeVote": "Pilih",
+  "challengeUnvote": "Hapus suara",
+  "challengeVotes": "{count, plural, =0{0 suara} =1{1 suara} other{{count} suara}}",
+  "@challengeVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeShare": "Bagikan tantangan",
+  "challengeRemove": "Hapus tantangan",
+  "challengeContext": "Tantangan · {theme}",
+  "@challengeContext": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeError": "Tantangan tidak dapat dimuat. Coba lagi.",
+  "challengeVoteError": "Suara tidak dapat disimpan. Coba lagi.",
+  "challengeSignIn": "Masuk untuk ikut atau memilih.",
+  "challengeLimit": "Anda telah mengirim 3 wallpaper untuk tantangan ini.",
+  "challengeRetry": "Coba lagi",
+  "challengeOwnEntry": "Anda tidak dapat memilih karya sendiri.",
+  "challengeDailyLimit": "Batas suara harian telah tercapai.",
+  "challengeMissing": "Tantangan atau karya ini tidak lagi tersedia.",
+  "challengeBadge": "Pemenang Tantangan",
+  "challengeBadgeDescription": "Menangkan tantangan mingguan",
+  "challengeWinnerNotificationTitle": "Wallpaper Anda menang",
+  "challengeWinnerNotificationBody": "Karya Anda memenangkan tantangan mingguan: {theme}.",
+  "@challengeWinnerNotificationBody": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  }
 }

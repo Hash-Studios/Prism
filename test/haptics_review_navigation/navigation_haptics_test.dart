@@ -7,6 +7,7 @@ import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
+import 'package:Prism/features/weekly_challenges/biz/weekly_challenges_cubit.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../support/empty_mood_repository.dart';
+import '../support/empty_weekly_challenges_repository.dart';
 
 class _MockNotificationsBloc extends MockBloc<InAppNotificationsEvent, InAppNotificationsState>
     implements InAppNotificationsBloc {}
@@ -62,6 +64,7 @@ void main() {
     when(trendingBloc.close).thenAnswer((_) async {});
     getIt.registerSingleton<TrendingBloc>(trendingBloc);
     getIt.registerSingleton<MoodsCubit>(MoodsCubit(const EmptyMoodRepository()));
+    getIt.registerFactory<WeeklyChallengesCubit>(() => WeeklyChallengesCubit(const EmptyWeeklyChallengesRepository()));
     final _MockWotdBloc wotdBloc = _MockWotdBloc();
     when(() => wotdBloc.state).thenReturn(WotdState.initial());
     final _MockNotificationsBloc notificationsBloc = _MockNotificationsBloc();

@@ -28,6 +28,8 @@ class AiGenerationRecord {
     this.format,
     this.foldedPrompt,
     this.revealedPrompt,
+    this.challengeId,
+    this.challengeTheme,
   });
 
   final String id;
@@ -57,6 +59,8 @@ class AiGenerationRecord {
 
   /// Firestore doc id of the wall this generation remixed, if any.
   final String? remixOf;
+  final String? challengeId;
+  final String? challengeTheme;
 
   String displayUrl({required bool isPremium}) => isPremium ? imageUrl : watermarkedImageUrl;
 
@@ -85,6 +89,8 @@ class AiGenerationRecord {
       'submittedWallId': submittedWallId,
       'submittedAt': submittedAt?.toUtc(),
       'remixOf': remixOf,
+      'challengeId': challengeId,
+      'challengeTheme': challengeTheme,
     };
   }
 
@@ -115,6 +121,8 @@ class AiGenerationRecord {
       submittedWallId: json['submittedWallId']?.toString(),
       submittedAt: json['submittedAt'] == null ? null : parseDate(json['submittedAt']),
       remixOf: _nonEmptyOrNull(json['remixOf']),
+      challengeId: _nonEmptyOrNull(json['challengeId']),
+      challengeTheme: _nonEmptyOrNull(json['challengeTheme']),
     );
   }
 
@@ -125,6 +133,8 @@ class AiGenerationRecord {
     DateTime? submittedAt,
     String? status,
     String? remixOf,
+    String? challengeId,
+    String? challengeTheme,
   }) {
     return AiGenerationRecord(
       id: id,
@@ -150,6 +160,8 @@ class AiGenerationRecord {
       submittedWallId: submittedWallId ?? this.submittedWallId,
       submittedAt: submittedAt ?? this.submittedAt,
       remixOf: remixOf ?? this.remixOf,
+      challengeId: challengeId ?? this.challengeId,
+      challengeTheme: challengeTheme ?? this.challengeTheme,
     );
   }
 }

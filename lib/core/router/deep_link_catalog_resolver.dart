@@ -83,6 +83,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.folder => FolderRoute(folderId: path['folderId']!),
     DeepLinkPageTarget.mood => MoodRoute(moodId: path['moodId']!),
     DeepLinkPageTarget.gallery => GalleryRoute(ids: query['ids']!, source: query['source'] ?? 'link'),
+    DeepLinkPageTarget.weeklyChallenge => WeeklyChallengeRoute(challengeId: match.pathParams['challengeId']!),
     DeepLinkPageTarget.wallRequests => WallRequestsRoute(tab: query['tab'] ?? 'top'),
     DeepLinkPageTarget.uploadInput => _inputRoute(DeepLinkInputWorkflow.uploadWall),
     DeepLinkPageTarget.editWallInput => _inputRoute(DeepLinkInputWorkflow.editWall),

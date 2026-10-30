@@ -11545,4 +11545,111 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get feedShowAiWalls => 'AI वॉलपेपर दिखाएँ';
+
+  @override
+  String get challengeTitle => 'साप्ताहिक चुनौती';
+
+  @override
+  String get challengeRules => 'अधिकतम 3 प्रविष्टियाँ, दिखाने से पहले समीक्षा होगी।';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'अन्य रचनाकारों के लिए $date UTC तक वोट दें।';
+  }
+
+  @override
+  String get challengeUpload => 'प्रविष्टि अपलोड करें';
+
+  @override
+  String get challengeAi => 'AI से बनाएँ';
+
+  @override
+  String get challengeTop => 'शीर्ष';
+
+  @override
+  String get challengeNew => 'नई';
+
+  @override
+  String get challengePast => 'पिछली चुनौतियाँ';
+
+  @override
+  String get challengeEmpty => 'स्वीकृत प्रविष्टियाँ यहाँ दिखेंगी।';
+
+  @override
+  String get challengeWaiting => 'वोटिंग बंद है। विजेता चुनने से पहले प्रविष्टियों की समीक्षा पूरी होगी।';
+
+  @override
+  String get challengeClosed => 'यह चुनौती समाप्त हो गई है।';
+
+  @override
+  String get challengeScheduled => 'यह चुनौती अभी शुरू नहीं हुई है।';
+
+  @override
+  String get challengeNoWinner => 'इस चुनौती का कोई विजेता नहीं है।';
+
+  @override
+  String challengeWinner(String name) {
+    return 'विजेता · $name';
+  }
+
+  @override
+  String get challengeVote => 'वोट दें';
+
+  @override
+  String get challengeUnvote => 'वोट हटाएँ';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count वोट', one: '1 वोट', zero: '0 वोट');
+    return '$_temp0';
+  }
+
+  @override
+  String get challengeShare => 'चुनौती साझा करें';
+
+  @override
+  String get challengeRemove => 'चुनौती हटाएँ';
+
+  @override
+  String challengeContext(String theme) {
+    return 'चुनौती · $theme';
+  }
+
+  @override
+  String get challengeError => 'चुनौती लोड नहीं हुई। फिर कोशिश करें।';
+
+  @override
+  String get challengeVoteError => 'वोट सहेजा नहीं गया। फिर कोशिश करें।';
+
+  @override
+  String get challengeSignIn => 'भाग लेने या वोट देने के लिए साइन इन करें।';
+
+  @override
+  String get challengeLimit => 'आपने इस चुनौती में 3 वॉलपेपर जमा किए हैं।';
+
+  @override
+  String get challengeRetry => 'फिर कोशिश करें';
+
+  @override
+  String get challengeOwnEntry => 'आप अपनी प्रविष्टि को वोट नहीं दे सकते।';
+
+  @override
+  String get challengeDailyLimit => 'आज की वोटिंग सीमा पूरी हो गई है।';
+
+  @override
+  String get challengeMissing => 'यह चुनौती या प्रविष्टि अब उपलब्ध नहीं है।';
+
+  @override
+  String get challengeBadge => 'चुनौती विजेता';
+
+  @override
+  String get challengeBadgeDescription => 'साप्ताहिक चुनौती जीतें';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'आपका वॉलपेपर जीत गया';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'आपकी प्रविष्टि ने साप्ताहिक चुनौती जीती: $theme।';
+  }
 }

@@ -146,6 +146,11 @@ class _InMemoryCopyFile extends Fake implements File {
 class _CountingAiGenerationRepository extends Fake implements AiGenerationRepositoryImpl {
   _CountingAiGenerationRepository({this.duo = false});
   final bool duo;
+  final List<AiGenerationRecord> savedRecords = <AiGenerationRecord>[];
+
+  @override
+  Future<void> saveHistoryRecord(AiGenerationRecord record) async => savedRecords.add(record);
+
   int generateCalls = 0;
   int variationCalls = 0;
   int fetchHistoryCalls = 0;
@@ -257,7 +262,11 @@ Future<void> _onPlatform(TargetPlatform platform, Future<void> Function() body) 
   }
 }
 
-Future<void> _pumpPage(WidgetTester tester, _CountingAiGenerationRepository repository) async {
+Future<void> _pumpPage(
+  WidgetTester tester,
+  _CountingAiGenerationRepository repository, {
+  ChallengeSeed? challengeSeed,
+}) async {
   tester.view.physicalSize = const Size(1000, 2200);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
@@ -281,7 +290,7 @@ Future<void> _pumpPage(WidgetTester tester, _CountingAiGenerationRepository repo
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: AiWallpaperTabPage(repository: repository),
+      home: AiWallpaperTabPage(repository: repository, challengeSeed: challengeSeed),
     ),
   );
   await tester.pumpAndSettle();
@@ -580,6 +589,35 @@ void main() {
         afterFirstVisit.lookups,
         reason: 'a swap back reuses the decoded take',
       );
+    });
+  });
+
+  testWidgets('swapping session takes restores their challenge context without tagging unrelated takes', (
+    tester,
+  ) async {
+    await _onPlatform(TargetPlatform.android, () async {
+      final repository = _CountingAiGenerationRepository();
+      OfflineAssetStore.testOverride = _FakeAssetStore(heroFile);
+      await _pumpPage(
+        tester,
+        repository,
+        challengeSeed: const ChallengeSeed(id: '2026-10-26', theme: 'Quiet oceans'),
+      );
+      await _generate(tester);
+      expect(tester.widget<AiResultView>(find.byType(AiResultView)).record.challengeId, '2026-10-26');
+      await _editPrompt(tester);
+      await tester.tap(find.byTooltip('Remove challenge'));
+      await tester.pump();
+      await _generate(tester);
+      expect(tester.widget<AiResultView>(find.byType(AiResultView)).record.challengeId, isNull);
+      await tester.tap(_sessionThumb('take-1'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<AiResultView>(find.byType(AiResultView)).record.challengeId, '2026-10-26');
+      await _editPrompt(tester);
+      expect(find.text('Challenge · Quiet oceans'), findsOneWidget);
+      await _generate(tester);
+      expect(tester.widget<AiResultView>(find.byType(AiResultView)).record.challengeId, '2026-10-26');
+      expect(repository.savedRecords.map((record) => record.id), <String>['take-1', 'take-3']);
     });
   });
 

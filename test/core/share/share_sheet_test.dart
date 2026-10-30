@@ -128,7 +128,12 @@ void _mockChannels(WidgetTester tester, {List<MethodCall>? toastCalls}) {
   });
 }
 
-Future<void> _openSheet(WidgetTester tester, ShareSheetServices services, {ShareCardContent content = _content}) async {
+Future<void> _openSheet(
+  WidgetTester tester,
+  ShareSheetServices services, {
+  ShareCardContent content = _content,
+  VoidCallback? onShared,
+}) async {
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -138,7 +143,7 @@ Future<void> _openSheet(WidgetTester tester, ShareSheetServices services, {Share
         builder: (BuildContext context) => Scaffold(
           body: Center(
             child: TextButton(
-              onPressed: () => showShareSheet(context, content, 'wall_detail', services: services),
+              onPressed: () => showShareSheet(context, content, 'wall_detail', services: services, onShared: onShared),
               child: const Text('open'),
             ),
           ),
@@ -338,6 +343,40 @@ void main() {
     expect(event.result, EventResultValue.failure);
     expect(_target(ShareTargetValue.saveImage), findsOneWidget);
   });
+
+  for (final target in [ShareTargetValue.copyLink, ShareTargetValue.saveImage, ShareTargetValue.instagramStories]) {
+    testWidgets('successful $target does not prove a completed native share', (tester) async {
+      _mockChannels(tester);
+      final fake = _Fake(await _writeCards(tester))..instagram = true;
+      int observed = 0;
+      await _openSheet(tester, fake.services, onShared: () => observed++);
+      await tester.tap(_target(target));
+      await _settle(tester);
+      expect(observed, 0);
+      expect(
+        target == ShareTargetValue.copyLink
+            ? fake.copied
+            : target == ShareTargetValue.saveImage
+            ? fake.saved
+            : fake.instagramPaths,
+        isNotEmpty,
+      );
+    });
+  }
+
+  for (final status in ShareResultStatus.values) {
+    testWidgets('share callback requires observed success: $status', (tester) async {
+      _mockChannels(tester);
+      final cards = await _writeCards(tester);
+      final fake = _Fake(cards)..shareResult = ShareResult('', status);
+      int observed = 0;
+      await _openSheet(tester, fake.services, onShared: () => observed++);
+      expect(observed, 0);
+      await tester.tap(_target(ShareTargetValue.more));
+      await _settle(tester);
+      expect(observed, status == ShareResultStatus.success ? 1 : 0);
+    });
+  }
 
   testWidgets('More shares the rendered story with the link and tracks success', (tester) async {
     tester.view

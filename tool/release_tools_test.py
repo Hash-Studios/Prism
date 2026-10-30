@@ -178,15 +178,38 @@ class ReleaseToolsTest(ReleaseFixture, unittest.TestCase):
         self.assertNotIn('server-secret', result.stdout + result.stderr)
 
     def test_allowlist_tracks_shipping_env_keys(self):
-        # The contract is Env, not every name returned by Doppler. Bool debug
-        # switches are deliberately not shipping configuration.
+        # Bool debug switches and these exact local-only strings do not ship.
+        # Do not exclude a prefix: a new Env string must be classified explicitly.
         env_keys = set(re.findall(r"String\.fromEnvironment\('([^']+)'", (ROOT / 'lib/env/env.dart').read_text()))
+        local_only_keys = {'PRISM_LOCAL_QA_USER', 'PRISM_LOCAL_QA_CERTIFICATE'}
+        self.assertTrue(local_only_keys <= env_keys)
         self.values = {key: 'fixture' for key in env_keys}
         self.write_payload()
         result = self.run_tool('python3', str(RUNNER), '--', 'flutter', 'run')
         self.assertEqual(result.returncode, 0, result.stderr)
         argv = json.loads(Path(self.env['CAPTURE']).read_text())
-        self.assertEqual({arg.split('=', 2)[1] for arg in argv[1:]}, env_keys)
+        self.assertEqual({arg.split('=', 2)[1] for arg in argv[1:]}, env_keys - local_only_keys)
+
+    def test_release_never_forwards_local_qa_or_unknown_doppler_keys(self):
+        self.values.update({
+            'PRISM_LOCAL_QA': 'true',
+            'PRISM_LOCAL_QA_USER': 'creator',
+            'PRISM_LOCAL_QA_CERTIFICATE': 'fixture-certificate',
+            'PRISM_LOCAL_QA_FUTURE': 'future-local-value',
+        })
+        self.write_payload()
+        for platform in ('android', 'ios'):
+            with self.subTest(platform=platform):
+                self.native(platform)
+                result = self.run_tool('python3', str(RUNNER), '--release-platform', platform,
+                                       '--', 'flutter', 'build', '--release')
+                self.assertEqual(result.returncode, 0, result.stderr)
+                expected = [
+                    'build', '--release', '--dart-define=GH_USERNAME=owner',
+                    '--dart-define=R2_PREVIEW_BASE_URL=https://images.example.com']
+                if platform == 'ios':
+                    expected.append(f'--dart-define=ADMOB_IOS_REWARDED_AD_UNIT_ID={IOS_ADMOB_UNIT}')
+                self.assertEqual(json.loads(Path(self.env['CAPTURE']).read_text()), expected)
 
     def test_release_missing_config_stops_before_flutter(self):
         for platform in ('android', 'ios'):

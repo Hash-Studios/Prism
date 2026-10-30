@@ -11027,5 +11027,72 @@
   "feedShowAiWalls": "Show AI walls",
   "@feedShowAiWalls": {
     "description": "Action in the empty state that turns AI-generated walls back on."
+  },
+  "challengeTitle": "Weekly challenge",
+  "challengeRules": "Up to 3 entries, each reviewed before appearing.",
+  "challengeVotingRules": "Vote for other creators until {date} UTC.",
+  "@challengeVotingRules": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeUpload": "Upload an entry",
+  "challengeAi": "Create with AI",
+  "challengeTop": "Top",
+  "challengeNew": "New",
+  "challengePast": "Past challenges",
+  "challengeEmpty": "Approved entries will appear here.",
+  "challengeWaiting": "Voting has closed. We are waiting for entry reviews before choosing a winner.",
+  "challengeClosed": "This challenge has ended.",
+  "challengeScheduled": "This challenge has not opened yet.",
+  "challengeNoWinner": "No winner for this challenge.",
+  "challengeWinner": "Winner · {name}",
+  "@challengeWinner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeVote": "Vote",
+  "challengeUnvote": "Remove vote",
+  "challengeVotes": "{count, plural, =0{0 votes} =1{1 vote} other{{count} votes}}",
+  "@challengeVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeShare": "Share challenge",
+  "challengeRemove": "Remove challenge",
+  "challengeContext": "Challenge · {theme}",
+  "@challengeContext": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeError": "We could not load this challenge. Try again.",
+  "challengeVoteError": "Your vote could not be saved. Try again.",
+  "challengeSignIn": "Sign in to enter or vote.",
+  "challengeLimit": "You have entered 3 wallpapers in this challenge.",
+  "challengeRetry": "Try again",
+  "challengeOwnEntry": "You cannot vote for your own entry.",
+  "challengeDailyLimit": "Your daily voting limit is reached.",
+  "challengeMissing": "This challenge or entry is no longer available.",
+  "challengeBadge": "Challenge Winner",
+  "challengeBadgeDescription": "Win a weekly challenge",
+  "challengeWinnerNotificationTitle": "Your wallpaper won",
+  "challengeWinnerNotificationBody": "Your entry won the weekly challenge: {theme}.",
+  "@challengeWinnerNotificationBody": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
   }
 }

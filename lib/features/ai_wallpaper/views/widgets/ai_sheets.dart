@@ -88,6 +88,10 @@ Future<AiSubmissionMetadata?> showAiSubmitSheet(
                 ),
               ],
             ),
+          if (record?.challengeId != null) ...[
+            const SizedBox(height: PrismSpace.md),
+            Text(l10n.challengeContext(record!.challengeTheme ?? '')),
+          ],
           const SizedBox(height: PrismSpace.md),
           Text(l10n.economyAiSubmitPromptNotice, style: PrismTextStyles.caption(sheetContext)),
         ],

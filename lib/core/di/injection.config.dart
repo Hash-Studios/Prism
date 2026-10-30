@@ -257,6 +257,16 @@ import '../../features/wallpaper_position/data/repositories/wallpaper_position_r
     as _i536;
 import '../../features/wallpaper_position/domain/repositories/wallpaper_position_repository.dart'
     as _i307;
+import '../../features/weekly_challenges/biz/challenge_admission_tracker.dart'
+    as _i184;
+import '../../features/weekly_challenges/biz/confirm_challenge_submission.dart'
+    as _i360;
+import '../../features/weekly_challenges/biz/weekly_challenges_cubit.dart'
+    as _i666;
+import '../../features/weekly_challenges/data/weekly_challenges_repository_impl.dart'
+    as _i58;
+import '../../features/weekly_challenges/domain/repositories/weekly_challenges_repository.dart'
+    as _i836;
 import '../content_reports/content_report_repository.dart' as _i177;
 import '../firestore/firestore_client.dart' as _i349;
 import '../firestore/firestore_telemetry.dart' as _i393;
@@ -330,6 +340,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i1073.SettingsLocalDataSource>(
     () => _i1073.SettingsLocalDataSource(gh<_i496.LocalStore>()),
+  );
+  gh.lazySingleton<_i184.ChallengeAdmissionTracker>(
+    () => _i184.ChallengeAdmissionTracker(gh<_i496.LocalStore>()),
   );
   gh.lazySingleton<_i663.WallRequestsRepository>(
     () => _i221.WallRequestsRepositoryImpl(),
@@ -646,6 +659,12 @@ _i174.GetIt initGetIt(
       gh<_i312.PexelsWallpaperRepository>(),
     ),
   );
+  gh.lazySingleton<_i836.WeeklyChallengesRepository>(
+    () => _i58.WeeklyChallengesRepositoryImpl(
+      gh<_i244.WallRemixRepository>(),
+      gh<_i184.ChallengeAdmissionTracker>(),
+    ),
+  );
   gh.lazySingleton<_i301.LoadCategoriesUseCase>(
     () => _i301.LoadCategoriesUseCase(gh<_i563.CategoryFeedRepository>()),
   );
@@ -738,6 +757,14 @@ _i174.GetIt initGetIt(
       gh<_i446.FetchUserSummariesPageUseCase>(),
       gh<_i446.SearchUsersByUsernameUseCase>(),
     ),
+  );
+  gh.lazySingleton<_i360.ConfirmChallengeSubmission>(
+    () => _i360.ConfirmChallengeSubmission(
+      gh<_i836.WeeklyChallengesRepository>(),
+    ),
+  );
+  gh.factory<_i666.WeeklyChallengesCubit>(
+    () => _i666.WeeklyChallengesCubit(gh<_i836.WeeklyChallengesRepository>()),
   );
   gh.lazySingleton<_i489.WallOfTheDayRepository>(
     () => _i1070.WallOfTheDayRepositoryImpl(

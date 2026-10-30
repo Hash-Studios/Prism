@@ -61,6 +61,7 @@ Future<void> showShareSheet(
   ShareCardContent content,
   String sourceContext, {
   ShareSheetServices services = const ShareSheetServices(),
+  VoidCallback? onShared,
 }) {
   return showPrismSheet<void>(
     context,
@@ -81,6 +82,7 @@ Future<void> showShareSheet(
       ),
       sourceContext: sourceContext,
       services: services,
+      onShared: onShared,
     ),
   );
 }
@@ -90,12 +92,14 @@ class ShareSheet extends StatefulWidget {
     required this.content,
     required this.sourceContext,
     this.services = const ShareSheetServices(),
+    this.onShared,
     super.key,
   });
 
   final ShareCardContent content;
   final String sourceContext;
   final ShareSheetServices services;
+  final VoidCallback? onShared;
 
   @override
   State<ShareSheet> createState() => _ShareSheetState();
@@ -290,6 +294,7 @@ class _ShareSheetState extends State<ShareSheet> {
         }
       }
       final bool dismissed = sent.status == ShareResultStatus.dismissed;
+      if (sent.status == ShareResultStatus.success) widget.onShared?.call();
       _track(
         ShareTargetValue.more,
         dismissed ? EventResultValue.cancelled : EventResultValue.success,

@@ -13,6 +13,7 @@ import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
@@ -24,6 +25,8 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart'
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
+import 'package:Prism/features/weekly_challenges/biz/challenge_admission_tracker.dart';
+import 'package:Prism/features/weekly_challenges/biz/confirm_challenge_submission.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -82,6 +85,14 @@ class _LocalAiAssetStore extends OfflineAssetStore {
   Future<File> retain(String source, {File? file}) async {
     retained.add(source);
     return this.file;
+  }
+}
+
+class _RecordingChallengeConfirmation extends Fake implements ConfirmChallengeSubmission {
+  final List<({String uid, String challengeId, String wallId})> calls = [];
+  @override
+  Future<void> call({required String uid, required String challengeId, required String wallId}) async {
+    calls.add((uid: uid, challengeId: challengeId, wallId: wallId));
   }
 }
 
@@ -980,6 +991,64 @@ void main() {
     expect(toastCalls, isNotEmpty);
   });
 
+  testWidgets('history submission keeps its own challenge rather than the current form seed', (tester) async {
+    tester.view.physicalSize = const Size(1000, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    final store = InMemoryLocalStore();
+    final confirmation = _RecordingChallengeConfirmation();
+    getIt.registerSingleton<ConfirmChallengeSubmission>(confirmation);
+    getIt.registerSingleton<ChallengeAdmissionTracker>(ChallengeAdmissionTracker(store));
+    addTearDown(getIt.reset);
+    const toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    final record = _record().copyWith(challengeId: '2026-10-19', challengeTheme: 'Morning light', remixOf: 'original');
+    final repository = _FakeAiGenerationRepository(record, Completer<AiSubmissionMetadata>()..complete(_emptyMetadata));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(
+          repository: repository,
+          challengeSeed: const ChallengeSeed(id: '2026-10-26', theme: 'Quiet oceans'),
+          submitForTesting: () async => WallSubmissionResult.submitted,
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await _openRecent(tester);
+    final submit = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+      find.descendant(of: find.byType(PrismSheetBody), matching: find.text('Challenge · Morning light')),
+      findsOneWidget,
+    );
+    await tester.tap(find.text(AppLocalizationsEn().economyAiSubmitForReview));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(repository.savedRecords.single.challengeId, '2026-10-19');
+    expect(confirmation.calls.single.challengeId, '2026-10-19');
+    expect(confirmation.calls.single.wallId, startsWith('wall_AI'));
+    expect(repository.savedRecords.single.remixOf, 'original');
+    expect(store.data.keys.where((key) => key.startsWith('challenge.entry.user-1.2026-10-19.')), hasLength(1));
+    expect(store.data.keys.where((key) => key.startsWith('challenge.entry.user-1.2026-10-26.')), isEmpty);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 10));
+  });
+
   testWidgets('quota-exceeded stays retryable but an unconfirmed submission does not', (tester) async {
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
@@ -1160,6 +1229,9 @@ void main() {
       getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
       final firestore = FakeFirestoreClient();
       final localStore = InMemoryLocalStore();
+      final confirmation = _RecordingChallengeConfirmation();
+      getIt.registerSingleton<ConfirmChallengeSubmission>(confirmation);
+      getIt.registerSingleton<ChallengeAdmissionTracker>(ChallengeAdmissionTracker(localStore));
       getIt.registerSingleton<FirestoreClient>(firestore);
       getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(localStore));
       app_state.prismUser = app_constants.createGuestPrismUser()
@@ -1169,7 +1241,10 @@ void main() {
         ..premium = initialPremium;
       toastArguments.clear();
       final repository = _FakeAiGenerationRepository(
-        _record(id: generation, imageUrl: originalUrl, watermarkedImageUrl: previewUrl),
+        _record(id: generation, imageUrl: originalUrl, watermarkedImageUrl: previewUrl).copyWith(
+          challengeId: initialPremium && confirmationPremium ? '2026-10-26' : null,
+          challengeTheme: initialPremium && confirmationPremium ? 'Quiet oceans' : null,
+        ),
         Completer<AiSubmissionMetadata>()..complete(_emptyMetadata),
       );
       await tester.pumpWidget(
@@ -1197,6 +1272,13 @@ void main() {
       );
       final wall = wallWrites.single.data!;
       expect(wall['id'], 'AI2B83C297CF7C420FF33FA03823705EA95');
+      if (initialPremium && confirmationPremium) {
+        expect(wall['challengeId'], '2026-10-26');
+        expect(wallWrites.single.id, 'wall_AI2B83C297CF7C420FF33FA03823705EA95');
+        expect(confirmation.calls.single.wallId, wallWrites.single.id);
+      } else {
+        expect(wall.containsKey('challengeId'), isFalse);
+      }
       expect(wall['aiGenerationId'], generation);
       expect(wall['isAiGenerated'], true);
       expect(wall['wallpaper_url'], confirmationPremium ? originalUrl : previewUrl);
