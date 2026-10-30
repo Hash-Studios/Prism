@@ -45,6 +45,7 @@ import 'package:Prism/core/router/short_link_retry.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/startup/notification_channels.dart';
 import 'package:Prism/core/startup/session_end_watcher.dart';
+import 'package:Prism/core/startup/session_ended_navigation.dart';
 import 'package:Prism/core/startup/session_ended_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
@@ -693,11 +694,16 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
 
   Future<void> _handleSessionEnded() async {
     try {
-      _authContinuation.cancel();
-      await globalGoogleAuth.signOutGoogle();
-      final BuildContext? context = _appRouter.navigatorKey.currentContext;
-      if (!mounted || context == null || !context.mounted) return;
-      unawaited(showSessionEndedSheet(context, onSignedIn: () => RestartWidget.restartApp(context)));
+      await handleSessionEndedNavigation(
+        router: _appRouter,
+        signOut: globalGoogleAuth.signOutGoogle,
+        isMounted: () => mounted,
+        showGuestPrompt: () async {
+          final BuildContext? context = _appRouter.navigatorKey.currentContext;
+          if (context == null || !context.mounted) return;
+          await showSessionEndedSheet(context, onSignedIn: () => RestartWidget.restartApp(context));
+        },
+      );
     } catch (error, stackTrace) {
       logger.w('Session ended handling failed.', tag: 'Session', error: error, stackTrace: stackTrace);
     }

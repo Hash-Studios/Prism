@@ -201,6 +201,9 @@ void main() {
   });
 
   testWidgets('tapping a filled wall opens the real gallery route with its single logical id', (tester) async {
+    app_state.prismUser.loggedIn = true;
+    app_state.prismUser.id = 'user';
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
     final AppRouter router = AppRouter();
     final _MockGalleryCubit gallery = _MockGalleryCubit();
     when(() => cubit.close()).thenAnswer((_) async {});

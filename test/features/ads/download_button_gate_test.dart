@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -18,7 +19,6 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
@@ -1814,27 +1814,79 @@ void main() {
   });
 
   group('guest', () {
+    for (final scenario in <({String name, String link, String id, WallpaperSource source})>[
+      (name: 'Prism', link: '', id: 'wall-1', source: WallpaperSource.prism),
+      (name: 'Wallhaven', link: _link, id: 'wall-1', source: WallpaperSource.wallhaven),
+      (name: 'Pexels', link: _link, id: 'wall-1', source: WallpaperSource.pexels),
+      (name: 'local file', link: '/local.jpg', id: 'wall-1', source: WallpaperSource.downloaded),
+      (name: 'bundled starter', link: '/starter-sunset.jpg', id: 'starter-sunset', source: WallpaperSource.prism),
+      (name: 'unlocked Drop', link: _link, id: 'wall-1', source: WallpaperSource.prism),
+    ]) {
+      testWidgets('cancelled sign-in blocks ${scenario.name} before preparation, spending or save despite local Pro', (
+        tester,
+      ) async {
+        app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+        if (scenario.name == 'unlocked Drop') {
+          CoinsService.instance.setDropUnlocksForTest(const <String, DropUnlock>{
+            'wall-1': DropUnlock(wallId: 'wall-1', weekKey: '2026-W43', url: _link),
+          });
+          addTearDown(() => CoinsService.instance.dropsUnlockedNotifier.value = const <String, DropUnlock>{});
+        }
+        final originalSignIn = signedInActionSignIn;
+        addTearDown(() => signedInActionSignIn = originalSignIn);
+        var signIns = 0;
+        var preparations = 0;
+        signedInActionSignIn = (_) async {
+          signIns++;
+          return false;
+        };
+        await pump(
+          tester,
+          source: scenario.source,
+          link: scenario.link,
+          contentId: scenario.id,
+          variant: DownloadVariant(
+            key: 'variant',
+            prepare: () async {
+              preparations++;
+              return tinted;
+            },
+          ),
+        );
+
+        await tapSave(tester);
+
+        expect(signIns, 1);
+        expect(preparations, 0);
+        expect(backend.originalCalls, isEmpty);
+        expect(spendCalls, isEmpty);
+        expect(enqueued, isEmpty);
+        expect(saved, isEmpty);
+        expect(fakeAnalytics.events.whereType<DownloadAttemptEvent>(), isEmpty);
+      });
+    }
+
     testWidgets('a protected Prism original offers sign in without calling original access', (tester) async {
       app_state.prismUser = app_constants.createGuestPrismUser();
       backend.originalAuthenticated = false;
       await pump(tester, source: WallpaperSource.prism, link: '');
       await tapSave(tester);
-      expect(find.text('Sign in'), findsOneWidget);
+      expect(find.text('Sign in to Prism'), findsOneWidget);
       expect(backend.originalCalls, isEmpty);
       expect(enqueued, isEmpty);
-      Navigator.of(tester.element(find.text('Sign in'))).pop();
+      Navigator.of(tester.element(find.text('Sign in to Prism'))).pop();
       await settle(tester);
-      expect(fakeAnalytics.events.whereType<DownloadResultEvent>().single.reason, 'sign_in_required');
+      expect(fakeAnalytics.events.whereType<DownloadAttemptEvent>(), isEmpty);
     });
 
     testWidgets('a guest with Pro is asked to sign in without calling original access', (tester) async {
       app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
       backend.originalAuthenticated = false;
       backend.originalAssets['wall-1'] = (premium: false, coins: 20);
-      final signIn = originalSignIn;
-      addTearDown(() => originalSignIn = signIn);
+      final signIn = signedInActionSignIn;
+      addTearDown(() => signedInActionSignIn = signIn);
       var signIns = 0;
-      originalSignIn = (_) async {
+      signedInActionSignIn = (_) async {
         signIns++;
         return false;
       };
@@ -1844,20 +1896,20 @@ void main() {
       expect(signIns, 1);
       expect(backend.originalCalls, isEmpty);
       expect(enqueued, isEmpty);
-      expect(fakeAnalytics.events.whereType<DownloadResultEvent>().single.reason, 'sign_in_required');
+      expect(fakeAnalytics.events.whereType<DownloadAttemptEvent>(), isEmpty);
     });
 
-    testWidgets('a Pro wallpaper offers sign in or Pro, never an ad', (tester) async {
+    testWidgets('a Pro wallpaper requires sign-in before coins, Pro or an ad', (tester) async {
       app_state.prismUser = app_constants.createGuestPrismUser();
       await pump(tester, premiumContent: true);
       await tapSave(tester);
 
-      expect(find.text('Pro wallpaper'), findsOneWidget);
-      expect(find.text('Sign in'), findsOneWidget);
-      expect(find.text('Get Pro'), findsOneWidget);
+      expect(find.text('Sign in to Prism'), findsOneWidget);
+      expect(find.text('Pro wallpaper'), findsNothing);
+      expect(find.text('Get Pro'), findsNothing);
       expect(find.textContaining('Watch a video'), findsNothing);
       expect(enqueued, isEmpty);
-      expect(fakeAnalytics.events.whereType<DownloadAttemptEvent>().single.premium, isTrue);
+      expect(fakeAnalytics.events.whereType<DownloadAttemptEvent>(), isEmpty);
     });
   });
 }

@@ -1,14 +1,12 @@
-import 'dart:io';
-
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/purchase_analytics.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/widgets.dart';
@@ -44,7 +42,11 @@ class PaywallOrchestrator {
     required String placement,
     required String source,
     AppLocalizations? messages,
+    BuildContext? context,
   }) async {
+    if (!app_state.prismUser.loggedIn) {
+      if (context == null || !await requireSignedInAction(context)) return PaywallResultValue.guestSignInRequired;
+    }
     final String normalizedPlacement = placement.trim().isEmpty ? PaywallPlacement.mainUpsell : placement.trim();
     _logPlacementTriggerContext(placement: normalizedPlacement, source: source);
     analytics.track(
@@ -72,22 +74,14 @@ class PaywallOrchestrator {
     PaywallResultValue.rcError,
   };
 
-  /// Same as [present], but for a signed-out user it requires sign-in first
-  /// unless the platform allows guest browsing (iOS 5.1.1(v): purchases must
-  /// not require an account). Android has no guest path, so signed-out users
-  /// there always see the sign-in prompt.
   Future<PaywallResultValue?> presentOrRequireSignIn(
     BuildContext context, {
     required String placement,
     required String source,
   }) async {
-    if (app_state.prismUser.loggedIn || Platform.isIOS) {
-      return present(placement: placement, source: source, messages: AppLocalizations.of(context));
-    }
-    googleSignInPopUp(context, () {
-      present(placement: placement, source: source);
-    });
-    return null;
+    if (!await requireSignedInAction(context)) return null;
+    if (!context.mounted) return null;
+    return present(placement: placement, source: source, messages: AppLocalizations.of(context), context: context);
   }
 
   Future<void> recordRewardedAdWatchAndMaybeUpsell({required String source}) async {

@@ -40,9 +40,7 @@ class _MockSetFavouritePinUseCase extends Mock implements SetFavouritePinUseCase
 void main() {
   setUpFavouriteCounts();
 
-  testWidgets('a guest heart tap saves in the first frame; holding the heart asks for sign-in without another save', (
-    tester,
-  ) async {
+  testWidgets('guest heart taps and holds require sign-in without saving', (tester) async {
     app_state.prismUser = app_constants.createGuestPrismUser();
     AnalyticsRuntime.instance = FakeAppAnalytics();
     final local = FavoritesLocalDataSource(InMemoryLocalStore());
@@ -92,16 +90,20 @@ void main() {
     );
     await tester.tap(find.byType(FavoriteIcon));
     await tester.pump();
-    expect(local.isWallFavourite('', 'wall'), isTrue);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(local.isWallFavourite('', 'wall'), isFalse);
     expect(find.byType(FolderSheet), findsNothing);
-    expect(find.text('Sign in to use folders'), findsNothing);
-    verify(() => toggle(any())).called(1);
+    expect(find.text('Sign in to Prism'), findsOneWidget);
+    verifyNever(() => toggle(any()));
 
+    await tester.tap(find.text('Not now'));
     await tester.pump(const Duration(seconds: 3));
     await tester.longPress(find.byType(FavoriteIcon));
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Sign in to use folders'), findsOneWidget);
+    expect(find.text('Sign in to Prism'), findsOneWidget);
+    expect(local.isWallFavourite('', 'wall'), isFalse);
     verifyNever(() => toggle(any()));
+    await tester.tap(find.text('Not now'));
     await tester.pump(const Duration(seconds: 3));
   });
 

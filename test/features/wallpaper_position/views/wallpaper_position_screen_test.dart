@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
 import 'package:Prism/features/wallpaper_position/biz/bloc/wallpaper_position_bloc.j.dart';
@@ -20,6 +21,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 
 import '../../../support/fake_app_analytics.dart';
+import '../../../support/profile_user_fixture.dart';
 import '../../../support/wait_for_real_io.dart';
 
 class _Repository implements WallpaperPositionRepository {
@@ -80,6 +82,7 @@ void main() {
   late _Client client;
 
   setUp(() {
+    app_state.prismUser = profileUser();
     directory = Directory.systemTemp.createTempSync('position_screen_test_');
     repository = _Repository(directory);
     client = _Client();
@@ -98,6 +101,7 @@ void main() {
   });
 
   tearDown(() async {
+    app_state.prismUser = profileUser(loggedIn: false);
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), null);
     messenger.setMockMethodCallHandler(SystemChannels.platform, null);

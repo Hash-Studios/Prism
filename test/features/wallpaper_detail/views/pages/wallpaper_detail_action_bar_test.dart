@@ -813,6 +813,10 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('iOS preview exposes Save to Photos with its current tinted variant', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'ios-preview-user'
+        ..loggedIn = true;
+      addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
       final File source = File('${directory.path}/ios-preview-wall.png');
       await tester.runAsync(() async => source.writeAsBytes(await _redAndBluePng()));
       final FeedItemEntity entity = FeedItemEntity.prism(

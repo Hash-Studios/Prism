@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/share/share_card.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
 import 'package:Prism/features/pexels_feed/data/dtos/pexels_dtos.dart';
@@ -58,8 +60,16 @@ void main() {
     setupFirebaseCoreMocks();
     await Firebase.initializeApp();
   });
-  setUp(AnalyticsRuntime.reset);
-  tearDown(AnalyticsRuntime.reset);
+  setUp(() {
+    AnalyticsRuntime.reset();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user'
+      ..loggedIn = true;
+  });
+  tearDown(() {
+    AnalyticsRuntime.reset();
+    app_state.prismUser = app_constants.createGuestPrismUser();
+  });
 
   testWidgets('Prism shares pass the display derivative, never an original', (tester) async {
     final FakeAppAnalytics analytics = FakeAppAnalytics();

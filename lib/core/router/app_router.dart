@@ -91,6 +91,9 @@ class AppRouter extends RootStackRouter {
   final SignedInGuard _signedInGuard = const SignedInGuard();
   final AdminGuard _adminGuard = const AdminGuard();
 
+  @override
+  List<AutoRouteGuard> get guards => const [PlatformAccountGuard()];
+
   /// iOS keeps the Cupertino slide so the edge back-swipe works (a custom route has no back gesture). Android fades
   /// in and slides 24px from the right.
   @override
@@ -136,7 +139,7 @@ class AppRouter extends RootStackRouter {
           ],
         ),
         // Rewards tab (was Streak)
-        AutoRoute(path: 'rewards', page: RewardsTabRoute.page),
+        AutoRoute(path: 'rewards', page: RewardsTabRoute.page, guards: [_signedInGuard]),
         RedirectRoute(path: 'streak', redirectTo: 'rewards'),
         // Collection tab
         AutoRoute(path: 'collection', page: CollectionTabRoute.page),
@@ -144,19 +147,24 @@ class AppRouter extends RootStackRouter {
     ),
 
     // Global routes (pushed over entire shell as full-screen dialogs)
-    AutoRoute(path: '/ai', page: AiTabRoute.page),
+    AutoRoute(path: '/ai', page: AiTabRoute.page, guards: [_signedInGuard]),
     CustomRoute(
       path: '/wallpaper-detail',
       page: WallpaperDetailRoute.page,
       customRouteBuilder: wallpaperDetailRouteBuilder,
     ),
     AutoRoute(path: '/wotd-archive', page: WotdArchiveRoute.page),
-    AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
-    AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page),
-    AutoRoute(path: '/choose-wallpaper', page: DeepLinkInputRoute.page),
+    AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/choose-wallpaper', page: DeepLinkInputRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/premium', page: PremiumRoute.page),
     RedirectRoute(path: '/paywall', redirectTo: '/premium'),
-    AutoRoute(path: '/photo-preview', page: ReviewPhotoPreviewRoute.page, fullscreenDialog: true),
+    AutoRoute(
+      path: '/photo-preview',
+      page: ReviewPhotoPreviewRoute.page,
+      fullscreenDialog: true,
+      guards: [_signedInGuard],
+    ),
     CustomRoute(
       path: '/clock-preview',
       page: ClockPreviewRoute.page,
@@ -180,16 +188,16 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/settings', page: SettingsRoute.page),
     AutoRoute(path: '/blocked-accounts', page: BlockedAccountsRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/about', page: AboutRoute.page),
-    AutoRoute(path: '/fav-walls', page: FavouriteWallpaperRoute.page),
-    AutoRoute(path: '/downloads', page: DownloadRoute.page),
-    AutoRoute(path: '/library', page: LibraryRoute.page),
+    AutoRoute(path: '/fav-walls', page: FavouriteWallpaperRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/downloads', page: DownloadRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/library', page: LibraryRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/folder/:folderId', page: FolderRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/upload-wall', page: UploadWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/edit-wall', page: EditWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/review', page: ReviewRoute.page, guards: [_signedInGuard]),
     RedirectRoute(path: '/coin-transactions', redirectTo: '/rewards'),
     AutoRoute(path: '/theme', page: ThemeViewRoute.page),
-    AutoRoute(path: '/notifications', page: NotificationRoute.page),
+    AutoRoute(path: '/notifications', page: NotificationRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/collection-view', page: CollectionViewRoute.page),
     AutoRoute(path: '/mood/:moodId', page: MoodRoute.page),
     AutoRoute(path: '/gallery', page: GalleryRoute.page),
@@ -202,12 +210,12 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/admin-review/image', page: FullScreenImageRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/admin-firestore-telemetry', page: FirestoreTelemetryRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/debug-panel', page: DebugPanelRoute.page, guards: [_adminGuard]),
-    AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page),
-    AutoRoute(path: '/auto-rotate', page: AutoRotateRoute.page),
-    AutoRoute(path: '/ios-shortcuts', page: IosShortcutsGuideRoute.page),
-    AutoRoute(path: '/wallpaper-position', page: WallpaperPositionRoute.page),
-    AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page),
-    AutoRoute(path: '/rewards', page: RewardsRoute.page),
+    AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/auto-rotate', page: AutoRotateRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/ios-shortcuts', page: IosShortcutsGuideRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/wallpaper-position', page: WallpaperPositionRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/rewards', page: RewardsRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/coin-history', page: CoinHistoryRoute.page, guards: [_signedInGuard]),
     CustomRoute(
       path: '/daily-chest',

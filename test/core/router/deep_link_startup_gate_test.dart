@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_startup_gate.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,11 +26,15 @@ void main() {
   }
 
   setUp(() {
+    app_state.prismUser = createGuestPrismUser()..loggedIn = true;
     router = StubAppRouter();
     gate = DeepLinkStartupGate(router: router);
   });
 
-  tearDown(() => gate.dispose());
+  tearDown(() {
+    gate.dispose();
+    app_state.prismUser = createGuestPrismUser();
+  });
 
   testWidgets('navigation waits for onboarding and its replacement splash to leave the stack', (tester) async {
     await pumpRouter(tester);

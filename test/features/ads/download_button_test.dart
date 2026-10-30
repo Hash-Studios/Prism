@@ -16,8 +16,8 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -28,6 +28,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../support/in_memory_local_store.dart';
 import '../../support/offline_asset_fixture.dart';
+import '../../support/profile_user_fixture.dart';
 
 class _ThrowingSettings extends SettingsLocalDataSource {
   _ThrowingSettings() : super(InMemoryLocalStore());
@@ -96,7 +97,7 @@ void main() {
   }.entries) {
     testWidgets('downloads a ${source.key} with the correct native source kind', (tester) async {
       getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
-      app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+      app_state.prismUser = profileUser(premium: true);
       final File image = (await tester.runAsync(() => offlineFixture.createImage('filtered wall.png')))!;
       final String link = switch (source.key) {
         'absolute local file' => image.path,
@@ -152,7 +153,7 @@ void main() {
 
   testWidgets('tapping the label beside the circle starts the download', (tester) async {
     getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
-    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    app_state.prismUser = profileUser(premium: true);
     const BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
       'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
       PrismMediaHostApi.pigeonChannelCodec,
@@ -192,7 +193,7 @@ void main() {
 
   testWidgets('successful download records callback when permission prompt fails', (tester) async {
     getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
-    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    app_state.prismUser = profileUser(premium: true);
     const BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
       'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
       PrismMediaHostApi.pigeonChannelCodec,
@@ -232,7 +233,7 @@ void main() {
 
   testWidgets('maps native storage failures to localized copy instead of the native message', (tester) async {
     getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
-    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    app_state.prismUser = profileUser(premium: true);
     const BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
       'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
       PrismMediaHostApi.pigeonChannelCodec,
@@ -320,7 +321,7 @@ void main() {
   });
 
   for (final bool semanticTap in <bool>[false, true]) {
-    testWidgets('primary download emits one tap haptic (${semanticTap ? 'semantics' : 'touch'})', (tester) async {
+    testWidgets('primary guest download requests sign-in (${semanticTap ? 'semantics' : 'touch'})', (tester) async {
       final handle = tester.ensureSemantics();
       final List<String> haptics = recordHaptics(tester);
       app_state.prismUser = app_constants.createGuestPrismUser();
@@ -353,15 +354,15 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 600));
 
-      expect(find.text('Download this wallpaper'), findsOneWidget);
-      expect(haptics, <String>['tap']);
+      expect(find.text('Sign in to Prism'), findsOneWidget);
+      expect(haptics, semanticTap ? isEmpty : <String>['tap']);
       handle.dispose();
     });
   }
 
   testWidgets('download that finishes after leaving the page still shows the saved toast', (tester) async {
     getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
-    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    app_state.prismUser = profileUser(premium: true);
     const BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
       'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
       PrismMediaHostApi.pigeonChannelCodec,
@@ -411,7 +412,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('a signed-out user sees the ad gate as a sheet with both options', (tester) async {
+  testWidgets('a signed-out user sees sign-in, not the old ad gate', (tester) async {
     final AdConsent original = AdConsent.instance;
     AdConsent.instance = consent(canRequestAds: true);
     addTearDown(() => AdConsent.instance = original);
@@ -432,14 +433,14 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.text('Download this wallpaper'), findsOneWidget);
-    expect(find.text('Watch a small video ad to download this wallpaper.'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Watch ad'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Buy premium'), findsOneWidget);
+    expect(find.text('Sign in to Prism'), findsOneWidget);
+    expect(find.text('Download this wallpaper'), findsNothing);
+    expect(find.widgetWithText(FilledButton, 'Watch ad'), findsNothing);
+    expect(find.widgetWithText(FilledButton, 'Buy premium'), findsNothing);
     expect(find.byType(Dialog), findsNothing);
   });
 
-  testWidgets('with ads refused the gate says so and offers only Buy premium', (tester) async {
+  testWidgets('with ads refused guests still must sign in', (tester) async {
     final AdConsent original = AdConsent.instance;
     AdConsent.instance = consent(canRequestAds: false);
     addTearDown(() => AdConsent.instance = original);
@@ -459,12 +460,13 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.textContaining('Ads are off. Change this in Settings > Privacy.'), findsOneWidget);
+    expect(find.text('Sign in to Prism'), findsOneWidget);
+    expect(find.textContaining('Ads are off. Change this in Settings > Privacy.'), findsNothing);
     expect(find.widgetWithText(FilledButton, 'Watch ad'), findsNothing);
-    expect(find.widgetWithText(FilledButton, 'Buy premium'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Buy premium'), findsNothing);
   });
 
-  testWidgets('guest Watch ad emits one tap haptic and requests the ad', (tester) async {
+  testWidgets('guest download never requests an ad before sign-in', (tester) async {
     final List<String> haptics = recordHaptics(tester);
     final AdConsent original = AdConsent.instance;
     AdConsent.instance = consent(canRequestAds: true);
@@ -493,16 +495,13 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
     haptics.clear();
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Watch ad'));
-    await tester.pump();
-
-    expect(haptics.where((event) => event == 'tap'), <String>['tap']);
-    verify(() => bloc.add(const AdsEvent.started())).called(1);
-    expect(find.text('Download this wallpaper'), findsOneWidget);
+    expect(haptics.where((event) => event == 'tap'), isEmpty);
+    verifyNever(() => bloc.add(const AdsEvent.started()));
+    expect(find.text('Sign in to Prism'), findsOneWidget);
     await tester.pump(const Duration(seconds: 2));
   });
 
-  testWidgets('guest Buy premium emits one tap haptic and opens sign in', (tester) async {
+  testWidgets('guest download opens sign-in without offering a purchase first', (tester) async {
     final List<String> haptics = recordHaptics(tester);
     final AdConsent original = AdConsent.instance;
     AdConsent.instance = consent(canRequestAds: false);
@@ -523,11 +522,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
     haptics.clear();
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Buy premium'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 600));
-
-    expect(haptics, <String>['tap']);
+    expect(find.widgetWithText(FilledButton, 'Buy premium'), findsNothing);
+    expect(haptics, isEmpty);
     expect(find.text('Sign in to Prism'), findsOneWidget);
   });
 
@@ -548,7 +544,7 @@ void main() {
       bool guideShown = false,
     }) async {
       getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
-      app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+      app_state.prismUser = profileUser(premium: true);
       IosWallpaperGuideSession.shown = guideShown;
       toastMessages.clear();
       tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(

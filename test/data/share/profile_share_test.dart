@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart' as share;
@@ -57,6 +60,9 @@ void main() {
   late List<MethodCall> shareCalls;
 
   setUp(() {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user'
+      ..loggedIn = true;
     platformCalls = <MethodCall>[];
     toastMessages = <String>[];
     shareCalls = <MethodCall>[];
@@ -77,6 +83,7 @@ void main() {
   });
 
   tearDown(() {
+    app_state.prismUser = app_constants.createGuestPrismUser();
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(SystemChannels.platform, null);
     messenger.setMockMethodCallHandler(const MethodChannel('dev.fluttercommunity.plus/share'), null);
@@ -105,6 +112,28 @@ void main() {
     expect((request['preview'] as Map)['title'], 'Ana (@ana_w)');
     expect(shareCalls.single.arguments.toString(), contains('https://prismwalls.com/s/abc'));
     expect(shareCalls.single.arguments.toString(), isNot(contains('ana@example.com')));
+  });
+
+  test('switching accounts while the link loads prevents copying and sharing', () async {
+    final started = Completer<void>();
+    final response = Completer<http.Response>();
+    final client = MockClient((_) {
+      started.complete();
+      return response.future;
+    });
+    final pending = http.runWithClient(
+      () => createUserDynamicLink('Ana', 'ana_w', 'ana@example.com', 'Bio', ''),
+      () => client,
+    );
+    await started.future;
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'other'
+      ..loggedIn = true;
+    response.complete(http.Response('{"short_url":"https://prismwalls.com/s/abc"}', 200));
+    await pending;
+
+    expect(platformCalls.where((call) => call.method == 'Clipboard.setData'), isEmpty);
+    expect(shareCalls, isEmpty);
   });
 
   test('a name that is an email address is not put in the preview', () async {

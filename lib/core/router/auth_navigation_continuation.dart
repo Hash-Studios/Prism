@@ -106,7 +106,10 @@ class AuthNavigationContinuation {
       if (resuming.cancelled) return;
       final target = resuming.routes.last.flattened.last;
       final top = _router.topRoute;
-      if (top.route.toPageRouteInfo() == target && identical(top.args, target.args)) {
+      final visible = top.route.toPageRouteInfo();
+      // AutoRoute can represent a leaf's children as either null or empty after reusing the dashboard.
+      if (visible.copyWith(children: const []) == target.copyWith(children: const []) &&
+          identical(top.args, target.args)) {
         _resuming = null;
         resuming.complete(true);
       }

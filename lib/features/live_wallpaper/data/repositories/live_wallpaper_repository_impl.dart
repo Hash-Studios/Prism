@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/live_wallpaper/data/live_apply_outcome_mapper.dart';
 import 'package:Prism/features/live_wallpaper/data/live_texture_preparer.dart';
 import 'package:Prism/features/live_wallpaper/data/shaders/live_shader_sources.dart';
@@ -42,6 +43,8 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
     String? depthMapUrl,
     bool tilt = false,
   }) async {
+    if (!app_state.prismUser.loggedIn) return const LiveApplyOutcome(LiveApplyStatus.cancelled);
+    final String owner = app_state.prismUser.id;
     if (style.needsDepthMap && depthMapUrl == null) {
       return const LiveApplyOutcome.failed(LiveApplyFailure.styleUnavailable);
     }
@@ -60,6 +63,9 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
     } on LiveTextureException catch (error) {
       return LiveApplyOutcome.failed(error.failure);
     }
+    if (!app_state.prismUser.loggedIn || owner != app_state.prismUser.id) {
+      return const LiveApplyOutcome(LiveApplyStatus.cancelled);
+    }
     return _applyShader(LiveShaderSources.motion(style, palette, tilt: tilt), <aw.WallpaperSource>[
       for (final String path in texturePaths) aw.WallpaperSource.filePath(path),
     ], batterySaver);
@@ -75,6 +81,7 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
   }
 
   Future<LiveApplyOutcome> _applyShader(String shader, List<aw.WallpaperSource> textures, bool batterySaver) async {
+    if (!app_state.prismUser.loggedIn) return const LiveApplyOutcome(LiveApplyStatus.cancelled);
     final aw.OpenGlLiveWallpaperRequest request = aw.OpenGlLiveWallpaperRequest(
       fragmentShader: shader,
       textures: textures,
@@ -103,13 +110,21 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
 
   @override
   Future<LiveApplyOutcome> applyVideo(String path) async {
+    if (!app_state.prismUser.loggedIn) return const LiveApplyOutcome(LiveApplyStatus.cancelled);
+    final String owner = app_state.prismUser.id;
     final LiveApplyFailure? problem = await validateVideo(path);
+    if (!app_state.prismUser.loggedIn || owner != app_state.prismUser.id) {
+      return const LiveApplyOutcome(LiveApplyStatus.cancelled);
+    }
     if (problem != null) return LiveApplyOutcome.failed(problem);
     final aw.VideoWallpaperRequest request = aw.VideoWallpaperRequest(source: aw.WallpaperSource.filePath(path));
     try {
       final aw.WallpaperOperationResult prepared = await aw.AsyncWallpaper.setVideoWallpaper(request);
       if (prepared.status != aw.WallpaperOperationStatus.awaitingUserConfirmation) {
         return liveApplyOutcomeFromResult(prepared);
+      }
+      if (!app_state.prismUser.loggedIn || owner != app_state.prismUser.id) {
+        return const LiveApplyOutcome(LiveApplyStatus.cancelled);
       }
       return liveApplyOutcomeFromResult(await aw.AsyncWallpaper.openLiveWallpaperPreview(request));
     } catch (_) {

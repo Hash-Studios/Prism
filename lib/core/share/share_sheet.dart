@@ -6,11 +6,13 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/share/instagram_stories.dart';
 import 'package:Prism/core/share/share_card.dart';
 import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/share/share_text.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -103,6 +105,9 @@ class _ShareSheetState extends State<ShareSheet> {
   ShareCardFormat _format = ShareCardFormat.values.first;
   bool _instagram = false;
   ShareTargetValue? _busy;
+  String? _actionUserId;
+
+  bool get _actionSessionValid => mounted && app_state.prismUser.loggedIn && app_state.prismUser.id == _actionUserId;
 
   @override
   void initState() {
@@ -167,13 +172,16 @@ class _ShareSheetState extends State<ShareSheet> {
   }
 
   Future<void> _run(ShareTargetValue target, Future<bool> Function() action) async {
+    if (!await requireSignedInAction(context) || !mounted) return;
     if (_busy != null) return;
+    _actionUserId = app_state.prismUser.id;
     PrismHaptics.tap();
     setState(() => _busy = target);
     bool done = false;
     try {
       done = await action();
     } finally {
+      _actionUserId = null;
       if (mounted) {
         setState(() => _busy = null);
       } else {
@@ -184,6 +192,7 @@ class _ShareSheetState extends State<ShareSheet> {
   }
 
   Future<bool> _copyLink() async {
+    if (!_actionSessionValid) return false;
     final AppLocalizations l10n = context.l10n;
     try {
       await widget.services.copyText(widget.content.link);
@@ -203,7 +212,7 @@ class _ShareSheetState extends State<ShareSheet> {
     final AppLocalizations l10n = context.l10n;
     try {
       final File file = await _render(format, retry: true);
-      if (!mounted) return false;
+      if (!_actionSessionValid) return false;
       final OperationResult result = await widget.services.saveImage(file);
       if (result.success) {
         _track(ShareTargetValue.saveImage, EventResultValue.success, format: format.analytics);
@@ -231,7 +240,7 @@ class _ShareSheetState extends State<ShareSheet> {
     bool opened = false;
     try {
       final File file = await _render(format, retry: true);
-      if (!mounted) return false;
+      if (!_actionSessionValid) return false;
       opened = await widget.services.shareToInstagram(file.path);
     } catch (error, stackTrace) {
       logger.w('Instagram story share failed', error: error, stackTrace: stackTrace);
@@ -255,7 +264,7 @@ class _ShareSheetState extends State<ShareSheet> {
     } catch (error, stackTrace) {
       logger.w('Share card failed; sharing text', error: error, stackTrace: stackTrace);
     }
-    if (!mounted) return false;
+    if (!_actionSessionValid) return false;
     try {
       ShareResult sent;
       if (file == null) {
@@ -266,6 +275,7 @@ class _ShareSheetState extends State<ShareSheet> {
         } catch (error, stackTrace) {
           logger.w('Share card send failed; sharing text', error: error, stackTrace: stackTrace);
           if (!mounted) rethrow;
+          if (!_actionSessionValid) return false;
           file = null;
           sent = await widget.services.shareText(text: text, context: context);
         }

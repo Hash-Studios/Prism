@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart' as share;
@@ -44,6 +47,9 @@ void main() {
   late List<MethodCall> platformCalls;
 
   setUp(() {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user'
+      ..loggedIn = true;
     platformCalls = <MethodCall>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       SystemChannels.platform,
@@ -60,6 +66,7 @@ void main() {
   });
 
   tearDown(() {
+    app_state.prismUser = app_constants.createGuestPrismUser();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       SystemChannels.platform,
       null,
@@ -250,6 +257,22 @@ void main() {
     expect(copied, isTrue);
     final call = platformCalls.singleWhere((c) => c.method == 'Clipboard.setData');
     expect((call.arguments as Map)['text'], 'Hey check this out ➜ https://prismwalls.com/s/abc');
+  });
+
+  test('signing out while the link loads prevents copying', () async {
+    final started = Completer<void>();
+    final response = Completer<http.Response>();
+    final client = MockClient((_) {
+      started.complete();
+      return response.future;
+    });
+    final pending = withApi(() => copyWallpaperLink('wall1', WallpaperSource.prism, null, 't'), client);
+    await started.future;
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    response.complete(http.Response('{"short_url":"https://prismwalls.com/s/abc"}', 200));
+
+    expect(await pending, isFalse);
+    expect(copiedToClipboard(), isFalse);
   });
 
   test('records the success event once', () async {

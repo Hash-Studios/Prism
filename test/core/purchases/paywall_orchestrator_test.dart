@@ -2,13 +2,14 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/l10n/l10n.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
@@ -25,6 +26,7 @@ void main() {
   late FakeAppAnalytics fakeAnalytics;
   late SettingsLocalDataSource settings;
   late List<String> toasts;
+  late Future<bool> Function(BuildContext) originalSignIn;
 
   setUp(() {
     settings = SettingsLocalDataSource(InMemoryLocalStore());
@@ -32,6 +34,7 @@ void main() {
     fakeAnalytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = fakeAnalytics;
     app_state.prismUser = profileUser();
+    originalSignIn = signedInActionSignIn;
     toasts = <String>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (
       call,
@@ -47,6 +50,8 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(paywallChannel, null);
     await getIt.reset();
     AnalyticsRuntime.reset();
+    signedInActionSignIn = originalSignIn;
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
   });
 
   group('present', () {
@@ -174,29 +179,122 @@ void main() {
       return backend;
     }
 
-    for (final sdkResult in <String>['PURCHASED', 'RESTORED']) {
-      test('a guest $sdkResult acknowledges local access without server confirmation', () async {
-        final backend = await installPaywall(present: () async => sdkResult);
-        app_state.prismUser = profileUser(id: '', loggedIn: false);
-        var syncs = 0;
-        backend.onCall = (_, _) {
-          syncs++;
-          throw StateError('Guests cannot sync paid server access.');
-        };
-
-        final result = await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
-        await AnalyticsRuntime.instance.flush();
-
-        expect(result, PaywallResultValue.guestSignInRequired);
-        expect(result.indicatesPurchase, isFalse);
-        expect(app_state.prismUser.premium, isTrue);
-        expect(syncs, 0);
-        expect(toasts, <String>[
-          'Your store purchase is active on this device. Sign in to use account-based Pro features.',
-        ]);
-        expect(fakeAnalytics.events.whereType<PaywallResultEvent>().single.entitlementSynced, 0);
+    test('context-free present cannot bypass sign-in or change existing guest access', () async {
+      var presented = 0;
+      final backend = await installPaywall(
+        present: () async {
+          presented++;
+          return 'PURCHASED';
+        },
+      );
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
+      app_state.prismUser.premium = true;
+      var syncs = 0;
+      backend.onCall = (_, _) {
+        syncs++;
+        throw StateError('Guests cannot sync paid server access.');
+      };
+      final storeCalls = <String>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(purchasesChannel, (
+        call,
+      ) async {
+        storeCalls.add(call.method);
+        return null;
       });
+
+      final result = await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
+      await AnalyticsRuntime.instance.flush();
+
+      expect(result, PaywallResultValue.guestSignInRequired);
+      expect(result.indicatesPurchase, isFalse);
+      expect(app_state.prismUser.premium, isTrue);
+      expect(syncs, 0);
+      expect(presented, 0);
+      expect(storeCalls, isEmpty);
+      expect(toasts, isEmpty);
+      expect(fakeAnalytics.events.whereType<PaywallImpressionEvent>(), isEmpty);
+    });
+
+    for (final direct in [false, true]) {
+      testWidgets(
+        '${direct ? 'present with context' : 'presentOrRequireSignIn'} cancellation never touches the store',
+        (tester) async {
+          app_state.prismUser = profileUser(id: '', loggedIn: false);
+          final storeCalls = <String>[];
+          final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+          messenger.setMockMethodCallHandler(purchasesChannel, (call) async {
+            storeCalls.add(call.method);
+            return null;
+          });
+          messenger.setMockMethodCallHandler(paywallChannel, (call) async {
+            storeCalls.add(call.method);
+            return null;
+          });
+          late BuildContext context;
+          await tester.pumpWidget(
+            MaterialApp(
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Builder(
+                builder: (value) {
+                  context = value;
+                  return const SizedBox();
+                },
+              ),
+            ),
+          );
+          final result = direct
+              ? orchestrator.present(context: context, placement: PaywallPlacement.mainUpsell, source: 'test')
+              : orchestrator.presentOrRequireSignIn(context, placement: PaywallPlacement.mainUpsell, source: 'test');
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 500));
+          expect(find.text('Continue with Google'), findsOneWidget);
+          expect(storeCalls, isEmpty);
+          await tester.tap(find.text('Not now'));
+          await tester.pumpAndSettle();
+          expect(await result, direct ? PaywallResultValue.guestSignInRequired : null);
+          expect(storeCalls, isEmpty);
+          expect(fakeAnalytics.events.whereType<PaywallImpressionEvent>(), isEmpty);
+        },
+      );
     }
+
+    testWidgets('completed sign-in presents against the signed-in account', (tester) async {
+      var presented = 0;
+      await installPaywall(
+        present: () async {
+          presented++;
+          return 'CANCELLED';
+        },
+      );
+      final account = app_state.prismUser;
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
+      signedInActionSignIn = (_) async {
+        app_state.prismUser = account;
+        return true;
+      };
+      late BuildContext context;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(
+            builder: (value) {
+              context = value;
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      final result = await tester.runAsync(
+        () => orchestrator.presentOrRequireSignIn(context, placement: PaywallPlacement.mainUpsell, source: 'test'),
+      );
+
+      expect(result, PaywallResultValue.cancelled);
+      expect(presented, 1);
+      expect(app_state.prismUser.id, account.id);
+    });
 
     for (final sdkResult in <String>['PURCHASED', 'RESTORED']) {
       test('an unconfirmed $sdkResult does not report completion and keeps the receipt result once', () async {

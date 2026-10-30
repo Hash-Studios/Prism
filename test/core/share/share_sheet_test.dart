@@ -4,9 +4,12 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/share/share_card.dart';
 import 'package:Prism/core/share/share_sheet.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
@@ -161,8 +164,52 @@ Finder _target(ShareTargetValue target) => find.byKey(ValueKey<ShareTargetValue>
 Finder _pages() => find.byKey(const ValueKey<String>('share-formats'));
 
 void main() {
-  setUp(AnalyticsRuntime.reset);
-  tearDown(AnalyticsRuntime.reset);
+  setUp(() {
+    AnalyticsRuntime.reset();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user'
+      ..loggedIn = true;
+  });
+  tearDown(() {
+    AnalyticsRuntime.reset();
+    app_state.prismUser = app_constants.createGuestPrismUser();
+  });
+
+  testWidgets('cancelling sign-in does not copy or save a share card', (tester) async {
+    _mockChannels(tester);
+    final fake = _Fake(await _writeCards(tester));
+    await _openSheet(tester, fake.services);
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final original = signedInActionSignIn;
+    var prompts = 0;
+    signedInActionSignIn = (_) async {
+      prompts++;
+      return false;
+    };
+    addTearDown(() => signedInActionSignIn = original);
+
+    await tester.tap(_target(ShareTargetValue.copyLink));
+    await _settle(tester);
+    await tester.tap(_target(ShareTargetValue.saveImage));
+    await _settle(tester);
+
+    expect(prompts, 2);
+    expect(fake.copied, isEmpty);
+    expect(fake.saved, isEmpty);
+  });
+
+  testWidgets('signing out while rendering prevents saving the image', (tester) async {
+    _mockChannels(tester);
+    final rendered = Completer<File>();
+    final fake = _Fake(await _writeCards(tester))..pendingRender = rendered.future;
+    await _openSheet(tester, fake.services);
+    await tester.tap(_target(ShareTargetValue.saveImage));
+    await tester.pump();
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    rendered.complete(fake.cards[ShareCardFormat.story]!);
+    await _settle(tester);
+    expect(fake.saved, isEmpty);
+  });
 
   testWidgets('opening the sheet shows the three formats, the three targets, and renders Story once', (tester) async {
     tester.view

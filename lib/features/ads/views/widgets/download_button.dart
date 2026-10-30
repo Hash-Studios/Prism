@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/analytics_correlation.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -11,7 +12,6 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
-import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/rating/rate_prompt_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -22,14 +22,11 @@ import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
-import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
-import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/ads/ads.dart';
-import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
@@ -40,7 +37,6 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as p;
 
 class DownloadButton extends StatefulWidget {
@@ -114,8 +110,6 @@ class DownloadButton extends StatefulWidget {
 }
 
 enum _SavedChoice { open, again }
-
-enum _GuestProChoice { signIn, pro }
 
 typedef _DownloadConfirmation = ({bool proceed, File? freeLocalCopy});
 
@@ -306,6 +300,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       toasts.error(context.l10n.economyDownloadWaitForCurrent);
       return;
     }
+    if (!await requireSignedInAction(context) || !mounted) return;
 
     final String link = widget.link?.trim() ?? '';
     if (link.isEmpty && widget.wallpaperSource != WallpaperSource.prism) {
@@ -370,25 +365,7 @@ class _DownloadButtonState extends State<DownloadButton> {
               isValidNetworkUrl(tap.link));
       if (serverAccess) {
         _authorizedSource = (confirmation.freeLocalCopy ?? await _previouslyAcquiredLocalOriginal(tap))?.path;
-        if (tap.isGuest && _authorizedSource == null) {
-          await _showGuestPremiumPrompt();
-          _track(const DownloadResultEvent(result: 'cancelled', reason: 'sign_in_required', stage: 'gate'));
-          return;
-        }
-        if (!app_state.prismUser.loggedIn &&
-            _authorizedSource == null &&
-            OriginalAccessService.requiresGrant(tap.link, tap.contentId, tap.wallpaperSource)) {
-          if (mounted) {
-            await signInForOriginal(
-              context,
-              url: tap.link,
-              wallpaperId: tap.contentId,
-              wallpaperSource: tap.wallpaperSource,
-            );
-          }
-          _track(const DownloadResultEvent(result: 'cancelled', reason: 'sign_in_required', stage: 'gate'));
-          return;
-        }
+        if (!_ownerStillMatches(tap)) return;
         final result = await _gatedDownload(originalAccess: true, variant: variant);
         _trackGateResult(result);
         return;
@@ -449,10 +426,6 @@ class _DownloadButtonState extends State<DownloadButton> {
             stage: saved ? 'download' : _failureStage,
           ),
         );
-        return;
-      }
-      if (_isGuest) {
-        await _runGuestFlow();
         return;
       }
       final File? freeLocalCopy = confirmation.freeLocalCopy ?? await _previouslyAcquiredLocalOriginal(tap);
@@ -586,7 +559,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     return (proceed: choice == _SavedChoice.again, freeLocalCopy: choice == _SavedChoice.again ? localOriginal : null);
   }
 
-  bool _ownerStillMatches(_DownloadTap tap) => tap.ownerId == app_state.prismUser.id;
+  bool _ownerStillMatches(_DownloadTap tap) => app_state.prismUser.loggedIn && tap.ownerId == app_state.prismUser.id;
 
   void _cancelAfterAccountSwitch() {
     _track(const DownloadResultEvent(result: 'cancelled', reason: 'account_changed', stage: 'gate'));
@@ -644,72 +617,6 @@ class _DownloadButtonState extends State<DownloadButton> {
       logger.w('Could not list downloads', error: error, stackTrace: stackTrace);
       return false;
     }
-  }
-
-  Future<void> _runGuestFlow() async {
-    if (_tap.isPremiumContent) {
-      await _showGuestPremiumPrompt();
-      _track(const DownloadResultEvent(result: 'cancelled', stage: 'gate'));
-      return;
-    }
-    final bool? downloaded = await _showGuestAdGatePopup();
-    if (downloaded == null) {
-      _track(const DownloadResultEvent(result: 'cancelled', stage: 'gate'));
-    } else if (downloaded) {
-      _track(const DownloadResultEvent(result: 'success', stage: 'download'));
-    } else {
-      _track(DownloadResultEvent(result: 'failed', reason: _failureReason ?? 'unknown', stage: _failureStage));
-    }
-  }
-
-  /// Guests cannot pay for a Pro wallpaper with an ad. They sign in to use coins, or get Pro.
-  Future<void> _showGuestPremiumPrompt() async {
-    final _GuestProChoice? choice = await showCoinGateSheet<_GuestProChoice>(
-      context,
-      title: context.l10n.economyProWallpaper,
-      cost: 0,
-      message: (_) => context.l10n.economyDownloadProGuestMessage,
-      options: <CoinGateOption<_GuestProChoice>>[
-        CoinGateOption(label: context.l10n.economySignIn, value: _GuestProChoice.signIn),
-        CoinGateOption(label: context.l10n.economyGetPro, value: _GuestProChoice.pro, outlined: true),
-      ],
-    );
-    if (!mounted) return;
-    switch (choice) {
-      case _GuestProChoice.signIn:
-        googleSignInPopUp(context, () {});
-      case _GuestProChoice.pro:
-        await PaywallOrchestrator.instance.presentOrRequireSignIn(
-          context,
-          placement: PaywallPlacement.mainUpsell,
-          source: 'download_guest_premium',
-        );
-      case null:
-        break;
-    }
-  }
-
-  /// Returns whether the download ran and worked, or null when the user left without one.
-  Future<bool?> _showGuestAdGatePopup() async {
-    Future<bool>? pendingDownload;
-    final bool adsAllowed = await AdConsent.instance.ensure();
-    if (!mounted) return null;
-    await showPrismSheet<void>(
-      context,
-      builder: (BuildContext sheetContext) => _GuestAdGateSheet(
-        adsAllowed: adsAllowed,
-        onBuyPremium: () {
-          Navigator.of(sheetContext).pop();
-          PaywallOrchestrator.instance.presentOrRequireSignIn(
-            context,
-            placement: PaywallPlacement.mainUpsell,
-            source: 'download_guest_buy_premium',
-          );
-        },
-        onWatched: () => pendingDownload = _performDownload(),
-      ),
-    );
-    return pendingDownload;
   }
 
   Future<CoinGateChoice> _chooseLowBalanceAction(CoinGatePrompt prompt) async {
@@ -866,6 +773,7 @@ class _DownloadButtonState extends State<DownloadButton> {
   Future<bool> _performDownload({File? cachedOriginalForRestore}) async {
     final AppLocalizations l10n = context.l10n;
     final _DownloadTap tap = _tap;
+    if (!_ownerStillMatches(tap)) return false;
     final String link = tap.link;
     final String? sourceContext = tap.sourceContext;
     final bool premiumContent = tap.isPremiumContent;
@@ -889,6 +797,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     final bool isLocalFile =
         prepared || cachedOriginal != null || saveLink.startsWith('/') || sourceUri?.scheme == 'file';
     final List<String> downloadsBefore = await _listedDownloads();
+    if (!_ownerStillMatches(tap)) return false;
 
     try {
       final DownloadRequest request = DownloadRequest(
@@ -1077,58 +986,5 @@ class _DownloadButtonState extends State<DownloadButton> {
         stackTrace: stackTrace,
       );
     }
-  }
-}
-
-/// The sheet a signed-out user sees before a download: watch an ad or go Premium.
-class _GuestAdGateSheet extends StatefulWidget {
-  const _GuestAdGateSheet({required this.adsAllowed, required this.onBuyPremium, required this.onWatched});
-
-  final bool adsAllowed;
-  final VoidCallback onBuyPremium;
-
-  /// Runs after the ad is watched and the sheet has closed.
-  final Future<bool> Function() onWatched;
-
-  @override
-  State<_GuestAdGateSheet> createState() => _GuestAdGateSheetState();
-}
-
-class _GuestAdGateSheetState extends State<_GuestAdGateSheet> {
-  bool _watching = false;
-
-  Future<void> _watch() async {
-    setState(() => _watching = true);
-    final AppLocalizations l10n = context.l10n;
-    final RewardedAdResult watched = await watchRewardedAdResult(context.read<AdsBloc>());
-    if (mounted) setState(() => _watching = false);
-    if (!watched.earned) {
-      toasts.error(adFailureMessage(l10n, watched.failure));
-      return;
-    }
-    if (!mounted) return;
-    final NavigatorState navigator = Navigator.of(context);
-    final Future<bool> Function() onWatched = widget.onWatched;
-    if (navigator.canPop()) navigator.pop();
-    await onWatched();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l10n = AppLocalizations.of(context);
-    return PrismSheetBody(
-      title: l10n.economyDownloadThisWallpaper,
-      message: widget.adsAllowed ? l10n.economyDownloadWatchAdMessage : l10n.economyDownloadWatchAdPrivacyMessage,
-      actions: <Widget>[
-        if (widget.adsAllowed)
-          PrismButton(label: l10n.economyWatchAd, expand: true, loading: _watching, onPressed: _watch),
-        PrismButton(
-          label: l10n.economyBuyPremium,
-          expand: true,
-          variant: widget.adsAllowed ? PrismButtonVariant.tonal : PrismButtonVariant.primary,
-          onPressed: _watching ? null : widget.onBuyPremium,
-        ),
-      ],
-    );
   }
 }

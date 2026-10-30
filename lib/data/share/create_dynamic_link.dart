@@ -3,10 +3,12 @@ import 'dart:convert';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/share/share_text.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
@@ -218,9 +220,19 @@ Future<bool> copyWallpaperLink(
   String thumbUrl, {
   String? title,
   WallpaperCore? core,
+  BuildContext? context,
   required AppLocalizations l10n,
 }) async {
+  if (context == null) {
+    if (!app_state.prismUser.loggedIn) return false;
+  } else if (!await requireSignedInAction(context) || !context.mounted) {
+    return false;
+  }
+  final String userId = app_state.prismUser.id;
   final String? link = await createDynamicLink(id, source, url, thumbUrl, title: title, core: core, l10n: l10n);
+  if (!app_state.prismUser.loggedIn || app_state.prismUser.id != userId || (context != null && !context.mounted)) {
+    return false;
+  }
   if (link == null) {
     toasts.error(l10n.coreWallpaperLinkCreateFailed);
     return false;
@@ -250,6 +262,12 @@ Future<void> createUserDynamicLink(
   List<String> gallery = const <String>[],
   required AppLocalizations l10n,
 }) async {
+  if (context == null) {
+    if (!app_state.prismUser.loggedIn) return;
+  } else if (!await requireSignedInAction(context) || !context.mounted) {
+    return;
+  }
+  final String userId = app_state.prismUser.id;
   final String userIdentifier = username.trim();
   if (userIdentifier.isEmpty) {
     toasts.info(l10n.coreUsernameRequiredToShareProfile);
@@ -275,6 +293,9 @@ Future<void> createUserDynamicLink(
       },
     );
 
+    if (!app_state.prismUser.loggedIn || app_state.prismUser.id != userId || (context != null && !context.mounted)) {
+      return;
+    }
     await Clipboard.setData(ClipboardData(text: link));
     if (context != null && !context.mounted) {
       return;

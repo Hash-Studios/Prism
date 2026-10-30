@@ -1,7 +1,9 @@
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -81,6 +83,9 @@ void main() {
     late OfflineAssetFixture offlineAssets;
 
     setUp(() async {
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'signed-in-user'
+        ..loggedIn = true;
       offlineAssets = await OfflineAssetFixture.create(cacheMissByDefault: true);
       offlineAssets.install();
       settings = SettingsLocalDataSource(InMemoryLocalStore());
@@ -91,6 +96,7 @@ void main() {
     });
 
     tearDown(() async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
       await offlineAssets.dispose();
       await getIt.reset();
     });
