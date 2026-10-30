@@ -141,28 +141,21 @@ class PaywallOrchestrator {
           .timeout(_loadTimeout);
       final Offerings? offerings = await PurchasesService.instance.getOfferings().timeout(_loadTimeout);
       if (!isCurrentAccount()) return PaywallResultValue.error;
-      final Offering? v3Offering = offerings?.all[PurchaseConstants.offeringV3Default];
-      Offering? offering;
-      if (v3Offering != null) {
-        offering = v3Offering;
-        if (placementOffering != null && placementOffering.identifier != PurchaseConstants.offeringV3Default) {
-          analytics.track(
-            PaywallResultEvent(
-              source: source,
-              placement: placement,
-              result: PaywallResultValue.placementOverriddenToV3,
-              placementOffering: placementOffering.identifier,
-              selectedOffering: v3Offering.identifier,
-              rcOrFallback: RcOrFallbackValue.rc,
-            ),
-          );
-        }
-      } else {
-        offering =
-            placementOffering ??
-            offerings?.all[PurchaseConstants.offeringUltra] ??
-            offerings?.all[PurchaseConstants.offeringDefault] ??
-            offerings?.current;
+      // Never substitute legacy pricing when the v3 catalog is unavailable.
+      final Offering? offering = offerings?.all[PurchaseConstants.offeringV3Default];
+      if (offering != null &&
+          placementOffering != null &&
+          placementOffering.identifier != PurchaseConstants.offeringV3Default) {
+        analytics.track(
+          PaywallResultEvent(
+            source: source,
+            placement: placement,
+            result: PaywallResultValue.placementOverriddenToV3,
+            placementOffering: placementOffering.identifier,
+            selectedOffering: offering.identifier,
+            rcOrFallback: RcOrFallbackValue.rc,
+          ),
+        );
       }
       if (offering == null) {
         analytics.track(
