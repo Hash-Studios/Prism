@@ -177,18 +177,21 @@ class _EarnRow extends StatelessWidget {
     } else {
       trailing = _RewardPill(key: const ValueKey<String>('reward'), reward: reward);
     }
-    return PrismRow(
-      icon: icon,
-      title: title,
-      subtitle: done ? context.l10n.actionDone : subtitle,
-      trailing: AnimatedSwitcher(duration: context.motion(PrismDurations.fast), child: trailing),
-      showChevron: tappable,
-      onTap: tappable
-          ? () {
-              PrismHaptics.tap();
-              onTap?.call();
-            }
-          : null,
+    return LayoutBuilder(
+      builder: (context, constraints) => PrismRow(
+        trailingBelow: MediaQuery.textScalerOf(context).scale(14) / 14 >= 1.3 || constraints.maxWidth < 360,
+        icon: icon,
+        title: title,
+        subtitle: done ? context.l10n.actionDone : subtitle,
+        trailing: AnimatedSwitcher(duration: context.motion(PrismDurations.fast), child: trailing),
+        showChevron: tappable,
+        onTap: tappable
+            ? () {
+                PrismHaptics.tap();
+                onTap?.call();
+              }
+            : null,
+      ),
     );
   }
 }
@@ -212,7 +215,9 @@ class _RewardPill extends StatelessWidget {
         children: <Widget>[
           const PrismCoinIcon(size: 14),
           const SizedBox(width: 5),
-          Text(reward, style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w700)),
+          Flexible(
+            child: Text(reward, style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w700)),
+          ),
         ],
       ),
     );
