@@ -121,3 +121,40 @@ Use the device panel command for capture and the conversion settings in `tool/re
 Video share export is a follow-up. The current share artifact is a still card with folded and unfolded previews.
 Local tests, device proof, hosted CI, deployments, and live behavior are separate gates.
 No deployment or real Studio batch is authorized by the implementation task.
+
+## Verification on 2026-10-30
+
+The reviewed feature commit is `aa7578930`. Documentation changes do not change the built app.
+
+- Full Flutter suite after the fixing review: 8,125 passed, 5 skipped, no failures.
+- Functions build and full suite: 2,198 passed, 16 skipped, no failures.
+- Worker suite: 130 passed. Wrangler dry-run bundle passed; nothing was deployed.
+- Web production build, type check, and all three SSR/manifest tests passed.
+- Geometry, copy, analytics, localization, and remaining local guards passed.
+- `make ci` is not green: its strict analysis step stops on 315 existing info-level findings. None maps to changed lines. The gate was not weakened.
+- Doppler dev debug builds passed for iOS Simulator and Android, with `SENTRY_UPLOAD=false`.
+
+The Sol fixing review added regressions and fixed five issues: replay metadata contamination, short-screen control overflow,
+lost Apply analytics, duplicate Apply preparation, and stale-session error messages.
+The parent reran the full Flutter and Functions suites afterward.
+The Astra final review found no new confirmed defects and made no code changes.
+
+### Captured proof
+
+[Published evidence and source notes](https://github.com/Hash-Studios/Prism/tree/qa/screenshots/qa-2026-10-30/duo-reveal) include the before/after screenshots, share PNG, and reveal clip.
+
+- iPhone Duo Simulator: the real Photos picker loaded a local 2670 x 1878 geometry fixture. Phone, folded, and unfolded previews were captured. The clock stays visible and the right-side preset reveals the second shape. This is a QA fixture, not generated or approved catalog content.
+- Pixel Fold emulator: the real Pexels catalog wallpaper `3244513` was opened through the normal preview route. Both preview states worked on the inner and cover displays. Closing the emulator hinge retained preview state. Home, Lock, and Both remained selectable. Android's system-crop notice is visible. This is an existing wide wallpaper, not approved Duo content.
+- Reduced motion: Android animations were disabled for an end-state capture, then restored. Widget tests prove the zero-duration transition; the screenshot alone does not measure timing.
+- Share card: the production renderer produced a 1080 x 1920 PNG from the local geometry fixture. It shows folded above unfolded and the Get it on Prism CTA. This proves the renderer, not native share-sheet export.
+- Reveal clip: an actual iOS app interaction was recorded with the device-panel `agent-device` command. The conversion settings from `tool/record_clip.sh` produced a 1080 x 1920, 5.03-second clip. That script did not perform the capture.
+
+### Open proof gates
+
+- Live dev AI generation needs an owner-authenticated QA session and a way to exercise the changed worker. Fresh QA devices are signed out, and the app endpoint is currently the production URL. No auth bypass or request to the old deployed worker was used as substitute proof.
+- Successful iOS Photos save followed by the three-step Duo guide still needs a device run. Tests cover full-original bytes, success-only presentation, and failed-save retry.
+- Native share-sheet export still needs a device run.
+- Actual Android wallpaper application is not proven. The device helper timed out after Set as wallpaper; its one diagnostic retry reported `adb: device 'emulator-5586' not found`. The fleet lease was closed rather than replaced or bypassed.
+- iOS hardware fold and system wallpaper alignment remain unverified. An in-app Fold/Unfold toggle is not proof of either.
+
+These are release gates, not claims covered by the screenshots or local tests.
