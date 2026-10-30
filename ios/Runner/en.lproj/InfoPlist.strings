@@ -1,3 +1,4 @@
 "NSPhotoLibraryUsageDescription" = "Prism needs access to your photo library to let you pick images for your profile and setups.";
 "NSPhotoLibraryAddUsageDescription" = "Prism needs permission to save wallpapers to your photo library.";
 "NSCameraUsageDescription" = "Prism needs camera access to let you take a photo for your profile picture.";
+"NSMotionUsageDescription" = "Prism uses motion to open Report a problem when you shake your phone.";

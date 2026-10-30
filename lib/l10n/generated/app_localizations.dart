@@ -1905,16 +1905,10 @@ abstract class AppLocalizations {
   /// **'Report a problem'**
   String get accountReportAProblem;
 
-  /// Privacy explanation shown before sharing a diagnostic report.
-  ///
-  /// In en, this message translates to:
-  /// **'This report has your app version, device and recent logs. It has no email address or sign-in tokens. Read it, then share it with {email}.'**
-  String accountReportPreviewNotice(String email);
-
   /// Subtitle for reporting a problem.
   ///
   /// In en, this message translates to:
-  /// **'Share your app logs with the Prism team'**
+  /// **'Send a bug report to the Prism team'**
   String get accountReportProblemSubtitle;
 
   /// Profile menu report action label.
@@ -2108,12 +2102,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings'**
   String get accountSettings;
-
-  /// Share action label.
-  ///
-  /// In en, this message translates to:
-  /// **'Share'**
-  String get accountShare;
 
   /// Share invite action label.
   ///
@@ -17970,6 +17958,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{remixerName} remixed your wallpaper.'**
   String notifPushWallRemixedBodyUntitled(String remixerName);
+
+  /// Intro text in the report a problem sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what went wrong. Prism never adds your email address or sign-in tokens. Check any screenshot before you send it.'**
+  String get reportSheetMessage;
+
+  /// Report topic chip: app crashed or froze.
+  ///
+  /// In en, this message translates to:
+  /// **'Crash/freeze'**
+  String get reportTopicCrashFreeze;
+
+  /// Report topic chip: wallpaper could not be set.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpaper won\'t set'**
+  String get reportTopicWallpaperWontSet;
+
+  /// Report topic chip: something looks visually broken.
+  ///
+  /// In en, this message translates to:
+  /// **'Looks broken'**
+  String get reportTopicLooksBroken;
+
+  /// Report topic chip: app is slow.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow'**
+  String get reportTopicSlow;
+
+  /// Report topic chip: any other problem.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get reportTopicOther;
+
+  /// Hint text of the note field in the report sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'What happened? What did you expect?'**
+  String get reportNoteHint;
+
+  /// Title of the screenshot row in the report sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Screenshot'**
+  String get reportScreenshotTitle;
+
+  /// Subtitle of the screenshot row when no screenshot is attached.
+  ///
+  /// In en, this message translates to:
+  /// **'Show us what you see.'**
+  String get reportScreenshotEmpty;
+
+  /// Subtitle of the screenshot row when a screenshot is attached.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to view. Check it before you send.'**
+  String get reportScreenshotAttached;
+
+  /// Button to add a screenshot to the report.
+  ///
+  /// In en, this message translates to:
+  /// **'Add screenshot'**
+  String get reportAddScreenshot;
+
+  /// Button to remove the attached screenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get reportRemoveScreenshot;
+
+  /// Tooltip or label to view the attached screenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'View screenshot'**
+  String get reportViewScreenshot;
+
+  /// Switch label to include device info and recent logs in the report.
+  ///
+  /// In en, this message translates to:
+  /// **'Include device info & recent logs'**
+  String get reportIncludeDiagnostics;
+
+  /// Button to expand the list of included diagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Show what\'s included'**
+  String get reportShowDiagnostics;
+
+  /// Button to collapse the list of included diagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide details'**
+  String get reportHideDiagnostics;
+
+  /// Button that sends the report.
+  ///
+  /// In en, this message translates to:
+  /// **'Send report'**
+  String get reportSend;
+
+  /// Button that shares the report as a file.
+  ///
+  /// In en, this message translates to:
+  /// **'Share as file'**
+  String get reportShareAsFile;
+
+  /// Confirmation after the report is sent, with a short reference code.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks, report sent. Reference {reference}'**
+  String reportSent(String reference);
+
+  /// Title of the dialog shown when the report fails to send.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send'**
+  String get reportCouldNotSend;
+
+  /// Body of the dialog shown when the report fails to send.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again, or share the report as a file.'**
+  String get reportCouldNotSendBody;
+
+  /// Dialog action to share the report as a file after a send failure.
+  ///
+  /// In en, this message translates to:
+  /// **'Share instead'**
+  String get reportShareInstead;
+
+  /// Settings toggle label for shake to report.
+  ///
+  /// In en, this message translates to:
+  /// **'Shake to report'**
+  String get reportShakeToReport;
+
+  /// Settings toggle subtitle for shake to report.
+  ///
+  /// In en, this message translates to:
+  /// **'Shake your phone on any screen to report a problem'**
+  String get reportShakeToReportSubtitle;
 
   /// Content preference that shows or hides AI-generated Prism walls.
   ///

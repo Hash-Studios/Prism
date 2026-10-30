@@ -1095,12 +1095,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountReportAProblem => 'Laporkan masalah';
 
   @override
-  String accountReportPreviewNotice(String email) {
-    return 'Laporan ini berisi versi aplikasi, perangkat, dan log terbaru Anda. Tidak ada alamat email atau token masuk. Baca laporan, lalu bagikan kepada $email.';
-  }
-
-  @override
-  String get accountReportProblemSubtitle => 'Bagikan log aplikasi Anda dengan tim Prism';
+  String get accountReportProblemSubtitle => 'Kirim laporan bug ke tim Prism';
 
   @override
   String get accountReportUser => 'Laporkan pengguna';
@@ -1209,9 +1204,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get accountSettings => 'Setelan';
-
-  @override
-  String get accountShare => 'Bagikan';
 
   @override
   String get accountShareInvite => 'Bagikan undangan';
@@ -11251,6 +11243,81 @@ class AppLocalizationsId extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName me-remix wallpaper Anda.';
   }
+
+  @override
+  String get reportSheetMessage =>
+      'Ceritakan apa yang salah. Prism tidak pernah menambahkan alamat email atau token masuk Anda. Periksa tangkapan layar sebelum mengirim.';
+
+  @override
+  String get reportTopicCrashFreeze => 'Crash/macet';
+
+  @override
+  String get reportTopicWallpaperWontSet => 'Wallpaper tidak bisa diatur';
+
+  @override
+  String get reportTopicLooksBroken => 'Tampilan rusak';
+
+  @override
+  String get reportTopicSlow => 'Lambat';
+
+  @override
+  String get reportTopicOther => 'Lainnya';
+
+  @override
+  String get reportNoteHint => 'Apa yang terjadi? Apa yang Anda harapkan?';
+
+  @override
+  String get reportScreenshotTitle => 'Tangkapan layar';
+
+  @override
+  String get reportScreenshotEmpty => 'Tunjukkan apa yang Anda lihat.';
+
+  @override
+  String get reportScreenshotAttached => 'Ketuk untuk melihat. Periksa sebelum mengirim.';
+
+  @override
+  String get reportAddScreenshot => 'Tambah tangkapan layar';
+
+  @override
+  String get reportRemoveScreenshot => 'Hapus';
+
+  @override
+  String get reportViewScreenshot => 'Lihat tangkapan layar';
+
+  @override
+  String get reportIncludeDiagnostics => 'Sertakan info perangkat dan log terbaru';
+
+  @override
+  String get reportShowDiagnostics => 'Tampilkan yang disertakan';
+
+  @override
+  String get reportHideDiagnostics => 'Sembunyikan detail';
+
+  @override
+  String get reportSend => 'Kirim laporan';
+
+  @override
+  String get reportShareAsFile => 'Bagikan sebagai file';
+
+  @override
+  String reportSent(String reference) {
+    return 'Terima kasih, laporan terkirim. Referensi $reference';
+  }
+
+  @override
+  String get reportCouldNotSend => 'Tidak dapat mengirim';
+
+  @override
+  String get reportCouldNotSendBody => 'Periksa koneksi Anda lalu coba lagi, atau bagikan laporan sebagai file.';
+
+  @override
+  String get reportShareInstead => 'Bagikan saja';
+
+  @override
+  String get reportShakeToReport => 'Goyang untuk melapor';
+
+  @override
+  String get reportShakeToReportSubtitle => 'Goyangkan ponsel di layar mana pun untuk melaporkan masalah';
 
   @override
   String get accountShowAiWallpapers => 'Tampilkan wallpaper buatan AI';

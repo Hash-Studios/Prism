@@ -1097,12 +1097,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountReportAProblem => 'समस्या की रिपोर्ट करें';
 
   @override
-  String accountReportPreviewNotice(String email) {
-    return 'इस रिपोर्ट में आपके ऐप का वर्ज़न, डिवाइस और हाल के लॉग शामिल हैं। इसमें ईमेल पता या साइन-इन टोकन नहीं हैं। इसे पढ़ें, फिर $email के साथ शेयर करें।';
-  }
-
-  @override
-  String get accountReportProblemSubtitle => 'Prism टीम के साथ अपने ऐप लॉग शेयर करें';
+  String get accountReportProblemSubtitle => 'Prism टीम को बग रिपोर्ट भेजें';
 
   @override
   String get accountReportUser => 'यूज़र की रिपोर्ट करें';
@@ -1211,9 +1206,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get accountSettings => 'सेटिंग्स';
-
-  @override
-  String get accountShare => 'शेयर करें';
 
   @override
   String get accountShareInvite => 'निमंत्रण शेयर करें';
@@ -11338,6 +11330,82 @@ class AppLocalizationsHi extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName ने आपके वॉलपेपर को रीमिक्स किया।';
   }
+
+  @override
+  String get reportSheetMessage =>
+      'हमें बताएं कि क्या गड़बड़ हुई। Prism कभी आपका ईमेल पता या साइन-इन टोकन नहीं जोड़ता। भेजने से पहले स्क्रीनशॉट जांच लें।';
+
+  @override
+  String get reportTopicCrashFreeze => 'क्रैश/फ़्रीज़';
+
+  @override
+  String get reportTopicWallpaperWontSet => 'वॉलपेपर सेट नहीं हो रहा';
+
+  @override
+  String get reportTopicLooksBroken => 'गड़बड़ दिखता है';
+
+  @override
+  String get reportTopicSlow => 'धीमा';
+
+  @override
+  String get reportTopicOther => 'अन्य';
+
+  @override
+  String get reportNoteHint => 'क्या हुआ? आपको क्या उम्मीद थी?';
+
+  @override
+  String get reportScreenshotTitle => 'स्क्रीनशॉट';
+
+  @override
+  String get reportScreenshotEmpty => 'हमें दिखाएं कि आपको क्या दिख रहा है।';
+
+  @override
+  String get reportScreenshotAttached => 'देखने के लिए टैप करें। भेजने से पहले जांच लें।';
+
+  @override
+  String get reportAddScreenshot => 'स्क्रीनशॉट जोड़ें';
+
+  @override
+  String get reportRemoveScreenshot => 'हटाएं';
+
+  @override
+  String get reportViewScreenshot => 'स्क्रीनशॉट देखें';
+
+  @override
+  String get reportIncludeDiagnostics => 'डिवाइस जानकारी और हाल के लॉग शामिल करें';
+
+  @override
+  String get reportShowDiagnostics => 'क्या शामिल है, दिखाएं';
+
+  @override
+  String get reportHideDiagnostics => 'विवरण छिपाएं';
+
+  @override
+  String get reportSend => 'रिपोर्ट भेजें';
+
+  @override
+  String get reportShareAsFile => 'फ़ाइल के रूप में शेयर करें';
+
+  @override
+  String reportSent(String reference) {
+    return 'धन्यवाद, रिपोर्ट भेज दी गई। रेफ़रेंस $reference';
+  }
+
+  @override
+  String get reportCouldNotSend => 'भेजा नहीं जा सका';
+
+  @override
+  String get reportCouldNotSendBody =>
+      'अपना कनेक्शन जांचें और फिर कोशिश करें, या रिपोर्ट को फ़ाइल के रूप में शेयर करें।';
+
+  @override
+  String get reportShareInstead => 'इसके बजाय शेयर करें';
+
+  @override
+  String get reportShakeToReport => 'रिपोर्ट के लिए शेक करें';
+
+  @override
+  String get reportShakeToReportSubtitle => 'किसी भी स्क्रीन पर समस्या की रिपोर्ट करने के लिए फ़ोन को हिलाएं';
 
   @override
   String get accountShowAiWallpapers => 'AI से बने वॉलपेपर दिखाएँ';

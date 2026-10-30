@@ -68,6 +68,7 @@ void main() {
     final Map<String, String> spanish = _readInfoPlistStrings(_iosSpanishInfoPath);
     const Set<String> expectedPermissionKeys = <String>{
       'NSCameraUsageDescription',
+      'NSMotionUsageDescription',
       'NSPhotoLibraryAddUsageDescription',
       'NSPhotoLibraryUsageDescription',
     };

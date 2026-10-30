@@ -1102,12 +1102,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountReportAProblem => 'Report a problem';
 
   @override
-  String accountReportPreviewNotice(String email) {
-    return 'This report has your app version, device and recent logs. It has no email address or sign-in tokens. Read it, then share it with $email.';
-  }
-
-  @override
-  String get accountReportProblemSubtitle => 'Share your app logs with the Prism team';
+  String get accountReportProblemSubtitle => 'Send a bug report to the Prism team';
 
   @override
   String get accountReportUser => 'Report user';
@@ -1216,9 +1211,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountSettings => 'Settings';
-
-  @override
-  String get accountShare => 'Share';
 
   @override
   String get accountShareInvite => 'Share invite';
@@ -11194,6 +11186,81 @@ class AppLocalizationsEn extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName remixed your wallpaper.';
   }
+
+  @override
+  String get reportSheetMessage =>
+      'Tell us what went wrong. Prism never adds your email address or sign-in tokens. Check any screenshot before you send it.';
+
+  @override
+  String get reportTopicCrashFreeze => 'Crash/freeze';
+
+  @override
+  String get reportTopicWallpaperWontSet => 'Wallpaper won\'t set';
+
+  @override
+  String get reportTopicLooksBroken => 'Looks broken';
+
+  @override
+  String get reportTopicSlow => 'Slow';
+
+  @override
+  String get reportTopicOther => 'Other';
+
+  @override
+  String get reportNoteHint => 'What happened? What did you expect?';
+
+  @override
+  String get reportScreenshotTitle => 'Screenshot';
+
+  @override
+  String get reportScreenshotEmpty => 'Show us what you see.';
+
+  @override
+  String get reportScreenshotAttached => 'Tap to view. Check it before you send.';
+
+  @override
+  String get reportAddScreenshot => 'Add screenshot';
+
+  @override
+  String get reportRemoveScreenshot => 'Remove';
+
+  @override
+  String get reportViewScreenshot => 'View screenshot';
+
+  @override
+  String get reportIncludeDiagnostics => 'Include device info & recent logs';
+
+  @override
+  String get reportShowDiagnostics => 'Show what\'s included';
+
+  @override
+  String get reportHideDiagnostics => 'Hide details';
+
+  @override
+  String get reportSend => 'Send report';
+
+  @override
+  String get reportShareAsFile => 'Share as file';
+
+  @override
+  String reportSent(String reference) {
+    return 'Thanks, report sent. Reference $reference';
+  }
+
+  @override
+  String get reportCouldNotSend => 'Couldn\'t send';
+
+  @override
+  String get reportCouldNotSendBody => 'Check your connection and try again, or share the report as a file.';
+
+  @override
+  String get reportShareInstead => 'Share instead';
+
+  @override
+  String get reportShakeToReport => 'Shake to report';
+
+  @override
+  String get reportShakeToReportSubtitle => 'Shake your phone on any screen to report a problem';
 
   @override
   String get accountShowAiWallpapers => 'Show AI-generated wallpapers';
