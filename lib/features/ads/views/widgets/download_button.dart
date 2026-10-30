@@ -365,7 +365,10 @@ class _DownloadButtonState extends State<DownloadButton> {
               isValidNetworkUrl(tap.link));
       if (serverAccess) {
         _authorizedSource = (confirmation.freeLocalCopy ?? await _previouslyAcquiredLocalOriginal(tap))?.path;
-        if (!_ownerStillMatches(tap)) return;
+        if (!_ownerStillMatches(tap)) {
+          _cancelAfterAccountSwitch();
+          return;
+        }
         final result = await _gatedDownload(originalAccess: true, variant: variant);
         _trackGateResult(result);
         return;

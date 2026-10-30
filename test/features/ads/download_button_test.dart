@@ -493,9 +493,8 @@ void main() {
     await tester.tap(find.byType(CircularMenuButton));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
-    haptics.clear();
 
-    expect(haptics.where((event) => event == 'tap'), isEmpty);
+    expect(haptics, isEmpty, reason: 'a guest tap must not play the download haptic');
     verifyNever(() => bloc.add(const AdsEvent.started()));
     expect(find.text('Sign in to Prism'), findsOneWidget);
     await tester.pump(const Duration(seconds: 2));
@@ -520,10 +519,9 @@ void main() {
     await tester.tap(find.byType(CircularMenuButton));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
-    haptics.clear();
 
     expect(find.widgetWithText(FilledButton, 'Buy premium'), findsNothing);
-    expect(haptics, isEmpty);
+    expect(haptics, isEmpty, reason: 'a guest tap must not play the download haptic');
     expect(find.text('Sign in to Prism'), findsOneWidget);
   });
 

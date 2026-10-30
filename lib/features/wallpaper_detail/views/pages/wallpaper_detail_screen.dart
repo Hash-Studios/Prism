@@ -1474,7 +1474,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                   onClock: canonicalLoading
                       ? null
                       : () async {
-                          if (!await requireSignedInAction(context) || !context.mounted) return;
+                          // iOS opens a passive preview; its Save button has its own sign-in guard.
+                          if (!hideSetWallpaperUi && (!await requireSignedInAction(context) || !context.mounted)) {
+                            return;
+                          }
                           final entity = state.entity;
                           _actedOn(entity);
                           _trackAction(state, AnalyticsActionValue.clockOverlayOpened);

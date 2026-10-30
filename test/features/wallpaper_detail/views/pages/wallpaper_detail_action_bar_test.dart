@@ -862,6 +862,33 @@ void main() {
       expect(hues, everyElement(closeTo(120, 10)));
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
+    testWidgets('an iOS guest opens the passive preview; its Save asks for sign-in', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await pumpDetail(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: _prism(),
+          paletteLoading: false,
+          colors: const <Color>[Colors.teal],
+          accent: Colors.teal,
+        ),
+      );
+
+      await tester.tap(find.byTooltip(AppLocalizationsEn().wallpaperPreviewOnScreen));
+      await tester.pumpAndSettle();
+
+      final Finder preview = find.byType(ClockOverlay);
+      expect(preview, findsOneWidget);
+      expect(find.text('Sign in to Prism'), findsNothing);
+
+      await tester.tap(find.descendant(of: preview, matching: find.byType(DownloadButton)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(find.text('Sign in to Prism'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
     testWidgets('with the original showing, each action uses the wallpaper as it is', (tester) async {
       await pumpDetail(
         tester,

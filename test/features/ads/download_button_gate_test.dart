@@ -99,6 +99,18 @@ class _CacheMissOfflineAssetStore extends OfflineAssetStore {
   Future<File?> lookup(String source) async => null;
 }
 
+class _SwitchingAccountAssetStore extends OfflineAssetStore {
+  _SwitchingAccountAssetStore({required this.onLookup, required super.directory});
+
+  final void Function() onLookup;
+
+  @override
+  Future<File?> lookup(String source) async {
+    onLookup();
+    return null;
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final backend = CoinsTestBackend();
@@ -1090,6 +1102,44 @@ void main() {
       expect(app_state.prismUser.id, 'account-b');
       expect(spendCalls, isEmpty);
       expect(enqueued, isEmpty);
+    });
+
+    testWidgets('an account switch while finding a server-granted original reports the switch, not a failure', (
+      tester,
+    ) async {
+      signInAgain();
+      final String ownerA = app_state.prismUser.id;
+      final DownloadedWallIndex index = DownloadedWallIndex(SettingsLocalDataSource(InMemoryLocalStore()));
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      addTearDown(() async {
+        await index.clearOwner(ownerA);
+        await getIt.unregister<DownloadedWallIndex>();
+      });
+      await index.remember(link: _link, id: 'wall-1', source: WallpaperSource.prism, ownerId: ownerA);
+      OfflineAssetStore.testOverride = _SwitchingAccountAssetStore(
+        directory: Directory('${tempDir.path}/switching'),
+        onLookup: () => app_state.prismUser = app_constants.createGuestPrismUser()
+          ..id = 'account-b'
+          ..loggedIn = true
+          ..coins = 100,
+      );
+      addTearDown(() => OfflineAssetStore.testOverride = null);
+      final List<String> calls = <String>[];
+      backend.onCall = (name, parameters) async {
+        calls.add(name);
+        return _spent;
+      };
+
+      await pump(tester, source: WallpaperSource.prism);
+      await tapSave(tester);
+
+      expect(app_state.prismUser.id, 'account-b');
+      expect(calls, isEmpty);
+      expect(enqueued, isEmpty);
+      final DownloadResultEvent result = results().single;
+      expect(result.result, 'cancelled');
+      expect(result.reason, 'account_changed');
+      expect(toastMessages, contains('Account changed. Please try saving again.'));
     });
 
     testWidgets('the ledger entry names the variation, not the original link', (tester) async {
