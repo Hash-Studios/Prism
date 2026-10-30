@@ -659,8 +659,12 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     if (batch != null && batch.isMulti) toasts.info(batch.summary(context.l10n));
     if (batch == null || batch.submittedCount > 0) {
       showGlintToast(context);
-      Navigator.pop(context);
-      unawaited(router.push(const ReviewRoute()));
+      if (router.stackData.any((route) => route.name == ReviewRoute.name)) {
+        router.popUntilRouteWithName(ReviewRoute.name);
+      } else {
+        Navigator.pop(context);
+        unawaited(router.push(const ReviewRoute()));
+      }
     } else {
       Navigator.pop(context);
     }
