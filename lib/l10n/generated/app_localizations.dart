@@ -18202,7 +18202,7 @@ abstract class AppLocalizations {
   /// Daily moment: StreakReceipt.
   ///
   /// In en, this message translates to:
-  /// **'{coins} coins earned · {days} day streak'**
+  /// **'{coins, plural, one{{coins} coin earned} other{{coins} coins earned}} · {days, plural, one{streak of {days} day} other{streak of {days} days}}'**
   String dailyMomentStreakReceipt(int coins, int days);
 
   /// Daily moment: Cosmetic.
@@ -18214,7 +18214,7 @@ abstract class AppLocalizations {
   /// Daily moment: Reward.
   ///
   /// In en, this message translates to:
-  /// **'{coins} coins earned'**
+  /// **'{coins, plural, one{{coins} coin earned} other{{coins} coins earned}}'**
   String dailyMomentReward(int coins);
 
   /// Daily moment: ChestBody.
@@ -18232,7 +18232,7 @@ abstract class AppLocalizations {
   /// Daily moment: Balance.
   ///
   /// In en, this message translates to:
-  /// **'Balance: {coins} coins'**
+  /// **'Balance: {coins, plural, one{{coins} coin} other{{coins} coins}}'**
   String dailyMomentBalance(int coins);
 
   /// Daily moment: Done.
@@ -18262,7 +18262,7 @@ abstract class AppLocalizations {
   /// Daily moment: OpenChest.
   ///
   /// In en, this message translates to:
-  /// **'Open for {coins} coins'**
+  /// **'Open for {coins, plural, one{{coins} coin} other{{coins} coins}}'**
   String dailyMomentOpenChest(int coins);
 
   /// Daily moment: SpinAction.

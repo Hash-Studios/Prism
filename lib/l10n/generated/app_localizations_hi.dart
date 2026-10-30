@@ -11443,7 +11443,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dailyMomentTitle => 'रोज़ का पल';
 
   @override
-  String get dailyMomentStreakTitle => 'रोज़ की लड़ी';
+  String get dailyMomentStreakTitle => 'रोज़ की स्ट्रीक';
 
   @override
   String get dailyMomentChestTitle => 'रोज़ का संदूक';
@@ -11459,7 +11459,19 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String dailyMomentStreakReceipt(int coins, int days) {
-    return '$coins सिक्के मिले · $days दिनों की लड़ी';
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins सिक्के मिले',
+      one: '$coins सिक्का मिला',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days दिनों की स्ट्रीक',
+      one: '$days दिन की स्ट्रीक',
+    );
+    return '$_temp0 · $_temp1';
   }
 
   @override
@@ -11467,7 +11479,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String dailyMomentReward(int coins) {
-    return '$coins सिक्के मिले';
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins सिक्के मिले',
+      one: '$coins सिक्का मिला',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -11478,7 +11496,8 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String dailyMomentBalance(int coins) {
-    return 'शेष: $coins सिक्के';
+    String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins सिक्के', one: '$coins सिक्का');
+    return 'शेष: $_temp0';
   }
 
   @override
@@ -11495,7 +11514,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String dailyMomentOpenChest(int coins) {
-    return '$coins सिक्कों में खोलें';
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins सिक्कों में खोलें',
+      one: '$coins सिक्के में खोलें',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -11529,5 +11554,5 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dailyMomentSpinLeft => 'मुफ़्त स्पिन उपलब्ध है';
 
   @override
-  String get dailyMomentStreakLeft => 'रोज़ की लड़ी उपलब्ध है';
+  String get dailyMomentStreakLeft => 'रोज़ की स्ट्रीक उपलब्ध है';
 }

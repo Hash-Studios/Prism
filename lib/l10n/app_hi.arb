@@ -10896,7 +10896,7 @@
   "@dailyMomentTitle": {
     "description": "Daily moment: Title."
   },
-  "dailyMomentStreakTitle": "रोज़ की लड़ी",
+  "dailyMomentStreakTitle": "रोज़ की स्ट्रीक",
   "@dailyMomentStreakTitle": {
     "description": "Daily moment: StreakTitle."
   },
@@ -10916,7 +10916,7 @@
   "@dailyMomentError": {
     "description": "Daily moment: Error."
   },
-  "dailyMomentStreakReceipt": "{coins} सिक्के मिले · {days} दिनों की लड़ी",
+  "dailyMomentStreakReceipt": "{coins, plural, one{{coins} सिक्का मिला} other{{coins} सिक्के मिले}} · {days, plural, one{{days} दिन की स्ट्रीक} other{{days} दिनों की स्ट्रीक}}",
   "@dailyMomentStreakReceipt": {
     "description": "Daily moment: StreakReceipt.",
     "placeholders": {
@@ -10932,7 +10932,7 @@
   "@dailyMomentCosmetic": {
     "description": "Daily moment: Cosmetic."
   },
-  "dailyMomentReward": "{coins} सिक्के मिले",
+  "dailyMomentReward": "{coins, plural, one{{coins} सिक्का मिला} other{{coins} सिक्के मिले}}",
   "@dailyMomentReward": {
     "description": "Daily moment: Reward.",
     "placeholders": {
@@ -10949,7 +10949,7 @@
   "@dailyMomentSpinBody": {
     "description": "Daily moment: SpinBody."
   },
-  "dailyMomentBalance": "शेष: {coins} सिक्के",
+  "dailyMomentBalance": "शेष: {coins, plural, one{{coins} सिक्का} other{{coins} सिक्के}}",
   "@dailyMomentBalance": {
     "description": "Daily moment: Balance.",
     "placeholders": {
@@ -10974,7 +10974,7 @@
   "@dailyMomentOpenFree": {
     "description": "Daily moment: OpenFree."
   },
-  "dailyMomentOpenChest": "{coins} सिक्कों में खोलें",
+  "dailyMomentOpenChest": "{coins, plural, one{{coins} सिक्के में खोलें} other{{coins} सिक्कों में खोलें}}",
   "@dailyMomentOpenChest": {
     "description": "Daily moment: OpenChest.",
     "placeholders": {
@@ -11023,7 +11023,7 @@
   "@dailyMomentSpinLeft": {
     "description": "Daily moment: SpinLeft."
   },
-  "dailyMomentStreakLeft": "रोज़ की लड़ी उपलब्ध है",
+  "dailyMomentStreakLeft": "रोज़ की स्ट्रीक उपलब्ध है",
   "@dailyMomentStreakLeft": {
     "description": "Daily moment: StreakLeft."
   }

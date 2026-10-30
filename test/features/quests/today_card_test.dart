@@ -105,7 +105,84 @@ void main() {
     expect(find.text(AppLocalizationsEn().economyQuestDoneMessage(4, 17)), findsOneWidget);
     expect(find.text(AppLocalizationsEn().economyQuestDoneMessage(18, 81)), findsOneWidget);
     expect(toasts, isEmpty);
+    expect(repo.consumed, 1);
+    expect(repo.awards.value, isEmpty);
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text(AppLocalizationsEn().economyQuestDoneMessage(4, 17)), findsOneWidget);
+
+    // A new card shares the same repository, but must not replay delivered feedback.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: const Scaffold(body: SingleChildScrollView(child: TodayCard())),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(AppLocalizationsEn().economyQuestDoneMessage(4, 17)), findsNothing);
+    expect(find.text(AppLocalizationsEn().economyQuestDoneMessage(18, 81)), findsNothing);
+    expect(repo.consumed, 1);
+  });
+
+  testWidgets('daily moment clears delivered feedback when the board disappears', (tester) async {
+    DailyMomentConfig.enabledOverride = true;
+    final FakeQuestsRepository repo = await pumpCard(tester, questState());
+    repo.awards.value = const <QuestAward>[QuestAward(id: 'set_wall', coins: 4, xp: 17)];
+    await tester.pump();
+    await tester.pump();
+    final String message = AppLocalizationsEn().economyQuestDoneMessage(4, 17);
+    expect(find.text(message), findsOneWidget);
+
+    repo.quests.value = null;
+    repo.quests.value = questState();
+    await tester.pump();
+    expect(find.text(message), findsNothing);
+    expect(repo.awards.value, isEmpty);
+  });
+
+  testWidgets('daily moment keeps hidden awards pending until the card is visible', (tester) async {
+    DailyMomentConfig.enabledOverride = true;
+    final FakeQuestsRepository repo = await pumpCard(tester, questState());
+    final NavigatorState navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    navigator.push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Other'))));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    repo.awards.value = const <QuestAward>[QuestAward(id: 'set_wall', coins: 4, xp: 17)];
+    await tester.pump();
+    await tester.pump();
     expect(repo.consumed, 0);
+    expect(repo.awards.value, isNotEmpty);
+
+    navigator.pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(repo.consumed, 1);
+    expect(repo.awards.value, isEmpty);
+    expect(find.text(AppLocalizationsEn().economyQuestDoneMessage(4, 17)), findsOneWidget);
+  });
+
+  testWidgets('daily moment clears feedback when the daily board expires', (tester) async {
+    DailyMomentConfig.enabledOverride = true;
+    DateTime now = DateTime.now();
+    final FakeQuestsRepository repo = await pumpCard(tester, questState(), clock: () => now);
+    repo.awards.value = const <QuestAward>[QuestAward(id: 'set_wall', coins: 4, xp: 17)];
+    await tester.pump();
+    await tester.pump();
+    final String message = AppLocalizationsEn().economyQuestDoneMessage(4, 17);
+    expect(find.text(message), findsOneWidget);
+
+    now = now.add(const Duration(days: 1));
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(find.text(message), findsNothing);
+    now = DateTime.now();
+    repo.quests.value = questState();
+    await tester.pump();
+    expect(find.text(message), findsNothing);
   });
 
   testWidgets('paid: shows the header, the quest tiles, the chest with its price and the weekly tile', (tester) async {

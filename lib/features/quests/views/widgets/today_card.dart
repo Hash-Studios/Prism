@@ -33,6 +33,8 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
   bool _visible = true;
 
   late final Timer _clock;
+  List<QuestAward> _visibleAwards = const <QuestAward>[];
+  String? _awardsDayKey;
 
   @override
   void initState() {
@@ -45,8 +47,12 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final bool visible = TickerMode.valuesOf(context).enabled && (ModalRoute.of(context)?.isCurrent ?? true);
-    if (visible && !_visible) _bloc.add(const QuestsEvent.refreshed());
+    final bool becameVisible = visible && !_visible;
     _visible = visible;
+    if (becameVisible) {
+      _bloc.add(const QuestsEvent.refreshed());
+      _showAwards(_bloc.state);
+    }
   }
 
   @override
@@ -69,22 +75,40 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  void _showAwards(QuestsState state) {
+    if (state.awards.isEmpty) return;
+    if (DailyMomentConfig.enabled) {
+      if (!_visible || state.quests == null || state.quests!.dayKey != economyDayKey(DateTime.now())) return;
+      _awardsDayKey = state.quests!.dayKey;
+      _visibleAwards = List<QuestAward>.of(state.awards);
+    } else {
+      final int coins = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.coins);
+      final int xp = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.xp);
+      toasts.success(context.l10n.economyQuestDoneMessage(coins, xp));
+    }
+    _bloc.add(const QuestsEvent.awardsShown());
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<QuestsBloc>.value(
       value: _bloc,
       child: BlocListener<QuestsBloc, QuestsState>(
-        listenWhen: (before, after) => after.awards.isNotEmpty && before.awards != after.awards,
+        listenWhen: (before, after) => before.quests != after.quests || before.awards != after.awards,
         listener: (context, state) {
-          final int coins = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.coins);
-          final int xp = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.xp);
-          if (DailyMomentConfig.enabled) return;
-          toasts.success(context.l10n.economyQuestDoneMessage(coins, xp));
-          context.read<QuestsBloc>().add(const QuestsEvent.awardsShown());
+          if (state.quests == null || state.quests!.dayKey != _awardsDayKey) {
+            _visibleAwards = const <QuestAward>[];
+            _awardsDayKey = state.quests?.dayKey;
+          }
+          _showAwards(state);
         },
         child: BlocBuilder<QuestsBloc, QuestsState>(
           builder: (context, state) {
             final QuestState? quests = state.quests;
+            if (quests == null || quests.dayKey != _awardsDayKey) {
+              _visibleAwards = const <QuestAward>[];
+              _awardsDayKey = quests?.dayKey;
+            }
             if (quests == null) return const SizedBox.shrink();
             return ValueListenableBuilder<EconomyConfig>(
               valueListenable: EconomyConfig.notifier,
@@ -97,8 +121,12 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
                   price: CoinPolicy.dailyChestPrice,
                   l10n: context.l10n,
                 );
-                if (board == null) return const SizedBox.shrink();
-                return _TodayView(board: board, now: now, onOpenSpin: widget.onOpenSpin, awards: state.awards);
+                if (board == null) {
+                  _visibleAwards = const <QuestAward>[];
+                  _awardsDayKey = null;
+                  return const SizedBox.shrink();
+                }
+                return _TodayView(board: board, now: now, onOpenSpin: widget.onOpenSpin, awards: _visibleAwards);
               },
             );
           },

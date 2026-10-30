@@ -10916,7 +10916,7 @@
   "@dailyMomentError": {
     "description": "Daily moment: Error."
   },
-  "dailyMomentStreakReceipt": "{coins} coins earned · {days} day streak",
+  "dailyMomentStreakReceipt": "{coins, plural, one{{coins} coin earned} other{{coins} coins earned}} · {days, plural, one{streak of {days} day} other{streak of {days} days}}",
   "@dailyMomentStreakReceipt": {
     "description": "Daily moment: StreakReceipt.",
     "placeholders": {
@@ -10932,7 +10932,7 @@
   "@dailyMomentCosmetic": {
     "description": "Daily moment: Cosmetic."
   },
-  "dailyMomentReward": "{coins} coins earned",
+  "dailyMomentReward": "{coins, plural, one{{coins} coin earned} other{{coins} coins earned}}",
   "@dailyMomentReward": {
     "description": "Daily moment: Reward.",
     "placeholders": {
@@ -10949,7 +10949,7 @@
   "@dailyMomentSpinBody": {
     "description": "Daily moment: SpinBody."
   },
-  "dailyMomentBalance": "Balance: {coins} coins",
+  "dailyMomentBalance": "Balance: {coins, plural, one{{coins} coin} other{{coins} coins}}",
   "@dailyMomentBalance": {
     "description": "Daily moment: Balance.",
     "placeholders": {
@@ -10974,7 +10974,7 @@
   "@dailyMomentOpenFree": {
     "description": "Daily moment: OpenFree."
   },
-  "dailyMomentOpenChest": "Open for {coins} coins",
+  "dailyMomentOpenChest": "Open for {coins, plural, one{{coins} coin} other{{coins} coins}}",
   "@dailyMomentOpenChest": {
     "description": "Daily moment: OpenChest.",
     "placeholders": {

@@ -11466,7 +11466,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String dailyMomentStreakReceipt(int coins, int days) {
-    return '$coins monedas ganadas · racha de $days días';
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins monedas ganadas',
+      one: '$coins moneda ganada',
+    );
+    String _temp1 = intl.Intl.pluralLogic(days, locale: localeName, other: '$days días', one: '$days día');
+    return '$_temp0 · racha de $_temp1';
   }
 
   @override
@@ -11474,7 +11481,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String dailyMomentReward(int coins) {
-    return '$coins monedas ganadas';
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins monedas ganadas',
+      one: '$coins moneda ganada',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -11485,7 +11498,8 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String dailyMomentBalance(int coins) {
-    return 'Saldo: $coins monedas';
+    String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins monedas', one: '$coins moneda');
+    return 'Saldo: $_temp0';
   }
 
   @override
@@ -11502,7 +11516,8 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String dailyMomentOpenChest(int coins) {
-    return 'Abrir por $coins monedas';
+    String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins monedas', one: '$coins moneda');
+    return 'Abrir por $_temp0';
   }
 
   @override

@@ -78,58 +78,23 @@ The owner approved this additive backend response change. Reward amounts, odds, 
 The owner approved the selective callable deployment completed on 2026-10-30.
 Keep the release flag off until the remaining mobile checks pass.
 
-## Limits and proof
+## Limits
 
-The feature still needs iOS proof and eligible streak and spin proof.
-The release default for `daily_moment_v1` remains off. The debug default remains on.
+Keep `daily_moment_v1` off in release until the remaining mobile checks pass.
+iOS Simulator proof and eligible streak and free-spin reveals remain open.
+The linked Mac checkout contains unrelated edits, so verification has not changed it.
 
-Android sign-in now works with the registered debug SHA and real native and Dart Firebase configuration.
-The signed-in session survives app and emulator restarts. The Android emulator runs with SwiftShader through a user service.
-The window and Vulkan renderer are disabled during QA after graphics crashes.
+The approved `recordWallpaperAction` and `deleteAccount` updates are deployed in both regions.
+Android proof covers the chest, both Rewards layouts, deep links, large text, and live set/save receipts.
+See [PR #762](https://github.com/Hash-Studios/Prism/pull/762) for screenshots, test results, and deployment evidence.
 
-An earlier signed-in run produced screenshots and a published daily chest clip.
-The chest cost 8 coins and awarded 16 coins. The balance changed from 908 to 916.
-The current run, `20261030T090259Z-1486500`, captures the current flag-on screen through a full scroll.
-It also includes four screenshots of the expanded More group and the large-text fixes in light and dark themes.
+Action receipts remain until account deletion. Expiring them without a request-age contract can allow an old
+request ID to count as a new action. Bounded retention needs a separate replay-safe design.
 
-A temporary APK forces the flag off for fallback proof. The source override was reverted.
-The committed flag defaults did not change. Full-scroll Android captures cover both Rewards layouts.
-Both legacy reward deep links open their original pages when the flag is off.
+## Verification
 
-The account has no eligible streak or free spin today. Those reward paths still need device proof.
-This Linux host has no iOS Simulator tooling. A Mac link was requested and is pending.
-
-The approved selective deployment completed on 2026-10-30 in `prism-wallpapers`.
-`recordWallpaperAction` and `deleteAccount` are `ACTIVE` in `asia-south1` and `us-central1`.
-No other function source hash changed. Seven application environment values stayed unchanged.
-The before and after snapshots are `/tmp/prism-receipt-functions-before-deploy.json` and
-`/tmp/prism-receipt-functions-after-deploy.json`. The deploy log is `/tmp/prism-day20-receipts-deploy.log`.
-Live Android action award receipt proof passed visual inspection in run `20261030T092642Z-1534675`.
-The second download completed the daily Download 2 walls quest and showed `+2 coins` beside Download.
-The next set completed the weekly 5 walls quest and showed `+30 coins` beside Set with the existing Wallpaper set toast.
-The weekly quest started at 2/5. Two downloads and one set on distinct Prism walls completed it.
-Each action used the normal 10-coin cost. No rules or account eligibility changed.
-The screenshots are `qa/screenshots:qa-2026-10-30/day20-live-save-plus2.png` and
-`qa/screenshots:qa-2026-10-30/day20-live-set-plus30.png`.
-Keep the release flag off until the remaining mobile checks pass.
-
-## Review
-
-The independent `gpt-6-astra` review fixed six issues and added regression tests.
-Receipt writes now stop during account deletion, and deletion removes their records.
-Deep-link suppression ends when its target closes. Today refreshes claim eligibility and pending receipts.
-Account changes clear the visible daily receipt and stop action retries. Late streak replies use the server claim day.
-
-Merge commit `d8e41602f` integrates master commit `6b629500d`.
-The large-text fix is `09ca20c27`.
-`PrismRow.trailingBelow` applies only to Earn rows at text scale 1.3 or greater, or widths less than 360.
-Nine layout tests include English and Portuguese at widths 320 and 393, with text scales 2 and 3.
-Another 26 section tests passed.
-
-The Astra `ready_review` found no P1 or P2 issues. All 60 focused backend action and deletion tests passed.
-The full Functions suite passed with 2,199 tests passed, 16 skipped, and no failures.
-
-The full local gate passed with `make ci ANALYZE_FLAGS=--no-fatal-infos TEST_FLAGS=--concurrency=6`.
-This uses the same informational-lint policy as CI. The main Flutter suite passed 8,147 tests and skipped six.
-All six isolated callable tests also passed. The log is `/tmp/prism-day20-ready-ci.log`.
-These results do not complete the open iOS and eligible streak and spin proof.
+Run `make ci` for the local gate. Use the `verify-prism` skill for device proof.
+Check the flow with the flag on and the original pages with it off.
+Check stopping at each step, repeated taps, resume, day changes, and account changes.
+Check onboarding, purchase, and deep-link presentation gates.
+A set or save must show only a positive award from its complete server receipt.
