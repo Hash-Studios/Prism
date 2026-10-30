@@ -79,14 +79,28 @@ Deploy the callable update before enabling the feature in a release. Deployment 
 
 ## Limits and proof
 
-The feature is not ready for release until both mobile platforms have current build proof.
-The signed-in flow needs screenshots and a clip for the shared sheet, reward feedback, and flag-off fallback.
-The reviewed debug build starts on `Prism_QA_API36` (`emulator-5580`). Rewards stops at sign-in.
-The verification skill requires a human to complete Google or Apple sign-in.
-This Linux host has no iOS Simulator tooling. The required signed-in screenshots and clip are still pending.
+The feature still needs iOS proof, eligible streak and spin proof, and live proof of the new action receipt.
+The release default for `daily_moment_v1` remains off. The debug default remains on.
 
-Keep `daily_moment_v1` off in release until the callable update is deployed and the mobile checks pass.
-The flag's debug default does not enable it for release builds.
+Android sign-in now works with the registered debug SHA and real native and Dart Firebase configuration.
+The signed-in session survives app and emulator restarts. The Android emulator runs with SwiftShader through a user service.
+The window and Vulkan renderer are disabled during QA after graphics crashes.
+
+An earlier signed-in run produced screenshots and a published daily chest clip.
+The chest cost 8 coins and awarded 16 coins. The balance changed from 908 to 916.
+The current run, `20261030T090259Z-1486500`, captures the current flag-on screen through a full scroll.
+It also includes four screenshots of the expanded More group and the large-text fixes in light and dark themes.
+
+A temporary APK forces the flag off for fallback proof. The source override was reverted.
+The committed flag defaults did not change. Full-scroll Android captures cover both Rewards layouts.
+Both legacy reward deep links open their original pages when the flag is off.
+
+The account has no eligible streak or free spin today. Those reward paths still need device proof.
+This Linux host has no iOS Simulator tooling. Access to a linked Mac remains unresolved.
+
+The new action receipt backend is not deployed. Live set receipt proof therefore remains open.
+Deployment requires owner approval for `recordWallpaperAction` and `deleteAccount` in both regions.
+Keep the release flag off until the deployment and required mobile checks pass.
 
 ## Review
 
@@ -95,11 +109,16 @@ Receipt writes now stop during account deletion, and deletion removes their reco
 Deep-link suppression ends when its target closes. Today refreshes claim eligibility and pending receipts.
 Account changes clear the visible daily receipt and stop action retries. Late streak replies use the server claim day.
 
+Merge commit `d8e41602f` integrates master commit `6b629500d`.
+The large-text fix is `09ca20c27`.
+`PrismRow.trailingBelow` applies only to Earn rows at text scale 1.3 or greater, or widths less than 360.
+Nine layout tests include English and Portuguese at widths 320 and 393, with text scales 2 and 3.
+Another 26 section tests passed.
+
+The Astra `ready_review` found no P1 or P2 issues. All 60 focused backend action and deletion tests passed.
 The full Functions suite passed with 2,199 tests passed, 16 skipped, and no failures.
-The reviewed Android APK built with both skipped Firebase initialization and the existing dev configuration.
 
 The full local gate passed with `make ci ANALYZE_FLAGS=--no-fatal-infos TEST_FLAGS=--concurrency=6`.
-This uses the same informational-lint policy as CI. The main Flutter suite passed 7,891 tests and skipped six.
-All six isolated callable tests also passed.
-The final APK builds, but another verification run owns the Android emulator lock.
-Signed-in Android proof, iOS proof, and the daily-moment clip remain incomplete.
+This uses the same informational-lint policy as CI. The main Flutter suite passed 8,147 tests and skipped six.
+All six isolated callable tests also passed. The log is `/tmp/prism-day20-ready-ci.log`.
+These results do not complete the open device and deployment proof.
