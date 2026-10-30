@@ -78,18 +78,25 @@ void main() {
   test('folder links prefer the strip and use the cover when the strip is missing', () async {
     for (final strip in <String>['', 'https://img.prismwalls.com/push-gallery/v1/strip.jpg']) {
       const cover = 'https://img.prismwalls.com/previews/cover.img';
+      final previews = <Map<String, dynamic>>[];
       final client = MockClient((request) async {
         final body = jsonDecode(request.body) as Map<String, dynamic>;
-        expect((body['preview'] as Map)['image_source_url'], strip.isEmpty ? cover : strip);
+        previews.add(body['preview'] as Map<String, dynamic>);
         return http.Response('{"short_url":"https://prismwalls.com/l/folder"}', 200);
       });
-      await withApi(
+      final link = await withApi(
         () => share.createFolderLink(
-          folderId: 'folder', name: 'Purple Landscapes', description: '8 wallpapers',
-          shareImage: strip, coverImage: cover,
+          folderId: 'folder',
+          name: 'Purple Landscapes',
+          description: '8 wallpapers',
+          shareImage: strip,
+          coverImage: cover,
         ),
         client,
       );
+      expect(link, 'https://prismwalls.com/l/folder');
+      expect(previews, hasLength(1));
+      expect(previews.single['image_source_url'], strip.isEmpty ? cover : strip);
     }
   });
 

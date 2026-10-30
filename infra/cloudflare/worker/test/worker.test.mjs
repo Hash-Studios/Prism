@@ -2765,7 +2765,7 @@ test('folder page links without an allowed preview image use the Prism icon, not
   assert.doesNotMatch(crawler, new RegExp(`/og/${code}\\.jpg`));
 });
 
-test('folder page links keep only a push-gallery share image from the configured R2 base', async () => {
+test('folder page links reject images outside the allowed strip and public cover paths', async () => {
   const env = workerEnv(FOLDER_ENV);
   const hash = 'd'.repeat(64);
   for (const image of [
