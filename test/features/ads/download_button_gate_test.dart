@@ -354,6 +354,7 @@ void main() {
     testWidgets('a signed-in user sees the coin price', (tester) async {
       await pump(tester);
 
+      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
       expect(semanticsLabel(tester), 'Save. Costs ${CoinPolicy.wallpaperDownload} coins');
     });
 
@@ -495,11 +496,13 @@ void main() {
     testWidgets('another url for the same wall id keeps the normal price', (tester) async {
       await pump(tester, source: WallpaperSource.prism, link: 'https://example.com/walls/other.jpg');
 
+      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
     });
 
     testWidgets('a wallpaper from another source keeps its normal price', (tester) async {
       await pump(tester);
 
+      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
     });
   });
 
@@ -708,6 +711,7 @@ void main() {
       expect(result.result, 'failed');
       expect(result.reason, 'enqueue_failed');
       expect(result.stage, 'download');
+      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
       expect(ledger(), isEmpty);
     });
   });
@@ -1214,6 +1218,7 @@ void main() {
       CoinsService.instance.isLinkDownloaded = (identity) => identity == _link;
       await pump(tester, variant: variant());
 
+      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
       await tester.runAsync(() async {});
       await tapSave(tester);
 
@@ -1323,6 +1328,7 @@ void main() {
 
       await pump(tester, variant: variant(key: 'tint-00ff00'));
 
+      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
     });
 
     testWidgets('a colour picked while the first one renders changes neither what is saved nor what is remembered', (
@@ -1348,6 +1354,7 @@ void main() {
 
       expect((enqueued.single! as DownloadRequest).filenameWithoutExtension, 'sunset_tint-ff8800');
       expect(remembered, <String>['a']);
+      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
     });
 
     testWidgets('a variant save counts the download for the wallpaper, not for the variation link', (tester) async {
