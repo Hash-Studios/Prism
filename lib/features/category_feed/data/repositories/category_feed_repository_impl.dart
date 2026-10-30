@@ -177,14 +177,9 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     if (prism.isEmpty) return provider;
     final Map<String, FeedItemEntity> unique = <String, FeedItemEntity>{};
     for (final FeedItemEntity item in <FeedItemEntity>[...prism, ...provider]) {
-      unique.putIfAbsent(_canonicalKey(item), () => item);
+      unique.putIfAbsent(item.canonicalKey, () => item);
     }
     return unique.values.toList(growable: false);
-  }
-
-  String _canonicalKey(FeedItemEntity item) {
-    final String url = item.fullUrl.trim().toLowerCase();
-    return url.isNotEmpty ? url : '${item.source.wireValue}:${item.id.trim().toLowerCase()}';
   }
 
   Future<Result<CategoryFeedPage>> _fetchFromSource(CategoryEntity category, {required bool refresh}) async {
@@ -248,8 +243,8 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
       final CategoryFeedPage? previous = await _readCached(category);
       if (previous != null) {
         final Map<String, FeedItemEntity> merged = <String, FeedItemEntity>{
-          for (final FeedItemEntity item in previous.items) _canonicalKey(item): item,
-          for (final FeedItemEntity item in page.items) _canonicalKey(item): item,
+          for (final FeedItemEntity item in previous.items) item.canonicalKey: item,
+          for (final FeedItemEntity item in page.items) item.canonicalKey: item,
         };
         items = merged.values.toList(growable: false);
       }

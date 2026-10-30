@@ -7,6 +7,7 @@ import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
@@ -21,12 +22,10 @@ import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/views/widgets/mood_chip_row.dart';
 import 'package:Prism/features/moods/views/widgets/mood_row.dart';
-import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/following_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/popular_feed_bloc.j.dart';
-import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_loading_more.dart';
@@ -561,9 +560,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                     boostedWalls: boostedWalls,
                     liveDrop: state.liveDrop,
                     previewWalls: previewWalls,
-                    onWallShown: (wall) => _bloc.add(
-                      PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(wall)]),
-                    ),
+                    onWallShown: (wall) => _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[wall.canonicalKey])),
                   ),
           ),
         ),
@@ -631,8 +628,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
               crossAxisCount: crossAxisCount,
               memCacheHeight: tileMemCacheHeight,
               onShowLessLikeThis: () => _lessLikeThis(item),
-              onVisible: () =>
-                  _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(item)])),
+              onVisible: () => _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[item.canonicalKey])),
               feed: visibleItems,
               gridItems: gridItems,
             ),

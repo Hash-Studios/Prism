@@ -14,7 +14,6 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism_sheet.dart';
-import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
@@ -24,6 +23,7 @@ import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.da
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/features/weekly_challenges/biz/challenge_admission_tracker.dart';
 import 'package:Prism/features/weekly_challenges/biz/confirm_challenge_submission.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';

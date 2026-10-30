@@ -5,8 +5,8 @@ import 'dart:io';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
-import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -95,7 +95,7 @@ void main() {
           const GitHubContent(downloadUrl: 'https://example.com/image.png', path: 'image.png', sha: 'sha'),
       createRecordWithMetadataForTesting: ({required id, required metadata}) async {
         submitted = metadata;
-        return wall_store.WallSubmissionResult.quotaExceeded;
+        return WallSubmissionResult.quotaExceeded;
       },
     );
     await tester.pumpWidget(

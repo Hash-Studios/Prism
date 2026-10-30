@@ -6,9 +6,9 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
-import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -113,7 +113,7 @@ void main() {
     Size? size,
     UploadBatch? batch,
     Future<GitHubContent> Function({required bool isThumbnail})? upload,
-    Future<wall_store.WallSubmissionResult> Function({required String id, required SubmissionMetadata metadata})? save,
+    Future<WallSubmissionResult> Function({required String id, required SubmissionMetadata metadata})? save,
   }) async {
     final router = _BatchRouter(
       () => UploadWallRoute(
@@ -124,7 +124,7 @@ void main() {
         uploadFileForTesting: upload ?? _upload,
         deleteFileForTesting: ({required path, required sha}) async {},
         createRecordWithMetadataForTesting:
-            save ?? ({required id, required metadata}) async => wall_store.WallSubmissionResult.submitted,
+            save ?? ({required id, required metadata}) async => WallSubmissionResult.submitted,
       ),
     );
     await tester.pumpWidget(
@@ -151,7 +151,7 @@ void main() {
       save: ({required id, required metadata}) async {
         savedId = id;
         savedMetadata = metadata;
-        return wall_store.WallSubmissionResult.submitted;
+        return WallSubmissionResult.submitted;
       },
     );
 
@@ -177,7 +177,7 @@ void main() {
       image,
       save: ({required id, required metadata}) async {
         savedMetadata = metadata;
-        return wall_store.WallSubmissionResult.submitted;
+        return WallSubmissionResult.submitted;
       },
     );
 
@@ -209,7 +209,7 @@ void main() {
       image,
       save: ({required id, required metadata}) async {
         savedMetadata = metadata;
-        return wall_store.WallSubmissionResult.submitted;
+        return WallSubmissionResult.submitted;
       },
     );
 
@@ -245,7 +245,7 @@ void main() {
         size: const Size(720, 1600),
         save: ({required id, required metadata}) async {
           saved = true;
-          return wall_store.WallSubmissionResult.submitted;
+          return WallSubmissionResult.submitted;
         },
       );
 
@@ -320,7 +320,7 @@ void main() {
           prepareImageForTesting: () async {},
           uploadFileForTesting: _upload,
           deleteFileForTesting: ({required path, required sha}) async {},
-          createRecordForTesting: () async => wall_store.WallSubmissionResult.submitted,
+          createRecordForTesting: () async => WallSubmissionResult.submitted,
         ),
       );
       await tester.pumpWidget(
@@ -395,7 +395,7 @@ void main() {
           prepareImageForTesting: () async {},
           uploadFileForTesting: _upload,
           deleteFileForTesting: ({required path, required sha}) async {},
-          createRecordForTesting: () async => wall_store.WallSubmissionResult.submitted,
+          createRecordForTesting: () async => WallSubmissionResult.submitted,
         ),
       );
       await tester.pumpWidget(
