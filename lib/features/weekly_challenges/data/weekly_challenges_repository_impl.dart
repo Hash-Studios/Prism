@@ -76,7 +76,9 @@ class WeeklyChallengesRepositoryImpl implements WeeklyChallengesRepository {
       if (cursor != null && !cursors.add(cursor)) throw const ChallengeException(ChallengeError.unknown);
     } while (cursor != null);
     final blocked = await _walls.loadBlockedCreators();
-    return Future.wait(rows.map((Object? row) => _challenge(row, blocked)));
+    final challenges = await Future.wait(rows.map((Object? row) => _challenge(row, blocked)));
+    if (_walls.blockedCreators != blocked) throw const ChallengeException(ChallengeError.unknown);
+    return challenges;
   }
 
   @override
@@ -103,8 +105,10 @@ class WeeklyChallengesRepositoryImpl implements WeeklyChallengesRepository {
     final entries = await Future.wait(
       allEntries.map((Object? row) => _hydrate(ChallengeEntry.fromMap(_map(row)), blocked)),
     );
+    final challenge = await _challenge(body['challenge'], blocked);
+    if (_walls.blockedCreators != blocked) throw const ChallengeException(ChallengeError.unknown);
     return ChallengeDetail(
-      challenge: await _challenge(body['challenge'], blocked),
+      challenge: challenge,
       entries: {
         for (final entry in entries.whereType<ChallengeEntry>()) entry.id: entry,
       }.values.toList(growable: false),

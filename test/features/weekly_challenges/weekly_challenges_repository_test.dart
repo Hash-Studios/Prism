@@ -119,6 +119,55 @@ void main() {
     expect(visible.challenge.winner!.id, 'wall');
     expect((await repo.list(past: true)).single.winner!.id, 'wall');
   });
+  for (final history in [false, true]) {
+    for (final unknown in [false, true]) {
+      test(
+        'rejects stale ${history ? 'history winners' : 'detail'} when blocks become ${unknown ? 'unknown' : 'restricted'} during hydration',
+        () async {
+          final blocks = FakeUserBlockRepository.pending()..completeInitial({});
+          final firestore = FakeFirestoreClient(
+            onQuery: (spec) {
+              if (unknown) {
+                blocks.emitUnknown();
+              } else {
+                blocks.completeInitial({'creator'});
+              }
+              return [
+                (
+                  id: 'wall',
+                  data: <String, dynamic>{
+                    'id': 'logical-wall',
+                    'review': true,
+                    'creatorUid': 'creator',
+                    'wallpaper_url': 'https://image.test/wall',
+                    'wallpaper_thumb': '',
+                    'by': 'Maya',
+                  },
+                ),
+              ];
+            },
+          );
+          final repo = WeeklyChallengesRepositoryImpl.withCaller(
+            WallRemixRepository(firestore, blocks),
+            ChallengeAdmissionTracker(InMemoryLocalStore()),
+            (name, args) async => name == 'listWeeklyChallenges'
+                ? {
+                    'challenges': [challengeMap(winner: row('wall'))],
+                  }
+                : {
+                    'challenge': challengeMap(winner: row('wall')),
+                    'entries': [row('wall')],
+                    'myEntryCount': 0,
+                  },
+          );
+          await expectLater(
+            history ? repo.list(past: true) : repo.get('2026-10-26', ChallengeSort.top),
+            throwsA(isA<ChallengeException>()),
+          );
+        },
+      );
+    }
+  }
   test('loads all cursor pages including an empty visibility-filtered page', () async {
     final blocks = FakeUserBlockRepository.pending()..completeInitial({});
     final calls = <Map<String, Object?>>[];
