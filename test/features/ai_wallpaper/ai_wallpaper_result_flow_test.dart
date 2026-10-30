@@ -19,6 +19,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
@@ -29,6 +30,7 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart'
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_actions.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
@@ -142,6 +144,8 @@ class _InMemoryCopyFile extends Fake implements File {
 }
 
 class _CountingAiGenerationRepository extends Fake implements AiGenerationRepositoryImpl {
+  _CountingAiGenerationRepository({this.duo = false});
+  final bool duo;
   int generateCalls = 0;
   int variationCalls = 0;
   int fetchHistoryCalls = 0;
@@ -182,16 +186,20 @@ class _CountingAiGenerationRepository extends Fake implements AiGenerationReposi
     required AiChargeMode chargeMode,
     required int coinsSpent,
     int? seed,
+    String? format,
+    String? foldedPrompt,
+    String? revealedPrompt,
     String? chargeTxId,
     String? remixOf,
   }) async {
     generateCalls++;
-    return _take('take-$generateCalls');
+    return _take('take-$generateCalls', duo: duo);
   }
 
   @override
   Future<AiGenerationRecord> generateVariation({
     required String generationId,
+    AiGenerationRecord? originalRecord,
     required AiChargeMode chargeMode,
     required int coinsSpent,
     String variationPrompt = '',
@@ -204,11 +212,12 @@ class _CountingAiGenerationRepository extends Fake implements AiGenerationReposi
   }
 }
 
-AiGenerationRecord _take(String id) => AiGenerationRecord(
+AiGenerationRecord _take(String id, {bool duo = false}) => AiGenerationRecord(
   id: id,
   userId: 'user-1',
   createdAt: DateTime.utc(2026),
   prompt: 'A glass lighthouse at dawn',
+  format: duo ? 'duo-reveal' : null,
   stylePreset: AiStylePreset.nature,
   qualityTier: AiQualityTier.fast,
   provider: 'test',
@@ -331,6 +340,41 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
     tempDir.deleteSync(recursive: true);
   });
+
+  for (final bool failResolve in <bool>[false, true]) {
+    testWidgets('Duo preparation ignores repeated apply and stale owner ${failResolve ? 'failure' : 'success'}', (
+      tester,
+    ) async {
+      await _onPlatform(TargetPlatform.android, () async {
+        final store = _FakeAssetStore(heroFile)..resolveGate = Completer<File>();
+        OfflineAssetStore.testOverride = store;
+        await _pumpPage(tester, _CountingAiGenerationRepository(duo: true));
+        await _generate(tester);
+        toastMessages.clear();
+        expect(store.resolves, 1);
+        if (!failResolve) {
+          await tester.tap(find.descendant(of: find.byType(AiResultActions), matching: find.byType(PrismButton)));
+          await tester.pump();
+        }
+        app_state.prismUser = app_constants.createGuestPrismUser();
+        CoinsService.instance.resetSession();
+        app_state.prismUser = app_constants.createGuestPrismUser()
+          ..id = 'user-1'
+          ..loggedIn = true;
+        CoinsService.instance.resetSession();
+        if (failResolve) {
+          store.resolveGate!.completeError(const SocketException('offline'));
+        } else {
+          store.resolveGate!.complete(_InMemoryCopyFile(heroFile.path));
+        }
+        await tester.pumpAndSettle();
+        expect(store.resolves, 1);
+        expect(find.byType(ClockOverlay), findsNothing);
+        expect(toastMessages, isEmpty);
+        expect(tester.widget<AiResultActions>(find.byType(AiResultActions)).applying, isFalse);
+      });
+    });
+  }
 
   testWidgets('a finished wallpaper fills the screen and Edit prompt returns to the prompt', (tester) async {
     await _onPlatform(TargetPlatform.android, () async {

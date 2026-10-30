@@ -10,6 +10,7 @@ import {annotateWithVision, duplicateCheck, type KnownSignature, runGates, type 
 import {randomWallId, type Rng} from "./ids";
 import {STUDIO_SERIES} from "./series";
 import {STUDIO_ASSET_BASE} from "./assetSource";
+import {DUO_REVEAL_SPEC as duo, hasBannedDuoPhrase} from "../duo_reveal_spec";
 export {isStudioWall} from "./isStudioWall";
 
 export const studioSecret = defineSecret("STUDIO_SECRET");
@@ -120,10 +121,14 @@ async function workerError(response: Response, what: string): Promise<Error> {
 }
 
 async function generate(deps: StudioProcessDeps, candidateId: string, c: admin.firestore.DocumentData) {
+  if (c.duoPresetId && (c.duoPresetId !== duo.presetId || hasBannedDuoPhrase(str(c.prompt)))) {
+    throw new PermanentError("duo_prompt", "Duo prompt failed the originality guard.");
+  }
   const response = await workerFetch(deps, "generate", "/api/ai/studio/generations", {
     method: "POST",
     headers: {"content-type": "application/json"},
     body: JSON.stringify({id: candidateId, prompt: c.prompt, model: c.model, width: c.width, height: c.height,
+      ...(c.duoPresetId ? {duoPresetId: c.duoPresetId} : {}),
       ...(typeof c.seed === "number" ? {seed: c.seed} : {})}),
   }, GENERATE_TIMEOUT_MS);
   if (!response.ok) throw await workerError(response, "generate");
@@ -231,13 +236,17 @@ async function rejectUnavailableRequest(
   return saved;
 }
 
-/** The final wallpaper (same size, mozjpeg, no metadata) and the thumbnail the app would make. */
-export async function renderWallpaper(bytes: Buffer): Promise<{wall: Buffer; thumb: Buffer; width: number; height: number}> {
+export async function renderWallpaper(bytes: Buffer, duoReveal = false): Promise<{wall: Buffer; thumb: Buffer; width: number; height: number}> {
   const sharp = (await import("sharp")).default;
-  const {data: wall, info} = await sharp(bytes).jpeg({quality: STUDIO_WALL_JPEG_QUALITY, mozjpeg: true})
+  const meta = await sharp(bytes).metadata();
+  if (duoReveal && ((meta.width ?? 0) < duo.canvasWidth || (meta.height ?? 0) < duo.canvasHeight)) {
+    throw new PermanentError("duo_size", "Duo output cannot be enlarged to claim native size.");
+  }
+  const original = duoReveal ? await sharp(bytes).resize(duo.canvasWidth, duo.canvasHeight, {fit: "cover"}).toBuffer() : bytes;
+  const {data: wall, info} = await sharp(original).jpeg({quality: STUDIO_WALL_JPEG_QUALITY, mozjpeg: true})
     .toBuffer({resolveWithObject: true});
   const size = thumbSize(info.width, info.height);
-  const thumb = await sharp(bytes).resize(size.width, size.height, {fit: "fill"})
+  const thumb = await sharp(original).resize(size.width, size.height, {fit: "fill"})
     .jpeg({quality: STUDIO_THUMB_QUALITY}).toBuffer();
   return {wall, thumb, width: info.width, height: info.height};
 }
@@ -394,6 +403,7 @@ function wallRecord(params: {
     aiPrompt: str(candidate.prompt),
     origin: "studio",
     seriesId: str(candidate.seriesId),
+    ...(candidate.duoPresetId === duo.presetId ? {duoPresetId: duo.presetId} : {}),
     studioCandidateId: params.candidateId,
     studioRunId: params.runId,
     ...(str(candidate.requestId) ? {requestId: str(candidate.requestId)} : {}),
@@ -433,7 +443,8 @@ export async function processCandidate(runId: string, candidateId: string, deps:
     if (!await updateOwnedCandidate(ref, attempts, {worker: image})) return;
     const bytes = await download(image.imageUrl);
     const wantsDepth = STUDIO_SERIES.find((s) => s.id === candidate.seriesId)?.depth === true;
-    const gates = await runGates(bytes, {annotate: deps.annotate, knownSignatures: loadKnownSignatures,
+    const isDuo = candidate.duoPresetId === duo.presetId;
+    const gates = await runGates(bytes, {annotate: deps.annotate, knownSignatures: loadKnownSignatures, duoReveal: isDuo,
       ...(wantsDepth ? {depth: (jpeg: Buffer) => deps.depth(candidateId, jpeg)} : {})});
     if (!gates.passed) {
       const saved = await updateOwnedCandidate(ref, attempts, {
@@ -450,7 +461,7 @@ export async function processCandidate(runId: string, candidateId: string, deps:
       logger.info("studio: candidate rejected.", {runId, candidateId, reasons: gates.reasons});
       return;
     }
-    const rendered = await renderWallpaper(bytes);
+    const rendered = await renderWallpaper(bytes, isDuo);
     const wallKey = `ai/studio/${candidateId}.jpg`;
     const thumbKey = `ai/studio/thumb_${candidateId}.jpg`;
     outputAssetKeys.splice(0, outputAssetKeys.length, ...new Set([...outputAssetKeys, wallKey, thumbKey]));
@@ -468,7 +479,7 @@ export async function processCandidate(runId: string, candidateId: string, deps:
       outputAssetKeys,
       rng: deps.rng,
       day: utcDateString(new Date(deps.nowMs())),
-      dropReserves: config.dailyDropReserves,
+      dropReserves: isDuo ? 0 : config.dailyDropReserves,
     });
     if (wallId === null) {
       logger.warn("studio: another attempt took this candidate over; not publishing.", {runId, candidateId});

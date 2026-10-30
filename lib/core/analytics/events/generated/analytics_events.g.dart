@@ -2749,6 +2749,80 @@ class MoodChipTappedEvent extends AnalyticsEvent {
   }
 }
 
+class DuoPreviewOpenedEvent extends AnalyticsEvent {
+  const DuoPreviewOpenedEvent({required this.contentId, required this.source, required this.presetId});
+
+  final String contentId;
+  final String source;
+  final String presetId;
+
+  @override
+  String get eventName => 'duo_preview_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'content_id': contentId, 'source': source, 'preset_id': presetId};
+  }
+}
+
+class DuoFoldToggledEvent extends AnalyticsEvent {
+  const DuoFoldToggledEvent({required this.contentId, required this.unfolded});
+
+  final String contentId;
+  final bool unfolded;
+
+  @override
+  String get eventName => 'duo_fold_toggled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'content_id': contentId, 'unfolded': unfolded ? 1 : 0};
+  }
+}
+
+class DuoAiGeneratedEvent extends AnalyticsEvent {
+  const DuoAiGeneratedEvent({required this.generationId, required this.qualityTier});
+
+  final String generationId;
+  final String qualityTier;
+
+  @override
+  String get eventName => 'duo_ai_generated';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'generation_id': generationId, 'quality_tier': qualityTier};
+  }
+}
+
+class DuoShareCardMadeEvent extends AnalyticsEvent {
+  const DuoShareCardMadeEvent({required this.contentId});
+
+  final String contentId;
+
+  @override
+  String get eventName => 'duo_share_card_made';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'content_id': contentId};
+  }
+}
+
+class DuoRowOpenedEvent extends AnalyticsEvent {
+  const DuoRowOpenedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'duo_row_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
 class MoodRowSeenEvent extends AnalyticsEvent {
   const MoodRowSeenEvent({required this.moodId, required this.slot});
 

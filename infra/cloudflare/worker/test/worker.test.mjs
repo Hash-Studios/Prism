@@ -4,6 +4,8 @@ import { webcrypto } from 'node:crypto';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { AiQuotaCoordinator, classifyCategory, gptImageSize, seedreamImageSize } from '../src/ai.ts';
+import {composeDuoPrompt, parseDuoPrompt, imageDimensions} from '../src/ai_duo_prompt.ts';
+import {hasBannedDuoPhrase} from '../src/duo_reveal_spec.ts';
 import { verifyFirebaseIdTokenFromRequest } from '../src/firebase_auth.ts';
 import worker from '../src/index.ts';
 import { formatCount, renderOgCardHtml } from '../src/og_card.ts';
@@ -3468,6 +3470,139 @@ test('studio asset delete removes raw and uploaded keys and also succeeds for a 
   for (const key of ['ai/public/x.png', 'ai/original/x.png', 'ai/studio/raw/nested/x.png']) {
     assert.equal((await remove(key)).status, 400, key);
   }
+});
+
+const DUO_FIELDS = {format: 'duo-reveal', foldedPrompt: 'a tiny fox', revealedPrompt: 'a luminous forest village'};
+
+function sizedPng(width, height) {
+  const bytes = new Uint8Array(4096);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(0, 0x89504e47);
+  view.setUint32(4, 0x0d0a1a0a);
+  view.setUint32(16, width);
+  view.setUint32(20, height);
+  return bytes;
+}
+
+test('Duo fields trim and validate whole normalized phrases without clipping composition', () => {
+  assert.deepEqual(parseDuoPrompt({...DUO_FIELDS, foldedPrompt: '  fox  '}), {...DUO_FIELDS, foldedPrompt: 'fox'});
+  for (const patch of [{foldedPrompt: ''}, {revealedPrompt: 'x'.repeat(161)}, {foldedPrompt: 5},
+    {foldedPrompt: 'ＳＴＡＲ ＷＡＲＳ'}, {revealedPrompt: 'Mickey-Mouse'}, {revealedPrompt: 'Taylor\u200b Swift'}]) {
+    assert.equal(parseDuoPrompt({...DUO_FIELDS, ...patch}), null);
+  }
+  const prompt = composeDuoPrompt({...DUO_FIELDS, revealedPrompt: 'r'.repeat(160)});
+  assert.ok(prompt.length > 320);
+  assert.ok(prompt.includes('r'.repeat(160)));
+  assert.match(prompt, /2670x1878/);
+  assert.match(prompt, /top quarter/);
+  assert.equal(hasBannedDuoPhrase('a sonic wave'), false);
+  assert.deepEqual(imageDimensions(sizedPng(2688, 1888)), {width: 2688, height: 1888});
+});
+
+test('Duo rejects invalid and unavailable renderer requests before provider calls', async () => {
+  const kv = aiKv(20);
+  const env = aiEnv(kv, new AiQuotaCoordinator({storage: new MemoryStorage()}));
+  const stats = {};
+  const restore = mockFal({stats});
+  try {
+    assert.equal((await postGeneration(env, DUO_FIELDS)).status, 503);
+    for (const patch of [{format: 'wide'}, {foldedPrompt: ''}, {revealedPrompt: 'Pikachu'}]) {
+      assert.equal((await postGeneration(env, {...DUO_FIELDS, ...patch})).status, 400);
+    }
+    assert.equal(stats.fal ?? 0, 0);
+    assert.equal((await postStudioGeneration(studioEnv(), {prompt: 'ＭＩＣＫＥＹ MOUSE'})).status, 422);
+    assert.equal(stats.fal ?? 0, 0);
+  } finally { restore(); }
+});
+
+test('Duo exact normalization preserves structured metadata in response, record and variation', async () => {
+  const kv = aiKv(10);
+  const env = aiEnv(kv, new AiQuotaCoordinator({storage: new MemoryStorage()}), RENDER_ENV);
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  const renders = [];
+  globalThis.fetch = async (input, init) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.startsWith('https://fal.run/')) {
+      requests.push(JSON.parse(init.body));
+      return Response.json({images: [{url: 'https://fal.media/duo.png', width: 2688, height: 1888}]});
+    }
+    if (url === 'https://fal.media/duo.png') return new Response(sizedPng(2688, 1888), {headers: {'content-type': 'image/png'}});
+    if (url.includes('/browser-rendering/screenshot')) {
+      renders.push(JSON.parse(init.body));
+      return new Response(sizedPng(2670, 1878), {headers: {'content-type': 'image/png'}});
+    }
+    throw new Error(`Unexpected mock URL ${url}`);
+  };
+  try {
+    const response = await postGeneration(env, {...DUO_FIELDS, qualityTier: 'quality', targetSize: '2000x1408'});
+    assert.equal(response.status, 200, await response.clone().text());
+    const result = await response.json();
+    assert.deepEqual([result.width, result.height], [2670, 1878]);
+    for (const [key, value] of Object.entries(DUO_FIELDS)) assert.equal(result[key], value);
+    assert.deepEqual(requests[0].image_size, {width: 2688, height: 1888});
+    assert.ok(requests[0].prompt.includes(DUO_FIELDS.revealedPrompt));
+    assert.ok(requests[0].prompt.length > 160);
+    const record = JSON.parse(await kv.get(`ai:gen:${result.generationId}`));
+    for (const [key, value] of Object.entries(DUO_FIELDS)) assert.equal(record[key], value);
+    assert.match(renders[0].html, /display: none/);
+    assert.equal(renders[0].viewport.width, 2670);
+    const variation = await worker.fetch(new Request(`https://prismwalls.com/api/ai/generations/${result.generationId}/variations`, {
+      method: 'POST', headers: {authorization: `Bearer ${await makeToken({sub: 'alice'})}`, 'content-type': 'application/json'},
+      body: JSON.stringify({variationPrompt: 'more moonlight'}),
+    }), env, {waitUntil() {}});
+    assert.equal(variation.status, 200, await variation.clone().text());
+    const changed = await variation.json();
+    for (const [key, value] of Object.entries(DUO_FIELDS)) assert.equal(changed[key], value);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test('Duo paid staging and trial keep metadata, while small output fails without publishing', async () => {
+  const originalFetch = globalThis.fetch;
+  let small = false;
+  let providers = 0;
+  globalThis.fetch = async (input, init) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.startsWith('https://firestore.googleapis.com/')) return chargeDoc();
+    if (url.startsWith('https://fal.run/')) {
+      providers++;
+      return Response.json({images: [{url: 'https://fal.media/duo-paid.png', width: 2670, height: 1878}]});
+    }
+    if (url === 'https://fal.media/duo-paid.png') return new Response(sizedPng(small ? 2000 : 2670, small ? 1408 : 1878),
+      {headers: {'content-type': 'image/png'}});
+    if (url.includes('/browser-rendering/screenshot')) return new Response(sizedPng(2670, 1878));
+    throw new Error(`Unexpected mock URL ${url}`);
+  };
+  try {
+    const paidKv = aiKv(10);
+    const paid = aiEnv(paidKv, new AiQuotaCoordinator({storage: new MemoryStorage()}), {...RENDER_ENV, AI_REQUIRE_CHARGE: 'true'});
+    assert.equal((await postGeneration(paid, DUO_FIELDS)).status, 402);
+    const response = await postGeneration(paid, {...DUO_FIELDS, chargeTxId: TX_ID});
+    assert.equal(response.status, 200, await response.clone().text());
+    const result = await response.json();
+    const pending = JSON.parse(await paidKv.get(`ai:charge-pending:${result.generationId}`));
+    const saved = JSON.parse(await paidKv.get(`ai:gen:${result.generationId}`));
+    for (const [key, value] of Object.entries(DUO_FIELDS)) {
+      assert.equal(pending.record[key], value);
+      assert.equal(saved[key], value);
+      assert.equal(result[key], value);
+    }
+    const count = providers;
+    assert.deepEqual(await (await postGeneration(paid, {...DUO_FIELDS, chargeTxId: TX_ID})).json(), result);
+    assert.equal(providers, count);
+    const trialKv = aiKv(10);
+    const trial = aiEnv(trialKv, new AiQuotaCoordinator({storage: new MemoryStorage()}), RENDER_ENV);
+    assert.equal((await postGeneration(trial, {...DUO_FIELDS, freeTrial: true, qualityTier: 'balanced'})).status, 400);
+    const granted = await postGeneration(trial, {...DUO_FIELDS, freeTrial: true});
+    assert.equal(granted.status, 200);
+    assert.equal((await granted.json()).format, 'duo-reveal');
+    small = true;
+    const failedKv = aiKv(10);
+    const failed = aiEnv(failedKv, new AiQuotaCoordinator({storage: new MemoryStorage()}), {...RENDER_ENV, AI_REQUIRE_CHARGE: 'true'});
+    const failure = await postGeneration(failed, {...DUO_FIELDS, chargeTxId: TX_ID});
+    assert.equal(failure.status, 502);
+    assert.equal((await getChargeEvidence(failed, TX_ID)).body.status, 'failed');
+  } finally { globalThis.fetch = originalFetch; }
 });
 
 async function makeToken(overrides = {}) {

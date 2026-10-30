@@ -4,6 +4,7 @@ import {isWotdEligible, premiumCollections, protectedWalls} from "./wallOfTheDay
 
 export type MoodRule = {
   id: string;
+  anyTag?: readonly string[];
   firstColour?: readonly string[];
   onlyColours?: readonly string[];
   maxColours?: number;
@@ -20,6 +21,7 @@ export const MIN_MOOD_WALLS = 12;
 export const MAX_MOOD_WALLS = 60;
 
 export const MOODS: readonly MoodRule[] = [
+  {id: "duo_reveal", anyTag: ["duo", "duo-reveal"]},
   {
     id: "dreamy",
     firstColour: ["pink", "purple", "teal", "white", "blue"],
@@ -65,6 +67,8 @@ const tier = (value: unknown): string => (typeof value === "string" ? value : ""
 /** True when the wall satisfies every field the rule sets. */
 export function matchesMood(rule: MoodRule, wall: admin.firestore.DocumentData): boolean {
   const colors = strings(wall.colors);
+  const tags = strings(wall.tags).map((tag) => tag.trim().toLowerCase());
+  if (rule.anyTag && !tags.some((tag) => rule.anyTag?.includes(tag))) return false;
   const labels = strings(wall.visionLabels).map((l) => l.toLowerCase());
   const category = typeof wall.category === "string" ? wall.category.toLowerCase() : "";
   const collections = [...strings(wall.collections).map((c) => c.trim().toLowerCase()), category];
@@ -122,7 +126,7 @@ export function moodLists(
       seen.add(id);
       matches.push(id);
     }
-    if (matches.length < MIN_MOOD_WALLS) return [];
+    if (matches.length < (rule.id === "duo_reveal" ? 1 : MIN_MOOD_WALLS)) return [];
     return [{id: rule.id, wallIds: matches.slice(0, MAX_MOOD_WALLS)}];
   });
 }
@@ -130,7 +134,7 @@ export function moodLists(
 /** Writes moods/current from the walls the app lists and returns the wall count per mood id. */
 export async function refreshMoods(): Promise<Record<string, number>> {
   const snap = await protectedWalls()
-    .select("id", "review", "createdAt", "colors", "visionLabels", "collections", "category", "spatial", "depth",
+    .select("id", "review", "createdAt", "colors", "visionLabels", "collections", "category", "spatial", "depth", "tags",
       "originalProtected", "is_streak_exclusive", "dropReserved", "dropWeek")
     .get();
   const premium = await premiumCollections();

@@ -20,6 +20,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/duo_reveal_view.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
 import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
@@ -88,6 +89,7 @@ Future<void> _openPreview(
   EdgeInsets safeArea = EdgeInsets.zero,
   bool reduceMotion = false,
   double textScale = 1,
+  bool duoReveal = false,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -100,7 +102,8 @@ Future<void> _openPreview(
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute<void>(
-              builder: (_) => ClockOverlay(link: File('assets/images/prism.webp').path, file: true),
+              builder: (_) =>
+                  ClockOverlay(link: File('assets/images/prism.webp').path, file: true, duoReveal: duoReveal),
             ),
           ),
           child: const Text('open'),
@@ -334,6 +337,43 @@ Future<void> _pumpPreview(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('Duo controls remain reachable on a short screen with larger text', (tester) async {
+    tester.view.physicalSize = const Size(667, 320);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await _openPreview(tester, duoReveal: true, reduceMotion: true, textScale: 1.5);
+    expect(tester.takeException(), isNull);
+    await tester.ensureVisible(find.text('Unfold'));
+    await tester.tap(find.text('Unfold'));
+    await tester.pump();
+    expect(tester.widget<DuoRevealView>(find.byType(DuoRevealView)).unfolded, isTrue);
+    await tester.ensureVisible(find.byTooltip('Close preview'));
+    await tester.tap(find.byTooltip('Close preview'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ClockOverlay), findsNothing);
+    expect(tester.takeException(), isNull);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('Duo exposes accessible reversible fold controls and keeps clocks in both states', (tester) async {
+    await _openPreview(tester, duoReveal: true, reduceMotion: true);
+    expect(find.byTooltip('Unfold'), findsOneWidget);
+    expect(find.byType(LockPreviewLayer), findsOneWidget);
+    final Element image = tester.element(find.byType(ProgressiveWallpaperImage));
+    final Size? decode = tester.widget<ProgressiveWallpaperImage>(find.byType(ProgressiveWallpaperImage)).decodeBox;
+    await tester.tap(find.text('Unfold'));
+    await tester.pump();
+    expect(tester.widget<DuoRevealView>(find.byType(DuoRevealView)).unfolded, isTrue);
+    expect(find.byTooltip('Fold'), findsOneWidget);
+    expect(find.byType(LockPreviewLayer), findsOneWidget);
+    expect(tester.element(find.byType(ProgressiveWallpaperImage)), same(image));
+    expect(tester.widget<ProgressiveWallpaperImage>(find.byType(ProgressiveWallpaperImage)).decodeBox, decode);
+    await tester.tap(find.text('Fold'));
+    await tester.pump();
+    expect(tester.widget<DuoRevealView>(find.byType(DuoRevealView)).unfolded, isFalse);
+    expect(find.byType(LockPreviewLayer), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
   test('a Prism Set screen never falls back to its original when no thumbnail is available', () {
     const String original = 'https://storage.example/private-original.jpg?token=secret';
 

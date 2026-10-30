@@ -92,6 +92,115 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
+  String get duoTitle => 'Revelación Duo';
+
+  @override
+  String get duoAiFormatLabel => 'Crear una revelación Duo';
+
+  @override
+  String get duoPresetNotice =>
+      'Prism muestra el lado derecho en la vista plegada. Alinea manualmente el original guardado y comprueba ambas vistas en la vista previa del fondo del sistema. Es un ajuste de Prism, no un recorte automático de iOS.';
+
+  @override
+  String get duoFoldedPromptLabel => 'Vista plegada';
+
+  @override
+  String get duoFoldedPromptExample => 'Un gato adormilado junto a una ventana';
+
+  @override
+  String get duoRevealedPromptLabel => 'La sorpresa al desplegar';
+
+  @override
+  String get duoRevealedPromptExample => 'Una pequeña nave espacial al otro lado de la ventana';
+
+  @override
+  String get duoPromptValidation => 'Describe ambas vistas con entre 1 y 160 caracteres cada una.';
+
+  @override
+  String get duoMoodBody => 'Un fondo. Más por descubrir al desplegar.';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'Teléfono';
+
+  @override
+  String get duoFold => 'Plegar';
+
+  @override
+  String get duoUnfold => 'Desplegar';
+
+  @override
+  String get duoFolded => 'Plegado';
+
+  @override
+  String get duoUnfolded => 'Desplegado';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'Prism muestra el lado derecho en la vista plegada. Android puede recortar la imagen de otra forma. Comprueba la vista previa del fondo del sistema antes de aplicarlo.';
+
+  @override
+  String get duoGetOnPrism => 'Consíguelo en Prism';
+
+  @override
+  String get duoGuideTitle => 'Configura tu revelación Duo';
+
+  @override
+  String get duoGuideOpen => 'Abre el original guardado en Fotos, toca Compartir y luego Usar como fondo de pantalla.';
+
+  @override
+  String get duoGuideAlign =>
+      'Alinea manualmente la imagen completa para que la vista plegada muestre el lado derecho.';
+
+  @override
+  String get duoGuideCheck =>
+      'Comprueba las vistas plegada y desplegada en la vista previa del sistema y luego añade el fondo.';
+
+  @override
+  String get duoWebTitle => 'Fondos de pantalla para iPhone Duo | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'Un fondo con una segunda escena oculta. Descubre fondos originales con revelación Duo en Prism.';
+
+  @override
+  String get duoWebHeading => 'Un fondo. Una historia que se amplía.';
+
+  @override
+  String get duoWebIntro =>
+      'Una escena tranquila al plegar. Una segunda historia al desplegar. Mira ambas vistas de cada fondo original.';
+
+  @override
+  String get duoWebEmpty => 'La primera colección Duo está en revisión.';
+
+  @override
+  String get duoWebEmptyBody => 'Explora Prism mientras revisamos cada fondo en ambas vistas.';
+
+  @override
+  String get duoWebFolded => 'Vista previa plegada';
+
+  @override
+  String get duoWebUnfolded => 'Original desplegado';
+
+  @override
+  String get duoWebPresetNotice =>
+      'Estas vistas previas usan el ajuste de Prism para el lado derecho, no un recorte automático de Apple. Guarda el original completo, alinéalo manualmente y comprueba las vistas plegada y desplegada en la vista previa del fondo del sistema.';
+
+  @override
+  String get duoWebOpenPrism => 'Abrir en Prism';
+
+  @override
+  String get duoWebExplore => 'Explorar Prism';
+
+  @override
+  String get duoWebAppStore => 'Descargar en el App Store';
+
+  @override
+  String get duoWebPlayStore => 'Consíguelo en Google Play';
+
+  @override
   String get economyExportFailedLabel => 'No se pudo exportar';
 
   @override

@@ -128,7 +128,7 @@ void _mockChannels(WidgetTester tester, {List<MethodCall>? toastCalls}) {
   });
 }
 
-Future<void> _openSheet(WidgetTester tester, ShareSheetServices services) async {
+Future<void> _openSheet(WidgetTester tester, ShareSheetServices services, {ShareCardContent content = _content}) async {
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -138,7 +138,7 @@ Future<void> _openSheet(WidgetTester tester, ShareSheetServices services) async 
         builder: (BuildContext context) => Scaffold(
           body: Center(
             child: TextButton(
-              onPressed: () => showShareSheet(context, _content, 'wall_detail', services: services),
+              onPressed: () => showShareSheet(context, content, 'wall_detail', services: services),
               child: const Text('open'),
             ),
           ),
@@ -163,6 +163,38 @@ Finder _pages() => find.byKey(const ValueKey<String>('share-formats'));
 void main() {
   setUp(AnalyticsRuntime.reset);
   tearDown(AnalyticsRuntime.reset);
+
+  testWidgets('Duo opens its own card first and tracks only a successful render once', (tester) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(400, 900);
+    addTearDown(tester.view.reset);
+    _mockChannels(tester);
+    final FakeAppAnalytics analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    final _Fake fake = _Fake(await _writeCards(tester));
+    await _openSheet(
+      tester,
+      fake.services,
+      content: const ShareCardContent(
+        imageUrl: 'https://img.test/full.jpg',
+        link: _link,
+        brandName: 'Prism',
+        duoReveal: true,
+        contentId: 'duo-wall',
+        foldedLabel: 'Folded',
+        unfoldedLabel: 'Unfolded',
+        cta: 'Get it on Prism',
+      ),
+    );
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.duoReveal]);
+    expect(analytics.events.whereType<DuoShareCardMadeEvent>(), hasLength(1));
+    await tester.tap(_target(ShareTargetValue.saveImage));
+    await _settle(tester);
+    expect(fake.saved.single.path, fake.cards[ShareCardFormat.duoReveal]!.path);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.duoReveal]);
+    expect(analytics.events.whereType<DuoShareCardMadeEvent>(), hasLength(1));
+  });
 
   testWidgets('opening the sheet shows the three formats, the three targets, and renders Story once', (tester) async {
     tester.view

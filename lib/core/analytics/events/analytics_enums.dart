@@ -255,6 +255,7 @@ enum ShareChannelValue {
 }
 
 enum ShareFormatValue {
+  duoReveal,
   story,
   post,
   clean,

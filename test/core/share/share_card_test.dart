@@ -60,7 +60,31 @@ void main() {
     ShareCardFormat.story: Size(1080, 1920),
     ShareCardFormat.post: Size(1080, 1350),
     ShareCardFormat.clean: Size(1080, 1920),
+    ShareCardFormat.duoReveal: Size(1080, 1920),
   };
+
+  testWidgets('Duo card places folded above unfolded and the CTA below both', (tester) async {
+    await pumpCard(
+      tester,
+      format: ShareCardFormat.duoReveal,
+      content: const ShareCardContent(
+        imageUrl: '',
+        link: 'https://prismwalls.com/s/abc',
+        brandName: 'Prism',
+        duoReveal: true,
+        foldedLabel: 'Folded',
+        unfoldedLabel: 'Unfolded',
+        cta: 'Get it on Prism',
+      ),
+    );
+    final Finder folded = find.byKey(const ValueKey<String>('duo-share-folded'));
+    final Finder unfolded = find.byKey(const ValueKey<String>('duo-share-unfolded'));
+    expect(tester.getBottomLeft(folded).dy, lessThan(tester.getTopLeft(unfolded).dy));
+    expect(tester.getBottomLeft(unfolded).dy, lessThan(tester.getTopLeft(find.text('Get it on Prism')).dy));
+    expect(tester.getSize(folded).aspectRatio, closeTo(1398 / 2034, 1e-9));
+    expect(tester.getSize(unfolded).aspectRatio, closeTo(2670 / 1878, 1e-9));
+    expect(tester.takeException(), isNull);
+  });
 
   for (final ShareCardFormat format in ShareCardFormat.values) {
     testWidgets('${format.name} format sizes the card to its fixed pixel size', (tester) async {

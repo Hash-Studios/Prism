@@ -91,6 +91,116 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperProviderWallhaven => 'Wallhaven';
 
   @override
+  String get duoTitle => 'Surpresa Duo';
+
+  @override
+  String get duoAiFormatLabel => 'Criar uma surpresa Duo';
+
+  @override
+  String get duoPresetNotice =>
+      'O Prism mostra o lado direito na prévia com o celular dobrado. Alinhe manualmente o original salvo e confira as duas vistas na prévia de papel de parede do sistema. Esta é uma predefinição do Prism, não um recorte automático do iOS.';
+
+  @override
+  String get duoFoldedPromptLabel => 'Vista com o celular dobrado';
+
+  @override
+  String get duoFoldedPromptExample => 'Um gato sonolento ao lado de uma janela';
+
+  @override
+  String get duoRevealedPromptLabel => 'A surpresa ao abrir';
+
+  @override
+  String get duoRevealedPromptExample => 'Uma pequena nave espacial do lado de fora da janela';
+
+  @override
+  String get duoPromptValidation => 'Descreva as duas vistas com 1 a 160 caracteres em cada uma.';
+
+  @override
+  String get duoMoodBody => 'Um papel de parede. Mais surpresas ao abrir.';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'Celular';
+
+  @override
+  String get duoFold => 'Dobrar';
+
+  @override
+  String get duoUnfold => 'Abrir';
+
+  @override
+  String get duoFolded => 'Dobrado';
+
+  @override
+  String get duoUnfolded => 'Aberto';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'O Prism mostra o lado direito na prévia com o celular dobrado. O Android pode recortar a imagem de outra forma. Confira a prévia de papel de parede do sistema antes de aplicar.';
+
+  @override
+  String get duoGetOnPrism => 'Encontre no Prism';
+
+  @override
+  String get duoGuideTitle => 'Configure sua surpresa Duo';
+
+  @override
+  String get duoGuideOpen =>
+      'Abra o original salvo no Fotos, toque em Compartilhar e depois em Usar como Papel de Parede.';
+
+  @override
+  String get duoGuideAlign =>
+      'Alinhe manualmente a imagem inteira para que a vista com o celular dobrado mostre o lado direito.';
+
+  @override
+  String get duoGuideCheck =>
+      'Confira as vistas com o celular dobrado e aberto na prévia do sistema e adicione o papel de parede.';
+
+  @override
+  String get duoWebTitle => 'Papéis de parede para iPhone Duo | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'Um papel de parede com uma segunda cena escondida. Explore papéis de parede originais com surpresa Duo no Prism.';
+
+  @override
+  String get duoWebHeading => 'Um papel de parede. Uma história que se amplia.';
+
+  @override
+  String get duoWebIntro =>
+      'Uma cena tranquila ao dobrar. Outra história ao abrir. Veja as duas vistas de cada papel de parede original.';
+
+  @override
+  String get duoWebEmpty => 'A primeira coleção Duo está em análise.';
+
+  @override
+  String get duoWebEmptyBody => 'Explore o Prism enquanto conferimos cada papel de parede nas duas vistas.';
+
+  @override
+  String get duoWebFolded => 'Prévia com o celular dobrado';
+
+  @override
+  String get duoWebUnfolded => 'Original com o celular aberto';
+
+  @override
+  String get duoWebPresetNotice =>
+      'Estas prévias usam a predefinição do Prism para o lado direito, não um recorte automático da Apple. Salve o original completo, alinhe manualmente e confira as vistas com o celular dobrado e aberto na prévia de papel de parede do sistema.';
+
+  @override
+  String get duoWebOpenPrism => 'Abrir no Prism';
+
+  @override
+  String get duoWebExplore => 'Explorar o Prism';
+
+  @override
+  String get duoWebAppStore => 'Baixar na App Store';
+
+  @override
+  String get duoWebPlayStore => 'Disponível no Google Play';
+
+  @override
   String get economyExportFailedLabel => 'Falha ao exportar';
 
   @override
@@ -11715,6 +11825,116 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
+  String get duoTitle => 'Surpresa Duo';
+
+  @override
+  String get duoAiFormatLabel => 'Criar uma surpresa Duo';
+
+  @override
+  String get duoPresetNotice =>
+      'O Prism mostra o lado direito na prévia com o celular dobrado. Alinhe manualmente o original salvo e confira as duas vistas na prévia de papel de parede do sistema. Esta é uma predefinição do Prism, não um recorte automático do iOS.';
+
+  @override
+  String get duoFoldedPromptLabel => 'Vista com o celular dobrado';
+
+  @override
+  String get duoFoldedPromptExample => 'Um gato sonolento ao lado de uma janela';
+
+  @override
+  String get duoRevealedPromptLabel => 'A surpresa ao abrir';
+
+  @override
+  String get duoRevealedPromptExample => 'Uma pequena nave espacial do lado de fora da janela';
+
+  @override
+  String get duoPromptValidation => 'Descreva as duas vistas com 1 a 160 caracteres em cada uma.';
+
+  @override
+  String get duoMoodBody => 'Um papel de parede. Mais surpresas ao abrir.';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'Celular';
+
+  @override
+  String get duoFold => 'Dobrar';
+
+  @override
+  String get duoUnfold => 'Abrir';
+
+  @override
+  String get duoFolded => 'Dobrado';
+
+  @override
+  String get duoUnfolded => 'Aberto';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'O Prism mostra o lado direito na prévia com o celular dobrado. O Android pode recortar a imagem de outra forma. Confira a prévia de papel de parede do sistema antes de aplicar.';
+
+  @override
+  String get duoGetOnPrism => 'Encontre no Prism';
+
+  @override
+  String get duoGuideTitle => 'Configure sua surpresa Duo';
+
+  @override
+  String get duoGuideOpen =>
+      'Abra o original salvo no Fotos, toque em Compartilhar e depois em Usar como Papel de Parede.';
+
+  @override
+  String get duoGuideAlign =>
+      'Alinhe manualmente a imagem inteira para que a vista com o celular dobrado mostre o lado direito.';
+
+  @override
+  String get duoGuideCheck =>
+      'Confira as vistas com o celular dobrado e aberto na prévia do sistema e adicione o papel de parede.';
+
+  @override
+  String get duoWebTitle => 'Papéis de parede para iPhone Duo | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'Um papel de parede com uma segunda cena escondida. Explore papéis de parede originais com surpresa Duo no Prism.';
+
+  @override
+  String get duoWebHeading => 'Um papel de parede. Uma história que se amplia.';
+
+  @override
+  String get duoWebIntro =>
+      'Uma cena tranquila ao dobrar. Outra história ao abrir. Veja as duas vistas de cada papel de parede original.';
+
+  @override
+  String get duoWebEmpty => 'A primeira coleção Duo está em análise.';
+
+  @override
+  String get duoWebEmptyBody => 'Explore o Prism enquanto conferimos cada papel de parede nas duas vistas.';
+
+  @override
+  String get duoWebFolded => 'Prévia com o celular dobrado';
+
+  @override
+  String get duoWebUnfolded => 'Original com o celular aberto';
+
+  @override
+  String get duoWebPresetNotice =>
+      'Estas prévias usam a predefinição do Prism para o lado direito, não um recorte automático da Apple. Salve o original completo, alinhe manualmente e confira as vistas com o celular dobrado e aberto na prévia de papel de parede do sistema.';
+
+  @override
+  String get duoWebOpenPrism => 'Abrir no Prism';
+
+  @override
+  String get duoWebExplore => 'Explorar o Prism';
+
+  @override
+  String get duoWebAppStore => 'Baixar na App Store';
+
+  @override
+  String get duoWebPlayStore => 'Disponível no Google Play';
 
   @override
   String get economyExportFailedLabel => 'Falha ao exportar';
