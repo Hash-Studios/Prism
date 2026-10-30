@@ -75,11 +75,12 @@ The receipt has no wallpaper ID, so the UI does not attribute it to a specific w
 Neither feedback path creates another reward.
 
 The owner approved this additive backend response change. Reward amounts, odds, limits, and Firestore rules stay unchanged.
-Deploy the callable update before enabling the feature in a release. Deployment requires separate owner approval.
+The owner approved the selective callable deployment completed on 2026-10-30.
+Keep the release flag off until the remaining mobile checks pass.
 
 ## Limits and proof
 
-The feature still needs iOS proof, eligible streak and spin proof, and live proof of the new action receipt.
+The feature still needs iOS proof and eligible streak and spin proof.
 The release default for `daily_moment_v1` remains off. The debug default remains on.
 
 Android sign-in now works with the registered debug SHA and real native and Dart Firebase configuration.
@@ -96,11 +97,21 @@ The committed flag defaults did not change. Full-scroll Android captures cover b
 Both legacy reward deep links open their original pages when the flag is off.
 
 The account has no eligible streak or free spin today. Those reward paths still need device proof.
-This Linux host has no iOS Simulator tooling. Access to a linked Mac remains unresolved.
+This Linux host has no iOS Simulator tooling. A Mac link was requested and is pending.
 
-The new action receipt backend is not deployed. Live set receipt proof therefore remains open.
-Deployment requires owner approval for `recordWallpaperAction` and `deleteAccount` in both regions.
-Keep the release flag off until the deployment and required mobile checks pass.
+The approved selective deployment completed on 2026-10-30 in `prism-wallpapers`.
+`recordWallpaperAction` and `deleteAccount` are `ACTIVE` in `asia-south1` and `us-central1`.
+No other function source hash changed. Seven application environment values stayed unchanged.
+The before and after snapshots are `/tmp/prism-receipt-functions-before-deploy.json` and
+`/tmp/prism-receipt-functions-after-deploy.json`. The deploy log is `/tmp/prism-day20-receipts-deploy.log`.
+Live Android action award receipt proof passed visual inspection in run `20261030T092642Z-1534675`.
+The second download completed the daily Download 2 walls quest and showed `+2 coins` beside Download.
+The next set completed the weekly 5 walls quest and showed `+30 coins` beside Set with the existing Wallpaper set toast.
+The weekly quest started at 2/5. Two downloads and one set on distinct Prism walls completed it.
+Each action used the normal 10-coin cost. No rules or account eligibility changed.
+The screenshots are `qa/screenshots:qa-2026-10-30/day20-live-save-plus2.png` and
+`qa/screenshots:qa-2026-10-30/day20-live-set-plus30.png`.
+Keep the release flag off until the remaining mobile checks pass.
 
 ## Review
 
@@ -121,4 +132,4 @@ The full Functions suite passed with 2,199 tests passed, 16 skipped, and no fail
 The full local gate passed with `make ci ANALYZE_FLAGS=--no-fatal-infos TEST_FLAGS=--concurrency=6`.
 This uses the same informational-lint policy as CI. The main Flutter suite passed 8,147 tests and skipped six.
 All six isolated callable tests also passed. The log is `/tmp/prism-day20-ready-ci.log`.
-These results do not complete the open device and deployment proof.
+These results do not complete the open iOS and eligible streak and spin proof.
