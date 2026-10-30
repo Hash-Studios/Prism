@@ -59,6 +59,9 @@ class _FakeRemixRepository extends Fake implements AiGenerationRepositoryImpl {
     required AiChargeMode chargeMode,
     required int coinsSpent,
     int? seed,
+    String? format,
+    String? foldedPrompt,
+    String? revealedPrompt,
     String? chargeTxId,
     String? remixOf,
   }) {

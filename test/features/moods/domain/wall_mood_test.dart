@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('parses every stored id and returns null for an unknown one', () {
+    expect(WallMood.parse('duo_reveal'), WallMood.duoReveal);
     expect(WallMood.parse('dreamy'), WallMood.dreamy);
     expect(WallMood.parse('dark_quiet'), WallMood.darkQuiet);
     expect(WallMood.parse('bright_bold'), WallMood.brightBold);
@@ -15,6 +16,7 @@ void main() {
 
   test('shows the four general moods everywhere', () {
     for (final WallMood mood in <WallMood>[
+      WallMood.duoReveal,
       WallMood.dreamy,
       WallMood.darkQuiet,
       WallMood.brightBold,

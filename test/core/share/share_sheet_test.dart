@@ -131,7 +131,12 @@ void _mockChannels(WidgetTester tester, {List<MethodCall>? toastCalls}) {
   });
 }
 
-Future<void> _openSheet(WidgetTester tester, ShareSheetServices services) async {
+Future<void> _openSheet(
+  WidgetTester tester,
+  ShareSheetServices services, {
+  ShareCardContent content = _content,
+  VoidCallback? onShared,
+}) async {
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -141,7 +146,7 @@ Future<void> _openSheet(WidgetTester tester, ShareSheetServices services) async 
         builder: (BuildContext context) => Scaffold(
           body: Center(
             child: TextButton(
-              onPressed: () => showShareSheet(context, _content, 'wall_detail', services: services),
+              onPressed: () => showShareSheet(context, content, 'wall_detail', services: services, onShared: onShared),
               child: const Text('open'),
             ),
           ),
@@ -209,6 +214,38 @@ void main() {
     rendered.complete(fake.cards[ShareCardFormat.story]!);
     await _settle(tester);
     expect(fake.saved, isEmpty);
+  });
+
+  testWidgets('Duo opens its own card first and tracks only a successful render once', (tester) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(400, 900);
+    addTearDown(tester.view.reset);
+    _mockChannels(tester);
+    final FakeAppAnalytics analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    final _Fake fake = _Fake(await _writeCards(tester));
+    await _openSheet(
+      tester,
+      fake.services,
+      content: const ShareCardContent(
+        imageUrl: 'https://img.test/full.jpg',
+        link: _link,
+        brandName: 'Prism',
+        duoReveal: true,
+        contentId: 'duo-wall',
+        foldedLabel: 'Folded',
+        unfoldedLabel: 'Unfolded',
+        cta: 'Get it on Prism',
+      ),
+    );
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.duoReveal]);
+    expect(analytics.events.whereType<DuoShareCardMadeEvent>(), hasLength(1));
+    await tester.tap(_target(ShareTargetValue.saveImage));
+    await _settle(tester);
+    expect(fake.saved.single.path, fake.cards[ShareCardFormat.duoReveal]!.path);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.duoReveal]);
+    expect(analytics.events.whereType<DuoShareCardMadeEvent>(), hasLength(1));
   });
 
   testWidgets('opening the sheet shows the three formats, the three targets, and renders Story once', (tester) async {
@@ -353,6 +390,40 @@ void main() {
     expect(event.result, EventResultValue.failure);
     expect(_target(ShareTargetValue.saveImage), findsOneWidget);
   });
+
+  for (final target in [ShareTargetValue.copyLink, ShareTargetValue.saveImage, ShareTargetValue.instagramStories]) {
+    testWidgets('successful $target does not prove a completed native share', (tester) async {
+      _mockChannels(tester);
+      final fake = _Fake(await _writeCards(tester))..instagram = true;
+      int observed = 0;
+      await _openSheet(tester, fake.services, onShared: () => observed++);
+      await tester.tap(_target(target));
+      await _settle(tester);
+      expect(observed, 0);
+      expect(
+        target == ShareTargetValue.copyLink
+            ? fake.copied
+            : target == ShareTargetValue.saveImage
+            ? fake.saved
+            : fake.instagramPaths,
+        isNotEmpty,
+      );
+    });
+  }
+
+  for (final status in ShareResultStatus.values) {
+    testWidgets('share callback requires observed success: $status', (tester) async {
+      _mockChannels(tester);
+      final cards = await _writeCards(tester);
+      final fake = _Fake(cards)..shareResult = ShareResult('', status);
+      int observed = 0;
+      await _openSheet(tester, fake.services, onShared: () => observed++);
+      expect(observed, 0);
+      await tester.tap(_target(ShareTargetValue.more));
+      await _settle(tester);
+      expect(observed, status == ShareResultStatus.success ? 1 : 0);
+    });
+  }
 
   testWidgets('More shares the rendered story with the link and tracks success', (tester) async {
     tester.view

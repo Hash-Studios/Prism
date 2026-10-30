@@ -10,7 +10,6 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
-import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
@@ -48,11 +47,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     _blockListUnknown = _userBlockRepository.blockedCreators is UnknownBlockedCreators;
     _blockedCreatorsSub = _userBlockRepository.watchBlockedCreators().skip(1).listen((blocked) {
       if (blocked is UnknownBlockedCreators) _blockListUnknown = true;
-      add(
-        PersonalizedFeedEvent.blockedCreatorsChanged(
-          blocked: blocked is KnownBlockedCreators ? blocked.uids : const {},
-        ),
-      );
+      add(const PersonalizedFeedEvent.blockedCreatorsChanged());
     });
     _dropsWereEnabled = EconomyConfig.notifier.value.flags.dropsEnabled;
     EconomyConfig.notifier.addListener(_onEconomyConfigChanged);
@@ -215,14 +210,8 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
   }
 
   Future<void> _onLessLikeThisRequested(_LessLikeThisRequested event, Emitter<PersonalizedFeedState> emit) async {
-    final String key = PersonalizedRankingService.canonicalKey(event.item);
-    emit(
-      state.copyWith(
-        items: state.items
-            .where((item) => PersonalizedRankingService.canonicalKey(item) != key)
-            .toList(growable: false),
-      ),
-    );
+    final String key = event.item.canonicalKey;
+    emit(state.copyWith(items: state.items.where((item) => item.canonicalKey != key).toList(growable: false)));
     await _afterPendingHide(() => _repository.lessLikeThis(event.item), 'less-like-this');
   }
 
@@ -234,9 +223,9 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
   }
 
   Future<void> _onLessLikeThisUndone(_LessLikeThisUndone event, Emitter<PersonalizedFeedState> emit) async {
-    final String key = PersonalizedRankingService.canonicalKey(event.item);
+    final String key = event.item.canonicalKey;
     if (!BlockedCreatorsFilter.hidesFeedItem(event.item, _userBlockRepository.blockedCreators) &&
-        !state.items.any((item) => PersonalizedRankingService.canonicalKey(item) == key)) {
+        !state.items.any((item) => item.canonicalKey == key)) {
       final List<FeedItemEntity> restored = <FeedItemEntity>[...state.items]
         ..insert(event.index.clamp(0, state.items.length), event.item);
       emit(state.copyWith(items: restored));
@@ -274,7 +263,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
             ...state.items,
             ...BlockedCreatorsFilter.filterFeedItems(page.items, _userBlockRepository.blockedCreators),
           ])
-            PersonalizedRankingService.canonicalKey(item): item,
+            item.canonicalKey: item,
         }.values.toList(growable: false);
 
         emit(

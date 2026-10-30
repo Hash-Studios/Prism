@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import {removeChallengeVotesForAccount} from "./weeklyChallenges";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
 import {db, CALLABLE_REGIONS, str} from "./common";
@@ -19,7 +20,7 @@ const DRAW_TICKETS = "drawTickets";
 const BOOSTS = "boosts";
 const DELETED_NAME = "Deleted Account";
 /** Docs keyed by the bare uid. The last two are legacy collections. */
-const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens"];
+const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens", "rewardedAdUsers"];
 /** Docs keyed `<uid>_<day>`. */
 const UID_PREFIX_KEYED = [
   "coinAdRateDaily", "coinRefundDaily", "contentReportRateDaily", "userBlockRateDaily", REQUEST_RATE_DAILY, VOTE_RATE_DAILY,
@@ -109,6 +110,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await closeCreatorProgressForDeletion(callerUid);
   await removeUidFollowGraph(callerUid);
   await removeWallRequestsForAccount(callerUid);
+  await removeChallengeVotesForAccount(callerUid);
   // The deletion barrier is closed, so no sync can project these folders again.
   await removeOwnerPublicFolders(callerUid);
   await removeAllFolderFollows(callerUid);
@@ -147,6 +149,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   const queueUpdate: QueueUpdate = (ref, data) => track(ref, writer.update(ref, data));
   try {
     await queueDeleteWhereEqual(COIN_TRANSACTIONS, "userId", callerUid, queue);
+    await queueDeleteWhereEqual("rewardedAdSessions", "uid", callerUid, queue);
     await queueDeleteWhereEqual(AI_GENERATIONS, "userId", callerUid, queue);
     await queueDeleteWhereEqual(GITHUB_UPLOADS, "uid", callerUid, queue);
     await queueDeleteWhereEqual(DRAW_TICKETS, "uid", callerUid, queue);

@@ -11,6 +11,41 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get economyAd => 'Anúncio';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Assistir a anúncio por $rewardString moedas';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Faltam $countString moedas.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Você ainda pode precisar de $countString moedas após o anúncio';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'Se o seu saldo após a recompensa cobrir o preço, este item será comprado automaticamente.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Sua recompensa está aguardando verificação. As moedas aparecerão após a confirmação.';
+
+  @override
   String get foldersLibraryEmptyTitle => 'Nenhuma pasta ainda';
 
   @override
@@ -89,6 +124,116 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
+  String get duoTitle => 'Surpresa Duo';
+
+  @override
+  String get duoAiFormatLabel => 'Criar uma surpresa Duo';
+
+  @override
+  String get duoPresetNotice =>
+      'O Prism mostra o lado direito na prévia com o celular dobrado. Alinhe manualmente o original salvo e confira as duas vistas na prévia de papel de parede do sistema. Esta é uma predefinição do Prism, não um recorte automático do iOS.';
+
+  @override
+  String get duoFoldedPromptLabel => 'Vista com o celular dobrado';
+
+  @override
+  String get duoFoldedPromptExample => 'Um gato sonolento ao lado de uma janela';
+
+  @override
+  String get duoRevealedPromptLabel => 'A surpresa ao abrir';
+
+  @override
+  String get duoRevealedPromptExample => 'Uma pequena nave espacial do lado de fora da janela';
+
+  @override
+  String get duoPromptValidation => 'Descreva as duas vistas com 1 a 160 caracteres em cada uma.';
+
+  @override
+  String get duoMoodBody => 'Um papel de parede. Mais surpresas ao abrir.';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'Celular';
+
+  @override
+  String get duoFold => 'Dobrar';
+
+  @override
+  String get duoUnfold => 'Abrir';
+
+  @override
+  String get duoFolded => 'Dobrado';
+
+  @override
+  String get duoUnfolded => 'Aberto';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'O Prism mostra o lado direito na prévia com o celular dobrado. O Android pode recortar a imagem de outra forma. Confira a prévia de papel de parede do sistema antes de aplicar.';
+
+  @override
+  String get duoGetOnPrism => 'Encontre no Prism';
+
+  @override
+  String get duoGuideTitle => 'Configure sua surpresa Duo';
+
+  @override
+  String get duoGuideOpen =>
+      'Abra o original salvo no Fotos, toque em Compartilhar e depois em Usar como Papel de Parede.';
+
+  @override
+  String get duoGuideAlign =>
+      'Alinhe manualmente a imagem inteira para que a vista com o celular dobrado mostre o lado direito.';
+
+  @override
+  String get duoGuideCheck =>
+      'Confira as vistas com o celular dobrado e aberto na prévia do sistema e adicione o papel de parede.';
+
+  @override
+  String get duoWebTitle => 'Papéis de parede para iPhone Duo | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'Um papel de parede com uma segunda cena escondida. Explore papéis de parede originais com surpresa Duo no Prism.';
+
+  @override
+  String get duoWebHeading => 'Um papel de parede. Uma história que se amplia.';
+
+  @override
+  String get duoWebIntro =>
+      'Uma cena tranquila ao dobrar. Outra história ao abrir. Veja as duas vistas de cada papel de parede original.';
+
+  @override
+  String get duoWebEmpty => 'A primeira coleção Duo está em análise.';
+
+  @override
+  String get duoWebEmptyBody => 'Explore o Prism enquanto conferimos cada papel de parede nas duas vistas.';
+
+  @override
+  String get duoWebFolded => 'Prévia com o celular dobrado';
+
+  @override
+  String get duoWebUnfolded => 'Original com o celular aberto';
+
+  @override
+  String get duoWebPresetNotice =>
+      'Estas prévias usam a predefinição do Prism para o lado direito, não um recorte automático da Apple. Salve o original completo, alinhe manualmente e confira as vistas com o celular dobrado e aberto na prévia de papel de parede do sistema.';
+
+  @override
+  String get duoWebOpenPrism => 'Abrir no Prism';
+
+  @override
+  String get duoWebExplore => 'Explorar o Prism';
+
+  @override
+  String get duoWebAppStore => 'Baixar na App Store';
+
+  @override
+  String get duoWebPlayStore => 'Disponível no Google Play';
 
   @override
   String get economyExportFailedLabel => 'Falha ao exportar';
@@ -11630,6 +11775,119 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get feedShowAiWalls => 'Mostrar papéis de parede de IA';
+
+  @override
+  String get challengeTitle => 'Desafio semanal';
+
+  @override
+  String get challengeRules => 'Até 3 criações, revisadas antes de aparecerem.';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'Vote em outros criadores até $date UTC.';
+  }
+
+  @override
+  String get challengeUpload => 'Enviar uma criação';
+
+  @override
+  String get challengeAi => 'Criar com IA';
+
+  @override
+  String get challengeTop => 'Destaques';
+
+  @override
+  String get challengeNew => 'Recentes';
+
+  @override
+  String get challengePast => 'Desafios anteriores';
+
+  @override
+  String get challengeEmpty => 'As criações aprovadas aparecerão aqui.';
+
+  @override
+  String get challengeWaiting => 'A votação terminou. Aguardamos as revisões antes de escolher o vencedor.';
+
+  @override
+  String get challengeClosed => 'Este desafio terminou.';
+
+  @override
+  String get challengeScheduled => 'Este desafio ainda não começou.';
+
+  @override
+  String get challengeNoWinner => 'Este desafio não tem vencedor.';
+
+  @override
+  String challengeWinner(String name) {
+    return 'Vencedor · $name';
+  }
+
+  @override
+  String get challengeVote => 'Votar';
+
+  @override
+  String get challengeUnvote => 'Remover voto';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votos',
+      one: '1 voto',
+      zero: '0 votos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get challengeShare => 'Compartilhar desafio';
+
+  @override
+  String get challengeRemove => 'Remover desafio';
+
+  @override
+  String challengeContext(String theme) {
+    return 'Desafio · $theme';
+  }
+
+  @override
+  String get challengeError => 'Não foi possível carregar o desafio. Tente novamente.';
+
+  @override
+  String get challengeVoteError => 'Não foi possível salvar seu voto. Tente novamente.';
+
+  @override
+  String get challengeSignIn => 'Entre para participar ou votar.';
+
+  @override
+  String get challengeLimit => 'Você já enviou 3 wallpapers para este desafio.';
+
+  @override
+  String get challengeRetry => 'Tentar novamente';
+
+  @override
+  String get challengeOwnEntry => 'Você não pode votar na própria criação.';
+
+  @override
+  String get challengeDailyLimit => 'Você atingiu o limite diário de votos.';
+
+  @override
+  String get challengeMissing => 'Este desafio ou criação não está mais disponível.';
+
+  @override
+  String get challengeBadge => 'Vencedor do desafio';
+
+  @override
+  String get challengeBadgeDescription => 'Vença um desafio semanal';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'Seu wallpaper venceu';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'Sua criação venceu o desafio semanal: $theme.';
+  }
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -11637,6 +11895,41 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
 
   @override
+  String get economyAd => 'Anúncio';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Assistir a anúncio por $rewardString moedas';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Faltam $countString moedas.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Você ainda pode precisar de $countString moedas após o anúncio';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'Se o seu saldo após a recompensa cobrir o preço, este item será comprado automaticamente.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Sua recompensa está aguardando verificação. As moedas aparecerão após a confirmação.';
+
+  @override
   String get foldersLibraryEmptyTitle => 'Nenhuma pasta ainda';
 
   @override
@@ -11715,6 +12008,116 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
+  String get duoTitle => 'Surpresa Duo';
+
+  @override
+  String get duoAiFormatLabel => 'Criar uma surpresa Duo';
+
+  @override
+  String get duoPresetNotice =>
+      'O Prism mostra o lado direito na prévia com o celular dobrado. Alinhe manualmente o original salvo e confira as duas vistas na prévia de papel de parede do sistema. Esta é uma predefinição do Prism, não um recorte automático do iOS.';
+
+  @override
+  String get duoFoldedPromptLabel => 'Vista com o celular dobrado';
+
+  @override
+  String get duoFoldedPromptExample => 'Um gato sonolento ao lado de uma janela';
+
+  @override
+  String get duoRevealedPromptLabel => 'A surpresa ao abrir';
+
+  @override
+  String get duoRevealedPromptExample => 'Uma pequena nave espacial do lado de fora da janela';
+
+  @override
+  String get duoPromptValidation => 'Descreva as duas vistas com 1 a 160 caracteres em cada uma.';
+
+  @override
+  String get duoMoodBody => 'Um papel de parede. Mais surpresas ao abrir.';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'Celular';
+
+  @override
+  String get duoFold => 'Dobrar';
+
+  @override
+  String get duoUnfold => 'Abrir';
+
+  @override
+  String get duoFolded => 'Dobrado';
+
+  @override
+  String get duoUnfolded => 'Aberto';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'O Prism mostra o lado direito na prévia com o celular dobrado. O Android pode recortar a imagem de outra forma. Confira a prévia de papel de parede do sistema antes de aplicar.';
+
+  @override
+  String get duoGetOnPrism => 'Encontre no Prism';
+
+  @override
+  String get duoGuideTitle => 'Configure sua surpresa Duo';
+
+  @override
+  String get duoGuideOpen =>
+      'Abra o original salvo no Fotos, toque em Compartilhar e depois em Usar como Papel de Parede.';
+
+  @override
+  String get duoGuideAlign =>
+      'Alinhe manualmente a imagem inteira para que a vista com o celular dobrado mostre o lado direito.';
+
+  @override
+  String get duoGuideCheck =>
+      'Confira as vistas com o celular dobrado e aberto na prévia do sistema e adicione o papel de parede.';
+
+  @override
+  String get duoWebTitle => 'Papéis de parede para iPhone Duo | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'Um papel de parede com uma segunda cena escondida. Explore papéis de parede originais com surpresa Duo no Prism.';
+
+  @override
+  String get duoWebHeading => 'Um papel de parede. Uma história que se amplia.';
+
+  @override
+  String get duoWebIntro =>
+      'Uma cena tranquila ao dobrar. Outra história ao abrir. Veja as duas vistas de cada papel de parede original.';
+
+  @override
+  String get duoWebEmpty => 'A primeira coleção Duo está em análise.';
+
+  @override
+  String get duoWebEmptyBody => 'Explore o Prism enquanto conferimos cada papel de parede nas duas vistas.';
+
+  @override
+  String get duoWebFolded => 'Prévia com o celular dobrado';
+
+  @override
+  String get duoWebUnfolded => 'Original com o celular aberto';
+
+  @override
+  String get duoWebPresetNotice =>
+      'Estas prévias usam a predefinição do Prism para o lado direito, não um recorte automático da Apple. Salve o original completo, alinhe manualmente e confira as vistas com o celular dobrado e aberto na prévia de papel de parede do sistema.';
+
+  @override
+  String get duoWebOpenPrism => 'Abrir no Prism';
+
+  @override
+  String get duoWebExplore => 'Explorar o Prism';
+
+  @override
+  String get duoWebAppStore => 'Baixar na App Store';
+
+  @override
+  String get duoWebPlayStore => 'Disponível no Google Play';
 
   @override
   String get economyExportFailedLabel => 'Falha ao exportar';
@@ -23256,4 +23659,117 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get feedShowAiWalls => 'Mostrar papéis de parede de IA';
+
+  @override
+  String get challengeTitle => 'Desafio semanal';
+
+  @override
+  String get challengeRules => 'Até 3 criações, revisadas antes de aparecerem.';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'Vote em outros criadores até $date UTC.';
+  }
+
+  @override
+  String get challengeUpload => 'Enviar uma criação';
+
+  @override
+  String get challengeAi => 'Criar com IA';
+
+  @override
+  String get challengeTop => 'Destaques';
+
+  @override
+  String get challengeNew => 'Recentes';
+
+  @override
+  String get challengePast => 'Desafios anteriores';
+
+  @override
+  String get challengeEmpty => 'As criações aprovadas aparecerão aqui.';
+
+  @override
+  String get challengeWaiting => 'A votação terminou. Aguardamos as revisões antes de escolher o vencedor.';
+
+  @override
+  String get challengeClosed => 'Este desafio terminou.';
+
+  @override
+  String get challengeScheduled => 'Este desafio ainda não começou.';
+
+  @override
+  String get challengeNoWinner => 'Este desafio não tem vencedor.';
+
+  @override
+  String challengeWinner(String name) {
+    return 'Vencedor · $name';
+  }
+
+  @override
+  String get challengeVote => 'Votar';
+
+  @override
+  String get challengeUnvote => 'Remover voto';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votos',
+      one: '1 voto',
+      zero: '0 votos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get challengeShare => 'Compartilhar desafio';
+
+  @override
+  String get challengeRemove => 'Remover desafio';
+
+  @override
+  String challengeContext(String theme) {
+    return 'Desafio · $theme';
+  }
+
+  @override
+  String get challengeError => 'Não foi possível carregar o desafio. Tente novamente.';
+
+  @override
+  String get challengeVoteError => 'Não foi possível salvar seu voto. Tente novamente.';
+
+  @override
+  String get challengeSignIn => 'Entre para participar ou votar.';
+
+  @override
+  String get challengeLimit => 'Você já enviou 3 wallpapers para este desafio.';
+
+  @override
+  String get challengeRetry => 'Tentar novamente';
+
+  @override
+  String get challengeOwnEntry => 'Você não pode votar na própria criação.';
+
+  @override
+  String get challengeDailyLimit => 'Você atingiu o limite diário de votos.';
+
+  @override
+  String get challengeMissing => 'Este desafio ou criação não está mais disponível.';
+
+  @override
+  String get challengeBadge => 'Vencedor do desafio';
+
+  @override
+  String get challengeBadgeDescription => 'Vença um desafio semanal';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'Seu wallpaper venceu';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'Sua criação venceu o desafio semanal: $theme.';
+  }
 }

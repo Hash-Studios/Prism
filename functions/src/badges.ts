@@ -21,6 +21,7 @@ interface BadgeDef {
 }
 
 export const BADGES: readonly BadgeDef[] = [
+  {id: "challenge_winner", name: "Challenge Winner", description: "Win a weekly challenge", coins: 0, xp: 0},
   {id: "week_warrior", name: "Week Warrior", description: "Reach a 7 day streak", coins: 25, xp: 25},
   {id: "streak_master", name: "Streak Master", description: "Reach a 28 day streak", coins: 100, xp: 100},
   {id: "creator", name: "Creator", description: "Get a wallpaper approved", coins: 50, xp: 0},

@@ -3,6 +3,7 @@ import 'package:Prism/l10n/l10n.dart';
 
 extension WallMoodCopy on WallMood {
   String title(AppLocalizations l10n) => switch (this) {
+    WallMood.duoReveal => l10n.duoTitle,
     WallMood.dreamy => l10n.moodDreamyTitle,
     WallMood.darkQuiet => l10n.moodDarkQuietTitle,
     WallMood.brightBold => l10n.moodBrightBoldTitle,
@@ -13,6 +14,7 @@ extension WallMoodCopy on WallMood {
 
   /// The one line under the title.
   String body(AppLocalizations l10n) => switch (this) {
+    WallMood.duoReveal => l10n.duoMoodBody,
     WallMood.dreamy => l10n.moodDreamyBody,
     WallMood.darkQuiet => l10n.moodDarkQuietBody,
     WallMood.brightBold => l10n.moodBrightBoldBody,

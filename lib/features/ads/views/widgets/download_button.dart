@@ -59,6 +59,7 @@ class DownloadButton extends StatefulWidget {
     this.variant,
     this.primary = false,
     this.labelled = false,
+    this.duoReveal = false,
     super.key,
   });
 
@@ -104,6 +105,7 @@ class DownloadButton extends StatefulWidget {
 
   /// Shows a caption under the round icon button.
   final bool labelled;
+  final bool duoReveal;
 
   @override
   State<DownloadButton> createState() => _DownloadButtonState();
@@ -131,6 +133,7 @@ class _DownloadTap {
     required this.onDownloaded,
     required this.ownerId,
     required this.isGuest,
+    required this.duoReveal,
   });
 
   final String link;
@@ -149,6 +152,7 @@ class _DownloadTap {
   final VoidCallback? onDownloaded;
   final String ownerId;
   final bool isGuest;
+  final bool duoReveal;
 }
 
 class _DownloadButtonState extends State<DownloadButton> {
@@ -341,6 +345,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         onDownloaded: widget.onDownloaded,
         ownerId: app_state.prismUser.id,
         isGuest: _isGuest,
+        duoReveal: widget.duoReveal,
       );
       _activeTap = tap;
       _attemptStarted = false;
@@ -933,7 +938,12 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
     if (mounted) {
       try {
-        await showIosSetWallpaperGuide(context, depthTier: tap.depthTier, spatialTier: tap.spatialTier);
+        await showIosSetWallpaperGuide(
+          context,
+          depthTier: tap.depthTier,
+          spatialTier: tap.spatialTier,
+          duoReveal: tap.duoReveal,
+        );
       } catch (e, stackTrace) {
         logger.w('iOS wallpaper guide failed after media was saved', error: e, stackTrace: stackTrace);
       }

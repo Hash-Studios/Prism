@@ -25,6 +25,17 @@ AiGenerationRecord _record({String? remixOf}) => AiGenerationRecord(
 );
 
 void main() {
+  test('challenge context survives history and submission without changing remix linkage', () {
+    final original = _record(remixOf: 'orig_1').copyWith(challengeId: '2026-10-26', challengeTheme: 'Quiet oceans');
+    final restored = AiGenerationRecord.fromJson(
+      original.toJson(),
+    ).copyWith(status: 'submitted', submittedWallId: 'wall');
+    expect(restored.challengeId, '2026-10-26');
+    expect(restored.challengeTheme, 'Quiet oceans');
+    expect(restored.remixOf, 'orig_1');
+    expect(_record().challengeId, isNull);
+  });
+
   test('toJson and fromJson keep remixOf', () {
     final AiGenerationRecord record = _record(remixOf: 'orig_1');
 

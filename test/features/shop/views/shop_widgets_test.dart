@@ -181,9 +181,33 @@ void main() {
       await openSheet(tester, 'theme_rose');
 
       expect(find.text('Buy for 150'), findsNothing);
-      expect(find.text('Watch a video (+${coins.adsRewardNow})'), findsOneWidget);
+      expect(find.text('Watch ad for ${coins.adsRewardNow} coins'), findsOneWidget);
       expect(find.text('Earn coins'), findsOneWidget);
-      expect(find.text('You need 50 more coins.'), findsOneWidget);
+      expect(find.textContaining('You need 50 more coins.'), findsOneWidget);
+      expect(find.textContaining('You may still need ${50 - coins.adsRewardNow} coins after the ad'), findsOneWidget);
+      expect(find.textContaining('purchased automatically'), findsNothing);
+    });
+
+    testWidgets('an ad that covers the shortfall discloses the automatic purchase', (tester) async {
+      coins.balanceNotifier.value = 149;
+      await openSheet(tester, 'theme_rose');
+
+      expect(find.text('Watch ad for ${coins.adsRewardNow} coins'), findsOneWidget);
+      expect(find.textContaining('this item will be purchased automatically'), findsOneWidget);
+      expect(find.textContaining('still need'), findsNothing);
+    });
+
+    testWidgets('a known exhausted ad cap hides the offer', (tester) async {
+      coins.balanceNotifier.value = 100;
+      backend.onCall = (_, _) async => <String, Object?>{'version': 1, 'status': 'unavailable', 'adsRemaining': 0};
+      await coins.beginRewardedSession('shop');
+      coins.startPendingRetryWatch();
+      expect(coins.adsRemainingToday, 0);
+      await openSheet(tester, 'theme_rose');
+
+      expect(find.textContaining('Watch ad for'), findsNothing);
+      expect(find.text('Earn coins'), findsOneWidget);
+      expect(find.textContaining('purchased automatically'), findsNothing);
     });
 
     testWidgets('an owned frame can be equipped and an equipped one unequipped', (tester) async {

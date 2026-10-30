@@ -234,7 +234,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         upgradeSource: 'premium_filter_low_balance',
         isMounted: () => mounted && app_state.prismUser.loggedIn && owner == app_state.prismUser.id,
         perform: action,
-        creditAfterUnmount: false,
+        creditAfterUnmount: true,
         choose: _choosePremiumFilterAction,
         failureLabel: context.l10n.economyExportFailedLabel,
         refundReason: 'premium_filter_export_failed_refund',

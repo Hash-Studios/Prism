@@ -183,6 +183,7 @@
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
                 <data android:pathPrefix="/mood/" />
+                <data android:pathPrefix="/challenges/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -305,6 +306,7 @@
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
                 <data android:pathPrefix="/mood/" />
+                <data android:pathPrefix="/challenges/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -416,6 +418,7 @@
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
                 <data android:pathPrefix="/mood/" />
+                <data android:pathPrefix="/challenges/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -527,6 +530,7 @@
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
                 <data android:pathPrefix="/mood/" />
+                <data android:pathPrefix="/challenges/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -638,6 +642,7 @@
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
                 <data android:pathPrefix="/mood/" />
+                <data android:pathPrefix="/challenges/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />

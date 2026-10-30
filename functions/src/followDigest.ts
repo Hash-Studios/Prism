@@ -5,7 +5,7 @@ import {db, REGION, str} from "./common";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {sendToUser} from "./notificationHelper";
 import {galleryTags, galleryWall, tagsLine, type GalleryWall} from "./pushGallery";
-import {premiumCollections} from "./wallOfTheDay";
+import {premiumCollections} from "./wallEligibility";
 
 const DIGEST_MINUTE = 19 * 60;
 const OFFSET_STEP = 15;

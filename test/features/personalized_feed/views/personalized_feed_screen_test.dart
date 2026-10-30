@@ -12,6 +12,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -30,7 +31,6 @@ import 'package:Prism/features/moods/biz/mood_walls_cubit.dart';
 import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
-import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/following_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
@@ -58,6 +58,7 @@ import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_e
 import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
 import 'package:Prism/features/wallpaper_history/views/widgets/pick_up_row.dart';
+import 'package:Prism/features/weekly_challenges/biz/weekly_challenges_cubit.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -71,6 +72,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../support/coins_test_backend.dart';
+import '../../../support/empty_weekly_challenges_repository.dart';
 import '../../../support/fake_app_analytics.dart';
 import '../../../support/fake_firestore_client.dart';
 import '../../../support/fake_user_block_repository.dart';
@@ -240,6 +242,7 @@ void main() {
     fetchTrending = _MockFetchTrending();
     when(() => fetchTrending(any())).thenAnswer((_) async => TrendingFetch.success(<PrismWallpaper>[]));
     app_state.prismUser = _user(loggedIn: true);
+    getIt.registerFactory<WeeklyChallengesCubit>(() => WeeklyChallengesCubit(const EmptyWeeklyChallengesRepository()));
     getIt
       ..registerFactory<PersonalizedFeedBloc>(
         () => PersonalizedFeedBloc(fetchUseCase, feedRepository, blockRepository, _FakeDropsRepository()),

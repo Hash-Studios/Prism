@@ -30,7 +30,6 @@ import 'package:Prism/features/favourite_walls/domain/repositories/favourite_wal
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/personalized_feed/data/personalized_feed_repository_impl.dart';
-import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
@@ -1513,7 +1512,7 @@ void main() {
       );
     }
 
-    List<String> keys(PersonalizedFeedPage? page) => page!.items.map(PersonalizedRankingService.canonicalKey).toList();
+    List<String> keys(PersonalizedFeedPage? page) => page!.items.map((item) => item.canonicalKey).toList();
 
     FeedSnapshot cacheSnapshot(List<FeedItemEntity> items) => FeedSnapshot(
       cachedAtUtc: DateTime.now().toUtc(),
@@ -2281,7 +2280,7 @@ void main() {
       );
       repository.warmCache();
       await Future<void>.delayed(Duration.zero);
-      await impressions.hide(PersonalizedRankingService.canonicalKey(item), DateTime.now().toUtc());
+      await impressions.hide(item.canonicalKey, DateTime.now().toUtc());
 
       expect(_itemIds((await repository.readCached())!.items), <String>['keep']);
     });
@@ -2480,7 +2479,7 @@ void main() {
       app_state.prismUser = _signedInUser();
       final FeedImpressionStore impressions = FeedImpressionStore(settings);
       final FeedItemEntity hidden = _prismItem('hidden');
-      await impressions.hide(PersonalizedRankingService.canonicalKey(hidden), DateTime.now().toUtc());
+      await impressions.hide(hidden.canonicalKey, DateTime.now().toUtc());
       final PersonalizedFeedRepository repository = _repository(
         firestore: _EmptyFirestore(),
         cache: _MemoryFeedCache()..snapshot = snapshot(<FeedItemEntity>[hidden, _prismItem('shown')]),

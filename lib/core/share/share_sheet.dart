@@ -63,6 +63,7 @@ Future<void> showShareSheet(
   ShareCardContent content,
   String sourceContext, {
   ShareSheetServices services = const ShareSheetServices(),
+  VoidCallback? onShared,
 }) {
   return showPrismSheet<void>(
     context,
@@ -75,9 +76,15 @@ Future<void> showShareSheet(
         creator: shareSafeText(content.creator),
         creatorLine: shareSafeText(content.creatorLine),
         palette: content.palette,
+        duoReveal: content.duoReveal,
+        contentId: content.contentId,
+        foldedLabel: shareSafeText(content.foldedLabel),
+        unfoldedLabel: shareSafeText(content.unfoldedLabel),
+        cta: shareSafeText(content.cta),
       ),
       sourceContext: sourceContext,
       services: services,
+      onShared: onShared,
     ),
   );
 }
@@ -87,12 +94,14 @@ class ShareSheet extends StatefulWidget {
     required this.content,
     required this.sourceContext,
     this.services = const ShareSheetServices(),
+    this.onShared,
     super.key,
   });
 
   final ShareCardContent content;
   final String sourceContext;
   final ShareSheetServices services;
+  final VoidCallback? onShared;
 
   @override
   State<ShareSheet> createState() => _ShareSheetState();
@@ -102,7 +111,13 @@ class _ShareSheetState extends State<ShareSheet> {
   final PageController _pages = PageController(viewportFraction: 0.62);
   final Map<ShareCardFormat, Future<File>> _renders = <ShareCardFormat, Future<File>>{};
   final Set<ShareCardFormat> _failedRenders = <ShareCardFormat>{};
-  ShareCardFormat _format = ShareCardFormat.values.first;
+  late ShareCardFormat _format = _formats.first;
+  List<ShareCardFormat> get _formats => <ShareCardFormat>[
+    if (widget.content.duoReveal) ShareCardFormat.duoReveal,
+    ShareCardFormat.story,
+    ShareCardFormat.post,
+    ShareCardFormat.clean,
+  ];
   bool _instagram = false;
   ShareTargetValue? _busy;
   String? _actionUserId;
@@ -145,10 +160,18 @@ class _ShareSheetState extends State<ShareSheet> {
     if (retry && _failedRenders.remove(format)) _renders.remove(format);
     return _renders.putIfAbsent(
       format,
-      () => widget.services.render(format, widget.content).onError((Object error, StackTrace stackTrace) {
-        _failedRenders.add(format);
-        Error.throwWithStackTrace(error, stackTrace);
-      }),
+      () => widget.services
+          .render(format, widget.content)
+          .then((file) {
+            if (format == ShareCardFormat.duoReveal) {
+              analytics.track(DuoShareCardMadeEvent(contentId: widget.content.contentId));
+            }
+            return file;
+          })
+          .onError((Object error, StackTrace stackTrace) {
+            _failedRenders.add(format);
+            Error.throwWithStackTrace(error, stackTrace);
+          }),
     );
   }
 
@@ -281,6 +304,7 @@ class _ShareSheetState extends State<ShareSheet> {
         }
       }
       final bool dismissed = sent.status == ShareResultStatus.dismissed;
+      if (sent.status == ShareResultStatus.success) widget.onShared?.call();
       _track(
         ShareTargetValue.more,
         dismissed ? EventResultValue.cancelled : EventResultValue.success,
@@ -303,6 +327,7 @@ class _ShareSheetState extends State<ShareSheet> {
     ShareCardFormat.story => l10n.coreShareFormatStory,
     ShareCardFormat.post => l10n.coreShareFormatPost,
     ShareCardFormat.clean => l10n.coreShareFormatClean,
+    ShareCardFormat.duoReveal => l10n.duoTitle,
   };
 
   @override
@@ -319,13 +344,13 @@ class _ShareSheetState extends State<ShareSheet> {
             child: PageView.builder(
               key: const ValueKey<String>('share-formats'),
               controller: _pages,
-              itemCount: ShareCardFormat.values.length,
+              itemCount: _formats.length,
               onPageChanged: (int index) {
                 PrismHaptics.selection();
-                setState(() => _format = ShareCardFormat.values[index]);
+                setState(() => _format = _formats[index]);
               },
               itemBuilder: (BuildContext context, int index) {
-                final ShareCardFormat format = ShareCardFormat.values[index];
+                final ShareCardFormat format = _formats[index];
                 final bool selected = format == _format;
                 return _FormatPreview(
                   key: ValueKey<ShareCardFormat>(format),

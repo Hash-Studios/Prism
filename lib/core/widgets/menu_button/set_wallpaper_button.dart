@@ -147,6 +147,8 @@ class SetWallpaperFlow {
     String? wallpaperId,
     WallpaperSource? wallpaperSource,
     bool forceScreen = false,
+    bool duoReveal = false,
+    bool allowDuo = false,
     WallpaperTarget? target,
     bool recordHistory = true,
     ValueChanged<bool>? onBusy,
@@ -224,6 +226,8 @@ class SetWallpaperFlow {
         wallpaperId: wallpaperId,
         wallpaperSource: wallpaperSource,
         tint: previewTint,
+        duoReveal: duoReveal,
+        allowDuo: allowDuo,
         notes: notes,
         onAdjust: (screenContext) async {
           final String? source = await authorize(screenContext);
@@ -781,6 +785,8 @@ class SetWallpaperFlow {
 }
 
 class SetWallpaperButton extends StatefulWidget {
+  final bool duoReveal;
+  final bool allowDuo;
   final String? url;
   final String? wallpaperId;
   final WallpaperSource? wallpaperSource;
@@ -839,6 +845,8 @@ class SetWallpaperButton extends StatefulWidget {
     this.primary = false,
     this.labelled = false,
     this.target,
+    this.duoReveal = false,
+    this.allowDuo = false,
   });
 
   @override
@@ -892,6 +900,8 @@ class SetWallpaperButtonState extends State<SetWallpaperButton> {
         wallpaperSource: widget.wallpaperSource,
         prepareAuthorized: widget.prepareAuthorized,
         previewTint: widget.previewTint,
+        duoReveal: widget.duoReveal,
+        allowDuo: widget.allowDuo,
         forceScreen: forceScreen,
         target: widget.target,
         entryPoint: entryPoint ?? widget.entryPoint,

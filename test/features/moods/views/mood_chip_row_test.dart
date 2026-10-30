@@ -30,8 +30,8 @@ void main() {
         home: Scaffold(
           body: MoodChipRow(
             moods: <MoodList>[
-              MoodList(mood: WallMood.dreamy, wallIds: <String>[]),
-              MoodList(mood: WallMood.darkQuiet, wallIds: <String>[]),
+              MoodList(mood: WallMood.dreamy, wallIds: <String>['wall']),
+              MoodList(mood: WallMood.darkQuiet, wallIds: <String>['wall']),
             ],
           ),
         ),
@@ -55,6 +55,24 @@ void main() {
     expect(find.byType(PrismChip), findsNothing);
   });
 
+  testWidgets('hides an empty Duo chip and shows a populated Duo chip', (tester) async {
+    Future<void> pump(List<String> ids) => tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: MoodChipRow(
+            moods: <MoodList>[MoodList(mood: WallMood.duoReveal, wallIds: ids)],
+          ),
+        ),
+      ),
+    );
+    await pump(<String>[]);
+    expect(find.byType(PrismChip), findsNothing);
+    await pump(<String>['duo']);
+    expect(find.text('Duo reveal'), findsOneWidget);
+  });
+
   testWidgets('the row is labelled Moods for screen readers', (tester) async {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(
@@ -63,7 +81,9 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: MoodChipRow(
-            moods: <MoodList>[MoodList(mood: WallMood.dreamy, wallIds: <String>[])],
+            moods: <MoodList>[
+              MoodList(mood: WallMood.dreamy, wallIds: <String>['wall']),
+            ],
           ),
         ),
       ),
@@ -80,7 +100,9 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: MoodChipRow(
-            moods: <MoodList>[MoodList(mood: WallMood.dreamy, wallIds: <String>[])],
+            moods: <MoodList>[
+              MoodList(mood: WallMood.dreamy, wallIds: <String>['wall']),
+            ],
           ),
         ),
       ),
@@ -111,8 +133,8 @@ void main() {
             home: const Scaffold(
               body: MoodChipRow(
                 moods: <MoodList>[
-                  MoodList(mood: WallMood.dreamy, wallIds: <String>[]),
-                  MoodList(mood: WallMood.darkQuiet, wallIds: <String>[]),
+                  MoodList(mood: WallMood.dreamy, wallIds: <String>['wall']),
+                  MoodList(mood: WallMood.darkQuiet, wallIds: <String>['wall']),
                 ],
               ),
             ),

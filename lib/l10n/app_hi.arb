@@ -1,4 +1,16 @@
 {
+  "economyAd": "विज्ञापन",
+  "@economyAd": {"description": "Label identifying a rewarded advertisement."},
+  "economyWatchAdForCoins": "{reward} सिक्कों के लिए विज्ञापन देखें",
+  "@economyWatchAdForCoins": {"description": "Offer for the currently quoted rewarded ad amount.", "placeholders": {"reward": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsMissing": "आपको {count} और सिक्के चाहिए।",
+  "@economyCoinsMissing": {"description": "Coins missing for the selected purchase.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsRemainAfterAd": "विज्ञापन के बाद भी आपको {count} सिक्के चाहिए हो सकते हैं",
+  "@economyCoinsRemainAfterAd": {"description": "Estimated remaining shortfall after the quoted ad reward.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyAdAutomaticPurchase": "अगर इनाम मिलने के बाद आपका बैलेंस कीमत पूरी करता है, तो यह आइटम अपने आप खरीदा जाएगा।",
+  "@economyAdAutomaticPurchase": {"description": "Disclosure of the shop's automatic purchase after a credited ad."},
+  "economyAdVerificationPending": "आपके विज्ञापन इनाम की पुष्टि बाकी है। पुष्टि होने पर सिक्के दिखेंगे।",
+  "@economyAdVerificationPending": {"description": "A completed ad reward is awaiting server verification."},
   "foldersLibraryEmptyTitle": "अभी कोई फ़ोल्डर नहीं",
   "@foldersLibraryEmptyTitle": {
     "description": "Title of the empty Folders tab in the Library."
@@ -90,6 +102,142 @@
   },
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "hi",
+  "duoTitle": "Duo का खुलता नज़ारा",
+  "@duoTitle": {
+    "description": "Shared title for Prism Duo reveal wallpapers."
+  },
+  "duoAiFormatLabel": "Duo का खुलता नज़ारा बनाएँ",
+  "@duoAiFormatLabel": {
+    "description": "AI composition format switch. Normal quality and coin prices still apply."
+  },
+  "duoPresetNotice": "Prism मुड़े हुए फ़ोन के लिए दाईं ओर का हिस्सा दिखाता है। सहेजे गए मूल चित्र को खुद सही जगह पर जमाएँ और सिस्टम के वॉलपेपर प्रीव्यू में दोनों दृश्य जाँचें। यह Prism की तय सेटिंग है, iOS की अपने-आप होने वाली क्रॉपिंग नहीं।",
+  "@duoPresetNotice": {
+    "description": "Shared notice explaining the user-approved Prism crop preset, not an Apple crop claim."
+  },
+  "duoFoldedPromptLabel": "मुड़े हुए फ़ोन का दृश्य",
+  "@duoFoldedPromptLabel": {
+    "description": "Visible label for the 1 to 160 character subject visible in the right-side crop."
+  },
+  "duoFoldedPromptExample": "खिड़की के पास एक उनींदी बिल्ली",
+  "@duoFoldedPromptExample": {
+    "description": "Brief example for the folded-view prompt, not its label."
+  },
+  "duoRevealedPromptLabel": "खोलने पर दिखने वाला नज़ारा",
+  "@duoRevealedPromptLabel": {
+    "description": "Visible label for the 1 to 160 character scene revealed by the wider canvas."
+  },
+  "duoRevealedPromptExample": "खिड़की के बाहर एक नन्हा अंतरिक्ष यान",
+  "@duoRevealedPromptExample": {
+    "description": "Brief example for the unfolded-view prompt, not its label."
+  },
+  "duoPromptValidation": "दोनों दृश्यों का वर्णन करें, हर एक के लिए 1 से 160 अक्षर लिखें।",
+  "@duoPromptValidation": {
+    "description": "Validation before a Duo AI generation. Both trimmed prompts must contain 1 to 160 characters."
+  },
+  "duoMoodBody": "एक वॉलपेपर। खोलने पर दिखे और भी बहुत कुछ।",
+  "@duoMoodBody": {
+    "description": "One-line Home mood row description for Duo reveal wallpapers."
+  },
+  "duoDeviceName": "iPhone Duo",
+  "@duoDeviceName": {
+    "description": "Duo device preview selector. Product name remains unchanged."
+  },
+  "duoPhoneDevice": "फ़ोन",
+  "@duoPhoneDevice": {
+    "description": "Standard phone preview selector."
+  },
+  "duoFold": "मोड़ें",
+  "@duoFold": {
+    "description": "Button and accessibility label to fold the Duo preview."
+  },
+  "duoUnfold": "खोलें",
+  "@duoUnfold": {
+    "description": "Button and accessibility label to unfold the Duo preview."
+  },
+  "duoFolded": "मुड़ा हुआ",
+  "@duoFolded": {
+    "description": "Label above the folded view on a share card."
+  },
+  "duoUnfolded": "खुला हुआ",
+  "@duoUnfolded": {
+    "description": "Label above the unfolded view on a share card."
+  },
+  "duoAndroidCropNotice": "Prism मुड़े हुए फ़ोन के लिए दाईं ओर का हिस्सा दिखाता है। Android इसे अलग तरह से क्रॉप कर सकता है। लगाने से पहले सिस्टम का वॉलपेपर प्रीव्यू जाँचें।",
+  "@duoAndroidCropNotice": {
+    "description": "Android Duo preview caveat. Standard Home, Lock and Both targets remain available."
+  },
+  "duoGetOnPrism": "Prism पर पाएँ",
+  "@duoGetOnPrism": {
+    "description": "Call to action printed on the exported Duo reveal share card."
+  },
+  "duoGuideTitle": "Duo का खुलता नज़ारा सेट करें",
+  "@duoGuideTitle": {
+    "description": "Title of setup guide shown only after a successful iOS Photos save."
+  },
+  "duoGuideOpen": "सहेजे गए मूल चित्र को Photos में खोलें, शेयर करें पर टैप करें, फिर वॉलपेपर के रूप में इस्तेमाल करें चुनें।",
+  "@duoGuideOpen": {
+    "description": "First of three Duo wallpaper setup steps."
+  },
+  "duoGuideAlign": "पूरे चित्र को खुद सही जगह पर जमाएँ ताकि मुड़े हुए फ़ोन पर दाईं ओर का हिस्सा दिखे।",
+  "@duoGuideAlign": {
+    "description": "Second of three steps. Manual alignment, not an automatic Apple crop."
+  },
+  "duoGuideCheck": "सिस्टम प्रीव्यू में मुड़े और खुले हुए, दोनों दृश्य जाँचें, फिर वॉलपेपर जोड़ें।",
+  "@duoGuideCheck": {
+    "description": "Third of three steps. User must check both system previews."
+  },
+  "duoWebTitle": "iPhone Duo के लिए वॉलपेपर | Prism",
+  "@duoWebTitle": {
+    "description": "Duo website browser and search title"
+  },
+  "duoWebDescription": "एक वॉलपेपर, जिसमें छिपा है दूसरा नज़ारा। Prism में Duo के लिए बने मौलिक वॉलपेपर देखें।",
+  "@duoWebDescription": {
+    "description": "Duo website metadata description"
+  },
+  "duoWebHeading": "एक वॉलपेपर। खुलती जाए कहानी।",
+  "@duoWebHeading": {
+    "description": "Duo website heading"
+  },
+  "duoWebIntro": "मोड़ने पर एक शांत नज़ारा। खोलने पर एक और कहानी। हर मौलिक वॉलपेपर के दोनों दृश्य देखें।",
+  "@duoWebIntro": {
+    "description": "Duo website introduction"
+  },
+  "duoWebEmpty": "पहले Duo संग्रह की समीक्षा चल रही है।",
+  "@duoWebEmpty": {
+    "description": "Empty approved Duo website collection"
+  },
+  "duoWebEmptyBody": "जब तक हम हर वॉलपेपर के दोनों दृश्य जाँच रहे हैं, Prism पर और वॉलपेपर देखें।",
+  "@duoWebEmptyBody": {
+    "description": "Empty Duo website next step"
+  },
+  "duoWebFolded": "मुड़े हुए फ़ोन का प्रीव्यू",
+  "@duoWebFolded": {
+    "description": "Website folded preview caption"
+  },
+  "duoWebUnfolded": "खुले हुए फ़ोन का मूल चित्र",
+  "@duoWebUnfolded": {
+    "description": "Website unfolded preview caption"
+  },
+  "duoWebPresetNotice": "ये प्रीव्यू Prism की दाईं ओर वाली तय सेटिंग इस्तेमाल करते हैं, Apple की अपने-आप होने वाली क्रॉपिंग नहीं। पूरा मूल चित्र सहेजें, उसे खुद सही जगह पर जमाएँ और सिस्टम के वॉलपेपर प्रीव्यू में मुड़े और खुले हुए, दोनों दृश्य जाँचें।",
+  "@duoWebPresetNotice": {
+    "description": "Website notice about the approved Prism crop"
+  },
+  "duoWebOpenPrism": "Prism में खोलें",
+  "@duoWebOpenPrism": {
+    "description": "Website wallpaper deep link action"
+  },
+  "duoWebExplore": "Prism देखें",
+  "@duoWebExplore": {
+    "description": "Website homepage action"
+  },
+  "duoWebAppStore": "App Store से डाउनलोड करें",
+  "@duoWebAppStore": {
+    "description": "Website App Store link"
+  },
+  "duoWebPlayStore": "Google Play पर पाएँ",
+  "@duoWebPlayStore": {
+    "description": "Website Google Play link"
+  },
   "economyAiMatchingScreenSize": "आपकी स्क्रीन के आकार से मेल बिठा रहे हैं…",
   "@economyAiMatchingScreenSize": {
     "description": "AI wallpaper generation status shown while matching the output to the device screen."
@@ -10891,5 +11039,72 @@
   "feedShowAiWalls": "AI वॉलपेपर दिखाएँ",
   "@feedShowAiWalls": {
     "description": "Action in the empty state that turns AI-generated walls back on."
+  },
+  "challengeTitle": "साप्ताहिक चुनौती",
+  "challengeRules": "अधिकतम 3 प्रविष्टियाँ, दिखाने से पहले समीक्षा होगी।",
+  "challengeVotingRules": "अन्य रचनाकारों के लिए {date} UTC तक वोट दें।",
+  "@challengeVotingRules": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeUpload": "प्रविष्टि अपलोड करें",
+  "challengeAi": "AI से बनाएँ",
+  "challengeTop": "शीर्ष",
+  "challengeNew": "नई",
+  "challengePast": "पिछली चुनौतियाँ",
+  "challengeEmpty": "स्वीकृत प्रविष्टियाँ यहाँ दिखेंगी।",
+  "challengeWaiting": "वोटिंग बंद है। विजेता चुनने से पहले प्रविष्टियों की समीक्षा पूरी होगी।",
+  "challengeClosed": "यह चुनौती समाप्त हो गई है।",
+  "challengeScheduled": "यह चुनौती अभी शुरू नहीं हुई है।",
+  "challengeNoWinner": "इस चुनौती का कोई विजेता नहीं है।",
+  "challengeWinner": "विजेता · {name}",
+  "@challengeWinner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeVote": "वोट दें",
+  "challengeUnvote": "वोट हटाएँ",
+  "challengeVotes": "{count, plural, =0{0 वोट} =1{1 वोट} other{{count} वोट}}",
+  "@challengeVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeShare": "चुनौती साझा करें",
+  "challengeRemove": "चुनौती हटाएँ",
+  "challengeContext": "चुनौती · {theme}",
+  "@challengeContext": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeError": "चुनौती लोड नहीं हुई। फिर कोशिश करें।",
+  "challengeVoteError": "वोट सहेजा नहीं गया। फिर कोशिश करें।",
+  "challengeSignIn": "भाग लेने या वोट देने के लिए साइन इन करें।",
+  "challengeLimit": "आपने इस चुनौती में 3 वॉलपेपर जमा किए हैं।",
+  "challengeRetry": "फिर कोशिश करें",
+  "challengeOwnEntry": "आप अपनी प्रविष्टि को वोट नहीं दे सकते।",
+  "challengeDailyLimit": "आज की वोटिंग सीमा पूरी हो गई है।",
+  "challengeMissing": "यह चुनौती या प्रविष्टि अब उपलब्ध नहीं है।",
+  "challengeBadge": "चुनौती विजेता",
+  "challengeBadgeDescription": "साप्ताहिक चुनौती जीतें",
+  "challengeWinnerNotificationTitle": "आपका वॉलपेपर जीत गया",
+  "challengeWinnerNotificationBody": "आपकी प्रविष्टि ने साप्ताहिक चुनौती जीती: {theme}।",
+  "@challengeWinnerNotificationBody": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -49,7 +49,9 @@ import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
+import 'package:Prism/features/ads/data/ad_experiment_service.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/ads/views/widgets/experimental_interstitial_return.dart';
 import 'package:Prism/features/ai_wallpaper/domain/ai_rollout.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
@@ -148,8 +150,11 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
     final FeedItemEntity? entity = this.entity;
     final int start = feed == null || entity == null ? -1 : feed.indexOf(entity);
     if (feed != null && start >= 0) {
-      return _DetailImmersion(
-        child: _FeedBrowser(screen: this, feed: feed, start: start),
+      return ExperimentalInterstitialReturn(
+        grid: feed.grid,
+        child: _DetailImmersion(
+          child: _FeedBrowser(screen: this, feed: feed, start: start),
+        ),
       );
     }
     return _DetailImmersion(
@@ -1496,6 +1501,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                             tint: state.tint,
                             saveAction: _saveAction,
                             spatialMapUrl: spatialOf(entity)?.mapUrl,
+                            duoReveal: isDuoWallpaper(entity),
+                            allowDuo: isLandscapeWallpaper(entity.wallpaperCore),
                           );
                         },
                 ),
@@ -2344,11 +2351,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               )
             : null,
         depthTier: depthTierOf(entity),
+        duoReveal: isDuoWallpaper(entity),
         spatialTier: spatialOf(entity)?.tier,
         sourceContext: _getSourceContext(state),
         requestId: widget.requestId,
         onDownloaded: () {
           if (!mounted || historyOwner != (app_state.prismUser.id, app_state.prismUser.loggedIn)) return;
+          AdExperimentService.instance.recordSuccessfulWallpaperAction();
           final (String, int)? currentSession = getIt.isRegistered<SyncedHistoryStore>()
               ? getIt<SyncedHistoryStore>().recordingSession
               : null;
@@ -2375,6 +2384,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         entryPoint: 'wallpaper_detail',
         requestId: widget.requestId,
         previewTint: tint,
+        duoReveal: isDuoWallpaper(entity),
+        allowDuo: isLandscapeWallpaper(entity.wallpaperCore),
         notes: wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context)),
         onMatchAccent: _matchAccentAction(context, state),
         onSet: () => _onWallpaperSet(entity),
@@ -2446,6 +2457,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             thumbUrl: entity.thumbnailUrl,
             creator: entity.wallpaperCore.authorName,
             palette: _sharePalette(entity),
+            duoReveal: isDuoWallpaper(entity),
             createLink: (id, source, url, thumbUrl) => createDynamicLink(
               id,
               source,
@@ -2510,6 +2522,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   void _onWallpaperSet(FeedItemEntity entity) {
+    AdExperimentService.instance.recordSuccessfulWallpaperAction();
     _recordTaste(TasteAction.set, entity);
     _actedOn(entity);
     if (shouldRecordWallpaperSetStats(entity)) {

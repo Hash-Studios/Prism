@@ -1,4 +1,16 @@
 {
+  "economyAd": "Anuncio",
+  "@economyAd": {"description": "Label identifying a rewarded advertisement."},
+  "economyWatchAdForCoins": "Ver anuncio por {reward} monedas",
+  "@economyWatchAdForCoins": {"description": "Currently quoted rewarded ad amount.", "placeholders": {"reward": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsMissing": "Te faltan {count} monedas.",
+  "@economyCoinsMissing": {"description": "Coins missing for the selected purchase.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsRemainAfterAd": "Puede que aún necesites {count} monedas después del anuncio",
+  "@economyCoinsRemainAfterAd": {"description": "Estimated remaining shortfall after the quoted ad reward.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyAdAutomaticPurchase": "Si tu saldo después de la recompensa cubre el precio, este artículo se comprará automáticamente.",
+  "@economyAdAutomaticPurchase": {"description": "Disclosure of automatic purchase after a credited ad."},
+  "economyAdVerificationPending": "Tu recompensa está pendiente de verificación. Las monedas aparecerán cuando se confirme.",
+  "@economyAdVerificationPending": {"description": "Ad reward awaiting server verification."},
   "foldersLibraryEmptyTitle": "Aún no hay carpetas",
   "foldersLibraryEmptyBody": "Mantén pulsado el corazón de un fondo de pantalla para guardarlo en una carpeta.",
   "foldersLoadAllError": "No se pudieron cargar tus carpetas",
@@ -20,6 +32,40 @@
   "wallpaperHistoryTileLabel": "{current}{target}, aplicado a las {time}",
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "es",
+  "duoTitle": "Revelación Duo",
+  "duoAiFormatLabel": "Crear una revelación Duo",
+  "duoPresetNotice": "Prism muestra el lado derecho en la vista plegada. Alinea manualmente el original guardado y comprueba ambas vistas en la vista previa del fondo del sistema. Es un ajuste de Prism, no un recorte automático de iOS.",
+  "duoFoldedPromptLabel": "Vista plegada",
+  "duoFoldedPromptExample": "Un gato adormilado junto a una ventana",
+  "duoRevealedPromptLabel": "La sorpresa al desplegar",
+  "duoRevealedPromptExample": "Una pequeña nave espacial al otro lado de la ventana",
+  "duoPromptValidation": "Describe ambas vistas con entre 1 y 160 caracteres cada una.",
+  "duoMoodBody": "Un fondo. Más por descubrir al desplegar.",
+  "duoDeviceName": "iPhone Duo",
+  "duoPhoneDevice": "Teléfono",
+  "duoFold": "Plegar",
+  "duoUnfold": "Desplegar",
+  "duoFolded": "Plegado",
+  "duoUnfolded": "Desplegado",
+  "duoAndroidCropNotice": "Prism muestra el lado derecho en la vista plegada. Android puede recortar la imagen de otra forma. Comprueba la vista previa del fondo del sistema antes de aplicarlo.",
+  "duoGetOnPrism": "Consíguelo en Prism",
+  "duoGuideTitle": "Configura tu revelación Duo",
+  "duoGuideOpen": "Abre el original guardado en Fotos, toca Compartir y luego Usar como fondo de pantalla.",
+  "duoGuideAlign": "Alinea manualmente la imagen completa para que la vista plegada muestre el lado derecho.",
+  "duoGuideCheck": "Comprueba las vistas plegada y desplegada en la vista previa del sistema y luego añade el fondo.",
+  "duoWebTitle": "Fondos de pantalla para iPhone Duo | Prism",
+  "duoWebDescription": "Un fondo con una segunda escena oculta. Descubre fondos originales con revelación Duo en Prism.",
+  "duoWebHeading": "Un fondo. Una historia que se amplía.",
+  "duoWebIntro": "Una escena tranquila al plegar. Una segunda historia al desplegar. Mira ambas vistas de cada fondo original.",
+  "duoWebEmpty": "La primera colección Duo está en revisión.",
+  "duoWebEmptyBody": "Explora Prism mientras revisamos cada fondo en ambas vistas.",
+  "duoWebFolded": "Vista previa plegada",
+  "duoWebUnfolded": "Original desplegado",
+  "duoWebPresetNotice": "Estas vistas previas usan el ajuste de Prism para el lado derecho, no un recorte automático de Apple. Guarda el original completo, alinéalo manualmente y comprueba las vistas plegada y desplegada en la vista previa del fondo del sistema.",
+  "duoWebOpenPrism": "Abrir en Prism",
+  "duoWebExplore": "Explorar Prism",
+  "duoWebAppStore": "Descargar en el App Store",
+  "duoWebPlayStore": "Consíguelo en Google Play",
   "economyExportFailedLabel": "No se pudo exportar",
   "economyAiPromptSceneAnime1": "un gato dormitando en un andén soleado",
   "economyAiPromptSceneAnime2": "nubes de verano gigantes sobre arrozales",
@@ -3088,5 +3134,72 @@
   "wallpaperAiMadeWithUnknown": "Hecho con IA",
   "wallpaperAiReportWrongLabel": "Reportar etiqueta incorrecta",
   "feedNoHumanWalls": "Aún no hay fondos hechos por personas aquí",
-  "feedShowAiWalls": "Mostrar fondos de IA"
+  "feedShowAiWalls": "Mostrar fondos de IA",
+  "challengeTitle": "Reto semanal",
+  "challengeRules": "Hasta 3 obras, revisadas antes de aparecer.",
+  "challengeVotingRules": "Vota por otros creadores hasta {date} UTC.",
+  "@challengeVotingRules": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeUpload": "Subir una obra",
+  "challengeAi": "Crear con IA",
+  "challengeTop": "Destacadas",
+  "challengeNew": "Nuevas",
+  "challengePast": "Retos anteriores",
+  "challengeEmpty": "Las obras aprobadas aparecerán aquí.",
+  "challengeWaiting": "La votación terminó. Esperamos las revisiones antes de elegir al ganador.",
+  "challengeClosed": "Este reto ha terminado.",
+  "challengeScheduled": "Este reto aún no ha comenzado.",
+  "challengeNoWinner": "Este reto no tiene ganador.",
+  "challengeWinner": "Ganador · {name}",
+  "@challengeWinner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeVote": "Votar",
+  "challengeUnvote": "Quitar voto",
+  "challengeVotes": "{count, plural, =0{0 votos} =1{1 voto} other{{count} votos}}",
+  "@challengeVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeShare": "Compartir reto",
+  "challengeRemove": "Quitar reto",
+  "challengeContext": "Reto · {theme}",
+  "@challengeContext": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeError": "No pudimos cargar el reto. Inténtalo de nuevo.",
+  "challengeVoteError": "No se pudo guardar tu voto. Inténtalo de nuevo.",
+  "challengeSignIn": "Inicia sesión para participar o votar.",
+  "challengeLimit": "Ya has enviado 3 fondos a este reto.",
+  "challengeRetry": "Reintentar",
+  "challengeOwnEntry": "No puedes votar por tu propia obra.",
+  "challengeDailyLimit": "Has alcanzado el límite diario de votos.",
+  "challengeMissing": "Este reto u obra ya no está disponible.",
+  "challengeBadge": "Ganador del reto",
+  "challengeBadgeDescription": "Gana un reto semanal",
+  "challengeWinnerNotificationTitle": "Tu fondo ganó",
+  "challengeWinnerNotificationBody": "Tu obra ganó el reto semanal: {theme}.",
+  "@challengeWinnerNotificationBody": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  }
 }

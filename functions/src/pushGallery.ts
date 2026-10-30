@@ -2,7 +2,7 @@ import {createHash} from "node:crypto";
 import type * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {matchesMood, MOODS} from "./wallMoods";
-import {isWotdEligible} from "./wallOfTheDay";
+import {isWotdEligible} from "./wallEligibility";
 import {R2Storage, r2Env} from "./r2Storage";
 
 /** A wall that passed the gate: its logical id, its public thumbnail, and its tags. */

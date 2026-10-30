@@ -43,7 +43,7 @@ class TrendingBloc extends Bloc<TrendingEvent, TrendingState> {
     _blocked = _userBlockRepository.blockedCreators;
     _blockedCreatorsSub = _userBlockRepository.watchBlockedCreators().listen((blocked) {
       if (blocked is UnknownBlockedCreators) _blocked = blocked;
-      add(TrendingEvent.blockedCreatorsChanged(blocked: blocked is KnownBlockedCreators ? blocked.uids : const {}));
+      add(const TrendingEvent.blockedCreatorsChanged());
     });
     _sessionRepository =
         sessionRepository ?? (getIt.isRegistered<SessionRepository>() ? getIt<SessionRepository>() : null);

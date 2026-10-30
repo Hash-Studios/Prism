@@ -11,6 +11,40 @@ class AppLocalizationsHi extends AppLocalizations {
   AppLocalizationsHi([String locale = 'hi']) : super(locale);
 
   @override
+  String get economyAd => 'विज्ञापन';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return '$rewardString सिक्कों के लिए विज्ञापन देखें';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'आपको $countString और सिक्के चाहिए।';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'विज्ञापन के बाद भी आपको $countString सिक्के चाहिए हो सकते हैं';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'अगर इनाम मिलने के बाद आपका बैलेंस कीमत पूरी करता है, तो यह आइटम अपने आप खरीदा जाएगा।';
+
+  @override
+  String get economyAdVerificationPending => 'आपके विज्ञापन इनाम की पुष्टि बाकी है। पुष्टि होने पर सिक्के दिखेंगे।';
+
+  @override
   String get foldersLibraryEmptyTitle => 'अभी कोई फ़ोल्डर नहीं';
 
   @override
@@ -89,6 +123,113 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
+  String get duoTitle => 'Duo का खुलता नज़ारा';
+
+  @override
+  String get duoAiFormatLabel => 'Duo का खुलता नज़ारा बनाएँ';
+
+  @override
+  String get duoPresetNotice =>
+      'Prism मुड़े हुए फ़ोन के लिए दाईं ओर का हिस्सा दिखाता है। सहेजे गए मूल चित्र को खुद सही जगह पर जमाएँ और सिस्टम के वॉलपेपर प्रीव्यू में दोनों दृश्य जाँचें। यह Prism की तय सेटिंग है, iOS की अपने-आप होने वाली क्रॉपिंग नहीं।';
+
+  @override
+  String get duoFoldedPromptLabel => 'मुड़े हुए फ़ोन का दृश्य';
+
+  @override
+  String get duoFoldedPromptExample => 'खिड़की के पास एक उनींदी बिल्ली';
+
+  @override
+  String get duoRevealedPromptLabel => 'खोलने पर दिखने वाला नज़ारा';
+
+  @override
+  String get duoRevealedPromptExample => 'खिड़की के बाहर एक नन्हा अंतरिक्ष यान';
+
+  @override
+  String get duoPromptValidation => 'दोनों दृश्यों का वर्णन करें, हर एक के लिए 1 से 160 अक्षर लिखें।';
+
+  @override
+  String get duoMoodBody => 'एक वॉलपेपर। खोलने पर दिखे और भी बहुत कुछ।';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'फ़ोन';
+
+  @override
+  String get duoFold => 'मोड़ें';
+
+  @override
+  String get duoUnfold => 'खोलें';
+
+  @override
+  String get duoFolded => 'मुड़ा हुआ';
+
+  @override
+  String get duoUnfolded => 'खुला हुआ';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'Prism मुड़े हुए फ़ोन के लिए दाईं ओर का हिस्सा दिखाता है। Android इसे अलग तरह से क्रॉप कर सकता है। लगाने से पहले सिस्टम का वॉलपेपर प्रीव्यू जाँचें।';
+
+  @override
+  String get duoGetOnPrism => 'Prism पर पाएँ';
+
+  @override
+  String get duoGuideTitle => 'Duo का खुलता नज़ारा सेट करें';
+
+  @override
+  String get duoGuideOpen =>
+      'सहेजे गए मूल चित्र को Photos में खोलें, शेयर करें पर टैप करें, फिर वॉलपेपर के रूप में इस्तेमाल करें चुनें।';
+
+  @override
+  String get duoGuideAlign => 'पूरे चित्र को खुद सही जगह पर जमाएँ ताकि मुड़े हुए फ़ोन पर दाईं ओर का हिस्सा दिखे।';
+
+  @override
+  String get duoGuideCheck => 'सिस्टम प्रीव्यू में मुड़े और खुले हुए, दोनों दृश्य जाँचें, फिर वॉलपेपर जोड़ें।';
+
+  @override
+  String get duoWebTitle => 'iPhone Duo के लिए वॉलपेपर | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'एक वॉलपेपर, जिसमें छिपा है दूसरा नज़ारा। Prism में Duo के लिए बने मौलिक वॉलपेपर देखें।';
+
+  @override
+  String get duoWebHeading => 'एक वॉलपेपर। खुलती जाए कहानी।';
+
+  @override
+  String get duoWebIntro => 'मोड़ने पर एक शांत नज़ारा। खोलने पर एक और कहानी। हर मौलिक वॉलपेपर के दोनों दृश्य देखें।';
+
+  @override
+  String get duoWebEmpty => 'पहले Duo संग्रह की समीक्षा चल रही है।';
+
+  @override
+  String get duoWebEmptyBody => 'जब तक हम हर वॉलपेपर के दोनों दृश्य जाँच रहे हैं, Prism पर और वॉलपेपर देखें।';
+
+  @override
+  String get duoWebFolded => 'मुड़े हुए फ़ोन का प्रीव्यू';
+
+  @override
+  String get duoWebUnfolded => 'खुले हुए फ़ोन का मूल चित्र';
+
+  @override
+  String get duoWebPresetNotice =>
+      'ये प्रीव्यू Prism की दाईं ओर वाली तय सेटिंग इस्तेमाल करते हैं, Apple की अपने-आप होने वाली क्रॉपिंग नहीं। पूरा मूल चित्र सहेजें, उसे खुद सही जगह पर जमाएँ और सिस्टम के वॉलपेपर प्रीव्यू में मुड़े और खुले हुए, दोनों दृश्य जाँचें।';
+
+  @override
+  String get duoWebOpenPrism => 'Prism में खोलें';
+
+  @override
+  String get duoWebExplore => 'Prism देखें';
+
+  @override
+  String get duoWebAppStore => 'App Store से डाउनलोड करें';
+
+  @override
+  String get duoWebPlayStore => 'Google Play पर पाएँ';
 
   @override
   String get economyExportFailedLabel => 'एक्सपोर्ट नहीं हो सका';
@@ -11438,4 +11579,111 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get feedShowAiWalls => 'AI वॉलपेपर दिखाएँ';
+
+  @override
+  String get challengeTitle => 'साप्ताहिक चुनौती';
+
+  @override
+  String get challengeRules => 'अधिकतम 3 प्रविष्टियाँ, दिखाने से पहले समीक्षा होगी।';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'अन्य रचनाकारों के लिए $date UTC तक वोट दें।';
+  }
+
+  @override
+  String get challengeUpload => 'प्रविष्टि अपलोड करें';
+
+  @override
+  String get challengeAi => 'AI से बनाएँ';
+
+  @override
+  String get challengeTop => 'शीर्ष';
+
+  @override
+  String get challengeNew => 'नई';
+
+  @override
+  String get challengePast => 'पिछली चुनौतियाँ';
+
+  @override
+  String get challengeEmpty => 'स्वीकृत प्रविष्टियाँ यहाँ दिखेंगी।';
+
+  @override
+  String get challengeWaiting => 'वोटिंग बंद है। विजेता चुनने से पहले प्रविष्टियों की समीक्षा पूरी होगी।';
+
+  @override
+  String get challengeClosed => 'यह चुनौती समाप्त हो गई है।';
+
+  @override
+  String get challengeScheduled => 'यह चुनौती अभी शुरू नहीं हुई है।';
+
+  @override
+  String get challengeNoWinner => 'इस चुनौती का कोई विजेता नहीं है।';
+
+  @override
+  String challengeWinner(String name) {
+    return 'विजेता · $name';
+  }
+
+  @override
+  String get challengeVote => 'वोट दें';
+
+  @override
+  String get challengeUnvote => 'वोट हटाएँ';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count वोट', one: '1 वोट', zero: '0 वोट');
+    return '$_temp0';
+  }
+
+  @override
+  String get challengeShare => 'चुनौती साझा करें';
+
+  @override
+  String get challengeRemove => 'चुनौती हटाएँ';
+
+  @override
+  String challengeContext(String theme) {
+    return 'चुनौती · $theme';
+  }
+
+  @override
+  String get challengeError => 'चुनौती लोड नहीं हुई। फिर कोशिश करें।';
+
+  @override
+  String get challengeVoteError => 'वोट सहेजा नहीं गया। फिर कोशिश करें।';
+
+  @override
+  String get challengeSignIn => 'भाग लेने या वोट देने के लिए साइन इन करें।';
+
+  @override
+  String get challengeLimit => 'आपने इस चुनौती में 3 वॉलपेपर जमा किए हैं।';
+
+  @override
+  String get challengeRetry => 'फिर कोशिश करें';
+
+  @override
+  String get challengeOwnEntry => 'आप अपनी प्रविष्टि को वोट नहीं दे सकते।';
+
+  @override
+  String get challengeDailyLimit => 'आज की वोटिंग सीमा पूरी हो गई है।';
+
+  @override
+  String get challengeMissing => 'यह चुनौती या प्रविष्टि अब उपलब्ध नहीं है।';
+
+  @override
+  String get challengeBadge => 'चुनौती विजेता';
+
+  @override
+  String get challengeBadgeDescription => 'साप्ताहिक चुनौती जीतें';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'आपका वॉलपेपर जीत गया';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'आपकी प्रविष्टि ने साप्ताहिक चुनौती जीती: $theme।';
+  }
 }

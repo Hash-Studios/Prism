@@ -5,6 +5,7 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
@@ -25,6 +26,7 @@ import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_s
 import 'package:Prism/features/personalized_feed/views/widgets/home_feed_tab_bar.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
+import 'package:Prism/features/weekly_challenges/biz/weekly_challenges_cubit.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:bloc_test/bloc_test.dart';
@@ -39,6 +41,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/empty_mood_repository.dart';
+import '../../support/empty_weekly_challenges_repository.dart';
 import '../../support/in_memory_local_store.dart';
 
 class _MockPersonalizedFeedBloc extends MockBloc<PersonalizedFeedEvent, PersonalizedFeedState>
@@ -570,6 +573,7 @@ void main() {
     when(trendingBloc.close).thenAnswer((_) async {});
     getIt.registerSingleton<TrendingBloc>(trendingBloc);
     getIt.registerSingleton<MoodsCubit>(MoodsCubit(const EmptyMoodRepository()));
+    getIt.registerFactory<WeeklyChallengesCubit>(() => WeeklyChallengesCubit(const EmptyWeeklyChallengesRepository()));
     final _MockWotdBloc wotd = _MockWotdBloc();
     when(() => wotd.state).thenReturn(WotdState.initial());
     final _MockNotificationsBloc notifications = _MockNotificationsBloc();
