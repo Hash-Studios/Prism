@@ -1,0 +1,35 @@
+{
+  "sourceCommit": "09ca20c27",
+  "device": "Prism_QA_API36 / emulator-5580",
+  "run": "20261030T090259Z-1486500",
+  "flagOn": "committed debug default",
+  "flagOff": "temporary enabledOverride=false; reverted; same backend and account",
+  "remaining": [
+    "eligible streak/free spin",
+    "live inline action receipt",
+    "iOS Simulator"
+  ],
+  "screenshots": [
+    "ready-large-dark-01.png",
+    "ready-large-dark-02.png",
+    "ready-large-light.png",
+    "ready-off-bottom.png",
+    "ready-off-chest-link.png",
+    "ready-off-light-01.png",
+    "ready-off-light-02.png",
+    "ready-off-light-03.png",
+    "ready-off-light-04.png",
+    "ready-off-light-05.png",
+    "ready-off-light-06.png",
+    "ready-off-light-07.png",
+    "ready-off-spin-link.png",
+    "ready-on-bottom.png",
+    "ready-on-light-01.png",
+    "ready-on-light-02.png",
+    "ready-on-more-01.png",
+    "ready-on-more-02.png",
+    "ready-on-more-03.png",
+    "ready-on-more-04.png",
+    "ready-spin-dark.png"
+  ]
+}
