@@ -75,6 +75,24 @@ void main() {
 
   bool copiedToClipboard() => platformCalls.any((call) => call.method == 'Clipboard.setData');
 
+  test('folder links prefer the strip and use the cover when the strip is missing', () async {
+    for (final strip in <String>['', 'https://img.prismwalls.com/push-gallery/v1/strip.jpg']) {
+      const cover = 'https://img.prismwalls.com/previews/cover.img';
+      final client = MockClient((request) async {
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        expect((body['preview'] as Map)['image_source_url'], strip.isEmpty ? cover : strip);
+        return http.Response('{"short_url":"https://prismwalls.com/l/folder"}', 200);
+      });
+      await withApi(
+        () => share.createFolderLink(
+          folderId: 'folder', name: 'Purple Landscapes', description: '8 wallpapers',
+          shareImage: strip, coverImage: cover,
+        ),
+        client,
+      );
+    }
+  });
+
   for (final source in WallpaperSource.values) {
     test('never sends the original in ${source.name} links or short-link payloads', () async {
       const original = 'https://private.example/premium-original.jpg?token=secret&url=hostile';
