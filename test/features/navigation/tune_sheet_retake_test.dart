@@ -95,7 +95,7 @@ void main() {
                   catalog: _catalog,
                   initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
                   initialFeedMix: FeedMix.balanced,
-                  onSave: (_, _) async => true,
+                  onSave: (_, _, _) async => true,
                   tasteSignals: store,
                   tasteQuiz: repo,
                   openRetake:

@@ -122,6 +122,7 @@ enums:
     dart_type: SettingValue
     values:
       - anime_wallpapers
+      - ai_wallpapers
       - sketchy_wallpapers
       - recommendations_notifications
       - haptics

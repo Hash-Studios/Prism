@@ -3078,5 +3078,15 @@
   "reportCouldNotSendBody": "Revisa tu conexión e inténtalo de nuevo, o comparte el informe como archivo.",
   "reportShareInstead": "Compartir en su lugar",
   "reportShakeToReport": "Agitar para informar",
-  "reportShakeToReportSubtitle": "Agita el teléfono en cualquier pantalla para informar de un problema"
+  "reportShakeToReportSubtitle": "Agita el teléfono en cualquier pantalla para informar de un problema",
+  "accountShowAiWallpapers": "Mostrar fondos generados con IA",
+  "accountShowAiWallpapersSubtitle": "Desactívalo para ver solo fondos hechos por personas",
+  "accountShowAiWallpapersFootnote": "Ocultar los fondos de IA nunca oculta tus propias subidas ni tus favoritos.",
+  "wallpaperFeedHideAi": "Ocultar IA",
+  "wallpaperAiGenerated": "Generado con IA",
+  "wallpaperAiMadeWith": "Hecho con {model}",
+  "wallpaperAiMadeWithUnknown": "Hecho con IA",
+  "wallpaperAiReportWrongLabel": "Reportar etiqueta incorrecta",
+  "feedNoHumanWalls": "Aún no hay fondos hechos por personas aquí",
+  "feedShowAiWalls": "Mostrar fondos de IA"
 }

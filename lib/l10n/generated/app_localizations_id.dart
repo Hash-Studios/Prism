@@ -11318,4 +11318,37 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get reportShakeToReportSubtitle => 'Goyangkan ponsel di layar mana pun untuk melaporkan masalah';
+
+  @override
+  String get accountShowAiWallpapers => 'Tampilkan wallpaper buatan AI';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'Matikan untuk melihat wallpaper buatan manusia saja';
+
+  @override
+  String get accountShowAiWallpapersFootnote =>
+      'Menyembunyikan wallpaper AI tidak pernah menyembunyikan unggahan dan favorit Anda.';
+
+  @override
+  String get wallpaperFeedHideAi => 'Sembunyikan AI';
+
+  @override
+  String get wallpaperAiGenerated => 'Buatan AI';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return 'Dibuat dengan $model';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'Dibuat dengan AI';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'Laporkan label salah';
+
+  @override
+  String get feedNoHumanWalls => 'Belum ada wallpaper buatan manusia di sini';
+
+  @override
+  String get feedShowAiWalls => 'Tampilkan wallpaper AI';
 }

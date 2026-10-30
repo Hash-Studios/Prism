@@ -9,6 +9,7 @@ import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/categories/category_catalog.dart';
@@ -86,8 +87,12 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
       final page = providerPage == null
           ? null
           : CategoryFeedPage(
+              // Hidden AI walls go before the URL dedupe, so a provider copy of the same image still shows.
               items: AnimeContentFilter.filterFeedItems(
-                _prependPrism(await prismFirst, providerPage.items),
+                _prependPrism(
+                  AiContentFilter.filterFeedItems(await prismFirst, showAi: AiContentFilter.showsAi(_settingsLocal)),
+                  AiContentFilter.filterFeedItems(providerPage.items, showAi: AiContentFilter.showsAi(_settingsLocal)),
+                ),
                 showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
               ),
               hasMore: providerPage.hasMore,
@@ -311,11 +316,13 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     final snapshot = await _feedCacheLocal.read(source: 'category', scope: _scopeFor(category));
     final payload = toJsonMap(snapshot?.payload);
     final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
-    // A cache written while anime was on may hold anime Prism walls.
+    final bool showAi = AiContentFilter.showsAi(_settingsLocal);
+    // A cache written while anime or AI was on may hold those Prism walls.
     final items = ((payload['items'] as List?) ?? const <Object?>[])
         .map((entry) => decodeFeedItem(toJsonMap(entry)))
         .nonNulls
         .where((item) => !AnimeContentFilter.hidesFeedItem(item, showAnime: showAnime))
+        .where((item) => !AiContentFilter.hidesFeedItem(item, showAi: showAi))
         .toList(growable: false);
 
     if (items.isEmpty) {

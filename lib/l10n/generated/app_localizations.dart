@@ -18102,6 +18102,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Shake your phone on any screen to report a problem'**
   String get reportShakeToReportSubtitle;
+
+  /// Content preference that shows or hides AI-generated Prism walls.
+  ///
+  /// In en, this message translates to:
+  /// **'Show AI-generated wallpapers'**
+  String get accountShowAiWallpapers;
+
+  /// Subtitle under the AI-generated wallpapers switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off to see only human-made walls'**
+  String get accountShowAiWallpapersSubtitle;
+
+  /// Footnote under the AI-generated wallpapers switch. Says what still shows when the switch is off.
+  ///
+  /// In en, this message translates to:
+  /// **'Hiding AI wallpapers never hides your own uploads or favourites.'**
+  String get accountShowAiWallpapersFootnote;
+
+  /// Chip in the Tune your feed sheet that hides AI-generated walls. Same setting as the Settings switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide AI'**
+  String get wallpaperFeedHideAi;
+
+  /// Tag on the wallpaper detail screen for a wall that was made with AI.
+  ///
+  /// In en, this message translates to:
+  /// **'AI-generated'**
+  String get wallpaperAiGenerated;
+
+  /// Sheet line that names the AI model that made the wall.
+  ///
+  /// In en, this message translates to:
+  /// **'Made with {model}'**
+  String wallpaperAiMadeWith(String model);
+
+  /// Sheet line for an AI wall that did not record its model.
+  ///
+  /// In en, this message translates to:
+  /// **'Made with AI'**
+  String get wallpaperAiMadeWithUnknown;
+
+  /// Row in the AI-generated sheet that opens the report sheet for a wrong AI label.
+  ///
+  /// In en, this message translates to:
+  /// **'Report wrong label'**
+  String get wallpaperAiReportWrongLabel;
+
+  /// Empty state when every wall in a feed is AI-generated and AI walls are hidden.
+  ///
+  /// In en, this message translates to:
+  /// **'No human-made walls here yet'**
+  String get feedNoHumanWalls;
+
+  /// Action in the empty state that turns AI-generated walls back on.
+  ///
+  /// In en, this message translates to:
+  /// **'Show AI walls'**
+  String get feedShowAiWalls;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

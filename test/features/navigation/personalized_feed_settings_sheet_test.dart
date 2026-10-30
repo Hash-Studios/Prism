@@ -13,6 +13,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
@@ -51,6 +52,14 @@ class _MockWotdBloc extends MockBloc<WotdEvent, WotdState> implements WotdBloc {
 
 class _MockNotificationsBloc extends MockBloc<InAppNotificationsEvent, InAppNotificationsState>
     implements InAppNotificationsBloc {}
+
+class _MockCategoryFeedBloc extends MockBloc<CategoryFeedEvent, CategoryFeedState> implements CategoryFeedBloc {}
+
+Widget _withCategoryFeedBloc(Widget child) {
+  final bloc = _MockCategoryFeedBloc();
+  when(() => bloc.state).thenReturn(CategoryFeedState.initial());
+  return BlocProvider<CategoryFeedBloc>.value(value: bloc, child: child);
+}
 
 class _FailingClearStore extends TasteSignalStore {
   _FailingClearStore(super.settingsLocal);
@@ -102,6 +111,7 @@ void main() {
   late _FakeFirebaseRemoteConfigPlatform remoteConfig;
   List<String>? savedInterests;
   FeedMix? savedMix;
+  bool? savedHideAi;
 
   setUpAll(() async {
     registerFallbackValue(const SaveInterestsParams(interests: <String>[]));
@@ -122,6 +132,7 @@ void main() {
     store = TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore()));
     savedInterests = null;
     savedMix = null;
+    savedHideAi = null;
   });
 
   /// Opens [sheet] in a Prism sheet, the way the app does. PrismSheetBody needs the sheet around it.
@@ -170,9 +181,10 @@ void main() {
         initialInterests: initial,
         initialFeedMix: FeedMix.balanced,
         tasteSignals: store,
-        onSave: (List<String> interests, FeedMix mix) async {
+        onSave: (List<String> interests, FeedMix mix, bool hideAi) async {
           savedInterests = interests;
           savedMix = mix;
+          savedHideAi = hideAi;
           return true;
         },
       ),
@@ -213,15 +225,17 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: DefaultTabController(
-          length: HomeFeedChip.values.length,
-          child: Builder(
-            builder: (context) => Scaffold(
-              body: HomeFeedTabBar(
-                controller: DefaultTabController.of(context),
-                selected: HomeFeedChip.forYou,
-                onSelected: (_) {},
-                onTuneTap: () => unawaited(openPersonalizedFeedSettingsBottomSheet(context)),
+        home: _withCategoryFeedBloc(
+          DefaultTabController(
+            length: HomeFeedChip.values.length,
+            child: Builder(
+              builder: (context) => Scaffold(
+                body: HomeFeedTabBar(
+                  controller: DefaultTabController.of(context),
+                  selected: HomeFeedChip.forYou,
+                  onSelected: (_) {},
+                  onTuneTap: () => unawaited(openPersonalizedFeedSettingsBottomSheet(context)),
+                ),
               ),
             ),
           ),
@@ -277,6 +291,37 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('the Hide AI chip is off by default, saves on, and Reset turns it off again', (tester) async {
+    await pumpSheet(tester);
+    await tester.ensureVisible(find.text('Hide AI'));
+    bool selected() =>
+        tester
+            .getSemantics(find.bySemanticsLabel('Hide AI'))
+            .getSemanticsData()
+            .flagsCollection
+            .isSelected
+            .toBoolOrNull() ==
+        true;
+    final SemanticsHandle handle = tester.ensureSemantics();
+    expect(selected(), isFalse);
+
+    await tester.tap(find.text('Hide AI'));
+    await tester.pumpAndSettle();
+    expect(selected(), isTrue);
+
+    await tester.tap(find.text('Reset'));
+    await tester.pumpAndSettle();
+    expect(selected(), isFalse);
+
+    await tester.tap(find.text('Hide AI'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+    expect(savedHideAi, isTrue);
+    handle.dispose();
+  });
+
   testWidgets('Save needs at least three interests', (tester) async {
     await pumpSheet(tester);
     expect(find.text('2 picked'), findsOneWidget);
@@ -311,7 +356,7 @@ void main() {
         initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
         initialFeedMix: FeedMix.balanced,
         tasteSignals: store,
-        onSave: (List<String> _, FeedMix _) async => false,
+        onSave: (List<String> _, FeedMix _, bool _) async => false,
       ),
     );
 
@@ -324,6 +369,93 @@ void main() {
     expect(find.text('Could not save feed settings. Try again.'), findsOneWidget);
   });
 
+  testWidgets('successful save publishes a revision after an unrelated revision during persistence', (tester) async {
+    await store.record(TasteSignal(action: TasteAction.set, at: DateTime.now(), terms: const <String>['neon']));
+    final Completer<bool> saveResult = Completer<bool>();
+    var revisionChanges = 0;
+    void countRevision() => revisionChanges++;
+    personalizedFeedSettingsRevision.addListener(countRevision);
+    addTearDown(() => personalizedFeedSettingsRevision.removeListener(countRevision));
+
+    await openSheet(
+      tester,
+      PersonalizedFeedSettingsSheet(
+        catalog: _catalog,
+        initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
+        initialFeedMix: FeedMix.balanced,
+        tasteSignals: store,
+        onSave: (_, _, _) => saveResult.future,
+      ),
+    );
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pump();
+    await tester.tap(find.text('Clear'));
+    await _settle(tester);
+    expect(revisionChanges, 1);
+
+    saveResult.complete(true);
+    await tester.pumpAndSettle();
+
+    expect(revisionChanges, 2);
+  });
+
+  testWidgets('successful save publishes a revision after the sheet is dismissed during persistence', (tester) async {
+    final Completer<bool> saveResult = Completer<bool>();
+    var revisionChanges = 0;
+    void countRevision() => revisionChanges++;
+    personalizedFeedSettingsRevision.addListener(countRevision);
+    addTearDown(() => personalizedFeedSettingsRevision.removeListener(countRevision));
+
+    await openSheet(
+      tester,
+      PersonalizedFeedSettingsSheet(
+        catalog: _catalog,
+        initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
+        initialFeedMix: FeedMix.balanced,
+        tasteSignals: store,
+        onSave: (_, _, _) => saveResult.future,
+      ),
+    );
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+    saveResult.complete(true);
+    await tester.pump();
+
+    expect(revisionChanges, 1);
+  });
+
+  testWidgets('failed save does not publish a revision after the sheet is dismissed during persistence', (
+    tester,
+  ) async {
+    final Completer<bool> saveResult = Completer<bool>();
+    var revisionChanges = 0;
+    void countRevision() => revisionChanges++;
+    personalizedFeedSettingsRevision.addListener(countRevision);
+    addTearDown(() => personalizedFeedSettingsRevision.removeListener(countRevision));
+
+    await openSheet(
+      tester,
+      PersonalizedFeedSettingsSheet(
+        catalog: _catalog,
+        initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
+        initialFeedMix: FeedMix.balanced,
+        tasteSignals: store,
+        onSave: (_, _, _) => saveResult.future,
+      ),
+    );
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+    saveResult.complete(false);
+    await tester.pump();
+
+    expect(revisionChanges, 0);
+  });
+
   testWidgets('thrown save error also releases the saving state', (tester) async {
     await openSheet(
       tester,
@@ -332,7 +464,7 @@ void main() {
         initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
         initialFeedMix: FeedMix.balanced,
         tasteSignals: store,
-        onSave: (_, _) async => throw StateError('save failed'),
+        onSave: (_, _, _) async => throw StateError('save failed'),
       ),
     );
     await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
@@ -367,11 +499,13 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Builder(
-          builder: (BuildContext context) => Scaffold(
-            body: TextButton(
-              onPressed: () => unawaited(openPersonalizedFeedSettingsBottomSheet(context)),
-              child: const Text('Open settings'),
+        home: _withCategoryFeedBloc(
+          Builder(
+            builder: (BuildContext context) => Scaffold(
+              body: TextButton(
+                onPressed: () => unawaited(openPersonalizedFeedSettingsBottomSheet(context)),
+                child: const Text('Open settings'),
+              ),
             ),
           ),
         ),
@@ -410,7 +544,7 @@ void main() {
           initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
           initialFeedMix: FeedMix.balanced,
           tasteSignals: store,
-          onSave: (_, _) async => true,
+          onSave: (_, _, _) async => true,
         ),
         theme: ThemeData(colorScheme: scheme),
       );
@@ -479,7 +613,7 @@ void main() {
                       initialInterests: const <String>{'Nature', 'Abstract', 'Space'},
                       initialFeedMix: FeedMix.balanced,
                       tasteSignals: store,
-                      onSave: (_, _) async => true,
+                      onSave: (_, _, _) async => true,
                     ),
                   ),
                   child: const Text('Open settings'),
@@ -521,11 +655,13 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Builder(
-          builder: (BuildContext context) => Scaffold(
-            body: TextButton(
-              onPressed: () => unawaited(openPersonalizedFeedSettingsBottomSheet(context)),
-              child: const Text('Open settings'),
+        home: _withCategoryFeedBloc(
+          Builder(
+            builder: (BuildContext context) => Scaffold(
+              body: TextButton(
+                onPressed: () => unawaited(openPersonalizedFeedSettingsBottomSheet(context)),
+                child: const Text('Open settings'),
+              ),
             ),
           ),
         ),

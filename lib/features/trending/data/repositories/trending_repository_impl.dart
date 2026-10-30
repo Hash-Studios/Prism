@@ -9,6 +9,7 @@ import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/prism_preview.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -110,12 +111,14 @@ class TrendingRepositoryImpl implements TrendingRepository {
 
   List<PrismWallpaper> _visible(List<PrismWallpaper> walls, BlockedCreators blocked) {
     final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
+    final bool showAi = AiContentFilter.showsAi(_settingsLocal);
     return walls
         .where(
           (wall) =>
               hasPrismPreview(wall) &&
               !BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked) &&
-              (showAnime || !AnimeContentFilter.isAnime(wall)),
+              (showAnime || !AnimeContentFilter.isAnime(wall)) &&
+              (showAi || !AiContentFilter.isAi(wall)),
         )
         .toList(growable: false);
   }

@@ -26,6 +26,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
@@ -72,6 +73,7 @@ import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dar
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/ai_generated_tag.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/depth_effect_row.dart';
@@ -1980,6 +1982,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final resolution = wallpaper.core.resolution;
     final sizeBytes = wallpaper.core.sizeBytes;
     final createdAt = wallpaper.core.createdAt;
+    final String? reportDocId = BundledWallpapers.isStarter(state.entity) ? null : wallpaper.firestoreDocumentId;
     return _metadataShell(
       left: [
         Padding(
@@ -2022,6 +2025,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             },
           ),
         ),
+        if (AiContentFilter.isAi(wallpaper))
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AiGeneratedTag(wallpaper: wallpaper, reportDocId: reportDocId, reportSubtitle: state.entity.id),
+          ),
         if (collections != null && collections.isNotEmpty) ...[
           _buildInfoRow(context, JamIcons.folder, collections.take(2).join(', ')),
           const SizedBox(height: 4),

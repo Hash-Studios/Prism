@@ -10779,5 +10779,15 @@
   "reportShakeToReportSubtitle": "Schüttle dein Handy auf jedem Bildschirm, um ein Problem zu melden",
   "@reportShakeToReportSubtitle": {
     "description": "Settings toggle subtitle for shake to report."
-  }
+  },
+  "accountShowAiWallpapers": "KI-generierte Hintergrundbilder anzeigen",
+  "accountShowAiWallpapersSubtitle": "Ausschalten, um nur von Menschen gemachte Walls zu sehen",
+  "accountShowAiWallpapersFootnote": "Wenn du KI-Hintergrundbilder ausblendest, bleiben deine eigenen Uploads und Favoriten sichtbar.",
+  "wallpaperFeedHideAi": "KI ausblenden",
+  "wallpaperAiGenerated": "KI-generiert",
+  "wallpaperAiMadeWith": "Erstellt mit {model}",
+  "wallpaperAiMadeWithUnknown": "Mit KI erstellt",
+  "wallpaperAiReportWrongLabel": "Falsches Label melden",
+  "feedNoHumanWalls": "Hier gibt es noch keine von Menschen gemachten Walls",
+  "feedShowAiWalls": "KI-Walls anzeigen"
 }

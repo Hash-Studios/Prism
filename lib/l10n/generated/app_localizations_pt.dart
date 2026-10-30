@@ -11597,6 +11597,39 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get reportShakeToReportSubtitle => 'Agite o celular em qualquer tela para relatar um problema';
+
+  @override
+  String get accountShowAiWallpapers => 'Mostrar papéis de parede gerados por IA';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'Desative para ver só papéis de parede feitos por pessoas';
+
+  @override
+  String get accountShowAiWallpapersFootnote =>
+      'Ocultar papéis de parede de IA nunca oculta seus próprios envios nem seus favoritos.';
+
+  @override
+  String get wallpaperFeedHideAi => 'Ocultar IA';
+
+  @override
+  String get wallpaperAiGenerated => 'Gerado por IA';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return 'Feito com $model';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'Feito com IA';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'Denunciar rótulo errado';
+
+  @override
+  String get feedNoHumanWalls => 'Ainda não há papéis de parede feitos por pessoas aqui';
+
+  @override
+  String get feedShowAiWalls => 'Mostrar papéis de parede de IA';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -23190,4 +23223,37 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get reportShakeToReportSubtitle => 'Agite o celular em qualquer tela para relatar um problema';
+
+  @override
+  String get accountShowAiWallpapers => 'Mostrar papéis de parede gerados por IA';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'Desative para ver só papéis de parede feitos por pessoas';
+
+  @override
+  String get accountShowAiWallpapersFootnote =>
+      'Ocultar papéis de parede de IA nunca oculta seus próprios envios nem seus favoritos.';
+
+  @override
+  String get wallpaperFeedHideAi => 'Ocultar IA';
+
+  @override
+  String get wallpaperAiGenerated => 'Gerado por IA';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return 'Feito com $model';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'Feito com IA';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'Denunciar rótulo errado';
+
+  @override
+  String get feedNoHumanWalls => 'Ainda não há papéis de parede feitos por pessoas aqui';
+
+  @override
+  String get feedShowAiWalls => 'Mostrar papéis de parede de IA';
 }

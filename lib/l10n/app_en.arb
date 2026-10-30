@@ -10845,5 +10845,51 @@
   "reportShakeToReportSubtitle": "Shake your phone on any screen to report a problem",
   "@reportShakeToReportSubtitle": {
     "description": "Settings toggle subtitle for shake to report."
+  },
+  "accountShowAiWallpapers": "Show AI-generated wallpapers",
+  "@accountShowAiWallpapers": {
+    "description": "Content preference that shows or hides AI-generated Prism walls."
+  },
+  "accountShowAiWallpapersSubtitle": "Turn off to see only human-made walls",
+  "@accountShowAiWallpapersSubtitle": {
+    "description": "Subtitle under the AI-generated wallpapers switch."
+  },
+  "accountShowAiWallpapersFootnote": "Hiding AI wallpapers never hides your own uploads or favourites.",
+  "@accountShowAiWallpapersFootnote": {
+    "description": "Footnote under the AI-generated wallpapers switch. Says what still shows when the switch is off."
+  },
+  "wallpaperFeedHideAi": "Hide AI",
+  "@wallpaperFeedHideAi": {
+    "description": "Chip in the Tune your feed sheet that hides AI-generated walls. Same setting as the Settings switch."
+  },
+  "wallpaperAiGenerated": "AI-generated",
+  "@wallpaperAiGenerated": {
+    "description": "Tag on the wallpaper detail screen for a wall that was made with AI."
+  },
+  "wallpaperAiMadeWith": "Made with {model}",
+  "@wallpaperAiMadeWith": {
+    "description": "Sheet line that names the AI model that made the wall.",
+    "placeholders": {
+      "model": {
+        "type": "String",
+        "example": "Seedream 5 Lite"
+      }
+    }
+  },
+  "wallpaperAiMadeWithUnknown": "Made with AI",
+  "@wallpaperAiMadeWithUnknown": {
+    "description": "Sheet line for an AI wall that did not record its model."
+  },
+  "wallpaperAiReportWrongLabel": "Report wrong label",
+  "@wallpaperAiReportWrongLabel": {
+    "description": "Row in the AI-generated sheet that opens the report sheet for a wrong AI label."
+  },
+  "feedNoHumanWalls": "No human-made walls here yet",
+  "@feedNoHumanWalls": {
+    "description": "Empty state when every wall in a feed is AI-generated and AI walls are hidden."
+  },
+  "feedShowAiWalls": "Show AI walls",
+  "@feedShowAiWalls": {
+    "description": "Action in the empty state that turns AI-generated walls back on."
   }
 }

@@ -11261,4 +11261,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportShakeToReportSubtitle => 'Shake your phone on any screen to report a problem';
+
+  @override
+  String get accountShowAiWallpapers => 'Show AI-generated wallpapers';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'Turn off to see only human-made walls';
+
+  @override
+  String get accountShowAiWallpapersFootnote => 'Hiding AI wallpapers never hides your own uploads or favourites.';
+
+  @override
+  String get wallpaperFeedHideAi => 'Hide AI';
+
+  @override
+  String get wallpaperAiGenerated => 'AI-generated';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return 'Made with $model';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'Made with AI';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'Report wrong label';
+
+  @override
+  String get feedNoHumanWalls => 'No human-made walls here yet';
+
+  @override
+  String get feedShowAiWalls => 'Show AI walls';
 }

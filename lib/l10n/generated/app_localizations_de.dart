@@ -11427,4 +11427,37 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get reportShakeToReportSubtitle => 'Schüttle dein Handy auf jedem Bildschirm, um ein Problem zu melden';
+
+  @override
+  String get accountShowAiWallpapers => 'KI-generierte Hintergrundbilder anzeigen';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'Ausschalten, um nur von Menschen gemachte Walls zu sehen';
+
+  @override
+  String get accountShowAiWallpapersFootnote =>
+      'Wenn du KI-Hintergrundbilder ausblendest, bleiben deine eigenen Uploads und Favoriten sichtbar.';
+
+  @override
+  String get wallpaperFeedHideAi => 'KI ausblenden';
+
+  @override
+  String get wallpaperAiGenerated => 'KI-generiert';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return 'Erstellt mit $model';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'Mit KI erstellt';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'Falsches Label melden';
+
+  @override
+  String get feedNoHumanWalls => 'Hier gibt es noch keine von Menschen gemachten Walls';
+
+  @override
+  String get feedShowAiWalls => 'KI-Walls anzeigen';
 }

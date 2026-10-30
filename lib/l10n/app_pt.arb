@@ -2994,5 +2994,15 @@
   "reportCouldNotSendBody": "Verifique sua conexão e tente novamente, ou compartilhe o relatório como arquivo.",
   "reportShareInstead": "Compartilhar em vez disso",
   "reportShakeToReport": "Agitar para relatar",
-  "reportShakeToReportSubtitle": "Agite o celular em qualquer tela para relatar um problema"
+  "reportShakeToReportSubtitle": "Agite o celular em qualquer tela para relatar um problema",
+  "accountShowAiWallpapers": "Mostrar papéis de parede gerados por IA",
+  "accountShowAiWallpapersSubtitle": "Desative para ver só papéis de parede feitos por pessoas",
+  "accountShowAiWallpapersFootnote": "Ocultar papéis de parede de IA nunca oculta seus próprios envios nem seus favoritos.",
+  "wallpaperFeedHideAi": "Ocultar IA",
+  "wallpaperAiGenerated": "Gerado por IA",
+  "wallpaperAiMadeWith": "Feito com {model}",
+  "wallpaperAiMadeWithUnknown": "Feito com IA",
+  "wallpaperAiReportWrongLabel": "Denunciar rótulo errado",
+  "feedNoHumanWalls": "Ainda não há papéis de parede feitos por pessoas aqui",
+  "feedShowAiWalls": "Mostrar papéis de parede de IA"
 }

@@ -11406,4 +11406,36 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get reportShakeToReportSubtitle => 'किसी भी स्क्रीन पर समस्या की रिपोर्ट करने के लिए फ़ोन को हिलाएं';
+
+  @override
+  String get accountShowAiWallpapers => 'AI से बने वॉलपेपर दिखाएँ';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'केवल इंसानों के बनाए वॉलपेपर देखने के लिए बंद करें';
+
+  @override
+  String get accountShowAiWallpapersFootnote => 'AI वॉलपेपर छिपाने पर भी आपके अपलोड और पसंदीदा कभी नहीं छिपते।';
+
+  @override
+  String get wallpaperFeedHideAi => 'AI छिपाएँ';
+
+  @override
+  String get wallpaperAiGenerated => 'AI से बना';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return '$model से बना';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'AI से बना';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'गलत लेबल की रिपोर्ट करें';
+
+  @override
+  String get feedNoHumanWalls => 'यहाँ अभी इंसानों के बनाए वॉलपेपर नहीं हैं';
+
+  @override
+  String get feedShowAiWalls => 'AI वॉलपेपर दिखाएँ';
 }

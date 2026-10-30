@@ -10776,5 +10776,15 @@
   "reportShakeToReportSubtitle": "Goyangkan ponsel di layar mana pun untuk melaporkan masalah",
   "@reportShakeToReportSubtitle": {
     "description": "Settings toggle subtitle for shake to report."
-  }
+  },
+  "accountShowAiWallpapers": "Tampilkan wallpaper buatan AI",
+  "accountShowAiWallpapersSubtitle": "Matikan untuk melihat wallpaper buatan manusia saja",
+  "accountShowAiWallpapersFootnote": "Menyembunyikan wallpaper AI tidak pernah menyembunyikan unggahan dan favorit Anda.",
+  "wallpaperFeedHideAi": "Sembunyikan AI",
+  "wallpaperAiGenerated": "Buatan AI",
+  "wallpaperAiMadeWith": "Dibuat dengan {model}",
+  "wallpaperAiMadeWithUnknown": "Dibuat dengan AI",
+  "wallpaperAiReportWrongLabel": "Laporkan label salah",
+  "feedNoHumanWalls": "Belum ada wallpaper buatan manusia di sini",
+  "feedShowAiWalls": "Tampilkan wallpaper AI"
 }
