@@ -74,8 +74,8 @@ void main() {
   });
 
   tearDown(() async {
-    CoinsService.instance.consumeLastClaim();
     app_state.prismUser = app_constants.createGuestPrismUser();
+    CoinsService.instance.resetSession();
     await getIt.reset();
   });
 
@@ -348,6 +348,7 @@ void main() {
     expect(find.text(AppLocalizationsEn().economyNice), findsNothing);
     expect(CoinsService.instance.lastClaimNotifier.value, isNull);
 
+    CoinsService.instance.resetSession();
     await backend.install();
     await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
     expect(CoinsService.instance.pendingClaimForCurrentUser, isNotNull);
