@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -11,6 +12,7 @@ import 'package:Prism/features/personalized_feed/views/widgets/feed_loading_more
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -162,13 +164,21 @@ class PagedChipSliver extends StatelessWidget {
 class AiHiddenFeedState extends StatelessWidget {
   const AiHiddenFeedState({super.key});
 
+  Future<void> _showAiWalls(String saveError) async {
+    try {
+      await setShowAiWallpapers(getIt<SettingsLocalDataSource>(), true);
+    } catch (_) {
+      toasts.error(saveError);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GlintState(
       kind: GlintStateKind.empty,
       title: context.l10n.feedNoHumanWalls,
       actionLabel: context.l10n.feedShowAiWalls,
-      onAction: () => unawaited(setShowAiWallpapers(getIt<SettingsLocalDataSource>(), true)),
+      onAction: () => unawaited(_showAiWalls(context.l10n.wallpaperFeedSaveError)),
     );
   }
 }
