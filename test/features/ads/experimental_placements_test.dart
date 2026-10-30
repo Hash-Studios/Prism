@@ -32,6 +32,19 @@ class _EligibleService extends AdExperimentService {
   Future<int?> bucket({String? accountId}) async => 42;
 }
 
+class _FakeInterstitial extends Fake implements InterstitialAd {
+  int shows = 0;
+  int disposals = 0;
+  @override
+  OnPaidEventCallback? onPaidEvent;
+  @override
+  FullScreenContentCallback<InterstitialAd>? fullScreenContentCallback;
+  @override
+  Future<void> show() async => shows++;
+  @override
+  Future<void> dispose() async => disposals++;
+}
+
 void main() {
   for (final allowed in [true, false]) {
     testWidgets('inline rechecks privacy result $allowed after the form closes', (tester) async {
@@ -303,5 +316,49 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Browse'), findsOneWidget);
     expect(service.consumeSuccessfulWallpaperAction(), isFalse);
+  });
+
+  testWidgets('route changes during the return delay do not discard the loaded interstitial', (tester) async {
+    final service = _EligibleService();
+    final ad = _FakeInterstitial();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (grid) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(grid).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (detailContext) => ExperimentalInterstitialReturn(
+                    grid: grid,
+                    service: service,
+                    android: true,
+                    loadAd: (_, callback) async => callback.onAdLoaded(ad),
+                    child: Scaffold(
+                      body: TextButton(
+                        onPressed: () {
+                          service.recordSuccessfulWallpaperAction();
+                          Navigator.of(detailContext).pop();
+                        },
+                        child: const Text('Return'),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              child: const Text('Browse'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Browse'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Return'));
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 600));
+    expect((ad.shows, ad.disposals), (1, 0));
   });
 }

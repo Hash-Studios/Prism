@@ -984,7 +984,7 @@ class CoinsService with WidgetsBindingObserver {
     });
   }
 
-  Future<RewardedSession?> _beginRewardedSession(String placement) async {
+  Future<RewardedSession?> _beginRewardedSession(String placement, {bool retried = false}) async {
     rewardedSessionUnavailableReason = null;
     if (!_canMutateCoins()) return null;
     final String owner = app_state.prismUser.id;
@@ -1054,7 +1054,12 @@ class CoinsService with WidgetsBindingObserver {
         entries.removeWhere((entry) => entry['requestId'] == requestId);
         entries.add(reservation);
       });
-      return _isCurrentOwner(owner, generation) ? _reservedSession(reservation) : null;
+      if (!_isCurrentOwner(owner, generation)) return null;
+      // A replayed requestId returns its old reservation. Keep it for reconciliation and reserve a fresh one.
+      if (!retried && parseIntOr(reservation['showBeforeMs']) <= DateTime.now().millisecondsSinceEpoch) {
+        return await _beginRewardedSession(placement, retried: true);
+      }
+      return _reservedSession(reservation);
     } catch (_) {
       // Retrying begin uses this same persisted ID. Queries never mint a reward.
       return null;

@@ -55,6 +55,8 @@ class _ExperimentalInterstitialReturnState extends State<ExperimentalInterstitia
           WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed);
 
   void _sync() {
+    // After the pop, _showAfterReturn owns the ad and rechecks the grid itself.
+    if (_returning) return;
     if (!_active) {
       _invalidate();
     } else if (!_loading && _ad == null) {

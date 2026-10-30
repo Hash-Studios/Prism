@@ -218,6 +218,30 @@ void main() {
         'getRewardedSession',
       ]);
     });
+    test('a replayed reservation past its show window is kept and a fresh one is reserved', () async {
+      int begins = 0;
+      reply((name, _) {
+        if (name == 'getRewardedSession') {
+          return <String, Object?>{'version': 1, 'status': 'reserved', 'sessionId': 'old', 'currentBalance': 100};
+        }
+        begins++;
+        return <String, Object?>{
+          'version': 1,
+          'status': 'reserved',
+          'sessionId': begins == 1 ? 'old' : 'fresh',
+          'userId': app_state.prismUser.id,
+          'customData': 'token',
+          'adUnitId': 'server-unit',
+          'rewardCoins': 10,
+          'showBeforeMs': DateTime.now().add(Duration(minutes: begins == 1 ? -1 : 5)).millisecondsSinceEpoch,
+        };
+      });
+      final session = await service.beginRewardedSession('test');
+      expect(session?.sessionId, 'fresh');
+      final begun = calls.where(((String, Map<String, dynamic>) c) => c.$1 == 'beginRewardedSession').toList();
+      expect(begun, hasLength(2));
+      expect(begun.first.$2['requestId'], isNot(begun.last.$2['requestId']));
+    });
   });
 
   group('spend', () {
