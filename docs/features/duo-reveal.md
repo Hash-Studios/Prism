@@ -7,7 +7,7 @@ The inner portrait display is 1878 x 2670 pixels. Prism uses its landscape size,
 These display specifications were checked on 2026-10-30. They do not define an exact wallpaper file or automatic crop contract.
 
 Apple's [Device Hub guide](https://developer.apple.com/documentation/Xcode/interacting-with-your-app-in-device-hub.md) documents fold controls.
-The parent research found iPhone Duo in local Xcode 27.1. A fold command produced a wide screenshot, but hinge readback failed.
+Local Xcode 27.1 includes iPhone Duo. During research, a fold command produced a wide screenshot, but hinge readback failed.
 The local screenshot was 2853 x 2007. That screenshot does not establish the physical panel size or complete fold proof.
 
 No verified exact iOS wallpaper crop was found. The user approved Prism's `prism-right-v1` preset.
@@ -94,7 +94,7 @@ Renderer failures or undersized provider output fail generation through the exis
 No dependency was added. Provider output sizes and browser rendering still need one authorized live dev proof.
 The [fal Z Image Turbo OpenAPI schema](https://fal.ai/api/openapi/queue/openapi.json?endpoint_id=fal-ai/z-image/turbo)
 accepts positive integer custom edges up to 14142. Its schema does not impose a 2048-edge cap or an alignment multiple.
-This implementation worker read that schema without making a generation request. Fast requests retain the canonical target.
+Schema validation does not prove live provider output. Fast requests retain the canonical target.
 
 ## Website publication
 
@@ -107,17 +107,17 @@ The site uses its current dark gallery, type, spacing, header, and footer.
 The preview images require no animation or JavaScript, so reduced motion shows the same content.
 Tests inject local data without adding fixtures to the published manifest.
 
-## Deployment order and remaining proof
+## Deployment order and proof
 
-1. Complete copy integration, shared generator CI checks, model generation, and independent review.
-2. Run the full local gates. Recheck exact current diffs after the parallel workers finish.
+1. Complete local checks and independent reviews before device proof.
+2. Verify the app on iOS Duo and Android, plus a foldable if available. Run the authorized dev AI generation against the changed worker, not the old deployed version.
 3. With explicit approval, deploy the worker changes before shipping Duo AI. Verify the existing renderer configuration and quotas.
 4. With explicit approval, deploy Functions before the new Studio series runs.
 5. With separate explicit approval, run the manual Studio batch. Wait for processing, then review both views in the normal queue.
-6. With publication approval, populate the approved manifest. Build and deploy the website only after those approvals.
-7. Verify the app on iOS Duo and Android or a foldable if available. Run the separately authorized dev AI generation after review.
+6. With publication approval, populate the approved manifest. Deploy the website only after those approvals.
 
-The parent owns screenshots and a real device-driven recording through the device panel command and `tool/record_clip.sh`.
+Proof must include screenshots, a share card, empty and populated local web fixtures, and a real device-driven reveal recording.
+Use the device panel command for capture and the conversion settings in `tool/record_clip.sh` for the clip.
 Video share export is a follow-up. The current share artifact is a still card with folded and unfolded previews.
 Local tests, device proof, hosted CI, deployments, and live behavior are separate gates.
-This implementation worker runs no real generations, devices, deploys, production writes, commits, pushes, or PRs.
+No deployment or real Studio batch is authorized by the implementation task.
