@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import {removeChallengeVotesForAccount} from "./weeklyChallenges";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
 import {db, CALLABLE_REGIONS, str} from "./common";
@@ -109,6 +110,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await closeCreatorProgressForDeletion(callerUid);
   await removeUidFollowGraph(callerUid);
   await removeWallRequestsForAccount(callerUid);
+  await removeChallengeVotesForAccount(callerUid);
   // The deletion barrier is closed, so no sync can project these folders again.
   await removeOwnerPublicFolders(callerUid);
   await removeAllFolderFollows(callerUid);

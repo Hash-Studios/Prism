@@ -54,11 +54,17 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheets.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_style_sheet.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
+import 'package:Prism/features/weekly_challenges/biz/challenge_admission_tracker.dart';
+import 'package:Prism/features/weekly_challenges/biz/confirm_challenge_submission.dart';
+import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
+import 'package:Prism/features/weekly_challenges/views/widgets/challenge_context_chip.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+
+export 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart' show ChallengeSeed;
 
 bool canSubmitAiGeneration(AiGenerationRecord record, {required String currentUserId}) =>
     record.submittedWallId == null && record.userId == currentUserId;
@@ -81,12 +87,20 @@ List<AiGenerationRecord> mergeAiSubmissionHistory(
 
 @RoutePage(name: 'AiTabRoute')
 class AiWallpaperTabPage extends StatefulWidget {
-  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting, this.shareSheet, this.remixSeed});
+  const AiWallpaperTabPage({
+    super.key,
+    this.repository,
+    this.submitForTesting,
+    this.shareSheet,
+    this.remixSeed,
+    this.challengeSeed,
+  });
 
   final AiGenerationRepositoryImpl? repository;
 
   /// The wall the user tapped Remix on. Its prompt and style fill the form, and a generation links back to it.
   final AiRemixSeed? remixSeed;
+  final ChallengeSeed? challengeSeed;
 
   /// Opens the share sheet. Tests replace it.
   final ShareSheetOpen? shareSheet;
@@ -107,6 +121,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   AiStylePreset _selectedStyle = AiStylePreset.abstract;
   AiQualityTier _selectedQualityTier = AiQualityTier.fast;
   AiRemixSeed? _remixLink;
+  ChallengeSeed? _challengeLink;
   List<AiGenerationRecord> _history = <AiGenerationRecord>[];
 
   /// The wallpaper shown full-bleed. Null shows the prompt editor.
@@ -157,6 +172,14 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     _loadHistory();
     final AiRemixSeed? remixSeed = widget.remixSeed;
     if (remixSeed != null) _applyRemixSeed(remixSeed);
+    _challengeLink = widget.challengeSeed;
+    if (_challengeLink case final seed?) {
+      _setPrompt(
+        seed.theme.length > _maxPromptChars ? _clipPrompt(seed.theme) : seed.theme,
+        userInitiated: true,
+        updateSeed: false,
+      );
+    }
   }
 
   /// Fills the form from [seed]. Runs after [_loadHistory], which resets the prompt owner, so the remix prompt wins.
@@ -363,6 +386,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     setState(() {
       _hero = record;
       _heroFrom = AiApplyFromValue.hero;
+      _challengeLink = record.challengeId == null
+          ? null
+          : ChallengeSeed(id: record.challengeId!, theme: record.challengeTheme ?? '');
     });
   }
 
@@ -373,6 +399,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     setState(() {
       _hero = record;
       _heroFrom = AiApplyFromValue.strip;
+      _challengeLink = record.challengeId == null
+          ? null
+          : ChallengeSeed(id: record.challengeId!, theme: record.challengeTheme ?? '');
     });
     analytics.track(AiStripSwappedEvent(position: position, count: _session.length));
   }
@@ -564,6 +593,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       onSuccess: (_) {
         if (fromSheet) _variationController.clear();
       },
+      variation: true,
     );
   }
 
@@ -631,6 +661,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     request,
     required AnalyticsEvent Function(AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) successEvent,
     required void Function(AiGenerationRecord generated) onSuccess,
+    bool variation = false,
   }) async {
     if (_promptOwner != _localOwnerId) {
       unawaited(_loadHistory());
@@ -638,6 +669,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     }
     if (!_canStartGeneration()) return;
     final AiRemixSeed? remixLink = _remixLink;
+    final ChallengeSeed? challengeLink = variation && _hero?.challengeId != _challengeLink?.id ? null : _challengeLink;
     final String ownerId = app_state.prismUser.id;
     final int ownerSession = CoinsService.instance.economySession;
     bool ownsSession() =>
@@ -755,12 +787,20 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           chargeTransactionId: reservation.transactionId,
         ),
       );
-      final AiGenerationRecord generated = await request(
+      AiGenerationRecord generated = await request(
         reservation.mode,
         reservation.coinsSpent,
         reservation.transactionId,
         remixLink?.wallDocId,
       );
+      if (challengeLink != null) {
+        generated = generated.copyWith(challengeId: challengeLink.id, challengeTheme: challengeLink.theme);
+        try {
+          await _repository.saveHistoryRecord(generated);
+        } catch (error, stackTrace) {
+          logger.w('Challenge generation context is pending history sync', error: error, stackTrace: stackTrace);
+        }
+      }
       generationSucceeded = true;
 
       // The repository handles persistence of the completed remote result for its original owner. Do not publish
@@ -1067,11 +1107,32 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 aiPrompt: record.prompt,
                 aiStylePreset: record.stylePreset.apiValue,
                 remixOf: record.remixOf,
+                challengeId: record.challengeId ?? '',
+                docId: record.challengeId == null ? null : 'wall_$communityId',
               ));
       if (submissionResult == wallstore.WallSubmissionResult.quotaExceeded) {
         return;
       }
       submissionConfirmed = true;
+      if (record.challengeId case final challengeId?) {
+        try {
+          await getIt<ChallengeAdmissionTracker>().submitted(
+            uid: record.userId,
+            challengeId: challengeId,
+            wallId: 'wall_$communityId',
+            source: ChallengeEntrySource.ai,
+          );
+          unawaited(
+            getIt<ConfirmChallengeSubmission>()(
+              uid: record.userId,
+              challengeId: challengeId,
+              wallId: 'wall_$communityId',
+            ),
+          );
+        } catch (error, stackTrace) {
+          logger.w('Could not persist challenge admission analytics', error: error, stackTrace: stackTrace);
+        }
+      }
       if (app_state.prismUser.id != record.userId) return;
       final updated = record.copyWith(
         submittedWallId: communityId,
@@ -1206,6 +1267,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
+                  if (_challengeLink case final seed?)
+                    ChallengeContextChip(
+                      seed: seed,
+                      onRemove: busy ? null : () => setState(() => _challengeLink = null),
+                    ),
                   if (_remixLink != null) ...<Widget>[
                     AiRemixChip(seed: _remixLink!, onDrop: busy ? null : _dropRemixLink),
                     const SizedBox(height: PrismSpace.sm),

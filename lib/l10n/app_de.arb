@@ -10801,5 +10801,72 @@
   "wallpaperAiMadeWithUnknown": "Mit KI erstellt",
   "wallpaperAiReportWrongLabel": "Falsches Label melden",
   "feedNoHumanWalls": "Hier gibt es noch keine von Menschen gemachten Walls",
-  "feedShowAiWalls": "KI-Walls anzeigen"
+  "feedShowAiWalls": "KI-Walls anzeigen",
+  "challengeTitle": "Wochen-Challenge",
+  "challengeRules": "Bis zu 3 Beiträge, die vor der Anzeige geprüft werden.",
+  "challengeVotingRules": "Stimme bis {date} UTC für andere ab.",
+  "@challengeVotingRules": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeUpload": "Beitrag hochladen",
+  "challengeAi": "Mit KI erstellen",
+  "challengeTop": "Beliebt",
+  "challengeNew": "Neu",
+  "challengePast": "Frühere Challenges",
+  "challengeEmpty": "Geprüfte Beiträge erscheinen hier.",
+  "challengeWaiting": "Die Abstimmung ist beendet. Nach der Prüfung aller Beiträge wird der Gewinner gewählt.",
+  "challengeClosed": "Diese Challenge ist beendet.",
+  "challengeScheduled": "Diese Challenge hat noch nicht begonnen.",
+  "challengeNoWinner": "Für diese Challenge gibt es keinen Gewinner.",
+  "challengeWinner": "Gewinner · {name}",
+  "@challengeWinner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeVote": "Abstimmen",
+  "challengeUnvote": "Stimme entfernen",
+  "challengeVotes": "{count, plural, =0{0 Stimmen} =1{1 Stimme} other{{count} Stimmen}}",
+  "@challengeVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeShare": "Challenge teilen",
+  "challengeRemove": "Challenge entfernen",
+  "challengeContext": "Challenge · {theme}",
+  "@challengeContext": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeError": "Die Challenge konnte nicht geladen werden. Versuche es erneut.",
+  "challengeVoteError": "Deine Stimme konnte nicht gespeichert werden. Versuche es erneut.",
+  "challengeSignIn": "Melde dich zum Mitmachen oder Abstimmen an.",
+  "challengeLimit": "Du hast 3 Wallpaper für diese Challenge eingereicht.",
+  "challengeRetry": "Erneut versuchen",
+  "challengeOwnEntry": "Du kannst nicht für deinen eigenen Beitrag stimmen.",
+  "challengeDailyLimit": "Dein tägliches Abstimmungslimit ist erreicht.",
+  "challengeMissing": "Diese Challenge oder dieser Beitrag ist nicht mehr verfügbar.",
+  "challengeBadge": "Challenge-Gewinner",
+  "challengeBadgeDescription": "Gewinne eine Wochen-Challenge",
+  "challengeWinnerNotificationTitle": "Dein Wallpaper hat gewonnen",
+  "challengeWinnerNotificationBody": "Dein Beitrag hat die Wochen-Challenge gewonnen: {theme}.",
+  "@challengeWinnerNotificationBody": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  }
 }

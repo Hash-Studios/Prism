@@ -11665,6 +11665,119 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get feedShowAiWalls => 'Mostrar papéis de parede de IA';
+
+  @override
+  String get challengeTitle => 'Desafio semanal';
+
+  @override
+  String get challengeRules => 'Até 3 criações, revisadas antes de aparecerem.';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'Vote em outros criadores até $date UTC.';
+  }
+
+  @override
+  String get challengeUpload => 'Enviar uma criação';
+
+  @override
+  String get challengeAi => 'Criar com IA';
+
+  @override
+  String get challengeTop => 'Destaques';
+
+  @override
+  String get challengeNew => 'Recentes';
+
+  @override
+  String get challengePast => 'Desafios anteriores';
+
+  @override
+  String get challengeEmpty => 'As criações aprovadas aparecerão aqui.';
+
+  @override
+  String get challengeWaiting => 'A votação terminou. Aguardamos as revisões antes de escolher o vencedor.';
+
+  @override
+  String get challengeClosed => 'Este desafio terminou.';
+
+  @override
+  String get challengeScheduled => 'Este desafio ainda não começou.';
+
+  @override
+  String get challengeNoWinner => 'Este desafio não tem vencedor.';
+
+  @override
+  String challengeWinner(String name) {
+    return 'Vencedor · $name';
+  }
+
+  @override
+  String get challengeVote => 'Votar';
+
+  @override
+  String get challengeUnvote => 'Remover voto';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votos',
+      one: '1 voto',
+      zero: '0 votos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get challengeShare => 'Compartilhar desafio';
+
+  @override
+  String get challengeRemove => 'Remover desafio';
+
+  @override
+  String challengeContext(String theme) {
+    return 'Desafio · $theme';
+  }
+
+  @override
+  String get challengeError => 'Não foi possível carregar o desafio. Tente novamente.';
+
+  @override
+  String get challengeVoteError => 'Não foi possível salvar seu voto. Tente novamente.';
+
+  @override
+  String get challengeSignIn => 'Entre para participar ou votar.';
+
+  @override
+  String get challengeLimit => 'Você já enviou 3 wallpapers para este desafio.';
+
+  @override
+  String get challengeRetry => 'Tentar novamente';
+
+  @override
+  String get challengeOwnEntry => 'Você não pode votar na própria criação.';
+
+  @override
+  String get challengeDailyLimit => 'Você atingiu o limite diário de votos.';
+
+  @override
+  String get challengeMissing => 'Este desafio ou criação não está mais disponível.';
+
+  @override
+  String get challengeBadge => 'Vencedor do desafio';
+
+  @override
+  String get challengeBadgeDescription => 'Vença um desafio semanal';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'Seu wallpaper venceu';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'Sua criação venceu o desafio semanal: $theme.';
+  }
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -23326,4 +23439,117 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get feedShowAiWalls => 'Mostrar papéis de parede de IA';
+
+  @override
+  String get challengeTitle => 'Desafio semanal';
+
+  @override
+  String get challengeRules => 'Até 3 criações, revisadas antes de aparecerem.';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'Vote em outros criadores até $date UTC.';
+  }
+
+  @override
+  String get challengeUpload => 'Enviar uma criação';
+
+  @override
+  String get challengeAi => 'Criar com IA';
+
+  @override
+  String get challengeTop => 'Destaques';
+
+  @override
+  String get challengeNew => 'Recentes';
+
+  @override
+  String get challengePast => 'Desafios anteriores';
+
+  @override
+  String get challengeEmpty => 'As criações aprovadas aparecerão aqui.';
+
+  @override
+  String get challengeWaiting => 'A votação terminou. Aguardamos as revisões antes de escolher o vencedor.';
+
+  @override
+  String get challengeClosed => 'Este desafio terminou.';
+
+  @override
+  String get challengeScheduled => 'Este desafio ainda não começou.';
+
+  @override
+  String get challengeNoWinner => 'Este desafio não tem vencedor.';
+
+  @override
+  String challengeWinner(String name) {
+    return 'Vencedor · $name';
+  }
+
+  @override
+  String get challengeVote => 'Votar';
+
+  @override
+  String get challengeUnvote => 'Remover voto';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votos',
+      one: '1 voto',
+      zero: '0 votos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get challengeShare => 'Compartilhar desafio';
+
+  @override
+  String get challengeRemove => 'Remover desafio';
+
+  @override
+  String challengeContext(String theme) {
+    return 'Desafio · $theme';
+  }
+
+  @override
+  String get challengeError => 'Não foi possível carregar o desafio. Tente novamente.';
+
+  @override
+  String get challengeVoteError => 'Não foi possível salvar seu voto. Tente novamente.';
+
+  @override
+  String get challengeSignIn => 'Entre para participar ou votar.';
+
+  @override
+  String get challengeLimit => 'Você já enviou 3 wallpapers para este desafio.';
+
+  @override
+  String get challengeRetry => 'Tentar novamente';
+
+  @override
+  String get challengeOwnEntry => 'Você não pode votar na própria criação.';
+
+  @override
+  String get challengeDailyLimit => 'Você atingiu o limite diário de votos.';
+
+  @override
+  String get challengeMissing => 'Este desafio ou criação não está mais disponível.';
+
+  @override
+  String get challengeBadge => 'Vencedor do desafio';
+
+  @override
+  String get challengeBadgeDescription => 'Vença um desafio semanal';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'Seu wallpaper venceu';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'Sua criação venceu o desafio semanal: $theme.';
+  }
 }

@@ -11328,4 +11328,117 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedShowAiWalls => 'Show AI walls';
+
+  @override
+  String get challengeTitle => 'Weekly challenge';
+
+  @override
+  String get challengeRules => 'Up to 3 entries, each reviewed before appearing.';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'Vote for other creators until $date UTC.';
+  }
+
+  @override
+  String get challengeUpload => 'Upload an entry';
+
+  @override
+  String get challengeAi => 'Create with AI';
+
+  @override
+  String get challengeTop => 'Top';
+
+  @override
+  String get challengeNew => 'New';
+
+  @override
+  String get challengePast => 'Past challenges';
+
+  @override
+  String get challengeEmpty => 'Approved entries will appear here.';
+
+  @override
+  String get challengeWaiting => 'Voting has closed. We are waiting for entry reviews before choosing a winner.';
+
+  @override
+  String get challengeClosed => 'This challenge has ended.';
+
+  @override
+  String get challengeScheduled => 'This challenge has not opened yet.';
+
+  @override
+  String get challengeNoWinner => 'No winner for this challenge.';
+
+  @override
+  String challengeWinner(String name) {
+    return 'Winner · $name';
+  }
+
+  @override
+  String get challengeVote => 'Vote';
+
+  @override
+  String get challengeUnvote => 'Remove vote';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votes',
+      one: '1 vote',
+      zero: '0 votes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get challengeShare => 'Share challenge';
+
+  @override
+  String get challengeRemove => 'Remove challenge';
+
+  @override
+  String challengeContext(String theme) {
+    return 'Challenge · $theme';
+  }
+
+  @override
+  String get challengeError => 'We could not load this challenge. Try again.';
+
+  @override
+  String get challengeVoteError => 'Your vote could not be saved. Try again.';
+
+  @override
+  String get challengeSignIn => 'Sign in to enter or vote.';
+
+  @override
+  String get challengeLimit => 'You have entered 3 wallpapers in this challenge.';
+
+  @override
+  String get challengeRetry => 'Try again';
+
+  @override
+  String get challengeOwnEntry => 'You cannot vote for your own entry.';
+
+  @override
+  String get challengeDailyLimit => 'Your daily voting limit is reached.';
+
+  @override
+  String get challengeMissing => 'This challenge or entry is no longer available.';
+
+  @override
+  String get challengeBadge => 'Challenge Winner';
+
+  @override
+  String get challengeBadgeDescription => 'Win a weekly challenge';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'Your wallpaper won';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'Your entry won the weekly challenge: $theme.';
+  }
 }

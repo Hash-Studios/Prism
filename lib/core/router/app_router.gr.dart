@@ -120,6 +120,7 @@ class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
     Future<WallSubmissionResult> Function()? submitForTesting,
     ShareSheetOpen? shareSheet,
     AiRemixSeed? remixSeed,
+    ChallengeSeed? challengeSeed,
     List<PageRouteInfo>? children,
   }) : super(
          AiTabRoute.name,
@@ -129,6 +130,7 @@ class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
            submitForTesting: submitForTesting,
            shareSheet: shareSheet,
            remixSeed: remixSeed,
+           challengeSeed: challengeSeed,
          ),
          initialChildren: children,
        );
@@ -147,6 +149,7 @@ class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
         submitForTesting: args.submitForTesting,
         shareSheet: args.shareSheet,
         remixSeed: args.remixSeed,
+        challengeSeed: args.challengeSeed,
       );
     },
   );
@@ -159,6 +162,7 @@ class AiTabRouteArgs {
     this.submitForTesting,
     this.shareSheet,
     this.remixSeed,
+    this.challengeSeed,
   });
 
   final Key? key;
@@ -171,9 +175,11 @@ class AiTabRouteArgs {
 
   final AiRemixSeed? remixSeed;
 
+  final ChallengeSeed? challengeSeed;
+
   @override
   String toString() {
-    return 'AiTabRouteArgs{key: $key, repository: $repository, submitForTesting: $submitForTesting, shareSheet: $shareSheet, remixSeed: $remixSeed}';
+    return 'AiTabRouteArgs{key: $key, repository: $repository, submitForTesting: $submitForTesting, shareSheet: $shareSheet, remixSeed: $remixSeed, challengeSeed: $challengeSeed}';
   }
 
   @override
@@ -183,7 +189,8 @@ class AiTabRouteArgs {
     return key == other.key &&
         repository == other.repository &&
         shareSheet == other.shareSheet &&
-        remixSeed == other.remixSeed;
+        remixSeed == other.remixSeed &&
+        challengeSeed == other.challengeSeed;
   }
 
   @override
@@ -191,7 +198,8 @@ class AiTabRouteArgs {
       key.hashCode ^
       repository.hashCode ^
       shareSheet.hashCode ^
-      remixSeed.hashCode;
+      remixSeed.hashCode ^
+      challengeSeed.hashCode;
 }
 
 /// generated route for
@@ -2066,6 +2074,7 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
     Key? key,
     required File image,
     UploadBatch? batch,
+    ChallengeSeed? challengeSeed,
     Size? imageSizeForTesting,
     Future<void> Function()? prepareImageForTesting,
     Future<GitHubContent> Function({required bool isThumbnail})?
@@ -2088,6 +2097,7 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
            key: key,
            image: image,
            batch: batch,
+           challengeSeed: challengeSeed,
            imageSizeForTesting: imageSizeForTesting,
            prepareImageForTesting: prepareImageForTesting,
            uploadFileForTesting: uploadFileForTesting,
@@ -2112,6 +2122,7 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
         key: args.key,
         image: args.image,
         batch: args.batch,
+        challengeSeed: args.challengeSeed,
         imageSizeForTesting: args.imageSizeForTesting,
         prepareImageForTesting: args.prepareImageForTesting,
         uploadFileForTesting: args.uploadFileForTesting,
@@ -2132,6 +2143,7 @@ class UploadWallRouteArgs {
     this.key,
     required this.image,
     this.batch,
+    this.challengeSeed,
     this.imageSizeForTesting,
     this.prepareImageForTesting,
     this.uploadFileForTesting,
@@ -2148,6 +2160,8 @@ class UploadWallRouteArgs {
   final File image;
 
   final UploadBatch? batch;
+
+  final ChallengeSeed? challengeSeed;
 
   final Size? imageSizeForTesting;
 
@@ -2175,7 +2189,7 @@ class UploadWallRouteArgs {
 
   @override
   String toString() {
-    return 'UploadWallRouteArgs{key: $key, image: $image, batch: $batch, imageSizeForTesting: $imageSizeForTesting, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting, createRecordWithMetadataForTesting: $createRecordWithMetadataForTesting, presentPaywallForTesting: $presentPaywallForTesting, nowForTesting: $nowForTesting, draftStoreForTesting: $draftStoreForTesting}';
+    return 'UploadWallRouteArgs{key: $key, image: $image, batch: $batch, challengeSeed: $challengeSeed, imageSizeForTesting: $imageSizeForTesting, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting, createRecordWithMetadataForTesting: $createRecordWithMetadataForTesting, presentPaywallForTesting: $presentPaywallForTesting, nowForTesting: $nowForTesting, draftStoreForTesting: $draftStoreForTesting}';
   }
 
   @override
@@ -2185,6 +2199,7 @@ class UploadWallRouteArgs {
     return key == other.key &&
         image == other.image &&
         batch == other.batch &&
+        challengeSeed == other.challengeSeed &&
         imageSizeForTesting == other.imageSizeForTesting &&
         draftStoreForTesting == other.draftStoreForTesting;
   }
@@ -2194,6 +2209,7 @@ class UploadWallRouteArgs {
       key.hashCode ^
       image.hashCode ^
       batch.hashCode ^
+      challengeSeed.hashCode ^
       imageSizeForTesting.hashCode ^
       draftStoreForTesting.hashCode;
 }
@@ -2524,6 +2540,76 @@ class WallpaperPositionRouteArgs {
       imageUrl.hashCode ^
       thumbnailUrl.hashCode ^
       entryPoint.hashCode;
+}
+
+/// generated route for
+/// [WeeklyChallengePage]
+class WeeklyChallengeRoute extends PageRouteInfo<WeeklyChallengeRouteArgs> {
+  WeeklyChallengeRoute({
+    required String challengeId,
+    WeeklyChallengesCubit? cubit,
+    Key? key,
+    List<PageRouteInfo>? children,
+  }) : super(
+         WeeklyChallengeRoute.name,
+         args: WeeklyChallengeRouteArgs(
+           challengeId: challengeId,
+           cubit: cubit,
+           key: key,
+         ),
+         rawPathParams: {'challengeId': challengeId},
+         initialChildren: children,
+       );
+
+  static const String name = 'WeeklyChallengeRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final pathParams = data.inheritedPathParams;
+      final args = data.argsAs<WeeklyChallengeRouteArgs>(
+        orElse: () => WeeklyChallengeRouteArgs(
+          challengeId: pathParams.getString('challengeId'),
+        ),
+      );
+      return WeeklyChallengePage(
+        challengeId: args.challengeId,
+        cubit: args.cubit,
+        key: args.key,
+      );
+    },
+  );
+}
+
+class WeeklyChallengeRouteArgs {
+  const WeeklyChallengeRouteArgs({
+    required this.challengeId,
+    this.cubit,
+    this.key,
+  });
+
+  final String challengeId;
+
+  final WeeklyChallengesCubit? cubit;
+
+  final Key? key;
+
+  @override
+  String toString() {
+    return 'WeeklyChallengeRouteArgs{challengeId: $challengeId, cubit: $cubit, key: $key}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! WeeklyChallengeRouteArgs) return false;
+    return challengeId == other.challengeId &&
+        cubit == other.cubit &&
+        key == other.key;
+  }
+
+  @override
+  int get hashCode => challengeId.hashCode ^ cubit.hashCode ^ key.hashCode;
 }
 
 /// generated route for

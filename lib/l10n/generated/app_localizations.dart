@@ -18198,6 +18198,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show AI walls'**
   String get feedShowAiWalls;
+
+  /// No description provided for @challengeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly challenge'**
+  String get challengeTitle;
+
+  /// No description provided for @challengeRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 3 entries, each reviewed before appearing.'**
+  String get challengeRules;
+
+  /// No description provided for @challengeVotingRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Vote for other creators until {date} UTC.'**
+  String challengeVotingRules(String date);
+
+  /// No description provided for @challengeUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload an entry'**
+  String get challengeUpload;
+
+  /// No description provided for @challengeAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Create with AI'**
+  String get challengeAi;
+
+  /// No description provided for @challengeTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Top'**
+  String get challengeTop;
+
+  /// No description provided for @challengeNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get challengeNew;
+
+  /// No description provided for @challengePast.
+  ///
+  /// In en, this message translates to:
+  /// **'Past challenges'**
+  String get challengePast;
+
+  /// No description provided for @challengeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved entries will appear here.'**
+  String get challengeEmpty;
+
+  /// No description provided for @challengeWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Voting has closed. We are waiting for entry reviews before choosing a winner.'**
+  String get challengeWaiting;
+
+  /// No description provided for @challengeClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'This challenge has ended.'**
+  String get challengeClosed;
+
+  /// No description provided for @challengeScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'This challenge has not opened yet.'**
+  String get challengeScheduled;
+
+  /// No description provided for @challengeNoWinner.
+  ///
+  /// In en, this message translates to:
+  /// **'No winner for this challenge.'**
+  String get challengeNoWinner;
+
+  /// No description provided for @challengeWinner.
+  ///
+  /// In en, this message translates to:
+  /// **'Winner · {name}'**
+  String challengeWinner(String name);
+
+  /// No description provided for @challengeVote.
+  ///
+  /// In en, this message translates to:
+  /// **'Vote'**
+  String get challengeVote;
+
+  /// No description provided for @challengeUnvote.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove vote'**
+  String get challengeUnvote;
+
+  /// No description provided for @challengeVotes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{0 votes} =1{1 vote} other{{count} votes}}'**
+  String challengeVotes(int count);
+
+  /// No description provided for @challengeShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share challenge'**
+  String get challengeShare;
+
+  /// No description provided for @challengeRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove challenge'**
+  String get challengeRemove;
+
+  /// No description provided for @challengeContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge · {theme}'**
+  String challengeContext(String theme);
+
+  /// No description provided for @challengeError.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not load this challenge. Try again.'**
+  String get challengeError;
+
+  /// No description provided for @challengeVoteError.
+  ///
+  /// In en, this message translates to:
+  /// **'Your vote could not be saved. Try again.'**
+  String get challengeVoteError;
+
+  /// No description provided for @challengeSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to enter or vote.'**
+  String get challengeSignIn;
+
+  /// No description provided for @challengeLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You have entered 3 wallpapers in this challenge.'**
+  String get challengeLimit;
+
+  /// No description provided for @challengeRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get challengeRetry;
+
+  /// No description provided for @challengeOwnEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot vote for your own entry.'**
+  String get challengeOwnEntry;
+
+  /// No description provided for @challengeDailyLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Your daily voting limit is reached.'**
+  String get challengeDailyLimit;
+
+  /// No description provided for @challengeMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This challenge or entry is no longer available.'**
+  String get challengeMissing;
+
+  /// No description provided for @challengeBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge Winner'**
+  String get challengeBadge;
+
+  /// No description provided for @challengeBadgeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Win a weekly challenge'**
+  String get challengeBadgeDescription;
+
+  /// No description provided for @challengeWinnerNotificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallpaper won'**
+  String get challengeWinnerNotificationTitle;
+
+  /// No description provided for @challengeWinnerNotificationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your entry won the weekly challenge: {theme}.'**
+  String challengeWinnerNotificationBody(String theme);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

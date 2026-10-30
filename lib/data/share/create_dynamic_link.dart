@@ -293,19 +293,21 @@ Future<void> createUserDynamicLink(
 }
 
 /// A short link to a public folder. The preview shows the folder name and its 4-wall share image when the server
-/// has made one. Falls back to the canonical URL when the short-link service is down.
+/// has made one, or the newest cover otherwise. Falls back to the canonical URL when the short-link service is down.
 Future<String> createFolderLink({
   required String folderId,
   required String name,
   required String description,
   String shareImage = '',
+  String coverImage = '',
 }) => _buildShareableLink(
   type: 'page',
   canonicalUri: Uri.https(_shareDomain, '/folder/$folderId'),
   preview: <String, dynamic>{
     'title': name,
     'description': description,
-    if (shareImage.isNotEmpty) 'image_source_url': shareImage,
+    if (shareImage.isNotEmpty || coverImage.isNotEmpty)
+      'image_source_url': shareImage.isNotEmpty ? shareImage : coverImage,
   },
 );
 

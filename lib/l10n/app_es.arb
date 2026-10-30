@@ -3100,5 +3100,72 @@
   "wallpaperAiMadeWithUnknown": "Hecho con IA",
   "wallpaperAiReportWrongLabel": "Reportar etiqueta incorrecta",
   "feedNoHumanWalls": "Aún no hay fondos hechos por personas aquí",
-  "feedShowAiWalls": "Mostrar fondos de IA"
+  "feedShowAiWalls": "Mostrar fondos de IA",
+  "challengeTitle": "Reto semanal",
+  "challengeRules": "Hasta 3 obras, revisadas antes de aparecer.",
+  "challengeVotingRules": "Vota por otros creadores hasta {date} UTC.",
+  "@challengeVotingRules": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeUpload": "Subir una obra",
+  "challengeAi": "Crear con IA",
+  "challengeTop": "Destacadas",
+  "challengeNew": "Nuevas",
+  "challengePast": "Retos anteriores",
+  "challengeEmpty": "Las obras aprobadas aparecerán aquí.",
+  "challengeWaiting": "La votación terminó. Esperamos las revisiones antes de elegir al ganador.",
+  "challengeClosed": "Este reto ha terminado.",
+  "challengeScheduled": "Este reto aún no ha comenzado.",
+  "challengeNoWinner": "Este reto no tiene ganador.",
+  "challengeWinner": "Ganador · {name}",
+  "@challengeWinner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeVote": "Votar",
+  "challengeUnvote": "Quitar voto",
+  "challengeVotes": "{count, plural, =0{0 votos} =1{1 voto} other{{count} votos}}",
+  "@challengeVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeShare": "Compartir reto",
+  "challengeRemove": "Quitar reto",
+  "challengeContext": "Reto · {theme}",
+  "@challengeContext": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeError": "No pudimos cargar el reto. Inténtalo de nuevo.",
+  "challengeVoteError": "No se pudo guardar tu voto. Inténtalo de nuevo.",
+  "challengeSignIn": "Inicia sesión para participar o votar.",
+  "challengeLimit": "Ya has enviado 3 fondos a este reto.",
+  "challengeRetry": "Reintentar",
+  "challengeOwnEntry": "No puedes votar por tu propia obra.",
+  "challengeDailyLimit": "Has alcanzado el límite diario de votos.",
+  "challengeMissing": "Este reto u obra ya no está disponible.",
+  "challengeBadge": "Ganador del reto",
+  "challengeBadgeDescription": "Gana un reto semanal",
+  "challengeWinnerNotificationTitle": "Tu fondo ganó",
+  "challengeWinnerNotificationBody": "Tu obra ganó el reto semanal: {theme}.",
+  "@challengeWinnerNotificationBody": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  }
 }
