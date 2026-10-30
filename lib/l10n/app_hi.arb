@@ -10891,5 +10891,72 @@
   "feedShowAiWalls": "AI वॉलपेपर दिखाएँ",
   "@feedShowAiWalls": {
     "description": "Action in the empty state that turns AI-generated walls back on."
+  },
+  "challengeTitle": "साप्ताहिक चुनौती",
+  "challengeRules": "अधिकतम 3 प्रविष्टियाँ, दिखाने से पहले समीक्षा होगी।",
+  "challengeVotingRules": "अन्य रचनाकारों के लिए {date} UTC तक वोट दें।",
+  "@challengeVotingRules": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeUpload": "प्रविष्टि अपलोड करें",
+  "challengeAi": "AI से बनाएँ",
+  "challengeTop": "शीर्ष",
+  "challengeNew": "नई",
+  "challengePast": "पिछली चुनौतियाँ",
+  "challengeEmpty": "स्वीकृत प्रविष्टियाँ यहाँ दिखेंगी।",
+  "challengeWaiting": "वोटिंग बंद है। विजेता चुनने से पहले प्रविष्टियों की समीक्षा पूरी होगी।",
+  "challengeClosed": "यह चुनौती समाप्त हो गई है।",
+  "challengeScheduled": "यह चुनौती अभी शुरू नहीं हुई है।",
+  "challengeNoWinner": "इस चुनौती का कोई विजेता नहीं है।",
+  "challengeWinner": "विजेता · {name}",
+  "@challengeWinner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeVote": "वोट दें",
+  "challengeUnvote": "वोट हटाएँ",
+  "challengeVotes": "{count, plural, =0{0 वोट} =1{1 वोट} other{{count} वोट}}",
+  "@challengeVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeShare": "चुनौती साझा करें",
+  "challengeRemove": "चुनौती हटाएँ",
+  "challengeContext": "चुनौती · {theme}",
+  "@challengeContext": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeError": "चुनौती लोड नहीं हुई। फिर कोशिश करें।",
+  "challengeVoteError": "वोट सहेजा नहीं गया। फिर कोशिश करें।",
+  "challengeSignIn": "भाग लेने या वोट देने के लिए साइन इन करें।",
+  "challengeLimit": "आपने इस चुनौती में 3 वॉलपेपर जमा किए हैं।",
+  "challengeRetry": "फिर कोशिश करें",
+  "challengeOwnEntry": "आप अपनी प्रविष्टि को वोट नहीं दे सकते।",
+  "challengeDailyLimit": "आज की वोटिंग सीमा पूरी हो गई है।",
+  "challengeMissing": "यह चुनौती या प्रविष्टि अब उपलब्ध नहीं है।",
+  "challengeBadge": "चुनौती विजेता",
+  "challengeBadgeDescription": "साप्ताहिक चुनौती जीतें",
+  "challengeWinnerNotificationTitle": "आपका वॉलपेपर जीत गया",
+  "challengeWinnerNotificationBody": "आपकी प्रविष्टि ने साप्ताहिक चुनौती जीती: {theme}।",
+  "@challengeWinnerNotificationBody": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
   }
 }

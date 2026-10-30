@@ -9,8 +9,10 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
+import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
 
 Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
+  'challenge_entry_source': ChallengeEntrySource.values.map((value) => value.wireValue).toList(),
   'wallpaper_target': WallpaperTarget.values.map((value) => value.wireValue).toList(),
   'taste_quiz_source': TasteQuizSource.values.map((value) => value.wireValue).toList(),
   'quiz_side': QuizSide.values.map((value) => value.wireValue).toList(),
@@ -3669,5 +3671,90 @@ class RemixesGridOpenedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'count': count};
+  }
+}
+
+class ChallengeViewedEvent extends AnalyticsEvent {
+  const ChallengeViewedEvent({required this.challengeId});
+
+  final String challengeId;
+
+  @override
+  String get eventName => 'challenge_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'challenge_id': challengeId};
+  }
+}
+
+class ChallengeEnteredEvent extends AnalyticsEvent {
+  const ChallengeEnteredEvent({required this.challengeId, required this.source});
+
+  final String challengeId;
+  final ChallengeEntrySource source;
+
+  @override
+  String get eventName => 'challenge_entered';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'challenge_id': challengeId, 'source': source.wireValue};
+  }
+}
+
+class ChallengeVotedEvent extends AnalyticsEvent {
+  const ChallengeVotedEvent({required this.challengeId});
+
+  final String challengeId;
+
+  @override
+  String get eventName => 'challenge_voted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'challenge_id': challengeId};
+  }
+}
+
+class ChallengeUnvotedEvent extends AnalyticsEvent {
+  const ChallengeUnvotedEvent({required this.challengeId});
+
+  final String challengeId;
+
+  @override
+  String get eventName => 'challenge_unvoted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'challenge_id': challengeId};
+  }
+}
+
+class ChallengeSharedEvent extends AnalyticsEvent {
+  const ChallengeSharedEvent({required this.challengeId});
+
+  final String challengeId;
+
+  @override
+  String get eventName => 'challenge_shared';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'challenge_id': challengeId};
+  }
+}
+
+class ChallengeWinnerViewedEvent extends AnalyticsEvent {
+  const ChallengeWinnerViewedEvent({required this.challengeId});
+
+  final String challengeId;
+
+  @override
+  String get eventName => 'challenge_winner_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'challenge_id': challengeId};
   }
 }

@@ -11351,4 +11351,117 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get feedShowAiWalls => 'Tampilkan wallpaper AI';
+
+  @override
+  String get challengeTitle => 'Tantangan mingguan';
+
+  @override
+  String get challengeRules => 'Maksimal 3 karya, ditinjau sebelum ditampilkan.';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'Pilih karya kreator lain hingga $date UTC.';
+  }
+
+  @override
+  String get challengeUpload => 'Unggah karya';
+
+  @override
+  String get challengeAi => 'Buat dengan AI';
+
+  @override
+  String get challengeTop => 'Teratas';
+
+  @override
+  String get challengeNew => 'Terbaru';
+
+  @override
+  String get challengePast => 'Tantangan sebelumnya';
+
+  @override
+  String get challengeEmpty => 'Karya yang disetujui akan muncul di sini.';
+
+  @override
+  String get challengeWaiting => 'Pemungutan suara ditutup. Kami menunggu tinjauan karya sebelum memilih pemenang.';
+
+  @override
+  String get challengeClosed => 'Tantangan ini telah berakhir.';
+
+  @override
+  String get challengeScheduled => 'Tantangan ini belum dibuka.';
+
+  @override
+  String get challengeNoWinner => 'Tidak ada pemenang untuk tantangan ini.';
+
+  @override
+  String challengeWinner(String name) {
+    return 'Pemenang · $name';
+  }
+
+  @override
+  String get challengeVote => 'Pilih';
+
+  @override
+  String get challengeUnvote => 'Hapus suara';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count suara',
+      one: '1 suara',
+      zero: '0 suara',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get challengeShare => 'Bagikan tantangan';
+
+  @override
+  String get challengeRemove => 'Hapus tantangan';
+
+  @override
+  String challengeContext(String theme) {
+    return 'Tantangan · $theme';
+  }
+
+  @override
+  String get challengeError => 'Tantangan tidak dapat dimuat. Coba lagi.';
+
+  @override
+  String get challengeVoteError => 'Suara tidak dapat disimpan. Coba lagi.';
+
+  @override
+  String get challengeSignIn => 'Masuk untuk ikut atau memilih.';
+
+  @override
+  String get challengeLimit => 'Anda telah mengirim 3 wallpaper untuk tantangan ini.';
+
+  @override
+  String get challengeRetry => 'Coba lagi';
+
+  @override
+  String get challengeOwnEntry => 'Anda tidak dapat memilih karya sendiri.';
+
+  @override
+  String get challengeDailyLimit => 'Batas suara harian telah tercapai.';
+
+  @override
+  String get challengeMissing => 'Tantangan atau karya ini tidak lagi tersedia.';
+
+  @override
+  String get challengeBadge => 'Pemenang Tantangan';
+
+  @override
+  String get challengeBadgeDescription => 'Menangkan tantangan mingguan';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'Wallpaper Anda menang';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'Karya Anda memenangkan tantangan mingguan: $theme.';
+  }
 }

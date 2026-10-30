@@ -11445,4 +11445,117 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get feedShowAiWalls => 'Mostrar fondos de IA';
+
+  @override
+  String get challengeTitle => 'Reto semanal';
+
+  @override
+  String get challengeRules => 'Hasta 3 obras, revisadas antes de aparecer.';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'Vota por otros creadores hasta $date UTC.';
+  }
+
+  @override
+  String get challengeUpload => 'Subir una obra';
+
+  @override
+  String get challengeAi => 'Crear con IA';
+
+  @override
+  String get challengeTop => 'Destacadas';
+
+  @override
+  String get challengeNew => 'Nuevas';
+
+  @override
+  String get challengePast => 'Retos anteriores';
+
+  @override
+  String get challengeEmpty => 'Las obras aprobadas aparecerán aquí.';
+
+  @override
+  String get challengeWaiting => 'La votación terminó. Esperamos las revisiones antes de elegir al ganador.';
+
+  @override
+  String get challengeClosed => 'Este reto ha terminado.';
+
+  @override
+  String get challengeScheduled => 'Este reto aún no ha comenzado.';
+
+  @override
+  String get challengeNoWinner => 'Este reto no tiene ganador.';
+
+  @override
+  String challengeWinner(String name) {
+    return 'Ganador · $name';
+  }
+
+  @override
+  String get challengeVote => 'Votar';
+
+  @override
+  String get challengeUnvote => 'Quitar voto';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votos',
+      one: '1 voto',
+      zero: '0 votos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get challengeShare => 'Compartir reto';
+
+  @override
+  String get challengeRemove => 'Quitar reto';
+
+  @override
+  String challengeContext(String theme) {
+    return 'Reto · $theme';
+  }
+
+  @override
+  String get challengeError => 'No pudimos cargar el reto. Inténtalo de nuevo.';
+
+  @override
+  String get challengeVoteError => 'No se pudo guardar tu voto. Inténtalo de nuevo.';
+
+  @override
+  String get challengeSignIn => 'Inicia sesión para participar o votar.';
+
+  @override
+  String get challengeLimit => 'Ya has enviado 3 fondos a este reto.';
+
+  @override
+  String get challengeRetry => 'Reintentar';
+
+  @override
+  String get challengeOwnEntry => 'No puedes votar por tu propia obra.';
+
+  @override
+  String get challengeDailyLimit => 'Has alcanzado el límite diario de votos.';
+
+  @override
+  String get challengeMissing => 'Este reto u obra ya no está disponible.';
+
+  @override
+  String get challengeBadge => 'Ganador del reto';
+
+  @override
+  String get challengeBadgeDescription => 'Gana un reto semanal';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'Tu fondo ganó';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'Tu obra ganó el reto semanal: $theme.';
+  }
 }

@@ -103,7 +103,7 @@ const APP_PAGE_PATHS = [
 ];
 const APP_LINK_PATHS = [
   '/share', '/user', '/fprofile', '/follower-profile', '/profile', '/setup', '/share-setup', '/refer', '/referral',
-  '/collection', '/category', '/wallpaper', '/l', '/folder', '/mood', ...APP_PAGE_PATHS,
+  '/collection', '/category', '/wallpaper', '/l', '/folder', '/mood', '/challenges', ...APP_PAGE_PATHS,
 ];
 const PAGE_PARAMETER_ROOTS = new Set(['drops', 'folder', 'mood']);
 const PAGE_IDENTIFIER_ROOTS = new Set(['user', 'fprofile', 'follower-profile', 'profile']);
@@ -774,6 +774,12 @@ function isAllowedAppPage(segments: string[], url: URL): boolean {
   if (segments.length === 0) return false;
   const path = `/${segments.join('/')}`;
   if (APP_PAGE_PATHS.includes(path)) return true;
+  if (segments[0] === 'challenges' && segments.length === 2) {
+    const id = segments[1];
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) return false;
+    const date = new Date(`${id}T00:00:00Z`);
+    return !Number.isNaN(date.getTime()) && date.getUTCDay() === 1 && date.toISOString().slice(0, 10) === id;
+  }
   if (PAGE_IDENTIFIER_ROOTS.has(segments[0]) && segments.length === 2 && isSafePathSegment(segments[1])) return true;
   if (PAGE_IDENTIFIER_ROOTS.has(segments[0]) && segments.length === 1 && url.searchParams.size > 0) return true;
   if (PAGE_PARAMETER_ROOTS.has(segments[0]) && segments.length === 2 && isSafePathSegment(segments[1])) return true;
@@ -1018,10 +1024,11 @@ function buildDefaultPreview(type: LinkType, canonical: URL, env: Env): PreviewD
         play_store_url: env.PLAY_STORE_URL,
       };
     }
+    const isChallenge = canonical.pathname.startsWith('/challenges/');
     const pageName = canonical.pathname.split('/').filter(Boolean).at(-1)?.replaceAll('-', ' ') ?? 'Prism';
     return {
-      title: `${pageName.replace(/\b\w/g, (letter) => letter.toUpperCase())} - Prism`,
-      description: 'Open this page in Prism.',
+      title: isChallenge ? 'Weekly challenge - Prism' : `${pageName.replace(/\b\w/g, (letter) => letter.toUpperCase())} - Prism`,
+      description: isChallenge ? 'Explore this weekly wallpaper challenge in Prism.' : 'Open this page in Prism.',
       image_source_url: '',
       username: '',
       provider: '',
