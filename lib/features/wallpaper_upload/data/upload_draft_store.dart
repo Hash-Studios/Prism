@@ -250,6 +250,7 @@ class UploadDraftStore {
           'requestId': metadata.requestId,
           'challengeId': metadata.challengeId,
           'challengeTheme': metadata.challengeTheme,
+          'challengeRemoved': metadata.challengeRemoved,
           'requestText': metadata.requestText,
         },
         'savedAtUtc': DateTime.now().toUtc().toIso8601String(),
@@ -287,6 +288,7 @@ class UploadDraftStore {
       requestId: raw['requestId'] is String ? raw['requestId'] as String : '',
       challengeId: raw['challengeId'] is String ? raw['challengeId'] as String : '',
       challengeTheme: raw['challengeTheme'] is String ? raw['challengeTheme'] as String : '',
+      challengeRemoved: raw['challengeRemoved'] == true,
       requestText: raw['requestText'] is String ? raw['requestText'] as String : '',
     );
   }

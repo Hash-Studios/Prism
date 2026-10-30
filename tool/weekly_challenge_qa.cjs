@@ -137,6 +137,7 @@ async function buildApk() {
     [null, 'android/app/src/debug/AndroidManifest.xml'],
   ];
   const originals = [];
+  const errors = [];
   try {
     for (const [source, destination] of destinations) {
       const target = path.join(repo, destination);
@@ -148,19 +149,23 @@ async function buildApk() {
       fs.writeFileSync(target, replacement);
     }
     run('fvm', ['flutter', 'build', 'apk', '--debug', '--no-pub', '--target-platform=android-x64', '--dart-define-from-file=' + path.join(runtime, 'dart-defines.json')], {cwd: repo, env: {...process.env, GRADLE_OPTS: `${process.env.GRADLE_OPTS || ''} -Dorg.gradle.workers.max=2`}});
-  } finally {
-    const errors = [];
-    for (const {target, original, replacement} of originals.reverse()) {
-      try {
-        if (!fs.readFileSync(target).equals(replacement)) throw Error('Build input changed concurrently; refusing overwrite: ' + target);
-        if (original) fs.writeFileSync(target, original);
-        else fs.unlinkSync(target);
-      } catch (error) {
-        errors.push(error);
-      }
-    }
-    if (errors.length) throw new AggregateError(errors, 'Unable to restore all QA build inputs: ' + errors.map(error => error.message).join('; '));
+  } catch (error) {
+    errors.push(error);
   }
+  const buildFailed = errors.length > 0;
+  for (const {target, original, replacement} of originals.reverse()) {
+    try {
+      if (!fs.readFileSync(target).equals(replacement)) throw Error('Build input changed concurrently; refusing overwrite: ' + target);
+      if (original) fs.writeFileSync(target, original);
+      else fs.unlinkSync(target);
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+  if (errors.length > (buildFailed ? 1 : 0)) {
+    throw new AggregateError(errors, 'QA build or input restoration failed: ' + errors.map(error => error.message).join('; '));
+  }
+  if (buildFailed) throw errors[0];
 }
 async function serve() {
   const manifest = read('manifest.json');

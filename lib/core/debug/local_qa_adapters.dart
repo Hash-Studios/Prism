@@ -139,16 +139,18 @@ class LocalQaStartup implements StartupRepository {
 // No fake token, permission, subscription, purchase or generation success is returned.
 class LocalQaWidgetsBinding extends WidgetsFlutterBinding {
   @override
-  BinaryMessenger createBinaryMessenger() => _LocalQaMessenger(super.createBinaryMessenger());
+  BinaryMessenger createBinaryMessenger() => LocalQaMessenger(super.createBinaryMessenger());
 }
 
-class _LocalQaMessenger implements BinaryMessenger {
-  _LocalQaMessenger(this._delegate);
+class LocalQaMessenger implements BinaryMessenger {
+  LocalQaMessenger(this._delegate);
   final BinaryMessenger _delegate;
   static const _blocked = <String>[
     'plugins.flutter.io/firebase_messaging',
     'plugins.flutter.io/firebase_analytics',
     'plugins.flutter.io/firebase_remote_config',
+    'dev.flutter.pigeon.firebase_analytics_platform_interface.',
+    'dev.flutter.pigeon.firebase_remote_config_platform_interface.',
     'plugins.flutter.io/google_mobile_ads',
     'purchases_flutter',
     'mixpanel_flutter',

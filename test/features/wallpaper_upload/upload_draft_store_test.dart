@@ -31,6 +31,43 @@ void main() {
     if (await root.exists()) await root.delete(recursive: true);
   });
 
+  for (final removed in [false, true]) {
+    test('challenge removal survives restart and legacy drafts default to not removed: $removed', () async {
+      final records = DurableJsonStore('upload_test', directory: recordsDirectory);
+      final drafts = UploadDraftStore(store: records, directory: filesDirectory);
+      final image = File('${root.path}/selected.png')..writeAsBytesSync([1, 2, 3]);
+      await drafts.save(
+        owner: 'account',
+        draftId: 'image',
+        selectedFile: image,
+        metadata: const SubmissionMetadata(title: 'Kept title'),
+      );
+      final record = (await records.read('draft/account/image'))!;
+      final metadata = Map<String, Object?>.from(record['metadata']! as Map);
+      if (removed) {
+        metadata['challengeRemoved'] = true;
+      } else {
+        metadata.remove('challengeRemoved');
+      }
+      await records.write('draft/account/image', {...record, 'metadata': metadata});
+      final restarted = UploadDraftStore(
+        store: DurableJsonStore('upload_test', directory: recordsDirectory),
+        directory: filesDirectory,
+      );
+      final restored = (await restarted.read(owner: 'account', draftId: 'image'))!;
+      expect(restored.metadata.challengeRemoved, removed);
+      await restarted.save(
+        owner: 'account',
+        draftId: 'image',
+        selectedFile: restored.file,
+        metadata: restored.metadata.copyWith(title: 'Edited'),
+      );
+      final resaved = (await restarted.read(owner: 'account', draftId: 'image'))!;
+      expect(resaved.metadata.challengeRemoved, removed);
+      expect(resaved.metadata.title, 'Edited');
+    });
+  }
+
   test('the same selected image bytes have the same draft id across file paths', () async {
     final first = File('${root.path}/camera.png')..writeAsBytesSync(<int>[1, 2, 3, 4]);
     final second = await first.copy('${root.path}/gallery.png');

@@ -186,8 +186,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
 
   void _restoreMetadata(SubmissionMetadata restored) {
     final seed = widget.batch?.challengeSeed ?? widget.challengeSeed;
+    _challengeRemoved = _challengeRemoved || restored.challengeRemoved;
+    if (_challengeRemoved) widget.batch?.challengeSeed = null;
     _metadata = _challengeRemoved
-        ? restored.copyWith(challengeId: '', challengeTheme: '')
+        ? restored.copyWith(challengeId: '', challengeTheme: '', challengeRemoved: true)
         : seed == null
         ? restored
         : restored.copyWith(challengeId: seed.id, challengeTheme: seed.theme);
@@ -904,6 +906,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       requestText: _metadata.requestText,
                       challengeId: _metadata.challengeId,
                       challengeTheme: _metadata.challengeTheme,
+                      challengeRemoved: _metadata.challengeRemoved,
                     );
                     unawaited(_persistDraft().then<void>((_) {}));
                   },
@@ -915,7 +918,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                     onRemove: () {
                       setState(() {
                         _challengeRemoved = true;
-                        _metadata = _metadata.copyWith(challengeId: '', challengeTheme: '');
+                        _metadata = _metadata.copyWith(challengeId: '', challengeTheme: '', challengeRemoved: true);
                         widget.batch?.challengeSeed = null;
                       });
                       unawaited(_persistDraft().then<void>((_) {}));

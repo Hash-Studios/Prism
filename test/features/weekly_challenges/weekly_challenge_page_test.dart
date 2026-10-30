@@ -1,7 +1,12 @@
 import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/weekly_challenges/biz/weekly_challenges_cubit.dart';
 import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
 import 'package:Prism/features/weekly_challenges/views/pages/weekly_challenge_page.dart';
@@ -10,9 +15,11 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import '../../support/fake_app_analytics.dart';
+import '../../support/in_memory_local_store.dart';
 import 'weekly_challenges_cubit_test.dart' show Repository, challenge, entry;
 
 class MockChallengeCubit extends MockCubit<WeeklyChallengesState> implements WeeklyChallengesCubit {}
@@ -35,6 +42,75 @@ class ChallengeTestRouter extends RootStackRouter {
 }
 
 void main() {
+  for (final premium in [false, true]) {
+    for (final (count, remainingFree, expected) in [
+      (0, 3, 3),
+      (1, 3, 2),
+      (2, 3, 1),
+      (3, 3, 0),
+      (0, 1, 1),
+      (0, 0, 0),
+      (1, 1, 1),
+    ]) {
+      testWidgets('picker respects remaining lifetime slots: premium=$premium entries=$count free=$remainingFree', (
+        tester,
+      ) async {
+        final previousUser = app_state.prismUser;
+        const pickerChannel = MethodChannel('plugins.flutter.io/image_picker');
+        int singleCalls = 0;
+        final multiLimits = <int?>[];
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(pickerChannel, (call) async {
+          if (call.method == 'pickImage') {
+            singleCalls++;
+            return null;
+          }
+          if (call.method == 'pickMultiImage') {
+            multiLimits.add((call.arguments as Map)['limit'] as int?);
+            return <String>[];
+          }
+          throw StateError('Unexpected picker method: ${call.method}');
+        });
+        app_state.prismUser = app_constants.createGuestPrismUser()
+          ..loggedIn = true
+          ..premium = premium;
+        final settings = SettingsLocalDataSource(InMemoryLocalStore());
+        getIt.registerSingleton<SettingsLocalDataSource>(settings);
+        for (var used = remainingFree; used < UploadQuota.freeUploadsPerWeek; used++) {
+          await UploadQuota.incrementWeeklyUploads();
+        }
+        const toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+        addTearDown(() async {
+          tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(pickerChannel, null);
+          app_state.prismUser = previousUser;
+          tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+          await getIt.reset();
+        });
+        final cubit = MockChallengeCubit();
+        when(() => cubit.state).thenReturn(
+          WeeklyChallengesState(
+            loading: false,
+            detail: ChallengeDetail(challenge: challenge(), entries: [], myEntryCount: count),
+          ),
+        );
+        when(() => cubit.load(any(), sort: any(named: 'sort'))).thenAnswer((_) async {});
+        await tester.pumpWidget(app(WeeklyChallengePage(challengeId: '2026-10-26', cubit: cubit)));
+        final button = find.widgetWithText(FilledButton, 'Upload an entry');
+        if (count == 3) {
+          expect(tester.widget<FilledButton>(button).onPressed, isNull);
+        } else {
+          await tester.tap(button);
+          await tester.pump();
+        }
+        final limit = premium ? 3 - count : expected;
+        expect(singleCalls, limit == 1 ? 1 : 0);
+        expect(multiLimits, limit > 1 ? [limit] : isEmpty);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(seconds: 2));
+      });
+    }
+  }
+
   testWidgets('warm navigate replaces challenge ID on the same page state', (tester) async {
     final cubit = MockChallengeCubit();
     when(() => cubit.state).thenReturn(const WeeklyChallengesState());

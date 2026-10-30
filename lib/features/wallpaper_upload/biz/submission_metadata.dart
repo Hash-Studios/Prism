@@ -30,6 +30,7 @@ class SubmissionMetadata {
     this.requestText = '',
     this.challengeId = '',
     this.challengeTheme = '',
+    this.challengeRemoved = false,
   });
 
   final String title;
@@ -43,6 +44,7 @@ class SubmissionMetadata {
   final String requestText;
   final String challengeId;
   final String challengeTheme;
+  final bool challengeRemoved;
   ChallengeSeed? get challengeSeed =>
       challengeId.isEmpty ? null : ChallengeSeed(id: challengeId, theme: challengeTheme);
 
@@ -56,6 +58,7 @@ class SubmissionMetadata {
     String? requestText,
     String? challengeId,
     String? challengeTheme,
+    bool? challengeRemoved,
   }) => SubmissionMetadata(
     title: title ?? this.title,
     category: category ?? this.category,
@@ -64,5 +67,6 @@ class SubmissionMetadata {
     requestText: requestText ?? this.requestText,
     challengeId: challengeId ?? this.challengeId,
     challengeTheme: challengeTheme ?? this.challengeTheme,
+    challengeRemoved: challengeRemoved ?? this.challengeRemoved,
   );
 }

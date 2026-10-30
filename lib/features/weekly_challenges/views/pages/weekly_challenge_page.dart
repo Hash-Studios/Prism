@@ -37,6 +37,7 @@ class WeeklyChallengePage extends StatefulWidget {
 
 class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsBindingObserver {
   late final WeeklyChallengesCubit _cubit = widget.cubit ?? getIt<WeeklyChallengesCubit>();
+  static const int _maxChallengeEntries = 3;
   Timer? _closeTimer;
   bool _picking = false;
   String? _winnerViewed;
@@ -81,19 +82,28 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
     return false;
   }
 
-  Future<void> _upload(WeeklyChallenge challenge) async {
+  Future<void> _upload(WeeklyChallenge challenge, int myEntryCount) async {
     if (_picking || !_signedIn()) return;
+    final int remainingEntries = (_maxChallengeEntries - myEntryCount).clamp(0, _maxChallengeEntries);
+    if (remainingEntries == 0) return;
     final int limit = uploadPickLimit(
       isPremium: app_state.prismUser.premium,
       remainingFree: UploadQuota.remainingFreeUploadsThisWeek(),
-    );
+    ).clamp(0, remainingEntries);
     if (limit < 1) {
       toasts.error(context.l10n.wallpaperUploadFreeQuotaMessage(UploadQuota.freeUploadsPerWeek));
       return;
     }
     _picking = true;
     try {
-      final picked = await ImagePicker().pickMultiImage(limit: limit);
+      final picker = ImagePicker();
+      final List<XFile> picked;
+      if (limit == 1) {
+        final image = await picker.pickImage(source: ImageSource.gallery);
+        picked = [if (image != null) image];
+      } else {
+        picked = await picker.pickMultiImage(limit: limit);
+      }
       if (!mounted || picked.isEmpty) return;
       final files = picked.take(limit).map((row) => File(row.path)).toList();
       final batch = UploadBatch(files, challengeSeed: challenge.seed);
@@ -195,17 +205,19 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
               Text(l10n.challengeVotingRules(DateFormat.yMMMd(l10n.localeName).add_Hm().format(challenge.closesAt))),
               const SizedBox(height: 16),
               if (open) ...[
-                if (detail.myEntryCount >= 3) Text(l10n.challengeLimit),
+                if (detail.myEntryCount >= _maxChallengeEntries) Text(l10n.challengeLimit),
                 Wrap(
                   spacing: 12,
                   runSpacing: 8,
                   children: [
                     FilledButton(
-                      onPressed: detail.myEntryCount >= 3 ? null : () => _upload(challenge),
+                      onPressed: detail.myEntryCount >= _maxChallengeEntries
+                          ? null
+                          : () => _upload(challenge, detail.myEntryCount),
                       child: Text(l10n.challengeUpload),
                     ),
                     OutlinedButton(
-                      onPressed: detail.myEntryCount >= 3
+                      onPressed: detail.myEntryCount >= _maxChallengeEntries
                           ? null
                           : () async {
                               if (!_signedIn()) return;

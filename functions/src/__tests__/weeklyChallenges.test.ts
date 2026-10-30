@@ -3,6 +3,7 @@ import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 import * as wotd from "../wallOfTheDay";
+import {sendToUser} from "../notificationHelper";
 import {onWallSubmitted} from "../onWallSubmitted";
 import {installFakeDb, type Doc} from "./fakeDb";
 import {
@@ -582,4 +583,87 @@ test("challenge trigger propagates transient identity errors and admits on redel
   assert.equal(store.has(`weeklyChallenges/${CH}/members/maker`), false);
   await run();
   assert.equal(store.get(`weeklyChallenges/${CH}/members/maker`)?.count, 1);
+});
+
+test("scheduler aggregates actual push failures after later challenges and published recovery", async (t) => {
+  const store = setup(t, {"walls/w1": wall()});
+  await approved();
+  store.set(`weeklyChallenges/${CH}`, challenge({state: "voting_closed"}));
+  assert.equal(await finalizeChallenge(CH, NOW), true);
+  const later = "2026-11-09";
+  store.set(`weeklyChallenges/${later}`, challenge());
+  store.set("walls/w2", wall({challengeId: later}));
+  const secondWall = await db.doc("walls/w2").get();
+  assert.ok(secondWall.createTime);
+  assert.equal(await admitChallengeWall(secondWall, "maker", "unknown"), true);
+  await secondWall.ref.update({review: true});
+  await reconcileChallengeWall("w2", later, at(NOW), secondWall.createTime);
+  await db.doc(`weeklyChallenges/${later}`).update({state: "winner_picked", sealed: true,
+    winnerEntryId: admissionIdentity(later, "w2", secondWall.createTime)});
+  const day = Date.parse("2026-11-03T12:00:00Z");
+  assert.equal(await db.runTransaction((tx) => commitChallengeReservation(tx, "2026-11-03", "w1", [])), true);
+  assert.equal(store.get("challengeWotdReservations/2026-11-03")?.state, "consumed");
+  await db.doc("wall_of_the_day/current").set({wallId: "w1", date: at(day)});
+  // The published wall becomes ineligible, but remains visible to the notice handler.
+  t.mock.method(challengeIo, "ready", async () => false);
+  store.set("usersv2/maker/private/session", {fcmToken: "fixture-token", fcmTokenBindingVersion: 1,
+    fcmTokenBindingToken: "fixture-token"});
+  let sends = 0;
+  let failPush = true;
+  t.mock.method(challengeIo, "send", sendToUser);
+  t.mock.method(admin.messaging(), "send", async (message: admin.messaging.Message) => {
+    assert.ok("token" in message && message.token === "fixture-token");
+    sends++;
+    if (failPush) throw new Error("FCM unavailable");
+    return "fixture-message";
+  });
+  let recovery = 0;
+  const recoveryError = new Error("replacement failed");
+  t.mock.method(wotd, "pickWallOfTheDay", async () => {
+    recovery++; throw recoveryError;
+  });
+  await assert.rejects(runChallengeSchedule(day, day), (error: unknown) => {
+    assert.ok(error instanceof Error && "errors" in error && Array.isArray(error.errors));
+    assert.equal(error.errors.length, 3);
+    assert.equal(error.errors[2], recoveryError);
+    return true;
+  });
+  assert.equal(sends, 2);
+  assert.equal(recovery, 1);
+  for (const id of [CH, later]) {
+    assert.equal(store.get(`challengeNotices/winner_${id}_maker`)?.pushState, "retry");
+  }
+  failPush = false;
+  t.mock.method(wotd, "pickWallOfTheDay", async () => {
+    recovery++;
+  });
+  await runChallengeSchedule(day, day);
+  await runChallengeSchedule(day, day);
+  assert.equal(sends, 4);
+  for (const id of [CH, later]) assert.equal(store.get(`challengeNotices/winner_${id}_maker`)?.sent, true);
+});
+
+
+test("theme opening failure still advances existing challenges and attempts published recovery", async (t) => {
+  const store = setup(t, {[`weeklyChallenges/${CH}`]: challenge({state: "scheduled", closesAt: at(OPEN + 2 * WEEK)})});
+  const collection = db.collection.bind(db);
+  const themeError = new Error("theme queue unavailable");
+  t.mock.method(db, "collection", (name: string) => {
+    if (name === "challengeThemes") throw themeError;
+    return collection(name);
+  });
+  const day = OPEN + WEEK;
+  store.set(`challengeWotdReservations/${dateKey(day)}`, {state: "consumed", wallId: "gone", challengeId: CH, entryId: "gone"});
+  store.set("wall_of_the_day/current", {wallId: "gone", date: at(day)});
+  let recoveries = 0;
+  t.mock.method(wotd, "pickWallOfTheDay", async () => {
+    recoveries++;
+  });
+  await assert.rejects(runChallengeSchedule(day, day), (error: unknown) => {
+    assert.ok(error instanceof Error && "errors" in error);
+    assert.deepEqual(error.errors, [themeError]);
+    return true;
+  });
+  assert.equal(store.get(`weeklyChallenges/${CH}`)?.state, "open");
+  assert.equal(recoveries, 1);
 });

@@ -307,6 +307,26 @@ void main() {
     expect(_target(ShareTargetValue.saveImage), findsOneWidget);
   });
 
+  for (final target in [ShareTargetValue.copyLink, ShareTargetValue.saveImage, ShareTargetValue.instagramStories]) {
+    testWidgets('successful $target does not prove a completed native share', (tester) async {
+      _mockChannels(tester);
+      final fake = _Fake(await _writeCards(tester))..instagram = true;
+      int observed = 0;
+      await _openSheet(tester, fake.services, onShared: () => observed++);
+      await tester.tap(_target(target));
+      await _settle(tester);
+      expect(observed, 0);
+      expect(
+        target == ShareTargetValue.copyLink
+            ? fake.copied
+            : target == ShareTargetValue.saveImage
+            ? fake.saved
+            : fake.instagramPaths,
+        isNotEmpty,
+      );
+    });
+  }
+
   for (final status in ShareResultStatus.values) {
     testWidgets('share callback requires observed success: $status', (tester) async {
       _mockChannels(tester);

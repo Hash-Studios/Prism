@@ -1,11 +1,12 @@
 import {createHash} from "node:crypto";
 import * as admin from "firebase-admin";
 import {onDocumentCreatedWithAuthContext, onDocumentWritten} from "firebase-functions/v2/firestore";
+import {logger} from "firebase-functions";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {CALLABLE_REGIONS, db, int, REGION, str} from "./common";
 import {publicRequestText} from "./wallRequests";
-import {isWotdEligible, premiumCollections, readyWall} from "./wallOfTheDay";
+import {isWotdEligible, pickWallOfTheDay, premiumCollections, readyWall} from "./wallOfTheDay";
 import {r2Secrets} from "./r2Storage";
 import {sendToUser} from "./notificationHelper";
 import {notificationCopyPayload} from "./notificationCatalog";
@@ -502,41 +503,56 @@ export async function refreshPublishedChallengeAward(now: number): Promise<void>
   const entry = (await entryRef(reservation.challengeId, reservation.entryId).get()).data();
   const wall = entry ? await db.runTransaction((tx) => visible(tx, entry), {readOnly: true}) : null;
   if (wall && await challengeIo.ready(wall.id, await challengeIo.premium(), wall.data())) return;
-  const {pickWallOfTheDay} = await import("./wallOfTheDay.js");
   await pickWallOfTheDay(now);
 }
 
 export async function runChallengeSchedule(slot: number, now?: number): Promise<void> {
   if (!Number.isFinite(slot)) throw new Error("Invalid challenge scheduler slot");
-  const pastReservations = await all(db.collection("challengeWotdReservations")
-    .where(admin.firestore.FieldPath.documentId(), "<", dateKey(now ?? Date.now())));
-  for (const row of pastReservations) {
-    await db.runTransaction(async (tx) => {
-      const current = await tx.get(row.ref);
-      const r = current.data();
-      if (r?.state !== "reserved") return;
-      const challenge = await tx.get(challenges().doc(r.challengeId));
-      tx.update(row.ref, {state: "missed"});
-      if (challenge.exists) tx.update(challenge.ref, {state: "archived", awardOutcome: "missed", revision: int(challenge.data()?.revision) + 1});
-    });
-  }
+  const errors: unknown[] = [];
+  const attempt = async (operation: string, work: () => Promise<void>): Promise<void> => {
+    try {
+      await work();
+    } catch (error) {
+      logger.error("Weekly challenge scheduling failed", {operation, error: error instanceof Error ? error.stack : error});
+      errors.push(error);
+    }
+  };
+  await attempt("past reservations", async () => {
+    const pastReservations = await all(db.collection("challengeWotdReservations")
+      .where(admin.firestore.FieldPath.documentId(), "<", dateKey(now ?? Date.now())));
+    for (const row of pastReservations) {
+      await attempt(row.ref.path, () => db.runTransaction(async (tx) => {
+        const current = await tx.get(row.ref);
+        const r = current.data();
+        if (r?.state !== "reserved") return;
+        const challenge = await tx.get(challenges().doc(r.challengeId));
+        tx.update(row.ref, {state: "missed"});
+        if (challenge.exists) tx.update(challenge.ref, {state: "archived", awardOutcome: "missed", revision: int(challenge.data()?.revision) + 1});
+      }));
+    }
+  });
   const week = mondayAt(slot);
-  if (slot === week && (now ?? Date.now()) < week + WEEK) await openChallengeSlot(week);
-  const rows = await all(challenges());
-  for (const row of rows) {
-    const c = row.data();
-    await db.runTransaction(async (tx) => {
-      const current = await tx.get(row.ref);
-      const d = current.data();
-      if (!d) return;
-      const state = millis(d.closesAt) <= slot && ["scheduled", "open"].includes(d.state) ? "voting_closed" :
-        d.state === "scheduled" && millis(d.opensAt) <= slot ? "open" : d.state;
-      if (state !== d.state) tx.update(row.ref, {state, revision: int(d.revision) + 1});
-    });
-    if (millis(c.closesAt) <= slot) await finalizeChallenge(row.id, now);
-    await notifyChallengeWinner(row.id);
-  }
-  await refreshPublishedChallengeAward(now ?? Date.now());
+  if (slot === week && (now ?? Date.now()) < week + WEEK) await attempt("open slot", () => openChallengeSlot(week));
+  await attempt("challenge scan", async () => {
+    const rows = await all(challenges());
+    for (const row of rows) {
+      await attempt(row.ref.path, async () => {
+        const c = row.data();
+        await db.runTransaction(async (tx) => {
+          const current = await tx.get(row.ref);
+          const d = current.data();
+          if (!d) return;
+          const state = millis(d.closesAt) <= slot && ["scheduled", "open"].includes(d.state) ? "voting_closed" :
+            d.state === "scheduled" && millis(d.opensAt) <= slot ? "open" : d.state;
+          if (state !== d.state) tx.update(row.ref, {state, revision: int(d.revision) + 1});
+        });
+        if (millis(c.closesAt) <= slot) await finalizeChallenge(row.id, now);
+        await notifyChallengeWinner(row.id);
+      });
+    }
+  });
+  await attempt("published award recovery", () => refreshPublishedChallengeAward(now ?? Date.now()));
+  if (errors.length) throw Object.assign(new Error("Weekly challenge scheduling failed"), {errors});
 }
 export const scheduleWeeklyChallenges = onSchedule({schedule: "*/15 * * * *", timeZone: "UTC", region: REGION,
   retryCount: 3, secrets: r2Secrets}, async (event) => runChallengeSchedule(Date.parse(event.scheduleTime)));
