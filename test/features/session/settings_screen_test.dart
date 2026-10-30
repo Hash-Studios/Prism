@@ -66,6 +66,14 @@ class _FailingViewingPreferenceStore extends InMemoryLocalStore {
   }
 }
 
+class _FailingAiSettingStore extends InMemoryLocalStore {
+  @override
+  Future<void> set(String key, Object? value) async {
+    if (key == PersistenceKeys.settings(AiContentFilter.settingKey)) throw StateError('disk full');
+    await super.set(key, value);
+  }
+}
+
 class _TrackingRecentlyViewedStore extends RecentlyViewedStore {
   _TrackingRecentlyViewedStore(super.settings);
 
@@ -194,6 +202,28 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
   }
+
+  testWidgets('the AI switch goes back on and shows an error when the save fails', (tester) async {
+    useTallSurface(tester);
+    await getIt.unregister<SettingsLocalDataSource>();
+    getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(_FailingAiSettingStore()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SettingsScreen(),
+      ),
+    );
+    expect(switchOf(tester, 'Show AI-generated wallpapers').value, isTrue);
+
+    await tester.tap(find.text('Show AI-generated wallpapers'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(switchOf(tester, 'Show AI-generated wallpapers').value, isTrue);
+    expect(messages, contains('Could not save feed settings. Try again.'));
+    await tester.pump(const Duration(seconds: 1));
+  });
 
   testWidgets('haptics switch persists off and enabling it plays one selection', (tester) async {
     useTallSurface(tester);

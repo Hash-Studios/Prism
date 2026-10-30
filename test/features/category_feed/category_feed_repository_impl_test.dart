@@ -496,6 +496,17 @@ void main() {
       expect(hidden.data!.items.map((item) => item.id), <String>['p2', 'a']);
     });
 
+    test('a hidden AI Prism wall does not swallow the provider wall that shares its image URL', () async {
+      when(
+        () => prism.fetchByCategory('Nature'),
+      ).thenAnswer((_) async => Result.success(<PrismWallpaper>[prismWall('p1', url: 'https://w/a.jpg', ai: true)]));
+      await AiContentFilter.setShowsAi(SettingsLocalDataSource(store), false);
+
+      final result = await repository.fetchCategoryFeed(category: nature, refresh: true);
+
+      expect(result.data!.items.map((item) => item.id), <String>['a']);
+    });
+
     test('a snapshot saved while AI was on drops AI walls once it is off', () async {
       const CategoryEntity community = CategoryEntity(
         name: 'Community',
