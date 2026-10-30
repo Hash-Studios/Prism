@@ -310,7 +310,7 @@ class _Home {
           initialInterests: const <String>{'Nature', 'Abstract', 'Space', 'Cities'},
           initialFeedMix: FeedMix.balanced,
           tasteSignals: store,
-          onSave: (List<String> interests, FeedMix mix) async => true,
+          onSave: (List<String> interests, FeedMix mix, bool hideAi) async => true,
         ),
       ),
     );

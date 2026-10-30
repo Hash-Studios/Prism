@@ -13,6 +13,7 @@ import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
@@ -20,8 +21,9 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
-import 'package:Prism/features/ai_wallpaper/views/widgets/ai_preview_stage.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
 import 'package:Prism/features/weekly_challenges/biz/challenge_admission_tracker.dart';
 import 'package:Prism/features/weekly_challenges/biz/confirm_challenge_submission.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -197,6 +199,13 @@ class _LocaleTestAppState extends State<_LocaleTestApp> {
   );
 }
 
+Future<void> _openRecent(WidgetTester tester) async {
+  final Finder thumb = find.descendant(of: find.byType(AiHistoryStrip), matching: find.byType(AiGenerationThumb)).first;
+  await tester.ensureVisible(thumb);
+  await tester.tap(thumb);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUp(AnalyticsRuntime.reset);
   tearDown(AnalyticsRuntime.reset);
@@ -231,8 +240,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(remoteCalls, 0);
-    expect(find.text('Save'), findsOneWidget);
-    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'generation-1');
+    expect(find.byType(AiResultView), findsNothing);
+    expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history.first.id, 'generation-1');
     expect(tester.takeException(), isNull);
   });
 
@@ -287,7 +296,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Save'));
+      await _openRecent(tester);
+      await tester.tap(find.byTooltip('Save'));
       await tester.pumpAndSettle();
       expect(requests, hasLength(1));
       expect(requests.single.link, file.path);
@@ -384,9 +394,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save'));
+    await _openRecent(tester);
+    await tester.tap(find.byTooltip('Save'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.byTooltip('Save'));
     await tester.pumpAndSettle();
 
     expect(assets.resolveCalls, 2);
@@ -433,6 +444,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     expect(tester.takeException(), isNull);
     final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
@@ -502,6 +514,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
@@ -549,6 +562,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
@@ -597,6 +611,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
@@ -635,6 +650,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
@@ -768,6 +784,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     expect(find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview), findsOneWidget);
 
     final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
@@ -816,6 +833,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
     await tester.ensureVisible(submitButton);
     await tester.tap(submitButton);
@@ -867,6 +885,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
     await tester.ensureVisible(submitButton);
     await tester.tap(submitButton);
@@ -875,9 +894,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(submissions, 1);
+    await tester.tap(find.text(AppLocalizationsEn().aiResultEditPrompt));
+    await tester.pumpAndSettle();
     final Future<void> refresh = tester.state<RefreshIndicatorState>(find.byType(RefreshIndicator)).show();
     await tester.pumpAndSettle();
     await refresh;
+    await _openRecent(tester);
 
     expect(find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview), findsNothing);
     expect(submissions, 1);
@@ -919,12 +941,16 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
+    await _openRecent(tester);
     final submit = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
     await tester.ensureVisible(submit);
     await tester.tap(submit);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('Challenge · Morning light'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(PrismSheetBody), matching: find.text('Challenge · Morning light')),
+      findsOneWidget,
+    );
     await tester.tap(find.text(AppLocalizationsEn().economyAiSubmitForReview));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -974,6 +1000,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
 
     Future<void> submitOnce() async {
       final button = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
@@ -1022,6 +1049,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
     await tester.ensureVisible(submitButton);
     await tester.tap(submitButton);
@@ -1065,6 +1093,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
     await tester.ensureVisible(submitButton);
     await tester.tap(submitButton);
@@ -1141,6 +1170,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await _openRecent(tester);
       final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
       await tester.ensureVisible(submitButton);
       await tester.tap(submitButton);

@@ -18,6 +18,7 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/wallpaper_detail_route.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/utils/localized_relative_time.dart';
@@ -25,6 +26,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
@@ -71,6 +73,7 @@ import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dar
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/ai_generated_tag.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/depth_effect_row.dart';
@@ -645,11 +648,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   final GlobalKey<SetWallpaperButtonState> _setButtonKey = GlobalKey<SetWallpaperButtonState>();
   final GlobalKey _cardHeroKey = GlobalKey();
 
-  /// Creators the viewer has blocked. Null until they load.
-  Set<String>? _blockedCreatorUids;
-  Set<String>? _pendingBlockedCreatorUids;
-  StreamSubscription<Set<String>>? _blockedCreatorSubscription;
-  bool _blockedCreatorReadCompleted = false;
+  /// Creators the viewer has blocked. The Remix surfaces stay hidden while this is unknown.
+  BlockedCreators _blockedCreators = const UnknownBlockedCreators();
+  StreamSubscription<BlockedCreators>? _blockedCreatorSubscription;
 
   /// iOS only: builds Save to Photos for the phone preview.
   Widget Function(String label)? _saveAction;
@@ -888,28 +889,18 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   void initState() {
     super.initState();
     _scroll.addListener(_onDiscoveryScroll);
-    unawaited(_loadBlockedCreators());
+    _watchBlockedCreators();
   }
 
-  /// Loads the current blocked creators and keeps the view in step with the live block set.
-  Future<void> _loadBlockedCreators() async {
+  /// Keeps the view in step with the live block set.
+  void _watchBlockedCreators() {
     try {
       final WallRemixRepository repository = getIt<WallRemixRepository>();
-      _blockedCreatorSubscription = repository.watchBlockedCreatorUids().listen((Set<String> uids) {
-        if (!mounted) return;
-        if (!_blockedCreatorReadCompleted) {
-          _pendingBlockedCreatorUids = uids;
-          return;
-        }
-        if (setEquals(_blockedCreatorUids, uids)) return;
-        setState(() => _blockedCreatorUids = uids);
+      _blockedCreators = repository.blockedCreators;
+      _blockedCreatorSubscription = repository.watchBlockedCreators().listen((BlockedCreators blocked) {
+        if (!mounted || blocked == _blockedCreators) return;
+        setState(() => _blockedCreators = blocked);
       }, onError: (Object _) {});
-      await repository.blockedCreatorUids();
-      final Set<String> latest = await repository.blockedCreatorUids(waitForInitialLoad: false);
-      if (!mounted) return;
-      final Set<String> uids = _pendingBlockedCreatorUids ?? latest;
-      _blockedCreatorReadCompleted = true;
-      setState(() => _blockedCreatorUids = uids);
     } catch (_) {
       // Keep the Remix action hidden.
     }
@@ -933,12 +924,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   WallViewer? _remixViewer() {
-    final Set<String>? blockedCreatorUids = _blockedCreatorUids;
-    if (blockedCreatorUids == null) return null;
+    final BlockedCreators blockedCreators = _blockedCreators;
+    if (blockedCreators is! KnownBlockedCreators) return null;
     return WallViewer(
       isPremium: app_state.prismUser.premium,
       premiumCollections: app_state.premiumCollections,
-      blockedCreatorUids: blockedCreatorUids,
+      blockedCreators: blockedCreators,
     );
   }
 
@@ -1991,6 +1982,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final resolution = wallpaper.core.resolution;
     final sizeBytes = wallpaper.core.sizeBytes;
     final createdAt = wallpaper.core.createdAt;
+    final String? reportDocId = BundledWallpapers.isStarter(state.entity) ? null : wallpaper.firestoreDocumentId;
     return _metadataShell(
       left: [
         Padding(
@@ -2033,6 +2025,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             },
           ),
         ),
+        if (AiContentFilter.isAi(wallpaper))
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AiGeneratedTag(wallpaper: wallpaper, reportDocId: reportDocId, reportSubtitle: state.entity.id),
+          ),
         if (collections != null && collections.isNotEmpty) ...[
           _buildInfoRow(context, JamIcons.folder, collections.take(2).join(', ')),
           const SizedBox(height: 4),
@@ -2545,6 +2542,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   List<Widget> _buildPanelExtras(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
+    final WallViewer? remixViewer = _remixViewer();
     final theme = Theme.of(context);
     final tags = wallpaperTags(entity);
     final notes = wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context));
@@ -2576,20 +2574,23 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       if (tags.isNotEmpty) padded(WallpaperTagChips(tags: tags, onTagTap: (tag) => openTagSearch(context, tag))),
       // The remix rows size themselves: they take no padding when they show nothing.
       if (entity case PrismFeedItem(:final wallpaper)
-          when wallpaper.aiSource != null &&
+          when remixViewer != null &&
+              wallpaper.aiSource != null &&
               wallpaper.remixOf != null &&
               wallpaper.remixOf!.trim().isNotEmpty &&
               wallpaper.remixOf!.trim() != wallpaper.firestoreDocumentId?.trim())
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: _sheetHPad),
-          child: RemixCreditRow(remixOfDocId: wallpaper.remixOf!, viewer: _remixViewer()),
+          child: RemixCreditRow(remixOfDocId: wallpaper.remixOf!, viewer: remixViewer),
         ),
-      if (entity case PrismFeedItem(
-        :final wallpaper,
-      ) when wallpaper.aiSource != null && wallpaper.remixCount > 0 && wallpaper.firestoreDocumentId != null)
+      if (entity case PrismFeedItem(:final wallpaper)
+          when remixViewer != null &&
+              wallpaper.aiSource != null &&
+              wallpaper.remixCount > 0 &&
+              wallpaper.firestoreDocumentId != null)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: _sheetHPad),
-          child: RemixesSection(original: wallpaper, viewer: _remixViewer()),
+          child: RemixesSection(original: wallpaper, viewer: remixViewer),
         ),
       if (depthTier != null && showsDepthEffect(depthTier)) padded(DepthEffectRow(tier: depthTier)),
       if (spatial != null && showsSpatialScene(spatial.tier))

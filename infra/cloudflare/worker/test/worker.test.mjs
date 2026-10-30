@@ -2772,6 +2772,22 @@ test('when the new card fails to render, an old link keeps its old image with a 
 const FOLDER_IMAGE = `https://img.prismwalls.com/push-gallery/v1/${'d'.repeat(64)}.jpg`;
 const FOLDER_ENV = { ...RENDER_ENV, R2_PREVIEW_BASE_URL: 'https://img.prismwalls.com' };
 
+test('folder page links use a public cover when the gallery strip is unavailable', async () => {
+  const env = workerEnv(FOLDER_ENV);
+  const image = `https://img.prismwalls.com/previews/${'a'.repeat(64)}.img`;
+  const response = await postLink(env, {
+    type: 'page', canonical_url: 'https://prismwalls.com/folder/AbC123',
+    preview: { title: 'Purple Landscapes', image_source_url: image },
+  });
+  assert.equal(response.status, 201);
+  const { code, og_image_url: ogImageUrl } = await response.json();
+  assert.equal(ogImageUrl, image);
+  const crawler = await (await getShare('WhatsApp/2.23', `/l/${code}`, env)).text();
+  assert.ok(crawler.includes(`<meta property="og:image" content="${image}" />`));
+  assert.doesNotMatch(crawler, /og:image:(?:width|height)/);
+  assert.ok(crawler.includes(`<meta name="twitter:image" content="${image}" />`));
+});
+
 test('folder page links keep their push-gallery share image as og:image and skip the browser card', async () => {
   const env = workerEnv(FOLDER_ENV);
   const response = await postLink(env, {
@@ -2805,7 +2821,7 @@ test('folder page links without an allowed preview image use the Prism icon, not
   assert.doesNotMatch(crawler, new RegExp(`/og/${code}\\.jpg`));
 });
 
-test('folder page links keep only a push-gallery share image from the configured R2 base', async () => {
+test('folder page links reject images outside the allowed strip and public cover paths', async () => {
   const env = workerEnv(FOLDER_ENV);
   const hash = 'd'.repeat(64);
   for (const image of [
@@ -2816,7 +2832,9 @@ test('folder page links keep only a push-gallery share image from the configured
     `https://user:pass@img.prismwalls.com/push-gallery/v1/${hash}.jpg`,
     `https://img.prismwalls.com:8443/push-gallery/v1/${hash}.jpg`,
     `http://img.prismwalls.com/push-gallery/v1/${hash}.jpg`,
-    `https://img.prismwalls.com/previews/${hash}.img`,
+    `https://img.prismwalls.com/previews/${hash}.img?token=secret`,
+    `https://evil.example.com/previews/${hash}.img`,
+    'https://img.prismwalls.com/previews/original.img',
     `https://img.prismwalls.com/push-gallery/v1/${hash}.png`,
     `https://img.prismwalls.com/push-gallery/v1/${'D'.repeat(64)}.jpg`,
   ]) {

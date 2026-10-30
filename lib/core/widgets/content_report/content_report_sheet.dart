@@ -34,6 +34,8 @@ Future<void> showContentReportSheet(
   required String targetFirestoreDocId,
   String? subtitle,
   VoidCallback? onBlockCreator,
+  String? initialReason,
+  String? initialDetails,
 }) async {
   if (!context.mounted) {
     return;
@@ -49,6 +51,8 @@ Future<void> showContentReportSheet(
           targetFirestoreDocId: targetFirestoreDocId,
           subtitle: subtitle,
           onBlockCreator: onBlockCreator,
+          initialReason: initialReason,
+          initialDetails: initialDetails,
         ),
       );
     });
@@ -65,6 +69,8 @@ Future<void> showContentReportSheet(
         targetFirestoreDocId: targetFirestoreDocId,
         subtitle: subtitle,
         onBlockCreator: onBlockCreator,
+        initialReason: initialReason,
+        initialDetails: initialDetails,
       );
     },
   );
@@ -78,12 +84,18 @@ class ContentReportSheetBody extends StatefulWidget {
     required this.targetFirestoreDocId,
     this.subtitle,
     this.onBlockCreator,
+    this.initialReason,
+    this.initialDetails,
   });
 
   final String contentType;
   final String targetFirestoreDocId;
   final String? subtitle;
   final VoidCallback? onBlockCreator;
+
+  /// Preselected reason. Ignored unless it is in [kContentReportReasons].
+  final String? initialReason;
+  final String? initialDetails;
 
   @override
   State<ContentReportSheetBody> createState() => ContentReportSheetBodyState();
@@ -100,8 +112,8 @@ String _contentTypeLabel(String contentType, AppLocalizations l10n) {
 
 @visibleForTesting
 class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
-  String? _selectedWire;
-  final TextEditingController _details = TextEditingController();
+  late String? _selectedWire = kContentReportReasons.contains(widget.initialReason) ? widget.initialReason : null;
+  late final TextEditingController _details = TextEditingController(text: widget.initialDetails);
   bool _submitting = false;
 
   @override

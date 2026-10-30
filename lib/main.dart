@@ -72,6 +72,7 @@ import 'package:Prism/features/personalized_feed/domain/repositories/personalize
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
+import 'package:Prism/features/session/views/widgets/shake_to_report_listener.dart';
 import 'package:Prism/features/startup/services/resume_refresh_policy.dart';
 import 'package:Prism/features/startup/startup.dart';
 import 'package:Prism/features/theme_mode/data/theme_mode_migration.dart';
@@ -84,8 +85,8 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/local_notification.dart';
 import 'package:Prism/notifications/notification_signals.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -195,6 +196,7 @@ Future<void> main() async {
 
       const skipFirebaseInit = Env.skipFirebaseInit;
       final SentryConfig sentryConfig = _resolveSentryConfig();
+      MonitoringRuntime.config = sentryConfig;
 
       // Start Firebase early so it can initialize while persistence and monitoring run.
       // StartupRepositoryImpl.bootstrap() also awaits this future before accessing Remote Config.
@@ -927,13 +929,13 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
                 builder: (context, child) {
                   app_state.notchSize = MediaQuery.paddingOf(context).top;
                   final ThemeData theme = Theme.of(context);
-                  final bool wide = MediaQuery.sizeOf(context).width > PrismLayout.panelWidth;
                   return Theme(
-                    data: theme.copyWith(
-                      snackBarTheme: theme.snackBarTheme.copyWith(width: wide ? PrismLayout.panelWidth : null),
-                    ),
+                    data: theme.copyWith(snackBarTheme: prismSnackBarThemeFor(context, theme.snackBarTheme)),
                     child: FolderWriteFailureListener(
-                      child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                      child: ShakeToReportListener(
+                        navigatorKey: _appRouter.navigatorKey,
+                        child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                      ),
                     ),
                   );
                 },

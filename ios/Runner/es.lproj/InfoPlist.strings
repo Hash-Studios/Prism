@@ -1,3 +1,4 @@
 "NSPhotoLibraryUsageDescription" = "Prism necesita acceder a tu fototeca para que puedas elegir imágenes para tu perfil y tus configuraciones.";
 "NSPhotoLibraryAddUsageDescription" = "Prism necesita permiso para guardar fondos de pantalla en tu fototeca.";
 "NSCameraUsageDescription" = "Prism necesita acceder a la cámara para que puedas hacerte una foto de perfil.";
+"NSMotionUsageDescription" = "Prism usa el movimiento para abrir Informar de un problema cuando agitas el teléfono.";

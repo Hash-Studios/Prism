@@ -12,7 +12,6 @@ class AiGenerateBar extends StatelessWidget {
     required this.balance,
     required this.hasPrompt,
     required this.loading,
-    required this.prominent,
     required this.onGenerate,
     required this.onGetCoins,
   });
@@ -22,8 +21,6 @@ class AiGenerateBar extends StatelessWidget {
   final bool hasPrompt;
   final bool loading;
 
-  /// False when a result is on screen: its Save button is the accent action then.
-  final bool prominent;
   final VoidCallback onGenerate;
   final VoidCallback onGetCoins;
 
@@ -51,7 +48,6 @@ class AiGenerateBar extends StatelessWidget {
           label: hasCoins ? l10n.economyAiGenerate : l10n.economyEarnCoins,
           expand: true,
           loading: loading,
-          variant: prominent ? PrismButtonVariant.primary : PrismButtonVariant.tonal,
           trailing: hasCoins
               ? Row(
                   mainAxisSize: MainAxisSize.min,

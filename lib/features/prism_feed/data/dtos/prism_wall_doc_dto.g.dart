@@ -35,6 +35,8 @@ _PrismWallDocDto _$PrismWallDocDtoFromJson(Map<String, dynamic> json) => _PrismW
   aiMetadata: json['aiMetadata'] == null
       ? const <String, Object?>{}
       : const FirestoreJsonMapConverter().fromJson(json['aiMetadata']),
+  isAiGenerated: json['isAiGenerated'] == null ? false : const FirestoreTrueConverter().fromJson(json['isAiGenerated']),
+  aiModel: json['aiModel'] == null ? '' : const FirestoreStrictStringConverter().fromJson(json['aiModel']),
   isStreakExclusive: json['is_streak_exclusive'] as bool? ?? false,
   requiredStreakDays: (json['required_streak_days'] as num?)?.toInt(),
   streakShopCoinCost: (json['streak_shop_coin_cost'] as num?)?.toInt(),
@@ -43,10 +45,8 @@ _PrismWallDocDto _$PrismWallDocDtoFromJson(Map<String, dynamic> json) => _PrismW
   spatial: json['spatial'] == null
       ? const <String, Object?>{}
       : const FirestoreJsonMapConverter().fromJson(json['spatial']),
-  isAiGenerated: json['isAiGenerated'] as bool? ?? false,
   aiPrompt: json['aiPrompt'] == null ? '' : const FirestoreStringConverter().fromJson(json['aiPrompt']),
   aiStylePreset: json['aiStylePreset'] == null ? '' : const FirestoreStringConverter().fromJson(json['aiStylePreset']),
-  aiModel: json['aiModel'] == null ? '' : const FirestoreStringConverter().fromJson(json['aiModel']),
   origin: json['origin'] == null ? '' : const FirestoreStringConverter().fromJson(json['origin']),
   remixOf: json['remixOf'] == null ? '' : const FirestoreStringConverter().fromJson(json['remixOf']),
   remixCount: (json['remixCount'] as num?)?.toInt(),
@@ -73,16 +73,16 @@ Map<String, dynamic> _$PrismWallDocDtoToJson(_PrismWallDocDto instance) => <Stri
   'colors': const FirestoreStringListConverter().toJson(instance.colors),
   'review': instance.review,
   'aiMetadata': const FirestoreJsonMapConverter().toJson(instance.aiMetadata),
+  'isAiGenerated': const FirestoreTrueConverter().toJson(instance.isAiGenerated),
+  'aiModel': const FirestoreStrictStringConverter().toJson(instance.aiModel),
   'is_streak_exclusive': instance.isStreakExclusive,
   'required_streak_days': instance.requiredStreakDays,
   'streak_shop_coin_cost': instance.streakShopCoinCost,
   'boostedUntil': const FirestoreDateTimeConverter().toJson(instance.boostedUntil),
   'depth': const FirestoreJsonMapConverter().toJson(instance.depth),
   'spatial': const FirestoreJsonMapConverter().toJson(instance.spatial),
-  'isAiGenerated': instance.isAiGenerated,
   'aiPrompt': const FirestoreStringConverter().toJson(instance.aiPrompt),
   'aiStylePreset': const FirestoreStringConverter().toJson(instance.aiStylePreset),
-  'aiModel': const FirestoreStringConverter().toJson(instance.aiModel),
   'origin': const FirestoreStringConverter().toJson(instance.origin),
   'remixOf': const FirestoreStringConverter().toJson(instance.remixOf),
   'remixCount': instance.remixCount,

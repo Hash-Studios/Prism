@@ -43,11 +43,17 @@ class PersistenceKeys {
   // Default target when the user taps Set: 'ask' | 'home' | 'lock' | 'both'.
   static const String defaultApplyTarget = 'wallpaper.defaultApplyTarget';
 
+  // The target the user last picked on the Set screen: 'home' | 'lock' | 'both'.
+  static const String lastApplyTarget = 'wallpaper.lastApplyTarget';
+
   // Icon style the home screen preview showed last: a PreviewIconStyle name.
   static const String previewIconStyle = 'wallpaper.previewIconStyle';
 
   // JSON list of applied wallpapers, newest first. Owned by wallpaper_history.
   static const String wallpaperHistoryItems = 'wallpaper.history.items';
+
+  // The highest follow-up chip price the user confirmed.
+  static const String aiFollowUpConfirmedCost = 'ai.followUpConfirmedCost';
 
   // Recently viewed walls on this device, newest first, and the Save viewing history setting.
   static const String viewedHistoryItems = 'history.viewed.items';

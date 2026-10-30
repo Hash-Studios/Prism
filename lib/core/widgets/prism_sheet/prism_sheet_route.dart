@@ -113,6 +113,9 @@ Future<T?> showPrismSheet<T>(
   );
 }
 
+/// How many Prism sheets are on screen, counting one that is still animating away.
+int get openPrismSheetCount => _PrismSheetRoute.open;
+
 /// Disposes the sheet controller with the route. The navigator disposes a route only after its subtree is unmounted,
 /// so nothing listens to the controller any more.
 class _PrismSheetRoute<T> extends ModalSheetRoute<T> {
@@ -129,8 +132,17 @@ class _PrismSheetRoute<T> extends ModalSheetRoute<T> {
 
   final SheetController sheetController;
 
+  static int open = 0;
+
+  @override
+  void install() {
+    super.install();
+    open += 1;
+  }
+
   @override
   void dispose() {
+    open -= 1;
     // One frame later, so a notification the controller queued for the end of this frame still finds it alive.
     WidgetsBinding.instance.addPostFrameCallback((_) => sheetController.dispose());
     super.dispose();

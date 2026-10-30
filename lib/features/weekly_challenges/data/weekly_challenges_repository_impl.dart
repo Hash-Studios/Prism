@@ -1,4 +1,6 @@
 import 'package:Prism/core/constants/app_functions.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/wall_remix/data/wall_remix_repository.dart';
 import 'package:Prism/features/weekly_challenges/biz/challenge_admission_tracker.dart';
@@ -42,19 +44,19 @@ class WeeklyChallengesRepositoryImpl implements WeeklyChallengesRepository {
   }
 
   static Map<String, Object?> _map(Object? value) => Map<String, Object?>.from(value! as Map);
-  Future<ChallengeEntry?> _hydrate(ChallengeEntry entry, Set<String> blocked) async {
-    if (blocked.contains(entry.creatorUid)) return null;
+  Future<ChallengeEntry?> _hydrate(ChallengeEntry entry, BlockedCreators blocked) async {
+    if (BlockedCreatorsFilter.hidesCreatorUid(entry.creatorUid, blocked)) return null;
     final PrismWallpaper? wall = await _walls.fetchApprovedWall(entry.wallId);
     if (wall == null ||
         wall.id != entry.wallLogicalId ||
         (wall.core.authorUid != null && wall.core.authorUid != entry.creatorUid) ||
-        blocked.contains(wall.core.authorUid)) {
+        BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked)) {
       return null;
     }
     return entry.copyWith(wall: wall);
   }
 
-  Future<WeeklyChallenge> _challenge(Object? value, Set<String> blocked) async {
+  Future<WeeklyChallenge> _challenge(Object? value, BlockedCreators blocked) async {
     final WeeklyChallenge challenge = WeeklyChallenge.fromMap(_map(value));
     return challenge.withWinner(challenge.winner == null ? null : await _hydrate(challenge.winner!, blocked));
   }
@@ -73,7 +75,7 @@ class WeeklyChallengesRepositoryImpl implements WeeklyChallengesRepository {
       cursor = body['nextCursor'] as String?;
       if (cursor != null && !cursors.add(cursor)) throw const ChallengeException(ChallengeError.unknown);
     } while (cursor != null);
-    final blocked = await _walls.blockedCreatorUids();
+    final blocked = await _walls.loadBlockedCreators();
     return Future.wait(rows.map((Object? row) => _challenge(row, blocked)));
   }
 
@@ -97,7 +99,7 @@ class WeeklyChallengesRepositoryImpl implements WeeklyChallengesRepository {
     try {
       await _admission.confirm(challengeId, admitted);
     } catch (_) {}
-    final blocked = await _walls.blockedCreatorUids();
+    final blocked = await _walls.loadBlockedCreators();
     final entries = await Future.wait(
       allEntries.map((Object? row) => _hydrate(ChallengeEntry.fromMap(_map(row)), blocked)),
     );

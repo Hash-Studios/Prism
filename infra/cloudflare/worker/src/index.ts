@@ -1123,7 +1123,7 @@ function sanitizeFolderShareImageUrl(value: string | undefined, env: Env): strin
   if (!isNonEmptyString(value)) return '';
   try {
     const parsed = new URL(value);
-    return isFolderShareImageUrl(parsed, env) ? parsed.toString() : '';
+    return isFolderShareImageUrl(parsed, env) || isR2PreviewUrl(parsed, env) ? parsed.toString() : '';
   } catch {
     return '';
   }
@@ -1436,6 +1436,9 @@ function renderCrawlerPreviewHtml(code: string, record: LinkRecord, env: Env): s
   const title = record.preview.title || 'Prism';
   const description = record.preview.description || 'Discover Prism.';
   const ogImage = escapeAttribute(getOgImageUrl(record, env));
+  const hasCoverImage = hasFolderShareImage(record) && isR2PreviewUrl(new URL(record.preview.image_source_url), env);
+  const imageDimensions = hasCoverImage ? '' : `<meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="${hasFolderShareImage(record) ? 545 : 630}" />`;
 
   return `<!doctype html>
 <html>
@@ -1448,8 +1451,7 @@ function renderCrawlerPreviewHtml(code: string, record: LinkRecord, env: Env): s
   <meta property="og:type" content="website" />
   <meta property="og:url" content="${escapeAttribute(shortUrl)}" />
   <meta property="og:image" content="${ogImage}" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="${hasFolderShareImage(record) ? 545 : 630}" />
+  ${imageDimensions}
   <meta property="og:site_name" content="Prism" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeAttribute(title)}" />

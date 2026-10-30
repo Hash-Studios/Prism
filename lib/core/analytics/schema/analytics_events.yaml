@@ -31,6 +31,11 @@ enums:
     values:
       - success
       - failure
+  - name: ai_apply_from
+    dart_type: AiApplyFromValue
+    values:
+      - hero
+      - strip
   - name: ai_style_pick_source
     dart_type: AiStylePickSource
     values:
@@ -123,6 +128,7 @@ enums:
     dart_type: SettingValue
     values:
       - anime_wallpapers
+      - ai_wallpapers
       - sketchy_wallpapers
       - recommendations_notifications
       - haptics
@@ -1021,6 +1027,28 @@ events:
       - name: generation_id
         key: generation_id
         type: string
+  - id: ai_result_applied
+    fields:
+      - name: platform
+        key: platform
+        type: string
+      - name: from
+        key: from
+        type: enum
+        enum: AiApplyFromValue
+  - id: ai_follow_up_used
+    fields:
+      - name: chip_id
+        key: chip_id
+        type: string
+  - id: ai_strip_swapped
+    fields:
+      - name: position
+        key: position
+        type: int
+      - name: count
+        key: count
+        type: int
   - id: coin_preview_unlock_attempt
     fields:
       - name: collection
@@ -1768,10 +1796,37 @@ events:
       - name: source
         key: source
         type: string
+      - name: trigger
+        key: trigger
+        type: string
   - id: report_problem_shared
     fields:
       - name: result
         key: result
+        type: string
+      - name: topic
+        key: topic
+        type: string
+        required: false
+      - name: has_screenshot
+        key: has_screenshot
+        type: bool
+      - name: trigger
+        key: trigger
+        type: string
+  - id: report_problem_sent
+    fields:
+      - name: result
+        key: result
+        type: string
+      - name: topic
+        key: topic
+        type: string
+      - name: has_screenshot
+        key: has_screenshot
+        type: bool
+      - name: trigger
+        key: trigger
         type: string
   - id: rate_prompt_shown
     fields:

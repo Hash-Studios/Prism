@@ -3,13 +3,11 @@ import 'dart:async';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
-import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
-import 'package:Prism/features/ai_wallpaper/views/widgets/ai_decoded_image.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
-/// A phone-shaped rounded frame with a hairline outline. It holds the generating state and the finished wallpaper.
+/// A phone-shaped rounded frame with a hairline outline. It holds the generating state.
 class AiPreviewFrame extends StatelessWidget {
   const AiPreviewFrame({super.key, required this.child});
 
@@ -40,41 +38,21 @@ class AiPreviewFrame extends StatelessWidget {
   }
 }
 
-/// The top of the AI page: nothing, the generating state, or the selected generation.
+/// The top of the compose page: nothing, or the generating state. A finished wallpaper opens [AiResultView].
 class AiPreviewStage extends StatelessWidget {
-  const AiPreviewStage({super.key, required this.generating, required this.record, required this.isPremium});
+  const AiPreviewStage({super.key, required this.generating});
 
   final bool generating;
-  final AiGenerationRecord? record;
-  final bool isPremium;
 
   @override
   Widget build(BuildContext context) {
-    final AppLocalizations l10n = AppLocalizations.of(context);
-    final AiGenerationRecord? current = record;
-    final Widget child = generating
-        ? const _GeneratingStage(key: ValueKey<String>('generating'))
-        : current == null
-        ? const SizedBox.shrink(key: ValueKey<String>('none'))
-        : Semantics(
-            key: ValueKey<String>(current.id),
-            image: true,
-            label: l10n.economyAiGeneratedWallpaper,
-            child: AiPreviewFrame(
-              child: LayoutBuilder(
-                builder: (context, box) => AiDecodedImage(
-                  url: current.displayUrl(isPremium: isPremium),
-                  logicalWidth: box.maxWidth,
-                  logicalHeight: box.maxHeight,
-                ),
-              ),
-            ),
-          );
     return RepaintBoundary(
       child: AnimatedSwitcher(
         duration: context.motion(PrismDurations.base),
         switchInCurve: PrismCurves.enter,
-        child: child,
+        child: generating
+            ? const _GeneratingStage(key: ValueKey<String>('generating'))
+            : const SizedBox.shrink(key: ValueKey<String>('none')),
       ),
     );
   }
@@ -101,7 +79,7 @@ class _GeneratingStage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: PrismSpace.md),
-        const _StatusLine(),
+        const AiGeneratingStatusLine(),
         const SizedBox(height: PrismSpace.xxs),
         Text(l10n.economyAiGenerationTime, style: PrismTextStyles.caption(context)),
       ],
@@ -109,14 +87,15 @@ class _GeneratingStage extends StatelessWidget {
   }
 }
 
-class _StatusLine extends StatefulWidget {
-  const _StatusLine();
+/// What the generation is doing. The line changes every few seconds; with reduced motion it stays on the first.
+class AiGeneratingStatusLine extends StatefulWidget {
+  const AiGeneratingStatusLine({super.key});
 
   @override
-  State<_StatusLine> createState() => _StatusLineState();
+  State<AiGeneratingStatusLine> createState() => _AiGeneratingStatusLineState();
 }
 
-class _StatusLineState extends State<_StatusLine> {
+class _AiGeneratingStatusLineState extends State<AiGeneratingStatusLine> {
   static const int _lineCount = 3;
 
   Timer? _timer;

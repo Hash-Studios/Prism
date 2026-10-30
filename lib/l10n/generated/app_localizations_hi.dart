@@ -1097,12 +1097,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountReportAProblem => 'समस्या की रिपोर्ट करें';
 
   @override
-  String accountReportPreviewNotice(String email) {
-    return 'इस रिपोर्ट में आपके ऐप का वर्ज़न, डिवाइस और हाल के लॉग शामिल हैं। इसमें ईमेल पता या साइन-इन टोकन नहीं हैं। इसे पढ़ें, फिर $email के साथ शेयर करें।';
-  }
-
-  @override
-  String get accountReportProblemSubtitle => 'Prism टीम के साथ अपने ऐप लॉग शेयर करें';
+  String get accountReportProblemSubtitle => 'Prism टीम को बग रिपोर्ट भेजें';
 
   @override
   String get accountReportUser => 'यूज़र की रिपोर्ट करें';
@@ -1211,9 +1206,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get accountSettings => 'सेटिंग्स';
-
-  @override
-  String get accountShare => 'शेयर करें';
 
   @override
   String get accountShareInvite => 'निमंत्रण शेयर करें';
@@ -3924,6 +3916,62 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get aiLiveActivityOpen => 'Prism में खोलें';
+
+  @override
+  String get aiResultApply => 'लागू करें';
+
+  @override
+  String get aiResultEditPrompt => 'प्रॉम्प्ट संपादित करें';
+
+  @override
+  String get aiSessionStripLabel => 'इस सत्र के वॉलपेपर';
+
+  @override
+  String aiSessionTake(int index, int count) {
+    final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String indexString = indexNumberFormat.format(index);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'संस्करण $indexString, कुल $countString';
+  }
+
+  @override
+  String get aiFollowUpWatercolour => 'वॉटरकलर में';
+
+  @override
+  String get aiFollowUpNight => 'रात वाला संस्करण';
+
+  @override
+  String get aiFollowUpMinimal => 'और सरल';
+
+  @override
+  String get aiFollowUpWarmer => 'गर्म रंग';
+
+  @override
+  String get aiFollowUpDepth => 'गहराई जोड़ें';
+
+  @override
+  String aiFollowUpCostLabel(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'हर नए संस्करण की कीमत $costString कॉइन है';
+  }
+
+  @override
+  String get aiFollowUpConfirmTitle => 'नया संस्करण बनाएँ?';
+
+  @override
+  String aiFollowUpConfirmBody(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'इससे एक नया वॉलपेपर बनेगा। हर एक की कीमत $costString कॉइन है।';
+  }
+
+  @override
+  String get aiFollowUpConfirmAction => 'बनाएँ';
 
   @override
   String get economyAiDailyLimit => 'आज की AI सीमा पूरी हो गई।';
@@ -11282,6 +11330,114 @@ class AppLocalizationsHi extends AppLocalizations {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName ने आपके वॉलपेपर को रीमिक्स किया।';
   }
+
+  @override
+  String get reportSheetMessage =>
+      'हमें बताएं कि क्या गड़बड़ हुई। Prism कभी आपका ईमेल पता या साइन-इन टोकन नहीं जोड़ता। भेजने से पहले स्क्रीनशॉट जांच लें।';
+
+  @override
+  String get reportTopicCrashFreeze => 'क्रैश/फ़्रीज़';
+
+  @override
+  String get reportTopicWallpaperWontSet => 'वॉलपेपर सेट नहीं हो रहा';
+
+  @override
+  String get reportTopicLooksBroken => 'गड़बड़ दिखता है';
+
+  @override
+  String get reportTopicSlow => 'धीमा';
+
+  @override
+  String get reportTopicOther => 'अन्य';
+
+  @override
+  String get reportNoteHint => 'क्या हुआ? आपको क्या उम्मीद थी?';
+
+  @override
+  String get reportScreenshotTitle => 'स्क्रीनशॉट';
+
+  @override
+  String get reportScreenshotEmpty => 'हमें दिखाएं कि आपको क्या दिख रहा है।';
+
+  @override
+  String get reportScreenshotAttached => 'देखने के लिए टैप करें। भेजने से पहले जांच लें।';
+
+  @override
+  String get reportAddScreenshot => 'स्क्रीनशॉट जोड़ें';
+
+  @override
+  String get reportRemoveScreenshot => 'हटाएं';
+
+  @override
+  String get reportViewScreenshot => 'स्क्रीनशॉट देखें';
+
+  @override
+  String get reportIncludeDiagnostics => 'डिवाइस जानकारी और हाल के लॉग शामिल करें';
+
+  @override
+  String get reportShowDiagnostics => 'क्या शामिल है, दिखाएं';
+
+  @override
+  String get reportHideDiagnostics => 'विवरण छिपाएं';
+
+  @override
+  String get reportSend => 'रिपोर्ट भेजें';
+
+  @override
+  String get reportShareAsFile => 'फ़ाइल के रूप में शेयर करें';
+
+  @override
+  String reportSent(String reference) {
+    return 'धन्यवाद, रिपोर्ट भेज दी गई। रेफ़रेंस $reference';
+  }
+
+  @override
+  String get reportCouldNotSend => 'भेजा नहीं जा सका';
+
+  @override
+  String get reportCouldNotSendBody =>
+      'अपना कनेक्शन जांचें और फिर कोशिश करें, या रिपोर्ट को फ़ाइल के रूप में शेयर करें।';
+
+  @override
+  String get reportShareInstead => 'इसके बजाय शेयर करें';
+
+  @override
+  String get reportShakeToReport => 'रिपोर्ट के लिए शेक करें';
+
+  @override
+  String get reportShakeToReportSubtitle => 'किसी भी स्क्रीन पर समस्या की रिपोर्ट करने के लिए फ़ोन को हिलाएं';
+
+  @override
+  String get accountShowAiWallpapers => 'AI से बने वॉलपेपर दिखाएँ';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'केवल इंसानों के बनाए वॉलपेपर देखने के लिए बंद करें';
+
+  @override
+  String get accountShowAiWallpapersFootnote => 'AI वॉलपेपर छिपाने पर भी आपके अपलोड और पसंदीदा कभी नहीं छिपते।';
+
+  @override
+  String get wallpaperFeedHideAi => 'AI छिपाएँ';
+
+  @override
+  String get wallpaperAiGenerated => 'AI से बना';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return '$model से बना';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'AI से बना';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'गलत लेबल की रिपोर्ट करें';
+
+  @override
+  String get feedNoHumanWalls => 'यहाँ अभी इंसानों के बनाए वॉलपेपर नहीं हैं';
+
+  @override
+  String get feedShowAiWalls => 'AI वॉलपेपर दिखाएँ';
 
   @override
   String get challengeTitle => 'साप्ताहिक चुनौती';

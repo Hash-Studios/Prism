@@ -78,6 +78,47 @@ void main() {
     expect(firestore.querySpecs.every((spec) => spec.cachePolicy == FirestoreCachePolicy.serverOnly), isTrue);
     expect(firestore.querySpecs.every((spec) => spec.sourceTag.isNotEmpty), isTrue);
   });
+  test('unknown block state hides entries and winners until the block list loads', () async {
+    final blocks = FakeUserBlockRepository.pending()..timeOutInitialLoad();
+    final firestore = FakeFirestoreClient(
+      onQuery: (spec) => [
+        (
+          id: 'wall',
+          data: <String, dynamic>{
+            'id': 'logical-wall',
+            'review': true,
+            'creatorUid': 'creator',
+            'wallpaper_url': 'https://image.test/wall',
+            'wallpaper_thumb': '',
+            'by': 'Maya',
+          },
+        ),
+      ],
+    );
+    final repo = WeeklyChallengesRepositoryImpl.withCaller(
+      WallRemixRepository(firestore, blocks),
+      ChallengeAdmissionTracker(InMemoryLocalStore()),
+      (name, args) async => name == 'listWeeklyChallenges'
+          ? {
+              'challenges': [challengeMap(winner: row('wall'))],
+            }
+          : {
+              'challenge': challengeMap(winner: row('wall')),
+              'entries': [row('wall')],
+              'myEntryCount': 0,
+            },
+    );
+    final hidden = await repo.get('2026-10-26', ChallengeSort.top);
+    expect(hidden.entries, isEmpty);
+    expect(hidden.challenge.winner, isNull);
+    expect((await repo.list(past: true)).single.winner, isNull);
+    expect(firestore.querySpecs, isEmpty);
+    blocks.completeInitial({});
+    final visible = await repo.get('2026-10-26', ChallengeSort.top);
+    expect(visible.entries.single.id, 'wall');
+    expect(visible.challenge.winner!.id, 'wall');
+    expect((await repo.list(past: true)).single.winner!.id, 'wall');
+  });
   test('loads all cursor pages including an empty visibility-filtered page', () async {
     final blocks = FakeUserBlockRepository.pending()..completeInitial({});
     final calls = <Map<String, Object?>>[];

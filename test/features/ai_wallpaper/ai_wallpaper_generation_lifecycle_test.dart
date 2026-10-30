@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -14,6 +15,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/platform/live_activity_channel.dart';
 import 'package:Prism/core/platform/pigeon/prism_live_activity_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
@@ -22,7 +24,10 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart';
-import 'package:Prism/features/ai_wallpaper/views/widgets/ai_preview_stage.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_remix_chip.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
+import 'package:Prism/features/session/domain/entities/session_entity.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
@@ -89,13 +94,23 @@ class _RecordingAnalytics extends FakeAppAnalytics {
 }
 
 class _FakeAiGenerationRepository extends Fake implements AiGenerationRepositoryImpl {
-  _FakeAiGenerationRepository(this.record, {this.generation, this.variation, this.localHistory, this.history});
+  _FakeAiGenerationRepository(
+    this.record, {
+    this.generation,
+    this.variation,
+    this.localHistory,
+    this.history,
+    this.historyForUser,
+    this.submissionMetadata,
+  });
 
   final AiGenerationRecord record;
   final Future<AiGenerationRecord> Function()? generation;
   final Future<AiGenerationRecord> Function()? variation;
   final Future<List<AiGenerationRecord>> Function()? localHistory;
   final Future<List<AiGenerationRecord>> Function()? history;
+  final Future<List<AiGenerationRecord>> Function(String userId)? historyForUser;
+  final AiSubmissionMetadata? submissionMetadata;
   final List<({AiStylePreset style, AiQualityTier quality, int coinsSpent})> requests = [];
   final List<String?> chargeTxIds = <String?>[];
   final List<String?> remixOfValues = <String?>[];
@@ -117,7 +132,16 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
   Future<AiSubmissionMetadata> prefillSubmissionMetadata({
     required String generationId,
     required List<String> defaultTags,
-  }) async => (title: 'Remix', description: '', category: 'Nature', tags: defaultTags);
+  }) async {
+    final AiSubmissionMetadata? metadata = submissionMetadata;
+    if (metadata == null) return (title: 'Remix', description: '', category: 'Nature', tags: defaultTags);
+    return (
+      title: metadata.title,
+      description: metadata.description,
+      category: metadata.category,
+      tags: metadata.tags.isEmpty ? defaultTags : metadata.tags,
+    );
+  }
 
   @override
   Future<void> clearForUser(String userId) async {
@@ -126,7 +150,11 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
 
   @override
   Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) async =>
-      history == null ? <AiGenerationRecord>[record] : await history!();
+      historyForUser != null
+      ? await historyForUser!(userId)
+      : history == null
+      ? <AiGenerationRecord>[record]
+      : await history!();
 
   @override
   Future<List<AiGenerationRecord>> fetchLocalHistory({required String userId, int limit = 50}) async =>
@@ -172,6 +200,51 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
       return linked;
     });
   }
+}
+
+class _StreamSessionRepository extends Fake implements SessionRepository {
+  _StreamSessionRepository(this._currentUser);
+
+  PrismUsersV2 _currentUser;
+  final StreamController<PrismUsersV2> _users = StreamController<PrismUsersV2>.broadcast();
+
+  @override
+  PrismUsersV2 get currentUser => _currentUser;
+
+  @override
+  Stream<PrismUsersV2> watchCurrentUser() async* {
+    yield _currentUser;
+    yield* _users.stream;
+  }
+
+  @override
+  Future<Result<SessionEntity>> replaceCurrentUser(PrismUsersV2 user) async {
+    _currentUser = user;
+    _users.add(user);
+    return Result.success<SessionEntity>(
+      SessionEntity(
+        userId: user.id,
+        loggedIn: user.loggedIn,
+        premium: user.premium,
+        subscriptionTier: user.subscriptionTier,
+      ),
+    );
+  }
+
+  @override
+  Future<Result<SessionEntity>> getSession() async => Result.success<SessionEntity>(
+    SessionEntity(
+      userId: _currentUser.id,
+      loggedIn: _currentUser.loggedIn,
+      premium: _currentUser.premium,
+      subscriptionTier: _currentUser.subscriptionTier,
+    ),
+  );
+
+  @override
+  Future<Result<SessionEntity>> updateFollowing(List<String> following) => getSession();
+
+  Future<void> dispose() => _users.close();
 }
 
 class _MemoryAiStore extends Fake implements DurableJsonStore {
@@ -253,14 +326,17 @@ class _RecordingLiveActivityApi extends PrismLiveActivityHostApi {
 AiGenerationRecord _record({
   String id = 'generation-1',
   String userId = 'user-1',
+  String prompt = 'A quiet mountain lake',
+  AiStylePreset stylePreset = AiStylePreset.nature,
+  String? remixOf,
   int width = 720,
   int height = 1280,
 }) => AiGenerationRecord(
   id: id,
   userId: userId,
   createdAt: DateTime.utc(2026),
-  prompt: 'A quiet mountain lake',
-  stylePreset: AiStylePreset.nature,
+  prompt: prompt,
+  stylePreset: stylePreset,
   qualityTier: AiQualityTier.fast,
   provider: 'test',
   model: 'test',
@@ -272,7 +348,15 @@ AiGenerationRecord _record({
   chargeMode: AiChargeMode.freeTrial,
   coinsSpent: 0,
   status: 'success',
+  remixOf: remixOf,
 );
+
+Future<void> openFirstRecent(WidgetTester tester) async {
+  final Finder thumb = find.descendant(of: find.byType(AiHistoryStrip), matching: find.byType(AiGenerationThumb)).first;
+  await tester.ensureVisible(thumb);
+  await tester.tap(thumb);
+  await tester.pumpAndSettle();
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -293,7 +377,9 @@ void main() {
     FirestoreClient? firestore,
     ConnectivityService? connectivity,
     List<MethodCall>? toastCalls,
+    bool disableAnimations = false,
     AiRemixSeed? remixSeed,
+    SessionRepository? sessionRepository,
   }) async {
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
@@ -302,6 +388,7 @@ void main() {
     await getIt.reset();
     getIt.registerSingleton<ConnectivityService>(connectivity ?? _FakeConnectivityService());
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+    if (sessionRepository != null) getIt.registerSingleton<SessionRepository>(sessionRepository);
     if (firestore != null) getIt.registerSingleton<FirestoreClient>(firestore);
     functions.onCall = onCall;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
@@ -317,9 +404,12 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: AiWallpaperTabPage(
-          repository: repository ?? _FakeAiGenerationRepository(_record()),
-          remixSeed: remixSeed,
+        home: MediaQuery(
+          data: MediaQueryData.fromView(tester.view).copyWith(disableAnimations: disableAnimations),
+          child: AiWallpaperTabPage(
+            repository: repository ?? _FakeAiGenerationRepository(_record()),
+            remixSeed: remixSeed,
+          ),
         ),
       ),
     );
@@ -378,12 +468,12 @@ void main() {
     await tester.tap(find.text('Generate'));
     await tester.pumpAndSettle();
     expect(store.records['history/user-1/gen_mlt7o22q_7a9688a037a47de6']?['_syncState'], 'synced');
-    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'gen_mlt7o22q_7a9688a037a47de6');
+    expect(tester.widget<AiResultView>(find.byType(AiResultView)).record.id, 'gen_mlt7o22q_7a9688a037a47de6');
 
     firestore.pending.single.complete([]);
     await refresh;
     await tester.pumpAndSettle();
-    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'gen_mlt7o22q_7a9688a037a47de6');
+    expect(tester.widget<AiResultView>(find.byType(AiResultView)).record.id, 'gen_mlt7o22q_7a9688a037a47de6');
     expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history.map((r) => r.id), [
       'gen_mlt7o22q_7a9688a037a47de6',
     ]);
@@ -395,7 +485,11 @@ void main() {
     await nextRefresh;
     await tester.pumpAndSettle();
     expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history, isEmpty);
-    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record, isNull);
+    expect(
+      tester.widget<AiResultView>(find.byType(AiResultView)).record.id,
+      'gen_mlt7o22q_7a9688a037a47de6',
+      reason: 'a history refresh does not close the result the user is looking at',
+    );
     await tester.pump(const Duration(seconds: 2));
   });
 
@@ -431,8 +525,7 @@ void main() {
     await tester.tap(find.text('Generate'));
     await tester.pumpAndSettle();
 
-    final AiPreviewStage stage = tester.widget<AiPreviewStage>(find.byType(AiPreviewStage));
-    expect(stage.record?.remixOf, 'orig_1');
+    expect(tester.widget<AiResultView>(find.byType(AiResultView)).record.remixOf, 'orig_1');
     expect(repository.remixOfValues, <String?>['orig_1']);
     expect(repository.savedHistoryRecords, hasLength(1));
     expect(repository.savedHistoryRecords.single.remixOf, 'orig_1');
@@ -449,6 +542,68 @@ void main() {
 
     final Map<String, dynamic>? uploadedWall = firestore.docs['walls']?.values.single;
     expect(uploadedWall?['aiGenerationId'], generatedId);
+    expect(uploadedWall?['remixOf'], 'orig_1');
+  });
+
+  testWidgets('submitting a selected recent uses that generation prompt and style as metadata fallbacks', (
+    tester,
+  ) async {
+    final AiGenerationRecord recent = _record(
+      id: 'recent-wall',
+      prompt: 'silver fox beneath a winter moon',
+      stylePreset: AiStylePreset.watercolor,
+      remixOf: 'orig_1',
+    );
+    final FakeFirestoreClient firestore = FakeFirestoreClient();
+    await setUpPage(
+      tester,
+      (name, parameters) async => <String, Object>{
+        'success': true,
+        'changed': true,
+        'currentBalance': 90,
+        'delta': -10,
+        'transactionId': 'reservation-1',
+      },
+      repository: _FakeAiGenerationRepository(
+        recent,
+        history: () async => <AiGenerationRecord>[recent],
+        submissionMetadata: (title: '', description: '', category: '', tags: <String>[]),
+      ),
+      firestore: firestore,
+      remixSeed: const AiRemixSeed(
+        wallDocId: 'compose-seed',
+        title: 'Compose seed',
+        creatorName: 'Asha',
+        thumbnailUrl: '',
+        prompt: 'neon koi pond at dusk',
+        sourceType: RemixSourceType.user,
+      ),
+    );
+    app_state.prismUser.premium = true;
+    await openFirstRecent(tester);
+
+    final String submitLabel = AppLocalizations.of(
+      tester.element(find.byType(AiWallpaperTabPage)),
+    ).economyAiSubmitForReview;
+    final Finder submitButton = find.bySemanticsLabel(submitLabel);
+    await tester.ensureVisible(submitButton);
+    await tester.tap(submitButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(submitLabel));
+    await tester.pumpAndSettle();
+
+    final Map<String, dynamic>? uploadedWall = firestore.docs['walls']?.values.single;
+    expect(
+      uploadedWall,
+      isNotNull,
+      reason: 'the selected recent must complete submission before fallback fields are checked',
+    );
+    expect(uploadedWall?['title'], 'silver fox beneath a winter moon');
+    expect(uploadedWall?['desc'], 'silver fox beneath a winter moon');
+    expect(uploadedWall?['category'], AiStylePreset.watercolor.label);
+    expect(uploadedWall?['tags'], containsAll(<String>['silver', 'fox', 'beneath', AiStylePreset.watercolor.apiValue]));
+    expect(uploadedWall?['aiPrompt'], recent.prompt);
+    expect(uploadedWall?['aiStylePreset'], AiStylePreset.watercolor.apiValue);
     expect(uploadedWall?['remixOf'], 'orig_1');
   });
 
@@ -493,7 +648,7 @@ void main() {
 
     expect(repository.savedHistoryRecords, hasLength(1));
     expect(repository.savedHistoryRecords.single.remixOf, 'orig_1');
-    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record, isNull);
+    expect(find.byType(AiResultView), findsNothing);
     await tester.pump(const Duration(seconds: 2));
   });
 
@@ -523,7 +678,7 @@ void main() {
     local.complete([_record()]);
     await refresh;
     await tester.pumpAndSettle();
-    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'new-generation');
+    expect(tester.widget<AiResultView>(find.byType(AiResultView)).record.id, 'new-generation');
     expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).loading, false);
     await tester.pump(const Duration(seconds: 2));
   });
@@ -556,7 +711,7 @@ void main() {
       }
       await older;
       await tester.pumpAndSettle();
-      expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'newer');
+      expect(find.byType(AiResultView), findsNothing);
       final history = tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip));
       expect(history.history.map((r) => r.id), ['newer']);
       expect(history.failed, false);
@@ -589,7 +744,7 @@ void main() {
     oldHistory.complete([_record(id: 'old-session-history')]);
     await refresh;
     await tester.pumpAndSettle();
-    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'generation-1');
+    expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history.map((r) => r.id), ['generation-1']);
     expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).loading, false);
   });
 
@@ -656,7 +811,7 @@ void main() {
         generation.complete(_record(id: 'old-account-generation'));
       }
       await tester.pumpAndSettle();
-      expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'replacement-history');
+      expect(find.byType(AiResultView), findsNothing);
       expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history.map((r) => r.id), [
         'replacement-history',
       ]);
@@ -733,7 +888,8 @@ void main() {
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
     await setUpPage(tester, (name, parameters) async => <String, Object>{});
 
-    await tester.tap(find.text('Try another'));
+    await openFirstRecent(tester);
+    await tester.tap(find.byTooltip('Try another'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, '');
     await tester.pump();
@@ -1112,7 +1268,8 @@ void main() {
         sourceType: RemixSourceType.user,
       ),
     );
-    final Finder refine = find.text('Try another');
+    await openFirstRecent(tester);
+    final Finder refine = find.byTooltip('Try another');
     await tester.ensureVisible(refine);
     await tester.tap(refine);
     await tester.pumpAndSettle();
@@ -1176,7 +1333,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final Finder refine = find.text('Try another');
+    await openFirstRecent(tester);
+    final Finder refine = find.byTooltip('Try another');
     await tester.ensureVisible(refine);
     await tester.tap(refine);
     await tester.pumpAndSettle();
@@ -1679,7 +1837,8 @@ void main() {
     await tester.ensureVisible(find.text('Quality').last);
     await tester.tap(find.text('Quality').last);
     await tester.pump();
-    await tester.tap(find.text('Try another'));
+    await openFirstRecent(tester);
+    await tester.tap(find.byTooltip('Try another'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'warmer palette');
     await tester.pump();
@@ -1703,8 +1862,8 @@ void main() {
     await tester.tap(generate);
     await tester.pumpAndSettle();
     await tester.pump(const Duration(milliseconds: 1400));
-    await tester.ensureVisible(find.text('Try another'));
-    await tester.tap(find.text('Try another'));
+    await tester.ensureVisible(find.byTooltip('Try another'));
+    await tester.tap(find.byTooltip('Try another'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'warmer palette');
     await tester.pump();
@@ -1769,5 +1928,157 @@ void main() {
 
     expect(find.text('Sign in to Prism'), findsOneWidget);
     expect(toastMessages(toastCalls), isEmpty);
+  });
+
+  // Guards lib: `_scrollToTop` jumps when `context.reduceMotion` is true. A zero-duration animateTo asserts.
+  testWidgets('generation scrolls to top without a zero-duration animation under reduced motion', (tester) async {
+    await setUpPage(
+      tester,
+      (name, parameters) async => coinReply(name),
+      repository: _FakeAiGenerationRepository(_record(), generation: () async => _record()),
+      disableAnimations: true,
+    );
+    tester.view.physicalSize = const Size(400, 800);
+    await tester.pump();
+    await tester.ensureVisible(find.text('Quality').last);
+    expect(Scrollable.of(tester.element(find.text('Quality').last)).position.pixels, greaterThan(0));
+
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(find.byType(AiResultView), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('account changes clear account-bound AI result, history, and remix state', (tester) async {
+    final AiGenerationRecord generated = _record();
+    final repository = _FakeAiGenerationRepository(
+      generated,
+      generation: () async => _record(userId: app_state.prismUser.id),
+      historyForUser: (String userId) async =>
+          userId == 'user-1' ? <AiGenerationRecord>[generated] : <AiGenerationRecord>[],
+    );
+    await setUpPage(
+      tester,
+      (name, parameters) async => coinReply(name),
+      repository: repository,
+      remixSeed: const AiRemixSeed(
+        wallDocId: 'orig_1',
+        title: 'Koi',
+        creatorName: 'Asha',
+        thumbnailUrl: '',
+        prompt: 'neon koi pond at dusk',
+        sourceType: RemixSourceType.user,
+      ),
+    );
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+    expect(find.byType(AiResultView), findsOneWidget);
+    expect(tester.widget<AiResultView>(find.byType(AiResultView)).session, hasLength(1));
+
+    await tester.ensureVisible(find.byTooltip('Try another'));
+    await tester.tap(find.byTooltip('Try another'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'A private refine draft');
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-2'
+      ..coins = 100
+      ..loggedIn = true;
+    tester.element(find.byType(AiWallpaperTabPage)).markNeedsBuild();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byType(AiResultView), findsNothing);
+    expect(
+      find.byType(AiRemixChip),
+      findsNothing,
+      reason: 'a remix seed from user-1 must not remain active for user-2',
+    );
+    expect(
+      tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history,
+      isEmpty,
+      reason: 'user-2 must not see user-1 AI history before a pull-to-refresh',
+    );
+
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..coins = 100
+      ..loggedIn = true;
+    tester.element(find.byType(AiWallpaperTabPage)).markNeedsBuild();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byType(AiResultView), findsNothing, reason: 'switching back must not resurrect the old result/session');
+
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-2'
+      ..coins = 100
+      ..loggedIn = true;
+    tester.element(find.byType(AiWallpaperTabPage)).markNeedsBuild();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.ensureVisible(find.text('Generate'));
+    await tester.tap(find.text('Generate'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+    expect(repository.remixOfValues, <String?>['orig_1', null]);
+    await tester.ensureVisible(find.byTooltip('Try another'));
+    await tester.tap(find.byTooltip('Try another'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField).last).controller!.text, isEmpty);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('session stream owner changes clear remix and history without a page rebuild', (tester) async {
+    final _StreamSessionRepository session = _StreamSessionRepository(
+      app_constants.createGuestPrismUser()
+        ..id = 'user-1'
+        ..coins = 100
+        ..loggedIn = true,
+    );
+    addTearDown(session.dispose);
+    final AiGenerationRecord firstUserRecord = _record();
+    await setUpPage(
+      tester,
+      (name, parameters) async => coinReply(name),
+      sessionRepository: session,
+      repository: _FakeAiGenerationRepository(
+        firstUserRecord,
+        historyForUser: (String userId) async =>
+            userId == 'user-1' ? <AiGenerationRecord>[firstUserRecord] : <AiGenerationRecord>[],
+      ),
+      remixSeed: const AiRemixSeed(
+        wallDocId: 'orig_1',
+        title: 'Koi',
+        creatorName: 'Asha',
+        thumbnailUrl: '',
+        prompt: 'neon koi pond at dusk',
+        sourceType: RemixSourceType.user,
+      ),
+    );
+    expect(find.byType(AiRemixChip), findsOneWidget);
+    expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history, hasLength(1));
+
+    await session.replaceCurrentUser(
+      app_constants.createGuestPrismUser()
+        ..id = 'user-2'
+        ..coins = 100
+        ..loggedIn = true,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AiRemixChip), findsNothing);
+    expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history, isEmpty);
+    expect(tester.takeException(), isNull);
   });
 }

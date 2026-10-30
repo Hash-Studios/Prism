@@ -6,9 +6,11 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -105,6 +107,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   int _moodLoadVersion = 0;
   bool _moodsReady = false;
 
+  bool get _showAi =>
+      !getIt.isRegistered<SettingsLocalDataSource>() || AiContentFilter.showsAi(getIt<SettingsLocalDataSource>());
+
   @override
   bool get wantKeepAlive => true;
 
@@ -134,6 +139,10 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     if (mounted) {
       _reloadMoodRows(resetImpressions: true);
       _bloc.add(const PersonalizedFeedEvent.settingsChanged());
+      _trending.add(const TrendingEvent.refreshRequested());
+      _latest?.add(const PagedFeedEvent.refreshRequested());
+      _following?.add(const PagedFeedEvent.refreshRequested());
+      _popular?.add(const PagedFeedEvent.refreshRequested());
     }
   }
 
@@ -464,6 +473,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         return <Widget>[
           PagedChipSliver(
             bloc: _chipBloc(HomeFeedChip.latest)!,
+            showAi: _showAi,
             failureTitle: context.l10n.wallpaperFeedLatestLoadError,
             emptyTitle: context.l10n.accountNoWallpapersYet,
             emptyBody: context.l10n.wallpaperFeedPullToRefresh,
@@ -478,6 +488,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         return <Widget>[
           PagedChipSliver(
             bloc: _chipBloc(HomeFeedChip.following)!,
+            showAi: _showAi,
             failureTitle: context.l10n.wallpaperFeedFollowingLoadError,
             emptyTitle: context.l10n.wallpaperFeedFollowingEmptyTitle,
             emptyActionLabel: context.l10n.accountFindCreators,
@@ -488,12 +499,18 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         ];
       case HomeFeedChip.trending:
         return <Widget>[
-          TrendingChipSliver(bloc: _trending, crossAxisCount: crossAxisCount, tileMemCacheHeight: tileMemCacheHeight),
+          TrendingChipSliver(
+            bloc: _trending,
+            crossAxisCount: crossAxisCount,
+            tileMemCacheHeight: tileMemCacheHeight,
+            showAi: _showAi,
+          ),
         ];
       case HomeFeedChip.popular:
         return <Widget>[
           PagedChipSliver(
             bloc: _chipBloc(HomeFeedChip.popular)!,
+            showAi: _showAi,
             failureTitle: context.l10n.wallpaperFeedPopularLoadError,
             emptyTitle: context.l10n.wallpaperFeedPopularEmptyTitle,
             emptyBody: context.l10n.wallpaperFeedPullToRefresh,
@@ -514,16 +531,20 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     int crossAxisCount,
     int tileMemCacheHeight,
   ) {
+    final List<FeedItemEntity> filteredItems = AiContentFilter.filterFeedItems(state.items, showAi: _showAi);
+    final PersonalizedFeedState visibleState = state.copyWith(items: filteredItems);
     final DateTime now = DateTime.now();
-    final List<PrismWallpaper> boostedWalls = weekWalls.where((wall) => wall.isBoostedAt(now)).toList(growable: false);
+    final List<PrismWallpaper> boostedWalls = weekWalls
+        .where((wall) => wall.isBoostedAt(now) && (_showAi || !AiContentFilter.isAi(wall)))
+        .toList(growable: false);
     final Set<String> boostedIds = <String>{for (final PrismWallpaper wall in boostedWalls) wall.id};
-    final List<PrismFeedItem> previewWalls = state.items
+    final List<PrismFeedItem> previewWalls = visibleState.items
         .whereType<PrismFeedItem>()
         .where((item) => !boostedIds.contains(item.id))
         .take(_carouselPreviewCount)
         .toList(growable: false);
     final Set<String> shownInCarousel = <String>{...boostedIds, for (final PrismFeedItem item in previewWalls) item.id};
-    final List<FeedItemEntity> visibleItems = state.items
+    final List<FeedItemEntity> visibleItems = visibleState.items
         .where((item) => item is! PrismFeedItem || !shownInCarousel.contains(item.id))
         .toList(growable: false);
     final bool loadingFirstPage =
@@ -549,7 +570,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         if (!loadingFirstPage)
           SliverToBoxAdapter(child: WeeklyChallengeCard(key: ValueKey('challenge-$_moodRowsRevision'))),
         if (!loadingFirstPage) SliverToBoxAdapter(child: MoodChipRow(moods: moods)),
-        ..._forYouGridSlivers(context, state, visibleItems, moods, crossAxisCount, tileMemCacheHeight),
+        ..._forYouGridSlivers(context, visibleState, visibleItems, moods, crossAxisCount, tileMemCacheHeight),
       ],
     );
   }

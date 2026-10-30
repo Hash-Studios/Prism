@@ -188,4 +188,4 @@ bool _sameViewer(WallViewer? first, WallViewer? second) =>
         second != null &&
         first.isPremium == second.isPremium &&
         listEquals(first.premiumCollections, second.premiumCollections) &&
-        setEquals(first.blockedCreatorUids, second.blockedCreatorUids));
+        first.blockedCreators == second.blockedCreators);

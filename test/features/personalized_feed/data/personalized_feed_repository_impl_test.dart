@@ -15,7 +15,9 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -123,6 +125,22 @@ class _AnimeWallFirestore extends _OneWallFirestore {
           'wallpaper_url': 'https://example.com/anime.jpg',
           'category': 'Anime',
         }, 'anime-doc'),
+        map(<String, dynamic>{
+          ..._OneWallFirestore._wall,
+          'wallpaper_url': 'https://example.com/visible.jpg',
+        }, 'visible-doc'),
+      ];
+}
+
+class _AiWallFirestore extends _OneWallFirestore {
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async =>
+      <T>[
+        map(<String, dynamic>{
+          ..._OneWallFirestore._wall,
+          'wallpaper_url': 'https://example.com/ai.jpg',
+          'isAiGenerated': true,
+        }, 'ai-doc'),
         map(<String, dynamic>{
           ..._OneWallFirestore._wall,
           'wallpaper_url': 'https://example.com/visible.jpg',
@@ -522,36 +540,36 @@ class _EmptyBlocks extends Fake implements UserBlockRepository {
   Set<String> loaded = <String>{};
 
   @override
-  Set<String> get cachedBlockedCreatorUids {
+  BlockedCreators get blockedCreators {
     if (failCachedRead) {
       failCachedRead = false;
       throw StateError('blocked list unavailable');
     }
-    return cached;
+    return KnownBlockedCreators(cached);
   }
 
   @override
-  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) async {
+  Future<BlockedCreators> loadBlockedCreators() async {
     if (loadDelay > Duration.zero) {
       await Future<void>.delayed(loadDelay);
-      return loaded;
+      return KnownBlockedCreators(loaded);
     }
-    if (hangOnWait && waitForInitialLoad) {
-      return Completer<Set<String>>().future;
+    if (hangOnWait) {
+      return Completer<BlockedCreators>().future;
     }
     if (failNext) {
       failNext = false;
       throw StateError('offline');
     }
-    return cached;
+    return KnownBlockedCreators(cached);
   }
 }
 
 class _PendingBlocks extends _EmptyBlocks {
-  final Completer<Set<String>> initial = Completer<Set<String>>();
+  final Completer<BlockedCreators> initial = Completer<BlockedCreators>();
 
   @override
-  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) => initial.future;
+  Future<BlockedCreators> loadBlockedCreators() => initial.future;
 }
 
 class _FailingFavourites extends Fake implements FavouriteWallsRepository {
@@ -1505,6 +1523,53 @@ void main() {
 
     int gems(_GatedWallsFirestore f) => f.sourceTags.where((tag) => tag == 'personalized.gems').length;
 
+    test('a completed unknown-block prime is discarded and rebuilt once the list is known', () async {
+      final _GatedWallsFirestore firestore = _GatedWallsFirestore()..gate.complete();
+      final _BlocksLoadedLater blocks = _BlocksLoadedLater();
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+
+      final PersonalizedFeedPage? primed = await repository.primeFirstPage();
+      expect(primed, isNotNull);
+      expect(primed!.items, isEmpty);
+      blocks.listLoaded = true;
+      final PersonalizedFeedPage? rebuilt = await repository.primeFirstPage();
+      final Result<PersonalizedFeedPage> fetched = await repository.fetch(_firstPage);
+
+      expect(rebuilt, isNotNull);
+      expect(rebuilt!.items.map((item) => item.id), unorderedEquals(<String>['visible-doc', 'wall-doc']));
+      expect(fetched.isSuccess, isTrue);
+      expect(fetched.data!.items.map((item) => item.id), unorderedEquals(<String>['visible-doc', 'wall-doc']));
+      expect(gems(firestore), 2);
+    });
+
+    test('a direct refresh rebuilds when its captured unknown block list becomes known in flight', () async {
+      final _GatedWallsFirestore firestore = _GatedWallsFirestore();
+      final _BlocksLoadedLater blocks = _BlocksLoadedLater();
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+
+      final Future<Result<PersonalizedFeedPage>> fetching = repository.fetch(_firstPage);
+      await Future<void>.delayed(Duration.zero);
+      blocks.listLoaded = true;
+      firestore.gate.complete();
+      final Result<PersonalizedFeedPage> fetched = await fetching;
+
+      expect(fetched.isSuccess, isTrue);
+      expect(fetched.data!.items.map((item) => item.id), unorderedEquals(<String>['visible-doc', 'wall-doc']));
+      expect(gems(firestore), 2);
+    });
+
     test('the next page-one refresh takes the primed page and hits the sources once', () async {
       final env = await build();
       env.firestore.gate.complete();
@@ -1781,6 +1846,71 @@ void main() {
       await Future.wait<Object?>(<Future<Object?>>[prime, first, second]);
 
       expect(gems(env.firestore), 1);
+    });
+
+    for (final bool offerPrime in <bool>[false, true]) {
+      test('concurrent refreshes share one recovery with offerPrime=$offerPrime', () async {
+        final _GatedWallsFirestore firestore = _GatedWallsFirestore();
+        final _BlocksLoadedLater blocks = _BlocksLoadedLater();
+        app_state.prismUser = _signedInUser();
+        final PersonalizedFeedRepository repository = _repository(
+          firestore: firestore,
+          settings: SettingsLocalDataSource(InMemoryLocalStore()),
+          favourites: _CountingFavourites(),
+          blocks: blocks,
+        );
+
+        final Future<PersonalizedFeedPage?>? prime = offerPrime ? repository.primeFirstPage() : null;
+        final Future<Result<PersonalizedFeedPage>> first = repository.fetch(_firstPage);
+        final Future<Result<PersonalizedFeedPage>> second = repository.fetch(_firstPage);
+        await Future<void>.delayed(Duration.zero);
+        blocks.listLoaded = true;
+        firestore.gate.complete();
+        final List<Result<PersonalizedFeedPage>> results = await Future.wait<Result<PersonalizedFeedPage>>(
+          <Future<Result<PersonalizedFeedPage>>>[first, second],
+        );
+
+        if (prime != null) expect(await prime, isNull);
+        for (final Result<PersonalizedFeedPage> result in results) {
+          expect(result.isSuccess, isTrue);
+          expect(result.data!.items.map((item) => item.id), unorderedEquals(<String>['visible-doc', 'wall-doc']));
+        }
+        expect(gems(firestore), 2);
+
+        final Result<PersonalizedFeedPage> next = await repository.fetch(_firstPage);
+
+        expect(next.isSuccess, isTrue);
+        expect(next.data!.items.map((item) => item.id), unorderedEquals(<String>['visible-doc', 'wall-doc']));
+        expect(gems(firestore), 3);
+      });
+    }
+
+    test('a generation change supersedes an in-flight unknown-block prime recovery', () async {
+      final _GatedWallsFirestore firestore = _GatedWallsFirestore();
+      final _BlocksLoadedLater blocks = _BlocksLoadedLater();
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: settings,
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+
+      final Future<PersonalizedFeedPage?> oldPrime = repository.primeFirstPage();
+      await Future<void>.delayed(Duration.zero);
+      blocks.listLoaded = true;
+      await settings.set(app_constants.personalizedFeedMixLocalKey, 'adventurous');
+      final Future<PersonalizedFeedPage?> newPrime = repository.primeFirstPage();
+      firestore.gate.complete();
+      final List<PersonalizedFeedPage?> pages = await Future.wait(<Future<PersonalizedFeedPage?>>[oldPrime, newPrime]);
+      final Result<PersonalizedFeedPage> fetched = await repository.fetch(_firstPage);
+
+      expect(pages.first, isNull);
+      expect(pages.last, isNotNull);
+      expect(fetched.isSuccess, isTrue);
+      expect(fetched.data!.items.map((item) => item.id), unorderedEquals(<String>['visible-doc', 'wall-doc']));
+      expect(gems(firestore), 2);
     });
 
     test('a newly blocked creator is removed from the primed page at delivery', () async {
@@ -2174,7 +2304,7 @@ void main() {
       });
       await Future<void>.delayed(Duration.zero);
       expect(returned, isFalse);
-      blocks.initial.complete(<String>{'blocked-uid'});
+      blocks.initial.complete(KnownBlockedCreators(<String>{'blocked-uid'}));
 
       final page = await pending;
       expect(page!.items.any((item) => item.id == 'blocked'), isFalse);
@@ -2297,6 +2427,39 @@ void main() {
       expect(_itemIds((await repository.readCached())!.items), <String>['keep']);
     });
 
+    test('an unknown block list drops cached Prism creators and keeps cached Wallhaven items', () async {
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: _MemoryFeedCache()
+          ..snapshot = snapshot(<FeedItemEntity>[_prismItem('drop', authorUid: 'blocked-uid'), _wallhavenItem('wh')]),
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+
+      expect(_itemIds((await repository.readCached())!.items), <String>['wh']);
+    });
+
+    test('an unknown block list does not overwrite the saved mixed feed', () async {
+      app_state.prismUser = _signedInUser();
+      final _MemoryFeedCache cache = _MemoryFeedCache()
+        ..snapshot = snapshot(<FeedItemEntity>[_prismItem('prism'), _wallhavenItem('wallhaven')]);
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: cache,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+      final Object? originalItems = (cache.snapshot!.payload! as Map)['items'];
+
+      await repository.fetch(_firstPage);
+
+      expect(identical((cache.snapshot!.payload! as Map)['items'], originalItems), isTrue);
+      expect((cache.snapshot!.payload! as Map)['items'], hasLength(2));
+    });
+
     test('marks a snapshot older than the cache lifetime as stale', () async {
       app_state.prismUser = _signedInUser();
       final PersonalizedFeedRepository repository = _repository(
@@ -2381,6 +2544,23 @@ void main() {
       expect(_itemIds((await repository.readCached())!.items), <String>['anime', 'other']);
     });
 
+    test('drops AI Prism walls while the AI setting is off', () async {
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: _MemoryFeedCache()
+          ..snapshot = snapshot(<FeedItemEntity>[_prismItem('ai', ai: true), _prismItem('other')]),
+        settings: settings,
+        favourites: _CountingFavourites(),
+      );
+      expect(_itemIds((await repository.readCached())!.items), <String>['ai', 'other']);
+
+      await AiContentFilter.setShowsAi(settings, false);
+
+      expect(_itemIds((await repository.readCached())!.items), <String>['other']);
+    });
+
     test('a cache written by a fetch carries the content filters', () async {
       final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
       await settings.set('WHpurity', 110);
@@ -2417,6 +2597,24 @@ void main() {
     expect(_itemIds(shown.data!.items), <String>['anime-doc', 'visible-doc']);
   });
 
+  test('the feed leaves out AI Prism walls while the AI setting is off', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    PersonalizedFeedRepository repository() => _repository(
+      firestore: _AiWallFirestore(),
+      settings: settings,
+      favourites: _CountingFavourites(),
+      impressions: FeedImpressionStore(SettingsLocalDataSource(InMemoryLocalStore())),
+    );
+
+    final shown = await repository().fetch(_firstPage);
+    expect(_itemIds(shown.data!.items), <String>['ai-doc', 'visible-doc']);
+
+    await AiContentFilter.setShowsAi(settings, false);
+    final hidden = await repository().fetch(_firstPage);
+    expect(_itemIds(hidden.data!.items), <String>['visible-doc']);
+  });
+
   group('undoLessLikeThis', () {
     test('shows a hidden wall again', () async {
       final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
@@ -2438,6 +2636,31 @@ void main() {
   });
 
   group('fetchFollowing', () {
+    test('an unknown block list fails the page, and the retry queries from the first creator page', () async {
+      app_state.prismUser = _signedInUser();
+      final firestore = _FollowingGraphFirestore();
+      final blocks = _BlocksLoadedLater();
+      final repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+
+      final failed = await repository.fetchFollowing(page: 1);
+
+      expect(failed.isFailure, isTrue);
+      expect(failed.data, isNull);
+      blocks.listLoaded = true;
+
+      final retry = await repository.fetchFollowing(page: 1);
+
+      expect(retry.data!.items.map((item) => item.id), <String>['wall-for-creator-uid']);
+      final wallQueries = firestore.specs.where((spec) => spec.collection == 'walls').toList();
+      expect(wallQueries, hasLength(2));
+      expect(wallQueries.every((spec) => spec.startAfterDocId == null), isTrue);
+    });
+
     test('reads UID relation edges and queries walls by creatorUid, ignoring session email follows', () async {
       app_state.prismUser = _signedInUser(following: const <String>['private@example.test']);
       final firestore = _FollowingGraphFirestore();
@@ -2539,6 +2762,141 @@ void main() {
       expect((await old).isFailure, isTrue);
       expect((await repository.fetchFollowing(page: 3)).data!.items.first.id, 'W24');
     });
+    test('an unknown block list does not fail a Following page that has no rows', () async {
+      app_state.prismUser = _signedInUser();
+      final firestore = _FollowingGraphFirestore()..followedUid = null;
+      final repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+
+      final result = await repository.fetchFollowing(page: 1);
+
+      expect(result.isSuccess, isTrue);
+      expect(result.data!.items, isEmpty);
+    });
+
+    test('Following without follows completes with a hanging block loader without advancing time', () {
+      fakeAsync((async) {
+        app_state.prismUser = _signedInUser();
+        final _FollowingFirestore firestore = _FollowingFirestore(rows: 3)..followed = const <String>[];
+        final _EmptyBlocks blocks = _EmptyBlocks()..hangOnWait = true;
+        final PersonalizedFeedRepository repository = _repository(
+          firestore: firestore,
+          settings: SettingsLocalDataSource(InMemoryLocalStore()),
+          favourites: _CountingFavourites(),
+          blocks: blocks,
+        );
+        Result<PersonalizedFeedPage>? result;
+        repository.fetchFollowing(page: 1).then((value) => result = value);
+
+        async.flushMicrotasks();
+
+        expect(result?.isSuccess, isTrue);
+        expect(result?.data?.items, isEmpty);
+        expect(result?.data?.hasMore, isFalse);
+        expect(firestore.limits, isEmpty);
+      });
+    });
+
+    test('Following with follows but zero walls completes with a hanging block loader without advancing time', () {
+      fakeAsync((async) {
+        app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
+        final _FollowingFirestore firestore = _FollowingFirestore(rows: 0);
+        final _EmptyBlocks blocks = _EmptyBlocks()..hangOnWait = true;
+        final PersonalizedFeedRepository repository = _repository(
+          firestore: firestore,
+          settings: SettingsLocalDataSource(InMemoryLocalStore()),
+          favourites: _CountingFavourites(),
+          blocks: blocks,
+        );
+        Result<PersonalizedFeedPage>? result;
+        repository.fetchFollowing(page: 1).then((value) => result = value);
+
+        async.flushMicrotasks();
+
+        expect(result?.isSuccess, isTrue);
+        expect(result?.data?.items, isEmpty);
+        expect(result?.data?.hasMore, isFalse);
+        expect(firestore.limits, <int>[12]);
+      });
+    });
+
+    test('an exhausted Following page completes with a hanging block loader without advancing time', () {
+      fakeAsync((async) {
+        app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
+        final _FollowingFirestore firestore = _FollowingFirestore(rows: 3);
+        final _EmptyBlocks blocks = _EmptyBlocks();
+        final PersonalizedFeedRepository repository = _repository(
+          firestore: firestore,
+          settings: SettingsLocalDataSource(InMemoryLocalStore()),
+          favourites: _CountingFavourites(),
+          blocks: blocks,
+        );
+        Result<PersonalizedFeedPage>? first;
+        repository.fetchFollowing(page: 1).then((value) => first = value);
+        async.flushMicrotasks();
+        expect(first?.isSuccess, isTrue);
+        expect(first?.data?.items.map((item) => item.id), <String>['W0', 'W1', 'W2']);
+        expect(first?.data?.hasMore, isFalse);
+        expect(firestore.limits, <int>[12]);
+        blocks.hangOnWait = true;
+
+        Result<PersonalizedFeedPage>? exhausted;
+        repository.fetchFollowing(page: 2).then((value) => exhausted = value);
+        async.flushMicrotasks();
+
+        expect(exhausted?.isSuccess, isTrue);
+        expect(exhausted?.data?.items, isEmpty);
+        expect(exhausted?.data?.hasMore, isFalse);
+        expect(firestore.limits, <int>[12]);
+      });
+    });
+
+    test('an unknown block list on a later Following page keeps its cursor for the retry', () async {
+      app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
+      final firestore = _FollowingFirestore(rows: 57);
+      final blocks = _BlocksLoadedLater()..listLoaded = true;
+      final repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+      final first = (await repository.fetchFollowing(page: 1)).data!;
+      expect(first.items.map((item) => item.id), List<String>.generate(12, (i) => 'W$i'));
+
+      blocks.listLoaded = false;
+      expect((await repository.fetchFollowing(page: 2)).isFailure, isTrue);
+      blocks.listLoaded = true;
+      final second = (await repository.fetchFollowing(page: 2)).data!;
+
+      expect(second.items.map((item) => item.id), List<String>.generate(12, (i) => 'W${i + 12}'));
+    });
+
+    test('an unknown block list on a refresh keeps the last committed cursor', () async {
+      app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
+      final firestore = _FollowingFirestore(rows: 57);
+      final blocks = _BlocksLoadedLater()..listLoaded = true;
+      final repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+      final first = (await repository.fetchFollowing(page: 1)).data!;
+      expect(first.items.map((item) => item.id), List<String>.generate(12, (i) => 'W$i'));
+
+      blocks.listLoaded = false;
+      expect((await repository.fetchFollowing(page: 1)).isFailure, isTrue);
+      blocks.listLoaded = true;
+      final second = (await repository.fetchFollowing(page: 2)).data!;
+
+      expect(second.items.map((item) => item.id), List<String>.generate(12, (i) => 'W${i + 12}'));
+    });
+
     test('cursor pages reach all 57 walls once without growing query limits', () async {
       app_state.prismUser = _signedInUser(following: const <String>['a-uid']);
       final firestore = _FollowingFirestore(rows: 57);
@@ -2662,6 +3020,58 @@ void main() {
       expect(firestore.sourceTags, isNot(contains('popular.stats')));
     });
 
+    test('fails instead of an empty page while the block list is unknown', () async {
+      final _PopularFirestore firestore = _PopularFirestore(
+        popularIds: <String>['AAA'],
+        walls: <String>['AAA'],
+        creatorUid: 'creator-uid',
+      );
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+
+      expect((await repository.fetchPopular()).isFailure, isTrue);
+    });
+
+    test('fails an unknown mixed page, then restores its ordered walls once blocks load', () async {
+      final _PopularFirestore firestore = _PopularFirestore(
+        popularIds: <String>['CREATORLESS', 'BLOCKED', 'VISIBLE'],
+        walls: <String>['CREATORLESS', 'BLOCKED', 'VISIBLE'],
+        creatorUids: <String, String>{'BLOCKED': 'blocked-uid', 'VISIBLE': 'visible-uid'},
+      );
+      final _BlocksLoadedLater blocks = _BlocksLoadedLater();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+
+      final firstResult = await repository.fetchPopular();
+      expect(firstResult.isFailure, isTrue);
+      expect(firstResult.data, isNull);
+
+      blocks.listLoaded = true;
+      final retryResult = await repository.fetchPopular();
+      expect(retryResult.data!.items.map((item) => item.id), <String>['CREATORLESS', 'BLOCKED', 'VISIBLE']);
+      expect(retryResult.data!.hasMore, isFalse);
+    });
+
+    test('keeps walls without a creator while the block list is unknown', () async {
+      final _PopularFirestore firestore = _PopularFirestore(popularIds: <String>['AAA'], walls: <String>['AAA']);
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+
+      expect((await repository.fetchPopular()).data!.items.map((item) => item.id), <String>['AAA']);
+    });
+
     test('falls back to the most viewed walls when the list is missing', () async {
       final _PopularFirestore firestore = _PopularFirestore(
         statsIds: <String>['BBB', 'AAA'],
@@ -2677,6 +3087,81 @@ void main() {
 
       expect(result.data!.items.map((item) => item.id), <String>['BBB', 'AAA']);
       expect(firestore.sourceTags, contains('popular.stats'));
+    });
+
+    test('falls back when the popular document has an empty wallIds list', () async {
+      final _PopularFirestore firestore = _PopularFirestore(
+        popularDocExists: true,
+        statsIds: <String>['AAA'],
+        walls: <String>['AAA'],
+      );
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      expect((await repository.fetchPopular()).data!.items.map((item) => item.id), <String>['AAA']);
+      expect(firestore.sourceTags, contains('popular.stats'));
+    });
+
+    test('fails unknown stats fallback rows that have creators', () async {
+      final _PopularFirestore firestore = _PopularFirestore(
+        statsIds: <String>['AAA'],
+        walls: <String>['AAA'],
+        creatorUid: 'creator-uid',
+      );
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+
+      final result = await repository.fetchPopular();
+      expect(result.isFailure, isTrue);
+      expect(result.data, isNull);
+    });
+
+    test('keeps creatorless stats fallback rows when blocks are unknown', () async {
+      final _PopularFirestore firestore = _PopularFirestore(statsIds: <String>['AAA'], walls: <String>['AAA']);
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+
+      expect((await repository.fetchPopular()).data!.items.map((item) => item.id), <String>['AAA']);
+    });
+
+    test('returns an empty page when popular and stats are empty even if blocks are unknown', () async {
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _PopularFirestore(),
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _UnknownBlocks(),
+      );
+
+      final result = await repository.fetchPopular();
+      expect(result.data!.items, isEmpty);
+      expect(result.data!.hasMore, isFalse);
+    });
+
+    test('hides only blocked creators from a known mixed page', () async {
+      final _PopularFirestore firestore = _PopularFirestore(
+        popularIds: <String>['CREATORLESS', 'BLOCKED', 'VISIBLE'],
+        walls: <String>['CREATORLESS', 'BLOCKED', 'VISIBLE'],
+        creatorUids: <String, String>{'BLOCKED': 'blocked-uid', 'VISIBLE': 'visible-uid'},
+      );
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _BlockingBlocks(<String>{'blocked-uid'}),
+      );
+
+      expect((await repository.fetchPopular()).data!.items.map((item) => item.id), <String>['CREATORLESS', 'VISIBLE']);
     });
 
     test('falls back when the popular list cannot be read', () async {
@@ -2775,19 +3260,21 @@ PrismFavouriteWall _favourite(String id) => PrismFavouriteWall(
   ),
 );
 
-FeedItemEntity _prismItem(String id, {String authorUid = 'creator-id', List<String>? tags}) => FeedItemEntity.prism(
-  id: id,
-  wallpaper: PrismWallpaper(
-    core: WallpaperCore(
+FeedItemEntity _prismItem(String id, {String authorUid = 'creator-id', List<String>? tags, bool ai = false}) =>
+    FeedItemEntity.prism(
       id: id,
-      source: WallpaperSource.prism,
-      fullUrl: 'https://example.com/$id.jpg',
-      thumbnailUrl: 'https://example.com/$id-thumb.jpg',
-      authorUid: authorUid,
-    ),
-    tags: tags,
-  ),
-);
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(
+          id: id,
+          source: WallpaperSource.prism,
+          fullUrl: 'https://example.com/$id.jpg',
+          thumbnailUrl: 'https://example.com/$id-thumb.jpg',
+          authorUid: authorUid,
+        ),
+        tags: tags,
+        isAiGenerated: ai,
+      ),
+    );
 
 FeedItemEntity _wallhavenItem(String id) => FeedItemEntity.wallhaven(
   id: id,
@@ -2807,7 +3294,27 @@ class _BlockingBlocks extends _EmptyBlocks {
   }
 
   @override
-  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) async => cached;
+  Future<BlockedCreators> loadBlockedCreators() async => KnownBlockedCreators(cached);
+}
+
+class _UnknownBlocks extends _EmptyBlocks {
+  @override
+  BlockedCreators get blockedCreators => const UnknownBlockedCreators();
+
+  @override
+  Future<BlockedCreators> loadBlockedCreators() async => const UnknownBlockedCreators();
+}
+
+/// Unknown until [loaded] is set, then an empty known list.
+class _BlocksLoadedLater extends _EmptyBlocks {
+  bool listLoaded = false;
+
+  @override
+  BlockedCreators get blockedCreators =>
+      listLoaded ? KnownBlockedCreators(const <String>{}) : const UnknownBlockedCreators();
+
+  @override
+  Future<BlockedCreators> loadBlockedCreators() async => blockedCreators;
 }
 
 class _FollowingGraphFirestore extends _EmptyFirestore {
@@ -2926,12 +3433,18 @@ class _PopularFirestore extends _EmptyFirestore {
     this.popularIds = const <String>[],
     this.statsIds = const <String>[],
     this.popularFails = false,
+    this.popularDocExists = false,
     this.walls = const <String>[],
+    this.creatorUid,
+    this.creatorUids = const <String, String>{},
   });
 
+  final String? creatorUid;
+  final Map<String, String> creatorUids;
   final List<String> popularIds;
   final List<String> statsIds;
   final bool popularFails;
+  final bool popularDocExists;
   final List<String> walls;
   final List<String> sourceTags = <String>[];
   final List<int> whereInSizes = <int>[];
@@ -2948,7 +3461,7 @@ class _PopularFirestore extends _EmptyFirestore {
     if (popularFails) {
       throw StateError('permission-denied');
     }
-    return popularIds.isEmpty ? null : map(<String, dynamic>{'wallIds': popularIds}, id);
+    return popularIds.isEmpty && !popularDocExists ? null : map(<String, dynamic>{'wallIds': popularIds}, id);
   }
 
   @override
@@ -2971,6 +3484,7 @@ class _PopularFirestore extends _EmptyFirestore {
             'wallpaper_provider': 'prism',
             'review': true,
             'email': 'creator@example.com',
+            'creatorUid': ?(creatorUids[id] ?? creatorUid),
           }, 'doc-$id'),
     ];
   }

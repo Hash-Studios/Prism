@@ -1421,16 +1421,7 @@
   "@accountReportAProblem": {
     "description": "Title for the report problem sheet and settings row."
   },
-  "accountReportPreviewNotice": "This report has your app version, device and recent logs. It has no email address or sign-in tokens. Read it, then share it with {email}.",
-  "@accountReportPreviewNotice": {
-    "description": "Privacy explanation shown before sharing a diagnostic report.",
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
-  "accountReportProblemSubtitle": "Share your app logs with the Prism team",
+  "accountReportProblemSubtitle": "Send a bug report to the Prism team",
   "@accountReportProblemSubtitle": {
     "description": "Subtitle for reporting a problem."
   },
@@ -1581,10 +1572,6 @@
   "accountSettings": "Settings",
   "@accountSettings": {
     "description": "Settings action label."
-  },
-  "accountShare": "Share",
-  "@accountShare": {
-    "description": "Share action label."
   },
   "accountShareInvite": "Share invite",
   "@accountShareInvite": {
@@ -3333,6 +3320,80 @@
   "aiLiveActivityOpen": "Open in Prism",
   "@aiLiveActivityOpen": {
     "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiResultApply": "Apply",
+  "@aiResultApply": {
+    "description": "Primary button on a finished AI wallpaper. On Android it opens the Set screen; on iOS it saves to Photos."
+  },
+  "aiResultEditPrompt": "Edit prompt",
+  "@aiResultEditPrompt": {
+    "description": "Button on the full-screen AI result that returns to the prompt editor."
+  },
+  "aiSessionStripLabel": "Wallpapers from this session",
+  "@aiSessionStripLabel": {
+    "description": "Screen reader label for the strip of thumbnails made in this session."
+  },
+  "aiSessionTake": "Take {index} of {count}",
+  "@aiSessionTake": {
+    "description": "Screen reader label for one thumbnail in the session strip.",
+    "placeholders": {
+      "index": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpWatercolour": "As watercolour",
+  "@aiFollowUpWatercolour": {
+    "description": "Follow-up chip. Makes a new take of the wallpaper as a watercolour painting."
+  },
+  "aiFollowUpNight": "Night version",
+  "@aiFollowUpNight": {
+    "description": "Follow-up chip. Makes a night-time take."
+  },
+  "aiFollowUpMinimal": "More minimal",
+  "@aiFollowUpMinimal": {
+    "description": "Follow-up chip. Makes a simpler take."
+  },
+  "aiFollowUpWarmer": "Warmer",
+  "@aiFollowUpWarmer": {
+    "description": "Follow-up chip. Makes a take with warmer colours."
+  },
+  "aiFollowUpDepth": "Add depth",
+  "@aiFollowUpDepth": {
+    "description": "Follow-up chip. Makes a take with more depth and layers."
+  },
+  "aiFollowUpCostLabel": "Each new take costs {cost} coins",
+  "@aiFollowUpCostLabel": {
+    "description": "Screen reader label for the coin price shown next to the follow-up chips.",
+    "placeholders": {
+      "cost": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpConfirmTitle": "Make a new take?",
+  "@aiFollowUpConfirmTitle": {
+    "description": "Title of the sheet shown the first time a follow-up chip is tapped."
+  },
+  "aiFollowUpConfirmBody": "A follow-up makes a new wallpaper from this one. Each one costs {cost} coins.",
+  "@aiFollowUpConfirmBody": {
+    "description": null,
+    "placeholders": {
+      "cost": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpConfirmAction": "Make it",
+  "@aiFollowUpConfirmAction": {
+    "description": "Confirm button on the follow-up cost sheet."
   },
   "economyAiDailyLimit": "You reached today's AI limit.",
   "economyAiDescribeChanges": "Say what you want different, such as colors, mood or details.",
@@ -10683,6 +10744,153 @@
         "type": "String"
       }
     }
+  },
+  "reportSheetMessage": "Tell us what went wrong. Prism never adds your email address or sign-in tokens. Check any screenshot before you send it.",
+  "@reportSheetMessage": {
+    "description": "Intro text in the report a problem sheet."
+  },
+  "reportTopicCrashFreeze": "Crash/freeze",
+  "@reportTopicCrashFreeze": {
+    "description": "Report topic chip: app crashed or froze."
+  },
+  "reportTopicWallpaperWontSet": "Wallpaper won't set",
+  "@reportTopicWallpaperWontSet": {
+    "description": "Report topic chip: wallpaper could not be set."
+  },
+  "reportTopicLooksBroken": "Looks broken",
+  "@reportTopicLooksBroken": {
+    "description": "Report topic chip: something looks visually broken."
+  },
+  "reportTopicSlow": "Slow",
+  "@reportTopicSlow": {
+    "description": "Report topic chip: app is slow."
+  },
+  "reportTopicOther": "Other",
+  "@reportTopicOther": {
+    "description": "Report topic chip: any other problem."
+  },
+  "reportNoteHint": "What happened? What did you expect?",
+  "@reportNoteHint": {
+    "description": "Hint text of the note field in the report sheet."
+  },
+  "reportScreenshotTitle": "Screenshot",
+  "@reportScreenshotTitle": {
+    "description": "Title of the screenshot row in the report sheet."
+  },
+  "reportScreenshotEmpty": "Show us what you see.",
+  "@reportScreenshotEmpty": {
+    "description": "Subtitle of the screenshot row when no screenshot is attached."
+  },
+  "reportScreenshotAttached": "Tap to view. Check it before you send.",
+  "@reportScreenshotAttached": {
+    "description": "Subtitle of the screenshot row when a screenshot is attached."
+  },
+  "reportAddScreenshot": "Add screenshot",
+  "@reportAddScreenshot": {
+    "description": "Button to add a screenshot to the report."
+  },
+  "reportRemoveScreenshot": "Remove",
+  "@reportRemoveScreenshot": {
+    "description": "Button to remove the attached screenshot."
+  },
+  "reportViewScreenshot": "View screenshot",
+  "@reportViewScreenshot": {
+    "description": "Tooltip or label to view the attached screenshot."
+  },
+  "reportIncludeDiagnostics": "Include device info & recent logs",
+  "@reportIncludeDiagnostics": {
+    "description": "Switch label to include device info and recent logs in the report."
+  },
+  "reportShowDiagnostics": "Show what's included",
+  "@reportShowDiagnostics": {
+    "description": "Button to expand the list of included diagnostics."
+  },
+  "reportHideDiagnostics": "Hide details",
+  "@reportHideDiagnostics": {
+    "description": "Button to collapse the list of included diagnostics."
+  },
+  "reportSend": "Send report",
+  "@reportSend": {
+    "description": "Button that sends the report."
+  },
+  "reportShareAsFile": "Share as file",
+  "@reportShareAsFile": {
+    "description": "Button that shares the report as a file."
+  },
+  "reportSent": "Thanks, report sent. Reference {reference}",
+  "@reportSent": {
+    "description": "Confirmation after the report is sent, with a short reference code.",
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCouldNotSend": "Couldn't send",
+  "@reportCouldNotSend": {
+    "description": "Title of the dialog shown when the report fails to send."
+  },
+  "reportCouldNotSendBody": "Check your connection and try again, or share the report as a file.",
+  "@reportCouldNotSendBody": {
+    "description": "Body of the dialog shown when the report fails to send."
+  },
+  "reportShareInstead": "Share instead",
+  "@reportShareInstead": {
+    "description": "Dialog action to share the report as a file after a send failure."
+  },
+  "reportShakeToReport": "Shake to report",
+  "@reportShakeToReport": {
+    "description": "Settings toggle label for shake to report."
+  },
+  "reportShakeToReportSubtitle": "Shake your phone on any screen to report a problem",
+  "@reportShakeToReportSubtitle": {
+    "description": "Settings toggle subtitle for shake to report."
+  },
+  "accountShowAiWallpapers": "Show AI-generated wallpapers",
+  "@accountShowAiWallpapers": {
+    "description": "Content preference that shows or hides AI-generated Prism walls."
+  },
+  "accountShowAiWallpapersSubtitle": "Turn off to see only human-made walls",
+  "@accountShowAiWallpapersSubtitle": {
+    "description": "Subtitle under the AI-generated wallpapers switch."
+  },
+  "accountShowAiWallpapersFootnote": "Hiding AI wallpapers never hides your own uploads or favourites.",
+  "@accountShowAiWallpapersFootnote": {
+    "description": "Footnote under the AI-generated wallpapers switch. Says what still shows when the switch is off."
+  },
+  "wallpaperFeedHideAi": "Hide AI",
+  "@wallpaperFeedHideAi": {
+    "description": "Chip in the Tune your feed sheet that hides AI-generated walls. Same setting as the Settings switch."
+  },
+  "wallpaperAiGenerated": "AI-generated",
+  "@wallpaperAiGenerated": {
+    "description": "Tag on the wallpaper detail screen for a wall that was made with AI."
+  },
+  "wallpaperAiMadeWith": "Made with {model}",
+  "@wallpaperAiMadeWith": {
+    "description": "Sheet line that names the AI model that made the wall.",
+    "placeholders": {
+      "model": {
+        "type": "String",
+        "example": "Seedream 5 Lite"
+      }
+    }
+  },
+  "wallpaperAiMadeWithUnknown": "Made with AI",
+  "@wallpaperAiMadeWithUnknown": {
+    "description": "Sheet line for an AI wall that did not record its model."
+  },
+  "wallpaperAiReportWrongLabel": "Report wrong label",
+  "@wallpaperAiReportWrongLabel": {
+    "description": "Row in the AI-generated sheet that opens the report sheet for a wrong AI label."
+  },
+  "feedNoHumanWalls": "No human-made walls here yet",
+  "@feedNoHumanWalls": {
+    "description": "Empty state when every wall in a feed is AI-generated and AI walls are hidden."
+  },
+  "feedShowAiWalls": "Show AI walls",
+  "@feedShowAiWalls": {
+    "description": "Action in the empty state that turns AI-generated walls back on."
   },
   "challengeTitle": "Weekly challenge",
   "challengeRules": "Up to 3 entries, each reviewed before appearing.",
