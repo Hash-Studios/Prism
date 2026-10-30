@@ -154,6 +154,7 @@ class _DownloadTap {
 class _DownloadButtonState extends State<DownloadButton> {
   bool isLoading = false;
   bool _saved = false;
+  bool _signInPending = false;
   late String _savedOwner;
   String? _preparedSource;
   String? _authorizedSource;
@@ -300,7 +301,15 @@ class _DownloadButtonState extends State<DownloadButton> {
       toasts.error(context.l10n.economyDownloadWaitForCurrent);
       return;
     }
-    if (!await requireSignedInAction(context) || !mounted) return;
+    if (_signInPending) return;
+    _signInPending = true;
+    late final bool signedIn;
+    try {
+      signedIn = await requireSignedInAction(context);
+    } finally {
+      _signInPending = false;
+    }
+    if (!signedIn || !mounted) return;
 
     final String link = widget.link?.trim() ?? '';
     if (link.isEmpty && widget.wallpaperSource != WallpaperSource.prism) {
@@ -380,6 +389,10 @@ class _DownloadButtonState extends State<DownloadButton> {
               : () => variant.prepareAuthorized!(_authorizedSource ?? tap.link),
           l10n: l10n,
         );
+        if (!_ownerStillMatches(tap)) {
+          _cancelAfterAccountSwitch();
+          return;
+        }
         if (_preparedSource == null || !mounted) {
           _track(
             DownloadResultEvent(
@@ -566,7 +579,7 @@ class _DownloadButtonState extends State<DownloadButton> {
 
   void _cancelAfterAccountSwitch() {
     _track(const DownloadResultEvent(result: 'cancelled', reason: 'account_changed', stage: 'gate'));
-    toasts.error(context.l10n.economyDownloadAccountChanged);
+    if (mounted) toasts.error(context.l10n.economyDownloadAccountChanged);
   }
 
   Future<File?> _previouslyAcquiredLocalOriginal(_DownloadTap tap) async {
@@ -800,7 +813,10 @@ class _DownloadButtonState extends State<DownloadButton> {
     final bool isLocalFile =
         prepared || cachedOriginal != null || saveLink.startsWith('/') || sourceUri?.scheme == 'file';
     final List<String> downloadsBefore = await _listedDownloads();
-    if (!_ownerStillMatches(tap)) return false;
+    if (!_ownerStillMatches(tap)) {
+      _cancelAfterAccountSwitch();
+      return false;
+    }
 
     try {
       final DownloadRequest request = DownloadRequest(
@@ -898,7 +914,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       logger.w('Download analytics failed after media was saved', error: e, stackTrace: stackTrace);
     }
 
-    if (mounted && tap.identity == _currentIdentity) setState(() => _saved = true);
+    if (mounted && _ownerStillMatches(tap) && tap.identity == _currentIdentity) setState(() => _saved = true);
     final String recordedContentId = tap.contentId?.trim() ?? '';
     if (!isBundledStarter && recordedContentId.isNotEmpty) {
       try {

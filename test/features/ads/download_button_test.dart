@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -498,6 +499,45 @@ void main() {
     verifyNever(() => bloc.add(const AdsEvent.started()));
     expect(find.text('Sign in to Prism'), findsOneWidget);
     await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('repeated taps share a pending sign-in request and retry after cancellation', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final Future<bool> Function(BuildContext context) originalSignIn = signedInActionSignIn;
+    addTearDown(() => signedInActionSignIn = originalSignIn);
+    final List<Completer<bool>> signInRequests = <Completer<bool>>[];
+    signedInActionSignIn = (_) {
+      final Completer<bool> request = Completer<bool>();
+      signInRequests.add(request);
+      return request.future;
+    };
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: DownloadButton(wallpaperSource: WallpaperSource.wallhaven, link: 'https://example.com/wall.jpg'),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(CircularMenuButton));
+    await tester.pump();
+    await tester.tap(find.byType(CircularMenuButton));
+    await tester.pump();
+    expect(signInRequests, hasLength(1));
+
+    signInRequests.single.complete(false);
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pump();
+    await tester.tap(find.byType(CircularMenuButton));
+    await tester.pump();
+
+    expect(signInRequests, hasLength(2));
+    signInRequests.last.complete(false);
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pump();
   });
 
   testWidgets('guest download opens sign-in without offering a purchase first', (tester) async {

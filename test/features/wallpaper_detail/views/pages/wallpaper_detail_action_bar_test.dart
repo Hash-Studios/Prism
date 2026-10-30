@@ -42,6 +42,7 @@ import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart'
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -881,6 +882,30 @@ void main() {
       final Finder preview = find.byType(ClockOverlay);
       expect(preview, findsOneWidget);
       expect(find.text('Sign in to Prism'), findsNothing);
+      for (final Type action in <Type>[FavouriteWallpaperButton, ShareButton, EditButton, SetWallpaperButton]) {
+        expect(
+          find.descendant(of: preview, matching: find.byType(action)),
+          findsNothing,
+          reason: '$action is absent',
+        );
+      }
+
+      final Finder lockChoice = find.descendant(
+        of: preview,
+        matching: find.text(AppLocalizationsEn().wallpaperPreviewLock),
+      );
+      final Finder homeChoice = find.descendant(
+        of: preview,
+        matching: find.text(AppLocalizationsEn().wallpaperPreviewHome),
+      );
+      expect(lockChoice, findsOneWidget);
+      expect(homeChoice, findsOneWidget);
+      await tester.tap(homeChoice);
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.descendant(of: preview, matching: find.byType(HomePreviewLayer)), findsOneWidget);
+      await tester.tap(lockChoice);
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.descendant(of: preview, matching: find.byType(LockPreviewLayer)), findsOneWidget);
 
       await tester.tap(find.descendant(of: preview, matching: find.byType(DownloadButton)));
       await tester.pump();

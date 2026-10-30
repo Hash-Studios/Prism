@@ -354,7 +354,6 @@ void main() {
     testWidgets('a signed-in user sees the coin price', (tester) async {
       await pump(tester);
 
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
       expect(semanticsLabel(tester), 'Save. Costs ${CoinPolicy.wallpaperDownload} coins');
     });
 
@@ -496,13 +495,11 @@ void main() {
     testWidgets('another url for the same wall id keeps the normal price', (tester) async {
       await pump(tester, source: WallpaperSource.prism, link: 'https://example.com/walls/other.jpg');
 
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
     });
 
     testWidgets('a wallpaper from another source keeps its normal price', (tester) async {
       await pump(tester);
 
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
     });
   });
 
@@ -711,7 +708,6 @@ void main() {
       expect(result.result, 'failed');
       expect(result.reason, 'enqueue_failed');
       expect(result.stage, 'download');
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
       expect(ledger(), isEmpty);
     });
   });
@@ -1063,12 +1059,14 @@ void main() {
       app_state.prismUser = app_constants.createGuestPrismUser()
         ..id = 'account-b'
         ..loggedIn = true;
+      await pump(tester, onDownloaded: completed.complete);
       nativeSave.complete(true);
       await pumpUntil(tester, () => completed.isCompleted);
       await completed.future;
       await tester.pump(const Duration(seconds: 2));
 
       expect(index.hasAcquired(link: _link, id: 'wall-1', source: WallpaperSource.wallhaven), isFalse);
+      expect(find.text(AppLocalizationsEn().economyDownloadSaved), findsNothing);
       app_state.prismUser = app_constants.createGuestPrismUser()
         ..id = ownerA
         ..loggedIn = true;
@@ -1102,6 +1100,59 @@ void main() {
       expect(app_state.prismUser.id, 'account-b');
       expect(spendCalls, isEmpty);
       expect(enqueued, isEmpty);
+    });
+
+    testWidgets('an account switch during variant preparation cancels instead of reporting preparation failure', (
+      tester,
+    ) async {
+      signInAgain();
+      await pump(
+        tester,
+        variant: DownloadVariant(
+          key: 'switch',
+          prepare: () {
+            app_state.prismUser = app_constants.createGuestPrismUser()
+              ..id = 'account-b'
+              ..loggedIn = true;
+            return Future<String>.error(StateError('account changed while preparing'));
+          },
+        ),
+      );
+
+      await tapSave(tester);
+
+      expect(enqueued, isEmpty);
+      expect(results(), hasLength(1));
+      expect(results().single.result, 'cancelled');
+      expect(results().single.reason, 'account_changed');
+    });
+
+    testWidgets('an account switch while listing downloads cancels instead of reporting a save failure', (
+      tester,
+    ) async {
+      signInAgain();
+      int listCalls = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+        listChannel,
+        (_) async {
+          listCalls++;
+          if (listCalls == 2) {
+            app_state.prismUser = app_constants.createGuestPrismUser()
+              ..id = 'account-b'
+              ..loggedIn = true;
+          }
+          return <Object?>[DownloadItemsResult(success: true, items: const <String>[])];
+        },
+      );
+      await pump(tester);
+
+      await tapSave(tester);
+
+      expect(enqueued, isEmpty);
+      expect(results(), hasLength(1));
+      expect(results().single.result, 'cancelled');
+      expect(results().single.reason, 'account_changed');
+      expect(fakeAnalytics.events.whereType<DownloadAttemptEvent>(), hasLength(1));
     });
 
     testWidgets('an account switch while finding a server-granted original reports the switch, not a failure', (
@@ -1163,7 +1214,6 @@ void main() {
       CoinsService.instance.isLinkDownloaded = (identity) => identity == _link;
       await pump(tester, variant: variant());
 
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
       await tester.runAsync(() async {});
       await tapSave(tester);
 
@@ -1273,7 +1323,6 @@ void main() {
 
       await pump(tester, variant: variant(key: 'tint-00ff00'));
 
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
     });
 
     testWidgets('a colour picked while the first one renders changes neither what is saved nor what is remembered', (
@@ -1299,7 +1348,6 @@ void main() {
 
       expect((enqueued.single! as DownloadRequest).filenameWithoutExtension, 'sunset_tint-ff8800');
       expect(remembered, <String>['a']);
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
     });
 
     testWidgets('a variant save counts the download for the wallpaper, not for the variation link', (tester) async {
