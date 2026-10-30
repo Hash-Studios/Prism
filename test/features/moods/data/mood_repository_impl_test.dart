@@ -3,13 +3,12 @@ import 'dart:math';
 
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/features/moods/biz/gallery_walls_cubit.dart';
 import 'package:Prism/features/moods/biz/mood_walls_cubit.dart';
 import 'package:Prism/features/moods/data/mood_repository_impl.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
-import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart'
-    show personalizedFeedSettingsRevision, setShowAiWallpapers;
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 

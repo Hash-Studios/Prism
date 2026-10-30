@@ -58,4 +58,6 @@ export {
   setWallRequestHiddenCallable as setWallRequestHidden,
 } from "./wallRequests";
 
-export {listWeeklyChallenges, getWeeklyChallenge, setChallengeVote, scheduleWeeklyChallenges, onChallengeWallWritten, onChallengeWallSubmitted} from "./weeklyChallenges";
+export {listWeeklyChallenges, getWeeklyChallenge, setChallengeVote, onChallengeWallWritten, onChallengeWallSubmitted} from "./weeklyChallenges";
+
+export {scheduleWeeklyChallenges} from "./challengeScheduler";

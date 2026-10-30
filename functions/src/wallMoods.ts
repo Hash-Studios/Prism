@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 import {db} from "./common";
-import {isWotdEligible, premiumCollections, protectedWalls} from "./wallOfTheDay";
+import {isWotdEligible, premiumCollections, protectedWalls} from "./wallEligibility";
 
 export type MoodRule = {
   id: string;

@@ -57,6 +57,7 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_style_sheet.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/features/weekly_challenges/biz/challenge_admission_tracker.dart';
 import 'package:Prism/features/weekly_challenges/biz/confirm_challenge_submission.dart';
 import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
@@ -107,7 +108,7 @@ class AiWallpaperTabPage extends StatefulWidget {
 
   /// Opens the share sheet. Tests replace it.
   final ShareSheetOpen? shareSheet;
-  final Future<wallstore.WallSubmissionResult> Function()? submitForTesting;
+  final Future<WallSubmissionResult> Function()? submitForTesting;
 
   @override
   State<AiWallpaperTabPage> createState() => _AiWallpaperTabPageState();
@@ -1155,7 +1156,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       final String communityId = aiCommunityId(record.id);
       final String wallpaperUrl = record.displayUrl(isPremium: app_state.prismUser.premium);
       submissionStarted = true;
-      final wallstore.WallSubmissionResult submissionResult =
+      final WallSubmissionResult submissionResult =
           await (widget.submitForTesting?.call() ??
               wallstore.createRecord(
                 communityId,
@@ -1182,7 +1183,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 challengeId: record.challengeId ?? '',
                 docId: record.challengeId == null ? null : 'wall_$communityId',
               ));
-      if (submissionResult == wallstore.WallSubmissionResult.quotaExceeded) {
+      if (submissionResult == WallSubmissionResult.quotaExceeded) {
         return;
       }
       submissionConfirmed = true;

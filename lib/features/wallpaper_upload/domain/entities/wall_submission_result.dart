@@ -1,0 +1,1 @@
+enum WallSubmissionResult { submitted, quotaExceeded }

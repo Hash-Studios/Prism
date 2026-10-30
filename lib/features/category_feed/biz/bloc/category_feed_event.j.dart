@@ -6,5 +6,5 @@ abstract class CategoryFeedEvent with _$CategoryFeedEvent {
   const factory CategoryFeedEvent.categorySelected({required CategoryEntity category}) = _CategorySelected;
   const factory CategoryFeedEvent.fetchMoreRequested() = _FetchMoreRequested;
   const factory CategoryFeedEvent.refreshRequested() = _RefreshRequested;
-  const factory CategoryFeedEvent.blockedCreatorsChanged({required Set<String> blocked}) = _BlockedCreatorsChanged;
+  const factory CategoryFeedEvent.blockedCreatorsChanged() = _BlockedCreatorsChanged;
 }
