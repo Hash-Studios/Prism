@@ -74,7 +74,7 @@ Future<WallSubmissionResult> submitWallRecord({
 }
 
 /// A retry must never overwrite a wall that already landed: it may have been reviewed since.
-/// Rules refuse reads of a missing wall, so permission-denied means the id is free.
+/// A missing wall reads back empty. permission-denied means the document exists and this caller cannot read it.
 Future<bool> _alreadySubmittedByOwner(FirestoreClient firestoreClient, String docId, Object? email) async {
   try {
     final Map<String, dynamic>? existing = await firestoreClient.getById<Map<String, dynamic>>(
