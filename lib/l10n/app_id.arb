@@ -10833,6 +10833,24 @@
   "wallpaperAiReportWrongLabel": "Laporkan label salah",
   "feedNoHumanWalls": "Belum ada wallpaper buatan manusia di sini",
   "feedShowAiWalls": "Tampilkan wallpaper AI",
+  "dailyMomentTitle": "Momen harian",
+  "dailyMomentStreakTitle": "Runtun harian",
+  "dailyMomentChestTitle": "Peti harian",
+  "dailyMomentSpinTitle": "Putaran gratis",
+  "dailyMomentUnavailable": "Hadiah ini tidak lagi tersedia hari ini.",
+  "dailyMomentError": "Hadiah tidak dapat dimuat. Coba lagi.",
+  "dailyMomentStreakReceipt": "{coins} koin diperoleh · runtun {days} hari",
+  "@dailyMomentStreakReceipt": {
+    "description": "Daily moment: StreakReceipt.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "challengeTitle": "Tantangan mingguan",
   "challengeRules": "Maksimal 3 karya, ditinjau sebelum ditampilkan.",
   "challengeVotingRules": "Pilih karya kreator lain hingga {date} UTC.",
@@ -10871,6 +10889,51 @@
       }
     }
   },
+  "dailyMomentCosmetic": "Item kosmetik ditambahkan ke koleksi",
+  "dailyMomentReward": "{coins} koin diperoleh",
+  "@dailyMomentReward": {
+    "description": "Daily moment: Reward.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentChestBody": "Buka peti hari ini saat kamu siap.",
+  "dailyMomentSpinBody": "Putaran gratismu siap.",
+  "dailyMomentBalance": "Saldo: {coins} koin",
+  "@dailyMomentBalance": {
+    "description": "Daily moment: Balance.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentDone": "Selesai",
+  "dailyMomentRetry": "Coba lagi",
+  "dailyMomentContinue": "Lanjutkan",
+  "dailyMomentOpenFree": "Buka peti gratis",
+  "dailyMomentOpenChest": "Buka dengan {coins} koin",
+  "@dailyMomentOpenChest": {
+    "description": "Daily moment: OpenChest.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentSpinAction": "Putar gratis",
+  "dailyMomentClose": "Tutup momen harian",
+  "dailyMomentToday": "Hari ini",
+  "dailyMomentReady": "Hadiah harian sudah siap",
+  "dailyMomentComplete": "Hari ini sudah selesai",
+  "dailyMomentResume": "Lanjutkan momen harian",
+  "dailyMomentMore": "Lainnya",
+  "dailyMomentQuests": "Misi",
+  "dailyMomentChestLeft": "Peti harian tersedia",
+  "dailyMomentSpinLeft": "Putaran gratis tersedia",
+  "dailyMomentStreakLeft": "Runtun harian tersedia",
   "challengeShare": "Bagikan tantangan",
   "challengeRemove": "Hapus tantangan",
   "challengeContext": "Tantangan · {theme}",

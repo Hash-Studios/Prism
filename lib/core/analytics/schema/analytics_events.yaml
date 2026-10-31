@@ -1,6 +1,12 @@
 version: 1
 
 enums:
+  - name: daily_moment_step
+    dart_type: DailyMomentStepValue
+    values:
+      - streak
+      - chest
+      - spin
   - name: challenge_entry_source
     dart_type: ChallengeEntrySource
     import: package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart
@@ -2621,6 +2627,26 @@ events:
       - name: wall_id
         key: wall_id
         type: string
+  - id: daily_moment_shown
+    fields: []
+  - id: daily_moment_step_done
+    fields:
+      - name: step
+        key: step
+        type: enum
+        enum: DailyMomentStepValue
+  - id: daily_moment_stopped_early
+    fields:
+      - name: step
+        key: step
+        type: enum
+        enum: DailyMomentStepValue
+  - id: daily_moment_deep_link_opened
+    fields:
+      - name: step
+        key: step
+        type: enum
+        enum: DailyMomentStepValue
   - id: challenge_viewed
     fields:
       - name: challenge_id

@@ -456,6 +456,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     await _saveRecord();
   }
 
+  late int _uploadAwardCoins = widget.batch?.confirmedUploadAward?.coins ?? 0;
+  late String? _uploadAwardOwner = widget.batch?.confirmedUploadAward?.ownerId;
+
   Future<void> _saveRecord() async {
     setState(() {
       _stage = _UploadStage.saving;
@@ -488,6 +491,11 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               thumbSourceKind: thumbSourceKind,
               docId: _wallDocId ??= 'wall_${_fileName ?? id}',
               requestId: _metadata.requestId,
+              onUploadAward: (result) {
+                _uploadAwardCoins = result.delta;
+                _uploadAwardOwner = app_state.prismUser.id;
+                widget.batch?.confirmedUploadAward = (coins: result.delta, ownerId: app_state.prismUser.id);
+              },
               challengeId: _metadata.challengeId,
             );
       if (result == WallSubmissionResult.quotaExceeded && _submissionUnresolved) {
@@ -577,7 +585,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     if (batch == null || batch.submittedCount > 0) {
       showGlintToast(context);
       Navigator.pop(context);
-      unawaited(router.push(const ReviewRoute()));
+      unawaited(router.push(ReviewRoute(earnedCoins: _uploadAwardCoins, earnedCoinsOwnerId: _uploadAwardOwner)));
     } else {
       Navigator.pop(context);
     }
@@ -885,7 +893,11 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       label: context.l10n.wallpaperUploadCheckReviewStatus,
                       variant: PrismButtonVariant.ghost,
                       size: PrismButtonSize.compact,
-                      onPressed: () => unawaited(context.router.push(const ReviewRoute())),
+                      onPressed: () => unawaited(
+                        context.router.push(
+                          ReviewRoute(earnedCoins: _uploadAwardCoins, earnedCoinsOwnerId: _uploadAwardOwner),
+                        ),
+                      ),
                     ),
                   ),
               ] else ...<Widget>[

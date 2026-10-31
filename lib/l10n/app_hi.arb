@@ -11040,6 +11040,42 @@
   "@feedShowAiWalls": {
     "description": "Action in the empty state that turns AI-generated walls back on."
   },
+  "dailyMomentTitle": "रोज़ का पल",
+  "@dailyMomentTitle": {
+    "description": "Daily moment: Title."
+  },
+  "dailyMomentStreakTitle": "रोज़ की स्ट्रीक",
+  "@dailyMomentStreakTitle": {
+    "description": "Daily moment: StreakTitle."
+  },
+  "dailyMomentChestTitle": "रोज़ का संदूक",
+  "@dailyMomentChestTitle": {
+    "description": "Daily moment: ChestTitle."
+  },
+  "dailyMomentSpinTitle": "मुफ़्त स्पिन",
+  "@dailyMomentSpinTitle": {
+    "description": "Daily moment: SpinTitle."
+  },
+  "dailyMomentUnavailable": "यह इनाम आज अब उपलब्ध नहीं है।",
+  "@dailyMomentUnavailable": {
+    "description": "Daily moment: Unavailable."
+  },
+  "dailyMomentError": "इनाम लोड नहीं हो सका। फिर कोशिश करें।",
+  "@dailyMomentError": {
+    "description": "Daily moment: Error."
+  },
+  "dailyMomentStreakReceipt": "{coins, plural, one{{coins} सिक्का मिला} other{{coins} सिक्के मिले}} · {days, plural, one{{days} दिन की स्ट्रीक} other{{days} दिनों की स्ट्रीक}}",
+  "@dailyMomentStreakReceipt": {
+    "description": "Daily moment: StreakReceipt.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "challengeTitle": "साप्ताहिक चुनौती",
   "challengeRules": "अधिकतम 3 प्रविष्टियाँ, दिखाने से पहले समीक्षा होगी।",
   "challengeVotingRules": "अन्य रचनाकारों के लिए {date} UTC तक वोट दें।",
@@ -11077,6 +11113,105 @@
         "type": "int"
       }
     }
+  },
+  "dailyMomentCosmetic": "सजावटी आइटम आपके संग्रह में जोड़ा गया",
+  "@dailyMomentCosmetic": {
+    "description": "Daily moment: Cosmetic."
+  },
+  "dailyMomentReward": "{coins, plural, one{{coins} सिक्का मिला} other{{coins} सिक्के मिले}}",
+  "@dailyMomentReward": {
+    "description": "Daily moment: Reward.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentChestBody": "जब चाहें आज का संदूक खोलें।",
+  "@dailyMomentChestBody": {
+    "description": "Daily moment: ChestBody."
+  },
+  "dailyMomentSpinBody": "आपका मुफ़्त स्पिन तैयार है।",
+  "@dailyMomentSpinBody": {
+    "description": "Daily moment: SpinBody."
+  },
+  "dailyMomentBalance": "शेष: {coins, plural, one{{coins} सिक्का} other{{coins} सिक्के}}",
+  "@dailyMomentBalance": {
+    "description": "Daily moment: Balance.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentDone": "हो गया",
+  "@dailyMomentDone": {
+    "description": "Daily moment: Done."
+  },
+  "dailyMomentRetry": "फिर कोशिश करें",
+  "@dailyMomentRetry": {
+    "description": "Daily moment: Retry."
+  },
+  "dailyMomentContinue": "जारी रखें",
+  "@dailyMomentContinue": {
+    "description": "Daily moment: Continue."
+  },
+  "dailyMomentOpenFree": "मुफ़्त संदूक खोलें",
+  "@dailyMomentOpenFree": {
+    "description": "Daily moment: OpenFree."
+  },
+  "dailyMomentOpenChest": "{coins, plural, one{{coins} सिक्के में खोलें} other{{coins} सिक्कों में खोलें}}",
+  "@dailyMomentOpenChest": {
+    "description": "Daily moment: OpenChest.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentSpinAction": "मुफ़्त स्पिन लें",
+  "@dailyMomentSpinAction": {
+    "description": "Daily moment: SpinAction."
+  },
+  "dailyMomentClose": "रोज़ का पल बंद करें",
+  "@dailyMomentClose": {
+    "description": "Daily moment: Close."
+  },
+  "dailyMomentToday": "आज",
+  "@dailyMomentToday": {
+    "description": "Daily moment: Today."
+  },
+  "dailyMomentReady": "रोज़ के इनाम तैयार हैं",
+  "@dailyMomentReady": {
+    "description": "Daily moment: Ready."
+  },
+  "dailyMomentComplete": "आज के इनाम पूरे हुए",
+  "@dailyMomentComplete": {
+    "description": "Daily moment: Complete."
+  },
+  "dailyMomentResume": "रोज़ का पल जारी रखें",
+  "@dailyMomentResume": {
+    "description": "Daily moment: Resume."
+  },
+  "dailyMomentMore": "और",
+  "@dailyMomentMore": {
+    "description": "Daily moment: More."
+  },
+  "dailyMomentQuests": "मिशन",
+  "@dailyMomentQuests": {
+    "description": "Daily moment: Quests."
+  },
+  "dailyMomentChestLeft": "रोज़ का संदूक उपलब्ध है",
+  "@dailyMomentChestLeft": {
+    "description": "Daily moment: ChestLeft."
+  },
+  "dailyMomentSpinLeft": "मुफ़्त स्पिन उपलब्ध है",
+  "@dailyMomentSpinLeft": {
+    "description": "Daily moment: SpinLeft."
+  },
+  "dailyMomentStreakLeft": "रोज़ की स्ट्रीक उपलब्ध है",
+  "@dailyMomentStreakLeft": {
+    "description": "Daily moment: StreakLeft."
   },
   "challengeShare": "चुनौती साझा करें",
   "challengeRemove": "चुनौती हटाएँ",

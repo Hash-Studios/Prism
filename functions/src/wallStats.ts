@@ -12,7 +12,7 @@ import {
   WALLPAPER_STATS,
   WALLPAPER_STATS_DAILY,
 } from "./viewStats";
-import {progressQuestForUser} from "./quests";
+import {progressQuestForUser, progressWallpaperActionQuest, type Awarded} from "./quests";
 import {dayKey} from "./economy";
 
 const ACTION_FIELDS = {download: "downloads", set: "sets", share: "shares"} as const;
@@ -40,11 +40,19 @@ export const recordWallpaperAction = onCall(
     cors: true,
     maxInstances: 10,
   },
-  async (request: CallableRequest<{wallId?: string; action?: string}>): Promise<{counted: boolean}> => {
+  async (request: CallableRequest<{wallId?: string; action?: string; requestId?: unknown}>) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "Sign in to record an action.");
     const wallId = normalizeId(request.data?.wallId ?? "");
     const action = normalizeAction(request.data?.action);
+
+    const requestId = request.data?.requestId;
+    if (requestId !== undefined) {
+      if (typeof requestId !== "string" || !/^[A-Za-z0-9_-]{8,64}$/.test(requestId)) {
+        throw new HttpsError("invalid-argument", "requestId is invalid.");
+      }
+      return recordReceiptedAction(uid, wallId, action, requestId);
+    }
 
     const rateRef = db.collection(WALL_ACTION_RATE).doc(`${uid}_${wallId}_${action}`);
     const rateSnap = await rateRef.get();
@@ -77,6 +85,61 @@ export const recordWallpaperAction = onCall(
     return {counted: true};
   },
 );
+
+async function recordReceiptedAction(uid: string, wallId: string, action: WallAction, requestId: string) {
+  const receiptRef = db.collection("usersv2").doc(uid).collection("wallActionReceipts").doc(requestId);
+  const rateRef = db.collection(WALL_ACTION_RATE).doc(`${uid}_${wallId}_${action}`);
+  const now = Date.now();
+  const accepted = await db.runTransaction(async (tx) => {
+    const [receipt, rate, user, deletion] = await Promise.all([
+      tx.get(receiptRef), tx.get(rateRef), tx.get(db.collection("usersv2").doc(uid)),
+      tx.get(db.collection("creatorDeletionState").doc(uid)),
+    ]);
+    if (!user.exists || user.data()?.deleted === true || deletion.data()?.closed === true) {
+      throw new HttpsError("failed-precondition", "This account is unavailable.");
+    }
+    if (receipt.exists) {
+      const stored = receipt.data() ?? {};
+      if (stored.wallId !== wallId || stored.action !== action) {
+        throw new HttpsError("invalid-argument", "requestId already belongs to another action.");
+      }
+      return {counted: stored.counted === true, acceptedAt: stored.acceptedAt as number};
+    }
+    const lastAt = rate.data()?.lastAt as admin.firestore.Timestamp | undefined;
+    const counted = !lastAt || now - lastAt.toMillis() >= RATE_DOC_TTL_MS;
+    tx.set(receiptRef, {wallId, action, counted, acceptedAt: now});
+    if (counted) {
+      tx.set(rateRef, {
+        lastAt: admin.firestore.Timestamp.fromMillis(now),
+        expireAt: admin.firestore.Timestamp.fromMillis(now + RATE_DOC_TTL_MS),
+      });
+      const field = ACTION_FIELDS[action];
+      tx.set(db.collection(WALLPAPER_STATS).doc(wallId), {
+        [field]: admin.firestore.FieldValue.increment(1), lastEventAt: admin.firestore.Timestamp.fromMillis(now),
+      }, {merge: true});
+      const day = utcDateString(new Date(now)).replace(/-/g, "");
+      tx.set(db.collection(WALLPAPER_STATS_DAILY).doc(`${day}_${wallId}`), {
+        wallId, day, [field]: admin.firestore.FieldValue.increment(1),
+        expireAt: admin.firestore.Timestamp.fromMillis(now + 14 * 86_400_000),
+      }, {merge: true});
+    }
+    return {counted, acceptedAt: now};
+  });
+  const questAwards: Awarded[] = [];
+  let questReceiptComplete = true;
+  if (accepted.counted) {
+    const events = action === "share" ? ["share"] as const :
+      action === "download" ? ["set_wallpaper", "download"] as const : ["set_wallpaper"] as const;
+    for (const event of events) {
+      const awards = await progressWallpaperActionQuest(uid, event,
+        `${uid}_${wallId}_${dayKey(accepted.acceptedAt)}`, accepted.acceptedAt, receiptRef.collection("events").doc(event));
+      if (awards === null) questReceiptComplete = false;
+      else questAwards.push(...awards);
+    }
+  }
+  return {counted: accepted.counted, questAwards, questCoins: questAwards.reduce((sum, award) => sum + award.coins, 0),
+    questReceiptId: requestId, questReceiptComplete};
+}
 
 export function isPrismFavourite(pathId: string, data: admin.firestore.DocumentData | undefined): boolean {
   return data?.id === pathId && typeof data.provider === "string" && PRISM_PROVIDERS.has(data.provider.toLowerCase());

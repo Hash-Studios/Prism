@@ -5,6 +5,7 @@ import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/creator_stats/views/widgets/stats_entry_button.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/wall_tile.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -15,20 +16,31 @@ export 'package:Prism/features/wallpaper_upload/views/widgets/wall_tile.dart' sh
 
 @RoutePage()
 class ReviewScreen extends StatelessWidget {
-  const ReviewScreen({super.key});
+  const ReviewScreen({super.key, this.earnedCoins = 0, this.earnedCoinsOwnerId});
+
+  final int earnedCoins;
+  final String? earnedCoinsOwnerId;
 
   @override
   Widget build(BuildContext context) {
     return PrismPage(
       title: context.l10n.wallpaperUploadYourUploads,
       onBack: () => Navigator.maybePop(context),
-      body: const Column(
+      body: Column(
         children: [
-          Align(
+          const Align(
             alignment: AlignmentDirectional.centerStart,
             child: StatsEntryButton(source: 'uploads'),
           ),
-          Expanded(child: _WallReview()),
+          if (DailyMomentConfig.enabled && earnedCoins > 0 && earnedCoinsOwnerId == app_state.prismUser.id)
+            Padding(
+              padding: const EdgeInsets.all(PrismSpace.md),
+              child: Text(
+                context.l10n.economyCoinsEarned(earnedCoins),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.primary),
+              ),
+            ),
+          const Expanded(child: _WallReview()),
         ],
       ),
     );

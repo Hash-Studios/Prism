@@ -4,6 +4,7 @@ import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,7 @@ class BadgeCelebrateSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final BadgeInfo? info = badgeInfo(badge.id);
+    final bool inlineApproval = DailyMomentConfig.enabled && badge.id == 'creator';
     final bool small = MediaQuery.sizeOf(context).height < 700;
     return PrismSheetBody(
       title: context.l10n.economyNewBadge,
@@ -51,7 +53,7 @@ class BadgeCelebrateSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Glint(mood: GlintMood.celebrate, size: small ? 88 : 140),
+          Glint(mood: inlineApproval ? GlintMood.calm : GlintMood.celebrate, size: small ? 88 : 140),
           const SizedBox(height: 8),
           Text(
             info?.name(context.l10n) ?? context.l10n.economyBadgeEarned,
@@ -60,9 +62,32 @@ class BadgeCelebrateSheet extends StatelessWidget {
           ),
           if (info != null) ...<Widget>[
             const SizedBox(height: 4),
-            Text(info.description(context.l10n), textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
+            if (!inlineApproval)
+              Text(info.description(context.l10n), textAlign: TextAlign.center, style: PrismTextStyles.body(context))
+            else
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
+                children: <Widget>[
+                  Text(
+                    info.description(context.l10n),
+                    textAlign: TextAlign.center,
+                    style: PrismTextStyles.body(context),
+                  ),
+                  if (badge.coins > 0)
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        context.l10n.economyCoinsEarned(badge.coins),
+                        style: PrismTextStyles.rowTitle(context).copyWith(color: cs.primary),
+                      ),
+                    ),
+                ],
+              ),
           ],
-          if (badge.coins > 0) ...<Widget>[
+          if (!inlineApproval && badge.coins > 0) ...<Widget>[
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

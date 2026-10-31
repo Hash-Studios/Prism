@@ -22,6 +22,7 @@ class UploadBatch {
   final List<File> files;
   ChallengeSeed? challengeSeed;
   final List<UploadItemOutcome> outcomes;
+  ({int coins, String ownerId})? confirmedUploadAward;
   int index = 0;
 
   int get total => files.length;

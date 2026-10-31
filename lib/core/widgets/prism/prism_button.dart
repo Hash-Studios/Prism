@@ -38,6 +38,7 @@ class PrismButton extends StatelessWidget {
     this.trailing,
     this.loading = false,
     this.expand = false,
+    this.maxLines = 1,
   });
 
   final String label;
@@ -57,6 +58,8 @@ class PrismButton extends StatelessWidget {
   /// Fills the available width.
   final bool expand;
 
+  final int? maxLines;
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
@@ -73,7 +76,14 @@ class PrismButton extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         if (icon != null) ...<Widget>[Icon(icon, size: large ? 20 : 18), const SizedBox(width: PrismSpace.xs)],
-        Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
+        Flexible(
+          child: Text(
+            label,
+            maxLines: maxLines,
+            overflow: maxLines == null ? TextOverflow.visible : TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ),
         if (trailing != null) ...<Widget>[const SizedBox(width: PrismSpace.xs), trailing!],
       ],
     );

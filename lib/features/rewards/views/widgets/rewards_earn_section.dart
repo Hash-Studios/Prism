@@ -11,6 +11,7 @@ import 'package:Prism/core/widgets/prism/prism_row.dart';
 import 'package:Prism/core/widgets/prism/prism_section.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ads/ads.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -61,9 +62,10 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<CoinEarnFlags>(
-      valueListenable: CoinsService.instance.earnFlagsNotifier,
-      builder: (context, flags, _) => _buildRows(context, flags),
+    final coins = CoinsService.instance;
+    return ListenableBuilder(
+      listenable: Listenable.merge([coins.earnFlagsNotifier, coins.adsRemainingNotifier]),
+      builder: (context, _) => _buildRows(context, coins.earnFlagsNotifier.value),
     );
   }
 
@@ -71,19 +73,21 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
     final bool isPro = app_state.prismUser.premium;
     final String proMultiplier = '${EconomyConfig.current.award.proStreakMultiplier}';
     final List<Widget> rows = <Widget>[
-      _EarnRow(
-        icon: Icons.local_fire_department_rounded,
-        title: context.l10n.economyDailyStreak,
-        subtitle: isPro ? context.l10n.economyOpenDailyPro(proMultiplier) : context.l10n.economyOpenDaily,
-        reward: context.l10n.economyCoinsRange(CoinPolicy.streakDay1To2Daily, CoinPolicy.streakDay7Daily),
-      ),
-      _EarnRow(
-        icon: Icons.redeem_rounded,
-        title: context.l10n.economyDay7Chest,
-        subtitle: context.l10n.economyFinishStreakWeek,
-        reward: context.l10n.economyCoinsRange(CoinPolicy.streakChestMin, CoinPolicy.streakChestMax),
-      ),
-      if (isPro)
+      if (!DailyMomentConfig.enabled)
+        _EarnRow(
+          icon: Icons.local_fire_department_rounded,
+          title: context.l10n.economyDailyStreak,
+          subtitle: isPro ? context.l10n.economyOpenDailyPro(proMultiplier) : context.l10n.economyOpenDaily,
+          reward: context.l10n.economyCoinsRange(CoinPolicy.streakDay1To2Daily, CoinPolicy.streakDay7Daily),
+        ),
+      if (!DailyMomentConfig.enabled)
+        _EarnRow(
+          icon: Icons.redeem_rounded,
+          title: context.l10n.economyDay7Chest,
+          subtitle: context.l10n.economyFinishStreakWeek,
+          reward: context.l10n.economyCoinsRange(CoinPolicy.streakChestMin, CoinPolicy.streakChestMax),
+        ),
+      if (isPro && !DailyMomentConfig.enabled)
         _EarnRow(
           icon: Icons.workspace_premium_outlined,
           title: context.l10n.economyFreeDailySpin,
@@ -131,7 +135,7 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
       children: <Widget>[
         PrismSectionHeader(
           title: context.l10n.economyEarnCoins,
-          padding: EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.sm),
+          padding: const EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.sm),
         ),
         PrismGroup(children: rows),
       ],
@@ -174,18 +178,21 @@ class _EarnRow extends StatelessWidget {
     } else {
       trailing = _RewardPill(key: const ValueKey<String>('reward'), reward: reward);
     }
-    return PrismRow(
-      icon: icon,
-      title: title,
-      subtitle: done ? context.l10n.actionDone : subtitle,
-      trailing: AnimatedSwitcher(duration: context.motion(PrismDurations.fast), child: trailing),
-      showChevron: tappable,
-      onTap: tappable
-          ? () {
-              PrismHaptics.tap();
-              onTap?.call();
-            }
-          : null,
+    return LayoutBuilder(
+      builder: (context, constraints) => PrismRow(
+        trailingBelow: MediaQuery.textScalerOf(context).scale(14) / 14 >= 1.3 || constraints.maxWidth < 360,
+        icon: icon,
+        title: title,
+        subtitle: done ? context.l10n.actionDone : subtitle,
+        trailing: AnimatedSwitcher(duration: context.motion(PrismDurations.fast), child: trailing),
+        showChevron: tappable,
+        onTap: tappable
+            ? () {
+                PrismHaptics.tap();
+                onTap?.call();
+              }
+            : null,
+      ),
     );
   }
 }
@@ -209,7 +216,9 @@ class _RewardPill extends StatelessWidget {
         children: <Widget>[
           const PrismCoinIcon(size: 14),
           const SizedBox(width: 5),
-          Text(reward, style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w700)),
+          Flexible(
+            child: Text(reward, style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w700)),
+          ),
         ],
       ),
     );
