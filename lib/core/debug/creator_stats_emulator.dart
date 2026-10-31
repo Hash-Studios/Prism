@@ -37,14 +37,10 @@ class CreatorStatsEmulator {
       account: Env.creatorStatsEmulatorAccount,
     );
     if (Env.skipFirebaseInit) throw StateError('Do not combine emulator QA with SKIP_FIREBASE_INIT.');
-    final app = await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: 'demo-prism-local-only',
-        appId: '1:1234567890:android:0123456789abcdef',
-        messagingSenderId: '1234567890',
-        projectId: 'demo-prism',
-      ),
-    );
+    for (final existing in Firebase.apps) {
+      if (existing.options.projectId != 'demo-prism') throw StateError('A non-demo Firebase app already exists.');
+    }
+    final app = await Firebase.initializeApp(options: options(defaultTargetPlatform));
     if (app.options.projectId != 'demo-prism') throw StateError('Refusing a non-demo Firebase app.');
     const host = Env.creatorStatsEmulatorHost;
     await FirebaseAuth.instance.useAuthEmulator(host, 9099);
@@ -52,6 +48,18 @@ class CreatorStatsEmulator {
     _firebaseModule.firebaseFirestore.useFirestoreEmulator(host, 8080);
     appFunctions.useFunctionsEmulator(host, 5001);
   }
+
+  /// Must equal the native demo config written by `tool/creator_stats_qa/native.cjs`.
+  static FirebaseOptions options(TargetPlatform platform) => FirebaseOptions(
+    apiKey: 'AIzaSyDemoPrismLocalOnly00000000000000000',
+    appId: platform == TargetPlatform.iOS
+        ? '1:123456789012:ios:0000000000000000000000'
+        : '1:123456789012:android:0000000000000000000000',
+    messagingSenderId: '123456789012',
+    projectId: 'demo-prism',
+    storageBucket: 'demo-prism.appspot.com',
+    iosBundleId: 'com.hash.prism',
+  );
 
   static FirestoreClient localFirestore() =>
       FirestoreTrackedClient(_firebaseModule.firebaseFirestore, const FirestoreConsoleTelemetrySink());

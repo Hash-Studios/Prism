@@ -20,8 +20,27 @@ function checkVariants(directory) {
   }
 }
 checkVariants(path.resolve(__dirname, '../../android/app/src'));
+const iosTarget = path.resolve(__dirname, '../../ios/Runner/GoogleService-Info.plist');
+const iosConfig = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>API_KEY</key><string>AIzaSyDemoPrismLocalOnly00000000000000000</string>
+<key>GCM_SENDER_ID</key><string>123456789012</string>
+<key>GOOGLE_APP_ID</key><string>1:123456789012:ios:0000000000000000000000</string>
+<key>PROJECT_ID</key><string>demo-prism</string>
+<key>STORAGE_BUCKET</key><string>demo-prism.appspot.com</string>
+<key>BUNDLE_ID</key><string>com.hash.prism</string>
+<key>IS_ANALYTICS_ENABLED</key><false/>
+<key>IS_GCM_ENABLED</key><false/>
+<key>PLIST_VERSION</key><string>1</string>
+</dict></plist>
+`;
+if (fs.existsSync(iosTarget)) {
+  assert.equal(fs.readFileSync(iosTarget, 'utf8'), iosConfig,
+    'Existing iOS native config differs. Refusing to overwrite it. Use a QA checkout with no real native config.');
+} else fs.writeFileSync(iosTarget, iosConfig, {flag: 'wx'});
 if (fs.existsSync(target)) {
   assert.deepEqual(JSON.parse(fs.readFileSync(target, 'utf8')), config,
     'Existing native config differs. Refusing to overwrite it. Use a QA checkout with no real native config.');
 } else fs.writeFileSync(target, JSON.stringify(config, null, 2) + '\n', {flag: 'wx'});
-console.log('Demo-only Android native config ready. Never commit it or use this checkout for release builds.');
+console.log('Demo-only Android and iOS native config ready. Never commit it or use this checkout for release builds.');

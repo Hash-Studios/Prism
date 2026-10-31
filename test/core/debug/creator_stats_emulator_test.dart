@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:Prism/core/debug/creator_stats_emulator.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -25,5 +28,16 @@ void main() {
       () => CreatorStatsEmulator.validate(project: 'demo-prism', host: 'localhost', account: 'real'),
       throwsArgumentError,
     );
+  });
+  test('Dart options match the demo native config so Firebase does not report a duplicate app', () {
+    final native = File('tool/creator_stats_qa/native.cjs').readAsStringSync();
+    for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+      final options = CreatorStatsEmulator.options(platform);
+      expect(options.projectId, 'demo-prism');
+      expect(native, contains("'${options.apiKey}'"));
+      expect(native, contains(options.appId));
+      expect(native, contains("'${options.messagingSenderId}'"));
+    }
+    expect(CreatorStatsEmulator.options(TargetPlatform.iOS).appId, contains(':ios:'));
   });
 }
