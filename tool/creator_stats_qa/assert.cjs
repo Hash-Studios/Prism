@@ -111,6 +111,31 @@ async function main() {
   await daily.processCreatorStatsDailyQueue();
   assert.equal((await db.collection('creatorStatsDailyCheckpoints').doc(aliasQueue.id).get()).data().counters.views, 20);
   assert.equal((await ref.get()).data().weeks[week].views, aliasHistoryBefore.weeks[week].views + 20);
+
+  const raceSource = db.doc(`wallpaper_stats_daily/qa-higher-counter-race-${day}`);
+  const raceBefore = (await ref.get()).data().weeks[week].views;
+  await raceSource.set({wallId: 'QA-OTHER', day, views: 1, favs: 0, sets: 0, downloads: 0, shares: 0});
+  const raceKey = h.hash(`${raceSource.path}:${h.incarnation(await raceSource.get())}`);
+  await waitForQueue(db.collection('creatorStatsDailyQueue').doc(raceKey));
+  await raceSource.update({views: 29});
+  const higher = await raceSource.get();
+  await raceSource.delete();
+  const raceResults = await Promise.allSettled([
+    ...Array.from({length: 4}, () => daily.processCreatorStatsDailyQueue()),
+    ...Array.from({length: 4}, () => daily.enqueueCreatorStatsDaily(higher, now)),
+  ]);
+  for (const [index, result] of raceResults.entries()) {
+    if (result.status === 'rejected') {
+      assert.equal(result.reason.code, 10, 'only transaction contention may abort a race attempt');
+      if (index >= 4) await daily.enqueueCreatorStatsDaily(higher, now);
+    }
+  }
+  await daily.processCreatorStatsDailyQueue();
+  assert.equal((await ref.get()).data().weeks[week].views, raceBefore + 29,
+    'a higher delayed counter must survive concurrent queue deletion exactly once');
+  assert.equal((await db.doc(`creatorStatsDailyCheckpoints/${raceKey}`).get()).data().counters.views, 29);
+  assert.equal((await db.doc(`creatorStatsDailyQueue/${raceKey}`).get()).exists, false);
+
   await db.doc('folders/qa-stats').set({ownerId: 'qa-stats-creator', name: 'QA stats folder'});
   const itemRef = db.collection('folders/qa-stats/items').doc();
   await itemRef.create({ownerId: 'qa-stats-creator', provider: 'prism', id: 'QA-OTHER', wallpaperDocumentId: 'qa-other'});

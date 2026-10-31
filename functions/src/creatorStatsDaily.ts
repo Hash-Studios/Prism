@@ -300,8 +300,10 @@ async function processBatch(owner: string, observationNow: number | undefined, c
     for (const {ref, code} of poison.values()) tx.update(ref, {state: "blocked", failure: {code, at: timestamp(now)}});
     return {processed: rows.length, capacity: false, empty: false,
       rejected: rejectedItems.size, blocked: poison.size,
-      oldestPendingAgeMs: Math.max(0, clock() - Math.min(...rows.map((row) =>
-        ((row.data() as unknown as DailyQueue).firstEnqueuedAt?.toMillis?.() ?? clock()))))};
+      oldestPendingAgeMs: Math.max(0, clock() - Math.min(...rows.map((row) => {
+        const enqueuedAt = row.data().firstEnqueuedAt;
+        return enqueuedAt instanceof Timestamp ? enqueuedAt.toMillis() : clock();
+      })))};
   }, {maxAttempts: 1}).catch((error: unknown) => {
     if (error instanceof IdentityCapacityError) {
       return {processed: 0, capacity: true, empty: false, rejected: 0, blocked: 0, oldestPendingAgeMs: 0};

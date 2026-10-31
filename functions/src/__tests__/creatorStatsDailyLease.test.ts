@@ -272,3 +272,30 @@ test("an all-no-delta batch deletes completed work with 11 reads and 5 writes wi
   assert.equal(paths(store, "creatorStatsDailyQueue").length, 0);
   assert.deepEqual({reads: observed.reads, writes: observed.writes}, {reads: 11, writes: 5});
 });
+
+test("processor read costs include rejected owners, rejected histories, and an empty census", async (t) => {
+  for (const kind of ["inactive_owner", "invalid_history", "empty_census", "invalid_queue"] as const) {
+    await t.test(kind, async (subtest) => {
+      const observed = {reads: 0, writes: 0};
+      const store = installFakeDb(subtest, seed(), observed);
+      await enqueueCreatorStatsDaily(await db.doc("wallpaper_stats_daily/source").get(), NOW);
+      const queuePath = paths(store, "creatorStatsDailyQueue")[0];
+      if (kind === "inactive_owner") store.delete("usersv2/alice");
+      if (kind === "empty_census") store.delete("walls/wall");
+      if (kind === "invalid_queue") store.set(queuePath, {...store.get(queuePath), counters: {views: -1}});
+      if (kind === "invalid_history") {
+        await processCreatorStatsDailyQueue(NOW);
+        const historyPath = paths(store, "creatorStatsHistory")[0];
+        store.set(historyPath, {...store.get(historyPath), weeks: {"2026-W43": {views: -1}}});
+        store.set("wallpaper_stats_daily/source", {wallId: "WALL", day: "20261025", views: 6});
+        await enqueueCreatorStatsDaily(await db.doc("wallpaper_stats_daily/source").get(), NOW);
+      }
+      observed.reads = 0; observed.writes = 0;
+      await processCreatorStatsDailyQueue(NOW);
+      const expectedReads = {inactive_owner: 10, invalid_history: 11, empty_census: 8, invalid_queue: 6};
+      assert.deepEqual(observed, {reads: expectedReads[kind], writes: 3});
+      if (kind === "invalid_history" || kind === "invalid_queue") assert.equal(store.get(queuePath)?.state, "blocked");
+      else assert.equal(store.has(queuePath), false);
+    });
+  }
+});

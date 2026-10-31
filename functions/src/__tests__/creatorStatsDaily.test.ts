@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {Timestamp} from "firebase-admin/firestore";
 import {db} from "../common";
-import {readCreatorStats} from "../creatorStats";
+import {deliverCreatorWeek, readCreatorStats} from "../creatorStats";
 import {enqueueCreatorStatsDaily, processCreatorStatsDailyQueue} from "../creatorStatsDaily";
 import {hash, historyRef, incarnation} from "../creatorStatsHistory";
 import {installFakeDb, type Doc} from "./fakeDb";
@@ -176,6 +176,28 @@ test("malformed history blocks only its contributing wall while peer work commit
   assert.equal((await historyRef(other).get()).data()?.weeks["2026-W43"].views, 2);
 });
 
+test("a malformed enqueue timestamp cannot roll back poison isolation and peer history", async (t) => {
+  const store = installFakeDb(t, seed({
+    "walls/other": {id: "OTHER", creatorUid: "alice", review: true},
+    "wallpaper_stats_daily/other": {wallId: "OTHER", day: "20261025", views: 2},
+  }));
+  await enqueueCreatorStatsDaily(await db.doc("wallpaper_stats_daily/20261025_WALL").get(), NOW);
+  const queue = [...store.entries()].find(([path]) => path.startsWith("creatorStatsDailyQueue/"));
+  assert.ok(queue);
+  store.set(queue[0], {...queue[1], firstEnqueuedAt: {toMillis: "invalid"}});
+  await enqueueCreatorStatsDaily(await db.doc("wallpaper_stats_daily/other").get(), NOW);
+  await processCreatorStatsDailyQueue(NOW);
+  const blocked = store.get(queue[0]);
+  assert.equal(blocked?.state, "blocked");
+  assert.equal((blocked?.failure as Doc).code, "invalid_queue");
+  assert.deepEqual(blocked?.counters, {views: 5, favs: 2, sets: 0, downloads: 0, shares: 0});
+  assert.equal(store.has(queue[0].replace("creatorStatsDailyQueue/", "creatorStatsDailyCheckpoints/")), false);
+  const other = await db.doc("walls/other").get();
+  assert.equal((await historyRef(other).get()).data()?.weeks["2026-W43"].views, 2);
+  await processCreatorStatsDailyQueue(NOW);
+  assert.deepEqual(store.get(queue[0]), blocked);
+});
+
 test("unsafe history arithmetic blocks every contributor to that wall, not peer walls", async (t) => {
   const store = installFakeDb(t, seed({
     "walls/other": {id: "OTHER", creatorUid: "alice", review: true},
@@ -225,6 +247,40 @@ test("per-field maxima survive reordered after-images and lower current snapshot
   await enqueueCreatorStatsDaily(delayed, NOW);
   assert.deepEqual([...store.entries()].find(([name]) => name.startsWith("creatorStatsDailyQueue/"))?.[1]?.counters,
     {views: 7, favs: 8, sets: 0, downloads: 0, shares: 0});
+});
+
+test("a higher delayed counter survives queue deletion before or after its enqueue transaction", async (t) => {
+  for (const enqueueFirst of [false, true]) {
+    await t.test(enqueueFirst ? "enqueue before delete" : "delete before enqueue", async (subtest) => {
+      const path = "wallpaper_stats_daily/20261025_WALL";
+      const observed = {reads: 0, writes: 0, outsideReads: 0, outsideWrites: 0};
+      const store = installFakeDb(subtest, seed(), observed);
+      await enqueueCreatorStatsDaily(await db.doc(path).get(), NOW);
+      store.set(path, {wallId: "WALL", day: "20261025", views: 17, favs: 1});
+      const higher = await db.doc(path).get();
+      store.delete(path);
+      observed.outsideReads = 0; observed.outsideWrites = 0;
+      const process = () => processCreatorStatsDailyQueue(NOW);
+      const enqueue = () => enqueueCreatorStatsDaily(higher, NOW);
+      if (enqueueFirst) {
+        await enqueue();
+        await process();
+      } else {
+        await process();
+        await enqueue();
+      }
+      await process();
+      assert.equal(observed.outsideReads, 0);
+      assert.equal(observed.outsideWrites, 0);
+      const wall = await db.doc("walls/wall").get();
+      const history = (await historyRef(wall).get()).data();
+      assert.equal(history?.weeks["2026-W43"].views, 17);
+      assert.equal(history?.weeks["2026-W43"].saves, 2);
+      const checkpoint = [...store.entries()].find(([name]) => name.startsWith("creatorStatsDailyCheckpoints/"))?.[1];
+      assert.deepEqual(checkpoint?.counters, {views: 17, favs: 2, sets: 0, downloads: 0, shares: 0});
+      assert.equal([...store.keys()].some((name) => name.startsWith("creatorStatsDailyQueue/")), false);
+    });
+  }
 });
 
 test("recreated source incarnations use independent queue and checkpoint keys", async (t) => {
@@ -454,4 +510,16 @@ test("first history coverage starts when a delayed queue item is processed", asy
   assert.equal(stats.weeks[3].metrics.views, 5);
   assert.equal(stats.weeks[0].metrics.views, null);
   assert.equal(stats.coverage.views.weeklyFrom, new Date(later).toISOString());
+});
+
+test("Monday inbox skips pending daily activity and needs a same-week rerun after projection", async (t) => {
+  const store = installFakeDb(t, seed());
+  await enqueueCreatorStatsDaily(await db.doc("wallpaper_stats_daily/20261025_WALL").get(), NOW);
+  assert.equal(await deliverCreatorWeek("alice", NOW), false);
+  await processCreatorStatsDailyQueue(NOW + 60_000);
+  assert.equal(await deliverCreatorWeek("alice", NOW + 7 * 86400000), false);
+  assert.equal(await deliverCreatorWeek("alice", NOW + 60_000), true);
+  const notifications = [...store.entries()].filter(([path]) => path.startsWith("notifications/"));
+  assert.equal(notifications.length, 1);
+  assert.deepEqual(notifications[0][1].message, {kind: "creatorStatsWeekly", args: {week: "2026-W43"}});
 });

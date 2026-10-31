@@ -59,3 +59,32 @@ Astra found that the independently pushed wall detail retained its snapshot afte
 Astra also found that deterministic identity-census overflow retried every background event. The trigger boundary now distinguishes this capacity failure, acknowledges it without a checkpoint, and retains retries for transient failures. The new wrapper-level regression failed before the fix. All 37 backend tests and all 16 creator-stats Dart tests passed after the fixes. Both account-change regressions failed before the fix, and the capacity wrapper regression failed before its fix.
 
 Production rollout needs an event-volume budget before Functions deployment. At 20,000 walls, 10,000 changed daily documents cost 200,050,000 projection reads before retries. No production volume or affordability claim has been verified. The five-minute callable cache does not reduce projection cost.
+
+## Durable daily projection review, 2026-10-31
+
+This pass reviews `c13aab249..8e9d87667` against `/tmp/cs761/astra-spec.md`. The review worktree is `/Users/codenameakshay/.t3/worktrees/Prism/t3-d8cf7ae1`, on `akshay/creator-stats-daily-review`. Earlier per-event census cost and six-collection statements above describe historical implementations. The current backend document describes batched projection and eight private collections.
+
+### Findings
+
+- Fixed a poison-isolation failure in `creatorStatsDaily.ts`. After identifying an invalid queue item, batch telemetry still invoked its unvalidated `firstEnqueuedAt.toMillis`. A stored map with a non-callable `toMillis` rolled back the entire batch, including healthy peer history and the blocked-state update. The new regression failed with `TypeError: _b.call is not a function` before the fix and passed afterward. Telemetry now accepts only a Firestore Timestamp. The test checks retained poison counters, no checkpoint advance, successful peer history, and persistence of the blocked item on another invocation.
+- Corrected the backend read-cost formulas. Account checks include inactive owners. Malformed queues can skip checkpoint reads. Invalid histories incur reads without history writes. Empty census queries incur one read. Four measured unit cases cover these differences. The full-batch example now states its upper-bound assumption of one checked creator and one history per item.
+- Open product decision. Monday delivery reads projected history only. If all activity remains queued at the check, it skips the notice successfully. Later projection does not trigger delivery, and next Monday selects a different week. The new test proves that a rerun for the original week can deliver after projection. Option 1 is to keep this best-effort behavior. Option 2, recommended if weekly delivery is promised, is to design a bounded catch-up window with the existing UID/week deduplication. No catch-up policy was added in this review.
+
+### Audit conclusions
+
+The normalized wall census is inside the same transaction that writes history. It includes foreign, draft, withdrawn, mixed-case and whitespace aliases. Current approval, creator gates and nanosecond source ordering are checked before attribution. No-delta work stops before the census. Blocked items are excluded from the ready query, and enqueue preserves their blocked state while merging valid counter maxima.
+
+The trigger reads the source, checkpoint and queue in one transaction. The processor reads the queue before deleting it in its history/checkpoint transaction. A concurrent deletion therefore participates in Firestore conflict detection. In the processor-first serialization, a higher delayed after-image exceeds the newly accepted checkpoint and recreates ready work. In the enqueue-first serialization, the processor consumes the raised maximum. A new test proves both serializations, including a deleted source and a lower favourite count that must not erase the previous maximum. It also checks that processing performs no database operations outside transactions. The fake database serializes transactions, so these tests do not measure Firestore contention. The emulator QA script now also races higher delayed counters against multiple processors and checks the final history, checkpoint and empty queue. Only aborted operations may be retried in that scenario.
+
+Existing passing tests cover lease exclusion, expired takeover, stale-token rejection, token-safe release, capacity retention and cooldown recovery, oldest-first ordering, stable queue position under increments, the 240-second budget, reordered events, source recreation, TTL-delayed events, arithmetic poison, rollback, shared histories, null coverage and nine-week pruning. The 100-item query bounds writes to at most 300, with the separate byte ceiling retained. Rules explicitly deny both new collections. The composite index matches `state == ready`, `firstEnqueuedAt ASC`, then document ID ASC. Index exemptions and no-TTL contracts remain intact.
+
+The Test Behavior, Not Implementation principle shaped the new regression assertions. They check persisted counters, blocked work and healthy peer history, rather than only successful completion.
+
+### Local proof and limits
+
+- `cd functions && npm run build && node --test 'lib/__tests__/*.test.js'` passed with 2,363 passes, 23 skips and no failures.
+- `npx eslint --max-warnings 0` passed for all eight changed TypeScript files across the reviewed commits and this review.
+- `node tool/creator_stats_qa/validate.cjs` passed. It validates script syntax, bundle allowlists, API wiring and local-only guards without starting an emulator.
+- `git diff --check` passed.
+
+The worktree had no Functions dependencies, so the authorized `npm ci` ran once. The installed runtime is Node 26.12.1, while Functions declares Node 24. No dependency manifest or toolchain was changed. This pass did not run devices or emulators, perform production actions, push, merge or deploy. Real contention, emulator rules behavior and production latency remain separate proof gates. The added emulator race assertion has syntax validation only in this pass.
