@@ -54,6 +54,7 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_actions.dart
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheets.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_style_sheet.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
@@ -137,6 +138,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   /// The wallpapers made since the page opened, oldest first.
   List<AiGenerationRecord> _session = <AiGenerationRecord>[];
+  final Map<String, int> _uploadAwards = <String, int>{};
   final Map<String, AiGenerationRecord> _confirmedSubmissionRecords = <String, AiGenerationRecord>{};
   String _historyUserId = '';
   String _promptOwner = '';
@@ -448,6 +450,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       _hero = null;
       _session = <AiGenerationRecord>[];
       _confirmedSubmissionRecords.clear();
+      _uploadAwards.clear();
       _unconfirmedSubmissionIds.clear();
     }
     if (!_isLoggedIn) {
@@ -457,6 +460,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         _hero = null;
         _session = <AiGenerationRecord>[];
         _confirmedSubmissionRecords.clear();
+        _uploadAwards.clear();
         _unconfirmedSubmissionIds.clear();
       });
       return;
@@ -1180,6 +1184,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 aiPrompt: record.prompt,
                 aiStylePreset: record.stylePreset.apiValue,
                 remixOf: record.remixOf,
+                onUploadAward: (result) {
+                  if (mounted && app_state.prismUser.id == record.userId) {
+                    setState(() => _uploadAwards[record.id] = result.delta);
+                  }
+                },
                 challengeId: record.challengeId ?? '',
                 docId: record.challengeId == null ? null : 'wall_$communityId',
               ));
@@ -1425,6 +1434,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         app_state.aiSubmitEnabled &&
         !_submitting &&
         !_unconfirmedSubmissionIds.contains(hero.id);
+    final bool hasUploadAward = DailyMomentConfig.enabled && (_uploadAwards[hero.id] ?? 0) > 0;
+    final bool hasUnconfirmedSubmission = _unconfirmedSubmissionIds.contains(hero.id);
     return AiResultView(
       key: const ValueKey<String>('result'),
       record: hero,
@@ -1437,8 +1448,23 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       onSelectTake: _selectTake,
       onFollowUp: _runFollowUp,
       trailing: const CoinBalanceChip(sourceTag: 'ai_gen_page', showStreak: false),
-      notice: _unconfirmedSubmissionIds.contains(hero.id)
-          ? AiUnconfirmedNotice(onCheck: () => context.router.push(const ReviewRoute()))
+      notice: hasUploadAward || hasUnconfirmedSubmission
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (hasUploadAward)
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      context.l10n.economyCoinsEarned(_uploadAwards[hero.id]!),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.primary),
+                    ),
+                  ),
+                if (hasUnconfirmedSubmission) AiUnconfirmedNotice(onCheck: () => context.router.push(ReviewRoute())),
+              ],
+            )
           : null,
       actions: AiResultActions(
         showSave: !hideSetWallpaperUi,

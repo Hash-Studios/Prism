@@ -8,6 +8,7 @@ import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/deep_link_startup_gate.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -95,6 +96,33 @@ void main() {
   }
 
   List<DeepLinkNavigationResultEvent> results() => events.whereType<DeepLinkNavigationResultEvent>().toList();
+
+  testWidgets('daily moment waits through link resolution and releases after leaving its target', (tester) async {
+    await mount(tester);
+    dispatcher.dispose();
+    final resolution = Completer<DeepLinkRouteResolution>();
+    dispatcher = create(navigation: _ResolvingNavigation((_) => resolution.future));
+    final opened = dispatcher.openUri(Uri.parse('/downloads'), source: DeepLinkSourceValue.appLinks);
+    await tester.pump();
+    expect(DailyMomentPresentationGate.instance.deepLinkActive, isTrue);
+    resolution.complete(const DeepLinkRouteResolution.route(DownloadRoute()));
+    await tester.pumpAndSettle();
+    expect(await opened, DeepLinkDispatchResult.navigated);
+    expect(DailyMomentPresentationGate.instance.deepLinkActive, isTrue);
+    expect(router.stackData.map((route) => route.name), contains(DownloadRoute.name));
+    expect(await router.maybePop(), isTrue);
+    await tester.pumpAndSettle();
+    expect(router.stackData.map((route) => route.name), isNot(contains(DownloadRoute.name)));
+    expect(DailyMomentPresentationGate.instance.deepLinkActive, isFalse);
+  });
+
+  testWidgets('a blocked link releases daily moment suppression', (tester) async {
+    await mount(tester);
+    final opened = dispatcher.openUri(Uri.parse('/shop'), source: DeepLinkSourceValue.appLinks);
+    await tester.pumpAndSettle();
+    expect(await opened, DeepLinkDispatchResult.blocked);
+    expect(DailyMomentPresentationGate.instance.deepLinkActive, isFalse);
+  });
 
   setUp(() {
     router = _LinkTestRouter();

@@ -11607,6 +11607,41 @@ class AppLocalizationsDe extends AppLocalizations {
   String get feedShowAiWalls => 'KI-Walls anzeigen';
 
   @override
+  String get dailyMomentTitle => 'Täglicher Moment';
+
+  @override
+  String get dailyMomentStreakTitle => 'Tägliche Serie';
+
+  @override
+  String get dailyMomentChestTitle => 'Tägliche Truhe';
+
+  @override
+  String get dailyMomentSpinTitle => 'Gratisdreh';
+
+  @override
+  String get dailyMomentUnavailable => 'Diese Belohnung ist heute nicht mehr verfügbar.';
+
+  @override
+  String get dailyMomentError => 'Die Belohnung konnte nicht geladen werden. Versuche es erneut.';
+
+  @override
+  String dailyMomentStreakReceipt(int coins, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins Münzen erhalten',
+      one: '$coins Münze erhalten',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days Tage in Folge',
+      one: '$days Tag in Folge',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
   String get challengeTitle => 'Wochen-Challenge';
 
   @override
@@ -11670,6 +11705,83 @@ class AppLocalizationsDe extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get dailyMomentCosmetic => 'Kosmetischer Gegenstand zu deiner Sammlung hinzugefügt';
+
+  @override
+  String dailyMomentReward(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins Münzen erhalten',
+      one: '$coins Münze erhalten',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentChestBody => 'Öffne die heutige Truhe, wenn du bereit bist.';
+
+  @override
+  String get dailyMomentSpinBody => 'Dein Gratisdreh ist bereit.';
+
+  @override
+  String dailyMomentBalance(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins Münzen', one: '$coins Münze');
+    return 'Guthaben: $_temp0';
+  }
+
+  @override
+  String get dailyMomentDone => 'Fertig';
+
+  @override
+  String get dailyMomentRetry => 'Erneut versuchen';
+
+  @override
+  String get dailyMomentContinue => 'Weiter';
+
+  @override
+  String get dailyMomentOpenFree => 'Gratis-Truhe öffnen';
+
+  @override
+  String dailyMomentOpenChest(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins Münzen', one: '$coins Münze');
+    return 'Für $_temp0 öffnen';
+  }
+
+  @override
+  String get dailyMomentSpinAction => 'Gratis drehen';
+
+  @override
+  String get dailyMomentClose => 'Täglichen Moment schließen';
+
+  @override
+  String get dailyMomentToday => 'Heute';
+
+  @override
+  String get dailyMomentReady => 'Tägliche Belohnungen sind bereit';
+
+  @override
+  String get dailyMomentComplete => 'Heute ist alles erledigt';
+
+  @override
+  String get dailyMomentResume => 'Täglichen Moment fortsetzen';
+
+  @override
+  String get dailyMomentMore => 'Mehr';
+
+  @override
+  String get dailyMomentQuests => 'Aufgaben';
+
+  @override
+  String get dailyMomentChestLeft => 'Tägliche Truhe verfügbar';
+
+  @override
+  String get dailyMomentSpinLeft => 'Gratisdreh verfügbar';
+
+  @override
+  String get dailyMomentStreakLeft => 'Tägliche Serie verfügbar';
 
   @override
   String get challengeShare => 'Challenge teilen';

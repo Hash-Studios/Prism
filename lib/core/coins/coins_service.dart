@@ -409,8 +409,9 @@ class CoinsService with WidgetsBindingObserver {
 
   @visibleForTesting
   VerifiedLegacyNativeDownloadCheck verifiedLegacyNativeDownloadCheck = hasVerifiedLegacyNativeDownload;
-  int? _adsRemaining;
+  final ValueNotifier<int?> adsRemainingNotifier = ValueNotifier<int?>(null);
   String _adsRemainingDay = '';
+  String _adsRemainingOwner = '';
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
   final ValueNotifier<StreakStatus> streakNotifier = ValueNotifier<StreakStatus>(StreakStatus.empty);
@@ -419,6 +420,8 @@ class CoinsService with WidgetsBindingObserver {
   /// Set only when a daily claim really paid out. The UI shows the daily sheet, then calls [consumeLastClaim].
   final ValueNotifier<StreakClaimResult?> lastClaimNotifier = ValueNotifier<StreakClaimResult?>(null);
   String? _pendingClaimUserId;
+  String? _pendingClaimLocalDay;
+  int? _pendingClaimOffsetMinutes;
   final Set<(String, String)> _publishedClaimDays = <(String, String)>{};
   String? _pendingFreezeUserId;
   String? _pendingFreezeRequestId;
@@ -491,14 +494,15 @@ class CoinsService with WidgetsBindingObserver {
 
   /// What the next rewarded ad pays: more for the first ad of the UTC day.
   int get adsRewardNow {
-    final String? day = _adsTodayDay;
-    if (day != null) {
-      return day == _utcDayKey() && _adsTodayCount > 0 ? CoinPolicy.rewardedAd : CoinPolicy.rewardedAdFirstOfDay;
-    }
     final int? remaining = adsRemainingToday;
-    return remaining == null || remaining == EconomyConfig.current.award.rewardedAdMaxPerDay
-        ? CoinPolicy.rewardedAdFirstOfDay
-        : CoinPolicy.rewardedAd;
+    if (remaining != null) {
+      return remaining == EconomyConfig.current.award.rewardedAdMaxPerDay
+          ? CoinPolicy.rewardedAdFirstOfDay
+          : CoinPolicy.rewardedAd;
+    }
+    return _ownsEconomyState && _adsTodayDay == _utcDayKey() && _adsTodayCount > 0
+        ? CoinPolicy.rewardedAd
+        : CoinPolicy.rewardedAdFirstOfDay;
   }
 
   void consumeQuestAwards() => questAwardsNotifier.value = const <QuestAward>[];
@@ -524,19 +528,24 @@ class CoinsService with WidgetsBindingObserver {
     balanceNotifier.value = app_state.prismUser.coins;
     streakNotifier.value = StreakStatus.empty;
     earnFlagsNotifier.value = CoinEarnFlags.empty;
-    _adsRemaining = null;
+    adsRemainingNotifier.value = null;
     _adsRemainingDay = '';
+    _adsRemainingOwner = '';
     _resetEconomy('');
   }
 
   StreakClaimResult? get pendingClaimForCurrentUser {
-    if (!_canMutateCoins() || _pendingClaimUserId != app_state.prismUser.id) consumeLastClaim();
+    final offset = _pendingClaimOffsetMinutes;
+    final bool stale = offset != null && _pendingClaimLocalDay != _offsetDayKey(DateTime.now().toUtc(), offset);
+    if (!_canMutateCoins() || _pendingClaimUserId != app_state.prismUser.id || stale) consumeLastClaim();
     return lastClaimNotifier.value;
   }
 
   void consumeLastClaim() {
     lastClaimNotifier.value = null;
     _pendingClaimUserId = null;
+    _pendingClaimLocalDay = null;
+    _pendingClaimOffsetMinutes = null;
   }
 
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
@@ -1383,12 +1392,16 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   /// Rewarded ads left today, as the last `rewardedAd` reply told. Null when unknown or from an earlier UTC day.
-  int? get adsRemainingToday => _adsRemainingDay == _utcDayKey() ? _adsRemaining : null;
+  int? get adsRemainingToday =>
+      _canMutateCoins() && _adsRemainingOwner == app_state.prismUser.id && _adsRemainingDay == _utcDayKey()
+      ? adsRemainingNotifier.value
+      : null;
 
   void _noteAdsRemaining(int? remaining) {
     if (remaining == null) return;
-    _adsRemaining = remaining;
     _adsRemainingDay = _utcDayKey();
+    _adsRemainingOwner = app_state.prismUser.id;
+    adsRemainingNotifier.value = remaining;
   }
 
   String _utcDayKey() => _offsetDayKey(DateTime.now().toUtc(), 0);
@@ -2085,6 +2098,8 @@ class CoinsService with WidgetsBindingObserver {
           analytics.track(event);
         }
         _pendingClaimUserId = userId;
+        _pendingClaimLocalDay = todayLocalKey;
+        _pendingClaimOffsetMinutes = effectiveTimezoneOffset;
         lastClaimNotifier.value = result;
       }
 

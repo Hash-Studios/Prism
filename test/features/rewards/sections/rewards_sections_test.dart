@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
@@ -5,11 +7,14 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/prism/prism_row.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_activity_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
@@ -58,12 +63,25 @@ Widget _host(Widget child, Brightness brightness) => MaterialApp(
 
 void main() {
   setUpFavouriteCounts();
+  setUp(() => DailyMomentConfig.enabledOverride = false);
   tearDown(() async {
+    DailyMomentConfig.enabledOverride = null;
     app_state.prismUser = app_constants.createGuestPrismUser();
     CoinsService.instance.streakNotifier.value = StreakStatus.empty;
     CoinsService.instance.balanceNotifier.value = 0;
     CoinsService.instance.earnFlagsNotifier.value = CoinEarnFlags.empty;
     await getIt.reset();
+  });
+
+  testWidgets('daily moment earn section hides the three repeated daily rewards', (tester) async {
+    DailyMomentConfig.enabledOverride = true;
+    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.light));
+    expect(find.text('Daily streak'), findsNothing);
+    expect(find.text('Day 7 chest'), findsNothing);
+    expect(find.text('Free daily spin'), findsNothing);
+    expect(find.text(AppLocalizationsEn().economyAd), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyInviteFriend), findsOneWidget);
   });
 
   testWidgets('activity refreshes fresh transactions after a balance mutation', (tester) async {
@@ -179,6 +197,45 @@ void main() {
     await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.light));
     expect(find.text(AppLocalizationsEn().economyWatchAdForCoins(CoinsService.instance.adsRewardNow)), findsOneWidget);
     expect(find.text(AppLocalizationsEn().economyCoinsEarned(CoinsService.instance.adsRewardNow)), findsOneWidget);
+  });
+
+  testWidgets('earn ad row refreshes after background settlement and disables at the daily limit', (tester) async {
+    final backend = CoinsTestBackend();
+    await backend.install();
+    final service = CoinsService.instance;
+    service.resetSession();
+    DailyMomentConfig.enabledOverride = true;
+    await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.light));
+    expect(find.text(AppLocalizationsEn().economyWatchAdForCoins(20)), findsOneWidget);
+    final owner = app_state.prismUser.id;
+    for (final remaining in [19, 0]) {
+      final sessionId = 'settled-$remaining';
+      await getIt<SettingsLocalDataSource>().set(
+        'verifiedRewardSession_v1.$owner',
+        jsonEncode([
+          {'userId': owner, 'requestId': sessionId, 'sessionId': sessionId, 'placement': 'rewards'},
+        ]),
+      );
+      backend.onCall = (_, _) async => {
+        'version': 1,
+        'sessionId': sessionId,
+        'status': 'settled',
+        'rewardCoins': 20,
+        'currentBalance': 120,
+        'adsRemaining': remaining,
+      };
+      await service.reconcileRewardedSession();
+      await tester.pump();
+      expect(
+        find.text(
+          remaining == 0 ? AppLocalizationsEn().economyAdDailyLimit : AppLocalizationsEn().economyWatchAdForCoins(10),
+        ),
+        findsOneWidget,
+      );
+    }
+    final row = tester.widget<PrismRow>(find.ancestor(of: find.text('Ad'), matching: find.byType(PrismRow)));
+    expect(row.onTap, isNull);
+    await tester.pump(const Duration(seconds: 2));
   });
 
   testWidgets('PrismTextStyles titles are not the legacy dark grey on a dark theme', (tester) async {

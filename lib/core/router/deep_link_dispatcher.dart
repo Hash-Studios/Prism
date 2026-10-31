@@ -8,6 +8,7 @@ import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/router/push_tap_startup.dart';
+import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -29,6 +30,8 @@ class DeepLinkDispatcher {
        _whenBootstrapped = whenBootstrapped ?? whenReady,
        _track = track ?? analytics.track {
     _instances[_router] = this;
+    _router.addListener(_onRouterChanged);
+    _router.navigationHistory.addListener(_onRouterChanged);
   }
 
   static final Expando<DeepLinkDispatcher> _instances = Expando<DeepLinkDispatcher>();
@@ -45,6 +48,19 @@ class DeepLinkDispatcher {
   Completer<void> _cancelled = Completer<void>();
   final List<(ShortCodeIntent, DeepLinkSourceValue)> _deferred = <(ShortCodeIntent, DeepLinkSourceValue)>[];
   Future<void> _tail = Future<void>.value();
+  int _pendingDispatches = 0;
+  PageRouteInfo? _dailyMomentTarget;
+
+  void _onRouterChanged() => scheduleMicrotask(_updateDailyMomentGate);
+
+  void _updateDailyMomentGate() {
+    if (!identical(_instances[_router], this) || _disposed.isCompleted) return;
+    if (_pendingDispatches == 0 && _dailyMomentTarget != null && !_isVisible(_dailyMomentTarget!)) {
+      _dailyMomentTarget = null;
+    }
+    DailyMomentPresentationGate.instance.deepLinkActive =
+        _pendingDispatches > 0 || _dailyMomentTarget != null || _deferred.isNotEmpty;
+  }
 
   Future<DeepLinkDispatchResult> openUri(Uri uri, {required DeepLinkSourceValue source}) {
     DeepLinkActionEntity action = navigation.isPrismDeepLink(uri) || !uri.hasScheme
@@ -123,6 +139,8 @@ class DeepLinkDispatcher {
     bool? hasPayload,
   }) {
     final TargetTypeValue targetType = receivedTargetType ?? DeepLinkNavigation.targetType(action);
+    _pendingDispatches++;
+    _updateDailyMomentGate();
     final Completer<void> cancellation = _cancelled;
     if (isRetry) {
       final int index = _deferred.indexWhere((request) => identical(request.$1, action) && request.$2 == source);
@@ -141,17 +159,22 @@ class DeepLinkDispatcher {
     final Future<DeepLinkRouteResolution>? referral = action is ReferLinkIntent
         ? _saveReferral(action, cancellation)
         : null;
-    final Future<DeepLinkDispatchResult> result = _tail.then(
-      (_) => _dispatch(
-        action,
-        source: source,
-        isRetry: isRetry,
-        resolved: referral,
-        cancellation: cancellation,
-        loadAction: loadAction,
-        receivedTargetType: targetType,
-      ),
-    );
+    final Future<DeepLinkDispatchResult> result = _tail
+        .then(
+          (_) => _dispatch(
+            action,
+            source: source,
+            isRetry: isRetry,
+            resolved: referral,
+            cancellation: cancellation,
+            loadAction: loadAction,
+            receivedTargetType: targetType,
+          ),
+        )
+        .whenComplete(() {
+          _pendingDispatches--;
+          _updateDailyMomentGate();
+        });
     _tail = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
     return result;
   }
@@ -179,14 +202,21 @@ class DeepLinkDispatcher {
       );
     }
     _deferred.clear();
+    _dailyMomentTarget = null;
     _cancelled.complete();
     _cancelled = Completer<void>();
+    _updateDailyMomentGate();
   }
 
   void dispose() {
     if (_disposed.isCompleted) return;
     cancel();
-    if (identical(_instances[_router], this)) _instances[_router] = null;
+    _router.removeListener(_onRouterChanged);
+    _router.navigationHistory.removeListener(_onRouterChanged);
+    if (identical(_instances[_router], this)) {
+      _instances[_router] = null;
+      DailyMomentPresentationGate.instance.deepLinkActive = false;
+    }
     _disposed.complete();
   }
 
@@ -272,7 +302,10 @@ class DeepLinkDispatcher {
         return finish(DeepLinkDispatchResult.failure, reason: resolution.reason);
       }
       if (opensOnboarding) {
-        if (_isVisible(route)) return finish(DeepLinkDispatchResult.navigated);
+        if (_isVisible(route)) {
+          _dailyMomentTarget = route;
+          return finish(DeepLinkDispatchResult.navigated);
+        }
         await _untilDisposed(SchedulerBinding.instance.endOfFrame, cancelled: cancellation);
         if (_disposed.isCompleted || cancellation.isCompleted) return finish(DeepLinkDispatchResult.cancelled);
       }
@@ -330,7 +363,9 @@ class DeepLinkDispatcher {
     } else if (failure != null) {
       return failure is RejectedByGuardFailure ? DeepLinkDispatchResult.blocked : DeepLinkDispatchResult.failure;
     }
-    return _isVisible(route) ? DeepLinkDispatchResult.navigated : DeepLinkDispatchResult.failure;
+    if (!_isVisible(route)) return DeepLinkDispatchResult.failure;
+    _dailyMomentTarget = route;
+    return DeepLinkDispatchResult.navigated;
   }
 
   bool _isVisible(PageRouteInfo route) {

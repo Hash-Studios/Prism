@@ -276,7 +276,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.fact_check_rounded,
       title: context.l10n.accountReviewStatus,
       subtitle: context.l10n.accountTrackSubmittedWallpapers,
-      onTap: () => context.router.push(const ReviewRoute()),
+      onTap: () => context.router.push(ReviewRoute()),
     ),
     PrismRow(
       icon: Icons.person_off_rounded,

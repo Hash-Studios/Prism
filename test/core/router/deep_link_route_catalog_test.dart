@@ -10,6 +10,8 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
+import 'package:Prism/features/daily_flow/domain/daily_moment_repository.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
@@ -19,6 +21,45 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   const DeepLinkParser parser = DeepLinkParser();
+  setUp(() => DailyMomentConfig.enabledOverride = false);
+  tearDown(() => DailyMomentConfig.enabledOverride = null);
+
+  test('daily moment links respect the feature flag', () async {
+    for (final enabled in <bool>[false, true]) {
+      DailyMomentConfig.enabledOverride = enabled;
+      for (final uri in <String>['prism://daily-moment', 'https://prismwalls.com/daily-moment']) {
+        final intent = parser.parse(Uri.parse(uri));
+        expect(intent, isA<PageLinkIntent>());
+        final route = await routeForPageLink(intent as PageLinkIntent);
+        if (enabled) {
+          expect(route, isA<DailyMomentRoute>());
+          final args = (route! as DailyMomentRoute).args!;
+          expect(args.requestedStep, isNull);
+          expect(args.deepLink, isTrue);
+        } else {
+          expect(route, isA<RewardsRoute>());
+        }
+      }
+    }
+  });
+
+  test('daily reward links preserve the requested step with the flag on', () async {
+    DailyMomentConfig.enabledOverride = true;
+    for (final entry in <String, DailyMomentStep>{
+      'prism://daily-chest': DailyMomentStep.chest,
+      'prism://spin-wheel': DailyMomentStep.spin,
+      'https://prismwalls.com/daily-chest': DailyMomentStep.chest,
+      'https://prismwalls.com/spin-wheel': DailyMomentStep.spin,
+    }.entries) {
+      final action = parser.parse(Uri.parse(entry.key));
+      expect(action, isA<PageLinkIntent>());
+      final route = await routeForPageLink(action as PageLinkIntent);
+      expect(route, isA<DailyMomentRoute>());
+      final args = (route! as DailyMomentRoute).args!;
+      expect(args.requestedStep, entry.value);
+      expect(args.deepLink, isTrue);
+    }
+  });
 
   test('every catalog example resolves to its declared AutoRoute page', () async {
     final Directory tempDirectory = await Directory.systemTemp.createTemp('deep-link-catalog-');
@@ -161,8 +202,13 @@ void main() {
       'ReviewPhotoPreviewRoute',
     });
 
+    DailyMomentConfig.enabledOverride = true;
+    final moment = await routeForPageLink(parser.parse(Uri.parse('prism://daily-chest')) as PageLinkIntent);
+    expect(moment, isA<DailyMomentRoute>());
+    reachablePages.addAll(_routeNames(moment!));
     final Set<String> appPages = _appRouteNames(AppRouter().routes)..remove('SplashWidgetRoute');
-    expect(appPages, hasLength(60));
+    expect(appPages, hasLength(61));
+    expect(appPages, containsAll(<String>['DailyMomentRoute', 'WeeklyChallengeRoute']));
     expect(
       appPages.difference(reachablePages),
       isEmpty,
@@ -580,6 +626,7 @@ String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (targe
   DeepLinkPageTarget.drops => 'DropsRoute',
   DeepLinkPageTarget.dropDetail => 'DropDetailRoute',
   DeepLinkPageTarget.dropPreview => 'DropPreviewRoute',
+  DeepLinkPageTarget.dailyMoment => 'RewardsRoute',
   DeepLinkPageTarget.dailyChest => 'DailyChestRoute',
   DeepLinkPageTarget.spinWheel => 'SpinWheelRoute',
   DeepLinkPageTarget.premium => 'PremiumRoute',

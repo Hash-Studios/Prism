@@ -1,9 +1,11 @@
 // Firebase platform-interface packages are transitive, but these fakes need them.
 // ignore_for_file: depend_on_referenced_packages
 
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/data/view_stats/firebase_view_stats_repository.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
@@ -51,6 +53,7 @@ void main() {
   late FirebaseFunctionsPlatform previous;
   final List<(String, dynamic)> calls = <(String, dynamic)>[];
   Object? failure;
+  Future<dynamic> Function(String, dynamic)? actionReply;
   Map<String, Object?> response = <String, Object?>{'ok': true};
 
   setUpAll(() async {
@@ -60,11 +63,14 @@ void main() {
   });
 
   setUp(() {
+    DailyMomentConfig.enabledOverride = true;
     calls.clear();
     failure = null;
+    actionReply = null;
     response = <String, Object?>{'ok': true};
     FirebaseFunctionsPlatform.instance = _FakeFunctions((name, parameters) async {
       calls.add((name, parameters));
+      if (actionReply case final reply?) return reply(name, parameters);
       final Object? error = failure;
       if (error != null) throw error;
       return response;
@@ -72,6 +78,8 @@ void main() {
     firestore = FakeFirestoreClient();
     repository = FirebaseViewStatsRepository(firestore);
   });
+
+  tearDown(() => DailyMomentConfig.enabledOverride = null);
 
   tearDownAll(() => FirebaseFunctionsPlatform.instance = previous);
 
@@ -150,12 +158,80 @@ void main() {
   });
 
   group('recordWallpaperAction', () {
+    test('flag off keeps the legacy callable payload and ignores awards', () async {
+      DailyMomentConfig.enabledOverride = false;
+      response = <String, Object?>{'questCoins': 9, 'questReceiptComplete': true};
+      final result = await repository.recordWallpaperAction('abc', WallpaperAction.set);
+
+      expect(calls.single.$2, <String, Object?>{'wallId': 'ABC', 'action': 'set'});
+      expect(result.data?.coins, 0);
+      expect(result.data?.receiptId, isNull);
+    });
+
     test('calls the callable with the upper-case wall id and the action', () async {
       final result = await repository.recordWallpaperAction(' abc12 ', WallpaperAction.set);
 
       expect(result.isSuccess, isTrue);
       expect(calls.single.$1, 'recordWallpaperAction');
-      expect(calls.single.$2, {'wallId': 'ABC12', 'action': 'set'});
+      expect(calls.single.$2, containsPair('wallId', 'ABC12'));
+      expect(calls.single.$2, containsPair('action', 'set'));
+      expect((calls.single.$2 as Map)['requestId'], matches(RegExp(r'^[A-Za-z0-9_-]{8,64}$')));
+    });
+
+    test('retries an incomplete receipt with the same request id and reads the actual award', () async {
+      actionReply = (name, parameters) async {
+        return <String, Object?>{
+          'counted': calls.length == 1,
+          'questReceiptComplete': calls.length > 1,
+          'questReceiptId': (parameters as Map)['requestId'],
+          'questCoins': 9,
+          'questAwards': <Object?>[
+            <String, Object?>{'id': 'set', 'coins': 9, 'xp': 1},
+          ],
+        };
+      };
+      final result = await repository.recordWallpaperAction('abc', WallpaperAction.set);
+      expect(calls, hasLength(2));
+      expect(calls.first.$2, calls.last.$2);
+      expect(result.data?.coins, 9);
+    });
+
+    test('an account change cancels an incomplete action instead of retrying for the new account', () async {
+      final owner = app_state.prismUser.id;
+      addTearDown(() => app_state.prismUser.id = owner);
+      actionReply = (_, _) async {
+        app_state.prismUser.id = 'another-account';
+        return <String, Object?>{'questReceiptComplete': false};
+      };
+      final result = await repository.recordWallpaperAction('abc', WallpaperAction.set);
+      expect(calls, hasLength(1));
+      expect(result.isFailure, isTrue);
+    });
+
+    test('a receipt from before sign-out is rejected after the same account signs back in', () async {
+      actionReply = (_, parameters) async {
+        CoinsService.instance.resetSession();
+        return <String, Object?>{
+          'questReceiptComplete': true,
+          'questReceiptId': (parameters as Map)['requestId'],
+          'questCoins': 9,
+          'questAwards': <Object?>[
+            <String, Object?>{'id': 'set', 'coins': 9},
+          ],
+        };
+      };
+      final result = await repository.recordWallpaperAction('abc', WallpaperAction.set);
+      expect(result.isFailure, isTrue);
+      expect(result.failure?.message, contains('Account changed'));
+      expect(calls, hasLength(1));
+    });
+
+    test('legacy responses never report an earned amount', () async {
+      response = <String, Object?>{'counted': true, 'questCoins': 20};
+      final result = await repository.recordWallpaperAction('abc', WallpaperAction.set);
+      expect(result.data?.counted, isTrue);
+      expect(result.data?.coins, 0);
+      expect(result.data?.receiptId, isNull);
     });
 
     test('sends download and share as their own actions', () async {
