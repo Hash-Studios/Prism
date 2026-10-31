@@ -8,6 +8,7 @@ import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -48,6 +49,7 @@ import 'package:url_launcher_platform_interface/url_launcher_platform_interface.
 
 import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
+import '../../support/fake_firestore_client.dart';
 import '../../support/in_memory_local_store.dart';
 import '../../support/wait_for_real_io.dart';
 
@@ -171,6 +173,7 @@ void main() {
     sessionRepository = _MockSessionRepository();
     when(() => sessionRepository.currentUser).thenReturn(testUser());
     getIt.registerSingleton<SessionRepository>(sessionRepository);
+    getIt.registerSingleton<FirestoreClient>(FakeFirestoreClient());
     originalSignOut = settingsSignOut;
     originalDeleteService = DeleteAccountService.instance;
   });

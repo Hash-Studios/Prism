@@ -160,6 +160,8 @@ The page cursor key for a colour search is `search:<query>:color:<id>`. The Wall
 - The Search screen keeps one discover bloc. "Trending right now" does not load again after each search. It loads again only when its first load failed.
 - Discover cards decode their images at card size.
 
+The Creators to follow row also shows in the Discover view. The details are in [creator-directory.md](creator-directory.md).
+
 ### Errors and empty states
 
 | State | What the user sees |

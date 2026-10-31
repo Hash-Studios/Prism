@@ -102,7 +102,9 @@ class _CreatorsSectionState extends State<CreatorsSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           const Padding(padding: _sectionHeaderPadding, child: PrismBone(width: 160, height: 20)),
-          Padding(
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const NeverScrollableScrollPhysics(),
             padding: PrismSpace.pageInsets,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,

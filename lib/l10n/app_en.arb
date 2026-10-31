@@ -11341,7 +11341,7 @@
   "@creatorsShowMeTitle": {
     "description": "Settings switch that lists the user in the creator directory."
   },
-  "creatorsShowMeBody": "Others can find your profile and top walls",
+  "creatorsShowMeBody": "Others can find your profile and top wallpapers",
   "@creatorsShowMeBody": {
     "description": "Subtitle of the creator directory settings switch."
   }

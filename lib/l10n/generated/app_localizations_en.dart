@@ -11725,5 +11725,5 @@ class AppLocalizationsEn extends AppLocalizations {
   String get creatorsShowMeTitle => 'Show me in Creators to follow';
 
   @override
-  String get creatorsShowMeBody => 'Others can find your profile and top walls';
+  String get creatorsShowMeBody => 'Others can find your profile and top wallpapers';
 }

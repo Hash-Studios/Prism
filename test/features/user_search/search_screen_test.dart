@@ -37,6 +37,7 @@ import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/favourite_test_scope.dart';
 import '../../support/in_memory_local_store.dart';
+import '../creator_directory/creator_directory_test_support.dart';
 
 class _MockWallpaperSearchService extends Mock implements WallpaperSearchService {}
 
@@ -90,6 +91,7 @@ void main() {
     stubDiscovery(SearchDiscoveryState.initial());
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
+    registerCreatorDirectoryFakes();
   });
 
   tearDown(() async {

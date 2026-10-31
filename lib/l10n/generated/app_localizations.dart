@@ -18856,7 +18856,7 @@ abstract class AppLocalizations {
   /// Subtitle of the creator directory settings switch.
   ///
   /// In en, this message translates to:
-  /// **'Others can find your profile and top walls'**
+  /// **'Others can find your profile and top wallpapers'**
   String get creatorsShowMeBody;
 }
 

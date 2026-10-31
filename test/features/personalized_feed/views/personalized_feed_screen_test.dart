@@ -78,6 +78,7 @@ import '../../../support/fake_firestore_client.dart';
 import '../../../support/fake_user_block_repository.dart';
 import '../../../support/favourite_test_scope.dart';
 import '../../../support/in_memory_local_store.dart';
+import '../../creator_directory/creator_directory_test_support.dart';
 
 class _MockFetchUseCase extends Mock implements FetchPersonalizedFeedUseCase {}
 
@@ -255,6 +256,7 @@ void main() {
       ..registerSingleton<UserBlockRepository>(blockRepository)
       ..registerLazySingleton<MoodsCubit>(() => MoodsCubit(moodRepository))
       ..registerFactory<MoodWallsCubit>(() => MoodWallsCubit(moodRepository));
+    registerCreatorDirectoryFakes();
   });
 
   tearDown(() async {
