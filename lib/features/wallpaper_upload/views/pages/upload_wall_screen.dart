@@ -456,8 +456,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     await _saveRecord();
   }
 
-  int _uploadAwardCoins = 0;
-  String? _uploadAwardOwner;
+  late int _uploadAwardCoins = widget.batch?.confirmedUploadAward?.coins ?? 0;
+  late String? _uploadAwardOwner = widget.batch?.confirmedUploadAward?.ownerId;
 
   Future<void> _saveRecord() async {
     setState(() {
@@ -494,6 +494,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               onUploadAward: (result) {
                 _uploadAwardCoins = result.delta;
                 _uploadAwardOwner = app_state.prismUser.id;
+                widget.batch?.confirmedUploadAward = (coins: result.delta, ownerId: app_state.prismUser.id);
               },
               challengeId: _metadata.challengeId,
             );
