@@ -75,9 +75,11 @@ void main() {
           ..premium = premium;
         final settings = SettingsLocalDataSource(InMemoryLocalStore());
         getIt.registerSingleton<SettingsLocalDataSource>(settings);
-        for (var used = remainingFree; used < UploadQuota.freeUploadsPerWeek; used++) {
-          await UploadQuota.incrementWeeklyUploads();
-        }
+        await tester.runAsync(() async {
+          for (var used = remainingFree; used < UploadQuota.freeUploadsPerWeek; used++) {
+            await UploadQuota.incrementWeeklyUploads();
+          }
+        });
         const toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
         tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
         addTearDown(() async {

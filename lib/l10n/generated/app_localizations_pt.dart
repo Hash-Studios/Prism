@@ -11668,6 +11668,174 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get wallMetadataDescription => 'Descrição';
+
+  @override
+  String get wallMetadataEdit => 'Editar detalhes';
+
+  @override
+  String get wallResubmitAction => 'Corrigir e reenviar';
+
+  @override
+  String get wallResubmitChooseImage => 'Escolher imagem';
+
+  @override
+  String get wallResubmitImageMissing =>
+      'A imagem original não está mais disponível. Escolha-a novamente para continuar editando.';
+
+  @override
+  String get wallResubmitImageKept => 'Imagem original pronta';
+
+  @override
+  String get wallResubmitTitle => 'Corrija seu envio';
+
+  @override
+  String get wallUploadUseLastDetails => 'Usar últimos detalhes';
+
+  @override
+  String get wallUploadLastDetailsUnavailable => 'Não há detalhes anteriores neste dispositivo.';
+
+  @override
+  String get wallUploadWithdraw => 'Retirar envio';
+
+  @override
+  String get wallUploadWithdrawTitle => 'Retirar este envio?';
+
+  @override
+  String get wallUploadWithdrawBody => 'Isso remove o envio da análise e exclui os arquivos enviados.';
+
+  @override
+  String get wallUploadWithdrawn => 'Envio retirado';
+
+  @override
+  String get wallUploadDeleteHistory => 'Excluir do histórico';
+
+  @override
+  String get wallMetadataInvalid => 'Confira o texto e as tags e tente novamente.';
+
+  @override
+  String get wallUploadOwnerChanged => 'Sua conta mudou. Abra este envio novamente.';
+
+  @override
+  String get wallResubmitLimit => 'Este papel de parede atingiu os três reenvios vinculados.';
+
+  @override
+  String get wallResubmitUnsupported =>
+      'Escolha novamente a imagem original. Os detalhes da origem de IA não podem ser reutilizados.';
+
+  @override
+  String get wallResubmitUnavailable => 'Não foi possível carregar este envio rejeitado. Tente novamente.';
+
+  @override
+  String get wallMetadataEditDetails => 'Editar detalhes';
+
+  @override
+  String get wallMetadataApprovedHelp =>
+      'Altere o título, a descrição e as tags. A imagem e a categoria permanecem iguais.';
+
+  @override
+  String get wallMetadataPendingHelp => 'Atualize estes detalhes antes da análise do seu papel de parede.';
+
+  @override
+  String get wallMetadataSave => 'Salvar detalhes';
+
+  @override
+  String get wallMetadataSaved => 'Detalhes salvos';
+
+  @override
+  String get wallMetadataDiscardTitle => 'Descartar alterações?';
+
+  @override
+  String get wallMetadataDiscardBody => 'Seus detalhes não salvos serão perdidos.';
+
+  @override
+  String get wallMetadataDiscard => 'Descartar alterações';
+
+  @override
+  String get wallMetadataReload => 'Recarregar detalhes';
+
+  @override
+  String get wallMetadataReloadTitle => 'Recarregar os detalhes atuais?';
+
+  @override
+  String get wallMetadataReloadBody => 'Isso substitui seus detalhes não salvos pela versão atual.';
+
+  @override
+  String get wallMetadataConflict =>
+      'Estes detalhes foram alterados em outro lugar. Suas edições continuam aqui. Recarregue os detalhes atuais antes de salvar.';
+
+  @override
+  String get wallMetadataStatusChanged =>
+      'O status de análise deste papel de parede mudou. Suas edições não foram salvas.';
+
+  @override
+  String get wallMetadataMissing => 'Este papel de parede não está mais disponível. Suas edições não foram salvas.';
+
+  @override
+  String get wallMetadataDenied => 'Você não tem permissão para editar este papel de parede.';
+
+  @override
+  String get wallMetadataSignedOut => 'Entre novamente para editar este papel de parede.';
+
+  @override
+  String get wallMetadataDailyLimit => 'Você atingiu o limite de edições de hoje. Tente novamente amanhã.';
+
+  @override
+  String get wallMetadataUnavailable => 'Não foi possível salvar os detalhes. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get wallMetadataLoadFailed => 'Não foi possível carregar os detalhes';
+
+  @override
+  String get wallMetadataHistory => 'Histórico de edições';
+
+  @override
+  String get wallMetadataHistoryEmpty => 'Nenhuma edição dos detalhes ainda';
+
+  @override
+  String get wallMetadataHistoryEmptyBody =>
+      'As alterações no título, na descrição e nas tags aprovados aparecem aqui.';
+
+  @override
+  String get wallMetadataHistoryFailed => 'Não foi possível carregar o histórico de edições';
+
+  @override
+  String get wallMetadataBefore => 'Antes';
+
+  @override
+  String get wallMetadataAfter => 'Depois';
+
+  @override
+  String get wallMetadataRevert => 'Reverter edição';
+
+  @override
+  String get wallMetadataRevertTitle => 'Reverter esta edição?';
+
+  @override
+  String get wallMetadataRevertBody =>
+      'Restaure apenas o título, a descrição e as tags anteriores mostrados aqui. A imagem e o status de análise não mudarão.';
+
+  @override
+  String get wallMetadataReverted => 'Edição revertida';
+
+  @override
+  String get wallMetadataLoadMore => 'Carregar mais edições';
+
+  @override
+  String get wallMetadataAbsent => 'Não definido';
+
+  @override
+  String wallMetadataResubmitted(int attempt) {
+    return 'Reenviado · tentativa $attempt de 3';
+  }
+
+  @override
+  String get wallMetadataPreviousReason => 'Motivo da rejeição anterior';
+
+  @override
+  String get wallMetadataContextUnavailable => 'Detalhes do reenvio indisponíveis';
+
+  @override
   String get reportSheetMessage =>
       'Conte o que deu errado. O Prism nunca adiciona seu e-mail nem tokens de acesso. Confira as capturas de tela antes de enviar.';
 
@@ -23766,6 +23934,174 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName remixou seu papel de parede.';
   }
+
+  @override
+  String get wallMetadataDescription => 'Descrição';
+
+  @override
+  String get wallMetadataEdit => 'Editar detalhes';
+
+  @override
+  String get wallResubmitAction => 'Corrigir e reenviar';
+
+  @override
+  String get wallResubmitChooseImage => 'Escolher imagem';
+
+  @override
+  String get wallResubmitImageMissing =>
+      'A imagem original não está mais disponível. Escolha-a novamente para continuar editando.';
+
+  @override
+  String get wallResubmitImageKept => 'Imagem original pronta';
+
+  @override
+  String get wallResubmitTitle => 'Corrija seu envio';
+
+  @override
+  String get wallUploadUseLastDetails => 'Usar últimos detalhes';
+
+  @override
+  String get wallUploadLastDetailsUnavailable => 'Não há detalhes anteriores neste dispositivo.';
+
+  @override
+  String get wallUploadWithdraw => 'Retirar envio';
+
+  @override
+  String get wallUploadWithdrawTitle => 'Retirar este envio?';
+
+  @override
+  String get wallUploadWithdrawBody => 'Isso remove o envio da análise e exclui os arquivos enviados.';
+
+  @override
+  String get wallUploadWithdrawn => 'Envio retirado';
+
+  @override
+  String get wallUploadDeleteHistory => 'Excluir do histórico';
+
+  @override
+  String get wallMetadataInvalid => 'Confira o texto e as tags e tente novamente.';
+
+  @override
+  String get wallUploadOwnerChanged => 'Sua conta mudou. Abra este envio novamente.';
+
+  @override
+  String get wallResubmitLimit => 'Este papel de parede atingiu os três reenvios vinculados.';
+
+  @override
+  String get wallResubmitUnsupported =>
+      'Escolha novamente a imagem original. Os detalhes da origem de IA não podem ser reutilizados.';
+
+  @override
+  String get wallResubmitUnavailable => 'Não foi possível carregar este envio rejeitado. Tente novamente.';
+
+  @override
+  String get wallMetadataEditDetails => 'Editar detalhes';
+
+  @override
+  String get wallMetadataApprovedHelp =>
+      'Altere o título, a descrição e as tags. A imagem e a categoria permanecem iguais.';
+
+  @override
+  String get wallMetadataPendingHelp => 'Atualize estes detalhes antes da análise do seu papel de parede.';
+
+  @override
+  String get wallMetadataSave => 'Salvar detalhes';
+
+  @override
+  String get wallMetadataSaved => 'Detalhes salvos';
+
+  @override
+  String get wallMetadataDiscardTitle => 'Descartar alterações?';
+
+  @override
+  String get wallMetadataDiscardBody => 'Seus detalhes não salvos serão perdidos.';
+
+  @override
+  String get wallMetadataDiscard => 'Descartar alterações';
+
+  @override
+  String get wallMetadataReload => 'Recarregar detalhes';
+
+  @override
+  String get wallMetadataReloadTitle => 'Recarregar os detalhes atuais?';
+
+  @override
+  String get wallMetadataReloadBody => 'Isso substitui seus detalhes não salvos pela versão atual.';
+
+  @override
+  String get wallMetadataConflict =>
+      'Estes detalhes foram alterados em outro lugar. Suas edições continuam aqui. Recarregue os detalhes atuais antes de salvar.';
+
+  @override
+  String get wallMetadataStatusChanged =>
+      'O status de análise deste papel de parede mudou. Suas edições não foram salvas.';
+
+  @override
+  String get wallMetadataMissing => 'Este papel de parede não está mais disponível. Suas edições não foram salvas.';
+
+  @override
+  String get wallMetadataDenied => 'Você não tem permissão para editar este papel de parede.';
+
+  @override
+  String get wallMetadataSignedOut => 'Entre novamente para editar este papel de parede.';
+
+  @override
+  String get wallMetadataDailyLimit => 'Você atingiu o limite de edições de hoje. Tente novamente amanhã.';
+
+  @override
+  String get wallMetadataUnavailable => 'Não foi possível salvar os detalhes. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get wallMetadataLoadFailed => 'Não foi possível carregar os detalhes';
+
+  @override
+  String get wallMetadataHistory => 'Histórico de edições';
+
+  @override
+  String get wallMetadataHistoryEmpty => 'Nenhuma edição dos detalhes ainda';
+
+  @override
+  String get wallMetadataHistoryEmptyBody =>
+      'As alterações no título, na descrição e nas tags aprovados aparecem aqui.';
+
+  @override
+  String get wallMetadataHistoryFailed => 'Não foi possível carregar o histórico de edições';
+
+  @override
+  String get wallMetadataBefore => 'Antes';
+
+  @override
+  String get wallMetadataAfter => 'Depois';
+
+  @override
+  String get wallMetadataRevert => 'Reverter edição';
+
+  @override
+  String get wallMetadataRevertTitle => 'Reverter esta edição?';
+
+  @override
+  String get wallMetadataRevertBody =>
+      'Restaure apenas o título, a descrição e as tags anteriores mostrados aqui. A imagem e o status de análise não mudarão.';
+
+  @override
+  String get wallMetadataReverted => 'Edição revertida';
+
+  @override
+  String get wallMetadataLoadMore => 'Carregar mais edições';
+
+  @override
+  String get wallMetadataAbsent => 'Não definido';
+
+  @override
+  String wallMetadataResubmitted(int attempt) {
+    return 'Reenviado · tentativa $attempt de 3';
+  }
+
+  @override
+  String get wallMetadataPreviousReason => 'Motivo da rejeição anterior';
+
+  @override
+  String get wallMetadataContextUnavailable => 'Detalhes do reenvio indisponíveis';
 
   @override
   String get reportSheetMessage =>

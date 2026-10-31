@@ -1,33 +1,74 @@
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Optional title, category and tags for a wallpaper that goes to review. Every field can stay empty.
 class SubmissionMetadataForm extends StatefulWidget {
-  const SubmissionMetadataForm({super.key, required this.onChanged, this.initial = const SubmissionMetadata()});
+  const SubmissionMetadataForm({
+    super.key,
+    required this.onChanged,
+    this.initial = const SubmissionMetadata(),
+    this.showCategory = true,
+    this.enabled = true,
+  });
 
   final SubmissionMetadata initial;
   final ValueChanged<SubmissionMetadata> onChanged;
+  final bool showCategory;
+  final bool enabled;
 
   @override
-  State<SubmissionMetadataForm> createState() => _SubmissionMetadataFormState();
+  SubmissionMetadataFormState createState() => SubmissionMetadataFormState();
 }
 
-class _SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
+class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
+  static final TextInputFormatter _lineBreaksToSpaces = FilteringTextInputFormatter.deny(
+    RegExp(r'\r\n|[\r\n]'),
+    replacementString: ' ',
+  );
+
   late final TextEditingController _title = TextEditingController(text: widget.initial.title);
+  late final TextEditingController _description = TextEditingController(text: widget.initial.description);
   final TextEditingController _tagInput = TextEditingController();
   late String _category = widget.initial.category;
   late List<String> _tags = List<String>.of(widget.initial.tags);
+  bool _invalid = false;
 
   @override
   void dispose() {
     _title.dispose();
+    _description.dispose();
     _tagInput.dispose();
     super.dispose();
   }
 
-  void _emit() =>
-      widget.onChanged(SubmissionMetadata(title: _title.text.trim(), category: _category, tags: List.of(_tags)));
+  void _emit() => widget.onChanged(
+    widget.initial.copyWith(
+      title: _title.text.trim(),
+      description: _description.text.trim(),
+      category: _category,
+      tags: List.of(_tags),
+    ),
+  );
+
+  bool flush() {
+    if (_tagInput.text.trim().isNotEmpty) _addTags(_tagInput.text);
+    _emit();
+    final valid = submissionMetadataIsValid(
+      widget.initial.copyWith(title: _title.text, description: _description.text, tags: _tags),
+    );
+    setState(() => _invalid = !valid);
+    return valid;
+  }
+
+  void useDetails({required String category, required List<String> tags}) {
+    setState(() {
+      _category = category;
+      _tags = List.of(tags);
+    });
+    _emit();
+  }
 
   void _addTags(String raw) {
     final List<String> next = List<String>.of(_tags);
@@ -53,6 +94,11 @@ class _SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        if (_invalid)
+          Semantics(
+            liveRegion: true,
+            child: Text(context.l10n.wallMetadataInvalid, style: TextStyle(color: colors.error)),
+          ),
         Text(
           context.l10n.wallpaperUploadDetailsOptional,
           style: theme.textTheme.titleSmall?.copyWith(color: colors.onSurface),
@@ -60,7 +106,9 @@ class _SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
         const SizedBox(height: 12),
         TextField(
           controller: _title,
+          enabled: widget.enabled,
           maxLength: maxSubmissionTitleLength,
+          inputFormatters: [_lineBreaksToSpaces],
           textCapitalization: TextCapitalization.sentences,
           textInputAction: TextInputAction.next,
           decoration: InputDecoration(
@@ -70,29 +118,44 @@ class _SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
           onChanged: (_) => _emit(),
         ),
         const SizedBox(height: 8),
-        Text(
-          context.l10n.wallpaperCategory,
-          style: theme.textTheme.labelLarge?.copyWith(color: colors.onSurfaceVariant),
+        TextField(
+          controller: _description,
+          enabled: widget.enabled,
+          maxLength: maxSubmissionDescriptionLength,
+          inputFormatters: [_lineBreaksToSpaces],
+          minLines: 2,
+          maxLines: 4,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(labelText: context.l10n.wallMetadataDescription),
+          onChanged: (_) => _emit(),
         ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          children: <Widget>[
-            for (final String category in submissionCategories)
-              ChoiceChip(
-                label: Text(category),
-                selected: _category == category,
-                onSelected: (_) {
-                  setState(() => _category = category);
-                  _emit();
-                },
-              ),
-          ],
-        ),
+        if (widget.showCategory) ...<Widget>[
+          Text(
+            context.l10n.wallpaperCategory,
+            style: theme.textTheme.labelLarge?.copyWith(color: colors.onSurfaceVariant),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: <Widget>[
+              for (final String category in submissionCategories)
+                ChoiceChip(
+                  label: Text(category),
+                  selected: _category == category,
+                  onSelected: !widget.enabled
+                      ? null
+                      : (_) {
+                          setState(() => _category = category);
+                          _emit();
+                        },
+                ),
+            ],
+          ),
+        ],
         const SizedBox(height: 16),
         TextField(
           controller: _tagInput,
-          enabled: !tagsFull,
+          enabled: widget.enabled && !tagsFull,
           textInputAction: TextInputAction.done,
           decoration: InputDecoration(
             labelText: context.l10n.wallpaperUploadTags,
@@ -103,7 +166,7 @@ class _SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
             suffixIcon: IconButton(
               tooltip: context.l10n.wallpaperUploadAddTag,
               icon: const Icon(Icons.add),
-              onPressed: tagsFull ? null : () => _addTags(_tagInput.text),
+              onPressed: tagsFull || !widget.enabled ? null : () => _addTags(_tagInput.text),
             ),
           ),
           onChanged: (String value) {
@@ -120,7 +183,7 @@ class _SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
                 InputChip(
                   label: Text(tag),
                   deleteButtonTooltipMessage: context.l10n.wallpaperUploadRemoveTag(tag),
-                  onDeleted: () => _removeTag(tag),
+                  onDeleted: !widget.enabled ? null : () => _removeTag(tag),
                 ),
             ],
           ),

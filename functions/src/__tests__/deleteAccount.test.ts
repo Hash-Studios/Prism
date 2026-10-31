@@ -173,6 +173,21 @@ test("draw tickets and boosts are deleted, the boosted wall is cleared and the e
   assert.ok(log.indexOf("anonymize") > log.indexOf("update:walls/w9:boostedUntil"));
 });
 
+test("account deletion covers private metadata, lineage, operation and receipt ledgers by owner and actor", async (t) => {
+  const log = fake(t);
+  await call();
+  for (const collection of ["wallMetadataEdits", "wallMetadataOperations", "wallResubmissionRoots", "wallResubmissions",
+    "wallResubmissionOperations", "wallResubmissionConsumptions"]) {
+    assert.ok(log.includes(`query:${collection}.ownerUid==u1`), collection);
+    assert.ok(log.includes(`delete:${collection}/d1`), collection);
+  }
+  assert.ok(log.includes("query:wallMetadataEditRates.uid==u1"));
+  for (const collection of ["wallMetadataEdits", "wallMetadataOperations", "wallResubmissionOperations"]) {
+    assert.ok(log.includes(`query:${collection}.actorUid==u1`), collection);
+  }
+  assert.ok(log.indexOf("barrier:creatorDeletionState/u1") < log.indexOf("delete:wallResubmissionRoots/d1"));
+});
+
 test("a failed delete throws before the profile is anonymized or the auth user removed", async (t) => {
   const log = fake(t, {failDelete: true});
   await assert.rejects(async () => {

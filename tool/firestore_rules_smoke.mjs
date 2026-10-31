@@ -188,6 +188,41 @@ const themeFields = {
 const themeNoChangedAt = Object.fromEntries(Object.entries(themeFields).filter(([k]) => k !== 'changedAt'));
 const themeMap = (fields) => ({ themePrefs: { mapValue: { fields } } });
 const cases = [
+  ['new wall accepts valid challenge and resubmission links together', () => req('PATCH', 'walls/linked-challenge', {
+    email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('2026-11-02'), resubmitOf: str('wall_old.png'),
+  }, Bu), 200],
+  ['valid challenge does not bypass resubmission validation', () => req('PATCH', 'walls/invalid-linked-resubmit', {
+    email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('2026-11-02'), resubmitOf: str('nested/path'),
+  }, Bu), 403],
+  ['valid resubmission does not bypass challenge validation', () => req('PATCH', 'walls/invalid-linked-challenge', {
+    email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('nested/path'), resubmitOf: str('wall_old.png'),
+  }, Bu), 403],
+  ['resubmission pointer accepts real long filename IDs', () => req('PATCH', 'walls/resubmit-valid', {
+    email: str('b@x.com'), review: { booleanValue: false }, resubmitOf: str(`wall_uid_1790000000000_${'photo.'.repeat(30)}jpg`),
+  }, Bu), 200],
+  ['resubmission pointer accepts real Unicode filenames with spaces', () => req('PATCH', 'walls/resubmit-unicode', {
+    email: str('b@x.com'), review: { booleanValue: false }, resubmitOf: str('wall_uid_1790000000000_café scene (2).jpg'),
+  }, Bu), 200],
+  ...['', '.', '..', 'nested/path', 'nested\\path', '__reserved__', 'hidden\u202e', 'a'.repeat(1025)].map((value, i) => [
+    `resubmission pointer rejects malformed value ${i}`, () => req('PATCH', `walls/resubmit-invalid-${i}`, {
+      email: str('b@x.com'), review: { booleanValue: false }, resubmitOf: str(value),
+    }, Bu), 403,
+  ]),
+  ['owner cannot change a resubmission pointer', () => req('PATCH', 'walls/resubmit-valid', { resubmitOf: str('different') }, Bu, ['resubmitOf']), 403],
+  ['owner cannot remove a resubmission pointer', () => req('PATCH', 'walls/resubmit-valid', {}, Bu, ['resubmitOf']), 403],
+  ['owner cannot add a resubmission pointer', () => req('PATCH', 'walls/w8', { resubmitOf: str('parent') }, Bu, ['resubmitOf']), 403],
+  ['owner can edit all four pending metadata fields', () => req('PATCH', 'walls/resubmit-valid', {
+    title: str('Calm'), desc: str('Blue'), tags: arr(['forest']), category: str('Nature'),
+  }, Bu, ['title', 'desc', 'tags', 'category']), 200],
+  ['owner cannot edit approved metadata directly', () => req('PATCH', 'walls/w9', {
+    title: str('Changed'), desc: str('Changed'), tags: arr(['changed']),
+  }, Bu, ['title', 'desc', 'tags']), 403],
+  ...['wallMetadataEdits', 'wallMetadataOperations', 'wallMetadataEditRates', 'wallResubmissionRoots',
+    'wallResubmissions', 'wallResubmissionOperations', 'wallResubmissionConsumptions'].flatMap((collection) =>
+    [['owner', Bu], ['admin client', ADM], ['guest', undefined]].flatMap(([role, auth]) => [
+      [`${role} cannot read ${collection}`, () => req('GET', `${collection}/private`, null, auth), 403],
+      [`${role} cannot write ${collection}`, () => req('PATCH', `${collection}/private`, { ownerUid: str('b') }, auth), 403],
+    ])),
   ['stranger can get a public profile', () => req('GET', 'profiles/a', null, Bu), 200],
   ['public profile carries no email key', () => profileHasNoEmail('profiles/a', Bu), 200],
   ['stranger can list public profiles', () => runCollectionQuery(Bu, 'profiles'), 200],

@@ -8,6 +8,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/platform/ios_widget_channel.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notification_tombstones.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
@@ -22,6 +23,7 @@ import 'package:Prism/features/user_blocks/domain/repositories/user_block_reposi
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
+import 'package:Prism/features/wallpaper_upload/data/last_submission_defaults_store.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/foundation.dart';
@@ -95,6 +97,8 @@ class LocalAccountDataCleaner {
     (name: 'notification inbox', run: (String userId) => getIt<NotificationsLocalDataSource>().clearForUser(userId)),
     (name: 'notification tombstones', run: (String userId) => getIt<NotificationTombstones>().clearForUser(userId)),
     (name: 'upload drafts', run: (String userId) => UploadDraftStore().clearForUser(userId)),
+    (name: 'upload quota operations', run: UploadQuota.clearOperationsForUser),
+    (name: 'last upload details', run: (String userId) => LastSubmissionDefaultsStore().clearForUser(userId)),
     (name: 'AI history and prompts', run: (String userId) => getIt<AiGenerationRepositoryImpl>().clearForUser(userId)),
   ];
 

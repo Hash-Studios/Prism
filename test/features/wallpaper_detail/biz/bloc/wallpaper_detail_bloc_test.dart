@@ -27,6 +27,7 @@ import 'package:Prism/features/wallpaper_detail/domain/entities/palette_entity.d
 import 'package:Prism/features/wallpaper_detail/domain/repositories/palette_repository.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -102,6 +103,109 @@ void main() {
     if (completed(bloc.state)) return;
     await bloc.stream.firstWhere(completed).timeout(const Duration(seconds: 10));
   }
+
+  group('metadata refresh', () {
+    const owned = PrismWallpaper(
+      core: WallpaperCore(id: 'editable', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+      firestoreDocumentId: 'wall_doc.jpg',
+      title: 'Before',
+      description: 'Old description',
+      tags: ['old'],
+      review: true,
+      remixOf: 'original-doc',
+      remixCount: 3,
+      isStreakExclusive: true,
+    );
+    const saved = WallMetadataSnapshot(
+      metadata: PendingWallMetadata(
+        text: WallTextMetadata(title: 'After', description: 'New description', tags: ['new']),
+      ),
+      approved: true,
+      revision: 'rev-2',
+    );
+
+    Future<void> open() async {
+      when(() => prism.fetchCanonicalById('editable')).thenAnswer((_) async => Result.success(owned));
+      bloc.add(const LoadFromId(wallId: 'editable', source: WallpaperSource.prism));
+      await waitForLookup();
+      bloc.add(const OnPanelOpened());
+      await pumpEventQueue();
+    }
+
+    test('saved text updates visible entity immediately and leaves unrelated wall and panel state intact', () async {
+      await open();
+      final read = Completer<Result<PrismWallpaper?>>();
+      when(() => prism.fetchCanonicalByDocumentId('wall_doc.jpg')).thenAnswer((_) => read.future);
+      bloc.add(const RefreshWallMetadata(wallDocId: 'wall_doc.jpg', saved: saved));
+      await pumpEventQueue();
+      final state = bloc.state as WallpaperDetailLoaded;
+      final wall = (state.entity as PrismFeedItem).wallpaper;
+      expect(wall.title, 'After');
+      expect(wall.description, 'New description');
+      expect(wall.tags, ['new']);
+      expect(wall.remixOf, 'original-doc');
+      expect(wall.remixCount, 3);
+      expect(wall.isStreakExclusive, isTrue);
+      expect(state.panelCollapsed, isFalse);
+      read.complete(Result.error(const NetworkFailure('offline')));
+      await pumpEventQueue();
+      expect(((bloc.state as WallpaperDetailLoaded).entity as PrismFeedItem).wallpaper.title, 'After');
+    });
+
+    test('history return refetches by Firestore document ID without another view or palette load', () async {
+      await open();
+      const reverted = PrismWallpaper(
+        core: WallpaperCore(id: 'editable', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+        firestoreDocumentId: 'wall_doc.jpg',
+        title: 'Reverted',
+        description: 'Restored',
+        tags: ['restored'],
+      );
+      when(() => prism.fetchCanonicalByDocumentId('wall_doc.jpg')).thenAnswer((_) async => Result.success(reverted));
+      clearInteractions(views);
+      clearInteractions(palette);
+      bloc.add(const RefreshWallMetadata(wallDocId: 'wall_doc.jpg'));
+      await pumpEventQueue();
+      final state = bloc.state as WallpaperDetailLoaded;
+      expect((state.entity as PrismFeedItem).wallpaper.title, 'Reverted');
+      expect((state.entity as PrismFeedItem).wallpaper.tags, ['restored']);
+      expect(state.panelCollapsed, isFalse);
+      verifyNever(() => views(any()));
+      verifyNever(() => palette.generatePalette(any()));
+    });
+
+    test('an older refresh cannot overwrite a newer save on the same wall', () async {
+      await open();
+      final first = Completer<Result<PrismWallpaper?>>();
+      final second = Completer<Result<PrismWallpaper?>>();
+      var calls = 0;
+      when(
+        () => prism.fetchCanonicalByDocumentId('wall_doc.jpg'),
+      ).thenAnswer((_) => calls++ == 0 ? first.future : second.future);
+      bloc.add(const RefreshWallMetadata(wallDocId: 'wall_doc.jpg'));
+      await pumpEventQueue();
+      bloc.add(const RefreshWallMetadata(wallDocId: 'wall_doc.jpg', saved: saved));
+      await pumpEventQueue();
+      second.complete(Result.error(const NetworkFailure('offline')));
+      await pumpEventQueue();
+      first.complete(Result.success(owned));
+      await pumpEventQueue();
+      expect(((bloc.state as WallpaperDetailLoaded).entity as PrismFeedItem).wallpaper.title, 'After');
+    });
+
+    test('a pending metadata refresh cannot replace a different detail route', () async {
+      await open();
+      final read = Completer<Result<PrismWallpaper?>>();
+      when(() => prism.fetchCanonicalByDocumentId('wall_doc.jpg')).thenAnswer((_) => read.future);
+      bloc.add(const RefreshWallMetadata(wallDocId: 'wall_doc.jpg', saved: saved));
+      await pumpEventQueue();
+      bloc.add(const LoadFromId(wallId: 'other', source: WallpaperSource.prism));
+      await pumpEventQueue();
+      read.complete(Result.success(owned));
+      await pumpEventQueue();
+      expect((bloc.state as WallpaperDetailLoaded).entity.id, 'other');
+    });
+  });
 
   test('a stale Prism entity cannot open detail when the canonical wall is unavailable', () async {
     when(() => prism.fetchCanonicalById('abc')).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));

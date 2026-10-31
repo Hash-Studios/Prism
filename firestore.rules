@@ -131,7 +131,7 @@ service cloud.firestore {
     }
 
     function wallServerKeysUntouched() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'challengeId']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId']);
     }
 
     // Optional link to the wall this one remixes. The server removes a link it cannot verify.
@@ -139,6 +139,16 @@ service cloud.firestore {
       return !('remixOf' in request.resource.data)
           || (request.resource.data.remixOf is string
               && request.resource.data.remixOf.matches('^[A-Za-z0-9_-]{1,64}$'));
+    }
+
+    function validResubmitOf() {
+      return !('resubmitOf' in request.resource.data)
+          || (request.resource.data.resubmitOf is string
+              && request.resource.data.resubmitOf.size() <= 1024
+              && request.resource.data.resubmitOf.matches('^[^/\\\\\\p{C}]+$')
+              && !request.resource.data.resubmitOf.matches('^__.*')
+              && request.resource.data.resubmitOf != '.'
+              && request.resource.data.resubmitOf != '..');
     }
 
     function validChallengeId() {
@@ -191,7 +201,8 @@ service cloud.firestore {
               && isEmailOwner(request.resource.data.email)
               && request.resource.data.review != true
               && wallServerKeysAbsent()
-              && validRemixOf()));
+              && validRemixOf()
+              && validResubmitOf()));
       // delete: request.resource is null — do not use request.resource.data here.
       allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny(['challengeId'])
           && (isConfiguredAdmin()

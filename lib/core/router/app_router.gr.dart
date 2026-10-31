@@ -2256,6 +2256,8 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
     Key? key,
     required File image,
     UploadBatch? batch,
+    ResubmissionSeed? resubmission,
+    UploadDraft? resumedDraft,
     ChallengeSeed? challengeSeed,
     Size? imageSizeForTesting,
     Future<void> Function()? prepareImageForTesting,
@@ -2272,6 +2274,7 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
     Future<void> Function()? presentPaywallForTesting,
     DateTime Function()? nowForTesting,
     UploadDraftStore? draftStoreForTesting,
+    LastSubmissionDefaultsStore? defaultsStoreForTesting,
     List<PageRouteInfo>? children,
   }) : super(
          UploadWallRoute.name,
@@ -2279,6 +2282,8 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
            key: key,
            image: image,
            batch: batch,
+           resubmission: resubmission,
+           resumedDraft: resumedDraft,
            challengeSeed: challengeSeed,
            imageSizeForTesting: imageSizeForTesting,
            prepareImageForTesting: prepareImageForTesting,
@@ -2290,6 +2295,7 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
            presentPaywallForTesting: presentPaywallForTesting,
            nowForTesting: nowForTesting,
            draftStoreForTesting: draftStoreForTesting,
+           defaultsStoreForTesting: defaultsStoreForTesting,
          ),
          initialChildren: children,
        );
@@ -2304,6 +2310,8 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
         key: args.key,
         image: args.image,
         batch: args.batch,
+        resubmission: args.resubmission,
+        resumedDraft: args.resumedDraft,
         challengeSeed: args.challengeSeed,
         imageSizeForTesting: args.imageSizeForTesting,
         prepareImageForTesting: args.prepareImageForTesting,
@@ -2315,6 +2323,7 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
         presentPaywallForTesting: args.presentPaywallForTesting,
         nowForTesting: args.nowForTesting,
         draftStoreForTesting: args.draftStoreForTesting,
+        defaultsStoreForTesting: args.defaultsStoreForTesting,
       );
     },
   );
@@ -2325,6 +2334,8 @@ class UploadWallRouteArgs {
     this.key,
     required this.image,
     this.batch,
+    this.resubmission,
+    this.resumedDraft,
     this.challengeSeed,
     this.imageSizeForTesting,
     this.prepareImageForTesting,
@@ -2335,6 +2346,7 @@ class UploadWallRouteArgs {
     this.presentPaywallForTesting,
     this.nowForTesting,
     this.draftStoreForTesting,
+    this.defaultsStoreForTesting,
   });
 
   final Key? key;
@@ -2342,6 +2354,10 @@ class UploadWallRouteArgs {
   final File image;
 
   final UploadBatch? batch;
+
+  final ResubmissionSeed? resubmission;
+
+  final UploadDraft? resumedDraft;
 
   final ChallengeSeed? challengeSeed;
 
@@ -2369,9 +2385,11 @@ class UploadWallRouteArgs {
 
   final UploadDraftStore? draftStoreForTesting;
 
+  final LastSubmissionDefaultsStore? defaultsStoreForTesting;
+
   @override
   String toString() {
-    return 'UploadWallRouteArgs{key: $key, image: $image, batch: $batch, challengeSeed: $challengeSeed, imageSizeForTesting: $imageSizeForTesting, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting, createRecordWithMetadataForTesting: $createRecordWithMetadataForTesting, presentPaywallForTesting: $presentPaywallForTesting, nowForTesting: $nowForTesting, draftStoreForTesting: $draftStoreForTesting}';
+    return 'UploadWallRouteArgs{key: $key, image: $image, batch: $batch, resubmission: $resubmission, resumedDraft: $resumedDraft, challengeSeed: $challengeSeed, imageSizeForTesting: $imageSizeForTesting, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting, createRecordWithMetadataForTesting: $createRecordWithMetadataForTesting, presentPaywallForTesting: $presentPaywallForTesting, nowForTesting: $nowForTesting, draftStoreForTesting: $draftStoreForTesting, defaultsStoreForTesting: $defaultsStoreForTesting}';
   }
 
   @override
@@ -2381,9 +2399,12 @@ class UploadWallRouteArgs {
     return key == other.key &&
         image == other.image &&
         batch == other.batch &&
+        resubmission == other.resubmission &&
+        resumedDraft == other.resumedDraft &&
         challengeSeed == other.challengeSeed &&
         imageSizeForTesting == other.imageSizeForTesting &&
-        draftStoreForTesting == other.draftStoreForTesting;
+        draftStoreForTesting == other.draftStoreForTesting &&
+        defaultsStoreForTesting == other.defaultsStoreForTesting;
   }
 
   @override
@@ -2391,9 +2412,12 @@ class UploadWallRouteArgs {
       key.hashCode ^
       image.hashCode ^
       batch.hashCode ^
+      resubmission.hashCode ^
+      resumedDraft.hashCode ^
       challengeSeed.hashCode ^
       imageSizeForTesting.hashCode ^
-      draftStoreForTesting.hashCode;
+      draftStoreForTesting.hashCode ^
+      defaultsStoreForTesting.hashCode;
 }
 
 /// generated route for
