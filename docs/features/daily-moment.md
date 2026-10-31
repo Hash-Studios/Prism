@@ -80,12 +80,15 @@ Keep the release flag off until the remaining mobile checks pass.
 
 ## Limits
 
-Keep `daily_moment_v1` off in release until the remaining mobile checks pass.
-iOS Simulator proof and eligible streak and free-spin reveals remain open.
-The linked Mac checkout contains unrelated edits, so verification has not changed it.
+Keep `daily_moment_v1` off in release until the owner accepts the mobile proof.
+Android and iOS proof cover both Rewards layouts, the chest and spin links, themes, and large text.
+iOS also shows a real eligible streak reveal. Android shows a real chest open and live set/save receipts.
+No device run shows a free Pro spin reveal, because the QA account has no Pro subscription.
+Automated tests cover the spin step order, stops, and callable arguments.
 
 The approved `recordWallpaperAction` and `deleteAccount` updates are deployed in both regions.
-Android proof covers the chest, both Rewards layouts, deep links, large text, and live set/save receipts.
+That `deleteAccount` deployment does not include the weekly challenge vote cleanup from master.
+Deploy `deleteAccount` again from master after this change merges.
 See [PR #762](https://github.com/Hash-Studios/Prism/pull/762) for screenshots, test results, and deployment evidence.
 
 Action receipts remain until account deletion. Expiring them without a request-age contract can allow an old
