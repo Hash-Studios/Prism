@@ -17,6 +17,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [wallpaper-detail.md](wallpaper-detail.md) | Action bar, More like this, tag chips, preview |
 | [library.md](library.md) | Library hub: favourites (sync, guest, export), downloads, history |
 | [folders.md](folders.md) | Public folders: projection, follow, "New in" push, share links, reports |
+| [web-catalogue.md](web-catalogue.md) | Public web pages on prismwalls.com: walls, folders, hubs, creators, sitemaps, caching (web and backend) |
 | [notifications.md](notifications.md) | Inbox, preferences, Wall of the Day at 09:00 local time |
 | [reliability.md](reliability.md) | Timeouts, offline banner, cache, error reports, ad consent, startup |
 | [backend-deploy.md](backend-deploy.md) | Deploy order for indexes, functions, worker, web and the app |

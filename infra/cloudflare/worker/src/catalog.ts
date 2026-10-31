@@ -1,0 +1,882 @@
+// The public web catalogue: wall, folder, hub and creator pages, their sitemaps, and their images.
+// Pages render from the webWalls and webPages projections (functions/src/webCatalog.ts), which hold public fields
+// only. The HTML is the same for every visitor, so one edge-cached copy serves crawlers and people alike.
+
+import { formatCount, renderOgCardHtml } from './og_card';
+import { buildAndroidIntentUrl, escapeAttribute, escapeHtml, screenshotCard, type ScreenshotEnv } from './page_kit';
+
+export interface CatalogEnv extends ScreenshotEnv {
+  PLAY_STORE_URL: string;
+  APP_STORE_URL: string;
+  FIREBASE_PROJECT_ID?: string;
+  OG_FALLBACK_IMAGE?: string;
+  OG_IMAGES?: R2Bucket;
+  /** Local runs point these at the Firestore and Functions emulators. Production leaves them unset. */
+  CATALOG_FIRESTORE_ORIGIN?: string;
+  CATALOG_PREVIEW_ORIGIN?: string;
+}
+
+type WallState = 'live' | 'gated' | 'hidden' | 'gone';
+
+interface WebWall {
+  state: WallState;
+  updatedAt: string;
+  title?: string;
+  description?: string;
+  category?: string;
+  categorySlug?: string;
+  tags?: string[];
+  colors?: Array<{ name: string; hex: string }>;
+  width?: number;
+  height?: number;
+  createdAt?: string;
+  creatorName?: string;
+  creator?: { username: string; name: string } | null;
+  thumb?: string;
+  blur?: string;
+}
+
+interface Card { id: string; title: string; thumb: string; width: number; height: number }
+interface CategoryLink { slug: string; name: string; count: number }
+interface ListPage {
+  kind: string;
+  page: number;
+  pages: number;
+  total: number;
+  items: Card[];
+  categories?: CategoryLink[];
+  slug?: string;
+  name?: string;
+  creator?: { username: string; name: string; bio: string; photo: string };
+  folders?: Array<{ id: string; name: string; total: number; cover: string }>;
+}
+interface FolderPage {
+  kind: 'folder';
+  id: string;
+  name: string;
+  owner: { username: string; name: string } | null;
+  total: number;
+  items: Card[];
+  updatedAt: string;
+}
+
+const DOMAIN = 'prismwalls.com';
+const SITE = `https://${DOMAIN}`;
+const SHARE_ID = /^[A-Za-z0-9_-]{1,200}$/;
+const FOLDER_ID = /^[A-Za-z0-9_-]{1,128}$/;
+const USERNAME = /^[A-Za-z0-9._-]{1,40}$/;
+const SLUG = /^[a-z0-9-]{1,40}$/;
+const PAGE_PARAM = /^[1-9]\d{0,3}$/;
+const RELATED_COUNT = 12;
+const FIRESTORE_TIMEOUT_MS = 4000;
+const PREVIEW_TIMEOUT_MS = 15000;
+// A page stays fresh for 10 minutes, then serves stale for up to a day while one request refreshes it in the
+// background. A takedown therefore reaches each edge location within about 10 minutes plus one request.
+const FRESH_SECONDS = 600;
+const STALE_SECONDS = 86400;
+const MISS_SECONDS = 300;
+const STORED_AT = 'x-catalog-stored-at';
+const LOGO_URL = '/assets/prism-logo.png';
+const OG_HOME = `${SITE}/assets/og/home.jpg`;
+const THUMB_WIDTH = 540;
+const THUMB_HEIGHT = 1080;
+
+type Route =
+  | { kind: 'wall'; id: string }
+  | { kind: 'folder'; id: string }
+  | { kind: 'hub'; list: 'latest' | 'popular' | 'category'; slug: string; page: number }
+  | { kind: 'creator'; username: string; page: number }
+  | { kind: 'sitemap-index' }
+  | { kind: 'sitemap'; name: string }
+  | { kind: 'og'; id: string }
+  | { kind: 'preview'; id: string }
+  | { kind: 'redirect'; location: string }
+  | { kind: 'not-found' };
+
+class FirestoreUnavailable extends Error {}
+
+/**
+ * The catalogue's response, or null when the path is not a catalogue page. `landing` is the old generic app landing:
+ * wall and folder links still work through it while Firestore is unreachable.
+ */
+export async function handleCatalogRequest(
+  request: Request, url: URL, env: CatalogEnv, ctx: ExecutionContext, landing: () => Response,
+): Promise<Response | null> {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return null;
+  const route = matchRoute(url);
+  if (route == null) return null;
+  if (route.kind === 'redirect') return Response.redirect(route.location, 301);
+  if (route.kind === 'not-found') return withMethod(request, renderMissing(404, 'page', env));
+
+  const key = cacheKeyOf(route);
+  try {
+    const response = await cached(key, ctx, () => render(route, env));
+    return withMethod(request, response);
+  } catch (error) {
+    if (!(error instanceof FirestoreUnavailable)) throw error;
+    console.warn('[catalog] firestore_unavailable', { route: route.kind, error: `${error.message}` });
+    if (route.kind === 'wall' || route.kind === 'folder') return landing();
+    return withMethod(request, unavailable());
+  }
+}
+
+function matchRoute(url: URL): Route | null {
+  const path = url.pathname;
+  const segments = path.split('/').filter(Boolean);
+  const pageParam = url.searchParams.get('page');
+
+  if (segments[0] === 'wallpaper' && segments.length === 2 && SHARE_ID.test(segments[1])) {
+    // Wallhaven and Pexels walls are not Prism walls: they keep the app landing.
+    const source = (url.searchParams.get('source') || url.searchParams.get('provider') || 'prism').toLowerCase();
+    return source === 'prism' ? { kind: 'wall', id: segments[1] } : null;
+  }
+  if (segments[0] === 'folder' && segments.length === 2 && FOLDER_ID.test(segments[1])) {
+    return { kind: 'folder', id: segments[1] };
+  }
+  if (path === '/sitemap.xml') return { kind: 'sitemap-index' };
+  const sitemap = /^\/sitemaps\/([a-z]+-\d{1,4})\.xml$/.exec(path);
+  if (sitemap) return { kind: 'sitemap', name: sitemap[1] };
+  const og = /^\/og\/wall\/([A-Za-z0-9_-]{1,200})\.jpg$/.exec(path);
+  if (og) return { kind: 'og', id: og[1] };
+  const preview = /^\/api\/catalog\/preview\/([A-Za-z0-9_-]{1,200})\.jpg$/.exec(path);
+  if (preview) return { kind: 'preview', id: preview[1] };
+
+  const listed = matchList(segments);
+  if (listed == null) {
+    if (segments[0] === 'wallpapers' || segments[0] === 'creator') return { kind: 'not-found' };
+    return null;
+  }
+  if (pageParam == null) return listed;
+  if (pageParam === '1') return { kind: 'redirect', location: `${SITE}${path.replace(/\/$/, '')}` };
+  if (!PAGE_PARAM.test(pageParam)) return { kind: 'not-found' };
+  return { ...listed, page: Number(pageParam) };
+}
+
+function matchList(segments: string[]): Route | null {
+  if (segments[0] === 'wallpapers' && segments.length === 1) return { kind: 'hub', list: 'latest', slug: '', page: 1 };
+  if (segments[0] === 'wallpapers' && segments.length === 2) {
+    if (segments[1] === 'popular') return { kind: 'hub', list: 'popular', slug: '', page: 1 };
+    if (SLUG.test(segments[1])) return { kind: 'hub', list: 'category', slug: segments[1], page: 1 };
+  }
+  if (segments[0] === 'creator' && segments.length === 2 && USERNAME.test(segments[1])) {
+    return { kind: 'creator', username: segments[1].toLowerCase(), page: 1 };
+  }
+  return null;
+}
+
+/** Only the parsed route names the cache entry, never the raw URL: query strings and headers cannot pick a copy. */
+function cacheKeyOf(route: Route): string {
+  switch (route.kind) {
+    case 'wall': case 'folder': case 'og': case 'preview': return `${route.kind}/${route.id}`;
+    case 'hub': return `hub/${route.list}/${route.slug}/${route.page}`;
+    case 'creator': return `creator/${route.username}/${route.page}`;
+    case 'sitemap': return `sitemap/${route.name}`;
+    default: return route.kind;
+  }
+}
+
+function edgeCache(): Cache | null {
+  return (globalThis as { caches?: { default?: Cache } }).caches?.default ?? null;
+}
+
+/**
+ * Edge cache with stale-while-revalidate. The Cache API has no stale serving of its own, so each entry carries the
+ * time it was stored and is kept a day longer than it is fresh.
+ */
+async function cached(key: string, ctx: ExecutionContext, render: () => Promise<Response>): Promise<Response> {
+  const cache = edgeCache();
+  const cacheKey = new Request(`${SITE}/__catalog/v1/${key}`);
+  const hit = cache ? await cache.match(cacheKey) : undefined;
+  const store = (response: Response) => {
+    if (cache && [200, 301, 302, 404, 410].includes(response.status)) {
+      ctx.waitUntil(cache.put(cacheKey, storable(response.clone())));
+    }
+  };
+  if (hit) {
+    const age = (Date.now() - Number(hit.headers.get(STORED_AT) ?? 0)) / 1000;
+    const fresh = hit.status === 200 ? FRESH_SECONDS : MISS_SECONDS;
+    if (age <= fresh) return forClient(hit);
+    if (hit.status === 200 && age <= FRESH_SECONDS + STALE_SECONDS) {
+      ctx.waitUntil(render().then(store).catch((error) => console.warn('[catalog] revalidate_failed', `${error}`)));
+      return forClient(hit);
+    }
+  }
+  try {
+    const response = await render();
+    store(response);
+    return forClient(response);
+  } catch (error) {
+    if (hit && error instanceof FirestoreUnavailable) return forClient(hit);
+    throw error;
+  }
+}
+
+function storable(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set(STORED_AT, `${Date.now()}`);
+  headers.set('cache-control', `public, max-age=${FRESH_SECONDS + STALE_SECONDS}`);
+  return new Response(response.body, { status: response.status, headers });
+}
+
+function forClient(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.delete(STORED_AT);
+  headers.set('cache-control', response.status === 200
+    ? `public, max-age=${FRESH_SECONDS}, stale-while-revalidate=${STALE_SECONDS}`
+    : `public, max-age=${MISS_SECONDS}`);
+  return new Response(response.body, { status: response.status, headers });
+}
+
+function withMethod(request: Request, response: Response): Response {
+  return request.method === 'HEAD' ? new Response(null, { status: response.status, headers: response.headers }) : response;
+}
+
+async function render(route: Route, env: CatalogEnv): Promise<Response> {
+  switch (route.kind) {
+    case 'wall': return renderWall(route.id, env);
+    case 'folder': return renderFolder(route.id, env);
+    case 'hub': return renderHub(route.list, route.slug, route.page, env);
+    case 'creator': return renderCreator(route.username, route.page, env);
+    case 'sitemap-index': return renderSitemapIndex(env);
+    case 'sitemap': return renderSitemap(route.name, env);
+    case 'og': return renderOgImage(route.id, env);
+    case 'preview': return renderPreview(route.id, env);
+    default: return renderMissing(404, 'page', env);
+  }
+}
+
+// Firestore REST, read with no credentials: the rules make only the two catalogue collections public.
+
+async function readDoc<T>(env: CatalogEnv, path: string): Promise<T | null> {
+  if (!env.FIREBASE_PROJECT_ID) throw new FirestoreUnavailable('no project id');
+  const origin = env.CATALOG_FIRESTORE_ORIGIN || 'https://firestore.googleapis.com';
+  const url = `${origin}/v1/projects/${encodeURIComponent(env.FIREBASE_PROJECT_ID)}/databases/(default)/documents/`
+    + path.split('/').map(encodeURIComponent).join('/');
+  let response: Response;
+  try {
+    response = await fetch(url, { signal: AbortSignal.timeout(FIRESTORE_TIMEOUT_MS) });
+  } catch (error) {
+    throw new FirestoreUnavailable(`${error}`);
+  }
+  if (response.status === 404) return null;
+  if (!response.ok) throw new FirestoreUnavailable(`status ${response.status}`);
+  const doc = await response.json() as { fields?: Record<string, FirestoreValue> };
+  return decodeFields(doc.fields ?? {}) as T;
+}
+
+type FirestoreValue = {
+  stringValue?: string; integerValue?: string; doubleValue?: number; booleanValue?: boolean; nullValue?: null;
+  timestampValue?: string; arrayValue?: { values?: FirestoreValue[] }; mapValue?: { fields?: Record<string, FirestoreValue> };
+};
+
+function decodeValue(value: FirestoreValue): unknown {
+  if ('stringValue' in value) return value.stringValue;
+  if ('integerValue' in value) return Number(value.integerValue);
+  if ('doubleValue' in value) return value.doubleValue;
+  if ('booleanValue' in value) return value.booleanValue;
+  if ('timestampValue' in value) return value.timestampValue;
+  if ('arrayValue' in value) return (value.arrayValue?.values ?? []).map(decodeValue);
+  if ('mapValue' in value) return decodeFields(value.mapValue?.fields ?? {});
+  return null;
+}
+
+function decodeFields(fields: Record<string, FirestoreValue>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, decodeValue(value)]));
+}
+
+// Pages.
+
+async function renderWall(id: string, env: CatalogEnv): Promise<Response> {
+  const wall = await readDoc<WebWall>(env, `webWalls/${id}`);
+  if (wall == null || wall.state === 'hidden' || wall.state === 'gone') {
+    if (wall == null && id !== id.toUpperCase() && await readDoc<WebWall>(env, `webWalls/${id.toUpperCase()}`)) {
+      return redirect(`${SITE}/wallpaper/${id.toUpperCase()}`);
+    }
+    return renderMissing(wall?.state === 'gone' ? 410 : 404, 'wallpaper', env);
+  }
+  const slug = wall.categorySlug || 'general';
+  const category = wall.category || 'General';
+  const related = ((await readDoc<ListPage>(env, `webPages/category~${slug}~1`))?.items ?? [])
+    .filter((card) => card.id !== id).slice(0, RELATED_COUNT);
+  const live = wall.state === 'live';
+  const canonical = `${SITE}/wallpaper/${id}`;
+  const heading = wall.title || `${category} wallpaper`;
+  const creatorName = wall.creator?.name || wall.creatorName || '';
+  const resolution = wall.width && wall.height ? `${wall.width} × ${wall.height}` : '';
+  const title = `${wall.title || `${category} wallpaper ${id}`}${creatorName ? ` by ${creatorName}` : ''} | Prism`;
+  const description = clip(live
+    ? `${wall.description ? `${wall.description.replace(/[.!?…]+$/, '')}. ` : ''}${heading}, a ${category} phone wallpaper`
+      + `${creatorName ? ` by ${creatorName}` : ''}${resolution ? ` in ${resolution}` : ''}. Get it for Android and iPhone in Prism.`
+    : `${heading}${creatorName ? ` by ${creatorName}` : ''} is only in the Prism app. Get Prism for Android and iPhone.`, 160);
+  const previewPath = `/api/catalog/preview/${id}.jpg`;
+  const previewUrl = `${SITE}${previewPath}`;
+  const ogImage = live ? `${SITE}/og/wall/${id}.jpg?v=${shortHash(`${wall.thumb}|${heading}|${creatorName}`)}` : OG_HOME;
+  const width = wall.width && wall.height ? wall.width : THUMB_WIDTH;
+  const height = wall.width && wall.height ? wall.height : THUMB_HEIGHT;
+  // wallpaperPreview fits the wall inside a 2560 px square and never enlarges it.
+  const previewWidth = Math.round(width * Math.min(1, 2560 / Math.max(width, height)));
+  const creatorLink = wall.creator
+    ? `<a href="/creator/${encodeURIComponent(wall.creator.username)}">${escapeHtml(creatorName)}</a>`
+    : escapeHtml(creatorName);
+
+  const hero = live
+    ? `<img class="wall-img" src="${escapeAttribute(previewPath)}" srcset="${escapeAttribute(wall.thumb ?? '')} ${THUMB_WIDTH}w, ${escapeAttribute(previewPath)} ${previewWidth}w"
+        sizes="(min-width: 960px) 420px, min(100vw - 32px, 480px)" width="${width}" height="${height}"
+        alt="${escapeAttribute(`${heading}${creatorName ? ` by ${creatorName}` : ''}`)}" fetchpriority="high" decoding="async"
+        data-fallback="${escapeAttribute(wall.thumb ?? '')}" onerror="this.onerror=null;this.removeAttribute('srcset');this.src=this.dataset.fallback">`
+    : `<div class="wall-img gated" role="img" aria-label="${escapeAttribute(`Blurred preview of ${heading}`)}"
+        style="aspect-ratio: ${width} / ${height}${wall.blur?.startsWith('data:image/jpeg;base64,') ? `; background-image: url('${escapeAttribute(wall.blur)}')` : ''}">
+        <span class="lock">${LOCK_ICON}<span>Only in Prism</span></span>
+      </div>`;
+
+  const facts = [
+    `<div><dt>Category</dt><dd><a href="/wallpapers/${escapeAttribute(slug)}">${escapeHtml(category)}</a></dd></div>`,
+    resolution ? `<div><dt>Resolution</dt><dd>${escapeHtml(resolution)}</dd></div>` : '',
+    wall.colors?.length ? `<div><dt>Colours</dt><dd class="swatches">${wall.colors.map((color) =>
+      `<span class="swatch"><i style="background:${/^#[0-9a-f]{6}$/i.test(color.hex) ? color.hex : '#000'}"></i>${escapeHtml(color.name)}</span>`).join('')}</dd></div>` : '',
+  ].join('');
+  const tags = wall.tags?.length
+    ? `<ul class="tags" aria-label="Tags">${wall.tags.map((tag) => `<li>${escapeHtml(tag)}</li>`).join('')}</ul>` : '';
+  const crumbs: Array<[string, string]> = [['Wallpapers', `${SITE}/wallpapers`], [category, `${SITE}/wallpapers/${slug}`], [heading, canonical]];
+
+  const body = `
+<main class="wall-layout">
+  <figure class="wall-figure" style="--ar: ${(width / height).toFixed(4)}">${hero}</figure>
+  <section class="wall-info">
+    ${breadcrumbHtml(crumbs)}
+    <h1>${escapeHtml(heading)}</h1>
+    ${creatorName ? `<p class="byline">by ${creatorLink}</p>` : ''}
+    ${wall.description ? `<p class="lead">${escapeHtml(wall.description)}</p>` : ''}
+    ${live ? '' : '<p class="lead">This wallpaper is part of a premium or limited set. Open Prism to see it in full.</p>'}
+    ${actionsHtml(canonical, live ? 'Open in Prism' : 'Get it in Prism', env)}
+    <dl class="facts">${facts}</dl>
+    ${tags}
+  </section>
+</main>
+${related.length ? `<section class="shelf">
+  <div class="shelf-head"><h2>More ${escapeHtml(category)} wallpapers</h2>
+    <a href="/wallpapers/${escapeAttribute(slug)}">See all</a></div>
+  ${gridHtml(related)}
+</section>` : ''}`;
+
+  const jsonLd: unknown[] = [breadcrumbLd(crumbs)];
+  if (live) {
+    jsonLd.unshift({
+      '@context': 'https://schema.org',
+      '@type': 'ImageObject',
+      name: heading,
+      description,
+      url: canonical,
+      contentUrl: previewUrl,
+      thumbnailUrl: wall.thumb,
+      encodingFormat: 'image/jpeg',
+      ...(wall.width && wall.height ? { width: wall.width, height: wall.height } : {}),
+      ...(wall.createdAt ? { uploadDate: wall.createdAt } : {}),
+      ...(wall.tags?.length ? { keywords: wall.tags.join(', ') } : {}),
+      ...(creatorName ? {
+        creator: { '@type': 'Person', name: creatorName, ...(wall.creator ? { url: `${SITE}/creator/${wall.creator.username}` } : {}) },
+        creditText: creatorName,
+        copyrightNotice: `© ${creatorName}`,
+      } : {}),
+      acquireLicensePage: canonical,
+    });
+  }
+  return page({
+    title, description, canonical, ogImage, ogType: 'article', body, jsonLd,
+    robots: live ? 'index,follow,max-image-preview:large' : 'noindex,follow',
+    appUrl: canonical,
+  });
+}
+
+async function renderFolder(id: string, env: CatalogEnv): Promise<Response> {
+  const folder = await readDoc<FolderPage>(env, `webPages/folder~${id}`);
+  if (folder == null) return renderMissing(404, 'folder', env);
+  const canonical = `${SITE}/folder/${id}`;
+  const owner = folder.owner;
+  const count = `${formatCount(folder.total)} ${folder.total === 1 ? 'wallpaper' : 'wallpapers'}`;
+  const title = `${folder.name}${owner ? ` by ${owner.name}` : ''}: ${count} | Prism`;
+  const description = clip(`${folder.name} is a public Prism folder${owner ? ` by ${owner.name}` : ''} with ${count}. `
+    + 'Browse it here, then open it in Prism to follow it.', 160);
+  const covers = folder.items.slice(0, 3);
+  const body = `
+<main class="folder-layout">
+  <header class="folder-head">
+    ${covers.length ? `<div class="collage" aria-hidden="true">${covers.map((card, index) =>
+      `<img src="${escapeAttribute(card.thumb)}" width="${THUMB_WIDTH}" height="${THUMB_HEIGHT}" alt="" ${index === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async">`).join('')}</div>` : ''}
+    <div class="folder-info">
+      ${breadcrumbHtml([['Wallpapers', `${SITE}/wallpapers`], [folder.name, canonical]])}
+      <h1>${escapeHtml(folder.name)}</h1>
+      <p class="byline">${owner ? `A folder by <a href="/creator/${encodeURIComponent(owner.username)}">${escapeHtml(owner.name)}</a> · ` : ''}${escapeHtml(count)}</p>
+      ${actionsHtml(canonical, 'Open in Prism', env)}
+    </div>
+  </header>
+  ${folder.items.length ? gridHtml(folder.items, covers.length) : '<p class="empty">This folder has no public wallpapers yet.</p>'}
+  ${folder.total > folder.items.length ? `<p class="more">Open Prism to see all ${escapeHtml(count)}.</p>` : ''}
+</main>`;
+  return page({
+    title, description, canonical, ogImage: covers[0]?.thumb || OG_HOME, ogType: 'website', body,
+    robots: folder.items.length ? 'index,follow,max-image-preview:large' : 'noindex,follow', appUrl: canonical,
+    jsonLd: [collectionLd(folder.name, description, canonical, folder.items),
+      breadcrumbLd([['Wallpapers', `${SITE}/wallpapers`], [folder.name, canonical]])],
+  });
+}
+
+async function renderHub(list: 'latest' | 'popular' | 'category', slug: string, pageNumber: number, env: CatalogEnv): Promise<Response> {
+  const key = list === 'category' ? `category~${slug}~${pageNumber}` : `${list}~${pageNumber}`;
+  const data = await readDoc<ListPage>(env, `webPages/${key}`);
+  if (data == null || (data.items.length === 0 && pageNumber > 1)) return renderMissing(404, 'page', env);
+  const base = list === 'category' ? `/wallpapers/${slug}` : list === 'popular' ? '/wallpapers/popular' : '/wallpapers';
+  const canonical = `${SITE}${base}${pageNumber > 1 ? `?page=${pageNumber}` : ''}`;
+  const name = data.name || 'General';
+  const heading = list === 'category' ? `${name} wallpapers` : list === 'popular' ? 'Popular wallpapers' : 'New wallpapers';
+  const lead = list === 'category'
+    ? `${formatCount(data.total)} ${name} wallpapers for Android and iPhone, made by Prism creators.`
+    : list === 'popular'
+      ? 'The wallpapers Prism users set, save and download the most right now.'
+      : 'The newest wallpapers from Prism creators, for Android and iPhone.';
+  const suffix = pageNumber > 1 ? ` (page ${pageNumber} of ${data.pages})` : '';
+  const title = `${heading}${suffix} | Prism`;
+  const description = clip(`${lead}${suffix ? ` Page ${pageNumber} of ${data.pages}.` : ''}`, 160);
+  const crumbs: Array<[string, string]> = list === 'latest'
+    ? [['Wallpapers', `${SITE}/wallpapers`]]
+    : [['Wallpapers', `${SITE}/wallpapers`], [heading, `${SITE}${base}`]];
+  const categories = data.categories ?? [];
+  const nav = `<nav class="chips" aria-label="Browse wallpapers">
+    <a href="/wallpapers"${list === 'latest' ? ' aria-current="page"' : ''}>New</a>
+    <a href="/wallpapers/popular"${list === 'popular' ? ' aria-current="page"' : ''}>Popular</a>
+    ${categories.map((category) => `<a href="/wallpapers/${escapeAttribute(category.slug)}"${category.slug === slug ? ' aria-current="page"' : ''}>${escapeHtml(category.name)}</a>`).join('')}
+  </nav>`;
+  const body = `
+<main class="hub-layout">
+  ${list === 'latest' ? '' : breadcrumbHtml(crumbs)}
+  <h1>${escapeHtml(heading)}</h1>
+  <p class="lead">${escapeHtml(lead)}</p>
+  ${nav}
+  ${data.items.length ? gridHtml(data.items, pageNumber === 1 ? 4 : 0) : '<p class="empty">No wallpapers here yet.</p>'}
+  ${paginationHtml(base, pageNumber, data.pages)}
+  ${appBandHtml(env)}
+</main>`;
+  return page({
+    title, description, canonical, ogImage: OG_HOME, ogType: 'website', body, robots: 'index,follow,max-image-preview:large',
+    appUrl: `${SITE}/dashboard`, prev: pageNumber > 1 ? pageHref(base, pageNumber - 1) : '',
+    next: pageNumber < data.pages ? pageHref(base, pageNumber + 1) : '',
+    jsonLd: [collectionLd(heading, description, canonical, data.items), breadcrumbLd(crumbs)],
+  });
+}
+
+async function renderCreator(username: string, pageNumber: number, env: CatalogEnv): Promise<Response> {
+  const data = await readDoc<ListPage>(env, `webPages/creator~${username}~${pageNumber}`);
+  if (data?.creator == null) return renderMissing(404, 'creator', env);
+  const creator = data.creator;
+  const base = `/creator/${encodeURIComponent(creator.username)}`;
+  const canonical = `${SITE}${base}${pageNumber > 1 ? `?page=${pageNumber}` : ''}`;
+  const count = `${formatCount(data.total)} ${data.total === 1 ? 'wallpaper' : 'wallpapers'}`;
+  const suffix = pageNumber > 1 ? ` (page ${pageNumber} of ${data.pages})` : '';
+  const title = `${creator.name} (@${creator.username}): ${count}${suffix} | Prism`;
+  const description = clip(creator.bio
+    ? `${creator.bio} ${count} by ${creator.name} on Prism.`
+    : `${count} by ${creator.name} (@${creator.username}) on Prism, the wallpaper app for Android and iPhone.`, 160);
+  const appUrl = `${SITE}/user/${encodeURIComponent(creator.username)}`;
+  const folders = pageNumber === 1 ? data.folders ?? [] : [];
+  const body = `
+<main class="creator-layout">
+  <header class="creator-head">
+    ${creator.photo ? `<img class="avatar" src="${escapeAttribute(creator.photo)}" width="96" height="96" alt="" referrerpolicy="no-referrer">` : `<span class="avatar initial" aria-hidden="true">${escapeHtml(creator.name.slice(0, 1).toUpperCase())}</span>`}
+    <div>
+      <h1>${escapeHtml(creator.name)}</h1>
+      <p class="byline">@${escapeHtml(creator.username)} · ${escapeHtml(count)}</p>
+      ${creator.bio ? `<p class="lead">${escapeHtml(creator.bio)}</p>` : ''}
+      ${actionsHtml(appUrl, 'Open profile in Prism', env)}
+    </div>
+  </header>
+  ${folders.length ? `<section class="shelf"><h2>Folders</h2><ul class="folder-row">${folders.map((folder) => `<li><a href="/folder/${escapeAttribute(folder.id)}">
+    <img src="${escapeAttribute(folder.cover)}" width="${THUMB_WIDTH}" height="${THUMB_HEIGHT}" alt="" loading="lazy" decoding="async">
+    <span class="folder-name">${escapeHtml(folder.name)}</span><span class="folder-count">${formatCount(folder.total)} wallpapers</span></a></li>`).join('')}</ul></section>` : ''}
+  <section class="shelf"><h2>Wallpapers</h2>${gridHtml(data.items, pageNumber === 1 ? 4 : 0)}</section>
+  ${paginationHtml(base, pageNumber, data.pages)}
+</main>`;
+  return page({
+    title, description, canonical, ogImage: creator.photo || OG_HOME, ogType: 'profile', body,
+    robots: 'index,follow,max-image-preview:large', appUrl,
+    prev: pageNumber > 1 ? pageHref(base, pageNumber - 1) : '', next: pageNumber < data.pages ? pageHref(base, pageNumber + 1) : '',
+    jsonLd: [{
+      '@context': 'https://schema.org',
+      '@type': 'ProfilePage',
+      url: canonical,
+      mainEntity: {
+        '@type': 'Person', name: creator.name, alternateName: `@${creator.username}`,
+        ...(creator.photo ? { image: creator.photo } : {}), ...(creator.bio ? { description: creator.bio } : {}),
+      },
+    }],
+  });
+}
+
+async function renderSitemapIndex(env: CatalogEnv): Promise<Response> {
+  const index = await readDoc<{ sitemaps?: Array<{ name: string; lastmod: string }> }>(env, 'webPages/sitemap~index');
+  const entries = [`  <sitemap><loc>${SITE}/sitemap-pages.xml</loc></sitemap>`, ...(index?.sitemaps ?? [])
+    .filter((entry) => /^[a-z]+-\d{1,4}$/.test(entry.name))
+    .map((entry) => `  <sitemap><loc>${SITE}/sitemaps/${entry.name}.xml</loc>${entry.lastmod ? `<lastmod>${escapeHtml(entry.lastmod)}</lastmod>` : ''}</sitemap>`)];
+  return xml(`<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${entries.join('\n')}
+</sitemapindex>`);
+}
+
+async function renderSitemap(name: string, env: CatalogEnv): Promise<Response> {
+  const doc = await readDoc<{ entries?: string }>(env, `webPages/sitemap~${name}`);
+  if (doc == null) return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
+  const urls = (doc.entries ?? '').split('\n').filter(Boolean).map((line) => {
+    const [path, lastmod] = line.split('\t');
+    return `  <url><loc>${escapeHtml(`${SITE}${path}`)}</loc>${lastmod ? `<lastmod>${escapeHtml(lastmod)}</lastmod>` : ''}</url>`;
+  });
+  return xml(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.join('\n')}
+</urlset>`);
+}
+
+/** The share card for a live wall, rendered once per wall and look, then kept in R2. */
+async function renderOgImage(id: string, env: CatalogEnv): Promise<Response> {
+  const wall = await readDoc<WebWall>(env, `webWalls/${id}`);
+  if (wall?.state !== 'live' || !wall.thumb) return redirect(env.OG_FALLBACK_IMAGE || OG_HOME, 302);
+  const heading = wall.title || `${wall.category || 'General'} wallpaper`;
+  const creatorName = wall.creator?.name || wall.creatorName || '';
+  const objectKey = `catalog/wall/${id}-${shortHash(`${wall.thumb}|${heading}|${creatorName}`)}.jpg`;
+  const stored = await env.OG_IMAGES?.get(objectKey);
+  if (stored) return jpeg(stored.body);
+  const bytes = await screenshotCard(renderOgCardHtml({
+    kind: 'wallpaper',
+    label: 'Wallpaper',
+    title: heading,
+    image: wall.thumb,
+    stats: wall.width && wall.height ? [{ icon: 'phone', value: `${wall.width}×${wall.height}`, label: 'Resolution' }] : [],
+    chip: creatorName ? { photo: '', prefix: 'by', name: creatorName, detail: wall.category || '' } : null,
+  }), env);
+  if (bytes == null) return redirect(wall.thumb, 302);
+  await env.OG_IMAGES?.put(objectKey, bytes, { httpMetadata: { contentType: 'image/jpeg' } });
+  return jpeg(bytes);
+}
+
+/**
+ * The web-size image of a live wall: the wallpaperPreview derivative (at most 2560 px, never the original). The
+ * function refuses gated walls itself, and this route asks only for walls the projection lists as live.
+ */
+async function renderPreview(id: string, env: CatalogEnv): Promise<Response> {
+  const wall = await readDoc<WebWall>(env, `webWalls/${id}`);
+  if (wall?.state !== 'live' || !wall.thumb) return new Response('Not found', { status: 404 });
+  const origin = env.CATALOG_PREVIEW_ORIGIN || `https://us-central1-${env.FIREBASE_PROJECT_ID}.cloudfunctions.net`;
+  const url = new URL(`${origin}/wallpaperPreview`);
+  url.searchParams.set('id', id);
+  url.searchParams.set('thumb', wall.thumb);
+  try {
+    const response = await fetch(url.toString(), { signal: AbortSignal.timeout(PREVIEW_TIMEOUT_MS) });
+    if (response.ok && response.headers.get('content-type')?.startsWith('image/jpeg')) return jpeg(response.body);
+  } catch (error) {
+    console.warn('[catalog] preview_fetch_failed', `${error}`);
+  }
+  return redirect(wall.thumb, 302);
+}
+
+function renderMissing(status: 404 | 410, what: 'wallpaper' | 'folder' | 'creator' | 'page', env: CatalogEnv): Response {
+  const heading = status === 410
+    ? 'This wallpaper was removed'
+    : { wallpaper: 'This wallpaper is not available', folder: 'This folder is private or was removed',
+      creator: 'This creator has no public page', page: 'This page does not exist' }[what];
+  const lead = status === 410
+    ? 'Its creator or Prism took it down. Browse other wallpapers instead.'
+    : 'It may be private, under review, or removed. Browse other wallpapers instead.';
+  const markup = documentHtml({
+    title: `${heading} | Prism`, description: lead, canonical: '', ogImage: OG_HOME, ogType: 'website',
+    robots: 'noindex', appUrl: '', jsonLd: [],
+    body: `<main class="missing"><h1>${escapeHtml(heading)}</h1><p class="lead">${escapeHtml(lead)}</p>
+      <p><a class="btn primary" href="/wallpapers">Browse wallpapers</a></p>${appBandHtml(env)}</main>`,
+  });
+  return new Response(markup, { status, headers: { 'content-type': 'text/html; charset=utf-8', 'x-robots-tag': 'noindex' } });
+}
+
+function unavailable(): Response {
+  return new Response('Prism is busy. Try again in a minute.', {
+    status: 503,
+    headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'retry-after': '60' },
+  });
+}
+
+// HTML building blocks.
+
+interface PageInput {
+  title: string;
+  description: string;
+  canonical: string;
+  ogImage: string;
+  ogType: string;
+  robots: string;
+  body: string;
+  jsonLd: unknown[];
+  appUrl: string;
+  prev?: string;
+  next?: string;
+}
+
+function page(input: PageInput): Response {
+  return new Response(documentHtml(input), { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
+}
+
+function documentHtml(input: PageInput): string {
+  const ld = input.jsonLd.map((entry) => `<script type="application/ld+json">${jsonForScript(entry)}</script>`).join('\n  ');
+  const canonical = input.canonical ? `<link rel="canonical" href="${escapeAttribute(input.canonical)}">
+  <meta property="og:url" content="${escapeAttribute(input.canonical)}">` : '';
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>${escapeHtml(input.title)}</title>
+  <meta name="description" content="${escapeAttribute(input.description)}">
+  <meta name="robots" content="${escapeAttribute(input.robots)}">
+  ${canonical}
+  ${input.prev ? `<link rel="prev" href="${escapeAttribute(input.prev)}">` : ''}
+  ${input.next ? `<link rel="next" href="${escapeAttribute(input.next)}">` : ''}
+  <meta property="og:site_name" content="Prism">
+  <meta property="og:type" content="${escapeAttribute(input.ogType)}">
+  <meta property="og:title" content="${escapeAttribute(input.title)}">
+  <meta property="og:description" content="${escapeAttribute(input.description)}">
+  <meta property="og:image" content="${escapeAttribute(input.ogImage)}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${escapeAttribute(input.title)}">
+  <meta name="twitter:description" content="${escapeAttribute(input.description)}">
+  <meta name="twitter:image" content="${escapeAttribute(input.ogImage)}">
+  <meta name="theme-color" content="#0e0e12">
+  <meta name="color-scheme" content="dark">
+  ${input.appUrl ? `<meta name="apple-itunes-app" content="app-id=1405860595, app-argument=${escapeAttribute(input.appUrl)}">` : ''}
+  <link rel="icon" href="/assets/ios.png">
+  ${ld}
+  <style>${STYLE}</style>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="site-head">
+    <a class="brand" href="/"><img src="${LOGO_URL}" width="28" height="28" alt="">Prism</a>
+    <nav aria-label="Main"><a href="/wallpapers">Wallpapers</a><a href="/wallpapers/popular">Popular</a><a class="get" href="/#download">Get the app</a></nav>
+  </header>
+  <div id="content">${input.body}</div>
+  <footer class="site-foot">
+    <p>Prism is a wallpaper app for Android and iPhone, made by Hash Studios.</p>
+    <nav aria-label="Footer"><a href="/wallpapers">Wallpapers</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></nav>
+  </footer>
+  <script>${ANDROID_SCRIPT}</script>
+</body>
+</html>`;
+}
+
+/** Android opens the app through an intent link with a Play Store fallback. Swapping it in here keeps the HTML the same for every visitor. */
+const ANDROID_SCRIPT = `if(/android/i.test(navigator.userAgent))document.querySelectorAll('[data-android]').forEach(function(a){a.href=a.getAttribute('data-android')})`;
+
+function actionsHtml(appUrl: string, label: string, env: CatalogEnv): string {
+  return `<div class="actions">
+      <a class="btn primary" href="${escapeAttribute(appUrl)}" data-android="${escapeAttribute(buildAndroidIntentUrl(appUrl, env.PLAY_STORE_URL))}">${escapeHtml(label)}</a>
+      ${storeButtonsHtml(env)}
+    </div>`;
+}
+
+function storeButtonsHtml(env: CatalogEnv): string {
+  return `<div class="stores">
+        <a class="btn store" href="${escapeAttribute(env.PLAY_STORE_URL)}">${PLAY_ICON}<span><small>Get it on</small>Google Play</span></a>
+        <a class="btn store" href="${escapeAttribute(env.APP_STORE_URL)}">${APPLE_ICON}<span><small>Download on the</small>App Store</span></a>
+      </div>`;
+}
+
+function appBandHtml(env: CatalogEnv): string {
+  return `<aside class="band"><div><h2>Set any of these in one tap</h2><p>Prism has thousands of wallpapers from real creators, with new ones every day.</p></div>${storeButtonsHtml(env)}</aside>`;
+}
+
+function gridHtml(cards: Card[], eager = 0): string {
+  return `<ul class="grid">${cards.map((card, index) => `<li><a href="/wallpaper/${escapeAttribute(card.id)}">
+    <img src="${escapeAttribute(card.thumb)}" width="${THUMB_WIDTH}" height="${THUMB_HEIGHT}" alt="${card.title ? '' : 'Untitled wallpaper'}" ${index < eager ? '' : 'loading="lazy" '}decoding="async">
+    ${card.title ? `<span class="card-title">${escapeHtml(card.title)}</span>` : ''}</a></li>`).join('')}</ul>`;
+}
+
+function pageHref(base: string, n: number): string {
+  return `${SITE}${base}${n > 1 ? `?page=${n}` : ''}`;
+}
+
+function paginationHtml(base: string, current: number, pages: number): string {
+  if (pages <= 1) return '';
+  const link = (n: number, label: string, rel: string) =>
+    `<a href="${escapeAttribute(pageHref(base, n).slice(SITE.length))}" rel="${rel}">${label}</a>`;
+  return `<nav class="pager" aria-label="Pages">
+    ${current > 1 ? link(current - 1, 'Previous page', 'prev') : '<span></span>'}
+    <span>Page ${current} of ${pages}</span>
+    ${current < pages ? link(current + 1, 'Next page', 'next') : '<span></span>'}
+  </nav>`;
+}
+
+function breadcrumbHtml(crumbs: Array<[string, string]>): string {
+  return `<nav class="crumbs" aria-label="Breadcrumb"><ol>${crumbs.map(([name, href], index) => index === crumbs.length - 1
+    ? `<li aria-current="page">${escapeHtml(name)}</li>`
+    : `<li><a href="${escapeAttribute(href.slice(SITE.length) || '/')}">${escapeHtml(name)}</a></li>`).join('')}</ol></nav>`;
+}
+
+function breadcrumbLd(crumbs: Array<[string, string]>): unknown {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: crumbs.map(([name, item], index) => ({ '@type': 'ListItem', position: index + 1, name, item })),
+  };
+}
+
+function collectionLd(name: string, description: string, url: string, cards: Card[]): unknown {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name,
+    description,
+    url,
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: cards.map((card, index) => ({ '@type': 'ListItem', position: index + 1, url: `${SITE}/wallpaper/${card.id}` })),
+    },
+  };
+}
+
+/** JSON inside a script tag: `<` is escaped so a title cannot close the tag. */
+function jsonForScript(value: unknown): string {
+  return JSON.stringify(value).replaceAll('<', '\\u003c').replaceAll('\u2028', '\\u2028').replaceAll('\u2029', '\\u2029');
+}
+
+function clip(value: string, max: number): string {
+  return value.length <= max ? value : `${value.slice(0, max - 1).trimEnd()}…`;
+}
+
+function shortHash(value: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function redirect(location: string, status: 301 | 302 = 301): Response {
+  return new Response(null, { status, headers: { location } });
+}
+
+function jpeg(body: BodyInit | null): Response {
+  return new Response(body, { status: 200, headers: { 'content-type': 'image/jpeg' } });
+}
+
+function xml(markup: string): Response {
+  return new Response(markup, { status: 200, headers: { 'content-type': 'application/xml; charset=utf-8' } });
+}
+
+const PLAY_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><polygon points="4,3.5 13,8.5 20.5,12 13,15.5 4,20.5 6,12"/></svg>';
+const APPLE_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M16.37 1.43c0 1.14-.46 2.2-1.2 2.98-.8.85-2.1 1.5-3.14 1.42-.13-1.1.4-2.24 1.15-3 .83-.86 2.2-1.5 3.19-1.4zM20.5 17.1c-.55 1.27-.82 1.84-1.52 2.96-.98 1.57-2.37 3.52-4.08 3.54-1.52.02-1.91-.99-3.97-.98-2.06.01-2.49 1-4.01.99-1.71-.02-3.02-1.78-4-3.35C-.1 15.9-.4 10.7 1.3 8.1c1.2-1.85 3.1-2.93 4.88-2.93 1.81 0 2.95.99 4.45.99 1.45 0 2.34-.99 4.44-.99 1.58 0 3.26.86 4.46 2.35-3.92 2.15-3.28 7.75.97 9.58z"/></svg>';
+const LOCK_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+
+// Matches prismwalls.com: near-black base, the #e57697 accent, pill buttons and 16px cards.
+const STYLE = `
+:root{--bg:#0e0e12;--surface:#14141a;--line:rgba(255,255,255,.1);--text:#fff;--muted:rgba(255,255,255,.7);--accent:#e57697;--accent-hover:#ef89a7;--radius:16px;--gutter:clamp(16px,4vw,32px)}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 Manrope,Inter,"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+img{display:block;max-width:100%}
+h1,h2{line-height:1.15;letter-spacing:-.02em;text-wrap:balance;margin:0}
+h1{font-size:clamp(1.9rem,1.4rem + 2.2vw,3rem);font-weight:800}
+h2{font-size:1.25rem;font-weight:700}
+.skip{position:absolute;left:-9999px}.skip:focus{left:16px;top:16px;z-index:10;background:var(--surface);padding:8px 12px;border-radius:8px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+.site-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px var(--gutter);padding-top:max(14px,env(safe-area-inset-top));max-width:1200px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.1rem;text-decoration:none}
+.brand img{border-radius:8px}
+.site-head nav{display:flex;gap:4px;align-items:center}
+.site-head nav a{text-decoration:none;color:var(--muted);font-weight:600;font-size:.92rem;padding:10px 12px;border-radius:999px;min-height:44px;display:inline-flex;align-items:center}
+.site-head nav a:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.site-head nav a.get{color:var(--text);background:rgba(255,255,255,.08)}
+@media (max-width:520px){.site-head nav a.get{display:none}}
+#content{max-width:1200px;margin:0 auto;padding:0 var(--gutter) 48px}
+.lead{color:var(--muted);margin:12px 0 0;max-width:62ch}
+.byline{color:var(--muted);margin:8px 0 0;font-weight:600}
+.byline a{color:var(--text);text-decoration-color:var(--accent);text-underline-offset:3px}
+.crumbs ol{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px;padding:0;font-size:.85rem;color:var(--muted)}
+.crumbs li+li::before{content:"/";margin-inline-end:6px;opacity:.5}
+.crumbs a{text-decoration:none}.crumbs a:hover{text-decoration:underline}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:12px 20px;border-radius:999px;font-weight:700;text-decoration:none;transition:background-color .15s ease-out,transform .15s ease-out}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--accent);color:#16070c;box-shadow:0 8px 24px -8px rgba(229,118,151,.6)}
+.btn.primary:hover{background:var(--accent-hover)}
+.btn.store{background:rgba(255,255,255,.06);border:1px solid var(--line);color:#fff;padding:8px 14px;gap:8px;line-height:1.1;text-align:start;white-space:nowrap}
+.btn.store:hover{background:rgba(255,255,255,.12)}
+.btn.store small{display:block;font-size:.68rem;font-weight:600;color:var(--muted)}
+.actions{display:flex;flex-direction:column;gap:12px;margin-top:24px}
+.actions .btn.primary{align-self:stretch}
+.stores{display:flex;flex-wrap:wrap;gap:12px}
+.stores .btn{flex:1 1 150px}
+@media (min-width:600px){.actions .btn.primary{align-self:flex-start;min-width:220px}.stores .btn{flex:0 0 auto}}
+.wall-layout{display:grid;gap:24px;padding-top:8px}
+.wall-figure{margin:0;justify-self:center;width:min(100%,480px,calc(56svh * var(--ar,.5)))}
+.wall-img{width:100%;height:auto;border-radius:24px;background:var(--surface);box-shadow:0 30px 60px -20px rgba(0,0,0,.7)}
+.wall-img.gated{position:relative;display:grid;place-items:center;background-size:cover;background-position:center;overflow:hidden}
+.wall-img.gated::before{content:"";position:absolute;inset:0;backdrop-filter:blur(28px) saturate(1.2);-webkit-backdrop-filter:blur(28px) saturate(1.2);background:rgba(14,14,18,.25)}
+.lock{position:relative;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:rgba(14,14,18,.7);font-weight:700}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:20px 24px;margin:32px 0 0}
+.facts dt{font-size:.78rem;color:var(--muted);font-weight:600;margin-bottom:4px}
+.facts dd{margin:0;font-weight:700}
+.facts dd a{text-decoration-color:var(--accent);text-underline-offset:3px}
+.swatches{display:flex;flex-wrap:wrap;gap:10px}
+.swatch{display:inline-flex;align-items:center;gap:6px;text-transform:capitalize}
+.swatch i{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+.tags{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin:24px 0 0;padding:0}
+.tags li{padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.06);color:var(--muted);font-size:.85rem;font-weight:600}
+@media (min-width:960px){
+  .wall-layout{grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:64px;align-items:start;padding-top:24px}
+  .wall-figure{position:sticky;top:24px;width:min(100%,calc(86svh * var(--ar,.5)));justify-self:start}
+  .wall-info{padding-top:24px}
+}
+.shelf{margin-top:56px}
+.shelf h2{margin-bottom:16px}
+.shelf-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:16px}
+.shelf-head h2{margin:0}
+.shelf-head a{color:var(--accent);font-weight:700;text-decoration:none;padding:10px 0}
+.grid{list-style:none;margin:24px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(42vw,168px),1fr));gap:12px}
+@media (min-width:960px){.grid{gap:16px;grid-template-columns:repeat(auto-fill,minmax(176px,1fr))}}
+.shelf .grid{margin-top:0}
+.grid a{display:block;position:relative;border-radius:var(--radius);overflow:hidden;background:var(--surface);text-decoration:none}
+.grid img{width:100%;height:auto;aspect-ratio:1/2;object-fit:cover;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.grid a:hover img{transform:scale(1.03)}
+.card-title{position:absolute;inset:auto 0 0;padding:28px 12px 10px;font-size:.82rem;font-weight:700;background:linear-gradient(transparent,rgba(0,0,0,.75));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hub-layout{padding-top:16px}
+.chips{display:flex;gap:8px;overflow-x:auto;margin:24px calc(-1 * var(--gutter)) 0;padding:0 var(--gutter) 4px;scrollbar-width:none}
+.chips a{flex:none;text-decoration:none;font-weight:700;font-size:.9rem;padding:10px 16px;border-radius:999px;background:rgba(255,255,255,.06);min-height:44px;display:inline-flex;align-items:center}
+.chips a:hover{background:rgba(255,255,255,.12)}
+.chips a[aria-current]{background:#fff;color:#0e0e12}
+.pager{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin-top:40px;color:var(--muted);font-weight:600}
+.pager a{font-weight:700;color:var(--text);text-decoration:none;padding:12px 18px;border-radius:999px;background:rgba(255,255,255,.06);justify-self:start}
+.pager a[rel=next]{justify-self:end}
+.band{margin-top:64px;padding:28px;border-radius:24px;background:linear-gradient(135deg,rgba(229,118,151,.22),rgba(229,118,151,.04));display:grid;gap:20px}
+.band p{color:var(--muted);margin:8px 0 0}
+@media (min-width:800px){.band{grid-template-columns:1fr auto;align-items:center;padding:36px 40px}}
+.folder-head{display:grid;gap:28px;padding-top:16px}
+.collage{display:flex;justify-content:center;height:clamp(220px,52vw,320px)}
+.collage img{height:100%;width:auto;aspect-ratio:1/2;object-fit:cover;border-radius:18px;box-shadow:0 20px 40px -12px rgba(0,0,0,.7);border:3px solid var(--bg)}
+.collage img:nth-child(1){position:relative;z-index:3}
+.collage img:nth-child(2){margin-inline-start:-18%;transform:rotate(6deg) translateY(10px);z-index:2}
+.collage img:nth-child(3){margin-inline-start:-18%;transform:rotate(11deg) translateY(22px);z-index:1}
+@media (min-width:860px){.folder-head{grid-template-columns:auto 1fr;align-items:center;gap:56px}.collage{justify-content:flex-start;height:340px;padding-inline-end:40px}}
+.empty,.more{color:var(--muted);margin-top:24px}
+.creator-head{display:grid;gap:20px;padding-top:16px;justify-items:start}
+.avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;background:var(--surface);box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--accent)}
+.avatar.initial{display:grid;place-items:center;font-size:2.2rem;font-weight:800}
+@media (min-width:760px){.creator-head{grid-template-columns:auto 1fr;gap:32px;align-items:start}}
+.folder-row{list-style:none;margin:0;padding:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(140px,180px);gap:12px;overflow-x:auto;scrollbar-width:none}
+.folder-row a{display:block;text-decoration:none}
+.folder-row img{width:100%;height:auto;aspect-ratio:3/4;object-fit:cover;border-radius:var(--radius)}
+.folder-name{display:block;font-weight:700;margin-top:8px}
+.folder-count{display:block;color:var(--muted);font-size:.85rem}
+.missing{padding-top:48px;max-width:640px}
+.missing .btn{margin-top:24px}
+.site-foot{max-width:1200px;margin:0 auto;padding:32px var(--gutter) max(32px,env(safe-area-inset-bottom));border-top:1px solid var(--line);color:var(--muted);font-size:.9rem;display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between}
+.site-foot p{margin:0}
+.site-foot nav{display:flex;gap:20px}
+.site-foot a{text-decoration:none}.site-foot a:hover{color:var(--text)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+`;

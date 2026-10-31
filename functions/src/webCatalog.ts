@@ -1,0 +1,423 @@
+import * as admin from "firebase-admin";
+import {createHash} from "node:crypto";
+import {logger} from "firebase-functions/v2";
+import {onDocumentWritten} from "firebase-functions/v2/firestore";
+import {onSchedule} from "firebase-functions/v2/scheduler";
+import {db, REGION, str} from "./common";
+import {isPreviewUrl} from "./pushGallery";
+import {r2Secrets} from "./r2Storage";
+import {PALETTE} from "./wallColors";
+import {isWotdEligible, premiumCollections} from "./wallEligibility";
+
+/**
+ * The public web catalogue on prismwalls.com. Crawlers read these collections through the links Worker, with no
+ * sign-in, so every field here is public by construction: no uid, email, original URL, storage path or moderation
+ * data is ever copied in. `webWalls/{shareId}` follows each wall at once, so a takedown leaves the web in minutes.
+ * `webPages/{key}` holds every list page, built on a schedule so one page view costs one document read.
+ */
+export const WEB_WALLS = "webWalls";
+export const WEB_PAGES = "webPages";
+const STATE = "webCatalogState";
+export const PAGE_SIZE = 24;
+const FOLDER_WALLS = 60;
+const CREATOR_FOLDERS = 12;
+const SITEMAP_SIZE = 5000;
+const WRITE_CHUNK = 100;
+const SHARE_ID = /^[A-Za-z0-9_-]{1,200}$/;
+const USERNAME = /^[A-Za-z0-9._-]{1,40}$/;
+const HIDDEN_TEXT = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}]/gu;
+const PALETTE_HEX = new Map(PALETTE.map(({id, hex}) => [id, `#${hex}`]));
+const RELEVANT_FIELDS = ["id", "review", "originalProtected", "is_streak_exclusive", "dropReserved", "dropWeek",
+  "collections", "wallpaper_thumb", "title", "desc", "tags", "category", "colors", "resolution", "by", "creatorUid",
+  "createdAt"];
+
+type Doc = admin.firestore.DocumentData;
+
+/** live: indexable with its image. gated: premium or exclusive, blurred. hidden: 404. gone: deleted, 410. */
+export type WebWallState = "live" | "gated" | "hidden" | "gone";
+
+export interface WebCreator {username: string; name: string}
+
+export interface WebWall {
+  state: WebWallState;
+  updatedAt: string;
+  title?: string;
+  description?: string;
+  category?: string;
+  categorySlug?: string;
+  tags?: string[];
+  colors?: Array<{name: string; hex: string}>;
+  width?: number;
+  height?: number;
+  createdAt?: string;
+  creatorName?: string;
+  creator?: WebCreator | null;
+  thumb?: string;
+  blur?: string;
+  blurKey?: string;
+}
+
+export interface WebCard {id: string; title: string; thumb: string; width: number; height: number}
+
+interface PublicProfile {username: string; name: string; bio: string; photo: string}
+
+/** Seams for tests: Remote Config and image fetches are outside the fake database. */
+export const webCatalogDeps: {
+  premium: () => Promise<string[]>;
+  blur: (thumb: string) => Promise<string>;
+  now: () => Date;
+} = {
+  premium: premiumCollections,
+  blur: blurPreview,
+  now: () => new Date(),
+};
+
+/** A tiny blurred JPEG data URL. It shows the mood of a gated wall and is too small to use as a wallpaper. */
+async function blurPreview(thumb: string): Promise<string> {
+  const response = await fetch(thumb, {signal: AbortSignal.timeout(10_000)});
+  if (!response.ok) throw new Error(`thumb ${response.status}`);
+  const {default: sharp} = await import("sharp");
+  const bytes = await sharp(Buffer.from(await response.arrayBuffer()), {limitInputPixels: 50_000_000})
+    .resize({width: 24}).blur(1.2).jpeg({quality: 45}).toBuffer();
+  return `data:image/jpeg;base64,${bytes.toString("base64")}`;
+}
+
+export function cleanText(value: unknown, max: number): string {
+  const text = str(value).replace(HIDDEN_TEXT, " ").replace(/\s+/g, " ").trim();
+  return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
+}
+
+export function categorySlug(category: string): string {
+  return category.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "general";
+}
+
+function isoOf(value: unknown): string {
+  if (value instanceof admin.firestore.Timestamp) return value.toDate().toISOString();
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString();
+  return "";
+}
+
+function dimensions(resolution: unknown): {width: number; height: number} {
+  const match = /^\s*(\d{2,5})\s*[x×*]\s*(\d{2,5})\s*$/i.exec(str(resolution));
+  return match ? {width: Number(match[1]), height: Number(match[2])} : {width: 0, height: 0};
+}
+
+function publicProfile(data: Doc | undefined): PublicProfile | null {
+  const username = str(data?.username).trim();
+  if (!USERNAME.test(username)) return null;
+  return {
+    username,
+    name: cleanText(data?.name, 60) || username,
+    bio: cleanText(data?.bio, 300),
+    photo: isHttpsUrl(str(data?.profilePhoto)) ? str(data?.profilePhoto) : "",
+  };
+}
+
+function isHttpsUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The public copy of one wall. `wall` is the only approved wall doc with this share id, or undefined when there is
+ * none. A gated wall keeps its text, so its page can say what it is, but never its image.
+ */
+export async function projectWall(
+  wall: Doc | undefined, premium: string[], profile: PublicProfile | null, previous: WebWall | undefined, now: Date,
+): Promise<WebWall> {
+  const updatedAt = now.toISOString();
+  if (!wall) return {state: "gone", updatedAt};
+  if (wall.review !== true) return {state: "hidden", updatedAt};
+  const thumb = str(wall.wallpaper_thumb);
+  const live = isWotdEligible(wall, premium) && isPreviewUrl(thumb);
+  const category = cleanText(wall.category, 40) || "General";
+  const projected: WebWall = {
+    state: live ? "live" : "gated",
+    updatedAt,
+    title: cleanText(wall.title, 90),
+    description: cleanText(wall.desc, 300),
+    category,
+    categorySlug: categorySlug(category),
+    tags: (Array.isArray(wall.tags) ? wall.tags : []).map((tag) => cleanText(tag, 32)).filter(Boolean).slice(0, 12),
+    colors: (Array.isArray(wall.colors) ? wall.colors : []).map(str)
+      .filter((name) => PALETTE_HEX.has(name)).map((name) => ({name, hex: PALETTE_HEX.get(name) as string})),
+    ...dimensions(wall.resolution),
+    createdAt: isoOf(wall.createdAt),
+    creatorName: profile?.name || cleanText(wall.by, 60),
+    creator: profile ? {username: profile.username, name: profile.name} : null,
+  };
+  if (live) return {...projected, thumb};
+  if (!isPreviewUrl(thumb)) return projected;
+  const blurKey = createHash("sha256").update(thumb).digest("hex").slice(0, 16);
+  if (previous?.blurKey === blurKey && previous.blur) return {...projected, blur: previous.blur, blurKey};
+  try {
+    return {...projected, blur: await webCatalogDeps.blur(thumb), blurKey};
+  } catch (error) {
+    logger.warn("webCatalog: no blurred preview for a gated wall.", {error: String(error)});
+    return projected;
+  }
+}
+
+function stableJson(value: unknown): string {
+  return JSON.stringify(value, (_, v) => v && typeof v === "object" && !Array.isArray(v) ?
+    Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b))) : v);
+}
+
+/** The same wall, ignoring the time it was written. Unchanged walls keep their old updatedAt, so lastmod is honest. */
+function sameWall(a: WebWall | undefined, b: WebWall): boolean {
+  return a !== undefined && stableJson({...a, updatedAt: ""}) === stableJson({...b, updatedAt: ""});
+}
+
+async function profilesOf(uids: string[]): Promise<Map<string, PublicProfile>> {
+  const found = new Map<string, PublicProfile>();
+  const unique = [...new Set(uids.filter((uid) => uid && !uid.includes("/")))];
+  for (let i = 0; i < unique.length; i += WRITE_CHUNK) {
+    await Promise.all(unique.slice(i, i + WRITE_CHUNK).map(async (uid) => {
+      const profile = publicProfile((await db.collection("profiles").doc(uid).get()).data());
+      if (profile) found.set(uid, profile);
+    }));
+  }
+  return found;
+}
+
+/**
+ * Re-projects one share id from the current walls, not from the event, so retried or late events converge. Two
+ * approved walls with one share id are hidden: the page could not tell which one a link meant.
+ */
+export async function syncWebWall(shareId: string): Promise<void> {
+  if (!SHARE_ID.test(shareId)) return;
+  const rows = await db.collection("walls").where("id", "==", shareId).limit(2).get();
+  const ref = db.collection(WEB_WALLS).doc(shareId);
+  const previous = (await ref.get()).data() as WebWall | undefined;
+  const wall = rows.size === 1 ? rows.docs[0].data() : undefined;
+  if (rows.size === 0 && !previous) return;
+  const premium = await webCatalogDeps.premium();
+  const profiles = await profilesOf(wall ? [str(wall.creatorUid)] : []);
+  const next = rows.size > 1 ?
+    {state: "hidden" as const, updatedAt: webCatalogDeps.now().toISOString()} :
+    await projectWall(wall, premium, profiles.get(str(wall?.creatorUid)) ?? null, previous, webCatalogDeps.now());
+  if (!sameWall(previous, next)) await ref.set(next);
+}
+
+/** Walls take frequent counter writes. Only a change to a field the page shows, or to its gate, re-projects. */
+export function isCatalogChange(before: Doc | undefined, after: Doc | undefined): boolean {
+  if (!before || !after) return true;
+  return RELEVANT_FIELDS.some((field) => stableJson(before[field]) !== stableJson(after[field]));
+}
+
+export const onWallWebCatalog = onDocumentWritten(
+  {document: "walls/{wallId}", region: REGION, retry: true, memory: "512MiB", secrets: r2Secrets},
+  async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    if (!isCatalogChange(before, after)) return;
+    const ids = new Set([str(before?.id), str(after?.id)].filter(Boolean));
+    for (const id of ids) await syncWebWall(id);
+  },
+);
+
+interface PageDoc {kind: string; [key: string]: unknown}
+
+function cardOf(id: string, wall: WebWall): WebCard {
+  return {id, title: wall.title ?? "", thumb: wall.thumb ?? "", width: wall.width ?? 0, height: wall.height ?? 0};
+}
+
+function chunks<T>(values: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < values.length; i += size) out.push(values.slice(i, i + size));
+  return out.length > 0 ? out : [[]];
+}
+
+function paged(prefix: string, base: PageDoc, cards: WebCard[]): Array<[string, PageDoc]> {
+  const pages = chunks(cards, PAGE_SIZE);
+  return pages.map((items, index) => [`${prefix}~${index + 1}`,
+    {...base, page: index + 1, pages: pages.length, total: cards.length, items}]);
+}
+
+function newest(a: [string, WebWall], b: [string, WebWall]): number {
+  return (b[1].createdAt ?? "").localeCompare(a[1].createdAt ?? "") || a[0].localeCompare(b[0]);
+}
+
+function maxDate(values: string[]): string {
+  return values.reduce((best, value) => value > best ? value : best, "");
+}
+
+function sitemap(name: string, entries: Array<[string, string]>): Array<[string, PageDoc]> {
+  return chunks(entries, SITEMAP_SIZE).map((part, index) => [`sitemap~${name}-${index + 1}`, {
+    kind: "sitemap",
+    lastmod: maxDate(part.map(([, lastmod]) => lastmod)),
+    entries: part.map(([path, lastmod]) => `${path}\t${lastmod}`).join("\n"),
+  }]);
+}
+
+/**
+ * Every list page, from the public wall copies alone, plus public folders and profiles. Pure apart from its inputs,
+ * so a test can check the whole catalogue from a seed.
+ */
+export function buildPages(
+  walls: Map<string, WebWall>, popularIds: string[], folders: Array<{id: string; name: string; owner: PublicProfile | null;
+    wallIds: string[]; updatedAt: string}>, creators: Map<string, PublicProfile>,
+): Map<string, PageDoc> {
+  const live = [...walls].filter(([, wall]) => wall.state === "live").sort(newest);
+  // Popular ids and folder items carry the share id in upper case, the way wallpaper_stats keys it.
+  const liveById = new Map(live.map((entry): [string, [string, WebWall]] => [entry[0].toUpperCase(), entry]));
+  const profileByName = new Map([...creators.values()].map((p) => [p.username.toLowerCase(), p]));
+  const cards = (entries: Array<[string, WebWall]>) => entries.map(([id, wall]) => cardOf(id, wall));
+  const byCategory = new Map<string, Array<[string, WebWall]>>();
+  const byCreator = new Map<string, Array<[string, WebWall]>>();
+  for (const entry of live) {
+    const slug = entry[1].categorySlug ?? "general";
+    byCategory.set(slug, [...(byCategory.get(slug) ?? []), entry]);
+    const username = entry[1].creator?.username.toLowerCase();
+    if (username) byCreator.set(username, [...(byCreator.get(username) ?? []), entry]);
+  }
+  const categories = [...byCategory].map(([slug, entries]) => ({
+    slug, name: entries[0][1].category ?? "General", count: entries.length, cover: entries[0][1].thumb ?? "",
+  })).sort((a, b) => b.count - a.count || a.slug.localeCompare(b.slug));
+  const pages = new Map<string, PageDoc>();
+  const add = (list: Array<[string, PageDoc]>) => list.forEach(([key, doc]) => pages.set(key, doc));
+
+  add(paged("latest", {kind: "latest", categories}, cards(live)));
+  const popular = [...new Set(popularIds.map((id) => id.toUpperCase()))]
+    .flatMap((id) => {
+      const entry = liveById.get(id);
+      return entry ? [entry] : [];
+    });
+  add(paged("popular", {kind: "popular", categories}, cards(popular)));
+  for (const [slug, entries] of byCategory) {
+    add(paged(`category~${slug}`, {kind: "category", slug, name: entries[0][1].category, categories}, cards(entries)));
+  }
+
+  const publicFolders = folders.map((folder) => {
+    const items = folder.wallIds.flatMap((id) => {
+      const entry = liveById.get(id.toUpperCase());
+      return entry ? [cardOf(...entry)] : [];
+    }).slice(0, FOLDER_WALLS);
+    return {...folder, items};
+  });
+  for (const folder of publicFolders) {
+    pages.set(`folder~${folder.id}`, {
+      kind: "folder", id: folder.id, name: folder.name, updatedAt: folder.updatedAt,
+      owner: folder.owner ? {username: folder.owner.username, name: folder.owner.name} : null,
+      total: folder.wallIds.length, items: folder.items,
+    });
+  }
+
+  const creatorPages: Array<[string, string]> = [];
+  for (const [username, entries] of byCreator) {
+    const profile = profileByName.get(username);
+    if (!profile) continue;
+    const owned = publicFolders.filter((f) => f.owner?.username.toLowerCase() === username && f.items.length > 0)
+      .slice(0, CREATOR_FOLDERS).map((f) => ({id: f.id, name: f.name, total: f.wallIds.length, cover: f.items[0].thumb}));
+    add(paged(`creator~${username}`, {kind: "creator", creator: profile, folders: owned}, cards(entries)));
+    creatorPages.push([`/creator/${encodeURIComponent(profile.username)}`, maxDate(entries.map(([, w]) => w.updatedAt))]);
+  }
+
+  const wallEntries = live.map(([id, wall]): [string, string] => [`/wallpaper/${id}`, wall.updatedAt]);
+  const hubEntries: Array<[string, string]> = [
+    ["/wallpapers", maxDate(live.map(([, w]) => w.updatedAt))],
+    ["/wallpapers/popular", maxDate(popular.map(([, w]) => w.updatedAt))],
+    ...[...byCategory].map(([slug, entries]): [string, string] =>
+      [`/wallpapers/${slug}`, maxDate(entries.map(([, w]) => w.updatedAt))]),
+  ];
+  const folderEntries = publicFolders.filter((f) => f.items.length > 0)
+    .map((f): [string, string] => [`/folder/${f.id}`, f.updatedAt]);
+  const sitemaps = [
+    ...sitemap("walls", wallEntries), ...sitemap("categories", hubEntries),
+    ...sitemap("folders", folderEntries), ...sitemap("creators", creatorPages),
+  ].filter(([, doc]) => (doc.entries as string).length > 0);
+  add(sitemaps);
+  pages.set("sitemap~index", {
+    kind: "sitemap-index",
+    sitemaps: sitemaps.map(([key, doc]) => ({name: key.slice("sitemap~".length), lastmod: doc.lastmod})),
+  });
+  return pages;
+}
+
+const hashOf = (doc: PageDoc) => createHash("sha256").update(stableJson(doc)).digest("hex").slice(0, 20);
+
+async function inChunks<T>(values: T[], run: (value: T) => Promise<unknown>): Promise<void> {
+  for (let i = 0; i < values.length; i += WRITE_CHUNK) await Promise.all(values.slice(i, i + WRITE_CHUNK).map(run));
+}
+
+/**
+ * Rebuilds the whole catalogue. It re-projects every wall too, so a missed trigger or a renamed creator heals here.
+ * Docs are written only when they change, and a page that no longer exists is deleted.
+ */
+export async function rebuildWebCatalog(): Promise<{walls: number; pages: number; written: number}> {
+  const now = webCatalogDeps.now();
+  const premium = await webCatalogDeps.premium();
+  const [approved, existing, popularDoc, folderDocs, manifestDoc] = await Promise.all([
+    db.collection("walls").where("review", "==", true).get(),
+    db.collection(WEB_WALLS).get(),
+    db.collection("popular").doc("current").get(),
+    db.collection("publicFolders").get(),
+    db.collection(STATE).doc("pages").get(),
+  ]);
+  const previous = new Map(existing.docs.map((doc) => [doc.id, doc.data() as WebWall]));
+  const byId = new Map<string, Doc[]>();
+  for (const doc of approved.docs) {
+    const id = str(doc.data().id);
+    if (SHARE_ID.test(id)) byId.set(id, [...(byId.get(id) ?? []), doc.data()]);
+  }
+  const ownerIds = folderDocs.docs.map((doc) => str(doc.data().ownerId));
+  const profiles = await profilesOf([...[...byId.values()].flat().map((wall) => str(wall.creatorUid)), ...ownerIds]);
+
+  const walls = new Map<string, WebWall>();
+  for (const [id, rows] of byId) {
+    const wall = rows.length === 1 ? rows[0] : undefined;
+    walls.set(id, rows.length > 1 ? {state: "hidden", updatedAt: now.toISOString()} :
+      await projectWall(wall, premium, profiles.get(str(wall?.creatorUid)) ?? null, previous.get(id), now));
+  }
+  for (const [id, old] of previous) {
+    if (!walls.has(id)) walls.set(id, old.state === "live" || old.state === "gated" ? {state: "hidden", updatedAt: now.toISOString()} : old);
+  }
+  let written = 0;
+  const changed = [...walls].filter(([id, wall]) => !sameWall(previous.get(id), wall));
+  await inChunks(changed, ([id, wall]) => db.collection(WEB_WALLS).doc(id).set(wall).then(() => written++));
+  for (const [id, wall] of walls) {
+    const old = previous.get(id);
+    if (old && sameWall(old, wall)) walls.set(id, old);
+  }
+
+  const folders = await Promise.all(folderDocs.docs.map(async (doc) => {
+    const data = doc.data();
+    const items = await doc.ref.collection("items").orderBy("addedAt", "desc").limit(FOLDER_WALLS).get();
+    return {
+      id: doc.id,
+      name: cleanText(data.name, 50),
+      owner: profiles.get(str(data.ownerId)) ?? null,
+      wallIds: items.docs.map((item) => str(item.data().id)).filter((id) => SHARE_ID.test(id)),
+      updatedAt: isoOf(data.updatedAt) || now.toISOString(),
+    };
+  }));
+  const popularIds = Array.isArray(popularDoc.data()?.wallIds) ? (popularDoc.data()?.wallIds as unknown[]).map(str) : [];
+  const pages = buildPages(walls, popularIds, folders.filter((f) => f.name), profiles);
+
+  const oldHashes = (manifestDoc.data()?.hashes ?? {}) as Record<string, string>;
+  const hashes: Record<string, string> = {};
+  const writes: Array<[string, PageDoc]> = [];
+  for (const [key, doc] of pages) {
+    hashes[key] = hashOf(doc);
+    if (oldHashes[key] !== hashes[key]) writes.push([key, doc]);
+  }
+  await inChunks(writes, ([key, doc]) => db.collection(WEB_PAGES).doc(key)
+    .set({...doc, updatedAt: now.toISOString()}).then(() => written++));
+  await inChunks(Object.keys(oldHashes).filter((key) => !(key in hashes)),
+    (key) => db.collection(WEB_PAGES).doc(key).delete().then(() => written++));
+  await db.collection(STATE).doc("pages").set({hashes, builtAt: now.toISOString()});
+  logger.info("webCatalog: rebuilt.", {walls: walls.size, pages: pages.size, written});
+  return {walls: walls.size, pages: pages.size, written};
+}
+
+export const buildWebCatalog = onSchedule(
+  {schedule: "20 */2 * * *", timeZone: "UTC", region: REGION, retryCount: 1, memory: "1GiB", timeoutSeconds: 540,
+    secrets: r2Secrets},
+  async () => {
+    await rebuildWebCatalog();
+  },
+);

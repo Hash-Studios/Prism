@@ -319,6 +319,18 @@ pattern = "prismwalls.com/not-found*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/creator/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/sitemap.xml"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/sitemaps/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "www.prismwalls.com/api/*"
 zone_name = "prismwalls.com"
 
@@ -632,6 +644,18 @@ zone_name = "prismwalls.com"
 
 [[routes]]
 pattern = "www.prismwalls.com/not-found*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/creator/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/sitemap.xml"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/sitemaps/*"
 zone_name = "prismwalls.com"
 
 [vars]

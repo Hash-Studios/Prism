@@ -589,6 +589,22 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // The public web catalogue (webCatalog.ts). The links Worker reads it with no sign-in, so it holds only public
+    // fields. Its build state lists every page key and stays server-only.
+    match /webWalls/{shareId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /webPages/{pageKey} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /webCatalogState/{docId} {
+      allow read, write: if false;
+    }
+
     // Username registry (claimUsername callable). Signed-in users can read it.
     match /usernames/{name} {
       allow read: if isSignedIn();
