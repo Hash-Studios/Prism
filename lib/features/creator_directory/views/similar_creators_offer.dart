@@ -41,11 +41,10 @@ Future<void> showFollowToastWithSimilarOffer(
       label: label,
       onPressed: () async {
         if (!app_state.prismUser.loggedIn || app_state.prismUser.id != viewer) return;
+        // A slow or failed refresh keeps the list the toast was offered with.
         try {
           similar = await getIt<CreatorDirectoryRepository>().similarTo(uid).timeout(const Duration(seconds: 2));
-        } catch (_) {
-          return;
-        }
+        } catch (_) {}
         if (similar.isEmpty || !app_state.prismUser.loggedIn || app_state.prismUser.id != viewer) return;
         if (!context.mounted) return;
         analytics.track(SimilarCreatorsShownEvent(creatorId: uid, count: similar.length));

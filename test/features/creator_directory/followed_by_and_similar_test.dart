@@ -27,6 +27,7 @@ class _FakeDirectory extends Fake implements CreatorDirectoryRepository {
   int followedCalls = 0;
   List<DirectoryCreator> similar = const <DirectoryCreator>[];
   int similarCalls = 0;
+  bool failSimilarAfterFirst = false;
 
   @override
   Future<FollowedBy> followedBy(String creatorUid) async {
@@ -38,6 +39,7 @@ class _FakeDirectory extends Fake implements CreatorDirectoryRepository {
   @override
   Future<List<DirectoryCreator>> similarTo(String uid, {int limit = 6}) async {
     similarCalls++;
+    if (failSimilarAfterFirst && similarCalls > 1) throw StateError('offline');
     return similar;
   }
 }
@@ -272,6 +274,27 @@ void main() {
       await tester.pump();
       expect(repo.similarCalls, 2);
       expect(find.byType(PrismSheetBody), findsNothing);
+      await settleToasts(tester);
+    });
+
+    testWidgets('a failed refresh on tap still opens the sheet with the offered creators', (tester) async {
+      repo.similar = [_creator('a', 'Lia')];
+      repo.failSimilarAfterFirst = true;
+      final bloc = _MockPublicProfileBloc();
+      whenListen(bloc, const Stream<PublicProfileState>.empty(), initialState: PublicProfileState.initial());
+      getIt.registerFactory<PublicProfileBloc>(() => bloc);
+      await pumpApp(tester);
+
+      showFollowOutcomeToast(context, _outcome(follow: true));
+      await tester.pump();
+      await tester.pump();
+      await tester.tap(find.text('More like Kai'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(repo.similarCalls, 2);
+      expect(find.descendant(of: find.byType(PrismSheetBody), matching: find.text('More like Kai')), findsOneWidget);
+      expect(find.text('Lia'), findsOneWidget);
       await settleToasts(tester);
     });
 
