@@ -29,6 +29,8 @@ export type NotificationCopy =
   | { kind: "wallRequestFilled"; requestText: string }
   | { kind: "drawWinner" }
   | { kind: "giftReceived"; senderName: string }
+  | { kind: "tipReceived"; senderName: string; amount: number; wallTitle: string }
+  | { kind: "tipsReceived"; tipCount: number; coins: number }
   | { kind: "reportNeedsReview"; contentType: string; reason: string }
   | {
       kind: "newContentReport";
@@ -216,6 +218,22 @@ export function renderNotificationCopy(
       title: "You won the Prism Draw",
       body: "One month of Pro and the Prism frame are yours.",
     };
+  case "tipReceived":
+    return {
+      kind: copy.kind,
+      args: {senderName: copy.senderName, amount: copy.amount, wallTitle: copy.wallTitle},
+      title: copy.wallTitle ?
+        `${copy.senderName} tipped you ${copy.amount} coins for ${copy.wallTitle}` :
+        `${copy.senderName} tipped you ${copy.amount} coins`,
+      body: "See your tips in your creator stats.",
+    };
+  case "tipsReceived":
+    return {
+      kind: copy.kind,
+      args: {tipCount: copy.tipCount, coins: copy.coins},
+      title: `You got ${copy.tipCount} tips today`,
+      body: `${copy.coins} coins in all. See them in your creator stats.`,
+    };
   case "giftReceived":
     return {
       kind: copy.kind,
@@ -302,6 +320,8 @@ export function nativeNotificationLocalization(
 ): NativeNotificationLocalization | null {
   const kind = message.kind;
   if (kind === "custom" || kind === "wallRemixed" || kind === "creatorStatsWeekly" || kind === "challengeWinner") return null;
+  // Later tips of the day only rewrite the inbox item, so this copy never reaches a system banner.
+  if (kind === "tipsReceived") return null;
 
   const prefix = `notif_push_${kind.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)}`;
   const stringArg = (key: string): string => String(message.args[key] ?? "");
@@ -346,6 +366,11 @@ export function nativeNotificationLocalization(
   }
   case "giftReceived":
     titleArgs.push(stringArg("senderName"));
+    break;
+  case "tipReceived":
+    titleArgs = [stringArg("senderName"), String(Number(message.args.amount ?? 0))];
+    if (!stringArg("wallTitle")) titleSuffix = "_untitled";
+    else titleArgs.push(stringArg("wallTitle"));
     break;
   case "galleryDrop":
     // Topic pushes reach builds that predate this kind, so it uses only shipped resources: the Drop title, and the

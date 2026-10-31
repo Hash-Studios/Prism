@@ -30,6 +30,27 @@ class WallStats {
   final List<StatsWeek> weeks;
 }
 
+/// Tips and the coins they carried.
+class TipTally {
+  const TipTally({required this.count, required this.coins});
+  final int count;
+  final int coins;
+}
+
+class TipWeek extends TipTally {
+  const TipWeek({required this.week, required this.start, required super.count, required super.coins});
+  final String week;
+  final DateTime start;
+}
+
+/// Tips the creator got: all time, per stats week (oldest first) and per approved wall.
+class CreatorTips extends TipTally {
+  const CreatorTips({required super.count, required super.coins, required this.weeks, required this.walls});
+  static const CreatorTips empty = CreatorTips(count: 0, coins: 0, weeks: <TipWeek>[], walls: <String, TipTally>{});
+  final List<TipWeek> weeks;
+  final Map<String, TipTally> walls;
+}
+
 class CreatorStats {
   const CreatorStats({
     required this.generatedAt,
@@ -39,6 +60,7 @@ class CreatorStats {
     required this.coverage,
     required this.weeks,
     required this.walls,
+    this.tips = CreatorTips.empty,
   });
   final DateTime generatedAt;
   final DateTime asOf;
@@ -47,6 +69,7 @@ class CreatorStats {
   final Map<StatsMetric, StatsCoverage> coverage;
   final List<StatsWeek> weeks;
   final List<WallStats> walls;
+  final CreatorTips tips;
   List<WallStats> ranked(StatsMetric metric) => [...walls]
     ..sort((a, b) {
       final av = a.weeks.last.metrics[metric];

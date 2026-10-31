@@ -11147,6 +11147,230 @@
   "@shortcutsAutomationIos16": {
     "description": "Note under the Step 2 automation lines for iOS 16, which has no Run Immediately option. Use the Shortcuts labels in this language."
   },
+  "tipAction": "Trinkgeld geben",
+  "@tipAction": {
+    "description": "Wall detail: opens the sheet to tip the wall's creator coins"
+  },
+  "tipMenuItem": "Trinkgeld senden",
+  "@tipMenuItem": {
+    "description": "Creator profile overflow menu item that opens the tip sheet"
+  },
+  "tipTitle": "Trinkgeld für {name}",
+  "@tipTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipMessage": "Wähle einen Betrag. {name} bekommt alle Coins und sieht deinen Namen.",
+  "@tipMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipAmountsLabel": "Trinkgeldbetrag",
+  "@tipAmountsLabel": {
+    "description": "Accessibility label for the group of tip amount choices"
+  },
+  "tipBalance": "Dein Guthaben: {balance, plural, =1{1 Coin} other{{balance} Coins}}",
+  "@tipBalance": {
+    "placeholders": {
+      "balance": {
+        "type": "int"
+      }
+    }
+  },
+  "tipShortBy": "Dir fehlen {amount, plural, =1{1 Coin} other{{amount} Coins}}.",
+  "@tipShortBy": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipSendButton": "{amount} Coins als Trinkgeld geben",
+  "@tipSendButton": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipEarnCoins": "Coins verdienen",
+  "@tipEarnCoins": {
+    "description": "Tip sheet: opens Rewards when the balance is too low"
+  },
+  "tipThanksTitle": "Danke für dein Trinkgeld",
+  "@tipThanksTitle": {
+    "description": "Tip sheet success headline"
+  },
+  "tipThanksMessage": "{name} hat deine {amount} Coins erhalten.",
+  "@tipThanksMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipDone": "Fertig",
+  "@tipDone": {
+    "description": "Closes the tip sheet after a tip"
+  },
+  "tipNotEnoughCoins": "Du hast nicht genug Coins für dieses Trinkgeld.",
+  "@tipNotEnoughCoins": {
+    "description": "Toast when the balance is short"
+  },
+  "tipDailyLimit": "Du hast heute alle deine Trinkgelder gesendet. Versuch es morgen noch einmal.",
+  "@tipDailyLimit": {
+    "description": "Toast when the sender hit the daily tip cap"
+  },
+  "tipPairLimit": "Du hast {name} heute schon ein Trinkgeld gegeben. Versuch es morgen noch einmal.",
+  "@tipPairLimit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipCreatorLimit": "{name} kann heute keine weiteren Trinkgelder bekommen. Versuch es morgen noch einmal.",
+  "@tipCreatorLimit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipSenderTooNew": "Du kannst 7 Tage nach deinem Beitritt zu Prism Trinkgeld senden.",
+  "@tipSenderTooNew": {
+    "description": "Toast for accounts younger than 7 days"
+  },
+  "tipSenderIneligible": "Melde dich mit einem verifizierten Konto an, um Trinkgeld zu senden.",
+  "@tipSenderIneligible": {
+    "description": "Toast for guest or unverified accounts"
+  },
+  "tipUnavailable": "Du kannst {name} gerade kein Trinkgeld geben.",
+  "@tipUnavailable": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipFailed": "Trinkgeld konnte nicht gesendet werden. Versuch es noch einmal.",
+  "@tipFailed": {
+    "description": "Toast when the tip call fails"
+  },
+  "wallTippedBy": "Trinkgeld von {count} Personen",
+  "@wallTippedBy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "coreCoinTipSent": "Trinkgeld gesendet",
+  "@coreCoinTipSent": {
+    "description": "Coin history row for a tip the user sent"
+  },
+  "coreCoinTipReceived": "Trinkgeld erhalten",
+  "@coreCoinTipReceived": {
+    "description": "Coin history row for a tip the user received"
+  },
+  "notifPushTipReceivedTitle": "{senderName} hat dir {amount} Coins für {wallTitle} als Trinkgeld gegeben",
+  "@notifPushTipReceivedTitle": {
+    "placeholders": {
+      "senderName": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTipReceivedTitleUntitled": "{senderName} hat dir {amount} Coins als Trinkgeld gegeben",
+  "@notifPushTipReceivedTitleUntitled": {
+    "placeholders": {
+      "senderName": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTipReceivedBody": "Deine Trinkgelder findest du in deinen Creator-Statistiken.",
+  "@notifPushTipReceivedBody": {
+    "description": "Body of the first tip push of the day"
+  },
+  "notifTipsReceivedTitle": "Du hast heute {count} Trinkgelder bekommen",
+  "@notifTipsReceivedTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notifTipsReceivedBody": "Insgesamt {coins} Coins. Sieh sie dir in deinen Creator-Statistiken an.",
+  "@notifTipsReceivedBody": {
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTips": "Trinkgelder",
+  "@statsTips": {
+    "description": "Creator stats: tips section title"
+  },
+  "statsTipsTotal": "{count, plural, =1{1 Trinkgeld} other{{count} Trinkgelder}}, insgesamt {coins} Coins",
+  "@statsTipsTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsWeek": "Woche ab {date}: {count, plural, =1{1 Trinkgeld} other{{count} Trinkgelder}}, {coins} Coins",
+  "@statsTipsWeek": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsWall": "{count, plural, =1{1 Trinkgeld} other{{count} Trinkgelder}}, {coins} Coins",
+  "@statsTipsWall": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsEmpty": "Noch keine Trinkgelder. Fans können dir über deine Wallpapers und dein Profil Trinkgeld geben.",
+  "@statsTipsEmpty": {
+    "description": "Creator stats: tips section with no tips"
+  },
   "creatorsToFollow": "Kreative zum Folgen",
   "@creatorsToFollow": {
     "description": "Title of the row of suggested creators on Home and Search."

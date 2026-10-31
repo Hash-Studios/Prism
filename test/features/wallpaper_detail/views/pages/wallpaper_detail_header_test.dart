@@ -5,6 +5,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -13,6 +14,7 @@ import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/repositories/favourite_counts_repository.dart';
+import 'package:Prism/features/wall_remix/data/wall_remix_repository.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
@@ -62,6 +64,7 @@ FeedItemEntity _prism({
   String? docId = 'doc-1',
   int? width,
   int? height,
+  bool? review,
 }) => FeedItemEntity.prism(
   id: id,
   wallpaper: PrismWallpaper(
@@ -77,8 +80,30 @@ FeedItemEntity _prism({
     ),
     title: title,
     firestoreDocumentId: docId,
+    review: review,
   ),
 );
+
+/// Only the block list matters to the detail screen's Tip and Remix gates.
+class _BlocksRepository implements WallRemixRepository {
+  _BlocksRepository(Iterable<String> blocked) : blockedCreators = KnownBlockedCreators(blocked);
+
+  @override
+  final BlockedCreators blockedCreators;
+
+  @override
+  Stream<BlockedCreators> watchBlockedCreators() => const Stream<BlockedCreators>.empty();
+
+  @override
+  Future<BlockedCreators> loadBlockedCreators() async => blockedCreators;
+
+  @override
+  Future<PrismWallpaper?> fetchApprovedWall(String docId) async => null;
+
+  @override
+  Future<List<PrismWallpaper>> fetchRemixes(String originalDocId, {String? startAfterDocId}) async =>
+      const <PrismWallpaper>[];
+}
 
 FeedItemEntity _wallhaven({int? favorites = 24, int? coreFavourites = 24}) => FeedItemEntity.wallhaven(
   id: 'wallhaven-1',
@@ -407,6 +432,40 @@ void main() {
       );
       expect(find.textContaining(RegExp(r'Set \d+ times')), findsNothing);
     });
+
+    testWidgets('shows Tipped by N people from 3 tippers and never an amount or a name', (tester) async {
+      final FeedItemEntity entity = _prism();
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+          tipperCount: 3,
+        ),
+        entity: entity,
+      );
+
+      expect(find.text('Tipped by 3 people'), findsOneWidget);
+      expect(find.textContaining('coins'), findsNothing);
+    });
+
+    testWidgets('hides Tipped by below 3 tippers', (tester) async {
+      final FeedItemEntity entity = _prism();
+      for (final int count in <int>[0, 2]) {
+        await pump(
+          tester,
+          WallpaperDetailLoaded(
+            recommendations: const RecommendationState.exhausted(),
+            entity: entity,
+            paletteLoading: false,
+            tipperCount: count,
+          ),
+          entity: entity,
+        );
+        expect(find.textContaining('Tipped by'), findsNothing, reason: '$count tippers');
+      }
+    });
   });
 
   testWidgets('keeps the network image visible while the retained-copy lookup is pending', (tester) async {
@@ -436,6 +495,56 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(fileImagePaths(tester), contains('assets/images/prism.webp'));
+  });
+
+  group('tip creator', () {
+    Future<void> pumpTip(WidgetTester tester, FeedItemEntity entity, {Iterable<String> blocked = const []}) async {
+      getIt.registerSingleton<WallRemixRepository>(_BlocksRepository(blocked));
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: entity,
+          paletteLoading: false,
+        ),
+        entity: entity,
+      );
+    }
+
+    testWidgets("is offered on someone else's approved wall", (tester) async {
+      app_state.prismUser = profileUser();
+      await pumpTip(tester, _prism(review: true));
+      expect(find.text('Tip creator'), findsOneWidget);
+    });
+
+    testWidgets('is hidden for a guest', (tester) async {
+      await pumpTip(tester, _prism(review: true));
+      expect(find.text('Tip creator'), findsNothing);
+    });
+
+    testWidgets('is hidden on your own wall', (tester) async {
+      app_state.prismUser = profileUser();
+      await pumpTip(tester, _prism(review: true, authorUid: 'u1'));
+      expect(find.text('Tip creator'), findsNothing);
+    });
+
+    testWidgets('is hidden for a creator you blocked', (tester) async {
+      app_state.prismUser = profileUser();
+      await pumpTip(tester, _prism(review: true), blocked: <String>['creator-uid']);
+      expect(find.text('Tip creator'), findsNothing);
+    });
+
+    testWidgets('is hidden on a wall that is not approved', (tester) async {
+      app_state.prismUser = profileUser();
+      await pumpTip(tester, _prism());
+      expect(find.text('Tip creator'), findsNothing);
+    });
+
+    testWidgets('is hidden when the creator is unknown', (tester) async {
+      app_state.prismUser = profileUser();
+      await pumpTip(tester, _prism(review: true, authorUid: null));
+      expect(find.text('Tip creator'), findsNothing);
+    });
   });
 
   group('block creator', () {

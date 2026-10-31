@@ -120,6 +120,20 @@ String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
     title: l10n.notifPushWallRequestFilledTitle,
     body: l10n.notifPushWallRequestFilledBody(_stringArg(args, 'requestText')),
   ),
+  'tipReceived' => (
+    title: _stringArg(args, 'wallTitle').trim().isEmpty
+        ? l10n.notifPushTipReceivedTitleUntitled(_stringArg(args, 'senderName'), '${_intArg(args, 'amount')}')
+        : l10n.notifPushTipReceivedTitle(
+            _stringArg(args, 'senderName'),
+            '${_intArg(args, 'amount')}',
+            _stringArg(args, 'wallTitle'),
+          ),
+    body: l10n.notifPushTipReceivedBody,
+  ),
+  'tipsReceived' => (
+    title: l10n.notifTipsReceivedTitle(_intArg(args, 'tipCount')),
+    body: l10n.notifTipsReceivedBody(_intArg(args, 'coins')),
+  ),
   'giftReceived' => (
     title: l10n.notifPushGiftReceivedTitle(_stringArg(args, 'senderName')),
     body: l10n.notifPushGiftReceivedBody,

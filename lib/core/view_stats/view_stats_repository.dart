@@ -45,6 +45,9 @@ class WallpaperActionReceipt {
   }
 }
 
+/// Times the wall was set (null when unknown) and how many people tipped it (0 when none).
+typedef WallpaperCounts = ({int? sets, int tippers});
+
 /// Prism wallpaper view counters (Firestore-backed via Cloud Functions).
 abstract class ViewStatsRepository {
   /// Increments the view count and returns the new total as a string for UI display.
@@ -53,6 +56,6 @@ abstract class ViewStatsRepository {
   /// Counts one [action] on the wall. An older backend without the callable counts as success, so the UI never breaks.
   Future<Result<WallpaperActionReceipt>> recordWallpaperAction(String wallId, WallpaperAction action);
 
-  /// How many times the wall was set, from `wallpaper_stats`. Null when the wall has no stats yet.
-  Future<Result<int?>> fetchWallpaperSetCount(String wallId);
+  /// The set and tipper counts from `wallpaper_stats`. Null when the wall has no stats doc yet.
+  Future<Result<WallpaperCounts?>> fetchWallpaperCounts(String wallId);
 }

@@ -163,6 +163,8 @@ test("native resources contain every typed notification key on Android and iOS",
     {kind: "dropLastCall", dropTitle: "Blue hour", hoursLeft: 3},
     {kind: "drawWinner"},
     {kind: "giftReceived", senderName: "Asha"},
+    {kind: "tipReceived", senderName: "Asha", amount: 25, wallTitle: "Neon rain"},
+    {kind: "tipReceived", senderName: "Asha", amount: 25, wallTitle: ""},
     {kind: "reportNeedsReview", contentType: "wall", reason: "spam"},
     {
       kind: "newContentReport",

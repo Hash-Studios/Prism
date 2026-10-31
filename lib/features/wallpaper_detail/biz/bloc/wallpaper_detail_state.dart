@@ -30,6 +30,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     required this.entity,
     this.views,
     this.setCount,
+    this.tipperCount = 0,
     this.viewsLoading = false,
     this.paletteLoading = true,
     this.colors,
@@ -46,6 +47,9 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
 
   /// Times the wall was set, from `wallpaper_stats`. Null until known.
   final int? setCount;
+
+  /// People who tipped the wall, from `wallpaper_stats`. 0 until known.
+  final int tipperCount;
   final bool viewsLoading;
   final bool paletteLoading;
   final List<Color>? colors;
@@ -63,6 +67,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     FeedItemEntity? entity,
     String? views,
     int? setCount,
+    int? tipperCount,
     bool? viewsLoading,
     bool? paletteLoading,
     List<Color>? colors,
@@ -77,6 +82,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
       entity: entity ?? this.entity,
       views: views ?? this.views,
       setCount: setCount ?? this.setCount,
+      tipperCount: tipperCount ?? this.tipperCount,
       viewsLoading: viewsLoading ?? this.viewsLoading,
       paletteLoading: paletteLoading ?? this.paletteLoading,
       colors: colors ?? this.colors,
@@ -94,6 +100,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     entity,
     views,
     setCount,
+    tipperCount,
     viewsLoading,
     paletteLoading,
     colors,

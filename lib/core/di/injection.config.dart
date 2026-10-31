@@ -554,8 +554,8 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i364.RecordWallpaperActionUseCase>(
     () => _i364.RecordWallpaperActionUseCase(gh<_i602.ViewStatsRepository>()),
   );
-  gh.lazySingleton<_i364.GetWallpaperSetCountUseCase>(
-    () => _i364.GetWallpaperSetCountUseCase(gh<_i602.ViewStatsRepository>()),
+  gh.lazySingleton<_i364.GetWallpaperCountsUseCase>(
+    () => _i364.GetWallpaperCountsUseCase(gh<_i602.ViewStatsRepository>()),
   );
   gh.lazySingleton<_i231.RecordPrismWallpaperViewsUsecase>(
     () =>
@@ -715,7 +715,7 @@ _i174.GetIt initGetIt(
       gh<_i312.PexelsWallpaperRepository>(),
       gh<_i231.RecordPrismWallpaperViewsUsecase>(),
       gh<_i652.PaletteRepository>(),
-      gh<_i364.GetWallpaperSetCountUseCase>(),
+      gh<_i364.GetWallpaperCountsUseCase>(),
     ),
   );
   gh.factory<_i1026.RemixCreditCubit>(

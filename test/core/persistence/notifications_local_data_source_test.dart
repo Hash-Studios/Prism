@@ -125,6 +125,29 @@ void main() {
     expect(await local.lastFetchAtUtc(), isNull);
   });
 
+  test('a doc the server rewrote with a newer time turns unread again, in upsert and in a full sync', () async {
+    final NotificationsLocalDataSource local = NotificationsLocalDataSource.withStore(
+      DurableJsonStore('notifications_rewrite', directory: directory),
+    )..setOwner('account-a');
+    final DateTime first = DateTime.utc(2026, 10, 31, 9);
+    await local.upsertAll(<InAppNotificationEntity>[notification('tips_day', first, body: '1 tip')]);
+    await local.markAsRead('tips_day');
+    await local.upsertAll(<InAppNotificationEntity>[
+      notification('tips_day', first.add(const Duration(hours: 2)), body: '2 tips'),
+    ]);
+    expect((await local.readAll()).single.read, isFalse);
+    expect((await local.readAll()).single.body, '2 tips');
+
+    await local.markAsRead('tips_day');
+    await local.replaceAllPreservingReadState(
+      <InAppNotificationEntity>[notification('tips_day', first.add(const Duration(hours: 3)), body: '3 tips')],
+      filterRemoved: (items) async => items,
+      isCurrentSession: () => true,
+    );
+    expect((await local.readAll()).single.read, isFalse);
+    expect((await local.readAll()).single.body, '3 tips');
+  });
+
   test('a local announcement upsert queued during sync survives the replacement', () async {
     final NotificationsLocalDataSource local = NotificationsLocalDataSource.withStore(
       DurableJsonStore('notifications_merge_upsert_race', directory: directory),
@@ -234,7 +257,7 @@ void main() {
     final DateTime now = DateTime.utc(2026, 10, 20);
     await local.writeAll(<InAppNotificationEntity>[
       for (var index = 0; index < 500; index++) notification('local_$index', now.add(Duration(minutes: index))),
-      notification('remote', now, read: true),
+      notification('remote', now.add(const Duration(days: 1)), read: true),
     ]);
 
     await local.replaceAllPreservingReadState(

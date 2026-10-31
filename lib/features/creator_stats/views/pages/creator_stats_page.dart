@@ -112,6 +112,10 @@ class CreatorStatsView extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: _MetricSummary(metric: metric, weeks: data.weeks, total: data.totals[metric]),
                 ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: _TipsSummary(tips: data.tips, walls: data.walls),
+              ),
               const SizedBox(height: 24),
               _Selector(
                 metric: state.metric,
@@ -169,6 +173,43 @@ class CreatorStatsView extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Tips all time, per week with tips (newest first) and per wall, most coins first.
+class _TipsSummary extends StatelessWidget {
+  const _TipsSummary({required this.tips, required this.walls});
+  final CreatorTips tips;
+  final List<WallStats> walls;
+  @override
+  Widget build(BuildContext context) {
+    final String locale = Localizations.localeOf(context).toLanguageTag();
+    final Map<String, String> titles = {for (final wall in walls) wall.wallId: wall.title};
+    final List<MapEntry<String, TipTally>> byWall = tips.walls.entries.toList()
+      ..sort((a, b) => b.value.coins.compareTo(a.value.coins));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(context.l10n.statsTips, style: PrismTextStyles.rowTitle(context)),
+        if (tips.count == 0)
+          Text(context.l10n.statsTipsEmpty, style: PrismTextStyles.body(context))
+        else ...[
+          Text(context.l10n.statsTipsTotal(tips.count, tips.coins), style: PrismTextStyles.body(context)),
+          for (final week in tips.weeks.reversed)
+            if (week.count > 0)
+              Text(
+                context.l10n.statsTipsWeek(DateFormat.MMMd(locale).format(week.start), week.count, week.coins),
+                style: PrismTextStyles.caption(context),
+              ),
+          for (final entry in byWall)
+            Text(
+              '${(titles[entry.key] ?? '').isEmpty ? context.l10n.statsUntitled : titles[entry.key]}: '
+              '${context.l10n.statsTipsWall(entry.value.count, entry.value.coins)}',
+              style: PrismTextStyles.caption(context),
+            ),
+        ],
+      ],
+    );
+  }
 }
 
 class _MetricSummary extends StatelessWidget {

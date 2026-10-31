@@ -9,6 +9,7 @@ import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -41,7 +42,7 @@ class _MockRecordViews extends Mock implements RecordPrismWallpaperViewsUsecase 
 
 class _MockPaletteRepository extends Mock implements PaletteRepository {}
 
-class _MockSetCount extends Mock implements GetWallpaperSetCountUseCase {}
+class _MockSetCount extends Mock implements GetWallpaperCountsUseCase {}
 
 const PrismWallpaper _wallpaper = PrismWallpaper(
   core: WallpaperCore(
@@ -83,7 +84,7 @@ void main() {
     wallhaven = _MockWallhavenRepository();
     views = _MockRecordViews();
     setCount = _MockSetCount();
-    when(() => setCount(any())).thenAnswer((_) async => Result.success<int?>(null));
+    when(() => setCount(any())).thenAnswer((_) async => Result.success<WallpaperCounts?>(null));
     when(() => palette.generatePalette(any())).thenAnswer((_) async => Result.error(const NetworkFailure('x')));
     when(() => views(any())).thenAnswer((_) async => Result.success('7'));
     final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
@@ -453,7 +454,7 @@ void main() {
   });
 
   test('the set count of a Prism wall lands in the loaded state', () async {
-    when(() => setCount('abc')).thenAnswer((_) async => Result.success<int?>(12));
+    when(() => setCount('abc')).thenAnswer((_) async => Result.success<WallpaperCounts?>((sets: 12, tippers: 4)));
 
     bloc.add(
       const LoadFromEntity(
@@ -463,6 +464,7 @@ void main() {
     await settle();
 
     expect((bloc.state as WallpaperDetailLoaded).setCount, 12);
+    expect((bloc.state as WallpaperDetailLoaded).tipperCount, 4);
   });
 
   test('a failed or empty set count leaves the state without a count', () async {

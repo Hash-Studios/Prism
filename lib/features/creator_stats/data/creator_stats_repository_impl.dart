@@ -74,6 +74,44 @@ String _isoWeek(DateTime monday) {
   return '${thursday.year}-W${number.toString().padLeft(2, '0')}';
 }
 
+int _count(Object? value) => switch (value) {
+  final int count when count >= 0 => count,
+  _ => throw const FormatException('Invalid tip count'),
+};
+
+/// Servers older than tips send no `tips`; that reads as no tips.
+CreatorTips _tips(Object? value, List<StatsWeek> weeks) {
+  if (value == null) return CreatorTips.empty;
+  final m = _map(value);
+  final tipWeeks = _read<List<Object?>>(m['weeks'])
+      .map((value) {
+        final w = _map(value);
+        return TipWeek(
+          week: _read<String>(w['week']),
+          start: _date(w['start']),
+          count: _count(w['count']),
+          coins: _count(w['coins']),
+        );
+      })
+      .toList(growable: false);
+  if (tipWeeks.length != weeks.length ||
+      [for (var i = 0; i < weeks.length; i++) tipWeeks[i].week == weeks[i].week].contains(false)) {
+    throw const FormatException('Mismatched tip weeks');
+  }
+  return CreatorTips(
+    count: _count(m['count']),
+    coins: _count(m['coins']),
+    weeks: tipWeeks,
+    walls: {
+      for (final value in _read<List<Object?>>(m['walls']))
+        _read<String>(_map(value)['wallId']): TipTally(
+          count: _count(_map(value)['count']),
+          coins: _count(_map(value)['coins']),
+        ),
+    },
+  );
+}
+
 CreatorStats parseCreatorStats(Object? value) {
   final m = _map(value);
   if (m['schemaVersion'] != 1 || m['timezone'] != 'UTC') throw const FormatException('Unsupported creator stats');
@@ -127,5 +165,6 @@ CreatorStats parseCreatorStats(Object? value) {
     },
     weeks: weeks,
     walls: walls,
+    tips: _tips(m['tips'], weeks),
   );
 }

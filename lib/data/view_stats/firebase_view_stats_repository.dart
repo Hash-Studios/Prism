@@ -110,19 +110,19 @@ class FirebaseViewStatsRepository implements ViewStatsRepository {
   }
 
   @override
-  Future<Result<int?>> fetchWallpaperSetCount(String wallId) async {
+  Future<Result<WallpaperCounts?>> fetchWallpaperCounts(String wallId) async {
     final String id = wallId.trim().toUpperCase();
     if (id.isEmpty) {
       return Result.error(const ServerFailure('Invalid wall id'));
     }
     try {
-      final int? sets = await _firestoreClient.getById<int?>(
+      final WallpaperCounts? counts = await _firestoreClient.getById<WallpaperCounts>(
         _statsCollection,
         id,
-        (data, _) => _count(data['sets']),
+        (data, _) => (sets: _count(data['sets']), tippers: _count(data['tippers']) ?? 0),
         sourceTag: 'wallpaper_stats.detail',
       );
-      return Result.success(sets);
+      return Result.success(counts);
     } catch (e) {
       return Result.error(ServerFailure('Failed to read wallpaper stats: $e'));
     }

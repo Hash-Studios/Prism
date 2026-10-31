@@ -11600,6 +11600,230 @@
   "@shortcutsAutomationIos16": {
     "description": "Note under the Step 2 automation lines for iOS 16, which has no Run Immediately option. Use the Shortcuts labels in this language."
   },
+  "tipAction": "Tip creator",
+  "@tipAction": {
+    "description": "Wall detail: opens the sheet to tip the wall's creator coins"
+  },
+  "tipMenuItem": "Send a tip",
+  "@tipMenuItem": {
+    "description": "Creator profile overflow menu item that opens the tip sheet"
+  },
+  "tipTitle": "Tip {name}",
+  "@tipTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipMessage": "Pick an amount. {name} gets every coin and sees your name.",
+  "@tipMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipAmountsLabel": "Tip amount",
+  "@tipAmountsLabel": {
+    "description": "Accessibility label for the group of tip amount choices"
+  },
+  "tipBalance": "Your balance: {balance, plural, =1{1 coin} other{{balance} coins}}",
+  "@tipBalance": {
+    "placeholders": {
+      "balance": {
+        "type": "int"
+      }
+    }
+  },
+  "tipShortBy": "You need {amount, plural, =1{1 more coin} other{{amount} more coins}}.",
+  "@tipShortBy": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipSendButton": "Tip {amount} coins",
+  "@tipSendButton": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipEarnCoins": "Earn coins",
+  "@tipEarnCoins": {
+    "description": "Tip sheet: opens Rewards when the balance is too low"
+  },
+  "tipThanksTitle": "Thanks for your tip",
+  "@tipThanksTitle": {
+    "description": "Tip sheet success headline"
+  },
+  "tipThanksMessage": "{name} got your {amount} coins.",
+  "@tipThanksMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipDone": "Done",
+  "@tipDone": {
+    "description": "Closes the tip sheet after a tip"
+  },
+  "tipNotEnoughCoins": "You don't have enough coins for this tip.",
+  "@tipNotEnoughCoins": {
+    "description": "Toast when the balance is short"
+  },
+  "tipDailyLimit": "You've sent all your tips for today. Try again tomorrow.",
+  "@tipDailyLimit": {
+    "description": "Toast when the sender hit the daily tip cap"
+  },
+  "tipPairLimit": "You already tipped {name} today. Try again tomorrow.",
+  "@tipPairLimit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipCreatorLimit": "{name} can't get more tips today. Try again tomorrow.",
+  "@tipCreatorLimit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipSenderTooNew": "You can send tips 7 days after you join Prism.",
+  "@tipSenderTooNew": {
+    "description": "Toast for accounts younger than 7 days"
+  },
+  "tipSenderIneligible": "Sign in with a verified account to send tips.",
+  "@tipSenderIneligible": {
+    "description": "Toast for guest or unverified accounts"
+  },
+  "tipUnavailable": "You can't tip {name} right now.",
+  "@tipUnavailable": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipFailed": "Couldn't send the tip. Try again.",
+  "@tipFailed": {
+    "description": "Toast when the tip call fails"
+  },
+  "wallTippedBy": "Tipped by {count} people",
+  "@wallTippedBy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "coreCoinTipSent": "Tip sent",
+  "@coreCoinTipSent": {
+    "description": "Coin history row for a tip the user sent"
+  },
+  "coreCoinTipReceived": "Tip received",
+  "@coreCoinTipReceived": {
+    "description": "Coin history row for a tip the user received"
+  },
+  "notifPushTipReceivedTitle": "{senderName} tipped you {amount} coins for {wallTitle}",
+  "@notifPushTipReceivedTitle": {
+    "placeholders": {
+      "senderName": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTipReceivedTitleUntitled": "{senderName} tipped you {amount} coins",
+  "@notifPushTipReceivedTitleUntitled": {
+    "placeholders": {
+      "senderName": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTipReceivedBody": "See your tips in your creator stats.",
+  "@notifPushTipReceivedBody": {
+    "description": "Body of the first tip push of the day"
+  },
+  "notifTipsReceivedTitle": "You got {count} tips today",
+  "@notifTipsReceivedTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notifTipsReceivedBody": "{coins} coins in all. See them in your creator stats.",
+  "@notifTipsReceivedBody": {
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTips": "Tips",
+  "@statsTips": {
+    "description": "Creator stats: tips section title"
+  },
+  "statsTipsTotal": "{count, plural, =1{1 tip} other{{count} tips}}, {coins} coins in all",
+  "@statsTipsTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsWeek": "Week of {date}: {count, plural, =1{1 tip} other{{count} tips}}, {coins} coins",
+  "@statsTipsWeek": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsWall": "{count, plural, =1{1 tip} other{{count} tips}}, {coins} coins",
+  "@statsTipsWall": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsEmpty": "No tips yet. Fans can tip you from your walls and your profile.",
+  "@statsTipsEmpty": {
+    "description": "Creator stats: tips section with no tips"
+  },
   "creatorsToFollow": "Creators to follow",
   "@creatorsToFollow": {
     "description": "Title of the row of suggested creators on Home and Search."
