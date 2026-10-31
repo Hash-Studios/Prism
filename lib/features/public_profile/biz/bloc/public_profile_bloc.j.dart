@@ -128,9 +128,16 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
           for (final item in merged) item.id: item,
         }.values.toList(growable: false);
 
-        emit(state.copyWith(walls: deduped, hasMoreWalls: page.hasMore, isFetchingMoreWalls: false));
+        emit(
+          state.copyWith(
+            status: LoadStatus.success,
+            walls: deduped,
+            hasMoreWalls: page.hasMore,
+            isFetchingMoreWalls: false,
+          ),
+        );
       },
-      onFailure: (_) => emit(state.copyWith(isFetchingMoreWalls: false)),
+      onFailure: (_) => emit(state.copyWith(status: LoadStatus.failure, isFetchingMoreWalls: false)),
     );
   }
 

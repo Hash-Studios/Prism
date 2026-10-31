@@ -6,25 +6,28 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/ads/data/ad_experiment_config.dart';
+import 'package:Prism/features/ads/views/widgets/experimental_inline_ad.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/views/widgets/mood_chip_row.dart';
 import 'package:Prism/features/moods/views/widgets/mood_row.dart';
-import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/following_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/popular_feed_bloc.j.dart';
-import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_loading_more.dart';
@@ -39,6 +42,7 @@ import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
 import 'package:Prism/features/wallpaper_history/views/widgets/pick_up_row.dart';
+import 'package:Prism/features/weekly_challenges/views/widgets/weekly_challenge_card.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -52,6 +56,13 @@ const List<int> _moodRowGridRows = <int>[4, 12];
 
 /// Grid rows before the "Pick up where you left off" row.
 const int _pickUpGridRows = 2;
+
+@visibleForTesting
+int? forYouAdIndex(int itemCount, int columns) {
+  if (columns <= 0) return null;
+  final int index = 14 * columns;
+  return itemCount >= index + columns ? index : null;
+}
 
 /// Splits the For you grid into chunks. Each chunk is a range of tiles, and [rowAfter] is the mood row that follows it.
 @visibleForTesting
@@ -104,6 +115,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   int _moodLoadVersion = 0;
   bool _moodsReady = false;
 
+  bool get _showAi =>
+      !getIt.isRegistered<SettingsLocalDataSource>() || AiContentFilter.showsAi(getIt<SettingsLocalDataSource>());
+
   @override
   bool get wantKeepAlive => true;
 
@@ -133,6 +147,10 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     if (mounted) {
       _reloadMoodRows(resetImpressions: true);
       _bloc.add(const PersonalizedFeedEvent.settingsChanged());
+      _trending.add(const TrendingEvent.refreshRequested());
+      _latest?.add(const PagedFeedEvent.refreshRequested());
+      _following?.add(const PagedFeedEvent.refreshRequested());
+      _popular?.add(const PagedFeedEvent.refreshRequested());
     }
   }
 
@@ -463,6 +481,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         return <Widget>[
           PagedChipSliver(
             bloc: _chipBloc(HomeFeedChip.latest)!,
+            showAi: _showAi,
             failureTitle: context.l10n.wallpaperFeedLatestLoadError,
             emptyTitle: context.l10n.accountNoWallpapersYet,
             emptyBody: context.l10n.wallpaperFeedPullToRefresh,
@@ -477,6 +496,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         return <Widget>[
           PagedChipSliver(
             bloc: _chipBloc(HomeFeedChip.following)!,
+            showAi: _showAi,
             failureTitle: context.l10n.wallpaperFeedFollowingLoadError,
             emptyTitle: context.l10n.wallpaperFeedFollowingEmptyTitle,
             emptyActionLabel: context.l10n.accountFindCreators,
@@ -487,12 +507,18 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         ];
       case HomeFeedChip.trending:
         return <Widget>[
-          TrendingChipSliver(bloc: _trending, crossAxisCount: crossAxisCount, tileMemCacheHeight: tileMemCacheHeight),
+          TrendingChipSliver(
+            bloc: _trending,
+            crossAxisCount: crossAxisCount,
+            tileMemCacheHeight: tileMemCacheHeight,
+            showAi: _showAi,
+          ),
         ];
       case HomeFeedChip.popular:
         return <Widget>[
           PagedChipSliver(
             bloc: _chipBloc(HomeFeedChip.popular)!,
+            showAi: _showAi,
             failureTitle: context.l10n.wallpaperFeedPopularLoadError,
             emptyTitle: context.l10n.wallpaperFeedPopularEmptyTitle,
             emptyBody: context.l10n.wallpaperFeedPullToRefresh,
@@ -513,16 +539,20 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     int crossAxisCount,
     int tileMemCacheHeight,
   ) {
+    final List<FeedItemEntity> filteredItems = AiContentFilter.filterFeedItems(state.items, showAi: _showAi);
+    final PersonalizedFeedState visibleState = state.copyWith(items: filteredItems);
     final DateTime now = DateTime.now();
-    final List<PrismWallpaper> boostedWalls = weekWalls.where((wall) => wall.isBoostedAt(now)).toList(growable: false);
+    final List<PrismWallpaper> boostedWalls = weekWalls
+        .where((wall) => wall.isBoostedAt(now) && (_showAi || !AiContentFilter.isAi(wall)))
+        .toList(growable: false);
     final Set<String> boostedIds = <String>{for (final PrismWallpaper wall in boostedWalls) wall.id};
-    final List<PrismFeedItem> previewWalls = state.items
+    final List<PrismFeedItem> previewWalls = visibleState.items
         .whereType<PrismFeedItem>()
         .where((item) => !boostedIds.contains(item.id))
         .take(_carouselPreviewCount)
         .toList(growable: false);
     final Set<String> shownInCarousel = <String>{...boostedIds, for (final PrismFeedItem item in previewWalls) item.id};
-    final List<FeedItemEntity> visibleItems = state.items
+    final List<FeedItemEntity> visibleItems = visibleState.items
         .where((item) => item is! PrismFeedItem || !shownInCarousel.contains(item.id))
         .toList(growable: false);
     final bool loadingFirstPage =
@@ -539,14 +569,14 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                     boostedWalls: boostedWalls,
                     liveDrop: state.liveDrop,
                     previewWalls: previewWalls,
-                    onWallShown: (wall) => _bloc.add(
-                      PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(wall)]),
-                    ),
+                    onWallShown: (wall) => _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[wall.canonicalKey])),
                   ),
           ),
         ),
+        if (!loadingFirstPage)
+          SliverToBoxAdapter(child: WeeklyChallengeCard(key: ValueKey('challenge-$_moodRowsRevision'))),
         if (!loadingFirstPage) SliverToBoxAdapter(child: MoodChipRow(moods: moods)),
-        ..._forYouGridSlivers(context, state, visibleItems, moods, crossAxisCount, tileMemCacheHeight),
+        ..._forYouGridSlivers(context, visibleState, visibleItems, moods, crossAxisCount, tileMemCacheHeight),
       ],
     );
   }
@@ -583,52 +613,60 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       crossAxisCount,
       rowMoods,
     );
-    final List<List<FeedItemEntity>?> chunkItems = chunks.length == 1
-        ? const <List<FeedItemEntity>?>[null]
-        : <List<FeedItemEntity>?>[
-            for (final (int start, int end, MoodList? _) in chunks) visibleItems.sublist(start, end),
-          ];
-    Widget grid(int start, int end, List<FeedItemEntity>? gridItems) => SliverPadding(
-      padding: PrismFeedLayout.gridPadding,
-      sliver: SliverGrid(
-        gridDelegate: PrismWallGrid.delegate(
-          context,
-          footerHeight: favouriteFooterHeight,
-          columns: crossAxisCount,
-          spacing: PrismFeedLayout.gridSpacing,
+    Widget grid(int start, int end) {
+      final gridItems = start == 0 && end == visibleItems.length ? null : visibleItems.sublist(start, end);
+      return SliverPadding(
+        padding: PrismFeedLayout.gridPadding,
+        sliver: SliverGrid(
+          gridDelegate: PrismWallGrid.delegate(
+            context,
+            footerHeight: favouriteFooterHeight,
+            columns: crossAxisCount,
+            spacing: PrismFeedLayout.gridSpacing,
+          ),
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final FeedItemEntity item = visibleItems[start + index];
+            return KeyedSubtree(
+              key: ValueKey<String>(item.id),
+              child: FeedWallTile(
+                item: item,
+                index: start + index,
+                crossAxisCount: crossAxisCount,
+                memCacheHeight: tileMemCacheHeight,
+                onShowLessLikeThis: () => _lessLikeThis(item),
+                onVisible: () => _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[item.canonicalKey])),
+                feed: visibleItems,
+                gridItems: gridItems,
+              ),
+            );
+          }, childCount: end - start),
         ),
-        delegate: SliverChildBuilderDelegate((context, index) {
-          final FeedItemEntity item = visibleItems[start + index];
-          return KeyedSubtree(
-            key: ValueKey<String>(item.id),
-            child: FeedWallTile(
-              item: item,
-              index: start + index,
-              crossAxisCount: crossAxisCount,
-              memCacheHeight: tileMemCacheHeight,
-              onShowLessLikeThis: () => _lessLikeThis(item),
-              onVisible: () =>
-                  _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(item)])),
-              feed: visibleItems,
-              gridItems: gridItems,
-            ),
-          );
-        }, childCount: end - start),
-      ),
-    );
+      );
+    }
+
     // The pick-up row sits after the second grid row, so the feed still starts on the first screen.
     final List<HistoryWall> pickUp = pickUpWallsForSession(now: _sessionStart);
     final int? pickUpAt = pickUp.isEmpty || visibleItems.isEmpty
         ? null
         : math.min(_pickUpGridRows * crossAxisCount, chunks.first.$2);
+    // Leave two wallpaper rows after the second mood row and content after the ad.
+    final int? adAt = forYouAdIndex(visibleItems.length, crossAxisCount);
+    List<Widget> gridWithAd(int start, int end) => <Widget>[
+      if (adAt != null && start < adAt && adAt < end) ...<Widget>[
+        grid(start, adAt),
+        const DeferredAdSliver(child: ExperimentalInlineAd(format: AdExperimentFormat.native, active: true)),
+        grid(adAt, end),
+      ] else
+        grid(start, end),
+    ];
     return <Widget>[
       for (int i = 0; i < chunks.length; i++) ...<Widget>[
         if (i == 0 && pickUpAt != null) ...<Widget>[
-          grid(chunks[i].$1, pickUpAt, chunkItems[i]),
+          ...gridWithAd(chunks[i].$1, pickUpAt),
           SliverToBoxAdapter(child: PickUpRow(walls: pickUp)),
-          if (pickUpAt < chunks[i].$2) grid(pickUpAt, chunks[i].$2, chunkItems[i]),
+          if (pickUpAt < chunks[i].$2) ...gridWithAd(pickUpAt, chunks[i].$2),
         ] else
-          grid(chunks[i].$1, chunks[i].$2, chunkItems[i]),
+          ...gridWithAd(chunks[i].$1, chunks[i].$2),
         if (chunks[i].$3 case final MoodList rowAfter)
           SliverToBoxAdapter(
             child: MoodRow(

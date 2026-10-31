@@ -315,7 +315,13 @@ update-flutter: ensure-fvm
 repo-assets-check:
 	@python3 tool/check_repo_assets.py
 
-ci: get format-check l10n-check guard-test env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard system-ui-guard find-unused-ci cloudflare-worker-check repo-assets-check test
+.PHONY: duo-check
+duo-check:
+	@node tool/generate_duo_reveal.mjs --check
+	@node tool/generate_duo_web_copy.mjs --check
+	@node --test tool/generate_duo_reveal.test.mjs tool/generate_duo_web_copy.test.mjs
+
+ci: get format-check l10n-check guard-test env-guard secrets-guard version-guard analytics-check duo-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard system-ui-guard find-unused-ci cloudflare-worker-check repo-assets-check test
 
 .PHONY: native-android-check native-ios-check ios-strip-test
 native-android-check: get

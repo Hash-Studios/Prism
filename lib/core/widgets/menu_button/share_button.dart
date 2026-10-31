@@ -35,6 +35,7 @@ class ShareButton extends StatefulWidget {
 
   /// Shows a caption under the round button.
   final bool labelled;
+  final bool duoReveal;
   const ShareButton({
     required this.id,
     required this.source,
@@ -46,6 +47,7 @@ class ShareButton extends StatefulWidget {
     this.createLink,
     this.openSheet = showShareSheet,
     this.labelled = false,
+    this.duoReveal = false,
     super.key,
   });
 
@@ -168,6 +170,11 @@ class _ShareButtonState extends State<ShareButton> {
           creator: creator,
           creatorLine: creator == null ? null : l10n.coreShareCardBy(creator),
           palette: palette,
+          duoReveal: widget.duoReveal,
+          contentId: itemId,
+          foldedLabel: l10n.duoFolded,
+          unfoldedLabel: l10n.duoUnfolded,
+          cta: l10n.duoGetOnPrism,
         ),
         'wallpaper_screen',
       );

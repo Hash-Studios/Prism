@@ -6,7 +6,7 @@ import {db, CALLABLE_REGIONS, readDailyCount, REGION, str, utcDateString} from "
 import {isAdminCaller} from "./adminConfig";
 import {buildPushGallery, isPreviewUrl, type GalleryDeps} from "./pushGallery";
 import {r2Secrets} from "./r2Storage";
-import {isWotdEligible, parseCollectionList} from "./wallOfTheDay";
+import {isWotdEligible, parseCollectionList} from "./wallEligibility";
 
 export const PUBLIC_FOLDERS = "publicFolders";
 export const FOLLOWED_FOLDERS = "followedFolders";

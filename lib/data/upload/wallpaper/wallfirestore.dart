@@ -8,11 +8,10 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wall_files.dart';
 import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-
-export 'package:Prism/data/upload/wallpaper/wall_submission.dart';
 
 Future<WallSubmissionResult> createRecord(
   String? id,
@@ -42,6 +41,7 @@ Future<WallSubmissionResult> createRecord(
   String? docId,
   DateTime Function()? now,
   String requestId = '',
+  String challengeId = '',
 }) async {
   final user = app_state.prismUser;
   final bool isPremium = user.premium;
@@ -107,6 +107,7 @@ Future<WallSubmissionResult> createRecord(
       if (aiStylePreset != null && aiStylePreset.trim().isNotEmpty) 'aiStylePreset': aiStylePreset,
       if (remixOf != null && remixOf.trim().isNotEmpty) 'remixOf': remixOf.trim(),
       if (requestId.isNotEmpty) 'requestId': requestId,
+      if (challengeId.isNotEmpty) 'challengeId': challengeId,
     },
     docId: docId,
     awardFirstUpload: () {

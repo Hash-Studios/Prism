@@ -11,6 +11,41 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get economyAd => 'Anuncio';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Ver anuncio por $rewardString monedas';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Te faltan $countString monedas.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Puede que aún necesites $countString monedas después del anuncio';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'Si tu saldo después de la recompensa cubre el precio, este artículo se comprará automáticamente.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Tu recompensa está pendiente de verificación. Las monedas aparecerán cuando se confirme.';
+
+  @override
   String get foldersLibraryEmptyTitle => 'Aún no hay carpetas';
 
   @override
@@ -90,6 +125,115 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
+  String get duoTitle => 'Revelación Duo';
+
+  @override
+  String get duoAiFormatLabel => 'Crear una revelación Duo';
+
+  @override
+  String get duoPresetNotice =>
+      'Prism muestra el lado derecho en la vista plegada. Alinea manualmente el original guardado y comprueba ambas vistas en la vista previa del fondo del sistema. Es un ajuste de Prism, no un recorte automático de iOS.';
+
+  @override
+  String get duoFoldedPromptLabel => 'Vista plegada';
+
+  @override
+  String get duoFoldedPromptExample => 'Un gato adormilado junto a una ventana';
+
+  @override
+  String get duoRevealedPromptLabel => 'La sorpresa al desplegar';
+
+  @override
+  String get duoRevealedPromptExample => 'Una pequeña nave espacial al otro lado de la ventana';
+
+  @override
+  String get duoPromptValidation => 'Describe ambas vistas con entre 1 y 160 caracteres cada una.';
+
+  @override
+  String get duoMoodBody => 'Un fondo. Más por descubrir al desplegar.';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'Teléfono';
+
+  @override
+  String get duoFold => 'Plegar';
+
+  @override
+  String get duoUnfold => 'Desplegar';
+
+  @override
+  String get duoFolded => 'Plegado';
+
+  @override
+  String get duoUnfolded => 'Desplegado';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'Prism muestra el lado derecho en la vista plegada. Android puede recortar la imagen de otra forma. Comprueba la vista previa del fondo del sistema antes de aplicarlo.';
+
+  @override
+  String get duoGetOnPrism => 'Consíguelo en Prism';
+
+  @override
+  String get duoGuideTitle => 'Configura tu revelación Duo';
+
+  @override
+  String get duoGuideOpen => 'Abre el original guardado en Fotos, toca Compartir y luego Usar como fondo de pantalla.';
+
+  @override
+  String get duoGuideAlign =>
+      'Alinea manualmente la imagen completa para que la vista plegada muestre el lado derecho.';
+
+  @override
+  String get duoGuideCheck =>
+      'Comprueba las vistas plegada y desplegada en la vista previa del sistema y luego añade el fondo.';
+
+  @override
+  String get duoWebTitle => 'Fondos de pantalla para iPhone Duo | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'Un fondo con una segunda escena oculta. Descubre fondos originales con revelación Duo en Prism.';
+
+  @override
+  String get duoWebHeading => 'Un fondo. Una historia que se amplía.';
+
+  @override
+  String get duoWebIntro =>
+      'Una escena tranquila al plegar. Una segunda historia al desplegar. Mira ambas vistas de cada fondo original.';
+
+  @override
+  String get duoWebEmpty => 'La primera colección Duo está en revisión.';
+
+  @override
+  String get duoWebEmptyBody => 'Explora Prism mientras revisamos cada fondo en ambas vistas.';
+
+  @override
+  String get duoWebFolded => 'Vista previa plegada';
+
+  @override
+  String get duoWebUnfolded => 'Original desplegado';
+
+  @override
+  String get duoWebPresetNotice =>
+      'Estas vistas previas usan el ajuste de Prism para el lado derecho, no un recorte automático de Apple. Guarda el original completo, alinéalo manualmente y comprueba las vistas plegada y desplegada en la vista previa del fondo del sistema.';
+
+  @override
+  String get duoWebOpenPrism => 'Abrir en Prism';
+
+  @override
+  String get duoWebExplore => 'Explorar Prism';
+
+  @override
+  String get duoWebAppStore => 'Descargar en el App Store';
+
+  @override
+  String get duoWebPlayStore => 'Consíguelo en Google Play';
 
   @override
   String get economyExportFailedLabel => 'No se pudo exportar';
@@ -1111,12 +1255,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get accountReportAProblem => 'Informar de un problema';
 
   @override
-  String accountReportPreviewNotice(String email) {
-    return 'Este informe incluye la versión de la aplicación, los datos del dispositivo y los registros recientes. No contiene tu correo electrónico ni tokens de inicio de sesión. Léelo y compártelo con $email.';
-  }
-
-  @override
-  String get accountReportProblemSubtitle => 'Compartir los registros de la aplicación con el equipo de Prism';
+  String get accountReportProblemSubtitle => 'Enviar un informe de error al equipo de Prism';
 
   @override
   String get accountReportUser => 'Denunciar usuario';
@@ -1225,9 +1364,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get accountSettings => 'Ajustes';
-
-  @override
-  String get accountShare => 'Compartir';
 
   @override
   String get accountShareInvite => 'Compartir invitación';
@@ -11344,6 +11480,227 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String notifPushWallRemixedBodyUntitled(String remixerName) {
     return '$remixerName remezcló tu fondo de pantalla.';
+  }
+
+  @override
+  String get reportSheetMessage =>
+      'Cuéntanos qué salió mal. Prism nunca añade tu correo electrónico ni tokens de inicio de sesión. Revisa las capturas antes de enviarlas.';
+
+  @override
+  String get reportTopicCrashFreeze => 'Cierre inesperado/bloqueo';
+
+  @override
+  String get reportTopicWallpaperWontSet => 'El fondo de pantalla no se aplica';
+
+  @override
+  String get reportTopicLooksBroken => 'Se ve mal';
+
+  @override
+  String get reportTopicSlow => 'Lento';
+
+  @override
+  String get reportTopicOther => 'Otro';
+
+  @override
+  String get reportNoteHint => '¿Qué pasó? ¿Qué esperabas que pasara?';
+
+  @override
+  String get reportScreenshotTitle => 'Captura de pantalla';
+
+  @override
+  String get reportScreenshotEmpty => 'Muéstranos lo que ves.';
+
+  @override
+  String get reportScreenshotAttached => 'Toca para verla. Revísala antes de enviar.';
+
+  @override
+  String get reportAddScreenshot => 'Añadir captura';
+
+  @override
+  String get reportRemoveScreenshot => 'Quitar';
+
+  @override
+  String get reportViewScreenshot => 'Ver captura';
+
+  @override
+  String get reportIncludeDiagnostics => 'Incluir datos del dispositivo y registros recientes';
+
+  @override
+  String get reportShowDiagnostics => 'Mostrar qué se incluye';
+
+  @override
+  String get reportHideDiagnostics => 'Ocultar detalles';
+
+  @override
+  String get reportSend => 'Enviar informe';
+
+  @override
+  String get reportShareAsFile => 'Compartir como archivo';
+
+  @override
+  String reportSent(String reference) {
+    return 'Gracias, informe enviado. Referencia $reference';
+  }
+
+  @override
+  String get reportCouldNotSend => 'No se pudo enviar';
+
+  @override
+  String get reportCouldNotSendBody => 'Revisa tu conexión e inténtalo de nuevo, o comparte el informe como archivo.';
+
+  @override
+  String get reportShareInstead => 'Compartir en su lugar';
+
+  @override
+  String get reportShakeToReport => 'Agitar para informar';
+
+  @override
+  String get reportShakeToReportSubtitle => 'Agita el teléfono en cualquier pantalla para informar de un problema';
+
+  @override
+  String get accountShowAiWallpapers => 'Mostrar fondos generados con IA';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'Desactívalo para ver solo fondos hechos por personas';
+
+  @override
+  String get accountShowAiWallpapersFootnote =>
+      'Ocultar los fondos de IA nunca oculta tus propias subidas ni tus favoritos.';
+
+  @override
+  String get wallpaperFeedHideAi => 'Ocultar IA';
+
+  @override
+  String get wallpaperAiGenerated => 'Generado con IA';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return 'Hecho con $model';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'Hecho con IA';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'Reportar etiqueta incorrecta';
+
+  @override
+  String get feedNoHumanWalls => 'Aún no hay fondos hechos por personas aquí';
+
+  @override
+  String get feedShowAiWalls => 'Mostrar fondos de IA';
+
+  @override
+  String get challengeTitle => 'Reto semanal';
+
+  @override
+  String get challengeRules => 'Hasta 3 obras, revisadas antes de aparecer.';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'Vota por otros creadores hasta $date UTC.';
+  }
+
+  @override
+  String get challengeUpload => 'Subir una obra';
+
+  @override
+  String get challengeAi => 'Crear con IA';
+
+  @override
+  String get challengeTop => 'Destacadas';
+
+  @override
+  String get challengeNew => 'Nuevas';
+
+  @override
+  String get challengePast => 'Retos anteriores';
+
+  @override
+  String get challengeEmpty => 'Las obras aprobadas aparecerán aquí.';
+
+  @override
+  String get challengeWaiting => 'La votación terminó. Esperamos las revisiones antes de elegir al ganador.';
+
+  @override
+  String get challengeClosed => 'Este reto ha terminado.';
+
+  @override
+  String get challengeScheduled => 'Este reto aún no ha comenzado.';
+
+  @override
+  String get challengeNoWinner => 'Este reto no tiene ganador.';
+
+  @override
+  String challengeWinner(String name) {
+    return 'Ganador · $name';
+  }
+
+  @override
+  String get challengeVote => 'Votar';
+
+  @override
+  String get challengeUnvote => 'Quitar voto';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votos',
+      one: '1 voto',
+      zero: '0 votos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get challengeShare => 'Compartir reto';
+
+  @override
+  String get challengeRemove => 'Quitar reto';
+
+  @override
+  String challengeContext(String theme) {
+    return 'Reto · $theme';
+  }
+
+  @override
+  String get challengeError => 'No pudimos cargar el reto. Inténtalo de nuevo.';
+
+  @override
+  String get challengeVoteError => 'No se pudo guardar tu voto. Inténtalo de nuevo.';
+
+  @override
+  String get challengeSignIn => 'Inicia sesión para participar o votar.';
+
+  @override
+  String get challengeLimit => 'Ya has enviado 3 fondos a este reto.';
+
+  @override
+  String get challengeRetry => 'Reintentar';
+
+  @override
+  String get challengeOwnEntry => 'No puedes votar por tu propia obra.';
+
+  @override
+  String get challengeDailyLimit => 'Has alcanzado el límite diario de votos.';
+
+  @override
+  String get challengeMissing => 'Este reto u obra ya no está disponible.';
+
+  @override
+  String get challengeBadge => 'Ganador del reto';
+
+  @override
+  String get challengeBadgeDescription => 'Gana un reto semanal';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'Tu fondo ganó';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'Tu obra ganó el reto semanal: $theme.';
   }
 
   @override

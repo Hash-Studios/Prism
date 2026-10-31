@@ -269,6 +269,7 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
 
   Future<void> _getCoins() => showGetCoinsSheet(
     context,
+    cost: _status.price,
     message: context.l10n.economySpinShortBalanceMessage(_status.price, _balance),
     sourceTag: 'coins.spin_wheel.rewarded_ad',
     upsellSource: 'spin_wheel_rewarded_ad',

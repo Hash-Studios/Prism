@@ -11,6 +11,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/side_safe_column.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/string_extensions.dart';
@@ -199,11 +200,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   );
                 }
-                return StreamBuilder<Set<String>>(
-                  stream: getIt<UserBlockRepository>().watchBlockedCreatorUids(),
-                  builder: (BuildContext context, AsyncSnapshot<Set<String>> snapshot) {
-                    final bool isBlocked = snapshot.data?.contains(profile.id) == true;
-                    if (isBlocked) {
+                final UserBlockRepository blocks = getIt<UserBlockRepository>();
+                return StreamBuilder<BlockedCreators>(
+                  initialData: blocks.blockedCreators,
+                  stream: blocks.watchBlockedCreators(),
+                  builder: (BuildContext context, AsyncSnapshot<BlockedCreators> snapshot) {
+                    final BlockedCreators? blocked = snapshot.data;
+                    if (blocked is! KnownBlockedCreators) return const ProfileSkeleton();
+                    if (blocked.uids.contains(profile.id)) {
                       final String display = creatorLabel(
                         name: profile.name,
                         username: profile.username,

@@ -1,6 +1,7 @@
 """Behavioral release-tool fixtures. No network, credentials, signing or builds."""
 
 import json
+import base64
 import os
 from pathlib import Path
 import plistlib
@@ -17,6 +18,8 @@ PREPARE = ROOT / 'tool/prepare_release_firebase.py'
 APP = 'com.hash.prism'
 SENDER = '123456789012'
 API_KEY = 'AIza' + 'x' * 35
+IOS_ADMOB_APP = 'ca-app-pub-1234567890123456~1234567890'
+IOS_ADMOB_UNIT = 'ca-app-pub-1234567890123456/1234567890'
 
 
 def android_config():
@@ -68,6 +71,7 @@ import json, os, pathlib, sys
 if sys.argv[1:2] == ['config']:
     sys.exit(0)
 pathlib.Path(os.environ['CAPTURE']).write_text(json.dumps(sys.argv[1:]))
+pathlib.Path(os.environ['CAPTURE'] + '.env').write_text(os.environ.get('PRISM_ADMOB_IOS_APP_ID', ''))
 sys.exit(int(os.environ.get('FLUTTER_EXIT', '0')))
 ''')
 
@@ -83,6 +87,9 @@ sys.exit(int(os.environ.get('FLUTTER_EXIT', '0')))
         return subprocess.run(args, cwd=self.work, env=self.env, capture_output=True, text=True)
 
     def native(self, platform):
+        if platform == 'ios':
+            self.values.update(ADMOB_IOS_APP_ID=IOS_ADMOB_APP, ADMOB_IOS_REWARDED_AD_UNIT_ID=IOS_ADMOB_UNIT)
+            self.write_payload()
         path = self.work / ('android/app/google-services.json' if platform == 'android'
                             else 'ios/Runner/GoogleService-Info.plist')
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -92,6 +99,50 @@ sys.exit(int(os.environ.get('FLUTTER_EXIT', '0')))
 
 
 class ReleaseToolsTest(ReleaseFixture, unittest.TestCase):
+    def test_ios_release_requires_non_android_non_sample_admob_ids(self):
+        self.native('ios')
+        for key, values in (
+            ('ADMOB_IOS_APP_ID', ('', 'ca-app-pub-4649644680694757~6175744196',
+                                  'ca-app-pub-3940256099942544~1458002511', 'malformed')),
+            ('ADMOB_IOS_REWARDED_AD_UNIT_ID', ('', 'ca-app-pub-4649644680694757/3358009164',
+                                               'ca-app-pub-3940256099942544/1712485313', 'malformed')),
+        ):
+            original = self.values[key]
+            for value in values:
+                with self.subTest(key=key, value=value):
+                    self.values[key] = value
+                    self.write_payload()
+                    result = self.run_tool('python3', str(RUNNER), '--release-platform', 'ios',
+                                           '--', 'flutter', 'build', 'ipa')
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn('AdMob', result.stderr)
+                    self.assertFalse(Path(self.env['CAPTURE']).exists())
+            self.values[key] = original
+        self.write_payload()
+        result = self.run_tool('python3', str(RUNNER), '--release-platform', 'ios',
+                               '--', 'flutter', 'build', 'ipa')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(Path(self.env['CAPTURE'] + '.env').read_text(), IOS_ADMOB_APP)
+        self.assertIn('--dart-define=ADMOB_IOS_REWARDED_AD_UNIT_ID=' + IOS_ADMOB_UNIT,
+                      json.loads(Path(self.env['CAPTURE']).read_text()))
+
+    def test_native_release_guard_checks_encoded_defines(self):
+        guard = ROOT / 'tool/check_ios_admob.py'
+        self.env.update(CONFIGURATION='Release', ADMOB_IOS_APP_ID=IOS_ADMOB_APP)
+        encoded = base64.b64encode(f'ADMOB_IOS_REWARDED_AD_UNIT_ID={IOS_ADMOB_UNIT}'.encode()).decode()
+        for app_id, defines, success in (
+            (IOS_ADMOB_APP, encoded, True),
+            ('', encoded, False),
+            ('ca-app-pub-4649644680694757~6175744196', encoded, False),
+            (IOS_ADMOB_APP, '', False),
+            (IOS_ADMOB_APP, encoded + ',' + encoded, False),
+        ):
+            self.env.update(ADMOB_IOS_APP_ID=app_id, DART_DEFINES=defines)
+            result = self.run_tool('python3', str(guard))
+            self.assertEqual(result.returncode == 0, success, result.stderr)
+        self.env['CONFIGURATION'] = 'Debug'
+        self.assertEqual(self.run_tool('python3', str(guard)).returncode, 0)
+
     def test_exact_argv_and_no_execution_or_credentials(self):
         dangerous = ' spaced "double" \'single\' = \\ $(touch OWNED) `touch ALSO_OWNED`; & | > * ?\nnext'
         self.values['PEXELS_API_KEY'] = dangerous
@@ -127,15 +178,38 @@ class ReleaseToolsTest(ReleaseFixture, unittest.TestCase):
         self.assertNotIn('server-secret', result.stdout + result.stderr)
 
     def test_allowlist_tracks_shipping_env_keys(self):
-        # The contract is Env, not every name returned by Doppler. Bool debug
-        # switches are deliberately not shipping configuration.
+        # Bool debug switches and these exact local-only strings do not ship.
+        # Do not exclude a prefix: a new Env string must be classified explicitly.
         env_keys = set(re.findall(r"String\.fromEnvironment\('([^']+)'", (ROOT / 'lib/env/env.dart').read_text()))
+        local_only_keys = {'PRISM_LOCAL_QA_USER', 'PRISM_LOCAL_QA_CERTIFICATE'}
+        self.assertTrue(local_only_keys <= env_keys)
         self.values = {key: 'fixture' for key in env_keys}
         self.write_payload()
         result = self.run_tool('python3', str(RUNNER), '--', 'flutter', 'run')
         self.assertEqual(result.returncode, 0, result.stderr)
         argv = json.loads(Path(self.env['CAPTURE']).read_text())
-        self.assertEqual({arg.split('=', 2)[1] for arg in argv[1:]}, env_keys)
+        self.assertEqual({arg.split('=', 2)[1] for arg in argv[1:]}, env_keys - local_only_keys)
+
+    def test_release_never_forwards_local_qa_or_unknown_doppler_keys(self):
+        self.values.update({
+            'PRISM_LOCAL_QA': 'true',
+            'PRISM_LOCAL_QA_USER': 'creator',
+            'PRISM_LOCAL_QA_CERTIFICATE': 'fixture-certificate',
+            'PRISM_LOCAL_QA_FUTURE': 'future-local-value',
+        })
+        self.write_payload()
+        for platform in ('android', 'ios'):
+            with self.subTest(platform=platform):
+                self.native(platform)
+                result = self.run_tool('python3', str(RUNNER), '--release-platform', platform,
+                                       '--', 'flutter', 'build', '--release')
+                self.assertEqual(result.returncode, 0, result.stderr)
+                expected = [
+                    'build', '--release', '--dart-define=GH_USERNAME=owner',
+                    '--dart-define=R2_PREVIEW_BASE_URL=https://images.example.com']
+                if platform == 'ios':
+                    expected.append(f'--dart-define=ADMOB_IOS_REWARDED_AD_UNIT_ID={IOS_ADMOB_UNIT}')
+                self.assertEqual(json.loads(Path(self.env['CAPTURE']).read_text()), expected)
 
     def test_release_missing_config_stops_before_flutter(self):
         for platform in ('android', 'ios'):

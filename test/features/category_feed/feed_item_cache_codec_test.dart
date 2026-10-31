@@ -56,6 +56,23 @@ void main() {
     expect(decoded.wallpaper.firestoreDocumentId, 'doc-p1');
   });
 
+  test('AI flag, model, and metadata survive a cache JSON round trip', () {
+    final FeedItemEntity item = FeedItemEntity.prism(
+      id: 'ai-wall',
+      wallpaper: PrismWallpaper(
+        core: _core('ai-wall', WallpaperSource.prism),
+        isAiGenerated: true,
+        aiModel: 'Seedream 5 Lite',
+        aiMetadata: const <String, Object?>{'prompt': 'a lake'},
+      ),
+    );
+
+    final PrismFeedItem decoded = decodeFeedItem(_viaJson(item))! as PrismFeedItem;
+    expect(decoded.wallpaper.isAiGenerated, isTrue);
+    expect(decoded.wallpaper.aiModel, 'Seedream 5 Lite');
+    expect(decoded.wallpaper.aiMetadata, <String, Object?>{'prompt': 'a lake'});
+  });
+
   test('the Depth Effect tier survives a JSON round trip, and a wall without one stays unchecked', () {
     for (final WallDepthTier tier in WallDepthTier.values) {
       final item = FeedItemEntity.prism(
@@ -191,5 +208,103 @@ void main() {
       }),
       isNull,
     );
+  });
+
+  test('rejects malformed cached field shapes without losing valid neighbours', () {
+    final valid = _viaJson(
+      FeedItemEntity.prism(
+        id: 'valid',
+        wallpaper: PrismWallpaper(core: _core('valid', WallpaperSource.prism)),
+      ),
+    );
+    Map<String, dynamic> changed(String key, Object? value, {bool core = false}) {
+      final copy = jsonDecode(jsonEncode(valid)) as Map<String, dynamic>;
+      final wall = copy['wallpaper'] as Map<String, dynamic>;
+      (core ? wall['core'] as Map<String, dynamic> : wall)[key] = value;
+      return copy;
+    }
+
+    final malformed = <Map<String, dynamic>>[
+      changed('core', 'bad'),
+      changed('core', <String, dynamic>{}),
+      changed('id', <String>['bad'], core: true),
+      changed('collections', 'bad'),
+      changed('tags', <Object>[<String, Object>{}]),
+      changed('review', 'bad'),
+      changed('requiredStreakDays', 'bad'),
+      changed('width', 'bad', core: true),
+      changed('height', double.nan, core: true),
+      changed('remixCount', double.infinity),
+      changed('source', 'unknown', core: true),
+      changed('source', 'pexels', core: true),
+      <String, dynamic>{
+        ...valid,
+        'id': <String>['bad'],
+      },
+    ];
+    final items = <Map<String, dynamic>>[valid, ...malformed, valid].map(decodeFeedItem).nonNulls.toList();
+    expect(items.map((item) => item.id), <String>['valid', 'valid']);
+  });
+
+  test('rejects malformed provider-specific fields', () {
+    for (final entry in <(FeedItemEntity, String, Object)>[
+      (
+        FeedItemEntity.wallhaven(
+          id: 'w',
+          wallpaper: WallhavenWallpaper(core: _core('w', WallpaperSource.wallhaven)),
+        ),
+        'views',
+        'bad',
+      ),
+      (
+        FeedItemEntity.wallhaven(
+          id: 'w',
+          wallpaper: WallhavenWallpaper(core: _core('w', WallpaperSource.wallhaven)),
+        ),
+        'colors',
+        false,
+      ),
+      (
+        FeedItemEntity.pexels(
+          id: 'p',
+          wallpaper: PexelsWallpaper(core: _core('p', WallpaperSource.pexels)),
+        ),
+        'src',
+        'bad',
+      ),
+      (
+        FeedItemEntity.pexels(
+          id: 'p',
+          wallpaper: PexelsWallpaper(core: _core('p', WallpaperSource.pexels)),
+        ),
+        'src',
+        <String, Object>{'original': <String>[]},
+      ),
+    ]) {
+      final encoded = _viaJson(entry.$1);
+      (encoded['wallpaper'] as Map<String, dynamic>)[entry.$2] = entry.$3;
+      expect(decodeFeedItem(encoded), isNull);
+    }
+  });
+
+  test('legacy wall alias and omitted optional fields decode', () {
+    final decoded =
+        decodeFeedItem(<String, dynamic>{
+              'type': 'prism',
+              'id': 'legacy',
+              'wall': <String, dynamic>{
+                'core': <String, dynamic>{
+                  'id': 'legacy',
+                  'source': 'wall_of_the_day',
+                  'fullUrl': 'full',
+                  'thumbnailUrl': 'thumb',
+                },
+              },
+            })
+            as PrismFeedItem?;
+    expect(decoded, isNotNull);
+    expect(decoded!.wallpaper.remixCount, 0);
+    expect(decoded.wallpaper.isStreakExclusive, isFalse);
+    expect(decoded.wallpaper.collections, isNull);
   });
 }

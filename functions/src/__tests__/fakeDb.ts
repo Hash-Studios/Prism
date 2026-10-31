@@ -46,7 +46,7 @@ function clone(value: unknown): unknown {
   return value;
 }
 
-const comparable = (v: unknown) => v instanceof admin.firestore.Timestamp ? v.toMillis() : v;
+const comparable = (v: unknown) => v instanceof admin.firestore.Timestamp ? v.valueOf() : v;
 
 function fieldValue(data: Doc, path: string): unknown {
   return path.split(".").reduce<unknown>((value, part) =>
@@ -172,7 +172,7 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}, ob
     limitTo?: number;
     offsetBy: number;
     startAt?: unknown;
-    startAfter?: string;
+    startAfter?: string | Snap;
     group?: string;
   };
 
@@ -193,7 +193,17 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}, ob
       }
       if (state.startAt !== undefined) docs = docs.filter((d) => d.id >= (state.startAt as string));
       const startAfter = state.startAfter;
-      if (startAfter !== undefined) docs = docs.filter((d) => (state.group ? d.ref.path : d.id) > startAfter);
+      if (typeof startAfter === "string") docs = docs.filter((d) => (state.group ? d.ref.path : d.id) > startAfter);
+      else if (startAfter) {
+        docs = docs.filter((d) => {
+          for (const [field, dir] of state.orders) {
+            const key = (row: Snap) => field === "__name__" ? row.ref.path :
+              comparable(fieldValue(row.data() as Doc, field as string)) as never;
+            if (key(d) !== key(startAfter)) return dir === "desc" ? key(d) < key(startAfter) : key(d) > key(startAfter);
+          }
+          return state.orders.at(-1)?.[1] === "desc" ? d.ref.path < startAfter.ref.path : d.ref.path > startAfter.ref.path;
+        });
+      }
       docs = docs.slice(state.offsetBy);
       return state.limitTo === undefined ? docs : docs.slice(0, state.limitTo);
     };
@@ -205,7 +215,8 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}, ob
       limit: (n: number) => next({limitTo: n}),
       offset: (n: number) => next({offsetBy: n}),
       startAt: (value: unknown) => next({startAt: value}),
-      startAfter: (value: {id: string; path?: string}) => next({startAfter: state.group ? value.path : value.id}),
+      startAfter: (value: Snap | {id: string; path?: string}) =>
+        next({startAfter: "data" in value ? value : state.group ? value.path : value.id}),
       select: () => q,
       count: () => ({get: async () => ({data: () => ({count: rows().length})})}),
       get: async () => {

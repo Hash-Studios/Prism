@@ -12,7 +12,7 @@ import {
 } from "../folderDigest";
 import * as notificationHelper from "../notificationHelper";
 import {sendToUser, userPushTokens} from "../notificationHelper";
-import * as wallOfTheDay from "../wallOfTheDay";
+import * as wallOfTheDay from "../wallEligibility";
 import {publicFolderDeps} from "../publicFolders";
 import {db} from "../common";
 import {claimDay} from "../followDigest";

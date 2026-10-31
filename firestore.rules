@@ -131,7 +131,7 @@ service cloud.firestore {
     }
 
     function wallServerKeysUntouched() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'challengeId']);
     }
 
     // Optional link to the wall this one remixes. The server removes a link it cannot verify.
@@ -139,6 +139,20 @@ service cloud.firestore {
       return !('remixOf' in request.resource.data)
           || (request.resource.data.remixOf is string
               && request.resource.data.remixOf.matches('^[A-Za-z0-9_-]{1,64}$'));
+    }
+
+    function validChallengeId() {
+      return !('challengeId' in request.resource.data)
+          || (request.resource.data.challengeId is string
+              && request.resource.data.challengeId.matches('^[A-Za-z0-9_-]{1,128}$'));
+    }
+
+    match /weeklyChallenges/{challengeId} {
+      allow read: if true;
+      allow write: if false;
+      match /{privatePath=**} {
+        allow read, write: if false;
+      }
     }
 
     // Wall of the Day — public read, admin-only write (set via Cloud Function)
@@ -172,19 +186,20 @@ service cloud.firestore {
       // fields == '') once 3.7.0 share is low. 3.8.0 clients already filter to protected walls on their side.
       allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
       // Admins re-create a rejected wall when they undo the rejection.
-      allow create: if isConfiguredAdmin()
+      allow create: if validChallengeId() && (isConfiguredAdmin()
           || (isSignedIn()
               && isEmailOwner(request.resource.data.email)
               && request.resource.data.review != true
               && wallServerKeysAbsent()
-              && validRemixOf());
+              && validRemixOf()));
       // delete: request.resource is null — do not use request.resource.data here.
-      allow update: if isConfiguredAdmin()
+      allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny(['challengeId'])
+          && (isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
               && wallServerKeysUntouched()
               && request.resource.data.email == resource.data.email
               && resource.data.review != true
-              && request.resource.data.review != true);
+              && request.resource.data.review != true));
       allow delete: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email) && resource.data.review != true);
     }

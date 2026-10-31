@@ -60,7 +60,7 @@ void main() {
       }
       return calls == 2 ? oldPage.future : refresh.future;
     });
-    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending());
+    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
     addTearDown(bloc.close);
     bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
     await Future<void>.delayed(Duration.zero);
@@ -98,7 +98,11 @@ void main() {
         ),
       );
     });
-    final bloc = CategoryFeedBloc(_MockLoadCategoriesUseCase(), fetch, FakeUserBlockRepository.pending());
+    final bloc = CategoryFeedBloc(
+      _MockLoadCategoriesUseCase(),
+      fetch,
+      FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+    );
     addTearDown(bloc.close);
     bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
     await Future<void>.delayed(Duration.zero);
@@ -125,7 +129,7 @@ void main() {
     final load = _MockLoadCategoriesUseCase();
     final fetch = _MockFetchCategoryFeedUseCase();
     when(() => load(any())).thenAnswer((_) async => Result.success(const <CategoryEntity>[_home]));
-    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending());
+    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
     addTearDown(bloc.close);
 
     bloc.add(const CategoryFeedEvent.started());
@@ -140,7 +144,7 @@ void main() {
     final load = _MockLoadCategoriesUseCase();
     final fetch = _MockFetchCategoryFeedUseCase();
     when(() => load(any())).thenAnswer((_) async => Result.success(const <CategoryEntity>[_home]));
-    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending());
+    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
     addTearDown(bloc.close);
 
     bloc.add(const CategoryFeedEvent.started());
@@ -170,7 +174,7 @@ void main() {
         ),
       ),
     );
-    final blockRepo = FakeUserBlockRepository.pending();
+    final blockRepo = FakeUserBlockRepository.pending()..completeInitial(<String>{});
     final bloc = CategoryFeedBloc(load, fetch, blockRepo);
     addTearDown(bloc.close);
 
@@ -189,6 +193,66 @@ void main() {
     verify(() => fetch(any())).called(1);
   });
 
+  test('an unknown block list hides creator walls, and recovery reloads the home feed', () async {
+    final load = _MockLoadCategoriesUseCase();
+    final fetch = _MockFetchCategoryFeedUseCase();
+    when(() => load(any())).thenAnswer((_) async => Result.success(const <CategoryEntity>[_home]));
+    when(() => fetch(any())).thenAnswer(
+      (_) async => Result.success(
+        CategoryFeedPage(
+          items: <FeedItemEntity>[
+            _prismItem('1', authorUid: 'blocked-uid'),
+            _prismItem('2', authorUid: 'kept-uid'),
+          ],
+          hasMore: false,
+        ),
+      ),
+    );
+    final blockRepo = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+    final bloc = CategoryFeedBloc(load, fetch, blockRepo);
+    addTearDown(bloc.close);
+
+    bloc.add(const CategoryFeedEvent.started());
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(bloc.state.items.map((e) => e.id), <String>['1', '2']);
+
+    blockRepo.emitUnknown();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(bloc.state.items, isEmpty);
+
+    blockRepo.completeInitial(<String>{'blocked-uid'});
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    expect(bloc.state.items.map((e) => e.id), <String>['2']);
+    verify(() => fetch(any())).called(2);
+  });
+
+  test('a block list that becomes known during a request gets one bounded recovery fetch', () async {
+    final fetch = _MockFetchCategoryFeedUseCase();
+    final Completer<Result<CategoryFeedPage>> pending = Completer<Result<CategoryFeedPage>>();
+    when(() => fetch(any())).thenAnswer((_) => pending.future);
+    final FakeUserBlockRepository blocks = FakeUserBlockRepository.pending();
+    final bloc = CategoryFeedBloc(_MockLoadCategoriesUseCase(), fetch, blocks);
+    addTearDown(bloc.close);
+
+    bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
+    await Future<void>.delayed(Duration.zero);
+    blocks.completeInitial(<String>{});
+    await Future<void>.delayed(Duration.zero);
+    pending.complete(
+      Result.success(
+        CategoryFeedPage(items: <FeedItemEntity>[_prismItem('restored', authorUid: 'creator')], hasMore: false),
+      ),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    expect(bloc.state.items.map((item) => item.id), <String>['restored']);
+    verify(() => fetch(any())).called(2);
+  });
+
   test('refreshRequested refetches the selected category, and fetchMoreRequested pages it', () async {
     final load = _MockLoadCategoriesUseCase();
     final fetch = _MockFetchCategoryFeedUseCase();
@@ -202,7 +266,7 @@ void main() {
         ),
       );
     });
-    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending());
+    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
     addTearDown(bloc.close);
 
     bloc.add(const CategoryFeedEvent.started());
@@ -242,7 +306,7 @@ void main() {
       }
       return pending.future;
     });
-    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending());
+    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
     addTearDown(bloc.close);
     final states = <CategoryFeedState>[];
     final sub = bloc.stream.listen(states.add);
@@ -288,7 +352,7 @@ void main() {
           ),
         );
       });
-      final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending());
+      final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
       addTearDown(bloc.close);
 
       bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
@@ -329,7 +393,7 @@ void main() {
           ),
         );
       });
-      final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending());
+      final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
       addTearDown(bloc.close);
 
       bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
@@ -345,6 +409,89 @@ void main() {
 
       expect(bloc.state.items.map((e) => e.id), <String>['space-1']);
       expect(bloc.state.hasMore, isFalse);
+    });
+  });
+
+  group('pages emptied by hidden walls', () {
+    const CategoryFeedPage empty = CategoryFeedPage(items: <FeedItemEntity>[], hasMore: true);
+
+    test('an empty first page with more behind it fetches the next page', () async {
+      final fetch = _MockFetchCategoryFeedUseCase();
+      final List<bool> refreshes = <bool>[];
+      when(() => fetch(any())).thenAnswer((invocation) async {
+        final params = invocation.positionalArguments.single as FetchCategoryFeedParams;
+        refreshes.add(params.refresh);
+        if (refreshes.length < 3) return Result.success(empty);
+        return Result.success(
+          CategoryFeedPage(items: <FeedItemEntity>[_prismItem('human', authorUid: 'a')], hasMore: false),
+        );
+      });
+      final bloc = CategoryFeedBloc(
+        _MockLoadCategoriesUseCase(),
+        fetch,
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+      addTearDown(bloc.close);
+
+      bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(refreshes, <bool>[true, false, false]);
+      expect(bloc.state.status, LoadStatus.success);
+      expect(bloc.state.items.map((e) => e.id), <String>['human']);
+      expect(bloc.state.hasMore, isFalse);
+    });
+
+    test('an empty next page fetches the one after it', () async {
+      final fetch = _MockFetchCategoryFeedUseCase();
+      int calls = 0;
+      when(() => fetch(any())).thenAnswer((_) async {
+        calls++;
+        if (calls == 2) return Result.success(empty);
+        return Result.success(
+          CategoryFeedPage(items: <FeedItemEntity>[_prismItem('wall-$calls', authorUid: 'a')], hasMore: true),
+        );
+      });
+      final bloc = CategoryFeedBloc(
+        _MockLoadCategoriesUseCase(),
+        fetch,
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+      addTearDown(bloc.close);
+
+      bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      bloc.add(const CategoryFeedEvent.fetchMoreRequested());
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(calls, 3);
+      expect(bloc.state.items.map((e) => e.id), <String>['wall-1', 'wall-3']);
+      expect(bloc.state.isFetchingMore, isFalse);
+    });
+
+    test('stops after 5 empty pages in a row', () async {
+      final fetch = _MockFetchCategoryFeedUseCase();
+      when(() => fetch(any())).thenAnswer((_) async => Result.success(empty));
+      final bloc = CategoryFeedBloc(
+        _MockLoadCategoriesUseCase(),
+        fetch,
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+      addTearDown(bloc.close);
+
+      bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      verify(() => fetch(any())).called(5);
+      expect(bloc.state.status, LoadStatus.success);
+      expect(bloc.state.items, isEmpty);
+      expect(bloc.state.hasMore, isTrue);
+
+      bloc.add(const CategoryFeedEvent.fetchMoreRequested());
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      verify(() => fetch(any())).called(5);
+      expect(bloc.state.isFetchingMore, isFalse);
     });
   });
 }

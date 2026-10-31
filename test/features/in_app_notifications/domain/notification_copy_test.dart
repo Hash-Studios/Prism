@@ -26,6 +26,19 @@ void main() {
     ));
   });
 
+  test('challenge winner uses the matched backend kind and theme argument', () {
+    expect(
+      localizedNotificationCopyData(
+        'challengeWinner',
+        {'theme': 'Quiet oceans'},
+        fallbackTitle: '',
+        fallbackBody: '',
+        l10n: l10n,
+      ),
+      (title: 'Your wallpaper won', body: 'Your entry won the weekly challenge: Quiet oceans.'),
+    );
+  });
+
   test('unknown and historical notifications keep stored copy', () {
     final InAppNotificationEntity item = notification(
       'legacy',

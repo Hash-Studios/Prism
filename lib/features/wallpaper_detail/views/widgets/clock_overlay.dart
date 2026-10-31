@@ -11,6 +11,8 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/utils/url_utils.dart';
+import 'package:Prism/core/wallpaper/duo_reveal_geometry.dart';
+import 'package:Prism/core/wallpaper/duo_reveal_spec.g.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
@@ -19,6 +21,7 @@ import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_scheme.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/duo_reveal_view.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -48,6 +51,8 @@ class SetScreenRequest {
     this.tint,
     this.notes = const <String>[],
     this.onAdjust,
+    this.duoReveal = false,
+    this.allowDuo = false,
   });
 
   /// The wall to set. A Prism wall previews its display derivative, because its original may need the user's consent.
@@ -55,6 +60,8 @@ class SetScreenRequest {
   final String? thumbnailUrl;
   final String? wallpaperId;
   final WallpaperSource? wallpaperSource;
+  final bool duoReveal;
+  final bool allowDuo;
 
   /// A colour variation the flow applies after consent. The preview shows it now.
   final Color? tint;
@@ -101,6 +108,8 @@ Future<SetWallpaperChoice?> showSetScreen(BuildContext context, SetScreenRequest
     tint: request.tint,
     notes: request.notes,
     onAdjust: request.onAdjust,
+    duoReveal: request.duoReveal,
+    allowDuo: request.allowDuo,
   );
   return Navigator.of(context, rootNavigator: true).push<SetWallpaperChoice>(
     _previewRoute<SetWallpaperChoice>(
@@ -113,6 +122,8 @@ Future<SetWallpaperChoice?> showSetScreen(BuildContext context, SetScreenRequest
         thumbnailUrl: display.thumbnail,
         tint: request.tint,
         request: safeRequest,
+        duoReveal: request.duoReveal,
+        allowDuo: request.allowDuo,
       ),
     ),
   );
@@ -138,6 +149,8 @@ class ClockOverlay extends StatefulWidget {
     this.saveAction,
     this.request,
     this.spatialMapUrl,
+    this.duoReveal = false,
+    this.allowDuo = false,
   });
 
   final String link;
@@ -159,6 +172,8 @@ class ClockOverlay extends StatefulWidget {
 
   /// The wall's depth map. When set, a 3D toggle shows the wall with a tilt parallax.
   final String? spatialMapUrl;
+  final bool duoReveal;
+  final bool allowDuo;
 
   @override
   State<ClockOverlay> createState() => _ClockOverlayState();
@@ -178,6 +193,10 @@ class _ClockOverlayState extends State<ClockOverlay> {
   PreviewIconStyle _iconStyle = _savedIconStyle();
   bool _controls = true;
   bool _spatial = false;
+  late bool _duo = widget.duoReveal;
+  bool _unfolded = false;
+  bool _wideObserved = false;
+  Size? _decodeBox;
 
   /// Unknown capabilities count as supported, so the targets do not jump in once they load.
   aw.WallpaperCapabilities? _capabilities;
@@ -265,6 +284,20 @@ class _ClockOverlayState extends State<ClockOverlay> {
     unawaited(_sampleText());
     _readSchemeOnce();
     if (!hideSetWallpaperUi) unawaited(_readCapabilities());
+    if (_duo) _trackDuoOpened();
+  }
+
+  void _trackDuoOpened() => analytics.track(
+    DuoPreviewOpenedEvent(
+      contentId: widget.wallpaperId ?? '',
+      source: widget.wallpaperSource?.name ?? 'unknown',
+      presetId: DuoRevealSpec.presetId,
+    ),
+  );
+
+  void _toggleFold() {
+    setState(() => _unfolded = !_unfolded);
+    analytics.track(DuoFoldToggledEvent(contentId: widget.wallpaperId ?? '', unfolded: _unfolded));
   }
 
   Future<void> _readCapabilities() async {
@@ -296,6 +329,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
       return;
     }
     _adjustGeneration++;
+    _duo = widget.duoReveal;
+    _unfolded = false;
+    _wideObserved = false;
     final PlacedWallpaper? placed = _placed;
     _placed = null;
     if (placed != null) unawaited(placed.discard());
@@ -456,6 +492,11 @@ class _ClockOverlayState extends State<ClockOverlay> {
         ProgressiveWallpaperImage(
           display: display,
           decodeBox: size,
+          onPictureSize: (pixels) {
+            if (pixels.width > pixels.height && !_wideObserved && mounted) {
+              setState(() => _wideObserved = true);
+            }
+          },
           errorBuilder: (_, _) =>
               Center(child: Icon(Icons.broken_image_outlined, color: Theme.of(context).colorScheme.secondary)),
         ),
@@ -555,6 +596,8 @@ class _ClockOverlayState extends State<ClockOverlay> {
         thumbnailUrl: widget.thumbnailUrl,
         target: _target,
         entryPoint: 'wallpaper_preview',
+        duoReveal: _duo,
+        allowDuo: widget.allowDuo,
       );
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -625,14 +668,23 @@ class _ClockOverlayState extends State<ClockOverlay> {
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.sizeOf(context);
+    _decodeBox ??= Size(
+      size.width > DuoRevealGeometry.canvas.width / MediaQuery.devicePixelRatioOf(context)
+          ? size.width
+          : DuoRevealGeometry.canvas.width / MediaQuery.devicePixelRatioOf(context),
+      size.height > DuoRevealGeometry.canvas.height / MediaQuery.devicePixelRatioOf(context)
+          ? size.height
+          : DuoRevealGeometry.canvas.height / MediaQuery.devicePixelRatioOf(context),
+    );
     final ThemeData theme = Theme.of(context);
     final Color textColor = _textColor ?? theme.colorScheme.secondary;
-    final bool lock = _mode == ClockPreviewMode.lock;
+    final bool lock = _duo || _mode == ClockPreviewMode.lock;
     final AppLocalizations l10n = context.l10n;
     final Duration fade = context.motion(PrismDurations.fast);
     final List<PreviewIconStyle> styles = PreviewIconStyle.forPlatform(defaultTargetPlatform);
     final Widget? primary = _primary(context);
     final List<String> notes = widget.request?.notes ?? const <String>[];
+    final double duoControlsHeight = (size.height * 0.55).clamp(0.0, 300.0);
     final Widget layers = Stack(
       fit: StackFit.expand,
       children: <Widget>[
@@ -681,7 +733,17 @@ class _ClockOverlayState extends State<ClockOverlay> {
                       onMode: _trackSpatial,
                       child: layers,
                     )
-                  : Stack(fit: StackFit.expand, children: <Widget>[_image(context, size), layers]),
+                  : Padding(
+                      padding: _duo
+                          ? EdgeInsets.fromLTRB(16, MediaQuery.viewPaddingOf(context).top + 16, 16, duoControlsHeight)
+                          : EdgeInsets.zero,
+                      child: DuoRevealView(
+                        enabled: _duo,
+                        unfolded: _unfolded,
+                        image: _image(context, _decodeBox!),
+                        overlay: layers,
+                      ),
+                    ),
             ),
             Positioned.fill(
               child: IgnorePointer(
@@ -723,13 +785,52 @@ class _ClockOverlayState extends State<ClockOverlay> {
                             ),
                             _EnterFromBelow(
                               child: _ControlCard(
+                                maxHeight: _duo ? duoControlsHeight : null,
                                 children: <Widget>[
+                                  if (widget.allowDuo || widget.duoReveal || _wideObserved) ...<Widget>[
+                                    PrismSegmented<bool>(
+                                      values: const <bool>[false, true],
+                                      selected: _duo,
+                                      labelOf: (duo) => duo ? l10n.duoDeviceName : l10n.duoPhoneDevice,
+                                      onChanged: (duo) {
+                                        setState(() {
+                                          _duo = duo;
+                                          _spatial = false;
+                                        });
+                                        if (duo) _trackDuoOpened();
+                                      },
+                                    ),
+                                    const SizedBox(height: PrismSpace.xs),
+                                  ],
+                                  if (_duo) ...<Widget>[
+                                    Text(
+                                      hideSetWallpaperUi ? l10n.duoPresetNotice : l10n.duoAndroidCropNotice,
+                                      style: PrismTextStyles.caption(context),
+                                    ),
+                                    const SizedBox(height: PrismSpace.xs),
+                                    Semantics(
+                                      button: true,
+                                      toggled: _unfolded,
+                                      label: _unfolded ? l10n.duoFold : l10n.duoUnfold,
+                                      child: Tooltip(
+                                        message: _unfolded ? l10n.duoFold : l10n.duoUnfold,
+                                        child: PrismButton(
+                                          label: _unfolded ? l10n.duoFold : l10n.duoUnfold,
+                                          variant: PrismButtonVariant.tonal,
+                                          onPressed: _toggleFold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: PrismSpace.xs),
+                                  ],
                                   if (notes.isNotEmpty) ...<Widget>[
                                     _NoteChips(notes: notes),
                                     const SizedBox(height: PrismSpace.sm),
                                   ],
-                                  _choices(context),
-                                  const SizedBox(height: PrismSpace.sm),
+                                  if (!_duo || !hideSetWallpaperUi) ...<Widget>[
+                                    _choices(context),
+                                    const SizedBox(height: PrismSpace.sm),
+                                  ],
                                   Row(
                                     children: <Widget>[
                                       PrismIconButton(
@@ -741,7 +842,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
                                         size: 48,
                                         onPressed: _close,
                                       ),
-                                      if (widget.spatialMapUrl != null) ...<Widget>[
+                                      if (widget.spatialMapUrl != null && !_duo) ...<Widget>[
                                         const SizedBox(width: PrismSpace.xs),
                                         _SpatialToggle(on: _spatial, onChanged: (on) => setState(() => _spatial = on)),
                                       ],
@@ -786,9 +887,10 @@ class _ClockOverlayState extends State<ClockOverlay> {
 
 /// The controls on one card in the theme's surface colour, so they read on any wall and follow the theme.
 class _ControlCard extends StatelessWidget {
-  const _ControlCard({required this.children});
+  const _ControlCard({required this.children, this.maxHeight});
 
   final List<Widget> children;
+  final double? maxHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -796,14 +898,19 @@ class _ControlCard extends StatelessWidget {
       borderRadius: PrismRadius.xl,
       thickness: 16,
       glassColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.97),
-      child: Padding(
-        padding: const EdgeInsets.all(PrismSpace.sm),
-        child: MediaQuery.withClampedTextScaling(
-          maxScaleFactor: 1.5,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: children,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxHeight ?? double.infinity),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(PrismSpace.sm),
+            child: MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.5,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: children,
+              ),
+            ),
           ),
         ),
       ),
@@ -1246,6 +1353,8 @@ Future<void> pushClockPreview(
   Color? tint,
   Widget Function(String label)? saveAction,
   String? spatialMapUrl,
+  bool duoReveal = false,
+  bool allowDuo = false,
 }) {
   return Navigator.push<void>(
     context,
@@ -1260,7 +1369,29 @@ Future<void> pushClockPreview(
         tint: tint,
         saveAction: saveAction,
         spatialMapUrl: spatialMapUrl,
+        duoReveal: duoReveal,
+        allowDuo: allowDuo,
       ),
     ),
   );
 }
+
+Future<void> showDuoPreview(
+  BuildContext context, {
+  required String link,
+  required bool file,
+  String? thumbnailUrl,
+  String? wallpaperId,
+  WallpaperSource? wallpaperSource,
+  Widget Function(String label)? saveAction,
+}) => pushClockPreview(
+  context,
+  link: link,
+  file: file,
+  thumbnailUrl: thumbnailUrl,
+  wallpaperId: wallpaperId,
+  wallpaperSource: wallpaperSource,
+  saveAction: saveAction,
+  duoReveal: true,
+  allowDuo: true,
+);

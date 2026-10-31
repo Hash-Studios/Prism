@@ -11,6 +11,7 @@ import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -26,7 +27,6 @@ import 'package:Prism/features/favourite_walls/domain/repositories/favourite_wal
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/personalized_feed/data/personalized_feed_repository_impl.dart';
-import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
 import 'package:Prism/features/personalized_feed/domain/usecases/personalized_feed_usecases.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
@@ -127,10 +127,10 @@ class _EmptyFavourites extends Fake implements FavouriteWallsRepository {
 
 class _EmptyBlocks extends Fake implements UserBlockRepository {
   @override
-  Set<String> get cachedBlockedCreatorUids => <String>{};
+  BlockedCreators get blockedCreators => KnownBlockedCreators(const <String>{});
 
   @override
-  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) async => <String>{};
+  Future<BlockedCreators> loadBlockedCreators() async => KnownBlockedCreators(const <String>{});
 }
 
 class _NoopOfflineCatalog extends OfflineWallpaperCatalog {
@@ -202,7 +202,7 @@ void main() {
     final bloc = PersonalizedFeedBloc(
       FetchPersonalizedFeedUseCase(env.repository),
       env.repository,
-      FakeUserBlockRepository.pending(),
+      FakeUserBlockRepository.pending()..completeInitial(<String>{}),
       _EmptyDrops(),
     );
     addTearDown(bloc.close);
@@ -229,7 +229,7 @@ void main() {
     final bloc = PersonalizedFeedBloc(
       FetchPersonalizedFeedUseCase(env.repository),
       env.repository,
-      FakeUserBlockRepository.pending(),
+      FakeUserBlockRepository.pending()..completeInitial(<String>{}),
       _EmptyDrops(),
     );
     addTearDown(bloc.close);
@@ -249,7 +249,7 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 20));
 
     expect(bloc.state.items.map((item) => item.id), <String>['primed-result']);
-    final keys = primed!.items.map(PersonalizedRankingService.canonicalKey).toList(growable: false);
+    final keys = primed!.items.map((item) => item.canonicalKey).toList(growable: false);
     bloc.add(PersonalizedFeedEvent.tilesSeen(keys));
     await Future<void>.delayed(const Duration(milliseconds: 1100));
     expect(env.impressions.recentShows(DateTime.now().toUtc()), <String, int>{for (final key in keys) key: 1});

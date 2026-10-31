@@ -77,7 +77,7 @@
 		</dict>
 	</array>
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-4649644680694757~6175744196</string>
+	<string>$(ADMOB_IOS_APP_ID)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
@@ -134,6 +134,8 @@
 	<string>Prism needs permission to save wallpapers to your photo library.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Prism needs camera access to let you take a photo for your profile picture.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Prism uses motion to open Report a problem when you shake your phone.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>instagram-stories</string>

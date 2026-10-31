@@ -427,6 +427,33 @@ void main() {
     }
   });
 
+  test('catalog clock preview keeps Duo tags and enables wide-wall device selection', () async {
+    for (final bool duo in <bool>[false, true]) {
+      final entity = PrismFeedItem(
+        id: 'wall1',
+        wallpaper: PrismWallpaper(
+          core: const WallpaperCore(
+            id: 'wall1',
+            source: WallpaperSource.prism,
+            fullUrl: 'https://images.example.com/original/wall1.jpg',
+            thumbnailUrl: 'https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg',
+            width: 2670,
+            height: 1878,
+          ),
+          tags: duo ? const <String>['duo-reveal'] : const <String>[],
+        ),
+      );
+      final route = await routeForPageLink(
+        parser.parse(Uri.parse('/clock-preview?wallpaperId=wall1')) as PageLinkIntent,
+        wallpaperLookup: ({required String wallId, required WallpaperSource source}) async => entity,
+      );
+      final args = route!.args! as ClockPreviewRouteArgs;
+      expect(args.duoReveal, duo);
+      expect(args.allowDuo, isTrue);
+      expect(args.link, isNot(entity.fullUrl));
+    }
+  });
+
   test('input workflows and debug tabs are allowlisted', () async {
     expect(DeepLinkRouteCatalog.match(Uri.parse('/choose-wallpaper?workflow=photoPreview')), isNotNull);
     expect(DeepLinkRouteCatalog.match(Uri.parse('/choose-wallpaper?workflow=clockPreview')), isNotNull);
@@ -515,6 +542,7 @@ String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (targe
   DeepLinkPageTarget.uploadInput ||
   DeepLinkPageTarget.editWallInput => 'DeepLinkInputRoute',
   DeepLinkPageTarget.ai => 'AiTabRoute',
+  DeepLinkPageTarget.weeklyChallenge => 'WeeklyChallengeRoute',
   DeepLinkPageTarget.wallpaperDetail => 'WallpaperDetailRoute',
   DeepLinkPageTarget.wotdArchive => 'WotdArchiveRoute',
   DeepLinkPageTarget.editProfile => 'EditProfilePanelRoute',

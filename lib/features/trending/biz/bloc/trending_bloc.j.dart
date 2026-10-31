@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/usecase/usecase.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -39,9 +40,11 @@ class TrendingBloc extends Bloc<TrendingEvent, TrendingState> {
       await _load(emit);
     });
     on<_BlockedCreatorsChanged>(_onBlockedCreatorsChanged);
-    _blockedCreatorsSub = _userBlockRepository.watchBlockedCreatorUids().listen(
-      (blocked) => add(TrendingEvent.blockedCreatorsChanged(blocked: blocked)),
-    );
+    _blocked = _userBlockRepository.blockedCreators;
+    _blockedCreatorsSub = _userBlockRepository.watchBlockedCreators().listen((blocked) {
+      if (blocked is UnknownBlockedCreators) _blocked = blocked;
+      add(const TrendingEvent.blockedCreatorsChanged());
+    });
     _sessionRepository =
         sessionRepository ?? (getIt.isRegistered<SessionRepository>() ? getIt<SessionRepository>() : null);
     _sessionKey = _currentSessionKey;
@@ -62,8 +65,8 @@ class TrendingBloc extends Bloc<TrendingEvent, TrendingState> {
 
   final FetchTrendingUseCase _fetchTrendingUseCase;
   final UserBlockRepository _userBlockRepository;
-  StreamSubscription<Set<String>>? _blockedCreatorsSub;
-  Set<String> _blocked = const <String>{};
+  StreamSubscription<BlockedCreators>? _blockedCreatorsSub;
+  BlockedCreators _blocked = const UnknownBlockedCreators();
   int _latestRequestId = 0;
   SessionRepository? _sessionRepository;
   StreamSubscription<Object?>? _sessionSub;
@@ -71,6 +74,7 @@ class TrendingBloc extends Bloc<TrendingEvent, TrendingState> {
   int _startupGeneration = 0;
   int _sessionGeneration = 0;
   bool _startupRetryAttempted = false;
+  bool _blockRecoveryDuringLoad = false;
 
   (String, bool)? get _currentSessionKey {
     final user = _sessionRepository?.currentUser;
@@ -100,13 +104,28 @@ class TrendingBloc extends Bloc<TrendingEvent, TrendingState> {
   /// Blocking a creator removes their walls at once, without waiting for the next load. Unblocking one loads the list
   /// again, because their walls were dropped from the state.
   Future<void> _onBlockedCreatorsChanged(_BlockedCreatorsChanged event, Emitter<TrendingState> emit) async {
-    final bool unblocked = _blocked.any((email) => !event.blocked.contains(email));
-    _blocked = event.blocked;
-    if (unblocked) {
+    final BlockedCreators current = _userBlockRepository.blockedCreators;
+    if (current is UnknownBlockedCreators) {
+      _blocked = current;
+      final List<PrismWallpaper> visible = _withoutBlocked(state.walls);
+      if (visible.length != state.walls.length) emit(state.copyWith(walls: visible));
+      return;
+    }
+    final bool recovered = _blocked is UnknownBlockedCreators;
+    final Set<String> oldUids = _blocked is KnownBlockedCreators ? (_blocked as KnownBlockedCreators).uids : const {};
+    final KnownBlockedCreators known = current as KnownBlockedCreators;
+    final bool unblocked = oldUids.any((uid) => !known.uids.contains(uid));
+    _blocked = known;
+    if (unblocked || recovered) {
+      if (state.status == LoadStatus.loading) {
+        _blockRecoveryDuringLoad = true;
+        return;
+      }
+      _blockRecoveryDuringLoad = false;
       if (state.status != LoadStatus.initial) await _load(emit);
       return;
     }
-    if (_blocked.isEmpty) return;
+    if (known.uids.isEmpty) return;
     final List<PrismWallpaper> visible = _withoutBlocked(state.walls);
     if (visible.length != state.walls.length) emit(state.copyWith(walls: visible));
   }
@@ -151,6 +170,10 @@ class TrendingBloc extends Bloc<TrendingEvent, TrendingState> {
       onSuccess: (walls) => emit(state.copyWith(status: LoadStatus.success, walls: _withoutBlocked(walls))),
       onFailure: (failure) => emit(state.copyWith(status: LoadStatus.failure, failure: failure)),
     );
+    if (_blockRecoveryDuringLoad) {
+      _blockRecoveryDuringLoad = false;
+      await _load(emit);
+    }
     final ready = result.retryAfterInitialization;
     if (ready == null || _startupRetryAttempted) return;
     unawaited(

@@ -8,12 +8,12 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/wallpaper/wall_ai_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
-import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
@@ -29,6 +29,7 @@ import 'package:Prism/features/wall_remix/data/wall_remix_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/features/wall_remix/views/widgets/remix_credit_row.dart';
 import 'package:Prism/features/wall_remix/views/widgets/remixes_section.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
@@ -51,7 +52,11 @@ const String _originalDocId = '1JMSVHNOLV';
 const String _originalTitle = 'Rose Arch · Sunrise';
 const String _prompt = 'a garden arch covered in climbing roses, warm sunrise light, soft mist, quiet path';
 const String _model = 'openai/gpt-image-2.5/sunburst/text-to-image';
-const WallViewer _viewer = WallViewer(isPremium: false, premiumCollections: <String>[], blockedCreatorUids: <String>{});
+final WallViewer _viewer = WallViewer(
+  isPremium: false,
+  premiumCollections: <String>[],
+  blockedCreators: KnownBlockedCreators(<String>{}),
+);
 
 class _QaRouter extends Mock implements StackRouter {}
 
@@ -82,7 +87,7 @@ class _QaRemixRepository extends WallRemixRepository {
   Future<PrismWallpaper?> fetchApprovedWall(String docId) async => original;
 
   @override
-  Future<Set<String>> blockedCreatorUids({bool waitForInitialLoad = true}) async => const <String>{};
+  Future<BlockedCreators> loadBlockedCreators() async => KnownBlockedCreators(const <String>{});
 }
 
 class _QaAiRepository extends Fake implements AiGenerationRepositoryImpl {
@@ -109,6 +114,9 @@ class _QaAiRepository extends Fake implements AiGenerationRepositoryImpl {
     required AiChargeMode chargeMode,
     required int coinsSpent,
     int? seed,
+    String? format,
+    String? foldedPrompt,
+    String? revealedPrompt,
     String? chargeTxId,
     String? remixOf,
   }) async {

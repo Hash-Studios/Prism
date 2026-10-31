@@ -1,4 +1,16 @@
 {
+  "economyAd": "Anzeige",
+  "@economyAd": {"description": "Label identifying a rewarded advertisement."},
+  "economyWatchAdForCoins": "Anzeige für {reward} Münzen ansehen",
+  "@economyWatchAdForCoins": {"description": "Currently quoted rewarded ad amount.", "placeholders": {"reward": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsMissing": "Dir fehlen noch {count} Münzen.",
+  "@economyCoinsMissing": {"description": "Coins missing for the selected purchase.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsRemainAfterAd": "Nach der Anzeige fehlen dir möglicherweise noch {count} Münzen",
+  "@economyCoinsRemainAfterAd": {"description": "Estimated remaining shortfall after the quoted ad reward.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyAdAutomaticPurchase": "Wenn dein Guthaben nach der Belohnung den Preis deckt, wird dieser Artikel automatisch gekauft.",
+  "@economyAdAutomaticPurchase": {"description": "Disclosure of automatic purchase after a credited ad."},
+  "economyAdVerificationPending": "Deine Anzeigenbelohnung wird geprüft. Nach der Bestätigung erscheinen die Münzen.",
+  "@economyAdVerificationPending": {"description": "Ad reward awaiting server verification."},
   "foldersLibraryEmptyTitle": "Noch keine Ordner",
   "@foldersLibraryEmptyTitle": {
     "description": "Title of the empty Folders tab in the Library."
@@ -90,6 +102,40 @@
   },
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "de",
+  "duoTitle": "Duo-Überraschung",
+  "duoAiFormatLabel": "Eine Duo-Überraschung erstellen",
+  "duoPresetNotice": "Prism zeigt im zugeklappten Zustand eine Vorschau der rechten Bildseite. Richte das gespeicherte Original manuell aus und prüfe beide Ansichten in der Hintergrundbildvorschau des Systems. Dies ist eine Prism-Voreinstellung, kein automatischer Bildzuschnitt von iOS.",
+  "duoFoldedPromptLabel": "Zugeklappte Ansicht",
+  "duoFoldedPromptExample": "Eine schläfrige Katze neben einem Fenster",
+  "duoRevealedPromptLabel": "Aufgeklappte Überraschung",
+  "duoRevealedPromptExample": "Ein winziges Raumschiff vor dem Fenster",
+  "duoPromptValidation": "Beschreibe beide Ansichten mit jeweils 1 bis 160 Zeichen.",
+  "duoMoodBody": "Ein Hintergrundbild. Aufgeklappt mehr entdecken.",
+  "duoDeviceName": "iPhone Duo",
+  "duoPhoneDevice": "Handy",
+  "duoFold": "Zuklappen",
+  "duoUnfold": "Aufklappen",
+  "duoFolded": "Zugeklappt",
+  "duoUnfolded": "Aufgeklappt",
+  "duoAndroidCropNotice": "Prism zeigt im zugeklappten Zustand eine Vorschau der rechten Bildseite. Android schneidet das Bild möglicherweise anders zu. Prüfe die Hintergrundbildvorschau des Systems, bevor du es anwendest.",
+  "duoGetOnPrism": "Auf Prism entdecken",
+  "duoGuideTitle": "Deine Duo-Überraschung einrichten",
+  "duoGuideOpen": "Öffne das gespeicherte Original in Fotos, tippe auf Teilen und dann auf Als Hintergrundbild.",
+  "duoGuideAlign": "Richte das vollständige Bild manuell so aus, dass im zugeklappten Zustand die rechte Seite zu sehen ist.",
+  "duoGuideCheck": "Prüfe die zugeklappte und die aufgeklappte Ansicht in der Systemvorschau und füge dann das Hintergrundbild hinzu.",
+  "duoWebTitle": "iPhone Duo Hintergrundbilder | Prism",
+  "duoWebDescription": "Ein Hintergrundbild mit einer verborgenen zweiten Szene. Entdecke originelle Hintergrundbilder mit Duo-Überraschung in Prism.",
+  "duoWebHeading": "Ein Hintergrundbild. Eine Geschichte, die sich entfaltet.",
+  "duoWebIntro": "Eine ruhige Szene im zugeklappten Zustand. Eine zweite Geschichte beim Aufklappen. Sieh dir beide Ansichten jedes Original-Hintergrundbilds an.",
+  "duoWebEmpty": "Die erste Duo-Kollektion wird geprüft.",
+  "duoWebEmptyBody": "Entdecke Prism, während wir jedes Hintergrundbild in beiden Ansichten prüfen.",
+  "duoWebFolded": "Zugeklappte Vorschau",
+  "duoWebUnfolded": "Aufgeklapptes Original",
+  "duoWebPresetNotice": "Diese Vorschauen nutzen die Prism-Voreinstellung für die rechte Bildseite, keinen automatischen Bildzuschnitt von Apple. Speichere das vollständige Original, richte es manuell aus und prüfe die zugeklappte und die aufgeklappte Ansicht in der Hintergrundbildvorschau des Systems.",
+  "duoWebOpenPrism": "In Prism öffnen",
+  "duoWebExplore": "Prism entdecken",
+  "duoWebAppStore": "Im App Store laden",
+  "duoWebPlayStore": "Bei Google Play herunterladen",
   "economyExportFailedLabel": "Export fehlgeschlagen",
   "@economyExportFailedLabel": {
     "description": "Failed filter export action inserted before refund status."
@@ -1413,16 +1459,7 @@
   "@accountReportAProblem": {
     "description": "Title for the report problem sheet and settings row."
   },
-  "accountReportPreviewNotice": "Dieser Bericht enthält deine App-Version, dein Gerät und aktuelle Protokolle. Er enthält weder deine E-Mail-Adresse noch Anmeldetokens. Lies ihn durch und teile ihn anschließend mit {email}.",
-  "@accountReportPreviewNotice": {
-    "description": "Privacy explanation shown before sharing a diagnostic report.",
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
-  "accountReportProblemSubtitle": "Teile deine App-Protokolle mit dem Prism-Team",
+  "accountReportProblemSubtitle": "Sende einen Fehlerbericht an das Prism-Team",
   "@accountReportProblemSubtitle": {
     "description": "Subtitle for reporting a problem."
   },
@@ -1573,10 +1610,6 @@
   "accountSettings": "Einstellungen",
   "@accountSettings": {
     "description": "Settings action label."
-  },
-  "accountShare": "Teilen",
-  "@accountShare": {
-    "description": "Share action label."
   },
   "accountShareInvite": "Einladung teilen",
   "@accountShareInvite": {
@@ -10688,6 +10721,184 @@
     "description": "Inbox body when another creator remixes your untitled wallpaper.",
     "placeholders": {
       "remixerName": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSheetMessage": "Sag uns, was schiefgelaufen ist. Prism fügt nie deine E-Mail-Adresse oder Anmeldetokens hinzu. Prüfe Screenshots, bevor du sie sendest.",
+  "@reportSheetMessage": {
+    "description": "Intro text in the report a problem sheet."
+  },
+  "reportTopicCrashFreeze": "Absturz/Einfrieren",
+  "@reportTopicCrashFreeze": {
+    "description": "Report topic chip: app crashed or froze."
+  },
+  "reportTopicWallpaperWontSet": "Hintergrundbild lässt sich nicht setzen",
+  "@reportTopicWallpaperWontSet": {
+    "description": "Report topic chip: wallpaper could not be set."
+  },
+  "reportTopicLooksBroken": "Sieht kaputt aus",
+  "@reportTopicLooksBroken": {
+    "description": "Report topic chip: something looks visually broken."
+  },
+  "reportTopicSlow": "Langsam",
+  "@reportTopicSlow": {
+    "description": "Report topic chip: app is slow."
+  },
+  "reportTopicOther": "Sonstiges",
+  "@reportTopicOther": {
+    "description": "Report topic chip: any other problem."
+  },
+  "reportNoteHint": "Was ist passiert? Was hast du erwartet?",
+  "@reportNoteHint": {
+    "description": "Hint text of the note field in the report sheet."
+  },
+  "reportScreenshotTitle": "Screenshot",
+  "@reportScreenshotTitle": {
+    "description": "Title of the screenshot row in the report sheet."
+  },
+  "reportScreenshotEmpty": "Zeig uns, was du siehst.",
+  "@reportScreenshotEmpty": {
+    "description": "Subtitle of the screenshot row when no screenshot is attached."
+  },
+  "reportScreenshotAttached": "Zum Ansehen tippen. Prüfe ihn vor dem Senden.",
+  "@reportScreenshotAttached": {
+    "description": "Subtitle of the screenshot row when a screenshot is attached."
+  },
+  "reportAddScreenshot": "Screenshot hinzufügen",
+  "@reportAddScreenshot": {
+    "description": "Button to add a screenshot to the report."
+  },
+  "reportRemoveScreenshot": "Entfernen",
+  "@reportRemoveScreenshot": {
+    "description": "Button to remove the attached screenshot."
+  },
+  "reportViewScreenshot": "Screenshot ansehen",
+  "@reportViewScreenshot": {
+    "description": "Tooltip or label to view the attached screenshot."
+  },
+  "reportIncludeDiagnostics": "Geräteinfos und aktuelle Protokolle einschließen",
+  "@reportIncludeDiagnostics": {
+    "description": "Switch label to include device info and recent logs in the report."
+  },
+  "reportShowDiagnostics": "Zeigen, was enthalten ist",
+  "@reportShowDiagnostics": {
+    "description": "Button to expand the list of included diagnostics."
+  },
+  "reportHideDiagnostics": "Details ausblenden",
+  "@reportHideDiagnostics": {
+    "description": "Button to collapse the list of included diagnostics."
+  },
+  "reportSend": "Bericht senden",
+  "@reportSend": {
+    "description": "Button that sends the report."
+  },
+  "reportShareAsFile": "Als Datei teilen",
+  "@reportShareAsFile": {
+    "description": "Button that shares the report as a file."
+  },
+  "reportSent": "Danke, Bericht gesendet. Referenz {reference}",
+  "@reportSent": {
+    "description": "Confirmation after the report is sent, with a short reference code.",
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCouldNotSend": "Senden fehlgeschlagen",
+  "@reportCouldNotSend": {
+    "description": "Title of the dialog shown when the report fails to send."
+  },
+  "reportCouldNotSendBody": "Prüfe deine Verbindung und versuche es erneut, oder teile den Bericht als Datei.",
+  "@reportCouldNotSendBody": {
+    "description": "Body of the dialog shown when the report fails to send."
+  },
+  "reportShareInstead": "Stattdessen teilen",
+  "@reportShareInstead": {
+    "description": "Dialog action to share the report as a file after a send failure."
+  },
+  "reportShakeToReport": "Schütteln zum Melden",
+  "@reportShakeToReport": {
+    "description": "Settings toggle label for shake to report."
+  },
+  "reportShakeToReportSubtitle": "Schüttle dein Handy auf jedem Bildschirm, um ein Problem zu melden",
+  "@reportShakeToReportSubtitle": {
+    "description": "Settings toggle subtitle for shake to report."
+  },
+  "accountShowAiWallpapers": "KI-generierte Hintergrundbilder anzeigen",
+  "accountShowAiWallpapersSubtitle": "Ausschalten, um nur von Menschen gemachte Walls zu sehen",
+  "accountShowAiWallpapersFootnote": "Wenn du KI-Hintergrundbilder ausblendest, bleiben deine eigenen Uploads und Favoriten sichtbar.",
+  "wallpaperFeedHideAi": "KI ausblenden",
+  "wallpaperAiGenerated": "KI-generiert",
+  "wallpaperAiMadeWith": "Erstellt mit {model}",
+  "wallpaperAiMadeWithUnknown": "Mit KI erstellt",
+  "wallpaperAiReportWrongLabel": "Falsches Label melden",
+  "feedNoHumanWalls": "Hier gibt es noch keine von Menschen gemachten Walls",
+  "feedShowAiWalls": "KI-Walls anzeigen",
+  "challengeTitle": "Wochen-Challenge",
+  "challengeRules": "Bis zu 3 Beiträge, die vor der Anzeige geprüft werden.",
+  "challengeVotingRules": "Stimme bis {date} UTC für andere ab.",
+  "@challengeVotingRules": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeUpload": "Beitrag hochladen",
+  "challengeAi": "Mit KI erstellen",
+  "challengeTop": "Beliebt",
+  "challengeNew": "Neu",
+  "challengePast": "Frühere Challenges",
+  "challengeEmpty": "Geprüfte Beiträge erscheinen hier.",
+  "challengeWaiting": "Die Abstimmung ist beendet. Nach der Prüfung aller Beiträge wird der Gewinner gewählt.",
+  "challengeClosed": "Diese Challenge ist beendet.",
+  "challengeScheduled": "Diese Challenge hat noch nicht begonnen.",
+  "challengeNoWinner": "Für diese Challenge gibt es keinen Gewinner.",
+  "challengeWinner": "Gewinner · {name}",
+  "@challengeWinner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeVote": "Abstimmen",
+  "challengeUnvote": "Stimme entfernen",
+  "challengeVotes": "{count, plural, =0{0 Stimmen} =1{1 Stimme} other{{count} Stimmen}}",
+  "@challengeVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeShare": "Challenge teilen",
+  "challengeRemove": "Challenge entfernen",
+  "challengeContext": "Challenge · {theme}",
+  "@challengeContext": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeError": "Die Challenge konnte nicht geladen werden. Versuche es erneut.",
+  "challengeVoteError": "Deine Stimme konnte nicht gespeichert werden. Versuche es erneut.",
+  "challengeSignIn": "Melde dich zum Mitmachen oder Abstimmen an.",
+  "challengeLimit": "Du hast 3 Wallpaper für diese Challenge eingereicht.",
+  "challengeRetry": "Erneut versuchen",
+  "challengeOwnEntry": "Du kannst nicht für deinen eigenen Beitrag stimmen.",
+  "challengeDailyLimit": "Dein tägliches Abstimmungslimit ist erreicht.",
+  "challengeMissing": "Diese Challenge oder dieser Beitrag ist nicht mehr verfügbar.",
+  "challengeBadge": "Challenge-Gewinner",
+  "challengeBadgeDescription": "Gewinne eine Wochen-Challenge",
+  "challengeWinnerNotificationTitle": "Dein Wallpaper hat gewonnen",
+  "challengeWinnerNotificationBody": "Dein Beitrag hat die Wochen-Challenge gewonnen: {theme}.",
+  "@challengeWinnerNotificationBody": {
+    "placeholders": {
+      "theme": {
         "type": "String"
       }
     }

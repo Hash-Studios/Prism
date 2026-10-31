@@ -11,6 +11,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
@@ -19,6 +20,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
@@ -29,11 +31,11 @@ import 'package:Prism/features/in_app_notifications/views/widgets/notification_s
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/ios_widgets/views/widget_guide_sheet.dart';
 import 'package:Prism/features/library/views/pages/library_screen.dart' show LibraryTab;
-import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart'
-    show personalizedFeedSettingsRevision;
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
+import 'package:Prism/features/session/data/report_problem_service.dart' show ReportTrigger;
+import 'package:Prism/features/session/data/shake_to_report.dart';
 import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
 import 'package:Prism/features/session/views/widgets/settings_account_card.dart';
 import 'package:Prism/features/theme_mode/views/widgets/diwali_decor.dart';
@@ -136,9 +138,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   late bool _showAnime;
   late bool _showSketchy;
+  late bool _showAi;
   late String _defaultApplyTarget;
   bool _haptics = PrismHaptics.enabled;
   bool _lowData = LowDataMode.enabled.value;
+  bool _shakeToReport = ShakeToReport.enabled.value;
   bool _saveViewingHistory = getIt<RecentlyViewedStore>().enabled;
   bool _savingViewingHistory = false;
   bool _restoring = false;
@@ -153,8 +157,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _viewedStore.addListener(_onViewedStoreChanged);
+    personalizedFeedSettingsRevision.addListener(_onAiSettingsChanged);
     _showAnime = animeEnabledFromCategories(_settingsLocal.get<int>('WHcategories', defaultValue: 100));
     _showSketchy = _settingsLocal.get<int>('WHpurity', defaultValue: 100) == 110;
+    _showAi = AiContentFilter.showsAi(_settingsLocal);
     final String storedTarget = _settingsLocal.get<String>(PersistenceKeys.defaultApplyTarget, defaultValue: 'ask');
     _defaultApplyTarget = _applyTargetKeys.contains(storedTarget) ? storedTarget : 'ask';
     _loadStorageStats();
@@ -234,7 +240,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     unawaited(analytics.track(SettingsRowTappedEvent(row: row)));
   }
 
-  Widget _group(String title, List<Widget> rows) {
+  Widget _group(String title, List<Widget> rows, {String? footnote}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -244,6 +250,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, PrismSpace.xl, 0, PrismSpace.xs),
         ),
         PrismGroup(children: rows),
+        if (footnote != null)
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, PrismSpace.xs, PrismSpace.xs, 0),
+            child: Text(footnote, style: PrismTextStyles.caption(context)),
+          ),
       ],
     );
   }
@@ -425,6 +436,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _trackSettingsToggle(SettingValue.animeWallpapers, value);
       },
     ),
+    PrismSwitchRow(
+      icon: Icons.auto_awesome_rounded,
+      title: context.l10n.accountShowAiWallpapers,
+      subtitle: context.l10n.accountShowAiWallpapersSubtitle,
+      value: _showAi,
+      onChanged: (value) async {
+        if (_showAi == value) return;
+        setState(() => _showAi = value);
+        final bool changed;
+        try {
+          changed = await setShowAiWallpapers(_settingsLocal, value);
+        } catch (_) {
+          if (!mounted) return;
+          setState(() => _showAi = AiContentFilter.showsAi(_settingsLocal));
+          toasts.error(context.l10n.wallpaperFeedSaveError);
+          return;
+        }
+        if (!changed) return;
+        _trackSettingsToggle(SettingValue.aiWallpapers, value);
+        if (!mounted) return;
+        context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.refreshRequested());
+      },
+    ),
     // App Store review: no sketchy content toggle on iOS, purity is forced SFW-only.
     if (!Platform.isIOS)
       PrismSwitchRow(
@@ -525,7 +559,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _viewedStore.removeListener(_onViewedStoreChanged);
+    personalizedFeedSettingsRevision.removeListener(_onAiSettingsChanged);
     super.dispose();
+  }
+
+  void _onAiSettingsChanged() {
+    if (!mounted) return;
+    final bool showAi = AiContentFilter.showsAi(_settingsLocal);
+    if (_showAi == showAi) return;
+    setState(() => _showAi = showAi);
   }
 
   /// Follows changes made elsewhere, such as Turn on in History.
@@ -856,7 +898,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitle: context.l10n.accountReportProblemSubtitle,
       onTap: () {
         _trackRow('report_a_problem');
-        unawaited(showReportProblemSheet(context, source: 'settings'));
+        unawaited(showReportProblemSheet(context, source: 'settings', trigger: ReportTrigger.settings));
+      },
+    ),
+    PrismSwitchRow(
+      icon: Icons.vibration_rounded,
+      title: context.l10n.reportShakeToReport,
+      subtitle: context.l10n.reportShakeToReportSubtitle,
+      value: _shakeToReport,
+      onChanged: (value) {
+        setState(() => _shakeToReport = value);
+        unawaited(ShakeToReport.set(value));
       },
     ),
     PrismRow(
@@ -1023,7 +1075,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _group(context.l10n.accountAppearance, _appearanceRows()),
               if (_isAndroid || _iosShortcuts || _iosWidgets)
                 _group(context.l10n.accountPersonalise, _personaliseRows()),
-              _group(context.l10n.accountContent, _contentRows()),
+              _group(
+                context.l10n.accountContent,
+                _contentRows(),
+                footnote: context.l10n.accountShowAiWallpapersFootnote,
+              ),
               _group(context.l10n.accountNotifications, _notificationRows()),
               _group(context.l10n.accountStorage, _storageRows()),
               _group(context.l10n.accountPurchases, _purchaseRows()),

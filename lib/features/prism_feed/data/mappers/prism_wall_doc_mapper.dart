@@ -45,6 +45,8 @@ extension PrismWallDocMapper on PrismWallDocDto {
       tags: mergedTags.isEmpty ? null : mergedTags,
       colors: colors.isEmpty ? null : colors,
       aiMetadata: aiMetadata.isEmpty ? null : aiMetadata,
+      isAiGenerated: isAiGenerated,
+      aiModel: aiModel.trim().isEmpty ? null : aiModel.trim(),
       isStreakExclusive: isStreakExclusive,
       requiredStreakDays: requiredStreakDays,
       streakShopCoinCost: streakShopCoinCost,

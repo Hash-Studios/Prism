@@ -14,6 +14,8 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/bloc_debug_observer.dart';
 import 'package:Prism/core/debug/creator_stats_emulator.dart';
 import 'package:Prism/core/debug/debug_flags.dart';
+import 'package:Prism/core/debug/local_qa_adapters.dart';
+import 'package:Prism/core/debug/local_qa_runtime.dart';
 import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/core/debug/perf_autodrive.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
@@ -57,6 +59,7 @@ import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
+import 'package:Prism/features/ads/data/ad_sdk.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_session_listener.dart';
 import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
@@ -71,6 +74,7 @@ import 'package:Prism/features/personalized_feed/domain/repositories/personalize
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
+import 'package:Prism/features/session/views/widgets/shake_to_report_listener.dart';
 import 'package:Prism/features/startup/services/resume_refresh_policy.dart';
 import 'package:Prism/features/startup/startup.dart';
 import 'package:Prism/features/theme_mode/data/theme_mode_migration.dart';
@@ -83,8 +87,8 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/local_notification.dart';
 import 'package:Prism/notifications/notification_signals.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -96,7 +100,6 @@ import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -161,7 +164,12 @@ int _colorValueFromPrefs(dynamic rawValue, {required int fallback}) {
 Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
-      WidgetsFlutterBinding.ensureInitialized();
+      if (Env.localQa) {
+        LocalQaRuntime.installNetworkPolicy();
+        LocalQaWidgetsBinding();
+      } else {
+        WidgetsFlutterBinding.ensureInitialized();
+      }
       PerformanceProbe.mark('startup.binding_ready');
       if (!kReleaseMode) {
         HttpsCallable.perfSink = (String name, int ms, bool ok) =>
@@ -190,6 +198,7 @@ Future<void> main() async {
 
       const skipFirebaseInit = Env.skipFirebaseInit;
       final SentryConfig sentryConfig = _resolveSentryConfig();
+      MonitoringRuntime.config = sentryConfig;
 
       // Start Firebase early so it can initialize while persistence and monitoring run.
       // StartupRepositoryImpl.bootstrap() also awaits this future before accessing Remote Config.
@@ -198,6 +207,10 @@ Future<void> main() async {
         // Keep Remote Config, economy remote config and FCM gates closed. The
         // three emulated services are already connected before DI or runApp.
         FirebaseInit.setFuture(Future<bool>.value(false));
+      } else if (Env.localQa) {
+        // Await directly: failure must stop QA before DI or the real router starts.
+        await LocalQaRuntime.initializeFirebase();
+        FirebaseInit.setFuture(Future<bool>.value(true));
       } else if (!skipFirebaseInit) {
         FirebaseInit.setFuture(
           PerformanceProbe.measure(
@@ -237,13 +250,16 @@ Future<void> main() async {
       await PerformanceProbe.measure(
         'startup',
         'persistence_and_monitoring',
-        () => Future.wait(<Future<Object?>>[PersistenceBootstrap.initialize(), _initializeMonitoring(sentryConfig)]),
+        () => Future.wait(<Future<Object?>>[
+          if (Env.localQa) LocalQaRuntime.initializePersistence() else PersistenceBootstrap.initialize(),
+          if (!Env.localQa) _initializeMonitoring(sentryConfig),
+        ]),
       );
 
       // Defer MobileAds and Analytics to after first frame. Resolves firebaseInitialized
       // lazily once Firebase background init completes.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (CreatorStatsEmulator.enabled) return;
+        if (CreatorStatsEmulator.enabled || Env.localQa) return;
         unawaited(PurchasesService.instance.configureEarly());
         unawaited(
           FirebaseInit.readyFuture.then(
@@ -299,6 +315,7 @@ Future<void> main() async {
       if (CreatorStatsEmulator.enabled) await CreatorStatsEmulator.signIn();
       configureDependencies();
       if (CreatorStatsEmulator.enabled) await CreatorStatsEmulator.installFirestore();
+      if (Env.localQa) await LocalQaRuntime.installDependenciesAndSession();
       PerformanceProbe.mark('startup.di_ready');
       // The session repository has loaded persisted identity; set private notification stores before runApp reads them.
       final persistedUser = app_state.prismUser;
@@ -371,7 +388,7 @@ Future<void> _setIfChanged(SettingsLocalDataSource settings, String key, Object 
 Future<void> _deferredStartup({required bool firebaseInitialized}) async {
   unawaited(
     AdConsent.instance.ensure().then((bool canRequestAds) {
-      if (canRequestAds) unawaited(MobileAds.instance.initialize());
+      if (canRequestAds) unawaited(initializeMobileAds());
     }),
   );
   await _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);
@@ -535,6 +552,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   DateTime? _lastCoinSyncAt;
 
   Future<bool> _restoreLoginStatus() async {
+    if (Env.localQa) return LocalQaRuntime.validateSession();
     if (!await FirebaseInit.readyFuture) return app_state.prismUser.loggedIn;
     final bool value = await globalGoogleAuth.isSignedIn();
     if (!value) {
@@ -641,6 +659,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _syncCoinEconomy({required String sourceTag}) async {
+    if (Env.localQa) return;
     if (_coinSyncInFlight) {
       return;
     }
@@ -725,6 +744,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _listenForPushMessages() async {
+    if (Env.localQa) return;
     // Wait for Firebase to be ready before touching any Firebase APIs.
     final bool firebaseReady = await FirebaseInit.readyFuture;
     if (!firebaseReady) return;
@@ -800,6 +820,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _refreshWotdTopics() async {
+    if (Env.localQa) return;
     try {
       if (!await FirebaseInit.readyFuture) return;
       await refreshWotdTopics(FirebaseMessaging.instance, getIt<SettingsLocalDataSource>());
@@ -919,13 +940,13 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
                 builder: (context, child) {
                   app_state.notchSize = MediaQuery.paddingOf(context).top;
                   final ThemeData theme = Theme.of(context);
-                  final bool wide = MediaQuery.sizeOf(context).width > PrismLayout.panelWidth;
                   return Theme(
-                    data: theme.copyWith(
-                      snackBarTheme: theme.snackBarTheme.copyWith(width: wide ? PrismLayout.panelWidth : null),
-                    ),
+                    data: theme.copyWith(snackBarTheme: prismSnackBarThemeFor(context, theme.snackBarTheme)),
                     child: FolderWriteFailureListener(
-                      child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                      child: ShakeToReportListener(
+                        navigatorKey: _appRouter.navigatorKey,
+                        child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                      ),
                     ),
                   );
                 },

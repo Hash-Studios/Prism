@@ -11,8 +11,8 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
-import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
@@ -299,7 +299,7 @@ void main() {
     await setViewport(tester);
     final image = await makeImage(tester);
     final fullUpload = Completer<GitHubContent>();
-    final save = Completer<wall_store.WallSubmissionResult>();
+    final save = Completer<WallSubmissionResult>();
     var uploadCalls = 0;
     var saveCalls = 0;
 
@@ -354,7 +354,7 @@ void main() {
     await tester.pump();
     expect(find.text('Submitting wallpaper'), findsOneWidget);
 
-    save.complete(wall_store.WallSubmissionResult.submitted);
+    save.complete(WallSubmissionResult.submitted);
     await tester.pumpAndSettle();
     expect(find.text('review-stub'), findsOneWidget);
     expect(find.text('Upload wallpaper'), findsNothing);
@@ -364,7 +364,7 @@ void main() {
   testWidgets('tracks a confirmed upload once when the screen was popped while saving', (tester) async {
     await setViewport(tester);
     final image = await makeImage(tester);
-    final save = Completer<wall_store.WallSubmissionResult>();
+    final save = Completer<WallSubmissionResult>();
     final recorder = FakeAppAnalytics();
     AnalyticsRuntime.instance = recorder;
 
@@ -413,7 +413,7 @@ void main() {
 
     Navigator.of(tester.element(find.text('Submitting wallpaper'))).pop();
     await tester.pumpAndSettle();
-    save.complete(wall_store.WallSubmissionResult.submitted);
+    save.complete(WallSubmissionResult.submitted);
     await tester.pump();
 
     final uploads = recorder.events.whereType<UploadWallpaperEvent>().toList();
@@ -441,7 +441,7 @@ void main() {
                 path: 'test-image.png',
                 sha: 'wall-sha',
               ),
-        createRecordForTesting: () async => wall_store.WallSubmissionResult.submitted,
+        createRecordForTesting: () async => WallSubmissionResult.submitted,
       ),
     );
     await tester.pumpAndSettle();
@@ -485,7 +485,7 @@ void main() {
         },
         createRecordForTesting: () async {
           saveCalls++;
-          return wall_store.WallSubmissionResult.submitted;
+          return WallSubmissionResult.submitted;
         },
       ),
     );
@@ -616,7 +616,7 @@ void main() {
           },
           createRecordForTesting: () async {
             saveCalls++;
-            return wall_store.WallSubmissionResult.quotaExceeded;
+            return WallSubmissionResult.quotaExceeded;
           },
         ),
       ),
@@ -658,7 +658,7 @@ void main() {
           createRecordForTesting: () async {
             saveCalls++;
             if (saveCalls == 1) throw StateError('network response was lost');
-            return wall_store.WallSubmissionResult.quotaExceeded;
+            return WallSubmissionResult.quotaExceeded;
           },
         ),
       ),
@@ -703,7 +703,7 @@ void main() {
             deleteCalls++;
             if (deleteCalls <= 2) throw StateError('temporary cleanup failure');
           },
-          createRecordForTesting: () async => wall_store.WallSubmissionResult.quotaExceeded,
+          createRecordForTesting: () async => WallSubmissionResult.quotaExceeded,
         ),
       ),
     );
@@ -760,7 +760,7 @@ void main() {
               : const GitHubContent(downloadUrl: 'https://example.test/wall.png', path: 'pixel.png', sha: 'wall-sha'),
           createRecordForTesting: () {
             saveCalls++;
-            return Future<wall_store.WallSubmissionResult>.error(StateError('network response was lost'));
+            return Future<WallSubmissionResult>.error(StateError('network response was lost'));
           },
         ),
       ),
@@ -805,7 +805,7 @@ void main() {
                   );
           },
           deleteFileForTesting: ({required path, required sha}) async => deletedFiles.add(path),
-          createRecordForTesting: () async => wall_store.WallSubmissionResult.submitted,
+          createRecordForTesting: () async => WallSubmissionResult.submitted,
         ),
       ),
     );
@@ -949,7 +949,7 @@ void main() {
           );
         },
         deleteFileForTesting: ({required path, required sha}) async => deletedFiles.add(path),
-        createRecordForTesting: () async => wall_store.WallSubmissionResult.submitted,
+        createRecordForTesting: () async => WallSubmissionResult.submitted,
       ),
     );
     await pumpImagePreparation(tester);
@@ -1003,7 +1003,7 @@ void main() {
         },
         createRecordForTesting: () async {
           saveCalls++;
-          return wall_store.WallSubmissionResult.submitted;
+          return WallSubmissionResult.submitted;
         },
       ),
     );
@@ -1217,7 +1217,7 @@ void main() {
                       deleteFileForTesting: ({required path, required sha}) async => deletedFiles.add(path),
                       createRecordForTesting: () async {
                         saveCalls++;
-                        return wall_store.WallSubmissionResult.submitted;
+                        return WallSubmissionResult.submitted;
                       },
                     ),
                   ),
@@ -1249,6 +1249,42 @@ void main() {
     expect(deletedFiles, ['pixel.png', 'thumb_pixel.png']);
     expect(routeResult, isNull);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('challenge seed prefills upload metadata and can be removed independently', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    SubmissionMetadata? submitted;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: UploadWallScreen(
+          image: image,
+          prepareImageForTesting: () async {},
+          challengeSeed: const ChallengeSeed(id: '2026-10-26', theme: 'Quiet oceans'),
+          uploadFileForTesting: ({required isThumbnail}) async =>
+              GitHubContent(downloadUrl: 'https://example.com/image.png', path: 'image.png', sha: 'sha'),
+          createRecordWithMetadataForTesting: ({required id, required metadata}) async {
+            submitted = metadata;
+            return WallSubmissionResult.quotaExceeded;
+          },
+        ),
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.pump();
+    expect(find.text('Quiet oceans'), findsOneWidget);
+    await tester.scrollUntilVisible(find.byTooltip('Remove challenge'), 200, scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.byTooltip('Remove challenge'));
+    await tester.pump();
+    expect(find.byTooltip('Remove challenge'), findsNothing);
+    await tester.ensureVisible(find.text('Upload'));
+    await tester.tap(find.text('Upload'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(submitted?.challengeId, '');
+    expect(submitted?.title, 'Quiet oceans');
   });
 
   testWidgets('ready state shows the preview facts, the checklist and one Upload button', (tester) async {
@@ -1386,7 +1422,7 @@ void main() {
         },
         createRecordForTesting: () async {
           if (saveCalls++ == 0) throw StateError('network response was lost');
-          return wall_store.WallSubmissionResult.submitted;
+          return WallSubmissionResult.submitted;
         },
       ),
     );

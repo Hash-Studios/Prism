@@ -128,6 +128,7 @@ enum SubscriptionEntitlementRefreshResultValue {
 
 enum SettingValue {
   animeWallpapers,
+  aiWallpapers,
   sketchyWallpapers,
   recommendationsNotifications,
   haptics;
@@ -254,6 +255,7 @@ enum ShareChannelValue {
 }
 
 enum ShareFormatValue {
+  duoReveal,
   story,
   post,
   clean,

@@ -95,6 +95,11 @@ class NotificationRouteMapper {
       if (action is! UnknownIntent) return Future<DeepLinkActionEntity?>.value(action);
     }
     final String route = data['route']?.toString().trim() ?? '';
+    if (route == 'challenge') {
+      final String id = data['challenge_id']?.toString().trim() ?? '';
+      final action = const DeepLinkParser().parse(Uri(path: '/challenges/$id'));
+      if (action is PageLinkIntent) return Future<DeepLinkActionEntity?>.value(action);
+    }
     final String wallId = data['wall_id']?.toString().trim() ?? '';
     final String profileIdentifier = _firstPresent(data, const <String>[
       'profile_identifier',

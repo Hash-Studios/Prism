@@ -169,6 +169,9 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
     required AiChargeMode chargeMode,
     required int coinsSpent,
     int? seed,
+    String? format,
+    String? foldedPrompt,
+    String? revealedPrompt,
     String? chargeTxId,
     String? remixOf,
   }) {
@@ -185,6 +188,7 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
   @override
   Future<AiGenerationRecord> generateVariation({
     required String generationId,
+    AiGenerationRecord? originalRecord,
     required AiChargeMode chargeMode,
     required int coinsSpent,
     String variationPrompt = '',

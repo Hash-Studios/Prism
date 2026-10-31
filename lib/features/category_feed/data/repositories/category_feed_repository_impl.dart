@@ -1,18 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
-import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/data/categories/category_catalog.dart';
 import 'package:Prism/data/feed_cache/paged_feed_cache.dart';
+import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
 import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
 import 'package:Prism/features/category_feed/domain/entities/category_feed_page.dart';
@@ -20,8 +22,8 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/domain/repositories/category_feed_repository.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
-import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:injectable/injectable.dart';
 
@@ -67,6 +69,10 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
   Future<Result<CategoryFeedPage>> fetchCategoryFeed({required CategoryEntity category, required bool refresh}) async {
     final mode = refresh ? 'r' : 'm';
     final String scope = _scopeFor(category);
+    final UserBlockRepository? blockRepository = getIt.isRegistered<UserBlockRepository>()
+        ? getIt<UserBlockRepository>()
+        : null;
+    final BlockedCreators? blocksAtStart = blockRepository?.blockedCreators;
     final int generation = refresh ? (_generations[scope] ?? 0) + 1 : (_generations[scope] ?? 0);
     _generations[scope] = generation;
     bool isCurrent() => _generations[scope] == generation;
@@ -81,8 +87,12 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
       final page = providerPage == null
           ? null
           : CategoryFeedPage(
+              // Hidden AI walls go before the URL dedupe, so a provider copy of the same image still shows.
               items: AnimeContentFilter.filterFeedItems(
-                _prependPrism(await prismFirst, providerPage.items),
+                _prependPrism(
+                  AiContentFilter.filterFeedItems(await prismFirst, showAi: AiContentFilter.showsAi(_settingsLocal)),
+                  AiContentFilter.filterFeedItems(providerPage.items, showAi: AiContentFilter.showsAi(_settingsLocal)),
+                ),
                 showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
               ),
               hasMore: providerPage.hasMore,
@@ -96,10 +106,12 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
       }
       if (!isCurrent()) return Result.error(const UnknownFailure('Category request was invalidated'));
 
-      try {
-        await _writeCache(category, page, append: !refresh, isCurrent: isCurrent);
-      } catch (error) {
-        logger.w('[CategoryFeedRepository] feed cache write failed: $error');
+      if (_canWriteCache(blockRepository, blocksAtStart)) {
+        try {
+          await _writeCache(category, page, append: !refresh, isCurrent: isCurrent);
+        } catch (error) {
+          logger.w('[CategoryFeedRepository] feed cache write failed: $error');
+        }
       }
       if (isCurrent()) _remember(page.items);
 
@@ -141,6 +153,9 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     }
   }
 
+  bool _canWriteCache(UserBlockRepository? repository, BlockedCreators? blocksAtStart) =>
+      repository == null || (blocksAtStart is KnownBlockedCreators && repository.blockedCreators == blocksAtStart);
+
   /// Prism creator walls that match a category with classifier data. Never fails the feed.
   Future<List<FeedItemEntity>> _fetchPrismFirst(CategoryEntity category) async {
     if (!category.hasPrismWalls || category.source == WallpaperSource.prism) {
@@ -162,14 +177,9 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     if (prism.isEmpty) return provider;
     final Map<String, FeedItemEntity> unique = <String, FeedItemEntity>{};
     for (final FeedItemEntity item in <FeedItemEntity>[...prism, ...provider]) {
-      unique.putIfAbsent(_canonicalKey(item), () => item);
+      unique.putIfAbsent(item.canonicalKey, () => item);
     }
     return unique.values.toList(growable: false);
-  }
-
-  String _canonicalKey(FeedItemEntity item) {
-    final String url = item.fullUrl.trim().toLowerCase();
-    return url.isNotEmpty ? url : '${item.source.wireValue}:${item.id.trim().toLowerCase()}';
   }
 
   Future<Result<CategoryFeedPage>> _fetchFromSource(CategoryEntity category, {required bool refresh}) async {
@@ -233,8 +243,8 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
       final CategoryFeedPage? previous = await _readCached(category);
       if (previous != null) {
         final Map<String, FeedItemEntity> merged = <String, FeedItemEntity>{
-          for (final FeedItemEntity item in previous.items) _canonicalKey(item): item,
-          for (final FeedItemEntity item in page.items) _canonicalKey(item): item,
+          for (final FeedItemEntity item in previous.items) item.canonicalKey: item,
+          for (final FeedItemEntity item in page.items) item.canonicalKey: item,
         };
         items = merged.values.toList(growable: false);
       }
@@ -301,11 +311,13 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     final snapshot = await _feedCacheLocal.read(source: 'category', scope: _scopeFor(category));
     final payload = toJsonMap(snapshot?.payload);
     final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
-    // A cache written while anime was on may hold anime Prism walls.
+    final bool showAi = AiContentFilter.showsAi(_settingsLocal);
+    // A cache written while anime or AI was on may hold those Prism walls.
     final items = ((payload['items'] as List?) ?? const <Object?>[])
         .map((entry) => decodeFeedItem(toJsonMap(entry)))
         .nonNulls
         .where((item) => !AnimeContentFilter.hidesFeedItem(item, showAnime: showAnime))
+        .where((item) => !AiContentFilter.hidesFeedItem(item, showAi: showAi))
         .toList(growable: false);
 
     if (items.isEmpty) {
@@ -315,7 +327,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     if (!getIt.isRegistered<UserBlockRepository>()) {
       return CategoryFeedPage(items: items, hasMore: payload['hasMore'] == true);
     }
-    final blocked = await getIt<UserBlockRepository>().getBlockedCreatorUids(waitForInitialLoad: true);
+    final blocked = await getIt<UserBlockRepository>().loadBlockedCreators();
     final visibleItems = items.where((item) => !BlockedCreatorsFilter.hidesFeedItem(item, blocked)).toList();
     return visibleItems.isEmpty ? null : CategoryFeedPage(items: visibleItems, hasMore: payload['hasMore'] == true);
   }

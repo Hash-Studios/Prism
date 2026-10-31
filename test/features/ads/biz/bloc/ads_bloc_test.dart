@@ -82,6 +82,29 @@ void main() {
     expect(showCalls, 2);
   });
 
+  testWidgets('guest wait ends at 60 seconds while fullscreen ownership remains', (tester) async {
+    final nativeCompletion = Completer<Result<AdsEntity>>();
+    when(() => showUseCase(const NoParams())).thenAnswer((_) => nativeCompletion.future);
+    RewardedAdResult? result;
+    watchRewardedAdResult(bloc).then((value) => result = value);
+    await tester.pump();
+    await tester.runAsync(() => pumpEventQueue());
+    await tester.pump(const Duration(seconds: 61));
+    expect(result?.failure, AdFailureReason.timeout);
+    RewardedAdResult? duplicate;
+    watchRewardedAdResult(bloc).then((value) => duplicate = value);
+    await tester.pump();
+    await tester.runAsync(() => pumpEventQueue());
+    expect(duplicate?.earned, isFalse);
+    verify(() => showUseCase(const NoParams())).called(1);
+    nativeCompletion.complete(Result.success(earned));
+    await tester.pump();
+    await tester.runAsync(() => pumpEventQueue());
+    await tester.pump();
+    expect(bloc.state.shouldUnlockDownload, isFalse);
+    await tester.pump(const Duration(seconds: 61));
+  });
+
   test('a failed load skips the show', () async {
     when(() => createUseCase(const NoParams())).thenAnswer(
       (_) async =>

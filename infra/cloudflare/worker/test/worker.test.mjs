@@ -4,6 +4,8 @@ import { webcrypto } from 'node:crypto';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { AiQuotaCoordinator, classifyCategory, gptImageSize, seedreamImageSize } from '../src/ai.ts';
+import {composeDuoPrompt, parseDuoPrompt, imageDimensions} from '../src/ai_duo_prompt.ts';
+import {hasBannedDuoPhrase} from '../src/duo_reveal_spec.ts';
 import { verifyFirebaseIdTokenFromRequest } from '../src/firebase_auth.ts';
 import worker from '../src/index.ts';
 import { formatCount, renderOgCardHtml } from '../src/og_card.ts';
@@ -393,6 +395,62 @@ test('every Dart deep-link catalog example resolves to a Worker landing', async 
       );
       assert.equal(response.status, 200, `${host}${uri.pathname}${uri.search}`);
     }
+  }
+});
+
+test('challenge links cover both hosts, campaigns, associations and app fallbacks', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => { throw new Error('Challenge links must not fetch remote data'); });
+  const env = workerEnv({
+    PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+    APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+  });
+  for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
+    for (const suffix of ['', '?utm_source=mail', '?utm_medium=social', '?utm_campaign=warm%2Fwood',
+      '?utm_source=mail&utm_medium=social&utm_campaign=warm%2Fwood']) {
+      const path = `/challenges/2026-10-26${suffix}`;
+      for (const ua of [ANDROID_UA, IOS_UA, 'Twitterbot']) {
+        const response = await worker.fetch(new Request(`https://${host}${path}`, {
+          headers: { 'user-agent': ua },
+        }), env, { waitUntil() {} });
+        assert.equal(response.status, 200, `${host}${path}`);
+        const html = await response.text();
+        assert.match(html, /Weekly challenge - Prism/);
+        assert.match(html, /Explore this weekly wallpaper challenge in Prism\./);
+        assert.ok(html.includes(path.replaceAll('&', '&amp;')), path);
+        if (ua === ANDROID_UA) assert.match(html, /#Intent;scheme=https/);
+      }
+    }
+    for (const path of ['/.well-known/apple-app-site-association', '/apple-app-site-association']) {
+      const response = await worker.fetch(new Request(`https://${host}${path}`), env, { waitUntil() {} });
+      assert.ok((await response.json()).applinks.details[0].paths.includes('/challenges/*'));
+    }
+  }
+  for (const path of ['/challenges/2026-10-26', '/challenges/2024-02-26', '/challenges/0000-01-03',
+    '/challenges/9999-12-27?utm_source=mail&utm_campaign=a%2Fb']) {
+    const response = await postLink(env, { type: 'page', payload: { path } });
+    assert.equal(response.status, 201, path);
+    const record = JSON.parse(await env.LINKS_KV.get((await response.json()).code));
+    assert.equal(record.canonical_url, `https://prismwalls.com${path}`);
+    assert.equal(record.preview.title, 'Weekly challenge - Prism');
+  }
+});
+
+test('challenge links reject unsupported roots, invalid dates, extra segments and query keys', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => { throw new Error('Challenge links must not fetch remote data'); });
+  const env = workerEnv({ PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism' });
+  for (const path of ['/challenges', '/challenges/', '/challenges/2026-10-27', '/challenges/2026-02-30',
+    '/challenges/2026-13-01', '/challenges/2026-00-01', '/challenges/2026-10-00',
+    '/challenges/2026-1-26', '/challenges/26-10-26', '/challenges/+010000-01-03',
+    '/challenges/2026-10-26T00:00:00Z', '/challenges/2026-10-26/entries',
+    '/challenges/2026-10-26%2Fentries', '/challenges/not-a-date',
+    '/challenges/2026-10-26?next=other', '/challenges/2026-10-26?utm_source=a&utm_source=b']) {
+    for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
+      const response = await worker.fetch(new Request(`https://${host}${path}`), env, { waitUntil() {} });
+      assert.equal(response.status, 302, `${host}${path}`);
+    }
+    const response = await postLink(env, { type: 'page', payload: { path } });
+    assert.equal(response.status, 400, path);
+    assert.equal((await response.json()).error, 'invalid_canonical_url', path);
   }
 });
 
@@ -2716,6 +2774,22 @@ test('when the new card fails to render, an old link keeps its old image with a 
 const FOLDER_IMAGE = `https://img.prismwalls.com/push-gallery/v1/${'d'.repeat(64)}.jpg`;
 const FOLDER_ENV = { ...RENDER_ENV, R2_PREVIEW_BASE_URL: 'https://img.prismwalls.com' };
 
+test('folder page links use a public cover when the gallery strip is unavailable', async () => {
+  const env = workerEnv(FOLDER_ENV);
+  const image = `https://img.prismwalls.com/previews/${'a'.repeat(64)}.img`;
+  const response = await postLink(env, {
+    type: 'page', canonical_url: 'https://prismwalls.com/folder/AbC123',
+    preview: { title: 'Purple Landscapes', image_source_url: image },
+  });
+  assert.equal(response.status, 201);
+  const { code, og_image_url: ogImageUrl } = await response.json();
+  assert.equal(ogImageUrl, image);
+  const crawler = await (await getShare('WhatsApp/2.23', `/l/${code}`, env)).text();
+  assert.ok(crawler.includes(`<meta property="og:image" content="${image}" />`));
+  assert.doesNotMatch(crawler, /og:image:(?:width|height)/);
+  assert.ok(crawler.includes(`<meta name="twitter:image" content="${image}" />`));
+});
+
 test('folder page links keep their push-gallery share image as og:image and skip the browser card', async () => {
   const env = workerEnv(FOLDER_ENV);
   const response = await postLink(env, {
@@ -2749,7 +2823,7 @@ test('folder page links without an allowed preview image use the Prism icon, not
   assert.doesNotMatch(crawler, new RegExp(`/og/${code}\\.jpg`));
 });
 
-test('folder page links keep only a push-gallery share image from the configured R2 base', async () => {
+test('folder page links reject images outside the allowed strip and public cover paths', async () => {
   const env = workerEnv(FOLDER_ENV);
   const hash = 'd'.repeat(64);
   for (const image of [
@@ -2760,7 +2834,9 @@ test('folder page links keep only a push-gallery share image from the configured
     `https://user:pass@img.prismwalls.com/push-gallery/v1/${hash}.jpg`,
     `https://img.prismwalls.com:8443/push-gallery/v1/${hash}.jpg`,
     `http://img.prismwalls.com/push-gallery/v1/${hash}.jpg`,
-    `https://img.prismwalls.com/previews/${hash}.img`,
+    `https://img.prismwalls.com/previews/${hash}.img?token=secret`,
+    `https://evil.example.com/previews/${hash}.img`,
+    'https://img.prismwalls.com/previews/original.img',
     `https://img.prismwalls.com/push-gallery/v1/${hash}.png`,
     `https://img.prismwalls.com/push-gallery/v1/${'D'.repeat(64)}.jpg`,
   ]) {
@@ -3450,6 +3526,139 @@ test('studio asset delete removes raw and uploaded keys and also succeeds for a 
   for (const key of ['ai/public/x.png', 'ai/original/x.png', 'ai/studio/raw/nested/x.png']) {
     assert.equal((await remove(key)).status, 400, key);
   }
+});
+
+const DUO_FIELDS = {format: 'duo-reveal', foldedPrompt: 'a tiny fox', revealedPrompt: 'a luminous forest village'};
+
+function sizedPng(width, height) {
+  const bytes = new Uint8Array(4096);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(0, 0x89504e47);
+  view.setUint32(4, 0x0d0a1a0a);
+  view.setUint32(16, width);
+  view.setUint32(20, height);
+  return bytes;
+}
+
+test('Duo fields trim and validate whole normalized phrases without clipping composition', () => {
+  assert.deepEqual(parseDuoPrompt({...DUO_FIELDS, foldedPrompt: '  fox  '}), {...DUO_FIELDS, foldedPrompt: 'fox'});
+  for (const patch of [{foldedPrompt: ''}, {revealedPrompt: 'x'.repeat(161)}, {foldedPrompt: 5},
+    {foldedPrompt: 'ＳＴＡＲ ＷＡＲＳ'}, {revealedPrompt: 'Mickey-Mouse'}, {revealedPrompt: 'Taylor\u200b Swift'}]) {
+    assert.equal(parseDuoPrompt({...DUO_FIELDS, ...patch}), null);
+  }
+  const prompt = composeDuoPrompt({...DUO_FIELDS, revealedPrompt: 'r'.repeat(160)});
+  assert.ok(prompt.length > 320);
+  assert.ok(prompt.includes('r'.repeat(160)));
+  assert.match(prompt, /2670x1878/);
+  assert.match(prompt, /top quarter/);
+  assert.equal(hasBannedDuoPhrase('a sonic wave'), false);
+  assert.deepEqual(imageDimensions(sizedPng(2688, 1888)), {width: 2688, height: 1888});
+});
+
+test('Duo rejects invalid and unavailable renderer requests before provider calls', async () => {
+  const kv = aiKv(20);
+  const env = aiEnv(kv, new AiQuotaCoordinator({storage: new MemoryStorage()}));
+  const stats = {};
+  const restore = mockFal({stats});
+  try {
+    assert.equal((await postGeneration(env, DUO_FIELDS)).status, 503);
+    for (const patch of [{format: 'wide'}, {foldedPrompt: ''}, {revealedPrompt: 'Pikachu'}]) {
+      assert.equal((await postGeneration(env, {...DUO_FIELDS, ...patch})).status, 400);
+    }
+    assert.equal(stats.fal ?? 0, 0);
+    assert.equal((await postStudioGeneration(studioEnv(), {prompt: 'ＭＩＣＫＥＹ MOUSE'})).status, 422);
+    assert.equal(stats.fal ?? 0, 0);
+  } finally { restore(); }
+});
+
+test('Duo exact normalization preserves structured metadata in response, record and variation', async () => {
+  const kv = aiKv(10);
+  const env = aiEnv(kv, new AiQuotaCoordinator({storage: new MemoryStorage()}), RENDER_ENV);
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  const renders = [];
+  globalThis.fetch = async (input, init) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.startsWith('https://fal.run/')) {
+      requests.push(JSON.parse(init.body));
+      return Response.json({images: [{url: 'https://fal.media/duo.png', width: 2688, height: 1888}]});
+    }
+    if (url === 'https://fal.media/duo.png') return new Response(sizedPng(2688, 1888), {headers: {'content-type': 'image/png'}});
+    if (url.includes('/browser-rendering/screenshot')) {
+      renders.push(JSON.parse(init.body));
+      return new Response(sizedPng(2670, 1878), {headers: {'content-type': 'image/png'}});
+    }
+    throw new Error(`Unexpected mock URL ${url}`);
+  };
+  try {
+    const response = await postGeneration(env, {...DUO_FIELDS, qualityTier: 'quality', targetSize: '2000x1408'});
+    assert.equal(response.status, 200, await response.clone().text());
+    const result = await response.json();
+    assert.deepEqual([result.width, result.height], [2670, 1878]);
+    for (const [key, value] of Object.entries(DUO_FIELDS)) assert.equal(result[key], value);
+    assert.deepEqual(requests[0].image_size, {width: 2688, height: 1888});
+    assert.ok(requests[0].prompt.includes(DUO_FIELDS.revealedPrompt));
+    assert.ok(requests[0].prompt.length > 160);
+    const record = JSON.parse(await kv.get(`ai:gen:${result.generationId}`));
+    for (const [key, value] of Object.entries(DUO_FIELDS)) assert.equal(record[key], value);
+    assert.match(renders[0].html, /display: none/);
+    assert.equal(renders[0].viewport.width, 2670);
+    const variation = await worker.fetch(new Request(`https://prismwalls.com/api/ai/generations/${result.generationId}/variations`, {
+      method: 'POST', headers: {authorization: `Bearer ${await makeToken({sub: 'alice'})}`, 'content-type': 'application/json'},
+      body: JSON.stringify({variationPrompt: 'more moonlight'}),
+    }), env, {waitUntil() {}});
+    assert.equal(variation.status, 200, await variation.clone().text());
+    const changed = await variation.json();
+    for (const [key, value] of Object.entries(DUO_FIELDS)) assert.equal(changed[key], value);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test('Duo paid staging and trial keep metadata, while small output fails without publishing', async () => {
+  const originalFetch = globalThis.fetch;
+  let small = false;
+  let providers = 0;
+  globalThis.fetch = async (input, init) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.startsWith('https://firestore.googleapis.com/')) return chargeDoc();
+    if (url.startsWith('https://fal.run/')) {
+      providers++;
+      return Response.json({images: [{url: 'https://fal.media/duo-paid.png', width: 2670, height: 1878}]});
+    }
+    if (url === 'https://fal.media/duo-paid.png') return new Response(sizedPng(small ? 2000 : 2670, small ? 1408 : 1878),
+      {headers: {'content-type': 'image/png'}});
+    if (url.includes('/browser-rendering/screenshot')) return new Response(sizedPng(2670, 1878));
+    throw new Error(`Unexpected mock URL ${url}`);
+  };
+  try {
+    const paidKv = aiKv(10);
+    const paid = aiEnv(paidKv, new AiQuotaCoordinator({storage: new MemoryStorage()}), {...RENDER_ENV, AI_REQUIRE_CHARGE: 'true'});
+    assert.equal((await postGeneration(paid, DUO_FIELDS)).status, 402);
+    const response = await postGeneration(paid, {...DUO_FIELDS, chargeTxId: TX_ID});
+    assert.equal(response.status, 200, await response.clone().text());
+    const result = await response.json();
+    const pending = JSON.parse(await paidKv.get(`ai:charge-pending:${result.generationId}`));
+    const saved = JSON.parse(await paidKv.get(`ai:gen:${result.generationId}`));
+    for (const [key, value] of Object.entries(DUO_FIELDS)) {
+      assert.equal(pending.record[key], value);
+      assert.equal(saved[key], value);
+      assert.equal(result[key], value);
+    }
+    const count = providers;
+    assert.deepEqual(await (await postGeneration(paid, {...DUO_FIELDS, chargeTxId: TX_ID})).json(), result);
+    assert.equal(providers, count);
+    const trialKv = aiKv(10);
+    const trial = aiEnv(trialKv, new AiQuotaCoordinator({storage: new MemoryStorage()}), RENDER_ENV);
+    assert.equal((await postGeneration(trial, {...DUO_FIELDS, freeTrial: true, qualityTier: 'balanced'})).status, 400);
+    const granted = await postGeneration(trial, {...DUO_FIELDS, freeTrial: true});
+    assert.equal(granted.status, 200);
+    assert.equal((await granted.json()).format, 'duo-reveal');
+    small = true;
+    const failedKv = aiKv(10);
+    const failed = aiEnv(failedKv, new AiQuotaCoordinator({storage: new MemoryStorage()}), {...RENDER_ENV, AI_REQUIRE_CHARGE: 'true'});
+    const failure = await postGeneration(failed, {...DUO_FIELDS, chargeTxId: TX_ID});
+    assert.equal(failure.status, 502);
+    assert.equal((await getChargeEvidence(failed, TX_ID)).body.status, 'failed');
+  } finally { globalThis.fetch = originalFetch; }
 });
 
 async function makeToken(overrides = {}) {

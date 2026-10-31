@@ -84,7 +84,7 @@ void main() {
       () => themeBloc.add(any(that: isA<ThemeEvent>().having((e) => e.toString(), 'text', contains('kLRose')))),
     );
     expect(find.text('Rose'), findsWidgets);
-    expect(find.text('You need 150 more coins.'), findsOneWidget);
+    expect(find.textContaining('You need 150 more coins.'), findsOneWidget);
   });
 
   testWidgets('a bought theme selects normally', (tester) async {
