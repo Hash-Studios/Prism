@@ -503,6 +503,55 @@ class CollectionViewRouteArgs {
 }
 
 /// generated route for
+/// [CreatorsPage]
+class CreatorsRoute extends PageRouteInfo<CreatorsRouteArgs> {
+  CreatorsRoute({
+    Key? key,
+    String source = 'home',
+    List<PageRouteInfo>? children,
+  }) : super(
+         CreatorsRoute.name,
+         args: CreatorsRouteArgs(key: key, source: source),
+         initialChildren: children,
+       );
+
+  static const String name = 'CreatorsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<CreatorsRouteArgs>(
+        orElse: () => const CreatorsRouteArgs(),
+      );
+      return CreatorsPage(key: args.key, source: args.source);
+    },
+  );
+}
+
+class CreatorsRouteArgs {
+  const CreatorsRouteArgs({this.key, this.source = 'home'});
+
+  final Key? key;
+
+  final String source;
+
+  @override
+  String toString() {
+    return 'CreatorsRouteArgs{key: $key, source: $source}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! CreatorsRouteArgs) return false;
+    return key == other.key && source == other.source;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ source.hashCode;
+}
+
+/// generated route for
 /// [DailyChestPage]
 class DailyChestRoute extends PageRouteInfo<DailyChestRouteArgs> {
   DailyChestRoute({

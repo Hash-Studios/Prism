@@ -18762,6 +18762,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your entry won the weekly challenge: {theme}.'**
   String challengeWinnerNotificationBody(String theme);
+
+  /// Title of the row of suggested creators on Home and Search.
+  ///
+  /// In en, this message translates to:
+  /// **'Creators to follow'**
+  String get creatorsToFollow;
+
+  /// Opens the full list of creators.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get creatorsSeeAll;
+
+  /// Title of the page that lists all creators.
+  ///
+  /// In en, this message translates to:
+  /// **'Creators'**
+  String get creatorsTitle;
+
+  /// Filter chip that shows creators from every category.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get creatorsFilterAll;
+
+  /// Empty state when no creator matches the selected category.
+  ///
+  /// In en, this message translates to:
+  /// **'No creators here yet'**
+  String get creatorsEmptyTitle;
+
+  /// Empty state body under creatorsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another category.'**
+  String get creatorsEmptyBody;
+
+  /// Error state when the creators list fails to load.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load creators'**
+  String get creatorsLoadError;
+
+  /// Screen reader label for a creator's avatar and name.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {name}\'s profile'**
+  String creatorsOpenProfile(String name);
+
+  /// Screen reader label for a wallpaper thumbnail on a creator card.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpaper by {name}'**
+  String creatorsWallBy(String name);
+
+  /// Profile social proof when one person the viewer follows follows this creator.
+  ///
+  /// In en, this message translates to:
+  /// **'Followed by {first}'**
+  String creatorsFollowedByOne(String first);
+
+  /// Profile social proof when two people the viewer follows follow this creator.
+  ///
+  /// In en, this message translates to:
+  /// **'Followed by {first} and {second}'**
+  String creatorsFollowedByTwo(String first, String second);
+
+  /// Profile social proof when three or more people the viewer follows follow this creator. others is the count beyond the two names.
+  ///
+  /// In en, this message translates to:
+  /// **'Followed by {first}, {second} and {others, plural, =1{1 other you follow} other{{others} others you follow}}'**
+  String creatorsFollowedByMany(String first, String second, int others);
+
+  /// Toast action and sheet title that suggest creators similar to the one just followed.
+  ///
+  /// In en, this message translates to:
+  /// **'More like {name}'**
+  String creatorsMoreLike(String name);
+
+  /// Subtitle of the similar creators sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Creators with a similar style'**
+  String get creatorsSimilarSubtitle;
+
+  /// Settings switch that lists the user in the creator directory.
+  ///
+  /// In en, this message translates to:
+  /// **'Show me in Creators to follow'**
+  String get creatorsShowMeTitle;
+
+  /// Subtitle of the creator directory settings switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Others can find your profile and top walls'**
+  String get creatorsShowMeBody;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -1,0 +1,52 @@
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/generated/analytics_events.g.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
+import 'package:Prism/features/creator_directory/domain/creator_directory_repository.dart';
+import 'package:Prism/features/creator_directory/views/widgets/similar_creators_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flutter/widgets.dart';
+
+bool _similarOfferUsed = false;
+
+@visibleForTesting
+void resetSimilarCreatorsOffer() => _similarOfferUsed = false;
+
+/// Shows the follow toast. After a follow it carries "More like `name`" once per app session, when the creator has
+/// similar creators the viewer does not follow yet. An unfollow never calls this.
+Future<void> showFollowToastWithSimilarOffer(
+  BuildContext context, {
+  required String uid,
+  required String name,
+  required String message,
+}) async {
+  if (_similarOfferUsed || uid.isEmpty) {
+    toasts.success(message, haptic: false);
+    return;
+  }
+  _similarOfferUsed = true;
+  final String label = context.l10n.creatorsMoreLike(name);
+  List<DirectoryCreator> similar = const <DirectoryCreator>[];
+  try {
+    similar = await getIt<CreatorDirectoryRepository>().similarTo(uid).timeout(const Duration(seconds: 2));
+  } catch (_) {}
+  if (similar.isEmpty) {
+    _similarOfferUsed = false;
+    toasts.success(message, haptic: false);
+    return;
+  }
+  toasts.success(
+    message,
+    haptic: false,
+    action: (
+      label: label,
+      onPressed: () {
+        final BuildContext? target = context.mounted ? context : toasts.overlayResolver?.call()?.context;
+        if (target == null) return;
+        analytics.track(SimilarCreatorsShownEvent(creatorId: uid, count: similar.length));
+        showSimilarCreatorsSheet(target, name: name, creators: similar);
+      },
+    ),
+  );
+}

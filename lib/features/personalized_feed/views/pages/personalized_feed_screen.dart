@@ -19,6 +19,7 @@ import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/ads/data/ad_experiment_config.dart';
 import 'package:Prism/features/ads/views/widgets/experimental_inline_ad.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
@@ -659,12 +660,18 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       ] else
         grid(start, end),
     ];
+    // The creators row sits four wallpaper rows into the second chunk. With one chunk it goes after the whole chunk.
+    final int? creatorsAt = chunks.length > 1 ? math.min(chunks[1].$1 + 4 * crossAxisCount, chunks[1].$2) : null;
     return <Widget>[
       for (int i = 0; i < chunks.length; i++) ...<Widget>[
         if (i == 0 && pickUpAt != null) ...<Widget>[
           ...gridWithAd(chunks[i].$1, pickUpAt),
           SliverToBoxAdapter(child: PickUpRow(walls: pickUp)),
           if (pickUpAt < chunks[i].$2) ...gridWithAd(pickUpAt, chunks[i].$2),
+        ] else if (i == 1 && creatorsAt != null) ...<Widget>[
+          ...gridWithAd(chunks[i].$1, creatorsAt),
+          const SliverToBoxAdapter(child: CreatorsSection(source: 'home')),
+          if (creatorsAt < chunks[i].$2) ...gridWithAd(creatorsAt, chunks[i].$2),
         ] else
           ...gridWithAd(chunks[i].$1, chunks[i].$2),
         if (chunks[i].$3 case final MoodList rowAfter)
@@ -675,6 +682,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
               slot: i,
             ),
           ),
+        if (i == 0 && chunks.length == 1) const SliverToBoxAdapter(child: CreatorsSection(source: 'home')),
       ],
       SliverToBoxAdapter(child: _bottomState(context, state, crossAxisCount)),
     ];

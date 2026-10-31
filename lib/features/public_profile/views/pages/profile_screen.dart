@@ -22,6 +22,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
+import 'package:Prism/features/creator_directory/views/widgets/followed_by_line.dart';
 import 'package:Prism/features/folders/views/widgets/profile_folders_row.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
@@ -726,6 +727,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                         const SizedBox(height: 2),
                       ],
                       ProfileBadgeRow(badgeIds: _profile.badges),
+                      if (!ownProfile) FollowedByLine(creatorUid: _profile.id),
                       const SizedBox(height: 8),
                       SizedBox(
                         width: headerWidth * 0.9,

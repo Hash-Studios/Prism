@@ -126,6 +126,11 @@ service cloud.firestore {
         || validThemePrefs(request.resource.data.themePrefs);
     }
 
+    function ownerDirectoryOptOutOk() {
+      return !('creatorDirectoryOptOut' in request.resource.data.diff(resource.data).affectedKeys())
+        || request.resource.data.creatorDirectoryOptOut is bool;
+    }
+
     function wallServerKeysAbsent() {
       return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount']);
     }
@@ -263,8 +268,8 @@ service cloud.firestore {
             'name', 'profilePhoto', 'coverPhoto', 'bio', 'links', 'lastLoginAt', 'loggedIn',
             'interestCategories', 'onboardingV2', 'uploadsWeekStart',
             'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'coinState',
-            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs'
-          ]) && ownerCoinStateOk() && ownerAppOpenOk() && ownerThemePrefsOk())
+            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs', 'creatorDirectoryOptOut'
+          ]) && ownerCoinStateOk() && ownerAppOpenOk() && ownerThemePrefsOk() && ownerDirectoryOptOutOk())
           || isConfiguredAdmin();
       allow delete: if isConfiguredAdmin();
 

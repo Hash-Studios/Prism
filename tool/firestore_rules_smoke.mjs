@@ -428,6 +428,9 @@ const cases = [
   ['owner stamps a west-of-UTC offset', () => req('PATCH', 'usersv2/b', {
     appOpenTimezoneOffsetMinutes: { integerValue: '-300' },
   }, Bu, ['appOpenTimezoneOffsetMinutes']), 200],
+  ['owner opts out of the creator directory', () => req('PATCH', 'usersv2/b', { creatorDirectoryOptOut: { booleanValue: true } }, Bu, ['creatorDirectoryOptOut']), 200],
+  ['owner cannot write a non-bool directory opt-out', () => req('PATCH', 'usersv2/b', { creatorDirectoryOptOut: str('yes') }, Bu, ['creatorDirectoryOptOut']), 403],
+  ['stranger cannot opt another user out', () => req('PATCH', 'usersv2/b', { creatorDirectoryOptOut: { booleanValue: true } }, A, ['creatorDirectoryOptOut']), 403],
   ['owner writes a valid themePrefs map', () => req('PATCH', 'usersv2/b', themeMap(themeFields), Bu, ['themePrefs']), 200],
   ['owner writes themePrefs with an extra key', () => req('PATCH', 'usersv2/b', themeMap({ ...themeFields, extra: str('x') }), Bu, ['themePrefs']), 403],
   ['owner writes themePrefs with mode sepia', () => req('PATCH', 'usersv2/b', themeMap({ ...themeFields, mode: str('sepia') }), Bu, ['themePrefs']), 403],

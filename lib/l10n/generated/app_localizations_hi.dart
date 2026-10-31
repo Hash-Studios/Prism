@@ -11803,4 +11803,70 @@ class AppLocalizationsHi extends AppLocalizations {
   String challengeWinnerNotificationBody(String theme) {
     return 'आपकी प्रविष्टि ने साप्ताहिक चुनौती जीती: $theme।';
   }
+
+  @override
+  String get creatorsToFollow => 'फ़ॉलो करने लायक क्रिएटर';
+
+  @override
+  String get creatorsSeeAll => 'सभी देखें';
+
+  @override
+  String get creatorsTitle => 'क्रिएटर';
+
+  @override
+  String get creatorsFilterAll => 'सभी';
+
+  @override
+  String get creatorsEmptyTitle => 'यहाँ अभी कोई क्रिएटर नहीं';
+
+  @override
+  String get creatorsEmptyBody => 'कोई दूसरी श्रेणी आज़माएँ।';
+
+  @override
+  String get creatorsLoadError => 'क्रिएटर लोड नहीं हो सके';
+
+  @override
+  String creatorsOpenProfile(String name) {
+    return '$name की प्रोफ़ाइल खोलें';
+  }
+
+  @override
+  String creatorsWallBy(String name) {
+    return '$name का वॉलपेपर';
+  }
+
+  @override
+  String creatorsFollowedByOne(String first) {
+    return '$first फ़ॉलो करते हैं';
+  }
+
+  @override
+  String creatorsFollowedByTwo(String first, String second) {
+    return '$first और $second फ़ॉलो करते हैं';
+  }
+
+  @override
+  String creatorsFollowedByMany(String first, String second, int others) {
+    String _temp0 = intl.Intl.pluralLogic(
+      others,
+      locale: localeName,
+      other: 'आपके फ़ॉलो किए $others और लोग',
+      one: 'आपके फ़ॉलो किए एक और व्यक्ति',
+    );
+    return '$first, $second और $_temp0 फ़ॉलो करते हैं';
+  }
+
+  @override
+  String creatorsMoreLike(String name) {
+    return '$name जैसे और';
+  }
+
+  @override
+  String get creatorsSimilarSubtitle => 'मिलते-जुलते स्टाइल वाले क्रिएटर';
+
+  @override
+  String get creatorsShowMeTitle => 'मुझे फ़ॉलो करने लायक क्रिएटर में दिखाएँ';
+
+  @override
+  String get creatorsShowMeBody => 'दूसरे आपकी प्रोफ़ाइल और टॉप वॉलपेपर ढूँढ सकते हैं';
 }

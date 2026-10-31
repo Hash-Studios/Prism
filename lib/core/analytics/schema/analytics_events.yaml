@@ -2666,3 +2666,44 @@ events:
       - name: challenge_id
         key: challenge_id
         type: string
+  - id: creators_section_viewed
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: creator_card_followed
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: creator_id
+        key: creator_id
+        type: string
+  - id: creators_see_all_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: creators_category_filtered
+    fields:
+      - name: category
+        key: category
+        type: string
+  - id: followed_by_shown
+    fields:
+      - name: count
+        key: count
+        type: int
+  - id: similar_creators_shown
+    fields:
+      - name: creator_id
+        key: creator_id
+        type: string
+      - name: count
+        key: count
+        type: int
+  - id: similar_creator_followed
+    fields:
+      - name: creator_id
+        key: creator_id
+        type: string

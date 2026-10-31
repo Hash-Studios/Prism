@@ -3923,3 +3923,103 @@ class ChallengeWinnerViewedEvent extends AnalyticsEvent {
     return <String, Object?>{'challenge_id': challengeId};
   }
 }
+
+class CreatorsSectionViewedEvent extends AnalyticsEvent {
+  const CreatorsSectionViewedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'creators_section_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class CreatorCardFollowedEvent extends AnalyticsEvent {
+  const CreatorCardFollowedEvent({required this.source, required this.creatorId});
+
+  final String source;
+  final String creatorId;
+
+  @override
+  String get eventName => 'creator_card_followed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'creator_id': creatorId};
+  }
+}
+
+class CreatorsSeeAllOpenedEvent extends AnalyticsEvent {
+  const CreatorsSeeAllOpenedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'creators_see_all_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class CreatorsCategoryFilteredEvent extends AnalyticsEvent {
+  const CreatorsCategoryFilteredEvent({required this.category});
+
+  final String category;
+
+  @override
+  String get eventName => 'creators_category_filtered';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'category': category};
+  }
+}
+
+class FollowedByShownEvent extends AnalyticsEvent {
+  const FollowedByShownEvent({required this.count});
+
+  final int count;
+
+  @override
+  String get eventName => 'followed_by_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count': count};
+  }
+}
+
+class SimilarCreatorsShownEvent extends AnalyticsEvent {
+  const SimilarCreatorsShownEvent({required this.creatorId, required this.count});
+
+  final String creatorId;
+  final int count;
+
+  @override
+  String get eventName => 'similar_creators_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'creator_id': creatorId, 'count': count};
+  }
+}
+
+class SimilarCreatorFollowedEvent extends AnalyticsEvent {
+  const SimilarCreatorFollowedEvent({required this.creatorId});
+
+  final String creatorId;
+
+  @override
+  String get eventName => 'similar_creator_followed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'creator_id': creatorId};
+  }
+}

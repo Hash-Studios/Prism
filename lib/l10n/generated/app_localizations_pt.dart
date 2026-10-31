@@ -11995,6 +11995,72 @@ class AppLocalizationsPt extends AppLocalizations {
   String challengeWinnerNotificationBody(String theme) {
     return 'Sua criação venceu o desafio semanal: $theme.';
   }
+
+  @override
+  String get creatorsToFollow => 'Criadores para seguir';
+
+  @override
+  String get creatorsSeeAll => 'Ver tudo';
+
+  @override
+  String get creatorsTitle => 'Criadores';
+
+  @override
+  String get creatorsFilterAll => 'Todos';
+
+  @override
+  String get creatorsEmptyTitle => 'Ainda não há criadores aqui';
+
+  @override
+  String get creatorsEmptyBody => 'Experimente outra categoria.';
+
+  @override
+  String get creatorsLoadError => 'Não foi possível carregar os criadores';
+
+  @override
+  String creatorsOpenProfile(String name) {
+    return 'Abrir o perfil de $name';
+  }
+
+  @override
+  String creatorsWallBy(String name) {
+    return 'Papel de parede de $name';
+  }
+
+  @override
+  String creatorsFollowedByOne(String first) {
+    return 'Seguido por $first';
+  }
+
+  @override
+  String creatorsFollowedByTwo(String first, String second) {
+    return 'Seguido por $first e $second';
+  }
+
+  @override
+  String creatorsFollowedByMany(String first, String second, int others) {
+    String _temp0 = intl.Intl.pluralLogic(
+      others,
+      locale: localeName,
+      other: 'mais $others que você segue',
+      one: 'mais 1 que você segue',
+    );
+    return 'Seguido por $first, $second e $_temp0';
+  }
+
+  @override
+  String creatorsMoreLike(String name) {
+    return 'Mais como $name';
+  }
+
+  @override
+  String get creatorsSimilarSubtitle => 'Criadores com um estilo semelhante';
+
+  @override
+  String get creatorsShowMeTitle => 'Mostrar-me em Criadores para seguir';
+
+  @override
+  String get creatorsShowMeBody => 'Outros podem encontrar o seu perfil e os seus melhores papéis de parede';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -23986,4 +24052,70 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String challengeWinnerNotificationBody(String theme) {
     return 'Sua criação venceu o desafio semanal: $theme.';
   }
+
+  @override
+  String get creatorsToFollow => 'Criadores para seguir';
+
+  @override
+  String get creatorsSeeAll => 'Ver tudo';
+
+  @override
+  String get creatorsTitle => 'Criadores';
+
+  @override
+  String get creatorsFilterAll => 'Todos';
+
+  @override
+  String get creatorsEmptyTitle => 'Ainda não há criadores aqui';
+
+  @override
+  String get creatorsEmptyBody => 'Tente outra categoria.';
+
+  @override
+  String get creatorsLoadError => 'Não foi possível carregar os criadores';
+
+  @override
+  String creatorsOpenProfile(String name) {
+    return 'Abrir o perfil de $name';
+  }
+
+  @override
+  String creatorsWallBy(String name) {
+    return 'Papel de parede de $name';
+  }
+
+  @override
+  String creatorsFollowedByOne(String first) {
+    return 'Seguido por $first';
+  }
+
+  @override
+  String creatorsFollowedByTwo(String first, String second) {
+    return 'Seguido por $first e $second';
+  }
+
+  @override
+  String creatorsFollowedByMany(String first, String second, int others) {
+    String _temp0 = intl.Intl.pluralLogic(
+      others,
+      locale: localeName,
+      other: 'mais $others que você segue',
+      one: 'mais 1 que você segue',
+    );
+    return 'Seguido por $first, $second e $_temp0';
+  }
+
+  @override
+  String creatorsMoreLike(String name) {
+    return 'Mais como $name';
+  }
+
+  @override
+  String get creatorsSimilarSubtitle => 'Criadores com um estilo parecido';
+
+  @override
+  String get creatorsShowMeTitle => 'Me mostrar em Criadores para seguir';
+
+  @override
+  String get creatorsShowMeBody => 'Outras pessoas podem encontrar seu perfil e seus melhores papéis de parede';
 }

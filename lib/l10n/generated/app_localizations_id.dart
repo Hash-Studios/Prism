@@ -11698,4 +11698,70 @@ class AppLocalizationsId extends AppLocalizations {
   String challengeWinnerNotificationBody(String theme) {
     return 'Karya Anda memenangkan tantangan mingguan: $theme.';
   }
+
+  @override
+  String get creatorsToFollow => 'Kreator untuk diikuti';
+
+  @override
+  String get creatorsSeeAll => 'Lihat semua';
+
+  @override
+  String get creatorsTitle => 'Kreator';
+
+  @override
+  String get creatorsFilterAll => 'Semua';
+
+  @override
+  String get creatorsEmptyTitle => 'Belum ada kreator di sini';
+
+  @override
+  String get creatorsEmptyBody => 'Coba kategori lain.';
+
+  @override
+  String get creatorsLoadError => 'Kreator tidak dapat dimuat';
+
+  @override
+  String creatorsOpenProfile(String name) {
+    return 'Buka profil $name';
+  }
+
+  @override
+  String creatorsWallBy(String name) {
+    return 'Wallpaper oleh $name';
+  }
+
+  @override
+  String creatorsFollowedByOne(String first) {
+    return 'Diikuti oleh $first';
+  }
+
+  @override
+  String creatorsFollowedByTwo(String first, String second) {
+    return 'Diikuti oleh $first dan $second';
+  }
+
+  @override
+  String creatorsFollowedByMany(String first, String second, int others) {
+    String _temp0 = intl.Intl.pluralLogic(
+      others,
+      locale: localeName,
+      other: '$others lainnya yang Anda ikuti',
+      one: '1 lainnya yang Anda ikuti',
+    );
+    return 'Diikuti oleh $first, $second dan $_temp0';
+  }
+
+  @override
+  String creatorsMoreLike(String name) {
+    return 'Lainnya seperti $name';
+  }
+
+  @override
+  String get creatorsSimilarSubtitle => 'Kreator dengan gaya serupa';
+
+  @override
+  String get creatorsShowMeTitle => 'Tampilkan saya di Kreator untuk diikuti';
+
+  @override
+  String get creatorsShowMeBody => 'Orang lain dapat menemukan profil dan wallpaper teratas Anda';
 }

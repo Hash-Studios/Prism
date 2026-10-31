@@ -3110,5 +3110,21 @@
   "challengeBadge": "Vencedor do desafio",
   "challengeBadgeDescription": "Vença um desafio semanal",
   "challengeWinnerNotificationTitle": "Seu wallpaper venceu",
-  "challengeWinnerNotificationBody": "Sua criação venceu o desafio semanal: {theme}."
+  "challengeWinnerNotificationBody": "Sua criação venceu o desafio semanal: {theme}.",
+  "creatorsToFollow": "Criadores para seguir",
+  "creatorsSeeAll": "Ver tudo",
+  "creatorsTitle": "Criadores",
+  "creatorsFilterAll": "Todos",
+  "creatorsEmptyTitle": "Ainda não há criadores aqui",
+  "creatorsEmptyBody": "Experimente outra categoria.",
+  "creatorsLoadError": "Não foi possível carregar os criadores",
+  "creatorsOpenProfile": "Abrir o perfil de {name}",
+  "creatorsWallBy": "Papel de parede de {name}",
+  "creatorsFollowedByOne": "Seguido por {first}",
+  "creatorsFollowedByTwo": "Seguido por {first} e {second}",
+  "creatorsFollowedByMany": "Seguido por {first}, {second} e {others, plural, =1{mais 1 que você segue} other{mais {others} que você segue}}",
+  "creatorsMoreLike": "Mais como {name}",
+  "creatorsSimilarSubtitle": "Criadores com um estilo semelhante",
+  "creatorsShowMeTitle": "Mostrar-me em Criadores para seguir",
+  "creatorsShowMeBody": "Outros podem encontrar o seu perfil e os seus melhores papéis de parede"
 }

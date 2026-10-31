@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
+import 'package:Prism/features/creator_directory/views/similar_creators_offer.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flutter/material.dart';
 
 void showFollowOutcomeToast(BuildContext context, FollowOutcome outcome) {
   final String name = outcome.targetName.trim().isEmpty ? context.l10n.accountThisUser : outcome.targetName.trim();
@@ -14,8 +16,16 @@ void showFollowOutcomeToast(BuildContext context, FollowOutcome outcome) {
     );
     return;
   }
-  toasts.success(
-    outcome.follow ? context.l10n.accountFollowedPerson(name) : context.l10n.accountUnfollowedPerson(name),
-    haptic: false,
-  );
+  if (outcome.follow) {
+    unawaited(
+      showFollowToastWithSimilarOffer(
+        context,
+        uid: outcome.targetUserId,
+        name: name,
+        message: context.l10n.accountFollowedPerson(name),
+      ),
+    );
+    return;
+  }
+  toasts.success(context.l10n.accountUnfollowedPerson(name), haptic: false);
 }

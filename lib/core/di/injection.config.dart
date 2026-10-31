@@ -49,6 +49,12 @@ import '../../features/category_feed/domain/repositories/category_feed_repositor
     as _i563;
 import '../../features/category_feed/domain/usecases/category_feed_usecases.dart'
     as _i301;
+import '../../features/creator_directory/biz/creator_directory_cubit.dart'
+    as _i361;
+import '../../features/creator_directory/data/creator_directory_repository_impl.dart'
+    as _i1049;
+import '../../features/creator_directory/domain/creator_directory_repository.dart'
+    as _i612;
 import '../../features/draw/biz/bloc/draw_bloc.j.dart' as _i269;
 import '../../features/draw/data/repositories/draw_repository_impl.dart'
     as _i342;
@@ -721,6 +727,12 @@ _i174.GetIt initGetIt(
       gh<_i112.UserBlockRepository>(),
     ),
   );
+  gh.lazySingleton<_i612.CreatorDirectoryRepository>(
+    () => _i1049.CreatorDirectoryRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i112.UserBlockRepository>(),
+    ),
+  );
   gh.lazySingleton<_i446.FetchPublicProfileWallsUseCase>(
     () => _i446.FetchPublicProfileWallsUseCase(
       gh<_i817.PublicProfileRepository>(),
@@ -781,6 +793,9 @@ _i174.GetIt initGetIt(
       gh<_i649.GuestFavouritesMerger>(),
       gh<_i727.PrismWallpaperRepository>(),
     ),
+  );
+  gh.factory<_i361.CreatorDirectoryCubit>(
+    () => _i361.CreatorDirectoryCubit(gh<_i612.CreatorDirectoryRepository>()),
   );
   gh.lazySingleton<_i887.TasteQuizRepository>(
     () => _i939.TasteQuizRepositoryImpl(
