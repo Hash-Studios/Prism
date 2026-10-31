@@ -7,6 +7,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -45,6 +46,11 @@ void main() {
   });
 
   tearDown(() async {
+    final gate = DailyMomentPresentationGate.instance;
+    gate.bootstrapReady = false;
+    gate.launchIntentsReady = false;
+    gate.deepLinkActive = false;
+    gate.purchaseActive = false;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(purchasesChannel, null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(paywallChannel, null);
@@ -178,6 +184,28 @@ void main() {
       });
       return backend;
     }
+
+    test('daily moment waits until a presented purchase is dismissed', () async {
+      final gate = DailyMomentPresentationGate.instance;
+      gate.bootstrapReady = true;
+      gate.launchIntentsReady = true;
+      gate.deepLinkActive = false;
+      final entered = Completer<void>();
+      final dismissed = Completer<String>();
+      await installPaywall(
+        present: () {
+          entered.complete();
+          return dismissed.future;
+        },
+      );
+      final result = orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
+      await entered.future;
+      expect(gate.canShow, isFalse);
+      dismissed.complete('CANCELLED');
+      await result;
+      expect(gate.canShow, isTrue);
+      gate.bootstrapReady = false;
+    });
 
     test('context-free present cannot bypass sign-in or change existing guest access', () async {
       var presented = 0;

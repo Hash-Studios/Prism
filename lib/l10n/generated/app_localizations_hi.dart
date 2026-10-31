@@ -11581,6 +11581,41 @@ class AppLocalizationsHi extends AppLocalizations {
   String get feedShowAiWalls => 'AI वॉलपेपर दिखाएँ';
 
   @override
+  String get dailyMomentTitle => 'रोज़ का पल';
+
+  @override
+  String get dailyMomentStreakTitle => 'रोज़ की स्ट्रीक';
+
+  @override
+  String get dailyMomentChestTitle => 'रोज़ का संदूक';
+
+  @override
+  String get dailyMomentSpinTitle => 'मुफ़्त स्पिन';
+
+  @override
+  String get dailyMomentUnavailable => 'यह इनाम आज अब उपलब्ध नहीं है।';
+
+  @override
+  String get dailyMomentError => 'इनाम लोड नहीं हो सका। फिर कोशिश करें।';
+
+  @override
+  String dailyMomentStreakReceipt(int coins, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins सिक्के मिले',
+      one: '$coins सिक्का मिला',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days दिनों की स्ट्रीक',
+      one: '$days दिन की स्ट्रीक',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
   String get challengeTitle => 'साप्ताहिक चुनौती';
 
   @override
@@ -11637,6 +11672,88 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count वोट', one: '1 वोट', zero: '0 वोट');
     return '$_temp0';
   }
+
+  @override
+  String get dailyMomentCosmetic => 'सजावटी आइटम आपके संग्रह में जोड़ा गया';
+
+  @override
+  String dailyMomentReward(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins सिक्के मिले',
+      one: '$coins सिक्का मिला',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentChestBody => 'जब चाहें आज का संदूक खोलें।';
+
+  @override
+  String get dailyMomentSpinBody => 'आपका मुफ़्त स्पिन तैयार है।';
+
+  @override
+  String dailyMomentBalance(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins सिक्के', one: '$coins सिक्का');
+    return 'शेष: $_temp0';
+  }
+
+  @override
+  String get dailyMomentDone => 'हो गया';
+
+  @override
+  String get dailyMomentRetry => 'फिर कोशिश करें';
+
+  @override
+  String get dailyMomentContinue => 'जारी रखें';
+
+  @override
+  String get dailyMomentOpenFree => 'मुफ़्त संदूक खोलें';
+
+  @override
+  String dailyMomentOpenChest(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins सिक्कों में खोलें',
+      one: '$coins सिक्के में खोलें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentSpinAction => 'मुफ़्त स्पिन लें';
+
+  @override
+  String get dailyMomentClose => 'रोज़ का पल बंद करें';
+
+  @override
+  String get dailyMomentToday => 'आज';
+
+  @override
+  String get dailyMomentReady => 'रोज़ के इनाम तैयार हैं';
+
+  @override
+  String get dailyMomentComplete => 'आज के इनाम पूरे हुए';
+
+  @override
+  String get dailyMomentResume => 'रोज़ का पल जारी रखें';
+
+  @override
+  String get dailyMomentMore => 'और';
+
+  @override
+  String get dailyMomentQuests => 'मिशन';
+
+  @override
+  String get dailyMomentChestLeft => 'रोज़ का संदूक उपलब्ध है';
+
+  @override
+  String get dailyMomentSpinLeft => 'मुफ़्त स्पिन उपलब्ध है';
+
+  @override
+  String get dailyMomentStreakLeft => 'रोज़ की स्ट्रीक उपलब्ध है';
 
   @override
   String get challengeShare => 'चुनौती साझा करें';

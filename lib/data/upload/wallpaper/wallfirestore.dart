@@ -41,6 +41,7 @@ Future<WallSubmissionResult> createRecord(
   String? docId,
   DateTime Function()? now,
   String requestId = '',
+  void Function(CoinMutationResult result)? onUploadAward,
   String challengeId = '',
 }) async {
   final user = app_state.prismUser;
@@ -112,7 +113,11 @@ Future<WallSubmissionResult> createRecord(
     docId: docId,
     awardFirstUpload: () {
       if (app_state.prismUser.id != user.id) return Future<void>.value();
-      return CoinsService.instance.maybeAwardFirstWallpaperUpload().then((_) {});
+      return CoinsService.instance.maybeAwardFirstWallpaperUpload().then((result) {
+        if (app_state.prismUser.id == user.id && result.success && result.changed && result.delta > 0) {
+          onUploadAward?.call(result);
+        }
+      });
     },
   );
 

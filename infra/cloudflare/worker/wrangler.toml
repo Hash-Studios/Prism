@@ -287,6 +287,9 @@ pattern = "prismwalls.com/draw*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/daily-moment*"
+zone_name = "prismwalls.com"
+[[routes]]
 pattern = "prismwalls.com/daily-chest*"
 zone_name = "prismwalls.com"
 [[routes]]
@@ -595,6 +598,9 @@ zone_name = "prismwalls.com"
 pattern = "www.prismwalls.com/draw*"
 zone_name = "prismwalls.com"
 
+[[routes]]
+pattern = "www.prismwalls.com/daily-moment*"
+zone_name = "prismwalls.com"
 [[routes]]
 pattern = "www.prismwalls.com/daily-chest*"
 zone_name = "prismwalls.com"

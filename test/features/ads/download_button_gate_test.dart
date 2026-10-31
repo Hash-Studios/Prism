@@ -53,12 +53,14 @@ class _OrderedAnalytics extends FakeAppAnalytics {
 }
 
 class _RecordingStats extends Fake implements ViewStatsRepository {
+  _RecordingStats({this.receipt = const WallpaperActionReceipt()});
+  final WallpaperActionReceipt receipt;
   final List<(String, WallpaperAction)> actions = <(String, WallpaperAction)>[];
 
   @override
-  Future<Result<void>> recordWallpaperAction(String wallId, WallpaperAction action) async {
+  Future<Result<WallpaperActionReceipt>> recordWallpaperAction(String wallId, WallpaperAction action) async {
     actions.add((wallId, action));
-    return Result.success(null);
+    return Result.success(receipt);
   }
 }
 
@@ -624,6 +626,18 @@ void main() {
       expect(stats.actions, <(String, WallpaperAction)>[('wall-1', WallpaperAction.download)]);
     });
 
+    testWidgets('a finished save shows its actual confirmed award inline', (tester) async {
+      final stats = _RecordingStats(
+        receipt: const WallpaperActionReceipt(counted: true, coins: 23, receiptId: 'download_receipt_1234'),
+      );
+      getIt.registerSingleton<RecordWallpaperActionUseCase>(RecordWallpaperActionUseCase(stats));
+      addTearDown(() => getIt.unregister<RecordWallpaperActionUseCase>());
+      await pump(tester);
+      await tapSave(tester);
+      await tester.pump();
+      expect(find.text('+23 coins'), findsOneWidget);
+    });
+
     testWidgets('the ledger row falls back to the creator name', (tester) async {
       await pump(tester, creator: 'Ana');
       await tapSave(tester);
@@ -1044,6 +1058,10 @@ void main() {
       tester,
     ) async {
       signInAgain();
+      final stats = _RecordingStats();
+      getIt.registerSingleton<RecordWallpaperActionUseCase>(RecordWallpaperActionUseCase(stats));
+      addTearDown(() => getIt.unregister<RecordWallpaperActionUseCase>());
+
       final String ownerA = app_state.prismUser.id;
       final OfflineAssetStore assets = (await tester.runAsync(
         () async => _CacheMissOfflineAssetStore(directory: Directory('${tempDir.path}/offline')),
@@ -1072,6 +1090,7 @@ void main() {
       await completed.future;
       await tester.pump(const Duration(seconds: 2));
 
+      expect(stats.actions, isEmpty);
       expect(index.hasAcquired(link: _link, id: 'wall-1', source: WallpaperSource.wallhaven), isFalse);
       expect(find.text(AppLocalizationsEn().economyDownloadSaved), findsNothing);
       app_state.prismUser = app_constants.createGuestPrismUser()
