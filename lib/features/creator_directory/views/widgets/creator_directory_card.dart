@@ -6,11 +6,11 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
 import 'package:Prism/features/creator_directory/views/creator_follow_changes.dart';
 import 'package:Prism/features/creator_directory/views/widgets/visible_directory_creator.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -125,10 +125,9 @@ class CreatorIdentity extends StatelessWidget {
 
 /// A creator's top walls in a row. A tap opens the wall and swipes through the others.
 class CreatorWallStrip extends StatelessWidget {
-  const CreatorWallStrip({super.key, required this.creator, required this.source, this.count = 4});
+  const CreatorWallStrip({super.key, required this.creator, this.count = 4});
 
   final DirectoryCreator creator;
-  final String source;
   final int count;
 
   @override
@@ -136,7 +135,11 @@ class CreatorWallStrip extends StatelessWidget {
     final List<FeedItemEntity> items = <FeedItemEntity>[
       for (final wall in creator.walls.take(count)) FeedItemEntity.prism(id: wall.id, wallpaper: wall),
     ];
-    final String name = creator.entry.displayName;
+    final String label = context.l10n.creatorsWallBy(creator.entry.displayName);
+    final Object heroScope = Scrollable.maybeOf(context) ?? context;
+    final List<WallpaperFeedTile> tiles = <WallpaperFeedTile>[
+      for (final (i, item) in items.indexed) (item: item, index: i, heroTag: prismHeroTag(heroScope, i, item.id)),
+    ];
     return Row(
       children: <Widget>[
         for (int i = 0; i < count; i++) ...<Widget>[
@@ -144,16 +147,22 @@ class CreatorWallStrip extends StatelessWidget {
           Expanded(
             child: AspectRatio(
               aspectRatio: PrismFeedLayout.gridTileAspectRatio,
-              child: i < items.length
-                  ? Semantics(
-                      label: context.l10n.creatorsWallBy(name),
-                      child: WallpaperTile(
-                        item: items[i],
-                        index: i,
-                        crossAxisCount: 4,
-                        sourceContext: 'creators_${source}_card',
-                        feed: items,
-                      ),
+              child: i < tiles.length
+                  ? PrismWallTile(
+                      url: tiles[i].item.thumbnailUrl,
+                      fallbackUrl: tiles[i].item.fullUrl,
+                      heroTag: tiles[i].heroTag,
+                      semanticLabel: label,
+                      onTap: () {
+                        PrismHaptics.tap();
+                        context.router.push(
+                          WallpaperDetailRoute(
+                            entity: tiles[i].item,
+                            heroTag: tiles[i].heroTag,
+                            feed: WallpaperFeed(grid: context, tiles: tiles),
+                          ),
+                        );
+                      },
                     )
                   : DecoratedBox(
                       decoration: BoxDecoration(
@@ -193,7 +202,7 @@ class CreatorDirectoryCard extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              CreatorWallStrip(creator: creator, source: source),
+              CreatorWallStrip(creator: creator),
               const SizedBox(height: PrismSpace.sm),
               Row(
                 children: <Widget>[

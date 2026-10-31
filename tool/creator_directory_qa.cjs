@@ -177,7 +177,7 @@ async function prepare() {
       api_key: [{current_key: SYNTHETIC_KEY}]}], configuration_version: '1'});
   write('native/GoogleService-Info.plist', `<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict>
 <key>API_KEY</key><string>${SYNTHETIC_KEY}</string><key>GCM_SENDER_ID</key><string>1234567890</string>
-<key>GOOGLE_APP_ID</key><string>1:1234567890:ios:0123456789abcdef</string><key>PROJECT_ID</key><string>${PROJECT}</string>
+<key>GOOGLE_APP_ID</key><string>1:1234567890:ios:0123456789abcdef</string><key>PROJECT_ID</key><string>${PROJECT}</string><key>STORAGE_BUCKET</key><string>${PROJECT}.appspot.com</string>
 <key>BUNDLE_ID</key><string>com.hash.prism</string><key>IS_ANALYTICS_ENABLED</key><false/>
 <key>IS_GCM_ENABLED</key><false/><key>PLIST_VERSION</key><string>1</string></dict></plist>\n`);
   run('python3', ['-c', `import plistlib,sys
@@ -255,7 +255,7 @@ async function buildApk() {
   withBuildInputs([
     {source: path.join(runtime, 'native/google-services.json'), destination: 'android/app/google-services.json', check: validateAndroid},
     {source: path.join(guardDir, 'AndroidManifest.xml'), destination: 'android/app/src/debug/AndroidManifest.xml'},
-  ], () => run('fvm', ['flutter', 'build', 'apk', '--debug', '--no-pub', '--target-platform=android-x64',
+  ], () => run('fvm', ['flutter', 'build', 'apk', '--debug', '--no-pub', `--target-platform=android-${process.arch === 'arm64' ? 'arm64' : 'x64'}`,
     '--dart-define-from-file=' + path.join(runtime, 'dart-defines.json')],
   {cwd: repo, env: {...process.env, GRADLE_OPTS: `${process.env.GRADLE_OPTS || ''} -Dorg.gradle.workers.max=2`}}));
 }

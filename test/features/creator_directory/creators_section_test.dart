@@ -1,8 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
-import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/creator_directory/views/widgets/creator_directory_card.dart';
 import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
@@ -74,7 +73,7 @@ void main() {
     expect(find.text('2 followers'), findsOneWidget);
     expect(find.text('1 follower'), findsOneWidget);
     for (final String name in <String>['Creator a', 'Creator b']) {
-      expect(find.descendant(of: _cardFor(name), matching: find.byType(WallpaperTile)), findsNWidgets(4));
+      expect(find.descendant(of: _cardFor(name), matching: find.byType(PrismWallTile)), findsNWidgets(4));
     }
   });
 
