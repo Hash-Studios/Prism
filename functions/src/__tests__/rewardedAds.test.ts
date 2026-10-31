@@ -85,6 +85,18 @@ test("verified settlement atomically credits ledger, ad count, quest, and dedupl
   await assert.rejects(settleVerifiedReward(callback(second, {timestamp: String(NOW + 600_001)})), SsvInvalid);
 });
 
+test("the AdMob Verify URL probe is acknowledged without a credit; one missing field still fails", async (t) => {
+  const h = harness(t);
+  const before = new Map(h.store);
+  // The exact fields of the console probe seen in production on 2026-10-31.
+  const probe = {ad_network: "5450213213286189855", ad_unit: "1234567890", reward_amount: "10",
+    reward_item: "download_coins", timestamp: String(NOW), transaction_id: "123456789"};
+  await settleVerifiedReward(new URLSearchParams(probe));
+  assert.deepEqual(h.store, before);
+  await assert.rejects(settleVerifiedReward(new URLSearchParams({...probe, user_id: "u"})), SsvInvalid);
+  await assert.rejects(settleVerifiedReward(new URLSearchParams({...probe, custom_data: "x"})), SsvInvalid);
+});
+
 test("legacy awards respect pending capacity and first bonus, and the cutoff rejects the actual callable", async (t) => {
   const h = harness(t);
   await begin();
