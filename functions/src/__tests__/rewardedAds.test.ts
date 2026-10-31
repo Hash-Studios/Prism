@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {generateKeyPairSync, sign} from "node:crypto";
 import {db} from "../common";
-import {beginRewardedSession, getRewardedSession, settleVerifiedReward, rewardedConfig} from "../rewardedAds";
+import {admobRewardedSsv, beginRewardedSession, getRewardedSession, settleVerifiedReward, rewardedConfig} from "../rewardedAds";
 import {GoogleSsvVerifier, SsvInvalid, SsvUnavailable} from "../admobSsv";
 import {awardCoins, legacyRewardedAdsAllowed} from "../coinsCallables";
 import {installFakeDb} from "./fakeDb";
@@ -10,8 +10,8 @@ import {installFakeDb} from "./fakeDb";
 const UNIT = "ca-app-pub-1234567890123456/1234567890";
 const NOW = Date.UTC(2026, 9, 30, 12);
 type Store = Map<string, Record<string, any>>;
-function harness(t: test.TestContext) {
-  const store: Store = installFakeDb(t, {"usersv2/u": {coins: 0}});
+function harness(t: test.TestContext, observed?: {reads: number; writes: number; outsideReads: number; outsideWrites: number}) {
+  const store: Store = installFakeDb(t, {"usersv2/u": {coins: 0}}, observed);
   let now = NOW;
   t.mock.method(Date, "now", () => now);
   for (const [key, value] of Object.entries({REWARDED_AD_ENABLED: "true", REWARDED_AD_ANDROID_UNIT_ID: UNIT,
@@ -85,16 +85,68 @@ test("verified settlement atomically credits ledger, ad count, quest, and dedupl
   await assert.rejects(settleVerifiedReward(callback(second, {timestamp: String(NOW + 600_001)})), SsvInvalid);
 });
 
-test("the AdMob Verify URL probe is acknowledged without a credit; one missing field still fails", async (t) => {
-  const h = harness(t);
-  const before = new Map(h.store);
+test("HTTP verifies probes before acknowledging them without writes or consuming a transaction ID", async (t) => {
+  const observed = {reads: 0, writes: 0, outsideReads: 0, outsideWrites: 0};
+  const h = harness(t, observed);
+  const first = await begin();
+  const before = structuredClone(h.store);
+  const ioBefore = {...observed};
+  const pair = generateKeyPairSync("ec", {namedCurve: "prime256v1"});
+  const verifier = new GoogleSsvVerifier((async () => new Response(JSON.stringify({keys: [
+    {keyId: 1, pem: pair.publicKey.export({type: "spki", format: "pem"})},
+  ]}))) as typeof fetch);
+  // Keep real signature verification; replace only its Google key source with a local test key.
+  t.mock.method(GoogleSsvVerifier.prototype, "verify", verifier.verify.bind(verifier));
+  const signed = (raw: string) =>
+    `${raw}&signature=${sign("sha256", Buffer.from(raw), pair.privateKey).toString("base64url")}&key_id=1`;
+  const request = async (raw: string, method = "GET") => {
+    const result = {status: 0, body: ""};
+    const response = {
+      status(code: number) {
+        result.status = code; return this;
+      },
+      send(body: string) {
+        result.body = body; return this;
+      },
+    };
+    await admobRewardedSsv({method, originalUrl: `/admobRewardedSsv?${raw}`, headers: {}} as
+      Parameters<typeof admobRewardedSsv>[0], response as unknown as Parameters<typeof admobRewardedSsv>[1]);
+    return result;
+  };
   // The exact fields of the console probe seen in production on 2026-10-31.
   const probe = {ad_network: "5450213213286189855", ad_unit: "1234567890", reward_amount: "10",
     reward_item: "download_coins", timestamp: String(NOW), transaction_id: "123456789"};
-  await settleVerifiedReward(new URLSearchParams(probe));
-  assert.deepEqual(h.store, before);
-  await assert.rejects(settleVerifiedReward(new URLSearchParams({...probe, user_id: "u"})), SsvInvalid);
-  await assert.rejects(settleVerifiedReward(new URLSearchParams({...probe, custom_data: "x"})), SsvInvalid);
+  const raw = new URLSearchParams(probe).toString();
+  for (const invalid of [raw, signed(raw).replace("reward_amount=10", "reward_amount=20"),
+    signed(`${raw}&user_id=u`).replace("&user_id=u", ""), signed(`${raw}&ad_unit=other`),
+    signed(`${raw}&%75ser_id=&%63ustom_data=`)]) {
+    assert.deepEqual(await request(invalid), {status: 400, body: "Invalid callback"});
+    assert.deepEqual(h.store, before);
+  }
+  assert.deepEqual(await request(signed(raw), "POST"), {status: 405, body: "GET required"});
+  // Replaying even an old signed probe remains a no-op and reveals no session state.
+  for (const timestamp of [String(NOW), String(NOW), "1"]) {
+    assert.deepEqual(await request(signed(new URLSearchParams({...probe, timestamp}).toString())), {status: 200, body: "OK"});
+    assert.deepEqual(h.store, before);
+  }
+  const invalidFields: Record<string, string>[] = [{user_id: "u"}, {custom_data: first.customData},
+    {user_id: ""}, {custom_data: ""}, {user_id: "", custom_data: ""}, {user_id: "u", custom_data: ""},
+    {user_id: "", custom_data: first.customData}];
+  for (const fields of invalidFields) {
+    assert.deepEqual(await request(signed(new URLSearchParams({...probe, ...fields}).toString())),
+      {status: 400, body: "Invalid callback"});
+    assert.deepEqual(h.store, before);
+  }
+  assert.deepEqual(observed, ioBefore);
+  const earned = signed(callback(first, {transaction_id: probe.transaction_id}).toString());
+  assert.deepEqual(await request(earned), {status: 200, body: "OK"});
+  assert.equal(h.store.get("usersv2/u")?.coins, 20);
+  assert.equal(h.store.get(`rewardedAdSessions/${first.sessionId}`)?.status, "settled");
+  assert.equal([...h.store.keys()].filter((key) => key.startsWith("rewardedAdGoogleTransactions/")).length, 1);
+  const settled = new Map(h.store);
+  assert.deepEqual(await request(signed(raw)), {status: 200, body: "OK"});
+  assert.deepEqual(await request(earned), {status: 200, body: "OK"});
+  assert.deepEqual(h.store, settled);
 });
 
 test("legacy awards respect pending capacity and first bonus, and the cutoff rejects the actual callable", async (t) => {
