@@ -36,6 +36,7 @@ class NotificationRouteMapper {
       'home' ||
       'ai' ||
       'streak_reminder' ||
+      'creator_stats' ||
       'rewards' ||
       'drops' ||
       'announcement' ||
@@ -83,6 +84,9 @@ class NotificationRouteMapper {
     required String sourceTag,
     bool fallbackToInbox = true,
   }) {
+    if (data['route'] == 'creator_stats') {
+      return actionFromRoute(route: 'creator_stats', sourceTag: sourceTag, fallbackToInbox: fallbackToInbox);
+    }
     final String rawUrl = data['url']?.toString().trim() ?? '';
     final Uri? uri = Uri.tryParse(rawUrl);
     if (uri != null && const DeepLinkNavigation().isPrismDeepLink(uri)) {
@@ -184,6 +188,8 @@ class NotificationRouteMapper {
         return const PageLinkIntent(path: '/dashboard/home', rawUri: '/dashboard/home');
       case 'ai':
         return const PageLinkIntent(path: '/ai', rawUri: '/ai');
+      case 'creator_stats':
+        return const PageLinkIntent(path: '/creator-stats', rawUri: '/creator-stats', source: 'inbox');
       case 'streak_reminder':
       case 'rewards':
         return const PageLinkIntent(path: '/dashboard/rewards', rawUri: '/dashboard/rewards');

@@ -11803,4 +11803,112 @@ class AppLocalizationsHi extends AppLocalizations {
   String challengeWinnerNotificationBody(String theme) {
     return 'आपकी प्रविष्टि ने साप्ताहिक चुनौती जीती: $theme।';
   }
+
+  @override
+  String get statsTitle => 'आपके आँकड़े';
+
+  @override
+  String get statsEntry => 'आँकड़े';
+
+  @override
+  String get statsViews => 'व्यू';
+
+  @override
+  String get statsSaves => 'सेव';
+
+  @override
+  String get statsSets => 'सेट';
+
+  @override
+  String get statsDownloads => 'डाउनलोड';
+
+  @override
+  String get statsShares => 'शेयर';
+
+  @override
+  String get statsFolderAdds => 'फ़ोल्डर में जोड़े गए';
+
+  @override
+  String get statsRemixes => 'रीमिक्स';
+
+  @override
+  String get statsLoading => 'आपके आँकड़े लोड हो रहे हैं';
+
+  @override
+  String get statsError => 'आपके आँकड़े लोड नहीं हुए। फिर कोशिश करें।';
+
+  @override
+  String get statsRetry => 'फिर कोशिश करें';
+
+  @override
+  String get statsEmptyTitle => 'आपका पहला वॉलपेपर यहीं से शुरू होता है';
+
+  @override
+  String get statsEmptyBody => 'वॉलपेपर अपलोड करें। मंज़ूरी के बाद उसके आँकड़े दिखेंगे।';
+
+  @override
+  String get statsUpload => 'वॉलपेपर अपलोड करें';
+
+  @override
+  String get statsWeekNote => 'इस हफ़्ते अब तक की तुलना पिछले हफ़्ते से। हफ़्ता सोमवार को UTC में शुरू होता है।';
+
+  @override
+  String get statsHistoryNote =>
+      'आठ हफ़्ते, सबसे पुराना पहले। डैश का अर्थ है डेटा उपलब्ध नहीं है। ट्रैकिंग हफ़्ते के बीच में शुरू हो सकती है, इसलिए दर्ज हफ़्तों के आँकड़े अधूरे हो सकते हैं। मौजूदा हफ़्ता अधूरा है।';
+
+  @override
+  String get statsTopWalls => 'इस हफ़्ते के शीर्ष वॉलपेपर';
+
+  @override
+  String get statsUntitled => 'बिना शीर्षक का वॉलपेपर';
+
+  @override
+  String get statsCountingNote =>
+      'कुल सेव मौजूदा पसंदीदा की संख्या है; साप्ताहिक सेव नए जोड़े गए पसंदीदा हैं। कुल रीमिक्स मौजूदा क्रेडिट वाले रीमिक्स हैं; साप्ताहिक रीमिक्स पहली बार स्वीकार किए गए क्रेडिट हैं। फ़ोल्डर में जोड़ने की गिनती ट्रैकिंग शुरू होने के बाद से है।';
+
+  @override
+  String get statsUnavailable => 'उपलब्ध नहीं';
+
+  @override
+  String get statsWeeklyTitle => 'इस हफ़्ते आपके वॉलपेपर';
+
+  @override
+  String statsWeeklyBody(String week) {
+    return '$week में अपने वॉलपेपर के आँकड़े देखें।';
+  }
+
+  @override
+  String statsWallValue(String metric, String value) {
+    return '$metric: इस हफ़्ते $value';
+  }
+
+  @override
+  String statsComparison(String current, String previous) {
+    return 'इस हफ़्ते $current · पिछले हफ़्ते $previous';
+  }
+
+  @override
+  String statsTotal(String value) {
+    return 'कुल: $value';
+  }
+
+  @override
+  String statsChange(String value) {
+    return 'पिछले हफ़्ते की तुलना में $value';
+  }
+
+  @override
+  String statsUpdated(String date) {
+    return '$date UTC को अपडेट हुआ';
+  }
+
+  @override
+  String statsChartWeek(String date, String value) {
+    return '$date से शुरू हफ़्ता: $value';
+  }
+
+  @override
+  String statsChartSummary(String metric, String summary) {
+    return '$metric, आठ हफ़्ते। $summary';
+  }
 }

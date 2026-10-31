@@ -21,6 +21,7 @@ import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.da
 import 'package:Prism/features/auto_rotate/views/pages/auto_rotate_screen.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
+import 'package:Prism/features/creator_stats/views/pages/creator_stats_page.dart';
 import 'package:Prism/features/daily_chest/views/pages/daily_chest_page.dart';
 import 'package:Prism/features/daily_flow/views/daily_moment_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
@@ -196,6 +197,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/folder/:folderId', page: FolderRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/upload-wall', page: UploadWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/edit-wall', page: EditWallRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/creator-stats', page: CreatorStatsRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/review', page: ReviewRoute.page, guards: [_signedInGuard]),
     RedirectRoute(path: '/coin-transactions', redirectTo: '/rewards'),
     AutoRoute(path: '/theme', page: ThemeViewRoute.page),

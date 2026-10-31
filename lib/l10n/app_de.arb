@@ -10930,5 +10930,35 @@
         "type": "String"
       }
     }
-  }
+  },
+  "statsTitle": "Deine Statistik",
+  "statsEntry": "Statistik",
+  "statsViews": "Aufrufe",
+  "statsSaves": "Gespeichert",
+  "statsSets": "Festgelegt",
+  "statsDownloads": "Downloads",
+  "statsShares": "Geteilt",
+  "statsFolderAdds": "Ordnerzugänge",
+  "statsRemixes": "Remixe",
+  "statsLoading": "Statistik wird geladen",
+  "statsError": "Deine Statistik konnte nicht geladen werden. Versuche es erneut.",
+  "statsRetry": "Erneut versuchen",
+  "statsEmptyTitle": "Hier beginnt dein erstes Wallpaper",
+  "statsEmptyBody": "Lade ein Wallpaper hoch. Nach der Freigabe erscheint seine Statistik.",
+  "statsUpload": "Wallpaper hochladen",
+  "statsWeekNote": "Diese Woche bisher im Vergleich zur letzten Woche. Wochen beginnen montags, UTC.",
+  "statsHistoryNote": "Acht Wochen, die älteste zuerst. Ein Strich bedeutet, dass Daten fehlen. Die Erfassung kann mitten in einer Woche beginnen; erfasste Wochen können daher unvollständig sein. Die aktuelle Woche ist noch nicht abgeschlossen.",
+  "statsTopWalls": "Top-Wallpaper dieser Woche",
+  "statsUntitled": "Wallpaper ohne Titel",
+  "statsCountingNote": "Gespeichert insgesamt zählt aktuelle Favoriten; wöchentlich zählen neue Favoriten. Remixe insgesamt zählt aktuell verknüpfte Remixe; wöchentlich zählen erstmals akzeptierte Zuordnungen. Ordnerzugänge werden erst seit Beginn der Erfassung gezählt.",
+  "statsUnavailable": "Nicht verfügbar",
+  "statsWeeklyTitle": "Deine Wallpaper diese Woche",
+  "statsWeeklyBody": "Sieh dir die Ergebnisse deiner Wallpaper für {week} an.",
+  "statsWallValue": "{metric}: {value} diese Woche",
+  "statsComparison": "{current} diese Woche · {previous} letzte Woche",
+  "statsTotal": "Gesamt: {value}",
+  "statsChange": "{value} im Vergleich zur letzten Woche",
+  "statsUpdated": "Aktualisiert am {date} UTC",
+  "statsChartWeek": "Woche ab {date}: {value}",
+  "statsChartSummary": "{metric}, acht Wochen. {summary}"
 }

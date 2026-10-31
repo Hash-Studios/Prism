@@ -207,8 +207,8 @@ void main() {
     expect(moment, isA<DailyMomentRoute>());
     reachablePages.addAll(_routeNames(moment!));
     final Set<String> appPages = _appRouteNames(AppRouter().routes)..remove('SplashWidgetRoute');
-    expect(appPages, hasLength(61));
-    expect(appPages, containsAll(<String>['DailyMomentRoute', 'WeeklyChallengeRoute']));
+    expect(appPages, hasLength(62));
+    expect(appPages, containsAll(<String>['CreatorStatsRoute', 'DailyMomentRoute', 'WeeklyChallengeRoute']));
     expect(
       appPages.difference(reachablePages),
       isEmpty,
@@ -569,6 +569,7 @@ Set<String> _appRouteNames(List<AutoRoute> routes) => <String>{
 };
 
 String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (target) {
+  DeepLinkPageTarget.creatorStats => CreatorStatsRoute.name,
   DeepLinkPageTarget.splash || DeepLinkPageTarget.dashboard => 'DashboardRoute',
   DeepLinkPageTarget.onboarding => 'OnboardingV2ShellRoute',
   DeepLinkPageTarget.home => 'HomeTabRoute',
