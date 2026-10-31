@@ -157,6 +157,8 @@ function setup(t, { firestoreStatus = null } = {}) {
     previewStatus: 200,
     pending: [],
     firestoreStatus,
+    firestoreGate: null,
+    invalidFirestoreJson: false,
   };
   const cache = new FakeCache();
 
@@ -164,7 +166,9 @@ function setup(t, { firestoreStatus = null } = {}) {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     if (url.startsWith(FIRESTORE_PREFIX)) {
       state.reads.push(url);
+      if (state.firestoreGate) await state.firestoreGate;
       if (state.firestoreStatus) return new Response('', { status: state.firestoreStatus });
+      if (state.invalidFirestoreJson) return new Response('{', { status: 200 });
       const path = url.slice(FIRESTORE_PREFIX.length).split('/').map((segment) => decodeURIComponent(segment)).join('/');
       if (!Object.hasOwn(state.docs, path)) return new Response('{}', { status: 404, headers: { 'content-type': 'application/json' } });
       return Response.json({ fields: encodeFields(state.docs[path]) });
@@ -325,6 +329,20 @@ test('cache headers: 200 is fresh for ten minutes, misses for five, and the stor
 
   const miss = await h.get('/wallpaper/ZZZ9');
   assert.equal(miss.headers.get('cache-control'), 'public, max-age=300');
+
+  for (const [path, expectedStatus] of [['/wallpaper/H1', 404], ['/wallpaper/D1', 410]]) {
+    const absent = await h.get(path);
+    assert.equal(absent.status, expectedStatus);
+    await absent.text();
+    await h.flush();
+    const reads = h.state.reads.length;
+    const cachedAbsent = await h.get(path);
+    assert.equal(cachedAbsent.status, expectedStatus);
+    await cachedAbsent.text();
+    await h.flush();
+    assert.equal(h.state.reads.length, reads, `${expectedStatus} should be cached`);
+    assert.equal(cachedAbsent.headers.get('cache-control'), 'public, max-age=300');
+  }
 });
 
 test('cache key ignores query strings and user agents', async (t) => {
@@ -350,6 +368,19 @@ test('cache key ignores query strings and user agents', async (t) => {
   assert.equal(androidHtml, desktopHtml);
   assert.match(desktopHtml, /data-android="intent:\/\/prismwalls\.com\/wallpaper\/W1#Intent;scheme=https;package=com\.hash\.prism;/);
   assert.equal(desktopHtml.match(/intent:\/\//g)?.length, 1);
+});
+
+test('host, request headers, and unrelated queries cannot alter the cached page body', async (t) => {
+  const h = setup(t);
+  const first = await h.get('/wallpaper/W1');
+  const expected = await first.text();
+  await h.flush();
+
+  const request = new Request('https://attacker.example/wallpaper/W1?utm_source=changed', {
+    headers: { 'user-agent': 'Crawler/1.0', accept: 'application/xml', referer: 'https://attacker.example/' },
+  });
+  const response = await worker.fetch(request, h.env, { waitUntil(promise) { h.state.pending.push(promise); } });
+  assert.equal(await response.text(), expected);
 });
 
 test('stale entries are served once while a background refresh runs, then a gone wall reaches clients', async (t) => {
@@ -381,6 +412,25 @@ test('stale entries are served once while a background refresh runs, then a gone
   assert.equal(gone.status, 410);
 });
 
+test('concurrent stale hits share one background refresh per cache key', async (t) => {
+  const clock = stubClock(t);
+  const h = setup(t);
+  await (await h.get('/wallpaper/W1')).text();
+  await h.flush();
+  clock.advance(700);
+
+  let release;
+  h.state.firestoreGate = new Promise((resolve) => { release = resolve; });
+  const before = h.state.reads.length;
+  const responses = await Promise.all(Array.from({ length: 5 }, () => h.get('/wallpaper/W1')));
+  for (const response of responses) await response.text();
+
+  h.state.firestoreGate = null;
+  release();
+  await h.flush();
+  assert.equal(h.state.reads.length - before, 2, 'one wall render reads wall and related page once');
+});
+
 test('a Firestore outage keeps the old landing for walls and answers 503 for hubs', async (t) => {
   const h = setup(t, { firestoreStatus: 500 });
 
@@ -395,6 +445,25 @@ test('a Firestore outage keeps the old landing for walls and answers 503 for hub
   await hub.text();
   assert.equal(hub.status, 503);
   assert.equal(hub.headers.get('cache-control'), 'no-store');
+
+  const head = await worker.fetch(
+    new Request('https://prismwalls.com/wallpaper/W1', { method: 'HEAD', headers: { 'user-agent': ANDROID_UA } }),
+    h.env,
+    { waitUntil(promise) { h.state.pending.push(promise); } },
+  );
+  assert.equal(head.status, 200);
+  assert.equal(await head.text(), '');
+});
+
+test('invalid Firestore JSON is a no-store outage response and is not cached', async (t) => {
+  const h = setup(t);
+  h.state.invalidFirestoreJson = true;
+  const response = await h.get('/wallpapers');
+  assert.equal(response.status, 503);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  await response.text();
+  await h.flush();
+  assert.equal(h.cache.entries.size, 0);
 });
 
 test('hubs render with pagination, redirect page=1, and reject bad page numbers', async (t) => {
@@ -425,6 +494,29 @@ test('hubs render with pagination, redirect page=1, and reject bad page numbers'
   const missingPage = await h.get('/wallpapers/nature?page=2');
   await missingPage.text();
   assert.equal(missingPage.status, 404);
+});
+
+test('invalid catalogue routes cache their 404 while page-one redirects bypass the cache', async (t) => {
+  const h = setup(t);
+  const bad = await h.get('/wallpapers?page=bad');
+  assert.equal(bad.status, 404);
+  assert.equal(bad.headers.get('cache-control'), 'public, max-age=300');
+  await bad.text();
+  await h.flush();
+  const count = h.cache.entries.size;
+  const again = await h.get('/wallpapers?page=other');
+  assert.equal(again.status, 404);
+  await again.text();
+  await h.flush();
+  assert.equal(h.cache.entries.size, count);
+  assert.equal(h.state.reads.length, 0);
+
+  const redirect = await h.get('/wallpapers?page=1');
+  assert.equal(redirect.status, 301);
+  assert.equal(redirect.headers.get('cache-control'), null);
+  await redirect.text();
+  await h.flush();
+  assert.equal(h.cache.entries.size, count);
 });
 
 test('creator page looks up the lower-case username and renders the profile', async (t) => {
@@ -465,6 +557,20 @@ test('sitemaps list the page sitemap and each wall sitemap with its lastmod', as
   assert.equal(missing.status, 404);
 });
 
+test('wall text is escaped in HTML and JSON-LD and sitemap entries cannot break XML', async (t) => {
+  const h = setup(t);
+  h.state.docs['webWalls/W1'].title = '</script><script>HTML-XSS</script> & "title"';
+  const wallBody = await (await h.get('/wallpaper/W1')).text();
+  assert.ok(wallBody.includes('&lt;/script&gt;&lt;script&gt;HTML-XSS&lt;/script&gt;'));
+  assert.ok(wallBody.includes('\\u003c/script>\\u003cscript>HTML-XSS\\u003c/script>'));
+  assert.doesNotMatch(wallBody, /<script>HTML-XSS/);
+
+  h.state.docs['webPages/sitemap~walls-1'].entries = '/wallpaper/W1</loc><script>XML-XSS</script>\t2026-10-30';
+  const sitemapBody = await (await h.get('/sitemaps/walls-1.xml')).text();
+  assert.ok(sitemapBody.includes('&lt;/loc&gt;&lt;script&gt;XML-XSS&lt;/script&gt;'));
+  assert.doesNotMatch(sitemapBody, /<script>XML-XSS/);
+});
+
 test('public pages expose no private fields, and unknown stored fields are never printed', async (t) => {
   const h = setup(t);
   h.state.docs['webWalls/W1'].secretField = 'LEAK-123';
@@ -478,6 +584,72 @@ test('public pages expose no private fields, and unknown stored fields are never
     assert.ok(!body.includes('LEAK-123'), path);
     assert.ok(!body.includes('leak@example.com'), path);
   }
+});
+
+for (const [name, malformed, leak] of [
+  ['title map', { title: { uid: 'TITLE-UID-LEAK' } }, 'TITLE-UID-LEAK'],
+  ['width injection', { width: '1\" onload=\"WIDTH-HTML-LEAK' }, 'WIDTH-HTML-LEAK'],
+  ['createdAt map', { createdAt: { uid: 'DATE-UID-LEAK' } }, 'DATE-UID-LEAK'],
+]) {
+  test(`malformed wall ${name} is not printed or cached`, async (t) => {
+    const h = setup(t);
+    Object.assign(h.state.docs['webWalls/W1'], malformed);
+    const response = await h.get('/wallpaper/W1');
+    const body = await response.text();
+    assert.doesNotMatch(body, new RegExp(leak));
+    await h.flush();
+    assert.equal(h.cache.entries.size, 0);
+  });
+}
+
+test('unknown nested wall fields are ignored without rejecting the public projection', async (t) => {
+  const h = setup(t);
+  h.state.docs['webWalls/W1'].creator.uid = 'CREATOR-UID-LEAK';
+  h.state.docs['webPages/creator~sam~1'].items[0].uid = 'CARD-UID-LEAK';
+
+  const response = await h.get('/wallpaper/W1');
+  const body = await response.text();
+  assert.equal(response.status, 200);
+  assert.doesNotMatch(body, /CREATOR-UID-LEAK/);
+  const creator = await (await h.get('/creator/sam')).text();
+  assert.doesNotMatch(creator, /CARD-UID-LEAK/);
+});
+
+for (const thumb of [
+  'https://private.example/original.jpg',
+  'https://img.prismwalls.com:8443/previews/aaa.img',
+  'https://img.prismwalls.com/previews/aaa.img?token=secret',
+  'https://img.prismwalls.com/previews/aaa.img#private',
+  'https://img.prismwalls.com/previews/a%2F..%2Foriginal.img',
+]) {
+  test(`live wall rejects unsafe preview URL ${thumb}`, async (t) => {
+    const h = setup(t);
+    h.state.docs['webWalls/W1'].thumb = thumb;
+
+    const response = await h.get('/wallpaper/W1');
+    const body = await response.text();
+    assert.equal(response.status, 200);
+    assert.doesNotMatch(body, /private\.example|8443|token=secret|#private|original\.img/);
+    assert.equal(h.state.previewCalls.length, 0);
+
+    const preview = await h.get('/api/catalog/preview/W1.jpg');
+    assert.equal(preview.status, 404);
+    assert.equal(h.state.previewCalls.length, 0);
+
+    const og = await h.get('/og/wall/W1.jpg');
+    assert.equal(og.status, 302);
+    assert.equal(og.headers.get('location'), h.env.OG_FALLBACK_IMAGE);
+  });
+}
+
+test('preview URL validation follows the configured R2 preview origin and path', async (t) => {
+  const h = setup(t);
+  h.env.R2_PREVIEW_BASE_URL = 'https://cdn.example/media';
+  h.state.docs['webWalls/W1'].thumb = 'https://cdn.example/media/previews/aaa.img';
+
+  const response = await h.get('/og/wall/W1.jpg');
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get('location'), h.state.docs['webWalls/W1'].thumb);
 });
 
 test('existing share, short link and non-catalogue routes are unchanged and make no catalogue reads', async (t) => {

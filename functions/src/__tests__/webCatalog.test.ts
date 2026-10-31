@@ -1,8 +1,10 @@
 process.env.R2_PREVIEW_BASE_URL = "https://img.prismwalls.com";
 
 import assert from "node:assert/strict";
+import {createHash} from "node:crypto";
 import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
+import * as remoteConfig from "firebase-admin/remote-config";
 import {db} from "../common";
 import {
   buildPages,
@@ -109,6 +111,17 @@ test("syncWebWall projects a live wall into webWalls with only public fields", a
   });
 });
 
+test("syncWebWall keeps legacy walls with no creator uid and uses their public display name", async (t) => {
+  stubDeps(t);
+  installFakeDb(t, {"walls/d1": liveWall({creatorUid: undefined, by: "Legacy creator"})});
+
+  await syncWebWall("W1");
+
+  const doc = (await db.collection("webWalls").doc("W1").get()).data();
+  assert.equal(doc?.creatorName, "Legacy creator");
+  assert.equal(doc?.creator, null);
+});
+
 test("syncWebWall output carries no private fields and a fixed key set", async (t) => {
   stubDeps(t);
   installFakeDb(t, {"walls/d1": liveWall(), "profiles/u1": samProfile});
@@ -138,6 +151,21 @@ test("syncWebWall gates a wall in a premium collection and blurs it without a th
   assert.equal("thumb" in doc, false);
 });
 
+test("syncWebWall does not reuse a non-image value as a cached blurred preview", async (t) => {
+  stubDeps(t);
+  const blurKey = createHash("sha256").update(THUMB).digest("hex").slice(0, 16);
+  installFakeDb(t, {
+    "walls/d1": liveWall({collections: ["abstract"]}),
+    "webWalls/W1": {state: "gated", updatedAt: "old", blurKey, blur: "https://private.example/original.jpg"},
+  });
+
+  await syncWebWall("W1");
+
+  const doc = (await db.collection("webWalls").doc("W1").get()).data() as Doc;
+  assert.equal(doc.blur, BLUR);
+  assert.equal(JSON.stringify(doc).includes("private.example"), false);
+});
+
 test("syncWebWall gates an is_streak_exclusive wall", async (t) => {
   stubDeps(t);
   installFakeDb(t, {"walls/d1": liveWall({is_streak_exclusive: true}), "profiles/u1": samProfile});
@@ -150,6 +178,82 @@ test("syncWebWall gates a dropReserved wall", async (t) => {
   installFakeDb(t, {"walls/d1": liveWall({dropReserved: true}), "profiles/u1": samProfile});
   await syncWebWall("W1");
   assert.equal((await db.collection("webWalls").doc("W1").get()).data()?.state, "gated");
+});
+
+test("syncWebWall gates a wall in a drop week without publishing its thumbnail", async (t) => {
+  stubDeps(t);
+  installFakeDb(t, {"walls/d1": liveWall({dropWeek: "2026-10-31"}), "profiles/u1": samProfile});
+  await syncWebWall("W1");
+  const doc = (await db.collection("webWalls").doc("W1").get()).data() as Doc;
+  assert.equal(doc.state, "gated");
+  assert.equal("thumb" in doc, false);
+});
+
+test("syncWebWall gates an unprotected wall without publishing its thumbnail", async (t) => {
+  stubDeps(t);
+  installFakeDb(t, {"walls/d1": liveWall({originalProtected: false}), "profiles/u1": samProfile});
+  await syncWebWall("W1");
+  const doc = (await db.collection("webWalls").doc("W1").get()).data() as Doc;
+  assert.equal(doc.state, "gated");
+  assert.equal("thumb" in doc, false);
+});
+
+test("syncWebWall omits an invalid non-preview thumbnail entirely", async (t) => {
+  stubDeps(t);
+  installFakeDb(t, {"walls/d1": liveWall({wallpaper_thumb: "https://example.com/original.jpg"}), "profiles/u1": samProfile});
+  await syncWebWall("W1");
+  const doc = (await db.collection("webWalls").doc("W1").get()).data() as Doc;
+  assert.equal(doc.state, "gated");
+  assert.equal("thumb" in doc, false);
+  assert.equal("blur" in doc, false);
+});
+
+test("syncWebWall fails closed when the premium collection config is missing", async (t) => {
+  t.mock.method(remoteConfig, "getRemoteConfig", () => ({
+    getTemplate: async () => {
+      throw new Error("Remote Config unavailable");
+    },
+  }) as never);
+  t.mock.method(webCatalogDeps, "blur", async () => BLUR);
+  t.mock.method(webCatalogDeps, "now", () => new Date(NOW));
+  const store = installFakeDb(t, {"walls/d1": liveWall({collections: ["abstract"]})});
+
+  await assert.rejects(syncWebWall("W1"), /Remote Config unavailable/);
+
+  assert.equal(store.has("webWalls/W1"), false);
+});
+
+test("syncWebWall still withdraws a deleted wall when premium config is unavailable", async (t) => {
+  t.mock.method(remoteConfig, "getRemoteConfig", () => ({
+    getTemplate: async () => {
+      throw new Error("Remote Config unavailable");
+    },
+  }) as never);
+  t.mock.method(webCatalogDeps, "blur", async () => BLUR);
+  t.mock.method(webCatalogDeps, "now", () => new Date(NOW));
+  const store = installFakeDb(t, {"webWalls/W1": {state: "live", updatedAt: "old", thumb: THUMB}});
+
+  await syncWebWall("W1");
+
+  assert.deepEqual(store.get("webWalls/W1"), {state: "gone", updatedAt: NOW});
+});
+
+test("premium collection config rejects malformed JSON rather than opening its collection", async (t) => {
+  let value: string | undefined = "[\" abstract \",\"space\"]";
+  t.mock.method(remoteConfig, "getRemoteConfig", () => ({
+    getTemplate: async () => ({parameters: value === undefined ? {} :
+      {premiumCollections: {defaultValue: {value}}}}),
+  }) as never);
+
+  assert.deepEqual(await webCatalogDeps.premium(), ["abstract", "space"]);
+  value = "abstract, space";
+  assert.deepEqual(await webCatalogDeps.premium(), ["abstract", "space"]);
+
+  for (value of ["{\"premium\":[\"abstract\"]}", "[]", "[\"abstract\",3]"]) {
+    await assert.rejects(webCatalogDeps.premium(), /premiumCollections is invalid/);
+  }
+  value = undefined;
+  await assert.rejects(webCatalogDeps.premium(), /premiumCollections is empty or missing/);
 });
 
 test("syncWebWall hides an unreviewed wall, and marks a deleted wall gone", async (t) => {
@@ -181,6 +285,40 @@ test("syncWebWall keeps the old updatedAt when nothing changed", async (t) => {
   clock = new Date("2026-11-05T00:00:00.000Z");
   await syncWebWall("W1");
   assert.equal((await db.collection("webWalls").doc("W1").get()).data()?.updatedAt, NOW);
+});
+
+test("syncWebWall does not let a delayed stale projection overwrite a newer gate", async (t) => {
+  const clock = () => new Date(NOW);
+  let releaseFirst!: () => void;
+  let enteredFirst!: () => void;
+  const firstEntered = new Promise<void>((resolve) => {
+    enteredFirst = resolve;
+  });
+  const firstGate = new Promise<void>((resolve) => {
+    releaseFirst = resolve;
+  });
+  let calls = 0;
+  t.mock.method(webCatalogDeps, "premium", async () => {
+    calls++;
+    if (calls === 1) {
+      enteredFirst();
+      await firstGate;
+    }
+    return ["abstract"];
+  });
+  t.mock.method(webCatalogDeps, "blur", async () => BLUR);
+  t.mock.method(webCatalogDeps, "now", clock);
+  const store = installFakeDb(t, {"walls/d1": liveWall(), "profiles/u1": samProfile});
+
+  const staleSync = syncWebWall("W1");
+  await firstEntered;
+  store.set("walls/d1", liveWall({collections: ["abstract"]}));
+  await syncWebWall("W1");
+  releaseFirst();
+  await staleSync;
+
+  assert.equal(store.get("webWalls/W1")?.state, "gated");
+  assert.equal("thumb" in (store.get("webWalls/W1") ?? {}), false);
 });
 
 test("isCatalogChange ignores counter-only changes and reacts to shown fields", () => {
@@ -252,13 +390,33 @@ test("buildPages folder page lists live walls only and counts every saved wall",
   assert.equal(folder.total, 3);
 });
 
+test("buildPages uses the folder's full header count rather than its sampled wall items", () => {
+  const folders = [{
+    id: "F1", name: "Faves", owner: null, wallIds: ["W01", "W02"], total: 100, updatedAt: NOW,
+  }];
+
+  assert.equal(pageOf(buildPages(thirtyWalls(), [], folders, new Map()), "folder~F1").total, 100);
+});
+
+test("buildPages keeps maximum-length wall URLs under Firestore's document size limit", () => {
+  const walls = new Map<string, WebWall>();
+  for (let i = 0; i < 5000; i++) walls.set(`${String(i).padStart(4, "0")}${"x".repeat(196)}`, liveCard(i));
+
+  for (const [key, page] of buildPages(walls, [], [], new Map())) {
+    if (key.startsWith("sitemap~") && key !== "sitemap~index") {
+      assert.ok(Buffer.byteLength(JSON.stringify(page)) < 1_048_576, `${key} exceeds Firestore's 1 MiB document limit`);
+    }
+  }
+});
+
 test("rebuildWebCatalog writes the catalogue once, then writes nothing on a second run", async (t) => {
   stubDeps(t);
+  const writes = {reads: 0, writes: 0, outsideWrites: 0};
   const store = installFakeDb(t, {
     "walls/d1": liveWall(),
     "profiles/u1": samProfile,
     "popular/current": {wallIds: ["W1"]},
-  });
+  }, writes);
   const first = await rebuildWebCatalog();
   assert.equal(first.walls, 1);
   assert.equal(first.pages, 8);
@@ -266,6 +424,149 @@ test("rebuildWebCatalog writes the catalogue once, then writes nothing on a seco
   assert.ok(store.has("webPages/latest~1"));
   assert.ok(store.has("webPages/sitemap~index"));
   assert.ok(store.has("webCatalogState/pages"));
+  const writesAfterFirst = writes.writes;
+  writes.outsideWrites = 0;
   const second = await rebuildWebCatalog();
   assert.equal(second.written, 0);
+  assert.equal(writes.writes, writesAfterFirst);
+  assert.equal(writes.outsideWrites, 0);
+});
+
+test("rebuildWebCatalog hides an id shared by approved and unapproved walls", async (t) => {
+  stubDeps(t);
+  const store = installFakeDb(t, {
+    "walls/approved": liveWall(),
+    "walls/unapproved": liveWall({review: false}),
+  });
+
+  await rebuildWebCatalog();
+
+  assert.deepEqual(store.get("webWalls/W1"), {state: "hidden", updatedAt: NOW});
+});
+
+test("rebuildWebCatalog marks deleted walls gone and scrubs old projection fields", async (t) => {
+  stubDeps(t);
+  const store = installFakeDb(t, {
+    "webWalls/W1": {state: "live", updatedAt: "old", thumb: THUMB, creatorUid: "private", email: "private"},
+  });
+
+  await rebuildWebCatalog();
+
+  assert.deepEqual(store.get("webWalls/W1"), {state: "gone", updatedAt: NOW});
+});
+
+test("rebuildWebCatalog does not refresh a folder page when its header has no updatedAt", async (t) => {
+  let clock = new Date(NOW);
+  stubDeps(t, () => clock);
+  const store = installFakeDb(t, {
+    "walls/d1": liveWall(),
+    "profiles/u1": samProfile,
+    "publicFolders/F1": {ownerId: "u1", name: "Faves"},
+    "publicFolders/F1/items/i1": {id: "W1"},
+  });
+
+  await rebuildWebCatalog();
+  const folderPage = store.get("webPages/folder~F1");
+  clock = new Date("2026-11-05T00:00:00.000Z");
+  const second = await rebuildWebCatalog();
+
+  assert.equal(second.written, 0);
+  assert.deepEqual(store.get("webPages/folder~F1"), folderPage);
+});
+
+test("rebuildWebCatalog scrubs old fields from retained terminal projections", async (t) => {
+  stubDeps(t);
+  const store = installFakeDb(t, {
+    "webWalls/W1": {state: "hidden", updatedAt: "old", thumb: THUMB, creatorUid: "private", email: "private"},
+  });
+
+  await rebuildWebCatalog();
+
+  assert.deepEqual(store.get("webWalls/W1"), {state: "gone", updatedAt: NOW});
+});
+
+test("rebuildWebCatalog cannot overwrite a newer wall projection after a slow blur", async (t) => {
+  let releaseBlur!: () => void;
+  let enteredBlur!: () => void;
+  const blurEntered = new Promise<void>((resolve) => {
+    enteredBlur = resolve;
+  });
+  const blurGate = new Promise<void>((resolve) => {
+    releaseBlur = resolve;
+  });
+  t.mock.method(webCatalogDeps, "premium", async () => ["abstract"]);
+  t.mock.method(webCatalogDeps, "blur", async () => {
+    enteredBlur();
+    await blurGate;
+    return BLUR;
+  });
+  t.mock.method(webCatalogDeps, "now", () => new Date(NOW));
+  const store = installFakeDb(t, {"walls/d1": liveWall({collections: ["abstract"]}), "profiles/u1": samProfile});
+
+  const staleBuild = rebuildWebCatalog();
+  await blurEntered;
+  store.set("walls/d1", liveWall());
+  await syncWebWall("W1");
+  releaseBlur();
+  await staleBuild;
+
+  assert.equal(store.get("webWalls/W1")?.state, "live");
+  assert.equal(store.get("webWalls/W1")?.thumb, THUMB);
+});
+
+test("rebuildWebCatalog retries a failed manifest commit without rewriting already-current pages", async (t) => {
+  stubDeps(t);
+  const store = installFakeDb(t, {"walls/d1": liveWall(), "profiles/u1": samProfile});
+  const storeSet = store.set.bind(store);
+  let failManifest = false;
+  let pageWrites = 0;
+  store.set = (path, data) => {
+    if (path.startsWith("webPages/")) pageWrites++;
+    if (failManifest && path === "webCatalogState/pages") {
+      failManifest = false;
+      throw new Error("injected manifest write failure");
+    }
+    return storeSet(path, data);
+  };
+  await rebuildWebCatalog();
+  pageWrites = 0;
+  store.set("walls/d1", liveWall({title: "Changed"}));
+  failManifest = true;
+
+  await assert.rejects(rebuildWebCatalog(), /injected manifest write failure/);
+  const pagesWrittenBeforeRetry = pageWrites;
+  const retry = await rebuildWebCatalog();
+
+  assert.equal(retry.written, 0);
+  assert.equal(pageWrites, pagesWrittenBeforeRetry);
+});
+
+test("rebuildWebCatalog retries a failed manifest commit without deleting an already-removed page", async (t) => {
+  stubDeps(t);
+  const store = installFakeDb(t, {"walls/d1": liveWall(), "profiles/u1": samProfile});
+  const storeSet = store.set.bind(store);
+  const storeDelete = store.delete.bind(store);
+  let failManifest = false;
+  let pageDeletes = 0;
+  store.set = (path, data) => {
+    if (failManifest && path === "webCatalogState/pages") {
+      failManifest = false;
+      throw new Error("injected manifest write failure");
+    }
+    return storeSet(path, data);
+  };
+  store.delete = (path) => {
+    if (path.startsWith("webPages/")) pageDeletes++;
+    return storeDelete(path);
+  };
+  await rebuildWebCatalog();
+  store.set("walls/d1", liveWall({category: ""}));
+  failManifest = true;
+
+  await assert.rejects(rebuildWebCatalog(), /injected manifest write failure/);
+  const pageDeletesBeforeRetry = pageDeletes;
+  const retry = await rebuildWebCatalog();
+
+  assert.equal(retry.written, 0);
+  assert.equal(pageDeletes, pageDeletesBeforeRetry);
 });

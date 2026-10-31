@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import {getRemoteConfig} from "firebase-admin/remote-config";
 import {createHash} from "node:crypto";
 import {logger} from "firebase-functions/v2";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
@@ -7,7 +8,7 @@ import {db, REGION, str} from "./common";
 import {isPreviewUrl} from "./pushGallery";
 import {r2Secrets} from "./r2Storage";
 import {PALETTE} from "./wallColors";
-import {isWotdEligible, premiumCollections} from "./wallEligibility";
+import {isWotdEligible, parseCollectionList} from "./wallEligibility";
 
 /**
  * The public web catalogue on prismwalls.com. Crawlers read these collections through the links Worker, with no
@@ -21,7 +22,8 @@ const STATE = "webCatalogState";
 export const PAGE_SIZE = 24;
 const FOLDER_WALLS = 60;
 const CREATOR_FOLDERS = 12;
-const SITEMAP_SIZE = 5000;
+// Keep serialized sitemap pages below Firestore's 1 MiB document limit, including worst-case URL lengths.
+const SITEMAP_SIZE = 3000;
 const WRITE_CHUNK = 100;
 const SHARE_ID = /^[A-Za-z0-9_-]{1,200}$/;
 const USERNAME = /^[A-Za-z0-9._-]{1,40}$/;
@@ -67,7 +69,31 @@ export const webCatalogDeps: {
   blur: (thumb: string) => Promise<string>;
   now: () => Date;
 } = {
-  premium: premiumCollections,
+  premium: async () => {
+    const template = await getRemoteConfig().getTemplate();
+    const value = (template.parameters?.premiumCollections?.defaultValue as {value?: string} | undefined)?.value;
+    if (typeof value !== "string" || !value.trim()) throw new Error("premiumCollections is empty or missing");
+    const raw = value.trim();
+    if (raw.startsWith("[")) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        throw new Error("premiumCollections is invalid");
+      }
+      if (!Array.isArray(parsed) || parsed.length === 0 ||
+        parsed.some((item) => typeof item !== "string" || item.trim() === "")) {
+        throw new Error("premiumCollections is invalid");
+      }
+      return parsed.map((item: string) => item.trim());
+    }
+    if (["[", "]", "{", "}", "\""].some((character) => raw.includes(character))) {
+      throw new Error("premiumCollections is invalid");
+    }
+    const parsed = parseCollectionList(raw);
+    if (parsed.length === 0 || parsed.some((item) => item.trim() === "")) throw new Error("premiumCollections is invalid");
+    return parsed;
+  },
   blur: blurPreview,
   now: () => new Date(),
 };
@@ -122,6 +148,10 @@ function isHttpsUrl(value: string): boolean {
   }
 }
 
+function isBlurDataUrl(value: string | undefined): value is string {
+  return value !== undefined && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
+}
+
 /**
  * The public copy of one wall. `wall` is the only approved wall doc with this share id, or undefined when there is
  * none. A gated wall keeps its text, so its page can say what it is, but never its image.
@@ -153,7 +183,7 @@ export async function projectWall(
   if (live) return {...projected, thumb};
   if (!isPreviewUrl(thumb)) return projected;
   const blurKey = createHash("sha256").update(thumb).digest("hex").slice(0, 16);
-  if (previous?.blurKey === blurKey && previous.blur) return {...projected, blur: previous.blur, blurKey};
+  if (previous?.blurKey === blurKey && isBlurDataUrl(previous.blur)) return {...projected, blur: previous.blur, blurKey};
   try {
     return {...projected, blur: await webCatalogDeps.blur(thumb), blurKey};
   } catch (error) {
@@ -186,21 +216,34 @@ async function profilesOf(uids: string[]): Promise<Map<string, PublicProfile>> {
 
 /**
  * Re-projects one share id from the current walls, not from the event, so retried or late events converge. Two
- * approved walls with one share id are hidden: the page could not tell which one a link meant.
+ * walls with one share id are hidden: the page could not tell which one a link meant.
  */
 export async function syncWebWall(shareId: string): Promise<void> {
   if (!SHARE_ID.test(shareId)) return;
-  const rows = await db.collection("walls").where("id", "==", shareId).limit(2).get();
+  let premium: string[] = [];
+  let premiumError: unknown;
+  try {
+    premium = await webCatalogDeps.premium();
+  } catch (error) {
+    premiumError = error;
+  }
   const ref = db.collection(WEB_WALLS).doc(shareId);
-  const previous = (await ref.get()).data() as WebWall | undefined;
-  const wall = rows.size === 1 ? rows.docs[0].data() : undefined;
-  if (rows.size === 0 && !previous) return;
-  const premium = await webCatalogDeps.premium();
-  const profiles = await profilesOf(wall ? [str(wall.creatorUid)] : []);
-  const next = rows.size > 1 ?
-    {state: "hidden" as const, updatedAt: webCatalogDeps.now().toISOString()} :
-    await projectWall(wall, premium, profiles.get(str(wall?.creatorUid)) ?? null, previous, webCatalogDeps.now());
-  if (!sameWall(previous, next)) await ref.set(next);
+  await db.runTransaction(async (tx) => {
+    const [rows, previousSnap] = await Promise.all([
+      tx.get(db.collection("walls").where("id", "==", shareId).limit(2)), tx.get(ref),
+    ]);
+    const previous = previousSnap.data() as WebWall | undefined;
+    if (rows.size === 0 && !previous) return;
+    const wall = rows.size === 1 ? rows.docs[0].data() : undefined;
+    if (wall?.review === true && premiumError) throw premiumError;
+    const uid = str(wall?.creatorUid);
+    const profile = uid && !uid.includes("/") ?
+      publicProfile((await tx.get(db.collection("profiles").doc(uid))).data()) : null;
+    const next = rows.size > 1 ?
+      {state: "hidden" as const, updatedAt: webCatalogDeps.now().toISOString()} :
+      await projectWall(wall, premium, profile, previous, webCatalogDeps.now());
+    if (!sameWall(previous, next)) tx.set(ref, next);
+  });
 }
 
 /** Walls take frequent counter writes. Only a change to a field the page shows, or to its gate, re-projects. */
@@ -260,7 +303,7 @@ function sitemap(name: string, entries: Array<[string, string]>): Array<[string,
  */
 export function buildPages(
   walls: Map<string, WebWall>, popularIds: string[], folders: Array<{id: string; name: string; owner: PublicProfile | null;
-    wallIds: string[]; updatedAt: string}>, creators: Map<string, PublicProfile>,
+    wallIds: string[]; updatedAt: string; total?: number}>, creators: Map<string, PublicProfile>,
 ): Map<string, PageDoc> {
   const live = [...walls].filter(([, wall]) => wall.state === "live").sort(newest);
   // Popular ids and folder items carry the share id in upper case, the way wallpaper_stats keys it.
@@ -303,7 +346,7 @@ export function buildPages(
     pages.set(`folder~${folder.id}`, {
       kind: "folder", id: folder.id, name: folder.name, updatedAt: folder.updatedAt,
       owner: folder.owner ? {username: folder.owner.username, name: folder.owner.name} : null,
-      total: folder.wallIds.length, items: folder.items,
+      total: folder.total ?? folder.wallIds.length, items: folder.items,
     });
   }
 
@@ -312,7 +355,7 @@ export function buildPages(
     const profile = profileByName.get(username);
     if (!profile) continue;
     const owned = publicFolders.filter((f) => f.owner?.username.toLowerCase() === username && f.items.length > 0)
-      .slice(0, CREATOR_FOLDERS).map((f) => ({id: f.id, name: f.name, total: f.wallIds.length, cover: f.items[0].thumb}));
+      .slice(0, CREATOR_FOLDERS).map((f) => ({id: f.id, name: f.name, total: f.total ?? f.wallIds.length, cover: f.items[0].thumb}));
     add(paged(`creator~${username}`, {kind: "creator", creator: profile, folders: owned}, cards(entries)));
     creatorPages.push([`/creator/${encodeURIComponent(profile.username)}`, maxDate(entries.map(([, w]) => w.updatedAt))]);
   }
@@ -352,7 +395,7 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
   const now = webCatalogDeps.now();
   const premium = await webCatalogDeps.premium();
   const [approved, existing, popularDoc, folderDocs, manifestDoc] = await Promise.all([
-    db.collection("walls").where("review", "==", true).get(),
+    db.collection("walls").get(),
     db.collection(WEB_WALLS).get(),
     db.collection("popular").doc("current").get(),
     db.collection("publicFolders").get(),
@@ -368,20 +411,38 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
   const profiles = await profilesOf([...[...byId.values()].flat().map((wall) => str(wall.creatorUid)), ...ownerIds]);
 
   const walls = new Map<string, WebWall>();
-  for (const [id, rows] of byId) {
-    const wall = rows.length === 1 ? rows[0] : undefined;
-    walls.set(id, rows.length > 1 ? {state: "hidden", updatedAt: now.toISOString()} :
-      await projectWall(wall, premium, profiles.get(str(wall?.creatorUid)) ?? null, previous.get(id), now));
-  }
-  for (const [id, old] of previous) {
-    if (!walls.has(id)) walls.set(id, old.state === "live" || old.state === "gated" ? {state: "hidden", updatedAt: now.toISOString()} : old);
-  }
   let written = 0;
-  const changed = [...walls].filter(([id, wall]) => !sameWall(previous.get(id), wall));
-  await inChunks(changed, ([id, wall]) => db.collection(WEB_WALLS).doc(id).set(wall).then(() => written++));
-  for (const [id, wall] of walls) {
+  const ids = new Set([...byId.keys(), ...previous.keys()]);
+  for (const id of ids) {
+    const rows = byId.get(id) ?? [];
+    const wall = rows.length === 1 ? rows[0] : undefined;
+    const candidate = rows.length > 1 ? {state: "hidden" as const, updatedAt: now.toISOString()} :
+      rows.length === 0 ? {state: "gone" as const, updatedAt: now.toISOString()} :
+        await projectWall(wall, premium, profiles.get(str(wall?.creatorUid)) ?? null, previous.get(id), now);
     const old = previous.get(id);
-    if (old && sameWall(old, wall)) walls.set(id, old);
+    if (sameWall(old, candidate)) {
+      walls.set(id, old as WebWall);
+      continue;
+    }
+    const ref = db.collection(WEB_WALLS).doc(id);
+    const current = await db.runTransaction(async (tx) => {
+      const [latestRows, previousSnap] = await Promise.all([
+        tx.get(db.collection("walls").where("id", "==", id).limit(2)), tx.get(ref),
+      ]);
+      const currentPrevious = previousSnap.data() as WebWall | undefined;
+      const latestWall = latestRows.size === 1 ? latestRows.docs[0].data() : undefined;
+      const uid = str(latestWall?.creatorUid);
+      const profile = uid && !uid.includes("/") ?
+        publicProfile((await tx.get(db.collection("profiles").doc(uid))).data()) : null;
+      const next = latestRows.size > 1 ? {state: "hidden" as const, updatedAt: now.toISOString()} :
+        latestRows.size === 0 ? {state: "gone" as const, updatedAt: now.toISOString()} :
+          await projectWall(latestWall, premium, profile, currentPrevious, now);
+      if (sameWall(currentPrevious, next)) return {wall: currentPrevious as WebWall, written: false};
+      tx.set(ref, next);
+      return {wall: next, written: true};
+    });
+    walls.set(id, current.wall);
+    if (current.written) written++;
   }
 
   const folders = await Promise.all(folderDocs.docs.map(async (doc) => {
@@ -392,7 +453,8 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
       name: cleanText(data.name, 50),
       owner: profiles.get(str(data.ownerId)) ?? null,
       wallIds: items.docs.map((item) => str(item.data().id)).filter((id) => SHARE_ID.test(id)),
-      updatedAt: isoOf(data.updatedAt) || now.toISOString(),
+      total: typeof data.itemCount === "number" && Number.isFinite(data.itemCount) ? data.itemCount : items.size,
+      updatedAt: isoOf(data.updatedAt) || isoOf(doc.createTime) || now.toISOString(),
     };
   }));
   const popularIds = Array.isArray(popularDoc.data()?.wallIds) ? (popularDoc.data()?.wallIds as unknown[]).map(str) : [];
@@ -405,11 +467,22 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
     hashes[key] = hashOf(doc);
     if (oldHashes[key] !== hashes[key]) writes.push([key, doc]);
   }
-  await inChunks(writes, ([key, doc]) => db.collection(WEB_PAGES).doc(key)
-    .set({...doc, updatedAt: now.toISOString()}).then(() => written++));
-  await inChunks(Object.keys(oldHashes).filter((key) => !(key in hashes)),
-    (key) => db.collection(WEB_PAGES).doc(key).delete().then(() => written++));
-  await db.collection(STATE).doc("pages").set({hashes, builtAt: now.toISOString()});
+  await inChunks(writes, async ([key, doc]) => {
+    const ref = db.collection(WEB_PAGES).doc(key);
+    const current = (await ref.get()).data();
+    if (current && stableJson({...current, updatedAt: ""}) === stableJson({...doc, updatedAt: ""})) return;
+    await ref.set({...doc, updatedAt: now.toISOString()});
+    written++;
+  });
+  await inChunks(Object.keys(oldHashes).filter((key) => !(key in hashes)), async (key) => {
+    const ref = db.collection(WEB_PAGES).doc(key);
+    if (!(await ref.get()).exists) return;
+    await ref.delete();
+    written++;
+  });
+  if (stableJson(oldHashes) !== stableJson(hashes)) {
+    await db.collection(STATE).doc("pages").set({hashes, builtAt: now.toISOString()});
+  }
   logger.info("webCatalog: rebuilt.", {walls: walls.size, pages: pages.size, written});
   return {walls: walls.size, pages: pages.size, written};
 }

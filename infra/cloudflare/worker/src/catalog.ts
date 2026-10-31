@@ -14,6 +14,7 @@ export interface CatalogEnv extends ScreenshotEnv {
   /** Local runs point these at the Firestore and Functions emulators. Production leaves them unset. */
   CATALOG_FIRESTORE_ORIGIN?: string;
   CATALOG_PREVIEW_ORIGIN?: string;
+  R2_PREVIEW_BASE_URL?: string;
 }
 
 type WallState = 'live' | 'gated' | 'hidden' | 'gone';
@@ -95,6 +96,8 @@ type Route =
 
 class FirestoreUnavailable extends Error {}
 
+const activeRefreshes = new WeakMap<Cache, Map<string, Promise<void>>>();
+
 /**
  * The catalogue's response, or null when the path is not a catalogue page. `landing` is the old generic app landing:
  * wall and folder links still work through it while Firestore is unreachable.
@@ -106,16 +109,17 @@ export async function handleCatalogRequest(
   const route = matchRoute(url);
   if (route == null) return null;
   if (route.kind === 'redirect') return Response.redirect(route.location, 301);
-  if (route.kind === 'not-found') return withMethod(request, renderMissing(404, 'page', env));
 
   const key = cacheKeyOf(route);
   try {
-    const response = await cached(key, ctx, () => render(route, env));
+    const response = await cached(key, ctx, () => route.kind === 'not-found'
+      ? renderMissing(404, 'page', env)
+      : render(route, env));
     return withMethod(request, response);
   } catch (error) {
     if (!(error instanceof FirestoreUnavailable)) throw error;
     console.warn('[catalog] firestore_unavailable', { route: route.kind, error: `${error.message}` });
-    if (route.kind === 'wall' || route.kind === 'folder') return landing();
+    if (route.kind === 'wall' || route.kind === 'folder') return withMethod(request, landing());
     return withMethod(request, unavailable());
   }
 }
@@ -187,9 +191,9 @@ async function cached(key: string, ctx: ExecutionContext, render: () => Promise<
   const cache = edgeCache();
   const cacheKey = new Request(`${SITE}/__catalog/v1/${key}`);
   const hit = cache ? await cache.match(cacheKey) : undefined;
-  const store = (response: Response) => {
+  const store = async (response: Response) => {
     if (cache && [200, 301, 302, 404, 410].includes(response.status)) {
-      ctx.waitUntil(cache.put(cacheKey, storable(response.clone())));
+      await cache.put(cacheKey, storable(response.clone()));
     }
   };
   if (hit) {
@@ -197,13 +201,29 @@ async function cached(key: string, ctx: ExecutionContext, render: () => Promise<
     const fresh = hit.status === 200 ? FRESH_SECONDS : MISS_SECONDS;
     if (age <= fresh) return forClient(hit);
     if (hit.status === 200 && age <= FRESH_SECONDS + STALE_SECONDS) {
-      ctx.waitUntil(render().then(store).catch((error) => console.warn('[catalog] revalidate_failed', `${error}`)));
+      if (cache) {
+        let inFlight = activeRefreshes.get(cache);
+        if (!inFlight) {
+          inFlight = new Map();
+          activeRefreshes.set(cache, inFlight);
+        }
+        let refresh = inFlight.get(key);
+        if (!refresh) {
+          refresh = render().then(store)
+            .catch((error) => console.warn('[catalog] revalidate_failed', `${error}`))
+            .finally(() => inFlight?.delete(key));
+          inFlight.set(key, refresh);
+        }
+        ctx.waitUntil(refresh);
+      } else {
+        ctx.waitUntil(render().then(store).catch((error) => console.warn('[catalog] revalidate_failed', `${error}`)));
+      }
       return forClient(hit);
     }
   }
   try {
     const response = await render();
-    store(response);
+    ctx.waitUntil(store(response));
     return forClient(response);
   } catch (error) {
     if (hit && error instanceof FirestoreUnavailable) return forClient(hit);
@@ -260,8 +280,12 @@ async function readDoc<T>(env: CatalogEnv, path: string): Promise<T | null> {
   }
   if (response.status === 404) return null;
   if (!response.ok) throw new FirestoreUnavailable(`status ${response.status}`);
-  const doc = await response.json() as { fields?: Record<string, FirestoreValue> };
-  return decodeFields(doc.fields ?? {}) as T;
+  try {
+    const doc = await response.json() as { fields?: Record<string, FirestoreValue> };
+    return decodeFields(doc.fields ?? {}) as T;
+  } catch (error) {
+    throw new FirestoreUnavailable(`invalid document: ${error}`);
+  }
 }
 
 type FirestoreValue = {
@@ -284,10 +308,182 @@ function decodeFields(fields: Record<string, FirestoreValue>): Record<string, un
   return Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, decodeValue(value)]));
 }
 
-// Pages.
+function record(value: unknown): Record<string, unknown> {
+  if (value == null || typeof value !== 'object' || Array.isArray(value)) throw new FirestoreUnavailable('invalid projection');
+  return value as Record<string, unknown>;
+}
+
+function stringField(source: Record<string, unknown>, key: string, optional = false): string | undefined {
+  const value = source[key];
+  if (value == null && optional) return undefined;
+  if (typeof value !== 'string') throw new FirestoreUnavailable(`invalid ${key}`);
+  return value;
+}
+
+function requiredString(source: Record<string, unknown>, key: string): string {
+  const value = source[key];
+  if (typeof value !== 'string') throw new FirestoreUnavailable(`invalid ${key}`);
+  return value;
+}
+
+function numberField(source: Record<string, unknown>, key: string, optional = false): number | undefined {
+  const value = source[key];
+  if (value == null && optional) return undefined;
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+    throw new FirestoreUnavailable(`invalid ${key}`);
+  }
+  return value;
+}
+
+function dimensionField(source: Record<string, unknown>, key: string): number | undefined {
+  const value = numberField(source, key, true);
+  if (value !== undefined && value > 99999) throw new FirestoreUnavailable(`invalid ${key}`);
+  return value;
+}
+
+function requiredNumber(source: Record<string, unknown>, key: string): number {
+  const value = source[key];
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+    throw new FirestoreUnavailable(`invalid ${key}`);
+  }
+  return value;
+}
+
+function publicThumb(value: string, configuredBase?: string): boolean {
+  try {
+    const base = new URL(configuredBase || 'https://img.prismwalls.com');
+    const url = new URL(value);
+    if (base.protocol !== 'https:' || base.username || base.password || base.port || base.search || base.hash) return false;
+    const prefix = `${base.pathname.replace(/\/$/, '')}/previews/`;
+    return url.protocol === 'https:' && url.origin === base.origin && !url.username && !url.password
+      && !url.search && !url.hash && url.pathname.startsWith(prefix) && !/%(?:2f|5c)/i.test(url.pathname)
+      && url.pathname.length > prefix.length;
+  } catch {
+    return false;
+  }
+}
+
+function publicProfilePhoto(value: string): boolean {
+  if (!value) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
+function parseWall(value: unknown, env: CatalogEnv): WebWall {
+  const source = record(value);
+  const storedState = stringField(source, 'state');
+  if (storedState !== 'live' && storedState !== 'gated' && storedState !== 'hidden' && storedState !== 'gone') {
+    throw new FirestoreUnavailable('invalid state');
+  }
+  const storedThumb = stringField(source, 'thumb', true);
+  const thumb = storedThumb && publicThumb(storedThumb, env.R2_PREVIEW_BASE_URL) ? storedThumb : undefined;
+  const state = storedState === 'live' && thumb === undefined ? 'gated' : storedState;
+  const tags = source.tags;
+  if (tags != null && (!Array.isArray(tags) || !tags.every((tag) => typeof tag === 'string'))) {
+    throw new FirestoreUnavailable('invalid tags');
+  }
+  const colors = source.colors;
+  if (colors != null && (!Array.isArray(colors) || !colors.every((color) => {
+    const item = record(color);
+    return typeof item.name === 'string' && typeof item.hex === 'string';
+  }))) throw new FirestoreUnavailable('invalid colors');
+  let creator: WebWall['creator'];
+  if (source.creator != null) {
+    const item = record(source.creator);
+    creator = { username: requiredString(item, 'username'), name: requiredString(item, 'name') };
+  }
+  const blur = stringField(source, 'blur', true);
+  if (blur !== undefined && !/^data:image\/jpeg;base64,[A-Za-z0-9+/]*={0,2}$/.test(blur)) {
+    throw new FirestoreUnavailable('invalid blur');
+  }
+  return {
+    state,
+    updatedAt: requiredString(source, 'updatedAt'),
+    title: stringField(source, 'title', true),
+    description: stringField(source, 'description', true),
+    category: stringField(source, 'category', true),
+    categorySlug: stringField(source, 'categorySlug', true),
+    tags: tags as string[] | undefined,
+    colors: colors as Array<{ name: string; hex: string }> | undefined,
+    width: dimensionField(source, 'width'),
+    height: dimensionField(source, 'height'),
+    createdAt: stringField(source, 'createdAt', true),
+    creatorName: stringField(source, 'creatorName', true),
+    creator: creator ?? null,
+    thumb,
+    blur,
+  };
+}
+
+function parseCard(value: unknown, env: CatalogEnv): Card {
+  const item = record(value);
+  const thumb = requiredString(item, 'thumb');
+  if (!publicThumb(thumb, env.R2_PREVIEW_BASE_URL)) throw new FirestoreUnavailable('invalid card thumb');
+  return {
+    id: requiredString(item, 'id'), title: requiredString(item, 'title'), thumb,
+    width: requiredNumber(item, 'width'), height: requiredNumber(item, 'height'),
+  };
+}
+
+function parseListPage(value: unknown, env: CatalogEnv): ListPage {
+  const item = record(value);
+  if (!Array.isArray(item.items)) throw new FirestoreUnavailable('invalid page items');
+  const categories = item.categories;
+  if (categories != null && (!Array.isArray(categories) || !categories.every((value) => {
+    const category = record(value);
+    return typeof category.slug === 'string' && typeof category.name === 'string'
+      && typeof category.count === 'number' && Number.isSafeInteger(category.count);
+  }))) throw new FirestoreUnavailable('invalid categories');
+  let creator: ListPage['creator'];
+  if (item.creator != null) {
+    const value = record(item.creator);
+    const photo = requiredString(value, 'photo');
+    if (!publicProfilePhoto(photo)) throw new FirestoreUnavailable('invalid creator photo');
+    creator = {
+      username: requiredString(value, 'username'), name: requiredString(value, 'name'),
+      bio: requiredString(value, 'bio'), photo,
+    };
+  }
+  const folders = item.folders;
+  if (folders != null && (!Array.isArray(folders) || !folders.every((value) => {
+    const folder = record(value);
+    return typeof folder.id === 'string' && typeof folder.name === 'string'
+      && typeof folder.total === 'number' && Number.isSafeInteger(folder.total)
+      && typeof folder.cover === 'string' && publicThumb(folder.cover, env.R2_PREVIEW_BASE_URL);
+  }))) throw new FirestoreUnavailable('invalid folders');
+  return {
+    kind: requiredString(item, 'kind'), page: requiredNumber(item, 'page'), pages: requiredNumber(item, 'pages'),
+    total: requiredNumber(item, 'total'), items: item.items.map((value) => parseCard(value, env)),
+    categories: categories as CategoryLink[] | undefined,
+    slug: stringField(item, 'slug', true), name: stringField(item, 'name', true), creator,
+    folders: folders as ListPage['folders'],
+  };
+}
+
+function parseFolderPage(value: unknown, env: CatalogEnv): FolderPage {
+  const item = record(value);
+  if (!Array.isArray(item.items)) throw new FirestoreUnavailable('invalid folder items');
+  let owner: FolderPage['owner'];
+  if (item.owner != null) {
+    const value = record(item.owner);
+    owner = { username: requiredString(value, 'username'), name: requiredString(value, 'name') };
+  } else {
+    owner = null;
+  }
+  return {
+    kind: 'folder', id: requiredString(item, 'id'), name: requiredString(item, 'name'), owner,
+    total: requiredNumber(item, 'total'), items: item.items.map((value) => parseCard(value, env)),
+    updatedAt: requiredString(item, 'updatedAt'),
+  };
+}
 
 async function renderWall(id: string, env: CatalogEnv): Promise<Response> {
-  const wall = await readDoc<WebWall>(env, `webWalls/${id}`);
+  const stored = await readDoc<unknown>(env, `webWalls/${id}`);
+  const wall = stored == null ? null : parseWall(stored, env);
   if (wall == null || wall.state === 'hidden' || wall.state === 'gone') {
     if (wall == null && id !== id.toUpperCase() && await readDoc<WebWall>(env, `webWalls/${id.toUpperCase()}`)) {
       return redirect(`${SITE}/wallpaper/${id.toUpperCase()}`);
@@ -296,7 +492,8 @@ async function renderWall(id: string, env: CatalogEnv): Promise<Response> {
   }
   const slug = wall.categorySlug || 'general';
   const category = wall.category || 'General';
-  const related = ((await readDoc<ListPage>(env, `webPages/category~${slug}~1`))?.items ?? [])
+  const storedRelated = await readDoc<unknown>(env, `webPages/category~${slug}~1`);
+  const related = (storedRelated == null ? [] : parseListPage(storedRelated, env).items)
     .filter((card) => card.id !== id).slice(0, RELATED_COUNT);
   const live = wall.state === 'live';
   const canonical = `${SITE}/wallpaper/${id}`;
@@ -389,7 +586,8 @@ ${related.length ? `<section class="shelf">
 }
 
 async function renderFolder(id: string, env: CatalogEnv): Promise<Response> {
-  const folder = await readDoc<FolderPage>(env, `webPages/folder~${id}`);
+  const stored = await readDoc<unknown>(env, `webPages/folder~${id}`);
+  const folder = stored == null ? null : parseFolderPage(stored, env);
   if (folder == null) return renderMissing(404, 'folder', env);
   const canonical = `${SITE}/folder/${id}`;
   const owner = folder.owner;
@@ -423,7 +621,8 @@ async function renderFolder(id: string, env: CatalogEnv): Promise<Response> {
 
 async function renderHub(list: 'latest' | 'popular' | 'category', slug: string, pageNumber: number, env: CatalogEnv): Promise<Response> {
   const key = list === 'category' ? `category~${slug}~${pageNumber}` : `${list}~${pageNumber}`;
-  const data = await readDoc<ListPage>(env, `webPages/${key}`);
+  const stored = await readDoc<unknown>(env, `webPages/${key}`);
+  const data = stored == null ? null : parseListPage(stored, env);
   if (data == null || (data.items.length === 0 && pageNumber > 1)) return renderMissing(404, 'page', env);
   const base = list === 'category' ? `/wallpapers/${slug}` : list === 'popular' ? '/wallpapers/popular' : '/wallpapers';
   const canonical = `${SITE}${base}${pageNumber > 1 ? `?page=${pageNumber}` : ''}`;
@@ -465,7 +664,8 @@ async function renderHub(list: 'latest' | 'popular' | 'category', slug: string, 
 }
 
 async function renderCreator(username: string, pageNumber: number, env: CatalogEnv): Promise<Response> {
-  const data = await readDoc<ListPage>(env, `webPages/creator~${username}~${pageNumber}`);
+  const stored = await readDoc<unknown>(env, `webPages/creator~${username}~${pageNumber}`);
+  const data = stored == null ? null : parseListPage(stored, env);
   if (data?.creator == null) return renderMissing(404, 'creator', env);
   const creator = data.creator;
   const base = `/creator/${encodeURIComponent(creator.username)}`;
@@ -512,7 +712,14 @@ async function renderCreator(username: string, pageNumber: number, env: CatalogE
 }
 
 async function renderSitemapIndex(env: CatalogEnv): Promise<Response> {
-  const index = await readDoc<{ sitemaps?: Array<{ name: string; lastmod: string }> }>(env, 'webPages/sitemap~index');
+  const stored = await readDoc<unknown>(env, 'webPages/sitemap~index');
+  const rawIndex = stored == null ? null : record(stored);
+  const sitemaps = rawIndex?.sitemaps;
+  if (sitemaps != null && (!Array.isArray(sitemaps) || !sitemaps.every((value) => {
+    const item = record(value);
+    return typeof item.name === 'string' && typeof item.lastmod === 'string';
+  }))) throw new FirestoreUnavailable('invalid sitemap index');
+  const index = sitemaps == null ? null : { sitemaps: sitemaps as Array<{ name: string; lastmod: string }> };
   const entries = [`  <sitemap><loc>${SITE}/sitemap-pages.xml</loc></sitemap>`, ...(index?.sitemaps ?? [])
     .filter((entry) => /^[a-z]+-\d{1,4}$/.test(entry.name))
     .map((entry) => `  <sitemap><loc>${SITE}/sitemaps/${entry.name}.xml</loc>${entry.lastmod ? `<lastmod>${escapeHtml(entry.lastmod)}</lastmod>` : ''}</sitemap>`)];
@@ -523,9 +730,11 @@ ${entries.join('\n')}
 }
 
 async function renderSitemap(name: string, env: CatalogEnv): Promise<Response> {
-  const doc = await readDoc<{ entries?: string }>(env, `webPages/sitemap~${name}`);
-  if (doc == null) return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
-  const urls = (doc.entries ?? '').split('\n').filter(Boolean).map((line) => {
+  const stored = await readDoc<unknown>(env, `webPages/sitemap~${name}`);
+  if (stored == null) return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
+  const doc = record(stored);
+  if (typeof doc.entries !== 'string') throw new FirestoreUnavailable('invalid sitemap entries');
+  const urls = doc.entries.split('\n').filter(Boolean).map((line) => {
     const [path, lastmod] = line.split('\t');
     return `  <url><loc>${escapeHtml(`${SITE}${path}`)}</loc>${lastmod ? `<lastmod>${escapeHtml(lastmod)}</lastmod>` : ''}</url>`;
   });
@@ -535,9 +744,9 @@ ${urls.join('\n')}
 </urlset>`);
 }
 
-/** The share card for a live wall, rendered once per wall and look, then kept in R2. */
 async function renderOgImage(id: string, env: CatalogEnv): Promise<Response> {
-  const wall = await readDoc<WebWall>(env, `webWalls/${id}`);
+  const wallDoc = await readDoc<unknown>(env, `webWalls/${id}`);
+  const wall = wallDoc == null ? null : parseWall(wallDoc, env);
   if (wall?.state !== 'live' || !wall.thumb) return redirect(env.OG_FALLBACK_IMAGE || OG_HOME, 302);
   const heading = wall.title || `${wall.category || 'General'} wallpaper`;
   const creatorName = wall.creator?.name || wall.creatorName || '';
@@ -557,12 +766,9 @@ async function renderOgImage(id: string, env: CatalogEnv): Promise<Response> {
   return jpeg(bytes);
 }
 
-/**
- * The web-size image of a live wall: the wallpaperPreview derivative (at most 2560 px, never the original). The
- * function refuses gated walls itself, and this route asks only for walls the projection lists as live.
- */
 async function renderPreview(id: string, env: CatalogEnv): Promise<Response> {
-  const wall = await readDoc<WebWall>(env, `webWalls/${id}`);
+  const wallDoc = await readDoc<unknown>(env, `webWalls/${id}`);
+  const wall = wallDoc == null ? null : parseWall(wallDoc, env);
   if (wall?.state !== 'live' || !wall.thumb) return new Response('Not found', { status: 404 });
   const origin = env.CATALOG_PREVIEW_ORIGIN || `https://us-central1-${env.FIREBASE_PROJECT_ID}.cloudfunctions.net`;
   const url = new URL(`${origin}/wallpaperPreview`);
