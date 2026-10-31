@@ -2,14 +2,14 @@
 
 ## Final gates
 
-The final code commit is `58f61ed41b47edee14fc42dd57665d119201db5a`. Its starting and ending SHA matched, and the worktree had no tracked changes at either check. Later commits change documentation only.
+The final code commit is `be8d33268eb294ace3cd17c48bb1d882e5f25b2a`, a merge of master `2388489f7`. Its starting and ending SHA matched, and the worktree had no tracked changes at either check. Later commits change documentation only.
 
-- `CI=true make ci TEST_FLAGS=--concurrency=4` passed. The full Flutter suite passed 8,287 tests and skipped six. The release checks passed six tests. All preceding Makefile gates passed.
-- `cd functions && npm run build && node --test 'lib/__tests__/*.test.js'` passed: 2,308 passed, 23 skipped, 0 failed. ESLint with `--max-warnings 0` passed for every changed Functions source and test.
+- `CI=true make ci TEST_FLAGS=--concurrency=4` passed. The full Flutter suite passed 8,374 tests and skipped six. The release checks passed six tests. All preceding Makefile gates passed.
+- `cd functions && npm run build && node --test 'lib/__tests__/*.test.js'` passed: 2,316 passed, 23 skipped, 0 failed. ESLint with `--max-warnings 0` passed for every changed Functions source and test.
 - `node tool/creator_stats_qa/validate.cjs` and `node --test tool/creator_stats_qa/native.test.cjs tool/creator_stats_qa/seed_test.cjs` passed.
 - `seed.cjs` and `assert.cjs` passed against real Auth, Firestore and Functions emulators after the merge and after the daily projection fix.
 
-Earlier results: frozen commit `e109d854d` passed `make ci` with 7,789 Flutter tests and 2,228 Node tests. The review record's 2,226 Node tests ran at its own earlier commit.
+Earlier results: `58f61ed41`, before the last master merge, passed the same gates with 8,287 Flutter and 2,308 Node tests. Frozen commit `e109d854d` passed `make ci` with 7,789 Flutter tests and 2,228 Node tests. The review record's 2,226 Node tests ran at its own earlier commit.
 
 ## Device proof
 
@@ -18,6 +18,8 @@ Evidence is on `qa/screenshots` under [`creator-stats-761-2026-10-31`](https://g
 **Android.** AVD `Prism_QA_API36`, Android 16. Real taps covered own profile to Stats, metric switch, the eight-week chart, top wall to that wall's own numbers, the Uploads and Rewards entries, the weekly inbox item to the dashboard, another creator's profile without Stats, dark theme, the largest text size with the chart's screen-reader summary, and the empty creator with its upload link. A clip records profile, Stats, metric switch and top wall.
 
 **iOS.** Simulator `Prism QA iPhone 17 Pro`, iOS 27.0. The same flows and the same clip passed.
+
+Device proof ran on builds of `0ab0d548e` (creator flows) and `387b17adc` (empty state). Later commits change the Monday scan, three locale labels, tests, docs, and two master merges. The last merge adds master's earned-coins line beside the Uploads Stats entry; that screen was not rerun on a device.
 
 The other creator's profile was opened with a `prism://user/qa-stats-other` link, because creator search reads public profiles and the seed creates only two accounts.
 
