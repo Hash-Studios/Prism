@@ -95,7 +95,7 @@ A first delivery for N approved walls costs `2N + 5` reads and two writes. At 50
 
 Deploy rules, indexes, and Functions, in that order, before the store build that calls `getCreatorStats`. New indexes and TTL configuration must be ready first. The rules deny direct reads and writes for all six private creator stats collections. The new composite index supports the approved creator wall query. No existing client write is tightened.
 
-No deploy, production action, data migration, dependency change, or push was performed. Feature commits and review fixes are local. The parent owns final full Flutter CI and device proof.
+No deploy, production action, data migration, or dependency change was performed. Full gates and device proof are recorded in `creator-stats-proof.md`.
 
 See `creator-stats-review.md` for the independent review findings, current test results, and remaining proof limits.
 
@@ -104,5 +104,7 @@ See `creator-stats-review.md` for the independent review findings, current test 
 Daily and legacy-folder triggers log and acknowledge identity-census overflow. They do not advance a checkpoint or marker. Transient errors still retry. A later source update can recover its cumulative daily count while that source exists. If daily TTL deletes it first, the skipped history cannot be recovered by these triggers. Recorded history can therefore contain a gap. The callable still returns an explicit capacity error.
 
 Checkpoint-first projection reduces deliveries with no unaccepted counter delta to two reads. Every eligible positive-delta transaction still requires `M + 5` reads. For D positive-delta deliveries and Z no-delta deliveries, normal-path reads are `D(M + 5) + 2Z` before retries. At M=20,000, 10,000 positive-delta deliveries require 200,050,000 reads before retries. Callable caching does not reduce this cost. Functions deployment remains blocked pending an agreed event-volume/read budget. No production volume or replay ratio was inspected.
+
+The census is also a contention risk. Server SDK transactions on a Standard edition database use pessimistic concurrency, so each census can hold read locks on up to 20,001 `walls` documents until commit. Every other `walls` write waits for those locks, and the callable and the triggers can hold them at the same time. No production latency under this contention was measured.
 
 A follow-up must do one of two things. It can keep a normalized identity index complete atomically on every wall-writing path (client drafts, admin writes, scripts, deletes, recreation). Or it can move to durable batched or canonical event projection, which bounds B sources to `M + 5B` reads. A backfill alone is insufficient, because a foreign alias can commit while an asynchronous index trigger is delayed. Neither approach reconstructs deleted historical aliases or repairs legacy counter contamination.

@@ -22,6 +22,6 @@ The app needs the server callable and authenticated demo data before live verifi
 
 Focused tests cover nullable counts, invalid histories, BLoC loading, loading and failure UI, empty state at large text, metric selection, wall detail, and chart semantics. Router, DI, localization, and analytics files are generated with the repository tools. The parent integration owns full `make ci` and device proof.
 
-On this Linux host, the verification doctor cannot inspect iOS because `axe` is absent. An iOS Simulator run remains required on a Mac. Android proof must use only `Prism_QA_API36` on port 5580 and demo Firebase emulators. No production data is needed.
+Android and iOS device proof ran on a Mac against demo Firebase emulators. See `creator-stats-proof.md`. No production data is needed.
 
-Independent review and local validation are recorded in `creator-stats-review.md`. Full `make ci` and device screenshots remain with the parent. No dependency change, push, merge, or deploy was performed.
+Independent review and local validation are recorded in `creator-stats-review.md`. Full gates and device proof are recorded in `creator-stats-proof.md`. No dependency change, merge, or deploy was performed.

@@ -27,7 +27,7 @@ QA bootstrap was checked against generated DI. Registrations are lazy, so replac
 
 ## Proof
 
-- `npm run build` and the full Node suite passed: 2,226 passed, 16 existing skips, zero failures. The final focused creator-stats suite has 35 tests.
+- At the review commit, `cd functions && npm run build && node --test 'lib/__tests__/*.test.js'` passed: 2,226 passed, 16 existing skips, zero failures. The focused creator-stats suite had 35 tests. Later results name their own commits in `creator-stats-proof.md`.
 - ESLint passes with `--max-warnings 0` for every changed Functions source and test.
 - The affected Flutter run passed 118 tests, including stats, profile ownership, uploads, Rewards, Hindi/Portuguese contracts, emulator validation and routing. No full Flutter suite was rerun.
 - Feature analysis reported no issues. Full analysis with `--no-fatal-infos` completed with existing repository information-level findings; new feature findings were fixed.
@@ -50,7 +50,7 @@ The current-wall census cannot reconstruct deleted historical aliases or repair 
 
 The Model the Domain principle led to a BLoC owned by one session UID. The Test Behavior, Not Implementation principle led to actual profile and router integration tests in place of button visibility booleans.
 
-The parent rebased the reviewed commits onto `5dee629d0` without conflicts. Final full `make ci` and Android and iOS screenshot/clip proof remain separate gates. Linux cannot provide the required iOS Simulator proof. No deployment, push, merge, production data access, dependency change or toolchain change was performed. Deploy order remains rules, indexes, functions, then the store build.
+The parent rebased the reviewed commits onto `5dee629d0` without conflicts. Final full `make ci` and Android and iOS screenshot and clip proof are recorded in `creator-stats-proof.md`. No deployment, push, merge, production data access, dependency change or toolchain change was performed. Deploy order remains rules, indexes, functions, then the store build.
 
 ## Astra final pass
 
