@@ -76,7 +76,7 @@ void main() {
     expect(find.text('Daily streak'), findsNothing);
     expect(find.text('Day 7 chest'), findsNothing);
     expect(find.text('Free daily spin'), findsNothing);
-    expect(find.text(AppLocalizationsEn().economyWatchVideo), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyAd), findsOneWidget);
     expect(find.text(AppLocalizationsEn().economyInviteFriend), findsOneWidget);
   });
 

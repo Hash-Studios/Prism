@@ -4,17 +4,28 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/coin_pill.dart';
+import 'package:Prism/features/ads/data/ad_experiment_config.dart';
+import 'package:Prism/features/ads/views/widgets/experimental_inline_ad.dart';
 import 'package:Prism/features/badges/biz/bloc/badges_bloc.dart';
+import 'package:Prism/features/badges/views/widgets/rewards_badges_section.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/daily_flow/views/daily_moment_today_card.dart';
 import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
+import 'package:Prism/features/drops/views/widgets/drop_card.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
 import 'package:Prism/features/quests/views/widgets/today_card.dart';
 import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
 import 'package:Prism/features/rewards/views/widgets/balance_card.dart';
+import 'package:Prism/features/rewards/views/widgets/creator_progress_card.dart';
+import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
+import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
+import 'package:Prism/features/rewards/views/widgets/rewards_activity_section.dart';
+import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_hero.dart';
+import 'package:Prism/features/rewards/views/widgets/rewards_links_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_spend_section.dart';
+import 'package:Prism/features/spin_wheel/views/widgets/spin_wheel_card.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -69,17 +80,17 @@ void main() {
     await getIt.reset();
   });
 
-  Future<void> pumpPage(WidgetTester tester, {required bool enabled}) async {
+  Future<void> pumpPage(WidgetTester tester, {required bool enabled, bool showBack = false}) async {
     DailyMomentConfig.enabledOverride = enabled;
     tester.view.physicalSize = const Size(1000, 4000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         builder: favouriteTestBuilder,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: RewardsPage(showBack: false),
+        home: RewardsPage(showBack: showBack),
       ),
     );
     await tester.pump();
@@ -116,5 +127,47 @@ void main() {
     expect(find.byType(BalanceCard), findsOneWidget);
     expect(find.byType(CoinBalancePill), findsOneWidget);
     expect(find.byType(DailyMomentTodayCard), findsNothing);
+    final sections = <Type>[
+      RewardsHero,
+      DropCard,
+      RankProgressCard,
+      CreatorProgressCard,
+      TodayCard,
+      SpinWheelCard,
+      FreezeCard,
+      BalanceCard,
+      RewardsEarnSection,
+      ExperimentalInlineAd,
+      RewardsSpendSection,
+      RewardsLinksSection,
+      RewardsBadgesSection,
+      RewardsCollectionSection,
+      RewardsActivitySection,
+    ];
+    for (var index = 0; index < sections.length - 1; index++) {
+      final before = find.byType(sections[index]);
+      final after = find.byType(sections[index + 1]);
+      expect(before, findsOneWidget);
+      expect(after, findsOneWidget);
+      expect(tester.getTopLeft(before).dy, lessThanOrEqualTo(tester.getTopLeft(after).dy));
+    }
+    expect(find.byKey(const ValueKey<String>('rewards-more')), findsNothing);
   });
+
+  for (final enabled in <bool>[true, false]) {
+    for (final showBack in <bool>[true, false]) {
+      testWidgets('Rewards banner follows Earn with daily moment $enabled and pushed route $showBack', (tester) async {
+        await pumpPage(tester, enabled: enabled, showBack: showBack);
+        final slot = find.byType(ExperimentalInlineAd);
+        expect(slot, findsOneWidget);
+        final banner = tester.widget<ExperimentalInlineAd>(slot);
+        expect(banner.format, AdExperimentFormat.banner);
+        expect(banner.active, showBack);
+        expect(banner.availableWidth, greaterThan(0));
+        expect(banner.availableWidth, lessThanOrEqualTo(640));
+        expect(tester.getBottomLeft(find.byType(RewardsEarnSection)).dy, tester.getTopLeft(slot).dy);
+        expect(tester.getBottomLeft(slot).dy, tester.getTopLeft(find.byType(RewardsSpendSection)).dy);
+      });
+    }
+  }
 }

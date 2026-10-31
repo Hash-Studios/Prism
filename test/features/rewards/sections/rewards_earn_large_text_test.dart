@@ -32,7 +32,8 @@ void main() {
             final title = find.descendant(of: rowFinder, matching: find.text(row.title));
             final subtitle = find.descendant(of: rowFinder, matching: find.text(row.subtitle!));
             final reward = find.descendant(of: rowFinder, matching: find.byKey(const ValueKey<String>('reward')));
-            expect(tester.getSize(title).width, greaterThan(100));
+            final textColumn = find.ancestor(of: title, matching: find.byType(Column)).first;
+            expect(tester.getSize(textColumn).width, greaterThan(100));
             expect(tester.getTopLeft(reward).dy, greaterThanOrEqualTo(tester.getBottomLeft(subtitle).dy));
           }
         });
