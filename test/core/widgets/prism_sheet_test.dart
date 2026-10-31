@@ -208,4 +208,65 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Required'), findsOneWidget);
   });
+
+  testWidgets('a zero-size viewport does not give the sheet a negative height', (tester) async {
+    await tester.binding.setSurfaceSize(Size.zero);
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navigatorKey,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const SizedBox.shrink(),
+      ),
+    );
+
+    const Key bodyKey = Key('sheet-body');
+    showPrismSheet<void>(navigatorKey.currentContext!, builder: (_) => const SizedBox.shrink(key: bodyKey));
+    await tester.pump();
+    expect(find.byKey(bodyKey, skipOffstage: false), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('a keyboard taller than the viewport does not give the sheet a negative height', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.viewPadding = const FakeViewPadding(top: 24);
+    tester.view.padding = const FakeViewPadding(top: 24);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 900);
+    addTearDown(tester.view.reset);
+    final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navigatorKey,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const SizedBox.shrink(),
+      ),
+    );
+
+    const Key bodyKey = Key('sheet-body');
+    showPrismSheet<void>(navigatorKey.currentContext!, builder: (_) => const SizedBox.shrink(key: bodyKey));
+    await tester.pump();
+    expect(find.byKey(bodyKey, skipOffstage: false), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('a keyboard that fits keeps the sheet above it', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.viewPadding = const FakeViewPadding(top: 24);
+    tester.view.padding = const FakeViewPadding(top: 24);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    addTearDown(tester.view.reset);
+
+    const Key bodyKey = Key('sheet-body');
+    await tester.pumpWidget(
+      _app((context) => showPrismSheet<void>(context, builder: (_) => const SizedBox(key: bodyKey, height: 80))),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(find.byKey(bodyKey)).bottom, lessThanOrEqualTo(500));
+  });
 }
