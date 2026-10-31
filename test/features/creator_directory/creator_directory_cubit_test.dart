@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/features/creator_directory/biz/creator_directory_cubit.dart';
+import 'package:Prism/features/creator_directory/biz/creator_directory_opt_out_cubit.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -38,7 +40,7 @@ void main() {
     final gate = Completer<void>();
     repo.gates[(null, null)] = gate;
     repo.pages[(null, null)] = creatorPage(<DirectoryCreator>[directoryCreator('a')]);
-    final cubit = CreatorDirectoryCubit(repo);
+    final cubit = CreatorDirectoryCubit(repo, EmptyCreatorBlocks());
     final pending = cubit.loadRow();
     app_state.prismUser = profileUser(loggedIn: false);
     await cubit.loadRow();
@@ -50,7 +52,7 @@ void main() {
 
   test('guests cannot load See all', () async {
     app_state.prismUser = profileUser(loggedIn: false);
-    final cubit = CreatorDirectoryCubit(repo);
+    final cubit = CreatorDirectoryCubit(repo, EmptyCreatorBlocks());
     await cubit.loadPage();
     expect(cubit.state.isEmpty, isTrue);
     expect(repo.fetchCalls, isEmpty);
@@ -67,7 +69,7 @@ void main() {
           directoryCreator('c', rank: 3),
         ], nextRank: 3);
         repo.followed = <String>{'b'};
-        return CreatorDirectoryCubit(repo);
+        return CreatorDirectoryCubit(repo, EmptyCreatorBlocks());
       },
       act: (cubit) => cubit.loadRow(),
       expect: () => <Matcher>[
@@ -84,7 +86,7 @@ void main() {
     blocTest<CreatorDirectoryCubit, CreatorDirectoryState>(
       'signed-out viewer emits loaded empty without calling the repository',
       setUp: () => app_state.prismUser = profileUser(loggedIn: false),
-      build: () => CreatorDirectoryCubit(repo),
+      build: () => CreatorDirectoryCubit(repo, EmptyCreatorBlocks()),
       act: (cubit) => cubit.loadRow(),
       expect: () => <Matcher>[_state(status: CreatorDirectoryStatus.loaded, uids: <String>[])],
       verify: (_) => expect(repo.fetchCalls, isEmpty),
@@ -94,7 +96,7 @@ void main() {
       'emits failed when the fetch throws',
       build: () {
         repo.fetchError = StateError('network down');
-        return CreatorDirectoryCubit(repo);
+        return CreatorDirectoryCubit(repo, EmptyCreatorBlocks());
       },
       act: (cubit) => cubit.loadRow(),
       expect: () => <Matcher>[_state(status: CreatorDirectoryStatus.failed)],
@@ -110,7 +112,7 @@ void main() {
           directoryCreator('b', rank: 2, categories: <String>['Nature', 'Dark']),
           directoryCreator('c', rank: 3, categories: <String>['Nature', 'Minimal', 'Abstract']),
         ]);
-        return CreatorDirectoryCubit(repo);
+        return CreatorDirectoryCubit(repo, EmptyCreatorBlocks());
       },
       act: (cubit) => cubit.loadPage(),
       expect: () => <Matcher>[
@@ -129,7 +131,7 @@ void main() {
         repo.pages[(null, null)] = creatorPage(<DirectoryCreator>[
           for (int i = 0; i < 10; i++) directoryCreator('c$i', rank: i + 1, categories: <String>['Cat0$i']),
         ]);
-        return CreatorDirectoryCubit(repo);
+        return CreatorDirectoryCubit(repo, EmptyCreatorBlocks());
       },
       act: (cubit) => cubit.loadPage(),
       expect: () => <Matcher>[
@@ -151,7 +153,7 @@ void main() {
         repo.pages[('Nature', null)] = creatorPage(<DirectoryCreator>[
           directoryCreator('n1', categories: <String>['Nature']),
         ]);
-        return CreatorDirectoryCubit(repo);
+        return CreatorDirectoryCubit(repo, EmptyCreatorBlocks());
       },
       act: (cubit) => cubit.loadPage(category: 'Nature'),
       expect: () => <Matcher>[
@@ -169,7 +171,7 @@ void main() {
     );
 
     test('a stale loadPage result is ignored after a newer loadPage', () async {
-      final CreatorDirectoryCubit cubit = CreatorDirectoryCubit(repo);
+      final CreatorDirectoryCubit cubit = CreatorDirectoryCubit(repo, EmptyCreatorBlocks());
       addTearDown(cubit.close);
       repo.gates[(null, null)] = Completer<void>();
       repo.pages[(null, null)] = creatorPage(<DirectoryCreator>[directoryCreator('a')]);
@@ -201,7 +203,7 @@ void main() {
           directoryCreator('c', rank: 3),
           directoryCreator('d', rank: 4),
         ]);
-        return CreatorDirectoryCubit(repo);
+        return CreatorDirectoryCubit(repo, EmptyCreatorBlocks());
       },
       act: (cubit) => cubit.loadMore(),
       expect: () => <Matcher>[
@@ -221,10 +223,47 @@ void main() {
     blocTest<CreatorDirectoryCubit, CreatorDirectoryState>(
       'does nothing when nextRank is null',
       seed: () => const CreatorDirectoryState(status: CreatorDirectoryStatus.loaded),
-      build: () => CreatorDirectoryCubit(repo),
+      build: () => CreatorDirectoryCubit(repo, EmptyCreatorBlocks()),
       act: (cubit) => cubit.loadMore(),
       expect: () => <Matcher>[],
       verify: (_) => expect(repo.fetchCalls, isEmpty),
     );
   });
+
+  test('a creator the viewer blocks leaves the loaded list without a reload', () async {
+    final StreamController<BlockedCreators> blocks = StreamController<BlockedCreators>.broadcast();
+    final CreatorDirectoryCubit cubit = CreatorDirectoryCubit(repo, _StreamBlocks(blocks.stream));
+    cubit.show(<DirectoryCreator>[directoryCreator('a', name: 'Ann'), directoryCreator('b', name: 'Ben')]);
+
+    blocks.add(KnownBlockedCreators(<String>['b']));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(uidsOf(cubit.state.creators), <String>['a']);
+    await cubit.close();
+    await blocks.close();
+  });
+
+  test('the opt-out switch loads, saves, and goes back when the write fails', () async {
+    repo.optedOut = true;
+    final CreatorDirectoryOptOutCubit cubit = CreatorDirectoryOptOutCubit(repo);
+    await cubit.load();
+    expect(cubit.state, (loaded: true, optOut: true));
+
+    expect(await cubit.setOptedOut(false), isTrue);
+    expect(repo.optedOut, isFalse);
+
+    repo.failOptOut = true;
+    expect(await cubit.setOptedOut(true), isFalse);
+    expect(cubit.state, (loaded: true, optOut: false));
+    await cubit.close();
+  });
+}
+
+class _StreamBlocks extends EmptyCreatorBlocks {
+  _StreamBlocks(this._changes);
+
+  final Stream<BlockedCreators> _changes;
+
+  @override
+  Stream<BlockedCreators> watchBlockedCreators() => _changes;
 }

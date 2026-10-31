@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_repository.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
@@ -55,13 +60,35 @@ class CreatorDirectoryState {
 /// The Creators row and the See all page. The row shows only creators the viewer does not follow yet.
 @injectable
 class CreatorDirectoryCubit extends Cubit<CreatorDirectoryState> {
-  CreatorDirectoryCubit(this._repository) : super(const CreatorDirectoryState());
+  CreatorDirectoryCubit(this._repository, UserBlockRepository blocks) : super(const CreatorDirectoryState()) {
+    _blocks = blocks.watchBlockedCreators().listen(_hideBlocked);
+  }
 
   static const int rowSize = 10;
   static const int _maxChips = 8;
 
   final CreatorDirectoryRepository _repository;
+  late final StreamSubscription<BlockedCreators> _blocks;
   int _load = 0;
+
+  /// Shows a fixed list, for the More like sheet. Blocks still remove creators from it.
+  void show(List<DirectoryCreator> creators) =>
+      emit(CreatorDirectoryState(status: CreatorDirectoryStatus.loaded, creators: creators));
+
+  /// A creator the viewer blocks leaves the list at once, without a reload.
+  void _hideBlocked(BlockedCreators blocked) {
+    if (isClosed) return;
+    final List<DirectoryCreator> visible = state.creators
+        .where((c) => !BlockedCreatorsFilter.hidesCreatorUid(c.uid, blocked))
+        .toList(growable: false);
+    if (visible.length != state.creators.length) emit(state.copyWith(creators: visible));
+  }
+
+  @override
+  Future<void> close() async {
+    await _blocks.cancel();
+    return super.close();
+  }
 
   /// Loads the Home or search row. Signed-out guests cannot read the directory, so the row stays empty for them.
   Future<void> loadRow() async {

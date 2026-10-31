@@ -151,6 +151,28 @@ class CreatorDirectoryRepositoryImpl implements CreatorDirectoryRepository {
     );
   }
 
+  @override
+  Future<bool> isOptedOut() async {
+    final String viewer = _viewer;
+    if (viewer.isEmpty) return false;
+    return await _firestore.getById<bool>(
+          FirebaseCollections.usersV2,
+          viewer,
+          (data, _) => data['creatorDirectoryOptOut'] == true,
+          sourceTag: 'creator_directory.opt_out.read',
+        ) ??
+        false;
+  }
+
+  @override
+  Future<void> setOptedOut(bool optOut) async {
+    final String viewer = _viewer;
+    if (viewer.isEmpty) throw StateError('Sign in to change directory visibility.');
+    await _firestore.updateDoc(FirebaseCollections.usersV2, viewer, <String, dynamic>{
+      'creatorDirectoryOptOut': optOut,
+    }, sourceTag: 'creator_directory.opt_out.write');
+  }
+
   Future<List<CreatorDirectoryEntry>> _visible(List<CreatorDirectoryEntry> entries) async {
     final BlockedCreators blocked = await _blocks.loadBlockedCreators();
     final String viewer = _viewer;

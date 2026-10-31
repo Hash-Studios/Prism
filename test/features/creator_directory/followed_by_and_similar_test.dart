@@ -17,7 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/profile_user_fixture.dart';
-import 'creator_directory_test_support.dart' show EmptyCreatorBlocks;
+import 'creator_directory_test_support.dart' show EmptyCreatorBlocks, registerCreatorDirectoryFakes;
 
 class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
 
@@ -92,6 +92,7 @@ void main() {
     getIt.registerSingleton<UserBlockRepository>(EmptyCreatorBlocks());
     repo = _FakeDirectory();
     getIt.registerSingleton<CreatorDirectoryRepository>(repo);
+    registerCreatorDirectoryFakes(profileBloc: false);
     app_state.prismUser = profileUser(id: 'viewer-${++viewerSeq}');
   });
 

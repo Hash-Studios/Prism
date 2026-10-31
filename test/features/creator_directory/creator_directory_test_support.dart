@@ -9,6 +9,9 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/creator_directory/biz/creator_directory_cubit.dart';
+import 'package:Prism/features/creator_directory/biz/creator_directory_opt_out_cubit.dart';
+import 'package:Prism/features/creator_directory/biz/followed_by_cubit.dart';
+import 'package:Prism/features/creator_directory/biz/similar_creators_offer_session.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_repository.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
@@ -66,6 +69,19 @@ class FakeCreatorDirectoryRepository implements CreatorDirectoryRepository {
 
   @override
   Future<FollowedBy> followedBy(String creatorUid) async => FollowedBy.none;
+
+  bool optedOut = false;
+
+  @override
+  Future<bool> isOptedOut() async => optedOut;
+
+  bool failOptOut = false;
+
+  @override
+  Future<void> setOptedOut(bool optOut) async {
+    if (failOptOut) throw StateError('offline');
+    optedOut = optOut;
+  }
 }
 
 class EmptyCreatorBlocks extends Fake implements UserBlockRepository {
@@ -141,9 +157,8 @@ Future<void> pumpCreators(
   required PublicProfileBloc profileBloc,
 }) async {
   getIt.registerSingleton<UserBlockRepository>(EmptyCreatorBlocks());
-  getIt.registerSingleton<CreatorDirectoryRepository>(repository);
-  getIt.registerFactory<CreatorDirectoryCubit>(() => CreatorDirectoryCubit(repository));
   getIt.registerFactory<PublicProfileBloc>(() => profileBloc);
+  registerCreatorDirectoryFakes(repository: repository, profileBloc: false);
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -163,7 +178,25 @@ void registerCreatorDirectoryFakes({FakeCreatorDirectoryRepository? repository, 
     getIt.registerSingleton<CreatorDirectoryRepository>(fake);
   }
   if (!getIt.isRegistered<CreatorDirectoryCubit>()) {
-    getIt.registerFactory<CreatorDirectoryCubit>(() => CreatorDirectoryCubit(fake));
+    getIt.registerFactory<CreatorDirectoryCubit>(
+      () => CreatorDirectoryCubit(
+        getIt<CreatorDirectoryRepository>(),
+        getIt.isRegistered<UserBlockRepository>() ? getIt<UserBlockRepository>() : EmptyCreatorBlocks(),
+      ),
+    );
+  }
+  if (!getIt.isRegistered<FollowedByCubit>()) {
+    getIt.registerFactory<FollowedByCubit>(() => FollowedByCubit(getIt<CreatorDirectoryRepository>()));
+  }
+  if (!getIt.isRegistered<CreatorDirectoryOptOutCubit>()) {
+    getIt.registerFactory<CreatorDirectoryOptOutCubit>(
+      () => CreatorDirectoryOptOutCubit(getIt<CreatorDirectoryRepository>()),
+    );
+  }
+  if (!getIt.isRegistered<SimilarCreatorsOfferSession>()) {
+    getIt.registerLazySingleton<SimilarCreatorsOfferSession>(
+      () => SimilarCreatorsOfferSession(getIt<CreatorDirectoryRepository>()),
+    );
   }
   if (profileBloc && !getIt.isRegistered<PublicProfileBloc>()) {
     final MockPublicProfileBloc bloc = publicProfileBlocWith();

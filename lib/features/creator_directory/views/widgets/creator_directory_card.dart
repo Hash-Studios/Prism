@@ -8,7 +8,6 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
 import 'package:Prism/features/creator_directory/views/creator_follow_changes.dart';
-import 'package:Prism/features/creator_directory/views/widgets/visible_directory_creator.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -229,24 +228,21 @@ class CreatorDirectoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    return VisibleDirectoryCreator(
-      uid: creator.uid,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(PrismRadius.lg),
-          border: Border.all(color: cs.onSurface.withValues(alpha: 0.06)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(PrismSpace.sm),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              CreatorWallStrip(creator: creator),
-              const SizedBox(height: PrismSpace.sm),
-              CreatorFollowRow(creator: creator.entry, followed: followed, source: source),
-            ],
-          ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(PrismRadius.lg),
+        border: Border.all(color: cs.onSurface.withValues(alpha: 0.06)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(PrismSpace.sm),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            CreatorWallStrip(creator: creator),
+            const SizedBox(height: PrismSpace.sm),
+            CreatorFollowRow(creator: creator.entry, followed: followed, source: source),
+          ],
         ),
       ),
     );

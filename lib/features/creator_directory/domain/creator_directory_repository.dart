@@ -13,6 +13,11 @@ abstract class CreatorDirectoryRepository {
   /// Up to [limit] creators like [uid] that the viewer does not follow yet.
   Future<List<DirectoryCreator>> similarTo(String uid, {int limit = 6});
 
-  /// People the viewer follows who follow [creatorUid]. Cached for the app session.
+  /// People the viewer follows who follow [creatorUid]. The server caches matches for a day.
   Future<FollowedBy> followedBy(String creatorUid);
+
+  /// Whether the signed-in viewer left the directory.
+  Future<bool> isOptedOut();
+
+  Future<void> setOptedOut(bool optOut);
 }

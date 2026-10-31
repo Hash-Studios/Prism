@@ -3,10 +3,11 @@ import 'package:Prism/core/analytics/events/generated/analytics_events.g.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/creator_directory/biz/followed_by_cubit.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
-import 'package:Prism/features/creator_directory/domain/creator_directory_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// "Followed by Ana and 2 others you follow", with up to 3 avatars. Shows nothing for signed-out viewers, the viewer's
 /// own profile, or when no one the viewer follows follows this creator.
@@ -20,7 +21,7 @@ class FollowedByLine extends StatefulWidget {
 }
 
 class _FollowedByLineState extends State<FollowedByLine> {
-  Future<FollowedBy>? _future;
+  late final FollowedByCubit _cubit = getIt<FollowedByCubit>();
   bool _tracked = false;
   String _viewer = '';
 
@@ -36,28 +37,25 @@ class _FollowedByLineState extends State<FollowedByLine> {
     if (oldWidget.creatorUid != widget.creatorUid || _viewer != app_state.prismUser.id) _load();
   }
 
+  @override
+  void dispose() {
+    _cubit.close();
+    super.dispose();
+  }
+
   void _load() {
-    _future = null;
     _tracked = false;
     _viewer = app_state.prismUser.id;
-    final String viewerId = _viewer;
-    if (app_state.prismUser.loggedIn && widget.creatorUid.isNotEmpty && widget.creatorUid != viewerId) {
-      _future = getIt<CreatorDirectoryRepository>().followedBy(widget.creatorUid);
-    }
+    _cubit.load(widget.creatorUid);
   }
 
   @override
   Widget build(BuildContext context) {
     if (!app_state.prismUser.loggedIn || _viewer != app_state.prismUser.id) return const SizedBox.shrink();
-    final Future<FollowedBy>? future = _future;
-    if (future == null) return const SizedBox.shrink();
-    return FutureBuilder<FollowedBy>(
-      future: future,
-      builder: (context, snapshot) {
-        final FollowedBy? data = snapshot.data;
-        if (snapshot.connectionState != ConnectionState.done || snapshot.hasError || data == null) {
-          return const SizedBox.shrink();
-        }
+    return BlocBuilder<FollowedByCubit, FollowedBy?>(
+      bloc: _cubit,
+      builder: (context, data) {
+        if (data == null) return const SizedBox.shrink();
         if (data.count == 0 || data.people.isEmpty) return const SizedBox.shrink();
         if (!_tracked) {
           _tracked = true;
