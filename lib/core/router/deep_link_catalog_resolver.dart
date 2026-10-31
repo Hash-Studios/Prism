@@ -105,7 +105,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.debugPanel => DebugPanelRoute(tab: query['tab'] ?? 'logs'),
     DeepLinkPageTarget.quickTileSettings => const QuickTileSettingsRoute(),
     DeepLinkPageTarget.autoRotate => AutoRotateRoute(),
-    DeepLinkPageTarget.iosShortcuts => const IosShortcutsGuideRoute(),
+    DeepLinkPageTarget.iosShortcuts => IosShortcutsGuideRoute(source: 'deep_link'),
     DeepLinkPageTarget.wallpaperHistory => LibraryRoute(initialTab: LibraryTab.history),
     DeepLinkPageTarget.photoPreview => _previewRoute(
       wallId: query['wallpaperId']!,

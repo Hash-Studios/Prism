@@ -1581,6 +1581,60 @@ class AutoRotateStoppedEvent extends AnalyticsEvent {
   }
 }
 
+class IosRotationFolderSetEvent extends AnalyticsEvent {
+  const IosRotationFolderSetEvent({required this.source, required this.itemCountBucket});
+
+  final String source;
+  final String itemCountBucket;
+
+  @override
+  String get eventName => 'ios_rotation_folder_set';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'item_count_bucket': itemCountBucket};
+  }
+}
+
+class IosShortcutsGuideOpenedEvent extends AnalyticsEvent {
+  const IosShortcutsGuideOpenedEvent({
+    required this.source,
+    required this.hasShortcutLink,
+    required this.hasRotationFolder,
+  });
+
+  final String source;
+  final bool hasShortcutLink;
+  final bool hasRotationFolder;
+
+  @override
+  String get eventName => 'ios_shortcuts_guide_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'source': source,
+      'has_shortcut_link': hasShortcutLink ? 1 : 0,
+      'has_rotation_folder': hasRotationFolder ? 1 : 0,
+    };
+  }
+}
+
+class IosShortcutLinkOpenedEvent extends AnalyticsEvent {
+  const IosShortcutLinkOpenedEvent({required this.kind, required this.opened});
+
+  final String kind;
+  final bool opened;
+
+  @override
+  String get eventName => 'ios_shortcut_link_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'kind': kind, 'opened': opened ? 1 : 0};
+  }
+}
+
 class NavTabSelectedEvent extends AnalyticsEvent {
   const NavTabSelectedEvent({required this.fromTab, required this.toTab});
 

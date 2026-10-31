@@ -1,8 +1,23 @@
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
+import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/ios_shortcuts/views/pages/ios_shortcuts_guide_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/theme.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
+
+import '../../support/profile_user_fixture.dart';
+
+class _MockFoldersBloc extends MockBloc<FoldersEvent, FoldersState> implements FoldersBloc {}
 
 class _RecordingUrlLauncher extends UrlLauncherPlatform {
   _RecordingUrlLauncher({required this.opens});
@@ -20,148 +35,158 @@ class _RecordingUrlLauncher extends UrlLauncherPlatform {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-Future<void> _pump(WidgetTester tester, {Size size = const Size(800, 1800), double textScale = 1}) async {
+FolderEntity _folder(String id, String name, {int itemCount = 0}) {
+  final DateTime at = DateTime.utc(2026, 10);
+  return FolderEntity(
+    id: id,
+    ownerId: 'u1',
+    name: name,
+    createdAt: at,
+    updatedAt: at,
+    itemCount: itemCount,
+    covers: const <String>[],
+  );
+}
+
+FoldersState _foldersState({List<FolderEntity> folders = const <FolderEntity>[]}) =>
+    FoldersState(status: LoadStatus.success, userId: 'u1', folders: folders);
+
+Future<void> _pump(
+  WidgetTester tester, {
+  required FoldersState folders,
+  Size size = const Size(800, 1800),
+  double textScale = 1,
+}) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
+  final _MockFoldersBloc foldersBloc = _MockFoldersBloc();
+  when(() => foldersBloc.state).thenReturn(folders);
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      theme: kLightTheme,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
         child: child!,
       ),
-      home: const IosShortcutsGuideScreen(),
+      home: BlocProvider<FoldersBloc>.value(value: foldersBloc, child: const IosShortcutsGuideScreen()),
     ),
   );
+  // The rotation folder is read from SharedPreferences, which resolves outside the fake clock.
+  await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
 }
+
+AppLocalizations _l10n(WidgetTester tester) => tester.element(find.byType(IosShortcutsGuideScreen)).l10n;
 
 void main() {
   late UrlLauncherPlatform original;
 
-  setUp(() => original = UrlLauncherPlatform.instance);
-  tearDown(() => UrlLauncherPlatform.instance = original);
-
-  testWidgets('shows the four steps and both sources', (tester) async {
-    await _pump(tester);
-
-    expect(find.text('Change your wallpaper automatically'), findsOneWidget);
-    final List<String> steps = shortcutsGuideSteps(tester.element(find.byType(IosShortcutsGuideScreen)).l10n);
-    expect(steps, hasLength(4));
-    for (final String step in steps) {
-      expect(find.text(step), findsOneWidget);
-    }
-    expect(find.textContaining('Get Prism Wallpaper'), findsOneWidget);
-    expect(find.textContaining('Ask Before Running'), findsOneWidget);
-    expect(find.text('Wall of the Day'), findsOneWidget);
-    expect(find.text('Random favourite'), findsOneWidget);
-    expect(find.text('Open Shortcuts'), findsOneWidget);
+  setUp(() {
+    original = UrlLauncherPlatform.instance;
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    app_state.prismUser = profileUser();
   });
 
-  testWidgets('explains both setup routes and makes the old confirmation switch conditional', (tester) async {
-    await _pump(tester);
-    final l10n = tester.element(find.byType(IosShortcutsGuideScreen)).l10n;
-    expect(l10n.wallpaperShortcutsOpenAutomationSteps, contains('If there is an Automation tab'));
-    expect(l10n.wallpaperShortcutsOpenAutomationSteps, contains('New Automation'));
-    expect(l10n.wallpaperShortcutsOpenAutomationSteps, contains('Otherwise, tap Add (+), then Edit if shown'));
-    expect(l10n.wallpaperShortcutsChooseTriggerSteps, contains('Choose and configure a trigger'));
-    expect(l10n.wallpaperShortcutsDisableConfirmationSteps, contains('If "Ask Before Running" appears'));
-    expect(find.text('Turn off "Ask Before Running". Tap Done.'), findsNothing);
+  tearDown(() {
+    UrlLauncherPlatform.instance = original;
+    iosShortcutLinkOverride = null;
+    app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
-  test('every supported locale explains the routes, conditional confirmation and original prerequisite', () async {
-    const cases = <(Locale, String, String, String)>[
-      (Locale('en'), 'New Automation', 'If "Ask Before Running" appears', "Download today's original"),
-      (Locale('hi'), 'नया ऑटोमेशन', 'अगर "चलाने से पहले पूछें" दिखे', 'आज का मूल वॉलपेपर डाउनलोड'),
-      (
-        Locale('de'),
-        'Neue Automation',
-        'Falls "Vor Ausführen bestätigen" erscheint',
-        'Lade zuerst das heutige Original',
-      ),
-      (Locale('id'), 'Automasi Baru', 'Jika "Tanya Sebelum Menjalankan" muncul', 'Unduh gambar asli hari ini'),
-      (
-        Locale('es'),
-        'Nueva automatización',
-        'Si aparece "Preguntar antes de ejecutar"',
-        'Descarga primero el original de hoy',
-      ),
-      (
-        Locale('pt'),
-        'Nova automação',
-        'Se aparecer "Perguntar antes de executar"',
-        'Baixe primeiro o original de hoje',
-      ),
-      (
-        Locale('pt', 'BR'),
-        'Nova automação',
-        'Se aparecer "Perguntar antes de executar"',
-        'Baixe primeiro o original de hoje',
-      ),
-    ];
-    expect(cases.map((entry) => entry.$1).toSet(), AppLocalizations.supportedLocales.toSet());
-    for (final (locale, automation, conditional, prerequisite) in cases) {
-      final l10n = await AppLocalizations.delegate.load(locale);
-      expect(l10n.wallpaperShortcutsOpenAutomationSteps, contains(automation), reason: '$locale legacy route');
-      expect(l10n.wallpaperShortcutsOpenAutomationSteps, contains('(+)'), reason: '$locale Add route');
-      expect(l10n.wallpaperShortcutsDisableConfirmationSteps, contains(conditional), reason: '$locale confirmation');
-      expect(l10n.wallpaperShortcutsSourceWotdDescription, contains(prerequisite), reason: '$locale original');
-    }
-  });
-
-  for (final double textScale in <double>[1, 2]) {
-    testWidgets('source prerequisites can be read on a phone at text scale $textScale', (tester) async {
-      await _pump(tester, size: const Size(402, 874), textScale: textScale);
-      final l10n = tester.element(find.byType(IosShortcutsGuideScreen)).l10n;
-      expect(find.text('Open Shortcuts').hitTestable(), findsOneWidget);
-      await tester.scrollUntilVisible(
-        find.text(l10n.wallpaperShortcutsSourceWotdDescription),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.pump();
-      expect(l10n.wallpaperShortcutsSourceWotdDescription, contains("Download today's original"));
-      expect(l10n.wallpaperShortcutsSourceWotdDescription, contains('daily pick changes'));
-      expect(find.text(l10n.wallpaperShortcutsSourceWotdDescription).hitTestable(), findsOneWidget);
-      await tester.scrollUntilVisible(
-        find.text(l10n.wallpaperShortcutsSourceFavouriteDescription),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.pump();
-      expect(
-        l10n.wallpaperShortcutsSourceFavouriteDescription,
-        contains('Some protected wallpapers may not be available'),
-      );
-      expect(find.text(l10n.wallpaperShortcutsSourceFavouriteDescription).hitTestable(), findsOneWidget);
-      expect(find.text('Open Shortcuts').hitTestable(), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-  }
-
-  testWidgets('Open Shortcuts launches shortcuts://', (tester) async {
+  testWidgets('with a Remote Config link, step 1 opens that link and hides the manual steps', (tester) async {
+    iosShortcutLinkOverride = 'https://www.icloud.com/shortcuts/abc';
     final launcher = _RecordingUrlLauncher(opens: true);
     UrlLauncherPlatform.instance = launcher;
-    await _pump(tester);
+    await _pump(tester, folders: _foldersState());
+    final AppLocalizations l10n = _l10n(tester);
 
-    await tester.tap(find.text('Open Shortcuts'));
+    expect(find.text(l10n.shortcutsStepAddAction), findsOneWidget);
+    for (final String line in shortcutsManualSteps(l10n)) {
+      expect(find.text(line), findsNothing);
+    }
+
+    await tester.tap(find.text(l10n.shortcutsStepAddAction));
     await tester.pump();
 
-    expect(launcher.urls, <String>['shortcuts://']);
-    expect(find.byType(SnackBar), findsNothing);
+    expect(launcher.urls, <String>['https://www.icloud.com/shortcuts/abc']);
   });
 
-  testWidgets('Open Shortcuts shows a snackbar when it cannot open', (tester) async {
-    final launcher = _RecordingUrlLauncher(opens: false);
+  testWidgets('without a Remote Config link, step 1 lists the manual steps and opens Shortcuts', (tester) async {
+    iosShortcutLinkOverride = '';
+    final launcher = _RecordingUrlLauncher(opens: true);
     UrlLauncherPlatform.instance = launcher;
-    await _pump(tester);
+    await _pump(tester, folders: _foldersState());
+    final AppLocalizations l10n = _l10n(tester);
 
-    await tester.tap(find.text('Open Shortcuts'));
-    await tester.pump();
+    expect(find.text(l10n.shortcutsStepAddAction), findsNothing);
+    for (final String line in shortcutsManualSteps(l10n)) {
+      expect(find.text(line), findsOneWidget);
+    }
+    expect(find.text(l10n.wallpaperShortcutsOpenAction), findsOneWidget);
+
+    await tester.tap(find.text(l10n.wallpaperShortcutsOpenAction));
     await tester.pump();
 
     expect(launcher.urls, <String>['shortcuts://']);
-    expect(find.text('Could not open Shortcuts. Open the app yourself.'), findsOneWidget);
+  });
+
+  testWidgets('without a rotation folder, the card asks for one and offers no Stop', (tester) async {
+    await _pump(tester, folders: _foldersState());
+    final AppLocalizations l10n = _l10n(tester);
+
+    expect(find.text(l10n.shortcutsRotationNone), findsOneWidget);
+    expect(find.text(l10n.shortcutsRotationNoneBody), findsOneWidget);
+    expect(find.text(l10n.shortcutsRotationPick), findsOneWidget);
+    expect(find.text(l10n.shortcutsRotationStop), findsNothing);
+  });
+
+  testWidgets('with a rotation folder, the card shows it and Stop clears it', (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{'flutter.shortcuts.rotation_folder': 'f1'});
+    await _pump(tester, folders: _foldersState(folders: <FolderEntity>[_folder('f1', 'Calm', itemCount: 3)]));
+    final AppLocalizations l10n = _l10n(tester);
+
+    expect(find.text('Calm'), findsOneWidget);
+    expect(find.text(l10n.foldersItemCount(3)), findsOneWidget);
+    expect(find.text(l10n.shortcutsRotationChange), findsOneWidget);
+    expect(find.text(l10n.shortcutsRotationStop), findsOneWidget);
+
+    await tester.tap(find.text(l10n.shortcutsRotationStop));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text(l10n.shortcutsRotationNone), findsOneWidget);
+    expect(find.text(l10n.shortcutsRotationStop), findsNothing);
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('shortcuts.rotation_folder'), isNull);
+  });
+
+  testWidgets('the test step opens the run-shortcut URL for Prism Wallpaper', (tester) async {
+    final launcher = _RecordingUrlLauncher(opens: true);
+    UrlLauncherPlatform.instance = launcher;
+    await _pump(tester, folders: _foldersState());
+    final AppLocalizations l10n = _l10n(tester);
+
+    await tester.tap(find.text(l10n.shortcutsStepTestAction));
+    await tester.pump();
+
+    expect(launcher.urls, <String>[iosRunShortcutUri().toString()]);
+    expect(launcher.urls, <String>['shortcuts://run-shortcut?name=Prism%20Wallpaper']);
+  });
+
+  testWidgets('all three step titles and the automation lines show', (tester) async {
+    await _pump(tester, folders: _foldersState());
+    final AppLocalizations l10n = _l10n(tester);
+
+    expect(find.text(l10n.shortcutsStepAddTitle), findsOneWidget);
+    expect(find.text(l10n.shortcutsStepAutomationTitle), findsOneWidget);
+    expect(find.text(l10n.shortcutsStepTestTitle), findsOneWidget);
+    for (final String line in shortcutsAutomationSteps(l10n)) {
+      expect(find.text(line), findsOneWidget);
+    }
   });
 }

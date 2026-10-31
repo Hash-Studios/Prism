@@ -119,7 +119,8 @@ void main() {
     await pumpScreen(tester);
     await tester.pump();
 
-    expect(find.text('Auto-rotate is only available on Android.'), findsOneWidget);
+    expect(find.text('Change wallpapers with Shortcuts'), findsOneWidget);
+    expect(find.text('Set up Shortcuts'), findsOneWidget);
     verifyNever(() => autoRotateBloc.add(any()));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
