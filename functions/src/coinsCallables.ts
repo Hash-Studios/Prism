@@ -403,6 +403,10 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
   const sourceTag = requiredText(request.data?.sourceTag, "sourceTag");
   const reason = optionalReason(request.data?.reason, action);
   const refundTxId = action === "refund" ? requiredDocumentId(request.data?.transactionId, "transactionId") : "";
+  if (action === "refund" && request.data?.expectedUserId !== undefined &&
+    request.data.expectedUserId !== callerUid) {
+    throw new HttpsError("unauthenticated", "Refund owner is not signed in.");
+  }
   const rawRequestId = request.data?.requestId;
   if (rawRequestId != null && !isValidRequestId(rawRequestId)) {
     throw new HttpsError("invalid-argument", "requestId is invalid.");
@@ -898,6 +902,9 @@ export const spinWheel = onCall(
 
 export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableRequest<Record<string, unknown>>) => {
   const callerUid = uid(request);
+  if (request.data?.expectedUserId !== undefined && request.data.expectedUserId !== callerUid) {
+    throw new HttpsError("unauthenticated", "Spend owner is not signed in.");
+  }
   const action = requiredText(request.data?.action, "action");
   const sourceTag = requiredText(request.data?.sourceTag, "sourceTag");
   const reason = optionalReason(request.data?.reason, action);
@@ -994,6 +1001,9 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     };
     if (spendTxSnap?.exists) {
       const original = spendTxSnap.data() ?? {};
+      if (original.action !== action) {
+        throw new HttpsError("invalid-argument", "requestId was already used for a different spend.");
+      }
       if (original.status !== "completed") {
         response = {
           ...response,

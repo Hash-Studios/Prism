@@ -971,6 +971,7 @@ void main() {
       backend.onCall = (name, parameters) async {
         attempts++;
         if (attempts < 3) throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
+        if (attempts > 3) throw FirebaseFunctionsException(code: 'failed-precondition', message: 'already refunded');
         refunds.add(parameters);
         return _refunded;
       };
@@ -983,6 +984,7 @@ void main() {
       expect(attempts, 3);
       expect(txIds(refunds), <Object?>['spend_tx_legacy']);
       expect(ledger(), isEmpty);
+      expect(stored(_queueKey), isEmpty);
     });
 
     test('a refund the server refuses for good removes the entry', () async {

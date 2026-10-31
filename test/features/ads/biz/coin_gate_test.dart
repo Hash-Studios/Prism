@@ -122,6 +122,39 @@ void main() {
     expect(port.log, <String>['spend:x.spend']);
   });
 
+  test('server premium bypass with zero delta is not refunded when the action fails', () async {
+    final List<String> paid = <String>[];
+    final CoinGateResult result = await CoinGate(port).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        isMounted: () => true,
+        perform: () async {
+          performed++;
+          return false;
+        },
+        choose: (_) async => CoinGateChoice.cancel,
+        spend: (_) async => CoinMutationResult(
+          success: true,
+          changed: false,
+          bypassed: true,
+          previousBalance: port.balance,
+          currentBalance: port.balance,
+          delta: 0,
+          reason: 'premiumFilter_premium_bypass',
+        ),
+        onPaid: paid.add,
+      ),
+    );
+
+    expect(result, CoinGateResult.failedNotRefunded);
+    expect(performed, 1);
+    expect(paid, isEmpty);
+    expect(port.log, isEmpty);
+  });
+
   test('premium user pays for actions outside the config bypass set', () async {
     port.isPremium = true;
     expect(await CoinGate(port).run(spec(action: CoinSpendAction.boostWall)), isNot(CoinGateResult.performedFree));
