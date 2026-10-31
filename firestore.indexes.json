@@ -1475,6 +1475,15 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "creatorStatsDailyQueue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "state", "order": "ASCENDING"},
+        {"fieldPath": "firstEnqueuedAt", "order": "ASCENDING"},
+        {"fieldPath": "__name__", "order": "ASCENDING"}
+      ]
     }
   ],
   "fieldOverrides": [
@@ -1671,6 +1680,26 @@
       "collectionGroup": "creatorStatsCache",
       "fieldPath": "row",
       "indexes": []
-    }
+    },
+    {"collectionGroup": "creatorStatsDailyQueue", "fieldPath": "schemaVersion", "indexes": []},
+    {"collectionGroup": "creatorStatsDailyQueue", "fieldPath": "sourcePath", "indexes": []},
+    {"collectionGroup": "creatorStatsDailyQueue", "fieldPath": "incarnation", "indexes": []},
+    {"collectionGroup": "creatorStatsDailyQueue", "fieldPath": "sourceCreatedAt", "indexes": []},
+    {"collectionGroup": "creatorStatsDailyQueue", "fieldPath": "wallId", "indexes": []},
+    {"collectionGroup": "creatorStatsDailyQueue", "fieldPath": "day", "indexes": []},
+    {"collectionGroup": "creatorStatsDailyQueue", "fieldPath": "counters", "indexes": []},
+    {"collectionGroup": "creatorStatsDailyQueue", "fieldPath": "updatedAt", "indexes": []},
+    {"collectionGroup": "creatorStatsDailyQueue", "fieldPath": "failure", "indexes": []},
+    {"collectionGroup": "creatorStatsDailyCheckpoints", "fieldPath": "schemaVersion", "indexes": []},
+    {"collectionGroup": "creatorStatsDailyCheckpoints", "fieldPath": "sourcePath", "indexes": []},
+    {"collectionGroup": "creatorStatsDailyCheckpoints", "fieldPath": "incarnation", "indexes": []},
+    {"collectionGroup": "creatorStatsDailyCheckpoints", "fieldPath": "sourceCreatedAt", "indexes": []},
+    {"collectionGroup": "creatorStatsDailyCheckpoints", "fieldPath": "wallId", "indexes": []},
+    {"collectionGroup": "creatorStatsDailyCheckpoints", "fieldPath": "day", "indexes": []},
+    {"collectionGroup": "creatorStatsDailyCheckpoints", "fieldPath": "counters", "indexes": []},
+    {"collectionGroup": "creatorStatsProcessorState", "fieldPath": "schemaVersion", "indexes": []},
+    {"collectionGroup": "creatorStatsProcessorState", "fieldPath": "owner", "indexes": []},
+    {"collectionGroup": "creatorStatsProcessorState", "fieldPath": "leaseUntil", "indexes": []},
+    {"collectionGroup": "creatorStatsProcessorState", "fieldPath": "notBefore", "indexes": []}
   ]
 }

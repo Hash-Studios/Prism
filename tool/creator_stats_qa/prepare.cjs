@@ -21,7 +21,7 @@ const compile = (name, source) => {
   assert.equal((result.diagnostics ?? []).length, 0, `Transpile diagnostics: ${name}`);
   fs.writeFileSync(path.join(target, 'lib', name + '.js'), result.outputText);
 };
-for (const name of ['creatorStats', 'creatorStatsHistory', 'common', 'notificationCatalog']) {
+for (const name of ['creatorStats', 'creatorStatsHistory', 'creatorStatsDaily', 'common', 'notificationCatalog']) {
   compile(name, fs.readFileSync(path.join(root, 'functions/src', name + '.ts'), 'utf8'));
 }
 // viewStats also imports economy and asset delivery. Extract its exact normalizer and constant
@@ -41,4 +41,4 @@ fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify({name: 'prism
   }}));
 const modules = path.join(target, 'node_modules');
 if (!fs.existsSync(modules)) fs.symlinkSync(path.join(root, 'functions/node_modules'), modules, 'dir');
-console.log('Prepared five local modules from current backend source. No broad build or dependency installation.');
+console.log('Prepared six local modules from current backend source. No broad build or dependency installation.');

@@ -18,7 +18,8 @@ function connect() {
     privateKey: require('node:crypto').generateKeyPairSync('rsa', {modulusLength: 2048,
       privateKeyEncoding: {type: 'pkcs8', format: 'pem'}, publicKeyEncoding: {type: 'spki', format: 'pem'}}).privateKey})});
   return {admin, db: admin.firestore(), backend: require('./.runtime/lib/creatorStats.js'),
-    history: require('./.runtime/lib/creatorStatsHistory.js')};
+    history: require('./.runtime/lib/creatorStatsHistory.js'),
+    daily: require('./.runtime/lib/creatorStatsDaily.js')};
 }
 async function token(account) {
   const response = await fetch('http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo-prism-local-only', {

@@ -639,6 +639,8 @@ service cloud.firestore {
     match /creatorStatsFolderMarkers/{document=**} { allow read, write: if false; }
     match /creatorStatsRemixMarkers/{document=**} { allow read, write: if false; }
     match /creatorStatsWeeklyMarkers/{document=**} { allow read, write: if false; }
+    match /creatorStatsDailyQueue/{document=**} { allow read, write: if false; }
+    match /creatorStatsProcessorState/{document=**} { allow read, write: if false; }
 
     // Deny everything else by default.
     match /{document=**} {

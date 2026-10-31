@@ -10,6 +10,7 @@ if (!admin.apps.length) admin.initializeApp({projectId: 'demo-prism', credential
     privateKeyEncoding: {type: 'pkcs8', format: 'pem'}, publicKeyEncoding: {type: 'spki', format: 'pem'}}).privateKey})});
 const stats = require('./lib/creatorStats.js');
 const history = require('./lib/creatorStatsHistory.js');
+const daily = require('./lib/creatorStatsDaily.js');
 exports.getCreatorStats = stats.getCreatorStats;
-exports.onCreatorStatsDailyWritten = history.onCreatorStatsDailyWritten;
+exports.onCreatorStatsDailyWritten = daily.onCreatorStatsDailyWritten;
 exports.onCreatorStatsFolderCreated = history.onCreatorStatsFolderCreated;

@@ -1,6 +1,8 @@
 # Creator stats verification
 
-## Final gates
+## Earlier implementation evidence
+
+The records below describe the earlier per-event daily projection implementation at the named commits. The durable queue has separate local evidence below.
 
 The final code commit is `be8d33268eb294ace3cd17c48bb1d882e5f25b2a`, a merge of master `2388489f7`. Its starting and ending SHA matched, and the worktree had no tracked changes at either check. Later commits change documentation only.
 
@@ -37,19 +39,52 @@ Each fix has a test that fails without it.
 
 Astra made the read-cost decision. Sol reviewed the merge, the backend change and the device fixes. Sol added a native config preflight fix and regression tests. CodeRabbit findings were triaged. The Monday scan no longer retries a permanent capacity error. Spanish, Portuguese and Indonesian stat labels are clearer. The census locking finding stays a rollout blocker.
 
-## Read cost
+## Current read-cost model
 
 M is all global wall documents, capped at 20,000. N is the caller's approved walls, capped at 500. Counts are per transaction attempt, before retries.
 
 - Callable: cold `2 + M + 4N`, cached `2 + M + 2N`. Unchanged.
-- Daily projection: a delivery with no new counter delta now costs 2 reads, previously `M + 5`. A positive delta still costs `M + 5`.
+- Daily enqueue: a replay with no new value costs 2 reads and zero writes. A new positive candidate costs 3 reads and at most 1 write. Raising an existing queue maximum costs 3 reads and 1 write. A duplicate already represented in the queue costs 3 reads and zero writes.
+- Processor: for K items, U distinct eligible creators, H distinct histories, P accepted items and M census rows, a successful batch costs `1 + 2K + M + 2U + H` reads and `K + P + H` writes. Reads are at most `M + 5K + 1`; writes are at most `3K`. All-no-delta batches skip the census and cost `1 + 2K` reads and K deletes.
+- At M=20,000 and 10,000 positive events coalesced into 100 full batches, trigger and processor reads total about 2,080,100 before invocation overhead. The earlier 200,050,000 estimate assumed one census per positive event and is superseded.
 - Legacy folder creation without a wall document ID: `M + 7`.
-- At M=20,000, 10,000 positive daily deltas cost 200,050,000 reads before retries.
 - Each census can hold pessimistic read locks on up to 20,001 walls until commit.
+
+The lease adds two reads and two writes per invocation for acquire and release. Capacity overflow keeps the batch unchanged and sets a 15-minute cooldown. The 20,000-wall census and production event volume still need production cost and contention review. These are design estimates, not production billing measurements.
+An empty terminal processor batch adds two reads. Legacy folder projection has no durable queue and retains its separate census and capacity behavior.
 
 A safe identity index must stay complete atomically on every wall-writing path, so it is out of scope here. See `creator-stats-backend.md`.
 
+## Durable queue local evidence
+
+The queue change starts at `c13aab249f0a4a8085551cb4387c2ed0ded45557`. All commands ran in `/Users/codenameakshay/.t3/worktrees/Prism/t3-587be36f` on 2026-10-31. The existing local branch is `akshay/creator-stats-daily-queue`, not the requested `akshay/creator-stats-dashboard`. No branch switch or remote write occurred.
+
+- `cd functions && npm run build && node --test 'lib/__tests__/*.test.js'` passed. There were 2,376 tests, with 2,353 passed, 23 skipped, zero failed, and zero cancelled.
+- `npx eslint --max-warnings 0` passed for all eight changed or new TypeScript files.
+- `node tool/creator_stats_qa/validate.cjs` passed. The native and seed test command passed all three tests, with zero failures or skips. The launcher syntax check passed.
+- `JAVA_HOME=$(/usr/libexec/java_home) make rules-test` passed all 526 smoke cases. The real QA assertions also denied client access to all eight private collections.
+- Real Firebase emulator `seed.cjs` and `assert.cjs` passed. Assertions covered enqueue-only delivery, concurrent enqueues and processors, exactly-once checkpoints, deleted and recreated sources, approval and alias changes, folders, and inbox deduplication.
+- `capacity.cjs` passed in a fresh dedicated emulator session. The cold 500-wall callable used 2,502 transaction reads in one attempt. The warm callable used 1,502 reads in one attempt. Four concurrent cold calls used seven attempts.
+- At M=20,000, K=100, U=1, H=100, and P=100, the daily processor used 20,307 transaction reads and 302 writes. These counts include lease acquire and release, one full batch, and the terminal empty batch. The harness counted actual transaction operations and checked all committed histories and checkpoints. They are not production billing or latency measurements.
+- At 20,001 walls, the processor retained all 100 queue items byte-for-byte and advanced no checkpoints. After capacity returned, all 100 recovered with the daily sources deleted. QA advanced `notBefore` with an Admin write instead of waiting 15 minutes. The session ended with 20,001 walls as required.
+
+Every emulator launch required all six requested ports to be free. Only this task's emulator sessions were stopped. All six ports were free after the final run. No device or simulator was used.
+
+The worktree lacked `functions/node_modules`, so `npm ci` ran once. No dependency file or toolchain changed. Local commands used the installed Node v26.12.1, not the package's declared Node 24. npm reported 18 moderate audit findings, which remain outside this change.
+
+## Tests and TDD limits
+
+The new daily suite has 25 top-level tests and three nested boundary cases. The new lease suite has 12 tests. Together with the migrated creator-stats tests, the focused suites pass 74 tests.
+
+The tests cover queue maxima, replay costs, TTL after-images, source incarnations, calendar validation, nanosecond ordering, shared history accumulation, account gates, aliases, approval, poison isolation, atomic failure, capacity recovery, leases, ordering, budget, coverage, pruning, and exact operation counts. Fake database tests cover projections, outside-transaction operations, and commit failure injection. Index and rules contract tests cover private collections, query order, payload exemptions, and absent TTL.
+
+The requested test-first process was not complete. Many core, migrated, lease, and QA tests first ran after their behavior existed and passed immediately. Three index and rules contract tests did not run red first. The first QA validation failure was a missing-module integration failure, not a behavioral regression.
+
+Observed failing-first tests include the initial enqueue and projection slice, fake database projections, malformed-history isolation, expired lease clock checks, and acquisition budget and clock timing. Further failing-first regressions covered UTC-day observation timing, malformed queue maxima, and outside-transaction observer accounting. Nine initially green lease tests later passed 11 narrow in-memory mutation checks. Mutation sensitivity is not test-first proof. The final capacity fixture also failed before its terminal over-capacity state was restored. No claim is made that every section 6 test failed before implementation.
+
+Lease acquire and release use normal transaction retries. Only batch transactions use `maxAttempts: 1`, as specified. A real emulator race exposed lock timeouts when that restriction also covered lease transactions. Explicit modular Firestore imports fixed an emulator worker's missing namespace `Timestamp`.
+
 ## Remaining blockers
 
-- Functions deployment needs an agreed event-volume and read budget, or a follow-up that removes the census from positive-delta projection.
 - Nothing was deployed. Deploy order: rules, then indexes and TTL configuration (wait until ready), then Functions, then Cloudflare deep-link bindings, all before the store build.
+- No hosted CI, Node 24 runtime, production load, deployment, or new device proof is claimed for the queue change. Production cost and census contention remain rollout checks. There is no open product decision.

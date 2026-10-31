@@ -15,6 +15,11 @@ const env = {PATH: process.env.PATH, GCLOUD_PROJECT: 'demo-prism', GOOGLE_CLOUD_
 run(['-e', `const assert = require('node:assert/strict');
   const bundle = require('./.runtime/index.cjs');
   assert.deepEqual(Object.keys(bundle).sort(), ['getCreatorStats','onCreatorStatsDailyWritten','onCreatorStatsFolderCreated']);
+  const daily = require('./.runtime/lib/creatorStatsDaily.js');
+  assert.equal(bundle.onCreatorStatsDailyWritten, daily.onCreatorStatsDailyWritten);
+  assert.equal(typeof daily.enqueueCreatorStatsDaily, 'function');
+  assert.equal(typeof daily.processCreatorStatsDailyQueue, 'function');
+  assert.equal(Object.hasOwn(bundle, 'processCreatorStatsDailyQueue'), false);
   const normalizer = require('./.runtime/lib/viewStats.js');
   assert.equal(normalizer.normalizeId(' qa-creator '), 'QA-CREATOR');
   assert.throws(() => normalizer.normalizeId('bad/id'));
@@ -29,5 +34,5 @@ const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'firebase.json'))
 assert.equal(config.functions.length, 1);
 assert.equal(config.functions[0].source, '.runtime');
 assert.deepEqual(fs.readdirSync(path.join(__dirname, '.runtime/lib')).sort(),
-  ['common.js', 'creatorStats.js', 'creatorStatsHistory.js', 'notificationCatalog.js', 'viewStats.js']);
-console.log('PASS: script syntax, public-profile seed contract, source transpilation, exact export/module allowlist, normalizer, week boundaries, production-project rejection. No emulator or device started.');
+  ['common.js', 'creatorStats.js', 'creatorStatsDaily.js', 'creatorStatsHistory.js', 'notificationCatalog.js', 'viewStats.js']);
+console.log('PASS: script syntax, public-profile seed contract, source transpilation, exact export/module allowlist, daily API wiring, normalizer, week boundaries, production-project rejection. No emulator or device started.');

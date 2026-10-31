@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 import {createHash} from "node:crypto";
-import {onDocumentCreated, onDocumentWritten} from "firebase-functions/v2/firestore";
+import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {db, REGION, str} from "./common";
 import {HttpsError} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
@@ -68,7 +68,7 @@ export async function activeOwner(tx: admin.firestore.Transaction, uid: string):
   return user.exists && user.data()?.deleted !== true && barrier.data()?.closed !== true;
 }
 
-class IdentityCapacityError extends HttpsError {
+export class IdentityCapacityError extends HttpsError {
   constructor() {
     super("resource-exhausted", "Creator stats global identity capacity exceeded. Contact support.");
   }
@@ -105,52 +105,6 @@ export async function readWallIdentities(tx: admin.firestore.Transaction) {
 export function canonicalWall(identities: Awaited<ReturnType<typeof readWallIdentities>>, id: string) {
   return identities.get(id) ?? undefined;
 }
-
-export async function projectDailyStats(
-  path: string, now = Date.now(), eventSource?: admin.firestore.DocumentSnapshot,
-): Promise<void> {
-  await db.runTransaction(async (tx) => {
-    const current = await tx.get(db.doc(path));
-    const source = eventSource?.exists && eventSource.ref.path === path &&
-      (!current.exists || incarnation(current) !== incarnation(eventSource)) ? eventSource : current;
-    const data = source.data();
-    if (!data || typeof data.wallId !== "string" || !/^\d{8}$/.test(str(data.day))) return;
-    let id: string;
-    try {
-      id = normalizeId(data.wallId);
-    } catch {
-      return;
-    }
-    if (id !== data.wallId) return;
-    const day = str(data.day);
-    const eventMs = Date.parse(`${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6, 8)}T00:00:00Z`);
-    if (!Number.isFinite(eventMs) || eventMs > now) return;
-    const checkpointRef = db.collection("creatorStatsDailyCheckpoints").doc(hash(`${path}:${incarnation(source)}`));
-    const previous = (await tx.get(checkpointRef)).data();
-    const deltas: Partial<Record<Metric, number>> = {};
-    const next: Record<string, number> = {};
-    for (const [field, metric] of Object.entries({views: "views", favs: "saves", sets: "sets", downloads: "downloads", shares: "shares"} as const)) {
-      next[field] = Math.max(count(previous?.[field]), count(data[field]));
-      deltas[metric] = next[field] - count(previous?.[field]);
-    }
-    if (!Object.values(deltas).some((value) => value > 0)) return;
-    const wall = canonicalWall(await readWallIdentities(tx), id);
-    if (!wall || wall.data()?.review !== true || !wall.createTime || !source.createTime ||
-      !atOrAfter(source.createTime, wall.createTime) || !await activeOwner(tx, str(wall.data()?.creatorUid))) return;
-    const ref = historyRef(wall);
-    const history = await tx.get(ref);
-    tx.set(ref, addHistory(wall, history.data() as History | undefined, deltas, eventMs, now));
-    tx.set(checkpointRef, next);
-  });
-}
-export const onCreatorStatsDailyWritten = onDocumentWritten(
-  {document: "wallpaper_stats_daily/{dayId}", region: REGION, retry: true},
-  async (event) => {
-    if (!event.data?.after.exists) return;
-    const source = event.data.after;
-    await projectHistoryEvent(source.ref.path, () => projectDailyStats(source.ref.path, Date.now(), source));
-  },
-);
 
 export async function countFolderCreation(source: admin.firestore.DocumentSnapshot, now = Date.now()): Promise<void> {
   const item = source.data();

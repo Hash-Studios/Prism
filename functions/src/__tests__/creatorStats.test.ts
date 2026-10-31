@@ -3,7 +3,8 @@ import test from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 import {readCreatorStats, deliverCreatorWeek, sendCreatorWeeklyStats} from "../creatorStats";
-import {addHistory, atOrAfter, countFolderCreation, historyRef, isoWeek, MAX_IDENTITY_WALLS, onCreatorStatsDailyWritten, onCreatorStatsFolderCreated, projectDailyStats, weekWindows} from "../creatorStatsHistory";
+import {addHistory, atOrAfter, countFolderCreation, historyRef, isoWeek, MAX_IDENTITY_WALLS, onCreatorStatsFolderCreated, weekWindows} from "../creatorStatsHistory";
+import {enqueueCreatorStatsDaily, onCreatorStatsDailyWritten, processCreatorStatsDailyQueue} from "../creatorStatsDaily";
 import {syncRemixCredit} from "../wallRemix";
 import {nativeNotificationLocalization, renderNotificationCopy} from "../notificationCatalog";
 import {installFakeDb, type Doc} from "./fakeDb";
@@ -145,33 +146,6 @@ test("concurrent cold calls return complete results without shared cache mutatio
   assert.ok(results.every((result) => result.totals.views === 10 && result.walls.length === 1));
 });
 
-test("daily projection uses latest source, counts retries once, and preserves history after TTL deletion", async (t) => {
-  const path = "wallpaper_stats_daily/20261025_WALL";
-  const store = installFakeDb(t, seed({[path]: {wallId: "WALL", day: "20261025", views: 3, favs: 2}}));
-  await projectDailyStats(path, NOW);
-  await projectDailyStats(path, NOW);
-  store.set(path, {wallId: "WALL", day: "20261025", views: 5, favs: 2});
-  await projectDailyStats(path, NOW);
-  store.delete(path);
-  await projectDailyStats(path, NOW);
-  const snap = await db.doc("walls/wall").get();
-  const history = (await historyRef(snap).get()).data();
-  assert.equal(history?.weeks["2026-W43"].views, 5);
-  assert.equal(history?.weeks["2026-W43"].saves, 2);
-  assert.equal([...store.keys()].filter((p) => p.startsWith("creatorStatsDailyCheckpoints/")).length, 1);
-});
-test("daily source recreation is a new incarnation, lower snapshots cannot subtract history", async (t) => {
-  const path = "wallpaper_stats_daily/20261025_WALL";
-  const store = installFakeDb(t, seed({[path]: {wallId: "WALL", day: "20261025", views: 5}}));
-  await projectDailyStats(path, NOW);
-  store.set(path, {wallId: "WALL", day: "20261025", views: 2});
-  await projectDailyStats(path, NOW);
-  store.delete(path);
-  store.set(path, {wallId: "WALL", day: "20261025", views: 1});
-  await projectDailyStats(path, NOW);
-  const snap = await db.doc("walls/wall").get();
-  assert.equal((await historyRef(snap).get()).data()?.weeks["2026-W43"].views, 6);
-});
 test("history map prunes to nine weeks and ignores old daily sources", async (t) => {
   installFakeDb(t, seed());
   const snap = await db.doc("walls/wall").get();
@@ -181,15 +155,6 @@ test("history map prunes to nine weeks and ignores old daily sources", async (t)
   const next = addHistory(snap, history, {views: 100}, NOW, NOW + 19 * 7 * 86400000);
   assert.equal(Object.keys(next.weeks).length, 9);
   assert.equal(next.weeks["2026-W44"], undefined);
-});
-test("daily projection fails closed for shared stats ID or deleted creator", async (t) => {
-  const path = "wallpaper_stats_daily/20261025_WALL";
-  const store = installFakeDb(t, seed({[path]: {wallId: "WALL", day: "20261025", views: 5}, "walls/other": wall({creatorUid: "bob"})}));
-  await projectDailyStats(path, NOW);
-  assert.equal([...store.keys()].some((p) => p.startsWith("creatorStatsHistory/")), false);
-  store.delete("walls/other"); store.set("creatorDeletionState/alice", {closed: true});
-  await projectDailyStats(path, NOW);
-  assert.equal([...store.keys()].some((p) => p.startsWith("creatorStatsHistory/")), false);
 });
 
 async function folderSource() {
@@ -288,36 +253,6 @@ test("weekly inbox finds activity on wall 500 and dedupes concurrent deliveries"
   assert.equal([...store.keys()].filter((p) => p.startsWith("notifications/")).length, 1);
 });
 
-test("daily projection retries an aborted write without committing a checkpoint alone", async (t) => {
-  const path = "wallpaper_stats_daily/20261025_WALL";
-  const store = installFakeDb(t, seed({[path]: {wallId: "WALL", day: "20261025", views: 3}}));
-  const collection = db.collection.bind(db);
-  let fail = true;
-  t.mock.method(db, "collection", (name: string) => {
-    const result = collection(name);
-    if (name === "creatorStatsHistory") {
-      const doc = result.doc.bind(result);
-      t.mock.method(result, "doc", (id: string) => {
-        const ref = doc(id);
-        const set = ref.set.bind(ref);
-        t.mock.method(ref, "set", async (data: Doc) => {
-          if (fail) {
-            fail = false; throw new Error("injected write failure");
-          }
-          return set(data);
-        });
-        return ref;
-      });
-    }
-    return result;
-  });
-  await assert.rejects(projectDailyStats(path, NOW), /injected write failure/);
-  assert.equal([...store.keys()].some((p) => p.startsWith("creatorStatsDailyCheckpoints/")), false);
-  await projectDailyStats(path, NOW);
-  await projectDailyStats(path, NOW);
-  const snap = await db.doc("walls/wall").get();
-  assert.equal((await historyRef(snap).get()).data()?.weeks["2026-W43"].views, 3);
-});
 test("legacy numeric totals are parsed while invalid totals remain unavailable", async (t) => {
   installFakeDb(t, seed({"wallpaper_stats/WALL": {views: "17", favs: "bad", downloads: -1}}));
   const result = await readCreatorStats("alice", {}, NOW);
@@ -333,32 +268,6 @@ test("creation order compares nanoseconds without rounding to milliseconds", () 
   assert.equal(atOrAfter(newer, older), true);
 });
 
-test("a delayed daily update after TTL deletion retains its recorded after-image exactly once", async (t) => {
-  const path = "wallpaper_stats_daily/20261025_WALL";
-  const store = installFakeDb(t, seed({[path]: {wallId: "WALL", day: "20261025", views: 2}}));
-  const older = await db.doc(path).get();
-  store.set(path, {wallId: "WALL", day: "20261025", views: 7});
-  const latest = await db.doc(path).get();
-  store.delete(path);
-  await projectDailyStats(path, NOW, latest);
-  await projectDailyStats(path, NOW, older);
-  await projectDailyStats(path, NOW, latest);
-  const snap = await db.doc("walls/wall").get();
-  assert.equal((await historyRef(snap).get()).data()?.weeks["2026-W43"].views, 7);
-});
-test("daily delivery after source recreation preserves both source incarnations", async (t) => {
-  const path = "wallpaper_stats_daily/20261025_WALL";
-  const store = installFakeDb(t, seed({[path]: {wallId: "WALL", day: "20261025", views: 7}}));
-  const older = await db.doc(path).get();
-  store.delete(path);
-  store.set(path, {wallId: "WALL", day: "20261025", views: 2});
-  const latest = await db.doc(path).get();
-  await projectDailyStats(path, NOW, latest);
-  await projectDailyStats(path, NOW, older);
-  await projectDailyStats(path, NOW, older);
-  const snap = await db.doc("walls/wall").get();
-  assert.equal((await historyRef(snap).get()).data()?.weeks["2026-W43"].views, 9);
-});
 
 test("missing individual lifetime fields and remix counters stay unavailable beside genuine zero", async (t) => {
   installFakeDb(t, seed({"walls/wall": wall({remixCount: undefined}),
@@ -369,20 +278,23 @@ test("missing individual lifetime fields and remix counters stay unavailable bes
 });
 
 
-test("normalized mixed-case and whitespace aliases invalidate warm counters and block daily projection", async (t) => {
+test("normalized aliases block attribution and approval changes do not recover deleted daily work", async (t) => {
   const path = "wallpaper_stats_daily/20261025_WALL";
   const store = installFakeDb(t, seed({[path]: {wallId: "WALL", day: "20261025", views: 5}}));
+  await enqueueCreatorStatsDaily(await db.doc(path).get(), NOW);
   assert.equal((await readCreatorStats("alice", {}, NOW)).totals.views, 10);
   for (const alias of ["wall", "WaLl", " WALL ", "\twall\n"]) {
     store.set("walls/alias", wall({id: alias, creatorUid: "bob", review: false}));
     assert.equal((await readCreatorStats("alice", {}, NOW + 1)).totals.views, null);
-    await projectDailyStats(path, NOW);
+    await enqueueCreatorStatsDaily(await db.doc(path).get(), NOW);
+    await processCreatorStatsDailyQueue(NOW);
     assert.equal([...store.keys()].some((p) => p.startsWith("creatorStatsHistory/")), false);
+    assert.equal([...store.keys()].some((p) => p.startsWith("creatorStatsDailyQueue/")), false);
+    assert.equal([...store.keys()].some((p) => p.startsWith("creatorStatsDailyCheckpoints/")), false);
   }
   store.delete("walls/alias");
-  await projectDailyStats(path, NOW);
-  const snap = await db.doc("walls/wall").get();
-  assert.equal((await historyRef(snap).get()).data()?.weeks["2026-W43"].views, 5);
+  await processCreatorStatsDailyQueue(NOW + 1);
+  assert.equal([...store.keys()].some((p) => p.startsWith("creatorStatsHistory/")), false);
 });
 
 test("500 caller walls share one census with foreign aliases and warm invalidation", async (t) => {
@@ -403,13 +315,26 @@ test("500 caller walls share one census with foreign aliases and warm invalidati
   assert.equal(observed.reads, 1504);
 });
 
-test("global census capacity is explicit on warm reads and shared daily projection", async (t) => {
+test("global census capacity stops daily processing without losing queued work", async (t) => {
   const path = "wallpaper_stats_daily/20261025_WALL";
   const store = installFakeDb(t, seed({[path]: {wallId: "WALL", day: "20261025", views: 5}}));
   await readCreatorStats("alice", {}, NOW);
+  await enqueueCreatorStatsDaily(await db.doc(path).get(), NOW);
+  await enqueueCreatorStatsDaily(await db.doc(path).get(), NOW);
   for (let i = 0; i < MAX_IDENTITY_WALLS; i++) store.set(`walls/foreign${i}`, wall({id: `X${i}`, creatorUid: "bob"}));
   await assert.rejects(readCreatorStats("alice", {}, NOW + 1), fails("resource-exhausted"));
-  await assert.rejects(projectDailyStats(path, NOW), fails("resource-exhausted"));
+  let capacityClock = NOW;
+  await processCreatorStatsDailyQueue(NOW, () => capacityClock);
+  assert.equal([...store.keys()].filter((key) => key.startsWith("creatorStatsDailyQueue/")).length, 1);
+  const notBefore = (store.get("creatorStatsProcessorState/daily")?.notBefore as admin.firestore.Timestamp).toMillis();
+  assert.equal(notBefore, NOW + 900_000);
+  for (const path of [...store.keys()]) if (path.startsWith("walls/foreign")) store.delete(path);
+  await processCreatorStatsDailyQueue(NOW + 1, () => capacityClock + 1);
+  assert.equal([...store.keys()].filter((key) => key.startsWith("creatorStatsDailyQueue/")).length, 1);
+  capacityClock = notBefore + 1;
+  await processCreatorStatsDailyQueue(capacityClock, () => capacityClock);
+  assert.equal([...store.keys()].some((key) => key.startsWith("creatorStatsDailyQueue/")), false);
+  assert.equal([...store.keys()].some((key) => key.startsWith("creatorStatsDailyCheckpoints/")), true);
 });
 
 test("rollout weeks preserve recorded partial values and never invent pre-coverage zeroes", async (t) => {
@@ -435,17 +360,14 @@ test("a uniquely identified lowercase wall uses normalized lifetime and explicit
 });
 
 
-test("trigger boundaries acknowledge permanent census overflow without checkpoints", async (t) => {
+test("daily trigger only enqueues work and does not run the census", async (t) => {
   const path = "wallpaper_stats_daily/20261025_WALL";
-  const store = installFakeDb(t, seed({[path]: {wallId: "WALL", day: "20261025", views: 5},
-    "folders/f": {ownerId: "bob"}, "folders/f/items/item": {...item, wallpaperDocumentId: undefined}}));
+  const store = installFakeDb(t, seed({[path]: {wallId: "WALL", day: "20261025", views: 5}}));
   for (let i = 0; i < MAX_IDENTITY_WALLS; i++) store.set(`walls/foreign${i}`, wall({id: `X${i}`, creatorUid: "bob"}));
   const daily = await db.doc(path).get();
   await onCreatorStatsDailyWritten.run({data: {after: daily}} as Parameters<typeof onCreatorStatsDailyWritten.run>[0]);
-  await onCreatorStatsFolderCreated.run({data: await folderSource()} as Parameters<typeof onCreatorStatsFolderCreated.run>[0]);
-  for (const prefix of ["creatorStatsHistory/", "creatorStatsDailyCheckpoints/", "creatorStatsFolderMarkers/"]) {
-    assert.equal([...store.keys()].some((key) => key.startsWith(prefix)), false);
-  }
+  assert.equal([...store.keys()].filter((key) => key.startsWith("creatorStatsDailyQueue/")).length, 1);
+  assert.equal([...store.keys()].some((key) => key.startsWith("creatorStatsHistory/")), false);
 });
 
 test("trigger boundaries propagate transient failures for retry", async (t) => {
@@ -460,32 +382,27 @@ test("trigger boundaries propagate transient failures for retry", async (t) => {
   await assert.rejects(onCreatorStatsDailyWritten.run({data: {after: daily}} as Parameters<typeof onCreatorStatsDailyWritten.run>[0]), /temporary outage/);
   await assert.rejects(onCreatorStatsFolderCreated.run({data: folder} as Parameters<typeof onCreatorStatsFolderCreated.run>[0]), /temporary outage/);
 });
-test("daily replay without a new counter delta reads only the source and checkpoint", async (t) => {
+test("daily checkpoint replay reads source and checkpoint only, without rewriting the queue", async (t) => {
   const path = "wallpaper_stats_daily/20261025_WALL";
   const observed = {reads: 0, writes: 0};
   const store = installFakeDb(t, seed({[path]: {wallId: "WALL", day: "20261025", views: 5, favs: 2}}), observed);
-  await projectDailyStats(path, NOW);
-  const snap = await db.doc("walls/wall").get();
-  const before = (await historyRef(snap).get()).data();
+  const source = await db.doc(path).get();
+  await enqueueCreatorStatsDaily(source, NOW);
+  await processCreatorStatsDailyQueue(NOW);
+  const before = [...store.entries()];
   observed.reads = 0; observed.writes = 0;
-  await projectDailyStats(path, NOW);
+  await enqueueCreatorStatsDaily(source, NOW);
   assert.deepEqual(observed, {reads: 2, writes: 0});
-  store.set(path, {wallId: "WALL", day: "20261025", views: 3, favs: 1});
-  observed.reads = 0;
-  await projectDailyStats(path, NOW);
-  assert.deepEqual(observed, {reads: 2, writes: 0});
-  assert.deepEqual((await historyRef(snap).get()).data(), before);
+  assert.deepEqual([...store.entries()], before);
 });
-test("daily projection skips unapproved walls without a checkpoint, then counts once after approval", async (t) => {
+test("enqueue remains independent of approval and processor drops ineligible work", async (t) => {
   const path = "wallpaper_stats_daily/20261025_WALL";
   const store = installFakeDb(t, seed({"walls/wall": wall({review: false}), [path]: {wallId: "WALL", day: "20261025", views: 5}}));
-  await projectDailyStats(path, NOW);
-  assert.equal([...store.keys()].some((p) => p.startsWith("creatorStatsHistory/") || p.startsWith("creatorStatsDailyCheckpoints/")), false);
-  store.set("walls/wall", wall());
-  await projectDailyStats(path, NOW);
-  await projectDailyStats(path, NOW);
-  const snap = await db.doc("walls/wall").get();
-  assert.equal((await historyRef(snap).get()).data()?.weeks["2026-W43"].views, 5);
+  await enqueueCreatorStatsDaily(await db.doc(path).get(), NOW);
+  assert.equal([...store.keys()].some((p) => p.startsWith("creatorStatsHistory/")), false);
+  await processCreatorStatsDailyQueue(NOW);
+  assert.equal([...store.keys()].some((p) => p.startsWith("creatorStatsDailyCheckpoints/")), false);
+  assert.equal([...store.keys()].some((p) => p.startsWith("creatorStatsDailyQueue/")), false);
 });
 test("Monday job skips a creator over wall capacity without failing the scheduled run", async (t) => {
   const docs: Record<string, Doc> = {};
