@@ -12,7 +12,12 @@ export async function sanitizeSubmissionText(expected: admin.firestore.DocumentS
   for (const [key, max] of [["title", 60], ["desc", 500]] as const) {
     if (!(key in original)) continue;
     try {
-      boundedText(original[key], max);
+      const value = original[key];
+      if (typeof value === "string" && /[\r\n]/.test(value)) {
+        patch[key] = boundedText(value.replace(/\r\n|\r|\n/g, " "), max);
+      } else {
+        boundedText(value, max);
+      }
     } catch {
       patch[key] = "";
     }

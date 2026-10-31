@@ -176,6 +176,9 @@ void main() {
           ),
         );
         await tester.showKeyboard(find.widgetWithText(TextField, field));
+        if (field == 'Title' && action == 'Save') {
+          await tester.enterText(find.widgetWithText(TextField, field), 'Edited title');
+        }
         expect(tester.testTextInput.isVisible, isTrue);
         expect(
           tester.widgetList<EditableText>(find.byType(EditableText)).any((text) => text.focusNode.hasFocus),
@@ -192,7 +195,7 @@ void main() {
         expect(tester.testTextInput.isVisible, isFalse);
         if (action == 'Save') {
           final route = verify(() => router.push(captureAny())).captured.single as UploadWallRoute;
-          expect(route.args!.resubmission!.metadata.title, 'Dunes');
+          expect(route.args!.resubmission!.metadata.title, field == 'Title' ? 'Edited title' : 'Dunes');
         } else {
           expect(picker.calls, 1);
           picker.finish([]);

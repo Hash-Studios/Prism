@@ -12,11 +12,50 @@ import {getWallResubmissionContext, rejectWallForReview, sanitizeResubmitOf, sub
 import {sanitizeSubmissionText} from "../wallSubmissionSafety";
 import {onWallSearchTerms, wallSearchTermsFor} from "../wallSearchTerms";
 import {bindOwnedWall, cleanupDeletedOwnedWall, getOwnedWallDelivery} from "../ownedAssetDelivery";
+import {installFakeDb} from "./fakeDb";
 
 const enabled = !!process.env.FIRESTORE_EMULATOR_HOST;
 const gate = {skip: !enabled, timeout: 120000};
 const metadata = {title: "Quiet forest", desc: "Blue light", tags: ["nature"]};
 const hashBlob = (bytes: Buffer) => createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+
+for (const [field, max] of [["title", 60], ["desc", 500]] as const) {
+  test(`submission safety flattens and normalizes legacy ${field} line breaks`, async (t) => {
+    const store = installFakeDb(t);
+    const ref = db.doc("walls/legacy");
+    for (const value of ["Quiet\r\nforest", "Quiet\rforest", "Quiet\nforest", " \nQuiet  \r\n forest\r "]) {
+      await ref.set({[field]: value});
+      assert.equal(await sanitizeSubmissionText(await ref.get()), true);
+      assert.deepEqual(store.get(ref.path), {[field]: "Quiet forest", searchTerms: ["quiet", "forest"]});
+    }
+  });
+
+  test(`submission safety clears ${field} when flattened text still fails validation`, async (t) => {
+    const store = installFakeDb(t);
+    const ref = db.doc("walls/unsafe");
+    for (const value of ["Quiet\nforest\u0000", "Quiet\nforest\t", "Quiet\nforest\u202e", "Quiet\np0rn",
+      `\n${"a".repeat(max + 1)}`]) {
+      await ref.set({[field]: value});
+      assert.equal(await sanitizeSubmissionText(await ref.get()), true);
+      assert.deepEqual(store.get(ref.path), {[field]: "", searchTerms: []});
+    }
+  });
+
+  test(`submission safety leaves ${field} behavior unchanged without line breaks`, async (t) => {
+    const store = installFakeDb(t);
+    const ref = db.doc("walls/single-line");
+    for (const value of ["Quiet forest", "  Quiet   forest  ", "", "a".repeat(max)]) {
+      await ref.set({[field]: value, searchTerms: ["unchanged"]});
+      assert.equal(await sanitizeSubmissionText(await ref.get()), false);
+      assert.deepEqual(store.get(ref.path), {[field]: value, searchTerms: ["unchanged"]});
+    }
+    for (const value of ["Quiet\u0000", "Quiet\tforest", "Quiet\u202e", "p0rn", "a".repeat(max + 1), null, 42]) {
+      await ref.set({[field]: value});
+      assert.equal(await sanitizeSubmissionText(await ref.get()), true);
+      assert.deepEqual(store.get(ref.path), {[field]: "", searchTerms: []});
+    }
+  });
+}
 
 async function fixture(t: TestContext, kind: "github" | "owned" = "github") {
   assert.equal(admin.app().options.projectId ?? process.env.GCLOUD_PROJECT, "demo-prism");
