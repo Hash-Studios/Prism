@@ -21,6 +21,7 @@ class SubmitResubmission {
     required SubmissionMetadata metadata,
     required String resolution,
     required String size,
+    void Function(CoinMutationResult result, String ownerUid)? onUploadAward,
   }) async {
     if (!app_state.prismUser.loggedIn || app_state.prismUser.id != ownerUid) {
       throw StateError('The upload owner changed.');
@@ -44,7 +45,14 @@ class SubmitResubmission {
           await app_state.persistPrismUser();
         }
         if (app_state.prismUser.id == ownerUid && app_state.prismUser.loggedIn) {
-          await CoinsService.instance.maybeAwardFirstWallpaperUpload();
+          final result = await CoinsService.instance.maybeAwardFirstWallpaperUpload();
+          if (app_state.prismUser.id == ownerUid &&
+              app_state.prismUser.loggedIn &&
+              result.success &&
+              result.changed &&
+              result.delta > 0) {
+            onUploadAward?.call(result, ownerUid);
+          }
         }
       } catch (error, stackTrace) {
         logger.w('Resubmission completed but local success hooks failed', error: error, stackTrace: stackTrace);

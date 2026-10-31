@@ -9,6 +9,8 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
+import 'package:Prism/features/wallpaper_upload/biz/upload_session.dart';
+import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/review_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -19,6 +21,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
+import '../../support/wait_for_real_io.dart';
 
 class _UploadFirestore extends CoinsTestFirestore {
   final List<Map<String, dynamic>> walls = <Map<String, dynamic>>[];
@@ -44,15 +47,35 @@ class _RecordingDefaultsStore extends LastSubmissionDefaultsStore {
   Future<void> save(String owner, SubmissionMetadata metadata) async => owners.add(owner);
 }
 
+class _DraftStore extends UploadDraftStore {
+  @override
+  Future<UploadDraft?> read({required String owner, required String draftId}) async => null;
+
+  @override
+  Future<UploadDraft> save({
+    required String owner,
+    required String draftId,
+    required File selectedFile,
+    required SubmissionMetadata metadata,
+    UploadSession? session,
+  }) async => UploadDraft(owner: owner, draftId: draftId, file: selectedFile, metadata: metadata, session: session);
+
+  @override
+  Future<void> discard({required String owner, required String draftId}) async {}
+}
+
 class _BatchAwardRouter extends AppRouter {
-  _BatchAwardRouter(this.batch);
+  _BatchAwardRouter(this.batch, {this.resubmission});
 
   final UploadBatch batch;
+  final ResubmissionSeed? resubmission;
   final defaults = _RecordingDefaultsStore();
 
   UploadWallRoute upload() => UploadWallRoute(
     image: batch.current,
     batch: batch,
+    resubmission: resubmission,
+    draftStoreForTesting: resubmission == null ? null : _DraftStore(),
     defaultsStoreForTesting: defaults,
     prepareImageForTesting: () async {},
     uploadFileForTesting: ({required isThumbnail}) async => GitHubContent(
@@ -103,6 +126,109 @@ void main() {
     await getIt.reset();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
   });
+
+  for (final resubmitting in [false, true]) {
+    testWidgets('${resubmitting ? 'resubmission' : 'upload'} returns a confirmed receipt to Review already in stack', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+        disableAnimations: true,
+      );
+      addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+      AnalyticsRuntime.instance = FakeAppAnalytics();
+      DailyMomentConfig.enabledOverride = true;
+      final backend = CoinsTestBackend();
+      await backend.install();
+      app_state.prismUser.premium = true;
+      final owner = app_state.prismUser.id;
+      getIt.registerSingleton<FirestoreClient>(_UploadFirestore());
+      var awardCalls = 0;
+      var resubmissionCalls = 0;
+      backend.onCall = (name, params) async {
+        if (name == 'reconcileRankRewards') return <String, Object?>{'success': true};
+        if (name == 'submitWallResubmission') {
+          resubmissionCalls++;
+          return <String, Object?>{'wallDocId': 'admitted', 'logicalId': 'logical', 'attempt': 1};
+        }
+        expect(name, 'awardCoins');
+        expect(params['action'], 'firstWallpaperUpload');
+        awardCalls++;
+        return <String, Object?>{
+          'success': true,
+          'changed': true,
+          'delta': 37,
+          'previousBalance': 100,
+          'currentBalance': 137,
+        };
+      };
+      var image = File('first.png');
+      if (resubmitting) {
+        final directory = (await tester.runAsync(() => Directory.systemTemp.createTemp('prism-receipt-')))!;
+        addTearDown(() => tester.runAsync(() => directory.delete(recursive: true)));
+        image = File('${directory.path}/original.png');
+        await tester.runAsync(() => image.writeAsBytes([1, 2, 3]));
+      }
+      final router = _BatchAwardRouter(
+        UploadBatch(<File>[image]),
+        resubmission: resubmitting
+            ? const ResubmissionSeed(rejectedDocId: 'rejected', metadata: SubmissionMetadata(), previousReason: '')
+            : null,
+      );
+      await tester.pumpWidget(
+        MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router.config(),
+        ),
+      );
+      await router.navigatePath('/');
+      await tester.pumpAndSettle();
+      router.push(ReviewRoute());
+      await tester.pumpAndSettle();
+      expect(find.text('+37 coins'), findsNothing);
+      if (resubmitting) {
+        Navigator.of(
+          tester.element(find.byType(ReviewScreen)),
+        ).push<void>(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Stale resubmit form'))));
+        await tester.pumpAndSettle();
+        expect(find.text('Stale resubmit form'), findsOneWidget);
+      }
+      router.push(router.upload());
+      if (resubmitting) {
+        await waitForRealIo(
+          tester,
+          () => find.text('Ready to submit').evaluate().isNotEmpty,
+          reason: 'prepare resubmission receipt',
+        );
+      }
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Upload'));
+      await tester.pumpAndSettle();
+
+      expect(awardCalls, 1);
+      expect(resubmissionCalls, resubmitting ? 1 : 0);
+      expect(find.text('+37 coins'), findsOneWidget);
+      expect(router.stackData.map((route) => route.name), ['BatchHost', ReviewRoute.name]);
+      expect(tester.widget<ReviewScreen>(find.byType(ReviewScreen)).earnedCoinsOwnerId, owner);
+      app_state.prismUser.id = 'another-account';
+      tester.element(find.byType(ReviewScreen)).markNeedsBuild();
+      await tester.pump();
+      expect(find.text('+37 coins'), findsNothing);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text('Open uploader'), findsOneWidget);
+      expect(find.text('Stale resubmit form'), findsNothing);
+      expect(find.byType(UploadWallScreen), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 5));
+    });
+  }
 
   for (final scenario in <String>['submit', 'skip', 'switch account', 'no confirmed award']) {
     testWidgets('batch preserves only the confirmed first-upload receipt on $scenario', (tester) async {

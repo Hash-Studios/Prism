@@ -702,6 +702,11 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       metadata: _metadata,
       resolution: wallpaperResolution ?? '',
       size: wallpaperSize ?? '',
+      onUploadAward: (result, ownerUid) {
+        _uploadAwardCoins = result.delta;
+        _uploadAwardOwner = ownerUid;
+        widget.batch?.confirmedUploadAward = (coins: result.delta, ownerId: ownerUid);
+      },
     );
     return WallSubmissionResult.submitted;
   }
@@ -720,6 +725,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       showGlintToast(context);
       if (router.stackData.any((route) => route.name == ReviewRoute.name)) {
         router.popUntilRouteWithName(ReviewRoute.name);
+        if (_uploadAwardCoins > 0 && _uploadAwardOwner != null) {
+          unawaited(router.replace(ReviewRoute(earnedCoins: _uploadAwardCoins, earnedCoinsOwnerId: _uploadAwardOwner)));
+        }
       } else {
         Navigator.pop(context);
         unawaited(router.push(ReviewRoute(earnedCoins: _uploadAwardCoins, earnedCoinsOwnerId: _uploadAwardOwner)));

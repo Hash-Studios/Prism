@@ -1,3 +1,4 @@
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -11,6 +12,7 @@ import 'package:Prism/features/wallpaper_upload/domain/usecases/submit_resubmiss
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../support/coins_test_backend.dart';
 import '../../support/in_memory_local_store.dart';
 
 class _Store extends InMemoryLocalStore {
@@ -47,9 +49,14 @@ class _Repository extends ResubmissionRepository {
   }
 }
 
-Future<void> _submit(_Repository repository, {String operation = 'operation'}) => SubmitResubmission(repository)
+Future<void> _submit(
+  _Repository repository, {
+  String operation = 'operation',
+  String ownerUid = 'owner',
+  void Function(CoinMutationResult result, String ownerUid)? onUploadAward,
+}) => SubmitResubmission(repository)
     .call(
-      ownerUid: 'owner',
+      ownerUid: ownerUid,
       operationId: operation,
       rejectedDocId: 'rejected',
       original: const GitHubContent(downloadUrl: '', path: 'original', sha: 'sha'),
@@ -57,6 +64,7 @@ Future<void> _submit(_Repository repository, {String operation = 'operation'}) =
       metadata: const SubmissionMetadata(),
       resolution: '1080x1920',
       size: '1MB',
+      onUploadAward: onUploadAward,
     )
     .then((_) {});
 
@@ -75,6 +83,52 @@ void main() {
     app_state.prismUser = constants.createGuestPrismUser();
     await getIt.reset();
   });
+
+  for (final scenario in [
+    'confirmed',
+    'failed',
+    'unchanged',
+    'zero delta',
+    'negative delta',
+    'account changed',
+    'signed out',
+  ]) {
+    test('resubmission reports only a confirmed owner-bound award: $scenario', () async {
+      final backend = CoinsTestBackend();
+      await backend.install();
+      addTearDown(() => backend.onCall = (_, _) async => <String, Object?>{'success': false, 'changed': false});
+      final owner = app_state.prismUser.id;
+      var awardCalls = 0;
+      backend.onCall = (name, params) async {
+        if (name == 'reconcileRankRewards') return <String, Object?>{'success': true};
+        expect(name, 'awardCoins');
+        expect(params['action'], 'firstWallpaperUpload');
+        awardCalls++;
+        if (scenario == 'account changed') app_state.prismUser.id = 'another-owner';
+        if (scenario == 'signed out') app_state.prismUser.loggedIn = false;
+        return <String, Object?>{
+          'success': scenario != 'failed',
+          'changed': scenario != 'unchanged',
+          'delta': scenario == 'zero delta'
+              ? 0
+              : scenario == 'negative delta'
+              ? -37
+              : 37,
+          'previousBalance': 100,
+          'currentBalance': 137,
+        };
+      };
+      final receipts = <({int coins, String ownerId})>[];
+      await _submit(
+        _Repository(),
+        ownerUid: owner,
+        onUploadAward: (result, ownerUid) => receipts.add((coins: result.delta, ownerId: ownerUid)),
+      );
+
+      expect(awardCalls, 1);
+      expect(receipts, scenario == 'confirmed' ? [(coins: 37, ownerId: owner)] : isEmpty);
+    });
+  }
 
   test('successful admission replay after restart charges local quota once', () async {
     await _submit(_Repository());
