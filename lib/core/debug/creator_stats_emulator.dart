@@ -43,10 +43,11 @@ class CreatorStatsEmulator {
     final app = await Firebase.initializeApp(options: options(defaultTargetPlatform));
     if (app.options.projectId != 'demo-prism') throw StateError('Refusing a non-demo Firebase app.');
     const host = Env.creatorStatsEmulatorHost;
-    await FirebaseAuth.instance.useAuthEmulator(host, 9099);
+    // Use the host exactly as configured. Android QA reaches the Mac through adb reverse on 127.0.0.1.
+    await FirebaseAuth.instance.useAuthEmulator(host, 9099, automaticHostMapping: false);
     _firebaseModule.firebaseFirestore.settings = const firestore_sdk.Settings(persistenceEnabled: false);
-    _firebaseModule.firebaseFirestore.useFirestoreEmulator(host, 8080);
-    appFunctions.useFunctionsEmulator(host, 5001);
+    _firebaseModule.firebaseFirestore.useFirestoreEmulator(host, 8080, automaticHostMapping: false);
+    appFunctions.useFunctionsEmulator(host, 5001, automaticHostMapping: false);
   }
 
   /// Must equal the native demo config written by `tool/creator_stats_qa/native.cjs`.
