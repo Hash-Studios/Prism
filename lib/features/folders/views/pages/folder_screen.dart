@@ -22,6 +22,8 @@ import 'package:Prism/features/folders/domain/repositories/public_folders_reposi
 import 'package:Prism/features/folders/views/folders_access.dart';
 import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/features/folders/views/widgets/public_folder_view.dart';
+import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
+import 'package:Prism/features/ios_shortcuts/data/shortcuts_folders_store.dart';
 import 'package:Prism/features/library/views/widgets/offline_chip.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -31,7 +33,7 @@ import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatf
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-enum _FolderMenuAction { rotate, visibility, rename, delete }
+enum _FolderMenuAction { rotate, rotateDaily, visibility, rename, delete }
 
 /// One folder. The owner sees and edits their folder. Anyone else sees its public projection, read-only, or a calm
 /// "private or no longer exists" state.
@@ -48,11 +50,18 @@ class FolderScreen extends StatefulWidget {
 class _FolderScreenState extends State<FolderScreen> {
   bool _tracked = false;
   String? _loadingKey;
+  bool _iosShortcuts = false;
 
   @override
   void initState() {
     super.initState();
     unawaited(_load());
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) unawaited(_loadIosShortcutsSupport());
+  }
+
+  Future<void> _loadIosShortcutsSupport() async {
+    final bool supported = await iosSupportsShortcuts();
+    if (mounted && supported) setState(() => _iosShortcuts = true);
   }
 
   @override
@@ -187,6 +196,16 @@ class _FolderScreenState extends State<FolderScreen> {
       case _FolderMenuAction.rotate:
         unawaited(analytics.track(AutoRotateFolderTappedEvent(itemCountBucket: folderCountBucket(folder.itemCount))));
         unawaited(context.router.push(AutoRotateRoute(folderId: folder.id, folderName: folder.name)));
+      case _FolderMenuAction.rotateDaily:
+        if (app_state.prismUser.id != folder.ownerId || bloc.state.userId != folder.ownerId) return;
+        final StackRouter router = context.router;
+        await ShortcutsFoldersStore.setRotationFolder(folder.id);
+        unawaited(
+          analytics.track(
+            IosRotationFolderSetEvent(source: 'folder_menu', itemCountBucket: folderCountBucket(folder.itemCount)),
+          ),
+        );
+        unawaited(router.push(IosShortcutsGuideRoute(source: 'folder_menu')));
       case _FolderMenuAction.visibility:
         await _setPublic(folder, isPublic: !folder.isPublic);
       case _FolderMenuAction.rename:
@@ -371,6 +390,11 @@ class _FolderScreenState extends State<FolderScreen> {
                     PopupMenuItem<_FolderMenuAction>(
                       value: _FolderMenuAction.rotate,
                       child: Text(context.l10n.foldersRotateThisFolder),
+                    ),
+                  if (_iosShortcuts)
+                    PopupMenuItem<_FolderMenuAction>(
+                      value: _FolderMenuAction.rotateDaily,
+                      child: Text(context.l10n.foldersRotateDaily),
                     ),
                   PopupMenuItem<_FolderMenuAction>(
                     value: _FolderMenuAction.visibility,

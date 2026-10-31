@@ -7858,9 +7858,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperApplyTo => 'यहाँ लागू करें';
 
   @override
-  String get wallpaperAutoRotateAndroidOnly => 'ऑटो-रोटेशन केवल Android पर उपलब्ध है।';
-
-  @override
   String get wallpaperAutoRotateApplyTo => 'यहाँ लागू करें';
 
   @override
@@ -9485,33 +9482,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperShareLink => 'लिंक शेयर करें';
 
   @override
-  String get wallpaperShortcutsAddActionsSteps =>
-      '\"Prism वॉलपेपर पाएँ\" ऐक्शन जोड़ें। फिर \"वॉलपेपर सेट करें\" ऐक्शन जोड़ें।';
-
-  @override
-  String get wallpaperShortcutsBody =>
-      'Shortcuts से किसी समय या ट्रिगर पर वॉलपेपर लगाएँ। चलाने से पहले नीचे दिया स्रोत तैयार करें।';
-
-  @override
   String get wallpaperShortcutsChoosePrismData => 'चुनें कि Prism क्या भेजे';
 
   @override
-  String get wallpaperShortcutsChooseTriggerSteps =>
-      'शॉर्टकट संपादक में ज़रूरत हो तो ऑटोमेशन खोलें। ट्रिगर चुनकर सेट करें, जैसे दिन का समय, ऐप खोलना या चार्जर लगाना।';
-
-  @override
-  String get wallpaperShortcutsDisableConfirmationSteps =>
-      'दिखाए गए चलाने के विकल्प जाँचें और शॉर्टकट या ऑटोमेशन सहेजें। अगर \"चलाने से पहले पूछें\" दिखे, अपने-आप चलाने के लिए उसे बंद करें।';
-
-  @override
-  String get wallpaperShortcutsHeadline => 'अपना वॉलपेपर अपने-आप बदलें';
-
-  @override
   String get wallpaperShortcutsOpenAction => 'Shortcuts खोलें';
-
-  @override
-  String get wallpaperShortcutsOpenAutomationSteps =>
-      'Shortcuts खोलें। अगर ऑटोमेशन टैब है, उस पर और फिर नया ऑटोमेशन पर टैप करें। वरना जोड़ें (+) पर और संपादित करें दिखे तो उस पर टैप करें।';
 
   @override
   String get wallpaperShortcutsOpenError => 'Shortcuts नहीं खुल सका। ऐप खुद खोलें।';
@@ -9520,18 +9494,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperShortcutsSourceFavourite => 'रैंडम पसंदीदा';
 
   @override
-  String get wallpaperShortcutsSourceFavouriteDescription =>
-      'Shortcuts के लिए उपलब्ध कोई रैंडम पसंदीदा। पहले Prism में वॉलपेपर पसंद करें। कुछ संरक्षित वॉलपेपर उपलब्ध नहीं हो सकते। कोई दूसरा पसंदीदा उपलब्ध होने पर पिछला चयन दोहराया नहीं जाता।';
-
-  @override
   String get wallpaperShortcutsSourceWotd => 'आज का वॉलपेपर';
 
   @override
   String get wallpaperShortcutsSourceWotdDescription =>
       'आज का Prism चयन। पहले Prism में आज का मूल वॉलपेपर डाउनलोड करें। दिन का चयन बदलने पर इस स्रोत को चलाने से पहले नया मूल वॉलपेपर डाउनलोड करें।';
-
-  @override
-  String get wallpaperShortcutsSteps => 'कदम';
 
   @override
   String get wallpaperShortcutsTitle => 'अपने-आप बदलें';
@@ -11911,4 +11878,118 @@ class AppLocalizationsHi extends AppLocalizations {
   String statsChartSummary(String metric, String summary) {
     return '$metric, आठ हफ़्ते। $summary';
   }
+
+  @override
+  String get shortcutsGuideHeadline => 'हर दिन एक नया वॉलपेपर';
+
+  @override
+  String get shortcutsGuideBody =>
+      'Shortcuts को एक बार सेट करें। हर दिन यह आपके रोटेशन फ़ोल्डर से एक वॉलपेपर लगाता है, और कोई भी वॉलपेपर दोबारा आने से पहले हर वॉल एक बार ज़रूर दिखता है।';
+
+  @override
+  String get shortcutsSourceRotation => 'रोटेशन फ़ोल्डर';
+
+  @override
+  String get shortcutsSourceRotationDescription => 'ऊपर चुना गया फ़ोल्डर शफ़ल करता है।';
+
+  @override
+  String get shortcutsSourceFolder => 'फ़ोल्डर';
+
+  @override
+  String get shortcutsSourceFolderDescription => 'Shortcuts में चुना गया एक फ़ोल्डर शफ़ल करता है।';
+
+  @override
+  String get shortcutsSourceFavouriteDescription =>
+      'आपके पसंदीदा शफ़ल करता है। हर एक वॉलपेपर एक बार दिखता है, उसके बाद ही कोई दोहराया जाता है। कुछ सुरक्षित वॉलपेपर उपलब्ध न हों।';
+
+  @override
+  String get shortcutsRotationNone => 'कोई फ़ोल्डर नहीं चुना गया';
+
+  @override
+  String get shortcutsRotationNoneBody => 'वह फ़ोल्डर चुनें जिसे शॉर्टकट शफ़ल करता है।';
+
+  @override
+  String get shortcutsRotationPick => 'फ़ोल्डर चुनें';
+
+  @override
+  String get shortcutsRotationChange => 'बदलें';
+
+  @override
+  String get shortcutsRotationStop => 'रोकें';
+
+  @override
+  String shortcutsStepLabel(int number, String title) {
+    return 'चरण $number, $title';
+  }
+
+  @override
+  String get shortcutsStepAddTitle => 'Prism शॉर्टकट जोड़ें';
+
+  @override
+  String get shortcutsStepAddBody => 'यह आपके रोटेशन फ़ोल्डर से एक वॉल लेता है और उसे आपका वॉलपेपर सेट करता है।';
+
+  @override
+  String get shortcutsStepAddAction => 'शॉर्टकट जोड़ें';
+
+  @override
+  String get shortcutsStepAddManualBody => 'इसे Shortcuts में 2 क्रियाओं के साथ बनाएँ।';
+
+  @override
+  String get shortcutsManualNew => 'Shortcuts में + दबाकर नया शॉर्टकट बनाएँ।';
+
+  @override
+  String get shortcutsManualGet => '\"Get Prism Wallpaper\" जोड़ें। Source को रोटेशन फ़ोल्डर पर सेट करें।';
+
+  @override
+  String get shortcutsManualSet => '\"Set Wallpaper Photo\" जोड़ें। उसके तीर को दबाएँ, फिर \"Show Preview\" बंद करें।';
+
+  @override
+  String shortcutsManualName(String name) {
+    return 'शॉर्टकट का नाम \"$name\" रखें।';
+  }
+
+  @override
+  String get shortcutsStepAutomationTitle => 'हर दिन चलाएँ';
+
+  @override
+  String get shortcutsAutomationOpen => 'Shortcuts में ऑटोमेशन पर टैप करें, फिर + पर टैप करें।';
+
+  @override
+  String get shortcutsAutomationTime => 'दिन का समय पर टैप करें। एक समय चुनें, फिर प्रतिदिन चुनें।';
+
+  @override
+  String get shortcutsAutomationRun => 'तुरंत चलाएँ चुनें, फिर अगला पर टैप करें।';
+
+  @override
+  String shortcutsAutomationPick(String name) {
+    return 'चलाने के लिए \"$name\" चुनें।';
+  }
+
+  @override
+  String shortcutsAutomationNoTab(String name) {
+    return 'ऑटोमेशन टैब नहीं है? \"$name\" खोलें, संपादित करें पर टैप करें, फिर ऑटोमेशन पर टैप करें।';
+  }
+
+  @override
+  String get shortcutsStepTestTitle => 'अभी जाँचें';
+
+  @override
+  String shortcutsStepTestBody(String name) {
+    return '\"$name\" एक बार चलता है, ताकि आप नया वॉलपेपर अभी देख सकें।';
+  }
+
+  @override
+  String get shortcutsStepTestAction => 'शॉर्टकट चलाएँ';
+
+  @override
+  String get foldersRotateDaily => 'इस फ़ोल्डर को हर दिन रोटेट करें';
+
+  @override
+  String get autoRotateIosTitle => 'Shortcuts से वॉलपेपर बदलें';
+
+  @override
+  String get autoRotateIosBody => 'iPhone पर, एक Shortcuts ऑटोमेशन हर दिन आपके फ़ोल्डर से नया वॉलपेपर सेट करता है।';
+
+  @override
+  String get autoRotateIosAction => 'Shortcuts सेट करें';
 }

@@ -7818,9 +7818,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperApplyTo => 'Anwenden auf';
 
   @override
-  String get wallpaperAutoRotateAndroidOnly => 'Automatischer Wechsel ist nur unter Android verfügbar.';
-
-  @override
   String get wallpaperAutoRotateApplyTo => 'Anwenden auf';
 
   @override
@@ -9485,33 +9482,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperShareLink => 'Link teilen';
 
   @override
-  String get wallpaperShortcutsAddActionsSteps =>
-      'Füge die Aktion „Prism-Hintergrundbild abrufen“ hinzu. Füge dann die Aktion „Hintergrundbild festlegen“ hinzu.';
-
-  @override
-  String get wallpaperShortcutsBody =>
-      'Nutze Kurzbefehle, um ein Hintergrundbild nach Zeitplan oder Auslöser festzulegen. Bereite vorher die Quelle unten vor.';
-
-  @override
   String get wallpaperShortcutsChoosePrismData => 'Wähle aus, was Prism sendet';
 
   @override
-  String get wallpaperShortcutsChooseTriggerSteps =>
-      'Öffne im Kurzbefehl-Editor bei Bedarf Automation. Wähle und konfiguriere einen Auslöser, etwa Tageszeit, Öffnen einer App oder Anschließen eines Ladegeräts.';
-
-  @override
-  String get wallpaperShortcutsDisableConfirmationSteps =>
-      'Prüfe die angezeigten Ausführungsoptionen und speichere den Kurzbefehl oder die Automation. Falls \"Vor Ausführen bestätigen\" erscheint, schalte es für automatische Ausführungen aus.';
-
-  @override
-  String get wallpaperShortcutsHeadline => 'Hintergrundbild automatisch ändern';
-
-  @override
   String get wallpaperShortcutsOpenAction => 'Kurzbefehle öffnen';
-
-  @override
-  String get wallpaperShortcutsOpenAutomationSteps =>
-      'Öffne Kurzbefehle. Gibt es einen Tab \"Automation\", tippe darauf und dann auf \"Neue Automation\". Sonst tippe auf Hinzufügen (+) und auf Bearbeiten, falls es angezeigt wird.';
 
   @override
   String get wallpaperShortcutsOpenError => 'Kurzbefehle konnten nicht geöffnet werden. Öffne die App selbst.';
@@ -9520,18 +9494,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperShortcutsSourceFavourite => 'Zufälliger Favorit';
 
   @override
-  String get wallpaperShortcutsSourceFavouriteDescription =>
-      'Ein zufälliger, für Kurzbefehle verfügbarer Favorit. Markiere zuerst Hintergrundbilder in Prism mit einem Herz. Manche geschützten Bilder sind nicht verfügbar. Wenn ein anderer Favorit verfügbar ist, wird die letzte Auswahl übersprungen.';
-
-  @override
   String get wallpaperShortcutsSourceWotd => 'Hintergrundbild des Tages';
 
   @override
   String get wallpaperShortcutsSourceWotdDescription =>
       'Die heutige Prism-Auswahl. Lade zuerst das heutige Original in Prism herunter. Wenn die Tagesauswahl wechselt, lade vor der nächsten Nutzung dieser Quelle das neue Original herunter.';
-
-  @override
-  String get wallpaperShortcutsSteps => 'Schritte';
 
   @override
   String get wallpaperShortcutsTitle => 'Automatisch ändern';
@@ -11939,4 +11906,120 @@ class AppLocalizationsDe extends AppLocalizations {
   String statsChartSummary(String metric, String summary) {
     return '$metric, acht Wochen. $summary';
   }
+
+  @override
+  String get shortcutsGuideHeadline => 'Jeden Tag ein neues Hintergrundbild';
+
+  @override
+  String get shortcutsGuideBody =>
+      'Richte Kurzbefehle einmal ein. Jeden Tag setzt er ein Hintergrundbild aus deinem Rotationsordner, und jedes Bild erscheint einmal, bevor sich eines wiederholt.';
+
+  @override
+  String get shortcutsSourceRotation => 'Rotationsordner';
+
+  @override
+  String get shortcutsSourceRotationDescription => 'Mischt den Ordner, den du oben gewählt hast.';
+
+  @override
+  String get shortcutsSourceFolder => 'Ordner';
+
+  @override
+  String get shortcutsSourceFolderDescription => 'Mischt einen Ordner, den du in Kurzbefehle auswählst.';
+
+  @override
+  String get shortcutsSourceFavouriteDescription =>
+      'Mischt deine Favoriten. Jeder erscheint einmal, bevor sich einer wiederholt. Einige geschützte Hintergrundbilder sind möglicherweise nicht verfügbar.';
+
+  @override
+  String get shortcutsRotationNone => 'Kein Ordner ausgewählt';
+
+  @override
+  String get shortcutsRotationNoneBody => 'Wähle den Ordner, den der Kurzbefehl mischt.';
+
+  @override
+  String get shortcutsRotationPick => 'Ordner auswählen';
+
+  @override
+  String get shortcutsRotationChange => 'Ändern';
+
+  @override
+  String get shortcutsRotationStop => 'Stopp';
+
+  @override
+  String shortcutsStepLabel(int number, String title) {
+    return 'Schritt $number, $title';
+  }
+
+  @override
+  String get shortcutsStepAddTitle => 'Füge den Prism-Kurzbefehl hinzu';
+
+  @override
+  String get shortcutsStepAddBody => 'Er holt ein Bild aus deinem Rotationsordner und setzt es als Hintergrundbild.';
+
+  @override
+  String get shortcutsStepAddAction => 'Kurzbefehl hinzufügen';
+
+  @override
+  String get shortcutsStepAddManualBody => 'Erstelle ihn in Kurzbefehle mit 2 Aktionen.';
+
+  @override
+  String get shortcutsManualNew => 'Tippe in Kurzbefehle auf +, um einen neuen Kurzbefehl zu erstellen.';
+
+  @override
+  String get shortcutsManualGet => 'Füge „Get Prism Wallpaper“ hinzu. Setze Quelle auf Rotationsordner.';
+
+  @override
+  String get shortcutsManualSet =>
+      'Füge „Hintergrundbild festlegen“ hinzu. Tippe auf den Pfeil daneben und deaktiviere dann Vorschau zeigen.';
+
+  @override
+  String shortcutsManualName(String name) {
+    return 'Nenne den Kurzbefehl „$name“.';
+  }
+
+  @override
+  String get shortcutsStepAutomationTitle => 'Jeden Tag ausführen';
+
+  @override
+  String get shortcutsAutomationOpen => 'Tippe in Kurzbefehle auf Automation, dann auf +.';
+
+  @override
+  String get shortcutsAutomationTime => 'Tippe auf Tageszeit. Wähle eine Uhrzeit und dann Täglich.';
+
+  @override
+  String get shortcutsAutomationRun => 'Wähle Sofort ausführen und tippe dann auf Weiter.';
+
+  @override
+  String shortcutsAutomationPick(String name) {
+    return 'Wähle „$name“ zum Ausführen.';
+  }
+
+  @override
+  String shortcutsAutomationNoTab(String name) {
+    return 'Kein Tab Automation? Öffne „$name“, tippe auf Bearbeiten und dann auf Automation.';
+  }
+
+  @override
+  String get shortcutsStepTestTitle => 'Jetzt testen';
+
+  @override
+  String shortcutsStepTestBody(String name) {
+    return 'Führt „$name“ einmal aus, damit du das neue Hintergrundbild sofort siehst.';
+  }
+
+  @override
+  String get shortcutsStepTestAction => 'Kurzbefehl ausführen';
+
+  @override
+  String get foldersRotateDaily => 'Diesen Ordner täglich wechseln';
+
+  @override
+  String get autoRotateIosTitle => 'Hintergrundbilder mit Kurzbefehlen wechseln';
+
+  @override
+  String get autoRotateIosBody =>
+      'Auf dem iPhone setzt eine Kurzbefehle-Automation jeden Tag ein neues Hintergrundbild aus deinem Ordner.';
+
+  @override
+  String get autoRotateIosAction => 'Kurzbefehle einrichten';
 }

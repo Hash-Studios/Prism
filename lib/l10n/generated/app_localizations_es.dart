@@ -7818,9 +7818,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperApplyTo => 'Aplicar a';
 
   @override
-  String get wallpaperAutoRotateAndroidOnly => 'La rotación automática solo está disponible en Android.';
-
-  @override
   String get wallpaperAutoRotateApplyTo => 'Aplicar a';
 
   @override
@@ -9472,33 +9469,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperShareLink => 'Compartir enlace';
 
   @override
-  String get wallpaperShortcutsAddActionsSteps =>
-      'Añade la acción \"Get Prism Wallpaper\". Después, añade la acción \"Set Wallpaper\".';
-
-  @override
-  String get wallpaperShortcutsBody =>
-      'Usa Atajos para poner un fondo según un horario o activador. Prepara la fuente de abajo antes de ejecutarlo.';
-
-  @override
   String get wallpaperShortcutsChoosePrismData => 'Elige qué datos envía Prism';
 
   @override
-  String get wallpaperShortcutsChooseTriggerSteps =>
-      'En el editor de atajos, abre Automatización si hace falta. Elige y configura un activador, como una hora del día, abrir una app o conectar un cargador.';
-
-  @override
-  String get wallpaperShortcutsDisableConfirmationSteps =>
-      'Revisa las opciones de ejecución que aparezcan y guarda el atajo o la automatización. Si aparece \"Preguntar antes de ejecutar\", desactívalo para que se ejecute automáticamente.';
-
-  @override
-  String get wallpaperShortcutsHeadline => 'Cambia tu fondo de pantalla automáticamente';
-
-  @override
   String get wallpaperShortcutsOpenAction => 'Abrir Atajos';
-
-  @override
-  String get wallpaperShortcutsOpenAutomationSteps =>
-      'Abre Atajos. Si hay una pestaña Automatización, tócala y luego Nueva automatización. Si no, toca Añadir (+) y después Editar si aparece.';
 
   @override
   String get wallpaperShortcutsOpenError => 'No se pudo abrir Atajos. Abre la app manualmente.';
@@ -9507,18 +9481,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperShortcutsSourceFavourite => 'Favorito aleatorio';
 
   @override
-  String get wallpaperShortcutsSourceFavouriteDescription =>
-      'Un favorito aleatorio disponible para Atajos. Marca fondos como favoritos en Prism primero. Algunos fondos protegidos pueden no estar disponibles. Evita repetir el último si hay otro favorito disponible.';
-
-  @override
   String get wallpaperShortcutsSourceWotd => 'Fondo del día';
 
   @override
   String get wallpaperShortcutsSourceWotdDescription =>
       'La selección de hoy de Prism. Descarga primero el original de hoy en Prism. Cuando cambie la selección diaria, descarga el nuevo original antes de ejecutar esta fuente.';
-
-  @override
-  String get wallpaperShortcutsSteps => 'Pasos';
 
   @override
   String get wallpaperShortcutsTitle => 'Cambiar automáticamente';
@@ -11917,4 +11884,121 @@ class AppLocalizationsEs extends AppLocalizations {
   String statsChartSummary(String metric, String summary) {
     return '$metric, ocho semanas. $summary';
   }
+
+  @override
+  String get shortcutsGuideHeadline => 'Un fondo nuevo cada día';
+
+  @override
+  String get shortcutsGuideBody =>
+      'Configura Atajos una vez. Cada día establece un fondo de tu carpeta de rotación, y cada fondo aparece una vez antes de que se repita ninguno.';
+
+  @override
+  String get shortcutsSourceRotation => 'Carpeta de rotación';
+
+  @override
+  String get shortcutsSourceRotationDescription => 'Reproduce en orden aleatorio la carpeta que elegiste arriba.';
+
+  @override
+  String get shortcutsSourceFolder => 'Carpeta';
+
+  @override
+  String get shortcutsSourceFolderDescription => 'Reproduce en orden aleatorio una carpeta que elijas en Atajos.';
+
+  @override
+  String get shortcutsSourceFavouriteDescription =>
+      'Reproduce tus favoritos en orden aleatorio. Cada uno aparece una vez antes de que se repita alguno. Es posible que algunos fondos protegidos no estén disponibles.';
+
+  @override
+  String get shortcutsRotationNone => 'No se eligió ninguna carpeta';
+
+  @override
+  String get shortcutsRotationNoneBody => 'Elige la carpeta que el atajo reproduce en orden aleatorio.';
+
+  @override
+  String get shortcutsRotationPick => 'Elegir una carpeta';
+
+  @override
+  String get shortcutsRotationChange => 'Cambiar';
+
+  @override
+  String get shortcutsRotationStop => 'Detener';
+
+  @override
+  String shortcutsStepLabel(int number, String title) {
+    return 'Paso $number, $title';
+  }
+
+  @override
+  String get shortcutsStepAddTitle => 'Añade el atajo de Prism';
+
+  @override
+  String get shortcutsStepAddBody =>
+      'Obtiene un fondo de tu carpeta de rotación y lo define como tu fondo de pantalla.';
+
+  @override
+  String get shortcutsStepAddAction => 'Añadir el atajo';
+
+  @override
+  String get shortcutsStepAddManualBody => 'Créalo en Atajos con 2 acciones.';
+
+  @override
+  String get shortcutsManualNew => 'En Atajos, toca + para crear un atajo nuevo.';
+
+  @override
+  String get shortcutsManualGet => 'Añade “Get Prism Wallpaper”. Define Fuente como Carpeta de rotación.';
+
+  @override
+  String get shortcutsManualSet =>
+      'Añade “Definir foto de fondo de pantalla”. Toca la flecha y desactiva Mostrar vista previa.';
+
+  @override
+  String shortcutsManualName(String name) {
+    return 'Nombra el atajo “$name”.';
+  }
+
+  @override
+  String get shortcutsStepAutomationTitle => 'Ejecútalo todos los días';
+
+  @override
+  String get shortcutsAutomationOpen => 'En Atajos, toca Automatización y luego +.';
+
+  @override
+  String get shortcutsAutomationTime => 'Toca Hora del día. Elige una hora y luego Diariamente.';
+
+  @override
+  String get shortcutsAutomationRun => 'Elige Ejecutar inmediatamente y luego toca Siguiente.';
+
+  @override
+  String shortcutsAutomationPick(String name) {
+    return 'Elige “$name” para ejecutarlo.';
+  }
+
+  @override
+  String shortcutsAutomationNoTab(String name) {
+    return '¿No ves la pestaña Automatización? Abre “$name”, toca Editar y luego Automatización.';
+  }
+
+  @override
+  String get shortcutsStepTestTitle => 'Pruébalo ahora';
+
+  @override
+  String shortcutsStepTestBody(String name) {
+    return 'Ejecuta “$name” una vez para que veas el nuevo fondo ahora.';
+  }
+
+  @override
+  String get shortcutsStepTestAction => 'Ejecutar el atajo';
+
+  @override
+  String get foldersRotateDaily => 'Rotar esta carpeta a diario';
+
+  @override
+  String get autoRotateIosTitle => 'Cambia los fondos con Atajos';
+
+  @override
+  String get autoRotateIosBody =>
+      'En el iPhone, una automatización de Atajos define un nuevo fondo de tu carpeta cada día.';
+
+  @override
+  String get autoRotateIosAction => 'Configurar Atajos';
 }

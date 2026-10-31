@@ -13,6 +13,7 @@ import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/features/ads/data/ad_experiment_config.dart';
 import 'package:Prism/features/ads/data/ad_experiment_service.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
@@ -59,6 +60,7 @@ Future<void> prepareRemoteConfig(
     OnboardingV2Config.remoteConfigStarterPackKey: defaultOnboardingStarterPack,
     personalizedInterestsRemoteConfigKey: defaultPersonalizedInterestsJson,
     AdExperimentConfig.remoteConfigKey: '{}',
+    iosShortcutLinkRemoteConfigKey: '',
   });
   try {
     await remoteConfig.activate();
