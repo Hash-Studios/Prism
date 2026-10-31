@@ -343,7 +343,7 @@ void main() {
     }, variant: TargetPlatformVariant({platform}));
   }
 
-  test('keeps account-required routes behind the sign-in guard', () {
+  testWidgets('keeps account-required routes behind the sign-in guard', (tester) async {
     final root = _MockRootRouter();
     when(() => router.root).thenReturn(root);
     when(() => router.isRoot).thenReturn(true);
@@ -357,6 +357,8 @@ void main() {
     addTearDown(AuthNavigationContinuation.of(root).dispose);
 
     const SignedInGuard().onNavigation(resolver, router);
+    // The sign-in opens after the current frame.
+    await tester.pump();
 
     expect(AuthNavigationContinuation.of(root).pendingNavigation, isNotNull);
     verify(() => root.pushPath<Object?>('/onboarding/v2', onFailure: any(named: 'onFailure'))).called(1);

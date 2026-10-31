@@ -343,6 +343,59 @@ void main() {
     expect(results(), hasLength(1));
   });
 
+  testWidgets('an onboarding link after guest replacement opens a fresh shell', (tester) async {
+    await mount(tester);
+    unawaited(router.replaceAll(<PageRouteInfo>[OnboardingV2ShellRoute()]));
+    await tester.pumpAndSettle();
+    final firstSignIn = tester.element(find.text(OnboardingV2ShellRoute.name));
+    late Future<DeepLinkDispatchResult> result;
+
+    unawaited(
+      router.replaceAll(const <PageRouteInfo>[DashboardRoute()]).then((_) {
+        result = dispatcher.openUri(Uri.parse('prism://onboarding/v2'), source: DeepLinkSourceValue.appLinks);
+      }),
+    );
+    await tester.pumpAndSettle();
+
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, OnboardingV2ShellRoute.name);
+    expect(firstSignIn.mounted, isFalse, reason: 'a finished onboarding shell must not be reused');
+  });
+
+  testWidgets('an onboarding link adopts a shell opened while waiting for its frame', (tester) async {
+    await mount(tester);
+    final result = dispatcher.openUri(Uri.parse('prism://onboarding/v2'), source: DeepLinkSourceValue.appLinks);
+    await tester.idle();
+    unawaited(router.push(OnboardingV2ShellRoute()));
+    await tester.pumpAndSettle();
+
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.stackData.where((route) => route.name == OnboardingV2ShellRoute.name), hasLength(1));
+    expect(find.text(OnboardingV2ShellRoute.name), findsOneWidget);
+  });
+
+  for (final dispose in [false, true]) {
+    testWidgets('${dispose ? 'disposing' : 'cancelling'} an onboarding link before its frame prevents navigation', (
+      tester,
+    ) async {
+      await mount(tester);
+      final result = dispatcher.openUri(Uri.parse('prism://onboarding/v2'), source: DeepLinkSourceValue.appLinks);
+      await tester.idle();
+      expect(router.topRoute.name, HomeTabRoute.name);
+
+      if (dispose) {
+        dispatcher.dispose();
+      } else {
+        dispatcher.cancel();
+      }
+      expect(await result, DeepLinkDispatchResult.cancelled);
+      await tester.pumpAndSettle();
+
+      expect(router.topRoute.name, HomeTabRoute.name);
+      expect(router.stackData.where((route) => route.name == OnboardingV2ShellRoute.name), isEmpty);
+    });
+  }
+
   testWidgets('a referral is saved after bootstrap while another link is waiting for onboarding', (tester) async {
     await mount(tester);
     dispatcher.dispose();

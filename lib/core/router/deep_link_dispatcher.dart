@@ -11,6 +11,7 @@ import 'package:Prism/core/router/push_tap_startup.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/scheduler.dart';
 
 enum DeepLinkDispatchResult { navigated, failure, blocked, cancelled, deferred }
 
@@ -270,7 +271,11 @@ class DeepLinkDispatcher {
         );
         return finish(DeepLinkDispatchResult.failure, reason: resolution.reason);
       }
-      if (opensOnboarding && _isVisible(route)) return finish(DeepLinkDispatchResult.navigated);
+      if (opensOnboarding) {
+        if (_isVisible(route)) return finish(DeepLinkDispatchResult.navigated);
+        await _untilDisposed(SchedulerBinding.instance.endOfFrame, cancelled: cancellation);
+        if (_disposed.isCompleted || cancellation.isCompleted) return finish(DeepLinkDispatchResult.cancelled);
+      }
       final DeepLinkDispatchResult result = await _navigate(route, cancellation);
       return finish(
         result,
