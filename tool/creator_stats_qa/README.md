@@ -46,16 +46,18 @@ Assertions intentionally add 11 weekly views and one new folder event for the se
 ```sh
 # Refuses to overwrite any differing root google-services.json.
 node tool/creator_stats_qa/native.cjs demo-prism
+# The debug network security config permits cleartext only to localhost and 127.0.0.1.
+for port in 9099 8080 5001 9198; do adb -s <serial> reverse tcp:$port tcp:$port; done
 fvm flutter build apk --debug \
   --dart-define=CREATOR_STATS_EMULATOR=true \
-  --dart-define=CREATOR_STATS_EMULATOR_HOST=10.0.2.2 \
+  --dart-define=CREATOR_STATS_EMULATOR_HOST=127.0.0.1 \
   --dart-define=CREATOR_STATS_EMULATOR_PROJECT=demo-prism \
   --dart-define=CREATOR_STATS_EMULATOR_ACCOUNT=creator
 ```
 
 Never commit `android/app/google-services.json`. The native preparation command writes only that ignored file, exclusively if absent, or accepts an exact existing demo config. A real config is a blocker: use a dedicated QA checkout without it. The command also refuses any build-variant `google-services.json` under `android/app/src`. Native Firebase initializes only the demo project before Dart startup; the Dart bootstrap connects emulator services before normal app navigation. Do not add `SKIP_FIREBASE_INIT=true`. Do not use this native config for release/profile builds. No native file is modified by `validate.cjs` or the launcher.
 
-Use `creator`, `other`, or `empty` for the account define and rebuild when switching. PNG wallpaper and avatar fixtures are generated locally by `images.cjs`, with no external image service or new dependency. Android reaches them at `10.0.2.2:9198`. For iOS proof on a Mac, seed with `QA_IMAGE_HOST=127.0.0.1 node tool/creator_stats_qa/seed.cjs demo-prism` and use matching emulator Dart defines with host `127.0.0.1`. `native.cjs` also writes the ignored demo `ios/Runner/GoogleService-Info.plist` under the same rules. Its values must equal `CreatorStatsEmulator.options`; otherwise Firebase reports a duplicate default app and startup stops. Do not copy production native config. Linux cannot provide iOS Simulator proof.
+Use `creator`, `other`, or `empty` for the account define and rebuild when switching. PNG wallpaper and avatar fixtures are generated locally by `images.cjs`, with no external image service or new dependency. Seed with `QA_IMAGE_HOST=127.0.0.1`; Android reaches them through the `adb reverse` port forward. Host `10.0.2.2` fails on Android because cleartext to it is not permitted. For iOS proof on a Mac, seed with `QA_IMAGE_HOST=127.0.0.1 node tool/creator_stats_qa/seed.cjs demo-prism` and use matching emulator Dart defines with host `127.0.0.1`. `native.cjs` also writes the ignored demo `ios/Runner/GoogleService-Info.plist` under the same rules. Its values must equal `CreatorStatsEmulator.options`; otherwise Firebase reports a duplicate default app and startup stops. Do not copy production native config. Linux cannot provide iOS Simulator proof.
 
 ## Later: real UI navigation
 
