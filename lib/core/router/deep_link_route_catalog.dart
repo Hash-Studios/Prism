@@ -30,6 +30,7 @@ enum DeepLinkPageTarget {
   mood,
   gallery,
   wallRequests,
+  creators,
   weeklyChallenge,
   uploadInput,
   editWallInput,
@@ -135,6 +136,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkRouteExample('/mood/dreamy', DeepLinkPageTarget.mood),
     DeepLinkRouteExample('/gallery?ids=a1,b2', DeepLinkPageTarget.gallery),
     DeepLinkRouteExample('/requests?tab=filled', DeepLinkPageTarget.wallRequests),
+    DeepLinkRouteExample('/creators', DeepLinkPageTarget.creators),
     DeepLinkRouteExample('/challenges/2026-10-26', DeepLinkPageTarget.weeklyChallenge),
     DeepLinkRouteExample('/upload-wall', DeepLinkPageTarget.uploadInput),
     DeepLinkRouteExample('/edit-wall', DeepLinkPageTarget.editWallInput),
@@ -468,6 +470,7 @@ final class DeepLinkRouteCatalog {
   static const Map<String, DeepLinkPageTarget> _staticTargets = <String, DeepLinkPageTarget>{
     '/gallery': DeepLinkPageTarget.gallery,
     '/requests': DeepLinkPageTarget.wallRequests,
+    '/creators': DeepLinkPageTarget.creators,
     '/onboarding/v2': DeepLinkPageTarget.onboarding,
     '/dashboard': DeepLinkPageTarget.dashboard,
     '/dashboard/home': DeepLinkPageTarget.home,

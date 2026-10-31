@@ -50,10 +50,9 @@ Future<void> showFollowToastWithSimilarOffer(
           return;
         }
         if (similar.isEmpty || !app_state.prismUser.loggedIn || app_state.prismUser.id != viewer) return;
-        final BuildContext? target = context.mounted ? context : toasts.overlayResolver?.call()?.context;
-        if (target == null) return;
+        if (!context.mounted) return;
         analytics.track(SimilarCreatorsShownEvent(creatorId: uid, count: similar.length));
-        showSimilarCreatorsSheet(target, name: name, creators: similar);
+        await showSimilarCreatorsSheet(context, name: name, creators: similar);
       },
     ),
   );

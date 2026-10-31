@@ -5,7 +5,6 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_repository.dart';
 import 'package:Prism/features/creator_directory/views/creator_follow_changes.dart';
-import 'package:Prism/features/creator_directory/views/similar_creators_offer.dart';
 import 'package:Prism/features/creator_directory/views/widgets/followed_by_line.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';

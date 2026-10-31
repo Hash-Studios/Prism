@@ -87,6 +87,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.gallery => GalleryRoute(ids: query['ids']!, source: query['source'] ?? 'link'),
     DeepLinkPageTarget.weeklyChallenge => WeeklyChallengeRoute(challengeId: match.pathParams['challengeId']!),
     DeepLinkPageTarget.wallRequests => WallRequestsRoute(tab: query['tab'] ?? 'top'),
+    DeepLinkPageTarget.creators => CreatorsRoute(source: 'link'),
     DeepLinkPageTarget.uploadInput => _inputRoute(DeepLinkInputWorkflow.uploadWall),
     DeepLinkPageTarget.editWallInput => _inputRoute(DeepLinkInputWorkflow.editWall),
     DeepLinkPageTarget.review => ReviewRoute(),
