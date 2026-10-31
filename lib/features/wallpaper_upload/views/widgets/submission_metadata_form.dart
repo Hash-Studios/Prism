@@ -1,6 +1,7 @@
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Optional title, category and tags for a wallpaper that goes to review. Every field can stay empty.
 class SubmissionMetadataForm extends StatefulWidget {
@@ -22,6 +23,11 @@ class SubmissionMetadataForm extends StatefulWidget {
 }
 
 class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
+  static final TextInputFormatter _lineBreaksToSpaces = FilteringTextInputFormatter.deny(
+    RegExp(r'\r\n|[\r\n]'),
+    replacementString: ' ',
+  );
+
   late final TextEditingController _title = TextEditingController(text: widget.initial.title);
   late final TextEditingController _description = TextEditingController(text: widget.initial.description);
   final TextEditingController _tagInput = TextEditingController();
@@ -102,6 +108,7 @@ class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
           controller: _title,
           enabled: widget.enabled,
           maxLength: maxSubmissionTitleLength,
+          inputFormatters: [_lineBreaksToSpaces],
           textCapitalization: TextCapitalization.sentences,
           textInputAction: TextInputAction.next,
           decoration: InputDecoration(
@@ -115,6 +122,7 @@ class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
           controller: _description,
           enabled: widget.enabled,
           maxLength: maxSubmissionDescriptionLength,
+          inputFormatters: [_lineBreaksToSpaces],
           minLines: 2,
           maxLines: 4,
           textCapitalization: TextCapitalization.sentences,

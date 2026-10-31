@@ -49,6 +49,54 @@ void main() {
     expect(value!.requestId, 'request');
   });
 
+  for (final approved in [false, true]) {
+    for (final newline in ['\n', '\r', '\r\n']) {
+      testWidgets('description replaces ${newline.codeUnits} with a space before saving (approved: $approved)', (
+        tester,
+      ) async {
+        final key = GlobalKey<SubmissionMetadataFormState>();
+        SubmissionMetadata? value;
+        await pump(tester, key, (next) => value = next, approved: approved);
+        final description = find.widgetWithText(TextField, 'Description');
+
+        await tester.enterText(description, 'Morning');
+        tester.testTextInput.updateEditingValue(
+          TextEditingValue(
+            text: 'Morning$newline',
+            selection: TextSelection.collapsed(offset: 7 + newline.length),
+          ),
+        );
+        await tester.pump();
+        expect(tester.widget<TextField>(description).controller!.text, 'Morning ');
+        tester.testTextInput.updateEditingValue(
+          TextEditingValue(text: 'Morning${newline}light', selection: const TextSelection.collapsed(offset: 7)),
+        );
+        await tester.pump();
+
+        expect(tester.widget<TextField>(description).controller!.text, 'Morning light');
+        expect(value!.description, 'Morning light');
+        expect(key.currentState!.flush(), isTrue);
+        await tester.pump();
+        expect(find.textContaining('Check the'), findsNothing);
+        expect(value!.description, 'Morning light');
+      });
+    }
+  }
+
+  testWidgets('pasted carriage returns in titles become spaces and tags remain normalized on save', (tester) async {
+    final key = GlobalKey<SubmissionMetadataFormState>();
+    SubmissionMetadata? value;
+    await pump(tester, key, (next) => value = next);
+    await tester.enterText(find.widgetWithText(TextField, 'Title'), 'Morning\rlight');
+    await tester.enterText(find.widgetWithText(TextField, 'Tags'), 'Soft\r\nlight');
+
+    expect(value!.title, 'Morning light');
+    expect(key.currentState!.flush(), isTrue);
+    await tester.pump();
+    expect(value!.tags, ['soft light']);
+    expect(find.widgetWithText(InputChip, 'soft light'), findsOneWidget);
+  });
+
   testWidgets('last details copies category and tags without replacing text or linkage', (tester) async {
     final key = GlobalKey<SubmissionMetadataFormState>();
     SubmissionMetadata? value;

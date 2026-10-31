@@ -4,6 +4,7 @@ import 'package:Prism/features/admin_review/biz/bloc/wall_resubmission_context_c
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/domain/usecases/wall_metadata_actions.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -30,7 +31,9 @@ class _WallResubmissionScopeState extends State<WallResubmissionScope> {
   @override
   void didUpdateWidget(WallResubmissionScope oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.walls, widget.walls)) _load();
+    if (!setEquals(oldWidget.walls.map((wall) => wall.id).toSet(), widget.walls.map((wall) => wall.id).toSet())) {
+      _load();
+    }
   }
 
   void _load() => _cubit.load(widget.walls.map((wall) => wall.id).toList(growable: false));

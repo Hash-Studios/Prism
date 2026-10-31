@@ -18,7 +18,13 @@ class WallResubmissionContextCubit extends Cubit<WallResubmissionContextState> {
 
   Future<void> load(List<String> ids) async {
     final int generation = ++_generation;
-    emit(const WallResubmissionContextState(loading: true));
+    final Set<String> nextIds = ids.toSet();
+    emit(
+      WallResubmissionContextState(
+        contexts: Map.fromEntries(state.contexts.entries.where((entry) => nextIds.contains(entry.key))),
+        loading: true,
+      ),
+    );
     try {
       final Map<String, WallResubmissionContext> contexts = await _actions.contexts(ids);
       if (isClosed || generation != _generation) return;
