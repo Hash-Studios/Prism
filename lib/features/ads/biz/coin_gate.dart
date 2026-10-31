@@ -443,6 +443,7 @@ class CoinGate {
   Future<CoinGateResult> _spendAndPerform(CoinGateSpec spec, String tag) async {
     spec.onAttempt?.call(tag);
     final CoinMutationResult spent;
+    final String payer = _port.userId;
     try {
       spent =
           await (spec.spend?.call(tag) ??
@@ -479,7 +480,7 @@ class CoinGate {
     }
     if (!spec.isMounted()) {
       if (spent.changed && spec.refundOnFailure) {
-        return _refund(spec, tag, spent, txId);
+        return _refund(spec, tag, spent, txId, payer);
       }
       await _release(tag, txId);
       return spent.changed ? CoinGateResult.performed : CoinGateResult.failedNotRefunded;
@@ -496,7 +497,7 @@ class CoinGate {
       return CoinGateResult.performed;
     }
     if (spent.changed && spec.refundOnFailure) {
-      return _refund(spec, tag, spent, txId);
+      return _refund(spec, tag, spent, txId, payer);
     }
     await _release(tag, txId);
     return CoinGateResult.failedNotRefunded;
@@ -514,7 +515,13 @@ class CoinGate {
     }
   }
 
-  Future<CoinGateResult> _refund(CoinGateSpec spec, String tag, CoinMutationResult spent, String txId) async {
+  Future<CoinGateResult> _refund(
+    CoinGateSpec spec,
+    String tag,
+    CoinMutationResult spent,
+    String txId,
+    String payer,
+  ) async {
     final String refundTag = '$tag.refund';
     try {
       final CoinMutationResult refund = await _port.refundSpend(
@@ -522,6 +529,7 @@ class CoinGate {
         sourceTag: refundTag,
         transactionId: spent.transactionId,
         reason: spec.refundReason,
+        userId: payer,
       );
       if (refund.success && refund.changed) {
         await _clear(tag, txId);

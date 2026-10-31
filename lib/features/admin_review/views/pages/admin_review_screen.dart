@@ -12,6 +12,7 @@ import 'package:Prism/features/admin_review/views/widgets/moderation_card.dart';
 import 'package:Prism/features/admin_review/views/widgets/notification_sender_tab.dart';
 import 'package:Prism/features/admin_review/views/widgets/reject_reason_sheet.dart';
 import 'package:Prism/features/admin_review/views/widgets/report_cards.dart';
+import 'package:Prism/features/admin_review/views/widgets/wall_resubmission_notice.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -184,6 +185,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
       ],
       reserved: reserved,
       moderation: wallModeration(wall),
+      details: WallResubmissionNotice(wallDocId: wall.id),
       onToggleReserve: canReserveForDrop(wall)
           ? () async {
               if (reserved) {
@@ -284,7 +286,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         if (docs.isEmpty) {
           return GlintState(kind: GlintStateKind.nothingNew, title: emptyLabel, body: emptyBody);
         }
-        return ListView.separated(
+        final Widget list = ListView.separated(
           padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxl),
           itemCount: docs.length,
           separatorBuilder: (_, _) => const SizedBox(height: PrismSpace.sm),
@@ -299,6 +301,9 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
             child: itemBuilder(context, docs[index]),
           ),
         );
+        return keyPrefix == 'wall'
+            ? WallResubmissionScope(walls: docs, actions: _repository.metadataActions, child: list)
+            : list;
       },
     );
   }

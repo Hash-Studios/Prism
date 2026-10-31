@@ -281,3 +281,17 @@ test("a failed remixOf check still notifies the admins", async (t) => {
   await fire(store);
   assert.deepEqual(pushes.map((push) => push.token), ["admin-token"]);
 });
+
+test("submission removes forged lineage and clears rejected text while preserving the upload", async (t) => {
+  const {store} = setup(t, {name: "Maker", premium: false}, wall({resubmitOf: "claimed-parent",
+    title: "p0rn", desc: "Hidden\u202e", tags: ["nudes"], category: "Nature"}));
+  await fire(store);
+  const current = store.get("walls/w1")!;
+  assert.equal(current.resubmitOf, undefined);
+  assert.equal(current.title, "");
+  assert.equal(current.desc, "");
+  assert.deepEqual(current.tags, []);
+  assert.equal(current.wallpaper_url, `${RAW}/a.jpg`);
+  assert.equal(current.review, false);
+  assert.equal(current.category, "Nature");
+});

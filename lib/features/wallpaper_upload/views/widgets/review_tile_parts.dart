@@ -1,32 +1,13 @@
-import 'dart:async';
-
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
-import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-/// Asks the user to confirm deleting an upload, then runs [onConfirm].
-void showDeleteConfirm(BuildContext context, {required String title, required Future<void> Function() onConfirm}) {
-  unawaited(
-    showPrismConfirm(
-      context,
-      title: title,
-      message: context.l10n.corePopupCannotUndo,
-      confirmLabel: context.l10n.wallpaperUploadDeleteWallpaper,
-      destructive: true,
-    ).then((bool confirmed) async {
-      if (!confirmed) return;
-      await onConfirm();
-    }),
-  );
-}
 
 class ReviewDownloadButton extends StatelessWidget {
   const ReviewDownloadButton({

@@ -10,6 +10,8 @@ import {isStudioWall} from "./studio/isStudioWall";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {authorOf, authorUpdate} from "./wallAuthor";
 import {keepRemixOf, removeRemixOfIfUnchanged} from "./wallRemix";
+import {sanitizeResubmitOf} from "./wallResubmissions";
+import {sanitizeSubmissionText} from "./wallSubmissionSafety";
 
 const GITHUB_RAW_HOST = "raw.githubusercontent.com";
 const studioSecret = defineSecret("STUDIO_SECRET");
@@ -44,6 +46,10 @@ export const onWallSubmitted = onDocumentCreated(
     }
 
     const wallId = event.params.wallId;
+    if (event.data) {
+      await sanitizeResubmitOf(event.data);
+      if (await sanitizeSubmissionText(event.data)) logger.warn("onWallSubmitted: cleared rejected metadata text.", {wallId});
+    }
     if (data.remixOf !== undefined && event.data) {
       try {
         if (!(await keepRemixOf(wallId, data)) && await removeRemixOfIfUnchanged(event.data, data.remixOf)) {

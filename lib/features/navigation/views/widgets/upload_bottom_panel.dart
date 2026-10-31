@@ -74,7 +74,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
     }
     final router = context.router;
     Navigator.pop(context);
-    router.push(UploadWallRoute(image: draft.file));
+    router.push(UploadWallRoute(image: draft.file, resumedDraft: draft));
   }
 
   Future<void> _pickWallpaperImage() async {

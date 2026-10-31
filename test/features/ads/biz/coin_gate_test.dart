@@ -88,6 +88,27 @@ void main() {
     },
   );
 
+  test('a failed action refunds the payer captured before the spend after the account changes', () async {
+    final String payer = port.userId;
+    final CoinGateResult result = await CoinGate(port).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        isMounted: () => true,
+        perform: () async {
+          port.userId = 'other-account';
+          return false;
+        },
+        choose: (_) async => CoinGateChoice.cancel,
+      ),
+    );
+
+    expect(result, CoinGateResult.failedRefunded);
+    expect(port.refundUserIds, <String>[payer]);
+  });
+
   test('premium user skips the spend and runs the action', () async {
     port.isPremium = true;
     expect(await CoinGate(port).run(spec()), CoinGateResult.performedFree);
@@ -99,6 +120,39 @@ void main() {
     port.isPremium = true;
     expect(await CoinGate(port).run(spec(premiumBypass: false)), CoinGateResult.performed);
     expect(port.log, <String>['spend:x.spend']);
+  });
+
+  test('server premium bypass with zero delta is not refunded when the action fails', () async {
+    final List<String> paid = <String>[];
+    final CoinGateResult result = await CoinGate(port).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        isMounted: () => true,
+        perform: () async {
+          performed++;
+          return false;
+        },
+        choose: (_) async => CoinGateChoice.cancel,
+        spend: (_) async => CoinMutationResult(
+          success: true,
+          changed: false,
+          bypassed: true,
+          previousBalance: port.balance,
+          currentBalance: port.balance,
+          delta: 0,
+          reason: 'premiumFilter_premium_bypass',
+        ),
+        onPaid: paid.add,
+      ),
+    );
+
+    expect(result, CoinGateResult.failedNotRefunded);
+    expect(performed, 1);
+    expect(paid, isEmpty);
+    expect(port.log, isEmpty);
   });
 
   test('premium user pays for actions outside the config bypass set', () async {
@@ -950,6 +1004,7 @@ class _ThrowingRefundPort extends FakeCoinGatePort {
     required String sourceTag,
     required String transactionId,
     required String reason,
+    required String userId,
   }) {
     log.add('refund-threw');
     return Future<CoinMutationResult>.error(StateError('refund failed'));

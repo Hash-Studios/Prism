@@ -155,6 +155,14 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
     await queueDeleteWhereEqual("rewardedAdSessions", "uid", callerUid, queue);
     await queueDeleteWhereEqual(AI_GENERATIONS, "userId", callerUid, queue);
     await queueDeleteWhereEqual(GITHUB_UPLOADS, "uid", callerUid, queue);
+    for (const collection of ["wallMetadataEdits", "wallMetadataOperations", "wallResubmissionRoots", "wallResubmissions",
+      "wallResubmissionOperations", "wallResubmissionConsumptions"]) {
+      await queueDeleteWhereEqual(collection, "ownerUid", callerUid, queue);
+    }
+    for (const collection of ["wallMetadataEdits", "wallMetadataOperations", "wallResubmissionOperations"]) {
+      await queueDeleteWhereEqual(collection, "actorUid", callerUid, queue);
+    }
+    await queueDeleteWhereEqual("wallMetadataEditRates", "uid", callerUid, queue);
     await queueDeleteWhereEqual(DRAW_TICKETS, "uid", callerUid, queue);
     await queueBoosts(callerUid, queue, queueUpdate);
     // No update-time precondition: the repair trigger updates a folder while its items are deleted above.

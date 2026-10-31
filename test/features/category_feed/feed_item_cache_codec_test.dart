@@ -34,6 +34,7 @@ void main() {
       id: 'p1',
       wallpaper: PrismWallpaper(
         core: _core('p1', WallpaperSource.prism),
+        description: 'A quiet forest',
         collections: const <String>['minimal'],
         review: true,
         tags: const <String>['dark'],
@@ -50,6 +51,7 @@ void main() {
     expect(decoded.wallpaper.core.createdAt, DateTime.utc(2026, 1, 2, 3, 4, 5));
     expect(decoded.wallpaper.core.authorEmail, 'author@example.com');
     expect(decoded.wallpaper.collections, <String>['minimal']);
+    expect(decoded.wallpaper.description, 'A quiet forest');
     expect(decoded.wallpaper.review, isTrue);
     expect(decoded.wallpaper.tags, <String>['dark']);
     expect(decoded.wallpaper.aiMetadata, <String, Object?>{'model': 'x'});

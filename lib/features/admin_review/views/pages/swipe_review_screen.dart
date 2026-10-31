@@ -14,6 +14,7 @@ import 'package:Prism/features/admin_review/views/widgets/moderation_signals.dar
 import 'package:Prism/features/admin_review/views/widgets/reject_reason_sheet.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_action_overlay.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_wallpaper_card.dart';
+import 'package:Prism/features/admin_review/views/widgets/wall_resubmission_notice.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -213,7 +214,11 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
                 return _buildBatchComplete(state);
               }
 
-              return _buildSwipeArea(state);
+              return WallResubmissionScope(
+                walls: state.walls,
+                actions: _bloc.metadataActions,
+                child: _buildSwipeArea(state),
+              );
             },
           ),
         ),

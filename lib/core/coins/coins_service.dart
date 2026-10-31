@@ -372,6 +372,7 @@ class CoinsService with WidgetsBindingObserver {
     CoinSpendAction.wallpaperDownload,
     CoinSpendAction.premiumWallpaperDownload,
     CoinSpendAction.aiGeneration,
+    CoinSpendAction.premiumFilter,
   };
 
   /// Spends whose request id is stored until a definite reply, so a retry replays the same charge.
@@ -383,6 +384,7 @@ class CoinsService with WidgetsBindingObserver {
     CoinSpendAction.autoRotatePass7d,
   };
   final Queue<Completer<void>> _refundQueueWaiters = Queue<Completer<void>>();
+  final Map<String, Future<void>> _transactionLocks = <String, Future<void>>{};
   bool _refundQueueHeld = false;
   bool _pendingRetryInFlight = false;
   Timer? _pendingRetryTimer;
@@ -1175,6 +1177,7 @@ class CoinsService with WidgetsBindingObserver {
     String? reason,
     String? transactionId,
     String? requestId,
+    String? expectedUserId,
   }) async {
     if (action == CoinEarnAction.rewardedAd) {
       return CoinMutationResult.noChange(
@@ -1203,6 +1206,7 @@ class CoinsService with WidgetsBindingObserver {
       reason: reason ?? action.name,
       transactionId: transactionId,
       requestId: requestId,
+      expectedUserId: expectedUserId ?? (isRefund ? userId : null),
     );
     if (!_isCurrentOwner(userId, generation)) return _notLoggedIn;
     _applyLocalBalance(result.currentBalance, delta: result.delta);
@@ -1332,18 +1336,24 @@ class CoinsService with WidgetsBindingObserver {
       }
     }
     try {
-      final CoinMutationResult result = await _callCoinMutation(
-        userId: userId,
-        callableName: 'spendCoins',
-        amount: amount,
-        action: action.name,
-        sourceTag: sourceTag,
-        reason: reason ?? action.name,
-        allowPremiumBypass: true,
-        label: label,
-        requestId: requestId,
-        extra: <String, Object?>{if (styleId != null) 'styleId': styleId},
-      );
+      final String spendTxId = requestId == null ? '' : '$_spendTransactionPrefix${userId}_$requestId';
+      final CoinMutationResult result = await _withTransactionLock(spendTxId, () async {
+        final CoinMutationResult mutation = await _callCoinMutation(
+          userId: userId,
+          callableName: 'spendCoins',
+          amount: amount,
+          action: action.name,
+          sourceTag: sourceTag,
+          reason: reason ?? action.name,
+          allowPremiumBypass: true,
+          label: label,
+          requestId: requestId,
+          extra: <String, Object?>{if (styleId != null) 'styleId': styleId},
+        );
+        // A queued retry may already hold a snapshot of this refund.
+        if (requestKey != null && mutation.success && mutation.changed) await _forgetPendingRefund(spendTxId);
+        return mutation;
+      });
 
       if (result.success &&
           _isCurrentOwner(userId, generation) &&
@@ -1354,10 +1364,6 @@ class CoinsService with WidgetsBindingObserver {
         if (_pendingEconomyRequests[requestKey] == requestId) _pendingEconomyRequests.remove(requestKey);
         if (settings.isOpen && settings.get<String>(requestKey, defaultValue: '') == requestId) {
           await settings.delete(requestKey);
-        }
-        // A replay that landed settles the earlier lost reply, so its queued refund must not run.
-        if (result.success && result.changed) {
-          await _forgetPendingRefund('$_spendTransactionPrefix${userId}_$requestId');
         }
       }
       if (_isCurrentOwner(userId, generation)) _applyLocalBalance(result.currentBalance, delta: result.delta);
@@ -1406,23 +1412,57 @@ class CoinsService with WidgetsBindingObserver {
 
   String _utcDayKey() => _offsetDayKey(DateTime.now().toUtc(), 0);
 
+  /// Refunds a debit, queuing it for the payer when [userId] is supplied and that account cannot confirm the refund.
   Future<CoinMutationResult> refundSpend(
     CoinSpendAction action, {
     required String sourceTag,
     required String transactionId,
     String? reason,
-  }) {
+    String? userId,
+  }) => _withTransactionLock(
+    transactionId,
+    () => _refundSpendOnce(action, sourceTag: sourceTag, transactionId: transactionId, reason: reason, userId: userId),
+  );
+
+  Future<CoinMutationResult> _refundSpendOnce(
+    CoinSpendAction action, {
+    required String sourceTag,
+    required String transactionId,
+    String? reason,
+    String? userId,
+  }) async {
     if (transactionId.trim().isEmpty) {
-      return Future.value(
-        CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'missing_transaction_id'),
-      );
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'missing_transaction_id');
     }
-    return award(
-      CoinEarnAction.refund,
-      sourceTag: sourceTag,
-      reason: reason ?? 'refund_${action.name}',
-      transactionId: transactionId,
-    );
+    final String refundReason = reason ?? 'refund_${action.name}';
+    if (userId == null) {
+      return award(CoinEarnAction.refund, sourceTag: sourceTag, reason: refundReason, transactionId: transactionId);
+    }
+    if (_canMutateCoins() && app_state.prismUser.id == userId) {
+      final CoinMutationResult result = await award(
+        CoinEarnAction.refund,
+        sourceTag: sourceTag,
+        reason: refundReason,
+        transactionId: transactionId,
+        expectedUserId: userId,
+      );
+      if (result.changed ||
+          (_canMutateCoins() && app_state.prismUser.id == userId && !_isRetryableRefundFailure(result))) {
+        if (result.changed || result.reason == 'already_refunded') {
+          await _forgetPendingRefund(transactionId);
+          if (action == CoinSpendAction.wallpaperDownload || action == CoinSpendAction.premiumWallpaperDownload) {
+            await _updatePendingDownloads(
+              'coins.download.refund_settled',
+              (Map<String, PendingDownload> ledger) => ledger.remove(transactionId) != null,
+              onPersisted: () => _liveDownloadTxIds.remove(transactionId),
+            );
+          }
+        }
+        return result;
+      }
+    }
+    await _rememberPendingRefund(transactionId, userId: userId, action: action, reason: refundReason);
+    return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'refund_queued');
   }
 
   Future<_AiGenerationReservationResult> reserveForAiGeneration({
@@ -1623,6 +1663,19 @@ class CoinsService with WidgetsBindingObserver {
     }
   }
 
+  Future<T> _withTransactionLock<T>(String transactionId, Future<T> Function() action) async {
+    final Future<void>? previous = _transactionLocks[transactionId];
+    final Completer<void> turn = Completer<void>();
+    _transactionLocks[transactionId] = turn.future;
+    if (previous != null) await previous;
+    try {
+      return await action();
+    } finally {
+      turn.complete();
+      if (identical(_transactionLocks[transactionId], turn.future)) _transactionLocks.remove(transactionId);
+    }
+  }
+
   /// Retries refunds and queries verified sessions. Legacy SDK-only claims are discarded, never replayed.
   Future<void> retryPendingRefunds() async {
     if (!_canMutateCoins() || _pendingRetryInFlight) return;
@@ -1648,6 +1701,8 @@ class CoinsService with WidgetsBindingObserver {
       final String entryUser = entry['userId']?.toString() ?? '';
       final String key = _entryKey(entry);
       final bool isReward = _isRewardEntry(entry);
+      final CoinSpendAction action =
+          CoinSpendAction.values.asNameMap()[entry['action']?.toString()] ?? CoinSpendAction.aiGeneration;
       if (isReward && entryUser == userId) discardedReceiptFreeReward = true;
       final int atMs = parseIntOr(entry['atMs']);
       final Duration window = isReward ? _pendingRewardWindow : _refundWindow;
@@ -1664,14 +1719,26 @@ class CoinsService with WidgetsBindingObserver {
         discardedReceiptFreeReward = true;
         continue;
       } else {
-        final CoinSpendAction action =
-            CoinSpendAction.values.asNameMap()[entry['action']?.toString()] ?? CoinSpendAction.aiGeneration;
-        result = await refundSpend(
-          action,
-          sourceTag: 'coins.rollback.retry',
-          transactionId: key,
-          reason: entry['reason']?.toString() ?? 'ai_generation_failed_refund',
-        );
+        result = await _withTransactionLock(key, () async {
+          bool stillQueued = false;
+          await _withRefundQueueLock(() {
+            stillQueued = _readPendingEntries().any(
+              (Map<String, dynamic> pending) =>
+                  !_isRewardEntry(pending) && _entryKey(pending) == key && pending['userId'] == userId,
+            );
+            return Future<void>.value();
+          });
+          if (!stillQueued) {
+            return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'refund_cancelled');
+          }
+          return _refundSpendOnce(
+            action,
+            sourceTag: 'coins.rollback.retry',
+            transactionId: key,
+            userId: userId,
+            reason: entry['reason']?.toString() ?? 'ai_generation_failed_refund',
+          );
+        });
         if (app_state.prismUser.id == userId &&
             action == CoinSpendAction.aiGeneration &&
             (result.changed || result.reason == 'already_refunded')) {
@@ -1880,6 +1947,7 @@ class CoinsService with WidgetsBindingObserver {
         CoinSpendAction.values.asNameMap()[entry.action] ?? CoinSpendAction.wallpaperDownload,
         sourceTag: 'coins.download.abandoned_refund',
         transactionId: entry.txId,
+        userId: userId,
         reason: 'download_failed_refund',
       );
       if (refund.changed) {
@@ -3428,6 +3496,7 @@ class CoinsService with WidgetsBindingObserver {
     String? transactionId,
     String? label,
     String? requestId,
+    String? expectedUserId,
     Map<String, Object?> extra = const <String, Object?>{},
   }) async {
     final int generation = _economySessionGeneration;
@@ -3443,6 +3512,10 @@ class CoinsService with WidgetsBindingObserver {
       'allowPremiumBypass': allowPremiumBypass,
       if (inviterUserId != null) 'inviterUserId': inviterUserId,
       if (transactionId != null) 'transactionId': transactionId,
+      if (expectedUserId != null ||
+          callableName == 'spendCoins' ||
+          (callableName == 'awardCoins' && action == 'refund'))
+        'expectedUserId': expectedUserId ?? userId,
       if (effectiveRequestId != null) 'requestId': effectiveRequestId,
       if (trimmedLabel != null && trimmedLabel.isNotEmpty)
         'label': trimmedLabel.length > _maxLabelLength ? trimmedLabel.substring(0, _maxLabelLength) : trimmedLabel,

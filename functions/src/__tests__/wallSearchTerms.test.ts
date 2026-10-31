@@ -40,11 +40,11 @@ function written(t: TestContext, seed: Doc | undefined) {
   const store = installFakeDb(t, seed ? {"walls/w1": seed} : {});
   const ref = db.collection("walls").doc("w1");
   const update = t.mock.method(ref, "update");
-  const run = (after: Doc | undefined) => onWallSearchTerms.run({
+  const run = async (after: Doc | undefined) => onWallSearchTerms.run({
     params: {wallId: "w1"},
     data: {
       before: {exists: true, data: () => ({})},
-      after: {exists: after !== undefined, ref, data: () => after},
+      after: {exists: after !== undefined, ref, createTime: (await ref.get()).createTime, data: () => after},
     },
   } as unknown as Parameters<typeof onWallSearchTerms.run>[0]);
   return {store, update, run};
@@ -88,4 +88,10 @@ test("a deleted wall is left alone", async (t) => {
     Parameters<typeof onWallSearchTerms.run>[0]);
   assert.equal(update.mock.callCount(), 0);
   assert.equal(store.size, 0);
+});
+
+test("a delayed event indexes current text, never its stale snapshot", async (t) => {
+  const {store, run} = written(t, {title: "Current forest", visionLabels: ["Mountain"]});
+  await run({title: "Obsolete ocean"});
+  assert.deepEqual(store.get("walls/w1")?.searchTerms, ["current", "forest", "mountain"]);
 });

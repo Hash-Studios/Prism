@@ -1,6 +1,14 @@
 {
   "indexes": [
     {
+      "collectionGroup": "wallMetadataEdits",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "wallDocId", "order": "ASCENDING"},
+        {"fieldPath": "createdAt", "order": "DESCENDING"}
+      ]
+    },
+    {
       "collectionGroup": "aiGenerations",
       "queryScope": "COLLECTION",
       "fields": [

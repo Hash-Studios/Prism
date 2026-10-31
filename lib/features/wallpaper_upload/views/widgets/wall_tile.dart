@@ -1,21 +1,19 @@
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
-import 'package:Prism/core/widgets/animated/press_scale.dart';
-import 'package:Prism/core/widgets/prism/prism_bits.dart';
-import 'package:Prism/core/widgets/prism/prism_button.dart';
-import 'package:Prism/core/widgets/prism/prism_card.dart';
-import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/upload/wallpaper/wall_files.dart';
+import 'package:Prism/features/wallpaper_upload/views/pages/resubmit_wall_screen.dart';
+import 'package:Prism/features/wallpaper_upload/views/pages/wall_metadata_editor.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/rejection_feedback.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/review_photo_preview.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/review_tile_parts.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -23,11 +21,46 @@ import 'package:intl/intl.dart';
 
 /// One upload in "Your uploads": a thumbnail, its review status, the file facts and the actions. A rejected upload
 /// also shows the reviewer's reason.
-class WallTile extends StatelessWidget {
+class WallTile extends StatefulWidget {
   const WallTile(this.wallpaper, {super.key, required this.rejected});
 
   final FirestoreDocument wallpaper;
   final bool rejected;
+
+  @override
+  State<WallTile> createState() => _WallTileState();
+}
+
+class _WallTileState extends State<WallTile> {
+  FirestoreDocument get wallpaper => widget.wallpaper;
+  bool get rejected => widget.rejected;
+  bool _deleting = false;
+
+  Future<void> _confirmDelete() async {
+    if (_deleting) return;
+    final l10n = context.l10n;
+    final confirmed = await showPrismConfirm(
+      context,
+      title: rejected ? l10n.wallpaperUploadDeleteConfirmTitle : l10n.wallUploadWithdrawTitle,
+      message: rejected ? l10n.corePopupCannotUndo : l10n.wallUploadWithdrawBody,
+      confirmLabel: rejected ? l10n.wallUploadDeleteHistory : l10n.wallUploadWithdraw,
+      destructive: true,
+    );
+    if (!confirmed || !mounted || _deleting) return;
+    setState(() => _deleting = true);
+    try {
+      await _deleteDoc(
+        collection: rejected ? FirebaseCollections.rejectedWalls : FirebaseCollections.walls,
+        id: wallpaper.id,
+        sourceTag: rejected ? 'review.rejectedWall.delete' : 'review.wall.delete',
+        successToast: rejected ? l10n.wallpaperUploadDeleted : l10n.wallUploadWithdrawn,
+        l10n: l10n,
+        pendingWallData: rejected ? null : wallpaper.data(),
+      );
+    } finally {
+      if (mounted) setState(() => _deleting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,20 +114,9 @@ class WallTile extends StatelessWidget {
                           ),
                           PrismIconButton(
                             icon: Icons.delete_outline_rounded,
-                            tooltip: context.l10n.wallpaperUploadDeleteWallpaper,
+                            tooltip: rejected ? context.l10n.wallUploadDeleteHistory : context.l10n.wallUploadWithdraw,
                             color: cs.error,
-                            onPressed: () => showDeleteConfirm(
-                              context,
-                              title: context.l10n.wallpaperUploadDeleteConfirmTitle,
-                              onConfirm: () => _deleteDoc(
-                                collection: rejected ? FirebaseCollections.rejectedWalls : FirebaseCollections.walls,
-                                id: wallpaper.id,
-                                sourceTag: rejected ? 'review.rejectedWall.delete' : 'review.wall.delete',
-                                successToast: context.l10n.wallpaperUploadDeleted,
-                                l10n: context.l10n,
-                                pendingWallData: rejected ? null : wallpaper.data(),
-                              ),
-                            ),
+                            onPressed: _deleting ? null : _confirmDelete,
                           ),
                         ],
                       ),
@@ -105,6 +127,23 @@ class WallTile extends StatelessWidget {
             ],
           ),
           if (rejected) RejectionFeedback(reason: wallpaper.data()['rejectionReason']?.toString()),
+          const SizedBox(height: PrismSpace.sm),
+          PrismButton(
+            label: rejected ? context.l10n.wallResubmitAction : context.l10n.wallMetadataEdit,
+            variant: PrismButtonVariant.tonal,
+            expand: true,
+            onPressed: _deleting
+                ? null
+                : () {
+                    Navigator.of(context).push<Object?>(
+                      MaterialPageRoute(
+                        builder: (_) => rejected
+                            ? ResubmitWallScreen(rejectedDocId: wallpaper.id)
+                            : WallMetadataEditor(wall: wallpaper, approved: false),
+                      ),
+                    );
+                  },
+          ),
         ],
       ),
     );
@@ -187,6 +226,7 @@ Future<void> _deleteDoc({
     // A pending wall still holds a weekly upload slot. Deleting its files gives the slot back.
     if (pendingWallData != null) await deleteWallFiles(pendingWallData, throwOnFailure: true);
     await firestoreClient.deleteDoc(collection, id, sourceTag: sourceTag);
+    if (pendingWallData != null) analytics.track(UploadWithdrawnEvent(assetId: id));
     toasts.success(successToast);
   } on FirestoreError catch (e, st) {
     logger.e('review delete failed ($sourceTag)', error: e, stackTrace: st);

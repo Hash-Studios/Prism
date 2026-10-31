@@ -20,6 +20,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
 
+class _DefaultsStore extends LastSubmissionDefaultsStore {
+  @override
+  Future<void> save(String owner, SubmissionMetadata metadata) async {}
+}
+
 class _BatchRouter extends AppRouter {
   _BatchRouter(this.uploadRoute);
 
@@ -127,6 +132,7 @@ void main() {
         batch: batch,
         imageSizeForTesting: size,
         prepareImageForTesting: () async {},
+        defaultsStoreForTesting: _DefaultsStore(),
         uploadFileForTesting: upload ?? _upload,
         deleteFileForTesting: ({required path, required sha}) async {},
         createRecordWithMetadataForTesting:
@@ -165,6 +171,7 @@ void main() {
     await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
 
+    expect(find.text('review-stub'), findsOneWidget);
     expect(savedId, hasLength(10));
     expect(savedId, matches(RegExp(r'^[A-Z0-9]+$')));
     expect(savedMetadata!.title, '');
@@ -204,6 +211,25 @@ void main() {
     expect(savedMetadata!.category, 'Nature');
     final event = recorder.events.whereType<UploadMetadataSubmittedEvent>().single;
     expect((event.hasTitle, event.tagCount, event.category), (true, 2, 'Nature'));
+  });
+
+  testWidgets('description and an uncommitted tag reach the submitted metadata', (tester) async {
+    setViewport(tester);
+    SubmissionMetadata? saved;
+    await pumpScreen(
+      tester,
+      await makeImage(tester),
+      save: ({required id, required metadata}) async {
+        saved = metadata;
+        return WallSubmissionResult.submitted;
+      },
+    );
+    await tester.enterText(find.widgetWithText(TextField, 'Description'), '  Evening light  ');
+    await tester.enterText(find.widgetWithText(TextField, 'Tags'), '#Dunes');
+    await tester.tap(find.text('Upload'));
+    await tester.pumpAndSettle();
+    expect(saved!.description, 'Evening light');
+    expect(saved!.tags, ['dunes']);
   });
 
   testWidgets('a tag can be removed and only eight tags are kept', (tester) async {
@@ -324,6 +350,7 @@ void main() {
           image: batch.current,
           batch: batch,
           prepareImageForTesting: () async {},
+          defaultsStoreForTesting: _DefaultsStore(),
           uploadFileForTesting: _upload,
           deleteFileForTesting: ({required path, required sha}) async {},
           createRecordForTesting: () async => WallSubmissionResult.submitted,
@@ -399,6 +426,7 @@ void main() {
           image: batch.current,
           batch: batch,
           prepareImageForTesting: () async {},
+          defaultsStoreForTesting: _DefaultsStore(),
           uploadFileForTesting: _upload,
           deleteFileForTesting: ({required path, required sha}) async {},
           createRecordForTesting: () async => WallSubmissionResult.submitted,

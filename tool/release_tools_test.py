@@ -177,6 +177,21 @@ class ReleaseToolsTest(ReleaseFixture, unittest.TestCase):
         self.assertFalse(Path(self.env['CAPTURE']).exists())
         self.assertNotIn('server-secret', result.stdout + result.stderr)
 
+    def test_doppler_check_skips_local_only_qa_keys(self):
+        env_keys = set(re.findall(r"String\.fromEnvironment\('([^']+)'", (ROOT / 'lib/env/env.dart').read_text()))
+        shipping = sorted(env_keys - {'PRISM_LOCAL_QA_USER', 'PRISM_LOCAL_QA_CERTIFICATE'})
+        self.executable('doppler', '''#!/bin/sh
+cat "$PAYLOAD"
+''')
+        for keys, ok in ((shipping, True), (shipping[1:], False)):
+            with self.subTest(ok=ok):
+                Path(self.env['PAYLOAD']).write_text(''.join(f'{key}=x\n' for key in keys))
+                result = subprocess.run(['bash', str(ROOT / 'tool/doppler_check.sh')], cwd=ROOT, env=self.env,
+                                        capture_output=True, text=True)
+                self.assertEqual(result.returncode == 0, ok, result.stdout)
+                if not ok:
+                    self.assertIn(f'missing key in Doppler config: {shipping[0]}', result.stdout)
+
     def test_allowlist_tracks_shipping_env_keys(self):
         # Bool debug switches and these exact local-only strings do not ship.
         # Do not exclude a prefix: a new Env string must be classified explicitly.
