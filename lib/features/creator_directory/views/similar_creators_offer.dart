@@ -12,8 +12,8 @@ import 'package:flutter/widgets.dart';
 /// The signed-in viewer who already got the offer in this app session. Another account gets its own offer.
 String? _similarOfferUsedBy;
 
-/// Shows the follow toast. After a follow it carries "More like `name`" once per app session, when the creator has
-/// similar creators the viewer does not follow yet. An unfollow never calls this.
+/// Shows the follow toast at once. Once per app session, when the creator has similar creators the viewer does not
+/// follow yet, it then shows the toast again with a "More like `name`" action. An unfollow never calls this.
 Future<void> showFollowToastWithSimilarOffer(
   BuildContext context, {
   required String uid,
@@ -21,10 +21,8 @@ Future<void> showFollowToastWithSimilarOffer(
   required String message,
 }) async {
   final String viewer = app_state.prismUser.id;
-  if (!app_state.prismUser.loggedIn || _similarOfferUsedBy == viewer || uid.isEmpty) {
-    toasts.success(message, haptic: false);
-    return;
-  }
+  toasts.success(message, haptic: false);
+  if (!app_state.prismUser.loggedIn || _similarOfferUsedBy == viewer || uid.isEmpty) return;
   _similarOfferUsedBy = viewer;
   final String label = context.l10n.creatorsMoreLike(name);
   List<DirectoryCreator> similar = const <DirectoryCreator>[];
@@ -34,7 +32,6 @@ Future<void> showFollowToastWithSimilarOffer(
   if (!app_state.prismUser.loggedIn || app_state.prismUser.id != viewer) return;
   if (similar.isEmpty) {
     _similarOfferUsedBy = null;
-    toasts.success(message, haptic: false);
     return;
   }
   toasts.success(
