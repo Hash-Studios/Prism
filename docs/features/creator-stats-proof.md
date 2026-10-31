@@ -72,6 +72,10 @@ Every emulator launch required all six requested ports to be free. Only this tas
 
 The worktree lacked `functions/node_modules`, so `npm ci` ran once. No dependency file or toolchain changed. Local commands used the installed Node v26.12.1, not the package's declared Node 24. npm reported 18 moderate audit findings, which remain outside this change.
 
+## Parent rerun
+
+On the merged branch, the parent reran the queue change independently: the full Functions suite passed with 2,363 tests and 23 skips; `make rules-test` passed 526 checks with 0 failures, including the new private collections; fresh-emulator `seed.cjs` and `assert.cjs` passed, including the higher-counter race; and `capacity.cjs` measured 20,307 reads and 302 writes for one 100-item batch at 20,000 walls, with all 100 items kept at 20,001 walls.
+
 ## Tests and TDD limits
 
 The new daily suite has 25 top-level tests and three nested boundary cases. The new lease suite has 12 tests. Together with the migrated creator-stats tests, the focused suites pass 74 tests.
@@ -87,4 +91,5 @@ Lease acquire and release use normal transaction retries. Only batch transaction
 ## Remaining blockers
 
 - Nothing was deployed. Deploy order: rules, then indexes and TTL configuration (wait until ready), then Functions, then Cloudflare deep-link bindings, all before the store build.
-- No hosted CI, Node 24 runtime, production load, deployment, or new device proof is claimed for the queue change. Production cost and census contention remain rollout checks. There is no open product decision.
+- No hosted CI, Node 24 runtime, production load, deployment, or new device proof is claimed for the queue change. Production cost and census contention remain rollout checks. The UI and Flutter code did not change after `be8d33268`.
+- Open product decision: the Monday inbox reads recorded history at 09:00 UTC. Activity still queued at that time (backlog or a capacity cooldown) can miss that week's notice. The default is best-effort delivery. The alternative is a bounded catch-up run that reuses the existing week markers.
