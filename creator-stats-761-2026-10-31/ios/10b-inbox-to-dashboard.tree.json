@@ -1,0 +1,433 @@
+{
+  "success": true,
+  "data": {
+    "nodes": [
+      {
+        "index": 0,
+        "type": "Application",
+        "role": "UIApplication",
+        "label": "Prism",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 402,
+          "height": 874
+        },
+        "enabled": true,
+        "depth": 0,
+        "pid": 74014,
+        "hittable": false,
+        "ref": "e1",
+        "kind": "application"
+      },
+      {
+        "index": 1,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Back",
+        "rect": {
+          "x": 4,
+          "y": 66,
+          "width": 48,
+          "height": 48
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e2",
+        "kind": "button"
+      },
+      {
+        "index": 2,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Your stats",
+        "rect": {
+          "x": 60,
+          "y": 79.5,
+          "width": 75.87099202473956,
+          "height": 21
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e3",
+        "kind": "text"
+      },
+      {
+        "index": 3,
+        "parentIndex": 0,
+        "type": "ScrollView",
+        "role": "FlutterSemanticsScrollView",
+        "subrole": "UIScrollView",
+        "rect": {
+          "x": 0,
+          "y": 118,
+          "width": 402,
+          "height": 722
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e4",
+        "kind": "scroll-area"
+      },
+      {
+        "index": 4,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "This week so far compared with last week. Weeks start on Monday, UTC.",
+        "rect": {
+          "x": 20,
+          "y": 138,
+          "width": 362,
+          "height": 34
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e5",
+        "kind": "text"
+      },
+      {
+        "index": 5,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Views\n8 this week · 7 last week\nTotal: 12,000\n+1 compared with last week",
+        "rect": {
+          "x": 20,
+          "y": 172,
+          "width": 362,
+          "height": 91
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e6",
+        "kind": "text"
+      },
+      {
+        "index": 6,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Saves\n16 this week · 14 last week\nTotal: 180\n+2 compared with last week",
+        "rect": {
+          "x": 20,
+          "y": 263,
+          "width": 362,
+          "height": 91
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e7",
+        "kind": "text"
+      },
+      {
+        "index": 7,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Sets\n24 this week · 21 last week\nTotal: 240\n+3 compared with last week",
+        "rect": {
+          "x": 20,
+          "y": 354,
+          "width": 362,
+          "height": 91
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e8",
+        "kind": "text"
+      },
+      {
+        "index": 8,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Downloads\n32 this week · 28 last week\nTotal: 360\n+4 compared with last week",
+        "rect": {
+          "x": 20,
+          "y": 445,
+          "width": 362,
+          "height": 91
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e9",
+        "kind": "text"
+      },
+      {
+        "index": 9,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Shares\n40 this week · 35 last week\nTotal: 90\n+5 compared with last week",
+        "rect": {
+          "x": 20,
+          "y": 536,
+          "width": 362,
+          "height": 91
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e10",
+        "kind": "text"
+      },
+      {
+        "index": 10,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Folder additions\n48 this week · 42 last week\nTotal: 252\n+6 compared with last week",
+        "rect": {
+          "x": 20,
+          "y": 627,
+          "width": 362,
+          "height": 91
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e11",
+        "kind": "text"
+      },
+      {
+        "index": 11,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Remixes\n56 this week · 49 last week\nTotal: 8\n+7 compared with last week",
+        "rect": {
+          "x": 20,
+          "y": 718,
+          "width": 362,
+          "height": 91
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e12",
+        "kind": "text"
+      },
+      {
+        "index": 12,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Views",
+        "rect": {
+          "x": 20,
+          "y": 833,
+          "width": 66.30401611328125,
+          "height": 7
+        },
+        "enabled": true,
+        "selected": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e13",
+        "kind": "button"
+      },
+      {
+        "index": 13,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Saves",
+        "rect": {
+          "x": 94.30401611328125,
+          "y": 833,
+          "width": 65.60400390625,
+          "height": 7
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e14",
+        "kind": "button"
+      },
+      {
+        "index": 14,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Sets",
+        "rect": {
+          "x": 167.90802001953125,
+          "y": 833,
+          "width": 55.55198160807291,
+          "height": 7
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e15",
+        "kind": "button"
+      },
+      {
+        "index": 15,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Downloads",
+        "rect": {
+          "x": 231.46000162760416,
+          "y": 833,
+          "width": 99.02201334635416,
+          "height": 7
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e16",
+        "kind": "button"
+      },
+      {
+        "index": 16,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Shares",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": false,
+        "ref": "e17",
+        "kind": "button"
+      },
+      {
+        "index": 17,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Folder additions",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": false,
+        "ref": "e18",
+        "kind": "button"
+      },
+      {
+        "index": 18,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Remixes",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": false,
+        "ref": "e19",
+        "kind": "button"
+      },
+      {
+        "index": 19,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Views, eight weeks. Week of Sep 7, 2026: 1; Week of Sep 14, 2026: 2; Week of Sep 21, 2026: 3; Week of Sep 28, 2026: 4; Week of Oct 5, 2026: 5; Week of Oct 12, 2026: 6; Week of Oct 19, 2026: 7; Week of Oct 26, 2026: 8",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": false,
+        "ref": "e20",
+        "kind": "text"
+      }
+    ],
+    "truncated": false,
+    "appName": "com.hash.prism",
+    "appBundleId": "com.hash.prism",
+    "visibility": {
+      "partial": false,
+      "visibleNodeCount": 20,
+      "totalNodeCount": 20,
+      "reasons": []
+    },
+    "viewport": {
+      "width": 402,
+      "height": 874
+    },
+    "presentedSurface": "absent",
+    "snapshotDiagnostics": {
+      "stats": {
+        "count": 235,
+        "p50Ms": 105,
+        "p95Ms": 720,
+        "maxMs": 1314,
+        "slowThresholdMs": 1500,
+        "platform": "ios",
+        "backends": {
+          "xctest": 235
+        }
+      }
+    },
+    "refsGeneration": 903949
+  }
+}

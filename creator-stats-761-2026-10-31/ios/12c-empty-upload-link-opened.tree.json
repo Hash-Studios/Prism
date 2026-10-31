@@ -1,0 +1,152 @@
+{
+  "success": true,
+  "data": {
+    "nodes": [
+      {
+        "index": 0,
+        "type": "Application",
+        "role": "UIApplication",
+        "label": "Prism",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 402,
+          "height": 874
+        },
+        "enabled": true,
+        "depth": 0,
+        "pid": 92453,
+        "hittable": false,
+        "ref": "e1",
+        "kind": "application"
+      },
+      {
+        "index": 1,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Back",
+        "rect": {
+          "x": 8,
+          "y": 70,
+          "width": 48,
+          "height": 48
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 92453,
+        "hittable": true,
+        "ref": "e2",
+        "kind": "button"
+      },
+      {
+        "index": 2,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Upload a wallpaper",
+        "rect": {
+          "x": 60,
+          "y": 82,
+          "width": 330,
+          "height": 24
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 92453,
+        "hittable": true,
+        "ref": "e3",
+        "kind": "text"
+      },
+      {
+        "index": 3,
+        "parentIndex": 0,
+        "type": "ScrollView",
+        "role": "FlutterSemanticsScrollView",
+        "subrole": "UIScrollView",
+        "rect": {
+          "x": 30.056045532226562,
+          "y": 410.5,
+          "width": 341.8878987630208,
+          "height": 180
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 92453,
+        "hittable": true,
+        "ref": "e4",
+        "kind": "scroll-area"
+      },
+      {
+        "index": 4,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Choose an image from your gallery to continue.",
+        "rect": {
+          "x": 50.05604553222656,
+          "y": 494.5,
+          "width": 301.88787841796875,
+          "height": 20
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 92453,
+        "hittable": true,
+        "ref": "e5",
+        "kind": "text"
+      },
+      {
+        "index": 5,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Choose image",
+        "rect": {
+          "x": 128.34750366210938,
+          "y": 538.5,
+          "width": 145.30500284830725,
+          "height": 52
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 92453,
+        "hittable": true,
+        "ref": "e6",
+        "kind": "button"
+      }
+    ],
+    "truncated": false,
+    "appName": "com.hash.prism",
+    "appBundleId": "com.hash.prism",
+    "visibility": {
+      "partial": false,
+      "visibleNodeCount": 6,
+      "totalNodeCount": 6,
+      "reasons": []
+    },
+    "viewport": {
+      "width": 402,
+      "height": 874
+    },
+    "presentedSurface": "absent",
+    "snapshotDiagnostics": {
+      "stats": {
+        "count": 253,
+        "p50Ms": 102,
+        "p95Ms": 711,
+        "maxMs": 1314,
+        "slowThresholdMs": 1500,
+        "platform": "ios",
+        "backends": {
+          "xctest": 253
+        }
+      }
+    },
+    "refsGeneration": 903966
+  }
+}

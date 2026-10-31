@@ -1,0 +1,292 @@
+{
+  "success": true,
+  "data": {
+    "nodes": [
+      {
+        "index": 0,
+        "type": "Application",
+        "role": "UIApplication",
+        "label": "Prism",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 402,
+          "height": 874
+        },
+        "enabled": true,
+        "depth": 0,
+        "pid": 74014,
+        "hittable": false,
+        "ref": "e1",
+        "kind": "application"
+      },
+      {
+        "index": 1,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Back",
+        "rect": {
+          "x": 8,
+          "y": 8,
+          "width": 40,
+          "height": 134
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e2",
+        "kind": "button"
+      },
+      {
+        "index": 2,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Gift a 24 h pass",
+        "rect": {
+          "x": 248,
+          "y": 51,
+          "width": 48,
+          "height": 48
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e3",
+        "kind": "button"
+      },
+      {
+        "index": 3,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Follow",
+        "rect": {
+          "x": 296,
+          "y": 51,
+          "width": 48,
+          "height": 48
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e4",
+        "kind": "button"
+      },
+      {
+        "index": 4,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "More options",
+        "rect": {
+          "x": 344,
+          "y": 50,
+          "width": 50,
+          "height": 50
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e5",
+        "kind": "button"
+      },
+      {
+        "index": 5,
+        "parentIndex": 0,
+        "type": "ScrollView",
+        "role": "FlutterSemanticsScrollView",
+        "subrole": "UIScrollView",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 402,
+          "height": 874
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e6",
+        "kind": "scroll-area"
+      },
+      {
+        "index": 6,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "QA other",
+        "rect": {
+          "x": 60.29999796549479,
+          "y": 207.05999755859375,
+          "width": 281.3999837239583,
+          "height": 31
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e7",
+        "kind": "text"
+      },
+      {
+        "index": 7,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "@qaother",
+        "rect": {
+          "x": 60.29999796549479,
+          "y": 241.05999755859375,
+          "width": 281.3999837239583,
+          "height": 20
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e8",
+        "kind": "text"
+      },
+      {
+        "index": 8,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Local emulator fixture",
+        "rect": {
+          "x": 56.279998779296875,
+          "y": 269.05999755859375,
+          "width": 289.4400227864583,
+          "height": 19
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e9",
+        "kind": "text"
+      },
+      {
+        "index": 9,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "0 Following",
+        "rect": {
+          "x": 67.64998372395833,
+          "y": 312.55999755859375,
+          "width": 68.23801676432292,
+          "height": 19
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e10",
+        "kind": "text"
+      },
+      {
+        "index": 10,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "0 Followers",
+        "rect": {
+          "x": 168.88800048828125,
+          "y": 312.55999755859375,
+          "width": 68.34202067057294,
+          "height": 19
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e11",
+        "kind": "button"
+      },
+      {
+        "index": 11,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Bronze rank. How XP and rank rewards work",
+        "rect": {
+          "x": 254.23002115885416,
+          "y": 298.05999755859375,
+          "width": 80.11999511718747,
+          "height": 47.999979654947936
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e12",
+        "kind": "button"
+      },
+      {
+        "index": 12,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "No wallpapers yet",
+        "rect": {
+          "x": 133.7869873046875,
+          "y": 517.5999755859375,
+          "width": 134.42604573567712,
+          "height": 23
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 74014,
+        "hittable": true,
+        "ref": "e13",
+        "kind": "text"
+      }
+    ],
+    "truncated": false,
+    "appName": "com.hash.prism",
+    "appBundleId": "com.hash.prism",
+    "visibility": {
+      "partial": false,
+      "visibleNodeCount": 13,
+      "totalNodeCount": 13,
+      "reasons": []
+    },
+    "viewport": {
+      "width": 402,
+      "height": 874
+    },
+    "presentedSurface": "absent",
+    "snapshotDiagnostics": {
+      "stats": {
+        "count": 237,
+        "p50Ms": 105,
+        "p95Ms": 720,
+        "maxMs": 1314,
+        "slowThresholdMs": 1500,
+        "platform": "ios",
+        "backends": {
+          "xctest": 237
+        }
+      }
+    },
+    "refsGeneration": 903951
+  }
+}

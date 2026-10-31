@@ -1,0 +1,333 @@
+{
+  "success": true,
+  "data": {
+    "nodes": [
+      {
+        "index": 0,
+        "type": "Application",
+        "role": "UIApplication",
+        "label": "Prism",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 402,
+          "height": 874
+        },
+        "enabled": true,
+        "depth": 0,
+        "pid": 34567,
+        "hittable": false,
+        "ref": "e1",
+        "kind": "application"
+      },
+      {
+        "index": 1,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Back",
+        "rect": {
+          "x": 4,
+          "y": 66,
+          "width": 48,
+          "height": 48
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 34567,
+        "hittable": true,
+        "ref": "e2",
+        "kind": "button"
+      },
+      {
+        "index": 2,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "QA creator wall",
+        "rect": {
+          "x": 60,
+          "y": 79.5,
+          "width": 118.52400716145831,
+          "height": 21
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 34567,
+        "hittable": true,
+        "ref": "e3",
+        "kind": "text"
+      },
+      {
+        "index": 3,
+        "parentIndex": 0,
+        "type": "ScrollView",
+        "role": "FlutterSemanticsScrollView",
+        "subrole": "UIScrollView",
+        "rect": {
+          "x": 0,
+          "y": 118,
+          "width": 402,
+          "height": 722
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 34567,
+        "hittable": true,
+        "ref": "e4",
+        "kind": "scroll-area"
+      },
+      {
+        "index": 4,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Views",
+        "rect": {
+          "x": 20,
+          "y": 138,
+          "width": 66.30401611328125,
+          "height": 48
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 34567,
+        "hittable": true,
+        "ref": "e5",
+        "kind": "button"
+      },
+      {
+        "index": 5,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Saves",
+        "rect": {
+          "x": 94.30401611328125,
+          "y": 138,
+          "width": 65.60400390625,
+          "height": 48
+        },
+        "enabled": true,
+        "selected": true,
+        "depth": 1,
+        "pid": 34567,
+        "hittable": true,
+        "ref": "e6",
+        "kind": "button"
+      },
+      {
+        "index": 6,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Sets",
+        "rect": {
+          "x": 167.90802001953125,
+          "y": 138,
+          "width": 55.55198160807291,
+          "height": 48
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 34567,
+        "hittable": true,
+        "ref": "e7",
+        "kind": "button"
+      },
+      {
+        "index": 7,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Downloads",
+        "rect": {
+          "x": 231.46000162760416,
+          "y": 138,
+          "width": 99.02201334635416,
+          "height": 48
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 34567,
+        "hittable": true,
+        "ref": "e8",
+        "kind": "button"
+      },
+      {
+        "index": 8,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Shares",
+        "rect": {
+          "x": 20,
+          "y": 190,
+          "width": 71.58199055989583,
+          "height": 48
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 34567,
+        "hittable": true,
+        "ref": "e9",
+        "kind": "button"
+      },
+      {
+        "index": 9,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Folder additions",
+        "rect": {
+          "x": 99.58199055989583,
+          "y": 190,
+          "width": 130.78800455729169,
+          "height": 48
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 34567,
+        "hittable": true,
+        "ref": "e10",
+        "kind": "button"
+      },
+      {
+        "index": 10,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Remixes",
+        "rect": {
+          "x": 238.3699747721354,
+          "y": 190,
+          "width": 80.79400634765622,
+          "height": 48
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 34567,
+        "hittable": true,
+        "ref": "e11",
+        "kind": "button"
+      },
+      {
+        "index": 11,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Saves\n16 this week · 14 last week\nTotal: 180\n+2 compared with last week",
+        "rect": {
+          "x": 20,
+          "y": 238,
+          "width": 362,
+          "height": 75
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 34567,
+        "hittable": true,
+        "ref": "e12",
+        "kind": "text"
+      },
+      {
+        "index": 12,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Saves, eight weeks. Week of Sep 7, 2026: 2; Week of Sep 14, 2026: 4; Week of Sep 21, 2026: 6; Week of Sep 28, 2026: 8; Week of Oct 5, 2026: 10; Week of Oct 12, 2026: 12; Week of Oct 19, 2026: 14; Week of Oct 26, 2026: 16",
+        "rect": {
+          "x": 20,
+          "y": 313,
+          "width": 362,
+          "height": 432
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 34567,
+        "hittable": true,
+        "ref": "e13",
+        "kind": "text"
+      },
+      {
+        "index": 13,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Eight weeks, oldest first. A dash means unavailable history. Tracking can begin partway through a week, so recorded weeks may be partial. The current week is incomplete.",
+        "rect": {
+          "x": 20,
+          "y": 745,
+          "width": 362,
+          "height": 80
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 34567,
+        "hittable": true,
+        "ref": "e14",
+        "kind": "text"
+      },
+      {
+        "index": 14,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Save totals count current favourites; weekly saves count additions. Remix totals count current credited remixes; weekly remixes count first accepted credits. Folder additions are recorded only from the start of tracking.",
+        "rect": {
+          "x": 20,
+          "y": 825,
+          "width": 362,
+          "height": 15
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 34567,
+        "hittable": true,
+        "ref": "e15",
+        "kind": "text"
+      }
+    ],
+    "truncated": false,
+    "appName": "com.hash.prism",
+    "appBundleId": "com.hash.prism",
+    "visibility": {
+      "partial": false,
+      "visibleNodeCount": 15,
+      "totalNodeCount": 15,
+      "reasons": []
+    },
+    "viewport": {
+      "width": 402,
+      "height": 874
+    },
+    "presentedSurface": "absent",
+    "snapshotDiagnostics": {
+      "stats": {
+        "count": 63,
+        "p50Ms": 105,
+        "p95Ms": 309,
+        "maxMs": 453,
+        "slowThresholdMs": 1500,
+        "platform": "ios",
+        "backends": {
+          "xctest": 63
+        }
+      }
+    },
+    "refsGeneration": 903840
+  }
+}

@@ -1,0 +1,192 @@
+{
+  "success": true,
+  "data": {
+    "nodes": [
+      {
+        "index": 0,
+        "type": "Application",
+        "role": "UIApplication",
+        "label": "Prism",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 402,
+          "height": 874
+        },
+        "enabled": true,
+        "depth": 0,
+        "pid": 66130,
+        "hittable": false,
+        "ref": "e1",
+        "kind": "application"
+      },
+      {
+        "index": 1,
+        "parentIndex": 0,
+        "type": "Button",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Back",
+        "rect": {
+          "x": 4,
+          "y": 66,
+          "width": 48,
+          "height": 48
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 66130,
+        "hittable": true,
+        "ref": "e2",
+        "kind": "button"
+      },
+      {
+        "index": 2,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Your stats",
+        "rect": {
+          "x": 60,
+          "y": 76,
+          "width": 101.66714477539062,
+          "height": 28
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 66130,
+        "hittable": true,
+        "ref": "e3",
+        "kind": "text"
+      },
+      {
+        "index": 3,
+        "parentIndex": 0,
+        "type": "ScrollView",
+        "role": "FlutterSemanticsScrollView",
+        "subrole": "UIScrollView",
+        "rect": {
+          "x": 0,
+          "y": 118,
+          "width": 402,
+          "height": 722
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 66130,
+        "hittable": true,
+        "ref": "e4",
+        "kind": "scroll-area"
+      },
+      {
+        "index": 4,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "This week so far compared with last week. Weeks start on Monday, UTC.",
+        "rect": {
+          "x": 20,
+          "y": 138,
+          "width": 362,
+          "height": 212
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 66130,
+        "hittable": true,
+        "ref": "e5",
+        "kind": "text"
+      },
+      {
+        "index": 5,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Views\n8 this week · 7 last week\nTotal: 12,000\n+1 compared with last week",
+        "rect": {
+          "x": 20,
+          "y": 350,
+          "width": 362,
+          "height": 366
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 66130,
+        "hittable": true,
+        "ref": "e6",
+        "kind": "text"
+      },
+      {
+        "index": 6,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Saves\n16 this week · 14 last week\nTotal: 180\n+2 compared with last week",
+        "rect": {
+          "x": 20,
+          "y": 716,
+          "width": 362,
+          "height": 124
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 66130,
+        "hittable": true,
+        "ref": "e7",
+        "kind": "text"
+      },
+      {
+        "index": 7,
+        "parentIndex": 0,
+        "type": "StaticText",
+        "role": "FlutterSemanticsObject",
+        "subrole": "UIAccessibilityElement",
+        "label": "Sets\n24 this week · 21 last week\nTotal: 240\n+3 compared with last week",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "enabled": true,
+        "depth": 1,
+        "pid": 66130,
+        "hittable": false,
+        "ref": "e8",
+        "kind": "text"
+      }
+    ],
+    "truncated": false,
+    "appName": "com.hash.prism",
+    "appBundleId": "com.hash.prism",
+    "visibility": {
+      "partial": false,
+      "visibleNodeCount": 8,
+      "totalNodeCount": 8,
+      "reasons": []
+    },
+    "viewport": {
+      "width": 402,
+      "height": 874
+    },
+    "presentedSurface": "absent",
+    "snapshotDiagnostics": {
+      "stats": {
+        "count": 134,
+        "p50Ms": 89,
+        "p95Ms": 234,
+        "maxMs": 453,
+        "slowThresholdMs": 1500,
+        "platform": "ios",
+        "backends": {
+          "xctest": 134
+        }
+      }
+    },
+    "refsGeneration": 903871
+  }
+}

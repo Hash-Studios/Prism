@@ -1,0 +1,505 @@
+{
+  "success": true,
+  "data": {
+    "nodes": [
+      {
+        "index": 0,
+        "type": "android.widget.TextView",
+        "label": "7:18",
+        "contentDescription": "7:18 PM",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "identifier": "com.android.systemui:id/clock",
+        "bundleId": "com.android.systemui",
+        "rect": {
+          "x": 47,
+          "y": 47,
+          "width": 104,
+          "height": 43
+        },
+        "visibleToUser": true,
+        "depth": 0,
+        "systemBar": "status",
+        "ref": "e1",
+        "kind": "text"
+      },
+      {
+        "index": 1,
+        "type": "android.widget.ImageView",
+        "label": "Android System notification: ",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "bundleId": "com.android.systemui",
+        "rect": {
+          "x": 151,
+          "y": 1,
+          "width": 58,
+          "height": 135
+        },
+        "visibleToUser": true,
+        "depth": 0,
+        "systemBar": "status",
+        "ref": "e2",
+        "kind": "image"
+      },
+      {
+        "index": 2,
+        "type": "android.widget.ImageView",
+        "label": "Wifi signal full.",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "identifier": "com.android.systemui:id/wifi_signal",
+        "bundleId": "com.android.systemui",
+        "rect": {
+          "x": 891,
+          "y": 48,
+          "width": 39,
+          "height": 39
+        },
+        "visibleToUser": true,
+        "depth": 0,
+        "systemBar": "status",
+        "ref": "e3",
+        "kind": "image"
+      },
+      {
+        "index": 3,
+        "type": "android.widget.FrameLayout",
+        "label": "T-Mobile, three bars.",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "identifier": "com.android.systemui:id/mobile_combo",
+        "bundleId": "com.android.systemui",
+        "rect": {
+          "x": 930,
+          "y": 39,
+          "width": 39,
+          "height": 58
+        },
+        "visibleToUser": true,
+        "depth": 0,
+        "systemBar": "status",
+        "ref": "e4",
+        "kind": "group"
+      },
+      {
+        "index": 4,
+        "type": "android.widget.ImageView",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "identifier": "com.android.systemui:id/mobile_signal",
+        "bundleId": "com.android.systemui",
+        "rect": {
+          "x": 930,
+          "y": 48,
+          "width": 39,
+          "height": 39
+        },
+        "visibleToUser": true,
+        "depth": 1,
+        "parentIndex": 3,
+        "systemBar": "status",
+        "ref": "e5",
+        "kind": "image"
+      },
+      {
+        "index": 5,
+        "type": "android.widget.LinearLayout",
+        "label": "Battery charging, 100 percent.",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "identifier": "com.android.systemui:id/battery",
+        "bundleId": "com.android.systemui",
+        "rect": {
+          "x": 985,
+          "y": 51,
+          "width": 20,
+          "height": 34
+        },
+        "visibleToUser": true,
+        "depth": 0,
+        "systemBar": "status",
+        "ref": "e6",
+        "kind": "group"
+      },
+      {
+        "index": 6,
+        "type": "android.widget.ImageView",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "bundleId": "com.android.systemui",
+        "rect": {
+          "x": 985,
+          "y": 51,
+          "width": 20,
+          "height": 34
+        },
+        "visibleToUser": true,
+        "depth": 1,
+        "parentIndex": 5,
+        "systemBar": "status",
+        "ref": "e7",
+        "kind": "image"
+      },
+      {
+        "index": 7,
+        "type": "android.widget.FrameLayout",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "bundleId": "com.hash.prism",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 1080,
+          "height": 2400
+        },
+        "visibleToUser": true,
+        "depth": 0,
+        "ref": "e8",
+        "kind": "group"
+      },
+      {
+        "index": 8,
+        "type": "android.widget.LinearLayout",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "bundleId": "com.hash.prism",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 1080,
+          "height": 2400
+        },
+        "visibleToUser": true,
+        "depth": 1,
+        "parentIndex": 7,
+        "ref": "e9",
+        "kind": "group"
+      },
+      {
+        "index": 9,
+        "type": "android.widget.FrameLayout",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "identifier": "android:id/content",
+        "bundleId": "com.hash.prism",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 1080,
+          "height": 2400
+        },
+        "visibleToUser": true,
+        "depth": 2,
+        "parentIndex": 8,
+        "ref": "e10",
+        "kind": "group"
+      },
+      {
+        "index": 10,
+        "type": "android.widget.FrameLayout",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "bundleId": "com.hash.prism",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 1080,
+          "height": 2400
+        },
+        "visibleToUser": true,
+        "depth": 3,
+        "parentIndex": 9,
+        "ref": "e11",
+        "kind": "group"
+      },
+      {
+        "index": 11,
+        "type": "android.widget.FrameLayout",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "bundleId": "com.hash.prism",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 1080,
+          "height": 2400
+        },
+        "visibleToUser": true,
+        "hittable": true,
+        "depth": 4,
+        "parentIndex": 10,
+        "ref": "e12",
+        "kind": "group"
+      },
+      {
+        "index": 12,
+        "type": "android.view.View",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "bundleId": "com.hash.prism",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 1080,
+          "height": 2400
+        },
+        "visibleToUser": true,
+        "depth": 5,
+        "parentIndex": 11,
+        "ref": "e13",
+        "kind": "group"
+      },
+      {
+        "index": 13,
+        "type": "android.view.View",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "bundleId": "com.hash.prism",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 1080,
+          "height": 2400
+        },
+        "visibleToUser": true,
+        "depth": 6,
+        "parentIndex": 12,
+        "ref": "e14",
+        "kind": "group"
+      },
+      {
+        "index": 14,
+        "type": "android.view.View",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "bundleId": "com.hash.prism",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 1080,
+          "height": 2400
+        },
+        "visibleToUser": true,
+        "depth": 7,
+        "parentIndex": 13,
+        "ref": "e15",
+        "kind": "group"
+      },
+      {
+        "index": 15,
+        "type": "android.widget.Button",
+        "label": "Back",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "bundleId": "com.hash.prism",
+        "rect": {
+          "x": 21,
+          "y": 157,
+          "width": 126,
+          "height": 126
+        },
+        "visibleToUser": true,
+        "hittable": true,
+        "depth": 8,
+        "parentIndex": 14,
+        "ref": "e16",
+        "kind": "button"
+      },
+      {
+        "index": 16,
+        "type": "android.view.View",
+        "label": "Upload a wallpaper",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "bundleId": "com.hash.prism",
+        "rect": {
+          "x": 158,
+          "y": 189,
+          "width": 891,
+          "height": 63
+        },
+        "visibleToUser": true,
+        "hittable": true,
+        "depth": 8,
+        "parentIndex": 14,
+        "ref": "e17",
+        "kind": "group"
+      },
+      {
+        "index": 17,
+        "type": "android.view.View",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "bundleId": "com.hash.prism",
+        "rect": {
+          "x": 91,
+          "y": 1117,
+          "width": 898,
+          "height": 473
+        },
+        "visibleToUser": true,
+        "depth": 8,
+        "parentIndex": 14,
+        "ref": "e18",
+        "kind": "group"
+      },
+      {
+        "index": 18,
+        "type": "android.view.View",
+        "label": "Choose an image from your gallery to continue.",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "bundleId": "com.hash.prism",
+        "rect": {
+          "x": 144,
+          "y": 1338,
+          "width": 792,
+          "height": 52
+        },
+        "visibleToUser": true,
+        "hittable": true,
+        "depth": 9,
+        "parentIndex": 17,
+        "ref": "e19",
+        "kind": "group"
+      },
+      {
+        "index": 19,
+        "type": "android.widget.Button",
+        "label": "Choose image",
+        "enabled": true,
+        "selected": false,
+        "editable": false,
+        "password": false,
+        "hintShowing": false,
+        "bundleId": "com.hash.prism",
+        "rect": {
+          "x": 349,
+          "y": 1453,
+          "width": 382,
+          "height": 137
+        },
+        "visibleToUser": true,
+        "hittable": true,
+        "depth": 9,
+        "parentIndex": 17,
+        "ref": "e20",
+        "kind": "button"
+      }
+    ],
+    "truncated": false,
+    "appName": "com.hash.prism",
+    "appBundleId": "com.hash.prism",
+    "visibility": {
+      "partial": false,
+      "visibleNodeCount": 20,
+      "totalNodeCount": 20,
+      "reasons": []
+    },
+    "keyboard": {
+      "kind": "absent"
+    },
+    "viewport": {
+      "width": 1080,
+      "height": 2400
+    },
+    "androidSnapshot": {
+      "backend": "android-helper",
+      "pixelDensity": 2.625,
+      "helperVersion": "0.21.31",
+      "helperApiVersion": "2",
+      "helperTransport": "persistent-session",
+      "helperSessionReused": true,
+      "installReason": "current",
+      "waitForIdleTimeoutMs": 500,
+      "waitForIdleQuietMs": 100,
+      "timeoutMs": 2000,
+      "maxDepth": 128,
+      "maxNodes": 5000,
+      "rootPresent": true,
+      "cacheInvalidated": true,
+      "captureMode": "interactive-windows",
+      "windowCount": 2,
+      "missingRootWindowTypes": [],
+      "nodeCount": 42,
+      "helperTruncated": false,
+      "elapsedMs": 9
+    },
+    "snapshotQuality": {
+      "state": "healthy",
+      "backend": "android-helper"
+    },
+    "snapshotDiagnostics": {
+      "stats": {
+        "count": 348,
+        "p50Ms": 64,
+        "p95Ms": 489,
+        "maxMs": 6585,
+        "slowThresholdMs": 1500,
+        "platform": "android",
+        "backends": {
+          "android": 348
+        }
+      }
+    },
+    "refsGeneration": 896076
+  }
+}
