@@ -11716,7 +11716,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get statsSaves => 'Guardados';
 
   @override
-  String get statsSets => 'Aplicaciones';
+  String get statsSets => 'Veces aplicado';
 
   @override
   String get statsDownloads => 'Descargas';

@@ -11902,7 +11902,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get statsSaves => 'Salvos';
 
   @override
-  String get statsSets => 'Aplicações';
+  String get statsSets => 'Vezes aplicado';
 
   @override
   String get statsDownloads => 'Downloads';
@@ -23895,7 +23895,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get statsSaves => 'Salvos';
 
   @override
-  String get statsSets => 'Aplicações';
+  String get statsSets => 'Vezes aplicado';
 
   @override
   String get statsDownloads => 'Downloads';

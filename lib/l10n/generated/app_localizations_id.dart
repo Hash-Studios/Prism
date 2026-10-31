@@ -11629,7 +11629,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get statsShares => 'Dibagikan';
 
   @override
-  String get statsFolderAdds => 'Penambahan folder';
+  String get statsFolderAdds => 'Ditambahkan ke folder';
 
   @override
   String get statsRemixes => 'Remix';
@@ -11667,7 +11667,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get statsCountingNote =>
-      'Total simpan menghitung favorit saat ini; simpan mingguan menghitung penambahan. Total remix menghitung remix dengan kredit saat ini; remix mingguan menghitung kredit pertama yang diterima. Penambahan folder dicatat sejak pelacakan dimulai.';
+      'Total simpan menghitung favorit saat ini; simpan mingguan menghitung penambahan. Total remix menghitung remix dengan kredit saat ini; remix mingguan menghitung kredit pertama yang diterima. Wallpaper yang ditambahkan ke folder dicatat sejak pelacakan dimulai.';
 
   @override
   String get statsUnavailable => 'Tidak tersedia';
