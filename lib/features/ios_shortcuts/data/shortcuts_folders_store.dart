@@ -6,6 +6,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -128,6 +129,17 @@ class ShortcutsFoldersStore {
       });
     }();
   }
+
+  /// [sync] with each changed folder's newest [maxItems] walls read from [repository].
+  static Future<void> syncFrom(
+    FoldersRepository repository, {
+    required String ownerId,
+    required List<FolderEntity> folders,
+  }) => sync(
+    ownerId: ownerId,
+    folders: folders,
+    fetchItems: (folderId) => repository.fetchItems(folderId, userId: ownerId, limit: maxItems),
+  );
 
   static Future<String?> rotationFolderId() async {
     final String? id = (await SharedPreferences.getInstance()).getString(PersistenceKeys.shortcutsRotationFolder);

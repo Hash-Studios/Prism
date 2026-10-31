@@ -82,14 +82,7 @@ class _ShortcutsFoldersListenerState extends State<ShortcutsFoldersListener> {
       return;
     }
     final FoldersRepository repository = widget.repository ?? getIt<FoldersRepository>();
-    _run(
-      () => ShortcutsFoldersStore.sync(
-        ownerId: userId,
-        folders: folders.folders,
-        fetchItems: (folderId) =>
-            repository.fetchItems(folderId, userId: userId, limit: ShortcutsFoldersStore.maxItems),
-      ),
-    );
+    _run(() => ShortcutsFoldersStore.syncFrom(repository, ownerId: userId, folders: folders.folders));
   }
 
   bool _isResolvedGuest(SessionState state) => state.status == LoadStatus.success && !state.session.loggedIn;
