@@ -11382,7 +11382,7 @@
   "@shortcutsGuideHeadline": {
     "description": "Headline of the iOS Shortcuts guide."
   },
-  "shortcutsGuideBody": "Set up Shortcuts once. Each day it sets a wallpaper from your rotation folder, and every wall shows once before any wall repeats.",
+  "shortcutsGuideBody": "Set up Shortcuts once. Each day it sets a wallpaper from your rotation folder. Its 200 newest walls each show once before any repeats.",
   "@shortcutsGuideBody": {
     "description": "Body under the iOS Shortcuts guide headline."
   },

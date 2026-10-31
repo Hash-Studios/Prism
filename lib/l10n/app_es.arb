@@ -3252,7 +3252,7 @@
   "statsChartWeek": "Semana del {date}: {value}",
   "statsChartSummary": "{metric}, ocho semanas. {summary}",
   "shortcutsGuideHeadline": "Un fondo nuevo cada día",
-  "shortcutsGuideBody": "Configura Atajos una vez. Cada día establece un fondo de tu carpeta de rotación, y cada fondo aparece una vez antes de que se repita ninguno.",
+  "shortcutsGuideBody": "Configura Atajos una vez. Cada día, la automatización pone un fondo de tu carpeta de rotación. Sus 200 fondos más recientes aparecen una vez antes de que se repita alguno.",
   "shortcutsSourceRotation": "Carpeta de rotación",
   "shortcutsSourceRotationDescription": "Reproduce en orden aleatorio la carpeta que elegiste arriba.",
   "shortcutsSourceFolder": "Carpeta",

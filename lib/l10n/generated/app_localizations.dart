@@ -18898,7 +18898,7 @@ abstract class AppLocalizations {
   /// Body under the iOS Shortcuts guide headline.
   ///
   /// In en, this message translates to:
-  /// **'Set up Shortcuts once. Each day it sets a wallpaper from your rotation folder, and every wall shows once before any wall repeats.'**
+  /// **'Set up Shortcuts once. Each day it sets a wallpaper from your rotation folder. Its 200 newest walls each show once before any repeats.'**
   String get shortcutsGuideBody;
 
   /// Section title on the iOS Shortcuts guide, and the name of the Shortcuts source that shuffles the folder picked in Prism. Must match the iOS intent's source name.

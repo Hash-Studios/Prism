@@ -11912,7 +11912,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get shortcutsGuideBody =>
-      'Richte Kurzbefehle einmal ein. Danach setzt die Automation jeden Tag ein Hintergrundbild aus deinem Rotationsordner, und jedes Bild erscheint einmal, bevor sich eines wiederholt.';
+      'Richte Kurzbefehle einmal ein. Danach setzt die Automation jeden Tag ein Hintergrundbild aus deinem Rotationsordner. Seine 200 neuesten Bilder erscheinen je einmal, bevor sich eines wiederholt.';
 
   @override
   String get shortcutsSourceRotation => 'Rotationsordner';

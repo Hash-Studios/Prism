@@ -98,10 +98,13 @@ class ShortcutsFoldersStore {
         final Result<List<FavouriteWallEntity>?> result = await fetchItems(folder.id);
         if (!current()) return;
         if (result.failure != null) {
+          // With no earlier copy, leave the folder out: the intent then says to open Prism, which syncs again, and
+          // never reports a folder with walls as empty.
+          if (old == null) continue;
           // Keep what the last snapshot had. The epoch update time makes the next sync read the folder again.
           entries.add((
             folder: folder.copyWith(updatedAt: DateTime.fromMillisecondsSinceEpoch(0)),
-            items: _items(old?['items']),
+            items: _items(old['items']),
           ));
           continue;
         }

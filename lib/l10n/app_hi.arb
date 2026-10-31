@@ -11382,7 +11382,7 @@
   "@shortcutsGuideHeadline": {
     "description": "Headline of the iOS Shortcuts guide."
   },
-  "shortcutsGuideBody": "Shortcuts को एक बार सेट करें। हर दिन यह आपके रोटेशन फ़ोल्डर से एक वॉलपेपर लगाता है, और कोई भी वॉलपेपर दोबारा आने से पहले हर वॉल एक बार ज़रूर दिखता है।",
+  "shortcutsGuideBody": "Shortcuts को एक बार सेट करें। हर दिन ऑटोमेशन आपके रोटेशन फ़ोल्डर से एक वॉलपेपर लगाता है। इसके 200 सबसे नए वॉलपेपर दोबारा आने से पहले एक-एक बार दिखते हैं।",
   "@shortcutsGuideBody": {
     "description": "Body under the iOS Shortcuts guide headline."
   },

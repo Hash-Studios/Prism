@@ -323,6 +323,20 @@ void main() {
       expect(_itemIds(_entry(await _snapshot(), 'f1')), <String>[folderItemKey(_wall('b'))]);
     });
 
+    test('a failed first fetch leaves the folder out rather than writing it empty', () async {
+      final _FakeFetcher fetcher = _FakeFetcher(<String, List<FavouriteWallEntity>?>{
+        'f1': <FavouriteWallEntity>[_wall('a')],
+        'f2': <FavouriteWallEntity>[_wall('b')],
+      })..failing.add('f2');
+      await ShortcutsFoldersStore.sync(
+        ownerId: 'owner-a',
+        folders: <FolderEntity>[_folder('f1'), _folder('f2')],
+        fetchItems: fetcher.call,
+      );
+
+      expect(_folderIds(await _snapshot()), <String>['f1']);
+    });
+
     test('a folder whose fetch returns null is left out', () async {
       final _FakeFetcher fetcher = _FakeFetcher(<String, List<FavouriteWallEntity>?>{
         'f1': <FavouriteWallEntity>[_wall('a')],

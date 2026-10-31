@@ -216,6 +216,26 @@ void main() {
     await _finish(tester, foldersStates, sessionStates);
   }
 
+  Future<void> resumeScenario(WidgetTester tester) async {
+    final _RecordingStore store = _RecordingStore(<String, Object>{});
+    await _installStore(tester, store);
+    final _FakeFoldersRepository repository = _FakeFoldersRepository()..walls['f1'] = <FavouriteWallEntity>[_wall('a')];
+    final (foldersStates, sessionStates) = await pump(
+      tester,
+      _folders('u1', <FolderEntity>[_folder('f1')]),
+      _session('u1'),
+      repository,
+    );
+    await _settle(tester, () => store.writes.length == 1, reason: 'app open snapshot');
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await _settle(tester, () => store.writes.length == 2, reason: 'resume snapshot');
+
+    expect(repository.fetched, <String>['f1'], reason: 'an unchanged folder is not read again on resume');
+    await _finish(tester, foldersStates, sessionStates);
+  }
+
   Future<void> folderChangeScenario(WidgetTester tester) async {
     final _RecordingStore store = _RecordingStore(<String, Object>{});
     await _installStore(tester, store);
@@ -444,6 +464,7 @@ void main() {
   testWidgets('on iOS folder snapshots follow the signed-in user and rotation selection', (tester) async {
     // The native store retains its write-tail Future. Keep its scenarios in one FakeAsync zone.
     await appOpenScenario(tester);
+    await resumeScenario(tester);
     await folderChangeScenario(tester);
     await otherUserScenario(tester);
     await signOutScenario(tester);

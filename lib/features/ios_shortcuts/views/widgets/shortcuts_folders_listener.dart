@@ -13,7 +13,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// On iOS, keeps the folders snapshot that the Shortcuts intent reads in step with the signed-in user's folders.
-/// The app loads folders on every sign-in and app open, so that load writes the snapshot too.
+/// The app loads folders on every sign-in and app open, so that load writes the snapshot too. Coming back to the app
+/// syncs again, which reads only folders that changed or failed last time.
 class ShortcutsFoldersListener extends StatefulWidget {
   const ShortcutsFoldersListener({required this.child, this.repository, super.key});
 
@@ -29,7 +30,7 @@ class ShortcutsFoldersListener extends StatefulWidget {
   State<ShortcutsFoldersListener> createState() => _ShortcutsFoldersListenerState();
 }
 
-class _ShortcutsFoldersListenerState extends State<ShortcutsFoldersListener> {
+class _ShortcutsFoldersListenerState extends State<ShortcutsFoldersListener> with WidgetsBindingObserver {
   late bool _wasLoggedIn;
   late String _lastUserId;
   late LoadStatus _foldersStatus;
@@ -45,6 +46,7 @@ class _ShortcutsFoldersListenerState extends State<ShortcutsFoldersListener> {
     _wasLoggedIn = sessionState.session.loggedIn;
     _lastUserId = sessionState.session.userId;
     _foldersStatus = context.read<FoldersBloc>().state.status;
+    WidgetsBinding.instance.addObserver(this);
     if (_enabled) {
       _rotationFolderChanges = ShortcutsFoldersStore.rotationFolderChanges.listen((_) => _sync());
     }
@@ -54,9 +56,15 @@ class _ShortcutsFoldersListenerState extends State<ShortcutsFoldersListener> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _debounce?.cancel();
     _rotationFolderChanges?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _sync();
   }
 
   void _onFoldersChanged(FoldersState current) {

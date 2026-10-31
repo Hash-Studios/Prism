@@ -11890,7 +11890,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get shortcutsGuideBody =>
-      'Configura Atajos una vez. Cada día establece un fondo de tu carpeta de rotación, y cada fondo aparece una vez antes de que se repita ninguno.';
+      'Configura Atajos una vez. Cada día, la automatización pone un fondo de tu carpeta de rotación. Sus 200 fondos más recientes aparecen una vez antes de que se repita alguno.';
 
   @override
   String get shortcutsSourceRotation => 'Carpeta de rotación';

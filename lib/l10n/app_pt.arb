@@ -3133,7 +3133,7 @@
   "statsChartWeek": "Semana de {date}: {value}",
   "statsChartSummary": "{metric}, oito semanas. {summary}",
   "shortcutsGuideHeadline": "Um papel de parede novo todo dia",
-  "shortcutsGuideBody": "Configure os Atalhos uma vez. Todo dia, a automação define um papel de parede da sua pasta de rotação, e cada papel aparece uma vez antes de qualquer um se repetir.",
+  "shortcutsGuideBody": "Configure os Atalhos uma vez. Todo dia, a automação define um papel de parede da sua pasta de rotação. Os 200 mais recentes aparecem uma vez cada antes de qualquer repetição.",
   "shortcutsSourceRotation": "Pasta de rotação",
   "shortcutsSourceRotationDescription": "Embaralha a pasta que você escolheu acima.",
   "shortcutsSourceFolder": "Pasta",

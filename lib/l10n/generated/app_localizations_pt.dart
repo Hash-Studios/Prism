@@ -12077,7 +12077,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get shortcutsGuideBody =>
-      'Configure os Atalhos uma vez. Todo dia, a automação define um papel de parede da sua pasta de rotação, e cada papel aparece uma vez antes de qualquer um se repetir.';
+      'Configure os Atalhos uma vez. Todo dia, a automação define um papel de parede da sua pasta de rotação. Os 200 mais recentes aparecem uma vez cada antes de qualquer repetição.';
 
   @override
   String get shortcutsSourceRotation => 'Pasta de rotação';
@@ -24265,7 +24265,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get shortcutsGuideBody =>
-      'Configure os Atalhos uma vez. Todo dia, a automação define um papel de parede da sua pasta de rotação, e cada papel aparece uma vez antes de qualquer um se repetir.';
+      'Configure os Atalhos uma vez. Todo dia, a automação define um papel de parede da sua pasta de rotação. Os 200 mais recentes aparecem uma vez cada antes de qualquer repetição.';
 
   @override
   String get shortcutsSourceRotation => 'Pasta de rotação';

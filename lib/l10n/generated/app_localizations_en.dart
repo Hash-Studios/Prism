@@ -11741,7 +11741,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shortcutsGuideBody =>
-      'Set up Shortcuts once. Each day it sets a wallpaper from your rotation folder, and every wall shows once before any wall repeats.';
+      'Set up Shortcuts once. Each day it sets a wallpaper from your rotation folder. Its 200 newest walls each show once before any repeats.';
 
   @override
   String get shortcutsSourceRotation => 'Rotation folder';

@@ -10,7 +10,7 @@ On iPhone, Shortcuts can set a wallpaper on a schedule or trigger. Add Prism's "
   - Random favourite. A random favourite that Shortcuts can use. Heart wallpapers in Prism first. Some protected wallpapers may not be available.
   - Rotation folder. Shuffles the folder that you pick in Prism.
   - Folder. Shuffles a folder that you pick in the action. The Folder field shows only for this source.
-- Random favourite, Rotation folder and Folder use a shuffle. Each wall shows once before any wall repeats.
+- Random favourite, Rotation folder and Folder use a shuffle. Each wall shows once before any wall repeats. A folder rotates its 200 newest walls; favourites rotate the 200 newest favourites.
 - Apple's "Set Wallpaper" action takes the image and sets it.
 - The action also shows as App Shortcuts in Siri and Spotlight. Say "Get a wallpaper from Prism" or "Shuffle my Prism wallpaper".
 
@@ -107,6 +107,7 @@ FoldersBloc / SessionBloc -> ShortcutsFoldersListener
 - A shuffle bag keeps the walls that a pass has shown. It is stored at `shortcuts.shuffle_bags` (native `flutter.shortcuts.shuffle_bags`).
 - Each pool has its own bag. The pools are `favourites` and `folder:<id>`.
 - Each wall shows once before any wall repeats. Then a new pass starts.
+- If the first read of a folder fails, the snapshot leaves the folder out, and the action says to open Prism. When you come back to Prism, it syncs again. Only changed or failed folders are read.
 - A wall that you add joins the current pass. A wall that you remove leaves it.
 - A new pass does not start with the wall that ended the last pass.
 - The pass moves on only after the image loads. A failed run does not use up a wall.

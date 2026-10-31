@@ -11779,7 +11779,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get shortcutsGuideBody =>
-      'Atur Pintasan sekali saja. Setiap hari, Pintasan memasang wallpaper dari folder rotasi Anda, dan setiap wallpaper tampil sekali sebelum ada yang diulang.';
+      'Atur Pintasan sekali saja. Setiap hari, otomatisasi memasang wallpaper dari folder rotasi Anda. 200 wallpaper terbarunya masing-masing tampil sekali sebelum ada yang terulang.';
 
   @override
   String get shortcutsSourceRotation => 'Folder rotasi';

@@ -11884,7 +11884,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get shortcutsGuideBody =>
-      'Shortcuts को एक बार सेट करें। हर दिन यह आपके रोटेशन फ़ोल्डर से एक वॉलपेपर लगाता है, और कोई भी वॉलपेपर दोबारा आने से पहले हर वॉल एक बार ज़रूर दिखता है।';
+      'Shortcuts को एक बार सेट करें। हर दिन ऑटोमेशन आपके रोटेशन फ़ोल्डर से एक वॉलपेपर लगाता है। इसके 200 सबसे नए वॉलपेपर दोबारा आने से पहले एक-एक बार दिखते हैं।';
 
   @override
   String get shortcutsSourceRotation => 'रोटेशन फ़ोल्डर';
