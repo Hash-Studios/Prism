@@ -892,7 +892,7 @@ function storeButtonsHtml(env: CatalogEnv): string {
 }
 
 function appBandHtml(env: CatalogEnv): string {
-  return `<aside class="band"><div><h2>Set any of these in one tap</h2><p>Prism has thousands of wallpapers from real creators, with new ones every day.</p></div>${storeButtonsHtml(env)}</aside>`;
+  return `<aside class="band"><div><h2>Set any wallpaper in one tap</h2><p>Prism has thousands of wallpapers from real creators, with new ones every day.</p></div>${storeButtonsHtml(env)}</aside>`;
 }
 
 function gridHtml(cards: Card[], eager = 0): string {
