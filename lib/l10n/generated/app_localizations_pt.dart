@@ -12118,7 +12118,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String tipMessage(String name) {
-    return 'Escolha um valor. $name recebe todas as moedas e vê o seu nome.';
+    return 'Escolha um valor. $name recebe todas as moedas e vê seu nome.';
   }
 
   @override
@@ -12127,13 +12127,13 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String tipBalance(int balance) {
     String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance moedas', one: '1 moeda');
-    return 'O seu saldo: $_temp0';
+    return 'Seu saldo: $_temp0';
   }
 
   @override
   String tipShortBy(int amount) {
     String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount moedas', one: '1 moeda');
-    return 'Faltam-lhe $_temp0.';
+    return 'Faltam $_temp0.';
   }
 
   @override
@@ -12149,37 +12149,37 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String tipThanksMessage(String name, int amount) {
-    return '$name recebeu as suas $amount moedas.';
+    return '$name recebeu suas $amount moedas.';
   }
 
   @override
   String get tipDone => 'Concluído';
 
   @override
-  String get tipNotEnoughCoins => 'Não tem moedas suficientes para esta gorjeta.';
+  String get tipNotEnoughCoins => 'Você não tem moedas suficientes para esta gorjeta.';
 
   @override
-  String get tipDailyLimit => 'Já enviou todas as gorjetas de hoje. Tente novamente amanhã.';
+  String get tipDailyLimit => 'Você já enviou todas as gorjetas de hoje. Tente novamente amanhã.';
 
   @override
   String tipPairLimit(String name) {
-    return 'Já deu gorjeta a $name hoje. Tente novamente amanhã.';
+    return 'Você já deu gorjeta para $name hoje. Tente novamente amanhã.';
   }
 
   @override
   String tipCreatorLimit(String name) {
-    return '$name já não pode receber mais gorjetas hoje. Tente novamente amanhã.';
+    return '$name não pode receber mais gorjetas hoje. Tente novamente amanhã.';
   }
 
   @override
-  String get tipSenderTooNew => 'Pode enviar gorjetas 7 dias depois de se juntar ao Prism.';
+  String get tipSenderTooNew => 'Você pode enviar gorjetas 7 dias depois de entrar no Prism.';
 
   @override
-  String get tipSenderIneligible => 'Inicie sessão com uma conta verificada para enviar gorjetas.';
+  String get tipSenderIneligible => 'Entre com uma conta verificada para enviar gorjetas.';
 
   @override
   String tipUnavailable(String name) {
-    return 'Não pode dar gorjeta a $name neste momento.';
+    return 'Você não pode dar gorjeta para $name agora.';
   }
 
   @override
@@ -12187,7 +12187,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String wallTippedBy(int count) {
-    return 'Gorjeta de $count pessoas';
+    return 'Recebeu gorjeta de $count pessoas';
   }
 
   @override
@@ -12198,25 +12198,25 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String notifPushTipReceivedTitle(String senderName, String amount, String wallTitle) {
-    return '$senderName deu-lhe $amount moedas de gorjeta por $wallTitle';
+    return '$senderName te deu $amount moedas de gorjeta por $wallTitle';
   }
 
   @override
   String notifPushTipReceivedTitleUntitled(String senderName, String amount) {
-    return '$senderName deu-lhe $amount moedas de gorjeta';
+    return '$senderName te deu $amount moedas de gorjeta';
   }
 
   @override
-  String get notifPushTipReceivedBody => 'Veja as suas gorjetas nas estatísticas de criador.';
+  String get notifPushTipReceivedBody => 'Veja suas gorjetas nas estatísticas de criador.';
 
   @override
   String notifTipsReceivedTitle(int count) {
-    return 'Recebeu $count gorjetas hoje';
+    return 'Você recebeu $count gorjetas hoje';
   }
 
   @override
   String notifTipsReceivedBody(int coins) {
-    return '$coins moedas no total. Veja-as nas estatísticas de criador.';
+    return '$coins moedas no total. Veja nas suas estatísticas de criador.';
   }
 
   @override
@@ -12242,7 +12242,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get statsTipsEmpty =>
-      'Ainda não há gorjetas. Os fãs podem dar-lhe gorjetas a partir dos seus wallpapers e do seu perfil.';
+      'Ainda não há gorjetas. Seus fãs podem dar gorjeta pelos seus wallpapers e pelo seu perfil.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).

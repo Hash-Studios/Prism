@@ -27,7 +27,7 @@ void main() {
     final Map<String, String> english = _readAndroidStrings(_androidEnglishPath);
     final Map<String, String> spanish = _readAndroidStrings(_androidSpanishPath);
 
-    expect(english, hasLength(70));
+    expect(english, hasLength(73));
     expect(spanish.keys.toSet(), english.keys.toSet());
 
     for (final MapEntry<String, String> entry in english.entries) {
@@ -46,7 +46,7 @@ void main() {
     final Map<String, Object?> strings = catalog['strings']! as Map<String, Object?>;
 
     expect(catalog['sourceLanguage'], 'en');
-    expect(strings, hasLength(62));
+    expect(strings, hasLength(65));
 
     for (final MapEntry<String, Object?> entry in strings.entries) {
       final Map<String, Object?> record = entry.value! as Map<String, Object?>;
