@@ -11458,7 +11458,7 @@
   "@shortcutsManualNew": {
     "description": "Manual step to build the shortcut."
   },
-  "shortcutsManualGet": "\"Get Prism Wallpaper\" जोड़ें। Source को रोटेशन फ़ोल्डर पर सेट करें।",
+  "shortcutsManualGet": "\"Prism वॉलपेपर पाएँ\" जोड़ें। स्रोत को रोटेशन फ़ोल्डर पर सेट करें।",
   "@shortcutsManualGet": {
     "description": "Manual step to build the shortcut. Keep the quoted action name and \"Rotation folder\" as iOS shows them."
   },
@@ -11541,5 +11541,9 @@
   "autoRotateIosAction": "Shortcuts सेट करें",
   "@autoRotateIosAction": {
     "description": "Button on the auto-rotate page on iPhone that opens the Shortcuts guide."
+  },
+  "shortcutsAutomationIos16": "iOS 16 में \"तुरंत चलाएँ\" नहीं है। इसके बजाय \"चलाने से पहले पूछें\" बंद करें।",
+  "@shortcutsAutomationIos16": {
+    "description": "Note under the Step 2 automation lines for iOS 16, which has no Run Immediately option. Use the Shortcuts labels in this language."
   }
 }

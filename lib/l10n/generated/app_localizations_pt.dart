@@ -12077,7 +12077,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get shortcutsGuideBody =>
-      'Configure os Atalhos uma vez. Todo dia ele define um papel de parede da sua pasta de rotação, e cada papel aparece uma vez antes de qualquer um se repetir.';
+      'Configure os Atalhos uma vez. Todo dia, a automação define um papel de parede da sua pasta de rotação, e cada papel aparece uma vez antes de qualquer um se repetir.';
 
   @override
   String get shortcutsSourceRotation => 'Pasta de rotação';
@@ -12132,7 +12132,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get shortcutsManualNew => 'Nos Atalhos, toque em + para criar um atalho novo.';
 
   @override
-  String get shortcutsManualGet => 'Adicione \"Get Prism Wallpaper\". Defina a Fonte como Pasta de rotação.';
+  String get shortcutsManualGet => 'Adicione \"Obter papel de parede do Prism\". Defina Origem como Pasta de rotação.';
 
   @override
   String get shortcutsManualSet =>
@@ -12188,6 +12188,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get autoRotateIosAction => 'Configurar os Atalhos';
+
+  @override
+  String get shortcutsAutomationIos16 =>
+      'No iOS 16 não existe \"Executar Imediatamente\". Desative \"Perguntar Antes de Executar\".';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -24261,7 +24265,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get shortcutsGuideBody =>
-      'Configure os Atalhos uma vez. Todo dia ele define um papel de parede da sua pasta de rotação, e cada papel aparece uma vez antes de qualquer um se repetir.';
+      'Configure os Atalhos uma vez. Todo dia, a automação define um papel de parede da sua pasta de rotação, e cada papel aparece uma vez antes de qualquer um se repetir.';
 
   @override
   String get shortcutsSourceRotation => 'Pasta de rotação';
@@ -24316,7 +24320,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get shortcutsManualNew => 'Nos Atalhos, toque em + para criar um atalho novo.';
 
   @override
-  String get shortcutsManualGet => 'Adicione \"Get Prism Wallpaper\". Defina a Fonte como Pasta de rotação.';
+  String get shortcutsManualGet => 'Adicione \"Obter papel de parede do Prism\". Defina Origem como Pasta de rotação.';
 
   @override
   String get shortcutsManualSet =>
@@ -24372,4 +24376,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get autoRotateIosAction => 'Configurar os Atalhos';
+
+  @override
+  String get shortcutsAutomationIos16 =>
+      'No iOS 16 não existe \"Executar Imediatamente\". Desative \"Perguntar Antes de Executar\".';
 }

@@ -11849,4 +11849,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get autoRotateIosAction => 'Set up Shortcuts';
+
+  @override
+  String get shortcutsAutomationIos16 => 'On iOS 16 there is no Run Immediately. Turn off Ask Before Running instead.';
 }

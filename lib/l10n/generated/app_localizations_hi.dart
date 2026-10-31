@@ -11938,7 +11938,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get shortcutsManualNew => 'Shortcuts में + दबाकर नया शॉर्टकट बनाएँ।';
 
   @override
-  String get shortcutsManualGet => '\"Get Prism Wallpaper\" जोड़ें। Source को रोटेशन फ़ोल्डर पर सेट करें।';
+  String get shortcutsManualGet => '\"Prism वॉलपेपर पाएँ\" जोड़ें। स्रोत को रोटेशन फ़ोल्डर पर सेट करें।';
 
   @override
   String get shortcutsManualSet => '\"Set Wallpaper Photo\" जोड़ें। उसके तीर को दबाएँ, फिर \"Show Preview\" बंद करें।';
@@ -11992,4 +11992,8 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get autoRotateIosAction => 'Shortcuts सेट करें';
+
+  @override
+  String get shortcutsAutomationIos16 =>
+      'iOS 16 में \"तुरंत चलाएँ\" नहीं है। इसके बजाय \"चलाने से पहले पूछें\" बंद करें।';
 }

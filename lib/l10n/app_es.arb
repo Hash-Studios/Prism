@@ -3269,8 +3269,8 @@
   "shortcutsStepAddAction": "Añadir el atajo",
   "shortcutsStepAddManualBody": "Créalo en Atajos con 2 acciones.",
   "shortcutsManualNew": "En Atajos, toca + para crear un atajo nuevo.",
-  "shortcutsManualGet": "Añade “Get Prism Wallpaper”. Define Fuente como Carpeta de rotación.",
-  "shortcutsManualSet": "Añade “Definir foto de fondo de pantalla”. Toca la flecha y desactiva Mostrar vista previa.",
+  "shortcutsManualGet": "Añade “Obtener fondo de pantalla de Prism”. Define Origen como Carpeta de rotación.",
+  "shortcutsManualSet": "Añade “Establecer foto de fondo de pantalla”. Toca la flecha y desactiva Mostrar vista previa.",
   "shortcutsManualName": "Nombra el atajo “{name}”.",
   "shortcutsStepAutomationTitle": "Ejecútalo todos los días",
   "shortcutsAutomationOpen": "En Atajos, toca Automatización y luego +.",
@@ -3284,5 +3284,6 @@
   "foldersRotateDaily": "Rotar esta carpeta a diario",
   "autoRotateIosTitle": "Cambia los fondos con Atajos",
   "autoRotateIosBody": "En el iPhone, una automatización de Atajos define un nuevo fondo de tu carpeta cada día.",
-  "autoRotateIosAction": "Configurar Atajos"
+  "autoRotateIosAction": "Configurar Atajos",
+  "shortcutsAutomationIos16": "En iOS 16 no existe “Ejecutar inmediatamente”. Desactiva “Preguntar antes de ejecutar”."
 }

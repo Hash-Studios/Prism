@@ -3133,7 +3133,7 @@
   "statsChartWeek": "Semana de {date}: {value}",
   "statsChartSummary": "{metric}, oito semanas. {summary}",
   "shortcutsGuideHeadline": "Um papel de parede novo todo dia",
-  "shortcutsGuideBody": "Configure os Atalhos uma vez. Todo dia ele define um papel de parede da sua pasta de rotação, e cada papel aparece uma vez antes de qualquer um se repetir.",
+  "shortcutsGuideBody": "Configure os Atalhos uma vez. Todo dia, a automação define um papel de parede da sua pasta de rotação, e cada papel aparece uma vez antes de qualquer um se repetir.",
   "shortcutsSourceRotation": "Pasta de rotação",
   "shortcutsSourceRotationDescription": "Embaralha a pasta que você escolheu acima.",
   "shortcutsSourceFolder": "Pasta",
@@ -3150,7 +3150,7 @@
   "shortcutsStepAddAction": "Adicionar o atalho",
   "shortcutsStepAddManualBody": "Crie nos Atalhos com 2 ações.",
   "shortcutsManualNew": "Nos Atalhos, toque em + para criar um atalho novo.",
-  "shortcutsManualGet": "Adicione \"Get Prism Wallpaper\". Defina a Fonte como Pasta de rotação.",
+  "shortcutsManualGet": "Adicione \"Obter papel de parede do Prism\". Defina Origem como Pasta de rotação.",
   "shortcutsManualSet": "Adicione \"Definir Foto de Fundo\". Toque na seta nela e desative Mostrar Pré-Visualização.",
   "shortcutsManualName": "Dê o nome \"{name}\" ao atalho.",
   "shortcutsStepAutomationTitle": "Execute todos os dias",
@@ -3165,5 +3165,6 @@
   "foldersRotateDaily": "Rotacionar esta pasta todo dia",
   "autoRotateIosTitle": "Troque os papéis de parede com os Atalhos",
   "autoRotateIosBody": "No iPhone, uma automação dos Atalhos define um papel de parede novo da sua pasta todo dia.",
-  "autoRotateIosAction": "Configurar os Atalhos"
+  "autoRotateIosAction": "Configurar os Atalhos",
+  "shortcutsAutomationIos16": "No iOS 16 não existe \"Executar Imediatamente\". Desative \"Perguntar Antes de Executar\"."
 }

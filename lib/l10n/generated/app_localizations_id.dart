@@ -11834,7 +11834,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get shortcutsManualNew => 'Di Pintasan, ketuk + untuk membuat pintasan baru.';
 
   @override
-  String get shortcutsManualGet => 'Tambahkan \"Get Prism Wallpaper\". Atur Sumber ke Folder rotasi.';
+  String get shortcutsManualGet => 'Tambahkan \"Dapatkan Wallpaper Prism\". Atur Sumber ke Folder rotasi.';
 
   @override
   String get shortcutsManualSet =>
@@ -11890,4 +11890,8 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get autoRotateIosAction => 'Atur Pintasan';
+
+  @override
+  String get shortcutsAutomationIos16 =>
+      'Di iOS 16 tidak ada \"Jalankan Segera\". Matikan \"Tanya Sebelum Menjalankan\" sebagai gantinya.';
 }

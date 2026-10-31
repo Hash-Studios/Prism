@@ -11912,7 +11912,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get shortcutsGuideBody =>
-      'Richte Kurzbefehle einmal ein. Jeden Tag setzt er ein Hintergrundbild aus deinem Rotationsordner, und jedes Bild erscheint einmal, bevor sich eines wiederholt.';
+      'Richte Kurzbefehle einmal ein. Danach setzt die Automation jeden Tag ein Hintergrundbild aus deinem Rotationsordner, und jedes Bild erscheint einmal, bevor sich eines wiederholt.';
 
   @override
   String get shortcutsSourceRotation => 'Rotationsordner';
@@ -11966,7 +11966,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get shortcutsManualNew => 'Tippe in Kurzbefehle auf +, um einen neuen Kurzbefehl zu erstellen.';
 
   @override
-  String get shortcutsManualGet => 'Füge „Get Prism Wallpaper“ hinzu. Setze Quelle auf Rotationsordner.';
+  String get shortcutsManualGet => 'Füge „Prism-Hintergrundbild abrufen“ hinzu. Setze Quelle auf Rotationsordner.';
 
   @override
   String get shortcutsManualSet =>
@@ -12022,4 +12022,8 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get autoRotateIosAction => 'Kurzbefehle einrichten';
+
+  @override
+  String get shortcutsAutomationIos16 =>
+      'Unter iOS 16 gibt es „Sofort ausführen“ nicht. Schalte stattdessen „Vor Ausführen bestätigen“ aus.';
 }

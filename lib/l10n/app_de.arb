@@ -10929,7 +10929,7 @@
   "@shortcutsGuideHeadline": {
     "description": "Headline of the iOS Shortcuts guide."
   },
-  "shortcutsGuideBody": "Richte Kurzbefehle einmal ein. Jeden Tag setzt er ein Hintergrundbild aus deinem Rotationsordner, und jedes Bild erscheint einmal, bevor sich eines wiederholt.",
+  "shortcutsGuideBody": "Richte Kurzbefehle einmal ein. Danach setzt die Automation jeden Tag ein Hintergrundbild aus deinem Rotationsordner, und jedes Bild erscheint einmal, bevor sich eines wiederholt.",
   "@shortcutsGuideBody": {
     "description": "Body under the iOS Shortcuts guide headline."
   },
@@ -11005,7 +11005,7 @@
   "@shortcutsManualNew": {
     "description": "Manual step to build the shortcut."
   },
-  "shortcutsManualGet": "Füge „Get Prism Wallpaper“ hinzu. Setze Quelle auf Rotationsordner.",
+  "shortcutsManualGet": "Füge „Prism-Hintergrundbild abrufen“ hinzu. Setze Quelle auf Rotationsordner.",
   "@shortcutsManualGet": {
     "description": "Manual step to build the shortcut. Keep the quoted action name and \"Rotation folder\" as iOS shows them."
   },
@@ -11088,5 +11088,9 @@
   "autoRotateIosAction": "Kurzbefehle einrichten",
   "@autoRotateIosAction": {
     "description": "Button on the auto-rotate page on iPhone that opens the Shortcuts guide."
+  },
+  "shortcutsAutomationIos16": "Unter iOS 16 gibt es „Sofort ausführen“ nicht. Schalte stattdessen „Vor Ausführen bestätigen“ aus.",
+  "@shortcutsAutomationIos16": {
+    "description": "Note under the Step 2 automation lines for iOS 16, which has no Run Immediately option. Use the Shortcuts labels in this language."
   }
 }

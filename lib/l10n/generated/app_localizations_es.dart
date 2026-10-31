@@ -11945,11 +11945,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get shortcutsManualNew => 'En Atajos, toca + para crear un atajo nuevo.';
 
   @override
-  String get shortcutsManualGet => 'Añade “Get Prism Wallpaper”. Define Fuente como Carpeta de rotación.';
+  String get shortcutsManualGet =>
+      'Añade “Obtener fondo de pantalla de Prism”. Define Origen como Carpeta de rotación.';
 
   @override
   String get shortcutsManualSet =>
-      'Añade “Definir foto de fondo de pantalla”. Toca la flecha y desactiva Mostrar vista previa.';
+      'Añade “Establecer foto de fondo de pantalla”. Toca la flecha y desactiva Mostrar vista previa.';
 
   @override
   String shortcutsManualName(String name) {
@@ -12001,4 +12002,8 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get autoRotateIosAction => 'Configurar Atajos';
+
+  @override
+  String get shortcutsAutomationIos16 =>
+      'En iOS 16 no existe “Ejecutar inmediatamente”. Desactiva “Preguntar antes de ejecutar”.';
 }

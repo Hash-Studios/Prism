@@ -11541,5 +11541,9 @@
   "autoRotateIosAction": "Set up Shortcuts",
   "@autoRotateIosAction": {
     "description": "Button on the auto-rotate page on iPhone that opens the Shortcuts guide."
+  },
+  "shortcutsAutomationIos16": "On iOS 16 there is no Run Immediately. Turn off Ask Before Running instead.",
+  "@shortcutsAutomationIos16": {
+    "description": "Note under the Step 2 automation lines for iOS 16, which has no Run Immediately option. Use the Shortcuts labels in this language."
   }
 }

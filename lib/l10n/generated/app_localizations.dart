@@ -19092,6 +19092,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set up Shortcuts'**
   String get autoRotateIosAction;
+
+  /// Note under the Step 2 automation lines for iOS 16, which has no Run Immediately option. Use the Shortcuts labels in this language.
+  ///
+  /// In en, this message translates to:
+  /// **'On iOS 16 there is no Run Immediately. Turn off Ask Before Running instead.'**
+  String get shortcutsAutomationIos16;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

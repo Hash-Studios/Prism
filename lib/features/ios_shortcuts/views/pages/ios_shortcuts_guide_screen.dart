@@ -159,7 +159,7 @@ class _IosShortcutsGuideScreenState extends State<IosShortcutsGuideScreen> {
             number: 2,
             title: l10n.shortcutsStepAutomationTitle,
             lines: shortcutsAutomationSteps(l10n),
-            note: l10n.shortcutsAutomationNoTab(iosShortcutName),
+            note: '${l10n.shortcutsAutomationNoTab(iosShortcutName)}\n${l10n.shortcutsAutomationIos16}',
           ),
           _Step(
             number: 3,
