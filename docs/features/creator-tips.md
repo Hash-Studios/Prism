@@ -71,6 +71,19 @@ No rules change: `tipRateDaily`, `wallTippers` and `creatorTips` have no client 
 1. Functions: `tipCreator` (new), `getCreatorStats` (returns `tips`), `deleteAccount` (cleans tip docs).
 2. Then the store build.
 
+## Local proof
+
+Use the creator stats harness in `tool/creator_stats_qa/` (it now also serves `tipCreator`). Do these steps in this order:
+
+1. Start the emulators: `bash tool/creator_stats_qa/start.sh demo-prism`.
+2. Seed: `QA_IMAGE_HOST=127.0.0.1 node tool/creator_stats_qa/seed.cjs demo-prism`, then `node tool/creator_stats_qa/seed_tips.cjs demo-prism`.
+3. Build the fan app with `CREATOR_STATS_EMULATOR_ACCOUNT=other` and the creator app with `creator`.
+4. Open the wall with `prism://share/qa-creator?source=prism` and the profile with `prism://user/qa-stats-creator`.
+
+The tips seed makes `other` ("Ben") a 30 day old fan with 60 coins and `creator` ("Ava") the owner of "Neon rain". It stamps the protected-wall fields and starts the wall at 2 earlier tippers.
+
+firebase-tools 15.15 binds `admin.firestore` in the functions emulator, so `admin.firestore.Timestamp` is undefined there and the callable fails. Patch `functionsEmulatorRuntime.js` to `return target.firestore;` for the run, then restore it. FCM does not run in this harness. Prove the push on the iOS Simulator with `xcrun simctl push` and the APNs payload that `fcmMessage` builds.
+
 ## Follow-up: cash revenue share
 
 Out of scope here. A cash share needs payouts, tax forms and KYC per country, and a ledger that can convert coins to money. Track it as its own project.

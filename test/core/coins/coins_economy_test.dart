@@ -591,7 +591,7 @@ void main() {
     test('replayed tip refreshes the wallet instead of restoring its historical balance', () async {
       final firestore = CoinsTestFirestore()..userData = <String, dynamic>{'coins': 40};
       getIt.registerSingleton<FirestoreClient>(firestore);
-      reply((_, _) => _paid(before: 100, after: 75, extra: <String, Object?>{'amount': 25}));
+      reply((_, _) => _paid(after: 75, extra: <String, Object?>{'amount': 25}));
 
       final result = await service.tipCreator(creatorUid: 'maker', amount: 50);
 
@@ -615,7 +615,7 @@ void main() {
       backend.onCall = (name, params) async {
         requests.add(params);
         if (requests.length == 1) throw FirebaseFunctionsException(code: 'unavailable', message: 'lost');
-        return _paid(before: 100, after: 75, extra: <String, Object?>{'amount': 25});
+        return _paid(after: 75, extra: <String, Object?>{'amount': 25});
       };
 
       expect((await service.tipCreator(creatorUid: 'maker', amount: 25)).outcome, TipOutcome.failed);
