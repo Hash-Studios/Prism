@@ -1,3 +1,4 @@
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
@@ -141,13 +142,19 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
                   onFit: (fit) => bloc.add(WallpaperPositionEvent.fitChanged(fit)),
                   onDim: (dim) => bloc.add(WallpaperPositionEvent.dimChanged(dim)),
                   onReset: () => bloc.add(const WallpaperPositionEvent.resetRequested()),
-                  onDone: () => bloc.add(
-                    WallpaperPositionEvent.doneRequested(
-                      outputSize: MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context),
-                    ),
-                  ),
+                  onDone: () async {
+                    if (!await requireSignedInAction(context) || !context.mounted) return;
+                    bloc.add(
+                      WallpaperPositionEvent.doneRequested(
+                        outputSize: MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context),
+                      ),
+                    );
+                  },
                   onSystemEditor: !kIsWeb && defaultTargetPlatform == TargetPlatform.android
-                      ? () => Navigator.of(context).pop<StudioResult>(const SystemEditorRequested())
+                      ? () async {
+                          if (!await requireSignedInAction(context) || !context.mounted) return;
+                          Navigator.of(context).pop<StudioResult>(const SystemEditorRequested());
+                        }
                       : null,
                 ),
               ],

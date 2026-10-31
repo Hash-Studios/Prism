@@ -12002,4 +12002,112 @@ class AppLocalizationsDe extends AppLocalizations {
   String challengeWinnerNotificationBody(String theme) {
     return 'Dein Beitrag hat die Wochen-Challenge gewonnen: $theme.';
   }
+
+  @override
+  String get statsTitle => 'Deine Statistik';
+
+  @override
+  String get statsEntry => 'Statistik';
+
+  @override
+  String get statsViews => 'Aufrufe';
+
+  @override
+  String get statsSaves => 'Gespeichert';
+
+  @override
+  String get statsSets => 'Festgelegt';
+
+  @override
+  String get statsDownloads => 'Downloads';
+
+  @override
+  String get statsShares => 'Geteilt';
+
+  @override
+  String get statsFolderAdds => 'Ordnerzugänge';
+
+  @override
+  String get statsRemixes => 'Remixe';
+
+  @override
+  String get statsLoading => 'Statistik wird geladen';
+
+  @override
+  String get statsError => 'Deine Statistik konnte nicht geladen werden. Versuche es erneut.';
+
+  @override
+  String get statsRetry => 'Erneut versuchen';
+
+  @override
+  String get statsEmptyTitle => 'Hier beginnt dein erstes Wallpaper';
+
+  @override
+  String get statsEmptyBody => 'Lade ein Wallpaper hoch. Nach der Freigabe erscheint seine Statistik.';
+
+  @override
+  String get statsUpload => 'Wallpaper hochladen';
+
+  @override
+  String get statsWeekNote => 'Diese Woche bisher im Vergleich zur letzten Woche. Wochen beginnen montags, UTC.';
+
+  @override
+  String get statsHistoryNote =>
+      'Acht Wochen, die älteste zuerst. Ein Strich bedeutet, dass Daten fehlen. Die Erfassung kann mitten in einer Woche beginnen; erfasste Wochen können daher unvollständig sein. Die aktuelle Woche ist noch nicht abgeschlossen.';
+
+  @override
+  String get statsTopWalls => 'Top-Wallpaper dieser Woche';
+
+  @override
+  String get statsUntitled => 'Wallpaper ohne Titel';
+
+  @override
+  String get statsCountingNote =>
+      'Gespeichert insgesamt zählt aktuelle Favoriten; wöchentlich zählen neue Favoriten. Remixe insgesamt zählt aktuell verknüpfte Remixe; wöchentlich zählen erstmals akzeptierte Zuordnungen. Ordnerzugänge werden erst seit Beginn der Erfassung gezählt.';
+
+  @override
+  String get statsUnavailable => 'Nicht verfügbar';
+
+  @override
+  String get statsWeeklyTitle => 'Deine Wallpaper diese Woche';
+
+  @override
+  String statsWeeklyBody(String week) {
+    return 'Sieh dir die Ergebnisse deiner Wallpaper für $week an.';
+  }
+
+  @override
+  String statsWallValue(String metric, String value) {
+    return '$metric: $value diese Woche';
+  }
+
+  @override
+  String statsComparison(String current, String previous) {
+    return '$current diese Woche · $previous letzte Woche';
+  }
+
+  @override
+  String statsTotal(String value) {
+    return 'Gesamt: $value';
+  }
+
+  @override
+  String statsChange(String value) {
+    return '$value im Vergleich zur letzten Woche';
+  }
+
+  @override
+  String statsUpdated(String date) {
+    return 'Aktualisiert am $date UTC';
+  }
+
+  @override
+  String statsChartWeek(String date, String value) {
+    return 'Woche ab $date: $value';
+  }
+
+  @override
+  String statsChartSummary(String metric, String summary) {
+    return '$metric, acht Wochen. $summary';
+  }
 }

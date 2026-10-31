@@ -138,7 +138,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('production onboarding welcome renders pt-BR copy and keeps its action reachable at 320px', (
+  testWidgets('iOS onboarding welcome renders pt-BR copy and keeps its guest action reachable at 320px', (
     WidgetTester tester,
   ) async {
     tester.view.physicalSize = const Size(320, 640);
@@ -195,5 +195,5 @@ void main() {
     await tester.tap(browse);
     expect(browseCount, 1);
     expect(tester.takeException(), isNull);
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 }

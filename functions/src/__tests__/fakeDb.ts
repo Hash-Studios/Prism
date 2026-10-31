@@ -96,7 +96,9 @@ const lost = (code: number) => Object.assign(new Error(`firestore ${code}`), {co
  * An in-memory Firestore for tests: documents, queries, transactions and the FieldValue helpers that the
  * functions use. Returns the store so a test can seed and inspect documents by path.
  */
-export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
+export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
+  observed?: {reads: number; writes: number; outsideReads?: number; outsideWrites?: number},
+  options: {failCommits?: number; failCommitAt?: number; createTimes?: Record<string, admin.firestore.Timestamp>} = {}) {
   const store = new Map<string, Doc>(Object.entries(seed));
   const incarnations = new Map<string, number>(Object.keys(seed).map((path) => [path, 1]));
   let incarnation = 1;
@@ -132,12 +134,16 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
       data: () => data === undefined ? undefined : clone(data) as Doc,
       updateTime: data === undefined ? undefined : Object.assign(admin.firestore.Timestamp.fromMillis(versions.get(path) ?? 0),
         {version: versions.get(path) ?? 0}),
-      createTime: data === undefined ? undefined : admin.firestore.Timestamp.fromMillis(incarnations.get(path) ?? 1),
+      createTime: data === undefined ? undefined : options.createTimes?.[path] ??
+        admin.firestore.Timestamp.fromMillis(incarnations.get(path) ?? 1),
     };
   };
 
   // Writes made through a transaction are applied when it ends, like the real one.
   let pending: Array<() => void> | null = null;
+  let transactionReadDepth = 0;
+  let transactionWriteDepth = 0;
+  let commitAttempts = 0;
   const mutate = (apply: () => void) => {
     if (pending) pending.push(apply);
     else apply();
@@ -147,20 +153,29 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
     return {
       id: path.split("/").pop() as string,
       path,
-      get: async () => snap(path),
+      get: async () => {
+        if (!pending || transactionReadDepth === 0) {
+          if (observed?.outsideReads !== undefined) observed.outsideReads++;
+        }
+        return snap(path);
+      },
       set: async (data: Doc, options?: {merge?: boolean}) => {
+        if ((!pending || transactionWriteDepth === 0) && observed?.outsideWrites !== undefined) observed.outsideWrites++;
         mutate(() => write(path, applyFields(options?.merge ? store.get(path) : undefined, data, false)));
       },
       create: async (data: Doc) => {
+        if ((!pending || transactionWriteDepth === 0) && observed?.outsideWrites !== undefined) observed.outsideWrites++;
         if (store.has(path)) throw lost(6);
         mutate(() => write(path, applyFields(undefined, data, false)));
       },
       update: async (data: Doc, precondition?: {lastUpdateTime: {version: number}}) => {
+        if ((!pending || transactionWriteDepth === 0) && observed?.outsideWrites !== undefined) observed.outsideWrites++;
         if (!store.has(path)) throw lost(5);
         if (precondition && (versions.get(path) ?? 0) !== precondition.lastUpdateTime.version) throw lost(9);
         mutate(() => write(path, applyFields(store.get(path), data, true)));
       },
       delete: async () => {
+        if ((!pending || transactionWriteDepth === 0) && observed?.outsideWrites !== undefined) observed.outsideWrites++;
         mutate(() => write(path, undefined));
       },
       collection: (name: string) => collection(`${path}/${name}`),
@@ -175,6 +190,7 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
     startAt?: unknown;
     startAfter?: string | Snap;
     group?: string;
+    projection?: string[];
   };
 
   function query(path: string, state: QueryState) {
@@ -218,11 +234,22 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
       startAt: (value: unknown) => next({startAt: value}),
       startAfter: (value: Snap | {id: string; path?: string}) =>
         next({startAfter: "data" in value ? value : state.group ? value.path : value.id}),
-      select: () => q,
-      count: () => ({get: async () => ({data: () => ({count: rows().length})})}),
+      select: (...fields: string[]) => next({projection: fields}),
+      count: () => ({get: async () => {
+        if ((!pending || transactionReadDepth === 0) && observed?.outsideReads !== undefined) observed.outsideReads++;
+        return {data: () => ({count: rows().length})};
+      }}),
       get: async () => {
         const docs = rows();
-        return {docs, empty: docs.length === 0, size: docs.length, forEach: (fn: (d: unknown) => void) => docs.forEach(fn)};
+        if ((!pending || transactionReadDepth === 0) && observed?.outsideReads !== undefined) {
+          observed.outsideReads += Math.max(1, docs.length);
+        }
+        const projection = state.projection;
+        const projected = projection?.length ? docs.map((doc) => ({...doc,
+          data: () => Object.fromEntries(projection.filter((field) => field in (doc.data() ?? {}))
+            .map((field) => [field, (doc.data() as Doc)[field]])),
+        })) : docs;
+        return {docs: projected, empty: docs.length === 0, size: docs.length, forEach: (fn: (d: unknown) => void) => projected.forEach(fn)};
       },
     };
     return q;
@@ -257,14 +284,34 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
     let failure: unknown;
     const guarded = <A extends unknown[]>(fn: (...args: A) => Promise<unknown>) => (...args: A) => {
       wrote = true;
-      fn(...args).catch((err: unknown) => {
+      if (observed) observed.writes++;
+      transactionWriteDepth++;
+      let result: Promise<unknown>;
+      try {
+        result = fn(...args);
+      } finally {
+        transactionWriteDepth--;
+      }
+      result.catch((err: unknown) => {
         failure ??= err;
       });
     };
     const tx = {
       get: async (target: {get: () => Promise<unknown>}) => {
         if (wrote) throw new Error("Firestore transaction reads must precede writes");
-        return target.get();
+        transactionReadDepth++;
+        let pendingRead: Promise<unknown>;
+        try {
+          pendingRead = target.get();
+        } finally {
+          transactionReadDepth--;
+        }
+        const result = await pendingRead;
+        if (observed) {
+          observed.reads += result && typeof result === "object" && "size" in result ?
+            Math.max(1, Number(result.size)) : 1;
+        }
+        return result;
       },
       set: guarded((r: FakeRef, data: Doc, options?: {merge?: boolean}) => r.set(data, options)),
       update: guarded((r: FakeRef, data: Doc) => r.update(data)),
@@ -274,6 +321,13 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
     try {
       const result = await callback(tx);
       if (failure) throw failure;
+      commitAttempts++;
+      if (commitAttempts === options.failCommitAt) throw new Error("injected transaction commit failure");
+      const failuresLeft = options.failCommits ?? 0;
+      if (failuresLeft > 0) {
+        options.failCommits = failuresLeft - 1;
+        throw new Error("injected transaction commit failure");
+      }
       const queued = pending;
       pending = null;
       queued.forEach((apply) => apply());

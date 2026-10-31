@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
@@ -31,6 +32,7 @@ Future<void> toggleFavouritePin(
   required bool pin,
   required FavouritePinSurfaceValue surface,
 }) async {
+  if (!await requireSignedInAction(context) || !context.mounted) return;
   final AppLocalizations l10n = context.l10n;
   final FavouritePinOutcome outcome = await context.favouriteWallsAdapter(listen: false).setPinned(wallId, pinned: pin);
   switch (outcome) {

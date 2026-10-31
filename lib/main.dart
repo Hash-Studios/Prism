@@ -12,6 +12,7 @@ import 'package:Prism/core/analytics/providers/mixpanel_analytics_provider.dart'
 import 'package:Prism/core/analytics/providers/noop_analytics_provider.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/bloc_debug_observer.dart';
+import 'package:Prism/core/debug/creator_stats_emulator.dart';
 import 'package:Prism/core/debug/debug_flags.dart';
 import 'package:Prism/core/debug/local_qa_adapters.dart';
 import 'package:Prism/core/debug/local_qa_runtime.dart';
@@ -47,6 +48,7 @@ import 'package:Prism/core/router/short_link_retry.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/startup/notification_channels.dart';
 import 'package:Prism/core/startup/session_end_watcher.dart';
+import 'package:Prism/core/startup/session_ended_navigation.dart';
 import 'package:Prism/core/startup/session_ended_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
@@ -112,6 +114,7 @@ const double _sentryReplayOnErrorSampleRate = 1.0;
 /// Avoid any UI work here — only lightweight processing.
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  if (CreatorStatsEmulator.enabled) return;
   // Firebase.initializeApp() is already called before main() is reached, but
   // in the background isolate we may need to re-initialise.  The guard inside
   // Firebase.initializeApp makes this safe to call multiple times.
@@ -201,7 +204,12 @@ Future<void> main() async {
 
       // Start Firebase early so it can initialize while persistence and monitoring run.
       // StartupRepositoryImpl.bootstrap() also awaits this future before accessing Remote Config.
-      if (Env.localQa) {
+      if (CreatorStatsEmulator.enabled) {
+        await CreatorStatsEmulator.connect();
+        // Keep Remote Config, economy remote config and FCM gates closed. The
+        // three emulated services are already connected before DI or runApp.
+        FirebaseInit.setFuture(Future<bool>.value(false));
+      } else if (Env.localQa) {
         // Await directly: failure must stop QA before DI or the real router starts.
         await LocalQaRuntime.initializeFirebase();
         FirebaseInit.setFuture(Future<bool>.value(true));
@@ -253,7 +261,7 @@ Future<void> main() async {
       // Defer MobileAds and Analytics to after first frame. Resolves firebaseInitialized
       // lazily once Firebase background init completes.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (Env.localQa) return;
+        if (CreatorStatsEmulator.enabled || Env.localQa) return;
         unawaited(PurchasesService.instance.configureEarly());
         unawaited(
           FirebaseInit.readyFuture.then(
@@ -306,7 +314,9 @@ Future<void> main() async {
       }
 
       PerformanceProbe.mark('startup.before_di');
+      if (CreatorStatsEmulator.enabled) await CreatorStatsEmulator.signIn();
       configureDependencies();
+      if (CreatorStatsEmulator.enabled) await CreatorStatsEmulator.installFirestore();
       if (Env.localQa) await LocalQaRuntime.installDependenciesAndSession();
       PerformanceProbe.mark('startup.di_ready');
       // The session repository has loaded persisted identity; set private notification stores before runApp reads them.
@@ -397,7 +407,7 @@ SentryConfig _resolveSentryConfig() {
 }
 
 Future<void> _initializeMonitoring(SentryConfig config) async {
-  if (!config.enabled) {
+  if (CreatorStatsEmulator.enabled || !config.enabled) {
     MonitoringRuntime.reset();
     return;
   }
@@ -712,11 +722,16 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
 
   Future<void> _handleSessionEnded() async {
     try {
-      _authContinuation.cancel();
-      await globalGoogleAuth.signOutGoogle();
-      final BuildContext? context = _appRouter.navigatorKey.currentContext;
-      if (!mounted || context == null || !context.mounted) return;
-      unawaited(showSessionEndedSheet(context, onSignedIn: () => RestartWidget.restartApp(context)));
+      await handleSessionEndedNavigation(
+        router: _appRouter,
+        signOut: globalGoogleAuth.signOutGoogle,
+        isMounted: () => mounted,
+        showGuestPrompt: () async {
+          final BuildContext? context = _appRouter.navigatorKey.currentContext;
+          if (context == null || !context.mounted) return;
+          await showSessionEndedSheet(context, onSignedIn: () => RestartWidget.restartApp(context));
+        },
+      );
     } catch (error, stackTrace) {
       logger.w('Session ended handling failed.', tag: 'Session', error: error, stackTrace: stackTrace);
     }
@@ -800,9 +815,10 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     );
     unawaited(
       Future.wait<void>(<Future<void>>[
-        localNotification.fetchNotificationData().catchError((Object error, StackTrace stackTrace) {
-          logger.w('Reading the launch notification failed.', tag: 'Push', error: error, stackTrace: stackTrace);
-        }),
+        if (!CreatorStatsEmulator.enabled)
+          localNotification.fetchNotificationData().catchError((Object error, StackTrace stackTrace) {
+            logger.w('Reading the launch notification failed.', tag: 'Push', error: error, stackTrace: stackTrace);
+          }),
         _listenForPushMessages().catchError((Object error, StackTrace stackTrace) {
           logger.w('Reading the launch push failed.', tag: 'Push', error: error, stackTrace: stackTrace);
         }),

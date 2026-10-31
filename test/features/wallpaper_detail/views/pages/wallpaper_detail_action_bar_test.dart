@@ -42,6 +42,7 @@ import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart'
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -813,6 +814,10 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('iOS preview exposes Save to Photos with its current tinted variant', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'ios-preview-user'
+        ..loggedIn = true;
+      addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
       final File source = File('${directory.path}/ios-preview-wall.png');
       await tester.runAsync(() async => source.writeAsBytes(await _redAndBluePng()));
       final FeedItemEntity entity = FeedItemEntity.prism(
@@ -856,6 +861,57 @@ void main() {
       }))!;
       expect(hues, hasLength(2));
       expect(hues, everyElement(closeTo(120, 10)));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('an iOS guest opens the passive preview; its Save asks for sign-in', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await pumpDetail(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: _prism(),
+          paletteLoading: false,
+          colors: const <Color>[Colors.teal],
+          accent: Colors.teal,
+        ),
+      );
+
+      await tester.tap(find.byTooltip(AppLocalizationsEn().wallpaperPreviewOnScreen));
+      await tester.pumpAndSettle();
+
+      final Finder preview = find.byType(ClockOverlay);
+      expect(preview, findsOneWidget);
+      expect(find.text('Sign in to Prism'), findsNothing);
+      for (final Type action in <Type>[FavouriteWallpaperButton, ShareButton, EditButton, SetWallpaperButton]) {
+        expect(
+          find.descendant(of: preview, matching: find.byType(action)),
+          findsNothing,
+          reason: '$action is absent',
+        );
+      }
+
+      final Finder lockChoice = find.descendant(
+        of: preview,
+        matching: find.text(AppLocalizationsEn().wallpaperPreviewLock),
+      );
+      final Finder homeChoice = find.descendant(
+        of: preview,
+        matching: find.text(AppLocalizationsEn().wallpaperPreviewHome),
+      );
+      expect(lockChoice, findsOneWidget);
+      expect(homeChoice, findsOneWidget);
+      await tester.tap(homeChoice);
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.descendant(of: preview, matching: find.byType(HomePreviewLayer)), findsOneWidget);
+      await tester.tap(lockChoice);
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.descendant(of: preview, matching: find.byType(LockPreviewLayer)), findsOneWidget);
+
+      await tester.tap(find.descendant(of: preview, matching: find.byType(DownloadButton)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(find.text('Sign in to Prism'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('with the original showing, each action uses the wallpaper as it is', (tester) async {

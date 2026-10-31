@@ -3,10 +3,13 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
@@ -56,6 +59,9 @@ void main() {
   File makeFile(String name) => File('${dir.path}/$name')..writeAsBytesSync(<int>[1, 2, 3]);
 
   setUp(() {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user'
+      ..loggedIn = true;
     dir = Directory.systemTemp.createTempSync('download_screen_test');
     deleteCalls = <String>[];
     listCalls = 0;
@@ -76,6 +82,7 @@ void main() {
   });
 
   tearDown(() {
+    app_state.prismUser = app_constants.createGuestPrismUser();
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMessageHandler('$_channelPrefix.listDownloads', null);
     messenger.setMockMessageHandler('$_channelPrefix.deleteDownload', null);
@@ -184,6 +191,30 @@ void main() {
     expect(deleteCalls, <String>[a.path]);
     expect(find.text('1 selected'), findsNothing);
     expect(find.text('1 download · 3 B'), findsOneWidget);
+  });
+
+  testWidgets('guest cancelling sign-in cannot delete a download', (tester) async {
+    final File file = makeFile('a.png');
+    onList = () async => DownloadItemsResult(success: true, items: <String>[file.path]);
+    await pumpScreen(tester);
+    await tester.longPress(find.byKey(ValueKey<String>(file.path)));
+    await tester.pump();
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final original = signedInActionSignIn;
+    var prompts = 0;
+    signedInActionSignIn = (_) async {
+      prompts++;
+      return false;
+    };
+    addTearDown(() => signedInActionSignIn = original);
+
+    await tester.tap(find.bySemanticsLabel('Delete'));
+    await tester.pump();
+
+    expect(prompts, 1);
+    expect(deleteCalls, isEmpty);
+    expect(file.existsSync(), isTrue);
+    expect(find.text('Delete this download?'), findsNothing);
   });
 
   List<String> shownOrder(WidgetTester tester, List<File> candidates) {
@@ -335,6 +366,41 @@ void main() {
     expect(index.has('https://example.com/delete_me.png'), isFalse);
     expect(index.has('https://example.com/keep_me.png'), isTrue);
   });
+
+  for (final switchAccount in [false, true]) {
+    testWidgets('batch delete stops after ${switchAccount ? 'account switch' : 'sign-out'}', (tester) async {
+      final a = makeFile('first.png');
+      final b = makeFile('second.png');
+      onList = () async => DownloadItemsResult(success: true, items: [a.path, b.path]);
+      final firstDelete = Completer<void>();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(
+        '$_channelPrefix.deleteDownload',
+        (message) async {
+          final args = PrismMediaHostApi.pigeonChannelCodec.decodeMessage(message)! as List<Object?>;
+          deleteCalls.add(args.first! as String);
+          if (deleteCalls.length == 1) await firstDelete.future;
+          return reply(OperationResult(success: true));
+        },
+      );
+      await pumpScreen(tester);
+      await tester.longPress(find.byKey(ValueKey<String>(a.path)));
+      await tester.pump();
+      await tester.tap(find.byKey(ValueKey<String>(b.path)));
+      await tester.pump();
+      await tester.tap(find.bySemanticsLabel('Delete'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+      await tester.pump();
+      expect(deleteCalls, [a.path]);
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..loggedIn = switchAccount
+        ..id = switchAccount ? 'other-user' : '';
+      firstDelete.complete();
+      await tester.pump();
+      await tester.pump();
+      expect(deleteCalls, [a.path]);
+    });
+  }
 
   testWidgets('deleting one download words the dialog in the singular', (tester) async {
     final File a = makeFile('a.png');

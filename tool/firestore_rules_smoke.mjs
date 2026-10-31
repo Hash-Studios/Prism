@@ -156,6 +156,8 @@ const seed = () => Promise.all([
   req('PATCH', 'creatorWallCredits/test-wall', { creatorUid: { stringValue: 'b' } }, 'owner'),
   req('PATCH', 'creatorDeletionState/b', { closed: { booleanValue: false } }, 'owner'),
   req('PATCH', 'creatorMemberRateDaily/b_2026-10-18', { memberUid: { stringValue: 'b' } }, 'owner'),
+  req('PATCH', 'creatorStatsDailyQueue/rule-probe', { state: str('ready') }, 'owner'),
+  req('PATCH', 'creatorStatsProcessorState/daily', { owner: str('probe') }, 'owner'),
   req('PATCH', 'usersv2/b/private/economy/creatorMembers/a', { memberUid: { stringValue: 'a' } }, 'owner'),
   req('PATCH', 'folders/fb', folderFields('b'), 'owner'),
   req('PATCH', 'wallRequests/open', requestFields('b'), 'owner'),
@@ -562,6 +564,14 @@ const cases = [
     [`signed-out cannot read server creator store ${path}`, () => req('GET', path, null, null), 403],
     [`owner cannot write server creator store ${path}`, () => req('PATCH', path, { closed: { booleanValue: true } }, Bu), 403],
     [`admin client cannot write server creator store ${path}`, () => req('PATCH', path, { closed: { booleanValue: true } }, ADM), 403],
+  ]),
+  ...['creatorStatsHistory/probe', 'creatorStatsCache/probe', 'creatorStatsDailyCheckpoints/probe',
+    'creatorStatsFolderMarkers/probe', 'creatorStatsRemixMarkers/probe', 'creatorStatsWeeklyMarkers/probe',
+    'creatorStatsDailyQueue/rule-probe', 'creatorStatsProcessorState/daily'].flatMap((path) => [
+    [`owner cannot read private creator stats ${path}`, () => req('GET', path, null, Bu), 403],
+    [`signed-out cannot read private creator stats ${path}`, () => req('GET', path, null, null), 403],
+    [`owner cannot write private creator stats ${path}`, () => req('PATCH', path, { probe: str('client') }, Bu), 403],
+    [`signed-out cannot write private creator stats ${path}`, () => req('PATCH', path, { probe: str('client') }, null), 403],
   ]),
   ['shipped favourite create remains allowed', () => req('PATCH', 'usersv2/b/images/shipped-wall', {
     id: { stringValue: 'shipped-wall' }, provider: { stringValue: 'Prism' },

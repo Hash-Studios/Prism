@@ -6,6 +6,7 @@ import 'package:Prism/auth/transaction_model.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
@@ -14,7 +15,6 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
-import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
@@ -258,43 +258,20 @@ void main() {
     expect(haptics, <String>['HapticFeedbackType.selectionClick']);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
-  testWidgets('a guest restore acknowledges local access and explains the sign-in limitation', (tester) async {
+  testWidgets('a guest restore requires sign-in and cancellation leaves store access untouched', (tester) async {
     await getIt.unregister<SessionRepository>();
     final backend = CoinsTestBackend();
     await backend.install();
     app_state.prismUser = testUser(loggedIn: false)..id = '';
-    final entitlement = <String, Object?>{
-      'identifier': 'prism_v3_pro_access',
-      'isActive': true,
-      'willRenew': true,
-      'latestPurchaseDate': '2026-10-01T00:00:00Z',
-      'originalPurchaseDate': '2026-10-01T00:00:00Z',
-      'productIdentifier': 'prism_pro_yearly',
-      'isSandbox': false,
-      'expirationDate': '2027-10-01T00:00:00Z',
-    };
-    final customer = <String, Object?>{
-      'entitlements': <String, Object?>{
-        'all': <String, Object?>{'prism_v3_pro_access': entitlement},
-        'active': <String, Object?>{'prism_v3_pro_access': entitlement},
-      },
-      'allPurchaseDates': <String, Object?>{},
-      'activeSubscriptions': <String>[],
-      'allPurchasedProductIdentifiers': <String>[],
-      'nonSubscriptionTransactions': <Object?>[],
-      'firstSeen': '',
-      'originalAppUserId': 'anonymous-store-user',
-      'allExpirationDates': <String, Object?>{},
-      'requestDate': '',
-    };
+    app_state.prismUser.premium = true;
     var syncs = 0;
     backend.onCall = (_, _) {
       syncs++;
       throw StateError('A guest must not sync paid server access.');
     };
+    final storeCalls = <String>[];
     messenger.setMockMethodCallHandler(purchasesChannel, (call) async {
-      if (call.method == 'restorePurchases') return customer;
-      if (call.method == 'getCustomerInfo') throw StateError('Restore must use the store result.');
+      storeCalls.add(call.method);
       return null;
     });
     useTallSurface(tester);
@@ -309,14 +286,16 @@ void main() {
     await tester.ensureVisible(find.text('Restore purchases'));
     await tester.pumpAndSettle();
     await tester.runAsync(() => tester.tap(find.text('Restore purchases')));
-    await waitForRealIo(tester, () => messages.length > 1, reason: 'guest restore result');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
-    expect(messages, <String>[
-      'Restoring purchases…',
-      'Your store purchase is active on this device. Sign in to use account-based Pro features.',
-    ]);
+    expect(find.text('Continue with Google'), findsOneWidget);
+    expect(storeCalls, isEmpty);
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+    expect(messages, isEmpty);
     expect(app_state.prismUser.premium, isTrue);
-    expect(await tester.runAsync(PurchasesService.instance.restore), PurchaseEntitlementStatus.guestSignInRequired);
+    expect(storeCalls, isEmpty);
     expect(syncs, 0);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
@@ -382,12 +361,22 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   }
 
-  for (final outcome in <String>['confirmed', 'pending', 'empty']) {
+  for (final outcome in <String>['confirmed', 'after_sign_in', 'pending', 'empty']) {
     testWidgets('restore reports the $outcome store result', (tester) async {
       await getIt.unregister<SessionRepository>();
       final backend = CoinsTestBackend();
       await backend.install();
       app_state.prismUser.profilePhoto = '';
+      if (outcome == 'after_sign_in') {
+        final signedInUser = app_state.prismUser;
+        app_state.prismUser = testUser(loggedIn: false)..id = '';
+        final originalSignIn = signedInActionSignIn;
+        addTearDown(() => signedInActionSignIn = originalSignIn);
+        signedInActionSignIn = (_) async {
+          app_state.prismUser = signedInUser;
+          return true;
+        };
+      }
       final paid = outcome != 'empty';
       final entitlement = <String, Object?>{
         'identifier': 'prism_v3_pro_access',
@@ -457,7 +446,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       final expected = switch (outcome) {
-        'confirmed' => 'Purchases restored.',
+        'confirmed' || 'after_sign_in' => 'Purchases restored.',
         'pending' => 'Purchases restored. Pro can take a minute to unlock.',
         _ => 'No purchases to restore for this account.',
       };

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
@@ -93,6 +94,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
 
   Future<void> _onWallpaperTap() async {
     if (_picking) return;
+    if (!await requireSignedInAction(context) || !mounted) return;
     analytics.track(
       const UploadActionSelectedEvent(
         action: AnalyticsActionValue.uploadWallpaperSelected,

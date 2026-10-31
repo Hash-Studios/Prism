@@ -11295,5 +11295,177 @@
         "type": "String"
       }
     }
+  },
+  "statsTitle": "Your stats",
+  "statsEntry": "Stats",
+  "statsViews": "Views",
+  "statsSaves": "Saves",
+  "statsSets": "Sets",
+  "statsDownloads": "Downloads",
+  "statsShares": "Shares",
+  "statsFolderAdds": "Folder additions",
+  "statsRemixes": "Remixes",
+  "statsLoading": "Loading your stats",
+  "statsError": "Your stats could not load. Please try again.",
+  "statsRetry": "Try again",
+  "statsEmptyTitle": "Your first wall starts here",
+  "statsEmptyBody": "Upload a wallpaper. Its stats will appear after approval.",
+  "statsUpload": "Upload a wallpaper",
+  "statsWeekNote": "This week so far compared with last week. Weeks start on Monday, UTC.",
+  "statsHistoryNote": "Eight weeks, oldest first. A dash means unavailable history. Tracking can begin partway through a week, so recorded weeks may be partial. The current week is incomplete.",
+  "statsTopWalls": "Top walls this week",
+  "statsUntitled": "Untitled wall",
+  "statsCountingNote": "Save totals count current favourites; weekly saves count additions. Remix totals count current credited remixes; weekly remixes count first accepted credits. Folder additions are recorded only from the start of tracking.",
+  "statsUnavailable": "Unavailable",
+  "statsWeeklyTitle": "Your walls this week",
+  "statsWeeklyBody": "See how your walls did in {week}.",
+  "statsWallValue": "{metric}: {value} this week",
+  "statsComparison": "{current} this week · {previous} last week",
+  "statsTotal": "Total: {value}",
+  "statsChange": "{value} compared with last week",
+  "statsUpdated": "Updated {date} UTC",
+  "statsChartWeek": "Week of {date}: {value}",
+  "statsChartSummary": "{metric}, eight weeks. {summary}",
+  "@statsTitle": {
+    "description": "Creator dashboard: statsTitle"
+  },
+  "@statsEntry": {
+    "description": "Creator dashboard: statsEntry"
+  },
+  "@statsViews": {
+    "description": "Creator dashboard: statsViews"
+  },
+  "@statsSaves": {
+    "description": "Creator dashboard: statsSaves"
+  },
+  "@statsSets": {
+    "description": "Creator dashboard: statsSets"
+  },
+  "@statsDownloads": {
+    "description": "Creator dashboard: statsDownloads"
+  },
+  "@statsShares": {
+    "description": "Creator dashboard: statsShares"
+  },
+  "@statsFolderAdds": {
+    "description": "Creator dashboard: statsFolderAdds"
+  },
+  "@statsRemixes": {
+    "description": "Creator dashboard: statsRemixes"
+  },
+  "@statsLoading": {
+    "description": "Creator dashboard: statsLoading"
+  },
+  "@statsError": {
+    "description": "Creator dashboard: statsError"
+  },
+  "@statsRetry": {
+    "description": "Creator dashboard: statsRetry"
+  },
+  "@statsEmptyTitle": {
+    "description": "Creator dashboard: statsEmptyTitle"
+  },
+  "@statsEmptyBody": {
+    "description": "Creator dashboard: statsEmptyBody"
+  },
+  "@statsUpload": {
+    "description": "Creator dashboard: statsUpload"
+  },
+  "@statsWeekNote": {
+    "description": "Creator dashboard: statsWeekNote"
+  },
+  "@statsHistoryNote": {
+    "description": "Creator dashboard: statsHistoryNote"
+  },
+  "@statsTopWalls": {
+    "description": "Creator dashboard: statsTopWalls"
+  },
+  "@statsUntitled": {
+    "description": "Creator dashboard: statsUntitled"
+  },
+  "@statsCountingNote": {
+    "description": "Creator dashboard: statsCountingNote"
+  },
+  "@statsUnavailable": {
+    "description": "Creator dashboard: statsUnavailable"
+  },
+  "@statsWeeklyTitle": {
+    "description": "Creator dashboard: statsWeeklyTitle"
+  },
+  "@statsWeeklyBody": {
+    "description": "Creator dashboard: statsWeeklyBody",
+    "placeholders": {
+      "week": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsWallValue": {
+    "description": "Creator dashboard: statsWallValue",
+    "placeholders": {
+      "metric": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsComparison": {
+    "description": "Creator dashboard: statsComparison",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "previous": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsTotal": {
+    "description": "Creator dashboard: statsTotal",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsChange": {
+    "description": "Creator dashboard: statsChange",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsUpdated": {
+    "description": "Creator dashboard: statsUpdated",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsChartWeek": {
+    "description": "Creator dashboard: statsChartWeek",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsChartSummary": {
+    "description": "Creator dashboard: statsChartSummary",
+    "placeholders": {
+      "metric": {
+        "type": "String"
+      },
+      "summary": {
+        "type": "String"
+      }
+    }
   }
 }

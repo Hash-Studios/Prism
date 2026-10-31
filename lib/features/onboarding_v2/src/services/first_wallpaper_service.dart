@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -117,11 +118,18 @@ class FirstWallpaperService {
     String? wallpaperId,
     WallpaperSource? wallpaperSource,
   }) async {
+    if (!app_state.prismUser.loggedIn) {
+      return const FirstWallpaperResult(success: false, errorCode: 'sign_in_required');
+    }
     final owner = _originalAccess.ownerId;
+    final String sessionOwner = app_state.prismUser.id;
     try {
       final androidTarget = defaultTargetPlatform == TargetPlatform.android ? await _androidTarget() : null;
       if (defaultTargetPlatform == TargetPlatform.android && androidTarget == null) {
         return const FirstWallpaperResult(success: false, errorCode: 'unsupported');
+      }
+      if (!app_state.prismUser.loggedIn || sessionOwner != app_state.prismUser.id) {
+        return const FirstWallpaperResult(success: false, errorCode: 'account_changed');
       }
       final authorizedUrl = await _originalAccess.resolve(
         url: fullUrl,
@@ -132,7 +140,7 @@ class FirstWallpaperService {
             : OriginalAccessAction.download,
         maxCoins: 0,
       );
-      if (_originalAccess.ownerId != owner) {
+      if (!app_state.prismUser.loggedIn || sessionOwner != app_state.prismUser.id || _originalAccess.ownerId != owner) {
         return const FirstWallpaperResult(success: false, errorCode: 'account_changed');
       }
       if (defaultTargetPlatform == TargetPlatform.android) {

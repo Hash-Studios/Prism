@@ -4,12 +4,14 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/wallpaper_detail_route.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
@@ -201,6 +203,8 @@ class _DownloadsBodyState extends State<DownloadsBody> {
   Future<void> _deleteSelected() async {
     final List<String> paths = _selected.toList(growable: false);
     if (paths.isEmpty) return;
+    if (!await requireSignedInAction(context) || !mounted) return;
+    final String userId = app_state.prismUser.id;
     final bool confirmed =
         await showDialog<bool>(
           context: context,
@@ -222,11 +226,12 @@ class _DownloadsBodyState extends State<DownloadsBody> {
           ),
         ) ??
         false;
-    if (!confirmed || !mounted) return;
+    if (!confirmed || !mounted || !app_state.prismUser.loggedIn || app_state.prismUser.id != userId) return;
     PrismHaptics.tap();
     final Set<String> deleted = <String>{};
     final api = PrismMediaHostApi();
     for (final String path in paths) {
+      if (!mounted || !app_state.prismUser.loggedIn || app_state.prismUser.id != userId) break;
       try {
         final result = await api.deleteDownload(path);
         if (result.success) {
@@ -257,6 +262,7 @@ class _DownloadsBodyState extends State<DownloadsBody> {
   Future<void> _shareSelected() async {
     final List<String> paths = _selected.toList(growable: false);
     if (paths.isEmpty) return;
+    if (!await requireSignedInAction(context) || !mounted) return;
     final AppLocalizations l10n = context.l10n;
     PrismHaptics.tap();
     final RenderObject? box = context.findRenderObject();

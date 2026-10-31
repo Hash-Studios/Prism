@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/share/share_card.dart';
 import 'package:Prism/core/share/share_sheet.dart';
 import 'package:Prism/core/share/share_text.dart';
@@ -80,6 +81,7 @@ class _ShareButtonState extends State<ShareButton> {
 
   Future<void> onShare() async {
     if (isLoading) return;
+    if (!await requireSignedInAction(context) || !mounted) return;
 
     final String? id = widget.id;
     final WallpaperSource source = widget.source;

@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
@@ -167,6 +168,11 @@ class _UploadRouteHost extends StatelessWidget {
 
 /// Opens [route] from a host page inside a real [AppRouter], so a successful submit can push [ReviewRoute].
 Future<void> pumpRoutedUpload(WidgetTester tester, UploadWallRoute Function() route) async {
+  final previousUser = app_state.prismUser;
+  app_state.prismUser = app_constants.createGuestPrismUser()
+    ..id = 'test-user'
+    ..loggedIn = true;
+  addTearDown(() => app_state.prismUser = previousUser);
   final router = _TestAppRouter(route);
   await tester.pumpWidget(
     MaterialApp.router(

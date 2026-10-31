@@ -2010,6 +2010,9 @@ void main() {
     });
 
     testWidgets('Android plain preview sets lock, home and both through the Set button', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'clock-preview-user'
+        ..loggedIn = true;
       _mockSetChannels(tester);
       final _Client client = _Client(capabilities: _allCapabilities);
       aw.AsyncWallpaper.debugSetClient(client);

@@ -23,6 +23,7 @@ import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wal
 import 'package:Prism/features/taste_quiz/domain/repositories/taste_quiz_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -296,7 +297,9 @@ void main() {
     expect(interests.step, OnboardingV2Step.interests);
   });
 
-  test('guests never get the quiz', () async {
+  test('iOS guests never get the quiz', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
     app_state.prismUser = app_constants.createGuestPrismUser();
     when(() => tasteQuizRepository.loadPlan(any())).thenAnswer((_) async => quizPlan());
     final bloc = buildBloc();

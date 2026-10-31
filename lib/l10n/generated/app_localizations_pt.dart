@@ -12163,6 +12163,115 @@ class AppLocalizationsPt extends AppLocalizations {
   String challengeWinnerNotificationBody(String theme) {
     return 'Sua criação venceu o desafio semanal: $theme.';
   }
+
+  @override
+  String get statsTitle => 'Suas estatísticas';
+
+  @override
+  String get statsEntry => 'Estatísticas';
+
+  @override
+  String get statsViews => 'Visualizações';
+
+  @override
+  String get statsSaves => 'Salvos';
+
+  @override
+  String get statsSets => 'Vezes aplicado';
+
+  @override
+  String get statsDownloads => 'Downloads';
+
+  @override
+  String get statsShares => 'Compartilhamentos';
+
+  @override
+  String get statsFolderAdds => 'Adições a pastas';
+
+  @override
+  String get statsRemixes => 'Remixes';
+
+  @override
+  String get statsLoading => 'Carregando suas estatísticas';
+
+  @override
+  String get statsError => 'Não foi possível carregar suas estatísticas. Tente novamente.';
+
+  @override
+  String get statsRetry => 'Tentar novamente';
+
+  @override
+  String get statsEmptyTitle => 'Seu primeiro fundo começa aqui';
+
+  @override
+  String get statsEmptyBody => 'Envie um fundo. As estatísticas aparecem após a aprovação.';
+
+  @override
+  String get statsUpload => 'Enviar um fundo';
+
+  @override
+  String get statsWeekNote =>
+      'Esta semana até agora em comparação com a anterior. As semanas começam na segunda-feira, UTC.';
+
+  @override
+  String get statsHistoryNote =>
+      'Oito semanas, da mais antiga à mais recente. Um traço indica dados indisponíveis. O acompanhamento pode começar no meio da semana, por isso os dados semanais podem ser parciais. A semana atual está incompleta.';
+
+  @override
+  String get statsTopWalls => 'Melhores fundos desta semana';
+
+  @override
+  String get statsUntitled => 'Fundo sem título';
+
+  @override
+  String get statsCountingNote =>
+      'O total de salvos conta os favoritos atuais; o valor semanal conta adições. O total de remixes conta os créditos atuais; o valor semanal conta os primeiros créditos aceitos. As adições a pastas são registradas desde o início do acompanhamento.';
+
+  @override
+  String get statsUnavailable => 'Indisponível';
+
+  @override
+  String get statsWeeklyTitle => 'Seus fundos nesta semana';
+
+  @override
+  String statsWeeklyBody(String week) {
+    return 'Veja os resultados dos seus fundos em $week.';
+  }
+
+  @override
+  String statsWallValue(String metric, String value) {
+    return '$metric: $value nesta semana';
+  }
+
+  @override
+  String statsComparison(String current, String previous) {
+    return '$current nesta semana · $previous na anterior';
+  }
+
+  @override
+  String statsTotal(String value) {
+    return 'Total: $value';
+  }
+
+  @override
+  String statsChange(String value) {
+    return '$value em comparação com a semana anterior';
+  }
+
+  @override
+  String statsUpdated(String date) {
+    return 'Atualizado em $date UTC';
+  }
+
+  @override
+  String statsChartWeek(String date, String value) {
+    return 'Semana de $date: $value';
+  }
+
+  @override
+  String statsChartSummary(String metric, String summary) {
+    return '$metric, oito semanas. $summary';
+  }
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -24321,5 +24430,114 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String challengeWinnerNotificationBody(String theme) {
     return 'Sua criação venceu o desafio semanal: $theme.';
+  }
+
+  @override
+  String get statsTitle => 'Suas estatísticas';
+
+  @override
+  String get statsEntry => 'Estatísticas';
+
+  @override
+  String get statsViews => 'Visualizações';
+
+  @override
+  String get statsSaves => 'Salvos';
+
+  @override
+  String get statsSets => 'Vezes aplicado';
+
+  @override
+  String get statsDownloads => 'Downloads';
+
+  @override
+  String get statsShares => 'Compartilhamentos';
+
+  @override
+  String get statsFolderAdds => 'Adições a pastas';
+
+  @override
+  String get statsRemixes => 'Remixes';
+
+  @override
+  String get statsLoading => 'Carregando suas estatísticas';
+
+  @override
+  String get statsError => 'Não foi possível carregar suas estatísticas. Tente novamente.';
+
+  @override
+  String get statsRetry => 'Tentar novamente';
+
+  @override
+  String get statsEmptyTitle => 'Seu primeiro fundo começa aqui';
+
+  @override
+  String get statsEmptyBody => 'Envie um fundo. As estatísticas aparecem após a aprovação.';
+
+  @override
+  String get statsUpload => 'Enviar um fundo';
+
+  @override
+  String get statsWeekNote =>
+      'Esta semana até agora em comparação com a anterior. As semanas começam na segunda-feira, UTC.';
+
+  @override
+  String get statsHistoryNote =>
+      'Oito semanas, da mais antiga à mais recente. Um traço indica dados indisponíveis. O acompanhamento pode começar no meio da semana, por isso os dados semanais podem ser parciais. A semana atual está incompleta.';
+
+  @override
+  String get statsTopWalls => 'Melhores fundos desta semana';
+
+  @override
+  String get statsUntitled => 'Fundo sem título';
+
+  @override
+  String get statsCountingNote =>
+      'O total de salvos conta os favoritos atuais; o valor semanal conta adições. O total de remixes conta os créditos atuais; o valor semanal conta os primeiros créditos aceitos. As adições a pastas são registradas desde o início do acompanhamento.';
+
+  @override
+  String get statsUnavailable => 'Indisponível';
+
+  @override
+  String get statsWeeklyTitle => 'Seus fundos nesta semana';
+
+  @override
+  String statsWeeklyBody(String week) {
+    return 'Veja os resultados dos seus fundos em $week.';
+  }
+
+  @override
+  String statsWallValue(String metric, String value) {
+    return '$metric: $value nesta semana';
+  }
+
+  @override
+  String statsComparison(String current, String previous) {
+    return '$current nesta semana · $previous na anterior';
+  }
+
+  @override
+  String statsTotal(String value) {
+    return 'Total: $value';
+  }
+
+  @override
+  String statsChange(String value) {
+    return '$value em comparação com a semana anterior';
+  }
+
+  @override
+  String statsUpdated(String date) {
+    return 'Atualizado em $date UTC';
+  }
+
+  @override
+  String statsChartWeek(String date, String value) {
+    return 'Semana de $date: $value';
+  }
+
+  @override
+  String statsChartSummary(String metric, String summary) {
+    return '$metric, oito semanas. $summary';
   }
 }

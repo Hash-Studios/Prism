@@ -11978,4 +11978,112 @@ class AppLocalizationsEs extends AppLocalizations {
   String challengeWinnerNotificationBody(String theme) {
     return 'Tu obra ganó el reto semanal: $theme.';
   }
+
+  @override
+  String get statsTitle => 'Tus estadísticas';
+
+  @override
+  String get statsEntry => 'Estadísticas';
+
+  @override
+  String get statsViews => 'Vistas';
+
+  @override
+  String get statsSaves => 'Guardados';
+
+  @override
+  String get statsSets => 'Veces aplicado';
+
+  @override
+  String get statsDownloads => 'Descargas';
+
+  @override
+  String get statsShares => 'Veces compartido';
+
+  @override
+  String get statsFolderAdds => 'Adiciones a carpetas';
+
+  @override
+  String get statsRemixes => 'Remixes';
+
+  @override
+  String get statsLoading => 'Cargando tus estadísticas';
+
+  @override
+  String get statsError => 'No se pudieron cargar tus estadísticas. Inténtalo de nuevo.';
+
+  @override
+  String get statsRetry => 'Reintentar';
+
+  @override
+  String get statsEmptyTitle => 'Tu primer fondo empieza aquí';
+
+  @override
+  String get statsEmptyBody => 'Sube un fondo. Sus estadísticas aparecerán cuando se apruebe.';
+
+  @override
+  String get statsUpload => 'Subir un fondo';
+
+  @override
+  String get statsWeekNote => 'Esta semana hasta ahora frente a la anterior. Las semanas empiezan el lunes, UTC.';
+
+  @override
+  String get statsHistoryNote =>
+      'Ocho semanas, la más antigua primero. Un guion indica datos no disponibles. El seguimiento puede empezar a mitad de semana, por lo que los datos semanales pueden ser parciales. La semana actual está incompleta.';
+
+  @override
+  String get statsTopWalls => 'Mejores fondos de esta semana';
+
+  @override
+  String get statsUntitled => 'Fondo sin título';
+
+  @override
+  String get statsCountingNote =>
+      'El total de guardados cuenta los favoritos actuales; el dato semanal cuenta las adiciones. El total de remixes cuenta los créditos actuales; el dato semanal cuenta los primeros créditos aceptados. Las adiciones a carpetas se registran desde el inicio del seguimiento.';
+
+  @override
+  String get statsUnavailable => 'No disponible';
+
+  @override
+  String get statsWeeklyTitle => 'Tus fondos esta semana';
+
+  @override
+  String statsWeeklyBody(String week) {
+    return 'Consulta los resultados de tus fondos en $week.';
+  }
+
+  @override
+  String statsWallValue(String metric, String value) {
+    return '$metric: $value esta semana';
+  }
+
+  @override
+  String statsComparison(String current, String previous) {
+    return '$current esta semana · $previous la anterior';
+  }
+
+  @override
+  String statsTotal(String value) {
+    return 'Total: $value';
+  }
+
+  @override
+  String statsChange(String value) {
+    return '$value frente a la semana anterior';
+  }
+
+  @override
+  String statsUpdated(String date) {
+    return 'Actualizado $date UTC';
+  }
+
+  @override
+  String statsChartWeek(String date, String value) {
+    return 'Semana del $date: $value';
+  }
+
+  @override
+  String statsChartSummary(String metric, String summary) {
+    return '$metric, ocho semanas. $summary';
+  }
 }

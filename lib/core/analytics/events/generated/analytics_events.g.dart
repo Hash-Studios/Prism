@@ -3856,6 +3856,48 @@ class UploadWithdrawnEvent extends AnalyticsEvent {
   }
 }
 
+class CreatorStatsOpenedEvent extends AnalyticsEvent {
+  const CreatorStatsOpenedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'creator_stats_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class CreatorStatsMetricSwitchedEvent extends AnalyticsEvent {
+  const CreatorStatsMetricSwitchedEvent({required this.metric});
+
+  final String metric;
+
+  @override
+  String get eventName => 'creator_stats_metric_switched';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'metric': metric};
+  }
+}
+
+class CreatorWallStatsOpenedEvent extends AnalyticsEvent {
+  const CreatorWallStatsOpenedEvent({required this.wallId});
+
+  final String wallId;
+
+  @override
+  String get eventName => 'creator_wall_stats_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId};
+  }
+}
+
 class DailyMomentShownEvent extends AnalyticsEvent {
   const DailyMomentShownEvent();
 

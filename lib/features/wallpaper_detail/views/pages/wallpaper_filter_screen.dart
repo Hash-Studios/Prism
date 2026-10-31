@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -14,7 +15,6 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/platform/wallpaper_set_feedback.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
-import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
@@ -209,17 +209,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   /// [action] is the export. It runs inside the coin gate and returns false when it failed, so the gate attempts a refund.
   Future<void> _runWithPremiumFilterGate(Future<bool> Function() action, {required String sourceTag}) async {
-    if (!mounted) return;
+    if (!await requireSignedInAction(context) || !mounted) return;
+    final String owner = app_state.prismUser.id;
     if (!_selectedFilterNeedsPremiumSpend || app_state.prismUser.premium || _premiumFilterUnlockedForSession) {
       await action();
-      return;
-    }
-
-    if (!app_state.prismUser.loggedIn) {
-      toasts.error(context.l10n.wallpaperSignInForPremiumFilters, haptic: false);
-      googleSignInPopUp(context, () {
-        unawaited(_startActionWithPremiumFilterGate(action, sourceTag: '$sourceTag.after_sign_in'));
-      });
       return;
     }
 
@@ -239,7 +232,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         ),
         upsellSource: 'premium_filter_watch_ad',
         upgradeSource: 'premium_filter_low_balance',
-        isMounted: () => mounted,
+        isMounted: () => mounted && app_state.prismUser.loggedIn && owner == app_state.prismUser.id,
         perform: action,
         creditAfterUnmount: true,
         choose: _choosePremiumFilterAction,
@@ -296,12 +289,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<bool> _handleDownloadAction() async {
+    if (!await requireSignedInAction(context) || !mounted) return false;
+    final String owner = app_state.prismUser.id;
     final AppLocalizations l10n = context.l10n;
     File? imageFile;
     try {
       toasts.success(l10n.wallpaperProcessing, haptic: false);
       imageFile = await saveFilteredImage();
-      if (!mounted) {
+      if (!mounted || !app_state.prismUser.loggedIn || owner != app_state.prismUser.id) {
         return false;
       }
       final request = SaveMediaRequest(link: imageFile.path, isLocalFile: true, kind: SaveMediaKind.wallpaper);
@@ -337,8 +332,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     return false;
   }
 
-  /// Returns false only when the render or the wallpaper set failed. Closing the target sheet is not a failure.
+  /// Returns false when the render or the wallpaper set failed, or the account changed. Closing the target sheet is
+  /// not a failure.
   Future<bool> _handleSetAction() async {
+    if (!await requireSignedInAction(context) || !mounted) return false;
+    final String owner = app_state.prismUser.id;
     final AppLocalizations l10n = context.l10n;
     File? imageFile;
     try {
@@ -349,7 +347,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       toasts.error(l10n.wallpaperGenericError);
       return false;
     }
-    if (!mounted) {
+    if (!mounted || !app_state.prismUser.loggedIn || owner != app_state.prismUser.id) {
       await _deleteEditedFile(imageFile);
       return false;
     }
@@ -358,7 +356,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         context,
         SetScreenRequest(url: imageFile.path),
       );
-      if (!mounted || choice == null) return true;
+      if (!mounted || !app_state.prismUser.loggedIn || owner != app_state.prismUser.id) return false;
+      if (choice == null) return true;
       final WallpaperSetResult result = await _setWallpaper(imageFile.path, choice);
       if (result.isSuccess || result.isInfo) {
         if (mounted) Navigator.of(context).pop();

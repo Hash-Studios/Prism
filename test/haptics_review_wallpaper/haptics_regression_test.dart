@@ -479,7 +479,10 @@ void main() {
       return PrismMediaHostApi.pigeonChannelCodec.encodeMessage(<Object?>[OperationResult(success: false)]);
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMessageHandler(saveChannel, null));
-    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user'
+      ..loggedIn = true
+      ..premium = true;
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
     final File image = (await tester.runAsync(_createPng))!;

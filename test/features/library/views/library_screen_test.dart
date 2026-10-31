@@ -1,5 +1,6 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
@@ -7,6 +8,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_dispatcher.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
@@ -107,6 +109,7 @@ void main() {
     await connectivity.controller.close();
     AnalyticsRuntime.reset();
     await getIt.reset();
+    app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
   // The Downloads placeholders pulse forever, so pumpAndSettle would never finish.
@@ -149,6 +152,9 @@ void main() {
   }
 
   Future<({_LibraryRouter router, DeepLinkDispatcher dispatcher})> pumpDeepLinkHost(WidgetTester tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'test-user'
+      ..loggedIn = true;
     final router = _LibraryRouter();
     final dispatcher = DeepLinkDispatcher(router: router, whenReady: () async => true);
     addTearDown(dispatcher.dispose);

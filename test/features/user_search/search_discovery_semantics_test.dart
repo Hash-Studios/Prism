@@ -1,6 +1,7 @@
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/categories/category_catalog.dart';
 import 'package:Prism/features/user_search/views/widgets/search_discovery_sections.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -45,6 +46,16 @@ class _DiscoveryHost extends StatelessWidget {
 }
 
 void main() {
+  setUp(() {
+    app_state.prismUser = createGuestPrismUser()
+      ..id = 'test-user'
+      ..loggedIn = true;
+  });
+
+  tearDown(() {
+    app_state.prismUser = createGuestPrismUser();
+  });
+
   testWidgets('category semantic tap opens its category route', (tester) async {
     final router = _DiscoveryRouter();
     final SemanticsHandle semantics = tester.ensureSemantics();

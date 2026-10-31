@@ -116,6 +116,113 @@ void main() {
     app_state.prismUser = createGuestPrismUser();
   });
 
+  testWidgets('opening sign-in schedules a frame when the router is idle', (tester) async {
+    await pumpRouter(tester);
+    expect(tester.binding.hasScheduledFrame, isFalse);
+    unawaited(router.push(destination));
+    await tester.idle();
+
+    expect(tester.binding.hasScheduledFrame, isTrue);
+    expect(router.current.name, DashboardRoute.name);
+    await tester.pumpAndSettle();
+    expect(router.current.name, OnboardingV2ShellRoute.name);
+  });
+
+  testWidgets('a guarded request from a post-frame callback opens sign-in without another event', (tester) async {
+    await pumpRouter(tester);
+    tester.binding.addPostFrameCallback((_) => unawaited(router.push(destination)));
+    tester.binding.scheduleFrame();
+    await tester.pump();
+    await tester.idle();
+    expect(continuation.pendingNavigation, isNotNull);
+    expect(tester.binding.hasScheduledFrame, isTrue);
+    await tester.pumpAndSettle();
+
+    expect(router.current.name, OnboardingV2ShellRoute.name);
+  });
+
+  for (final operation in ['cancel', 'dispose', 'logout']) {
+    testWidgets('$operation before the sign-in frame does not open onboarding', (tester) async {
+      await pumpRouter(tester);
+      unawaited(router.push(destination));
+      await tester.idle();
+      final outcome = continuation.pendingNavigation!;
+      expect(router.current.name, DashboardRoute.name);
+
+      if (operation == 'dispose') {
+        continuation.dispose();
+      } else {
+        continuation.cancel();
+        if (operation == 'logout') app_state.prismUser = createGuestPrismUser();
+      }
+      await tester.pumpAndSettle();
+
+      expect(await outcome, isFalse);
+      expect(router.current.name, DashboardRoute.name);
+      expect(continuation.pendingNavigation, isNull);
+    });
+  }
+
+  testWidgets('a newer action before the sign-in frame opens only one onboarding', (tester) async {
+    await pumpRouter(tester);
+    unawaited(router.push(destination));
+    await tester.idle();
+    final previous = continuation.pendingNavigation!;
+    const latestArgs = _DestinationArgs('latest-before-frame');
+    unawaited(
+      router.push(
+        const PageRouteInfo<_DestinationArgs>('GuardedRoute', args: latestArgs, rawPathParams: {'id': 'latest-wall'}),
+      ),
+    );
+    await tester.idle();
+    final latest = continuation.pendingNavigation!;
+    await tester.pumpAndSettle();
+
+    expect(await previous, isFalse);
+    expect(router.stackData.where((route) => route.name == OnboardingV2ShellRoute.name), hasLength(1));
+    await finishSignIn(tester);
+    expect(await latest, isTrue);
+    expect(router.current.args, same(latestArgs));
+  });
+
+  for (final bootstrapCompleted in [true, false]) {
+    testWidgets('sign-in before the opening frame respects bootstrap=$bootstrapCompleted', (tester) async {
+      await pumpRouter(tester, bootstrapCompleted: bootstrapCompleted);
+      unawaited(router.push(destination));
+      await tester.idle();
+      final outcome = continuation.pendingNavigation!;
+      expect(router.current.name, DashboardRoute.name);
+
+      app_state.prismUser.loggedIn = true;
+      unawaited(router.replaceAll([const DashboardRoute()]));
+      await tester.pumpAndSettle();
+
+      if (!bootstrapCompleted) {
+        expect(router.current.name, DashboardRoute.name);
+        expect(continuation.pendingNavigation, isNotNull);
+        continuation.markBootstrapCompleted();
+        await tester.pumpAndSettle();
+      }
+      expect(router.current.name, 'GuardedRoute');
+      expect(await outcome, isTrue);
+      expect(router.stackData.where((route) => route.name == OnboardingV2ShellRoute.name), isEmpty);
+    });
+  }
+
+  testWidgets('an independently opened sign-in before the opening frame is not duplicated', (tester) async {
+    await pumpRouter(tester);
+    unawaited(router.push(destination));
+    await tester.idle();
+    unawaited(router.push(OnboardingV2ShellRoute()));
+    await tester.idle();
+    await tester.pumpAndSettle();
+
+    expect(router.stackData.where((route) => route.name == OnboardingV2ShellRoute.name), hasLength(1));
+    final outcome = continuation.pendingNavigation!;
+    await finishSignIn(tester);
+    expect(await outcome, isTrue);
+  });
+
   testWidgets('a typed in-app route resumes once after sign-in and both stack replacements', (tester) async {
     await pumpRouter(tester);
     await requestDestination(tester);
@@ -172,6 +279,22 @@ void main() {
     expect(continuation.pendingNavigation, isNull);
     await finishSignIn(tester);
     expect(router.current.name, DashboardRoute.name);
+  });
+
+  testWidgets('a protected link replayed as the guest declines opens a fresh sign-in', (tester) async {
+    await pumpRouter(tester);
+    await requestDestination(tester);
+    final Element firstSignIn = tester.element(find.text(OnboardingV2ShellRoute.name));
+    final outcome = continuation.pendingNavigation!;
+
+    // A link queued behind the sign-in replays as soon as the guest's replaceAll removes it, before the next frame.
+    unawaited(router.replaceAll([const DashboardRoute()]).then((_) => router.push(destination)));
+    await tester.pumpAndSettle();
+
+    expect(await outcome, isFalse);
+    expect(router.current.name, OnboardingV2ShellRoute.name);
+    expect(firstSignIn.mounted, isFalse, reason: 'the finished sign-in page must not be reused');
+    expect(continuation.pendingNavigation, isNotNull);
   });
 
   testWidgets('back from sign-in cancels the held action', (tester) async {

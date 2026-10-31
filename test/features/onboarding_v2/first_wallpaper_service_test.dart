@@ -1,6 +1,7 @@
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -13,6 +14,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../support/profile_user_fixture.dart';
+
 class _MockCategoryFeedRepository extends Mock implements CategoryFeedRepository {}
 
 class _MockWallOfTheDayRepository extends Mock implements WallOfTheDayRepository {}
@@ -22,9 +25,11 @@ void main() {
   late FirstWallpaperService service;
 
   setUp(() {
+    app_state.prismUser = profileUser();
     wotdRepository = _MockWallOfTheDayRepository();
     service = FirstWallpaperService(_MockCategoryFeedRepository(), wotdRepository);
   });
+  tearDown(() => app_state.prismUser = profileUser(loggedIn: false));
 
   void stubWotd(Result<WallOfTheDayEntity?> result) =>
       when(() => wotdRepository.fetchToday()).thenAnswer((_) async => result);
@@ -122,6 +127,23 @@ void main() {
       appliedUrls = <String>[];
       savedRequests = <SaveMediaRequest>[];
     });
+
+    for (final platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {
+      test('guest local Pro cannot perform the first wallpaper action on $platform', () async {
+        debugDefaultTargetPlatformOverride = platform;
+        addTearDown(() => debugDefaultTargetPlatformOverride = null);
+        app_state.prismUser = profileUser(loggedIn: false, premium: true);
+
+        final result = await build(
+          capabilities: const aw.WallpaperCapabilities(),
+        ).performAction('/local.png', wallpaperSource: WallpaperSource.downloaded);
+
+        expect(result.success, isFalse);
+        expect(result.errorCode, 'sign_in_required');
+        expect(appliedTargets, isEmpty);
+        expect(savedRequests, isEmpty);
+      });
+    }
 
     tearDown(() => debugDefaultTargetPlatformOverride = null);
 
