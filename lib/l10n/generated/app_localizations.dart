@@ -105,6 +105,42 @@ abstract class AppLocalizations {
     Locale('pt', 'BR'),
   ];
 
+  /// Label identifying a rewarded advertisement.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad'**
+  String get economyAd;
+
+  /// Offer for the currently quoted rewarded ad amount.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch ad for {reward} coins'**
+  String economyWatchAdForCoins(int reward);
+
+  /// Coins missing for the selected purchase.
+  ///
+  /// In en, this message translates to:
+  /// **'You need {count} more coins.'**
+  String economyCoinsMissing(int count);
+
+  /// Estimated remaining shortfall after the quoted ad reward.
+  ///
+  /// In en, this message translates to:
+  /// **'You may still need {count} coins after the ad'**
+  String economyCoinsRemainAfterAd(int count);
+
+  /// Disclosure of the shop's automatic purchase after a credited ad.
+  ///
+  /// In en, this message translates to:
+  /// **'If your balance after the reward covers the price, this item will be purchased automatically.'**
+  String get economyAdAutomaticPurchase;
+
+  /// A completed ad reward is awaiting server verification.
+  ///
+  /// In en, this message translates to:
+  /// **'Your ad reward is awaiting verification. Coins will appear once it is confirmed.'**
+  String get economyAdVerificationPending;
+
   /// Title of the empty Folders tab in the Library.
   ///
   /// In en, this message translates to:
@@ -224,6 +260,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wallhaven'**
   String get wallpaperProviderWallhaven;
+
+  /// Shared title for Prism Duo reveal wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'Duo reveal'**
+  String get duoTitle;
+
+  /// AI composition format switch. Normal quality and coin prices still apply.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a Duo reveal'**
+  String get duoAiFormatLabel;
+
+  /// Shared notice explaining the user-approved Prism crop preset, not an Apple crop claim.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism previews the right side when folded. Align the saved original manually and check both views in the system wallpaper preview. This is a Prism preset, not an automatic iOS crop.'**
+  String get duoPresetNotice;
+
+  /// Visible label for the 1 to 160 character subject visible in the right-side crop.
+  ///
+  /// In en, this message translates to:
+  /// **'Folded view'**
+  String get duoFoldedPromptLabel;
+
+  /// Brief example for the folded-view prompt, not its label.
+  ///
+  /// In en, this message translates to:
+  /// **'A sleepy cat beside a window'**
+  String get duoFoldedPromptExample;
+
+  /// Visible label for the 1 to 160 character scene revealed by the wider canvas.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfolded reveal'**
+  String get duoRevealedPromptLabel;
+
+  /// Brief example for the unfolded-view prompt, not its label.
+  ///
+  /// In en, this message translates to:
+  /// **'A tiny spaceship outside the window'**
+  String get duoRevealedPromptExample;
+
+  /// Validation before a Duo AI generation. Both trimmed prompts must contain 1 to 160 characters.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe both views using 1 to 160 characters each.'**
+  String get duoPromptValidation;
+
+  /// One-line Home mood row description for Duo reveal wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'One wallpaper. A wider reveal.'**
+  String get duoMoodBody;
+
+  /// Duo device preview selector. Product name remains unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'iPhone Duo'**
+  String get duoDeviceName;
+
+  /// Standard phone preview selector.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get duoPhoneDevice;
+
+  /// Button and accessibility label to fold the Duo preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Fold'**
+  String get duoFold;
+
+  /// Button and accessibility label to unfold the Duo preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfold'**
+  String get duoUnfold;
+
+  /// Label above the folded view on a share card.
+  ///
+  /// In en, this message translates to:
+  /// **'Folded'**
+  String get duoFolded;
+
+  /// Label above the unfolded view on a share card.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfolded'**
+  String get duoUnfolded;
+
+  /// Android Duo preview caveat. Standard Home, Lock and Both targets remain available.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism previews the right side when folded. Android may crop it differently. Check the system wallpaper preview before applying.'**
+  String get duoAndroidCropNotice;
+
+  /// Call to action printed on the exported Duo reveal share card.
+  ///
+  /// In en, this message translates to:
+  /// **'Get it on Prism'**
+  String get duoGetOnPrism;
+
+  /// Title of setup guide shown only after a successful iOS Photos save.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up your Duo reveal'**
+  String get duoGuideTitle;
+
+  /// First of three Duo wallpaper setup steps.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the saved original in Photos, tap Share, then Use as Wallpaper.'**
+  String get duoGuideOpen;
+
+  /// Second of three steps. Manual alignment, not an automatic Apple crop.
+  ///
+  /// In en, this message translates to:
+  /// **'Align the full image manually so the folded view shows the right side.'**
+  String get duoGuideAlign;
+
+  /// Third of three steps. User must check both system previews.
+  ///
+  /// In en, this message translates to:
+  /// **'Check both folded and unfolded views in the system preview, then add the wallpaper.'**
+  String get duoGuideCheck;
+
+  /// Duo website browser and search title
+  ///
+  /// In en, this message translates to:
+  /// **'iPhone Duo wallpapers | Prism'**
+  String get duoWebTitle;
+
+  /// Duo website metadata description
+  ///
+  /// In en, this message translates to:
+  /// **'One wallpaper, a hidden second scene. Explore original Duo reveal wallpapers in Prism.'**
+  String get duoWebDescription;
+
+  /// Duo website heading
+  ///
+  /// In en, this message translates to:
+  /// **'One wallpaper. A wider story.'**
+  String get duoWebHeading;
+
+  /// Duo website introduction
+  ///
+  /// In en, this message translates to:
+  /// **'A quiet scene when folded. A second story when unfolded. Preview both views of each original wallpaper.'**
+  String get duoWebIntro;
+
+  /// Empty approved Duo website collection
+  ///
+  /// In en, this message translates to:
+  /// **'The first Duo collection is in review.'**
+  String get duoWebEmpty;
+
+  /// Empty Duo website next step
+  ///
+  /// In en, this message translates to:
+  /// **'Explore Prism while each wallpaper is checked in both views.'**
+  String get duoWebEmptyBody;
+
+  /// Website folded preview caption
+  ///
+  /// In en, this message translates to:
+  /// **'Folded preview'**
+  String get duoWebFolded;
+
+  /// Website unfolded preview caption
+  ///
+  /// In en, this message translates to:
+  /// **'Unfolded original'**
+  String get duoWebUnfolded;
+
+  /// Website notice about the approved Prism crop
+  ///
+  /// In en, this message translates to:
+  /// **'These previews use Prism\'s right-side preset, not an automatic Apple crop. Save the full original, align it manually, and check both folded and unfolded views in the system wallpaper preview.'**
+  String get duoWebPresetNotice;
+
+  /// Website wallpaper deep link action
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Prism'**
+  String get duoWebOpenPrism;
+
+  /// Website homepage action
+  ///
+  /// In en, this message translates to:
+  /// **'Explore Prism'**
+  String get duoWebExplore;
+
+  /// Website App Store link
+  ///
+  /// In en, this message translates to:
+  /// **'Download on the App Store'**
+  String get duoWebAppStore;
+
+  /// Website Google Play link
+  ///
+  /// In en, this message translates to:
+  /// **'Get it on Google Play'**
+  String get duoWebPlayStore;
 
   /// Failed filter export action inserted before refund status.
   ///
@@ -18420,6 +18660,426 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Shake your phone on any screen to report a problem'**
   String get reportShakeToReportSubtitle;
+
+  /// Content preference that shows or hides AI-generated Prism walls.
+  ///
+  /// In en, this message translates to:
+  /// **'Show AI-generated wallpapers'**
+  String get accountShowAiWallpapers;
+
+  /// Subtitle under the AI-generated wallpapers switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off to see only human-made walls'**
+  String get accountShowAiWallpapersSubtitle;
+
+  /// Footnote under the AI-generated wallpapers switch. Says what still shows when the switch is off.
+  ///
+  /// In en, this message translates to:
+  /// **'Hiding AI wallpapers never hides your own uploads or favourites.'**
+  String get accountShowAiWallpapersFootnote;
+
+  /// Chip in the Tune your feed sheet that hides AI-generated walls. Same setting as the Settings switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide AI'**
+  String get wallpaperFeedHideAi;
+
+  /// Tag on the wallpaper detail screen for a wall that was made with AI.
+  ///
+  /// In en, this message translates to:
+  /// **'AI-generated'**
+  String get wallpaperAiGenerated;
+
+  /// Sheet line that names the AI model that made the wall.
+  ///
+  /// In en, this message translates to:
+  /// **'Made with {model}'**
+  String wallpaperAiMadeWith(String model);
+
+  /// Sheet line for an AI wall that did not record its model.
+  ///
+  /// In en, this message translates to:
+  /// **'Made with AI'**
+  String get wallpaperAiMadeWithUnknown;
+
+  /// Row in the AI-generated sheet that opens the report sheet for a wrong AI label.
+  ///
+  /// In en, this message translates to:
+  /// **'Report wrong label'**
+  String get wallpaperAiReportWrongLabel;
+
+  /// Empty state when every wall in a feed is AI-generated and AI walls are hidden.
+  ///
+  /// In en, this message translates to:
+  /// **'No human-made walls here yet'**
+  String get feedNoHumanWalls;
+
+  /// Action in the empty state that turns AI-generated walls back on.
+  ///
+  /// In en, this message translates to:
+  /// **'Show AI walls'**
+  String get feedShowAiWalls;
+
+  /// Daily moment: Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily moment'**
+  String get dailyMomentTitle;
+
+  /// Daily moment: StreakTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily streak'**
+  String get dailyMomentStreakTitle;
+
+  /// Daily moment: ChestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily chest'**
+  String get dailyMomentChestTitle;
+
+  /// Daily moment: SpinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Free spin'**
+  String get dailyMomentSpinTitle;
+
+  /// Daily moment: Unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This reward is no longer available today.'**
+  String get dailyMomentUnavailable;
+
+  /// Daily moment: Error.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load your reward. Try again.'**
+  String get dailyMomentError;
+
+  /// Daily moment: StreakReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins, plural, one{{coins} coin earned} other{{coins} coins earned}} · {days, plural, one{streak of {days} day} other{streak of {days} days}}'**
+  String dailyMomentStreakReceipt(int coins, int days);
+
+  /// No description provided for @challengeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly challenge'**
+  String get challengeTitle;
+
+  /// No description provided for @challengeRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 3 entries, each reviewed before appearing.'**
+  String get challengeRules;
+
+  /// No description provided for @challengeVotingRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Vote for other creators until {date} UTC.'**
+  String challengeVotingRules(String date);
+
+  /// No description provided for @challengeUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload an entry'**
+  String get challengeUpload;
+
+  /// No description provided for @challengeAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Create with AI'**
+  String get challengeAi;
+
+  /// No description provided for @challengeTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Top'**
+  String get challengeTop;
+
+  /// No description provided for @challengeNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get challengeNew;
+
+  /// No description provided for @challengePast.
+  ///
+  /// In en, this message translates to:
+  /// **'Past challenges'**
+  String get challengePast;
+
+  /// No description provided for @challengeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved entries will appear here.'**
+  String get challengeEmpty;
+
+  /// No description provided for @challengeWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Voting has closed. We are waiting for entry reviews before choosing a winner.'**
+  String get challengeWaiting;
+
+  /// No description provided for @challengeClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'This challenge has ended.'**
+  String get challengeClosed;
+
+  /// No description provided for @challengeScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'This challenge has not opened yet.'**
+  String get challengeScheduled;
+
+  /// No description provided for @challengeNoWinner.
+  ///
+  /// In en, this message translates to:
+  /// **'No winner for this challenge.'**
+  String get challengeNoWinner;
+
+  /// No description provided for @challengeWinner.
+  ///
+  /// In en, this message translates to:
+  /// **'Winner · {name}'**
+  String challengeWinner(String name);
+
+  /// No description provided for @challengeVote.
+  ///
+  /// In en, this message translates to:
+  /// **'Vote'**
+  String get challengeVote;
+
+  /// No description provided for @challengeUnvote.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove vote'**
+  String get challengeUnvote;
+
+  /// No description provided for @challengeVotes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{0 votes} =1{1 vote} other{{count} votes}}'**
+  String challengeVotes(int count);
+
+  /// Daily moment: Cosmetic.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmetic added to your collection'**
+  String get dailyMomentCosmetic;
+
+  /// Daily moment: Reward.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins, plural, one{{coins} coin earned} other{{coins} coins earned}}'**
+  String dailyMomentReward(int coins);
+
+  /// Daily moment: ChestBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Open today’s chest when you’re ready.'**
+  String get dailyMomentChestBody;
+
+  /// Daily moment: SpinBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your free spin is ready.'**
+  String get dailyMomentSpinBody;
+
+  /// Daily moment: Balance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance: {coins, plural, one{{coins} coin} other{{coins} coins}}'**
+  String dailyMomentBalance(int coins);
+
+  /// Daily moment: Done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get dailyMomentDone;
+
+  /// Daily moment: Retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get dailyMomentRetry;
+
+  /// Daily moment: Continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get dailyMomentContinue;
+
+  /// Daily moment: OpenFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Open free chest'**
+  String get dailyMomentOpenFree;
+
+  /// Daily moment: OpenChest.
+  ///
+  /// In en, this message translates to:
+  /// **'Open for {coins, plural, one{{coins} coin} other{{coins} coins}}'**
+  String dailyMomentOpenChest(int coins);
+
+  /// Daily moment: SpinAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Take free spin'**
+  String get dailyMomentSpinAction;
+
+  /// Daily moment: Close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close daily moment'**
+  String get dailyMomentClose;
+
+  /// Daily moment: Today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get dailyMomentToday;
+
+  /// Daily moment: Ready.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily rewards are ready'**
+  String get dailyMomentReady;
+
+  /// Daily moment: Complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Today is complete'**
+  String get dailyMomentComplete;
+
+  /// Daily moment: Resume.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue daily moment'**
+  String get dailyMomentResume;
+
+  /// Daily moment: More.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get dailyMomentMore;
+
+  /// Daily moment: Quests.
+  ///
+  /// In en, this message translates to:
+  /// **'Quests'**
+  String get dailyMomentQuests;
+
+  /// Daily moment: ChestLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily chest available'**
+  String get dailyMomentChestLeft;
+
+  /// Daily moment: SpinLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Free spin available'**
+  String get dailyMomentSpinLeft;
+
+  /// Daily moment: StreakLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily streak available'**
+  String get dailyMomentStreakLeft;
+
+  /// No description provided for @challengeShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share challenge'**
+  String get challengeShare;
+
+  /// No description provided for @challengeRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove challenge'**
+  String get challengeRemove;
+
+  /// No description provided for @challengeContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge · {theme}'**
+  String challengeContext(String theme);
+
+  /// No description provided for @challengeError.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not load this challenge. Try again.'**
+  String get challengeError;
+
+  /// No description provided for @challengeVoteError.
+  ///
+  /// In en, this message translates to:
+  /// **'Your vote could not be saved. Try again.'**
+  String get challengeVoteError;
+
+  /// No description provided for @challengeSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to enter or vote.'**
+  String get challengeSignIn;
+
+  /// No description provided for @challengeLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You have entered 3 wallpapers in this challenge.'**
+  String get challengeLimit;
+
+  /// No description provided for @challengeRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get challengeRetry;
+
+  /// No description provided for @challengeOwnEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot vote for your own entry.'**
+  String get challengeOwnEntry;
+
+  /// No description provided for @challengeDailyLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Your daily voting limit is reached.'**
+  String get challengeDailyLimit;
+
+  /// No description provided for @challengeMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This challenge or entry is no longer available.'**
+  String get challengeMissing;
+
+  /// No description provided for @challengeBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge Winner'**
+  String get challengeBadge;
+
+  /// No description provided for @challengeBadgeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Win a weekly challenge'**
+  String get challengeBadgeDescription;
+
+  /// No description provided for @challengeWinnerNotificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallpaper won'**
+  String get challengeWinnerNotificationTitle;
+
+  /// No description provided for @challengeWinnerNotificationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your entry won the weekly challenge: {theme}.'**
+  String challengeWinnerNotificationBody(String theme);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -136,7 +136,7 @@ void main() {
     getIt.registerSingleton<DownloadedWallIndex>(downloaded);
     await downloaded.remember(link: _prism().fullUrl, id: 'prism-1', source: WallpaperSource.prism);
     recordAction = _MockRecordAction();
-    when(() => recordAction(any(), any())).thenAnswer((_) async => Result.success(null));
+    when(() => recordAction(any(), any())).thenAnswer((_) async => Result.success(const WallpaperActionReceipt()));
     getIt.registerSingleton<RecordWallpaperActionUseCase>(recordAction);
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
@@ -210,14 +210,15 @@ void main() {
   }
 
   Future<void> tapSet(WidgetTester tester, {bool expectMatchAccent = false}) async {
+    final expectedRequests = client.requests.length + 1;
     await tester.tap(find.text('Set'));
     await tester.pump();
-    for (int i = 0; i < 40 && !client.requestObserved.isCompleted; i++) {
+    for (int i = 0; i < 40 && client.requests.length < expectedRequests; i++) {
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
       await tester.pump();
     }
     expect(client.requestObserved.isCompleted, isTrue, reason: 'setting waits for the offline image to resolve');
-    expect(client.requests, hasLength(1));
+    expect(client.requests, hasLength(expectedRequests));
     for (
       int i = 0;
       i < 40 &&
@@ -276,6 +277,67 @@ void main() {
 
     expect(client.requests.single.target, aw.WallpaperTarget.home);
     verify(() => recordAction('prism-1', WallpaperAction.set)).called(1);
+    await tester.pump(const Duration(seconds: 10));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('a completed set shows only its confirmed award once', (tester) async {
+    when(() => recordAction(any(), any())).thenAnswer(
+      (_) async =>
+          Result.success(const WallpaperActionReceipt(counted: true, coins: 17, receiptId: 'set_receipt_1234')),
+    );
+    await pump(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
+    await tapSet(tester);
+    await tester.pump();
+    expect(find.text('+17 coins'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 10));
+    await tapSet(tester);
+    for (var i = 0; i < 40 && find.text('+17 coins').evaluate().isNotEmpty; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump();
+    }
+    verify(() => recordAction('prism-1', WallpaperAction.set)).called(2);
+    expect(find.text('+17 coins'), findsNothing);
+    await tester.pump(const Duration(seconds: 10));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('a set receipt is hidden after changing accounts', (tester) async {
+    when(() => recordAction(any(), any())).thenAnswer(
+      (_) async => Result.success(const WallpaperActionReceipt(counted: true, coins: 17, receiptId: 'owner_receipt')),
+    );
+    final state = WallpaperDetailLoaded(
+      recommendations: const RecommendationState.exhausted(),
+      entity: _prism(),
+      paletteLoading: false,
+    );
+    await pump(tester, state);
+    await tapSet(tester);
+    await tester.pump();
+    expect(find.text('+17 coins'), findsOneWidget);
+    app_state.prismUser.id = 'another-owner';
+    await pump(tester, state);
+    expect(find.text('+17 coins'), findsNothing);
+    await tester.pump(const Duration(seconds: 10));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('a legacy set receipt shows no earned amount', (tester) async {
+    await pump(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
+    await tapSet(tester);
+    await tester.pump();
+    expect(find.textContaining('coins'), findsNothing);
     await tester.pump(const Duration(seconds: 10));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 

@@ -11,6 +11,41 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
+  String get economyAd => 'Iklan';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Tonton iklan untuk $rewardString koin';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Kamu membutuhkan $countString koin lagi.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Kamu mungkin masih membutuhkan $countString koin setelah iklan';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'Jika saldo setelah hadiah mencukupi harga, item ini akan dibeli secara otomatis.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Hadiah iklanmu sedang diverifikasi. Koin akan muncul setelah dikonfirmasi.';
+
+  @override
   String get foldersLibraryEmptyTitle => 'Belum ada folder';
 
   @override
@@ -84,6 +119,113 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
+  String get duoTitle => 'Kejutan Duo';
+
+  @override
+  String get duoAiFormatLabel => 'Buat kejutan Duo';
+
+  @override
+  String get duoPresetNotice =>
+      'Prism menampilkan sisi kanan saat ponsel dilipat. Atur posisi gambar asli yang disimpan secara manual dan periksa kedua tampilan di pratinjau wallpaper sistem. Ini adalah preset Prism, bukan pemotongan otomatis iOS.';
+
+  @override
+  String get duoFoldedPromptLabel => 'Tampilan terlipat';
+
+  @override
+  String get duoFoldedPromptExample => 'Kucing mengantuk di samping jendela';
+
+  @override
+  String get duoRevealedPromptLabel => 'Kejutan saat dibuka';
+
+  @override
+  String get duoRevealedPromptExample => 'Pesawat luar angkasa kecil di luar jendela';
+
+  @override
+  String get duoPromptValidation => 'Jelaskan kedua tampilan, masing-masing dengan 1 hingga 160 karakter.';
+
+  @override
+  String get duoMoodBody => 'Satu wallpaper. Lebih banyak kejutan saat dibuka.';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'Ponsel';
+
+  @override
+  String get duoFold => 'Lipat';
+
+  @override
+  String get duoUnfold => 'Buka lipatan';
+
+  @override
+  String get duoFolded => 'Terlipat';
+
+  @override
+  String get duoUnfolded => 'Terbuka';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'Prism menampilkan sisi kanan saat ponsel dilipat. Android mungkin memotongnya secara berbeda. Periksa pratinjau wallpaper sistem sebelum menerapkannya.';
+
+  @override
+  String get duoGetOnPrism => 'Dapatkan di Prism';
+
+  @override
+  String get duoGuideTitle => 'Atur kejutan Duo Anda';
+
+  @override
+  String get duoGuideOpen => 'Buka gambar asli yang disimpan di Foto, ketuk Bagikan, lalu Gunakan sebagai Wallpaper.';
+
+  @override
+  String get duoGuideAlign => 'Atur posisi gambar utuh secara manual agar tampilan terlipat menampilkan sisi kanan.';
+
+  @override
+  String get duoGuideCheck => 'Periksa tampilan terlipat dan terbuka di pratinjau sistem, lalu tambahkan wallpaper.';
+
+  @override
+  String get duoWebTitle => 'Wallpaper iPhone Duo | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'Satu wallpaper dengan adegan kedua yang tersembunyi. Jelajahi wallpaper kejutan Duo orisinal di Prism.';
+
+  @override
+  String get duoWebHeading => 'Satu wallpaper. Cerita yang lebih luas.';
+
+  @override
+  String get duoWebIntro =>
+      'Adegan tenang saat dilipat. Cerita lain saat dibuka. Lihat kedua tampilan setiap wallpaper orisinal.';
+
+  @override
+  String get duoWebEmpty => 'Koleksi Duo pertama sedang ditinjau.';
+
+  @override
+  String get duoWebEmptyBody => 'Jelajahi Prism selagi kami memeriksa setiap wallpaper dalam kedua tampilan.';
+
+  @override
+  String get duoWebFolded => 'Pratinjau terlipat';
+
+  @override
+  String get duoWebUnfolded => 'Gambar asli saat terbuka';
+
+  @override
+  String get duoWebPresetNotice =>
+      'Pratinjau ini menggunakan preset sisi kanan Prism, bukan pemotongan otomatis Apple. Simpan gambar asli secara utuh, atur posisinya secara manual, dan periksa tampilan terlipat serta terbuka di pratinjau wallpaper sistem.';
+
+  @override
+  String get duoWebOpenPrism => 'Buka di Prism';
+
+  @override
+  String get duoWebExplore => 'Jelajahi Prism';
+
+  @override
+  String get duoWebAppStore => 'Unduh di App Store';
+
+  @override
+  String get duoWebPlayStore => 'Dapatkan di Google Play';
 
   @override
   String get economyExportFailedLabel => 'Ekspor gagal';
@@ -11483,4 +11625,242 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get reportShakeToReportSubtitle => 'Goyangkan ponsel di layar mana pun untuk melaporkan masalah';
+
+  @override
+  String get accountShowAiWallpapers => 'Tampilkan wallpaper buatan AI';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'Matikan untuk melihat wallpaper buatan manusia saja';
+
+  @override
+  String get accountShowAiWallpapersFootnote =>
+      'Menyembunyikan wallpaper AI tidak pernah menyembunyikan unggahan dan favorit Anda.';
+
+  @override
+  String get wallpaperFeedHideAi => 'Sembunyikan AI';
+
+  @override
+  String get wallpaperAiGenerated => 'Buatan AI';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return 'Dibuat dengan $model';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'Dibuat dengan AI';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'Laporkan label salah';
+
+  @override
+  String get feedNoHumanWalls => 'Belum ada wallpaper buatan manusia di sini';
+
+  @override
+  String get feedShowAiWalls => 'Tampilkan wallpaper AI';
+
+  @override
+  String get dailyMomentTitle => 'Momen harian';
+
+  @override
+  String get dailyMomentStreakTitle => 'Runtun harian';
+
+  @override
+  String get dailyMomentChestTitle => 'Peti harian';
+
+  @override
+  String get dailyMomentSpinTitle => 'Putaran gratis';
+
+  @override
+  String get dailyMomentUnavailable => 'Hadiah ini tidak lagi tersedia hari ini.';
+
+  @override
+  String get dailyMomentError => 'Hadiah tidak dapat dimuat. Coba lagi.';
+
+  @override
+  String dailyMomentStreakReceipt(int coins, int days) {
+    return '$coins koin diperoleh · runtun $days hari';
+  }
+
+  @override
+  String get challengeTitle => 'Tantangan mingguan';
+
+  @override
+  String get challengeRules => 'Maksimal 3 karya, ditinjau sebelum ditampilkan.';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'Pilih karya kreator lain hingga $date UTC.';
+  }
+
+  @override
+  String get challengeUpload => 'Unggah karya';
+
+  @override
+  String get challengeAi => 'Buat dengan AI';
+
+  @override
+  String get challengeTop => 'Teratas';
+
+  @override
+  String get challengeNew => 'Terbaru';
+
+  @override
+  String get challengePast => 'Tantangan sebelumnya';
+
+  @override
+  String get challengeEmpty => 'Karya yang disetujui akan muncul di sini.';
+
+  @override
+  String get challengeWaiting => 'Pemungutan suara ditutup. Kami menunggu tinjauan karya sebelum memilih pemenang.';
+
+  @override
+  String get challengeClosed => 'Tantangan ini telah berakhir.';
+
+  @override
+  String get challengeScheduled => 'Tantangan ini belum dibuka.';
+
+  @override
+  String get challengeNoWinner => 'Tidak ada pemenang untuk tantangan ini.';
+
+  @override
+  String challengeWinner(String name) {
+    return 'Pemenang · $name';
+  }
+
+  @override
+  String get challengeVote => 'Pilih';
+
+  @override
+  String get challengeUnvote => 'Hapus suara';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count suara',
+      one: '1 suara',
+      zero: '0 suara',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentCosmetic => 'Item kosmetik ditambahkan ke koleksi';
+
+  @override
+  String dailyMomentReward(int coins) {
+    return '$coins koin diperoleh';
+  }
+
+  @override
+  String get dailyMomentChestBody => 'Buka peti hari ini saat kamu siap.';
+
+  @override
+  String get dailyMomentSpinBody => 'Putaran gratismu siap.';
+
+  @override
+  String dailyMomentBalance(int coins) {
+    return 'Saldo: $coins koin';
+  }
+
+  @override
+  String get dailyMomentDone => 'Selesai';
+
+  @override
+  String get dailyMomentRetry => 'Coba lagi';
+
+  @override
+  String get dailyMomentContinue => 'Lanjutkan';
+
+  @override
+  String get dailyMomentOpenFree => 'Buka peti gratis';
+
+  @override
+  String dailyMomentOpenChest(int coins) {
+    return 'Buka dengan $coins koin';
+  }
+
+  @override
+  String get dailyMomentSpinAction => 'Putar gratis';
+
+  @override
+  String get dailyMomentClose => 'Tutup momen harian';
+
+  @override
+  String get dailyMomentToday => 'Hari ini';
+
+  @override
+  String get dailyMomentReady => 'Hadiah harian sudah siap';
+
+  @override
+  String get dailyMomentComplete => 'Hari ini sudah selesai';
+
+  @override
+  String get dailyMomentResume => 'Lanjutkan momen harian';
+
+  @override
+  String get dailyMomentMore => 'Lainnya';
+
+  @override
+  String get dailyMomentQuests => 'Misi';
+
+  @override
+  String get dailyMomentChestLeft => 'Peti harian tersedia';
+
+  @override
+  String get dailyMomentSpinLeft => 'Putaran gratis tersedia';
+
+  @override
+  String get dailyMomentStreakLeft => 'Runtun harian tersedia';
+
+  @override
+  String get challengeShare => 'Bagikan tantangan';
+
+  @override
+  String get challengeRemove => 'Hapus tantangan';
+
+  @override
+  String challengeContext(String theme) {
+    return 'Tantangan · $theme';
+  }
+
+  @override
+  String get challengeError => 'Tantangan tidak dapat dimuat. Coba lagi.';
+
+  @override
+  String get challengeVoteError => 'Suara tidak dapat disimpan. Coba lagi.';
+
+  @override
+  String get challengeSignIn => 'Masuk untuk ikut atau memilih.';
+
+  @override
+  String get challengeLimit => 'Anda telah mengirim 3 wallpaper untuk tantangan ini.';
+
+  @override
+  String get challengeRetry => 'Coba lagi';
+
+  @override
+  String get challengeOwnEntry => 'Anda tidak dapat memilih karya sendiri.';
+
+  @override
+  String get challengeDailyLimit => 'Batas suara harian telah tercapai.';
+
+  @override
+  String get challengeMissing => 'Tantangan atau karya ini tidak lagi tersedia.';
+
+  @override
+  String get challengeBadge => 'Pemenang Tantangan';
+
+  @override
+  String get challengeBadgeDescription => 'Menangkan tantangan mingguan';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'Wallpaper Anda menang';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'Karya Anda memenangkan tantangan mingguan: $theme.';
+  }
 }

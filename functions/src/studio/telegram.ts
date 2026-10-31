@@ -26,8 +26,8 @@ function responseError(message: string, status: number): Error {
 export function studioPostCaption(wall: admin.firestore.DocumentData): string {
   const series = STUDIO_SERIES.find((s) => s.id === wall.seriesId);
   const prompt = typeof wall.aiPrompt === "string" ? wall.aiPrompt : "";
-  // The prompt is "<subject>, <palette>. <style> <composition>". The subject alone is the short scene.
-  const scene = series?.subjects.find((s) => prompt.startsWith(`${s.prompt}, `))?.prompt ??
+  const subject = series?.subjects.find((s) => prompt.startsWith(`${s.prompt}, `));
+  const scene = (series?.duoReveal ? subject?.title : subject?.prompt) ??
     prompt.split(/[,.]/)[0].trim();
   const sentence = scene ? `${scene[0].toUpperCase()}${scene.slice(1)}.` : "";
   const collection = series ? `Part of the ${series.name} collection by @PrismWallpapers.` : "By @PrismWallpapers.";

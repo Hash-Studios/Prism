@@ -4,15 +4,15 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import type {ScheduledEvent} from "firebase-functions/v2/scheduler";
 import {db} from "../common";
+import {isWotdEligible, parseCollectionList} from "../wallEligibility";
 import * as delivery from "../ownedAssetDelivery";
 import * as drops from "../drops";
 import * as pushGallery from "../pushGallery";
 import {resetEconomyCache} from "../economy";
 import {installFakeDb} from "./fakeDb";
 import {
-  isWotdEligible,
+  commitWotdPick,
   offsetsAtNineLocal,
-  parseCollectionList,
   sendWallOfTheDayBuckets,
   wallOfTheDay,
   wotdBucketTopic,
@@ -191,10 +191,14 @@ function harness(t: TestContext, options: {
     gate = undefined;
     await wait;
     return fn({
-      get: async (ref: {path: string}) => ref.path === deliveriesRef.path ?
+      get: async (ref: {path: string; get: () => Promise<unknown>}) => ref.path === deliveriesRef.path ?
         {data: () => ({buckets: {...result.deliveries}})} :
-        {data: () => state.current},
-      set: (_ref: unknown, data: {buckets: Record<string, unknown>}) => {
+        ref.get(),
+      update: (_ref: unknown, data: Record<string, unknown>) => currentRef.update(data),
+      set: (ref: {path: string}, data: {buckets: Record<string, unknown>}) => {
+        if (ref.path === currentRef.path) {
+          currentRef.set(data); return;
+        }
         for (const [topic, value] of Object.entries(data.buckets)) {
           if (typeof value === "string" || (typeof value === "object" && value !== null && "claimId" in value)) {
             result.deliveries[topic] = value;
@@ -251,7 +255,7 @@ function harness(t: TestContext, options: {
     }
     throw new Error(`Unexpected collection ${name}`);
   });
-  t.mock.method(db, "doc", (path: string) => ({get: async () => ({data: () => {
+  t.mock.method(db, "doc", (path: string) => ({path, get: async () => ({data: () => {
     const uid = path.split("/")[1];
     if (path.endsWith("/private/session")) {
       return options.creator && uid === options.creator.id ? {
@@ -300,8 +304,8 @@ test("a retry after the pick was saved but not announced only sends the push", a
   await wallOfTheDay.run(scheduled());
   assert.deepEqual(h.sets, []);
   assertLocalizedTopicFanout(h.topics, ["wall_of_the_day"]);
-  assert.equal(h.updates.length, 1);
-  assert.ok(h.updates[0].pushedAt);
+  assert.equal(h.updates.filter((u) => u.pushedAt).length, 1);
+  assert.ok(h.updates.some((u) => u.pushedAt));
 });
 
 test("the daily pick skips streak-exclusive and premium walls", async (t) => {
@@ -363,7 +367,7 @@ for (const currentWall of [{review: false}, {originalProtected: false}, {collect
     await sendWallOfTheDayBuckets.run(scheduled());
     assert.deepEqual(h.sets, []);
     assert.deepEqual(h.topics, []);
-    assert.deepEqual(h.updates, []);
+    assert.equal(h.updates.some((u) => u.pushedAt), false);
     assert.deepEqual(h.deliveries, {});
   });
 }
@@ -399,7 +403,7 @@ test("a failed push makes the run fail and leaves the pick unannounced", async (
   await assert.rejects(async () => {
     await wallOfTheDay.run(scheduled());
   }, /push failed/);
-  assert.deepEqual(h.updates, []);
+  assert.equal(h.updates.some((u) => u.pushedAt), false);
 });
 
 test("the bucket job pushes to the offset where it is 09:00", async (t) => {
@@ -739,7 +743,7 @@ test("a creator notice that cannot be delivered does not fail the public push", 
   });
   await wallOfTheDay.run(scheduled());
   assertLocalizedTopicFanout(h.topics, ["wall_of_the_day"]);
-  assert.equal(h.updates.length, 1);
+  assert.equal(h.updates.filter((u) => u.pushedAt).length, 1);
 });
 
 test("a run that starts late still sends to the bucket of its scheduled slot", async (t) => {
@@ -751,4 +755,17 @@ test("a run that starts late still sends to the bucket of its scheduled slot", a
   });
   await sendWallOfTheDayBuckets.run(scheduled(new Date("2026-01-02T03:30:00Z")));
   assertLocalizedTopicFanout(h.topics, [bucket]);
+});
+
+
+test("an unavailable same-day WOTD can be replaced once, but a stale replacement cannot overwrite it", async (t) => {
+  const slot = Date.parse("2026-11-03T03:30:00Z");
+  const store = installFakeDb(t, {
+    "wall_of_the_day/current": {wallId: "withdrawn", date: admin.firestore.Timestamp.fromMillis(slot)},
+  });
+  const observed = await db.doc("wall_of_the_day/current").get();
+  assert.equal(await commitWotdPick(slot, "replacement", [], false), false);
+  assert.equal(await commitWotdPick(slot, "replacement", [], false, observed), true);
+  assert.equal(await commitWotdPick(slot, "stale", [], false, observed), false);
+  assert.equal(store.get("wall_of_the_day/current")?.wallId, "replacement");
 });

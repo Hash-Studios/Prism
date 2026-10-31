@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
@@ -16,8 +17,8 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -546,15 +547,19 @@ void main() {
       WallDepthTier? depthTier,
       WallSpatialTier? spatialTier,
       bool guideShown = false,
+      bool duoReveal = false,
+      String link = 'https://example.com/wall.jpg',
+      void Function(DownloadRequest request)? onRequest,
     }) async {
       getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
       app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
       IosWallpaperGuideSession.shown = guideShown;
+      IosWallpaperGuideSession.duoShown = false;
       toastMessages.clear();
-      tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
-        channel,
-        (_) async => <Object?>[result],
-      );
+      tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, (message) async {
+        onRequest?.call((message! as List<Object?>).single! as DownloadRequest);
+        return <Object?>[result];
+      });
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
         if (call.method == 'showToast') toastMessages.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
         return true;
@@ -573,9 +578,10 @@ void main() {
           home: Scaffold(
             body: DownloadButton(
               wallpaperSource: WallpaperSource.wallhaven,
-              link: 'https://example.com/wall.jpg',
+              link: link,
               depthTier: depthTier,
               spatialTier: spatialTier,
+              duoReveal: duoReveal,
             ),
           ),
         ),
@@ -590,6 +596,45 @@ void main() {
       await download(tester, OperationResult(success: true));
 
       expect(find.text('Open Photos'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('Duo saves the full original and then opens exactly three setup steps', (tester) async {
+      final File original = File('${offlineFixture.directory.path}/duo-original.png');
+      await tester.runAsync(() async {
+        final ui.PictureRecorder recorder = ui.PictureRecorder();
+        Canvas(recorder).drawRect(const Rect.fromLTWH(0, 0, 2670, 1878), Paint()..color = const Color(0xFF123456));
+        final ui.Picture picture = recorder.endRecording();
+        final ui.Image image = await picture.toImage(2670, 1878);
+        final ByteData bytes = (await image.toByteData(format: ui.ImageByteFormat.png))!;
+        await original.writeAsBytes(bytes.buffer.asUint8List());
+        image.dispose();
+        picture.dispose();
+      });
+      final List<int> originalBytes = original.readAsBytesSync();
+      DownloadRequest? request;
+      await download(
+        tester,
+        OperationResult(success: true),
+        duoReveal: true,
+        guideShown: true,
+        link: original.path,
+        onRequest: (value) => request = value,
+      );
+      expect(request, isNotNull);
+      expect(request!.link, original.path);
+      expect(request!.isLocalFile, isTrue);
+      expect(File(request!.link).readAsBytesSync(), originalBytes);
+      expect(find.text(AppLocalizationsEn().duoGuideTitle), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().duoGuideAlign), findsOneWidget);
+      expect(find.text('3'), findsOneWidget);
+      expect(find.text('4'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a failed Duo save does not open or consume the setup guide', (tester) async {
+      await download(tester, OperationResult(success: false, errorCode: photosPermissionDeniedCode), duoReveal: true);
+      expect(find.text(AppLocalizationsEn().duoGuideTitle), findsNothing);
+      expect(IosWallpaperGuideSession.duoShown, isFalse);
+      expect(find.text('Open settings'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('a saved Depth Effect wall ends the guide with the Depth Effect step', (tester) async {

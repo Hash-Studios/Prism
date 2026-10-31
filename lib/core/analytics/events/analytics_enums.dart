@@ -128,6 +128,7 @@ enum SubscriptionEntitlementRefreshResultValue {
 
 enum SettingValue {
   animeWallpapers,
+  aiWallpapers,
   sketchyWallpapers,
   recommendationsNotifications,
   haptics;
@@ -254,6 +255,7 @@ enum ShareChannelValue {
 }
 
 enum ShareFormatValue {
+  duoReveal,
   story,
   post,
   clean,
@@ -429,6 +431,14 @@ enum WallRequestFillerValue {
   studio;
 
   String get wireValue => _snakeCase(name);
+}
+
+enum DailyMomentStepValue {
+  streak,
+  chest,
+  spin;
+
+  String get wireValue => name;
 }
 
 String _snakeCase(String name) => name.replaceAllMapped(RegExp('[A-Z]'), (Match m) => '_${m[0]!.toLowerCase()}');

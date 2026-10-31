@@ -31,6 +31,11 @@ sealed class FeedItemEntity with _$FeedItemEntity {
 
   String get fullUrl => when(prism: (_, w) => w.fullUrl, wallhaven: (_, w) => w.fullUrl, pexels: (_, w) => w.fullUrl);
 
+  String get canonicalKey {
+    final String url = fullUrl.trim().toLowerCase();
+    return url.isNotEmpty ? url : '${source.wireValue}:${id.trim().toLowerCase()}';
+  }
+
   /// What screen readers say for this wallpaper's tile.
   String semanticLabel(AppLocalizations l10n) => wallpaperSemanticLabel(
     when(

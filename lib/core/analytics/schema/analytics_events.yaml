@@ -1,6 +1,18 @@
 version: 1
 
 enums:
+  - name: daily_moment_step
+    dart_type: DailyMomentStepValue
+    values:
+      - streak
+      - chest
+      - spin
+  - name: challenge_entry_source
+    dart_type: ChallengeEntrySource
+    import: package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart
+    values:
+      - upload
+      - ai
   - name: wallpaper_target
     dart_type: WallpaperTarget
     import: package:Prism/core/platform/wallpaper_service.dart
@@ -122,6 +134,7 @@ enums:
     dart_type: SettingValue
     values:
       - anime_wallpapers
+      - ai_wallpapers
       - sketchy_wallpapers
       - recommendations_notifications
       - haptics
@@ -228,6 +241,7 @@ enums:
   - name: share_format
     dart_type: ShareFormatValue
     values:
+      - duo_reveal
       - story
       - post
       - clean
@@ -1841,6 +1855,32 @@ events:
       - name: value
         key: value
         type: bool
+  - id: ad_journey
+    fields:
+      - name: placement
+        key: placement
+        type: string
+      - name: watch_id
+        key: watch_id
+        type: string
+      - name: format
+        key: format
+        type: string
+      - name: outcome
+        key: outcome
+        type: string
+      - name: paid_value_micros
+        key: paid_value_micros
+        type: double
+        required: false
+      - name: currency
+        key: currency
+        type: string
+        required: false
+      - name: precision
+        key: precision
+        type: string
+        required: false
   - id: ad_load_result
     fields:
       - name: result
@@ -2050,6 +2090,43 @@ events:
       - name: position
         key: position
         type: int
+  - id: duo_preview_opened
+    fields:
+      - name: content_id
+        key: content_id
+        type: string
+      - name: source
+        key: source
+        type: string
+      - name: preset_id
+        key: preset_id
+        type: string
+  - id: duo_fold_toggled
+    fields:
+      - name: content_id
+        key: content_id
+        type: string
+      - name: unfolded
+        key: unfolded
+        type: bool
+  - id: duo_ai_generated
+    fields:
+      - name: generation_id
+        key: generation_id
+        type: string
+      - name: quality_tier
+        key: quality_tier
+        type: string
+  - id: duo_share_card_made
+    fields:
+      - name: content_id
+        key: content_id
+        type: string
+  - id: duo_row_opened
+    fields:
+      - name: source
+        key: source
+        type: string
   - id: mood_row_seen
     fields:
       - name: mood_id
@@ -2563,4 +2640,59 @@ events:
     fields:
       - name: asset_id
         key: asset_id
+        type: string
+
+  - id: daily_moment_shown
+    fields: []
+  - id: daily_moment_step_done
+    fields:
+      - name: step
+        key: step
+        type: enum
+        enum: DailyMomentStepValue
+  - id: daily_moment_stopped_early
+    fields:
+      - name: step
+        key: step
+        type: enum
+        enum: DailyMomentStepValue
+  - id: daily_moment_deep_link_opened
+    fields:
+      - name: step
+        key: step
+        type: enum
+        enum: DailyMomentStepValue
+  - id: challenge_viewed
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+  - id: challenge_entered
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+      - name: source
+        key: source
+        type: enum
+        enum: ChallengeEntrySource
+  - id: challenge_voted
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+  - id: challenge_unvoted
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+  - id: challenge_shared
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+  - id: challenge_winner_viewed
+    fields:
+      - name: challenge_id
+        key: challenge_id
         type: string

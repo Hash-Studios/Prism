@@ -27,6 +27,11 @@ _WallDocDto _$WallDocDtoFromJson(Map<String, dynamic> json) => _WallDocDto(
       : const FirestoreStringListConverter().fromJson(json['collections']),
   createdAt: const FirestoreDateTimeConverter().fromJson(json['createdAt']),
   review: json['review'] as bool? ?? false,
+  isAiGenerated: json['isAiGenerated'] == null ? false : const FirestoreTrueConverter().fromJson(json['isAiGenerated']),
+  aiModel: json['aiModel'] == null ? '' : const FirestoreStrictStringConverter().fromJson(json['aiModel']),
+  aiMetadata: json['aiMetadata'] == null
+      ? const <String, Object?>{}
+      : const FirestoreJsonMapConverter().fromJson(json['aiMetadata']),
   depth: json['depth'] == null ? const <String, Object?>{} : const FirestoreJsonMapConverter().fromJson(json['depth']),
   spatial: json['spatial'] == null
       ? const <String, Object?>{}
@@ -48,6 +53,9 @@ Map<String, dynamic> _$WallDocDtoToJson(_WallDocDto instance) => <String, dynami
   'collections': const FirestoreStringListConverter().toJson(instance.collections),
   'createdAt': const FirestoreDateTimeConverter().toJson(instance.createdAt),
   'review': instance.review,
+  'isAiGenerated': const FirestoreTrueConverter().toJson(instance.isAiGenerated),
+  'aiModel': const FirestoreStrictStringConverter().toJson(instance.aiModel),
+  'aiMetadata': const FirestoreJsonMapConverter().toJson(instance.aiMetadata),
   'depth': const FirestoreJsonMapConverter().toJson(instance.depth),
   'spatial': const FirestoreJsonMapConverter().toJson(instance.spatial),
 };

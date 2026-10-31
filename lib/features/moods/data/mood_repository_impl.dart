@@ -5,9 +5,11 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/prism_preview.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -81,13 +83,24 @@ class MoodRepositoryImpl implements MoodRepository {
       if (ids.isEmpty || moods.any((list) => list.mood == mood)) continue;
       moods.add(MoodList(mood: mood, wallIds: ids));
     }
-    return moods;
+    final MoodList? duo = moods.firstWhereOrNull((list) => list.mood == WallMood.duoReveal);
+    if (duo == null) return moods;
+    final List<PrismWallpaper> visible = await fetchMoodWalls(duo.wallIds, keepOrder: true);
+    return <MoodList>[
+      for (final MoodList list in moods)
+        if (list.mood != WallMood.duoReveal)
+          list
+        else if (visible.isNotEmpty)
+          MoodList(mood: list.mood, wallIds: visible.map((wall) => wall.id).toList(growable: false)),
+    ];
   }
 
   @override
   Stream<void> watchVisibilityChanges() {
     return Stream<void>.multi((controller) {
       BlockedCreators blocked = _userBlockRepository.blockedCreators;
+      bool showAi = AiContentFilter.showsAi(_settingsLocal);
+      bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
       final StreamSubscription<BlockedCreators> subscription = _userBlockRepository.watchBlockedCreators().listen(
         (next) {
           if (next == blocked) return;
@@ -97,10 +110,23 @@ class MoodRepositoryImpl implements MoodRepository {
         onError: controller.addError,
         onDone: controller.close,
       );
+      void onSettingsChanged() {
+        final bool nextShowAi = AiContentFilter.showsAi(_settingsLocal);
+        final bool nextShowAnime = AnimeContentFilter.showsAnime(_settingsLocal);
+        if (nextShowAi == showAi && nextShowAnime == showAnime) return;
+        showAi = nextShowAi;
+        showAnime = nextShowAnime;
+        controller.add(null);
+      }
+
+      personalizedFeedSettingsRevision.addListener(onSettingsChanged);
       controller
         ..onPause = subscription.pause
         ..onResume = subscription.resume
-        ..onCancel = subscription.cancel;
+        ..onCancel = () async {
+          personalizedFeedSettingsRevision.removeListener(onSettingsChanged);
+          await subscription.cancel();
+        };
     }, isBroadcast: true);
   }
 
@@ -158,12 +184,14 @@ class MoodRepositoryImpl implements MoodRepository {
 
   List<PrismWallpaper> _visible(List<PrismWallpaper> walls, BlockedCreators blocked) {
     final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
+    final bool showAi = AiContentFilter.showsAi(_settingsLocal);
     return walls
         .where(
           (wall) =>
               hasPrismPreview(wall) &&
               !BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked) &&
-              (showAnime || !AnimeContentFilter.isAnime(wall)),
+              (showAnime || !AnimeContentFilter.isAnime(wall)) &&
+              (showAi || !AiContentFilter.isAi(wall)),
         )
         .toList(growable: false);
   }

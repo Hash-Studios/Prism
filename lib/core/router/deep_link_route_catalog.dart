@@ -30,6 +30,7 @@ enum DeepLinkPageTarget {
   mood,
   gallery,
   wallRequests,
+  weeklyChallenge,
   uploadInput,
   editWallInput,
   review,
@@ -56,6 +57,7 @@ enum DeepLinkPageTarget {
   coinHistory,
   shop,
   drops,
+  dailyMoment,
   dailyChest,
   spinWheel,
   premium,
@@ -133,6 +135,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkRouteExample('/mood/dreamy', DeepLinkPageTarget.mood),
     DeepLinkRouteExample('/gallery?ids=a1,b2', DeepLinkPageTarget.gallery),
     DeepLinkRouteExample('/requests?tab=filled', DeepLinkPageTarget.wallRequests),
+    DeepLinkRouteExample('/challenges/2026-10-26', DeepLinkPageTarget.weeklyChallenge),
     DeepLinkRouteExample('/upload-wall', DeepLinkPageTarget.uploadInput),
     DeepLinkRouteExample('/edit-wall', DeepLinkPageTarget.editWallInput),
     DeepLinkRouteExample('/review', DeepLinkPageTarget.review),
@@ -190,6 +193,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkRouteExample('/drops', DeepLinkPageTarget.drops),
     DeepLinkRouteExample('/drops/week-2026-10-19', DeepLinkPageTarget.dropDetail),
     DeepLinkRouteExample('/drops/week-2026-10-19/preview/wall1', DeepLinkPageTarget.dropPreview),
+    DeepLinkRouteExample('/daily-moment', DeepLinkPageTarget.dailyMoment),
     DeepLinkRouteExample('/daily-chest', DeepLinkPageTarget.dailyChest),
     DeepLinkRouteExample('/spin-wheel', DeepLinkPageTarget.spinWheel),
     DeepLinkRouteExample('/premium', DeepLinkPageTarget.premium),
@@ -255,6 +259,17 @@ final class DeepLinkRouteCatalog {
     } else if (segments.length == 2 && segments[0].toLowerCase() == 'user') {
       target = DeepLinkPageTarget.profile;
       pathParams['identifier'] = segments[1];
+    } else if (segments.length == 2 && segments[0].toLowerCase() == 'challenges') {
+      final String id = segments[1];
+      final DateTime? date = DateTime.tryParse(id);
+      if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(id) ||
+          date == null ||
+          date.weekday != DateTime.monday ||
+          date.toIso8601String().substring(0, 10) != id) {
+        return null;
+      }
+      target = DeepLinkPageTarget.weeklyChallenge;
+      pathParams['challengeId'] = id;
     } else if (segments.length == 2 && segments[0].toLowerCase() == 'drops') {
       target = DeepLinkPageTarget.dropDetail;
       pathParams['weekKey'] = segments[1];
@@ -427,6 +442,7 @@ final class DeepLinkRouteCatalog {
         const <String>{
           'user',
           'drops',
+          'challenges',
           'collection',
           'category',
           'wallpaper',
@@ -501,6 +517,7 @@ final class DeepLinkRouteCatalog {
     '/coin-history': DeepLinkPageTarget.coinHistory,
     '/shop': DeepLinkPageTarget.shop,
     '/drops': DeepLinkPageTarget.drops,
+    '/daily-moment': DeepLinkPageTarget.dailyMoment,
     '/daily-chest': DeepLinkPageTarget.dailyChest,
     '/spin-wheel': DeepLinkPageTarget.spinWheel,
     '/premium': DeepLinkPageTarget.premium,

@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -23,6 +24,7 @@ import 'package:Prism/features/wallpaper_upload/biz/upload_session.dart';
 import 'package:Prism/features/wallpaper_upload/data/last_submission_defaults_store.dart';
 import 'package:Prism/features/wallpaper_upload/data/resubmission_repository.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/features/wallpaper_upload/domain/usecases/submit_resubmission.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/fills_request_row.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/rejection_feedback.dart';
@@ -30,6 +32,10 @@ import 'package:Prism/features/wallpaper_upload/views/widgets/submission_metadat
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_batch_stepper.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_checks_card.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_preview_row.dart';
+import 'package:Prism/features/weekly_challenges/biz/challenge_admission_tracker.dart';
+import 'package:Prism/features/weekly_challenges/biz/confirm_challenge_submission.dart';
+import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
+import 'package:Prism/features/weekly_challenges/views/widgets/challenge_context_chip.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -45,6 +51,7 @@ export 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart' show Uplo
 export 'package:Prism/features/wallpaper_upload/data/last_submission_defaults_store.dart'
     show LastSubmissionDefaultsStore;
 export 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart' show UploadDraft;
+export 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart' show ChallengeSeed;
 
 @RoutePage()
 class UploadWallScreen extends StatefulWidget {
@@ -54,6 +61,7 @@ class UploadWallScreen extends StatefulWidget {
     this.batch,
     this.resubmission,
     this.resumedDraft,
+    this.challengeSeed,
     @visibleForTesting this.imageSizeForTesting,
     @visibleForTesting this.prepareImageForTesting,
     @visibleForTesting this.uploadFileForTesting,
@@ -72,6 +80,7 @@ class UploadWallScreen extends StatefulWidget {
 
   /// Set when this image is one of several picked together. All screens of the batch share this object.
   final UploadBatch? batch;
+  final ChallengeSeed? challengeSeed;
 
   @visibleForTesting
   final Size? imageSizeForTesting;
@@ -86,10 +95,10 @@ class UploadWallScreen extends StatefulWidget {
   final Future<void> Function({required String path, required String sha})? deleteFileForTesting;
 
   @visibleForTesting
-  final Future<wall_store.WallSubmissionResult> Function()? createRecordForTesting;
+  final Future<WallSubmissionResult> Function()? createRecordForTesting;
 
   @visibleForTesting
-  final Future<wall_store.WallSubmissionResult> Function({required String id, required SubmissionMetadata metadata})?
+  final Future<WallSubmissionResult> Function({required String id, required SubmissionMetadata metadata})?
   createRecordWithMetadataForTesting;
 
   @visibleForTesting
@@ -155,6 +164,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   late List<int> imageBytes;
   late List<int> imageBytesThumb;
   bool _submitted = false;
+  bool _challengeRemoved = false;
   bool _submissionAttempted = false;
   bool _submissionUnresolved = false;
   bool _discarding = false;
@@ -188,6 +198,16 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       _rejectedDocId = seed.rejectedDocId;
       _previousReason = seed.previousReason;
     }
+    final seed = widget.batch?.challengeSeed ?? widget.challengeSeed;
+    if (seed != null) {
+      _metadata = _metadata.copyWith(
+        challengeId: seed.id,
+        challengeTheme: seed.theme,
+        title: seed.theme.length > maxSubmissionTitleLength
+            ? seed.theme.substring(0, maxSubmissionTitleLength)
+            : seed.theme,
+      );
+    }
     if (widget.resumedDraft case final draft? when draft.owner == _draftOwner) {
       _draftId = draft.draftId;
       _restoreDraft(draft);
@@ -197,7 +217,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
 
   void _restoreDraft(UploadDraft draft) {
     _draftImage = draft.file;
-    _metadata = draft.metadata;
+    _restoreMetadata(draft.metadata);
     final session = draft.session;
     if (session == null) return;
     id = session.logicalId;
@@ -240,6 +260,17 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       logger.w('Last upload details could not be loaded: $error');
       if (mounted) toasts.error(context.l10n.wallUploadLastDetailsUnavailable);
     }
+  }
+
+  void _restoreMetadata(SubmissionMetadata restored) {
+    final seed = widget.batch?.challengeSeed ?? widget.challengeSeed;
+    _challengeRemoved = _challengeRemoved || restored.challengeRemoved;
+    if (_challengeRemoved) widget.batch?.challengeSeed = null;
+    _metadata = _challengeRemoved
+        ? restored.copyWith(challengeId: '', challengeTheme: '', challengeRemoved: true)
+        : seed == null
+        ? restored
+        : restored.copyWith(challengeId: seed.id, challengeTheme: seed.theme);
   }
 
   Future<Uint8List> _compressFile(File file) async {
@@ -513,6 +544,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     await _saveRecord();
   }
 
+  late int _uploadAwardCoins = widget.batch?.confirmedUploadAward?.coins ?? 0;
+  late String? _uploadAwardOwner = widget.batch?.confirmedUploadAward?.ownerId;
+
   Future<void> _saveRecord() async {
     setState(() {
       _stage = _UploadStage.saving;
@@ -549,8 +583,14 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               thumbSourceKind: thumbSourceKind,
               docId: _wallDocId ??= 'wall_${_fileName ?? id}',
               requestId: _metadata.requestId,
+              onUploadAward: (result) {
+                _uploadAwardCoins = result.delta;
+                _uploadAwardOwner = app_state.prismUser.id;
+                widget.batch?.confirmedUploadAward = (coins: result.delta, ownerId: app_state.prismUser.id);
+              },
+              challengeId: _metadata.challengeId,
             );
-      if (result == wall_store.WallSubmissionResult.quotaExceeded && _submissionUnresolved) {
+      if (result == WallSubmissionResult.quotaExceeded && _submissionUnresolved) {
         setState(() {
           _stage = _UploadStage.failedSubmission;
           _errorMessage = context.l10n.wallpaperUploadSubmissionUnconfirmed;
@@ -559,7 +599,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         return;
       }
       _submissionUnresolved = false;
-      if (result == wall_store.WallSubmissionResult.quotaExceeded) {
+      if (result == WallSubmissionResult.quotaExceeded) {
         _submissionAttempted = false;
         final deleted = await _deleteFile();
         if (!mounted) return;
@@ -593,6 +633,25 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       _trackFailure('submission');
       return;
     }
+    if (_metadata.challengeId.isNotEmpty) {
+      try {
+        await getIt<ChallengeAdmissionTracker>().submitted(
+          uid: app_state.prismUser.id,
+          challengeId: _metadata.challengeId,
+          wallId: _wallDocId ?? 'wall_${_fileName ?? id}',
+          source: ChallengeEntrySource.upload,
+        );
+        unawaited(
+          getIt<ConfirmChallengeSubmission>()(
+            uid: app_state.prismUser.id,
+            challengeId: _metadata.challengeId,
+            wallId: _wallDocId ?? 'wall_${_fileName ?? id}',
+          ),
+        );
+      } catch (error, stackTrace) {
+        logger.w('Could not persist challenge admission analytics', error: error, stackTrace: stackTrace);
+      }
+    }
     _submitted = true;
     try {
       if (_activeDraftOwner == _draftOwner) await _defaultsStore.save(_draftOwner, _metadata);
@@ -623,7 +682,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     await _goToNextOrFinish();
   }
 
-  Future<wall_store.WallSubmissionResult> _submitResubmission() async {
+  Future<WallSubmissionResult> _submitResubmission() async {
     _admission = await SubmitResubmission.fromGetIt().call(
       ownerUid: _draftOwner,
       operationId: _operationId,
@@ -644,7 +703,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       resolution: wallpaperResolution ?? '',
       size: wallpaperSize ?? '',
     );
-    return wall_store.WallSubmissionResult.submitted;
+    return WallSubmissionResult.submitted;
   }
 
   /// Opens the next image of a batch, or ends the flow on Review status.
@@ -663,7 +722,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         router.popUntilRouteWithName(ReviewRoute.name);
       } else {
         Navigator.pop(context);
-        unawaited(router.push(const ReviewRoute()));
+        unawaited(router.push(ReviewRoute(earnedCoins: _uploadAwardCoins, earnedCoinsOwnerId: _uploadAwardOwner)));
       }
     } else {
       Navigator.pop(context);
@@ -991,7 +1050,11 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       label: context.l10n.wallpaperUploadCheckReviewStatus,
                       variant: PrismButtonVariant.ghost,
                       size: PrismButtonSize.compact,
-                      onPressed: () => unawaited(context.router.push(const ReviewRoute())),
+                      onPressed: () => unawaited(
+                        context.router.push(
+                          ReviewRoute(earnedCoins: _uploadAwardCoins, earnedCoinsOwnerId: _uploadAwardOwner),
+                        ),
+                      ),
                     ),
                   ),
               ] else ...<Widget>[
@@ -1015,11 +1078,29 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                   key: _formKey,
                   initial: _metadata,
                   onChanged: (SubmissionMetadata value) {
-                    _metadata = value.copyWith(requestId: _metadata.requestId, requestText: _metadata.requestText);
+                    _metadata = value.copyWith(
+                      requestId: _metadata.requestId,
+                      requestText: _metadata.requestText,
+                      challengeId: _metadata.challengeId,
+                      challengeTheme: _metadata.challengeTheme,
+                      challengeRemoved: _metadata.challengeRemoved,
+                    );
                     unawaited(_persistDraft().then<void>((_) {}));
                   },
                 ),
                 const SizedBox(height: PrismSpace.md),
+                if (_metadata.challengeSeed case final seed?)
+                  ChallengeContextChip(
+                    seed: seed,
+                    onRemove: () {
+                      setState(() {
+                        _challengeRemoved = true;
+                        _metadata = _metadata.copyWith(challengeId: '', challengeTheme: '', challengeRemoved: true);
+                        widget.batch?.challengeSeed = null;
+                      });
+                      unawaited(_persistDraft().then<void>((_) {}));
+                    },
+                  ),
                 if (_rejectedDocId.isEmpty)
                   FillsRequestRow(
                     requestText: _metadata.requestText,

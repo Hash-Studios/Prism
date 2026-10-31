@@ -1,7 +1,10 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -15,6 +18,7 @@ import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -25,7 +29,25 @@ import '../../../support/favourite_test_scope.dart';
 
 class _MockFavouriteBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState> implements FavouriteWallsBloc {}
 
+class _FailingAiSettingStore extends InMemoryLocalStore {
+  bool failAiWrites = false;
+
+  @override
+  Future<void> set(String key, Object? value) async {
+    if (failAiWrites && key == PersistenceKeys.settings(AiContentFilter.settingKey)) throw StateError('disk full');
+    await super.set(key, value);
+  }
+}
+
 class _MockPagedFeedBloc extends MockBloc<PagedFeedEvent, PagedFeedState> implements PagedFeedBloc {}
+
+FeedItemEntity _aiItem(String id) => FeedItemEntity.prism(
+  id: id,
+  wallpaper: PrismWallpaper(
+    core: WallpaperCore(id: id, source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+    isAiGenerated: true,
+  ),
+);
 
 FeedItemEntity _item(String id) => FeedItemEntity.prism(
   id: id,
@@ -46,7 +68,7 @@ void main() {
     await getIt.reset();
   });
 
-  Future<void> pumpSliver(WidgetTester tester, PagedFeedState state) async {
+  Future<void> pumpSliver(WidgetTester tester, PagedFeedState state, {bool showAi = true}) async {
     tester.view.physicalSize = const Size(600, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -71,6 +93,7 @@ void main() {
                   emptyTitle: 'Empty',
                   crossAxisCount: 3,
                   tileMemCacheHeight: 400,
+                  showAi: showAi,
                 ),
               ],
             ),
@@ -107,5 +130,63 @@ void main() {
 
     expect(tester.widget<LoadingCards>(find.byType(LoadingCards)).useFeedLayout, isTrue);
     expect(tester.getTopLeft(find.byType(PulseFill).first).dx, 4);
+  });
+
+  testWidgets('an all-AI page with AI hidden offers Show AI walls, which turns the setting on', (tester) async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    await AiContentFilter.setShowsAi(settings, false);
+    await pumpSliver(
+      tester,
+      PagedFeedState.initial().copyWith(
+        status: LoadStatus.success,
+        items: <FeedItemEntity>[_aiItem('a'), _aiItem('b')],
+        hasMore: false,
+      ),
+      showAi: false,
+    );
+
+    expect(find.text('No human-made walls here yet'), findsOneWidget);
+    expect(find.text('Empty'), findsNothing);
+    await tester.tap(find.text('Show AI walls'));
+    await tester.pump();
+
+    expect(AiContentFilter.showsAi(settings), isTrue);
+  });
+
+  testWidgets('Show AI walls reports a failed save instead of failing silently', (tester) async {
+    final List<String> toasts = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), (
+      call,
+    ) async {
+      if (call.method == 'showToast') toasts.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+      return true;
+    });
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('PonnamKarthik/fluttertoast'),
+        null,
+      ),
+    );
+    final _FailingAiSettingStore store = _FailingAiSettingStore();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(store);
+    await AiContentFilter.setShowsAi(settings, false);
+    store.failAiWrites = true;
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    await pumpSliver(
+      tester,
+      PagedFeedState.initial().copyWith(
+        status: LoadStatus.success,
+        items: <FeedItemEntity>[_aiItem('a')],
+        hasMore: false,
+      ),
+      showAi: false,
+    );
+
+    await tester.tap(find.text('Show AI walls'));
+    await tester.pump();
+
+    expect(toasts, <String>['Could not save feed settings. Try again.']);
+    await tester.pump(const Duration(seconds: 1));
   });
 }

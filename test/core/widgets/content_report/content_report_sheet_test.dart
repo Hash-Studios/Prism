@@ -4,6 +4,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -226,6 +227,63 @@ void main() {
     );
     expect(find.text('Send report'), findsNothing);
     expect(reports.sent, isEmpty);
+    await tester.pump(const Duration(seconds: 5));
+  });
+
+  Future<void> pumpBody(WidgetTester tester, {String? initialReason, String? initialDetails}) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showPrismSheet<void>(
+                context,
+                builder: (_) => ContentReportSheetBody(
+                  contentType: 'wall',
+                  targetFirestoreDocId: 'wall-doc',
+                  initialReason: initialReason,
+                  initialDetails: initialDetails,
+                ),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('an initial reason and details start selected and filled', (tester) async {
+    await pumpBody(tester, initialReason: 'other', initialDetails: 'Wrong AI label');
+
+    expect(find.text('Wrong AI label'), findsOneWidget);
+    await tester.tap(find.text('Send report'));
+    await tester.pumpAndSettle();
+
+    expect(reports.sent, <({String type, String id, String reason, String details})>[
+      (type: 'wall', id: 'wall-doc', reason: 'other', details: 'Wrong AI label'),
+    ]);
+    await tester.pump(const Duration(seconds: 5));
+  });
+
+  testWidgets('an unknown initial reason selects nothing', (tester) async {
+    await pumpBody(tester, initialReason: 'bogus');
+
+    await tester.tap(find.text('Send report'));
+    await tester.pump();
+
+    expect(reports.sent, isEmpty);
+    expect(
+      toasts.any((call) => call.method == 'showToast' && (call.arguments as Map)['msg'] == 'Choose a reason'),
+      isTrue,
+    );
     await tester.pump(const Duration(seconds: 5));
   });
 }

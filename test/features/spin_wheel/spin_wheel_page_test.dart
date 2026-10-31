@@ -4,6 +4,7 @@ import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/spin_wheel/views/pages/spin_wheel_page.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -173,8 +174,8 @@ void main() {
       await pumpFor(tester, const Duration(milliseconds: 500));
 
       expect(find.text('Not enough coins'), findsOneWidget);
-      expect(find.text('A spin costs 10 coins. You have 4. Watch a video to earn more.'), findsOneWidget);
-      expect(find.textContaining('Watch a video (+'), findsOneWidget);
+      expect(find.textContaining('A spin costs 10 coins. You have 4. Watch a video to earn more.'), findsOneWidget);
+      expect(find.textContaining('Watch ad for'), findsOneWidget);
       expect(maxCosts, isEmpty, reason: 'No spin is sent while the balance is short');
 
       await tester.tap(find.text('Not now'));
@@ -579,6 +580,8 @@ void main() {
     });
 
     testWidgets('has a close button with a tooltip that leaves the route', (tester) async {
+      DailyMomentConfig.enabledOverride = false;
+      addTearDown(() => DailyMomentConfig.enabledOverride = null);
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);

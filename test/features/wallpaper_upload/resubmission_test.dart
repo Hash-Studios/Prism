@@ -6,11 +6,11 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/github_content_api.dart';
-import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/features/wallpaper_upload/biz/resubmission_cubit.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_session.dart';
 import 'package:Prism/features/wallpaper_upload/data/resubmission_repository.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/resubmit_wall_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -85,10 +85,8 @@ class _ResubmissionRouter extends AppRouter {
         'HostRoute',
         builder: (data) => Scaffold(
           body: Builder(
-            builder: (context) => TextButton(
-              onPressed: () => context.router.push(const ReviewRoute()),
-              child: const Text('Your uploads'),
-            ),
+            builder: (context) =>
+                TextButton(onPressed: () => context.router.push(ReviewRoute()), child: const Text('Your uploads')),
           ),
         ),
       ),
@@ -127,7 +125,7 @@ class _ResubmissionRouter extends AppRouter {
                 const GitHubContent(downloadUrl: 'https://example.test/wall.png', path: 'wall.png', sha: 'sha'),
             createRecordForTesting: () async {
               onSubmit();
-              return wall_store.WallSubmissionResult.submitted;
+              return WallSubmissionResult.submitted;
             },
           );
         },

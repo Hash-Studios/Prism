@@ -38,6 +38,7 @@ export {buyDrawTicket, settleDraw} from "./draw";
 export {snapshotLeaderboard} from "./leaderboard";
 export {checkBadges} from "./badges";
 export {deleteAccount} from "./deleteAccount";
+export {beginRewardedSession, getRewardedSession, admobRewardedSsv} from "./rewardedAds";
 export {onFolderItemWritten, onFolderWritten} from "./folders";
 export {onWallPublicGateChanged, setFolderFollow, setFolderHidden, setFolderPublic} from "./publicFolders";
 export {sendFolderDigests} from "./folderDigest";
@@ -59,3 +60,7 @@ export {
   listWallRequestsCallable as listWallRequests,
   setWallRequestHiddenCallable as setWallRequestHidden,
 } from "./wallRequests";
+
+export {listWeeklyChallenges, getWeeklyChallenge, setChallengeVote, onChallengeWallWritten, onChallengeWallSubmitted} from "./weeklyChallenges";
+
+export {scheduleWeeklyChallenges} from "./challengeScheduler";

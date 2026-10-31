@@ -1,4 +1,16 @@
 {
+  "economyAd": "Iklan",
+  "@economyAd": {"description": "Label identifying a rewarded advertisement."},
+  "economyWatchAdForCoins": "Tonton iklan untuk {reward} koin",
+  "@economyWatchAdForCoins": {"description": "Currently quoted rewarded ad amount.", "placeholders": {"reward": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsMissing": "Kamu membutuhkan {count} koin lagi.",
+  "@economyCoinsMissing": {"description": "Coins missing for the selected purchase.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsRemainAfterAd": "Kamu mungkin masih membutuhkan {count} koin setelah iklan",
+  "@economyCoinsRemainAfterAd": {"description": "Estimated remaining shortfall after the quoted ad reward.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyAdAutomaticPurchase": "Jika saldo setelah hadiah mencukupi harga, item ini akan dibeli secara otomatis.",
+  "@economyAdAutomaticPurchase": {"description": "Disclosure of automatic purchase after a credited ad."},
+  "economyAdVerificationPending": "Hadiah iklanmu sedang diverifikasi. Koin akan muncul setelah dikonfirmasi.",
+  "@economyAdVerificationPending": {"description": "Ad reward awaiting server verification."},
   "foldersLibraryEmptyTitle": "Belum ada folder",
   "@foldersLibraryEmptyTitle": {
     "description": "Title of the empty Folders tab in the Library."
@@ -90,6 +102,40 @@
   },
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "id",
+  "duoTitle": "Kejutan Duo",
+  "duoAiFormatLabel": "Buat kejutan Duo",
+  "duoPresetNotice": "Prism menampilkan sisi kanan saat ponsel dilipat. Atur posisi gambar asli yang disimpan secara manual dan periksa kedua tampilan di pratinjau wallpaper sistem. Ini adalah preset Prism, bukan pemotongan otomatis iOS.",
+  "duoFoldedPromptLabel": "Tampilan terlipat",
+  "duoFoldedPromptExample": "Kucing mengantuk di samping jendela",
+  "duoRevealedPromptLabel": "Kejutan saat dibuka",
+  "duoRevealedPromptExample": "Pesawat luar angkasa kecil di luar jendela",
+  "duoPromptValidation": "Jelaskan kedua tampilan, masing-masing dengan 1 hingga 160 karakter.",
+  "duoMoodBody": "Satu wallpaper. Lebih banyak kejutan saat dibuka.",
+  "duoDeviceName": "iPhone Duo",
+  "duoPhoneDevice": "Ponsel",
+  "duoFold": "Lipat",
+  "duoUnfold": "Buka lipatan",
+  "duoFolded": "Terlipat",
+  "duoUnfolded": "Terbuka",
+  "duoAndroidCropNotice": "Prism menampilkan sisi kanan saat ponsel dilipat. Android mungkin memotongnya secara berbeda. Periksa pratinjau wallpaper sistem sebelum menerapkannya.",
+  "duoGetOnPrism": "Dapatkan di Prism",
+  "duoGuideTitle": "Atur kejutan Duo Anda",
+  "duoGuideOpen": "Buka gambar asli yang disimpan di Foto, ketuk Bagikan, lalu Gunakan sebagai Wallpaper.",
+  "duoGuideAlign": "Atur posisi gambar utuh secara manual agar tampilan terlipat menampilkan sisi kanan.",
+  "duoGuideCheck": "Periksa tampilan terlipat dan terbuka di pratinjau sistem, lalu tambahkan wallpaper.",
+  "duoWebTitle": "Wallpaper iPhone Duo | Prism",
+  "duoWebDescription": "Satu wallpaper dengan adegan kedua yang tersembunyi. Jelajahi wallpaper kejutan Duo orisinal di Prism.",
+  "duoWebHeading": "Satu wallpaper. Cerita yang lebih luas.",
+  "duoWebIntro": "Adegan tenang saat dilipat. Cerita lain saat dibuka. Lihat kedua tampilan setiap wallpaper orisinal.",
+  "duoWebEmpty": "Koleksi Duo pertama sedang ditinjau.",
+  "duoWebEmptyBody": "Jelajahi Prism selagi kami memeriksa setiap wallpaper dalam kedua tampilan.",
+  "duoWebFolded": "Pratinjau terlipat",
+  "duoWebUnfolded": "Gambar asli saat terbuka",
+  "duoWebPresetNotice": "Pratinjau ini menggunakan preset sisi kanan Prism, bukan pemotongan otomatis Apple. Simpan gambar asli secara utuh, atur posisinya secara manual, dan periksa tampilan terlipat serta terbuka di pratinjau wallpaper sistem.",
+  "duoWebOpenPrism": "Buka di Prism",
+  "duoWebExplore": "Jelajahi Prism",
+  "duoWebAppStore": "Unduh di App Store",
+  "duoWebPlayStore": "Dapatkan di Google Play",
   "economyExportFailedLabel": "Ekspor gagal",
   "@economyExportFailedLabel": {
     "description": "Failed filter export action inserted before refund status."
@@ -10830,5 +10876,145 @@
   "reportShakeToReportSubtitle": "Goyangkan ponsel di layar mana pun untuk melaporkan masalah",
   "@reportShakeToReportSubtitle": {
     "description": "Settings toggle subtitle for shake to report."
+  },
+  "accountShowAiWallpapers": "Tampilkan wallpaper buatan AI",
+  "accountShowAiWallpapersSubtitle": "Matikan untuk melihat wallpaper buatan manusia saja",
+  "accountShowAiWallpapersFootnote": "Menyembunyikan wallpaper AI tidak pernah menyembunyikan unggahan dan favorit Anda.",
+  "wallpaperFeedHideAi": "Sembunyikan AI",
+  "wallpaperAiGenerated": "Buatan AI",
+  "wallpaperAiMadeWith": "Dibuat dengan {model}",
+  "wallpaperAiMadeWithUnknown": "Dibuat dengan AI",
+  "wallpaperAiReportWrongLabel": "Laporkan label salah",
+  "feedNoHumanWalls": "Belum ada wallpaper buatan manusia di sini",
+  "feedShowAiWalls": "Tampilkan wallpaper AI",
+  "dailyMomentTitle": "Momen harian",
+  "dailyMomentStreakTitle": "Runtun harian",
+  "dailyMomentChestTitle": "Peti harian",
+  "dailyMomentSpinTitle": "Putaran gratis",
+  "dailyMomentUnavailable": "Hadiah ini tidak lagi tersedia hari ini.",
+  "dailyMomentError": "Hadiah tidak dapat dimuat. Coba lagi.",
+  "dailyMomentStreakReceipt": "{coins} koin diperoleh · runtun {days} hari",
+  "@dailyMomentStreakReceipt": {
+    "description": "Daily moment: StreakReceipt.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeTitle": "Tantangan mingguan",
+  "challengeRules": "Maksimal 3 karya, ditinjau sebelum ditampilkan.",
+  "challengeVotingRules": "Pilih karya kreator lain hingga {date} UTC.",
+  "@challengeVotingRules": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeUpload": "Unggah karya",
+  "challengeAi": "Buat dengan AI",
+  "challengeTop": "Teratas",
+  "challengeNew": "Terbaru",
+  "challengePast": "Tantangan sebelumnya",
+  "challengeEmpty": "Karya yang disetujui akan muncul di sini.",
+  "challengeWaiting": "Pemungutan suara ditutup. Kami menunggu tinjauan karya sebelum memilih pemenang.",
+  "challengeClosed": "Tantangan ini telah berakhir.",
+  "challengeScheduled": "Tantangan ini belum dibuka.",
+  "challengeNoWinner": "Tidak ada pemenang untuk tantangan ini.",
+  "challengeWinner": "Pemenang · {name}",
+  "@challengeWinner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeVote": "Pilih",
+  "challengeUnvote": "Hapus suara",
+  "challengeVotes": "{count, plural, =0{0 suara} =1{1 suara} other{{count} suara}}",
+  "@challengeVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentCosmetic": "Item kosmetik ditambahkan ke koleksi",
+  "dailyMomentReward": "{coins} koin diperoleh",
+  "@dailyMomentReward": {
+    "description": "Daily moment: Reward.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentChestBody": "Buka peti hari ini saat kamu siap.",
+  "dailyMomentSpinBody": "Putaran gratismu siap.",
+  "dailyMomentBalance": "Saldo: {coins} koin",
+  "@dailyMomentBalance": {
+    "description": "Daily moment: Balance.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentDone": "Selesai",
+  "dailyMomentRetry": "Coba lagi",
+  "dailyMomentContinue": "Lanjutkan",
+  "dailyMomentOpenFree": "Buka peti gratis",
+  "dailyMomentOpenChest": "Buka dengan {coins} koin",
+  "@dailyMomentOpenChest": {
+    "description": "Daily moment: OpenChest.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentSpinAction": "Putar gratis",
+  "dailyMomentClose": "Tutup momen harian",
+  "dailyMomentToday": "Hari ini",
+  "dailyMomentReady": "Hadiah harian sudah siap",
+  "dailyMomentComplete": "Hari ini sudah selesai",
+  "dailyMomentResume": "Lanjutkan momen harian",
+  "dailyMomentMore": "Lainnya",
+  "dailyMomentQuests": "Misi",
+  "dailyMomentChestLeft": "Peti harian tersedia",
+  "dailyMomentSpinLeft": "Putaran gratis tersedia",
+  "dailyMomentStreakLeft": "Runtun harian tersedia",
+  "challengeShare": "Bagikan tantangan",
+  "challengeRemove": "Hapus tantangan",
+  "challengeContext": "Tantangan · {theme}",
+  "@challengeContext": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeError": "Tantangan tidak dapat dimuat. Coba lagi.",
+  "challengeVoteError": "Suara tidak dapat disimpan. Coba lagi.",
+  "challengeSignIn": "Masuk untuk ikut atau memilih.",
+  "challengeLimit": "Anda telah mengirim 3 wallpaper untuk tantangan ini.",
+  "challengeRetry": "Coba lagi",
+  "challengeOwnEntry": "Anda tidak dapat memilih karya sendiri.",
+  "challengeDailyLimit": "Batas suara harian telah tercapai.",
+  "challengeMissing": "Tantangan atau karya ini tidak lagi tersedia.",
+  "challengeBadge": "Pemenang Tantangan",
+  "challengeBadgeDescription": "Menangkan tantangan mingguan",
+  "challengeWinnerNotificationTitle": "Wallpaper Anda menang",
+  "challengeWinnerNotificationBody": "Karya Anda memenangkan tantangan mingguan: {theme}.",
+  "@challengeWinnerNotificationBody": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
   }
 }

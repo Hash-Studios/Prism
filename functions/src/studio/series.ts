@@ -3,7 +3,11 @@
  * changes the colour of a scene. One prompt = subject + palette + series style + composition rules.
  */
 
+import {DUO_SERIES} from "./duo";
+
 export interface StudioSubject {
+  foldedPrompt?: string;
+  revealedPrompt?: string;
   /** Stable key. A subject is not used again for STUDIO_SUBJECT_COOLDOWN_DAYS. */
   id: string;
   title: string;
@@ -22,6 +26,8 @@ export interface StudioPalette {
 }
 
 export interface StudioSeries {
+  manualOnly?: boolean;
+  duoReveal?: boolean;
   id: string;
   name: string;
   /** One of the categories in wallCategory.ts. */
@@ -381,4 +387,5 @@ export const STUDIO_SERIES: StudioSeries[] = [
       {id: "teal-evening", name: "Teal Evening", prompt: "cool evening light under a smooth teal sky", tags: ["teal"]},
     ],
   },
+  DUO_SERIES,
 ];

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
+import {buildQuestState} from "../questCatalog";
 import {onFavouriteWritten, recordWallpaperAction} from "../wallStats";
 import {installFakeDb as installDb, type Doc} from "./fakeDb";
 
@@ -385,4 +386,144 @@ test("a previous-day create that is still live cannot earn today's favourite que
   await favEvent(undefined, fav, "w1", "old-live-create", undefined, "2026-01-01T23:59:00Z");
   assert.equal(store.get("wallpaper_stats/W1")?.favs, 1);
   assert.equal(store.has("questEventRate/u1_2026-01-02_favourite"), false);
+});
+
+const receiptCall = async (wallId: string, action: string, requestId: string) => {
+  const reply = await call({wallId, action, requestId});
+  assert.ok("questAwards" in reply);
+  return reply;
+};
+
+test("action receipts replay only their own awards under concurrent requests", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const store = installFakeDb(t);
+  const state = buildQuestState(undefined, NOW.getTime(), false);
+  state.items[0] = {id: "set_wall", event: "set_wallpaper", target: 1, progress: 0, claimed: false};
+  state.weekly.progress = 4;
+  store.set("usersv2/u1/private/economy", {quests: state});
+  const [a, replay] = await Promise.all([
+    receiptCall("w1", "set", "request_one"), receiptCall("w1", "set", "request_one"),
+  ]);
+  assert.deepEqual(a, replay);
+  assert.deepEqual(a.questAwards, [{id: "set_wall", coins: 2, xp: 25}, {id: "weekly_set_5", coins: 30, xp: 150}]);
+  assert.equal(a.questCoins, 32);
+  assert.equal(store.get("usersv2/u1")?.coins, 32);
+  assert.equal(store.get("wallpaper_stats/W1")?.sets, 1);
+  const other = await receiptCall("w1", "download", "request_two");
+  assert.deepEqual(other.questAwards, []);
+  assert.equal(quests(store).weekly.progress, 5);
+  const differentWall = await receiptCall("w2", "set", "request_other");
+  assert.deepEqual(differentWall.questAwards, []);
+  const gated = await receiptCall("w1", "set", "request_gated");
+  assert.equal(gated.counted, false);
+  assert.deepEqual(gated.questAwards, []);
+  await assert.rejects(() => receiptCall("w2", "set", "request_one"), {code: "invalid-argument"});
+  await assert.rejects(() => call({wallId: "w1", action: "set", requestId: "bad/id"}), {code: "invalid-argument"});
+  t.mock.timers.setTime(NOW.getTime() + 86_400_000);
+  assert.deepEqual(await receiptCall("w1", "set", "request_one"), a);
+  assert.equal(store.get("usersv2/u1")?.coins, 32);
+});
+
+test("failed action quests resume from durable acceptance without recounting stats", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const store = installFakeDb(t);
+  const failure = failQuestWrites(t);
+  const first = await receiptCall("w1", "set", "retry_request");
+  assert.equal(first.questReceiptComplete, false);
+  failure.active = false;
+  const resumed = await receiptCall("w1", "set", "retry_request");
+  assert.equal(resumed.questReceiptComplete, true);
+  assert.equal(store.get("wallpaper_stats/W1")?.sets, 1);
+  assert.equal(quests(store).weekly.progress, 1);
+  assert.deepEqual(await receiptCall("w1", "set", "retry_request"), resumed);
+});
+
+test("unfinished yesterday action receipts cannot rewind today's quests", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const store = installFakeDb(t);
+  const failure = failQuestWrites(t);
+  await receiptCall("w1", "download", "yesterday_request");
+  failure.active = false;
+  t.mock.timers.setTime(NOW.getTime() + 86_400_000);
+  await receiptCall("w2", "set", "today_request");
+  const current = store.get("usersv2/u1/private/economy");
+  const stale = await receiptCall("w1", "download", "yesterday_request");
+  assert.deepEqual(stale.questAwards, []);
+  assert.equal(stale.questReceiptComplete, true);
+  assert.deepEqual(store.get("usersv2/u1/private/economy"), current);
+});
+
+test("concurrent distinct requests share the rate gate without borrowing its receipt", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const store = installFakeDb(t);
+  const state = buildQuestState(undefined, NOW.getTime(), false);
+  state.items[0] = {id: "set_wall", event: "set_wallpaper", target: 1, progress: 0, claimed: false};
+  store.set("usersv2/u1/private/economy", {quests: state});
+  const results = await Promise.all([
+    receiptCall("w1", "set", "concurrent_one"), receiptCall("w1", "set", "concurrent_two"),
+  ]);
+  assert.equal(results.filter((reply) => reply.counted).length, 1);
+  assert.equal(results.reduce((sum, reply) => sum + reply.questCoins, 0), 2);
+  assert.deepEqual(results.find((reply) => !reply.counted)?.questAwards, []);
+  assert.equal(store.get("usersv2/u1")?.coins, 2);
+  assert.equal(store.get("wallpaper_stats/W1")?.sets, 1);
+});
+
+test("failure storing an award receipt rolls back its payout and retry pays once", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const store = installFakeDb(t);
+  const state = buildQuestState(undefined, NOW.getTime(), false);
+  state.items[0] = {id: "set_wall", event: "set_wallpaper", target: 1, progress: 0, claimed: false};
+  store.set("usersv2/u1/private/economy", {quests: state});
+  const run = db.runTransaction.bind(db);
+  let fail = true;
+  t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) =>
+    run(async (tx) => {
+      const set = tx.set.bind(tx);
+      tx.set = ((ref: admin.firestore.DocumentReference, ...args: unknown[]) => {
+        if (fail && ref.path.endsWith("/events/set_wallpaper")) throw new Error("receipt unavailable");
+        return Reflect.apply(set, tx, [ref, ...args]);
+      }) as typeof tx.set;
+      return callback(tx);
+    }));
+  assert.equal((await receiptCall("w1", "set", "atomic_receipt")).questReceiptComplete, false);
+  assert.equal(store.get("usersv2/u1")?.coins, 0);
+  assert.equal(quests(store).weekly.progress, 0);
+  fail = false;
+  const result = await receiptCall("w1", "set", "atomic_receipt");
+  assert.equal(result.questCoins, 2);
+  assert.equal(store.get("usersv2/u1")?.coins, 2);
+  assert.deepEqual(await receiptCall("w1", "set", "atomic_receipt"), result);
+});
+
+
+test("receipted actions reject deleted accounts without retaining history", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const store = installFakeDb(t, {"creatorDeletionState/u1": {closed: true}});
+  await assert.rejects(() => receiptCall("w1", "set", "deleted_request"), {code: "failed-precondition"});
+  assert.equal(store.has("usersv2/u1/wallActionReceipts/deleted_request"), false);
+  assert.equal(store.has("wallpaper_stats/W1"), false);
+});
+
+test("deletion between action acceptance and quest progress cannot recreate rewards or receipts", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const store = installFakeDb(t);
+  const run = db.runTransaction.bind(db);
+  let first = true;
+  t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    const result = await run(callback);
+    if (first) {
+      first = false;
+      store.set("creatorDeletionState/u1", {closed: true});
+      store.set("usersv2/u1", {deleted: true, coins: 0});
+      store.delete("usersv2/u1/wallActionReceipts/deleting_request");
+    }
+    return result;
+  });
+  const reply = await receiptCall("w1", "download", "deleting_request");
+  assert.deepEqual(reply.questAwards, []);
+  assert.equal(store.has("usersv2/u1/private/economy"), false);
+  assert.equal(store.has("usersv2/u1/wallActionReceipts/deleting_request/events/set_wallpaper"), false);
+  assert.equal(store.has("usersv2/u1/wallActionReceipts/deleting_request/events/download"), false);
+  assert.equal(store.get("usersv2/u1")?.coins, 0);
 });

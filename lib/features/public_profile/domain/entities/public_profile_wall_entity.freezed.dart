@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 mixin _$PublicProfileWallEntity {
 
  String get id;/// The Firestore document id. It can differ from [id], the wall's own id field.
- String? get firestoreDocumentId; String? get by; String? get desc; String? get category; String? get size; String? get resolution; String? get email; String? get creatorUid; WallpaperSource? get source; String? get wallpaperThumb; String get wallpaperUrl; List<String>? get collections; DateTime? get createdAt; bool get review; WallDepthTier? get depthTier; WallSpatial? get spatial;
+ String? get firestoreDocumentId; String? get by; String? get desc; String? get category; String? get size; String? get resolution; String? get email; String? get creatorUid; WallpaperSource? get source; String? get wallpaperThumb; String get wallpaperUrl; List<String>? get collections; DateTime? get createdAt; bool get review; bool get isAiGenerated; String? get aiModel; WallDepthTier? get depthTier; WallSpatial? get spatial;
 /// Create a copy of PublicProfileWallEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -26,16 +26,16 @@ $PublicProfileWallEntityCopyWith<PublicProfileWallEntity> get copyWith => _$Publ
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PublicProfileWallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.firestoreDocumentId, firestoreDocumentId) || other.firestoreDocumentId == firestoreDocumentId)&&(identical(other.by, by) || other.by == by)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.category, category) || other.category == category)&&(identical(other.size, size) || other.size == size)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.email, email) || other.email == email)&&(identical(other.creatorUid, creatorUid) || other.creatorUid == creatorUid)&&(identical(other.source, source) || other.source == source)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&const DeepCollectionEquality().equals(other.collections, collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.review, review) || other.review == review)&&(identical(other.depthTier, depthTier) || other.depthTier == depthTier)&&(identical(other.spatial, spatial) || other.spatial == spatial));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PublicProfileWallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.firestoreDocumentId, firestoreDocumentId) || other.firestoreDocumentId == firestoreDocumentId)&&(identical(other.by, by) || other.by == by)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.category, category) || other.category == category)&&(identical(other.size, size) || other.size == size)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.email, email) || other.email == email)&&(identical(other.creatorUid, creatorUid) || other.creatorUid == creatorUid)&&(identical(other.source, source) || other.source == source)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&const DeepCollectionEquality().equals(other.collections, collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.review, review) || other.review == review)&&(identical(other.isAiGenerated, isAiGenerated) || other.isAiGenerated == isAiGenerated)&&(identical(other.aiModel, aiModel) || other.aiModel == aiModel)&&(identical(other.depthTier, depthTier) || other.depthTier == depthTier)&&(identical(other.spatial, spatial) || other.spatial == spatial));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,firestoreDocumentId,by,desc,category,size,resolution,email,creatorUid,source,wallpaperThumb,wallpaperUrl,const DeepCollectionEquality().hash(collections),createdAt,review,depthTier,spatial);
+int get hashCode => Object.hashAll([runtimeType,id,firestoreDocumentId,by,desc,category,size,resolution,email,creatorUid,source,wallpaperThumb,wallpaperUrl,const DeepCollectionEquality().hash(collections),createdAt,review,isAiGenerated,aiModel,depthTier,spatial]);
 
 @override
 String toString() {
-  return 'PublicProfileWallEntity(id: $id, firestoreDocumentId: $firestoreDocumentId, by: $by, desc: $desc, category: $category, size: $size, resolution: $resolution, email: $email, creatorUid: $creatorUid, source: $source, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, collections: $collections, createdAt: $createdAt, review: $review, depthTier: $depthTier, spatial: $spatial)';
+  return 'PublicProfileWallEntity(id: $id, firestoreDocumentId: $firestoreDocumentId, by: $by, desc: $desc, category: $category, size: $size, resolution: $resolution, email: $email, creatorUid: $creatorUid, source: $source, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, collections: $collections, createdAt: $createdAt, review: $review, isAiGenerated: $isAiGenerated, aiModel: $aiModel, depthTier: $depthTier, spatial: $spatial)';
 }
 
 
@@ -46,7 +46,7 @@ abstract mixin class $PublicProfileWallEntityCopyWith<$Res>  {
   factory $PublicProfileWallEntityCopyWith(PublicProfileWallEntity value, $Res Function(PublicProfileWallEntity) _then) = _$PublicProfileWallEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String? firestoreDocumentId, String? by, String? desc, String? category, String? size, String? resolution, String? email, String? creatorUid, WallpaperSource? source, String? wallpaperThumb, String wallpaperUrl, List<String>? collections, DateTime? createdAt, bool review, WallDepthTier? depthTier, WallSpatial? spatial
+ String id, String? firestoreDocumentId, String? by, String? desc, String? category, String? size, String? resolution, String? email, String? creatorUid, WallpaperSource? source, String? wallpaperThumb, String wallpaperUrl, List<String>? collections, DateTime? createdAt, bool review, bool isAiGenerated, String? aiModel, WallDepthTier? depthTier, WallSpatial? spatial
 });
 
 
@@ -63,7 +63,7 @@ class _$PublicProfileWallEntityCopyWithImpl<$Res>
 
 /// Create a copy of PublicProfileWallEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? firestoreDocumentId = freezed,Object? by = freezed,Object? desc = freezed,Object? category = freezed,Object? size = freezed,Object? resolution = freezed,Object? email = freezed,Object? creatorUid = freezed,Object? source = freezed,Object? wallpaperThumb = freezed,Object? wallpaperUrl = null,Object? collections = freezed,Object? createdAt = freezed,Object? review = null,Object? depthTier = freezed,Object? spatial = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? firestoreDocumentId = freezed,Object? by = freezed,Object? desc = freezed,Object? category = freezed,Object? size = freezed,Object? resolution = freezed,Object? email = freezed,Object? creatorUid = freezed,Object? source = freezed,Object? wallpaperThumb = freezed,Object? wallpaperUrl = null,Object? collections = freezed,Object? createdAt = freezed,Object? review = null,Object? isAiGenerated = null,Object? aiModel = freezed,Object? depthTier = freezed,Object? spatial = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,firestoreDocumentId: freezed == firestoreDocumentId ? _self.firestoreDocumentId : firestoreDocumentId // ignore: cast_nullable_to_non_nullable
@@ -80,7 +80,9 @@ as String?,wallpaperUrl: null == wallpaperUrl ? _self.wallpaperUrl : wallpaperUr
 as String,collections: freezed == collections ? _self.collections : collections // ignore: cast_nullable_to_non_nullable
 as List<String>?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,review: null == review ? _self.review : review // ignore: cast_nullable_to_non_nullable
-as bool,depthTier: freezed == depthTier ? _self.depthTier : depthTier // ignore: cast_nullable_to_non_nullable
+as bool,isAiGenerated: null == isAiGenerated ? _self.isAiGenerated : isAiGenerated // ignore: cast_nullable_to_non_nullable
+as bool,aiModel: freezed == aiModel ? _self.aiModel : aiModel // ignore: cast_nullable_to_non_nullable
+as String?,depthTier: freezed == depthTier ? _self.depthTier : depthTier // ignore: cast_nullable_to_non_nullable
 as WallDepthTier?,spatial: freezed == spatial ? _self.spatial : spatial // ignore: cast_nullable_to_non_nullable
 as WallSpatial?,
   ));
@@ -167,10 +169,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? firestoreDocumentId,  String? by,  String? desc,  String? category,  String? size,  String? resolution,  String? email,  String? creatorUid,  WallpaperSource? source,  String? wallpaperThumb,  String wallpaperUrl,  List<String>? collections,  DateTime? createdAt,  bool review,  WallDepthTier? depthTier,  WallSpatial? spatial)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? firestoreDocumentId,  String? by,  String? desc,  String? category,  String? size,  String? resolution,  String? email,  String? creatorUid,  WallpaperSource? source,  String? wallpaperThumb,  String wallpaperUrl,  List<String>? collections,  DateTime? createdAt,  bool review,  bool isAiGenerated,  String? aiModel,  WallDepthTier? depthTier,  WallSpatial? spatial)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PublicProfileWallEntity() when $default != null:
-return $default(_that.id,_that.firestoreDocumentId,_that.by,_that.desc,_that.category,_that.size,_that.resolution,_that.email,_that.creatorUid,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review,_that.depthTier,_that.spatial);case _:
+return $default(_that.id,_that.firestoreDocumentId,_that.by,_that.desc,_that.category,_that.size,_that.resolution,_that.email,_that.creatorUid,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review,_that.isAiGenerated,_that.aiModel,_that.depthTier,_that.spatial);case _:
   return orElse();
 
 }
@@ -188,10 +190,10 @@ return $default(_that.id,_that.firestoreDocumentId,_that.by,_that.desc,_that.cat
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? firestoreDocumentId,  String? by,  String? desc,  String? category,  String? size,  String? resolution,  String? email,  String? creatorUid,  WallpaperSource? source,  String? wallpaperThumb,  String wallpaperUrl,  List<String>? collections,  DateTime? createdAt,  bool review,  WallDepthTier? depthTier,  WallSpatial? spatial)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? firestoreDocumentId,  String? by,  String? desc,  String? category,  String? size,  String? resolution,  String? email,  String? creatorUid,  WallpaperSource? source,  String? wallpaperThumb,  String wallpaperUrl,  List<String>? collections,  DateTime? createdAt,  bool review,  bool isAiGenerated,  String? aiModel,  WallDepthTier? depthTier,  WallSpatial? spatial)  $default,) {final _that = this;
 switch (_that) {
 case _PublicProfileWallEntity():
-return $default(_that.id,_that.firestoreDocumentId,_that.by,_that.desc,_that.category,_that.size,_that.resolution,_that.email,_that.creatorUid,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review,_that.depthTier,_that.spatial);case _:
+return $default(_that.id,_that.firestoreDocumentId,_that.by,_that.desc,_that.category,_that.size,_that.resolution,_that.email,_that.creatorUid,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review,_that.isAiGenerated,_that.aiModel,_that.depthTier,_that.spatial);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -208,10 +210,10 @@ return $default(_that.id,_that.firestoreDocumentId,_that.by,_that.desc,_that.cat
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? firestoreDocumentId,  String? by,  String? desc,  String? category,  String? size,  String? resolution,  String? email,  String? creatorUid,  WallpaperSource? source,  String? wallpaperThumb,  String wallpaperUrl,  List<String>? collections,  DateTime? createdAt,  bool review,  WallDepthTier? depthTier,  WallSpatial? spatial)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? firestoreDocumentId,  String? by,  String? desc,  String? category,  String? size,  String? resolution,  String? email,  String? creatorUid,  WallpaperSource? source,  String? wallpaperThumb,  String wallpaperUrl,  List<String>? collections,  DateTime? createdAt,  bool review,  bool isAiGenerated,  String? aiModel,  WallDepthTier? depthTier,  WallSpatial? spatial)?  $default,) {final _that = this;
 switch (_that) {
 case _PublicProfileWallEntity() when $default != null:
-return $default(_that.id,_that.firestoreDocumentId,_that.by,_that.desc,_that.category,_that.size,_that.resolution,_that.email,_that.creatorUid,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review,_that.depthTier,_that.spatial);case _:
+return $default(_that.id,_that.firestoreDocumentId,_that.by,_that.desc,_that.category,_that.size,_that.resolution,_that.email,_that.creatorUid,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.collections,_that.createdAt,_that.review,_that.isAiGenerated,_that.aiModel,_that.depthTier,_that.spatial);case _:
   return null;
 
 }
@@ -223,7 +225,7 @@ return $default(_that.id,_that.firestoreDocumentId,_that.by,_that.desc,_that.cat
 
 
 class _PublicProfileWallEntity extends PublicProfileWallEntity {
-  const _PublicProfileWallEntity({required this.id, this.firestoreDocumentId, this.by, this.desc, this.category, this.size, this.resolution, this.email, this.creatorUid, this.source, this.wallpaperThumb, required this.wallpaperUrl, final  List<String>? collections, this.createdAt, this.review = false, this.depthTier, this.spatial}): _collections = collections,super._();
+  const _PublicProfileWallEntity({required this.id, this.firestoreDocumentId, this.by, this.desc, this.category, this.size, this.resolution, this.email, this.creatorUid, this.source, this.wallpaperThumb, required this.wallpaperUrl, final  List<String>? collections, this.createdAt, this.review = false, this.isAiGenerated = false, this.aiModel, this.depthTier, this.spatial}): _collections = collections,super._();
   
 
 @override final  String id;
@@ -250,6 +252,8 @@ class _PublicProfileWallEntity extends PublicProfileWallEntity {
 
 @override final  DateTime? createdAt;
 @override@JsonKey() final  bool review;
+@override@JsonKey() final  bool isAiGenerated;
+@override final  String? aiModel;
 @override final  WallDepthTier? depthTier;
 @override final  WallSpatial? spatial;
 
@@ -263,16 +267,16 @@ _$PublicProfileWallEntityCopyWith<_PublicProfileWallEntity> get copyWith => __$P
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PublicProfileWallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.firestoreDocumentId, firestoreDocumentId) || other.firestoreDocumentId == firestoreDocumentId)&&(identical(other.by, by) || other.by == by)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.category, category) || other.category == category)&&(identical(other.size, size) || other.size == size)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.email, email) || other.email == email)&&(identical(other.creatorUid, creatorUid) || other.creatorUid == creatorUid)&&(identical(other.source, source) || other.source == source)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&const DeepCollectionEquality().equals(other._collections, _collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.review, review) || other.review == review)&&(identical(other.depthTier, depthTier) || other.depthTier == depthTier)&&(identical(other.spatial, spatial) || other.spatial == spatial));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PublicProfileWallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.firestoreDocumentId, firestoreDocumentId) || other.firestoreDocumentId == firestoreDocumentId)&&(identical(other.by, by) || other.by == by)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.category, category) || other.category == category)&&(identical(other.size, size) || other.size == size)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.email, email) || other.email == email)&&(identical(other.creatorUid, creatorUid) || other.creatorUid == creatorUid)&&(identical(other.source, source) || other.source == source)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&const DeepCollectionEquality().equals(other._collections, _collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.review, review) || other.review == review)&&(identical(other.isAiGenerated, isAiGenerated) || other.isAiGenerated == isAiGenerated)&&(identical(other.aiModel, aiModel) || other.aiModel == aiModel)&&(identical(other.depthTier, depthTier) || other.depthTier == depthTier)&&(identical(other.spatial, spatial) || other.spatial == spatial));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,firestoreDocumentId,by,desc,category,size,resolution,email,creatorUid,source,wallpaperThumb,wallpaperUrl,const DeepCollectionEquality().hash(_collections),createdAt,review,depthTier,spatial);
+int get hashCode => Object.hashAll([runtimeType,id,firestoreDocumentId,by,desc,category,size,resolution,email,creatorUid,source,wallpaperThumb,wallpaperUrl,const DeepCollectionEquality().hash(_collections),createdAt,review,isAiGenerated,aiModel,depthTier,spatial]);
 
 @override
 String toString() {
-  return 'PublicProfileWallEntity(id: $id, firestoreDocumentId: $firestoreDocumentId, by: $by, desc: $desc, category: $category, size: $size, resolution: $resolution, email: $email, creatorUid: $creatorUid, source: $source, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, collections: $collections, createdAt: $createdAt, review: $review, depthTier: $depthTier, spatial: $spatial)';
+  return 'PublicProfileWallEntity(id: $id, firestoreDocumentId: $firestoreDocumentId, by: $by, desc: $desc, category: $category, size: $size, resolution: $resolution, email: $email, creatorUid: $creatorUid, source: $source, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, collections: $collections, createdAt: $createdAt, review: $review, isAiGenerated: $isAiGenerated, aiModel: $aiModel, depthTier: $depthTier, spatial: $spatial)';
 }
 
 
@@ -283,7 +287,7 @@ abstract mixin class _$PublicProfileWallEntityCopyWith<$Res> implements $PublicP
   factory _$PublicProfileWallEntityCopyWith(_PublicProfileWallEntity value, $Res Function(_PublicProfileWallEntity) _then) = __$PublicProfileWallEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String? firestoreDocumentId, String? by, String? desc, String? category, String? size, String? resolution, String? email, String? creatorUid, WallpaperSource? source, String? wallpaperThumb, String wallpaperUrl, List<String>? collections, DateTime? createdAt, bool review, WallDepthTier? depthTier, WallSpatial? spatial
+ String id, String? firestoreDocumentId, String? by, String? desc, String? category, String? size, String? resolution, String? email, String? creatorUid, WallpaperSource? source, String? wallpaperThumb, String wallpaperUrl, List<String>? collections, DateTime? createdAt, bool review, bool isAiGenerated, String? aiModel, WallDepthTier? depthTier, WallSpatial? spatial
 });
 
 
@@ -300,7 +304,7 @@ class __$PublicProfileWallEntityCopyWithImpl<$Res>
 
 /// Create a copy of PublicProfileWallEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? firestoreDocumentId = freezed,Object? by = freezed,Object? desc = freezed,Object? category = freezed,Object? size = freezed,Object? resolution = freezed,Object? email = freezed,Object? creatorUid = freezed,Object? source = freezed,Object? wallpaperThumb = freezed,Object? wallpaperUrl = null,Object? collections = freezed,Object? createdAt = freezed,Object? review = null,Object? depthTier = freezed,Object? spatial = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? firestoreDocumentId = freezed,Object? by = freezed,Object? desc = freezed,Object? category = freezed,Object? size = freezed,Object? resolution = freezed,Object? email = freezed,Object? creatorUid = freezed,Object? source = freezed,Object? wallpaperThumb = freezed,Object? wallpaperUrl = null,Object? collections = freezed,Object? createdAt = freezed,Object? review = null,Object? isAiGenerated = null,Object? aiModel = freezed,Object? depthTier = freezed,Object? spatial = freezed,}) {
   return _then(_PublicProfileWallEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,firestoreDocumentId: freezed == firestoreDocumentId ? _self.firestoreDocumentId : firestoreDocumentId // ignore: cast_nullable_to_non_nullable
@@ -317,7 +321,9 @@ as String?,wallpaperUrl: null == wallpaperUrl ? _self.wallpaperUrl : wallpaperUr
 as String,collections: freezed == collections ? _self._collections : collections // ignore: cast_nullable_to_non_nullable
 as List<String>?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,review: null == review ? _self.review : review // ignore: cast_nullable_to_non_nullable
-as bool,depthTier: freezed == depthTier ? _self.depthTier : depthTier // ignore: cast_nullable_to_non_nullable
+as bool,isAiGenerated: null == isAiGenerated ? _self.isAiGenerated : isAiGenerated // ignore: cast_nullable_to_non_nullable
+as bool,aiModel: freezed == aiModel ? _self.aiModel : aiModel // ignore: cast_nullable_to_non_nullable
+as String?,depthTier: freezed == depthTier ? _self.depthTier : depthTier // ignore: cast_nullable_to_non_nullable
 as WallDepthTier?,spatial: freezed == spatial ? _self.spatial : spatial // ignore: cast_nullable_to_non_nullable
 as WallSpatial?,
   ));

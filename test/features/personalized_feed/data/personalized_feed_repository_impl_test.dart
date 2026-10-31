@@ -17,6 +17,7 @@ import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -29,7 +30,6 @@ import 'package:Prism/features/favourite_walls/domain/repositories/favourite_wal
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/personalized_feed/data/personalized_feed_repository_impl.dart';
-import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
@@ -124,6 +124,22 @@ class _AnimeWallFirestore extends _OneWallFirestore {
           'wallpaper_url': 'https://example.com/anime.jpg',
           'category': 'Anime',
         }, 'anime-doc'),
+        map(<String, dynamic>{
+          ..._OneWallFirestore._wall,
+          'wallpaper_url': 'https://example.com/visible.jpg',
+        }, 'visible-doc'),
+      ];
+}
+
+class _AiWallFirestore extends _OneWallFirestore {
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async =>
+      <T>[
+        map(<String, dynamic>{
+          ..._OneWallFirestore._wall,
+          'wallpaper_url': 'https://example.com/ai.jpg',
+          'isAiGenerated': true,
+        }, 'ai-doc'),
         map(<String, dynamic>{
           ..._OneWallFirestore._wall,
           'wallpaper_url': 'https://example.com/visible.jpg',
@@ -1496,7 +1512,7 @@ void main() {
       );
     }
 
-    List<String> keys(PersonalizedFeedPage? page) => page!.items.map(PersonalizedRankingService.canonicalKey).toList();
+    List<String> keys(PersonalizedFeedPage? page) => page!.items.map((item) => item.canonicalKey).toList();
 
     FeedSnapshot cacheSnapshot(List<FeedItemEntity> items) => FeedSnapshot(
       cachedAtUtc: DateTime.now().toUtc(),
@@ -2264,7 +2280,7 @@ void main() {
       );
       repository.warmCache();
       await Future<void>.delayed(Duration.zero);
-      await impressions.hide(PersonalizedRankingService.canonicalKey(item), DateTime.now().toUtc());
+      await impressions.hide(item.canonicalKey, DateTime.now().toUtc());
 
       expect(_itemIds((await repository.readCached())!.items), <String>['keep']);
     });
@@ -2463,7 +2479,7 @@ void main() {
       app_state.prismUser = _signedInUser();
       final FeedImpressionStore impressions = FeedImpressionStore(settings);
       final FeedItemEntity hidden = _prismItem('hidden');
-      await impressions.hide(PersonalizedRankingService.canonicalKey(hidden), DateTime.now().toUtc());
+      await impressions.hide(hidden.canonicalKey, DateTime.now().toUtc());
       final PersonalizedFeedRepository repository = _repository(
         firestore: _EmptyFirestore(),
         cache: _MemoryFeedCache()..snapshot = snapshot(<FeedItemEntity>[hidden, _prismItem('shown')]),
@@ -2527,6 +2543,23 @@ void main() {
       expect(_itemIds((await repository.readCached())!.items), <String>['anime', 'other']);
     });
 
+    test('drops AI Prism walls while the AI setting is off', () async {
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: _MemoryFeedCache()
+          ..snapshot = snapshot(<FeedItemEntity>[_prismItem('ai', ai: true), _prismItem('other')]),
+        settings: settings,
+        favourites: _CountingFavourites(),
+      );
+      expect(_itemIds((await repository.readCached())!.items), <String>['ai', 'other']);
+
+      await AiContentFilter.setShowsAi(settings, false);
+
+      expect(_itemIds((await repository.readCached())!.items), <String>['other']);
+    });
+
     test('a cache written by a fetch carries the content filters', () async {
       final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
       await settings.set('WHpurity', 110);
@@ -2561,6 +2594,24 @@ void main() {
     await settings.set('WHcategories', 110);
     final shown = await repository().fetch(_firstPage);
     expect(_itemIds(shown.data!.items), <String>['anime-doc', 'visible-doc']);
+  });
+
+  test('the feed leaves out AI Prism walls while the AI setting is off', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    PersonalizedFeedRepository repository() => _repository(
+      firestore: _AiWallFirestore(),
+      settings: settings,
+      favourites: _CountingFavourites(),
+      impressions: FeedImpressionStore(SettingsLocalDataSource(InMemoryLocalStore())),
+    );
+
+    final shown = await repository().fetch(_firstPage);
+    expect(_itemIds(shown.data!.items), <String>['ai-doc', 'visible-doc']);
+
+    await AiContentFilter.setShowsAi(settings, false);
+    final hidden = await repository().fetch(_firstPage);
+    expect(_itemIds(hidden.data!.items), <String>['visible-doc']);
   });
 
   group('undoLessLikeThis', () {
@@ -3208,19 +3259,21 @@ PrismFavouriteWall _favourite(String id) => PrismFavouriteWall(
   ),
 );
 
-FeedItemEntity _prismItem(String id, {String authorUid = 'creator-id', List<String>? tags}) => FeedItemEntity.prism(
-  id: id,
-  wallpaper: PrismWallpaper(
-    core: WallpaperCore(
+FeedItemEntity _prismItem(String id, {String authorUid = 'creator-id', List<String>? tags, bool ai = false}) =>
+    FeedItemEntity.prism(
       id: id,
-      source: WallpaperSource.prism,
-      fullUrl: 'https://example.com/$id.jpg',
-      thumbnailUrl: 'https://example.com/$id-thumb.jpg',
-      authorUid: authorUid,
-    ),
-    tags: tags,
-  ),
-);
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(
+          id: id,
+          source: WallpaperSource.prism,
+          fullUrl: 'https://example.com/$id.jpg',
+          thumbnailUrl: 'https://example.com/$id-thumb.jpg',
+          authorUid: authorUid,
+        ),
+        tags: tags,
+        isAiGenerated: ai,
+      ),
+    );
 
 FeedItemEntity _wallhavenItem(String id) => FeedItemEntity.wallhaven(
   id: id,

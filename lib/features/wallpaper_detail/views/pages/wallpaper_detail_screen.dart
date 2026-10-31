@@ -6,6 +6,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/constants/admin_users.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -28,6 +29,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
@@ -50,10 +52,13 @@ import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/admin_review/views/pages/wall_metadata_history_page.dart';
+import 'package:Prism/features/ads/data/ad_experiment_service.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/ads/views/widgets/experimental_interstitial_return.dart';
 import 'package:Prism/features/ai_wallpaper/domain/ai_rollout.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
@@ -75,6 +80,7 @@ import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dar
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/ai_generated_tag.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/depth_effect_row.dart';
@@ -150,8 +156,11 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
     final FeedItemEntity? entity = this.entity;
     final int start = feed == null || entity == null ? -1 : feed.indexOf(entity);
     if (feed != null && start >= 0) {
-      return _DetailImmersion(
-        child: _FeedBrowser(screen: this, feed: feed, start: start),
+      return ExperimentalInterstitialReturn(
+        grid: feed.grid,
+        child: _DetailImmersion(
+          child: _FeedBrowser(screen: this, feed: feed, start: start),
+        ),
       );
     }
     return _DetailImmersion(
@@ -646,7 +655,11 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
 }
 
 class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with SingleTickerProviderStateMixin {
-  /// The set or save button of the phone preview. The action bar rebuilds it, so it always has the current tint.
+  int _setAwardCoins = 0;
+  String? _setAwardWall;
+  String? _setAwardOwner;
+  final Set<String> _shownSetReceipts = <String>{};
+
   /// The Set button in the action bar. On Android the phone preview opens its Set screen.
   final GlobalKey<SetWallpaperButtonState> _setButtonKey = GlobalKey<SetWallpaperButtonState>();
   final GlobalKey _cardHeroKey = GlobalKey();
@@ -1494,6 +1507,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                             tint: state.tint,
                             saveAction: _saveAction,
                             spatialMapUrl: spatialOf(entity)?.mapUrl,
+                            duoReveal: isDuoWallpaper(entity),
+                            allowDuo: isLandscapeWallpaper(entity.wallpaperCore),
                           );
                         },
                 ),
@@ -1985,6 +2000,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final resolution = wallpaper.core.resolution;
     final sizeBytes = wallpaper.core.sizeBytes;
     final createdAt = wallpaper.core.createdAt;
+    final String? reportDocId = BundledWallpapers.isStarter(state.entity) ? null : wallpaper.firestoreDocumentId;
     return _metadataShell(
       left: [
         Padding(
@@ -2027,6 +2043,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             },
           ),
         ),
+        if (AiContentFilter.isAi(wallpaper))
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AiGeneratedTag(wallpaper: wallpaper, reportDocId: reportDocId, reportSubtitle: state.entity.id),
+          ),
         if (collections != null && collections.isNotEmpty) ...[
           _buildInfoRow(context, JamIcons.folder, collections.take(2).join(', ')),
           const SizedBox(height: 4),
@@ -2335,11 +2356,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               )
             : null,
         depthTier: depthTierOf(entity),
+        duoReveal: isDuoWallpaper(entity),
         spatialTier: spatialOf(entity)?.tier,
         sourceContext: _getSourceContext(state),
         requestId: widget.requestId,
         onDownloaded: () {
           if (!mounted || historyOwner != (app_state.prismUser.id, app_state.prismUser.loggedIn)) return;
+          AdExperimentService.instance.recordSuccessfulWallpaperAction();
           final (String, int)? currentSession = getIt.isRegistered<SyncedHistoryStore>()
               ? getIt<SyncedHistoryStore>().recordingSession
               : null;
@@ -2352,24 +2375,39 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       return label == null ? button : PressScale(child: button);
     }
 
-    Widget setButton({required String label}) => PressScale(
-      child: SetWallpaperButton(
-        key: _setButtonKey,
-        label: label,
-        url: source,
-        wallpaperId: entity.id,
-        wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
-        prepareSource: prepareSource,
-        prepareAuthorized: prepareAuthorized,
-        thumbnailUrl: WallpaperDisplaySource.of(entity).thumbnail,
-        promptNotificationPermissionOnSuccess: true,
-        entryPoint: 'wallpaper_detail',
-        requestId: widget.requestId,
-        previewTint: tint,
-        notes: wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context)),
-        onMatchAccent: _matchAccentAction(context, state),
-        onSet: () => _onWallpaperSet(entity),
-      ),
+    Widget setButton({required String label}) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        PressScale(
+          child: SetWallpaperButton(
+            key: _setButtonKey,
+            label: label,
+            url: source,
+            wallpaperId: entity.id,
+            wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
+            prepareSource: prepareSource,
+            prepareAuthorized: prepareAuthorized,
+            thumbnailUrl: WallpaperDisplaySource.of(entity).thumbnail,
+            promptNotificationPermissionOnSuccess: true,
+            entryPoint: 'wallpaper_detail',
+            requestId: widget.requestId,
+            previewTint: tint,
+            duoReveal: isDuoWallpaper(entity),
+            allowDuo: isLandscapeWallpaper(entity.wallpaperCore),
+            notes: wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context)),
+            onMatchAccent: _matchAccentAction(context, state),
+            onSet: () => _onWallpaperSet(entity),
+          ),
+        ),
+        if (DailyMomentConfig.enabled &&
+            _setAwardOwner == app_state.prismUser.id &&
+            _setAwardWall == entity.id &&
+            _setAwardCoins > 0)
+          Text(
+            context.l10n.economyCoinsEarned(_setAwardCoins),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.primary),
+          ),
+      ],
     );
     _saveAction = hideSetWallpaperUi ? (label) => downloadButton(label: label) : null;
     final primary = hideSetWallpaperUi
@@ -2437,6 +2475,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             thumbUrl: entity.thumbnailUrl,
             creator: entity.wallpaperCore.authorName,
             palette: _sharePalette(entity),
+            duoReveal: isDuoWallpaper(entity),
             createLink: (id, source, url, thumbUrl) => createDynamicLink(
               id,
               source,
@@ -2500,11 +2539,28 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     return Size(px.shortestSide, px.longestSide);
   }
 
-  void _onWallpaperSet(FeedItemEntity entity) {
+  Future<void> _onWallpaperSet(FeedItemEntity entity) async {
+    AdExperimentService.instance.recordSuccessfulWallpaperAction();
     _recordTaste(TasteAction.set, entity);
     _actedOn(entity);
+    if (mounted && _setAwardCoins != 0) setState(() => _setAwardCoins = 0);
     if (shouldRecordWallpaperSetStats(entity)) {
-      unawaited(getIt<RecordWallpaperActionUseCase>()(entity.id, WallpaperAction.set));
+      final owner = app_state.prismUser.id;
+      final result = await getIt<RecordWallpaperActionUseCase>()(entity.id, WallpaperAction.set);
+      final receipt = result.data;
+      if (mounted &&
+          owner == app_state.prismUser.id &&
+          receipt != null &&
+          receipt.coins > 0 &&
+          receipt.receiptId != null &&
+          _shownSetReceipts.add(receipt.receiptId!)) {
+        setState(() {
+          _setAwardCoins = receipt.coins;
+          _setAwardWall = entity.id;
+          _setAwardOwner = owner;
+        });
+        unawaited(CoinsService.instance.refreshBalance().catchError((Object _) => app_state.prismUser.coins));
+      }
     }
   }
 

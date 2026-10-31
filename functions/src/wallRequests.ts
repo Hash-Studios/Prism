@@ -9,8 +9,8 @@ import {db, CALLABLE_REGIONS, findUserByEmail, readDailyCount, str, utcDateStrin
 import {notificationCopyPayload} from "./notificationCatalog";
 import {sendToUser} from "./notificationHelper";
 import {isPreviewUrl, similarWallIds} from "./pushGallery";
-import {premiumCollections, protectedWalls, SIMILAR_FIELDS} from "./wallOfTheDay";
 import {hasBlockedWord, HIDDEN_CHARACTERS, TEXT_SEGMENTER, textWords as words} from "./textSafety";
+import {premiumCollections, protectedWalls, SIMILAR_FIELDS} from "./wallEligibility";
 
 export const WALL_REQUESTS = "wallRequests";
 export const VOTES = "votes";

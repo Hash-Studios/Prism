@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import {removeChallengeVotesForAccount} from "./weeklyChallenges";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
 import {db, CALLABLE_REGIONS, str} from "./common";
@@ -19,7 +20,7 @@ const DRAW_TICKETS = "drawTickets";
 const BOOSTS = "boosts";
 const DELETED_NAME = "Deleted Account";
 /** Docs keyed by the bare uid. The last two are legacy collections. */
-const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens"];
+const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens", "rewardedAdUsers"];
 /** Docs keyed `<uid>_<day>`. */
 const UID_PREFIX_KEYED = [
   "coinAdRateDaily", "coinRefundDaily", "contentReportRateDaily", "userBlockRateDaily", REQUEST_RATE_DAILY, VOTE_RATE_DAILY,
@@ -109,6 +110,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await closeCreatorProgressForDeletion(callerUid);
   await removeUidFollowGraph(callerUid);
   await removeWallRequestsForAccount(callerUid);
+  await removeChallengeVotesForAccount(callerUid);
   // The deletion barrier is closed, so no sync can project these folders again.
   await removeOwnerPublicFolders(callerUid);
   await removeAllFolderFollows(callerUid);
@@ -119,6 +121,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await db.recursiveDelete(userRef.collection(BLOCKED_USERS));
   await db.recursiveDelete(userRef.collection("private"));
   await db.recursiveDelete(userRef.collection("history"));
+  await db.recursiveDelete(userRef.collection("wallActionReceipts"));
   await db.recursiveDelete(userRef.collection(FOLLOWED_FOLDERS));
   // Items are found by owner, not through their folder, so items whose folder is already gone are deleted too.
   // The owner filter keeps another owner's items in a reused folder id. Items go before their folders.
@@ -147,6 +150,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   const queueUpdate: QueueUpdate = (ref, data) => track(ref, writer.update(ref, data));
   try {
     await queueDeleteWhereEqual(COIN_TRANSACTIONS, "userId", callerUid, queue);
+    await queueDeleteWhereEqual("rewardedAdSessions", "uid", callerUid, queue);
     await queueDeleteWhereEqual(AI_GENERATIONS, "userId", callerUid, queue);
     await queueDeleteWhereEqual(GITHUB_UPLOADS, "uid", callerUid, queue);
     for (const collection of ["wallMetadataEdits", "wallMetadataOperations", "wallResubmissionRoots", "wallResubmissions",

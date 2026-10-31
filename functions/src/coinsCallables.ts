@@ -11,6 +11,7 @@ import {STREAK_RESCUE_MIN_COUNT, streakCycleDay} from "./streak";
 import {isStudioWall} from "./studio/isStudioWall";
 import {inventoryOwned, rankRewardsFor} from "./rankRewards";
 import {verifiedUploadOwner} from "./creatorProgress";
+import {liveReservations} from "./rewardedAds";
 
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
@@ -65,6 +66,12 @@ const DEFAULT_PROFILE_PHOTO =
   "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4";
 const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true, maxInstances: 10};
 const AD_RATE_MIN_GAP_MS = 20_000;
+
+/** Unset preserves shipped clients. An invalid configured cutoff fails closed. */
+export function legacyRewardedAdsAllowed(nowMs: number): boolean {
+  const cutoff = process.env.REWARDED_AD_LEGACY_UNTIL;
+  return cutoff === undefined || (Number.isFinite(Date.parse(cutoff)) && nowMs < Date.parse(cutoff));
+}
 
 function requiredText(value: unknown, field: string): string {
   if (typeof value !== "string" || value.trim().length === 0 || value.trim().length > 200) {
@@ -390,6 +397,9 @@ function writeTx(
 export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableRequest<Record<string, unknown>>) => {
   const callerUid = uid(request);
   const action = requiredText(request.data?.action, "action");
+  if (action === "rewardedAd" && !legacyRewardedAdsAllowed(Date.now())) {
+    throw new HttpsError("failed-precondition", "Legacy rewarded ads are disabled.");
+  }
   const sourceTag = requiredText(request.data?.sourceTag, "sourceTag");
   const reason = optionalReason(request.data?.reason, action);
   const refundTxId = action === "refund" ? requiredDocumentId(request.data?.transactionId, "transactionId") : "";
@@ -441,18 +451,25 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     const snap = await tx.get(userRef);
     if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
     const adRateSnap = action === "rewardedAd" ? await tx.get(adRateRef) : null;
+    const adDeletionBarrier = action === "rewardedAd" ?
+      await tx.get(db.collection("creatorDeletionState").doc(callerUid)) : null;
     const adAwardSnap = adAwardRef ? await tx.get(adAwardRef) : null;
     const privateSnap = action !== "refund" ? await tx.get(privateRef) : null;
     const debitSnap = debitRef ? await tx.get(debitRef) : null;
     const refundDailySnap = debitRef ? await tx.get(refundDailyRef) : null;
 
     const data = snap.data() ?? {};
+    if (action === "rewardedAd" && (data.deleted === true || adDeletionBarrier?.exists)) {
+      throw new HttpsError("not-found", "User profile was not found.");
+    }
     response = {...response, ...xpReceipt(data, nowMs)};
     const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
     const state = coinState(data.coinState);
-    const adCountToday = typeof adRateSnap?.data()?.count === "number" ? adRateSnap.data()?.count : 0;
+    const adCountToday = int(adRateSnap?.data()?.count);
+    const adReservations = liveReservations(adRateSnap?.data()?.reservations, nowMs);
+    const adCapacityUsed = adCountToday + Object.keys(adReservations).length;
     const adsRemaining = action === "rewardedAd" ?
-      {adsRemaining: Math.max(0, award.rewardedAdMaxPerDay - adCountToday)} :
+      {adsRemaining: Math.max(0, award.rewardedAdMaxPerDay - adCapacityUsed)} :
       {};
     const skip = (skipReason: string) => {
       response = {...response, previousBalance: previous, currentBalance: previous, reason: skipReason, ...adsRemaining};
@@ -521,15 +538,15 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
       skip("pro_bonus_already_claimed");
       return;
     }
-    // ponytail: no AdMob server-side verification; add an SSV callback if ad fraud shows up
-    if (action === "rewardedAd" && !rewardedAdAllowed(adRateSnap?.data() ?? {}, nowMs, award.rewardedAdMaxPerDay)) {
+    // Compatibility-only client awards remain exposed until REWARDED_AD_LEGACY_UNTIL.
+    if (action === "rewardedAd" && !rewardedAdAllowed({...adRateSnap?.data(), count: adCapacityUsed}, nowMs, award.rewardedAdMaxPerDay)) {
       skip("rewarded_ad_limit");
       return;
     }
 
     const delta = action === "refund" ?
       refundableDelta(debit, callerUid, nowMs, refundWindowMs) :
-      awardAmount(action, award, adCountToday);
+      awardAmount(action, award, adCapacityUsed);
     if (delta === null) throw new HttpsError("failed-precondition", "No refundable spend.");
 
     if (action === "refund" && debitRef) {
@@ -543,7 +560,7 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
       state.proSpinDate = today;
     }
     if (action === "rewardedAd") {
-      tx.set(adRateRef, {count: adCountToday + 1, lastAt: nowMs});
+      tx.set(adRateRef, {count: adCountToday + 1, lastAt: nowMs, reservations: adReservations});
       state.adsToday = {day: today, count: adCountToday + 1};
     }
     const xpAwarded = action === "firstWallpaperUpload" ? config.xp.activities.firstWallpaperUpload :
@@ -573,7 +590,7 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
       currentBalance: current,
       delta,
       reason,
-      ...(action === "rewardedAd" ? {adsRemaining: Math.max(0, award.rewardedAdMaxPerDay - adCountToday - 1)} : {}),
+      ...(action === "rewardedAd" ? {adsRemaining: Math.max(0, award.rewardedAdMaxPerDay - adCapacityUsed - 1)} : {}),
     };
   });
   return response;

@@ -27,6 +27,22 @@ void main() {
     }
   });
 
+  test('a missing or wrongly typed AI flag defaults false without losing AI metadata', () {
+    for (final Object? flag in <Object?>[null, 'true', 1, <String>[]]) {
+      final PrismWallDocDto dto = PrismWallDocDto.fromJson(<String, dynamic>{
+        'wallpaper_url': 'https://x/y.jpg',
+        'aiMetadata': <String, Object?>{'prompt': 'a lake'},
+        'aiModel': 42,
+        if (flag != null) 'isAiGenerated': flag,
+      });
+
+      final wall = dto.toDomain(docId: 'w1');
+      expect(wall.isAiGenerated, isFalse);
+      expect(wall.aiModel, isNull);
+      expect(wall.aiMetadata, <String, Object?>{'prompt': 'a lake'});
+    }
+  });
+
   test('protected feed and profile previews never substitute the thumbnail for the original', () {
     const thumb =
         'https://images.example.com/previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.img';

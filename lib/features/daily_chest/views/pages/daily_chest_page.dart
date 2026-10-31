@@ -11,6 +11,8 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/daily_chest/domain/chest_action.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
+import 'package:Prism/features/daily_flow/views/daily_moment_page.dart';
 import 'package:Prism/features/daily_chest/domain/chest_copy.dart';
 import 'package:Prism/features/daily_chest/domain/chest_phase.dart';
 import 'package:Prism/features/daily_chest/domain/chest_tiers.dart';
@@ -31,6 +33,7 @@ const Duration _chargeHold = Duration(milliseconds: 600);
 
 /// Opens the chest over everything, including the bottom bar. The route fades in and scales up from 0.96.
 Future<void> showDailyChest(BuildContext context) {
+  if (DailyMomentConfig.enabled) return showDailyMoment(context, requestedStep: DailyMomentStep.chest);
   final Duration duration = context.motion(PrismDurations.base);
   return Navigator.of(context, rootNavigator: true).push<void>(
     PageRouteBuilder<void>(
@@ -290,6 +293,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
 
   Future<void> _getCoins(DailyChestStatus status) => showGetCoinsSheet(
     context,
+    cost: status.price,
     message: context.l10n.economyChestNeedCoins(status.price, _balance),
     sourceTag: 'coins.daily_chest.rewarded_ad',
     upsellSource: 'daily_chest_rewarded_ad',

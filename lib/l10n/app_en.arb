@@ -1,4 +1,16 @@
 {
+  "economyAd": "Ad",
+  "@economyAd": {"description": "Label identifying a rewarded advertisement."},
+  "economyWatchAdForCoins": "Watch ad for {reward} coins",
+  "@economyWatchAdForCoins": {"description": "Offer for the currently quoted rewarded ad amount.", "placeholders": {"reward": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsMissing": "You need {count} more coins.",
+  "@economyCoinsMissing": {"description": "Coins missing for the selected purchase.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsRemainAfterAd": "You may still need {count} coins after the ad",
+  "@economyCoinsRemainAfterAd": {"description": "Estimated remaining shortfall after the quoted ad reward.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyAdAutomaticPurchase": "If your balance after the reward covers the price, this item will be purchased automatically.",
+  "@economyAdAutomaticPurchase": {"description": "Disclosure of the shop's automatic purchase after a credited ad."},
+  "economyAdVerificationPending": "Your ad reward is awaiting verification. Coins will appear once it is confirmed.",
+  "@economyAdVerificationPending": {"description": "A completed ad reward is awaiting server verification."},
   "foldersLibraryEmptyTitle": "No folders yet",
   "@foldersLibraryEmptyTitle": {
     "description": "Title of the empty Folders tab in the Library."
@@ -90,6 +102,142 @@
   },
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "en",
+  "duoTitle": "Duo reveal",
+  "@duoTitle": {
+    "description": "Shared title for Prism Duo reveal wallpapers."
+  },
+  "duoAiFormatLabel": "Create a Duo reveal",
+  "@duoAiFormatLabel": {
+    "description": "AI composition format switch. Normal quality and coin prices still apply."
+  },
+  "duoPresetNotice": "Prism previews the right side when folded. Align the saved original manually and check both views in the system wallpaper preview. This is a Prism preset, not an automatic iOS crop.",
+  "@duoPresetNotice": {
+    "description": "Shared notice explaining the user-approved Prism crop preset, not an Apple crop claim."
+  },
+  "duoFoldedPromptLabel": "Folded view",
+  "@duoFoldedPromptLabel": {
+    "description": "Visible label for the 1 to 160 character subject visible in the right-side crop."
+  },
+  "duoFoldedPromptExample": "A sleepy cat beside a window",
+  "@duoFoldedPromptExample": {
+    "description": "Brief example for the folded-view prompt, not its label."
+  },
+  "duoRevealedPromptLabel": "Unfolded reveal",
+  "@duoRevealedPromptLabel": {
+    "description": "Visible label for the 1 to 160 character scene revealed by the wider canvas."
+  },
+  "duoRevealedPromptExample": "A tiny spaceship outside the window",
+  "@duoRevealedPromptExample": {
+    "description": "Brief example for the unfolded-view prompt, not its label."
+  },
+  "duoPromptValidation": "Describe both views using 1 to 160 characters each.",
+  "@duoPromptValidation": {
+    "description": "Validation before a Duo AI generation. Both trimmed prompts must contain 1 to 160 characters."
+  },
+  "duoMoodBody": "One wallpaper. A wider reveal.",
+  "@duoMoodBody": {
+    "description": "One-line Home mood row description for Duo reveal wallpapers."
+  },
+  "duoDeviceName": "iPhone Duo",
+  "@duoDeviceName": {
+    "description": "Duo device preview selector. Product name remains unchanged."
+  },
+  "duoPhoneDevice": "Phone",
+  "@duoPhoneDevice": {
+    "description": "Standard phone preview selector."
+  },
+  "duoFold": "Fold",
+  "@duoFold": {
+    "description": "Button and accessibility label to fold the Duo preview."
+  },
+  "duoUnfold": "Unfold",
+  "@duoUnfold": {
+    "description": "Button and accessibility label to unfold the Duo preview."
+  },
+  "duoFolded": "Folded",
+  "@duoFolded": {
+    "description": "Label above the folded view on a share card."
+  },
+  "duoUnfolded": "Unfolded",
+  "@duoUnfolded": {
+    "description": "Label above the unfolded view on a share card."
+  },
+  "duoAndroidCropNotice": "Prism previews the right side when folded. Android may crop it differently. Check the system wallpaper preview before applying.",
+  "@duoAndroidCropNotice": {
+    "description": "Android Duo preview caveat. Standard Home, Lock and Both targets remain available."
+  },
+  "duoGetOnPrism": "Get it on Prism",
+  "@duoGetOnPrism": {
+    "description": "Call to action printed on the exported Duo reveal share card."
+  },
+  "duoGuideTitle": "Set up your Duo reveal",
+  "@duoGuideTitle": {
+    "description": "Title of setup guide shown only after a successful iOS Photos save."
+  },
+  "duoGuideOpen": "Open the saved original in Photos, tap Share, then Use as Wallpaper.",
+  "@duoGuideOpen": {
+    "description": "First of three Duo wallpaper setup steps."
+  },
+  "duoGuideAlign": "Align the full image manually so the folded view shows the right side.",
+  "@duoGuideAlign": {
+    "description": "Second of three steps. Manual alignment, not an automatic Apple crop."
+  },
+  "duoGuideCheck": "Check both folded and unfolded views in the system preview, then add the wallpaper.",
+  "@duoGuideCheck": {
+    "description": "Third of three steps. User must check both system previews."
+  },
+  "duoWebTitle": "iPhone Duo wallpapers | Prism",
+  "@duoWebTitle": {
+    "description": "Duo website browser and search title"
+  },
+  "duoWebDescription": "One wallpaper, a hidden second scene. Explore original Duo reveal wallpapers in Prism.",
+  "@duoWebDescription": {
+    "description": "Duo website metadata description"
+  },
+  "duoWebHeading": "One wallpaper. A wider story.",
+  "@duoWebHeading": {
+    "description": "Duo website heading"
+  },
+  "duoWebIntro": "A quiet scene when folded. A second story when unfolded. Preview both views of each original wallpaper.",
+  "@duoWebIntro": {
+    "description": "Duo website introduction"
+  },
+  "duoWebEmpty": "The first Duo collection is in review.",
+  "@duoWebEmpty": {
+    "description": "Empty approved Duo website collection"
+  },
+  "duoWebEmptyBody": "Explore Prism while each wallpaper is checked in both views.",
+  "@duoWebEmptyBody": {
+    "description": "Empty Duo website next step"
+  },
+  "duoWebFolded": "Folded preview",
+  "@duoWebFolded": {
+    "description": "Website folded preview caption"
+  },
+  "duoWebUnfolded": "Unfolded original",
+  "@duoWebUnfolded": {
+    "description": "Website unfolded preview caption"
+  },
+  "duoWebPresetNotice": "These previews use Prism's right-side preset, not an automatic Apple crop. Save the full original, align it manually, and check both folded and unfolded views in the system wallpaper preview.",
+  "@duoWebPresetNotice": {
+    "description": "Website notice about the approved Prism crop"
+  },
+  "duoWebOpenPrism": "Open in Prism",
+  "@duoWebOpenPrism": {
+    "description": "Website wallpaper deep link action"
+  },
+  "duoWebExplore": "Explore Prism",
+  "@duoWebExplore": {
+    "description": "Website homepage action"
+  },
+  "duoWebAppStore": "Download on the App Store",
+  "@duoWebAppStore": {
+    "description": "Website App Store link"
+  },
+  "duoWebPlayStore": "Get it on Google Play",
+  "@duoWebPlayStore": {
+    "description": "Website Google Play link"
+  },
   "economyExportFailedLabel": "Export failed",
   "@economyExportFailedLabel": {
     "description": "Failed filter export action inserted before refund status."
@@ -10899,5 +11047,253 @@
   "reportShakeToReportSubtitle": "Shake your phone on any screen to report a problem",
   "@reportShakeToReportSubtitle": {
     "description": "Settings toggle subtitle for shake to report."
+  },
+  "accountShowAiWallpapers": "Show AI-generated wallpapers",
+  "@accountShowAiWallpapers": {
+    "description": "Content preference that shows or hides AI-generated Prism walls."
+  },
+  "accountShowAiWallpapersSubtitle": "Turn off to see only human-made walls",
+  "@accountShowAiWallpapersSubtitle": {
+    "description": "Subtitle under the AI-generated wallpapers switch."
+  },
+  "accountShowAiWallpapersFootnote": "Hiding AI wallpapers never hides your own uploads or favourites.",
+  "@accountShowAiWallpapersFootnote": {
+    "description": "Footnote under the AI-generated wallpapers switch. Says what still shows when the switch is off."
+  },
+  "wallpaperFeedHideAi": "Hide AI",
+  "@wallpaperFeedHideAi": {
+    "description": "Chip in the Tune your feed sheet that hides AI-generated walls. Same setting as the Settings switch."
+  },
+  "wallpaperAiGenerated": "AI-generated",
+  "@wallpaperAiGenerated": {
+    "description": "Tag on the wallpaper detail screen for a wall that was made with AI."
+  },
+  "wallpaperAiMadeWith": "Made with {model}",
+  "@wallpaperAiMadeWith": {
+    "description": "Sheet line that names the AI model that made the wall.",
+    "placeholders": {
+      "model": {
+        "type": "String",
+        "example": "Seedream 5 Lite"
+      }
+    }
+  },
+  "wallpaperAiMadeWithUnknown": "Made with AI",
+  "@wallpaperAiMadeWithUnknown": {
+    "description": "Sheet line for an AI wall that did not record its model."
+  },
+  "wallpaperAiReportWrongLabel": "Report wrong label",
+  "@wallpaperAiReportWrongLabel": {
+    "description": "Row in the AI-generated sheet that opens the report sheet for a wrong AI label."
+  },
+  "feedNoHumanWalls": "No human-made walls here yet",
+  "@feedNoHumanWalls": {
+    "description": "Empty state when every wall in a feed is AI-generated and AI walls are hidden."
+  },
+  "feedShowAiWalls": "Show AI walls",
+  "@feedShowAiWalls": {
+    "description": "Action in the empty state that turns AI-generated walls back on."
+  },
+  "dailyMomentTitle": "Daily moment",
+  "@dailyMomentTitle": {
+    "description": "Daily moment: Title."
+  },
+  "dailyMomentStreakTitle": "Daily streak",
+  "@dailyMomentStreakTitle": {
+    "description": "Daily moment: StreakTitle."
+  },
+  "dailyMomentChestTitle": "Daily chest",
+  "@dailyMomentChestTitle": {
+    "description": "Daily moment: ChestTitle."
+  },
+  "dailyMomentSpinTitle": "Free spin",
+  "@dailyMomentSpinTitle": {
+    "description": "Daily moment: SpinTitle."
+  },
+  "dailyMomentUnavailable": "This reward is no longer available today.",
+  "@dailyMomentUnavailable": {
+    "description": "Daily moment: Unavailable."
+  },
+  "dailyMomentError": "Could not load your reward. Try again.",
+  "@dailyMomentError": {
+    "description": "Daily moment: Error."
+  },
+  "dailyMomentStreakReceipt": "{coins, plural, one{{coins} coin earned} other{{coins} coins earned}} · {days, plural, one{streak of {days} day} other{streak of {days} days}}",
+  "@dailyMomentStreakReceipt": {
+    "description": "Daily moment: StreakReceipt.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeTitle": "Weekly challenge",
+  "challengeRules": "Up to 3 entries, each reviewed before appearing.",
+  "challengeVotingRules": "Vote for other creators until {date} UTC.",
+  "@challengeVotingRules": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeUpload": "Upload an entry",
+  "challengeAi": "Create with AI",
+  "challengeTop": "Top",
+  "challengeNew": "New",
+  "challengePast": "Past challenges",
+  "challengeEmpty": "Approved entries will appear here.",
+  "challengeWaiting": "Voting has closed. We are waiting for entry reviews before choosing a winner.",
+  "challengeClosed": "This challenge has ended.",
+  "challengeScheduled": "This challenge has not opened yet.",
+  "challengeNoWinner": "No winner for this challenge.",
+  "challengeWinner": "Winner · {name}",
+  "@challengeWinner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeVote": "Vote",
+  "challengeUnvote": "Remove vote",
+  "challengeVotes": "{count, plural, =0{0 votes} =1{1 vote} other{{count} votes}}",
+  "@challengeVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentCosmetic": "Cosmetic added to your collection",
+  "@dailyMomentCosmetic": {
+    "description": "Daily moment: Cosmetic."
+  },
+  "dailyMomentReward": "{coins, plural, one{{coins} coin earned} other{{coins} coins earned}}",
+  "@dailyMomentReward": {
+    "description": "Daily moment: Reward.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentChestBody": "Open today’s chest when you’re ready.",
+  "@dailyMomentChestBody": {
+    "description": "Daily moment: ChestBody."
+  },
+  "dailyMomentSpinBody": "Your free spin is ready.",
+  "@dailyMomentSpinBody": {
+    "description": "Daily moment: SpinBody."
+  },
+  "dailyMomentBalance": "Balance: {coins, plural, one{{coins} coin} other{{coins} coins}}",
+  "@dailyMomentBalance": {
+    "description": "Daily moment: Balance.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentDone": "Done",
+  "@dailyMomentDone": {
+    "description": "Daily moment: Done."
+  },
+  "dailyMomentRetry": "Try again",
+  "@dailyMomentRetry": {
+    "description": "Daily moment: Retry."
+  },
+  "dailyMomentContinue": "Continue",
+  "@dailyMomentContinue": {
+    "description": "Daily moment: Continue."
+  },
+  "dailyMomentOpenFree": "Open free chest",
+  "@dailyMomentOpenFree": {
+    "description": "Daily moment: OpenFree."
+  },
+  "dailyMomentOpenChest": "Open for {coins, plural, one{{coins} coin} other{{coins} coins}}",
+  "@dailyMomentOpenChest": {
+    "description": "Daily moment: OpenChest.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentSpinAction": "Take free spin",
+  "@dailyMomentSpinAction": {
+    "description": "Daily moment: SpinAction."
+  },
+  "dailyMomentClose": "Close daily moment",
+  "@dailyMomentClose": {
+    "description": "Daily moment: Close."
+  },
+  "dailyMomentToday": "Today",
+  "@dailyMomentToday": {
+    "description": "Daily moment: Today."
+  },
+  "dailyMomentReady": "Daily rewards are ready",
+  "@dailyMomentReady": {
+    "description": "Daily moment: Ready."
+  },
+  "dailyMomentComplete": "Today is complete",
+  "@dailyMomentComplete": {
+    "description": "Daily moment: Complete."
+  },
+  "dailyMomentResume": "Continue daily moment",
+  "@dailyMomentResume": {
+    "description": "Daily moment: Resume."
+  },
+  "dailyMomentMore": "More",
+  "@dailyMomentMore": {
+    "description": "Daily moment: More."
+  },
+  "dailyMomentQuests": "Quests",
+  "@dailyMomentQuests": {
+    "description": "Daily moment: Quests."
+  },
+  "dailyMomentChestLeft": "Daily chest available",
+  "@dailyMomentChestLeft": {
+    "description": "Daily moment: ChestLeft."
+  },
+  "dailyMomentSpinLeft": "Free spin available",
+  "@dailyMomentSpinLeft": {
+    "description": "Daily moment: SpinLeft."
+  },
+  "dailyMomentStreakLeft": "Daily streak available",
+  "@dailyMomentStreakLeft": {
+    "description": "Daily moment: StreakLeft."
+  },
+  "challengeShare": "Share challenge",
+  "challengeRemove": "Remove challenge",
+  "challengeContext": "Challenge · {theme}",
+  "@challengeContext": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeError": "We could not load this challenge. Try again.",
+  "challengeVoteError": "Your vote could not be saved. Try again.",
+  "challengeSignIn": "Sign in to enter or vote.",
+  "challengeLimit": "You have entered 3 wallpapers in this challenge.",
+  "challengeRetry": "Try again",
+  "challengeOwnEntry": "You cannot vote for your own entry.",
+  "challengeDailyLimit": "Your daily voting limit is reached.",
+  "challengeMissing": "This challenge or entry is no longer available.",
+  "challengeBadge": "Challenge Winner",
+  "challengeBadgeDescription": "Win a weekly challenge",
+  "challengeWinnerNotificationTitle": "Your wallpaper won",
+  "challengeWinnerNotificationBody": "Your entry won the weekly challenge: {theme}.",
+  "@challengeWinnerNotificationBody": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
   }
 }

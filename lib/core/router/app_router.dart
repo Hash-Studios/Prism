@@ -11,7 +11,6 @@ import 'package:Prism/core/share/share_sheet.dart' show ShareSheetOpen;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/popup/edit_profile_panel.dart';
 import 'package:Prism/data/upload/github_content_api.dart' show GitHubContent;
-import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' show WallSubmissionResult;
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/firestore_telemetry_screen.dart';
@@ -23,6 +22,7 @@ import 'package:Prism/features/auto_rotate/views/pages/auto_rotate_screen.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
 import 'package:Prism/features/daily_chest/views/pages/daily_chest_page.dart';
+import 'package:Prism/features/daily_flow/views/daily_moment_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
 import 'package:Prism/features/deep_link_input/views/pages/deep_link_input_page.dart';
@@ -73,10 +73,12 @@ import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_position/views/pages/wallpaper_position_screen.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/edit_wall_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/review_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/review_photo_preview.dart';
+import 'package:Prism/features/weekly_challenges/views/pages/weekly_challenge_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -194,6 +196,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/mood/:moodId', page: MoodRoute.page),
     AutoRoute(path: '/gallery', page: GalleryRoute.page),
     AutoRoute(path: '/requests', page: WallRequestsRoute.page),
+    AutoRoute(path: '/challenges/:challengeId', page: WeeklyChallengeRoute.page),
     AutoRoute(path: '/user/:identifier', page: ProfileRoute.page),
     AutoRoute(path: '/followers', page: FollowersRoute.page),
     AutoRoute(path: '/following', page: FollowingListRoute.page),
@@ -208,6 +211,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/wallpaper-position', page: WallpaperPositionRoute.page),
     AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page),
     AutoRoute(path: '/rewards', page: RewardsRoute.page),
+    AutoRoute(path: '/daily-moment', page: DailyMomentRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/coin-history', page: CoinHistoryRoute.page, guards: [_signedInGuard]),
     CustomRoute(
       path: '/daily-chest',

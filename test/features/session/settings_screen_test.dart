@@ -11,11 +11,13 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
@@ -25,8 +27,6 @@ import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
-import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart'
-    show personalizedFeedSettingsRevision;
 import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/session/views/pages/settings_screen.dart';
@@ -61,6 +61,14 @@ class _FailingViewingPreferenceStore extends InMemoryLocalStore {
   @override
   Future<void> set(String key, Object? value) async {
     if (key == PersistenceKeys.settings(PersistenceKeys.viewedHistoryEnabled)) throw StateError('disk full');
+    await super.set(key, value);
+  }
+}
+
+class _FailingAiSettingStore extends InMemoryLocalStore {
+  @override
+  Future<void> set(String key, Object? value) async {
+    if (key == PersistenceKeys.settings(AiContentFilter.settingKey)) throw StateError('disk full');
     await super.set(key, value);
   }
 }
@@ -193,6 +201,28 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
   }
+
+  testWidgets('the AI switch goes back on and shows an error when the save fails', (tester) async {
+    useTallSurface(tester);
+    await getIt.unregister<SettingsLocalDataSource>();
+    getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(_FailingAiSettingStore()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SettingsScreen(),
+      ),
+    );
+    expect(switchOf(tester, 'Show AI-generated wallpapers').value, isTrue);
+
+    await tester.tap(find.text('Show AI-generated wallpapers'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(switchOf(tester, 'Show AI-generated wallpapers').value, isTrue);
+    expect(messages, contains('Could not save feed settings. Try again.'));
+    await tester.pump(const Duration(seconds: 1));
+  });
 
   testWidgets('haptics switch persists off and enabling it plays one selection', (tester) async {
     useTallSurface(tester);
@@ -649,6 +679,31 @@ void main() {
     expect(getIt<SettingsLocalDataSource>().get<int>('WHcategories', defaultValue: 100), 110);
     verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
     expect(switchOf(tester, 'Show anime wallpapers').value, isTrue);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('the AI switch is on by default, stores false when turned off and shows its footnote', (tester) async {
+    useTallSurface(tester);
+    final bloc = _MockCategoryFeedBloc();
+    when(() => bloc.state).thenReturn(CategoryFeedState.initial());
+    final revision = personalizedFeedSettingsRevision.value;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: BlocProvider<CategoryFeedBloc>.value(value: bloc, child: const SettingsScreen()),
+      ),
+    );
+
+    expect(switchOf(tester, 'Show AI-generated wallpapers').value, isTrue);
+    expect(find.text('Hiding AI wallpapers never hides your own uploads or favourites.'), findsOneWidget);
+
+    await tester.tap(find.text('Show AI-generated wallpapers'));
+    await tester.pump();
+
+    expect(AiContentFilter.showsAi(getIt<SettingsLocalDataSource>()), isFalse);
+    expect(personalizedFeedSettingsRevision.value, revision + 1);
+    verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
+    expect(switchOf(tester, 'Show AI-generated wallpapers').value, isFalse);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   test('storage sizes read in B, KB, MB and GB', () {
@@ -1379,7 +1434,9 @@ void main() {
       for (final old in <String>['Clear Cache', 'Clear all Downloads', 'Delete Account', 'Logout', 'Review Status']) {
         expect(find.text(old), findsNothing, reason: old);
       }
-      expect(find.textContaining('walls'), findsNothing);
+      // The AI row subtitle is the one fixed copy that says "walls".
+      expect(find.textContaining('walls'), findsOneWidget);
+      expect(find.text('Turn off to see only human-made walls'), findsOneWidget);
     });
   });
 

@@ -95,6 +95,9 @@ const commitDocs = async (auth, docs) => {
   return r.status;
 };
 const seed = () => Promise.all([
+  req('PATCH', 'walls/challenge-src', { email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('2026-11-02') }, 'owner'),
+  req('PATCH', 'weeklyChallenges/2026-11-02', { theme: str('Quiet horizons'), state: str('open') }, 'owner'),
+  req('PATCH', 'weeklyChallenges/2026-11-02/entries/entry', { creatorUid: str('b') }, 'owner'),
   req('PATCH', 'usersv2/a', { id: str('a'), email: str('a@x.com'), followers: arr(['c@x.com']), following: arr([]) }, 'owner'),
   req('PATCH', 'profiles/a', {
     name: str('A'), username: str('a'), profilePhoto: str(''), bio: str(''), links: { mapValue: { fields: {} } },
@@ -183,6 +186,15 @@ const themeFields = {
 const themeNoChangedAt = Object.fromEntries(Object.entries(themeFields).filter(([k]) => k !== 'changedAt'));
 const themeMap = (fields) => ({ themePrefs: { mapValue: { fields } } });
 const cases = [
+  ['new wall accepts valid challenge and resubmission links together', () => req('PATCH', 'walls/linked-challenge', {
+    email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('2026-11-02'), resubmitOf: str('wall_old.png'),
+  }, Bu), 200],
+  ['valid challenge does not bypass resubmission validation', () => req('PATCH', 'walls/invalid-linked-resubmit', {
+    email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('2026-11-02'), resubmitOf: str('nested/path'),
+  }, Bu), 403],
+  ['valid resubmission does not bypass challenge validation', () => req('PATCH', 'walls/invalid-linked-challenge', {
+    email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('nested/path'), resubmitOf: str('wall_old.png'),
+  }, Bu), 403],
   ['resubmission pointer accepts real long filename IDs', () => req('PATCH', 'walls/resubmit-valid', {
     email: str('b@x.com'), review: { booleanValue: false }, resubmitOf: str(`wall_uid_1790000000000_${'photo.'.repeat(30)}jpg`),
   }, Bu), 200],
@@ -467,6 +479,14 @@ const cases = [
   ['owner cannot change protected upload markers', () => req('PATCH', 'walls/w8', { originalProtected: { booleanValue: true }, originalObjectId: { stringValue: 'a'.repeat(64) } }, Bu, ['originalProtected', 'originalObjectId']), 403],
   ['owner cannot forge moderation signals on create', () => req('PATCH', 'walls/forged-moderation', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, moderation: { mapValue: { fields: { v: { integerValue: '1' } } } } }, Bu), 403],
   ['owner cannot change moderation signals', () => req('PATCH', 'walls/w8', { moderation: { mapValue: { fields: { v: { integerValue: '1' } } } } }, Bu, ['moderation']), 403],
+  ['own new wall accepts challengeId', () => req('PATCH', 'walls/challenge-create', { email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('2026-11-02') }, Bu), 200],
+  ['challengeId rejects slash', () => req('PATCH', 'walls/challenge-invalid', { email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('a/b') }, Bu), 403],
+  ['owner cannot attach old wall', () => req('PATCH', 'walls/remix-src', { challengeId: str('2026-11-02') }, Bu, ['challengeId']), 403],
+  ['owner cannot change challengeId', () => req('PATCH', 'walls/challenge-src', { challengeId: str('2026-11-09') }, Bu, ['challengeId']), 403],
+  ['admin cannot change challengeId', () => req('PATCH', 'walls/challenge-src', { challengeId: str('2026-11-09') }, ADM, ['challengeId']), 403],
+  ['public challenge is readable', () => req('GET', 'weeklyChallenges/2026-11-02'), 200],
+  ['private challenge entry is not readable', () => req('GET', 'weeklyChallenges/2026-11-02/entries/entry', null, Bu), 403],
+  ['challenge client writes denied', () => req('PATCH', 'weeklyChallenges/2026-11-02', { state: str('archived') }, ADM, ['state']), 403],
   ['user creates own unreviewed wall with remixOf', () => req('PATCH', 'walls/remix-create-ok', { email: str('b@x.com'), review: { booleanValue: false }, remixOf: str('orig_1') }, Bu), 200],
   ['user creates wall with a 65-char remixOf', () => req('PATCH', 'walls/remix-create-long', { email: str('b@x.com'), review: { booleanValue: false }, remixOf: str('a'.repeat(65)) }, Bu), 403],
   ['user creates wall with a slash in remixOf', () => req('PATCH', 'walls/remix-create-slash', { email: str('b@x.com'), review: { booleanValue: false }, remixOf: str('a/b') }, Bu), 403],

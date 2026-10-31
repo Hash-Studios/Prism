@@ -163,6 +163,7 @@
                 <data android:path="/drops" />
                 <data android:path="/leaderboard" />
                 <data android:path="/draw" />
+                <data android:path="/daily-moment" />
                 <data android:path="/daily-chest" />
                 <data android:path="/spin-wheel" />
                 <data android:path="/photo-preview" />
@@ -183,6 +184,7 @@
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
                 <data android:pathPrefix="/mood/" />
+                <data android:pathPrefix="/challenges/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -285,6 +287,7 @@
                 <data android:path="/drops" />
                 <data android:path="/leaderboard" />
                 <data android:path="/draw" />
+                <data android:path="/daily-moment" />
                 <data android:path="/daily-chest" />
                 <data android:path="/spin-wheel" />
                 <data android:path="/photo-preview" />
@@ -305,6 +308,7 @@
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
                 <data android:pathPrefix="/mood/" />
+                <data android:pathPrefix="/challenges/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -396,6 +400,7 @@
                 <data android:path="/drops" />
                 <data android:path="/leaderboard" />
                 <data android:path="/draw" />
+                <data android:path="/daily-moment" />
                 <data android:path="/daily-chest" />
                 <data android:path="/spin-wheel" />
                 <data android:path="/photo-preview" />
@@ -416,6 +421,7 @@
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
                 <data android:pathPrefix="/mood/" />
+                <data android:pathPrefix="/challenges/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -507,6 +513,7 @@
                 <data android:path="/drops" />
                 <data android:path="/leaderboard" />
                 <data android:path="/draw" />
+                <data android:path="/daily-moment" />
                 <data android:path="/daily-chest" />
                 <data android:path="/spin-wheel" />
                 <data android:path="/photo-preview" />
@@ -527,6 +534,7 @@
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
                 <data android:pathPrefix="/mood/" />
+                <data android:pathPrefix="/challenges/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -618,6 +626,7 @@
                 <data android:path="/drops" />
                 <data android:path="/leaderboard" />
                 <data android:path="/draw" />
+                <data android:path="/daily-moment" />
                 <data android:path="/daily-chest" />
                 <data android:path="/spin-wheel" />
                 <data android:path="/photo-preview" />
@@ -638,6 +647,7 @@
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
                 <data android:pathPrefix="/mood/" />
+                <data android:pathPrefix="/challenges/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />

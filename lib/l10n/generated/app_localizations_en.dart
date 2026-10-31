@@ -11,6 +11,41 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get economyAd => 'Ad';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Watch ad for $rewardString coins';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'You need $countString more coins.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'You may still need $countString coins after the ad';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'If your balance after the reward covers the price, this item will be purchased automatically.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Your ad reward is awaiting verification. Coins will appear once it is confirmed.';
+
+  @override
   String get foldersLibraryEmptyTitle => 'No folders yet';
 
   @override
@@ -89,6 +124,113 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
+  String get duoTitle => 'Duo reveal';
+
+  @override
+  String get duoAiFormatLabel => 'Create a Duo reveal';
+
+  @override
+  String get duoPresetNotice =>
+      'Prism previews the right side when folded. Align the saved original manually and check both views in the system wallpaper preview. This is a Prism preset, not an automatic iOS crop.';
+
+  @override
+  String get duoFoldedPromptLabel => 'Folded view';
+
+  @override
+  String get duoFoldedPromptExample => 'A sleepy cat beside a window';
+
+  @override
+  String get duoRevealedPromptLabel => 'Unfolded reveal';
+
+  @override
+  String get duoRevealedPromptExample => 'A tiny spaceship outside the window';
+
+  @override
+  String get duoPromptValidation => 'Describe both views using 1 to 160 characters each.';
+
+  @override
+  String get duoMoodBody => 'One wallpaper. A wider reveal.';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'Phone';
+
+  @override
+  String get duoFold => 'Fold';
+
+  @override
+  String get duoUnfold => 'Unfold';
+
+  @override
+  String get duoFolded => 'Folded';
+
+  @override
+  String get duoUnfolded => 'Unfolded';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'Prism previews the right side when folded. Android may crop it differently. Check the system wallpaper preview before applying.';
+
+  @override
+  String get duoGetOnPrism => 'Get it on Prism';
+
+  @override
+  String get duoGuideTitle => 'Set up your Duo reveal';
+
+  @override
+  String get duoGuideOpen => 'Open the saved original in Photos, tap Share, then Use as Wallpaper.';
+
+  @override
+  String get duoGuideAlign => 'Align the full image manually so the folded view shows the right side.';
+
+  @override
+  String get duoGuideCheck => 'Check both folded and unfolded views in the system preview, then add the wallpaper.';
+
+  @override
+  String get duoWebTitle => 'iPhone Duo wallpapers | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'One wallpaper, a hidden second scene. Explore original Duo reveal wallpapers in Prism.';
+
+  @override
+  String get duoWebHeading => 'One wallpaper. A wider story.';
+
+  @override
+  String get duoWebIntro =>
+      'A quiet scene when folded. A second story when unfolded. Preview both views of each original wallpaper.';
+
+  @override
+  String get duoWebEmpty => 'The first Duo collection is in review.';
+
+  @override
+  String get duoWebEmptyBody => 'Explore Prism while each wallpaper is checked in both views.';
+
+  @override
+  String get duoWebFolded => 'Folded preview';
+
+  @override
+  String get duoWebUnfolded => 'Unfolded original';
+
+  @override
+  String get duoWebPresetNotice =>
+      'These previews use Prism\'s right-side preset, not an automatic Apple crop. Save the full original, align it manually, and check both folded and unfolded views in the system wallpaper preview.';
+
+  @override
+  String get duoWebOpenPrism => 'Open in Prism';
+
+  @override
+  String get duoWebExplore => 'Explore Prism';
+
+  @override
+  String get duoWebAppStore => 'Download on the App Store';
+
+  @override
+  String get duoWebPlayStore => 'Get it on Google Play';
 
   @override
   String get economyExportFailedLabel => 'Export failed';
@@ -11426,4 +11568,261 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportShakeToReportSubtitle => 'Shake your phone on any screen to report a problem';
+
+  @override
+  String get accountShowAiWallpapers => 'Show AI-generated wallpapers';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'Turn off to see only human-made walls';
+
+  @override
+  String get accountShowAiWallpapersFootnote => 'Hiding AI wallpapers never hides your own uploads or favourites.';
+
+  @override
+  String get wallpaperFeedHideAi => 'Hide AI';
+
+  @override
+  String get wallpaperAiGenerated => 'AI-generated';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return 'Made with $model';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'Made with AI';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'Report wrong label';
+
+  @override
+  String get feedNoHumanWalls => 'No human-made walls here yet';
+
+  @override
+  String get feedShowAiWalls => 'Show AI walls';
+
+  @override
+  String get dailyMomentTitle => 'Daily moment';
+
+  @override
+  String get dailyMomentStreakTitle => 'Daily streak';
+
+  @override
+  String get dailyMomentChestTitle => 'Daily chest';
+
+  @override
+  String get dailyMomentSpinTitle => 'Free spin';
+
+  @override
+  String get dailyMomentUnavailable => 'This reward is no longer available today.';
+
+  @override
+  String get dailyMomentError => 'Could not load your reward. Try again.';
+
+  @override
+  String dailyMomentStreakReceipt(int coins, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins coins earned',
+      one: '$coins coin earned',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'streak of $days days',
+      one: 'streak of $days day',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String get challengeTitle => 'Weekly challenge';
+
+  @override
+  String get challengeRules => 'Up to 3 entries, each reviewed before appearing.';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'Vote for other creators until $date UTC.';
+  }
+
+  @override
+  String get challengeUpload => 'Upload an entry';
+
+  @override
+  String get challengeAi => 'Create with AI';
+
+  @override
+  String get challengeTop => 'Top';
+
+  @override
+  String get challengeNew => 'New';
+
+  @override
+  String get challengePast => 'Past challenges';
+
+  @override
+  String get challengeEmpty => 'Approved entries will appear here.';
+
+  @override
+  String get challengeWaiting => 'Voting has closed. We are waiting for entry reviews before choosing a winner.';
+
+  @override
+  String get challengeClosed => 'This challenge has ended.';
+
+  @override
+  String get challengeScheduled => 'This challenge has not opened yet.';
+
+  @override
+  String get challengeNoWinner => 'No winner for this challenge.';
+
+  @override
+  String challengeWinner(String name) {
+    return 'Winner · $name';
+  }
+
+  @override
+  String get challengeVote => 'Vote';
+
+  @override
+  String get challengeUnvote => 'Remove vote';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votes',
+      one: '1 vote',
+      zero: '0 votes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentCosmetic => 'Cosmetic added to your collection';
+
+  @override
+  String dailyMomentReward(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins coins earned',
+      one: '$coins coin earned',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentChestBody => 'Open today’s chest when you’re ready.';
+
+  @override
+  String get dailyMomentSpinBody => 'Your free spin is ready.';
+
+  @override
+  String dailyMomentBalance(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins coins', one: '$coins coin');
+    return 'Balance: $_temp0';
+  }
+
+  @override
+  String get dailyMomentDone => 'Done';
+
+  @override
+  String get dailyMomentRetry => 'Try again';
+
+  @override
+  String get dailyMomentContinue => 'Continue';
+
+  @override
+  String get dailyMomentOpenFree => 'Open free chest';
+
+  @override
+  String dailyMomentOpenChest(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins coins', one: '$coins coin');
+    return 'Open for $_temp0';
+  }
+
+  @override
+  String get dailyMomentSpinAction => 'Take free spin';
+
+  @override
+  String get dailyMomentClose => 'Close daily moment';
+
+  @override
+  String get dailyMomentToday => 'Today';
+
+  @override
+  String get dailyMomentReady => 'Daily rewards are ready';
+
+  @override
+  String get dailyMomentComplete => 'Today is complete';
+
+  @override
+  String get dailyMomentResume => 'Continue daily moment';
+
+  @override
+  String get dailyMomentMore => 'More';
+
+  @override
+  String get dailyMomentQuests => 'Quests';
+
+  @override
+  String get dailyMomentChestLeft => 'Daily chest available';
+
+  @override
+  String get dailyMomentSpinLeft => 'Free spin available';
+
+  @override
+  String get dailyMomentStreakLeft => 'Daily streak available';
+
+  @override
+  String get challengeShare => 'Share challenge';
+
+  @override
+  String get challengeRemove => 'Remove challenge';
+
+  @override
+  String challengeContext(String theme) {
+    return 'Challenge · $theme';
+  }
+
+  @override
+  String get challengeError => 'We could not load this challenge. Try again.';
+
+  @override
+  String get challengeVoteError => 'Your vote could not be saved. Try again.';
+
+  @override
+  String get challengeSignIn => 'Sign in to enter or vote.';
+
+  @override
+  String get challengeLimit => 'You have entered 3 wallpapers in this challenge.';
+
+  @override
+  String get challengeRetry => 'Try again';
+
+  @override
+  String get challengeOwnEntry => 'You cannot vote for your own entry.';
+
+  @override
+  String get challengeDailyLimit => 'Your daily voting limit is reached.';
+
+  @override
+  String get challengeMissing => 'This challenge or entry is no longer available.';
+
+  @override
+  String get challengeBadge => 'Challenge Winner';
+
+  @override
+  String get challengeBadgeDescription => 'Win a weekly challenge';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'Your wallpaper won';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'Your entry won the weekly challenge: $theme.';
+  }
 }

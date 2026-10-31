@@ -10,6 +10,8 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
+import 'package:Prism/features/daily_flow/domain/daily_moment_repository.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
@@ -19,6 +21,45 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   const DeepLinkParser parser = DeepLinkParser();
+  setUp(() => DailyMomentConfig.enabledOverride = false);
+  tearDown(() => DailyMomentConfig.enabledOverride = null);
+
+  test('daily moment links respect the feature flag', () async {
+    for (final enabled in <bool>[false, true]) {
+      DailyMomentConfig.enabledOverride = enabled;
+      for (final uri in <String>['prism://daily-moment', 'https://prismwalls.com/daily-moment']) {
+        final intent = parser.parse(Uri.parse(uri));
+        expect(intent, isA<PageLinkIntent>());
+        final route = await routeForPageLink(intent as PageLinkIntent);
+        if (enabled) {
+          expect(route, isA<DailyMomentRoute>());
+          final args = (route! as DailyMomentRoute).args!;
+          expect(args.requestedStep, isNull);
+          expect(args.deepLink, isTrue);
+        } else {
+          expect(route, isA<RewardsRoute>());
+        }
+      }
+    }
+  });
+
+  test('daily reward links preserve the requested step with the flag on', () async {
+    DailyMomentConfig.enabledOverride = true;
+    for (final entry in <String, DailyMomentStep>{
+      'prism://daily-chest': DailyMomentStep.chest,
+      'prism://spin-wheel': DailyMomentStep.spin,
+      'https://prismwalls.com/daily-chest': DailyMomentStep.chest,
+      'https://prismwalls.com/spin-wheel': DailyMomentStep.spin,
+    }.entries) {
+      final action = parser.parse(Uri.parse(entry.key));
+      expect(action, isA<PageLinkIntent>());
+      final route = await routeForPageLink(action as PageLinkIntent);
+      expect(route, isA<DailyMomentRoute>());
+      final args = (route! as DailyMomentRoute).args!;
+      expect(args.requestedStep, entry.value);
+      expect(args.deepLink, isTrue);
+    }
+  });
 
   test('every catalog example resolves to its declared AutoRoute page', () async {
     final Directory tempDirectory = await Directory.systemTemp.createTemp('deep-link-catalog-');
@@ -161,8 +202,13 @@ void main() {
       'ReviewPhotoPreviewRoute',
     });
 
+    DailyMomentConfig.enabledOverride = true;
+    final moment = await routeForPageLink(parser.parse(Uri.parse('prism://daily-chest')) as PageLinkIntent);
+    expect(moment, isA<DailyMomentRoute>());
+    reachablePages.addAll(_routeNames(moment!));
     final Set<String> appPages = _appRouteNames(AppRouter().routes)..remove('SplashWidgetRoute');
-    expect(appPages, hasLength(59));
+    expect(appPages, hasLength(61));
+    expect(appPages, containsAll(<String>['DailyMomentRoute', 'WeeklyChallengeRoute']));
     expect(
       appPages.difference(reachablePages),
       isEmpty,
@@ -427,6 +473,33 @@ void main() {
     }
   });
 
+  test('catalog clock preview keeps Duo tags and enables wide-wall device selection', () async {
+    for (final bool duo in <bool>[false, true]) {
+      final entity = PrismFeedItem(
+        id: 'wall1',
+        wallpaper: PrismWallpaper(
+          core: const WallpaperCore(
+            id: 'wall1',
+            source: WallpaperSource.prism,
+            fullUrl: 'https://images.example.com/original/wall1.jpg',
+            thumbnailUrl: 'https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg',
+            width: 2670,
+            height: 1878,
+          ),
+          tags: duo ? const <String>['duo-reveal'] : const <String>[],
+        ),
+      );
+      final route = await routeForPageLink(
+        parser.parse(Uri.parse('/clock-preview?wallpaperId=wall1')) as PageLinkIntent,
+        wallpaperLookup: ({required String wallId, required WallpaperSource source}) async => entity,
+      );
+      final args = route!.args! as ClockPreviewRouteArgs;
+      expect(args.duoReveal, duo);
+      expect(args.allowDuo, isTrue);
+      expect(args.link, isNot(entity.fullUrl));
+    }
+  });
+
   test('input workflows and debug tabs are allowlisted', () async {
     expect(DeepLinkRouteCatalog.match(Uri.parse('/choose-wallpaper?workflow=photoPreview')), isNotNull);
     expect(DeepLinkRouteCatalog.match(Uri.parse('/choose-wallpaper?workflow=clockPreview')), isNotNull);
@@ -514,6 +587,7 @@ String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (targe
   DeepLinkPageTarget.uploadInput ||
   DeepLinkPageTarget.editWallInput => 'DeepLinkInputRoute',
   DeepLinkPageTarget.ai => 'AiTabRoute',
+  DeepLinkPageTarget.weeklyChallenge => 'WeeklyChallengeRoute',
   DeepLinkPageTarget.wallpaperDetail => 'WallpaperDetailRoute',
   DeepLinkPageTarget.wotdArchive => 'WotdArchiveRoute',
   DeepLinkPageTarget.editProfile => 'EditProfilePanelRoute',
@@ -552,6 +626,7 @@ String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (targe
   DeepLinkPageTarget.drops => 'DropsRoute',
   DeepLinkPageTarget.dropDetail => 'DropDetailRoute',
   DeepLinkPageTarget.dropPreview => 'DropPreviewRoute',
+  DeepLinkPageTarget.dailyMoment => 'RewardsRoute',
   DeepLinkPageTarget.dailyChest => 'DailyChestRoute',
   DeepLinkPageTarget.spinWheel => 'SpinWheelRoute',
   DeepLinkPageTarget.premium => 'PremiumRoute',

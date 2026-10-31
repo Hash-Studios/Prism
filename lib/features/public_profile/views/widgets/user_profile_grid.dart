@@ -1,9 +1,13 @@
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/premium_wall_utils.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
@@ -18,21 +22,139 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// The wallpapers of a profile, as a sliver: empty and error states, then the shared grid with a See more cell.
-/// [ownProfile] changes the empty state into an invitation to upload.
-class UserProfileGrid extends StatelessWidget {
+/// [ownProfile] changes the empty state into an invitation to upload. It also keeps the user's own walls visible when
+/// AI walls are hidden.
+class UserProfileGrid extends StatefulWidget {
   const UserProfileGrid({super.key, this.ownProfile = false});
 
   final bool ownProfile;
 
   @override
+  State<UserProfileGrid> createState() => _UserProfileGridState();
+}
+
+class _UserProfileGridState extends State<UserProfileGrid> {
+  static const int _maxEmptyPages = 5;
+
+  int _emptyPagesLoaded = 0;
+  bool _emptyPageLoadScheduled = false;
+  String? _lastProfileId;
+
+  int? _visibleWallCountAtSeeMore;
+  int _seeMorePages = 0;
+  String? _seeMoreProfileId;
+
+  bool get ownProfile => widget.ownProfile;
+
+  /// A page that hides every wall asks for the next one, up to [_maxEmptyPages] times.
+  void _loadMoreWhileEmpty(PublicProfileBloc bloc, SettingsLocalDataSource settings, String profileId) {
+    if (_emptyPageLoadScheduled) return;
+    _emptyPageLoadScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _emptyPageLoadScheduled = false;
+      final PublicProfileState current = bloc.state;
+      if (!mounted ||
+          bloc.isClosed ||
+          ownProfile ||
+          AiContentFilter.showsAi(settings) ||
+          current.profileId != profileId ||
+          current.status != LoadStatus.success ||
+          current.isFetchingMoreWalls ||
+          !current.hasMoreWalls ||
+          _emptyPagesLoaded >= _maxEmptyPages) {
+        return;
+      }
+      _emptyPagesLoaded += 1;
+      bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
+    });
+  }
+
+  void _seeMore(PublicProfileBloc bloc, int visible, bool hideAi) {
+    if (!ownProfile && hideAi) {
+      _visibleWallCountAtSeeMore = visible;
+      _seeMorePages = 1;
+      _seeMoreProfileId = bloc.state.profileId;
+    } else {
+      _clearSeeMore();
+    }
+    bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
+  }
+
+  void _continueSeeMore(PublicProfileBloc bloc, PublicProfileState state, bool hideAi) {
+    final int? from = _visibleWallCountAtSeeMore;
+    if (from == null) return;
+    if (ownProfile ||
+        !hideAi ||
+        state.profileId != _seeMoreProfileId ||
+        state.status != LoadStatus.success ||
+        !state.hasMoreWalls) {
+      _clearSeeMore();
+      return;
+    }
+    final List<PublicProfileWallEntity> visibleWalls = state.walls
+        .where((wall) => !wall.isAiGenerated)
+        .toList(growable: false);
+    if (visibleWalls.length > from || _seeMorePages >= _maxEmptyPages) {
+      _clearSeeMore();
+      return;
+    }
+    _seeMorePages += 1;
+    bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
+  }
+
+  void _clearSeeMore() {
+    _visibleWallCountAtSeeMore = null;
+    _seeMorePages = 0;
+    _seeMoreProfileId = null;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final PublicProfileBloc bloc = context.read<PublicProfileBloc>();
-    return BlocBuilder<PublicProfileBloc, PublicProfileState>(
+    return ValueListenableBuilder<int>(
+      valueListenable: personalizedFeedSettingsRevision,
+      builder: (context, _, _) => _buildGrid(context, bloc),
+    );
+  }
+
+  Widget _buildGrid(BuildContext context, PublicProfileBloc bloc) {
+    final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+    final bool hideAi = !ownProfile && !AiContentFilter.showsAi(settings);
+    return BlocConsumer<PublicProfileBloc, PublicProfileState>(
+      listenWhen: (previous, current) {
+        return current.status == LoadStatus.loading ||
+            (_visibleWallCountAtSeeMore != null &&
+                ((previous.isFetchingMoreWalls && !current.isFetchingMoreWalls) ||
+                    current.profileId != _seeMoreProfileId ||
+                    (current.status != LoadStatus.success && !current.isFetchingMoreWalls)));
+      },
+      listener: (context, state) {
+        if (state.status == LoadStatus.loading) {
+          _emptyPagesLoaded = 0;
+          _clearSeeMore();
+          return;
+        }
+        if (_visibleWallCountAtSeeMore == null) return;
+        if (state.profileId != _seeMoreProfileId ||
+            (state.status == LoadStatus.failure && !state.isFetchingMoreWalls)) {
+          _clearSeeMore();
+          return;
+        }
+        _continueSeeMore(bloc, state, !ownProfile && !AiContentFilter.showsAi(settings));
+      },
       builder: (context, state) {
+        if (_lastProfileId != state.profileId) {
+          _lastProfileId = state.profileId;
+          _emptyPagesLoaded = 0;
+          _clearSeeMore();
+          _emptyPageLoadScheduled = false;
+        }
         if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.walls.isEmpty)) {
           return const SliverToBoxAdapter(child: LoadingCards());
         }
-        final List<PublicProfileWallEntity> walls = state.walls;
+        final List<PublicProfileWallEntity> walls = hideAi
+            ? state.walls.where((wall) => !wall.isAiGenerated).toList(growable: false)
+            : state.walls;
         final bool failed = state.status == LoadStatus.failure;
         final Widget retryState = GlintState(
           kind: GlintStateKind.error,
@@ -41,6 +163,46 @@ class UserProfileGrid extends StatelessWidget {
           actionLabel: context.l10n.accountTryAgain,
           onAction: () => bloc.add(const PublicProfileEvent.refreshRequested()),
         );
+        if (walls.isNotEmpty || !hideAi) _emptyPagesLoaded = 0;
+        final bool morePagesToTry = hideAi && state.hasMoreWalls && !failed && _emptyPagesLoaded < _maxEmptyPages;
+        if (walls.isEmpty && hideAi && state.isFetchingMoreWalls) {
+          return const SliverToBoxAdapter(child: LoadingCards());
+        }
+        if (walls.isEmpty && morePagesToTry) {
+          if (!state.isFetchingMoreWalls && state.status != LoadStatus.loading) {
+            _loadMoreWhileEmpty(bloc, settings, state.profileId);
+          }
+          return const SliverToBoxAdapter(child: LoadingCards());
+        }
+        if (walls.isEmpty && hideAi && !failed && state.walls.isNotEmpty) {
+          if (state.hasMoreWalls) {
+            return SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: PrismSpace.xxl),
+                child: PrismInlineState(
+                  icon: Icons.auto_awesome_rounded,
+                  title: context.l10n.accountNoWallpapersYet,
+                  actionLabel: context.l10n.wallpaperTryAgain,
+                  onAction: () => bloc.add(const PublicProfileEvent.fetchMoreWallsRequested()),
+                ),
+              ),
+            );
+          }
+          return SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: PrismSpace.xxl),
+              child: PrismInlineState(
+                icon: Icons.auto_awesome_rounded,
+                title: context.l10n.feedNoHumanWalls,
+                actionLabel: context.l10n.feedShowAiWalls,
+                onAction: () async {
+                  await setShowAiWallpapers(settings, true);
+                  if (mounted && !bloc.isClosed) bloc.add(const PublicProfileEvent.refreshRequested());
+                },
+              ),
+            ),
+          );
+        }
         if (walls.isEmpty) {
           return SliverToBoxAdapter(
             child: Padding(
@@ -78,7 +240,7 @@ class UserProfileGrid extends StatelessWidget {
                   if (index == walls.length) {
                     return SeeMoreButton(
                       seeMoreLoader: state.isFetchingMoreWalls,
-                      func: () => bloc.add(const PublicProfileEvent.fetchMoreWallsRequested()),
+                      func: () => _seeMore(bloc, walls.length, hideAi),
                     );
                   }
                   final PublicProfileWallEntity wall = walls[index];
