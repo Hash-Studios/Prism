@@ -372,6 +372,7 @@ class CoinsService with WidgetsBindingObserver {
     CoinSpendAction.wallpaperDownload,
     CoinSpendAction.premiumWallpaperDownload,
     CoinSpendAction.aiGeneration,
+    CoinSpendAction.premiumFilter,
   };
 
   /// Spends whose request id is stored until a definite reply, so a retry replays the same charge.
@@ -1393,23 +1394,35 @@ class CoinsService with WidgetsBindingObserver {
 
   String _utcDayKey() => _offsetDayKey(DateTime.now().toUtc(), 0);
 
+  /// Refunds a debit, queuing it for the payer when [userId] is supplied and that account cannot confirm the refund.
   Future<CoinMutationResult> refundSpend(
     CoinSpendAction action, {
     required String sourceTag,
     required String transactionId,
     String? reason,
-  }) {
+    String? userId,
+  }) async {
     if (transactionId.trim().isEmpty) {
-      return Future.value(
-        CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'missing_transaction_id'),
-      );
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'missing_transaction_id');
     }
-    return award(
-      CoinEarnAction.refund,
-      sourceTag: sourceTag,
-      reason: reason ?? 'refund_${action.name}',
-      transactionId: transactionId,
-    );
+    final String refundReason = reason ?? 'refund_${action.name}';
+    if (userId == null) {
+      return award(CoinEarnAction.refund, sourceTag: sourceTag, reason: refundReason, transactionId: transactionId);
+    }
+    if (_canMutateCoins() && app_state.prismUser.id == userId) {
+      final CoinMutationResult result = await award(
+        CoinEarnAction.refund,
+        sourceTag: sourceTag,
+        reason: refundReason,
+        transactionId: transactionId,
+      );
+      if (result.changed ||
+          (_canMutateCoins() && app_state.prismUser.id == userId && !_isRetryableRefundFailure(result))) {
+        return result;
+      }
+    }
+    await _rememberPendingRefund(transactionId, userId: userId, action: action, reason: refundReason);
+    return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'refund_queued');
   }
 
   Future<_AiGenerationReservationResult> reserveForAiGeneration({

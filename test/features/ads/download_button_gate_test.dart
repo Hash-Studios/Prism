@@ -216,6 +216,8 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
     await getIt<SettingsLocalDataSource>().delete(_ledgerKey);
     await getIt<SettingsLocalDataSource>().delete(_legacyMarkerKey);
+    await getIt<SettingsLocalDataSource>().delete('pendingAiRefunds');
+    CoinsService.instance.startPendingRetryWatch();
     await getIt<SettingsLocalDataSource>().delete('notificationPermissionPromptedV2');
     CoinsService.instance.abandonedDownloadAfter = const Duration(minutes: 2);
     CoinsService.instance.pendingRetryInterval = const Duration(seconds: 30);
@@ -268,6 +270,7 @@ void main() {
       await tester.runAsync(() => Future<void>.delayed(Duration.zero));
       await tester.pump(const Duration(milliseconds: 100));
     }
+    await tester.runAsync(() => Future<void>.sync(CoinsService.instance.startPendingRetryWatch));
   }
 
   Future<void> pumpUntil(WidgetTester tester, bool Function() condition) async {
@@ -1135,6 +1138,7 @@ void main() {
       tester,
     ) async {
       signInAgain();
+      final String payer = app_state.prismUser.id;
       int listCalls = 0;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
         listChannel,
@@ -1157,6 +1161,13 @@ void main() {
       expect(results().single.result, 'cancelled');
       expect(results().single.reason, 'account_changed');
       expect(fakeAnalytics.events.whereType<DownloadAttemptEvent>(), hasLength(1));
+      final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+      expect(settings.get<String>('pendingAiRefunds', defaultValue: ''), contains('"userId":"$payer"'));
+
+      signInAgain();
+      await tester.runAsync(CoinsService.instance.retryPendingRefunds);
+
+      expect(settings.get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
     });
 
     testWidgets('an account switch while finding a server-granted original reports the switch, not a failure', (

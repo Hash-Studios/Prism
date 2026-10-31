@@ -17,6 +17,7 @@ abstract interface class CoinGatePort {
   Future<CoinMutationResult> watchVerifiedReward(String placement);
   bool get isPremium;
   int get balance;
+  String get userId;
 
   /// Rewarded ads the user can still watch today, when the server has said so.
   int? get adsRemaining;
@@ -39,6 +40,7 @@ abstract interface class CoinGatePort {
     required String sourceTag,
     required String transactionId,
     required String reason,
+    required String userId,
   });
 
   /// Removes the ledger entry of a paid download whose save finished or whose refund was confirmed.
@@ -149,6 +151,9 @@ class AppCoinGatePort implements CoinGatePort {
   int get balance => CoinsService.instance.balanceNotifier.value;
 
   @override
+  String get userId => app_state.prismUser.id;
+
+  @override
   int? get adsRemaining => CoinsService.instance.adsRemainingToday;
 
   @override
@@ -182,7 +187,14 @@ class AppCoinGatePort implements CoinGatePort {
     required String sourceTag,
     required String transactionId,
     required String reason,
-  }) => CoinsService.instance.refundSpend(action, sourceTag: sourceTag, transactionId: transactionId, reason: reason);
+    required String userId,
+  }) => CoinsService.instance.refundSpend(
+    action,
+    sourceTag: sourceTag,
+    transactionId: transactionId,
+    reason: reason,
+    userId: userId,
+  );
 
   @override
   Future<void> clearPendingDownload(String txId) => CoinsService.instance.clearPendingDownload(txId);

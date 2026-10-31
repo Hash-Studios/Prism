@@ -88,6 +88,27 @@ void main() {
     },
   );
 
+  test('a failed action refunds the payer captured before the spend after the account changes', () async {
+    final String payer = port.userId;
+    final CoinGateResult result = await CoinGate(port).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        isMounted: () => true,
+        perform: () async {
+          port.userId = 'other-account';
+          return false;
+        },
+        choose: (_) async => CoinGateChoice.cancel,
+      ),
+    );
+
+    expect(result, CoinGateResult.failedRefunded);
+    expect(port.refundUserIds, <String>[payer]);
+  });
+
   test('premium user skips the spend and runs the action', () async {
     port.isPremium = true;
     expect(await CoinGate(port).run(spec()), CoinGateResult.performedFree);
@@ -950,6 +971,7 @@ class _ThrowingRefundPort extends FakeCoinGatePort {
     required String sourceTag,
     required String transactionId,
     required String reason,
+    required String userId,
   }) {
     log.add('refund-threw');
     return Future<CoinMutationResult>.error(StateError('refund failed'));
