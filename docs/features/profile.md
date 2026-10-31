@@ -53,6 +53,8 @@ The app never shows an email address as a name. `creatorLabel` uses, in order: t
 - After a follow, the app subscribes to the creator posts topics. It passes the creator `uid`, so the topic `posts_<uid>` needs no extra read.
 - The event `follow_result` has `action` (`follow` or `unfollow`) and `result` (`success` or `failure`).
 
+The "Followed by" line and the More like offer are covered in [creator-directory.md](creator-directory.md).
+
 ### Share links
 
 - **Share your Profile** builds `https://prismwalls.com/user/<username>`. The link never holds an email address. The preview title is `<name> (@username)`, and a name that looks like an email is replaced by the username.

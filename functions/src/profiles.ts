@@ -3,6 +3,7 @@ import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/ht
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {db, CALLABLE_REGIONS, REGION} from "./common";
 import {removeAllFolderFollows, removeOwnerPublicFolders} from "./publicFolders";
+import {CREATOR_DIRECTORY} from "./creatorDirectory";
 
 const USERS = "usersv2";
 const PROFILES = "profiles";
@@ -83,8 +84,10 @@ export async function syncPublicProfile(uid: string): Promise<boolean> {
     ]);
     if (!sourceSnap.exists || sourceSnap.data()?.deleted === true || deletionBarrier.data()?.closed === true) {
       tx.delete(profileRef);
+      tx.delete(db.collection(CREATOR_DIRECTORY).doc(uid));
       return true;
     }
+    if (sourceSnap.data()?.creatorDirectoryOptOut === true) tx.delete(db.collection(CREATOR_DIRECTORY).doc(uid));
     const count = profileSnap.data()?.followerCount;
     const followingCount = profileSnap.data()?.followingCount;
     const next = projectedProfile(
@@ -94,7 +97,10 @@ export async function syncPublicProfile(uid: string): Promise<boolean> {
     if (!profileSnap.exists || stableJson(profileSnap.data()) !== stableJson(next)) tx.set(profileRef, next);
     return false;
   });
-  if (removeGraph) await removeUidFollowGraph(uid);
+  if (removeGraph) {
+    await removeUidFollowGraph(uid);
+    await db.collection(CREATOR_DIRECTORY).doc(uid).delete();
+  }
   return removeGraph;
 }
 

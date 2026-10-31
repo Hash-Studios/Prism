@@ -34,6 +34,7 @@ import '../../support/fake_user_block_repository.dart';
 import '../../support/favourite_test_scope.dart';
 import '../../support/profile_user_fixture.dart';
 import '../../support/in_memory_local_store.dart';
+import '../creator_directory/creator_directory_test_support.dart';
 
 class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
 
@@ -137,6 +138,7 @@ void main() {
       ..registerFactory<PublicProfileBloc>(() => bloc)
       ..registerSingleton<PublicProfileRepository>(repository)
       ..registerSingleton<UserBlockRepository>(blocks);
+    registerCreatorDirectoryFakes(profileBloc: false);
     app_state.prismUser = profileUser(id: 'me', username: 'creator_01', bio: 'Hello', premium: true)
       ..name = 'Me Myself';
     whenListen(

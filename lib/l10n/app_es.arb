@@ -3372,5 +3372,21 @@
   "statsTipsTotal": "{count, plural, =1{1 propina} other{{count} propinas}}, {coins} monedas en total",
   "statsTipsWeek": "Semana del {date}: {count, plural, =1{1 propina} other{{count} propinas}}, {coins} monedas",
   "statsTipsWall": "{count, plural, =1{1 propina} other{{count} propinas}}, {coins} monedas",
-  "statsTipsEmpty": "Aún no hay propinas. Tus fans pueden darte propinas desde tus wallpapers y tu perfil."
+  "statsTipsEmpty": "Aún no hay propinas. Tus fans pueden darte propinas desde tus wallpapers y tu perfil.",
+  "creatorsToFollow": "Creadores para seguir",
+  "creatorsSeeAll": "Ver todo",
+  "creatorsTitle": "Creadores",
+  "creatorsFilterAll": "Todos",
+  "creatorsEmptyTitle": "Aún no hay creadores aquí",
+  "creatorsEmptyBody": "Prueba otra categoría.",
+  "creatorsLoadError": "No se pudieron cargar los creadores",
+  "creatorsOpenProfile": "Abrir el perfil de {name}",
+  "creatorsWallBy": "Fondo de pantalla de {name}",
+  "creatorsFollowedByOne": "Le sigue {first}",
+  "creatorsFollowedByTwo": "Le siguen {first} y {second}",
+  "creatorsFollowedByMany": "Le siguen {first}, {second} y {others, plural, =1{1 persona más que sigues} other{{others} personas más que sigues}}",
+  "creatorsMoreLike": "Más como {name}",
+  "creatorsSimilarSubtitle": "Creadores con un estilo parecido",
+  "creatorsShowMeTitle": "Mostrarme en Creadores para seguir",
+  "creatorsShowMeBody": "Otros pueden encontrar tu perfil y tus mejores fondos de pantalla"
 }

@@ -21,6 +21,7 @@ import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.da
 import 'package:Prism/features/auto_rotate/views/pages/auto_rotate_screen.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
+import 'package:Prism/features/creator_directory/views/pages/creators_page.dart';
 import 'package:Prism/features/creator_stats/views/pages/creator_stats_page.dart';
 import 'package:Prism/features/daily_chest/views/pages/daily_chest_page.dart';
 import 'package:Prism/features/daily_flow/views/daily_moment_page.dart';
@@ -206,6 +207,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/mood/:moodId', page: MoodRoute.page),
     AutoRoute(path: '/gallery', page: GalleryRoute.page),
     AutoRoute(path: '/requests', page: WallRequestsRoute.page),
+    AutoRoute(path: '/creators', page: CreatorsRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/challenges/:challengeId', page: WeeklyChallengeRoute.page),
     AutoRoute(path: '/user/:identifier', page: ProfileRoute.page),
     AutoRoute(path: '/followers', page: FollowersRoute.page),

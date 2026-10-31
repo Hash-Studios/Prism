@@ -12336,4 +12336,70 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get statsTipsEmpty =>
       'Noch keine Trinkgelder. Fans können dir über deine Wallpapers und dein Profil Trinkgeld geben.';
+
+  @override
+  String get creatorsToFollow => 'Kreative zum Folgen';
+
+  @override
+  String get creatorsSeeAll => 'Alle ansehen';
+
+  @override
+  String get creatorsTitle => 'Kreative';
+
+  @override
+  String get creatorsFilterAll => 'Alle';
+
+  @override
+  String get creatorsEmptyTitle => 'Noch keine Kreative hier';
+
+  @override
+  String get creatorsEmptyBody => 'Probiere eine andere Kategorie.';
+
+  @override
+  String get creatorsLoadError => 'Kreative konnten nicht geladen werden';
+
+  @override
+  String creatorsOpenProfile(String name) {
+    return 'Profil von $name öffnen';
+  }
+
+  @override
+  String creatorsWallBy(String name) {
+    return 'Hintergrundbild von $name';
+  }
+
+  @override
+  String creatorsFollowedByOne(String first) {
+    return 'Gefolgt von $first';
+  }
+
+  @override
+  String creatorsFollowedByTwo(String first, String second) {
+    return 'Gefolgt von $first und $second';
+  }
+
+  @override
+  String creatorsFollowedByMany(String first, String second, int others) {
+    String _temp0 = intl.Intl.pluralLogic(
+      others,
+      locale: localeName,
+      other: '$others weiteren, denen du folgst',
+      one: '1 weiteren, dem du folgst',
+    );
+    return 'Gefolgt von $first, $second und $_temp0';
+  }
+
+  @override
+  String creatorsMoreLike(String name) {
+    return 'Mehr wie $name';
+  }
+
+  @override
+  String get creatorsSimilarSubtitle => 'Kreative mit ähnlichem Stil';
+
+  @override
+  String get creatorsShowMeTitle => 'Mich in Kreative zum Folgen anzeigen';
+
+  @override
+  String get creatorsShowMeBody => 'Andere können dein Profil und deine besten Hintergrundbilder finden';
 }

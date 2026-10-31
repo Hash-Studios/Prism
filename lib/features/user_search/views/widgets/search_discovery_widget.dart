@@ -2,6 +2,7 @@ import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
 import 'package:Prism/features/user_search/views/widgets/search_discovery_sections.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -67,6 +68,7 @@ class SearchDiscoveryWidget extends StatelessWidget {
           if (onColorPressed != null) ColourSection(onPressed: onColorPressed!),
           const TrendingSection(),
           const CategorySection(),
+          const CreatorsSection(source: 'search'),
           const SizedBox(height: PrismSpace.bottomBarClearance),
         ],
       ),

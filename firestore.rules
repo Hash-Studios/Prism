@@ -61,6 +61,7 @@ service cloud.firestore {
           && request.resource.data.get('username', '') == ''
           && !('usernameLower' in request.resource.data)
           && ownerAppOpenValuesOk(request.resource.data)
+          && request.resource.data.get('creatorDirectoryOptOut', false) is bool
           && request.resource.data.get('coins', 0) == 0
           && request.resource.data.get('premium', false) == false
           && request.resource.data.get('subscriptionTier', 'free') == 'free'
@@ -124,6 +125,11 @@ service cloud.firestore {
     function ownerThemePrefsOk() {
       return !('themePrefs' in request.resource.data.diff(resource.data).affectedKeys())
         || validThemePrefs(request.resource.data.themePrefs);
+    }
+
+    function ownerDirectoryOptOutOk() {
+      return !('creatorDirectoryOptOut' in request.resource.data.diff(resource.data).affectedKeys())
+        || request.resource.data.creatorDirectoryOptOut is bool;
     }
 
     function wallServerKeysAbsent() {
@@ -274,8 +280,8 @@ service cloud.firestore {
             'name', 'profilePhoto', 'coverPhoto', 'bio', 'links', 'lastLoginAt', 'loggedIn',
             'interestCategories', 'onboardingV2', 'uploadsWeekStart',
             'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'coinState',
-            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs'
-          ]) && ownerCoinStateOk() && ownerAppOpenOk() && ownerThemePrefsOk())
+            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs', 'creatorDirectoryOptOut'
+          ]) && ownerCoinStateOk() && ownerAppOpenOk() && ownerThemePrefsOk() && ownerDirectoryOptOutOk())
           || isConfiguredAdmin();
       allow delete: if isConfiguredAdmin();
 
@@ -442,6 +448,13 @@ service cloud.firestore {
       match /followers/{followerUid} {
         allow read, write: if false;
       }
+    }
+
+    // Creator directory: the server projection of public profiles and walls (functions/src/creatorDirectory.ts).
+    // Only the Admin SDK writes it. The app hides blocked creators on its side.
+    match /creatorDirectory/{uid} {
+      allow read: if isSignedIn();
+      allow write: if false;
     }
 
     // Public profile documents contain only the server-projected profile allowlist.

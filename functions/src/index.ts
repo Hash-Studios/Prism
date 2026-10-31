@@ -24,6 +24,7 @@ export {submitContentReport} from "./submitContentReport";
 export {onContentReportCreated} from "./onContentReportCreated";
 export {blockUser, unblockUser} from "./userBlockCallables";
 export {projectUserProfile, setFollow} from "./profiles";
+export {buildCreatorDirectory, getFollowedBy} from "./creatorDirectory";
 export {onWallAuthoredContentWritten, onSetupAuthoredContentWritten} from "./authoredContentUid";
 export {githubPutFile, githubDeleteFile} from "./githubContent";
 export {onOwnedWallWritten, onR2TombstoneCleanup} from "./ownedAssetDelivery";

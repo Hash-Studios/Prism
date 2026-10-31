@@ -12155,4 +12155,70 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statsTipsEmpty => 'No tips yet. Fans can tip you from your walls and your profile.';
+
+  @override
+  String get creatorsToFollow => 'Creators to follow';
+
+  @override
+  String get creatorsSeeAll => 'See all';
+
+  @override
+  String get creatorsTitle => 'Creators';
+
+  @override
+  String get creatorsFilterAll => 'All';
+
+  @override
+  String get creatorsEmptyTitle => 'No creators here yet';
+
+  @override
+  String get creatorsEmptyBody => 'Try another category.';
+
+  @override
+  String get creatorsLoadError => 'Couldn\'t load creators';
+
+  @override
+  String creatorsOpenProfile(String name) {
+    return 'Open $name\'s profile';
+  }
+
+  @override
+  String creatorsWallBy(String name) {
+    return 'Wallpaper by $name';
+  }
+
+  @override
+  String creatorsFollowedByOne(String first) {
+    return 'Followed by $first';
+  }
+
+  @override
+  String creatorsFollowedByTwo(String first, String second) {
+    return 'Followed by $first and $second';
+  }
+
+  @override
+  String creatorsFollowedByMany(String first, String second, int others) {
+    String _temp0 = intl.Intl.pluralLogic(
+      others,
+      locale: localeName,
+      other: '$others others you follow',
+      one: '1 other you follow',
+    );
+    return 'Followed by $first, $second and $_temp0';
+  }
+
+  @override
+  String creatorsMoreLike(String name) {
+    return 'More like $name';
+  }
+
+  @override
+  String get creatorsSimilarSubtitle => 'Creators with a similar style';
+
+  @override
+  String get creatorsShowMeTitle => 'Show me in Creators to follow';
+
+  @override
+  String get creatorsShowMeBody => 'Others can find your profile and top wallpapers';
 }

@@ -49,6 +49,17 @@ import '../../features/category_feed/domain/repositories/category_feed_repositor
     as _i563;
 import '../../features/category_feed/domain/usecases/category_feed_usecases.dart'
     as _i301;
+import '../../features/creator_directory/biz/creator_directory_cubit.dart'
+    as _i361;
+import '../../features/creator_directory/biz/creator_directory_opt_out_cubit.dart'
+    as _i686;
+import '../../features/creator_directory/biz/followed_by_cubit.dart' as _i720;
+import '../../features/creator_directory/biz/similar_creators_offer_session.dart'
+    as _i147;
+import '../../features/creator_directory/data/creator_directory_repository_impl.dart'
+    as _i1049;
+import '../../features/creator_directory/domain/creator_directory_repository.dart'
+    as _i612;
 import '../../features/creator_stats/biz/bloc/creator_stats_bloc.j.dart'
     as _i1061;
 import '../../features/creator_stats/data/creator_stats_repository_impl.dart'
@@ -736,6 +747,12 @@ _i174.GetIt initGetIt(
       gh<_i112.UserBlockRepository>(),
     ),
   );
+  gh.lazySingleton<_i612.CreatorDirectoryRepository>(
+    () => _i1049.CreatorDirectoryRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i112.UserBlockRepository>(),
+    ),
+  );
   gh.lazySingleton<_i446.FetchPublicProfileWallsUseCase>(
     () => _i446.FetchPublicProfileWallsUseCase(
       gh<_i817.PublicProfileRepository>(),
@@ -797,6 +814,19 @@ _i174.GetIt initGetIt(
       gh<_i727.PrismWallpaperRepository>(),
     ),
   );
+  gh.lazySingleton<_i147.SimilarCreatorsOfferSession>(
+    () => _i147.SimilarCreatorsOfferSession(
+      gh<_i612.CreatorDirectoryRepository>(),
+    ),
+  );
+  gh.factory<_i686.CreatorDirectoryOptOutCubit>(
+    () => _i686.CreatorDirectoryOptOutCubit(
+      gh<_i612.CreatorDirectoryRepository>(),
+    ),
+  );
+  gh.factory<_i720.FollowedByCubit>(
+    () => _i720.FollowedByCubit(gh<_i612.CreatorDirectoryRepository>()),
+  );
   gh.lazySingleton<_i887.TasteQuizRepository>(
     () => _i939.TasteQuizRepositoryImpl(
       gh<_i563.CategoryFeedRepository>(),
@@ -831,6 +861,12 @@ _i174.GetIt initGetIt(
     () => _i195.CategoryFeedBloc(
       gh<_i301.LoadCategoriesUseCase>(),
       gh<_i301.FetchCategoryFeedUseCase>(),
+      gh<_i112.UserBlockRepository>(),
+    ),
+  );
+  gh.factory<_i361.CreatorDirectoryCubit>(
+    () => _i361.CreatorDirectoryCubit(
+      gh<_i612.CreatorDirectoryRepository>(),
       gh<_i112.UserBlockRepository>(),
     ),
   );

@@ -24,6 +24,7 @@ import 'package:mocktail/mocktail.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/fake_user_block_repository.dart';
 import '../../support/profile_user_fixture.dart';
+import '../creator_directory/creator_directory_test_support.dart';
 
 final AppLocalizationsEn _l10n = AppLocalizationsEn();
 
@@ -64,6 +65,7 @@ void main() {
       ).thenReturn(PublicProfileState.initial().copyWith(profileId: 'user-uid', status: LoadStatus.success));
       return bloc;
     });
+    registerCreatorDirectoryFakes(profileBloc: false);
     AnalyticsRuntime.instance = FakeAppAnalytics();
     app_state.prismUser = profileUser(profilePhoto: '', username: 'creator', bio: 'My wallpaper collection');
   });
