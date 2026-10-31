@@ -323,7 +323,7 @@ void main() {
   Future<dynamic> Function(String name, Map<String, dynamic> parameters) offlineRefunds() => (name, parameters) async {
     if (name == 'spendCoins') {
       spendCalls.add(parameters);
-      return _spent;
+      return <String, Object>{..._spent, 'transactionId': 'spend_${backend.userId}_${parameters['requestId']}'};
     }
     throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
   };
