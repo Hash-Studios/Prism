@@ -52,7 +52,7 @@ class CreatorStatsEmulator {
 
   /// Must equal the native demo config written by `tool/creator_stats_qa/native.cjs`.
   static FirebaseOptions options(TargetPlatform platform) => FirebaseOptions(
-    apiKey: 'AIzaSyDemoPrismLocalOnly00000000000000000',
+    apiKey: 'AIzaSyDemoPrismLocalOnly000000000000000',
     appId: platform == TargetPlatform.iOS
         ? '1:123456789012:ios:0000000000000000000000'
         : '1:123456789012:android:0000000000000000000000',

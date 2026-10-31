@@ -34,6 +34,11 @@ void main() {
     for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
       final options = CreatorStatsEmulator.options(platform);
       expect(options.projectId, 'demo-prism');
+      expect(
+        options.apiKey,
+        matches(RegExp(r'^AIza[0-9A-Za-z_-]{35}$')),
+        reason: 'Native SDKs reject other key shapes',
+      );
       expect(native, contains("'${options.apiKey}'"));
       expect(native, contains(options.appId));
       expect(native, contains("'${options.messagingSenderId}'"));
