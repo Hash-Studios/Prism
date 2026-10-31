@@ -52,6 +52,7 @@ class _ResubmitWallScreenState extends State<ResubmitWallScreen> {
 
   Future<void> _choose() async {
     if (picking) return;
+    FocusScope.of(context).unfocus();
     setState(() => picking = true);
     try {
       final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -66,6 +67,7 @@ class _ResubmitWallScreenState extends State<ResubmitWallScreen> {
   void _continue(ResubmissionPreparation preparation) {
     if (app_state.prismUser.id != cubit.uid || preparation.original == null) return;
     if (formKey.currentState?.flush() == false) return;
+    FocusScope.of(context).unfocus();
     final seed = preparation.seed;
     context.router.push(
       UploadWallRoute(

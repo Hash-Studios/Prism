@@ -18,9 +18,11 @@ import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/pending_image_picker.dart';
 import '../../support/wait_for_real_io.dart';
 
 class _Firestore extends Mock implements FirestoreClient {
@@ -44,6 +46,8 @@ class _Firestore extends Mock implements FirestoreClient {
 }
 
 class _Cubit extends MockCubit<ResubmissionState> implements ResubmissionCubit {}
+
+class _Router extends Mock implements StackRouter {}
 
 class _DraftStore extends UploadDraftStore {
   @override
@@ -138,6 +142,68 @@ void main() {
     previousReason: 'Please remove the border',
     metadata: SubmissionMetadata(title: 'Dunes', description: 'At sunset', category: 'Nature', tags: ['sand']),
   );
+
+  setUpAll(() => registerFallbackValue(UploadWallRoute(image: File('/tmp/original.jpg'))));
+
+  for (final field in ['Title', 'Description']) {
+    for (final action in ['Save', 'Choose image']) {
+      testWidgets('resubmit releases $field focus before $action', (tester) async {
+        tester.view.physicalSize = const Size(500, 1200);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final cubit = _Cubit();
+        when(() => cubit.uid).thenReturn(app_state.prismUser.id);
+        when(() => cubit.state).thenReturn(
+          ResubmissionState(
+            loading: false,
+            preparation: ResubmissionPreparation(seed: seed, original: File('/tmp/original.jpg')),
+          ),
+        );
+        final router = _Router();
+        // Keep the form mounted so route focus handling cannot hide a missing unfocus.
+        when(() => router.push(any())).thenAnswer((_) async => null);
+        final previousPicker = ImagePickerPlatform.instance;
+        final picker = PendingImagePicker();
+        ImagePickerPlatform.instance = picker;
+        addTearDown(() => ImagePickerPlatform.instance = previousPicker);
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: StackRouterScope(
+              controller: router,
+              stateHash: 0,
+              child: ResubmitWallScreen(rejectedDocId: 'rejected-1', cubit: cubit),
+            ),
+          ),
+        );
+        await tester.showKeyboard(find.widgetWithText(TextField, field));
+        expect(tester.testTextInput.isVisible, isTrue);
+        expect(
+          tester.widgetList<EditableText>(find.byType(EditableText)).any((text) => text.focusNode.hasFocus),
+          isTrue,
+        );
+
+        await tester.tap(find.text(action));
+        await tester.pump();
+
+        expect(
+          tester.widgetList<EditableText>(find.byType(EditableText)).any((text) => text.focusNode.hasFocus),
+          isFalse,
+        );
+        expect(tester.testTextInput.isVisible, isFalse);
+        if (action == 'Save') {
+          final route = verify(() => router.push(captureAny())).captured.single as UploadWallRoute;
+          expect(route.args!.resubmission!.metadata.title, 'Dunes');
+        } else {
+          expect(picker.calls, 1);
+          picker.finish([]);
+          await tester.pump();
+        }
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
 
   testWidgets('successful resubmission returns to the existing review and Back skips the stale form', (tester) async {
     AnalyticsRuntime.instance = FakeAppAnalytics();
