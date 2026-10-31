@@ -216,7 +216,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      final List<dynamic> sent = verify(() => bloc.add(captureAny())).captured;
+      final List<Object?> sent = verify(() => bloc.add(captureAny())).captured;
       expect(
         sent.single,
         const PublicProfileEvent.followChangeRequested(
