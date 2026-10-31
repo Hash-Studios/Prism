@@ -83,6 +83,7 @@ class _DailyMomentTodayCardState extends State<DailyMomentTodayCard> with Widget
                 const SizedBox(height: PrismSpace.md),
                 PrismButton(
                   label: context.l10n.dailyMomentResume,
+                  maxLines: null,
                   onPressed: () => unawaited(showDailyMoment(context)),
                 ),
               ],

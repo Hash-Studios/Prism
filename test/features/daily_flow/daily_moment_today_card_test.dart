@@ -5,6 +5,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/daily_flow/views/daily_moment_today_card.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
@@ -74,6 +75,22 @@ void main() {
     expect(find.text('Daily streak available'), findsNothing);
     expect(find.text('Continue daily moment'), findsNothing);
     await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('Today shows the full primary label at accessibility extra-large text', (tester) async {
+    tester.view.physicalSize = const Size(393, 852);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    CoinsService.instance.questsNotifier.value = questState();
+    await pumpCard(tester, scale: 3);
+    final label = find.text('Continue daily moment');
+    expect(label, findsOneWidget);
+    final paragraph = tester.renderObject<RenderParagraph>(label);
+    expect(paragraph.didExceedMaxLines, isFalse);
+    expect(paragraph.overflow, TextOverflow.visible);
+    expect(paragraph.maxLines, isNull);
+    expect(paragraph.size.height, greaterThan(60));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Today fits a narrow screen with large text', (tester) async {
