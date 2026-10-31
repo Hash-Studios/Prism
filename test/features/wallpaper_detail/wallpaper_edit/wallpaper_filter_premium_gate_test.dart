@@ -43,6 +43,11 @@ const String _setWallpaperChannel = 'dev.flutter.pigeon.async_wallpaper.Wallpape
 const MethodChannel _toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
 const MethodChannel _pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
 const StandardMessageCodec _codec = StandardMessageCodec();
+const Map<String, Object> _wrongPayerRefundReply = <String, Object>{
+  'success': false,
+  'changed': false,
+  'reason': 'failed-precondition',
+};
 
 Finder _iconButton(String tooltip) => find.ancestor(of: find.byTooltip(tooltip), matching: find.byType(IconButton));
 
@@ -251,6 +256,9 @@ void main() {
       }
       if (call['functionName'] == 'awardCoins') {
         refundCalls++;
+        if (app_state.prismUser.id != 'test') {
+          return _codec.encodeMessage(<Object?>[_wrongPayerRefundReply]);
+        }
         final Map<Object?, Object?> parameters = call['parameters']! as Map<Object?, Object?>;
         expect(parameters['transactionId'], 'disposed-filter-spend');
         return _codec.encodeMessage(<Object?>[
@@ -328,6 +336,9 @@ void main() {
           ]);
         case 'awardCoins':
           refundCalls++;
+          if (app_state.prismUser.id != 'test') {
+            return _codec.encodeMessage(<Object?>[_wrongPayerRefundReply]);
+          }
           final Map<Object?, Object?> parameters = call['parameters']! as Map<Object?, Object?>;
           expect(parameters['action'], 'refund');
           expect(parameters['transactionId'], 'filter-spend-1');
@@ -423,6 +434,9 @@ void main() {
       }
       if (call['functionName'] == 'awardCoins') {
         refundCalls++;
+        if (app_state.prismUser.id != 'test') {
+          return _codec.encodeMessage(<Object?>[_wrongPayerRefundReply]);
+        }
         return _codec.encodeMessage(<Object?>[
           <String, Object?>{
             'success': true,
@@ -472,8 +486,6 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  // The refund callable is mocked. The server does not refund premiumFilter spends, so this only proves the gate
-  // treats the account change as a failure, not as a performed action.
   testWidgets('reports a failure, not success, when the account changes while set options are open', (tester) async {
     tester.view.physicalSize = const Size(800, 1000);
     tester.view.devicePixelRatio = 1;
@@ -488,6 +500,8 @@ void main() {
 
     var spendCalls = 0;
     var refundCalls = 0;
+    final refundUsers = <String>[];
+    final refundTransactions = <String>[];
     var setCalls = 0;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       _toastChannel,
@@ -517,6 +531,13 @@ void main() {
       }
       if (call['functionName'] == 'awardCoins') {
         refundCalls++;
+        refundUsers.add(app_state.prismUser.id);
+        final Map<Object?, Object?> parameters = call['parameters']! as Map<Object?, Object?>;
+        refundTransactions.add(parameters['transactionId']! as String);
+        expect(parameters['action'], 'refund');
+        if (app_state.prismUser.id != 'test') {
+          return _codec.encodeMessage(<Object?>[_wrongPayerRefundReply]);
+        }
         return _codec.encodeMessage(<Object?>[
           <String, Object?>{
             'success': true,
@@ -551,12 +572,29 @@ void main() {
       ..id = 'other-account'
       ..loggedIn = true;
     await tester.tap(find.byTooltip(AppLocalizationsEn().setScreenClose));
-    await _waitForCount(tester, () => refundCalls, 1, 'refund after the account changed');
+    await waitForRealIo(
+      tester,
+      () =>
+          refundCalls > 0 ||
+          getIt<SettingsLocalDataSource>()
+              .get<String>('pendingAiRefunds', defaultValue: '')
+              .contains('switch-filter-spend'),
+      reason: 'refund queued for the payer after the account changed',
+    );
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(spendCalls, 1);
-    expect(refundCalls, 1);
+    expect(refundCalls, 0);
     expect(setCalls, 0);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'test'
+      ..loggedIn = true;
+    await tester.runAsync(() => CoinsService.instance.retryPendingRefunds());
+
+    expect(refundCalls, 1);
+    expect(refundUsers, <String>['test']);
+    expect(refundTransactions, <String>['switch-filter-spend']);
+    expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
     await tester.pump(const Duration(seconds: 2));
     expect(tester.takeException(), isNull);
   });

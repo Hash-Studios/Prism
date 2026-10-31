@@ -11387,6 +11387,171 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get wallMetadataDescription => 'Deskripsi';
+
+  @override
+  String get wallMetadataEdit => 'Edit detail';
+
+  @override
+  String get wallResubmitAction => 'Perbaiki dan kirim ulang';
+
+  @override
+  String get wallResubmitChooseImage => 'Pilih gambar';
+
+  @override
+  String get wallResubmitImageMissing => 'Gambar asli tidak lagi tersedia. Pilih lagi untuk melanjutkan pengeditan.';
+
+  @override
+  String get wallResubmitImageKept => 'Gambar asli siap';
+
+  @override
+  String get wallResubmitTitle => 'Perbaiki unggahan';
+
+  @override
+  String get wallUploadUseLastDetails => 'Gunakan detail terakhir';
+
+  @override
+  String get wallUploadLastDetailsUnavailable => 'Tidak ada detail sebelumnya di perangkat ini.';
+
+  @override
+  String get wallUploadWithdraw => 'Tarik unggahan';
+
+  @override
+  String get wallUploadWithdrawTitle => 'Tarik unggahan ini?';
+
+  @override
+  String get wallUploadWithdrawBody =>
+      'Tindakan ini menghapus unggahan dari peninjauan dan menghapus file yang diunggah.';
+
+  @override
+  String get wallUploadWithdrawn => 'Unggahan ditarik';
+
+  @override
+  String get wallUploadDeleteHistory => 'Hapus dari riwayat';
+
+  @override
+  String get wallMetadataInvalid => 'Periksa teks dan tag, lalu coba lagi.';
+
+  @override
+  String get wallUploadOwnerChanged => 'Akun Anda berubah. Buka unggahan ini lagi.';
+
+  @override
+  String get wallResubmitLimit => 'Wallpaper ini telah mencapai tiga pengiriman ulang yang ditautkan.';
+
+  @override
+  String get wallResubmitUnsupported => 'Pilih lagi gambar aslinya. Detail sumber AI tidak dapat digunakan kembali.';
+
+  @override
+  String get wallResubmitUnavailable => 'Tidak dapat memuat unggahan yang ditolak ini. Coba lagi.';
+
+  @override
+  String get wallMetadataEditDetails => 'Edit detail';
+
+  @override
+  String get wallMetadataApprovedHelp => 'Ubah judul, deskripsi, dan tag. Gambar dan kategori tetap sama.';
+
+  @override
+  String get wallMetadataPendingHelp => 'Perbarui detail ini sebelum wallpaper Anda ditinjau.';
+
+  @override
+  String get wallMetadataSave => 'Simpan detail';
+
+  @override
+  String get wallMetadataSaved => 'Detail disimpan';
+
+  @override
+  String get wallMetadataDiscardTitle => 'Buang perubahan?';
+
+  @override
+  String get wallMetadataDiscardBody => 'Detail yang belum disimpan akan hilang.';
+
+  @override
+  String get wallMetadataDiscard => 'Buang perubahan';
+
+  @override
+  String get wallMetadataReload => 'Muat ulang detail';
+
+  @override
+  String get wallMetadataReloadTitle => 'Muat ulang detail saat ini?';
+
+  @override
+  String get wallMetadataReloadBody => 'Tindakan ini mengganti detail yang belum disimpan dengan versi saat ini.';
+
+  @override
+  String get wallMetadataConflict =>
+      'Detail ini berubah di tempat lain. Suntingan Anda masih ada. Muat ulang detail saat ini sebelum menyimpan.';
+
+  @override
+  String get wallMetadataStatusChanged =>
+      'Status peninjauan wallpaper ini telah berubah. Suntingan Anda belum disimpan.';
+
+  @override
+  String get wallMetadataMissing => 'Wallpaper ini tidak lagi tersedia. Suntingan Anda belum disimpan.';
+
+  @override
+  String get wallMetadataDenied => 'Anda tidak memiliki izin untuk mengedit wallpaper ini.';
+
+  @override
+  String get wallMetadataSignedOut => 'Masuk lagi untuk mengedit wallpaper ini.';
+
+  @override
+  String get wallMetadataDailyLimit => 'Anda telah mencapai batas edit hari ini. Coba lagi besok.';
+
+  @override
+  String get wallMetadataUnavailable => 'Tidak dapat menyimpan detail. Periksa koneksi Anda dan coba lagi.';
+
+  @override
+  String get wallMetadataLoadFailed => 'Tidak dapat memuat detail';
+
+  @override
+  String get wallMetadataHistory => 'Riwayat edit';
+
+  @override
+  String get wallMetadataHistoryEmpty => 'Belum ada perubahan detail';
+
+  @override
+  String get wallMetadataHistoryEmptyBody => 'Perubahan pada judul, deskripsi, dan tag yang disetujui muncul di sini.';
+
+  @override
+  String get wallMetadataHistoryFailed => 'Tidak dapat memuat riwayat edit';
+
+  @override
+  String get wallMetadataBefore => 'Sebelum';
+
+  @override
+  String get wallMetadataAfter => 'Sesudah';
+
+  @override
+  String get wallMetadataRevert => 'Urungkan edit';
+
+  @override
+  String get wallMetadataRevertTitle => 'Urungkan edit ini?';
+
+  @override
+  String get wallMetadataRevertBody =>
+      'Pulihkan hanya judul, deskripsi, dan tag sebelumnya yang ditampilkan di sini. Gambar dan status peninjauan tidak akan berubah.';
+
+  @override
+  String get wallMetadataReverted => 'Edit diurungkan';
+
+  @override
+  String get wallMetadataLoadMore => 'Muat lebih banyak edit';
+
+  @override
+  String get wallMetadataAbsent => 'Belum diatur';
+
+  @override
+  String wallMetadataResubmitted(int attempt) {
+    return 'Dikirim ulang · percobaan $attempt dari 3';
+  }
+
+  @override
+  String get wallMetadataPreviousReason => 'Alasan penolakan sebelumnya';
+
+  @override
+  String get wallMetadataContextUnavailable => 'Detail pengiriman ulang tidak tersedia';
+
+  @override
   String get reportSheetMessage =>
       'Ceritakan apa yang salah. Prism tidak pernah menambahkan alamat email atau token masuk Anda. Periksa tangkapan layar sebelum mengirim.';
 
@@ -11697,6 +11862,114 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String challengeWinnerNotificationBody(String theme) {
     return 'Karya Anda memenangkan tantangan mingguan: $theme.';
+  }
+
+  @override
+  String get statsTitle => 'Statistik Anda';
+
+  @override
+  String get statsEntry => 'Statistik';
+
+  @override
+  String get statsViews => 'Dilihat';
+
+  @override
+  String get statsSaves => 'Disimpan';
+
+  @override
+  String get statsSets => 'Diterapkan';
+
+  @override
+  String get statsDownloads => 'Unduhan';
+
+  @override
+  String get statsShares => 'Dibagikan';
+
+  @override
+  String get statsFolderAdds => 'Ditambahkan ke folder';
+
+  @override
+  String get statsRemixes => 'Remix';
+
+  @override
+  String get statsLoading => 'Memuat statistik Anda';
+
+  @override
+  String get statsError => 'Statistik Anda tidak dapat dimuat. Coba lagi.';
+
+  @override
+  String get statsRetry => 'Coba lagi';
+
+  @override
+  String get statsEmptyTitle => 'Wallpaper pertama Anda dimulai di sini';
+
+  @override
+  String get statsEmptyBody => 'Unggah wallpaper. Statistiknya muncul setelah disetujui.';
+
+  @override
+  String get statsUpload => 'Unggah wallpaper';
+
+  @override
+  String get statsWeekNote => 'Minggu ini sejauh ini dibanding minggu lalu. Minggu dimulai Senin, UTC.';
+
+  @override
+  String get statsHistoryNote =>
+      'Delapan minggu, yang terlama lebih dulu. Tanda pisah berarti data tidak tersedia. Pelacakan dapat dimulai di tengah minggu, jadi data mingguan bisa tidak lengkap. Minggu ini belum selesai.';
+
+  @override
+  String get statsTopWalls => 'Wallpaper teratas minggu ini';
+
+  @override
+  String get statsUntitled => 'Wallpaper tanpa judul';
+
+  @override
+  String get statsCountingNote =>
+      'Total simpan menghitung favorit saat ini; simpan mingguan menghitung penambahan. Total remix menghitung remix dengan kredit saat ini; remix mingguan menghitung kredit pertama yang diterima. Wallpaper yang ditambahkan ke folder dicatat sejak pelacakan dimulai.';
+
+  @override
+  String get statsUnavailable => 'Tidak tersedia';
+
+  @override
+  String get statsWeeklyTitle => 'Wallpaper Anda minggu ini';
+
+  @override
+  String statsWeeklyBody(String week) {
+    return 'Lihat hasil wallpaper Anda pada $week.';
+  }
+
+  @override
+  String statsWallValue(String metric, String value) {
+    return '$metric: $value minggu ini';
+  }
+
+  @override
+  String statsComparison(String current, String previous) {
+    return '$current minggu ini · $previous minggu lalu';
+  }
+
+  @override
+  String statsTotal(String value) {
+    return 'Total: $value';
+  }
+
+  @override
+  String statsChange(String value) {
+    return '$value dibanding minggu lalu';
+  }
+
+  @override
+  String statsUpdated(String date) {
+    return 'Diperbarui $date UTC';
+  }
+
+  @override
+  String statsChartWeek(String date, String value) {
+    return 'Minggu mulai $date: $value';
+  }
+
+  @override
+  String statsChartSummary(String metric, String summary) {
+    return '$metric, delapan minggu. $summary';
   }
 
   @override

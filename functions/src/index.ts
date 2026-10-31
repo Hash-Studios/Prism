@@ -9,6 +9,8 @@ export {onCreatorWallWritten, onCreatorFavouriteCreated} from "./creatorProgress
 export {onFollowCreated} from "./onFollowCreated";
 export {onUidFollowCreated} from "./onUidFollowCreated";
 export {onWallSubmitted} from "./onWallSubmitted";
+export {getWallMetadataForEdit, editWallMetadata, listWallMetadataEdits, revertWallMetadata} from "./wallMetadata";
+export {submitWallResubmission, getWallResubmissionContext, undoWallRejection, rejectWallForReview} from "./wallResubmissions";
 export {registerReviewLiveActivity, onReviewQueueChanged} from "./reviewLiveActivity";
 export {onWallCategorize} from "./onWallCategorize";
 export {onWallSearchTerms} from "./wallSearchTerms";
@@ -60,6 +62,9 @@ export {
   setWallRequestHiddenCallable as setWallRequestHidden,
 } from "./wallRequests";
 
+export {getCreatorStats, creatorStatsWeekly} from "./creatorStats";
+export {onCreatorStatsDailyWritten, processCreatorStatsDailyQueueScheduled} from "./creatorStatsDaily";
+export {onCreatorStatsFolderCreated} from "./creatorStatsHistory";
 export {listWeeklyChallenges, getWeeklyChallenge, setChallengeVote, onChallengeWallWritten, onChallengeWallSubmitted} from "./weeklyChallenges";
 
 export {scheduleWeeklyChallenges} from "./challengeScheduler";

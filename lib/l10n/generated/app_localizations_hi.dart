@@ -11473,6 +11473,169 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get wallMetadataDescription => 'विवरण';
+
+  @override
+  String get wallMetadataEdit => 'जानकारी संपादित करें';
+
+  @override
+  String get wallResubmitAction => 'सुधारें और फिर से भेजें';
+
+  @override
+  String get wallResubmitChooseImage => 'चित्र चुनें';
+
+  @override
+  String get wallResubmitImageMissing => 'मूल चित्र अब उपलब्ध नहीं है। संपादन जारी रखने के लिए उसे फिर से चुनें।';
+
+  @override
+  String get wallResubmitImageKept => 'मूल चित्र तैयार है';
+
+  @override
+  String get wallResubmitTitle => 'अपना अपलोड सुधारें';
+
+  @override
+  String get wallUploadUseLastDetails => 'पिछली जानकारी का उपयोग करें';
+
+  @override
+  String get wallUploadLastDetailsUnavailable => 'इस डिवाइस पर पिछली जानकारी नहीं है।';
+
+  @override
+  String get wallUploadWithdraw => 'अपलोड वापस लें';
+
+  @override
+  String get wallUploadWithdrawTitle => 'क्या यह अपलोड वापस लें?';
+
+  @override
+  String get wallUploadWithdrawBody => 'इससे अपलोड समीक्षा से हट जाएगा और उसकी अपलोड की गई फ़ाइलें मिट जाएंगी।';
+
+  @override
+  String get wallUploadWithdrawn => 'अपलोड वापस लिया गया';
+
+  @override
+  String get wallUploadDeleteHistory => 'इतिहास से हटाएं';
+
+  @override
+  String get wallMetadataInvalid => 'टेक्स्ट और टैग जांचें, फिर दोबारा कोशिश करें।';
+
+  @override
+  String get wallUploadOwnerChanged => 'आपका खाता बदल गया है। यह अपलोड फिर से खोलें।';
+
+  @override
+  String get wallResubmitLimit => 'इस वॉलपेपर के लिए तीन जुड़े हुए पुनः सबमिशन पूरे हो गए हैं।';
+
+  @override
+  String get wallResubmitUnsupported => 'मूल चित्र फिर से चुनें। AI स्रोत की जानकारी दोबारा इस्तेमाल नहीं की जा सकती।';
+
+  @override
+  String get wallResubmitUnavailable => 'यह अस्वीकृत अपलोड लोड नहीं हो सका। दोबारा कोशिश करें।';
+
+  @override
+  String get wallMetadataEditDetails => 'जानकारी संपादित करें';
+
+  @override
+  String get wallMetadataApprovedHelp => 'शीर्षक, विवरण और टैग बदलें। चित्र और श्रेणी वही रहेंगे।';
+
+  @override
+  String get wallMetadataPendingHelp => 'वॉलपेपर की समीक्षा से पहले यह जानकारी अपडेट करें।';
+
+  @override
+  String get wallMetadataSave => 'जानकारी सेव करें';
+
+  @override
+  String get wallMetadataSaved => 'जानकारी सेव हुई';
+
+  @override
+  String get wallMetadataDiscardTitle => 'बदलाव छोड़ें?';
+
+  @override
+  String get wallMetadataDiscardBody => 'आपकी बिना सेव की गई जानकारी खो जाएगी।';
+
+  @override
+  String get wallMetadataDiscard => 'बदलाव छोड़ें';
+
+  @override
+  String get wallMetadataReload => 'जानकारी फिर लोड करें';
+
+  @override
+  String get wallMetadataReloadTitle => 'मौजूदा जानकारी फिर लोड करें?';
+
+  @override
+  String get wallMetadataReloadBody => 'इससे आपकी बिना सेव की गई जानकारी मौजूदा जानकारी से बदल जाएगी।';
+
+  @override
+  String get wallMetadataConflict =>
+      'यह जानकारी कहीं और बदल गई है। आपके बदलाव अभी भी यहां हैं। सेव करने से पहले मौजूदा जानकारी फिर लोड करें।';
+
+  @override
+  String get wallMetadataStatusChanged => 'इस वॉलपेपर की समीक्षा स्थिति बदल गई है। आपके बदलाव सेव नहीं हुए हैं।';
+
+  @override
+  String get wallMetadataMissing => 'यह वॉलपेपर अब उपलब्ध नहीं है। आपके बदलाव सेव नहीं हुए हैं।';
+
+  @override
+  String get wallMetadataDenied => 'आपको इस वॉलपेपर को संपादित करने की अनुमति नहीं है।';
+
+  @override
+  String get wallMetadataSignedOut => 'इस वॉलपेपर को संपादित करने के लिए फिर से साइन इन करें।';
+
+  @override
+  String get wallMetadataDailyLimit => 'आप आज की संपादन सीमा तक पहुंच गए हैं। कल दोबारा कोशिश करें।';
+
+  @override
+  String get wallMetadataUnavailable => 'जानकारी सेव नहीं हो सकी। अपना कनेक्शन जांचें और दोबारा कोशिश करें।';
+
+  @override
+  String get wallMetadataLoadFailed => 'जानकारी लोड नहीं हो सकी';
+
+  @override
+  String get wallMetadataHistory => 'संपादन इतिहास';
+
+  @override
+  String get wallMetadataHistoryEmpty => 'अभी जानकारी में कोई बदलाव नहीं है';
+
+  @override
+  String get wallMetadataHistoryEmptyBody => 'स्वीकृत शीर्षक, विवरण और टैग में बदलाव यहां दिखते हैं।';
+
+  @override
+  String get wallMetadataHistoryFailed => 'संपादन इतिहास लोड नहीं हो सका';
+
+  @override
+  String get wallMetadataBefore => 'पहले';
+
+  @override
+  String get wallMetadataAfter => 'बाद में';
+
+  @override
+  String get wallMetadataRevert => 'संपादन वापस करें';
+
+  @override
+  String get wallMetadataRevertTitle => 'यह संपादन वापस करें?';
+
+  @override
+  String get wallMetadataRevertBody =>
+      'केवल यहां दिखाए गए पिछले शीर्षक, विवरण और टैग वापस लाएं। चित्र और समीक्षा स्थिति नहीं बदलेंगे।';
+
+  @override
+  String get wallMetadataReverted => 'संपादन वापस किया गया';
+
+  @override
+  String get wallMetadataLoadMore => 'और संपादन लोड करें';
+
+  @override
+  String get wallMetadataAbsent => 'सेट नहीं है';
+
+  @override
+  String wallMetadataResubmitted(int attempt) {
+    return 'फिर से भेजा गया · प्रयास $attempt / 3';
+  }
+
+  @override
+  String get wallMetadataPreviousReason => 'पिछली अस्वीकृति का कारण';
+
+  @override
+  String get wallMetadataContextUnavailable => 'फिर से भेजने की जानकारी उपलब्ध नहीं है';
+
+  @override
   String get reportSheetMessage =>
       'हमें बताएं कि क्या गड़बड़ हुई। Prism कभी आपका ईमेल पता या साइन-इन टोकन नहीं जोड़ता। भेजने से पहले स्क्रीनशॉट जांच लें।';
 
@@ -11802,6 +11965,114 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String challengeWinnerNotificationBody(String theme) {
     return 'आपकी प्रविष्टि ने साप्ताहिक चुनौती जीती: $theme।';
+  }
+
+  @override
+  String get statsTitle => 'आपके आँकड़े';
+
+  @override
+  String get statsEntry => 'आँकड़े';
+
+  @override
+  String get statsViews => 'व्यू';
+
+  @override
+  String get statsSaves => 'सेव';
+
+  @override
+  String get statsSets => 'सेट';
+
+  @override
+  String get statsDownloads => 'डाउनलोड';
+
+  @override
+  String get statsShares => 'शेयर';
+
+  @override
+  String get statsFolderAdds => 'फ़ोल्डर में जोड़े गए';
+
+  @override
+  String get statsRemixes => 'रीमिक्स';
+
+  @override
+  String get statsLoading => 'आपके आँकड़े लोड हो रहे हैं';
+
+  @override
+  String get statsError => 'आपके आँकड़े लोड नहीं हुए। फिर कोशिश करें।';
+
+  @override
+  String get statsRetry => 'फिर कोशिश करें';
+
+  @override
+  String get statsEmptyTitle => 'आपका पहला वॉलपेपर यहीं से शुरू होता है';
+
+  @override
+  String get statsEmptyBody => 'वॉलपेपर अपलोड करें। मंज़ूरी के बाद उसके आँकड़े दिखेंगे।';
+
+  @override
+  String get statsUpload => 'वॉलपेपर अपलोड करें';
+
+  @override
+  String get statsWeekNote => 'इस हफ़्ते अब तक की तुलना पिछले हफ़्ते से। हफ़्ता सोमवार को UTC में शुरू होता है।';
+
+  @override
+  String get statsHistoryNote =>
+      'आठ हफ़्ते, सबसे पुराना पहले। डैश का अर्थ है डेटा उपलब्ध नहीं है। ट्रैकिंग हफ़्ते के बीच में शुरू हो सकती है, इसलिए दर्ज हफ़्तों के आँकड़े अधूरे हो सकते हैं। मौजूदा हफ़्ता अधूरा है।';
+
+  @override
+  String get statsTopWalls => 'इस हफ़्ते के शीर्ष वॉलपेपर';
+
+  @override
+  String get statsUntitled => 'बिना शीर्षक का वॉलपेपर';
+
+  @override
+  String get statsCountingNote =>
+      'कुल सेव मौजूदा पसंदीदा की संख्या है; साप्ताहिक सेव नए जोड़े गए पसंदीदा हैं। कुल रीमिक्स मौजूदा क्रेडिट वाले रीमिक्स हैं; साप्ताहिक रीमिक्स पहली बार स्वीकार किए गए क्रेडिट हैं। फ़ोल्डर में जोड़ने की गिनती ट्रैकिंग शुरू होने के बाद से है।';
+
+  @override
+  String get statsUnavailable => 'उपलब्ध नहीं';
+
+  @override
+  String get statsWeeklyTitle => 'इस हफ़्ते आपके वॉलपेपर';
+
+  @override
+  String statsWeeklyBody(String week) {
+    return '$week में अपने वॉलपेपर के आँकड़े देखें।';
+  }
+
+  @override
+  String statsWallValue(String metric, String value) {
+    return '$metric: इस हफ़्ते $value';
+  }
+
+  @override
+  String statsComparison(String current, String previous) {
+    return 'इस हफ़्ते $current · पिछले हफ़्ते $previous';
+  }
+
+  @override
+  String statsTotal(String value) {
+    return 'कुल: $value';
+  }
+
+  @override
+  String statsChange(String value) {
+    return 'पिछले हफ़्ते की तुलना में $value';
+  }
+
+  @override
+  String statsUpdated(String date) {
+    return '$date UTC को अपडेट हुआ';
+  }
+
+  @override
+  String statsChartWeek(String date, String value) {
+    return '$date से शुरू हफ़्ता: $value';
+  }
+
+  @override
+  String statsChartSummary(String metric, String summary) {
+    return '$metric, आठ हफ़्ते। $summary';
   }
 
   @override

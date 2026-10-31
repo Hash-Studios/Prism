@@ -40,6 +40,7 @@ extension PrismWallDocMapper on PrismWallDocDto {
         createdAt: createdAt,
       ),
       title: cleanTitle == null || cleanTitle.isEmpty ? null : cleanTitle,
+      description: desc.trim().isEmpty ? null : desc.trim(),
       collections: collections.isEmpty ? null : collections,
       review: review,
       tags: mergedTags.isEmpty ? null : mergedTags,

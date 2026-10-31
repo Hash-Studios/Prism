@@ -11483,6 +11483,175 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get wallMetadataDescription => 'Descripción';
+
+  @override
+  String get wallMetadataEdit => 'Editar detalles';
+
+  @override
+  String get wallResubmitAction => 'Corregir y volver a enviar';
+
+  @override
+  String get wallResubmitChooseImage => 'Elegir imagen';
+
+  @override
+  String get wallResubmitImageMissing =>
+      'La imagen original ya no está disponible. Elígela de nuevo para seguir editando.';
+
+  @override
+  String get wallResubmitImageKept => 'Imagen original lista';
+
+  @override
+  String get wallResubmitTitle => 'Corrige tu envío';
+
+  @override
+  String get wallUploadUseLastDetails => 'Usar últimos detalles';
+
+  @override
+  String get wallUploadLastDetailsUnavailable => 'No hay detalles anteriores en este dispositivo.';
+
+  @override
+  String get wallUploadWithdraw => 'Retirar envío';
+
+  @override
+  String get wallUploadWithdrawTitle => '¿Retirar este envío?';
+
+  @override
+  String get wallUploadWithdrawBody => 'Esto retira el envío de la revisión y elimina sus archivos cargados.';
+
+  @override
+  String get wallUploadWithdrawn => 'Envío retirado';
+
+  @override
+  String get wallUploadDeleteHistory => 'Eliminar del historial';
+
+  @override
+  String get wallMetadataInvalid => 'Revisa el texto y las etiquetas y vuelve a intentarlo.';
+
+  @override
+  String get wallUploadOwnerChanged => 'Tu cuenta ha cambiado. Abre este envío de nuevo.';
+
+  @override
+  String get wallResubmitLimit => 'Este fondo de pantalla ha alcanzado sus tres reenvíos vinculados.';
+
+  @override
+  String get wallResubmitUnsupported =>
+      'Elige de nuevo la imagen original. Los datos de la fuente de IA no se pueden reutilizar.';
+
+  @override
+  String get wallResubmitUnavailable => 'No se pudo cargar este envío rechazado. Vuelve a intentarlo.';
+
+  @override
+  String get wallMetadataEditDetails => 'Editar detalles';
+
+  @override
+  String get wallMetadataApprovedHelp =>
+      'Cambia el título, la descripción y las etiquetas. La imagen y la categoría no cambian.';
+
+  @override
+  String get wallMetadataPendingHelp => 'Actualiza estos detalles antes de que se revise tu fondo de pantalla.';
+
+  @override
+  String get wallMetadataSave => 'Guardar detalles';
+
+  @override
+  String get wallMetadataSaved => 'Detalles guardados';
+
+  @override
+  String get wallMetadataDiscardTitle => '¿Descartar cambios?';
+
+  @override
+  String get wallMetadataDiscardBody => 'Se perderán los detalles sin guardar.';
+
+  @override
+  String get wallMetadataDiscard => 'Descartar cambios';
+
+  @override
+  String get wallMetadataReload => 'Volver a cargar detalles';
+
+  @override
+  String get wallMetadataReloadTitle => '¿Volver a cargar los detalles actuales?';
+
+  @override
+  String get wallMetadataReloadBody => 'Esto reemplaza tus detalles sin guardar por la versión actual.';
+
+  @override
+  String get wallMetadataConflict =>
+      'Estos detalles cambiaron en otro lugar. Tus cambios siguen aquí. Vuelve a cargar los detalles actuales antes de guardar.';
+
+  @override
+  String get wallMetadataStatusChanged =>
+      'El estado de revisión de este fondo de pantalla ha cambiado. Tus cambios no se han guardado.';
+
+  @override
+  String get wallMetadataMissing => 'Este fondo de pantalla ya no está disponible. Tus cambios no se han guardado.';
+
+  @override
+  String get wallMetadataDenied => 'No tienes permiso para editar este fondo de pantalla.';
+
+  @override
+  String get wallMetadataSignedOut => 'Inicia sesión de nuevo para editar este fondo de pantalla.';
+
+  @override
+  String get wallMetadataDailyLimit => 'Has alcanzado el límite de ediciones de hoy. Vuelve a intentarlo mañana.';
+
+  @override
+  String get wallMetadataUnavailable =>
+      'No se pudieron guardar los detalles. Comprueba tu conexión y vuelve a intentarlo.';
+
+  @override
+  String get wallMetadataLoadFailed => 'No se pudieron cargar los detalles';
+
+  @override
+  String get wallMetadataHistory => 'Historial de ediciones';
+
+  @override
+  String get wallMetadataHistoryEmpty => 'Aún no hay cambios en los detalles';
+
+  @override
+  String get wallMetadataHistoryEmptyBody =>
+      'Los cambios en el título, la descripción y las etiquetas aprobados aparecen aquí.';
+
+  @override
+  String get wallMetadataHistoryFailed => 'No se pudo cargar el historial de ediciones';
+
+  @override
+  String get wallMetadataBefore => 'Antes';
+
+  @override
+  String get wallMetadataAfter => 'Después';
+
+  @override
+  String get wallMetadataRevert => 'Revertir edición';
+
+  @override
+  String get wallMetadataRevertTitle => '¿Revertir esta edición?';
+
+  @override
+  String get wallMetadataRevertBody =>
+      'Restaura solo el título, la descripción y las etiquetas anteriores que se muestran aquí. La imagen y el estado de revisión no cambiarán.';
+
+  @override
+  String get wallMetadataReverted => 'Edición revertida';
+
+  @override
+  String get wallMetadataLoadMore => 'Cargar más ediciones';
+
+  @override
+  String get wallMetadataAbsent => 'Sin definir';
+
+  @override
+  String wallMetadataResubmitted(int attempt) {
+    return 'Reenviado · intento $attempt de 3';
+  }
+
+  @override
+  String get wallMetadataPreviousReason => 'Motivo del rechazo anterior';
+
+  @override
+  String get wallMetadataContextUnavailable => 'Detalles del reenvío no disponibles';
+
+  @override
   String get reportSheetMessage =>
       'Cuéntanos qué salió mal. Prism nunca añade tu correo electrónico ni tokens de inicio de sesión. Revisa las capturas antes de enviarlas.';
 
@@ -11808,6 +11977,114 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String challengeWinnerNotificationBody(String theme) {
     return 'Tu obra ganó el reto semanal: $theme.';
+  }
+
+  @override
+  String get statsTitle => 'Tus estadísticas';
+
+  @override
+  String get statsEntry => 'Estadísticas';
+
+  @override
+  String get statsViews => 'Vistas';
+
+  @override
+  String get statsSaves => 'Guardados';
+
+  @override
+  String get statsSets => 'Veces aplicado';
+
+  @override
+  String get statsDownloads => 'Descargas';
+
+  @override
+  String get statsShares => 'Veces compartido';
+
+  @override
+  String get statsFolderAdds => 'Adiciones a carpetas';
+
+  @override
+  String get statsRemixes => 'Remixes';
+
+  @override
+  String get statsLoading => 'Cargando tus estadísticas';
+
+  @override
+  String get statsError => 'No se pudieron cargar tus estadísticas. Inténtalo de nuevo.';
+
+  @override
+  String get statsRetry => 'Reintentar';
+
+  @override
+  String get statsEmptyTitle => 'Tu primer fondo empieza aquí';
+
+  @override
+  String get statsEmptyBody => 'Sube un fondo. Sus estadísticas aparecerán cuando se apruebe.';
+
+  @override
+  String get statsUpload => 'Subir un fondo';
+
+  @override
+  String get statsWeekNote => 'Esta semana hasta ahora frente a la anterior. Las semanas empiezan el lunes, UTC.';
+
+  @override
+  String get statsHistoryNote =>
+      'Ocho semanas, la más antigua primero. Un guion indica datos no disponibles. El seguimiento puede empezar a mitad de semana, por lo que los datos semanales pueden ser parciales. La semana actual está incompleta.';
+
+  @override
+  String get statsTopWalls => 'Mejores fondos de esta semana';
+
+  @override
+  String get statsUntitled => 'Fondo sin título';
+
+  @override
+  String get statsCountingNote =>
+      'El total de guardados cuenta los favoritos actuales; el dato semanal cuenta las adiciones. El total de remixes cuenta los créditos actuales; el dato semanal cuenta los primeros créditos aceptados. Las adiciones a carpetas se registran desde el inicio del seguimiento.';
+
+  @override
+  String get statsUnavailable => 'No disponible';
+
+  @override
+  String get statsWeeklyTitle => 'Tus fondos esta semana';
+
+  @override
+  String statsWeeklyBody(String week) {
+    return 'Consulta los resultados de tus fondos en $week.';
+  }
+
+  @override
+  String statsWallValue(String metric, String value) {
+    return '$metric: $value esta semana';
+  }
+
+  @override
+  String statsComparison(String current, String previous) {
+    return '$current esta semana · $previous la anterior';
+  }
+
+  @override
+  String statsTotal(String value) {
+    return 'Total: $value';
+  }
+
+  @override
+  String statsChange(String value) {
+    return '$value frente a la semana anterior';
+  }
+
+  @override
+  String statsUpdated(String date) {
+    return 'Actualizado $date UTC';
+  }
+
+  @override
+  String statsChartWeek(String date, String value) {
+    return 'Semana del $date: $value';
+  }
+
+  @override
+  String statsChartSummary(String metric, String summary) {
+    return '$metric, ocho semanas. $summary';
   }
 
   @override

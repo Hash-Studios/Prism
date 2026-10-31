@@ -9,7 +9,9 @@ import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/color/prism_palette.dart';
+import 'package:Prism/core/constants/admin_users.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -50,6 +52,7 @@ import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
+import 'package:Prism/features/admin_review/views/pages/wall_metadata_history_page.dart';
 import 'package:Prism/features/ads/data/ad_experiment_service.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/ads/views/widgets/experimental_interstitial_return.dart';
@@ -89,6 +92,8 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_recommen
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
 import 'package:Prism/features/wallpaper_history/domain/recently_viewed_rules.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
+import 'package:Prism/features/wallpaper_upload/views/pages/wall_metadata_editor.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -2594,6 +2599,46 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     }
   }
 
+  bool _canEditMetadata(PrismWallpaper wall) {
+    if (!app_state.prismUser.loggedIn || wall.review != true || wall.firestoreDocumentId?.isNotEmpty != true) {
+      return false;
+    }
+    final String uid = wall.core.authorUid?.trim() ?? '';
+    if (uid.isNotEmpty) return uid == app_state.prismUser.id;
+    final String email = wall.core.authorEmail?.trim() ?? '';
+    return email.isNotEmpty && email == app_state.prismUser.email;
+  }
+
+  Future<void> _editMetadata(BuildContext context, PrismWallpaper wall) async {
+    final WallpaperDetailBloc bloc = context.read<WallpaperDetailBloc>();
+    final String docId = wall.firestoreDocumentId!;
+    final WallMetadataSnapshot? saved = await Navigator.of(context).push<WallMetadataSnapshot>(
+      MaterialPageRoute<WallMetadataSnapshot>(
+        builder: (_) => WallMetadataEditor(
+          wall: FirestoreDocument(docId, <String, dynamic>{
+            'review': true,
+            'title': wall.title ?? '',
+            'desc': wall.description ?? '',
+            'tags': wall.tags ?? const <String>[],
+            'email': wall.core.authorEmail ?? '',
+            'creatorUid': wall.core.authorUid ?? '',
+          }),
+          approved: true,
+        ),
+      ),
+    );
+    if (saved != null && !bloc.isClosed) bloc.add(RefreshWallMetadata(wallDocId: docId, saved: saved));
+  }
+
+  Future<void> _metadataHistory(BuildContext context, PrismWallpaper wall) async {
+    final WallpaperDetailBloc bloc = context.read<WallpaperDetailBloc>();
+    final String docId = wall.firestoreDocumentId!;
+    final bool? changed = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute<bool>(builder: (_) => WallMetadataHistoryPage(wallDocId: docId)));
+    if (changed == true && !bloc.isClosed) bloc.add(RefreshWallMetadata(wallDocId: docId));
+  }
+
   List<Widget> _buildPanelExtras(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
     final WallViewer? remixViewer = _remixViewer();
@@ -2613,6 +2658,35 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     Widget padded(Widget child) =>
         Padding(padding: const EdgeInsets.fromLTRB(_sheetHPad, 0, _sheetHPad, 12), child: child);
     return [
+      if (entity case PrismFeedItem(:final wallpaper) when wallpaper.description?.trim().isNotEmpty == true)
+        padded(Text(wallpaper.description!, style: PrismTextStyles.body(context))),
+      if (entity case PrismFeedItem(:final wallpaper) when _canEditMetadata(wallpaper))
+        padded(
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: PrismButton(
+              label: context.l10n.wallMetadataEditDetails,
+              icon: Icons.edit_note_rounded,
+              variant: PrismButtonVariant.tonal,
+              onPressed: () => _editMetadata(context, wallpaper),
+            ),
+          ),
+        ),
+      if (entity case PrismFeedItem(:final wallpaper)
+          when wallpaper.review == true &&
+              wallpaper.firestoreDocumentId != null &&
+              isAdminEmail(app_state.prismUser.email))
+        padded(
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: PrismButton(
+              label: context.l10n.wallMetadataHistory,
+              icon: Icons.history_rounded,
+              variant: PrismButtonVariant.ghost,
+              onPressed: () => _metadataHistory(context, wallpaper),
+            ),
+          ),
+        ),
       for (final note in notes)
         padded(
           Row(

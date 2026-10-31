@@ -1,5 +1,5 @@
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// Why a submission was rejected: a hairline, a small label and the reviewer's reason in full contrast.

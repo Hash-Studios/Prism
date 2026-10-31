@@ -81,7 +81,7 @@ void main() {
         .byType(IconButton)
         .evaluate()
         .map((Element element) => (element.widget as IconButton).tooltip);
-    expect(tooltips, containsAll(<String?>['Download wallpaper', 'Delete wallpaper']));
+    expect(tooltips, containsAll(<String?>['Download wallpaper', 'Withdraw upload']));
   });
 
   testWidgets('cleanup failure retains the pending row and retry deletes metadata only after both files', (
@@ -122,9 +122,9 @@ void main() {
       'thumb_sha': '',
     });
     Future<void> confirmDelete() async {
-      await tester.tap(find.byTooltip('Delete wallpaper'));
+      await tester.tap(find.byTooltip('Withdraw upload'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Delete wallpaper'));
+      await tester.tap(find.text('Withdraw upload').last);
       await tester.pumpAndSettle();
     }
 

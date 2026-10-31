@@ -2554,6 +2554,36 @@ class UploadMetadataSubmittedEvent extends AnalyticsEvent {
   }
 }
 
+class WallPendingEditedEvent extends AnalyticsEvent {
+  const WallPendingEditedEvent({required this.assetId, required this.fields});
+
+  final String assetId;
+  final List<String> fields;
+
+  @override
+  String get eventName => 'wall_pending_edited';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'asset_id': assetId, 'fields': fields};
+  }
+}
+
+class WallApprovedMetadataEditedEvent extends AnalyticsEvent {
+  const WallApprovedMetadataEditedEvent({required this.assetId, required this.fields});
+
+  final String assetId;
+  final List<String> fields;
+
+  @override
+  String get eventName => 'wall_approved_metadata_edited';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'asset_id': assetId, 'fields': fields};
+  }
+}
+
 class FollowResultEvent extends AnalyticsEvent {
   const FollowResultEvent({required this.action, required this.result, this.creatorId, this.source});
 
@@ -3782,6 +3812,89 @@ class RemixesGridOpenedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'count': count};
+  }
+}
+
+class WallResubmittedEvent extends AnalyticsEvent {
+  const WallResubmittedEvent({required this.assetId, required this.attempt});
+
+  final String assetId;
+  final int attempt;
+
+  @override
+  String get eventName => 'wall_resubmitted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'asset_id': assetId, 'attempt': attempt};
+  }
+}
+
+class UploadLastDetailsUsedEvent extends AnalyticsEvent {
+  const UploadLastDetailsUsedEvent();
+
+  @override
+  String get eventName => 'upload_last_details_used';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class UploadWithdrawnEvent extends AnalyticsEvent {
+  const UploadWithdrawnEvent({required this.assetId});
+
+  final String assetId;
+
+  @override
+  String get eventName => 'upload_withdrawn';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'asset_id': assetId};
+  }
+}
+
+class CreatorStatsOpenedEvent extends AnalyticsEvent {
+  const CreatorStatsOpenedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'creator_stats_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class CreatorStatsMetricSwitchedEvent extends AnalyticsEvent {
+  const CreatorStatsMetricSwitchedEvent({required this.metric});
+
+  final String metric;
+
+  @override
+  String get eventName => 'creator_stats_metric_switched';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'metric': metric};
+  }
+}
+
+class CreatorWallStatsOpenedEvent extends AnalyticsEvent {
+  const CreatorWallStatsOpenedEvent({required this.wallId});
+
+  final String wallId;
+
+  @override
+  String get eventName => 'creator_wall_stats_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId};
   }
 }
 

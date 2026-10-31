@@ -1,5 +1,6 @@
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
-import {REGION} from "./common";
+import {db, REGION} from "./common";
+import {sameTimestamp} from "./wallEditingCommon";
 
 const STOPWORDS = new Set(["a", "an", "and", "at", "by", "for", "from", "in", "is", "of", "on", "the", "to", "with"]);
 const MAX_SEARCH_TERMS = 64;
@@ -48,8 +49,12 @@ export const onWallSearchTerms = onDocumentWritten(
     const after = event.data?.after;
     const data = after?.data();
     if (!after || !data) return;
-    const searchTerms = wallSearchTermsFor(data);
-    if (sameTerms(data.searchTerms, searchTerms)) return;
-    await after.ref.update({searchTerms});
+    await db.runTransaction(async (tx) => {
+      const current = await tx.get(after.ref);
+      if (!current.exists || !sameTimestamp(current.createTime, after.createTime)) return;
+      const latest = current.data()!;
+      const searchTerms = wallSearchTermsFor(latest);
+      if (!sameTerms(latest.searchTerms, searchTerms)) tx.update(after.ref, {searchTerms});
+    });
   },
 );

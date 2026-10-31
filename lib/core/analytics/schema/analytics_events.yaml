@@ -1971,6 +1971,22 @@ events:
       - name: category
         key: category
         type: string
+  - id: wall_pending_edited
+    fields:
+      - name: asset_id
+        key: asset_id
+        type: string
+      - name: fields
+        key: fields
+        type: string_list
+  - id: wall_approved_metadata_edited
+    fields:
+      - name: asset_id
+        key: asset_id
+        type: string
+      - name: fields
+        key: fields
+        type: string_list
   - id: follow_result
     fields:
       - name: action
@@ -2611,7 +2627,36 @@ events:
       - name: count
         key: count
         type: int
+  - id: wall_resubmitted
+    fields:
+      - name: asset_id
+        key: asset_id
+        type: string
+      - name: attempt
+        key: attempt
+        type: int
+  - id: upload_last_details_used
+  - id: upload_withdrawn
+    fields:
+      - name: asset_id
+        key: asset_id
+        type: string
 
+  - id: creator_stats_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: creator_stats_metric_switched
+    fields:
+      - name: metric
+        key: metric
+        type: string
+  - id: creator_wall_stats_opened
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
   - id: daily_moment_shown
     fields: []
   - id: daily_moment_step_done

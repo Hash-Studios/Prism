@@ -47,6 +47,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     on<OnPanelScrollStart>(_onPanelScrollStart);
     on<OnPanelScrollEnd>(_onPanelScrollEnd);
     on<LoadRecommendations>(_onLoadRecommendations);
+    on<RefreshWallMetadata>(_onRefreshWallMetadata);
   }
 
   final PrismWallpaperRepository _prismRepository;
@@ -60,6 +61,59 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   static int _nextVisit = 0;
   final String _recommendationSession = '${_nextVisit++}';
   bool _closing = false;
+  int _metadataRefreshGeneration = 0;
+
+  Future<void> _onRefreshWallMetadata(RefreshWallMetadata event, Emitter<WallpaperDetailState> emit) async {
+    final WallpaperDetailState initial = state;
+    if (initial is! WallpaperDetailLoaded || initial.entity is! PrismFeedItem) return;
+    final PrismWallpaper wall = (initial.entity as PrismFeedItem).wallpaper;
+    if (wall.firestoreDocumentId != event.wallDocId) return;
+    final generation = ++_metadataRefreshGeneration;
+    final saved = event.saved;
+    if (saved != null) {
+      final PrismWallpaper updated = PrismWallpaper(
+        core: wall.core,
+        title: saved.metadata.text.title,
+        description: saved.metadata.text.description,
+        tags: saved.metadata.text.tags,
+        collections: wall.collections,
+        review: wall.review,
+        colors: wall.colors,
+        aiMetadata: wall.aiMetadata,
+        isStreakExclusive: wall.isStreakExclusive,
+        requiredStreakDays: wall.requiredStreakDays,
+        streakShopCoinCost: wall.streakShopCoinCost,
+        firestoreDocumentId: wall.firestoreDocumentId,
+        boostedUntil: wall.boostedUntil,
+        depthTier: wall.depthTier,
+        spatial: wall.spatial,
+        aiSource: wall.aiSource,
+        remixOf: wall.remixOf,
+        remixCount: wall.remixCount,
+      );
+      emit(
+        initial.copyWith(
+          entity: PrismFeedItem(id: updated.id, wallpaper: updated),
+        ),
+      );
+    }
+    final result = await _prismRepository.fetchCanonicalByDocumentId(event.wallDocId);
+    if (emit.isDone || _closing || generation != _metadataRefreshGeneration) return;
+    final WallpaperDetailState latest = state;
+    if (latest is! WallpaperDetailLoaded ||
+        latest.entity is! PrismFeedItem ||
+        (latest.entity as PrismFeedItem).wallpaper.firestoreDocumentId != event.wallDocId) {
+      return;
+    }
+    final PrismWallpaper? current = result.data;
+    if (result.isSuccess && current != null) {
+      emit(
+        latest.copyWith(
+          entity: PrismFeedItem(id: current.id, wallpaper: current),
+        ),
+      );
+    }
+  }
 
   Future<void> _onLoadRecommendations(LoadRecommendations event, Emitter<WallpaperDetailState> emit) async {
     if (_closing) return;

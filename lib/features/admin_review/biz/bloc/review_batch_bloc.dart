@@ -4,6 +4,7 @@ import 'package:Prism/features/admin_review/biz/depth_override.dart';
 import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/data/review_batch_repository.dart';
+import 'package:Prism/features/wallpaper_upload/domain/usecases/wall_metadata_actions.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
@@ -24,6 +25,8 @@ class UndoableAction {
 class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
   final ReviewBatchRepository _repository;
   final AdminModerationRepository _moderation;
+
+  WallMetadataActions get metadataActions => _moderation.metadataActions;
 
   static const int _maxUndoStack = 5;
   String? _lastWallId;

@@ -56,7 +56,8 @@ removed session. Do not remove the deletion barrier or reuse deleted UIDs.
 
 ## Fail-closed configuration
 
-Set all of these in the deployed Functions environment:
+Set all of these in Doppler `prism/prd`. `make functions-env` (run by `make functions-deploy`) writes them to the
+deployed Functions environment, and it stops if one is missing:
 
 - `REWARDED_AD_ENABLED=true` (all other values disable the new path).
 - `REWARDED_AD_ANDROID_UNIT_ID` and `REWARDED_AD_IOS_UNIT_ID`: exact production

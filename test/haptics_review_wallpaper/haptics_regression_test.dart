@@ -441,7 +441,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   }, variant: android);
 
-  testWidgets('review delete failure emits an error haptic', (tester) async {
+  testWidgets('review withdrawal failure emits an error haptic', (tester) async {
     final List<String> haptics = _recordHaptics(tester);
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
@@ -458,10 +458,10 @@ void main() {
       ),
     );
     await tester.pump(const Duration(seconds: 1));
-    await tester.tap(find.byTooltip('Delete wallpaper'));
+    await tester.tap(find.byTooltip('Withdraw upload'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    await tester.tap(find.text('Delete wallpaper'));
+    await tester.tap(find.text('Withdraw upload'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
 

@@ -10893,6 +10893,60 @@
       }
     }
   },
+  "wallMetadataDescription": "विवरण",
+  "wallMetadataEdit": "जानकारी संपादित करें",
+  "wallResubmitAction": "सुधारें और फिर से भेजें",
+  "wallResubmitChooseImage": "चित्र चुनें",
+  "wallResubmitImageMissing": "मूल चित्र अब उपलब्ध नहीं है। संपादन जारी रखने के लिए उसे फिर से चुनें।",
+  "wallResubmitImageKept": "मूल चित्र तैयार है",
+  "wallResubmitTitle": "अपना अपलोड सुधारें",
+  "wallUploadUseLastDetails": "पिछली जानकारी का उपयोग करें",
+  "wallUploadLastDetailsUnavailable": "इस डिवाइस पर पिछली जानकारी नहीं है।",
+  "wallUploadWithdraw": "अपलोड वापस लें",
+  "wallUploadWithdrawTitle": "क्या यह अपलोड वापस लें?",
+  "wallUploadWithdrawBody": "इससे अपलोड समीक्षा से हट जाएगा और उसकी अपलोड की गई फ़ाइलें मिट जाएंगी।",
+  "wallUploadWithdrawn": "अपलोड वापस लिया गया",
+  "wallUploadDeleteHistory": "इतिहास से हटाएं",
+  "wallMetadataInvalid": "टेक्स्ट और टैग जांचें, फिर दोबारा कोशिश करें।",
+  "wallUploadOwnerChanged": "आपका खाता बदल गया है। यह अपलोड फिर से खोलें।",
+  "wallResubmitLimit": "इस वॉलपेपर के लिए तीन जुड़े हुए पुनः सबमिशन पूरे हो गए हैं।",
+  "wallResubmitUnsupported": "मूल चित्र फिर से चुनें। AI स्रोत की जानकारी दोबारा इस्तेमाल नहीं की जा सकती।",
+  "wallResubmitUnavailable": "यह अस्वीकृत अपलोड लोड नहीं हो सका। दोबारा कोशिश करें।",
+  "wallMetadataEditDetails": "जानकारी संपादित करें",
+  "wallMetadataApprovedHelp": "शीर्षक, विवरण और टैग बदलें। चित्र और श्रेणी वही रहेंगे।",
+  "wallMetadataPendingHelp": "वॉलपेपर की समीक्षा से पहले यह जानकारी अपडेट करें।",
+  "wallMetadataSave": "जानकारी सेव करें",
+  "wallMetadataSaved": "जानकारी सेव हुई",
+  "wallMetadataDiscardTitle": "बदलाव छोड़ें?",
+  "wallMetadataDiscardBody": "आपकी बिना सेव की गई जानकारी खो जाएगी।",
+  "wallMetadataDiscard": "बदलाव छोड़ें",
+  "wallMetadataReload": "जानकारी फिर लोड करें",
+  "wallMetadataReloadTitle": "मौजूदा जानकारी फिर लोड करें?",
+  "wallMetadataReloadBody": "इससे आपकी बिना सेव की गई जानकारी मौजूदा जानकारी से बदल जाएगी।",
+  "wallMetadataConflict": "यह जानकारी कहीं और बदल गई है। आपके बदलाव अभी भी यहां हैं। सेव करने से पहले मौजूदा जानकारी फिर लोड करें।",
+  "wallMetadataStatusChanged": "इस वॉलपेपर की समीक्षा स्थिति बदल गई है। आपके बदलाव सेव नहीं हुए हैं।",
+  "wallMetadataMissing": "यह वॉलपेपर अब उपलब्ध नहीं है। आपके बदलाव सेव नहीं हुए हैं।",
+  "wallMetadataDenied": "आपको इस वॉलपेपर को संपादित करने की अनुमति नहीं है।",
+  "wallMetadataSignedOut": "इस वॉलपेपर को संपादित करने के लिए फिर से साइन इन करें।",
+  "wallMetadataDailyLimit": "आप आज की संपादन सीमा तक पहुंच गए हैं। कल दोबारा कोशिश करें।",
+  "wallMetadataUnavailable": "जानकारी सेव नहीं हो सकी। अपना कनेक्शन जांचें और दोबारा कोशिश करें।",
+  "wallMetadataLoadFailed": "जानकारी लोड नहीं हो सकी",
+  "wallMetadataHistory": "संपादन इतिहास",
+  "wallMetadataHistoryEmpty": "अभी जानकारी में कोई बदलाव नहीं है",
+  "wallMetadataHistoryEmptyBody": "स्वीकृत शीर्षक, विवरण और टैग में बदलाव यहां दिखते हैं।",
+  "wallMetadataHistoryFailed": "संपादन इतिहास लोड नहीं हो सका",
+  "wallMetadataBefore": "पहले",
+  "wallMetadataAfter": "बाद में",
+  "wallMetadataRevert": "संपादन वापस करें",
+  "wallMetadataRevertTitle": "यह संपादन वापस करें?",
+  "wallMetadataRevertBody": "केवल यहां दिखाए गए पिछले शीर्षक, विवरण और टैग वापस लाएं। चित्र और समीक्षा स्थिति नहीं बदलेंगे।",
+  "wallMetadataReverted": "संपादन वापस किया गया",
+  "wallMetadataLoadMore": "और संपादन लोड करें",
+  "wallMetadataAbsent": "सेट नहीं है",
+  "wallMetadataResubmitted": "फिर से भेजा गया · प्रयास {attempt} / 3",
+  "wallMetadataPreviousReason": "पिछली अस्वीकृति का कारण",
+  "wallMetadataContextUnavailable": "फिर से भेजने की जानकारी उपलब्ध नहीं है",
+  "@wallMetadataResubmitted": {"placeholders": {"attempt": {"type": "int"}}},
   "reportSheetMessage": "हमें बताएं कि क्या गड़बड़ हुई। Prism कभी आपका ईमेल पता या साइन-इन टोकन नहीं जोड़ता। भेजने से पहले स्क्रीनशॉट जांच लें।",
   "@reportSheetMessage": {
     "description": "Intro text in the report a problem sheet."
@@ -11238,6 +11292,178 @@
   "@challengeWinnerNotificationBody": {
     "placeholders": {
       "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "statsTitle": "आपके आँकड़े",
+  "statsEntry": "आँकड़े",
+  "statsViews": "व्यू",
+  "statsSaves": "सेव",
+  "statsSets": "सेट",
+  "statsDownloads": "डाउनलोड",
+  "statsShares": "शेयर",
+  "statsFolderAdds": "फ़ोल्डर में जोड़े गए",
+  "statsRemixes": "रीमिक्स",
+  "statsLoading": "आपके आँकड़े लोड हो रहे हैं",
+  "statsError": "आपके आँकड़े लोड नहीं हुए। फिर कोशिश करें।",
+  "statsRetry": "फिर कोशिश करें",
+  "statsEmptyTitle": "आपका पहला वॉलपेपर यहीं से शुरू होता है",
+  "statsEmptyBody": "वॉलपेपर अपलोड करें। मंज़ूरी के बाद उसके आँकड़े दिखेंगे।",
+  "statsUpload": "वॉलपेपर अपलोड करें",
+  "statsWeekNote": "इस हफ़्ते अब तक की तुलना पिछले हफ़्ते से। हफ़्ता सोमवार को UTC में शुरू होता है।",
+  "statsHistoryNote": "आठ हफ़्ते, सबसे पुराना पहले। डैश का अर्थ है डेटा उपलब्ध नहीं है। ट्रैकिंग हफ़्ते के बीच में शुरू हो सकती है, इसलिए दर्ज हफ़्तों के आँकड़े अधूरे हो सकते हैं। मौजूदा हफ़्ता अधूरा है।",
+  "statsTopWalls": "इस हफ़्ते के शीर्ष वॉलपेपर",
+  "statsUntitled": "बिना शीर्षक का वॉलपेपर",
+  "statsCountingNote": "कुल सेव मौजूदा पसंदीदा की संख्या है; साप्ताहिक सेव नए जोड़े गए पसंदीदा हैं। कुल रीमिक्स मौजूदा क्रेडिट वाले रीमिक्स हैं; साप्ताहिक रीमिक्स पहली बार स्वीकार किए गए क्रेडिट हैं। फ़ोल्डर में जोड़ने की गिनती ट्रैकिंग शुरू होने के बाद से है।",
+  "statsUnavailable": "उपलब्ध नहीं",
+  "statsWeeklyTitle": "इस हफ़्ते आपके वॉलपेपर",
+  "statsWeeklyBody": "{week} में अपने वॉलपेपर के आँकड़े देखें।",
+  "statsWallValue": "{metric}: इस हफ़्ते {value}",
+  "statsComparison": "इस हफ़्ते {current} · पिछले हफ़्ते {previous}",
+  "statsTotal": "कुल: {value}",
+  "statsChange": "पिछले हफ़्ते की तुलना में {value}",
+  "statsUpdated": "{date} UTC को अपडेट हुआ",
+  "statsChartWeek": "{date} से शुरू हफ़्ता: {value}",
+  "statsChartSummary": "{metric}, आठ हफ़्ते। {summary}",
+  "@statsTitle": {
+    "description": "Creator dashboard: statsTitle"
+  },
+  "@statsEntry": {
+    "description": "Creator dashboard: statsEntry"
+  },
+  "@statsViews": {
+    "description": "Creator dashboard: statsViews"
+  },
+  "@statsSaves": {
+    "description": "Creator dashboard: statsSaves"
+  },
+  "@statsSets": {
+    "description": "Creator dashboard: statsSets"
+  },
+  "@statsDownloads": {
+    "description": "Creator dashboard: statsDownloads"
+  },
+  "@statsShares": {
+    "description": "Creator dashboard: statsShares"
+  },
+  "@statsFolderAdds": {
+    "description": "Creator dashboard: statsFolderAdds"
+  },
+  "@statsRemixes": {
+    "description": "Creator dashboard: statsRemixes"
+  },
+  "@statsLoading": {
+    "description": "Creator dashboard: statsLoading"
+  },
+  "@statsError": {
+    "description": "Creator dashboard: statsError"
+  },
+  "@statsRetry": {
+    "description": "Creator dashboard: statsRetry"
+  },
+  "@statsEmptyTitle": {
+    "description": "Creator dashboard: statsEmptyTitle"
+  },
+  "@statsEmptyBody": {
+    "description": "Creator dashboard: statsEmptyBody"
+  },
+  "@statsUpload": {
+    "description": "Creator dashboard: statsUpload"
+  },
+  "@statsWeekNote": {
+    "description": "Creator dashboard: statsWeekNote"
+  },
+  "@statsHistoryNote": {
+    "description": "Creator dashboard: statsHistoryNote"
+  },
+  "@statsTopWalls": {
+    "description": "Creator dashboard: statsTopWalls"
+  },
+  "@statsUntitled": {
+    "description": "Creator dashboard: statsUntitled"
+  },
+  "@statsCountingNote": {
+    "description": "Creator dashboard: statsCountingNote"
+  },
+  "@statsUnavailable": {
+    "description": "Creator dashboard: statsUnavailable"
+  },
+  "@statsWeeklyTitle": {
+    "description": "Creator dashboard: statsWeeklyTitle"
+  },
+  "@statsWeeklyBody": {
+    "description": "Creator dashboard: statsWeeklyBody",
+    "placeholders": {
+      "week": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsWallValue": {
+    "description": "Creator dashboard: statsWallValue",
+    "placeholders": {
+      "metric": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsComparison": {
+    "description": "Creator dashboard: statsComparison",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "previous": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsTotal": {
+    "description": "Creator dashboard: statsTotal",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsChange": {
+    "description": "Creator dashboard: statsChange",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsUpdated": {
+    "description": "Creator dashboard: statsUpdated",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsChartWeek": {
+    "description": "Creator dashboard: statsChartWeek",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsChartSummary": {
+    "description": "Creator dashboard: statsChartSummary",
+    "placeholders": {
+      "metric": {
+        "type": "String"
+      },
+      "summary": {
         "type": "String"
       }
     }

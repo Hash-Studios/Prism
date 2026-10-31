@@ -315,6 +315,10 @@ pattern = "prismwalls.com/streak*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/creator-stats*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "prismwalls.com/not-found*"
 zone_name = "prismwalls.com"
 
@@ -628,6 +632,10 @@ zone_name = "prismwalls.com"
 
 [[routes]]
 pattern = "www.prismwalls.com/streak*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/creator-stats*"
 zone_name = "prismwalls.com"
 
 [[routes]]
