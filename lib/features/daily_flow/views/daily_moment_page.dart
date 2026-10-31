@@ -92,13 +92,16 @@ class _DailyMomentContentState extends State<DailyMomentContent> {
     _activeContent = true;
     _ownsPresentation = true;
     unawaited(analytics.track(const DailyMomentShownEvent()));
-    if (widget.deepLink && widget.requestedStep != null) {
-      unawaited(
-        analytics.track(DailyMomentDeepLinkOpenedEvent(step: DailyMomentStepValue.values[widget.requestedStep!.index])),
-      );
-    }
     unawaited(_repository.markShown(_repository.accountId, _repository.now()));
-    unawaited(_cubit.start());
+    unawaited(
+      _cubit.start().then((_) {
+        if (!mounted || !widget.deepLink) return;
+        final DailyMomentStep? step = widget.requestedStep ?? _cubit.state.step;
+        if (step != null) {
+          unawaited(analytics.track(DailyMomentDeepLinkOpenedEvent(step: DailyMomentStepValue.values[step.index])));
+        }
+      }),
+    );
   }
 
   @override

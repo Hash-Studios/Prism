@@ -15,6 +15,77 @@ void main() {
   setUp(() => AnalyticsRuntime.instance = FakeAppAnalytics());
   tearDown(AnalyticsRuntime.reset);
 
+  for (final bool hasStreakReceipt in <bool>[true, false]) {
+    testWidgets('base deep link records its selected step once per open with streak receipt $hasStreakReceipt', (
+      tester,
+    ) async {
+      final analytics = FakeAppAnalytics();
+      AnalyticsRuntime.instance = analytics;
+      final repository = FakeDailyMomentRepository();
+      if (!hasStreakReceipt) repository.pendingReceipt = null;
+
+      Widget content() => MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: Scaffold(body: DailyMomentContent(repository: repository, deepLink: true)),
+        ),
+      );
+
+      for (var open = 1; open <= 2; open++) {
+        await tester.pumpWidget(content());
+        await tester.pump();
+        await tester.pump();
+        expect(
+          analytics.events
+              .where((event) => event.eventName == 'daily_moment_deep_link_opened')
+              .map((event) => event.toWireParameters()),
+          <Map<String, Object?>>[
+            for (var index = 0; index < open; index++) {'step': hasStreakReceipt && index == 0 ? 'streak' : 'chest'},
+          ],
+        );
+
+        await tester.pumpWidget(content());
+        repository.balance = 150;
+        await tester.pump();
+        await tester.tap(find.text(hasStreakReceipt && open == 1 ? 'Continue' : 'Open for 20 coins'));
+        await tester.pump();
+        await tester.pump();
+        expect(analytics.events.where((event) => event.eventName == 'daily_moment_deep_link_opened'), hasLength(open));
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+    });
+  }
+
+  testWidgets('explicit deep link records its requested step once', (tester) async {
+    final analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: Scaffold(
+            body: DailyMomentContent(
+              repository: FakeDailyMomentRepository(),
+              deepLink: true,
+              requestedStep: DailyMomentStep.spin,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(
+      analytics.events.where((event) => event.eventName == 'daily_moment_deep_link_opened').single.toWireParameters(),
+      <String, Object?>{'step': 'spin'},
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('full paid action wraps at three times text size with reduced motion', (tester) async {
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1;
