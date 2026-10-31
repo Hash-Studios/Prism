@@ -1394,6 +1394,33 @@ events:
       - name: reason
         key: reason
         type: string
+  - id: ios_rotation_folder_set
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: item_count_bucket
+        key: item_count_bucket
+        type: string
+  - id: ios_shortcuts_guide_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: has_shortcut_link
+        key: has_shortcut_link
+        type: bool
+      - name: has_rotation_folder
+        key: has_rotation_folder
+        type: bool
+  - id: ios_shortcut_link_opened
+    fields:
+      - name: kind
+        key: kind
+        type: string
+      - name: opened
+        key: opened
+        type: bool
   - id: nav_tab_selected
     fields:
       - name: from_tab

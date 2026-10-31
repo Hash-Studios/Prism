@@ -1,6 +1,366 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Rotation folder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotation folder"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotationsordner"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carpeta de rotación"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "रोटेशन फ़ोल्डर"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folder rotasi"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasta de rotação"
+          }
+        }
+      }
+    },
+    "Folder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folder"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordner"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carpeta"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "फ़ोल्डर"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folder"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasta"
+          }
+        }
+      }
+    },
+    "Get ${source} wallpaper": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get ${source} wallpaper"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${source}-Hintergrundbild abrufen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obtener un fondo de pantalla de ${source}"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${source} से वॉलपेपर पाएँ"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ambil wallpaper ${source}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obter um papel de parede de ${source}"
+          }
+        }
+      }
+    },
+    "Get ${source} wallpaper from ${folder}": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get ${source} wallpaper from ${folder}"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hintergrundbild von ${source} aus ${folder} abrufen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obtener un fondo de pantalla de ${source} de ${folder}"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${folder} फ़ोल्डर से ${source} का वॉलपेपर पाएँ"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ambil wallpaper ${source} dari ${folder}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obter um papel de parede de ${source} de ${folder}"
+          }
+        }
+      }
+    },
+    "No rotation folder yet. Open Prism, open a folder, and tap Rotate this folder daily.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No rotation folder yet. Open Prism, open a folder, and tap Rotate this folder daily."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch kein Rotationsordner. Öffne Prism, öffne einen Ordner und tippe auf „Diesen Ordner täglich wechseln“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay carpeta de rotación. Abre Prism, abre una carpeta y toca \"Rotar esta carpeta a diario\"."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अभी कोई रोटेशन फ़ोल्डर नहीं है। Prism खोलें, कोई फ़ोल्डर खोलें, और \"इस फ़ोल्डर को हर दिन रोटेट करें\" पर टैप करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belum ada folder rotasi. Buka Prism, buka folder, lalu ketuk \"Putar folder ini setiap hari\"."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você ainda não tem uma pasta de rotação. Abra o Prism, abra uma pasta e toque em \"Rotacionar esta pasta todo dia\"."
+          }
+        }
+      }
+    },
+    "This folder is empty. Open Prism and save wallpapers to it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This folder is empty. Open Prism and save wallpapers to it."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Ordner ist leer. Öffne Prism und speichere Hintergrundbilder darin."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta carpeta está vacía. Abre Prism y guarda fondos de pantalla en ella."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "यह फ़ोल्डर खाली है। Prism खोलें और इसमें वॉलपेपर सेव करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folder ini kosong. Buka Prism dan simpan wallpaper ke folder ini."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta pasta está vazia. Abra o Prism e salve papéis de parede nela."
+          }
+        }
+      }
+    },
+    "Prism cannot find this folder. Open Prism to refresh your folders, then pick the folder again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism cannot find this folder. Open Prism to refresh your folders, then pick the folder again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism kann diesen Ordner nicht finden. Öffne Prism, um deine Ordner zu aktualisieren, und wähle den Ordner dann erneut aus."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism no encuentra esta carpeta. Abre Prism para actualizar tus carpetas y luego vuelve a elegir la carpeta."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism यह फ़ोल्डर नहीं ढूँढ पा रहा है। फ़ोल्डर ताज़ा करने के लिए Prism खोलें, फिर फ़ोल्डर दोबारा चुनें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism tidak dapat menemukan folder ini. Buka Prism untuk memuat ulang folder, lalu pilih folder lagi."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Prism não encontra esta pasta. Abra o Prism para atualizar suas pastas e depois escolha a pasta de novo."
+          }
+        }
+      }
+    },
+    "Could not load a wallpaper from this folder. Check your connection.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not load a wallpaper from this folder. Check your connection."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Hintergrundbild aus diesem Ordner konnte nicht geladen werden. Prüfe deine Verbindung."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo cargar un fondo de pantalla de esta carpeta. Revisa tu conexión."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस फ़ोल्डर से वॉलपेपर लोड नहीं हो सका। अपना कनेक्शन जाँचें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tidak dapat memuat wallpaper dari folder ini. Periksa koneksi internet."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível carregar um papel de parede desta pasta. Verifique sua conexão."
+          }
+        }
+      }
+    },
+    "Open Prism and download today's Wall of the Day original, then run this Shortcut again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Prism and download today's Wall of the Day original, then run this Shortcut again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne Prism und lade das Original des heutigen Hintergrundbilds des Tages herunter. Führe dann diesen Kurzbefehl erneut aus."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre Prism y descarga el original del Fondo del día de hoy. Luego ejecuta este atajo otra vez."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prism खोलें और आज के वॉलपेपर का मूल संस्करण डाउनलोड करें, फिर यह शॉर्टकट दोबारा चलाएँ।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buka Prism dan unduh versi asli Wallpaper Hari Ini, lalu jalankan Shortcut ini lagi."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra o Prism e baixe o original do Papel de parede do dia. Depois execute este Atalho de novo."
+          }
+        }
+      }
+    },
     "Get a wallpaper from %1$@": {
       "localizations": {
         "en": {
@@ -2597,6 +2957,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hay una nueva publicación de %1$@ (%2$@) pendiente de revisión."
+          }
+        }
+      }
+    },
+    "Wallpapers: %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpapers: %lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hintergrundbilder: %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fondos de pantalla: %lld"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वॉलपेपर: %lld"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wallpaper: %lld"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Papéis de parede: %lld"
           }
         }
       }

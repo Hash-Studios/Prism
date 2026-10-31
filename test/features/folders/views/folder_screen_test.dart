@@ -17,6 +17,7 @@ import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/pages/folder_screen.dart';
+import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
@@ -153,7 +154,10 @@ class _NoPublicFolders implements PublicFoldersRepository {
 }
 
 void main() {
+  final Future<int?> Function() originalIosMajorVersion = iosMajorVersion;
+
   tearDown(() {
+    iosMajorVersion = originalIosMajorVersion;
     app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
@@ -399,6 +403,37 @@ void main() {
 
     expect(find.text('Rotating'), findsNothing);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('the folder path shows Rotate this folder daily on iOS 17 with the user own folder', (tester) async {
+    iosMajorVersion = () async => 17;
+    await pumpFolderPage(tester, folderId: 'work', rotation: AutoRotateState.initial());
+
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await settle(tester);
+
+    expect(find.text('Rotate this folder daily'), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('the Android overflow menu does not offer Rotate this folder daily', (tester) async {
+    iosMajorVersion = () async => 17;
+    await pumpFolderPage(tester, folderId: 'work', rotation: AutoRotateState.initial());
+
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await settle(tester);
+
+    expect(find.text('Rotate this folder daily'), findsNothing);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('the iOS 15 overflow menu does not offer Rotate this folder daily', (tester) async {
+    iosMajorVersion = () async => 15;
+    await pumpFolderPage(tester, folderId: 'work', rotation: AutoRotateState.initial());
+
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await settle(tester);
+
+    expect(find.text('Rename'), findsOneWidget);
+    expect(find.text('Rotate this folder daily'), findsNothing);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('the folder page hides Rotating when rotation uses another folder', (tester) async {
     await pumpFolderPage(

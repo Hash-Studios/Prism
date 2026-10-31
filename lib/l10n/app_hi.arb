@@ -6619,10 +6619,6 @@
   "@wallpaperApplyTo": {
     "description": "Setting label for choosing where to apply a wallpaper."
   },
-  "wallpaperAutoRotateAndroidOnly": "ऑटो-रोटेशन केवल Android पर उपलब्ध है।",
-  "@wallpaperAutoRotateAndroidOnly": {
-    "description": "Message shown when auto-rotate is opened on an unsupported platform."
-  },
   "wallpaperAutoRotateApplyTo": "यहाँ लागू करें",
   "@wallpaperAutoRotateApplyTo": {
     "description": "Auto-rotate target setting section label."
@@ -8743,37 +8739,13 @@
   "@wallpaperShareLink": {
     "description": "Wallpaper menu action to share its link."
   },
-  "wallpaperShortcutsAddActionsSteps": "\"Prism वॉलपेपर पाएँ\" ऐक्शन जोड़ें। फिर \"वॉलपेपर सेट करें\" ऐक्शन जोड़ें।",
-  "@wallpaperShortcutsAddActionsSteps": {
-    "description": "Step to add the Prism wallpaper and system wallpaper actions in Shortcuts."
-  },
-  "wallpaperShortcutsBody": "Shortcuts से किसी समय या ट्रिगर पर वॉलपेपर लगाएँ। चलाने से पहले नीचे दिया स्रोत तैयार करें।",
-  "@wallpaperShortcutsBody": {
-    "description": "Explanation of how iOS Shortcuts can change wallpapers automatically."
-  },
   "wallpaperShortcutsChoosePrismData": "चुनें कि Prism क्या भेजे",
   "@wallpaperShortcutsChoosePrismData": {
     "description": "Section title for choosing wallpaper data in Shortcuts."
   },
-  "wallpaperShortcutsChooseTriggerSteps": "शॉर्टकट संपादक में ज़रूरत हो तो ऑटोमेशन खोलें। ट्रिगर चुनकर सेट करें, जैसे दिन का समय, ऐप खोलना या चार्जर लगाना।",
-  "@wallpaperShortcutsChooseTriggerSteps": {
-    "description": "Step to choose a trigger for an iOS Shortcuts wallpaper automation."
-  },
-  "wallpaperShortcutsDisableConfirmationSteps": "दिखाए गए चलाने के विकल्प जाँचें और शॉर्टकट या ऑटोमेशन सहेजें। अगर \"चलाने से पहले पूछें\" दिखे, अपने-आप चलाने के लिए उसे बंद करें।",
-  "@wallpaperShortcutsDisableConfirmationSteps": {
-    "description": "Step to disable confirmation and save an iOS Shortcuts automation."
-  },
-  "wallpaperShortcutsHeadline": "अपना वॉलपेपर अपने-आप बदलें",
-  "@wallpaperShortcutsHeadline": {
-    "description": "Headline describing automatic wallpaper changes through Shortcuts."
-  },
   "wallpaperShortcutsOpenAction": "Shortcuts खोलें",
   "@wallpaperShortcutsOpenAction": {
     "description": "Action to open Apple's Shortcuts app."
-  },
-  "wallpaperShortcutsOpenAutomationSteps": "Shortcuts खोलें। अगर ऑटोमेशन टैब है, उस पर और फिर नया ऑटोमेशन पर टैप करें। वरना जोड़ें (+) पर और संपादित करें दिखे तो उस पर टैप करें।",
-  "@wallpaperShortcutsOpenAutomationSteps": {
-    "description": "First step in creating a wallpaper automation in iOS Shortcuts."
   },
   "wallpaperShortcutsOpenError": "Shortcuts नहीं खुल सका। ऐप खुद खोलें।",
   "@wallpaperShortcutsOpenError": {
@@ -8783,10 +8755,6 @@
   "@wallpaperShortcutsSourceFavourite": {
     "description": "Shortcuts source option for a random favourite wallpaper."
   },
-  "wallpaperShortcutsSourceFavouriteDescription": "Shortcuts के लिए उपलब्ध कोई रैंडम पसंदीदा। पहले Prism में वॉलपेपर पसंद करें। कुछ संरक्षित वॉलपेपर उपलब्ध नहीं हो सकते। कोई दूसरा पसंदीदा उपलब्ध होने पर पिछला चयन दोहराया नहीं जाता।",
-  "@wallpaperShortcutsSourceFavouriteDescription": {
-    "description": "Description of the random favourite Shortcuts source."
-  },
   "wallpaperShortcutsSourceWotd": "आज का वॉलपेपर",
   "@wallpaperShortcutsSourceWotd": {
     "description": "Shortcuts source option for the daily wallpaper pick."
@@ -8794,10 +8762,6 @@
   "wallpaperShortcutsSourceWotdDescription": "आज का Prism चयन। पहले Prism में आज का मूल वॉलपेपर डाउनलोड करें। दिन का चयन बदलने पर इस स्रोत को चलाने से पहले नया मूल वॉलपेपर डाउनलोड करें।",
   "@wallpaperShortcutsSourceWotdDescription": {
     "description": "Description of the Wall of the Day Shortcuts source."
-  },
-  "wallpaperShortcutsSteps": "कदम",
-  "@wallpaperShortcutsSteps": {
-    "description": "Section title for iOS Shortcuts setup instructions."
   },
   "wallpaperShortcutsTitle": "अपने-आप बदलें",
   "@wallpaperShortcutsTitle": {
@@ -11468,70 +11432,396 @@
       }
     }
   },
+  "shortcutsGuideHeadline": "हर दिन एक नया वॉलपेपर",
+  "@shortcutsGuideHeadline": {
+    "description": "Headline of the iOS Shortcuts guide."
+  },
+  "shortcutsGuideBody": "Shortcuts को एक बार सेट करें। हर दिन ऑटोमेशन आपके रोटेशन फ़ोल्डर से एक वॉलपेपर लगाता है। इसके 200 सबसे नए वॉलपेपर दोबारा आने से पहले एक-एक बार दिखते हैं।",
+  "@shortcutsGuideBody": {
+    "description": "Body under the iOS Shortcuts guide headline."
+  },
+  "shortcutsSourceRotation": "रोटेशन फ़ोल्डर",
+  "@shortcutsSourceRotation": {
+    "description": "Section title on the iOS Shortcuts guide, and the name of the Shortcuts source that shuffles the folder picked in Prism. Must match the iOS intent's source name."
+  },
+  "shortcutsSourceRotationDescription": "ऊपर चुना गया फ़ोल्डर शफ़ल करता है।",
+  "@shortcutsSourceRotationDescription": {
+    "description": "Description of the Rotation folder source in the iOS Shortcuts guide."
+  },
+  "shortcutsSourceFolder": "फ़ोल्डर",
+  "@shortcutsSourceFolder": {
+    "description": "Name of the Shortcuts source that shuffles a folder picked inside Shortcuts. Must match the iOS intent's source name."
+  },
+  "shortcutsSourceFolderDescription": "Shortcuts में चुना गया एक फ़ोल्डर शफ़ल करता है।",
+  "@shortcutsSourceFolderDescription": {
+    "description": "Description of the Folder source in the iOS Shortcuts guide."
+  },
+  "shortcutsSourceFavouriteDescription": "आपके पसंदीदा शफ़ल करता है। हर एक वॉलपेपर एक बार दिखता है, उसके बाद ही कोई दोहराया जाता है। कुछ सुरक्षित वॉलपेपर उपलब्ध न हों।",
+  "@shortcutsSourceFavouriteDescription": {
+    "description": "Description of the Random favourite source in the iOS Shortcuts guide."
+  },
+  "shortcutsRotationNone": "कोई फ़ोल्डर नहीं चुना गया",
+  "@shortcutsRotationNone": {
+    "description": "Rotation folder card title on the iOS Shortcuts guide when no folder is picked."
+  },
+  "shortcutsRotationNoneBody": "वह फ़ोल्डर चुनें जिसे शॉर्टकट शफ़ल करता है।",
+  "@shortcutsRotationNoneBody": {
+    "description": "Rotation folder card body when no folder is picked."
+  },
+  "shortcutsRotationPick": "फ़ोल्डर चुनें",
+  "@shortcutsRotationPick": {
+    "description": "Button on the rotation folder card that opens the folder picker when no folder is picked."
+  },
+  "shortcutsRotationChange": "बदलें",
+  "@shortcutsRotationChange": {
+    "description": "Button on the rotation folder card that picks another folder."
+  },
+  "shortcutsRotationStop": "रोकें",
+  "@shortcutsRotationStop": {
+    "description": "Button on the rotation folder card that stops using the folder for Shortcuts."
+  },
+  "shortcutsStepLabel": "चरण {number}, {title}",
+  "@shortcutsStepLabel": {
+    "description": "Screen reader label of a numbered step heading in the iOS Shortcuts guide.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepAddTitle": "Prism शॉर्टकट जोड़ें",
+  "@shortcutsStepAddTitle": {
+    "description": "Step 1 title in the iOS Shortcuts guide."
+  },
+  "shortcutsStepAddBody": "यह आपके रोटेशन फ़ोल्डर से एक वॉल लेता है और उसे आपका वॉलपेपर सेट करता है।",
+  "@shortcutsStepAddBody": {
+    "description": "Step 1 body when a shared shortcut link is available."
+  },
+  "shortcutsStepAddAction": "शॉर्टकट जोड़ें",
+  "@shortcutsStepAddAction": {
+    "description": "Button that opens the shared iCloud shortcut link."
+  },
+  "shortcutsStepAddManualBody": "इसे Shortcuts में 2 क्रियाओं के साथ बनाएँ।",
+  "@shortcutsStepAddManualBody": {
+    "description": "Step 1 body when there is no shared shortcut link."
+  },
+  "shortcutsManualNew": "Shortcuts में + दबाकर नया शॉर्टकट बनाएँ।",
+  "@shortcutsManualNew": {
+    "description": "Manual step to build the shortcut."
+  },
+  "shortcutsManualGet": "\"Prism वॉलपेपर पाएँ\" जोड़ें। स्रोत को रोटेशन फ़ोल्डर पर सेट करें।",
+  "@shortcutsManualGet": {
+    "description": "Manual step to build the shortcut. Keep the quoted action name and \"Rotation folder\" as iOS shows them."
+  },
+  "shortcutsManualSet": "\"Set Wallpaper Photo\" जोड़ें। उसके तीर को दबाएँ, फिर \"Show Preview\" बंद करें।",
+  "@shortcutsManualSet": {
+    "description": "Manual step to build the shortcut. Use the action and option names that Apple's Shortcuts app shows in this language."
+  },
+  "shortcutsManualName": "शॉर्टकट का नाम \"{name}\" रखें।",
+  "@shortcutsManualName": {
+    "description": "Manual step to build the shortcut. The name stays in English so Prism can run it.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepAutomationTitle": "हर दिन चलाएँ",
+  "@shortcutsStepAutomationTitle": {
+    "description": "Step 2 title in the iOS Shortcuts guide."
+  },
+  "shortcutsAutomationOpen": "Shortcuts में ऑटोमेशन पर टैप करें, फिर + पर टैप करें।",
+  "@shortcutsAutomationOpen": {
+    "description": "Step 2 line. Use Apple's Shortcuts labels in this language."
+  },
+  "shortcutsAutomationTime": "दिन का समय पर टैप करें। एक समय चुनें, फिर प्रतिदिन चुनें।",
+  "@shortcutsAutomationTime": {
+    "description": "Step 2 line. Use Apple's Shortcuts labels in this language."
+  },
+  "shortcutsAutomationRun": "तुरंत चलाएँ चुनें, फिर अगला पर टैप करें।",
+  "@shortcutsAutomationRun": {
+    "description": "Step 2 line. Use Apple's Shortcuts labels in this language."
+  },
+  "shortcutsAutomationPick": "चलाने के लिए \"{name}\" चुनें।",
+  "@shortcutsAutomationPick": {
+    "description": "Step 2 line. The shortcut name stays in English.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsAutomationNoTab": "ऑटोमेशन टैब नहीं है? \"{name}\" खोलें, संपादित करें पर टैप करें, फिर ऑटोमेशन पर टैप करें।",
+  "@shortcutsAutomationNoTab": {
+    "description": "Note for newer iOS versions without an Automation tab.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepTestTitle": "अभी जाँचें",
+  "@shortcutsStepTestTitle": {
+    "description": "Step 3 title in the iOS Shortcuts guide."
+  },
+  "shortcutsStepTestBody": "\"{name}\" एक बार चलता है, ताकि आप नया वॉलपेपर अभी देख सकें।",
+  "@shortcutsStepTestBody": {
+    "description": "Step 3 body.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepTestAction": "शॉर्टकट चलाएँ",
+  "@shortcutsStepTestAction": {
+    "description": "Button that runs the shortcut in the Shortcuts app."
+  },
+  "foldersRotateDaily": "इस फ़ोल्डर को हर दिन रोटेट करें",
+  "@foldersRotateDaily": {
+    "description": "Folder page menu item on iPhone. Makes this the Shortcuts rotation folder and opens the guide."
+  },
+  "autoRotateIosTitle": "Shortcuts से वॉलपेपर बदलें",
+  "@autoRotateIosTitle": {
+    "description": "Title on the auto-rotate page on iPhone, where Shortcuts changes the wallpaper."
+  },
+  "autoRotateIosBody": "iPhone पर, एक Shortcuts ऑटोमेशन हर दिन आपके फ़ोल्डर से नया वॉलपेपर सेट करता है।",
+  "@autoRotateIosBody": {
+    "description": "Body on the auto-rotate page on iPhone."
+  },
+  "autoRotateIosAction": "Shortcuts सेट करें",
+  "@autoRotateIosAction": {
+    "description": "Button on the auto-rotate page on iPhone that opens the Shortcuts guide."
+  },
+  "shortcutsAutomationIos16": "iOS 16 में \"तुरंत चलाएँ\" नहीं है। इसके बजाय \"चलाने से पहले पूछें\" बंद करें।",
+  "@shortcutsAutomationIos16": {
+    "description": "Note under the Step 2 automation lines for iOS 16, which has no Run Immediately option. Use the Shortcuts labels in this language."
+  },
   "tipAction": "क्रिएटर को टिप दें",
-  "@tipAction": {"description": "Wall detail: opens the sheet to tip the wall's creator coins"},
+  "@tipAction": {
+    "description": "Wall detail: opens the sheet to tip the wall's creator coins"
+  },
   "tipMenuItem": "टिप भेजें",
-  "@tipMenuItem": {"description": "Creator profile overflow menu item that opens the tip sheet"},
+  "@tipMenuItem": {
+    "description": "Creator profile overflow menu item that opens the tip sheet"
+  },
   "tipTitle": "{name} को टिप दें",
-  "@tipTitle": {"placeholders": {"name": {"type": "String"}}},
+  "@tipTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "tipMessage": "एक रकम चुनें। {name} को सारे कॉइन्स मिलेंगे और उन्हें आपका नाम दिखेगा।",
-  "@tipMessage": {"placeholders": {"name": {"type": "String"}}},
+  "@tipMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "tipAmountsLabel": "टिप की रकम",
-  "@tipAmountsLabel": {"description": "Accessibility label for the group of tip amount choices"},
+  "@tipAmountsLabel": {
+    "description": "Accessibility label for the group of tip amount choices"
+  },
   "tipBalance": "आपका बैलेंस: {balance, plural, =1{1 कॉइन} other{{balance} कॉइन्स}}",
-  "@tipBalance": {"placeholders": {"balance": {"type": "int"}}},
+  "@tipBalance": {
+    "placeholders": {
+      "balance": {
+        "type": "int"
+      }
+    }
+  },
   "tipShortBy": "आपको {amount, plural, =1{1 और कॉइन} other{{amount} और कॉइन्स}} चाहिए।",
-  "@tipShortBy": {"placeholders": {"amount": {"type": "int"}}},
+  "@tipShortBy": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
   "tipSendButton": "{amount} कॉइन्स की टिप दें",
-  "@tipSendButton": {"placeholders": {"amount": {"type": "int"}}},
+  "@tipSendButton": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
   "tipEarnCoins": "कॉइन्स कमाएँ",
-  "@tipEarnCoins": {"description": "Tip sheet: opens Rewards when the balance is too low"},
+  "@tipEarnCoins": {
+    "description": "Tip sheet: opens Rewards when the balance is too low"
+  },
   "tipThanksTitle": "टिप के लिए धन्यवाद",
-  "@tipThanksTitle": {"description": "Tip sheet success headline"},
+  "@tipThanksTitle": {
+    "description": "Tip sheet success headline"
+  },
   "tipThanksMessage": "{name} को आपके {amount} कॉइन्स मिल गए।",
-  "@tipThanksMessage": {"placeholders": {"name": {"type": "String"}, "amount": {"type": "int"}}},
+  "@tipThanksMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
   "tipDone": "हो गया",
-  "@tipDone": {"description": "Closes the tip sheet after a tip"},
+  "@tipDone": {
+    "description": "Closes the tip sheet after a tip"
+  },
   "tipNotEnoughCoins": "इस टिप के लिए आपके पास पर्याप्त कॉइन्स नहीं हैं।",
-  "@tipNotEnoughCoins": {"description": "Toast when the balance is short"},
+  "@tipNotEnoughCoins": {
+    "description": "Toast when the balance is short"
+  },
   "tipDailyLimit": "आज की सारी टिप्स आप भेज चुके हैं। कल फिर कोशिश करें।",
-  "@tipDailyLimit": {"description": "Toast when the sender hit the daily tip cap"},
+  "@tipDailyLimit": {
+    "description": "Toast when the sender hit the daily tip cap"
+  },
   "tipPairLimit": "आप आज {name} को पहले ही टिप दे चुके हैं। कल फिर कोशिश करें।",
-  "@tipPairLimit": {"placeholders": {"name": {"type": "String"}}},
+  "@tipPairLimit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "tipCreatorLimit": "{name} आज और टिप्स नहीं पा सकते। कल फिर कोशिश करें।",
-  "@tipCreatorLimit": {"placeholders": {"name": {"type": "String"}}},
+  "@tipCreatorLimit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "tipSenderTooNew": "Prism से जुड़ने के 7 दिन बाद आप टिप्स भेज सकते हैं।",
-  "@tipSenderTooNew": {"description": "Toast for accounts younger than 7 days"},
+  "@tipSenderTooNew": {
+    "description": "Toast for accounts younger than 7 days"
+  },
   "tipSenderIneligible": "टिप भेजने के लिए सत्यापित खाते से साइन इन करें।",
-  "@tipSenderIneligible": {"description": "Toast for guest or unverified accounts"},
+  "@tipSenderIneligible": {
+    "description": "Toast for guest or unverified accounts"
+  },
   "tipUnavailable": "अभी आप {name} को टिप नहीं दे सकते।",
-  "@tipUnavailable": {"placeholders": {"name": {"type": "String"}}},
+  "@tipUnavailable": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "tipFailed": "टिप नहीं भेजी जा सकी। फिर से कोशिश करें।",
-  "@tipFailed": {"description": "Toast when the tip call fails"},
+  "@tipFailed": {
+    "description": "Toast when the tip call fails"
+  },
   "wallTippedBy": "{count} लोगों ने टिप दी",
-  "@wallTippedBy": {"placeholders": {"count": {"type": "int"}}},
+  "@wallTippedBy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "coreCoinTipSent": "टिप भेजी गई",
-  "@coreCoinTipSent": {"description": "Coin history row for a tip the user sent"},
+  "@coreCoinTipSent": {
+    "description": "Coin history row for a tip the user sent"
+  },
   "coreCoinTipReceived": "टिप मिली",
-  "@coreCoinTipReceived": {"description": "Coin history row for a tip the user received"},
+  "@coreCoinTipReceived": {
+    "description": "Coin history row for a tip the user received"
+  },
   "notifPushTipReceivedTitle": "{senderName} ने {wallTitle} के लिए आपको {amount} कॉइन्स की टिप दी",
-  "@notifPushTipReceivedTitle": {"placeholders": {"senderName": {"type": "String"}, "amount": {"type": "String"}, "wallTitle": {"type": "String"}}},
+  "@notifPushTipReceivedTitle": {
+    "placeholders": {
+      "senderName": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
   "notifPushTipReceivedTitleUntitled": "{senderName} ने आपको {amount} कॉइन्स की टिप दी",
-  "@notifPushTipReceivedTitleUntitled": {"placeholders": {"senderName": {"type": "String"}, "amount": {"type": "String"}}},
+  "@notifPushTipReceivedTitleUntitled": {
+    "placeholders": {
+      "senderName": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "notifPushTipReceivedBody": "अपने क्रिएटर स्टैट्स में अपनी टिप्स देखें।",
-  "@notifPushTipReceivedBody": {"description": "Body of the first tip push of the day"},
+  "@notifPushTipReceivedBody": {
+    "description": "Body of the first tip push of the day"
+  },
   "notifTipsReceivedTitle": "आज आपको {count} टिप्स मिलीं",
-  "@notifTipsReceivedTitle": {"placeholders": {"count": {"type": "int"}}},
+  "@notifTipsReceivedTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "notifTipsReceivedBody": "कुल {coins} कॉइन्स। इन्हें अपने क्रिएटर स्टैट्स में देखें।",
-  "@notifTipsReceivedBody": {"placeholders": {"coins": {"type": "int"}}},
+  "@notifTipsReceivedBody": {
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
   "statsTips": "टिप्स",
-  "@statsTips": {"description": "Creator stats: tips section title"},
+  "@statsTips": {
+    "description": "Creator stats: tips section title"
+  },
   "statsTipsTotal": "{count, plural, =1{1 टिप} other{{count} टिप्स}}, कुल {coins} कॉइन्स",
-  "@statsTipsTotal": {"placeholders": {"count": {"type": "int"}, "coins": {"type": "int"}}},
+  "@statsTipsTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
   "statsTipsWeek": "{date} से शुरू हफ़्ता: {count, plural, =1{1 टिप} other{{count} टिप्स}}, {coins} कॉइन्स",
-  "@statsTipsWeek": {"placeholders": {"date": {"type": "String"}, "count": {"type": "int"}, "coins": {"type": "int"}}},
+  "@statsTipsWeek": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
   "statsTipsWall": "{count, plural, =1{1 टिप} other{{count} टिप्स}}, {coins} कॉइन्स",
-  "@statsTipsWall": {"placeholders": {"count": {"type": "int"}, "coins": {"type": "int"}}},
+  "@statsTipsWall": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
   "statsTipsEmpty": "अभी कोई टिप नहीं है। प्रशंसक आपके वॉलपेपर और प्रोफ़ाइल से आपको टिप दे सकते हैं।",
-  "@statsTipsEmpty": {"description": "Creator stats: tips section with no tips"}
+  "@statsTipsEmpty": {
+    "description": "Creator stats: tips section with no tips"
+  }
 }

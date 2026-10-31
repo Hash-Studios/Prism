@@ -7729,9 +7729,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperApplyTo => 'Apply to';
 
   @override
-  String get wallpaperAutoRotateAndroidOnly => 'Auto-rotate is only available on Android.';
-
-  @override
   String get wallpaperAutoRotateApplyTo => 'Apply to';
 
   @override
@@ -9351,33 +9348,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperShareLink => 'Share link';
 
   @override
-  String get wallpaperShortcutsAddActionsSteps =>
-      'Add the action \"Get Prism Wallpaper\". Then add the action \"Set Wallpaper\".';
-
-  @override
-  String get wallpaperShortcutsBody =>
-      'Use Shortcuts to set a wallpaper on a schedule or trigger. Prepare the source below before running it.';
-
-  @override
   String get wallpaperShortcutsChoosePrismData => 'Pick what Prism sends';
 
   @override
-  String get wallpaperShortcutsChooseTriggerSteps =>
-      'In the shortcut editor, open Automation if needed. Choose and configure a trigger, such as Time of Day, opening an app, or connecting a charger.';
-
-  @override
-  String get wallpaperShortcutsDisableConfirmationSteps =>
-      'Review the run options shown and save the shortcut or automation. If \"Ask Before Running\" appears, turn it off for automatic runs.';
-
-  @override
-  String get wallpaperShortcutsHeadline => 'Change your wallpaper automatically';
-
-  @override
   String get wallpaperShortcutsOpenAction => 'Open Shortcuts';
-
-  @override
-  String get wallpaperShortcutsOpenAutomationSteps =>
-      'Open Shortcuts. If there is an Automation tab, tap it, then New Automation. Otherwise, tap Add (+), then Edit if shown.';
 
   @override
   String get wallpaperShortcutsOpenError => 'Could not open Shortcuts. Open the app yourself.';
@@ -9386,18 +9360,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperShortcutsSourceFavourite => 'Random favourite';
 
   @override
-  String get wallpaperShortcutsSourceFavouriteDescription =>
-      'A random favourite available to Shortcuts. Heart wallpapers in Prism first. Some protected wallpapers may not be available. It avoids the last pick when another favourite is available.';
-
-  @override
   String get wallpaperShortcutsSourceWotd => 'Wall of the Day';
 
   @override
   String get wallpaperShortcutsSourceWotdDescription =>
       'Today\'s Prism pick. Download today\'s original in Prism first. When the daily pick changes, download the new original before running this source.';
-
-  @override
-  String get wallpaperShortcutsSteps => 'Steps';
 
   @override
   String get wallpaperShortcutsTitle => 'Change automatically';
@@ -11933,6 +11900,123 @@ class AppLocalizationsEn extends AppLocalizations {
   String statsChartSummary(String metric, String summary) {
     return '$metric, eight weeks. $summary';
   }
+
+  @override
+  String get shortcutsGuideHeadline => 'A new wallpaper every day';
+
+  @override
+  String get shortcutsGuideBody =>
+      'Set up Shortcuts once. Each day it sets a wallpaper from your rotation folder. Its 200 newest walls each show once before any repeats.';
+
+  @override
+  String get shortcutsSourceRotation => 'Rotation folder';
+
+  @override
+  String get shortcutsSourceRotationDescription => 'Shuffles the folder you picked above.';
+
+  @override
+  String get shortcutsSourceFolder => 'Folder';
+
+  @override
+  String get shortcutsSourceFolderDescription => 'Shuffles a folder that you pick in Shortcuts.';
+
+  @override
+  String get shortcutsSourceFavouriteDescription =>
+      'Shuffles your favourites. Each one shows once before any repeats. Some protected wallpapers may not be available.';
+
+  @override
+  String get shortcutsRotationNone => 'No folder picked';
+
+  @override
+  String get shortcutsRotationNoneBody => 'Pick the folder that the shortcut shuffles.';
+
+  @override
+  String get shortcutsRotationPick => 'Pick a folder';
+
+  @override
+  String get shortcutsRotationChange => 'Change';
+
+  @override
+  String get shortcutsRotationStop => 'Stop';
+
+  @override
+  String shortcutsStepLabel(int number, String title) {
+    return 'Step $number, $title';
+  }
+
+  @override
+  String get shortcutsStepAddTitle => 'Add the Prism shortcut';
+
+  @override
+  String get shortcutsStepAddBody => 'It gets a wall from your rotation folder and sets it as your wallpaper.';
+
+  @override
+  String get shortcutsStepAddAction => 'Add the shortcut';
+
+  @override
+  String get shortcutsStepAddManualBody => 'Make it in Shortcuts with 2 actions.';
+
+  @override
+  String get shortcutsManualNew => 'In Shortcuts, tap + to make a new shortcut.';
+
+  @override
+  String get shortcutsManualGet => 'Add \"Get Prism Wallpaper\". Set Source to Rotation folder.';
+
+  @override
+  String get shortcutsManualSet => 'Add \"Set Wallpaper Photo\". Tap the arrow on it, then turn off Show Preview.';
+
+  @override
+  String shortcutsManualName(String name) {
+    return 'Name the shortcut \"$name\".';
+  }
+
+  @override
+  String get shortcutsStepAutomationTitle => 'Run it every day';
+
+  @override
+  String get shortcutsAutomationOpen => 'In Shortcuts, tap Automation, then tap +.';
+
+  @override
+  String get shortcutsAutomationTime => 'Tap Time of Day. Pick a time, then choose Daily.';
+
+  @override
+  String get shortcutsAutomationRun => 'Choose Run Immediately, then tap Next.';
+
+  @override
+  String shortcutsAutomationPick(String name) {
+    return 'Pick \"$name\" to run.';
+  }
+
+  @override
+  String shortcutsAutomationNoTab(String name) {
+    return 'No Automation tab? Open \"$name\", tap Edit, then tap Automation.';
+  }
+
+  @override
+  String get shortcutsStepTestTitle => 'Test it now';
+
+  @override
+  String shortcutsStepTestBody(String name) {
+    return 'Runs \"$name\" once, so you can see the new wallpaper now.';
+  }
+
+  @override
+  String get shortcutsStepTestAction => 'Run the shortcut';
+
+  @override
+  String get foldersRotateDaily => 'Rotate this folder daily';
+
+  @override
+  String get autoRotateIosTitle => 'Change wallpapers with Shortcuts';
+
+  @override
+  String get autoRotateIosBody => 'On iPhone, a Shortcuts automation sets a new wallpaper from your folder every day.';
+
+  @override
+  String get autoRotateIosAction => 'Set up Shortcuts';
+
+  @override
+  String get shortcutsAutomationIos16 => 'On iOS 16 there is no Run Immediately. Turn off Ask Before Running instead.';
 
   @override
   String get tipAction => 'Tip creator';

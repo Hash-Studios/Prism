@@ -46,7 +46,7 @@ void main() {
     final Map<String, Object?> strings = catalog['strings']! as Map<String, Object?>;
 
     expect(catalog['sourceLanguage'], 'en');
-    expect(strings, hasLength(65));
+    expect(strings, hasLength(75));
 
     for (final MapEntry<String, Object?> entry in strings.entries) {
       final Map<String, Object?> record = entry.value! as Map<String, Object?>;
