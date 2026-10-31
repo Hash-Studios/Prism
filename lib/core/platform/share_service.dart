@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:Prism/core/auth/require_signed_in_action.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -11,7 +13,10 @@ class ShareService {
     String? title,
     BuildContext? context,
     Rect? sharePositionOrigin,
-  }) {
+  }) async {
+    if (!await _allowed(context) || (context != null && !context.mounted)) {
+      return const ShareResult('', ShareResultStatus.dismissed);
+    }
     return SharePlus.instance.share(
       ShareParams(
         text: text,
@@ -27,7 +32,10 @@ class ShareService {
     required String text,
     String? title,
     BuildContext? context,
-  }) {
+  }) async {
+    if (!await _allowed(context) || (context != null && !context.mounted)) {
+      return const ShareResult('', ShareResultStatus.dismissed);
+    }
     return SharePlus.instance.share(
       ShareParams(
         text: text,
@@ -36,6 +44,11 @@ class ShareService {
         sharePositionOrigin: _resolveSharePositionOrigin(context),
       ),
     );
+  }
+
+  static Future<bool> _allowed(BuildContext? context) async {
+    if (context == null) return app_state.prismUser.loggedIn;
+    return await requireSignedInAction(context) && context.mounted;
   }
 
   static Rect _resolveSharePositionOrigin(BuildContext? context) {

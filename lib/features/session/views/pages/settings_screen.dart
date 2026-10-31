@@ -6,6 +6,7 @@ import 'package:Prism/auth/google_auth.dart' show WrongAccountException;
 import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/account/reauth_cancelled.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
@@ -746,6 +747,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ];
 
   Future<void> _restorePurchases() async {
+    if (!await requireSignedInAction(context) || !mounted) return;
     final String requestedUserId = app_state.prismUser.id.trim();
     final bool requestedLoggedIn = app_state.prismUser.loggedIn;
     bool isCurrentAccount() =>

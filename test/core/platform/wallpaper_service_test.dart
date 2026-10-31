@@ -136,12 +136,27 @@ void main() {
   late OfflineAssetFixture assets;
 
   setUp(() async {
+    app_state.prismUser = profileUser();
     assets = await OfflineAssetFixture.create();
     assets.install();
   });
 
   tearDown(() => assets.dispose());
+  tearDown(() => app_state.prismUser = profileUser(loggedIn: false));
   tearDown(() => messenger.setMockDecodedMessageHandler<Object?>(channel, null));
+
+  test('a guest with local premium cannot resolve or apply even a local wallpaper', () async {
+    app_state.prismUser = profileUser(loggedIn: false, premium: true);
+    final client = _FakeClient(<aw.WallpaperOperationStatus>[aw.WallpaperOperationStatus.applied]);
+    aw.AsyncWallpaper.debugSetClient(client);
+    addTearDown(aw.AsyncWallpaper.debugResetClient);
+
+    final result = await WallpaperService.setWallpaper('/guest-local.png', WallpaperTarget.home);
+
+    expect(result.status, WallpaperSetStatus.cancelled);
+    expect(client.requests, isEmpty);
+    verifyNever(() => assets.cacheManager.getSingleFile(any()));
+  });
 
   test('a local-only cache miss reports unavailable without a network request', () async {
     const String source = 'https://example.test/not-saved.jpg';

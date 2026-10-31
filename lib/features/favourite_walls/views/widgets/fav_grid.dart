@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
@@ -170,7 +171,6 @@ class _FavouriteGridState extends State<FavouriteGrid> {
   Future<void> _removeSelected(List<FavouriteWallEntity> all) async {
     final List<FavouriteWallEntity> walls = _selectedWalls(all);
     if (walls.isEmpty) return;
-    _exitSelection();
     await _removeWalls(walls);
   }
 
@@ -191,6 +191,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
   }
 
   Future<void> _removeWalls(List<FavouriteWallEntity> walls, {bool playTapHaptic = true}) async {
+    if (!await requireSignedInAction(context) || !mounted) return;
     final FavouriteWallsAdapter adapter = context.favouriteWallsAdapter(listen: false);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     if (playTapHaptic) PrismHaptics.tap();
@@ -199,6 +200,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
       toasts.error(context.l10n.wallpaperFavouriteRemoveError);
       return;
     }
+    _exitSelection();
     _showUndo(
       messenger,
       walls.length == 1
@@ -210,6 +212,8 @@ class _FavouriteGridState extends State<FavouriteGrid> {
 
   Future<void> _clearAll(List<FavouriteWallEntity> all) async {
     if (all.isEmpty) return;
+    if (!await requireSignedInAction(context) || !mounted) return;
+    final String userId = app_state.prismUser.id;
     final bool guest = app_state.prismUser.id.isEmpty;
     final bool confirmed = await showPrismConfirm(
       context,
@@ -222,7 +226,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
       confirmLabel: context.l10n.wallpaperFavouriteClearAll,
       destructive: true,
     );
-    if (!confirmed || !mounted) return;
+    if (!confirmed || !mounted || !app_state.prismUser.loggedIn || app_state.prismUser.id != userId) return;
     final FavouriteWallsAdapter adapter = context.favouriteWallsAdapter(listen: false);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final List<FavouriteWallEntity> before = List<FavouriteWallEntity>.of(all);
@@ -246,11 +250,14 @@ class _FavouriteGridState extends State<FavouriteGrid> {
       toasts.info(context.l10n.wallpaperFavouriteExportEmpty);
       return;
     }
+    if (!await requireSignedInAction(context) || !mounted) return;
+    final String userId = app_state.prismUser.id;
     PrismHaptics.tap();
     final RenderObject? box = context.findRenderObject();
     final Rect origin = box is RenderBox && box.hasSize ? box.localToGlobal(Offset.zero) & box.size : Rect.zero;
     try {
       final file = await writeFavouritesExportFile(all);
+      if (!mounted || !app_state.prismUser.loggedIn || app_state.prismUser.id != userId) return;
       await SharePlus.instance.share(
         ShareParams(
           files: <XFile>[XFile(file.path)],
@@ -306,6 +313,8 @@ class _FavouriteGridState extends State<FavouriteGrid> {
   Future<void> _shareSelected(List<FavouriteWallEntity> all) async {
     final List<FavouriteWallEntity> walls = _selectedWalls(all);
     if (walls.isEmpty) return;
+    if (!await requireSignedInAction(context) || !mounted) return;
+    final String userId = app_state.prismUser.id;
     PrismHaptics.tap();
     try {
       final FavouriteWallEntity first = walls.first;
@@ -320,7 +329,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
           core: first.toFeedItem().wallpaperCore,
         );
       }
-      if (!mounted) return;
+      if (!mounted || !app_state.prismUser.loggedIn || app_state.prismUser.id != userId) return;
       final String text =
           link ??
           walls

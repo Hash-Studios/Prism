@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/router/push_tap_startup.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/scheduler.dart';
 
 /// Keeps the matched destination across onboarding's replacement of the router stack.
 class AuthNavigationContinuation {
@@ -84,6 +85,21 @@ class AuthNavigationContinuation {
 
   Future<void> _openSignIn(_PendingNavigation pending) async {
     try {
+      // Pages match by route name. A sign-in pushed in the frame that removed the previous one would reuse its
+      // finished state, so wait for that frame first.
+      final scheduler = SchedulerBinding.instance;
+      if (scheduler.schedulerPhase == SchedulerPhase.postFrameCallbacks) scheduler.scheduleFrame();
+      await scheduler.endOfFrame;
+      if (!identical(_pending, pending) || _disposed) return;
+      if (_hasOnboarding) {
+        _authWasVisible = true;
+        return;
+      }
+      if (app_state.prismUser.loggedIn) {
+        _authWasVisible = true;
+        _flush();
+        return;
+      }
       await _router.pushPath('/onboarding/v2', onFailure: (_) => _cancelIfCurrent(pending));
       if (!_authWasVisible) _cancelIfCurrent(pending);
       _onRouterChanged();
@@ -106,7 +122,10 @@ class AuthNavigationContinuation {
       if (resuming.cancelled) return;
       final target = resuming.routes.last.flattened.last;
       final top = _router.topRoute;
-      if (top.route.toPageRouteInfo() == target && identical(top.args, target.args)) {
+      final visible = top.route.toPageRouteInfo();
+      // AutoRoute can represent a leaf's children as either null or empty after reusing the dashboard.
+      if (visible.copyWith(children: const []) == target.copyWith(children: const []) &&
+          identical(top.args, target.args)) {
         _resuming = null;
         resuming.complete(true);
       }

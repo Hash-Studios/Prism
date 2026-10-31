@@ -4,7 +4,6 @@ import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/biz/bloc/ads_bloc.j.dart';
 import 'package:Prism/features/ads/biz/coin_gate_port.dart';
-import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/widgets.dart';
@@ -562,14 +561,6 @@ class CoinGate {
     }
   }
 }
-
-/// What to tell the user when no rewarded ad played.
-String adFailureMessage(AppLocalizations l10n, AdFailureReason? reason) => switch (reason) {
-  AdFailureReason.consent => l10n.economyAdsOffPrivacy,
-  AdFailureReason.noFill => l10n.economyAdUnavailable,
-  AdFailureReason.offline => l10n.economyAdOffline,
-  _ => l10n.economyAdNotCompleted,
-};
 
 String rewardPendingMessage(AppLocalizations l10n) => l10n.economyAdVerificationPending;
 

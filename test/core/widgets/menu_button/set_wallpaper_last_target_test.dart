@@ -87,7 +87,9 @@ void main() {
   late SettingsLocalDataSource settings;
 
   setUp(() {
-    app_state.prismUser = app_constants.createGuestPrismUser();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'signed-in-user'
+      ..loggedIn = true;
     AnalyticsRuntime.instance = FakeAppAnalytics();
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     getIt.registerSingleton<SettingsLocalDataSource>(settings);

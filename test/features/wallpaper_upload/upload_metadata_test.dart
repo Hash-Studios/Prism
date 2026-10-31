@@ -3,8 +3,10 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
@@ -63,6 +65,9 @@ void main() {
   late List<String> toastMessages;
 
   setUp(() {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'test-user'
+      ..loggedIn = true;
     recorder = FakeAppAnalytics();
     AnalyticsRuntime.instance = recorder;
     toastMessages = <String>[];
@@ -75,6 +80,7 @@ void main() {
   });
 
   tearDown(() {
+    app_state.prismUser = app_constants.createGuestPrismUser();
     AnalyticsRuntime.reset();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
   });

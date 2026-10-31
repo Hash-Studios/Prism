@@ -472,6 +472,95 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  // The refund callable is mocked. The server does not refund premiumFilter spends, so this only proves the gate
+  // treats the account change as a failure, not as a performed action.
+  testWidgets('reports a failure, not success, when the account changes while set options are open', (tester) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final Directory directory = Directory.systemTemp.createTempSync('wallpaper_filter_set_account_switch_');
+    addTearDown(() => directory.deleteSync(recursive: true));
+    final File source = File('${directory.path}/source.png');
+    source.writeAsBytesSync((await tester.runAsync(_smallPng))!);
+    app_state.prismUser.coins = 20;
+    CoinsService.instance.balanceNotifier.value = 20;
+
+    var spendCalls = 0;
+    var refundCalls = 0;
+    var setCalls = 0;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      _toastChannel,
+      (_) async => true,
+    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      _pathProviderChannel,
+      (_) async => directory.path,
+    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(_functionsChannel, (
+      message,
+    ) async {
+      final List<Object?> arguments = _codec.decodeMessage(message)! as List<Object?>;
+      final Map<Object?, Object?> call = arguments.single! as Map<Object?, Object?>;
+      if (call['functionName'] == 'spendCoins') {
+        spendCalls++;
+        return _codec.encodeMessage(<Object?>[
+          <String, Object?>{
+            'success': true,
+            'changed': true,
+            'previousBalance': 20,
+            'currentBalance': 15,
+            'delta': -CoinPolicy.premiumFilter,
+            'transactionId': 'switch-filter-spend',
+          },
+        ]);
+      }
+      if (call['functionName'] == 'awardCoins') {
+        refundCalls++;
+        return _codec.encodeMessage(<Object?>[
+          <String, Object?>{
+            'success': true,
+            'changed': true,
+            'previousBalance': 15,
+            'currentBalance': 20,
+            'delta': CoinPolicy.premiumFilter,
+          },
+        ]);
+      }
+      fail('Unexpected callable: ${call['functionName']}');
+    });
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(_setWallpaperChannel, (
+      _,
+    ) async {
+      setCalls++;
+      return null;
+    });
+
+    await tester.pumpWidget(_screenHost(source.path));
+    await _waitForEditorReady(tester);
+    await _tapInvert(tester);
+    await tester.tap(_iconButton('Set as wallpaper'));
+    await waitForRealIo(
+      tester,
+      () => find.byKey(const ValueKey<String>('set-screen-set')).evaluate().isNotEmpty,
+      reason: 'Set screen open',
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'other-account'
+      ..loggedIn = true;
+    await tester.tap(find.byTooltip(AppLocalizationsEn().setScreenClose));
+    await _waitForCount(tester, () => refundCalls, 1, 'refund after the account changed');
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(spendCalls, 1);
+    expect(refundCalls, 1);
+    expect(setCalls, 0);
+    await tester.pump(const Duration(seconds: 2));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('keeps filter retry tags extended after an ad credit is still insufficient', (tester) async {
     tester.view.physicalSize = const Size(800, 1000);
     tester.view.devicePixelRatio = 1;

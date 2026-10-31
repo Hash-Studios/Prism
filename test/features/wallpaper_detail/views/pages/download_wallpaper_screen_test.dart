@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_wallpaper_screen.dart';
@@ -47,6 +49,9 @@ void main() {
   late Future<SetWallpaperChoice?> Function(BuildContext context, SetScreenRequest request) originalOpener;
 
   setUp(() {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'download-wallpaper-user'
+      ..loggedIn = true;
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
     client = _Client();
@@ -60,6 +65,7 @@ void main() {
   });
 
   tearDown(() {
+    app_state.prismUser = app_constants.createGuestPrismUser();
     SetWallpaperFlow.screenOpener = originalOpener;
     aw.AsyncWallpaper.debugResetClient();
     AnalyticsRuntime.reset();

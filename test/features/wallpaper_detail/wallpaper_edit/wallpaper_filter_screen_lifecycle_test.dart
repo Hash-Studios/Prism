@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../support/profile_user_fixture.dart';
 import '../../../support/wait_for_real_io.dart';
 
 Future<List<int>> _smallPng() async {
@@ -231,7 +232,7 @@ void main() {
     source.writeAsBytesSync((await tester.runAsync(_smallPng))!);
     addTearDown(() => directory.deleteSync(recursive: true));
 
-    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    app_state.prismUser = profileUser(premium: true);
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
     final Completer<void> allowSave = Completer<void>();
@@ -311,7 +312,7 @@ void main() {
     source.writeAsBytesSync((await tester.runAsync(_smallPng))!);
     addTearDown(() => directory.deleteSync(recursive: true));
 
-    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    app_state.prismUser = profileUser(premium: true);
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
     final _PreviewWallpaperClient client = _PreviewWallpaperClient();

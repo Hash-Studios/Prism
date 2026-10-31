@@ -1,9 +1,12 @@
 import 'dart:io';
 
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/platform/share_service.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:share_plus/share_plus.dart';
 
 const MethodChannel _channel = MethodChannel('dev.fluttercommunity.plus/share');
 
@@ -12,6 +15,9 @@ void main() {
   final List<MethodCall> calls = <MethodCall>[];
 
   setUp(() {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user'
+      ..loggedIn = true;
     calls.clear();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(_channel, (
       MethodCall call,
@@ -22,7 +28,15 @@ void main() {
   });
 
   tearDown(() {
+    app_state.prismUser = app_constants.createGuestPrismUser();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(_channel, null);
+  });
+
+  testWidgets('guest without a context cannot invoke platform sharing', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final result = await ShareService.shareText(text: 'link');
+    expect(result.status, ShareResultStatus.dismissed);
+    expect(calls, isEmpty);
   });
 
   testWidgets('shares file and text from the exact caller bounds for iPad popover anchoring', (tester) async {

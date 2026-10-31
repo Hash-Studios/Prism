@@ -5,6 +5,7 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/color/prism_palette.dart';
@@ -1483,7 +1484,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                   _cardShown,
                   onClock: canonicalLoading
                       ? null
-                      : () {
+                      : () async {
+                          // iOS opens a passive preview; its Save button has its own sign-in guard.
+                          if (!hideSetWallpaperUi && (!await requireSignedInAction(context) || !context.mounted)) {
+                            return;
+                          }
                           final entity = state.entity;
                           _actedOn(entity);
                           _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
@@ -1852,7 +1857,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           color: color,
           isSelected: state.colorChanged && color == state.accent,
           onTap: () => _handleColorSelected(context, color),
-          onLongPress: () {
+          onLongPress: () async {
+            if (!await requireSignedInAction(context) || !context.mounted) return;
             PrismHaptics.impact();
             final String copiedMessage = context.l10n.wallpaperDetailColorCodeCopied;
             Clipboard.setData(

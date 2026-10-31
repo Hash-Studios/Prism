@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
@@ -67,6 +69,7 @@ void main() {
   late _SplashRouter router;
 
   setUp(() {
+    app_state.prismUser = createGuestPrismUser()..loggedIn = true;
     store = InMemoryLocalStore();
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(store));
     bootstrap = _MockBootstrapAppUseCase();
@@ -77,6 +80,7 @@ void main() {
   });
 
   tearDown(() async {
+    app_state.prismUser = createGuestPrismUser();
     await bloc.close();
     await getIt.reset();
   });
@@ -108,6 +112,25 @@ void main() {
 
   Future<void> storeObsoleteVersion(String version) =>
       store.set(PersistenceKeys.settings(PersistenceKeys.obsoleteAppVersion), version);
+
+  for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+    testWidgets('an onboarded guest follows the platform account policy after bootstrap on $platform', (tester) async {
+      app_state.prismUser = createGuestPrismUser();
+      await storeOnboarded();
+      await storeObsoleteVersion('1.0.0');
+
+      await pumpApp(tester);
+      expect(find.text(DashboardRoute.name), platform == TargetPlatform.iOS ? findsOneWidget : findsNothing);
+
+      await finishBootstrap(tester, Result.success(_config('1.0.0')));
+
+      expect(
+        find.text(OnboardingV2ShellRoute.name),
+        platform == TargetPlatform.android ? findsOneWidget : findsNothing,
+      );
+      expect(find.text(DashboardRoute.name), platform == TargetPlatform.iOS ? findsOneWidget : findsNothing);
+    }, variant: TargetPlatformVariant({platform}));
+  }
 
   testWidgets('a returning user with a safe stored version reaches the dashboard before bootstrap ends', (
     tester,

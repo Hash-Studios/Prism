@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:Prism/core/auth/guest_browsing_policy.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -84,7 +85,7 @@ class _SplashWidgetState extends State<SplashWidget> {
         isLoggedIn: app_state.prismUser.loggedIn,
         isOnboarded: isOnboarded,
         v2Enabled: v2,
-        guestBrowsingAllowed: true,
+        guestBrowsingAllowed: guestBrowsingAllowed,
       ),
     );
   }
@@ -111,7 +112,7 @@ class _SplashWidgetState extends State<SplashWidget> {
         isLoggedIn: app_state.prismUser.loggedIn,
         isOnboarded: isOnboarded,
         v2Enabled: v2Enabled,
-        guestBrowsingAllowed: true,
+        guestBrowsingAllowed: guestBrowsingAllowed,
       );
       if (showOnboarding) {
         _debugOnboardingShownThisSession = true;

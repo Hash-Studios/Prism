@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -84,6 +85,7 @@ class _FavouriteWallpaperFooterState extends State<FavouriteWallpaperFooter> {
 
   Future<void> _toggle(bool saved) async {
     if (_pending) return;
+    if (!await requireSignedInAction(context) || !mounted) return;
     final item = widget.item;
     setState(() => _pending = true);
     try {

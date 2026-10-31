@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
@@ -12,7 +13,6 @@ import 'package:Prism/core/widgets/animated/glint_toast.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
-import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
@@ -63,7 +63,9 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
     final FavouriteWallEntity? wall = widget.wall;
     final VoidCallback? openFolders = wall == null || wall is LegacyFavouriteWall
         ? null
-        : () => unawaited(showFolderSheet(context, wall));
+        : () async {
+            if (await requireSignedInAction(context) && context.mounted) await showFolderSheet(context, wall);
+          };
     return Semantics(
       onLongPressHint: context.l10n.foldersSaveToFolder,
       onLongPress: openFolders,
@@ -98,6 +100,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
 
   Future<bool> onFav(FavouriteWallEntity? wall, {required bool desired}) async {
     if (wall == null) return false;
+    if (!await requireSignedInAction(context) || !mounted) return false;
     final AppLocalizations l10n = context.l10n;
     setState(() {
       isLoading = true;
@@ -124,13 +127,6 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
         if (mounted) {
           _followUp(() => showGlintToast(context, mood: GlintMood.love));
           _followUp(() => _offerFolders(l10n, wall));
-        }
-        if (app_state.prismUser.id.isEmpty) {
-          try {
-            await _noteGuestSave(l10n);
-          } catch (error, stackTrace) {
-            logger.w('Favourite follow-up failed', error: error, stackTrace: stackTrace);
-          }
         }
       }
     } else {
@@ -166,11 +162,5 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
     } catch (error, stackTrace) {
       logger.w('Favourite follow-up failed', error: error, stackTrace: stackTrace);
     }
-  }
-
-  Future<void> _noteGuestSave(AppLocalizations l10n) async {
-    _followUp(() => analytics.track(const FavouriteSavedAsGuestEvent()));
-    final int saved = (await getIt<GuestFavouritesStore>().readAll()).length;
-    if (saved == 3) toasts.info(l10n.coreSignInToSyncFavourites);
   }
 }
