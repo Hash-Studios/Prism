@@ -106,7 +106,7 @@ struct GetPrismWallpaperIntent: AppIntent {
   var folder: PrismFolderEntity?
 
   static var parameterSummary: some ParameterSummary {
-    When(\.$source, .equalTo, .folder) {
+    When(\GetPrismWallpaperIntent.$source, .equalTo, PrismWallpaperSource.folder) {
       Summary("Get \(\.$source) wallpaper from \(\.$folder)")
     } otherwise: {
       Summary("Get \(\.$source) wallpaper")
