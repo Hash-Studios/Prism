@@ -12,7 +12,7 @@ class RecordWallpaperActionUseCase {
 
   final ViewStatsRepository _viewStatsRepository;
 
-  Future<Result<void>> call(String wallId, WallpaperAction action) {
+  Future<Result<WallpaperActionReceipt>> call(String wallId, WallpaperAction action) {
     return _viewStatsRepository.recordWallpaperAction(wallId, action);
   }
 }

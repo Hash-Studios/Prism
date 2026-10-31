@@ -53,7 +53,8 @@ class _MockStackRouter extends Mock implements StackRouter {}
 
 class _Stats extends Fake implements ViewStatsRepository {
   @override
-  Future<Result<void>> recordWallpaperAction(String wallId, WallpaperAction action) async => Result.success(null);
+  Future<Result<WallpaperActionReceipt>> recordWallpaperAction(String wallId, WallpaperAction action) async =>
+      Result.success(const WallpaperActionReceipt());
 }
 
 const String _fullUrl = 'https://images.example/full.jpg';

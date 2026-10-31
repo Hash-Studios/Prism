@@ -6,6 +6,9 @@ import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/json_utils.dart';
@@ -51,7 +54,9 @@ class StreakRescueService {
     SettingsLocalDataSource? settings,
     String Function()? newRequestId,
     Future<void> Function()? refreshBalance,
+    FirestoreClient? client,
   }) : _call = call ?? _callRestoreStreak,
+       _client = client,
        _settings = settings,
        _newRequestId = newRequestId ?? _randomRequestId,
        _refreshBalance = refreshBalance ?? _refreshCoins;
@@ -59,11 +64,29 @@ class StreakRescueService {
   static final StreakRescueService instance = StreakRescueService();
 
   final StreakRescueCall _call;
+  final FirestoreClient? _client;
   final SettingsLocalDataSource? _settings;
   final String Function() _newRequestId;
   final Future<void> Function() _refreshBalance;
 
   SettingsLocalDataSource get _store => _settings ?? getIt<SettingsLocalDataSource>();
+
+  Future<StreakRescueOffer?> fetch() async {
+    final String owner = app_state.prismUser.id;
+    if (!app_state.prismUser.loggedIn || owner.isEmpty) return null;
+    final offer = await (_client ?? firestoreClient).getById<StreakRescueOffer?>(FirebaseCollections.usersV2, owner, (
+      data,
+      _,
+    ) {
+      final state = toJsonMap(data['coinState']);
+      final rescue = toJsonMap(state['rescue']);
+      final int count = parseIntOr(rescue['count']);
+      final int expiresAt = parseIntOr(rescue['expiresAtMs']);
+      if (count < kStreakRescueMinCount || expiresAt <= DateTime.now().millisecondsSinceEpoch) return null;
+      return StreakRescueOffer(count);
+    }, sourceTag: 'streak_rescue.offer');
+    return app_state.prismUser.loggedIn && app_state.prismUser.id == owner ? offer : null;
+  }
 
   static Future<Map<String, dynamic>> _callRestoreStreak(Map<String, dynamic> data) async {
     final HttpsCallable callable = appFunctions.httpsCallable(

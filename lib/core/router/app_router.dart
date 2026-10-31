@@ -22,6 +22,7 @@ import 'package:Prism/features/auto_rotate/views/pages/auto_rotate_screen.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
 import 'package:Prism/features/daily_chest/views/pages/daily_chest_page.dart';
+import 'package:Prism/features/daily_flow/views/daily_moment_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
 import 'package:Prism/features/deep_link_input/views/pages/deep_link_input_page.dart';
@@ -210,6 +211,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/wallpaper-position', page: WallpaperPositionRoute.page),
     AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page),
     AutoRoute(path: '/rewards', page: RewardsRoute.page),
+    AutoRoute(path: '/daily-moment', page: DailyMomentRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/coin-history', page: CoinHistoryRoute.page, guards: [_signedInGuard]),
     CustomRoute(
       path: '/daily-chest',

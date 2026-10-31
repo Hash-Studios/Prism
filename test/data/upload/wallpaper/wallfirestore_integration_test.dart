@@ -29,6 +29,7 @@ import '../../../support/in_memory_local_store.dart';
 class _FakeFirestorePlatform extends FirebaseFirestorePlatform {
   final List<String> updatedPaths = <String>[];
   Map<String, dynamic>? savedWall;
+  String? savedWallPath;
   Completer<void>? wallWriteStarted;
   Completer<void>? allowWallWrite;
   Completer<void>? userUpdateAttempted;
@@ -53,10 +54,19 @@ class _FakeDocumentReference extends DocumentReferencePlatform {
   _FakeDocumentReference(super.firestore, super.path);
 
   @override
+  Future<DocumentSnapshotPlatform> get([GetOptions options = const GetOptions()]) async => DocumentSnapshotPlatform(
+    firestore,
+    path,
+    null,
+    InternalSnapshotMetadata(hasPendingWrites: false, isFromCache: false),
+  );
+
+  @override
   Future<void> set(Map<String, dynamic> data, [SetOptions? options]) async {
     final _FakeFirestorePlatform platform = firestore as _FakeFirestorePlatform;
     if (path.startsWith('walls/')) {
       platform.savedWall = Map<String, dynamic>.of(data);
+      platform.savedWallPath = path;
       platform.wallWriteStarted?.complete();
       await platform.allowWallWrite?.future;
     }
@@ -102,6 +112,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late _FakeFirestorePlatform firestore;
   final List<(String?, Map<String, dynamic>)> callableCalls = <(String?, Map<String, dynamic>)>[];
+  Map<String, Object> awardReply = const <String, Object>{'success': true, 'changed': false};
   late PrismUsersV2 originalUser;
   const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
   const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
@@ -115,7 +126,7 @@ void main() {
       callableCalls.add((name, toJsonMap(parameters)));
       return switch (name) {
         // A deployed older award reply requests XP reconciliation even when this reward was already claimed.
-        'awardCoins' => const <String, Object>{'success': true, 'changed': false},
+        'awardCoins' => awardReply,
         'reconcileRankRewards' => const <String, Object>{'success': true, 'inventoryChanged': false},
         _ => throw StateError('Unexpected callable: $name'),
       };
@@ -135,7 +146,9 @@ void main() {
     );
   });
 
-  setUp(() {
+  setUp(() async {
+    await getIt<SettingsLocalDataSource>().delete('uploadsWeekStart');
+    await getIt<SettingsLocalDataSource>().delete('uploadsThisWeek');
     originalUser = app_state.prismUser;
     final PrismUsersV2 user = app_constants.createGuestPrismUser()
       ..id = 'uploader'
@@ -144,11 +157,13 @@ void main() {
     CoinsService.instance.resetSession();
     firestore.updatedPaths.clear();
     firestore.savedWall = null;
+    firestore.savedWallPath = null;
     firestore.failUserUpdate = false;
     firestore.wallWriteStarted = null;
     firestore.allowWallWrite = null;
     firestore.userUpdateAttempted = null;
     callableCalls.clear();
+    awardReply = const <String, Object>{'success': true, 'changed': false};
   });
 
   tearDown(() async {
@@ -210,6 +225,45 @@ void main() {
     ];
     expect(reconciliations, hasLength(1));
     expect(reconciliations.single['sourceTag'], 'coins.rank_rewards.reconcile');
+  });
+
+  test('challenge upload keeps its stable wall ID and server-confirmed reward receipt', () async {
+    awardReply = const <String, Object>{
+      'success': true,
+      'changed': true,
+      'previousBalance': 30,
+      'currentBalance': 37,
+      'delta': 7,
+      'transactionId': 'server-upload-receipt',
+    };
+    CoinMutationResult? receipt;
+
+    final result = await createRecord(
+      'challenge-wall',
+      'Prism',
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      false,
+      docId: 'wall_challenge-wall',
+      challengeId: 'weekly-theme',
+      onUploadAward: (result) => receipt = result,
+    );
+
+    expect(result, WallSubmissionResult.submitted);
+    expect(firestore.savedWallPath, 'walls/wall_challenge-wall');
+    expect(firestore.savedWall!['id'], 'challenge-wall');
+    expect(firestore.savedWall!['challengeId'], 'weekly-theme');
+    expect(receipt, isNotNull);
+    expect(receipt!.delta, 7);
+    expect(receipt!.currentBalance, 37);
+    expect(receipt!.transactionId, 'server-upload-receipt');
+    expect(app_state.prismUser.coins, 37);
+    expect(callableCalls.where((call) => call.$1 == 'awardCoins'), hasLength(1));
   });
 
   test('quota sync and reward stay with the submitting account after an account switch', () async {

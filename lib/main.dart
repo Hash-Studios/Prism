@@ -63,6 +63,7 @@ import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_session_listener.dart';
 import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
+import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_quick_tile_listener.dart';
 import 'package:Prism/features/folders/folders.dart';
@@ -744,14 +745,13 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     localNotification.listenForPushMessages(localizations: loadDeviceAppLocalizations);
 
     // Launched from terminated state by tapping a notification.
-    localNotification.routeInitialMessage().catchError((Object error, StackTrace stackTrace) {
-      logger.w('Reading the launch push failed.', tag: 'Push', error: error, stackTrace: stackTrace);
-    });
+    await localNotification.routeInitialMessage();
   }
 
   @override
   void initState() {
     super.initState();
+    DailyMomentPresentationGate.instance.launchIntentsReady = false;
     WidgetsBinding.instance.addObserver(this);
     _orientationPolicyObserver = OrientationPolicyObserver();
     unawaited(_orientationPolicyObserver.start());
@@ -799,11 +799,20 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       }),
     );
     unawaited(
-      localNotification.fetchNotificationData().catchError((Object error, StackTrace stackTrace) {
-        logger.w('Reading the launch notification failed.', tag: 'Push', error: error, stackTrace: stackTrace);
+      Future.wait<void>(<Future<void>>[
+        localNotification.fetchNotificationData().catchError((Object error, StackTrace stackTrace) {
+          logger.w('Reading the launch notification failed.', tag: 'Push', error: error, stackTrace: stackTrace);
+        }),
+        _listenForPushMessages().catchError((Object error, StackTrace stackTrace) {
+          logger.w('Reading the launch push failed.', tag: 'Push', error: error, stackTrace: stackTrace);
+        }),
+      ]).whenComplete(() {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) DailyMomentPresentationGate.instance.launchIntentsReady = true;
+        });
+        WidgetsBinding.instance.ensureVisualUpdate();
       }),
     );
-    unawaited(_listenForPushMessages());
     unawaited(_watchSession());
     unawaited(NotificationSignals.instance.onResumed());
   }
