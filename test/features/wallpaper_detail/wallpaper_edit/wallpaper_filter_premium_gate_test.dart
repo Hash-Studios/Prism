@@ -472,7 +472,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('refunds a premium filter when the account changes while set options are open', (tester) async {
+  // The refund callable is mocked. The server does not refund premiumFilter spends, so this only proves the gate
+  // treats the account change as a failure, not as a performed action.
+  testWidgets('reports a failure, not success, when the account changes while set options are open', (tester) async {
     tester.view.physicalSize = const Size(800, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
