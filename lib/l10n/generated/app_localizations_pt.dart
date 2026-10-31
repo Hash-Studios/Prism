@@ -7992,9 +7992,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperApplyTo => 'Aplicar em';
 
   @override
-  String get wallpaperAutoRotateAndroidOnly => 'A rotação automática está disponível apenas no Android.';
-
-  @override
   String get wallpaperAutoRotateApplyTo => 'Aplicar em';
 
   @override
@@ -9658,33 +9655,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperShareLink => 'Compartilhar link';
 
   @override
-  String get wallpaperShortcutsAddActionsSteps =>
-      'Adicione a ação \"Obter papel de parede do Prism\". Em seguida, adicione a ação \"Definir papel de parede\".';
-
-  @override
-  String get wallpaperShortcutsBody =>
-      'Use Atalhos para definir um papel de parede por horário ou gatilho. Prepare a fonte abaixo antes de executá-lo.';
-
-  @override
   String get wallpaperShortcutsChoosePrismData => 'Escolha o que o Prism envia';
 
   @override
-  String get wallpaperShortcutsChooseTriggerSteps =>
-      'No editor de atalhos, abra Automação se necessário. Escolha e configure um gatilho, como uma hora do dia, abrir um app ou conectar um carregador.';
-
-  @override
-  String get wallpaperShortcutsDisableConfirmationSteps =>
-      'Revise as opções de execução exibidas e salve o atalho ou a automação. Se aparecer \"Perguntar antes de executar\", desative a opção para executar automaticamente.';
-
-  @override
-  String get wallpaperShortcutsHeadline => 'Mude seu papel de parede automaticamente';
-
-  @override
   String get wallpaperShortcutsOpenAction => 'Abrir atalhos';
-
-  @override
-  String get wallpaperShortcutsOpenAutomationSteps =>
-      'Abra Atalhos. Se houver uma aba Automação, toque nela e depois em Nova automação. Caso contrário, toque em Adicionar (+) e depois em Editar, se aparecer.';
 
   @override
   String get wallpaperShortcutsOpenError => 'Não foi possível abrir os atalhos. Abra o aplicativo você mesmo.';
@@ -9693,18 +9667,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperShortcutsSourceFavourite => 'Favorito aleatório';
 
   @override
-  String get wallpaperShortcutsSourceFavouriteDescription =>
-      'Um favorito aleatório disponível para Atalhos. Marque papéis de parede como favoritos no Prism primeiro. Alguns papéis de parede protegidos podem não estar disponíveis. Evita repetir o último se houver outro favorito disponível.';
-
-  @override
   String get wallpaperShortcutsSourceWotd => 'Papel de parede do dia';
 
   @override
   String get wallpaperShortcutsSourceWotdDescription =>
       'A escolha de hoje do Prism. Baixe primeiro o original de hoje no Prism. Quando a escolha diária mudar, baixe o novo original antes de executar esta fonte.';
-
-  @override
-  String get wallpaperShortcutsSteps => 'Passos';
 
   @override
   String get wallpaperShortcutsTitle => 'Alterar automaticamente';
@@ -12272,6 +12239,127 @@ class AppLocalizationsPt extends AppLocalizations {
   String statsChartSummary(String metric, String summary) {
     return '$metric, oito semanas. $summary';
   }
+
+  @override
+  String get shortcutsGuideHeadline => 'Um papel de parede novo todo dia';
+
+  @override
+  String get shortcutsGuideBody =>
+      'Configure os Atalhos uma vez. Todo dia, a automação define um papel de parede da sua pasta de rotação. Os 200 mais recentes aparecem uma vez cada antes de qualquer repetição.';
+
+  @override
+  String get shortcutsSourceRotation => 'Pasta de rotação';
+
+  @override
+  String get shortcutsSourceRotationDescription => 'Embaralha a pasta que você escolheu acima.';
+
+  @override
+  String get shortcutsSourceFolder => 'Pasta';
+
+  @override
+  String get shortcutsSourceFolderDescription => 'Embaralha uma pasta que você escolher nos Atalhos.';
+
+  @override
+  String get shortcutsSourceFavouriteDescription =>
+      'Embaralha seus favoritos. Cada um aparece uma vez antes de qualquer um se repetir. Alguns papéis de parede protegidos podem não estar disponíveis.';
+
+  @override
+  String get shortcutsRotationNone => 'Nenhuma pasta escolhida';
+
+  @override
+  String get shortcutsRotationNoneBody => 'Escolha a pasta que o atalho embaralha.';
+
+  @override
+  String get shortcutsRotationPick => 'Escolher uma pasta';
+
+  @override
+  String get shortcutsRotationChange => 'Alterar';
+
+  @override
+  String get shortcutsRotationStop => 'Parar';
+
+  @override
+  String shortcutsStepLabel(int number, String title) {
+    return 'Passo $number, $title';
+  }
+
+  @override
+  String get shortcutsStepAddTitle => 'Adicione o atalho do Prism';
+
+  @override
+  String get shortcutsStepAddBody =>
+      'Ele pega um papel de parede da sua pasta de rotação e o define como seu papel de parede.';
+
+  @override
+  String get shortcutsStepAddAction => 'Adicionar o atalho';
+
+  @override
+  String get shortcutsStepAddManualBody => 'Crie nos Atalhos com 2 ações.';
+
+  @override
+  String get shortcutsManualNew => 'Nos Atalhos, toque em + para criar um atalho novo.';
+
+  @override
+  String get shortcutsManualGet => 'Adicione \"Obter papel de parede do Prism\". Defina Origem como Pasta de rotação.';
+
+  @override
+  String get shortcutsManualSet =>
+      'Adicione \"Definir Foto de Fundo\". Toque na seta nela e desative Mostrar Pré-Visualização.';
+
+  @override
+  String shortcutsManualName(String name) {
+    return 'Dê o nome \"$name\" ao atalho.';
+  }
+
+  @override
+  String get shortcutsStepAutomationTitle => 'Execute todos os dias';
+
+  @override
+  String get shortcutsAutomationOpen => 'Nos Atalhos, toque em Automação e depois em +.';
+
+  @override
+  String get shortcutsAutomationTime => 'Toque em Hora do Dia. Escolha um horário e depois Diariamente.';
+
+  @override
+  String get shortcutsAutomationRun => 'Escolha Executar Imediatamente e depois toque em Avançar.';
+
+  @override
+  String shortcutsAutomationPick(String name) {
+    return 'Escolha \"$name\" para executar.';
+  }
+
+  @override
+  String shortcutsAutomationNoTab(String name) {
+    return 'Não encontrou a aba Automação? Abra \"$name\", toque em Editar e depois em Automação.';
+  }
+
+  @override
+  String get shortcutsStepTestTitle => 'Teste agora';
+
+  @override
+  String shortcutsStepTestBody(String name) {
+    return 'Executa \"$name\" uma vez, para você ver o novo papel de parede agora.';
+  }
+
+  @override
+  String get shortcutsStepTestAction => 'Executar o atalho';
+
+  @override
+  String get foldersRotateDaily => 'Rotacionar esta pasta todo dia';
+
+  @override
+  String get autoRotateIosTitle => 'Troque os papéis de parede com os Atalhos';
+
+  @override
+  String get autoRotateIosBody =>
+      'No iPhone, uma automação dos Atalhos define um papel de parede novo da sua pasta todo dia.';
+
+  @override
+  String get autoRotateIosAction => 'Configurar os Atalhos';
+
+  @override
+  String get shortcutsAutomationIos16 =>
+      'No iOS 16 não existe \"Executar Imediatamente\". Desative \"Perguntar Antes de Executar\".';
 
   @override
   String get creatorsToFollow => 'Criadores para seguir';
@@ -20326,9 +20414,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperApplyTo => 'Aplicar em';
 
   @override
-  String get wallpaperAutoRotateAndroidOnly => 'A rotação automática está disponível apenas no Android.';
-
-  @override
   String get wallpaperAutoRotateApplyTo => 'Aplicar em';
 
   @override
@@ -21992,33 +22077,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperShareLink => 'Compartilhar link';
 
   @override
-  String get wallpaperShortcutsAddActionsSteps =>
-      'Adicione a ação \"Obter papel de parede do Prism\". Em seguida, adicione a ação \"Definir papel de parede\".';
-
-  @override
-  String get wallpaperShortcutsBody =>
-      'Use Atalhos para definir um papel de parede por horário ou gatilho. Prepare a fonte abaixo antes de executá-lo.';
-
-  @override
   String get wallpaperShortcutsChoosePrismData => 'Escolha o que o Prism envia';
 
   @override
-  String get wallpaperShortcutsChooseTriggerSteps =>
-      'No editor de atalhos, abra Automação se necessário. Escolha e configure um gatilho, como uma hora do dia, abrir um app ou conectar um carregador.';
-
-  @override
-  String get wallpaperShortcutsDisableConfirmationSteps =>
-      'Revise as opções de execução exibidas e salve o atalho ou a automação. Se aparecer \"Perguntar antes de executar\", desative a opção para executar automaticamente.';
-
-  @override
-  String get wallpaperShortcutsHeadline => 'Mude seu papel de parede automaticamente';
-
-  @override
   String get wallpaperShortcutsOpenAction => 'Abrir atalhos';
-
-  @override
-  String get wallpaperShortcutsOpenAutomationSteps =>
-      'Abra Atalhos. Se houver uma aba Automação, toque nela e depois em Nova automação. Caso contrário, toque em Adicionar (+) e depois em Editar, se aparecer.';
 
   @override
   String get wallpaperShortcutsOpenError => 'Não foi possível abrir os atalhos. Abra o aplicativo você mesmo.';
@@ -22027,18 +22089,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperShortcutsSourceFavourite => 'Favorito aleatório';
 
   @override
-  String get wallpaperShortcutsSourceFavouriteDescription =>
-      'Um favorito aleatório disponível para Atalhos. Marque papéis de parede como favoritos no Prism primeiro. Alguns papéis de parede protegidos podem não estar disponíveis. Evita repetir o último se houver outro favorito disponível.';
-
-  @override
   String get wallpaperShortcutsSourceWotd => 'Papel de parede do dia';
 
   @override
   String get wallpaperShortcutsSourceWotdDescription =>
       'A escolha de hoje do Prism. Baixe primeiro o original de hoje no Prism. Quando a escolha diária mudar, baixe o novo original antes de executar esta fonte.';
-
-  @override
-  String get wallpaperShortcutsSteps => 'Passos';
 
   @override
   String get wallpaperShortcutsTitle => 'Alterar automaticamente';
@@ -24606,6 +24661,127 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String statsChartSummary(String metric, String summary) {
     return '$metric, oito semanas. $summary';
   }
+
+  @override
+  String get shortcutsGuideHeadline => 'Um papel de parede novo todo dia';
+
+  @override
+  String get shortcutsGuideBody =>
+      'Configure os Atalhos uma vez. Todo dia, a automação define um papel de parede da sua pasta de rotação. Os 200 mais recentes aparecem uma vez cada antes de qualquer repetição.';
+
+  @override
+  String get shortcutsSourceRotation => 'Pasta de rotação';
+
+  @override
+  String get shortcutsSourceRotationDescription => 'Embaralha a pasta que você escolheu acima.';
+
+  @override
+  String get shortcutsSourceFolder => 'Pasta';
+
+  @override
+  String get shortcutsSourceFolderDescription => 'Embaralha uma pasta que você escolher nos Atalhos.';
+
+  @override
+  String get shortcutsSourceFavouriteDescription =>
+      'Embaralha seus favoritos. Cada um aparece uma vez antes de qualquer um se repetir. Alguns papéis de parede protegidos podem não estar disponíveis.';
+
+  @override
+  String get shortcutsRotationNone => 'Nenhuma pasta escolhida';
+
+  @override
+  String get shortcutsRotationNoneBody => 'Escolha a pasta que o atalho embaralha.';
+
+  @override
+  String get shortcutsRotationPick => 'Escolher uma pasta';
+
+  @override
+  String get shortcutsRotationChange => 'Alterar';
+
+  @override
+  String get shortcutsRotationStop => 'Parar';
+
+  @override
+  String shortcutsStepLabel(int number, String title) {
+    return 'Passo $number, $title';
+  }
+
+  @override
+  String get shortcutsStepAddTitle => 'Adicione o atalho do Prism';
+
+  @override
+  String get shortcutsStepAddBody =>
+      'Ele pega um papel de parede da sua pasta de rotação e o define como seu papel de parede.';
+
+  @override
+  String get shortcutsStepAddAction => 'Adicionar o atalho';
+
+  @override
+  String get shortcutsStepAddManualBody => 'Crie nos Atalhos com 2 ações.';
+
+  @override
+  String get shortcutsManualNew => 'Nos Atalhos, toque em + para criar um atalho novo.';
+
+  @override
+  String get shortcutsManualGet => 'Adicione \"Obter papel de parede do Prism\". Defina Origem como Pasta de rotação.';
+
+  @override
+  String get shortcutsManualSet =>
+      'Adicione \"Definir Foto de Fundo\". Toque na seta nela e desative Mostrar Pré-Visualização.';
+
+  @override
+  String shortcutsManualName(String name) {
+    return 'Dê o nome \"$name\" ao atalho.';
+  }
+
+  @override
+  String get shortcutsStepAutomationTitle => 'Execute todos os dias';
+
+  @override
+  String get shortcutsAutomationOpen => 'Nos Atalhos, toque em Automação e depois em +.';
+
+  @override
+  String get shortcutsAutomationTime => 'Toque em Hora do Dia. Escolha um horário e depois Diariamente.';
+
+  @override
+  String get shortcutsAutomationRun => 'Escolha Executar Imediatamente e depois toque em Avançar.';
+
+  @override
+  String shortcutsAutomationPick(String name) {
+    return 'Escolha \"$name\" para executar.';
+  }
+
+  @override
+  String shortcutsAutomationNoTab(String name) {
+    return 'Não encontrou a aba Automação? Abra \"$name\", toque em Editar e depois em Automação.';
+  }
+
+  @override
+  String get shortcutsStepTestTitle => 'Teste agora';
+
+  @override
+  String shortcutsStepTestBody(String name) {
+    return 'Executa \"$name\" uma vez, para você ver o novo papel de parede agora.';
+  }
+
+  @override
+  String get shortcutsStepTestAction => 'Executar o atalho';
+
+  @override
+  String get foldersRotateDaily => 'Rotacionar esta pasta todo dia';
+
+  @override
+  String get autoRotateIosTitle => 'Troque os papéis de parede com os Atalhos';
+
+  @override
+  String get autoRotateIosBody =>
+      'No iPhone, uma automação dos Atalhos define um papel de parede novo da sua pasta todo dia.';
+
+  @override
+  String get autoRotateIosAction => 'Configurar os Atalhos';
+
+  @override
+  String get shortcutsAutomationIos16 =>
+      'No iOS 16 não existe \"Executar Imediatamente\". Desative \"Perguntar Antes de Executar\".';
 
   @override
   String get creatorsToFollow => 'Criadores para seguir';

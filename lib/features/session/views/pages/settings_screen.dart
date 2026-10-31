@@ -361,7 +361,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         icon: Icons.autorenew_rounded,
         title: context.l10n.accountChangeAutomatically,
         subtitle: context.l10n.accountUseShortcutsAutomation,
-        onTap: () => context.router.push(const IosShortcutsGuideRoute()),
+        onTap: () => context.router.push(IosShortcutsGuideRoute()),
       ),
     if (_isAndroid) ..._androidPersonaliseRows(),
   ];

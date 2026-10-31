@@ -1485,18 +1485,51 @@ class HomeTabRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [IosShortcutsGuideScreen]
-class IosShortcutsGuideRoute extends PageRouteInfo<void> {
-  const IosShortcutsGuideRoute({List<PageRouteInfo>? children})
-    : super(IosShortcutsGuideRoute.name, initialChildren: children);
+class IosShortcutsGuideRoute extends PageRouteInfo<IosShortcutsGuideRouteArgs> {
+  IosShortcutsGuideRoute({
+    Key? key,
+    String source = 'settings',
+    List<PageRouteInfo>? children,
+  }) : super(
+         IosShortcutsGuideRoute.name,
+         args: IosShortcutsGuideRouteArgs(key: key, source: source),
+         initialChildren: children,
+       );
 
   static const String name = 'IosShortcutsGuideRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const IosShortcutsGuideScreen();
+      final args = data.argsAs<IosShortcutsGuideRouteArgs>(
+        orElse: () => const IosShortcutsGuideRouteArgs(),
+      );
+      return IosShortcutsGuideScreen(key: args.key, source: args.source);
     },
   );
+}
+
+class IosShortcutsGuideRouteArgs {
+  const IosShortcutsGuideRouteArgs({this.key, this.source = 'settings'});
+
+  final Key? key;
+
+  final String source;
+
+  @override
+  String toString() {
+    return 'IosShortcutsGuideRouteArgs{key: $key, source: $source}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! IosShortcutsGuideRouteArgs) return false;
+    return key == other.key && source == other.source;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ source.hashCode;
 }
 
 /// generated route for

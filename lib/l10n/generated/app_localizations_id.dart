@@ -7754,9 +7754,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperApplyTo => 'Terapkan ke';
 
   @override
-  String get wallpaperAutoRotateAndroidOnly => 'Putar otomatis hanya tersedia di Android.';
-
-  @override
   String get wallpaperAutoRotateApplyTo => 'Terapkan ke';
 
   @override
@@ -9385,33 +9382,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperShareLink => 'Bagikan tautan';
 
   @override
-  String get wallpaperShortcutsAddActionsSteps =>
-      'Tambahkan tindakan \"Dapatkan Wallpaper Prism\". Lalu tambahkan tindakan \"Pasang Wallpaper\".';
-
-  @override
-  String get wallpaperShortcutsBody =>
-      'Gunakan Pintasan untuk memasang wallpaper sesuai jadwal atau pemicu. Siapkan sumber di bawah sebelum menjalankannya.';
-
-  @override
   String get wallpaperShortcutsChoosePrismData => 'Pilih data yang dikirim Prism';
 
   @override
-  String get wallpaperShortcutsChooseTriggerSteps =>
-      'Di editor pintasan, buka Automasi jika perlu. Pilih dan atur pemicu, seperti Waktu, membuka app, atau menghubungkan pengisi daya.';
-
-  @override
-  String get wallpaperShortcutsDisableConfirmationSteps =>
-      'Tinjau opsi menjalankan yang ditampilkan dan simpan pintasan atau automasi. Jika \"Tanya Sebelum Menjalankan\" muncul, nonaktifkan agar berjalan otomatis.';
-
-  @override
-  String get wallpaperShortcutsHeadline => 'Ubah wallpaper secara otomatis';
-
-  @override
   String get wallpaperShortcutsOpenAction => 'Buka Pintasan';
-
-  @override
-  String get wallpaperShortcutsOpenAutomationSteps =>
-      'Buka Pintasan. Jika ada tab Automasi, ketuk tab itu, lalu Automasi Baru. Jika tidak, ketuk Tambah (+), lalu Edit jika ditampilkan.';
 
   @override
   String get wallpaperShortcutsOpenError => 'Pintasan tidak dapat dibuka. Buka app secara manual.';
@@ -9420,18 +9394,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperShortcutsSourceFavourite => 'Favorit acak';
 
   @override
-  String get wallpaperShortcutsSourceFavouriteDescription =>
-      'Favorit acak yang tersedia untuk Pintasan. Sukai wallpaper di Prism terlebih dahulu. Beberapa wallpaper terlindungi mungkin tidak tersedia. Pilihan terakhir dihindari jika ada favorit lain yang tersedia.';
-
-  @override
   String get wallpaperShortcutsSourceWotd => 'Wallpaper Hari Ini';
 
   @override
   String get wallpaperShortcutsSourceWotdDescription =>
       'Pilihan Prism hari ini. Unduh gambar asli hari ini di Prism terlebih dahulu. Saat pilihan harian berubah, unduh gambar asli yang baru sebelum menjalankan sumber ini.';
-
-  @override
-  String get wallpaperShortcutsSteps => 'Langkah-langkah';
 
   @override
   String get wallpaperShortcutsTitle => 'Ubah secara otomatis';
@@ -11971,6 +11938,127 @@ class AppLocalizationsId extends AppLocalizations {
   String statsChartSummary(String metric, String summary) {
     return '$metric, delapan minggu. $summary';
   }
+
+  @override
+  String get shortcutsGuideHeadline => 'Wallpaper baru setiap hari';
+
+  @override
+  String get shortcutsGuideBody =>
+      'Atur Pintasan sekali saja. Setiap hari, otomatisasi memasang wallpaper dari folder rotasi Anda. 200 wallpaper terbarunya masing-masing tampil sekali sebelum ada yang terulang.';
+
+  @override
+  String get shortcutsSourceRotation => 'Folder rotasi';
+
+  @override
+  String get shortcutsSourceRotationDescription => 'Mengacak folder yang Anda pilih di atas.';
+
+  @override
+  String get shortcutsSourceFolder => 'Folder';
+
+  @override
+  String get shortcutsSourceFolderDescription => 'Mengacak folder yang Anda pilih di Pintasan.';
+
+  @override
+  String get shortcutsSourceFavouriteDescription =>
+      'Mengacak favorit Anda. Setiap favorit tampil sekali sebelum ada yang diulang. Beberapa wallpaper yang dilindungi mungkin tidak tersedia.';
+
+  @override
+  String get shortcutsRotationNone => 'Belum ada folder yang dipilih';
+
+  @override
+  String get shortcutsRotationNoneBody => 'Pilih folder yang diacak oleh pintasan.';
+
+  @override
+  String get shortcutsRotationPick => 'Pilih folder';
+
+  @override
+  String get shortcutsRotationChange => 'Ubah';
+
+  @override
+  String get shortcutsRotationStop => 'Berhenti';
+
+  @override
+  String shortcutsStepLabel(int number, String title) {
+    return 'Langkah $number, $title';
+  }
+
+  @override
+  String get shortcutsStepAddTitle => 'Tambahkan pintasan Prism';
+
+  @override
+  String get shortcutsStepAddBody =>
+      'Pintasan ini mengambil wallpaper dari folder rotasi Anda dan menjadikannya wallpaper Anda.';
+
+  @override
+  String get shortcutsStepAddAction => 'Tambahkan pintasan';
+
+  @override
+  String get shortcutsStepAddManualBody => 'Buat di Pintasan dengan 2 tindakan.';
+
+  @override
+  String get shortcutsManualNew => 'Di Pintasan, ketuk + untuk membuat pintasan baru.';
+
+  @override
+  String get shortcutsManualGet => 'Tambahkan \"Dapatkan Wallpaper Prism\". Atur Sumber ke Folder rotasi.';
+
+  @override
+  String get shortcutsManualSet =>
+      'Tambahkan \"Atur Foto Wallpaper\". Ketuk panah di sebelahnya, lalu nonaktifkan Tampilkan Pratinjau.';
+
+  @override
+  String shortcutsManualName(String name) {
+    return 'Beri nama pintasan \"$name\".';
+  }
+
+  @override
+  String get shortcutsStepAutomationTitle => 'Jalankan setiap hari';
+
+  @override
+  String get shortcutsAutomationOpen => 'Di Pintasan, ketuk Otomatisasi, lalu ketuk +.';
+
+  @override
+  String get shortcutsAutomationTime => 'Ketuk Waktu. Pilih jam, lalu pilih Harian.';
+
+  @override
+  String get shortcutsAutomationRun => 'Pilih Jalankan Segera, lalu ketuk Berikutnya.';
+
+  @override
+  String shortcutsAutomationPick(String name) {
+    return 'Pilih \"$name\" untuk dijalankan.';
+  }
+
+  @override
+  String shortcutsAutomationNoTab(String name) {
+    return 'Tidak ada tab Otomatisasi? Buka \"$name\", ketuk Edit, lalu ketuk Otomatisasi.';
+  }
+
+  @override
+  String get shortcutsStepTestTitle => 'Coba sekarang';
+
+  @override
+  String shortcutsStepTestBody(String name) {
+    return 'Menjalankan \"$name\" sekali, supaya Anda bisa melihat wallpaper baru sekarang.';
+  }
+
+  @override
+  String get shortcutsStepTestAction => 'Jalankan pintasan';
+
+  @override
+  String get foldersRotateDaily => 'Putar folder ini setiap hari';
+
+  @override
+  String get autoRotateIosTitle => 'Ubah wallpaper dengan Pintasan';
+
+  @override
+  String get autoRotateIosBody =>
+      'Di iPhone, otomatisasi Pintasan memasang wallpaper baru dari folder Anda setiap hari.';
+
+  @override
+  String get autoRotateIosAction => 'Atur Pintasan';
+
+  @override
+  String get shortcutsAutomationIos16 =>
+      'Di iOS 16 tidak ada \"Jalankan Segera\". Matikan \"Tanya Sebelum Menjalankan\" sebagai gantinya.';
 
   @override
   String get creatorsToFollow => 'Kreator untuk diikuti';

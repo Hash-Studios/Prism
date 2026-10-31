@@ -12019,12 +12019,6 @@ abstract class AppLocalizations {
   /// **'Apply to'**
   String get wallpaperApplyTo;
 
-  /// Message shown when auto-rotate is opened on an unsupported platform.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto-rotate is only available on Android.'**
-  String get wallpaperAutoRotateAndroidOnly;
-
   /// Auto-rotate target setting section label.
   ///
   /// In en, this message translates to:
@@ -14737,53 +14731,17 @@ abstract class AppLocalizations {
   /// **'Share link'**
   String get wallpaperShareLink;
 
-  /// Step to add the Prism wallpaper and system wallpaper actions in Shortcuts.
-  ///
-  /// In en, this message translates to:
-  /// **'Add the action \"Get Prism Wallpaper\". Then add the action \"Set Wallpaper\".'**
-  String get wallpaperShortcutsAddActionsSteps;
-
-  /// Explanation of how iOS Shortcuts can change wallpapers automatically.
-  ///
-  /// In en, this message translates to:
-  /// **'Use Shortcuts to set a wallpaper on a schedule or trigger. Prepare the source below before running it.'**
-  String get wallpaperShortcutsBody;
-
   /// Section title for choosing wallpaper data in Shortcuts.
   ///
   /// In en, this message translates to:
   /// **'Pick what Prism sends'**
   String get wallpaperShortcutsChoosePrismData;
 
-  /// Step to choose a trigger for an iOS Shortcuts wallpaper automation.
-  ///
-  /// In en, this message translates to:
-  /// **'In the shortcut editor, open Automation if needed. Choose and configure a trigger, such as Time of Day, opening an app, or connecting a charger.'**
-  String get wallpaperShortcutsChooseTriggerSteps;
-
-  /// Step to disable confirmation and save an iOS Shortcuts automation.
-  ///
-  /// In en, this message translates to:
-  /// **'Review the run options shown and save the shortcut or automation. If \"Ask Before Running\" appears, turn it off for automatic runs.'**
-  String get wallpaperShortcutsDisableConfirmationSteps;
-
-  /// Headline describing automatic wallpaper changes through Shortcuts.
-  ///
-  /// In en, this message translates to:
-  /// **'Change your wallpaper automatically'**
-  String get wallpaperShortcutsHeadline;
-
   /// Action to open Apple's Shortcuts app.
   ///
   /// In en, this message translates to:
   /// **'Open Shortcuts'**
   String get wallpaperShortcutsOpenAction;
-
-  /// First step in creating a wallpaper automation in iOS Shortcuts.
-  ///
-  /// In en, this message translates to:
-  /// **'Open Shortcuts. If there is an Automation tab, tap it, then New Automation. Otherwise, tap Add (+), then Edit if shown.'**
-  String get wallpaperShortcutsOpenAutomationSteps;
 
   /// Message shown when the Shortcuts app cannot be opened.
   ///
@@ -14797,12 +14755,6 @@ abstract class AppLocalizations {
   /// **'Random favourite'**
   String get wallpaperShortcutsSourceFavourite;
 
-  /// Description of the random favourite Shortcuts source.
-  ///
-  /// In en, this message translates to:
-  /// **'A random favourite available to Shortcuts. Heart wallpapers in Prism first. Some protected wallpapers may not be available. It avoids the last pick when another favourite is available.'**
-  String get wallpaperShortcutsSourceFavouriteDescription;
-
   /// Shortcuts source option for the daily wallpaper pick.
   ///
   /// In en, this message translates to:
@@ -14814,12 +14766,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Today\'s Prism pick. Download today\'s original in Prism first. When the daily pick changes, download the new original before running this source.'**
   String get wallpaperShortcutsSourceWotdDescription;
-
-  /// Section title for iOS Shortcuts setup instructions.
-  ///
-  /// In en, this message translates to:
-  /// **'Steps'**
-  String get wallpaperShortcutsSteps;
 
   /// Title of the iOS Shortcuts guide screen.
   ///
@@ -19260,6 +19206,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{metric}, eight weeks. {summary}'**
   String statsChartSummary(String metric, String summary);
+
+  /// Headline of the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'A new wallpaper every day'**
+  String get shortcutsGuideHeadline;
+
+  /// Body under the iOS Shortcuts guide headline.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up Shortcuts once. Each day it sets a wallpaper from your rotation folder. Its 200 newest walls each show once before any repeats.'**
+  String get shortcutsGuideBody;
+
+  /// Section title on the iOS Shortcuts guide, and the name of the Shortcuts source that shuffles the folder picked in Prism. Must match the iOS intent's source name.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotation folder'**
+  String get shortcutsSourceRotation;
+
+  /// Description of the Rotation folder source in the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffles the folder you picked above.'**
+  String get shortcutsSourceRotationDescription;
+
+  /// Name of the Shortcuts source that shuffles a folder picked inside Shortcuts. Must match the iOS intent's source name.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder'**
+  String get shortcutsSourceFolder;
+
+  /// Description of the Folder source in the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffles a folder that you pick in Shortcuts.'**
+  String get shortcutsSourceFolderDescription;
+
+  /// Description of the Random favourite source in the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffles your favourites. Each one shows once before any repeats. Some protected wallpapers may not be available.'**
+  String get shortcutsSourceFavouriteDescription;
+
+  /// Rotation folder card title on the iOS Shortcuts guide when no folder is picked.
+  ///
+  /// In en, this message translates to:
+  /// **'No folder picked'**
+  String get shortcutsRotationNone;
+
+  /// Rotation folder card body when no folder is picked.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the folder that the shortcut shuffles.'**
+  String get shortcutsRotationNoneBody;
+
+  /// Button on the rotation folder card that opens the folder picker when no folder is picked.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a folder'**
+  String get shortcutsRotationPick;
+
+  /// Button on the rotation folder card that picks another folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get shortcutsRotationChange;
+
+  /// Button on the rotation folder card that stops using the folder for Shortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get shortcutsRotationStop;
+
+  /// Screen reader label of a numbered step heading in the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {number}, {title}'**
+  String shortcutsStepLabel(int number, String title);
+
+  /// Step 1 title in the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the Prism shortcut'**
+  String get shortcutsStepAddTitle;
+
+  /// Step 1 body when a shared shortcut link is available.
+  ///
+  /// In en, this message translates to:
+  /// **'It gets a wall from your rotation folder and sets it as your wallpaper.'**
+  String get shortcutsStepAddBody;
+
+  /// Button that opens the shared iCloud shortcut link.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the shortcut'**
+  String get shortcutsStepAddAction;
+
+  /// Step 1 body when there is no shared shortcut link.
+  ///
+  /// In en, this message translates to:
+  /// **'Make it in Shortcuts with 2 actions.'**
+  String get shortcutsStepAddManualBody;
+
+  /// Manual step to build the shortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'In Shortcuts, tap + to make a new shortcut.'**
+  String get shortcutsManualNew;
+
+  /// Manual step to build the shortcut. Keep the quoted action name and "Rotation folder" as iOS shows them.
+  ///
+  /// In en, this message translates to:
+  /// **'Add \"Get Prism Wallpaper\". Set Source to Rotation folder.'**
+  String get shortcutsManualGet;
+
+  /// Manual step to build the shortcut. Use the action and option names that Apple's Shortcuts app shows in this language.
+  ///
+  /// In en, this message translates to:
+  /// **'Add \"Set Wallpaper Photo\". Tap the arrow on it, then turn off Show Preview.'**
+  String get shortcutsManualSet;
+
+  /// Manual step to build the shortcut. The name stays in English so Prism can run it.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the shortcut \"{name}\".'**
+  String shortcutsManualName(String name);
+
+  /// Step 2 title in the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Run it every day'**
+  String get shortcutsStepAutomationTitle;
+
+  /// Step 2 line. Use Apple's Shortcuts labels in this language.
+  ///
+  /// In en, this message translates to:
+  /// **'In Shortcuts, tap Automation, then tap +.'**
+  String get shortcutsAutomationOpen;
+
+  /// Step 2 line. Use Apple's Shortcuts labels in this language.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Time of Day. Pick a time, then choose Daily.'**
+  String get shortcutsAutomationTime;
+
+  /// Step 2 line. Use Apple's Shortcuts labels in this language.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Run Immediately, then tap Next.'**
+  String get shortcutsAutomationRun;
+
+  /// Step 2 line. The shortcut name stays in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick \"{name}\" to run.'**
+  String shortcutsAutomationPick(String name);
+
+  /// Note for newer iOS versions without an Automation tab.
+  ///
+  /// In en, this message translates to:
+  /// **'No Automation tab? Open \"{name}\", tap Edit, then tap Automation.'**
+  String shortcutsAutomationNoTab(String name);
+
+  /// Step 3 title in the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Test it now'**
+  String get shortcutsStepTestTitle;
+
+  /// Step 3 body.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs \"{name}\" once, so you can see the new wallpaper now.'**
+  String shortcutsStepTestBody(String name);
+
+  /// Button that runs the shortcut in the Shortcuts app.
+  ///
+  /// In en, this message translates to:
+  /// **'Run the shortcut'**
+  String get shortcutsStepTestAction;
+
+  /// Folder page menu item on iPhone. Makes this the Shortcuts rotation folder and opens the guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate this folder daily'**
+  String get foldersRotateDaily;
+
+  /// Title on the auto-rotate page on iPhone, where Shortcuts changes the wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Change wallpapers with Shortcuts'**
+  String get autoRotateIosTitle;
+
+  /// Body on the auto-rotate page on iPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'On iPhone, a Shortcuts automation sets a new wallpaper from your folder every day.'**
+  String get autoRotateIosBody;
+
+  /// Button on the auto-rotate page on iPhone that opens the Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up Shortcuts'**
+  String get autoRotateIosAction;
+
+  /// Note under the Step 2 automation lines for iOS 16, which has no Run Immediately option. Use the Shortcuts labels in this language.
+  ///
+  /// In en, this message translates to:
+  /// **'On iOS 16 there is no Run Immediately. Turn off Ask Before Running instead.'**
+  String get shortcutsAutomationIos16;
 
   /// Title of the row of suggested creators on Home and Search.
   ///

@@ -1,3 +1,4 @@
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
@@ -32,3 +33,25 @@ Future<int?> iosMajor() => iosMajorVersion();
 
 /// True when this iOS major version is at least [major]. An unreadable version counts as not supported.
 Future<bool> iosAtLeast(int major) async => (await iosMajorVersion() ?? 0) >= major;
+
+/// Remote Config key for the iCloud link of the shared Prism shortcut. Empty hides the button.
+const String iosShortcutLinkRemoteConfigKey = 'ios_shortcut_link';
+
+/// The name of the shared shortcut. "Test it now" runs the shortcut with this name.
+const String iosShortcutName = 'Prism Wallpaper';
+
+@visibleForTesting
+String? iosShortcutLinkOverride;
+
+/// The shared shortcut's https link from Remote Config, or null when it is empty or not https.
+Uri? iosShortcutLink() {
+  final String raw =
+      iosShortcutLinkOverride ??
+      FirebaseInit.remoteConfigIfInitialized?.getString(iosShortcutLinkRemoteConfigKey) ??
+      '';
+  final Uri? uri = Uri.tryParse(raw.trim());
+  return uri != null && uri.scheme == 'https' && uri.host.isNotEmpty ? uri : null;
+}
+
+/// `shortcuts://run-shortcut?name=Prism%20Wallpaper`. Shortcuts reads `+` as a plus sign, so the space is `%20`.
+Uri iosRunShortcutUri() => Uri.parse('shortcuts://run-shortcut?name=${Uri.encodeComponent(iosShortcutName)}');

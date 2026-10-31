@@ -99,4 +99,10 @@ class PersistenceKeys {
   // JSON list of {id, url} for the user's favourites, newest first. Written as a raw string so the iOS
   // Shortcuts intent reads it from UserDefaults as `flutter.shortcuts.favourites`.
   static const String shortcutsFavourites = 'shortcuts.favourites';
+  // JSON snapshot of the user's folders and their newest walls, read by the iOS intent.
+  static const String shortcutsFolders = 'shortcuts.folders';
+  // The folder id the "Rotation folder" source shuffles.
+  static const String shortcutsRotationFolder = 'shortcuts.rotation_folder';
+  // The iOS intent writes it. Prism only removes it.
+  static const String shortcutsShuffleBags = 'shortcuts.shuffle_bags';
 }
