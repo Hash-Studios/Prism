@@ -105,14 +105,7 @@ class _FollowedByLineState extends State<FollowedByLine> {
                   ),
                 ),
                 const SizedBox(width: PrismSpace.xs),
-                Expanded(
-                  child: Text(
-                    text,
-                    style: PrismTextStyles.caption(context),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
+                Expanded(child: Text(text, style: PrismTextStyles.caption(context))),
               ],
             ),
           ),
