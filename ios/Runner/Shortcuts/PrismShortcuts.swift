@@ -10,5 +10,12 @@ struct PrismShortcuts: AppShortcutsProvider {
         "Get a \(.applicationName) wallpaper"
       ]
     )
+    AppShortcut(
+      intent: GetPrismWallpaperIntent(source: .rotationFolder),
+      phrases: [
+        "Shuffle my \(.applicationName) wallpaper",
+        "Shuffle my wallpaper with \(.applicationName)"
+      ]
+    )
   }
 }
