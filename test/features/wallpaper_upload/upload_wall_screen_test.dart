@@ -166,13 +166,17 @@ class _UploadRouteHost extends StatelessWidget {
       TextButton(onPressed: () => context.router.push<Object?>(uploadRoute()), child: const Text('Open uploader'));
 }
 
-/// Opens [route] from a host page inside a real [AppRouter], so a successful submit can push [ReviewRoute].
-Future<void> pumpRoutedUpload(WidgetTester tester, UploadWallRoute Function() route) async {
+void signInUploadUser() {
   final previousUser = app_state.prismUser;
   app_state.prismUser = app_constants.createGuestPrismUser()
     ..id = 'test-user'
     ..loggedIn = true;
   addTearDown(() => app_state.prismUser = previousUser);
+}
+
+/// Opens [route] from a host page inside a real [AppRouter], so a successful submit can push [ReviewRoute].
+Future<void> pumpRoutedUpload(WidgetTester tester, UploadWallRoute Function() route) async {
+  signInUploadUser();
   final router = _TestAppRouter(route);
   await tester.pumpWidget(
     MaterialApp.router(
@@ -244,12 +248,13 @@ void main() {
   testWidgets('last details change only category and tags and a defaults write failure does not fail submission', (
     tester,
   ) async {
+    signInUploadUser();
     await setViewport(tester);
     final image = await makeImage(tester);
     final drafts = _RecordingDraftStore();
     SubmissionMetadata? submitted;
     final resumed = UploadDraft(
-      owner: UploadDraftStore.guestOwner,
+      owner: app_state.prismUser.id,
       draftId: 'resume',
       file: image,
       metadata: const SubmissionMetadata(
@@ -319,6 +324,7 @@ void main() {
   });
 
   testWidgets('response loss preserves operation and file receipts across restart', (tester) async {
+    signInUploadUser();
     await setViewport(tester);
     final image = await makeImage(tester);
     final drafts = _SessionDraftStore();
@@ -629,6 +635,7 @@ void main() {
       () => UploadWallRoute(
         image: image,
         prepareImageForTesting: () async {},
+        defaultsStoreForTesting: _Defaults(),
         uploadFileForTesting: ({required isThumbnail}) {
           uploadCalls++;
           if (isThumbnail) {
@@ -751,6 +758,7 @@ void main() {
       () => UploadWallRoute(
         image: File('test-image.png'),
         prepareImageForTesting: () async {},
+        defaultsStoreForTesting: _Defaults(),
         uploadFileForTesting: ({required isThumbnail}) async => isThumbnail
             ? const GitHubContent(
                 downloadUrl: 'https://example.test/thumb.png',
@@ -794,6 +802,7 @@ void main() {
       () => UploadWallRoute(
         image: image,
         prepareImageForTesting: () async {},
+        defaultsStoreForTesting: _Defaults(),
         uploadFileForTesting: ({required isThumbnail}) async {
           uploadedThumbnails.add(isThumbnail);
           return isThumbnail
@@ -1253,6 +1262,7 @@ void main() {
       () => UploadWallRoute(
         image: image,
         prepareImageForTesting: () async {},
+        defaultsStoreForTesting: _Defaults(),
         uploadFileForTesting: ({required isThumbnail}) async {
           if (isThumbnail) {
             thumbnailCalls++;
@@ -1309,6 +1319,7 @@ void main() {
       () => UploadWallRoute(
         image: image,
         prepareImageForTesting: () async {},
+        defaultsStoreForTesting: _Defaults(),
         uploadFileForTesting: ({required isThumbnail}) async {
           if (isThumbnail) {
             thumbnailCalls++;
@@ -1731,6 +1742,7 @@ void main() {
       () => UploadWallRoute(
         image: image,
         prepareImageForTesting: () async {},
+        defaultsStoreForTesting: _Defaults(),
         uploadFileForTesting: ({required isThumbnail}) async {
           uploadCalls++;
           return isThumbnail

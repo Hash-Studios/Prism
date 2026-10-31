@@ -20,6 +20,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
 
+class _DefaultsStore extends LastSubmissionDefaultsStore {
+  @override
+  Future<void> save(String owner, SubmissionMetadata metadata) async {}
+}
+
 class _BatchRouter extends AppRouter {
   _BatchRouter(this.uploadRoute);
 
@@ -127,6 +132,7 @@ void main() {
         batch: batch,
         imageSizeForTesting: size,
         prepareImageForTesting: () async {},
+        defaultsStoreForTesting: _DefaultsStore(),
         uploadFileForTesting: upload ?? _upload,
         deleteFileForTesting: ({required path, required sha}) async {},
         createRecordWithMetadataForTesting:
@@ -165,6 +171,7 @@ void main() {
     await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
 
+    expect(find.text('review-stub'), findsOneWidget);
     expect(savedId, hasLength(10));
     expect(savedId, matches(RegExp(r'^[A-Z0-9]+$')));
     expect(savedMetadata!.title, '');
@@ -343,6 +350,7 @@ void main() {
           image: batch.current,
           batch: batch,
           prepareImageForTesting: () async {},
+          defaultsStoreForTesting: _DefaultsStore(),
           uploadFileForTesting: _upload,
           deleteFileForTesting: ({required path, required sha}) async {},
           createRecordForTesting: () async => WallSubmissionResult.submitted,
@@ -418,6 +426,7 @@ void main() {
           image: batch.current,
           batch: batch,
           prepareImageForTesting: () async {},
+          defaultsStoreForTesting: _DefaultsStore(),
           uploadFileForTesting: _upload,
           deleteFileForTesting: ({required path, required sha}) async {},
           createRecordForTesting: () async => WallSubmissionResult.submitted,

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -207,6 +208,10 @@ void main() {
   }
 
   testWidgets('successful resubmission returns to the existing review and Back skips the stale form', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'test-user'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
     AnalyticsRuntime.instance = FakeAppAnalytics();
     addTearDown(AnalyticsRuntime.reset);
     tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
