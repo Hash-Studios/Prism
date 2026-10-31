@@ -37,6 +37,8 @@ void main() {
       expect(native, contains("'${options.apiKey}'"));
       expect(native, contains(options.appId));
       expect(native, contains("'${options.messagingSenderId}'"));
+      expect(native, contains(options.storageBucket));
+      expect(native, contains(options.iosBundleId));
     }
     expect(CreatorStatsEmulator.options(TargetPlatform.iOS).appId, contains(':ios:'));
   });

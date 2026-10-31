@@ -35,12 +35,16 @@ const iosConfig = `<?xml version="1.0" encoding="UTF-8"?>
 <key>PLIST_VERSION</key><string>1</string>
 </dict></plist>
 `;
-if (fs.existsSync(iosTarget)) {
+const iosExists = fs.existsSync(iosTarget);
+if (iosExists) {
   assert.equal(fs.readFileSync(iosTarget, 'utf8'), iosConfig,
     'Existing iOS native config differs. Refusing to overwrite it. Use a QA checkout with no real native config.');
-} else fs.writeFileSync(iosTarget, iosConfig, {flag: 'wx'});
-if (fs.existsSync(target)) {
+}
+const androidExists = fs.existsSync(target);
+if (androidExists) {
   assert.deepEqual(JSON.parse(fs.readFileSync(target, 'utf8')), config,
     'Existing native config differs. Refusing to overwrite it. Use a QA checkout with no real native config.');
-} else fs.writeFileSync(target, JSON.stringify(config, null, 2) + '\n', {flag: 'wx'});
+}
+if (!iosExists) fs.writeFileSync(iosTarget, iosConfig, {flag: 'wx'});
+if (!androidExists) fs.writeFileSync(target, JSON.stringify(config, null, 2) + '\n', {flag: 'wx'});
 console.log('Demo-only Android and iOS native config ready. Never commit it or use this checkout for release builds.');
