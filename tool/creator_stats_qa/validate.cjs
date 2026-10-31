@@ -9,6 +9,7 @@ const run = (args, env = process.env) => {
   return result.stdout;
 };
 run(['prepare.cjs', 'demo-prism']);
+run(['seed_test.cjs']);
 for (const file of ['prepare', 'local', 'seed', 'assert', 'capacity', 'native', 'images', 'bundle/index']) run(['--check', `${file}.cjs`]);
 const env = {PATH: process.env.PATH, GCLOUD_PROJECT: 'demo-prism', GOOGLE_CLOUD_PROJECT: 'demo-prism'};
 run(['-e', `const assert = require('node:assert/strict');
@@ -29,4 +30,4 @@ assert.equal(config.functions.length, 1);
 assert.equal(config.functions[0].source, '.runtime');
 assert.deepEqual(fs.readdirSync(path.join(__dirname, '.runtime/lib')).sort(),
   ['common.js', 'creatorStats.js', 'creatorStatsHistory.js', 'notificationCatalog.js', 'viewStats.js']);
-console.log('PASS: script syntax, source transpilation, exact export/module allowlist, normalizer, week boundaries, production-project rejection. No emulator or device started.');
+console.log('PASS: script syntax, public-profile seed contract, source transpilation, exact export/module allowlist, normalizer, week boundaries, production-project rejection. No emulator or device started.');

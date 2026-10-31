@@ -40,6 +40,9 @@ void main() {
         reason: 'Native SDKs reject other key shapes',
       );
       expect(native, contains("'${options.apiKey}'"));
+      if (platform == TargetPlatform.iOS) {
+        expect(native, contains('<key>API_KEY</key><string>${options.apiKey}</string>'));
+      }
       expect(native, contains(options.appId));
       expect(native, contains("'${options.messagingSenderId}'"));
       expect(native, contains(options.storageBucket));

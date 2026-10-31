@@ -167,7 +167,12 @@ void main() {
       isA<CreatorStatsState>().having((s) => s.data?.approvedWallCount, 'walls', 1),
     ],
   );
-  Future<MockStatsBloc> pump(WidgetTester tester, CreatorStatsState state, {double scale = 1}) async {
+  Future<MockStatsBloc> pump(
+    WidgetTester tester,
+    CreatorStatsState state, {
+    double scale = 1,
+    Brightness brightness = Brightness.light,
+  }) async {
     final bloc = MockStatsBloc();
     when(() => bloc.state).thenReturn(state);
     final session = MockSessionBloc();
@@ -181,6 +186,7 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        theme: ThemeData(brightness: brightness),
         builder: (context, child) => BlocProvider<SessionBloc>.value(value: session, child: child),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
@@ -284,14 +290,31 @@ void main() {
     await tester.tap(find.text('Try again'));
     verify(() => bloc.add(const CreatorStatsEvent.load())).called(1);
   });
-  testWidgets('empty state includes upload entry at large text', (tester) async {
-    await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture(empty: true))), scale: 2);
-    expect(find.text('Upload a wallpaper'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    final glint = tester.getRect(find.byType(Glint));
-    expect(glint.size, const Size.square(96), reason: 'Glint stretched to the list width paints over the copy');
-    expect(glint.bottom, lessThanOrEqualTo(tester.getRect(find.text('Your first wall starts here')).top));
-  });
+  for (final brightness in Brightness.values) {
+    testWidgets('empty state keeps Glint clear of copy at large text in ${brightness.name} theme', (tester) async {
+      tester.view.physicalSize = const Size(320, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await pump(
+        tester,
+        CreatorStatsState(data: parseCreatorStats(fixture(empty: true))),
+        scale: 2,
+        brightness: brightness,
+      );
+      final title = find.text('Your first wall starts here');
+      final upload = find.text('Upload a wallpaper');
+      expect(Theme.of(tester.element(title)).brightness, brightness);
+      final glint = tester.getRect(find.byType(Glint));
+      expect(glint.size, const Size.square(96), reason: 'Glint stretched to the list width paints over the copy');
+      expect(glint.center.dx, 160);
+      expect(glint.bottom, lessThan(tester.getRect(title).top));
+      expect(title.hitTestable(), findsOneWidget);
+      await tester.scrollUntilVisible(upload, 150);
+      await tester.pump();
+      expect(upload.hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
   testWidgets('metric switch dispatches and tracks typed event', (tester) async {
     final bloc = await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())));
     await tester.scrollUntilVisible(find.widgetWithText(ChoiceChip, 'Saves'), 300);
