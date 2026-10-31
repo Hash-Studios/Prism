@@ -1061,7 +1061,7 @@ h2{font-size:1.25rem;font-weight:700}
 .band{margin-top:64px;padding:28px;border-radius:24px;background:linear-gradient(135deg,rgba(229,118,151,.22),rgba(229,118,151,.04));display:grid;gap:20px}
 .band p{color:var(--muted);margin:8px 0 0}
 @media (min-width:800px){.band{grid-template-columns:1fr auto;align-items:center;padding:36px 40px}}
-.folder-head{display:grid;gap:28px;padding-top:16px}
+.folder-head{display:grid;gap:28px;padding:16px 0 40px}
 .collage{display:flex;justify-content:center;height:clamp(220px,52vw,320px)}
 .collage img{height:100%;width:auto;aspect-ratio:1/2;object-fit:cover;border-radius:18px;box-shadow:0 20px 40px -12px rgba(0,0,0,.7);border:3px solid var(--bg)}
 .collage img:nth-child(1){position:relative;z-index:3}
