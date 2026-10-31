@@ -7,6 +7,7 @@ import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/features/creator_stats/biz/bloc/creator_stats_bloc.j.dart';
 import 'package:Prism/features/creator_stats/data/creator_stats_repository_impl.dart';
 import 'package:Prism/features/creator_stats/domain/creator_stats.dart';
@@ -287,6 +288,9 @@ void main() {
     await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture(empty: true))), scale: 2);
     expect(find.text('Upload a wallpaper'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    final glint = tester.getRect(find.byType(Glint));
+    expect(glint.size, const Size.square(96), reason: 'Glint stretched to the list width paints over the copy');
+    expect(glint.bottom, lessThanOrEqualTo(tester.getRect(find.text('Your first wall starts here')).top));
   });
   testWidgets('metric switch dispatches and tracks typed event', (tester) async {
     final bloc = await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())));

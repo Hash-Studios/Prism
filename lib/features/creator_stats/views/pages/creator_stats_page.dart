@@ -92,7 +92,8 @@ class CreatorStatsView extends StatelessWidget {
             return ListView(
               padding: const EdgeInsets.all(24),
               children: [
-                const Glint(),
+                const Center(child: Glint()),
+                const SizedBox(height: PrismSpace.md),
                 Text(context.l10n.statsEmptyTitle, style: PrismTextStyles.screenTitle(context)),
                 Text(context.l10n.statsEmptyBody),
                 TextButton(
