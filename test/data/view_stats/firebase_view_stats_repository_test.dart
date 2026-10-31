@@ -1,6 +1,7 @@
 // Firebase platform-interface packages are transitive, but these fakes need them.
 // ignore_for_file: depend_on_referenced_packages
 
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/data/view_stats/firebase_view_stats_repository.dart';
@@ -205,6 +206,24 @@ void main() {
       final result = await repository.recordWallpaperAction('abc', WallpaperAction.set);
       expect(calls, hasLength(1));
       expect(result.isFailure, isTrue);
+    });
+
+    test('a receipt from before sign-out is rejected after the same account signs back in', () async {
+      actionReply = (_, parameters) async {
+        CoinsService.instance.resetSession();
+        return <String, Object?>{
+          'questReceiptComplete': true,
+          'questReceiptId': (parameters as Map)['requestId'],
+          'questCoins': 9,
+          'questAwards': <Object?>[
+            <String, Object?>{'id': 'set', 'coins': 9},
+          ],
+        };
+      };
+      final result = await repository.recordWallpaperAction('abc', WallpaperAction.set);
+      expect(result.isFailure, isTrue);
+      expect(result.failure?.message, contains('Account changed'));
+      expect(calls, hasLength(1));
     });
 
     test('legacy responses never report an earned amount', () async {

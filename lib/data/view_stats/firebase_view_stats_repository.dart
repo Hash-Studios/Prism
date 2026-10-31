@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_correlation.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -61,8 +62,9 @@ class FirebaseViewStatsRepository implements ViewStatsRepository {
 
   @override
   Future<Result<WallpaperActionReceipt>> recordWallpaperAction(String wallId, WallpaperAction action) async {
-    final owner = (app_state.prismUser.id, app_state.prismUser.loggedIn);
-    bool ownerMatches() => owner == (app_state.prismUser.id, app_state.prismUser.loggedIn);
+    final owner = (app_state.prismUser.id, app_state.prismUser.loggedIn, CoinsService.instance.economySession);
+    bool ownerMatches() =>
+        owner == (app_state.prismUser.id, app_state.prismUser.loggedIn, CoinsService.instance.economySession);
     final String id = wallId.trim().toUpperCase();
     if (id.isEmpty) {
       return Result.error(const ServerFailure('Invalid wall id'));
