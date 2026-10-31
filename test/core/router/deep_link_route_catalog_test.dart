@@ -162,7 +162,7 @@ void main() {
     });
 
     final Set<String> appPages = _appRouteNames(AppRouter().routes)..remove('SplashWidgetRoute');
-    expect(appPages, hasLength(60));
+    expect(appPages, hasLength(61));
     expect(
       appPages.difference(reachablePages),
       isEmpty,
