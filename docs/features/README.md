@@ -33,6 +33,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [coins-and-downloads.md](coins-and-downloads.md) | Price on the pill, already downloaded, ads, pending refunds and rewards |
 | [daily-moment.md](daily-moment.md) | Shared streak, chest, and free Pro spin sheet, reward contracts, old entry points, and release limits |
 | [coins-ledger.md](coins-ledger.md) | Ledger rows, labels, coin history screen, subscription reconcile |
+| [creator-tips.md](creator-tips.md) | Tip a creator 10, 25 or 50 coins from a wall or a profile, caps, ledger, daily push, Tipped by N |
 | [streak-rescue.md](streak-rescue.md) | Restore a broken streak for coins |
 | [ai-wallpaper.md](ai-wallpaper.md) | AI tab errors, charge id, Try another |
 | [ai-charge.md](ai-charge.md) | AI charge check on the worker, refund evidence |

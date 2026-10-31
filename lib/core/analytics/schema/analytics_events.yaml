@@ -118,6 +118,7 @@ enums:
       - drop_pack
       - boost_wall
       - gift_premium_pass
+      - tip_creator
       - draw_ticket
       - shop_item
       - spin_wheel
@@ -2407,6 +2408,23 @@ events:
       - name: recipient_uid
         key: recipient_uid
         type: string
+  - id: tip_sheet_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: tip_sent
+    fields:
+      - name: amount
+        key: amount
+        type: int
+  - id: tip_failed
+    fields:
+      - name: reason
+        key: reason
+        type: string
+  - id: tip_received_push_opened
+    fields: []
   - id: draw_ticket_bought
     fields:
       - name: week_key

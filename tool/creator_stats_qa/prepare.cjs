@@ -33,6 +33,23 @@ const selected = parsed.statements.filter(statement =>
   ts.isVariableStatement(statement) && statement.declarationList.declarations.some(d => d.name.getText(parsed) === 'MAX_ID_LEN'));
 assert.equal(selected.length, 2, 'Normalizer source structure changed. Review bundle preparation.');
 compile('viewStats', 'import {HttpsError} from "firebase-functions/v2/https";\n' + selected.map(s => s.getText(parsed)).join('\n'));
+// tipCreator imports most of the backend, so the whole current source is transpiled for it, tests and scripts left out.
+const fnlib = path.join(target, 'fnlib');
+fs.rmSync(fnlib, {recursive: true, force: true});
+const transpileTree = (dir, out) => {
+  for (const entry of fs.readdirSync(dir, {withFileTypes: true})) {
+    if (entry.name === '__tests__' || entry.name === 'scripts') continue;
+    const from = path.join(dir, entry.name);
+    if (entry.isDirectory()) transpileTree(from, path.join(out, entry.name));
+    else if (entry.name.endsWith('.ts')) {
+      const result = ts.transpileModule(fs.readFileSync(from, 'utf8'), {fileName: entry.name, compilerOptions:
+        {module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017, esModuleInterop: true}});
+      fs.mkdirSync(out, {recursive: true});
+      fs.writeFileSync(path.join(out, entry.name.replace(/\.ts$/, '.js')), result.outputText);
+    }
+  }
+};
+transpileTree(path.join(root, 'functions/src'), fnlib);
 fs.copyFileSync(path.join(__dirname, 'bundle/index.cjs'), path.join(target, 'index.cjs'));
 fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify({name: 'prism-local-stats', private: true,
   main: 'index.cjs', engines: {node: '24'}, dependencies: {

@@ -14,9 +14,12 @@ const CACHE_MS = 5 * 60000;
 type Week = ReturnType<typeof weekWindows>[number] & {metrics: Counts};
 type WallStats = {wallId: string; title: string; thumbnailUrl: string; totals: Counts; weeks: Week[]};
 type Coverage = {weeklyFrom: string | null; totalBasis: "recordedLifetime" | "currentMembership" | "since"; totalFrom: string | null};
+type TipTally = {count: number; coins: number};
+type Tips = TipTally & {weeks: Array<{week: string; start: string} & TipTally>; walls: Array<{wallId: string} & TipTally>};
 export type CreatorStats = {
   schemaVersion: 1; generatedAt: string; asOf: string; timezone: "UTC";
   approvedWallCount: number; totals: Counts; coverage: Record<Metric, Coverage>; weeks: Week[]; walls: WallStats[];
+  tips: Tips;
 };
 type CachedWall = {at: number; row: WallStats; from: string | null};
 const counts = (value: (metric: Metric) => number | null): Counts => Object.fromEntries(
@@ -30,6 +33,21 @@ function sum(rows: Counts[]): Counts {
     if (!Number.isSafeInteger(total)) throw capacity();
     return total;
   });
+}
+/** Tips from `creatorTips/{uid}`, cut to the stats weeks and to the creator's approved walls. */
+function tipsOf(raw: admin.firestore.DocumentData | undefined, now: number, wallIds: string[]): Tips {
+  const tally = (value: unknown): TipTally => {
+    const row = (typeof value === "object" && value !== null ? value : {}) as Record<string, unknown>;
+    return {count: count(row.count), coins: count(row.coins)};
+  };
+  const map = (value: unknown) => (typeof value === "object" && value !== null ? value : {}) as Record<string, unknown>;
+  const weeks = map(raw?.weeks);
+  const walls = map(raw?.walls);
+  return {
+    ...tally(raw),
+    weeks: weekWindows(now).map(({week, start}) => ({week, start, ...tally(weeks[week])})),
+    walls: wallIds.filter((id) => walls[id] !== undefined).map((wallId) => ({wallId, ...tally(walls[wallId])})),
+  };
 }
 async function wallStats(tx: admin.firestore.Transaction, wall: admin.firestore.QueryDocumentSnapshot, uid: string, now: number,
   identities: Awaited<ReturnType<typeof readWallIdentities>>) {
@@ -83,6 +101,7 @@ export async function readCreatorStats(uid: string, input: unknown, now = Date.n
     if (!await activeOwner(tx, uid)) throw new HttpsError("failed-precondition", "The creator account is unavailable.");
     const walls = await tx.get(db.collection("walls").where("creatorUid", "==", uid).where("review", "==", true).limit(MAX_WALLS + 1));
     if (walls.size > MAX_WALLS) throw capacity();
+    const tipsSnap = await tx.get(db.doc(`creatorTips/${uid}`));
     const identities = walls.empty ? new Map() : await readWallIdentities(tx);
     const results: Awaited<ReturnType<typeof wallStats>>[] = [];
     for (let i = 0; i < walls.size; i += 10) {
@@ -98,7 +117,8 @@ export async function readCreatorStats(uid: string, input: unknown, now = Date.n
     const response: CreatorStats = {schemaVersion: 1, generatedAt: new Date(now).toISOString(),
       asOf: new Date(Math.min(now, ...results.map(({cache}) => cache.at))).toISOString(), timezone: "UTC",
       approvedWallCount: rows.length, totals: sum(rows.map((row) => row.totals)), coverage,
-      weeks: weekWindows(now).map((window, i) => ({...window, metrics: sum(rows.map((row) => row.weeks[i].metrics))})), walls: rows};
+      weeks: weekWindows(now).map((window, i) => ({...window, metrics: sum(rows.map((row) => row.weeks[i].metrics))})), walls: rows,
+      tips: tipsOf(tipsSnap.data(), now, rows.map((row) => row.wallId))};
     if (Buffer.byteLength(JSON.stringify(response)) > 3 * 1024 * 1024) throw capacity();
     for (const result of results) {
       if (result.write) {

@@ -12017,4 +12017,142 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shortcutsAutomationIos16 => 'On iOS 16 there is no Run Immediately. Turn off Ask Before Running instead.';
+
+  @override
+  String get tipAction => 'Tip creator';
+
+  @override
+  String get tipMenuItem => 'Send a tip';
+
+  @override
+  String tipTitle(String name) {
+    return 'Tip $name';
+  }
+
+  @override
+  String tipMessage(String name) {
+    return 'Pick an amount. $name gets every coin and sees your name.';
+  }
+
+  @override
+  String get tipAmountsLabel => 'Tip amount';
+
+  @override
+  String tipBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance coins', one: '1 coin');
+    return 'Your balance: $_temp0';
+  }
+
+  @override
+  String tipShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount more coins', one: '1 more coin');
+    return 'You need $_temp0.';
+  }
+
+  @override
+  String tipSendButton(int amount) {
+    return 'Tip $amount coins';
+  }
+
+  @override
+  String get tipEarnCoins => 'Earn coins';
+
+  @override
+  String get tipThanksTitle => 'Thanks for your tip';
+
+  @override
+  String tipThanksMessage(String name, int amount) {
+    return '$name got your $amount coins.';
+  }
+
+  @override
+  String get tipDone => 'Done';
+
+  @override
+  String get tipNotEnoughCoins => 'You don\'t have enough coins for this tip.';
+
+  @override
+  String get tipDailyLimit => 'You\'ve sent all your tips for today. Try again tomorrow.';
+
+  @override
+  String tipPairLimit(String name) {
+    return 'You already tipped $name today. Try again tomorrow.';
+  }
+
+  @override
+  String tipCreatorLimit(String name) {
+    return '$name can\'t get more tips today. Try again tomorrow.';
+  }
+
+  @override
+  String get tipSenderTooNew => 'You can send tips 7 days after you join Prism.';
+
+  @override
+  String get tipSenderIneligible => 'Sign in with a verified account to send tips.';
+
+  @override
+  String tipUnavailable(String name) {
+    return 'You can\'t tip $name right now.';
+  }
+
+  @override
+  String get tipFailed => 'Couldn\'t send the tip. Try again.';
+
+  @override
+  String wallTippedBy(int count) {
+    return 'Tipped by $count people';
+  }
+
+  @override
+  String get coreCoinTipSent => 'Tip sent';
+
+  @override
+  String get coreCoinTipReceived => 'Tip received';
+
+  @override
+  String notifPushTipReceivedTitle(String senderName, String amount, String wallTitle) {
+    return '$senderName tipped you $amount coins for $wallTitle';
+  }
+
+  @override
+  String notifPushTipReceivedTitleUntitled(String senderName, String amount) {
+    return '$senderName tipped you $amount coins';
+  }
+
+  @override
+  String get notifPushTipReceivedBody => 'See your tips in your creator stats.';
+
+  @override
+  String notifTipsReceivedTitle(int count) {
+    return 'You got $count tips today';
+  }
+
+  @override
+  String notifTipsReceivedBody(int coins) {
+    return '$coins coins in all. See them in your creator stats.';
+  }
+
+  @override
+  String get statsTips => 'Tips';
+
+  @override
+  String statsTipsTotal(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count tips', one: '1 tip');
+    return '$_temp0, $coins coins in all';
+  }
+
+  @override
+  String statsTipsWeek(String date, int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count tips', one: '1 tip');
+    return 'Week of $date: $_temp0, $coins coins';
+  }
+
+  @override
+  String statsTipsWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count tips', one: '1 tip');
+    return '$_temp0, $coins coins';
+  }
+
+  @override
+  String get statsTipsEmpty => 'No tips yet. Fans can tip you from your walls and your profile.';
 }

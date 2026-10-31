@@ -52,7 +52,7 @@ class _Views extends Mock implements RecordPrismWallpaperViewsUsecase {}
 
 class _Palette extends Mock implements PaletteRepository {}
 
-class _Count extends Mock implements GetWallpaperSetCountUseCase {}
+class _Count extends Mock implements GetWallpaperCountsUseCase {}
 
 class _Recommendations implements WallpaperRecommendationRepository {
   final cursors = <RecommendationCursor?>[];

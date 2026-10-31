@@ -12059,4 +12059,142 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get shortcutsAutomationIos16 =>
       'Di iOS 16 tidak ada \"Jalankan Segera\". Matikan \"Tanya Sebelum Menjalankan\" sebagai gantinya.';
+
+  @override
+  String get tipAction => 'Beri tip kreator';
+
+  @override
+  String get tipMenuItem => 'Kirim tip';
+
+  @override
+  String tipTitle(String name) {
+    return 'Beri tip $name';
+  }
+
+  @override
+  String tipMessage(String name) {
+    return 'Pilih jumlah. $name menerima semua koin dan melihat nama Anda.';
+  }
+
+  @override
+  String get tipAmountsLabel => 'Jumlah tip';
+
+  @override
+  String tipBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance koin', one: '1 koin');
+    return 'Saldo Anda: $_temp0';
+  }
+
+  @override
+  String tipShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount koin lagi', one: '1 koin lagi');
+    return 'Anda perlu $_temp0.';
+  }
+
+  @override
+  String tipSendButton(int amount) {
+    return 'Beri tip $amount koin';
+  }
+
+  @override
+  String get tipEarnCoins => 'Dapatkan koin';
+
+  @override
+  String get tipThanksTitle => 'Terima kasih atas tip Anda';
+
+  @override
+  String tipThanksMessage(String name, int amount) {
+    return '$name menerima $amount koin Anda.';
+  }
+
+  @override
+  String get tipDone => 'Selesai';
+
+  @override
+  String get tipNotEnoughCoins => 'Koin Anda tidak cukup untuk tip ini.';
+
+  @override
+  String get tipDailyLimit => 'Anda sudah mengirim semua tip hari ini. Coba lagi besok.';
+
+  @override
+  String tipPairLimit(String name) {
+    return 'Anda sudah memberi tip kepada $name hari ini. Coba lagi besok.';
+  }
+
+  @override
+  String tipCreatorLimit(String name) {
+    return '$name tidak bisa menerima tip lagi hari ini. Coba lagi besok.';
+  }
+
+  @override
+  String get tipSenderTooNew => 'Anda bisa mengirim tip 7 hari setelah bergabung dengan Prism.';
+
+  @override
+  String get tipSenderIneligible => 'Masuk dengan akun terverifikasi untuk mengirim tip.';
+
+  @override
+  String tipUnavailable(String name) {
+    return 'Anda tidak bisa memberi tip kepada $name saat ini.';
+  }
+
+  @override
+  String get tipFailed => 'Tip tidak bisa dikirim. Coba lagi.';
+
+  @override
+  String wallTippedBy(int count) {
+    return 'Diberi tip oleh $count orang';
+  }
+
+  @override
+  String get coreCoinTipSent => 'Tip terkirim';
+
+  @override
+  String get coreCoinTipReceived => 'Tip diterima';
+
+  @override
+  String notifPushTipReceivedTitle(String senderName, String amount, String wallTitle) {
+    return '$senderName memberi Anda tip $amount koin untuk $wallTitle';
+  }
+
+  @override
+  String notifPushTipReceivedTitleUntitled(String senderName, String amount) {
+    return '$senderName memberi Anda tip $amount koin';
+  }
+
+  @override
+  String get notifPushTipReceivedBody => 'Lihat tip Anda di statistik kreator.';
+
+  @override
+  String notifTipsReceivedTitle(int count) {
+    return 'Anda mendapat $count tip hari ini';
+  }
+
+  @override
+  String notifTipsReceivedBody(int coins) {
+    return 'Total $coins koin. Lihat di statistik kreator Anda.';
+  }
+
+  @override
+  String get statsTips => 'Tip';
+
+  @override
+  String statsTipsTotal(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count tip', one: '1 tip');
+    return '$_temp0, total $coins koin';
+  }
+
+  @override
+  String statsTipsWeek(String date, int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count tip', one: '1 tip');
+    return 'Minggu $date: $_temp0, $coins koin';
+  }
+
+  @override
+  String statsTipsWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count tip', one: '1 tip');
+    return '$_temp0, $coins koin';
+  }
+
+  @override
+  String get statsTipsEmpty => 'Belum ada tip. Penggemar bisa memberi tip dari wallpaper dan profil Anda.';
 }

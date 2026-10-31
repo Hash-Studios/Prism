@@ -12360,6 +12360,145 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get shortcutsAutomationIos16 =>
       'No iOS 16 não existe \"Executar Imediatamente\". Desative \"Perguntar Antes de Executar\".';
+
+  @override
+  String get tipAction => 'Dar gorjeta ao criador';
+
+  @override
+  String get tipMenuItem => 'Enviar uma gorjeta';
+
+  @override
+  String tipTitle(String name) {
+    return 'Gorjeta para $name';
+  }
+
+  @override
+  String tipMessage(String name) {
+    return 'Escolha um valor. $name recebe todas as moedas e vê seu nome.';
+  }
+
+  @override
+  String get tipAmountsLabel => 'Valor da gorjeta';
+
+  @override
+  String tipBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance moedas', one: '1 moeda');
+    return 'Seu saldo: $_temp0';
+  }
+
+  @override
+  String tipShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount moedas', one: '1 moeda');
+    return 'Faltam $_temp0.';
+  }
+
+  @override
+  String tipSendButton(int amount) {
+    return 'Dar gorjeta de $amount moedas';
+  }
+
+  @override
+  String get tipEarnCoins => 'Ganhar moedas';
+
+  @override
+  String get tipThanksTitle => 'Obrigado pela gorjeta';
+
+  @override
+  String tipThanksMessage(String name, int amount) {
+    return '$name recebeu suas $amount moedas.';
+  }
+
+  @override
+  String get tipDone => 'Concluído';
+
+  @override
+  String get tipNotEnoughCoins => 'Você não tem moedas suficientes para esta gorjeta.';
+
+  @override
+  String get tipDailyLimit => 'Você já enviou todas as gorjetas de hoje. Tente novamente amanhã.';
+
+  @override
+  String tipPairLimit(String name) {
+    return 'Você já deu gorjeta para $name hoje. Tente novamente amanhã.';
+  }
+
+  @override
+  String tipCreatorLimit(String name) {
+    return '$name não pode receber mais gorjetas hoje. Tente novamente amanhã.';
+  }
+
+  @override
+  String get tipSenderTooNew => 'Você pode enviar gorjetas 7 dias depois de entrar no Prism.';
+
+  @override
+  String get tipSenderIneligible => 'Entre com uma conta verificada para enviar gorjetas.';
+
+  @override
+  String tipUnavailable(String name) {
+    return 'Você não pode dar gorjeta para $name agora.';
+  }
+
+  @override
+  String get tipFailed => 'Não foi possível enviar a gorjeta. Tente novamente.';
+
+  @override
+  String wallTippedBy(int count) {
+    return 'Recebeu gorjeta de $count pessoas';
+  }
+
+  @override
+  String get coreCoinTipSent => 'Gorjeta enviada';
+
+  @override
+  String get coreCoinTipReceived => 'Gorjeta recebida';
+
+  @override
+  String notifPushTipReceivedTitle(String senderName, String amount, String wallTitle) {
+    return '$senderName te deu $amount moedas de gorjeta por $wallTitle';
+  }
+
+  @override
+  String notifPushTipReceivedTitleUntitled(String senderName, String amount) {
+    return '$senderName te deu $amount moedas de gorjeta';
+  }
+
+  @override
+  String get notifPushTipReceivedBody => 'Veja suas gorjetas nas estatísticas de criador.';
+
+  @override
+  String notifTipsReceivedTitle(int count) {
+    return 'Você recebeu $count gorjetas hoje';
+  }
+
+  @override
+  String notifTipsReceivedBody(int coins) {
+    return '$coins moedas no total. Veja nas suas estatísticas de criador.';
+  }
+
+  @override
+  String get statsTips => 'Gorjetas';
+
+  @override
+  String statsTipsTotal(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count gorjetas', one: '1 gorjeta');
+    return '$_temp0, $coins moedas no total';
+  }
+
+  @override
+  String statsTipsWeek(String date, int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count gorjetas', one: '1 gorjeta');
+    return 'Semana de $date: $_temp0, $coins moedas';
+  }
+
+  @override
+  String statsTipsWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count gorjetas', one: '1 gorjeta');
+    return '$_temp0, $coins moedas';
+  }
+
+  @override
+  String get statsTipsEmpty =>
+      'Ainda não há gorjetas. Seus fãs podem dar gorjeta pelos seus wallpapers e pelo seu perfil.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -24716,4 +24855,143 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get shortcutsAutomationIos16 =>
       'No iOS 16 não existe \"Executar Imediatamente\". Desative \"Perguntar Antes de Executar\".';
+
+  @override
+  String get tipAction => 'Dar gorjeta ao criador';
+
+  @override
+  String get tipMenuItem => 'Enviar uma gorjeta';
+
+  @override
+  String tipTitle(String name) {
+    return 'Gorjeta para $name';
+  }
+
+  @override
+  String tipMessage(String name) {
+    return 'Escolha um valor. $name recebe todas as moedas e vê seu nome.';
+  }
+
+  @override
+  String get tipAmountsLabel => 'Valor da gorjeta';
+
+  @override
+  String tipBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance moedas', one: '1 moeda');
+    return 'Seu saldo: $_temp0';
+  }
+
+  @override
+  String tipShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount moedas', one: '1 moeda');
+    return 'Faltam $_temp0.';
+  }
+
+  @override
+  String tipSendButton(int amount) {
+    return 'Dar gorjeta de $amount moedas';
+  }
+
+  @override
+  String get tipEarnCoins => 'Ganhar moedas';
+
+  @override
+  String get tipThanksTitle => 'Obrigado pela gorjeta';
+
+  @override
+  String tipThanksMessage(String name, int amount) {
+    return '$name recebeu suas $amount moedas.';
+  }
+
+  @override
+  String get tipDone => 'Concluído';
+
+  @override
+  String get tipNotEnoughCoins => 'Você não tem moedas suficientes para esta gorjeta.';
+
+  @override
+  String get tipDailyLimit => 'Você já enviou todas as gorjetas de hoje. Tente novamente amanhã.';
+
+  @override
+  String tipPairLimit(String name) {
+    return 'Você já deu gorjeta para $name hoje. Tente novamente amanhã.';
+  }
+
+  @override
+  String tipCreatorLimit(String name) {
+    return '$name não pode receber mais gorjetas hoje. Tente novamente amanhã.';
+  }
+
+  @override
+  String get tipSenderTooNew => 'Você pode enviar gorjetas 7 dias depois de entrar no Prism.';
+
+  @override
+  String get tipSenderIneligible => 'Entre com uma conta verificada para enviar gorjetas.';
+
+  @override
+  String tipUnavailable(String name) {
+    return 'Você não pode dar gorjeta para $name agora.';
+  }
+
+  @override
+  String get tipFailed => 'Não foi possível enviar a gorjeta. Tente novamente.';
+
+  @override
+  String wallTippedBy(int count) {
+    return 'Recebeu gorjeta de $count pessoas';
+  }
+
+  @override
+  String get coreCoinTipSent => 'Gorjeta enviada';
+
+  @override
+  String get coreCoinTipReceived => 'Gorjeta recebida';
+
+  @override
+  String notifPushTipReceivedTitle(String senderName, String amount, String wallTitle) {
+    return '$senderName te deu $amount moedas de gorjeta por $wallTitle';
+  }
+
+  @override
+  String notifPushTipReceivedTitleUntitled(String senderName, String amount) {
+    return '$senderName te deu $amount moedas de gorjeta';
+  }
+
+  @override
+  String get notifPushTipReceivedBody => 'Veja suas gorjetas nas estatísticas de criador.';
+
+  @override
+  String notifTipsReceivedTitle(int count) {
+    return 'Você recebeu $count gorjetas hoje';
+  }
+
+  @override
+  String notifTipsReceivedBody(int coins) {
+    return '$coins moedas no total. Veja nas suas estatísticas de criador.';
+  }
+
+  @override
+  String get statsTips => 'Gorjetas';
+
+  @override
+  String statsTipsTotal(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count gorjetas', one: '1 gorjeta');
+    return '$_temp0, $coins moedas no total';
+  }
+
+  @override
+  String statsTipsWeek(String date, int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count gorjetas', one: '1 gorjeta');
+    return 'Semana de $date: $_temp0, $coins moedas';
+  }
+
+  @override
+  String statsTipsWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count gorjetas', one: '1 gorjeta');
+    return '$_temp0, $coins moedas';
+  }
+
+  @override
+  String get statsTipsEmpty =>
+      'Ainda não há gorjetas. Seus fãs podem dar gorjeta pelos seus wallpapers e pelo seu perfil.';
 }

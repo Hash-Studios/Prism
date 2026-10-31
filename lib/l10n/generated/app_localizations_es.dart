@@ -12175,4 +12175,142 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get shortcutsAutomationIos16 =>
       'En iOS 16 no existe “Ejecutar inmediatamente”. Desactiva “Preguntar antes de ejecutar”.';
+
+  @override
+  String get tipAction => 'Dar propina';
+
+  @override
+  String get tipMenuItem => 'Enviar una propina';
+
+  @override
+  String tipTitle(String name) {
+    return 'Propina para $name';
+  }
+
+  @override
+  String tipMessage(String name) {
+    return 'Elige una cantidad. $name recibe todas las monedas y ve tu nombre.';
+  }
+
+  @override
+  String get tipAmountsLabel => 'Cantidad de la propina';
+
+  @override
+  String tipBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance monedas', one: '1 moneda');
+    return 'Tu saldo: $_temp0';
+  }
+
+  @override
+  String tipShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount monedas', one: '1 moneda');
+    return 'Te faltan $_temp0.';
+  }
+
+  @override
+  String tipSendButton(int amount) {
+    return 'Dar propina de $amount monedas';
+  }
+
+  @override
+  String get tipEarnCoins => 'Ganar monedas';
+
+  @override
+  String get tipThanksTitle => 'Gracias por tu propina';
+
+  @override
+  String tipThanksMessage(String name, int amount) {
+    return '$name recibió tus $amount monedas.';
+  }
+
+  @override
+  String get tipDone => 'Listo';
+
+  @override
+  String get tipNotEnoughCoins => 'No tienes suficientes monedas para esta propina.';
+
+  @override
+  String get tipDailyLimit => 'Ya enviaste todas tus propinas de hoy. Vuelve a intentarlo mañana.';
+
+  @override
+  String tipPairLimit(String name) {
+    return 'Ya diste una propina a $name hoy. Vuelve a intentarlo mañana.';
+  }
+
+  @override
+  String tipCreatorLimit(String name) {
+    return '$name no puede recibir más propinas hoy. Vuelve a intentarlo mañana.';
+  }
+
+  @override
+  String get tipSenderTooNew => 'Puedes enviar propinas 7 días después de unirte a Prism.';
+
+  @override
+  String get tipSenderIneligible => 'Inicia sesión con una cuenta verificada para enviar propinas.';
+
+  @override
+  String tipUnavailable(String name) {
+    return 'No puedes dar propina a $name en este momento.';
+  }
+
+  @override
+  String get tipFailed => 'No se pudo enviar la propina. Inténtalo de nuevo.';
+
+  @override
+  String wallTippedBy(int count) {
+    return 'Propinas de $count personas';
+  }
+
+  @override
+  String get coreCoinTipSent => 'Propina enviada';
+
+  @override
+  String get coreCoinTipReceived => 'Propina recibida';
+
+  @override
+  String notifPushTipReceivedTitle(String senderName, String amount, String wallTitle) {
+    return '$senderName te dio $amount monedas de propina por $wallTitle';
+  }
+
+  @override
+  String notifPushTipReceivedTitleUntitled(String senderName, String amount) {
+    return '$senderName te dio $amount monedas de propina';
+  }
+
+  @override
+  String get notifPushTipReceivedBody => 'Mira tus propinas en tus estadísticas de creador.';
+
+  @override
+  String notifTipsReceivedTitle(int count) {
+    return 'Hoy recibiste $count propinas';
+  }
+
+  @override
+  String notifTipsReceivedBody(int coins) {
+    return '$coins monedas en total. Míralas en tus estadísticas de creador.';
+  }
+
+  @override
+  String get statsTips => 'Propinas';
+
+  @override
+  String statsTipsTotal(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count propinas', one: '1 propina');
+    return '$_temp0, $coins monedas en total';
+  }
+
+  @override
+  String statsTipsWeek(String date, int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count propinas', one: '1 propina');
+    return 'Semana del $date: $_temp0, $coins monedas';
+  }
+
+  @override
+  String statsTipsWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count propinas', one: '1 propina');
+    return '$_temp0, $coins monedas';
+  }
+
+  @override
+  String get statsTipsEmpty => 'Aún no hay propinas. Tus fans pueden darte propinas desde tus wallpapers y tu perfil.';
 }

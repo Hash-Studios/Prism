@@ -39,6 +39,7 @@ import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/shake_once.dart';
+import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
@@ -59,6 +60,7 @@ import 'package:Prism/features/ads/views/widgets/experimental_interstitial_retur
 import 'package:Prism/features/ai_wallpaper/domain/ai_rollout.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
+import 'package:Prism/features/creator_tips/views/widgets/tip_sheet.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -66,6 +68,7 @@ import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapte
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_pin_toggle.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/wallpaper_stats_row.dart';
+import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/theme_mode/domain/custom_accent.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -697,6 +700,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   /// "Set N times" shows from this count, so a small number never reads as a poor wallpaper.
   static const int _minSetCountShown = 5;
+  static const int _minTippersShown = 3;
 
   /// Set once the first detail screen showed the "Tap to hide controls" hint.
   static const String _immersiveHintKey = 'wallpaper_detail.immersive_hint_shown';
@@ -2034,6 +2038,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                     ],
                   ),
                 ],
+                if (state.tipperCount >= _minTippersShown)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(start: 6),
+                    child: Text(
+                      context.l10n.wallTippedBy(state.tipperCount),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: secondary.withValues(alpha: _secondaryAlpha)),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -2654,6 +2668,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             PrismFeedItem(:final wallpaper) => wallpaper.firestoreDocumentId,
             _ => null,
           };
+    final PrismWallpaper? tipWall = switch (entity) {
+      PrismFeedItem(:final wallpaper)
+          when wallpaper.review == true &&
+              reportWallDocId != null &&
+              reportWallDocId.isNotEmpty &&
+              canTipCreator(wallpaper.core.authorUid, _blockedCreators) =>
+        wallpaper,
+      _ => null,
+    };
     const gap = SizedBox(height: 12);
     Widget padded(Widget child) =>
         Padding(padding: const EdgeInsets.fromLTRB(_sheetHPad, 0, _sheetHPad, 12), child: child);
@@ -2738,6 +2761,22 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             alignment: Alignment.centerLeft,
             child: Wrap(
               children: [
+                if (tipWall != null)
+                  TextButton.icon(
+                    onPressed: () => showTipSheet(
+                      context,
+                      creatorUid: tipWall.core.authorUid!.trim(),
+                      creatorName: creatorLabel(
+                        name: tipWall.core.authorName ?? '',
+                        username: '',
+                        fallback: context.l10n.accountCreatorFallback,
+                      ),
+                      source: 'wall',
+                      wallId: reportWallDocId,
+                    ),
+                    icon: const PrismCoinIcon(),
+                    label: Text(context.l10n.tipAction, style: TextStyle(color: theme.colorScheme.secondary)),
+                  ),
                 TextButton.icon(
                   onPressed: () => showContentReportSheet(
                     context,

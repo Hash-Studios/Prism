@@ -12197,4 +12197,143 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get shortcutsAutomationIos16 =>
       'Unter iOS 16 gibt es „Sofort ausführen“ nicht. Schalte stattdessen „Vor Ausführen bestätigen“ aus.';
+
+  @override
+  String get tipAction => 'Trinkgeld geben';
+
+  @override
+  String get tipMenuItem => 'Trinkgeld senden';
+
+  @override
+  String tipTitle(String name) {
+    return 'Trinkgeld für $name';
+  }
+
+  @override
+  String tipMessage(String name) {
+    return 'Wähle einen Betrag. $name bekommt alle Coins und sieht deinen Namen.';
+  }
+
+  @override
+  String get tipAmountsLabel => 'Trinkgeldbetrag';
+
+  @override
+  String tipBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance Coins', one: '1 Coin');
+    return 'Dein Guthaben: $_temp0';
+  }
+
+  @override
+  String tipShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount Coins', one: '1 Coin');
+    return 'Dir fehlen $_temp0.';
+  }
+
+  @override
+  String tipSendButton(int amount) {
+    return '$amount Coins als Trinkgeld geben';
+  }
+
+  @override
+  String get tipEarnCoins => 'Coins verdienen';
+
+  @override
+  String get tipThanksTitle => 'Danke für dein Trinkgeld';
+
+  @override
+  String tipThanksMessage(String name, int amount) {
+    return '$name hat deine $amount Coins erhalten.';
+  }
+
+  @override
+  String get tipDone => 'Fertig';
+
+  @override
+  String get tipNotEnoughCoins => 'Du hast nicht genug Coins für dieses Trinkgeld.';
+
+  @override
+  String get tipDailyLimit => 'Du hast heute alle deine Trinkgelder gesendet. Versuch es morgen noch einmal.';
+
+  @override
+  String tipPairLimit(String name) {
+    return 'Du hast $name heute schon ein Trinkgeld gegeben. Versuch es morgen noch einmal.';
+  }
+
+  @override
+  String tipCreatorLimit(String name) {
+    return '$name kann heute keine weiteren Trinkgelder bekommen. Versuch es morgen noch einmal.';
+  }
+
+  @override
+  String get tipSenderTooNew => 'Du kannst 7 Tage nach deinem Beitritt zu Prism Trinkgeld senden.';
+
+  @override
+  String get tipSenderIneligible => 'Melde dich mit einem verifizierten Konto an, um Trinkgeld zu senden.';
+
+  @override
+  String tipUnavailable(String name) {
+    return 'Du kannst $name gerade kein Trinkgeld geben.';
+  }
+
+  @override
+  String get tipFailed => 'Trinkgeld konnte nicht gesendet werden. Versuch es noch einmal.';
+
+  @override
+  String wallTippedBy(int count) {
+    return 'Trinkgeld von $count Personen';
+  }
+
+  @override
+  String get coreCoinTipSent => 'Trinkgeld gesendet';
+
+  @override
+  String get coreCoinTipReceived => 'Trinkgeld erhalten';
+
+  @override
+  String notifPushTipReceivedTitle(String senderName, String amount, String wallTitle) {
+    return '$senderName hat dir $amount Coins für $wallTitle als Trinkgeld gegeben';
+  }
+
+  @override
+  String notifPushTipReceivedTitleUntitled(String senderName, String amount) {
+    return '$senderName hat dir $amount Coins als Trinkgeld gegeben';
+  }
+
+  @override
+  String get notifPushTipReceivedBody => 'Deine Trinkgelder findest du in deinen Creator-Statistiken.';
+
+  @override
+  String notifTipsReceivedTitle(int count) {
+    return 'Du hast heute $count Trinkgelder bekommen';
+  }
+
+  @override
+  String notifTipsReceivedBody(int coins) {
+    return 'Insgesamt $coins Coins. Sieh sie dir in deinen Creator-Statistiken an.';
+  }
+
+  @override
+  String get statsTips => 'Trinkgelder';
+
+  @override
+  String statsTipsTotal(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Trinkgelder', one: '1 Trinkgeld');
+    return '$_temp0, insgesamt $coins Coins';
+  }
+
+  @override
+  String statsTipsWeek(String date, int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Trinkgelder', one: '1 Trinkgeld');
+    return 'Woche ab $date: $_temp0, $coins Coins';
+  }
+
+  @override
+  String statsTipsWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Trinkgelder', one: '1 Trinkgeld');
+    return '$_temp0, $coins Coins';
+  }
+
+  @override
+  String get statsTipsEmpty =>
+      'Noch keine Trinkgelder. Fans können dir über deine Wallpapers und dein Profil Trinkgeld geben.';
 }

@@ -469,6 +469,12 @@ const cases = [
   ['owner writes themePrefs with a string lightAccent', () => req('PATCH', 'usersv2/b', themeMap({ ...themeFields, lightAccent: str('4293228183') }), Bu, ['themePrefs']), 403],
   ['owner writes themePrefs missing changedAt', () => req('PATCH', 'usersv2/b', themeMap(themeNoChangedAt), Bu, ['themePrefs']), 403],
   ['stranger writes themePrefs on another user doc', () => req('PATCH', 'usersv2/a', themeMap(themeFields), Bu, ['themePrefs']), 403],
+  ...['tipRateDaily', 'wallTippers', 'creatorTips'].flatMap((collection) => [
+    [`user reads private ${collection}`, () => req('GET', `${collection}/b`, null, Bu), 403],
+    [`user writes private ${collection}`, () => req('PATCH', `${collection}/b`, {
+      count: { integerValue: '100' }, senderUid: str('b'), creatorUid: str('b'),
+    }, Bu), 403],
+  ]),
   ['user writes a coin ledger entry', () => req('PATCH', 'coinTransactions/t1', {
     userId: { stringValue: 'b' }, delta: { integerValue: '500' },
   }, Bu), 403],

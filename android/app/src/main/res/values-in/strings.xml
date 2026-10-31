@@ -64,6 +64,9 @@
     <string name="notif_push_draw_winner_body">Satu bulan Pro dan bingkai Prism menjadi milik Anda.</string>
     <string name="notif_push_gift_received_title">%1$s mengirimkan akses Pro 24 jam kepada Anda</string>
     <string name="notif_push_gift_received_body">Koleksi Premium dan wallpaper Premium dapat diakses selama 24 jam.</string>
+    <string name="notif_push_tip_received_title">%1$s memberi Anda %2$s koin untuk %3$s</string>
+    <string name="notif_push_tip_received_title_untitled">%1$s memberi Anda %2$s koin</string>
+    <string name="notif_push_tip_received_body">Lihat tip Anda di statistik kreator Anda.</string>
     <string name="notif_push_report_needs_review_title">Laporan menunggu peninjauan</string>
     <string name="notif_push_report_needs_review_body">Laporan konten telah menunggu peninjauan selama lebih dari 12 jam.</string>
     <string name="notif_push_new_content_report_title">Laporan konten baru</string>
