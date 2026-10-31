@@ -20,10 +20,10 @@ const DRAW_TICKETS = "drawTickets";
 const BOOSTS = "boosts";
 const DELETED_NAME = "Deleted Account";
 /** Docs keyed by the bare uid. The last two are legacy collections. */
-const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens", "rewardedAdUsers"];
+const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens", "rewardedAdUsers", "creatorTips"];
 /** Docs keyed `<uid>_<day>`. */
 const UID_PREFIX_KEYED = [
-  "coinAdRateDaily", "coinRefundDaily", "contentReportRateDaily", "userBlockRateDaily", REQUEST_RATE_DAILY, VOTE_RATE_DAILY,
+  "coinAdRateDaily", "coinRefundDaily", "tipRateDaily", "contentReportRateDaily", "userBlockRateDaily", REQUEST_RATE_DAILY, VOTE_RATE_DAILY,
 ];
 /** Public docs that carry the caller's email: they stay, with the creator details blanked. */
 const SCRUBBED_BY_EMAIL = ["walls", "setups"];

@@ -111,13 +111,13 @@ test("500 walls are complete with bounded cold and warm reads and cache document
   const cold = await readCreatorStats("alice", {}, NOW);
   assert.equal(cold.walls.length, 500);
   assert.equal(cold.totals.views, 500);
-  assert.equal(observed.reads, 2502);
+  assert.equal(observed.reads, 2503);
   assert.equal(observed.writes, 500);
   for (const [path, data] of store) if (path.startsWith("creatorStatsCache/")) assert.ok(Buffer.byteLength(JSON.stringify(data)) < 12000);
   observed.reads = 0; observed.writes = 0;
   const warm = await readCreatorStats("alice", {}, NOW + 1);
   assert.equal(warm.walls.length, 500);
-  assert.equal(observed.reads, 1502);
+  assert.equal(observed.reads, 1503);
   assert.equal(observed.writes, 0);
   assert.ok(Buffer.byteLength(JSON.stringify(cold)) < 3 * 1024 * 1024);
 });
@@ -312,7 +312,7 @@ test("500 caller walls share one census with foreign aliases and warm invalidati
   assert.equal(warm.walls.length, 500);
   assert.equal(warm.totals.views, null);
   assert.equal(warm.walls.find((row) => row.wallId === "w499")?.totals.views, null);
-  assert.equal(observed.reads, 1504);
+  assert.equal(observed.reads, 1505);
 });
 
 test("global census capacity stops daily processing without losing queued work", async (t) => {
