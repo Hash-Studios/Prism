@@ -332,7 +332,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     return false;
   }
 
-  /// Returns false only when the render or the wallpaper set failed. Closing the target sheet is not a failure.
+  /// Returns false when the render or the wallpaper set failed, or the account changed. Closing the target sheet is
+  /// not a failure.
   Future<bool> _handleSetAction() async {
     if (!await requireSignedInAction(context) || !mounted) return false;
     final String owner = app_state.prismUser.id;
@@ -355,7 +356,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         context,
         SetScreenRequest(url: imageFile.path),
       );
-      if (!mounted || !app_state.prismUser.loggedIn || owner != app_state.prismUser.id || choice == null) return true;
+      if (!mounted || !app_state.prismUser.loggedIn || owner != app_state.prismUser.id) return false;
+      if (choice == null) return true;
       final WallpaperSetResult result = await _setWallpaper(imageFile.path, choice);
       if (result.isSuccess || result.isInfo) {
         if (mounted) Navigator.of(context).pop();
