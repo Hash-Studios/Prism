@@ -165,37 +165,28 @@ class ShortcutsFoldersStore {
     });
   }
 
+  /// Runs every step even when one fails, so one failure cannot leave the rest of the private state behind.
   static Future<void> _clearAll() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final List<Future<bool> Function()> steps = <Future<bool> Function()>[
+      () => prefs.setInt(sessionRevisionKey, (prefs.getInt(sessionRevisionKey) ?? 0) + 1),
+      () async {
+        await NativeAssetPathsStore.replaceGroup('folders', const <String, String>{});
+        return true;
+      },
+      () => prefs.setString(PersistenceKeys.shortcutsFolders, '{"folders":[]}'),
+      () => prefs.remove(PersistenceKeys.shortcutsRotationFolder),
+      () => prefs.remove(PersistenceKeys.shortcutsShuffleBags),
+    ];
     bool cleared = true;
-    try {
-      cleared = await prefs.setInt(sessionRevisionKey, (prefs.getInt(sessionRevisionKey) ?? 0) + 1) && cleared;
-    } catch (_) {
-      cleared = false;
+    for (final Future<bool> Function() step in steps) {
+      try {
+        cleared = await step() && cleared;
+      } catch (_) {
+        cleared = false;
+      }
     }
-    try {
-      await NativeAssetPathsStore.replaceGroup('folders', const <String, String>{});
-    } catch (_) {
-      cleared = false;
-    }
-    try {
-      cleared = await prefs.setString(PersistenceKeys.shortcutsFolders, '{"folders":[]}') && cleared;
-    } catch (_) {
-      cleared = false;
-    }
-    try {
-      cleared = await prefs.remove(PersistenceKeys.shortcutsRotationFolder) && cleared;
-    } catch (_) {
-      cleared = false;
-    }
-    try {
-      cleared = await prefs.remove(PersistenceKeys.shortcutsShuffleBags) && cleared;
-    } catch (_) {
-      cleared = false;
-    }
-    if (!cleared) {
-      throw StateError('Shortcuts folders could not be cleared');
-    }
+    if (!cleared) throw StateError('Shortcuts folders could not be cleared');
   }
 
   static Map<String, Object?>? _snapshot(SharedPreferences prefs) {

@@ -6,7 +6,6 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_folders_store.dart';
-import 'package:Prism/features/ios_shortcuts/data/shortcuts_folders_sync_service.dart';
 import 'package:Prism/features/session/session.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
@@ -83,7 +82,14 @@ class _ShortcutsFoldersListenerState extends State<ShortcutsFoldersListener> {
       return;
     }
     final FoldersRepository repository = widget.repository ?? getIt<FoldersRepository>();
-    _run(() => ShortcutsFoldersSyncService(repository).sync(ownerId: userId, folders: folders.folders));
+    _run(
+      () => ShortcutsFoldersStore.sync(
+        ownerId: userId,
+        folders: folders.folders,
+        fetchItems: (folderId) =>
+            repository.fetchItems(folderId, userId: userId, limit: ShortcutsFoldersStore.maxItems),
+      ),
+    );
   }
 
   bool _isResolvedGuest(SessionState state) => state.status == LoadStatus.success && !state.session.loggedIn;
