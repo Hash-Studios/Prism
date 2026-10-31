@@ -193,3 +193,6 @@ flutter:
 dependency_overrides:
   cloud_functions:
     path: packages/cloud_functions
+  # 3.0.1 animates a ScrollPosition after Scrollable has disposed it.
+  flutter_floating_bottom_bar:
+    path: packages/flutter_floating_bottom_bar

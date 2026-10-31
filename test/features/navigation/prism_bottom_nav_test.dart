@@ -19,6 +19,24 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
 
+bool _scrollToTopExcluded(WidgetTester tester) {
+  final Finder label = find.byWidgetPredicate(
+    (Widget widget) => widget is Semantics && widget.properties.label == AppLocalizationsEn().navigationScrollToTop,
+  );
+  return tester
+      .widget<ExcludeSemantics>(find.ancestor(of: label, matching: find.byType(ExcludeSemantics)).first)
+      .excluding;
+}
+
+/// Moves the list without leaving a fling, so a later pump does not scroll it back.
+Future<void> _dragList(WidgetTester tester, Offset offset) async {
+  final TestGesture gesture = await tester.startGesture(tester.getCenter(find.byType(ListView)));
+  await gesture.moveBy(offset);
+  await tester.pump(const Duration(milliseconds: 400));
+  await gesture.up();
+  await tester.pumpAndSettle();
+}
+
 PageInfo _stub(String name) => PageInfo(name, builder: (_) => Text(name));
 
 class _Shell extends StatelessWidget {
@@ -248,6 +266,121 @@ void main() {
     await tester.tap(find.byIcon(JamIcons.arrow_up));
     await tester.pumpAndSettle();
     expect(controller.offset, 0);
+    handle.dispose();
+  });
+
+  testWidgets('scrolling back up brings the bar back', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+    final ScrollController controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      _host(
+        _FakeTabsRouter(),
+        BottomBar(
+          child: ListView.builder(
+            controller: controller,
+            itemCount: 100,
+            itemBuilder: (_, int i) => SizedBox(height: 80, child: Text('row $i')),
+          ),
+        ),
+        reduceMotion: true,
+      ),
+    );
+
+    await _dragList(tester, const Offset(0, -600));
+    expect(controller.offset, greaterThan(0));
+    // Issue #543: hiding on the way down must not stick after the user scrolls back.
+    expect(_scrollToTopExcluded(tester), isFalse);
+
+    await _dragList(tester, const Offset(0, 600));
+    expect(controller.offset, lessThan(100));
+    expect(_scrollToTopExcluded(tester), isTrue);
+    handle.dispose();
+  });
+
+  // A route pop notifies MediaQuery, and Scrollable replaces its position.
+  // The bar must drive that new position. Animating the disposed one crashes
+  // (ValueNotifier / ScrollPosition used after dispose) and leaves the bar
+  // hidden. See GitHub issue #543.
+  testWidgets('scroll to top after the scroll position is replaced does not use the disposed position', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+    final ScrollController controller = ScrollController();
+    addTearDown(controller.dispose);
+
+    Future<void> pumpAt(double devicePixelRatio) {
+      return tester.pumpWidget(
+        _host(
+          _FakeTabsRouter(),
+          Builder(
+            builder: (BuildContext context) {
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(devicePixelRatio: devicePixelRatio),
+                child: BottomBar(
+                  child: ListView.builder(
+                    controller: controller,
+                    itemCount: 100,
+                    itemBuilder: (_, int i) => SizedBox(height: 80, child: Text('row $i')),
+                  ),
+                ),
+              );
+            },
+          ),
+          reduceMotion: true,
+        ),
+      );
+    }
+
+    await pumpAt(1);
+    await _dragList(tester, const Offset(0, -600));
+    expect(controller.offset, greaterThan(0));
+    expect(_scrollToTopExcluded(tester), isFalse);
+
+    await pumpAt(3);
+    await tester.pump();
+    expect(_scrollToTopExcluded(tester), isFalse);
+
+    await tester.tap(find.byIcon(JamIcons.arrow_up));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(tester.takeException(), isNull);
+    expect(controller.offset, 0);
+    expect(_scrollToTopExcluded(tester), isTrue);
+    handle.dispose();
+  });
+
+  testWidgets('navigating away during scroll to top does not use a disposed position', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+    final ScrollController controller = ScrollController();
+    addTearDown(controller.dispose);
+
+    Future<void> pumpBody({required bool showList}) {
+      return tester.pumpWidget(
+        _host(
+          _FakeTabsRouter(),
+          BottomBar(
+            child: showList
+                ? ListView.builder(
+                    controller: controller,
+                    itemCount: 100,
+                    itemBuilder: (_, int i) => SizedBox(height: 80, child: Text('row $i')),
+                  )
+                : const SizedBox.expand(key: Key('left-the-list')),
+          ),
+          reduceMotion: true,
+        ),
+      );
+    }
+
+    await pumpBody(showList: true);
+    await _dragList(tester, const Offset(0, -600));
+    expect(_scrollToTopExcluded(tester), isFalse);
+
+    await tester.tap(find.byIcon(JamIcons.arrow_up));
+    await tester.pump();
+    await pumpBody(showList: false);
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(tester.takeException(), isNull);
+    expect(_scrollToTopExcluded(tester), isTrue);
     handle.dispose();
   });
 
