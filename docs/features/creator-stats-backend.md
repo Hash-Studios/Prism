@@ -89,7 +89,7 @@ The client copy contract is exactly:
 
 `week` is an ISO UTC week string. The backend native push localization helper returns `null` for this inbox-only kind. The app owns localization and deep-link handling.
 
-A first delivery for N approved walls costs `2N + 5` reads and two writes. At 500 walls it costs 1,005 reads. A duplicate delivery costs one marker read. The scan itself reads each approved wall once, plus the minimum empty final page if applicable. A creator can appear in several pages. Its committed marker makes later visits cheap. A failed creator does not stop other creators in the scan. The job reports failures after the scan so the scheduler can retry. A very large scan can require future partitioning to fit the scheduler timeout. There is no bulk creator refresh on the callable path.
+A first delivery for N approved walls costs `2N + 5` reads and two writes. At 500 walls it costs 1,005 reads. A duplicate delivery costs one marker read. The scan itself reads each approved wall once, plus the minimum empty final page if applicable. A creator can appear in several pages. Its committed marker makes later visits cheap. A failed creator does not stop other creators in the scan. A creator over the 500-wall capacity is logged and skipped, because a retry would fail the same way. The job reports other failures after the scan so the scheduler can retry. A very large scan can require future partitioning to fit the scheduler timeout. There is no bulk creator refresh on the callable path.
 
 ## Delivery and proof
 

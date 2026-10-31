@@ -153,6 +153,10 @@ export async function sendCreatorWeeklyStats(now: number): Promise<void> {
       try {
         await deliverCreatorWeek(uid, now);
       } catch (err) {
+        if (err instanceof HttpsError && err.code === "resource-exhausted") {
+          logger.error("Creator stats weekly delivery skipped because capacity was exceeded.", {uid});
+          continue;
+        }
         failures++;
         logger.error("Creator stats weekly delivery failed.", {uid, err});
       }

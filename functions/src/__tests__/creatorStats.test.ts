@@ -487,3 +487,13 @@ test("daily projection skips unapproved walls without a checkpoint, then counts 
   const snap = await db.doc("walls/wall").get();
   assert.equal((await historyRef(snap).get()).data()?.weeks["2026-W43"].views, 5);
 });
+test("Monday job skips a creator over wall capacity without failing the scheduled run", async (t) => {
+  const docs: Record<string, Doc> = {};
+  for (let i = 0; i < 501; i++) docs[`walls/b${String(i).padStart(3, "0")}`] = wall({id: `B${i}`, creatorUid: "bob"});
+  const store = installFakeDb(t, seed(docs));
+  await putHistory({views: 2});
+  await sendCreatorWeeklyStats(NOW);
+  const inbox = [...store.entries()].filter(([p]) => p.startsWith("notifications/"));
+  assert.equal(inbox.length, 1);
+  assert.equal(inbox[0][1].modifier, "alice@example.com");
+});
