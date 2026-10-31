@@ -111,6 +111,7 @@ _Row _wall(String id) => (
     'email': 'creator@example.com',
     'creatorUid': 'creator',
     'review': true,
+    'collections': <String>[],
   },
 );
 
@@ -119,6 +120,49 @@ void main() {
   tearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
   group('CreatorDirectoryRepositoryImpl', () {
+    test('guests do not query the directory or call followedBy', () async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      final firestore = _FakeFirestore(directory: const <_Row>[]);
+      int calls = 0;
+      final repo = CreatorDirectoryRepositoryImpl.withCaller(firestore, _FakeBlocks(), (_, _) async {
+        calls++;
+        return null;
+      });
+      expect((await repo.fetchPage()).creators, isEmpty);
+      expect(await repo.similarTo('creator'), isEmpty);
+      expect((await repo.followedBy('creator')).count, 0);
+      expect(firestore.specs, isEmpty);
+      expect(calls, 0);
+    });
+
+    test('walls restricted after the directory build are excluded', () async {
+      final restrictions = <Map<String, dynamic>>[
+        <String, dynamic>{'dropReserved': true},
+        <String, dynamic>{'dropWeek': '2026-10'},
+        <String, dynamic>{'is_streak_exclusive': true},
+        <String, dynamic>{
+          'collections': <String>['space'],
+        },
+      ];
+      for (final restriction in restrictions) {
+        final wall = _wall('w');
+        final firestore = _FakeFirestore(
+          directory: <_Row>[
+            _dir('creator', 1, walls: <String>['w']),
+          ],
+          walls: <_Row>[
+            (id: wall.id, data: <String, dynamic>{...wall.data, ...restriction}),
+          ],
+        );
+        final repo = CreatorDirectoryRepositoryImpl.withCaller(firestore, _FakeBlocks(), _noCall);
+        expect((await repo.fetchPage()).creators, isEmpty, reason: restriction.toString());
+        expect(
+          firestore.specs.singleWhere((spec) => spec.collection == FirebaseCollections.walls).cachePolicy,
+          FirestoreCachePolicy.memoryFirst,
+        );
+      }
+    });
+
     test('fetchPage hides a blocked creator and the viewer own uid', () async {
       final firestore = _FakeFirestore(
         directory: <_Row>[
@@ -188,7 +232,7 @@ void main() {
       expect(similar.map((c) => c.uid).toList(), <String>['b', 'a']);
     });
 
-    test('followedBy maps people, drops empty names, and caches per creator', () async {
+    test('followedBy revalidates people on every request after follow or block changes', () async {
       final List<String> calledNames = <String>[];
       int calls = 0;
       Future<Object?> call(String name, Map<String, Object?> data) async {
@@ -217,8 +261,8 @@ void main() {
       expect(first.people.single.name, 'Ann');
       expect(first.people.single.photoUrl, 'u');
       expect(second.count, 2);
-      expect(calls, 1);
-      expect(calledNames, <String>['getFollowedBy']);
+      expect(calls, 2);
+      expect(calledNames, <String>['getFollowedBy', 'getFollowedBy']);
     });
 
     test('a failed followedBy call is not cached', () async {

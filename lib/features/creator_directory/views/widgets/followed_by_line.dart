@@ -22,11 +22,25 @@ class FollowedByLine extends StatefulWidget {
 class _FollowedByLineState extends State<FollowedByLine> {
   Future<FollowedBy>? _future;
   bool _tracked = false;
+  String _viewer = '';
 
   @override
   void initState() {
     super.initState();
-    final String viewerId = app_state.prismUser.id;
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(FollowedByLine oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.creatorUid != widget.creatorUid || _viewer != app_state.prismUser.id) _load();
+  }
+
+  void _load() {
+    _future = null;
+    _tracked = false;
+    _viewer = app_state.prismUser.id;
+    final String viewerId = _viewer;
     if (app_state.prismUser.loggedIn && widget.creatorUid.isNotEmpty && widget.creatorUid != viewerId) {
       _future = getIt<CreatorDirectoryRepository>().followedBy(widget.creatorUid);
     }
@@ -34,6 +48,7 @@ class _FollowedByLineState extends State<FollowedByLine> {
 
   @override
   Widget build(BuildContext context) {
+    if (!app_state.prismUser.loggedIn || _viewer != app_state.prismUser.id) return const SizedBox.shrink();
     final Future<FollowedBy>? future = _future;
     if (future == null) return const SizedBox.shrink();
     return FutureBuilder<FollowedBy>(

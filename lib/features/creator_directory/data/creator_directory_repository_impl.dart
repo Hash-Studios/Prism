@@ -27,12 +27,13 @@ class CreatorDirectoryRepositoryImpl implements CreatorDirectoryRepository {
   final FirestoreClient _firestore;
   final UserBlockRepository _blocks;
   final Future<Object?> Function(String name, Map<String, Object?> data) _call;
-  final Map<String, Future<FollowedBy>> _followedBy = <String, Future<FollowedBy>>{};
 
   static Future<Object?> _callable(String name, Map<String, Object?> data) async =>
       (await appFunctions.httpsCallable(name).call<Object?>(data)).data;
 
-  String get _viewer => app_state.prismUser.id;
+  String get _viewer => app_state.prismUser.loggedIn ? app_state.prismUser.id : '';
+
+  bool _sameViewer(String viewer) => viewer.isNotEmpty && _viewer == viewer;
 
   @override
   Future<CreatorPage> fetchPage({
@@ -40,6 +41,8 @@ class CreatorDirectoryRepositoryImpl implements CreatorDirectoryRepository {
     int? afterRank,
     int limit = CreatorDirectoryRepository.pageSize,
   }) async {
+    final String viewer = _viewer;
+    if (viewer.isEmpty) return const CreatorPage(creators: <DirectoryCreator>[], nextRank: null);
     final List<CreatorDirectoryEntry> entries = await _firestore.query<CreatorDirectoryEntry>(
       FirestoreQuerySpec(
         collection: _collection,
@@ -56,10 +59,9 @@ class CreatorDirectoryRepositoryImpl implements CreatorDirectoryRepository {
       ),
       (data, docId) => CreatorDirectoryEntry.fromMap(data, docId),
     );
-    return CreatorPage(
-      creators: await _withWalls(await _visible(entries)),
-      nextRank: entries.length < limit ? null : entries.last.rank,
-    );
+    final List<DirectoryCreator> creators = await _withWalls(await _visible(entries));
+    if (!_sameViewer(viewer)) return const CreatorPage(creators: <DirectoryCreator>[], nextRank: null);
+    return CreatorPage(creators: creators, nextRank: entries.length < limit ? null : entries.last.rank);
   }
 
   @override
@@ -87,6 +89,8 @@ class CreatorDirectoryRepositoryImpl implements CreatorDirectoryRepository {
 
   @override
   Future<List<DirectoryCreator>> similarTo(String uid, {int limit = 6}) async {
+    final String viewer = _viewer;
+    if (viewer.isEmpty) return const <DirectoryCreator>[];
     final CreatorDirectoryEntry? source = await _firestore.getById<CreatorDirectoryEntry>(
       _collection,
       uid,
@@ -120,20 +124,18 @@ class CreatorDirectoryRepositoryImpl implements CreatorDirectoryRepository {
         if (byId[id] case final CreatorDirectoryEntry e) e,
     ]);
     final Set<String> followed = await followedAmong(visible.map((e) => e.uid).toList(growable: false));
-    return _withWalls(visible.where((e) => !followed.contains(e.uid)).take(limit).toList(growable: false));
+    final List<DirectoryCreator> creators = await _withWalls(
+      visible.where((e) => !followed.contains(e.uid)).take(limit).toList(growable: false),
+    );
+    return _sameViewer(viewer) ? creators : const <DirectoryCreator>[];
   }
 
   @override
-  Future<FollowedBy> followedBy(String creatorUid) {
-    final String key = '$_viewer::$creatorUid';
-    return _followedBy[key] ??= _loadFollowedBy(creatorUid).catchError((Object error) {
-      _followedBy.remove(key);
-      throw error;
-    });
-  }
-
-  Future<FollowedBy> _loadFollowedBy(String creatorUid) async {
+  Future<FollowedBy> followedBy(String creatorUid) async {
+    final String viewer = _viewer;
+    if (viewer.isEmpty || creatorUid.isEmpty || creatorUid == viewer) return FollowedBy.none;
     final Object? raw = await _call('getFollowedBy', <String, Object?>{'creatorUid': creatorUid});
+    if (!_sameViewer(viewer)) return FollowedBy.none;
     if (raw is! Map) return FollowedBy.none;
     final Object? count = raw['count'];
     final Object? people = raw['people'];
@@ -163,7 +165,7 @@ class CreatorDirectoryRepositoryImpl implements CreatorDirectoryRepository {
     final List<String> ids = <String>{for (final e in entries) ...e.wallIds}.toList(growable: false);
     final Map<String, PrismWallpaper> walls = <String, PrismWallpaper>{};
     for (int i = 0; i < ids.length; i += _inLimit) {
-      final rows = await _firestore.query<({String docId, PrismWallDocDto doc})>(
+      final rows = await _firestore.query<({String docId, PrismWallDocDto? doc})>(
         FirestoreQuerySpec(
           collection: FirebaseCollections.walls,
           sourceTag: 'creator_directory.walls',
@@ -177,11 +179,25 @@ class CreatorDirectoryRepositoryImpl implements CreatorDirectoryRepository {
           ],
           cachePolicy: FirestoreCachePolicy.memoryFirst,
         ),
-        (data, docId) => (docId: docId, doc: PrismWallDocDto.fromJson(data)),
+        (data, docId) => (
+          docId: docId,
+          doc:
+              data['is_streak_exclusive'] == true ||
+                  data['dropReserved'] == true ||
+                  (data['dropWeek'] != null && data['dropWeek'] != '') ||
+                  data['collections'] is! List ||
+                  (data['collections']! as List).any(
+                    (c) => c is! String || app_state.premiumCollections.contains(c.trim()),
+                  )
+              ? null
+              : PrismWallDocDto.fromJson(data),
+        ),
       );
       for (final row in rows) {
-        final PrismWallpaper wall = row.doc.toDomain(docId: row.docId);
-        walls[row.doc.id] = wall;
+        final PrismWallDocDto? doc = row.doc;
+        if (doc == null) continue;
+        final PrismWallpaper wall = doc.toDomain(docId: row.docId);
+        walls[doc.id] = wall;
       }
     }
     return <DirectoryCreator>[

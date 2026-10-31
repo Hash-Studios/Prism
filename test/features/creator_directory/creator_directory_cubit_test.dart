@@ -34,6 +34,29 @@ void main() {
 
   tearDown(resetCreatorDirectoryGlobals);
 
+  test('a pending row cannot restore creators after signing out', () async {
+    final gate = Completer<void>();
+    repo.gates[(null, null)] = gate;
+    repo.pages[(null, null)] = creatorPage(<DirectoryCreator>[directoryCreator('a')]);
+    final cubit = CreatorDirectoryCubit(repo);
+    final pending = cubit.loadRow();
+    app_state.prismUser = profileUser(loggedIn: false);
+    await cubit.loadRow();
+    gate.complete();
+    await pending;
+    expect(cubit.state.creators, isEmpty);
+    await cubit.close();
+  });
+
+  test('guests cannot load See all', () async {
+    app_state.prismUser = profileUser(loggedIn: false);
+    final cubit = CreatorDirectoryCubit(repo);
+    await cubit.loadPage();
+    expect(cubit.state.isEmpty, isTrue);
+    expect(repo.fetchCalls, isEmpty);
+    await cubit.close();
+  });
+
   group('loadRow', () {
     blocTest<CreatorDirectoryCubit, CreatorDirectoryState>(
       'emits loaded with the creators the viewer does not follow',

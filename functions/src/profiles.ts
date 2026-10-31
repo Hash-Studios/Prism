@@ -84,8 +84,10 @@ export async function syncPublicProfile(uid: string): Promise<boolean> {
     ]);
     if (!sourceSnap.exists || sourceSnap.data()?.deleted === true || deletionBarrier.data()?.closed === true) {
       tx.delete(profileRef);
+      tx.delete(db.collection(CREATOR_DIRECTORY).doc(uid));
       return true;
     }
+    if (sourceSnap.data()?.creatorDirectoryOptOut === true) tx.delete(db.collection(CREATOR_DIRECTORY).doc(uid));
     const count = profileSnap.data()?.followerCount;
     const followingCount = profileSnap.data()?.followingCount;
     const next = projectedProfile(
@@ -106,9 +108,6 @@ export const projectUserProfile = onDocumentWritten(
   {document: "usersv2/{uid}", region: REGION, retry: true},
   async (event) => {
     const shouldCleanFolders = await syncPublicProfile(event.params.uid);
-    if (event.data?.after.data()?.creatorDirectoryOptOut === true) {
-      await db.collection(CREATOR_DIRECTORY).doc(event.params.uid).delete();
-    }
     if (shouldCleanFolders) {
       await removeOwnerPublicFolders(event.params.uid);
       await removeAllFolderFollows(event.params.uid);

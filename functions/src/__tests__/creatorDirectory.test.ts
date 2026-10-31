@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import {spawnSync} from "node:child_process";
+import {createHash} from "node:crypto";
+import {syncPublicProfile} from "../profiles";
 import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {
@@ -53,7 +56,7 @@ function creator(uid: string, user: Doc = {}): Seed {
 
 function stubSeams(t: TestContext, {premium = [], disabled = []}: {premium?: string[]; disabled?: string[]} = {}) {
   t.mock.method(creatorDirectoryDeps, "premium", async () => premium);
-  t.mock.method(creatorDirectoryDeps, "disabledUids", async () => new Set<string>(disabled));
+  t.mock.method(creatorDirectoryDeps, "disabledUids", async (uids: string[]) => new Set<string>(disabled.filter((uid) => uids.includes(uid))));
 }
 
 const listedIds = (store: Map<string, Doc>) =>
@@ -218,8 +221,14 @@ test("similarCreators ranks co-followed creators above shared categories", () =>
   assert.deepEqual(apart.get("E"), []);
 });
 
+function installFollowDb(t: TestContext, seed: Seed = {}) {
+  if (!seed["usersv2/v"]) stubSeams(t);
+  return installFakeDb(t, seedOf(creator("v"), creator("c"),
+    {"usersv2/a": {}, "usersv2/b": {}}, seed));
+}
+
 test("followedBy counts only people the viewer follows and returns names and photos", async (t) => {
-  installFakeDb(t, {
+  installFollowDb(t, {
     "profiles/v/following/a": {targetUid: "a", createdAt: ts(NOW - DAY)},
     "profiles/v/following/b": {targetUid: "b", createdAt: ts(NOW - 2 * DAY)},
     "profiles/c/followers/a": {followerUid: "a", createdAt: ts(NOW)},
@@ -246,7 +255,7 @@ test("followedBy scans only the viewer's newest follows", async (t) => {
   for (let i = 0; i <= FOLLOWING_SCAN_CAP; i++) {
     following[`profiles/v/following/u${i}`] = {targetUid: `u${i}`, createdAt: ts(NOW - i * 1000)};
   }
-  installFakeDb(t, seedOf(following, {
+  installFollowDb(t, seedOf(following, {
     [`profiles/c/followers/u${FOLLOWING_SCAN_CAP}`]: {followerUid: `u${FOLLOWING_SCAN_CAP}`, createdAt: ts(NOW)},
   }));
 
@@ -255,13 +264,14 @@ test("followedBy scans only the viewer's newest follows", async (t) => {
 });
 
 test("followedBy caches its result for a day", async (t) => {
-  const store = installFakeDb(t, {
+  const store = installFollowDb(t, {
     "profiles/v/following/a": {targetUid: "a", createdAt: ts(NOW)},
     "profiles/a": {name: "Ann"},
   });
 
   assert.deepEqual(await followedBy("v", "c", NOW), {count: 0, people: []});
-  assert.equal((store.get("followedByCache/v_c")?.expireAt as admin.firestore.Timestamp).toMillis(), NOW + DAY);
+  const key = createHash("sha256").update(JSON.stringify(["v", "c"])).digest("hex");
+  assert.equal((store.get(`followedByCache/${key}`)?.expireAt as admin.firestore.Timestamp).toMillis(), NOW + DAY);
 
   store.set("profiles/c/followers/a", {followerUid: "a", createdAt: ts(NOW)});
   assert.deepEqual(await followedBy("v", "c", NOW + 1000), {count: 0, people: []});
@@ -272,7 +282,109 @@ test("followedBy caches its result for a day", async (t) => {
 });
 
 test("followedBy returns zero when the viewer follows nobody", async (t) => {
-  installFakeDb(t);
+  installFollowDb(t);
 
   assert.deepEqual(await followedBy("v", "c", NOW), {count: 0, people: []});
+});
+
+test("cache keys cannot collide for custom UIDs containing underscores", async (t) => {
+  installFollowDb(t, seedOf(creator("a_b"), creator("a"), creator("b_c"), creator("friend"), {
+    "profiles/a_b/following/friend": {createdAt: ts(NOW)},
+    "profiles/c/followers/friend": {followerUid: "friend", createdAt: ts(NOW)},
+  }));
+  assert.equal((await followedBy("a_b", "c", NOW)).count, 1);
+  assert.deepEqual(await followedBy("a", "b_c", NOW), {count: 0, people: []});
+});
+
+test("cached followed-by people disappear after unfollow or either-direction block", async (t) => {
+  stubSeams(t);
+  const store = installFollowDb(t, seedOf(creator("v"), creator("c"), creator("a"), {
+    "profiles/v/following/a": {createdAt: ts(NOW)},
+    "profiles/c/followers/a": {followerUid: "a", createdAt: ts(NOW)},
+  }));
+  assert.equal((await followedBy("v", "c", NOW)).count, 1);
+  store.delete("profiles/v/following/a");
+  assert.deepEqual(await followedBy("v", "c", NOW + 1), {count: 0, people: []});
+  store.set("profiles/v/following/a", {createdAt: ts(NOW)});
+  store.set("usersv2/a/blockedUsers/v", {});
+  assert.deepEqual(await followedBy("v", "c", NOW + 2), {count: 0, people: []});
+});
+
+test("followed-by hides disabled people and a creator who blocks the viewer", async (t) => {
+  stubSeams(t, {disabled: ["a"]});
+  const store = installFollowDb(t, seedOf(creator("v"), creator("c"), creator("a"), {
+    "profiles/v/following/a": {createdAt: ts(NOW)},
+    "profiles/c/followers/a": {followerUid: "a", createdAt: ts(NOW)},
+  }));
+  assert.deepEqual(await followedBy("v", "c", NOW), {count: 0, people: []});
+  store.set("usersv2/c/blockedUsers/v", {});
+  assert.deepEqual(await followedBy("v", "c", NOW + 1), {count: 0, people: []});
+});
+
+test("profile sync removes opted-out directory entries from current source state", async (t) => {
+  const store = installFakeDb(t, seedOf(creator("v", {creatorDirectoryOptOut: true}),
+    {"creatorDirectory/v": {name: "Old"}}));
+  await syncPublicProfile("v");
+  assert.equal(store.has("creatorDirectory/v"), false);
+});
+
+test("cached lookups still count toward the daily rate limit", async (t) => {
+  const store = installFollowDb(t);
+  await followedBy("v", "c", NOW);
+  store.set("followedByRateDaily/v", {day: "2026-10-31", count: 300});
+  await assert.rejects(followedBy("v", "c", NOW + 1), {code: "resource-exhausted"});
+});
+
+test("similar creator planning stays within a bounded heap for a dense follower", () => {
+  const result = spawnSync(process.execPath, ["--max-old-space-size=128", "-e", `
+    const {similarCreators} = require(${JSON.stringify(require.resolve("../creatorDirectory"))});
+    const entries = Array.from({length: 2000}, (_, i) => ({uid: 'c' + i, categories: []}));
+    const edges = entries.map(({uid}) => ({followerUid: 'viewer', targetUid: uid, createdMs: 0}));
+    const similar = similarCreators(entries, edges);
+    require('node:assert/strict').deepEqual(similar.get('c0'), entries.slice(1, 13).map(({uid}) => uid));
+  `], {timeout: 30_000, encoding: "utf8"});
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test("publication rechecks an opt-out that occurs after candidate reads", async (t) => {
+  stubSeams(t);
+  const store = installFakeDb(t, seedOf(walls("R", "race", [1, 2, 3]), creator("race")));
+  t.mock.method(creatorDirectoryDeps, "disabledUids", async () => {
+    store.set("usersv2/race", {creatorDirectoryOptOut: true});
+    return new Set<string>();
+  });
+  await rebuildCreatorDirectory(NOW);
+  assert.equal(store.has("creatorDirectory/race"), false);
+});
+
+test("cached followed-by counts exclude deleted people and closed deletion barriers", async (t) => {
+  const store = installFollowDb(t, {
+    "profiles/v/following/a": {createdAt: ts(NOW)},
+    "profiles/c/followers/a": {followerUid: "a", createdAt: ts(NOW)},
+    "profiles/a": {name: "Ann"},
+  });
+  assert.equal((await followedBy("v", "c", NOW)).count, 1);
+  store.set("usersv2/a", {deleted: true});
+  assert.deepEqual(await followedBy("v", "c", NOW + 1), {count: 0, people: []});
+  store.set("usersv2/a", {});
+  store.set("creatorDeletionState/a", {closed: true});
+  assert.deepEqual(await followedBy("v", "c", NOW + 2), {count: 0, people: []});
+});
+
+test("followed-by suppresses blocks in either direction for every returned relationship", async (t) => {
+  const store = installFollowDb(t, {
+    "profiles/v/following/a": {createdAt: ts(NOW)},
+    "profiles/c/followers/a": {followerUid: "a", createdAt: ts(NOW)},
+    "profiles/a": {name: "Ann"},
+  });
+  assert.equal((await followedBy("v", "c", NOW)).count, 1);
+  for (const path of [
+    "usersv2/v/blockedUsers/a", "usersv2/a/blockedUsers/v",
+    "usersv2/c/blockedUsers/a", "usersv2/a/blockedUsers/c",
+    "usersv2/v/blockedUsers/c", "usersv2/c/blockedUsers/v",
+  ]) {
+    store.set(path, {});
+    assert.deepEqual(await followedBy("v", "c", NOW + 1), {count: 0, people: []}, path);
+    store.delete(path);
+  }
 });

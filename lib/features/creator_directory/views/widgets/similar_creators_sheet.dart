@@ -2,6 +2,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
 import 'package:Prism/features/creator_directory/views/widgets/creator_directory_card.dart';
+import 'package:Prism/features/creator_directory/views/widgets/visible_directory_creator.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -40,14 +41,17 @@ class _SimilarCreatorsSheet extends StatelessWidget {
           child: Column(
             children: <Widget>[
               for (final DirectoryCreator c in creators)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(child: CreatorIdentity(creator: c.entry, avatarSize: 44)),
-                      const SizedBox(width: PrismSpace.xs),
-                      CreatorFollowButton(creator: c.entry, followed: false, source: 'similar'),
-                    ],
+                VisibleDirectoryCreator(
+                  uid: c.uid,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(child: CreatorIdentity(creator: c.entry, avatarSize: 44)),
+                        const SizedBox(width: PrismSpace.xs),
+                        CreatorFollowButton(creator: c.entry, followed: false, source: 'similar'),
+                      ],
+                    ),
                   ),
                 ),
             ],

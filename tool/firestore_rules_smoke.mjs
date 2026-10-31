@@ -428,6 +428,16 @@ const cases = [
   ['owner stamps a west-of-UTC offset', () => req('PATCH', 'usersv2/b', {
     appOpenTimezoneOffsetMinutes: { integerValue: '-300' },
   }, Bu, ['appOpenTimezoneOffsetMinutes']), 200],
+  ...[
+    ['directory-optout-true', { booleanValue: true }, 200],
+    ['directory-optout-false', { booleanValue: false }, 200],
+    ['directory-optout-string', str('yes'), 403],
+    ['directory-optout-map', { mapValue: { fields: {} } }, 403],
+  ].map(([uid, value, expected]) => [
+    `new profile validates creator directory opt-out (${uid})`,
+    () => req('PATCH', `usersv2/${uid}`, { id: str(uid), creatorDirectoryOptOut: value }, tok(uid, `${uid}@x.com`)),
+    expected,
+  ]),
   ['owner opts out of the creator directory', () => req('PATCH', 'usersv2/b', { creatorDirectoryOptOut: { booleanValue: true } }, Bu, ['creatorDirectoryOptOut']), 200],
   ['owner cannot write a non-bool directory opt-out', () => req('PATCH', 'usersv2/b', { creatorDirectoryOptOut: str('yes') }, Bu, ['creatorDirectoryOptOut']), 403],
   ['stranger cannot opt another user out', () => req('PATCH', 'usersv2/b', { creatorDirectoryOptOut: { booleanValue: true } }, A, ['creatorDirectoryOptOut']), 403],

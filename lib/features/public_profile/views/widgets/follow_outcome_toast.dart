@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/features/creator_directory/views/creator_follow_changes.dart';
 import 'package:Prism/features/creator_directory/views/similar_creators_offer.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -16,6 +17,7 @@ void showFollowOutcomeToast(BuildContext context, FollowOutcome outcome) {
     );
     return;
   }
+  creatorFollowChanges.record(outcome.targetUserId, outcome.follow);
   if (outcome.follow) {
     unawaited(
       showFollowToastWithSimilarOffer(

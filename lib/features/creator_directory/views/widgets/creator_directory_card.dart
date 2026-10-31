@@ -8,6 +8,8 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
+import 'package:Prism/features/creator_directory/views/creator_follow_changes.dart';
+import 'package:Prism/features/creator_directory/views/widgets/visible_directory_creator.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -30,6 +32,13 @@ class CreatorFollowButton extends StatelessWidget {
     final bool following = context.select<PublicProfileBloc, bool>(
       (bloc) => bloc.state.followOverrides[creator.uid] ?? followed,
     );
+    return ListenableBuilder(
+      listenable: creatorFollowChanges,
+      builder: (context, _) => _button(context, creatorFollowChanges.following(creator.uid) ?? following),
+    );
+  }
+
+  Widget _button(BuildContext context, bool following) {
     final String name = creator.displayName;
     return Semantics(
       button: true,
@@ -171,27 +180,30 @@ class CreatorDirectoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(PrismRadius.lg),
-        border: Border.all(color: cs.onSurface.withValues(alpha: 0.06)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(PrismSpace.sm),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            CreatorWallStrip(creator: creator, source: source),
-            const SizedBox(height: PrismSpace.sm),
-            Row(
-              children: <Widget>[
-                Expanded(child: CreatorIdentity(creator: creator.entry)),
-                const SizedBox(width: PrismSpace.xs),
-                CreatorFollowButton(creator: creator.entry, followed: followed, source: source),
-              ],
-            ),
-          ],
+    return VisibleDirectoryCreator(
+      uid: creator.uid,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(PrismRadius.lg),
+          border: Border.all(color: cs.onSurface.withValues(alpha: 0.06)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(PrismSpace.sm),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              CreatorWallStrip(creator: creator, source: source),
+              const SizedBox(height: PrismSpace.sm),
+              Row(
+                children: <Widget>[
+                  Expanded(child: CreatorIdentity(creator: creator.entry)),
+                  const SizedBox(width: PrismSpace.xs),
+                  CreatorFollowButton(creator: creator.entry, followed: followed, source: source),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import {createHash} from "node:crypto";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
@@ -28,7 +29,7 @@ const MAX_DAILY_DOCS = 50_000;
 const MAX_FOLLOW_EDGES = 20_000;
 const CHUNK = 100;
 
-/** "Followed by" reads at most this many of the viewer's follows, so one lookup costs at most ~520 reads. */
+/** Maximum viewer follow edges scanned by one lookup. */
 export const FOLLOWING_SCAN_CAP = 500;
 const IN_CHUNK = 30;
 const FOLLOWED_BY_PEOPLE = 3;
@@ -66,7 +67,9 @@ export function planCandidates(
   const byCreator = new Map<string, WallRow[]>();
   for (const wall of walls) {
     if (!wall.creatorUid || !wall.id || !wall.thumb) continue;
-    byCreator.set(wall.creatorUid, [...(byCreator.get(wall.creatorUid) ?? []), wall]);
+    const own = byCreator.get(wall.creatorUid) ?? [];
+    own.push(wall);
+    byCreator.set(wall.creatorUid, own);
   }
   const wallActivity = new Map<string, number>();
   const wallWeighted = new Map<string, number>();
@@ -122,24 +125,37 @@ export function similarCreators(entries: Array<{uid: string; categories: string[
     set.add(edge.targetUid);
     followsByUser.set(edge.followerUid, set);
   }
-  const coFollows = new Map<string, number>();
-  for (const follows of followsByUser.values()) {
-    for (const a of follows) {
-      for (const b of follows) if (a !== b) coFollows.set(`${a}\n${b}`, (coFollows.get(`${a}\n${b}`) ?? 0) + 1);
+  const followersByCreator = new Map<string, Set<string>>();
+  for (const [uid, follows] of followsByUser) {
+    for (const creator of follows) {
+      const followers = followersByCreator.get(creator) ?? new Set<string>();
+      followers.add(uid);
+      followersByCreator.set(creator, followers);
     }
   }
   const order = new Map(entries.map((e, i) => [e.uid, i]));
   const result = new Map<string, string[]>();
   for (const a of entries) {
+    const scores = new Map<string, number>();
+    for (const follower of followersByCreator.get(a.uid) ?? []) {
+      for (const uid of followsByUser.get(follower) ?? []) {
+        if (uid !== a.uid) scores.set(uid, (scores.get(uid) ?? 0) + 2);
+      }
+    }
     const cats = new Set(a.categories);
-    result.set(a.uid, entries
-      .filter((b) => b.uid !== a.uid)
-      .map((b) => ({uid: b.uid, score: (coFollows.get(`${a.uid}\n${b.uid}`) ?? 0) * 2 +
-        b.categories.filter((c) => cats.has(c)).length}))
-      .filter((s) => s.score > 0)
-      .sort((x, y) => y.score - x.score || (order.get(x.uid) ?? 0) - (order.get(y.uid) ?? 0))
-      .slice(0, SIMILAR)
-      .map((s) => s.uid));
+    for (const b of entries) {
+      if (b.uid === a.uid) continue;
+      const shared = b.categories.filter((c) => cats.has(c)).length;
+      if (shared) scores.set(b.uid, (scores.get(b.uid) ?? 0) + shared);
+    }
+    const top: Array<{uid: string; score: number}> = [];
+    for (const [uid, score] of scores) {
+      const at = top.findIndex((other) => score > other.score ||
+        (score === other.score && (order.get(uid) ?? 0) < (order.get(other.uid) ?? 0)));
+      top.splice(at < 0 ? top.length : at, 0, {uid, score});
+      if (top.length > SIMILAR) top.pop();
+    }
+    result.set(a.uid, top.map((entry) => entry.uid));
   }
   return result;
 }
@@ -206,17 +222,32 @@ async function getDocs(refs: admin.firestore.DocumentReference[]): Promise<admin
   return out;
 }
 
+async function projectedDocs(collection: string, uids: string[], fields: string[]): Promise<Array<Record<string, unknown> | undefined>> {
+  const out: Array<Record<string, unknown> | undefined> = [];
+  for (let i = 0; i < uids.length; i += CHUNK) {
+    out.push(...await Promise.all(uids.slice(i, i + CHUNK).map(async (uid) => {
+      const data = (await db.collection(collection).doc(uid).get()).data();
+      if (!data) return undefined;
+      return Object.fromEntries(fields.filter((field) => data[field] !== undefined).map((field) => [field, data[field]]));
+    })));
+  }
+  return out;
+}
+
 /**
  * Rebuilds `creatorDirectory`. Reads every public approved wall, 7 days of wall stats, the newest 20k follow edges,
- * and three docs per candidate creator. Writes one doc per listed creator and deletes the rest.
+ * and three docs per candidate, then rechecks those docs when publishing. Writes one doc per listed creator.
  */
 export async function rebuildCreatorDirectory(nowMs = Date.now()): Promise<{listed: number; removed: number}> {
   const premium = await creatorDirectoryDeps.premium();
   const [wallSnap, dailySnap, edgeSnap, existing] = await Promise.all([
-    db.collection("walls").where("review", "==", true).limit(MAX_WALLS).get(),
-    db.collection(WALLPAPER_STATS_DAILY).where("day", "in", trendingDays(nowMs)).limit(MAX_DAILY_DOCS).get(),
-    db.collectionGroup("following").orderBy("createdAt", "desc").limit(MAX_FOLLOW_EDGES).get(),
-    db.collection(CREATOR_DIRECTORY).get(),
+    db.collection("walls").where("review", "==", true).select(
+      "id", "creatorUid", "wallpaper_thumb", "category", "createdAt", "review", "originalProtected",
+      "is_streak_exclusive", "dropReserved", "dropWeek", "collections",
+    ).limit(MAX_WALLS).get(),
+    db.collection(WALLPAPER_STATS_DAILY).where("day", "in", trendingDays(nowMs)).select("wallId", "day", "favs", "sets").limit(MAX_DAILY_DOCS).get(),
+    db.collectionGroup("following").orderBy("createdAt", "desc").select("createdAt").limit(MAX_FOLLOW_EDGES).get(),
+    db.collection(CREATOR_DIRECTORY).select().get(),
   ]);
   if (wallSnap.size >= MAX_WALLS) logger.warn("rebuildCreatorDirectory: walls hit the read cap.", {cap: MAX_WALLS});
   if (edgeSnap.size >= MAX_FOLLOW_EDGES) logger.warn("rebuildCreatorDirectory: follow edges hit the read cap.");
@@ -230,13 +261,13 @@ export async function rebuildCreatorDirectory(nowMs = Date.now()): Promise<{list
 
   const uids = candidates.map((c) => c.uid);
   const [users, profiles, barriers, disabled] = await Promise.all([
-    getDocs(uids.map((uid) => db.collection(USERS).doc(uid))),
-    getDocs(uids.map((uid) => db.collection(PROFILES).doc(uid))),
-    getDocs(uids.map((uid) => db.collection("creatorDeletionState").doc(uid))),
+    projectedDocs(USERS, uids, ["deleted", "creatorDirectoryOptOut"]),
+    projectedDocs(PROFILES, uids, ["name", "username", "profilePhoto", "followerCount"]),
+    projectedDocs("creatorDeletionState", uids, ["closed"]),
     creatorDirectoryDeps.disabledUids(uids),
   ]);
   const listed = candidates
-    .map((candidate, i) => ({candidate, user: users[i].data(), profile: profiles[i].data(), barrier: barriers[i].data()}))
+    .map((candidate, i) => ({candidate, user: users[i], profile: profiles[i], barrier: barriers[i]}))
     .filter(({candidate, user, profile, barrier}) => user && profile && user.deleted !== true &&
       user.creatorDirectoryOptOut !== true && barrier?.closed !== true && !disabled.has(candidate.uid))
     .sort((a, b) => b.candidate.score - a.candidate.score ||
@@ -246,8 +277,19 @@ export async function rebuildCreatorDirectory(nowMs = Date.now()): Promise<{list
   const updatedAt = admin.firestore.Timestamp.fromMillis(nowMs);
   const keep = new Set(listed.map(({candidate}) => candidate.uid));
   const writes = [
-    ...listed.map(({candidate, profile}, i) => () => db.collection(CREATOR_DIRECTORY).doc(candidate.uid).set({
-      ...directoryEntry(candidate, profile ?? {}, i + 1, similar.get(candidate.uid) ?? []), updatedAt,
+    ...listed.map(({candidate}, i) => () => db.runTransaction(async (tx) => {
+      const uid = candidate.uid;
+      const [user, profile, barrier] = await Promise.all([
+        tx.get(db.collection(USERS).doc(uid)), tx.get(db.collection(PROFILES).doc(uid)),
+        tx.get(db.collection("creatorDeletionState").doc(uid)),
+      ]);
+      const ref = db.collection(CREATOR_DIRECTORY).doc(uid);
+      if (!user.exists || !profile.exists || user.data()?.deleted === true ||
+        user.data()?.creatorDirectoryOptOut === true || barrier.data()?.closed === true) {
+        tx.delete(ref);
+        return;
+      }
+      tx.set(ref, {...directoryEntry(candidate, profile.data() ?? {}, i + 1, similar.get(uid) ?? []), updatedAt});
     })),
     ...existing.docs.filter((d) => !keep.has(d.id)).map((d) => () => d.ref.delete()),
   ];
@@ -271,15 +313,11 @@ export type FollowedBy = {count: number; people: Array<{name: string; photo: str
 
 /**
  * People the viewer follows who also follow the creator. It never returns anyone the viewer does not follow, and
- * it returns names and photos only, never uids. The scan stops at 500 follows, and the result is cached for a day.
+ * it returns names and photos only, never uids. A miss scans at most 500 of the viewer's follows and caches the
+ * matching uids for a day. A hit re-reads only those follow edges. Shown people are checked live (deleted, disabled,
+ * blocked in any direction) until three pass.
  */
 export async function followedBy(viewerUid: string, creatorUid: string, nowMs = Date.now()): Promise<FollowedBy> {
-  const cacheRef = db.collection(FOLLOWED_BY_CACHE).doc(`${viewerUid}_${creatorUid}`);
-  const cached = (await cacheRef.get()).data();
-  if (cached && cached.expireAt instanceof admin.firestore.Timestamp && cached.expireAt.toMillis() > nowMs) {
-    return {count: num(cached.count), people: Array.isArray(cached.people) ? cached.people : []};
-  }
-
   const day = utcDateString(new Date(nowMs));
   const rateRef = db.collection(FOLLOWED_BY_RATE).doc(viewerUid);
   await db.runTransaction(async (tx) => {
@@ -288,27 +326,65 @@ export async function followedBy(viewerUid: string, creatorUid: string, nowMs = 
     tx.set(rateRef, {day, count: used + 1, expireAt: admin.firestore.Timestamp.fromMillis(nowMs + 2 * DAY_MS)});
   });
 
-  const followingSnap = await db.collection(PROFILES).doc(viewerUid).collection("following")
-    .orderBy("createdAt", "desc").limit(FOLLOWING_SCAN_CAP).get();
-  const following = followingSnap.docs.map((d) => d.id).filter((uid) => uid !== creatorUid && uid !== viewerUid);
-  const followers = db.collection(PROFILES).doc(creatorUid).collection("followers");
-  const matched = new Set<string>();
-  for (let i = 0; i < following.length; i += IN_CHUNK) {
-    const chunk = following.slice(i, i + IN_CHUNK);
-    const snap = await followers.where("followerUid", "in", chunk).get();
-    for (const doc of snap.docs) if (chunk.includes(doc.id)) matched.add(doc.id);
+  const unavailable = async (uid: string, peers: string[]): Promise<boolean> => {
+    const [user, profile, barrier, ...blocks] = await getDocs([
+      db.collection(USERS).doc(uid), db.collection(PROFILES).doc(uid),
+      db.collection("creatorDeletionState").doc(uid),
+      ...peers.flatMap((peer) => [
+        db.collection(USERS).doc(uid).collection("blockedUsers").doc(peer),
+        db.collection(USERS).doc(peer).collection("blockedUsers").doc(uid),
+      ]),
+    ]);
+    return !user.exists || !profile.exists || user.data()?.deleted === true ||
+      barrier.data()?.closed === true || blocks.some((b) => b.exists);
+  };
+  const disabled = await creatorDirectoryDeps.disabledUids([viewerUid, creatorUid]);
+  if (disabled.size || await unavailable(viewerUid, [creatorUid]) || await unavailable(creatorUid, [])) {
+    return {count: 0, people: []};
   }
-  const ordered = following.filter((uid) => matched.has(uid));
+
+  const key = createHash("sha256").update(JSON.stringify([viewerUid, creatorUid])).digest("hex");
+  const cacheRef = db.collection(FOLLOWED_BY_CACHE).doc(key);
+  const cached = (await cacheRef.get()).data();
+  const following = db.collection(PROFILES).doc(viewerUid).collection("following");
+  let ordered: string[];
+  if (cached?.expireAt instanceof admin.firestore.Timestamp && cached.expireAt.toMillis() > nowMs &&
+    Array.isArray(cached.matches)) {
+    const matches = (cached.matches as unknown[]).filter((uid): uid is string => typeof uid === "string")
+      .slice(0, FOLLOWING_SCAN_CAP);
+    const edges = await getDocs(matches.map((uid) => following.doc(uid)));
+    ordered = matches.filter((_, i) => edges[i].exists);
+  } else {
+    const followingSnap = await following.orderBy("createdAt", "desc").limit(FOLLOWING_SCAN_CAP).get();
+    const followed = followingSnap.docs.map((d) => d.id).filter((uid) => uid !== creatorUid && uid !== viewerUid);
+    const followers = db.collection(PROFILES).doc(creatorUid).collection("followers");
+    const matched = new Set<string>();
+    for (let i = 0; i < followed.length; i += IN_CHUNK) {
+      const chunk = followed.slice(i, i + IN_CHUNK);
+      const snap = await followers.where("followerUid", "in", chunk).get();
+      for (const doc of snap.docs) if (chunk.includes(doc.id)) matched.add(doc.id);
+    }
+    ordered = followed.filter((uid) => matched.has(uid));
+    await cacheRef.set({matches: ordered, expireAt: admin.firestore.Timestamp.fromMillis(nowMs + FOLLOWED_BY_TTL_MS)});
+  }
+
+  // ponytail: count keeps people hidden by a block or ban; only the named ones are checked, to bound the reads.
   const people: FollowedBy["people"] = [];
-  for (const uid of ordered) {
-    if (people.length >= FOLLOWED_BY_PEOPLE) break;
-    const profile = (await db.collection(PROFILES).doc(uid).get()).data();
-    if (!profile) continue;
-    people.push({name: str(profile.name) || str(profile.username), photo: str(profile.profilePhoto)});
+  let hidden = 0;
+  for (let i = 0; i < ordered.length && people.length < FOLLOWED_BY_PEOPLE; i += FOLLOWED_BY_PEOPLE) {
+    const chunk = ordered.slice(i, i + FOLLOWED_BY_PEOPLE);
+    const off = await creatorDirectoryDeps.disabledUids(chunk);
+    for (const uid of chunk) {
+      if (people.length >= FOLLOWED_BY_PEOPLE) break;
+      if (off.has(uid) || await unavailable(uid, [viewerUid, creatorUid])) {
+        hidden++;
+        continue;
+      }
+      const profile = (await db.collection(PROFILES).doc(uid).get()).data();
+      if (profile) people.push({name: str(profile.name) || str(profile.username), photo: str(profile.profilePhoto)});
+    }
   }
-  const result: FollowedBy = {count: ordered.length, people};
-  await cacheRef.set({...result, expireAt: admin.firestore.Timestamp.fromMillis(nowMs + FOLLOWED_BY_TTL_MS)});
-  return result;
+  return {count: people.length ? ordered.length - hidden : 0, people};
 }
 
 export const getFollowedBy = onCall(

@@ -61,6 +61,7 @@ service cloud.firestore {
           && request.resource.data.get('username', '') == ''
           && !('usernameLower' in request.resource.data)
           && ownerAppOpenValuesOk(request.resource.data)
+          && request.resource.data.get('creatorDirectoryOptOut', false) is bool
           && request.resource.data.get('coins', 0) == 0
           && request.resource.data.get('premium', false) == false
           && request.resource.data.get('subscriptionTier', 'free') == 'free'

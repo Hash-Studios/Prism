@@ -4,6 +4,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -11,6 +12,7 @@ import 'package:Prism/features/creator_directory/biz/creator_directory_cubit.dar
 import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_repository.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -64,6 +66,14 @@ class FakeCreatorDirectoryRepository implements CreatorDirectoryRepository {
 
   @override
   Future<FollowedBy> followedBy(String creatorUid) async => FollowedBy.none;
+}
+
+class EmptyCreatorBlocks extends Fake implements UserBlockRepository {
+  @override
+  BlockedCreators get blockedCreators => KnownBlockedCreators(<String>[]);
+
+  @override
+  Stream<BlockedCreators> watchBlockedCreators() => const Stream<BlockedCreators>.empty();
 }
 
 class MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
@@ -130,6 +140,7 @@ Future<void> pumpCreators(
   required FakeCreatorDirectoryRepository repository,
   required PublicProfileBloc profileBloc,
 }) async {
+  getIt.registerSingleton<UserBlockRepository>(EmptyCreatorBlocks());
   getIt.registerSingleton<CreatorDirectoryRepository>(repository);
   getIt.registerFactory<CreatorDirectoryCubit>(() => CreatorDirectoryCubit(repository));
   getIt.registerFactory<PublicProfileBloc>(() => profileBloc);

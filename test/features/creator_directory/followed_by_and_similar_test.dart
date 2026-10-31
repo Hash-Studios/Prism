@@ -4,10 +4,12 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_repository.dart';
+import 'package:Prism/features/creator_directory/views/creator_follow_changes.dart';
 import 'package:Prism/features/creator_directory/views/similar_creators_offer.dart';
 import 'package:Prism/features/creator_directory/views/widgets/followed_by_line.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:bloc_test/bloc_test.dart';
@@ -16,6 +18,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/profile_user_fixture.dart';
+import 'creator_directory_test_support.dart' show EmptyCreatorBlocks;
 
 class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
 
@@ -67,6 +70,8 @@ Widget _app(Widget home, {GlobalKey<NavigatorState>? navigatorKey}) => MaterialA
   home: Scaffold(body: home),
 );
 
+int viewerSeq = 0;
+
 void main() {
   setUpAll(() {
     registerFallbackValue(
@@ -83,10 +88,10 @@ void main() {
   late _FakeDirectory repo;
 
   setUp(() {
+    getIt.registerSingleton<UserBlockRepository>(EmptyCreatorBlocks());
     repo = _FakeDirectory();
     getIt.registerSingleton<CreatorDirectoryRepository>(repo);
-    app_state.prismUser = profileUser(id: 'viewer');
-    resetSimilarCreatorsOffer();
+    app_state.prismUser = profileUser(id: 'viewer-${++viewerSeq}');
   });
 
   tearDown(() async {
@@ -95,12 +100,36 @@ void main() {
     await getIt.reset();
   });
 
+  test('follow changes are shared across surfaces but not viewer accounts', () {
+    final changes = CreatorFollowChanges();
+    changes.record('creator', true);
+    expect(changes.following('creator'), isTrue);
+    changes.record('creator', false);
+    expect(changes.following('creator'), isFalse);
+    app_state.prismUser = profileUser(id: 'another');
+    expect(changes.following('creator'), isNull);
+    changes.dispose();
+  });
+
   group('Followed by line', () {
     Future<void> pumpLine(WidgetTester tester, {String creatorUid = 'creator'}) async {
       await tester.pumpWidget(_app(FollowedByLine(creatorUid: creatorUid)));
       await tester.pump();
       await tester.pump();
     }
+
+    testWidgets('reused line reloads for a different creator and hides on logout', (tester) async {
+      repo.followed = FollowedBy(count: 1, people: <FollowedByPerson>[_person('Ann')]);
+      await pumpLine(tester);
+      expect(find.textContaining('Ann'), findsOneWidget);
+      repo.followed = FollowedBy.none;
+      await pumpLine(tester, creatorUid: 'different');
+      expect(repo.followedCalls, 2);
+      expect(find.textContaining('Ann'), findsNothing);
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await pumpLine(tester, creatorUid: 'different');
+      expect(find.textContaining('Followed by'), findsNothing);
+    });
 
     testWidgets('shows nothing when no one the viewer follows follows the creator', (tester) async {
       repo.followed = FollowedBy.none;
@@ -140,7 +169,7 @@ void main() {
 
     testWidgets('the viewer own profile never calls the repository and shows nothing', (tester) async {
       repo.followed = FollowedBy(count: 1, people: [_person('Ann')]);
-      await pumpLine(tester, creatorUid: 'viewer');
+      await pumpLine(tester, creatorUid: app_state.prismUser.id);
       expect(repo.followedCalls, 0);
       expect(find.textContaining('Followed by'), findsNothing);
     });
@@ -219,9 +248,9 @@ void main() {
       final List<Object?> sent = verify(() => bloc.add(captureAny())).captured;
       expect(
         sent.single,
-        const PublicProfileEvent.followChangeRequested(
+        PublicProfileEvent.followChangeRequested(
           follow: true,
-          currentUserId: 'viewer',
+          currentUserId: app_state.prismUser.id,
           currentUserEmail: 'user@example.com',
           targetUserId: 'a',
           targetUserEmail: '',
@@ -230,6 +259,20 @@ void main() {
       );
       expect(find.descendant(of: find.byType(PrismSheetBody), matching: find.text('More like Kai')), findsOneWidget);
 
+      await settleToasts(tester);
+    });
+
+    testWidgets('opening an offer rechecks creators followed or blocked since the toast', (tester) async {
+      repo.similar = [_creator('a', 'Lia')];
+      await pumpApp(tester);
+      showFollowOutcomeToast(context, _outcome(follow: true));
+      await tester.pump();
+      await tester.pump();
+      repo.similar = const <DirectoryCreator>[];
+      await tester.tap(find.text('More like Kai'));
+      await tester.pump();
+      expect(repo.similarCalls, 2);
+      expect(find.byType(PrismSheetBody), findsNothing);
       await settleToasts(tester);
     });
 
