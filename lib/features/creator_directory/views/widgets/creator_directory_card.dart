@@ -105,7 +105,7 @@ class CreatorIdentity extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),
+                    Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),
                     Text(
                       context.l10n.accountFollowersCount(creator.followerCount),
                       maxLines: 1,
@@ -119,6 +119,46 @@ class CreatorIdentity extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Who the creator is and a Follow button. At large text sizes the button moves under the name, so the name keeps
+/// its width.
+class CreatorFollowRow extends StatelessWidget {
+  const CreatorFollowRow({
+    super.key,
+    required this.creator,
+    required this.followed,
+    required this.source,
+    this.avatarSize = 40,
+  });
+
+  final CreatorDirectoryEntry creator;
+  final bool followed;
+  final String source;
+  final double avatarSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget identity = CreatorIdentity(creator: creator, avatarSize: avatarSize);
+    final Widget button = CreatorFollowButton(creator: creator, followed: followed, source: source);
+    if (MediaQuery.textScalerOf(context).scale(1) > 1.4) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          identity,
+          const SizedBox(height: PrismSpace.xs),
+          button,
+        ],
+      );
+    }
+    return Row(
+      children: <Widget>[
+        Expanded(child: identity),
+        const SizedBox(width: PrismSpace.xs),
+        button,
+      ],
     );
   }
 }
@@ -204,13 +244,7 @@ class CreatorDirectoryCard extends StatelessWidget {
             children: <Widget>[
               CreatorWallStrip(creator: creator),
               const SizedBox(height: PrismSpace.sm),
-              Row(
-                children: <Widget>[
-                  Expanded(child: CreatorIdentity(creator: creator.entry)),
-                  const SizedBox(width: PrismSpace.xs),
-                  CreatorFollowButton(creator: creator.entry, followed: followed, source: source),
-                ],
-              ),
+              CreatorFollowRow(creator: creator.entry, followed: followed, source: source),
             ],
           ),
         ),

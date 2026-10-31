@@ -48,23 +48,20 @@ class _CategoryChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<String?> filters = <String?>[null, ...state.categories];
-    return SizedBox(
-      height: 44,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: PrismSpace.pageInsets,
-        itemCount: filters.length,
-        separatorBuilder: (_, _) => const SizedBox(width: PrismSpace.xs),
-        itemBuilder: (context, index) {
-          final String? category = filters[index];
-          return Center(
-            child: PrismChip(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: PrismSpace.pageInsets,
+      child: Row(
+        children: <Widget>[
+          for (final (int i, String? category) in filters.indexed) ...<Widget>[
+            if (i > 0) const SizedBox(width: PrismSpace.xs),
+            PrismChip(
               label: category ?? context.l10n.creatorsFilterAll,
               selected: state.category == category,
               onTap: () => _select(context, category),
             ),
-          );
-        },
+          ],
+        ],
       ),
     );
   }

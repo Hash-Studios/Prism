@@ -64,11 +64,15 @@ class _CreatorsSectionState extends State<CreatorsSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        PrismSectionHeader(
-          title: context.l10n.creatorsToFollow,
-          actionLabel: context.l10n.creatorsSeeAll,
-          onAction: () => _openSeeAll(context),
-          padding: _sectionHeaderPadding,
+        // Past 1.6x the title breaks inside "Creators" next to See all.
+        MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.6,
+          child: PrismSectionHeader(
+            title: context.l10n.creatorsToFollow,
+            actionLabel: context.l10n.creatorsSeeAll,
+            onAction: () => _openSeeAll(context),
+            padding: _sectionHeaderPadding,
+          ),
         ),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,

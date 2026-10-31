@@ -45,13 +45,7 @@ class _SimilarCreatorsSheet extends StatelessWidget {
                   uid: c.uid,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
-                    child: Row(
-                      children: <Widget>[
-                        Expanded(child: CreatorIdentity(creator: c.entry, avatarSize: 44)),
-                        const SizedBox(width: PrismSpace.xs),
-                        CreatorFollowButton(creator: c.entry, followed: false, source: 'similar'),
-                      ],
-                    ),
+                    child: CreatorFollowRow(creator: c.entry, followed: false, source: 'similar', avatarSize: 44),
                   ),
                 ),
             ],

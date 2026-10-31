@@ -30,7 +30,7 @@ Android and iOS. Every plan sees the same directory. No coin, premium or Pro gat
 | Path | Writer | Readers | Contents |
 |---|---|---|---|
 | `creatorDirectory/{uid}` | Server only (`buildCreatorDirectory`, `projectUserProfile`) | Signed-in users | The fields below. |
-| `followedByCache/{viewerUid}_{creatorUid}` | Server only | Nobody | `count`, `people`, `expireAt`. |
+| `followedByCache/{sha256 of viewer and creator}` | Server only | Nobody | `matches` (uids), `expireAt`. |
 | `followedByRateDaily/{viewerUid}` | Server only | Nobody | `day`, `count`, `expireAt`. |
 
 A `creatorDirectory` doc has these fields:
@@ -91,6 +91,7 @@ A run deletes the docs of creators that no longer qualify. A profile delete or a
 | `wallpaper_stats_daily` docs, last 7 days | 50,000 |
 | Newest follow edges | 20,000 |
 | 3 reads per candidate creator | None |
+| 3 more reads per listed creator, in its publish transaction | None |
 | 1 read per existing directory doc | None |
 
 Each run writes one doc per listed creator. It deletes one doc per removed creator.
@@ -107,10 +108,12 @@ At 50,000 walls and 20,000 edges, the job reads about 125,000 docs a day. That c
 - The `creatorUid` must be a string of 128 characters or fewer. It must not contain `/`.
 - The viewer's own profile returns `{count: 0, people: []}`.
 - The callable scans the viewer's newest 500 follows. It checks the creator's followers in batches of 30.
-- It caches each viewer and creator pair for 24 hours.
-- A viewer gets 300 uncached lookups a day. Later calls fail with `resource-exhausted`.
+- It returns nothing when the viewer or the creator is deleted, closed, disabled in Auth, or blocked in either direction.
+- It caches the matching uids for each viewer and creator pair for 24 hours. A cache hit re-reads only those follow edges, so an unfollow shows at once.
+- It checks each named person live (deleted, closed, disabled, blocked either way) and skips them until 3 pass.
+- Every call counts toward 300 lookups per viewer per day. Later calls fail with `resource-exhausted`.
 
-A cache miss costs about 500 + 17 + 3 reads, plus 2 small reads for the cache and rate docs. A cache hit costs 1 read.
+A cache miss costs at most about 500 + 17 reads for the scan, plus about 10 reads for the viewer and creator checks and about 8 reads per named person. A cache hit costs 1 read per cached match, plus the same checks.
 
 ### App
 
