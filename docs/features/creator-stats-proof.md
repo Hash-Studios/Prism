@@ -45,7 +45,7 @@ M is all global wall documents, capped at 20,000. N is the caller's approved wal
 
 - Callable: cold `2 + M + 4N`, cached `2 + M + 2N`. Unchanged.
 - Daily enqueue: a replay with no new value costs 2 reads and zero writes. A new positive candidate costs 3 reads and at most 1 write. Raising an existing queue maximum costs 3 reads and 1 write. A duplicate already represented in the queue costs 3 reads and zero writes.
-- Processor: for K items, U distinct eligible creators, H distinct histories, P accepted items and M census rows, a successful batch costs `1 + 2K + M + 2U + H` reads and `K + P + H` writes. Reads are at most `M + 5K + 1`; writes are at most `3K`. All-no-delta batches skip the census and cost `1 + 2K` reads and K deletes.
+- Processor: for K items, U distinct eligible creators, H distinct histories, P accepted items and M census rows, a successful batch with positive deltas costs `1 + 2K + max(1, M) + 2U + H` reads and `K + P + H` writes. Reads are at most `max(1, M) + 5K + 1`; writes are at most `3K`. All-no-delta batches skip the census and cost `1 + 2K` reads and K deletes.
 - At M=20,000 and 10,000 positive events coalesced into 100 full batches, trigger and processor reads total about 2,080,100 before invocation overhead. The earlier 200,050,000 estimate assumed one census per positive event and is superseded.
 - Legacy folder creation without a wall document ID: `M + 7`.
 - Each census can hold pessimistic read locks on up to 20,001 walls until commit.

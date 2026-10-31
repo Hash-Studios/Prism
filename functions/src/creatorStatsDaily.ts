@@ -258,7 +258,10 @@ async function processBatch(owner: string, observationNow: number | undefined, c
     const failedWalls = new Map<string, string>();
     for (const [path, {wall, candidates: group}] of wallGroups) {
       const ref = db.collection("creatorStatsHistory").doc(hash(path));
-      const previous = (await tx.get(ref)).data() as History | undefined;
+      const stored = (await tx.get(ref)).data() as History | undefined;
+      // A wall moved to a new owner starts fresh history, as addHistory does for the other projections.
+      const previous = typeof stored?.creatorUid === "string" && stored.creatorUid !== str(wall.data()?.creatorUid) ?
+        undefined : stored;
       let next = previous;
       if (previous && !validHistory(previous, wall)) {
         failedWalls.set(path, "invalid_history");

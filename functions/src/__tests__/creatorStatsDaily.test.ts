@@ -523,3 +523,17 @@ test("Monday inbox skips pending daily activity and needs a same-week rerun afte
   assert.equal(notifications.length, 1);
   assert.deepEqual(notifications[0][1].message, {kind: "creatorStatsWeekly", args: {week: "2026-W43"}});
 });
+test("a previous owner's history resets for the wall's new owner instead of blocking work", async (t) => {
+  const path = "wallpaper_stats_daily/20261025_WALL";
+  const store = installFakeDb(t, seed({"usersv2/bob": {email: "bob@example.com"}}));
+  const before = await db.doc("walls/wall").get();
+  await historyRef(before).set({wallPath: before.ref.path, incarnation: incarnation(before), creatorUid: "bob",
+    from: new Date(NOW - 14 * 86400000).toISOString(), weeks: {"2026-W42": {views: 40}}, folderAdds: 3});
+  await enqueueCreatorStatsDaily(await db.doc(path).get(), NOW);
+  await processCreatorStatsDailyQueue(NOW);
+  const history = (await historyRef(await db.doc("walls/wall").get()).get()).data();
+  assert.equal(history?.creatorUid, "alice");
+  assert.deepEqual(history?.weeks, {"2026-W43": {views: 5, saves: 2}});
+  assert.equal(history?.folderAdds, 0);
+  assert.equal([...store.keys()].some((name) => name.startsWith("creatorStatsDailyQueue/")), false);
+});
