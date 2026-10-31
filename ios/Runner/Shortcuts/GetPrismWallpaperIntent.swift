@@ -147,17 +147,31 @@ struct GetPrismWallpaperIntent: AppIntent {
   }
 
   private static func randomFavouriteImage() async throws -> Data {
+    let defaults = UserDefaults.standard
+    let snapshot = defaults.string(forKey: PrismShortcutFavourites.defaultsKey)
+    let revision = PrismShortcutShuffle.sessionRevision(in: defaults)
     let favourites = PrismShortcutFavourites.parse(
-      UserDefaults.standard.string(forKey: PrismShortcutFavourites.defaultsKey)
+      snapshot
     )
     guard !favourites.isEmpty else { throw PrismShortcutError.noFavourites }
     return try await shuffledImage(
-      from: favourites, bagKey: PrismShortcutShuffle.favouritesKey, unavailable: .favouriteUnavailable
+      from: favourites,
+      bagKey: PrismShortcutShuffle.favouritesKey,
+      unavailable: .favouriteUnavailable,
+      defaults: defaults,
+      sessionRevision: revision,
+      isCurrent: {
+        PrismShortcutShuffle.snapshotMatchesSession(
+          snapshot, for: PrismShortcutFavourites.defaultsKey, revision: revision, in: defaults
+        )
+      }
     )
   }
 
   static func folderImage(id: String?, rotation: Bool, defaults: UserDefaults = .standard) async throws -> Data {
-    let folders = PrismShortcutFolders.parse(defaults.string(forKey: PrismShortcutFolders.defaultsKey))
+    let snapshot = defaults.string(forKey: PrismShortcutFolders.defaultsKey)
+    let revision = PrismShortcutShuffle.sessionRevision(in: defaults)
+    let folders = PrismShortcutFolders.parse(snapshot)
     let folder: PrismShortcutFolder
     do {
       folder = try PrismShortcutFolders.resolve(id, in: folders, rotation: rotation)
@@ -172,7 +186,13 @@ struct GetPrismWallpaperIntent: AppIntent {
       from: folder.items,
       bagKey: PrismShortcutFolders.bagKey(folderID: folder.id),
       unavailable: .folderWallUnavailable,
-      defaults: defaults
+      defaults: defaults,
+      sessionRevision: revision,
+      isCurrent: {
+        PrismShortcutShuffle.snapshotMatchesSession(
+          snapshot, for: PrismShortcutFolders.defaultsKey, revision: revision, in: defaults
+        )
+      }
     )
   }
 
@@ -181,24 +201,32 @@ struct GetPrismWallpaperIntent: AppIntent {
     from walls: [PrismShortcutFavourite],
     bagKey: String,
     unavailable: PrismShortcutError,
-    defaults: UserDefaults = .standard
+    defaults: UserDefaults = .standard,
+    sessionRevision: Int = 0,
+    isCurrent: @escaping () -> Bool = { true }
   ) async throws -> Data {
-    let bag = PrismShortcutShuffle.bag(bagKey, in: defaults)
-    guard let picked = PrismShortcutShuffle.pick(from: walls.map(\.id), bag: bag),
-      let wall = walls.first(where: { $0.id == picked.id })
-    else {
-      throw unavailable
-    }
-    let data: Data
     do {
-      data = try await PrismShortcutWallpaperLoader.imageData(from: wall.url)
+      guard let picked = try await PrismShortcutShuffle.loadAndCommit(
+        from: walls.map(\.id), key: bagKey, defaults: defaults, sessionRevision: sessionRevision,
+        load: { id in
+          guard let wall = walls.first(where: { $0.id == id }) else { throw unavailable }
+          return try await PrismShortcutWallpaperLoader.imageData(from: wall.url)
+        },
+        validate: { _ = try Self.file(from: $0) },
+        isCurrent: isCurrent
+      ) else {
+        throw unavailable
+      }
+      return picked.value
+    } catch PrismShortcutError.unsupportedImage {
+      throw PrismShortcutError.unsupportedImage
+    } catch PrismShortcutShuffleError.sourceChanged {
+      throw CancellationError()
     } catch let error as CancellationError {
       throw error
     } catch {
       throw unavailable
     }
-    PrismShortcutShuffle.save(picked.bag, for: bagKey, in: defaults)
-    return data
   }
 
   private static func file(from data: Data) throws -> IntentFile {

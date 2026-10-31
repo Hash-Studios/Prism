@@ -14,12 +14,13 @@ import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart'
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_folders_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 
 import '../../support/profile_user_fixture.dart';
 
-FolderEntity _folder(String id, {DateTime? updatedAt, int itemCount = 1}) => FolderEntity(
+FolderEntity _folder(String id, {DateTime? updatedAt, int itemCount = 1, String ownerId = 'owner-a'}) => FolderEntity(
   id: id,
-  ownerId: 'owner-a',
+  ownerId: ownerId,
   name: 'Folder $id',
   createdAt: DateTime.utc(2026),
   updatedAt: updatedAt ?? DateTime.utc(2026, 2),
@@ -48,6 +49,25 @@ class _FakeFetcher {
   }
 }
 
+class _RejectFolderSnapshotStore extends InMemorySharedPreferencesStore {
+  _RejectFolderSnapshotStore(this.rejectedKey, super.data) : super.withData();
+
+  final Set<String> removed = <String>{};
+  final String rejectedKey;
+
+  @override
+  Future<bool> setValue(String valueType, String key, Object value) async {
+    if (key == rejectedKey) return false;
+    return super.setValue(valueType, key, value);
+  }
+
+  @override
+  Future<bool> remove(String key) {
+    removed.add(key);
+    return super.remove(key);
+  }
+}
+
 Future<Map<String, dynamic>> _snapshot() async {
   final String? raw = (await SharedPreferences.getInstance()).getString(PersistenceKeys.shortcutsFolders);
   return jsonDecode(raw!) as Map<String, dynamic>;
@@ -71,7 +91,7 @@ void main() {
   late Directory offlineDirectory;
 
   setUp(() async {
-    app_state.prismUser = profileUser(id: '', loggedIn: false);
+    app_state.prismUser = profileUser(id: 'owner-a');
     SharedPreferences.setMockInitialValues(<String, Object>{});
     offlineDirectory = await Directory.systemTemp.createTemp('prism-shortcuts-folders-test');
     OfflineAssetStore.testOverride = OfflineAssetStore(
@@ -81,12 +101,58 @@ void main() {
   });
 
   tearDown(() async {
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
     OfflineAssetStore.testOverride = null;
     NativeAssetPathsStore.supportDirectoryOverride = null;
     if (await offlineDirectory.exists()) await offlineDirectory.delete(recursive: true);
   });
 
   group('sync', () {
+    test('a late folder fetch cannot write after app state becomes guest without a clear or session event', () async {
+      final Completer<void> started = Completer<void>();
+      final Completer<void> gate = Completer<void>();
+      final Future<void> sync = ShortcutsFoldersStore.sync(
+        ownerId: 'owner-a',
+        folders: <FolderEntity>[_folder('f1')],
+        fetchItems: (String folderId) async {
+          started.complete();
+          await gate.future;
+          return Result.success<List<FavouriteWallEntity>?>(<FavouriteWallEntity>[_wall('private')]);
+        },
+      );
+      await started.future;
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
+      gate.complete();
+      await sync;
+
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(PersistenceKeys.shortcutsFolders), isNull);
+      expect(prefs.getString('${NativeAssetPathsStore.preferenceKey}.folders'), isNull);
+      expect(prefs.getString(NativeAssetPathsStore.preferenceKey), isNull);
+    });
+
+    test('never fetches or serializes a foreign folder for the active snapshot owner', () async {
+      final _FakeFetcher fetcher = _FakeFetcher(<String, List<FavouriteWallEntity>?>{
+        'own': <FavouriteWallEntity>[_wall('own')],
+        'foreign': <FavouriteWallEntity>[_wall('foreign')],
+      });
+      await ShortcutsFoldersStore.sync(
+        ownerId: 'owner-a',
+        folders: <FolderEntity>[
+          _folder('own'),
+          _folder('foreign', ownerId: 'owner-b').copyWith(name: 'Private owner B folder'),
+        ],
+        fetchItems: fetcher.call,
+      );
+
+      final Map<String, dynamic> snapshot = await _snapshot();
+      expect(snapshot['ownerId'], 'owner-a');
+      expect(_folderIds(snapshot), <String>['own']);
+      expect(fetcher.calls, <String, int>{'own': 1});
+      expect(jsonEncode(snapshot), isNot(contains('foreign')));
+      expect(jsonEncode(snapshot), isNot(contains('Private owner B folder')));
+    });
+
     test('writes owner, folders newest first, and items keyed by folderItemKey', () async {
       final _FakeFetcher fetcher = _FakeFetcher(<String, List<FavouriteWallEntity>?>{
         'new': <FavouriteWallEntity>[_wall('a'), _wall('a')],
@@ -317,6 +383,7 @@ void main() {
       expect(prefs.getString(PersistenceKeys.shortcutsFolders), '{"folders":[]}');
       expect(prefs.getString(PersistenceKeys.shortcutsRotationFolder), isNull);
       expect(prefs.getString(PersistenceKeys.shortcutsShuffleBags), isNull);
+      expect(prefs.getInt(ShortcutsFoldersStore.sessionRevisionKey), 1);
     });
 
     test('a sync still waiting in fetchItems does not write after the clear', () async {
@@ -340,6 +407,89 @@ void main() {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       expect(prefs.getString(PersistenceKeys.shortcutsFolders), '{"folders":[]}');
     });
+
+    test('a sync started during clear cannot reuse the pre-clear cached items', () async {
+      final DateTime at = DateTime.utc(2026, 2);
+      final _FakeFetcher fetcher = _FakeFetcher(<String, List<FavouriteWallEntity>?>{
+        'f1': <FavouriteWallEntity>[_wall('a')],
+      });
+      await ShortcutsFoldersStore.sync(
+        ownerId: 'owner-a',
+        folders: <FolderEntity>[_folder('f1', updatedAt: at)],
+        fetchItems: fetcher.call,
+      );
+
+      fetcher.walls['f1'] = <FavouriteWallEntity>[_wall('b')];
+      final Future<void> clear = ShortcutsFoldersStore.clear();
+      final Future<void> sync = ShortcutsFoldersStore.sync(
+        ownerId: 'owner-a',
+        folders: <FolderEntity>[_folder('f1', updatedAt: at)],
+        fetchItems: fetcher.call,
+      );
+      await Future.wait(<Future<void>>[clear, sync]);
+
+      expect(fetcher.calls['f1'], 2);
+      expect(_itemIds(_entry(await _snapshot(), 'f1')), <String>[folderItemKey(_wall('b'))]);
+    });
+
+    test('clear completes before a blocked folder fetch and the late fetch cannot repopulate it', () async {
+      final Completer<void> started = Completer<void>();
+      final Completer<void> gate = Completer<void>();
+      final Future<void> sync = ShortcutsFoldersStore.sync(
+        ownerId: 'owner-a',
+        folders: <FolderEntity>[_folder('f1')],
+        fetchItems: (String folderId) async {
+          started.complete();
+          await gate.future;
+          return Result.success<List<FavouriteWallEntity>?>(<FavouriteWallEntity>[_wall('a')]);
+        },
+      );
+      await started.future;
+
+      bool cleared = false;
+      final Future<void> clear = ShortcutsFoldersStore.clear().then((_) => cleared = true);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      final bool clearedBeforeFetchCompleted = cleared;
+      gate.complete();
+      await Future.wait(<Future<void>>[sync, clear]);
+
+      expect(clearedBeforeFetchCompleted, isTrue);
+      expect((await SharedPreferences.getInstance()).getString(PersistenceKeys.shortcutsFolders), '{"folders":[]}');
+    });
+
+    test('clear attempts rotation and shuffle removal if snapshot persistence fails', () async {
+      final _RejectFolderSnapshotStore store =
+          _RejectFolderSnapshotStore('flutter.${PersistenceKeys.shortcutsFolders}', <String, Object>{
+            'flutter.${PersistenceKeys.shortcutsFolders}': '{"ownerId":"owner-a","folders":[]}',
+            'flutter.${PersistenceKeys.shortcutsRotationFolder}': 'f1',
+            'flutter.${PersistenceKeys.shortcutsShuffleBags}': '{"f1":[0,1]}',
+          });
+      SharedPreferencesStorePlatform.instance = store;
+      SharedPreferences.resetStatic();
+
+      await expectLater(ShortcutsFoldersStore.clear(), throwsStateError);
+
+      expect(store.removed, contains('flutter.${PersistenceKeys.shortcutsRotationFolder}'));
+      expect(store.removed, contains('flutter.${PersistenceKeys.shortcutsShuffleBags}'));
+    });
+
+    test('clear still removes snapshot, rotation and shuffle keys if native paths fail', () async {
+      final _RejectFolderSnapshotStore store =
+          _RejectFolderSnapshotStore('flutter.${NativeAssetPathsStore.preferenceKey}.folders', <String, Object>{
+            'flutter.${PersistenceKeys.shortcutsFolders}': '{"ownerId":"owner-a","folders":[]}',
+            'flutter.${PersistenceKeys.shortcutsRotationFolder}': 'f1',
+            'flutter.${PersistenceKeys.shortcutsShuffleBags}': '{"f1":[0,1]}',
+          });
+      SharedPreferencesStorePlatform.instance = store;
+      SharedPreferences.resetStatic();
+
+      await expectLater(ShortcutsFoldersStore.clear(), throwsStateError);
+
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(PersistenceKeys.shortcutsFolders), '{"folders":[]}');
+      expect(store.removed, contains('flutter.${PersistenceKeys.shortcutsRotationFolder}'));
+      expect(store.removed, contains('flutter.${PersistenceKeys.shortcutsShuffleBags}'));
+    });
   });
 
   group('clearForUser', () {
@@ -354,6 +504,7 @@ void main() {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       expect(prefs.getString(PersistenceKeys.shortcutsFolders), '{"folders":[]}');
       expect(prefs.getString(PersistenceKeys.shortcutsRotationFolder), isNull);
+      expect(prefs.getInt(ShortcutsFoldersStore.sessionRevisionKey), 1);
     });
 
     test('does nothing when the snapshot owner is another user', () async {
@@ -368,6 +519,7 @@ void main() {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       expect(prefs.getString(PersistenceKeys.shortcutsFolders), saved);
       expect(prefs.getString(PersistenceKeys.shortcutsRotationFolder), 'f1');
+      expect(prefs.getInt(ShortcutsFoldersStore.sessionRevisionKey), isNull);
     });
   });
 }

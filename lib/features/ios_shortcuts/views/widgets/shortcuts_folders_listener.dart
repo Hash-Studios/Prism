@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_folders_store.dart';
+import 'package:Prism/features/ios_shortcuts/data/shortcuts_folders_sync_service.dart';
 import 'package:Prism/features/session/session.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
@@ -33,6 +35,7 @@ class _ShortcutsFoldersListenerState extends State<ShortcutsFoldersListener> {
   late String _lastUserId;
   late LoadStatus _foldersStatus;
   Timer? _debounce;
+  StreamSubscription<void>? _rotationFolderChanges;
 
   bool get _enabled => defaultTargetPlatform == TargetPlatform.iOS;
 
@@ -43,6 +46,9 @@ class _ShortcutsFoldersListenerState extends State<ShortcutsFoldersListener> {
     _wasLoggedIn = sessionState.session.loggedIn;
     _lastUserId = sessionState.session.userId;
     _foldersStatus = context.read<FoldersBloc>().state.status;
+    if (_enabled) {
+      _rotationFolderChanges = ShortcutsFoldersStore.rotationFolderChanges.listen((_) => _sync());
+    }
     if (_enabled && _isResolvedGuest(sessionState)) _run(ShortcutsFoldersStore.clear);
     _sync();
   }
@@ -50,6 +56,7 @@ class _ShortcutsFoldersListenerState extends State<ShortcutsFoldersListener> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _rotationFolderChanges?.cancel();
     super.dispose();
   }
 
@@ -61,24 +68,22 @@ class _ShortcutsFoldersListenerState extends State<ShortcutsFoldersListener> {
     _debounce = Timer(ShortcutsFoldersListener.editDebounce, _sync);
   }
 
-  void _sync() {
+  void _sync({SessionState? stateOverride}) {
     _debounce?.cancel();
     if (!_enabled || !mounted) return;
-    final session = context.read<SessionBloc>().state.session;
+    final session = (stateOverride ?? context.read<SessionBloc>().state).session;
     final FoldersState folders = context.read<FoldersBloc>().state;
     final String userId = session.userId;
-    if (!session.loggedIn || userId.isEmpty || folders.userId != userId || folders.status != LoadStatus.success) {
+    if (!session.loggedIn ||
+        userId.isEmpty ||
+        !app_state.prismUser.loggedIn ||
+        app_state.prismUser.id.trim() != userId.trim() ||
+        folders.userId != userId ||
+        folders.status != LoadStatus.success) {
       return;
     }
     final FoldersRepository repository = widget.repository ?? getIt<FoldersRepository>();
-    _run(
-      () => ShortcutsFoldersStore.sync(
-        ownerId: userId,
-        folders: folders.folders,
-        fetchItems: (folderId) =>
-            repository.fetchItems(folderId, userId: userId, limit: ShortcutsFoldersStore.maxItems),
-      ),
-    );
+    _run(() => ShortcutsFoldersSyncService(repository).sync(ownerId: userId, folders: folders.folders));
   }
 
   bool _isResolvedGuest(SessionState state) => state.status == LoadStatus.success && !state.session.loggedIn;
@@ -97,8 +102,9 @@ class _ShortcutsFoldersListenerState extends State<ShortcutsFoldersListener> {
     if (!_enabled) return;
     if (loggedOut || switchedAccount || _isResolvedGuest(current)) {
       _run(ShortcutsFoldersStore.clear);
+      if (!loggedOut && current.session.loggedIn) _sync(stateOverride: current);
     } else {
-      _sync();
+      _sync(stateOverride: current);
     }
   }
 

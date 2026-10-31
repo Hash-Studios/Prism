@@ -202,6 +202,11 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{
       PersistenceKeys.shortcutsFolders: '{"ownerId":"user-1","folders":[{"id":"f1"}]}',
       PersistenceKeys.shortcutsRotationFolder: 'f1',
+      PersistenceKeys.shortcutsShuffleBags: '{"f1":[0]}',
+      'offline.native_asset_paths.folders': '{"https://example.com/a.jpg":"a.jpg"}',
+      'offline.native_asset_paths.category': '{"https://example.com/c.jpg":"c.jpg"}',
+      'offline.native_asset_paths': '{"https://example.com/a.jpg":"a.jpg","https://example.com/c.jpg":"c.jpg"}',
+      'offline.native_asset_paths.private_owner': 'user-1',
     });
 
     await LocalAccountDataCleaner().clearForUser('user-1');
@@ -209,6 +214,9 @@ void main() {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     expect(prefs.getString(PersistenceKeys.shortcutsFolders), '{"folders":[]}');
     expect(prefs.getString(PersistenceKeys.shortcutsRotationFolder), isNull);
+    expect(prefs.getString(PersistenceKeys.shortcutsShuffleBags), isNull);
+    expect(prefs.getString('offline.native_asset_paths.folders'), '{}');
+    expect(prefs.getString('offline.native_asset_paths'), '{"https://example.com/c.jpg":"c.jpg"}');
   });
 
   group('iOS widget streak', () {

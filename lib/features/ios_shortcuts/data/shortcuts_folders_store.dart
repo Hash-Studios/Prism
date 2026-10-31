@@ -18,9 +18,14 @@ class ShortcutsFoldersStore {
 
   static const int maxFolders = 50;
   static const int maxItems = 200;
+  static const String sessionRevisionKey = 'shortcuts.session_revision';
 
   static Future<void>? _tail;
   static int _generation = 0;
+  static int _syncRevision = 0;
+  static final StreamController<void> _rotationFolderChanges = StreamController<void>.broadcast();
+
+  static Stream<void> get rotationFolderChanges => _rotationFolderChanges.stream;
 
   /// `{"ownerId", "folders": [{"id", "name", "itemCount", "updatedAt", "items": [{"id", "url"}]}]}`. Items are
   /// newest first, at most [maxItems], each with an https URL.
@@ -60,11 +65,18 @@ class ShortcutsFoldersStore {
     required FolderItemsFetcher fetchItems,
   }) {
     final int generation = _generation;
-    final List<FolderEntity> sorted = folders.toList()..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-    bool current() => generation == _generation && !_otherOwnerIsActive(ownerId);
-    return _enqueue(() async {
+    final int syncRevision = ++_syncRevision;
+    final String owner = ownerId.trim();
+    final List<FolderEntity> sorted = folders.where((folder) => folder.ownerId.trim() == owner).toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    bool current() =>
+        owner.isNotEmpty && generation == _generation && syncRevision == _syncRevision && _activeOwnerMatches(owner);
+    return () async {
+      final Future<void>? pendingWrite = _tail;
+      if (pendingWrite != null) await pendingWrite;
       if (!current()) return;
       final SharedPreferences prefs = await SharedPreferences.getInstance();
+      if (!current()) return;
       final String? rotation = prefs.getString(PersistenceKeys.shortcutsRotationFolder);
       // The rotation folder always makes the cut, even when the user has more than [maxFolders] folders.
       final List<FolderEntity> selected = <FolderEntity>[
@@ -103,15 +115,18 @@ class ShortcutsFoldersStore {
         );
       } catch (_) {}
       if (!current()) return;
-      await NativeAssetPathsStore.replaceGroup('folders', relativePaths);
-      if (!current()) return;
-      if (!await prefs.setString(PersistenceKeys.shortcutsFolders, encode(ownerId, entries))) {
-        throw StateError('Shortcuts folders could not be persisted');
-      }
-      if (rotation != null && !folders.any((folder) => folder.id == rotation)) {
-        await prefs.remove(PersistenceKeys.shortcutsRotationFolder);
-      }
-    });
+      await _enqueue(() async {
+        if (!current()) return;
+        await NativeAssetPathsStore.replaceGroup('folders', relativePaths, isCurrent: current);
+        if (!current()) return;
+        if (!await prefs.setString(PersistenceKeys.shortcutsFolders, encode(ownerId, entries))) {
+          throw StateError('Shortcuts folders could not be persisted');
+        }
+        if (rotation != null && !folders.any((folder) => folder.id == rotation)) {
+          await prefs.remove(PersistenceKeys.shortcutsRotationFolder);
+        }
+      });
+    }();
   }
 
   static Future<String?> rotationFolderId() async {
@@ -126,11 +141,13 @@ class ShortcutsFoldersStore {
         ? await prefs.remove(PersistenceKeys.shortcutsRotationFolder)
         : await prefs.setString(PersistenceKeys.shortcutsRotationFolder, folderId);
     if (!ok) throw StateError('Shortcuts rotation folder could not be persisted');
+    _rotationFolderChanges.add(null);
   });
 
   /// Drops the snapshot, the rotation folder and the intent's shuffle passes. A sync called before it is dropped.
   static Future<void> clear() {
     _generation++;
+    _syncRevision++;
     return _enqueue(_clearAll);
   }
 
@@ -138,6 +155,7 @@ class ShortcutsFoldersStore {
     final String owner = userId.trim();
     if (owner.isEmpty || _otherOwnerIsActive(owner)) return;
     _generation++;
+    _syncRevision++;
     await _enqueue(() async {
       if (_otherOwnerIsActive(owner)) return;
       final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -149,10 +167,33 @@ class ShortcutsFoldersStore {
 
   static Future<void> _clearAll() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await NativeAssetPathsStore.replaceGroup('folders', const <String, String>{});
-    if (!await prefs.setString(PersistenceKeys.shortcutsFolders, '{"folders":[]}') ||
-        !await prefs.remove(PersistenceKeys.shortcutsRotationFolder) ||
-        !await prefs.remove(PersistenceKeys.shortcutsShuffleBags)) {
+    bool cleared = true;
+    try {
+      cleared = await prefs.setInt(sessionRevisionKey, (prefs.getInt(sessionRevisionKey) ?? 0) + 1) && cleared;
+    } catch (_) {
+      cleared = false;
+    }
+    try {
+      await NativeAssetPathsStore.replaceGroup('folders', const <String, String>{});
+    } catch (_) {
+      cleared = false;
+    }
+    try {
+      cleared = await prefs.setString(PersistenceKeys.shortcutsFolders, '{"folders":[]}') && cleared;
+    } catch (_) {
+      cleared = false;
+    }
+    try {
+      cleared = await prefs.remove(PersistenceKeys.shortcutsRotationFolder) && cleared;
+    } catch (_) {
+      cleared = false;
+    }
+    try {
+      cleared = await prefs.remove(PersistenceKeys.shortcutsShuffleBags) && cleared;
+    } catch (_) {
+      cleared = false;
+    }
+    if (!cleared) {
       throw StateError('Shortcuts folders could not be cleared');
     }
   }
@@ -192,6 +233,9 @@ class ShortcutsFoldersStore {
     final String activeOwner = app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '';
     return activeOwner.isNotEmpty && activeOwner != owner;
   }
+
+  static bool _activeOwnerMatches(String owner) =>
+      app_state.prismUser.loggedIn && app_state.prismUser.id.trim() == owner;
 
   static Future<void> _enqueue(Future<void> Function() write) {
     final Future<void>? previous = _tail;
