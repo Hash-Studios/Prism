@@ -34,7 +34,7 @@ node tool/creator_directory_qa.cjs opt-out      # after device proof
 
 - `qa-viewer` (Riya QA) follows `qa-friend-1` to `qa-friend-4` and `qa-maker-1`. It blocks `qa-maker-8`.
 - `qa-friend-1` to `qa-friend-4` (Maya Chen, Arjun Mehta, Lena Fischer, Tom Okafor) have no walls.
-- `qa-maker-1` to `qa-maker-9` (Aria Bloom to Ivy Moreau) each have five walls. Makers 1 to 3 use Nature and Space. Makers 4 to 6 use Abstract and Neon. Makers 7 to 9 use Space and Minimal. Maker 9 is new: its first wall is 3 days old.
+- `qa-maker-1` to `qa-maker-9` (Aria Bloom to Ivy Moreau) each have five walls. Makers 1 to 3 use Nature and Space. Makers 4 to 6 use Abstract and Neon. Makers 7 to 9 use Space and Minimal. Maker 9 is new: its first wall is 3 days old. Makers 6 and 8 are older creators (walls 35 to 55 days old) with no activity, so maker 9's new-creator boost shows in the ranks.
 - Daily wall stats exist for makers 2, 4 and 7, so their ranks differ.
 
 ## What each seed proves
@@ -46,7 +46,3 @@ node tool/creator_directory_qa.cjs opt-out      # after device proof
 - The see-all filter for Nature, Abstract and Space lists the matching makers.
 - Following `qa-maker-2` offers "More like Kai Nakamura". The similar list comes from shared followers (friends 1 to 3 follow both maker-2 and maker-5) and shared categories (makers 1 to 3 share Nature).
 - `qa-maker-6` opts out with `opt-out`. Its directory doc is removed, and the directory drops to 8 creators.
-
-## Known gap
-
-`assert` checks that `qa-maker-9` ranks above an older creator with no activity. Every seeded maker's first wall is under 30 days old, so the seed has no such creator. That check fails on purpose until the seed gets an older zero-activity creator.

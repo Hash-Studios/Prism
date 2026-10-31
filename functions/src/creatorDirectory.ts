@@ -314,7 +314,7 @@ export type FollowedBy = {count: number; people: Array<{name: string; photo: str
 /**
  * People the viewer follows who also follow the creator. It never returns anyone the viewer does not follow, and
  * it returns names and photos only, never uids. A miss scans at most 500 of the viewer's follows and caches the
- * matching uids for a day. A hit re-reads only those follow edges. Shown people are checked live (deleted, disabled,
+ * matching uids for a day. A hit re-reads only those uids' edges on both sides. Shown people are checked live (deleted, disabled,
  * blocked in any direction) until three pass.
  */
 export async function followedBy(viewerUid: string, creatorUid: string, nowMs = Date.now()): Promise<FollowedBy> {
@@ -352,8 +352,12 @@ export async function followedBy(viewerUid: string, creatorUid: string, nowMs = 
     Array.isArray(cached.matches)) {
     const matches = (cached.matches as unknown[]).filter((uid): uid is string => typeof uid === "string")
       .slice(0, FOLLOWING_SCAN_CAP);
-    const edges = await getDocs(matches.map((uid) => following.doc(uid)));
-    ordered = matches.filter((_, i) => edges[i].exists);
+    const creatorFollowers = db.collection(PROFILES).doc(creatorUid).collection("followers");
+    const edges = await getDocs([
+      ...matches.map((uid) => following.doc(uid)),
+      ...matches.map((uid) => creatorFollowers.doc(uid)),
+    ]);
+    ordered = matches.filter((_, i) => edges[i].exists && edges[matches.length + i].exists);
   } else {
     const followingSnap = await following.orderBy("createdAt", "desc").limit(FOLLOWING_SCAN_CAP).get();
     const followed = followingSnap.docs.map((d) => d.id).filter((uid) => uid !== creatorUid && uid !== viewerUid);

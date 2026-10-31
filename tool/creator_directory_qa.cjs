@@ -431,7 +431,12 @@ async function evidence() {
   });
   check('followedBy qa-maker-3: count 2', () => assert.equal(followedBy['qa-maker-3'].count, 2));
   check('followedBy qa-maker-6: count 0', () => assert.equal(followedBy['qa-maker-6'].count, 0));
-  const callable = await callFollowedBy(db, creatorDirectory);
+  let callable;
+  try {
+    callable = await callFollowedBy(db, creatorDirectory);
+  } catch (error) {
+    callable = {status: 0, body: {error: {message: String(error?.message ?? error)}}};
+  }
   check('HTTP getFollowedBy(qa-maker-2) returns count 4 and only count/people', () => {
     assert.equal(callable.status, 200, JSON.stringify(callable.body.error ?? {}));
     assert.equal(callable.body.result.count, 4);
@@ -442,7 +447,7 @@ async function evidence() {
   write('evidence.json', {project: PROJECT, proof: state.proof, checkedAt: new Date().toISOString(), passed: failed.length === 0,
     checks, listed: ids.map((id) => ({uid: id, rank: docs[id].rank, followerCount: docs[id].followerCount, categories: docs[id].categories})),
     followedBy: Object.fromEntries(Object.entries(followedBy).map(([k, v]) => [k, {count: v.count, names: v.people.map((p) => p.name)}])),
-    callable: {status: callable.status, count: callable.body.result?.count, names: callable.body.result?.people.map((p) => p.name)}});
+    callable: {status: callable.status, count: callable.body.result?.count, names: callable.body.result?.people?.map((p) => p.name)}});
   if (failed.length) throw Error(`${failed.length} check(s) failed; see evidence.json: ${failed.map((c) => c.name).join('; ')}`);
   console.log(`All ${checks.length} checks passed; evidence at ${runtime}/evidence.json. This is backend fixture evidence, not device proof.`);
 }

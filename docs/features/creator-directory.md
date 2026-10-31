@@ -109,11 +109,11 @@ At 50,000 walls and 20,000 edges, the job reads about 125,000 docs a day. That c
 - The viewer's own profile returns `{count: 0, people: []}`.
 - The callable scans the viewer's newest 500 follows. It checks the creator's followers in batches of 30.
 - It returns nothing when the viewer or the creator is deleted, closed, disabled in Auth, or blocked in either direction.
-- It caches the matching uids for each viewer and creator pair for 24 hours. A cache hit re-reads only those follow edges, so an unfollow shows at once.
+- It caches the matching uids for each viewer and creator pair for 24 hours. A cache hit re-reads both follow edges of each cached match (the viewer's and the creator's), so an unfollow on either side shows at once.
 - It checks each named person live (deleted, closed, disabled, blocked either way) and skips them until 3 pass.
 - Every call counts toward 300 lookups per viewer per day. Later calls fail with `resource-exhausted`.
 
-A cache miss costs at most about 500 + 17 reads for the scan, plus about 10 reads for the viewer and creator checks and about 8 reads per named person. A cache hit costs 1 read per cached match, plus the same checks.
+A cache miss costs at most about 500 + 17 reads for the scan, plus about 10 reads for the viewer and creator checks and about 8 reads per named person. A cache hit costs 2 reads per cached match, plus the same checks.
 
 ### App
 

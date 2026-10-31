@@ -12209,12 +12209,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String creatorsFollowedByOne(String first) {
-    return 'Seguido por $first';
+    return 'Le sigue $first';
   }
 
   @override
   String creatorsFollowedByTwo(String first, String second) {
-    return 'Seguido por $first y $second';
+    return 'Le siguen $first y $second';
   }
 
   @override
@@ -12225,7 +12225,7 @@ class AppLocalizationsEs extends AppLocalizations {
       other: '$others personas más que sigues',
       one: '1 persona más que sigues',
     );
-    return 'Seguido por $first, $second y $_temp0';
+    return 'Le siguen $first, $second y $_temp0';
   }
 
   @override

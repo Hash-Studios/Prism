@@ -12394,12 +12394,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String creatorsFollowedByOne(String first) {
-    return 'Seguido por $first';
+    return 'Perfil seguido por $first';
   }
 
   @override
   String creatorsFollowedByTwo(String first, String second) {
-    return 'Seguido por $first e $second';
+    return 'Perfil seguido por $first e $second';
   }
 
   @override
@@ -12407,10 +12407,10 @@ class AppLocalizationsPt extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       others,
       locale: localeName,
-      other: 'mais $others que você segue',
-      one: 'mais 1 que você segue',
+      other: 'mais $others pessoas que segues',
+      one: 'mais 1 pessoa que segues',
     );
-    return 'Seguido por $first, $second e $_temp0';
+    return 'Perfil seguido por $first, $second e $_temp0';
   }
 
   @override
@@ -24816,12 +24816,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String creatorsFollowedByOne(String first) {
-    return 'Seguido por $first';
+    return 'Perfil seguido por $first';
   }
 
   @override
   String creatorsFollowedByTwo(String first, String second) {
-    return 'Seguido por $first e $second';
+    return 'Perfil seguido por $first e $second';
   }
 
   @override
@@ -24829,10 +24829,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
     String _temp0 = intl.Intl.pluralLogic(
       others,
       locale: localeName,
-      other: 'mais $others que você segue',
-      one: 'mais 1 que você segue',
+      other: 'mais $others pessoas que você segue',
+      one: 'mais 1 pessoa que você segue',
     );
-    return 'Seguido por $first, $second e $_temp0';
+    return 'Perfil seguido por $first, $second e $_temp0';
   }
 
   @override

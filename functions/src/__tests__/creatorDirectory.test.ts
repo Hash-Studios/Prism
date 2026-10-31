@@ -281,6 +281,18 @@ test("followedBy caches its result for a day", async (t) => {
   });
 });
 
+test("a cached person who unfollows the creator is dropped on the next hit", async (t) => {
+  const store = installFollowDb(t, {
+    "profiles/v/following/a": {targetUid: "a", createdAt: ts(NOW)},
+    "profiles/c/followers/a": {followerUid: "a", createdAt: ts(NOW)},
+    "profiles/a": {name: "Ann"},
+  });
+
+  assert.deepEqual(await followedBy("v", "c", NOW), {count: 1, people: [{name: "Ann", photo: ""}]});
+  store.delete("profiles/c/followers/a");
+  assert.deepEqual(await followedBy("v", "c", NOW + 1000), {count: 0, people: []});
+});
+
 test("followedBy returns zero when the viewer follows nobody", async (t) => {
   installFollowDb(t);
 

@@ -207,7 +207,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/mood/:moodId', page: MoodRoute.page),
     AutoRoute(path: '/gallery', page: GalleryRoute.page),
     AutoRoute(path: '/requests', page: WallRequestsRoute.page),
-    AutoRoute(path: '/creators', page: CreatorsRoute.page),
+    AutoRoute(path: '/creators', page: CreatorsRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/challenges/:challengeId', page: WeeklyChallengeRoute.page),
     AutoRoute(path: '/user/:identifier', page: ProfileRoute.page),
     AutoRoute(path: '/followers', page: FollowersRoute.page),
