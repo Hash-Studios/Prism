@@ -88,6 +88,8 @@ Wallpaper details show the saved text immediately. An older metadata refresh can
 
 Resubmission uploads fresh original and thumbnail bytes through the normal upload quota path. `submitWallResubmission` verifies those completed uploads and creates a new pending wall. `resubmitOf` points to the immediate rejected document. A private root record limits the original lineage to three lifetime linked admissions. Rejection, withdrawal, and history deletion do not return an attempt. An identical operation retry returns its original result, even after the new wall was deleted.
 
+After a successful resubmission, the app returns to the existing **Review status** page. Back does not reopen the submitted **Fix your upload** form, so a second save cannot start another linked attempt by accident.
+
 The local weekly counter uses durable receipts keyed by owner and operation. A successful retry does not charge the counter again after restart or an interrupted local write. A retry from an earlier week does not charge the current week. Local account cleanup removes the owner's receipts. These receipts do not replace server quota checks. After quota persistence, the app rechecks the account before it updates the signed-in user's upload fields. It also rechecks the account before it requests the first-upload reward.
 
 The limit applies only to callable-admitted linked resubmissions. Existing general-create rules still permit an unrelated upload of the same artwork. The feature is not a universal duplicate-image limit.
