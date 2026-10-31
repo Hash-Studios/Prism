@@ -23,7 +23,7 @@ const DELETED_NAME = "Deleted Account";
 const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens", "rewardedAdUsers", "creatorTips"];
 /** Docs keyed `<uid>_<day>`. */
 const UID_PREFIX_KEYED = [
-  "coinAdRateDaily", "coinRefundDaily", "tipRateDaily", "contentReportRateDaily", "userBlockRateDaily", REQUEST_RATE_DAILY, VOTE_RATE_DAILY,
+  "coinAdRateDaily", "coinRefundDaily", "contentReportRateDaily", "userBlockRateDaily", REQUEST_RATE_DAILY, VOTE_RATE_DAILY,
 ];
 /** Public docs that carry the caller's email: they stay, with the creator details blanked. */
 const SCRUBBED_BY_EMAIL = ["walls", "setups"];
@@ -150,6 +150,8 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   const queueUpdate: QueueUpdate = (ref, data) => track(ref, writer.update(ref, data));
   try {
     await queueDeleteWhereEqual(COIN_TRANSACTIONS, "userId", callerUid, queue);
+    await queueDeleteWhereEqual("tipRateDaily", "senderUid", callerUid, queue);
+    await queueDeleteWhereEqual("tipRateDaily", "creatorUid", callerUid, queue);
     await queueDeleteWhereEqual("rewardedAdSessions", "uid", callerUid, queue);
     await queueDeleteWhereEqual(AI_GENERATIONS, "userId", callerUid, queue);
     await queueDeleteWhereEqual(GITHUB_UPLOADS, "uid", callerUid, queue);

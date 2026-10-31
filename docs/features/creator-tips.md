@@ -4,6 +4,8 @@ A signed-in user can tip a creator Prism Coins from a wall or from the creator p
 
 Coins move only through the `tipCreator` callable. Clients cannot write `coins` or `coinTransactions`.
 
+UID components in tip, ledger and daily-rate document IDs are escaped with `encodeURIComponent`, with underscores also escaped as `%5F`. This keeps UIDs containing underscores separate from the key delimiters.
+
 ## The tip
 
 | Part | Rule |
@@ -20,13 +22,13 @@ Coins move only through the `tipCreator` callable. Clients cannot write `coins` 
 | Ledger, sender | `coinTransactions/ctx_tip_{sender}_{requestId}`: `action: tipSent`, `delta: -amount`, `tipId`, `counterpartyUid: creator`, `wallId`. |
 | Ledger, creator | `coinTransactions/ctx_tipin_{sender}_{requestId}`: `action: tipReceived`, `delta: +amount`, the same `tipId`, `counterpartyUid: sender`, `wallId`. |
 | Idempotency key | `requestId` from the client. `tipId = tip_{sender}_{requestId}`. A retry with the same `requestId` returns the stored result and moves no coins. |
-| Transaction | One Firestore transaction reads both users, both blocks, the caps, the wall and the sender ledger doc. Then it writes both balances, both ledger docs, the caps, the creator tips aggregate and the wall tipper marker. |
+| Transaction | One Firestore transaction reads both users, both blocks, the caps, the wall and the sender ledger doc. Each transaction attempt chooses its UTC day, then writes both balances, both ledger docs, the caps, the creator tips aggregate, the wall tipper marker and the daily inbox item. |
 | XP, quests, badges | `tipCreator` never calls `grantXp`. A received tip counts for no quest, badge, leaderboard, rank or creator milestone. |
 | Refunds | `tipSent` is not in the refundable actions, so a tip cannot be refunded. |
-| Account deletion | `deleteAccount` deletes `creatorTips/{uid}` and `tipRateDaily/{uid}_{day}` with the other per-user docs. |
-| Public signal | `wallpaper_stats/{wall id field}.tippers` counts distinct senders on the wall (`wallTippers/{hash}` marks each sender once). Only verified senders 7 days old or more can tip, so only they count. The app shows it only when it is 3 or more, and never shows names or amounts. |
+| Account deletion | `deleteAccount` closes the account deletion barrier, deletes `creatorTips/{uid}`, and deletes sender, receiver and pair rate docs by their exact `senderUid` or `creatorUid` fields. Tip transactions read both accounts' deletion barriers. |
+| Public signal | `wallpaper_stats/{wall id field}.tippers` counts distinct senders on the wall (`wallTippers/{hash}` hashes the JSON pair `[normalized stats ID, sender UID]` and marks each sender once, even when wall documents share a stats ID). Only verified senders 7 days old or more can tip, so only they count. The app shows it only when it is 3 or more, and never shows names or amounts. |
 | Creator stats | `creatorTips/{creator}` keeps tips and coins per ISO week (last 9 weeks) and per wall. `getCreatorStats` returns them. |
-| Push | One push a creator a UTC day, on the first tip. Later tips that day rewrite the same inbox item with the day's total and send no push. |
+| Push | One push a creator a UTC day, on the first tip. The transaction writes the same inbox item with the day's total, so an older notification cannot overwrite a newer total. Only the first tip attempts a push after commit. |
 
 ## Failure cases
 
@@ -59,8 +61,8 @@ Before code, a reviewer checked the table for coin farming and laundering throug
 | Can two accounts tip each other in a ring to farm XP, ranks, badges, quests, leaderboards or milestones? | No. None of them read `tipReceived` credits. | None. |
 | Can alts fake "Tipped by N"? | Partly: 3 alts that pass the sender checks make "Tipped by 3" for 30 coins. | Senders must be verified, not anonymous, and 7 days old. The signal stays quiet (3 or more, no names, no amounts). |
 | Refunds | `tipSent` is not refundable. | Test added. |
-| Account deletion | The ledger rows go; `creatorTips` and `tipRateDaily` were left behind. | Both added to `deleteAccount`. |
-| UTC day edge | The caps reset at 00:00 UTC, so a burst across midnight can reach 2 times a cap. | Accepted and noted in the code. |
+| Account deletion | The ledger rows go; `creatorTips` and `tipRateDaily` were left behind. | The aggregate and all three rate shapes are removed by exact UID ownership, after closing the account deletion barrier. |
+| UTC day edge | The caps reset at 00:00 UTC, so a burst across midnight can reach 2 times a cap. A transaction retry uses its attempt's current UTC day. | Accepted and noted in the code. |
 
 ## Deploy order
 

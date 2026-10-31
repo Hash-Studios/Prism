@@ -181,8 +181,10 @@ export const tipCreator = onCall(
       throw new HttpsError("invalid-argument", "requestId is invalid.");
     }
 
-    const tipId = `tip_${uid}_${requestId}`;
-    const txId = `ctx_tip_${uid}_${requestId}`;
+    const senderKey = encodeURIComponent(uid).replace(/_/g, "%5F");
+    const creatorKey = encodeURIComponent(creatorUid).replace(/_/g, "%5F");
+    const tipId = `tip_${senderKey}_${requestId}`;
+    const txId = `ctx_tip_${senderKey}_${requestId}`;
     const txRef = db.collection("coinTransactions").doc(txId);
     // A retry of a finished tip returns its result even if the creator or the day changed since.
     const done = await txRef.get();
@@ -196,36 +198,31 @@ export const tipCreator = onCall(
     }
     if (await tipIo.creatorDisabled(creatorUid)) return refused("tip_creator_unavailable");
 
-    const today = utcDateString(new Date(nowMs));
     const senderRef = db.collection("usersv2").doc(uid);
     const creatorRef = db.collection("usersv2").doc(creatorUid);
-    const creatorTxRef = db.collection("coinTransactions").doc(`ctx_tipin_${uid}_${requestId}`);
-    const sentRef = db.collection("tipRateDaily").doc(`${uid}_${today}`);
-    const receivedRef = db.collection("tipRateDaily").doc(`recv_${creatorUid}_${today}`);
-    const pairRef = db.collection("tipRateDaily").doc(`pair_${uid}_${creatorUid}_${today}`);
+    const creatorTxRef = db.collection("coinTransactions").doc(`ctx_tipin_${senderKey}_${requestId}`);
     const tipsRef = db.collection("creatorTips").doc(creatorUid);
     const wallRef = wallId ? db.collection("walls").doc(wallId) : null;
-    const tipperRef = wallId ? db.collection("wallTippers").doc(hash(`${wallId}:${uid}`)) : null;
 
     let response: TipResponse | null = null;
-    let notice: {
-      senderName: string;
-      creatorEmail: string;
-      wallTitle: string;
-      tipsToday: number;
-      coinsToday: number;
-    } | null = null;
+    let notice: {payload: PersonalPayload; recipient: PushRecipient; push: boolean} | null = null;
     await db.runTransaction(async (tx) => {
+      const nowMs = Date.now();
+      const today = utcDateString(new Date(nowMs));
+      const sentRef = db.collection("tipRateDaily").doc(`${senderKey}_${today}`);
+      const receivedRef = db.collection("tipRateDaily").doc(`recv_${creatorKey}_${today}`);
+      const pairRef = db.collection("tipRateDaily").doc(`pair_${senderKey}_${creatorKey}_${today}`);
       response = null;
       notice = null;
       const [
-        txSnap, senderSnap, creatorSnap, barrierSnap, blockedBySnap, blockingSnap,
-        sentSnap, receivedSnap, pairSnap, tipsSnap, wallSnap, tipperSnap, approvedSnap,
+        txSnap, senderSnap, creatorSnap, barrierSnap, senderBarrierSnap, blockedBySnap, blockingSnap,
+        sentSnap, receivedSnap, pairSnap, tipsSnap, wallSnap, approvedSnap,
       ] = await Promise.all([
         tx.get(txRef),
         tx.get(senderRef),
         tx.get(creatorRef),
         tx.get(db.collection("creatorDeletionState").doc(creatorUid)),
+        tx.get(db.collection("creatorDeletionState").doc(uid)),
         tx.get(creatorRef.collection("blockedUsers").doc(uid)),
         tx.get(senderRef.collection("blockedUsers").doc(creatorUid)),
         tx.get(sentRef),
@@ -233,7 +230,6 @@ export const tipCreator = onCall(
         tx.get(pairRef),
         tx.get(tipsRef),
         wallRef ? tx.get(wallRef) : Promise.resolve(null),
-        tipperRef ? tx.get(tipperRef) : Promise.resolve(null),
         wallRef ? Promise.resolve(null) : tx.get(
           db.collection("walls").where("creatorUid", "==", creatorUid).where("review", "==", true).limit(20),
         ),
@@ -243,7 +239,7 @@ export const tipCreator = onCall(
         return;
       }
       const sender = senderSnap.data();
-      if (!senderSnap.exists || !sender || sender.deleted === true) {
+      if (!senderSnap.exists || !sender || sender.deleted === true || senderBarrierSnap.data()?.closed === true) {
         throw new HttpsError("not-found", "User profile was not found.");
       }
       const previous = int(sender.coins, 0);
@@ -257,7 +253,12 @@ export const tipCreator = onCall(
         response = refused("tip_wall_invalid", previous);
         return;
       }
-      if (approvedSnap && !approvedSnap.docs.some((doc) => approvedWall(doc.data()))) {
+      let approvedPage = approvedSnap;
+      while (approvedPage && approvedPage.size === 20 && !approvedPage.docs.some((doc) => approvedWall(doc.data()))) {
+        approvedPage = await tx.get(db.collection("walls").where("creatorUid", "==", creatorUid)
+          .where("review", "==", true).startAfter(approvedPage.docs[approvedPage.docs.length - 1]).limit(20));
+      }
+      if (approvedPage && !approvedPage.docs.some((doc) => approvedWall(doc.data()))) {
         response = refused("tip_creator_unavailable", previous);
         return;
       }
@@ -284,6 +285,9 @@ export const tipCreator = onCall(
         return;
       }
 
+      const statsId = wall ? statsIdOf(wall) : "";
+      const tipperRef = statsId ? db.collection("wallTippers").doc(hash(JSON.stringify([statsId, uid]))) : null;
+      const tipperSnap = tipperRef ? await tx.get(tipperRef) : null;
       const at = admin.firestore.Timestamp.fromMillis(nowMs);
       const link = {tipId, wallId};
       const senderLedger = coinTransactionDoc({
@@ -314,23 +318,36 @@ export const tipCreator = onCall(
       tx.update(creatorRef, {coins: creatorPrevious + amount});
       tx.set(txRef, {...senderLedger, ...link, counterpartyUid: creatorUid});
       tx.set(creatorTxRef, {...creatorLedger, ...link, counterpartyUid: uid});
-      tx.set(sentRef, {day: today, count: sentToday + 1});
-      tx.set(pairRef, {day: today, count: 1});
-      tx.set(receivedRef, {day: today, ...receivedNow});
+      tx.set(sentRef, {day: today, count: sentToday + 1, senderUid: uid});
+      tx.set(pairRef, {day: today, count: 1, senderUid: uid, creatorUid});
+      tx.set(receivedRef, {day: today, ...receivedNow, creatorUid});
       tx.set(tipsRef, addTip(tipsSnap.data(), amount, wallId, nowMs));
-      const statsId = wall ? statsIdOf(wall) : "";
       if (tipperRef && statsId && !tipperSnap?.exists) {
         tx.create(tipperRef, {wallId, at});
         tx.set(db.collection(WALLPAPER_STATS).doc(statsId),
           {tippers: admin.firestore.FieldValue.increment(1)}, {merge: true});
       }
-      notice = {
-        senderName: str(sender.name) || str(sender.username) || "A Prism user",
-        creatorEmail: str(creator.email),
-        wallTitle: str(wall?.title),
-        tipsToday: receivedNow.count,
-        coinsToday: receivedNow.coins,
-      };
+      const first = receivedNow.count === 1;
+      const payload = {
+        ...notificationCopyPayload(first ?
+          {kind: "tipReceived", senderName: str(sender.name) || str(sender.username) || "A Prism user",
+            amount, wallTitle: str(wall?.title)} :
+          {kind: "tipsReceived", tipCount: receivedNow.count, coins: receivedNow.coins}),
+        data: {route: "creator_stats", url: "prism://creator-stats", notification_kind: "tip_received"},
+        modifier: str(creator.email) || creatorUid,
+        channelId: "gifts",
+        docId: `tips_${hash(`${creatorUid}:${today}`).slice(0, 32)}`,
+        pushOnly: true,
+      } satisfies PersonalPayload;
+      tx.set(db.collection("notifications").doc(payload.docId), {
+        notification: {title: payload.title, body: payload.body},
+        message: {kind: payload.message.kind, args: payload.message.args},
+        data: {...payload.data, imageUrl: "", pageName: "", arguments: []},
+        modifier: payload.modifier,
+        pushHandled: true,
+        createdAt: at,
+      });
+      notice = {payload, recipient: {uid: creatorUid, email: str(creator.email)}, push: first};
       response = {
         success: true,
         changed: true,
@@ -346,31 +363,10 @@ export const tipCreator = onCall(
     });
     if (!response) throw new HttpsError("internal", "Tip did not finish.");
 
-    const sent = notice as {
-      senderName: string;
-      creatorEmail: string;
-      wallTitle: string;
-      tipsToday: number;
-      coinsToday: number;
-    } | null;
+    const sent = notice as {payload: PersonalPayload; recipient: PushRecipient; push: boolean} | null;
     if (sent) {
-      const first = sent.tipsToday === 1;
       try {
-        await tipIo.notify(
-          {
-            ...notificationCopyPayload(first ?
-              {kind: "tipReceived", senderName: sent.senderName, amount, wallTitle: sent.wallTitle} :
-              {kind: "tipsReceived", tipCount: sent.tipsToday, coins: sent.coinsToday}),
-            data: {route: "creator_stats", url: "prism://creator-stats", notification_kind: "tip_received"},
-            // The in-app inbox lists personal notifications by the recipient's email.
-            modifier: sent.creatorEmail || creatorUid,
-            channelId: "gifts",
-            // One inbox item a creator a day: later tips rewrite it with the day's total and send no push.
-            docId: `tips_${hash(`${creatorUid}:${today}`).slice(0, 32)}`,
-          },
-          {uid: creatorUid, email: sent.creatorEmail},
-          first,
-        );
+        await tipIo.notify(sent.payload, sent.recipient, sent.push);
       } catch (err) {
         logger.warn("tipCreator: notification failed.", {err});
       }

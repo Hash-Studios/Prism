@@ -2738,7 +2738,7 @@ class CoinsService with WidgetsBindingObserver {
         applyRoutineXpReply(data, userId: userId, session: generation);
       }
       final bool shopReplay = shopSuccess && data['reason'] == 'duplicate';
-      if (!shopReplay && data['currentBalance'] is num) {
+      if (name != 'tipCreator' && !shopReplay && data['currentBalance'] is num) {
         _applyLocalBalance(parseIntOr(data['currentBalance']), delta: parseIntOr(data['delta']));
       }
       if (!_isCurrentOwner(userId, generation)) return null;
@@ -3326,6 +3326,9 @@ class CoinsService with WidgetsBindingObserver {
   /// Tips [creatorUid] a fixed [amount] of coins, linked to [wallId] (the wall document ID) when it is set.
   Future<TipResult> tipCreator({required String creatorUid, required int amount, String? wallId}) async {
     if (!_canMutateCoins()) return const TipResult(TipOutcome.failed, reason: 'not_logged_in');
+    final String userId = app_state.prismUser.id;
+    _ensureEconomyUser(userId);
+    final int generation = _economySessionGeneration;
     // The scope leaves out the amount, so a retry after a lost reply replays the first tip instead of sending a second.
     final _EconomyReply? reply = await _economyPurchase(
       'tipCreator',
@@ -3334,6 +3337,15 @@ class CoinsService with WidgetsBindingObserver {
       sourceTag: 'coins.tip',
     );
     if (reply == null) return const TipResult(TipOutcome.failed, reason: 'session_changed');
+    // Tip receipts retain the original balance, and eligibility refusals carry a placeholder zero.
+    try {
+      await refreshBalance();
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.tip.balance_refresh', error: error, stackTrace: stackTrace);
+    }
+    if (!_isCurrentOwner(userId, generation)) {
+      return const TipResult(TipOutcome.failed, reason: 'session_changed');
+    }
     final String reason = reply.reason;
     if (reply.success) {
       final int sent = parseIntOr(reply.data['amount'], fallback: -reply.delta);

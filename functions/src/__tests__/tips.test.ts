@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
 import {Timestamp} from "firebase-admin/firestore";
 import {HttpsError} from "firebase-functions/v2/https";
+import {db} from "../common";
 import {refundableDelta} from "../coinsCallables";
 import {readCreatorStats} from "../creatorStats";
 import {hash} from "../creatorStatsHistory";
@@ -241,7 +242,7 @@ test("a sender may send 5 tips a UTC day and tip one creator once a day", async 
   assert.equal(coins(store, "fan"), 1000 - 25 - 10 * (TIPS_SENT_PER_DAY - 1));
 });
 
-test("a creator gets at most 300 tip coins a UTC day", async (t) => {
+test("a creator gets at most 100 tip coins a UTC day", async (t) => {
   const {store} = setup(t, {
     "tipRateDaily/recv_maker_2026-10-28": {day: "2026-10-28", count: 6, coins: TIP_COINS_RECEIVED_PER_DAY - 20},
   });
@@ -250,7 +251,7 @@ test("a creator gets at most 300 tip coins a UTC day", async (t) => {
   const fits = await tip({amount: 10, requestId: "request_0002"});
   assert.equal(fits.success, true);
   assert.deepEqual(store.get("tipRateDaily/recv_maker_2026-10-28"),
-    {day: "2026-10-28", count: 7, coins: TIP_COINS_RECEIVED_PER_DAY - 10});
+    {day: "2026-10-28", count: 7, coins: TIP_COINS_RECEIVED_PER_DAY - 10, creatorUid: "maker"});
 });
 
 test("the caps reset at 00:00 UTC and not before", async (t) => {
@@ -264,7 +265,7 @@ test("the caps reset at 00:00 UTC and not before", async (t) => {
   const next = await tip({requestId: "request_0002"});
   assert.equal(next.success, true);
   assert.equal(store.get("tipRateDaily/fan_2026-10-29")?.count, 1);
-  assert.deepEqual(store.get("tipRateDaily/recv_maker_2026-10-29"), {day: "2026-10-29", count: 1, coins: 25});
+  assert.deepEqual(store.get("tipRateDaily/recv_maker_2026-10-29"), {day: "2026-10-29", count: 1, coins: 25, creatorUid: "maker"});
 });
 
 test("the first tip of the day pushes and later tips only rewrite the same inbox item", async (t) => {
@@ -333,4 +334,132 @@ test("creator stats show tips per week and per approved wall", async (t) => {
   assert.deepEqual(stats.tips.weeks[7], {week: "2026-W44", start: "2026-10-26T00:00:00.000Z", count: 2, coins: 35});
   assert.equal(stats.tips.weeks[6].count, 0);
   assert.deepEqual(stats.tips.walls, [{wallId: "neon", count: 1, coins: 25}]);
+});
+
+test("profile tips find an approved wall after more than 20 Studio walls", async (t) => {
+  const {store} = setup(t);
+  store.delete("walls/neon");
+  for (let i = 0; i < 20; i++) {
+    store.set(`walls/studio${String(i).padStart(2, "0")}`, {creatorUid: "maker", review: true, wallpaper_provider: "prism", origin: "studio"});
+  }
+  store.set("walls/z_real", {id: "REAL", creatorUid: "maker", review: true, wallpaper_provider: "prism"});
+  assert.equal((await tip()).success, true);
+});
+
+test("the transaction uses the current UTC day after eligibility crosses midnight", async (t) => {
+  const late = new Date("2026-10-28T23:59:59.999Z");
+  const {store} = setup(t, {}, late);
+  t.mock.method(tipIo, "creatorDisabled", async () => {
+    t.mock.timers.setTime(late.getTime() + 1);
+    return false;
+  });
+  assert.equal((await tip()).success, true);
+  assert.equal(store.get("tipRateDaily/fan_2026-10-29")?.count, 1);
+  assert.equal(store.has("tipRateDaily/fan_2026-10-28"), false);
+});
+
+test("a delayed first push cannot overwrite the newer inbox total", async (t) => {
+  const {store} = setup(t);
+  let release!: () => void;
+  let started!: () => void;
+  const waiting = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  const blocked = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  t.mock.method(tipIo, "notify", async (payload: {docId: string; pushOnly?: boolean; title: string},
+    _recipient: unknown, push: boolean) => {
+    if (push) {
+      started(); await blocked;
+    }
+    if (!payload.pushOnly) store.set(`notifications/${payload.docId}`, {notification: {title: payload.title}});
+    return true;
+  });
+  const first = tip();
+  await waiting;
+  await tip({requestId: "request_0002"}, "fan2");
+  release();
+  await first;
+  const inbox = store.get(`notifications/tips_${hash("maker:2026-10-28").slice(0, 32)}`);
+  assert.equal((inbox?.notification as Doc)?.title, "You got 2 tips today");
+});
+
+test("a sender whose account deletion has started cannot transfer coins", async (t) => {
+  const {store} = setup(t, {"creatorDeletionState/fan": {closed: true}});
+  await assert.rejects(tip(), {code: "not-found"});
+  assert.equal(coins(store, "maker"), 5);
+});
+
+test("sender IDs and request IDs cannot alias another sender's ledger", async (t) => {
+  const {store} = setup(t, {"usersv2/fan_request": {coins: 200}});
+  await tip({requestId: "request_request_0001"});
+  const result = await tip({requestId: "request_0001"}, "fan_request");
+  assert.equal(result.success, true);
+  assert.equal(coins(store, "fan_request"), 175);
+  assert.equal(coins(store, "maker"), 55);
+});
+
+test("duplicate wall documents do not count one sender twice on the same public wall", async (t) => {
+  const {store} = setup(t, {
+    "walls/duplicate": {id: "NEON", creatorUid: "maker", review: true, wallpaper_provider: "prism"},
+  });
+  await tip({wallId: "neon"});
+  t.mock.timers.setTime(NOW.getTime() + DAY);
+  await tip({wallId: "duplicate", requestId: "request_0002"});
+  assert.equal(store.get("wallpaper_stats/NEON")?.tippers, 1);
+});
+
+test("a retried transaction crossing midnight charges the new day's cap", async (t) => {
+  const late = new Date("2026-10-28T23:59:59.999Z");
+  const {store} = setup(t, {}, late);
+  const original = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", async (callback: (tx: unknown) => Promise<unknown>) => {
+    await callback({
+      get: (ref: {get: () => Promise<unknown>}) => ref.get(),
+      set: () => undefined,
+      update: () => undefined,
+      create: () => undefined,
+    });
+    t.mock.timers.setTime(late.getTime() + 1);
+    return original(callback);
+  });
+  assert.equal((await tip()).success, true);
+  assert.equal(store.has("tipRateDaily/fan_2026-10-28"), false);
+  assert.equal(store.get("tipRateDaily/fan_2026-10-29")?.count, 1);
+});
+
+test("a sender ID cannot alias the receiver daily cap", async (t) => {
+  const {store} = setup(t, {"usersv2/recv_maker": {coins: 200}});
+  assert.equal((await tip({}, "recv_maker")).success, true);
+  assert.equal(store.get("tipRateDaily/recv%5Fmaker_2026-10-28")?.senderUid, "recv_maker");
+  assert.equal(store.get("tipRateDaily/recv_maker_2026-10-28")?.coins, 25);
+});
+
+test("concurrent senders cannot exceed the creator receive cap", async (t) => {
+  const {store} = setup(t, {
+    "tipRateDaily/recv_maker_2026-10-28": {day: "2026-10-28", count: 2, coins: 75},
+  });
+  const results = await Promise.all([tip(), tip({}, "fan2")]);
+  assert.deepEqual(results.map((result) => result.success).sort(), [false, true]);
+  assert.equal(results.find((result) => !result.success)?.reason, "tip_creator_limit");
+  assert.equal(coins(store, "maker"), 30);
+  assert.equal(store.get("tipRateDaily/recv_maker_2026-10-28")?.coins, 100);
+});
+
+test("concurrent same-key retries debit once even when the amount changes", async (t) => {
+  const {store} = setup(t);
+  const results = await Promise.all([tip(), tip({amount: 50})]);
+  assert.deepEqual(results[0], results[1]);
+  assert.equal(coins(store, "fan"), 175);
+  assert.equal(coins(store, "maker"), 30);
+});
+
+test("stale daily tallies do not consume today's caps", async (t) => {
+  setup(t, {
+    "tipRateDaily/fan_2026-10-28": {day: "2026-10-27", count: 5},
+    "tipRateDaily/recv_maker_2026-10-28": {day: "2026-10-27", count: 10, coins: 100},
+    "tipRateDaily/pair_fan_maker_2026-10-28": {day: "2026-10-27", count: 1},
+  });
+  assert.equal((await tip()).success, true);
 });

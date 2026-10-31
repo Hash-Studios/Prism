@@ -577,6 +577,29 @@ void main() {
   });
 
   group('tipCreator', () {
+    test('eligibility refusal does not replace the wallet with its placeholder zero', () async {
+      final firestore = CoinsTestFirestore()..userData = <String, dynamic>{'coins': 100};
+      getIt.registerSingleton<FirestoreClient>(firestore);
+      reply((_, _) => <String, Object?>{..._refused('tip_sender_too_new'), 'currentBalance': 0});
+
+      await service.tipCreator(creatorUid: 'maker', amount: 25);
+
+      expect(service.balanceNotifier.value, 100);
+      expect(app_state.prismUser.coins, 100);
+    });
+
+    test('replayed tip refreshes the wallet instead of restoring its historical balance', () async {
+      final firestore = CoinsTestFirestore()..userData = <String, dynamic>{'coins': 40};
+      getIt.registerSingleton<FirestoreClient>(firestore);
+      reply((_, _) => _paid(before: 100, after: 75, extra: <String, Object?>{'amount': 25}));
+
+      final result = await service.tipCreator(creatorUid: 'maker', amount: 50);
+
+      expect(result.amount, 25);
+      expect(service.balanceNotifier.value, 40);
+      expect(app_state.prismUser.coins, 40);
+    });
+
     test('sent returns the amount and sends the params', () async {
       reply((_, _) => _paid(extra: <String, Object?>{'amount': 25}));
       final TipResult result = await service.tipCreator(creatorUid: 'maker', amount: 25, wallId: 'neon');
@@ -585,6 +608,21 @@ void main() {
       expect(calls.single.$1, 'tipCreator');
       expect((params['creatorUid'], params['amount'], params['wallId']), ('maker', 25, 'neon'));
       expect(params['requestId'], isA<String>());
+    });
+
+    test('a lost reply retried with another amount retains the request id', () async {
+      final requests = <Map<String, dynamic>>[];
+      backend.onCall = (name, params) async {
+        requests.add(params);
+        if (requests.length == 1) throw FirebaseFunctionsException(code: 'unavailable', message: 'lost');
+        return _paid(before: 100, after: 75, extra: <String, Object?>{'amount': 25});
+      };
+
+      expect((await service.tipCreator(creatorUid: 'maker', amount: 25)).outcome, TipOutcome.failed);
+      final result = await service.tipCreator(creatorUid: 'maker', amount: 50);
+
+      expect(requests[0]['requestId'], requests[1]['requestId']);
+      expect(result.amount, 25);
     });
 
     test('no wallId is not sent', () async {

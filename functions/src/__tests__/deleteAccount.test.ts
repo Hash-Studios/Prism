@@ -33,6 +33,19 @@ function fake(t: TestContext, options: Options = {}) {
   const docsFor = (collection: string, filters: Array<[string, string, unknown]> = []) => {
     const prefix = filters.find(([field, op]) => field === "__name__" && op === ">=")?.[2];
     const upperBound = filters.find(([field, op]) => field === "__name__" && op === "<")?.[2];
+    if (collection === "tipRateDaily") {
+      const rows = [
+        {id: "u1_2026-10-31", senderUid: "u1", creatorUid: ""},
+        {id: "recv_u1_2026-10-31", senderUid: "", creatorUid: "u1"},
+        {id: "pair_u1_other_2026-10-31", senderUid: "u1", creatorUid: "other"},
+        {id: "pair_other_u1_2026-10-31", senderUid: "other", creatorUid: "u1"},
+        {id: "u1_other_2026-10-31", senderUid: "u1_other", creatorUid: ""},
+      ];
+      return rows.filter((row) => filters.every(([field, op, value]) => {
+        const actual = field === "__name__" ? row.id : row[field as "senderUid" | "creatorUid"];
+        return op === "==" ? actual === value : op === ">=" ? actual >= String(value) : actual < String(value);
+      })).map((row) => ({id: row.id, data: () => row, ref: {path: `${collection}/${row.id}`}}));
+    }
     const ids = (collection === "wallRequestRateDaily" || collection === "wallRequestVoteRateDaily") &&
       typeof prefix === "string" && prefix === "u1_" && upperBound === `${prefix}\uf8ff` ?
       ["u1_2026-10-29", "u1_2026-10-28"] : ["d1"];
@@ -670,4 +683,20 @@ test("wall action receipts and event children are removed after the deletion bar
   const cleanup = log.indexOf("recursive:usersv2/u1/wallActionReceipts");
   assert.ok(cleanup > log.indexOf("barrier:creatorDeletionState/u1"));
   assert.ok(cleanup < log.indexOf("anonymize"));
+});
+
+
+test("tip cleanup selects exact sender and creator ownership, not uid prefixes", async (t) => {
+  const log = fake(t);
+  await call();
+  assert.ok(log.includes("delete:creatorTips/u1"));
+  assert.ok(log.includes("query:tipRateDaily.senderUid==u1"));
+  assert.ok(log.includes("query:tipRateDaily.creatorUid==u1"));
+  assert.ok(!log.includes("query:tipRateDaily.__name__>=u1_"));
+  for (const id of ["u1_2026-10-31", "recv_u1_2026-10-31", "pair_u1_other_2026-10-31", "pair_other_u1_2026-10-31"]) {
+    const cleanup = log.indexOf(`delete:tipRateDaily/${id}`);
+    assert.ok(cleanup > log.indexOf("barrier:creatorDeletionState/u1"), id);
+    assert.ok(cleanup < log.indexOf("anonymize"), id);
+  }
+  assert.ok(!log.includes("delete:tipRateDaily/u1_other_2026-10-31"));
 });
