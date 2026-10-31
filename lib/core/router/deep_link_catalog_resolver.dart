@@ -43,6 +43,7 @@ Future<PageRouteInfo?> routeForPageLink(
   final WallpaperSource? source = sourceWire.isEmpty ? null : WallpaperSourceX.fromWire(sourceWire);
 
   return switch (match.target) {
+    DeepLinkPageTarget.creatorStats => CreatorStatsRoute(source: intent.source),
     // Splash is internal startup UI. A direct root link resumes in the browsable app after the startup gate.
     DeepLinkPageTarget.splash => const DashboardRoute(),
     DeepLinkPageTarget.onboarding => OnboardingV2ShellRoute(),

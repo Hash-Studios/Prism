@@ -49,6 +49,12 @@ import '../../features/category_feed/domain/repositories/category_feed_repositor
     as _i563;
 import '../../features/category_feed/domain/usecases/category_feed_usecases.dart'
     as _i301;
+import '../../features/creator_stats/biz/bloc/creator_stats_bloc.j.dart'
+    as _i1061;
+import '../../features/creator_stats/data/creator_stats_repository_impl.dart'
+    as _i899;
+import '../../features/creator_stats/domain/creator_stats.dart' as _i330;
+import '../../features/creator_stats/domain/get_creator_stats.dart' as _i685;
 import '../../features/draw/biz/bloc/draw_bloc.j.dart' as _i269;
 import '../../features/draw/data/repositories/draw_repository_impl.dart'
     as _i342;
@@ -329,6 +335,9 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i307.WallpaperPositionRepository>(
     () => _i536.WallpaperPositionRepositoryImpl(),
   );
+  gh.lazySingleton<_i330.CreatorStatsRepository>(
+    () => _i899.CreatorStatsRepositoryImpl(),
+  );
   gh.lazySingleton<_i721.StartupRepository>(
     () => _i152.StartupRepositoryImpl(),
   );
@@ -415,6 +424,9 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i415.BootstrapAppUseCase>(
     () => _i415.BootstrapAppUseCase(gh<_i721.StartupRepository>()),
   );
+  gh.factory<_i685.GetCreatorStats>(
+    () => _i685.GetCreatorStats(gh<_i330.CreatorStatsRepository>()),
+  );
   gh.lazySingleton<_i366.SyncedHistoryStore>(
     () => _i366.SyncedHistoryStore(
       gh<_i1073.SettingsLocalDataSource>(),
@@ -495,6 +507,9 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i688.LeaderboardBloc>(
     () => _i688.LeaderboardBloc(gh<_i655.LeaderboardRepository>()),
+  );
+  gh.factory<_i1061.CreatorStatsBloc>(
+    () => _i1061.CreatorStatsBloc(gh<_i685.GetCreatorStats>()),
   );
   gh.factory<_i313.StartupBloc>(
     () => _i313.StartupBloc(gh<_i415.BootstrapAppUseCase>()),

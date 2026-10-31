@@ -1,5 +1,10 @@
 ## Changelog
 
+### v3.17.0
+- Weekly Challenges: enter each week's theme and vote for your favourite entries
+- Make Duo reveal AI wallpapers, with one scene folded and another when you open it
+- Security and stability fixes
+
 ### v3.16.0
 - Remix AI wallpapers and explore creations inspired by the original
 - Choose whether AI wallpapers appear in your feeds and search

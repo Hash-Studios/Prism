@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {db, findUserByEmail, int, REGION, str} from "./common";
+import {activeOwner, addHistory, hash, historyRef, incarnation, type History} from "./creatorStatsHistory";
 import {notificationCopyPayload} from "./notificationCatalog";
 
 export const DOC_ID = /^[A-Za-z0-9_-]{1,64}$/;
@@ -155,6 +156,26 @@ export async function syncRemixCredit(remixId: string): Promise<RemixNotice | nu
     const oldRef = credited !== "" && credited !== wanted ? db.doc(`walls/${credited}`) : null;
     const old = oldRef ? (await tx.get(oldRef)).data() : undefined;
     const currentIncarnation = originalSnap?.createTime;
+
+    const creatorUid = str(original?.creatorUid);
+    if (wanted && originalSnap && remixSnap.exists && creatorUid && await activeOwner(tx, creatorUid)) {
+      const firstRef = db.collection("creatorStatsRemixMarkers").doc(hash(
+        `${remixRef.path}:${incarnation(remixSnap)}`,
+      ));
+      const first = await tx.get(firstRef);
+      if (!first.exists) {
+        if (credited !== wanted && !noticeSnap.exists) {
+          const ref = historyRef(originalSnap);
+          const history = await tx.get(ref);
+          const now = Date.now();
+          const next = addHistory(originalSnap, history.data() as History | undefined, {remixes: 1}, now, now);
+          tx.create(firstRef, {counted: true});
+          tx.set(ref, next);
+        } else {
+          tx.create(firstRef, {counted: false});
+        }
+      }
+    }
 
     if (credited !== wanted) {
       if (credited !== "") {

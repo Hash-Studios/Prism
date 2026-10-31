@@ -59,6 +59,9 @@ export {
   setWallRequestHiddenCallable as setWallRequestHidden,
 } from "./wallRequests";
 
+export {getCreatorStats, creatorStatsWeekly} from "./creatorStats";
+export {onCreatorStatsDailyWritten, processCreatorStatsDailyQueueScheduled} from "./creatorStatsDaily";
+export {onCreatorStatsFolderCreated} from "./creatorStatsHistory";
 export {listWeeklyChallenges, getWeeklyChallenge, setChallengeVote, onChallengeWallWritten, onChallengeWallSubmitted} from "./weeklyChallenges";
 
 export {scheduleWeeklyChallenges} from "./challengeScheduler";

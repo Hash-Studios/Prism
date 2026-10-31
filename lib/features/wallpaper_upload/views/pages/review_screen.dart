@@ -4,6 +4,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/creator_stats/views/widgets/stats_entry_button.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/wall_tile.dart';
@@ -27,6 +28,10 @@ class ReviewScreen extends StatelessWidget {
       onBack: () => Navigator.maybePop(context),
       body: Column(
         children: [
+          const Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: StatsEntryButton(source: 'uploads'),
+          ),
           if (DailyMomentConfig.enabled && earnedCoins > 0 && earnedCoinsOwnerId == app_state.prismUser.id)
             Padding(
               padding: const EdgeInsets.all(PrismSpace.md),

@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/creator_stats/views/widgets/stats_entry_button.dart';
 import 'package:Prism/features/rewards/domain/creator_progress.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +35,7 @@ class CreatorProgressView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          const StatsEntryButton(source: 'rewards'),
           Text(context.l10n.economyCreatorMilestones, style: PrismTextStyles.eyebrow(context)),
           const SizedBox(height: PrismSpace.sm),
           if (state.status == CreatorProgressStatus.loading)

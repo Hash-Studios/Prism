@@ -23,6 +23,20 @@ class Env {
   // Debug builds only: loads the AI style samples from http://localhost:8765. See docs/features/ai-wallpaper.md.
   static const bool aiStyleSamplesLocal = bool.fromEnvironment('AI_STYLE_SAMPLES_LOCAL');
 
+  static const bool creatorStatsEmulator = bool.fromEnvironment('CREATOR_STATS_EMULATOR');
+  static const String creatorStatsEmulatorHost = String.fromEnvironment(
+    'CREATOR_STATS_EMULATOR_HOST',
+    defaultValue: '127.0.0.1',
+  );
+  static const String creatorStatsEmulatorProject = String.fromEnvironment(
+    'CREATOR_STATS_EMULATOR_PROJECT',
+    defaultValue: 'demo-prism',
+  );
+  static const String creatorStatsEmulatorAccount = String.fromEnvironment(
+    'CREATOR_STATS_EMULATOR_ACCOUNT',
+    defaultValue: 'creator',
+  );
+
   // GitHub
   static const String ghRepoWalls = String.fromEnvironment('GH_REPO_WALLS');
   static const String ghUsername = String.fromEnvironment('GH_USERNAME');
