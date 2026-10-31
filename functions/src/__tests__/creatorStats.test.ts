@@ -460,3 +460,30 @@ test("trigger boundaries propagate transient failures for retry", async (t) => {
   await assert.rejects(onCreatorStatsDailyWritten.run({data: {after: daily}} as Parameters<typeof onCreatorStatsDailyWritten.run>[0]), /temporary outage/);
   await assert.rejects(onCreatorStatsFolderCreated.run({data: folder} as Parameters<typeof onCreatorStatsFolderCreated.run>[0]), /temporary outage/);
 });
+test("daily replay without a new counter delta reads only the source and checkpoint", async (t) => {
+  const path = "wallpaper_stats_daily/20261025_WALL";
+  const observed = {reads: 0, writes: 0};
+  const store = installFakeDb(t, seed({[path]: {wallId: "WALL", day: "20261025", views: 5, favs: 2}}), observed);
+  await projectDailyStats(path, NOW);
+  const snap = await db.doc("walls/wall").get();
+  const before = (await historyRef(snap).get()).data();
+  observed.reads = 0; observed.writes = 0;
+  await projectDailyStats(path, NOW);
+  assert.deepEqual(observed, {reads: 2, writes: 0});
+  store.set(path, {wallId: "WALL", day: "20261025", views: 3, favs: 1});
+  observed.reads = 0;
+  await projectDailyStats(path, NOW);
+  assert.deepEqual(observed, {reads: 2, writes: 0});
+  assert.deepEqual((await historyRef(snap).get()).data(), before);
+});
+test("daily projection skips unapproved walls without a checkpoint, then counts once after approval", async (t) => {
+  const path = "wallpaper_stats_daily/20261025_WALL";
+  const store = installFakeDb(t, seed({"walls/wall": wall({review: false}), [path]: {wallId: "WALL", day: "20261025", views: 5}}));
+  await projectDailyStats(path, NOW);
+  assert.equal([...store.keys()].some((p) => p.startsWith("creatorStatsHistory/") || p.startsWith("creatorStatsDailyCheckpoints/")), false);
+  store.set("walls/wall", wall());
+  await projectDailyStats(path, NOW);
+  await projectDailyStats(path, NOW);
+  const snap = await db.doc("walls/wall").get();
+  assert.equal((await historyRef(snap).get()).data()?.weeks["2026-W43"].views, 5);
+});

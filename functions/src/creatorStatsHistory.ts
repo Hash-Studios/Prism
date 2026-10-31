@@ -122,16 +122,11 @@ export async function projectDailyStats(
       return;
     }
     if (id !== data.wallId) return;
-    const wall = canonicalWall(await readWallIdentities(tx), id);
-    if (!wall || !wall.createTime || !source.createTime || !atOrAfter(source.createTime, wall.createTime) ||
-      !await activeOwner(tx, str(wall.data()?.creatorUid))) return;
     const day = str(data.day);
     const eventMs = Date.parse(`${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6, 8)}T00:00:00Z`);
     if (!Number.isFinite(eventMs) || eventMs > now) return;
     const checkpointRef = db.collection("creatorStatsDailyCheckpoints").doc(hash(`${path}:${incarnation(source)}`));
-    const ref = historyRef(wall);
-    const [checkpoint, history] = await Promise.all([tx.get(checkpointRef), tx.get(ref)]);
-    const previous = checkpoint.data();
+    const previous = (await tx.get(checkpointRef)).data();
     const deltas: Partial<Record<Metric, number>> = {};
     const next: Record<string, number> = {};
     for (const [field, metric] of Object.entries({views: "views", favs: "saves", sets: "sets", downloads: "downloads", shares: "shares"} as const)) {
@@ -139,6 +134,11 @@ export async function projectDailyStats(
       deltas[metric] = next[field] - count(previous?.[field]);
     }
     if (!Object.values(deltas).some((value) => value > 0)) return;
+    const wall = canonicalWall(await readWallIdentities(tx), id);
+    if (!wall || wall.data()?.review !== true || !wall.createTime || !source.createTime ||
+      !atOrAfter(source.createTime, wall.createTime) || !await activeOwner(tx, str(wall.data()?.creatorUid))) return;
+    const ref = historyRef(wall);
+    const history = await tx.get(ref);
     tx.set(ref, addHistory(wall, history.data() as History | undefined, deltas, eventMs, now));
     tx.set(checkpointRef, next);
   });
