@@ -41,7 +41,16 @@ class FakeDailyMomentRepository implements DailyMomentRepository {
   @override
   bool freeSpinAvailable = true;
   @override
-  int balance = 100;
+  int get balance => _balance;
+  int _balance = 100;
+  final _balances = StreamController<int>.broadcast();
+  set balance(int value) {
+    _balance = value;
+    _balances.add(value);
+  }
+
+  @override
+  Stream<int> watchBalance() => _balances.stream;
   final List<String> calls = <String>[];
   Completer<DailyChestResult>? pendingChest;
   @override

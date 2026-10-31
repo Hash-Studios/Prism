@@ -31,6 +31,24 @@ void main() {
     expect(repository.calls, <String>['refresh', 'chest:20', 'refresh', 'spin:0']);
   });
 
+  test('late ad settlement updates balance without changing the displayed receipt', () async {
+    final repository = FakeDailyMomentRepository();
+    final cubit = DailyMomentCubit(repository);
+    addTearDown(cubit.close);
+    await cubit.start();
+    expect(cubit.state.balance, 100);
+    repository.balance = 110;
+    await Future<void>.delayed(Duration.zero);
+    expect(cubit.state.balance, 110);
+    expect(cubit.state.receipt?.totalReward, 7);
+    expect(cubit.state.step, DailyMomentStep.streak);
+    repository.accountId = 'other';
+    repository.balance = 900;
+    await Future<void>.delayed(Duration.zero);
+    expect(cubit.state.balance, 0);
+    expect(cubit.state.unavailable, isTrue);
+  });
+
   test('fast taps issue one mutation and closing stops progression', () async {
     final repository = FakeDailyMomentRepository()..pendingChest = Completer<DailyChestResult>();
     final cubit = DailyMomentCubit(repository, requestedStep: DailyMomentStep.chest);

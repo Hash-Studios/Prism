@@ -31,6 +31,9 @@ class DailyMomentCubit extends Cubit<DailyMomentState> {
   DailyMomentCubit(this.repository, {this.requestedStep, this.receipt, this.onStepDone})
     : _owner = repository.accountId,
       super(const DailyMomentState(busy: true)) {
+    _balanceSubscription = repository.watchBalance().listen((balance) {
+      if (_active) emit(state.copyWith(balance: balance));
+    });
     _accountSubscription = repository.watchAccount().listen((account) {
       if (account == _owner || isClosed || _closedByUser) return;
       _closedByUser = true;
@@ -44,6 +47,7 @@ class DailyMomentCubit extends Cubit<DailyMomentState> {
   final String _owner;
   bool _closedByUser = false;
   late final StreamSubscription<String> _accountSubscription;
+  late final StreamSubscription<int> _balanceSubscription;
 
   bool get _active => !isClosed && !_closedByUser && repository.accountId == _owner && _owner.isNotEmpty;
 
@@ -187,6 +191,7 @@ class DailyMomentCubit extends Cubit<DailyMomentState> {
   @override
   Future<void> close() async {
     await _accountSubscription.cancel();
+    await _balanceSubscription.cancel();
     await super.close();
   }
 }

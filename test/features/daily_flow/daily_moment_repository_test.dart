@@ -52,4 +52,16 @@ void main() {
     expect(spin['maxCost'], 0);
     expect(spin['sourceTag'], 'coins.spin_wheel');
   });
+  test('publishes settled server balances and removes its listener on cancellation', () async {
+    final repository = CoinsDailyMomentRepository(coins: service);
+    final balances = <int>[];
+    final subscription = repository.watchBalance().listen(balances.add);
+    service.applyServerBalance(123, ownerId: app_state.prismUser.id);
+    await Future<void>.delayed(Duration.zero);
+    expect(balances, [123]);
+    await subscription.cancel();
+    service.applyServerBalance(135, ownerId: app_state.prismUser.id);
+    await Future<void>.delayed(Duration.zero);
+    expect(balances, [123]);
+  });
 }

@@ -16,6 +16,7 @@ abstract class DailyMomentRepository {
   DailyChestStatus? get chest;
   bool get freeSpinAvailable;
   int get balance;
+  Stream<int> watchBalance();
   Future<DailyChestResult> openChest({required int maxCost});
   Future<SpinWheelResult> takeFreeSpin();
   bool shownOn(String accountId, DateTime day);

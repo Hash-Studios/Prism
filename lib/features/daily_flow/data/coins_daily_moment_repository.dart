@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/daily_chest.dart';
@@ -66,6 +68,17 @@ class CoinsDailyMomentRepository implements DailyMomentRepository {
 
   @override
   int get balance => _coins.balanceNotifier.value;
+  @override
+  Stream<int> watchBalance() {
+    late final StreamController<int> controller;
+    void changed() => controller.add(balance);
+    controller = StreamController<int>(
+      onListen: () => _coins.balanceNotifier.addListener(changed),
+      onCancel: () => _coins.balanceNotifier.removeListener(changed),
+    );
+    return controller.stream;
+  }
+
   @override
   Future<DailyChestResult> openChest({required int maxCost}) => _coins.openDailyChest(maxCost: maxCost);
   @override
