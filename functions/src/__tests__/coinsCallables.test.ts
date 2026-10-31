@@ -68,6 +68,27 @@ test("refundableDelta: rejects a debit older than the refund window", () => {
   assert.throws(() => refundableDelta(old, "user-1", NOW), {code: "failed-precondition"});
 });
 
+test("refundableDelta: a premium filter debit rejects a different owner", () => {
+  const debit = debitFixture({action: "premiumFilter", delta: -5});
+  assert.throws(() => refundableDelta(debit, "someone-else", NOW), {code: "failed-precondition"});
+  assert.equal(refundableDelta(debit, "user-1", NOW), 5);
+});
+
+test("refundableDelta: a premium filter debit rejects refunded status", () => {
+  const debit = debitFixture({action: "premiumFilter", delta: -5});
+  assert.throws(() => refundableDelta({...debit, status: "refunded"}, "user-1", NOW), {code: "failed-precondition"});
+  assert.equal(refundableDelta(debit, "user-1", NOW), 5);
+});
+
+test("refundableDelta: a premium filter debit rejects an expired refund", () => {
+  const debit = debitFixture({action: "premiumFilter", delta: -5});
+  assert.throws(
+    () => refundableDelta({...debit, createdAt: {toMillis: () => NOW - 600_001}}, "user-1", NOW),
+    {code: "failed-precondition"},
+  );
+  assert.equal(refundableDelta(debit, "user-1", NOW), 5);
+});
+
 test("refundableDelta: allows a debit right at the edge of the refund window", () => {
   const edge = debitFixture({createdAt: {toMillis: () => NOW - 600_000}});
   assert.equal(refundableDelta(edge, "user-1", NOW), 15);
@@ -164,11 +185,11 @@ for (const retry of ["duplicate", "cap", "balance"] as const) {
   });
 }
 
-test("refundableDelta: only the download and AI generation debits are refundable", () => {
-  for (const action of ["premiumFilter", "premiumPreview24h", "rewardedAd", undefined]) {
+test("refundableDelta: only download, AI generation and premium filter debits are refundable", () => {
+  for (const action of ["premiumPreview24h", "rewardedAd", undefined]) {
     assert.throws(() => refundableDelta(debitFixture({action}), "user-1", NOW), {code: "failed-precondition"});
   }
-  for (const action of ["wallpaperDownload", "premiumWallpaperDownload", "aiGeneration"]) {
+  for (const action of ["wallpaperDownload", "premiumWallpaperDownload", "aiGeneration", "premiumFilter"]) {
     assert.equal(refundableDelta(debitFixture({action}), "user-1", NOW), 15);
   }
 });

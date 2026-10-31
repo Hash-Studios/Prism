@@ -57,8 +57,8 @@ const AI_REFUND_EVIDENCE_WINDOW_MS = 86_400_000;
 const AI_WORKER_DEFAULT_BASE = "https://prismwalls.com";
 const AI_WORKER_TIMEOUT_MS = 3_000;
 const REFUND_MAX_PER_DAY = 5;
-// Only the debits the app refunds today: a failed download and a failed AI generation.
-const REFUNDABLE_ACTIONS = new Set(["wallpaperDownload", "premiumWallpaperDownload", "aiGeneration"]);
+// Only the debits the app refunds today: a failed download, AI generation or premium filter save or set.
+const REFUNDABLE_ACTIONS = new Set(["wallpaperDownload", "premiumWallpaperDownload", "aiGeneration", "premiumFilter"]);
 const PREVIEW_ACCESS_MS = 86_400_000;
 const REFERRAL_NEW_ACCOUNT_MS = 14 * 86_400_000;
 // Mirrors defaultProfilePhotoUrl in lib/core/constants/app_constants.dart.
