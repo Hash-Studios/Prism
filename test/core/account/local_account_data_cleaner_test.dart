@@ -198,6 +198,19 @@ void main() {
     expect(settings.get<String?>('autoRotate.passRecord'), isNull);
   });
 
+  test('account deletion clears the iOS folders snapshot and rotation folder of the deleted user', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      PersistenceKeys.shortcutsFolders: '{"ownerId":"user-1","folders":[{"id":"f1"}]}',
+      PersistenceKeys.shortcutsRotationFolder: 'f1',
+    });
+
+    await LocalAccountDataCleaner().clearForUser('user-1');
+
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString(PersistenceKeys.shortcutsFolders), '{"folders":[]}');
+    expect(prefs.getString(PersistenceKeys.shortcutsRotationFolder), isNull);
+  });
+
   group('iOS widget streak', () {
     late _FakeWidgetApi widgets;
 

@@ -16,6 +16,7 @@ import 'package:Prism/features/draw/data/repositories/draw_repository_impl.dart'
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
 import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart';
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_favourites_store.dart';
+import 'package:Prism/features/ios_shortcuts/data/shortcuts_folders_store.dart';
 import 'package:Prism/features/leaderboard/data/repositories/leaderboard_repository_impl.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
@@ -63,6 +64,7 @@ class LocalAccountDataCleaner {
     ),
     (name: 'favourites', run: (String userId) => getIt<FavoritesLocalDataSource>().clearUser(userId)),
     (name: 'iOS favourites mirror', run: ShortcutsFavouritesStore.clearForUser),
+    (name: 'iOS folders mirror', run: ShortcutsFoldersStore.clearForUser),
     (name: 'iOS widget streak', run: clearIosWidgetStreakForUser),
     (name: 'native favourites paths', run: NativeAssetPathsStore.clearForUser),
     (name: 'Android favourites mirror', run: _clearAndroidFavouritesForUser),

@@ -72,6 +72,7 @@ import 'package:Prism/features/folders/folders.dart';
 import 'package:Prism/features/folders/views/widgets/folder_write_failure_listener.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/ios_shortcuts/views/widgets/shortcuts_favourites_listener.dart';
+import 'package:Prism/features/ios_shortcuts/views/widgets/shortcuts_folders_listener.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
@@ -944,42 +945,44 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       ],
       child: WotdQuickTileListener(
         child: ShortcutsFavouritesListener(
-          child: FavouriteQuickTileListener(
-            child: ListenableBuilder(
-              listenable: DebugFlags.instance,
-              builder: (context, _) => MaterialApp.router(
-                debugShowCheckedModeBanner: false,
-                localizationsDelegates: AppLocalizations.localizationsDelegates,
-                supportedLocales: AppLocalizations.supportedLocales,
-                builder: (context, child) {
-                  app_state.notchSize = MediaQuery.paddingOf(context).top;
-                  final ThemeData theme = Theme.of(context);
-                  return Theme(
-                    data: theme.copyWith(snackBarTheme: prismSnackBarThemeFor(context, theme.snackBarTheme)),
-                    child: FolderWriteFailureListener(
-                      child: ShakeToReportListener(
-                        navigatorKey: _appRouter.navigatorKey,
-                        child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+          child: ShortcutsFoldersListener(
+            child: FavouriteQuickTileListener(
+              child: ListenableBuilder(
+                listenable: DebugFlags.instance,
+                builder: (context, _) => MaterialApp.router(
+                  debugShowCheckedModeBanner: false,
+                  localizationsDelegates: AppLocalizations.localizationsDelegates,
+                  supportedLocales: AppLocalizations.supportedLocales,
+                  builder: (context, child) {
+                    app_state.notchSize = MediaQuery.paddingOf(context).top;
+                    final ThemeData theme = Theme.of(context);
+                    return Theme(
+                      data: theme.copyWith(snackBarTheme: prismSnackBarThemeFor(context, theme.snackBarTheme)),
+                      child: FolderWriteFailureListener(
+                        child: ShakeToReportListener(
+                          navigatorKey: _appRouter.navigatorKey,
+                          child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                        ),
                       ),
-                    ),
-                  );
-                },
-                routerConfig: _appRouter.config(
-                  deepLinkTransformer: (uri) async => _deepLinkParser.transform(uri),
-                  deepLinkBuilder: _routerDeepLinkBuilder,
-                  navigatorObservers: () => [
-                    ...AnalyticsRuntime.buildNavigatorObservers(),
-                    if (MonitoringRuntime.reporter.isEnabled)
-                      SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
-                  ],
+                    );
+                  },
+                  routerConfig: _appRouter.config(
+                    deepLinkTransformer: (uri) async => _deepLinkParser.transform(uri),
+                    deepLinkBuilder: _routerDeepLinkBuilder,
+                    navigatorObservers: () => [
+                      ...AnalyticsRuntime.buildNavigatorObservers(),
+                      if (MonitoringRuntime.reporter.isEnabled)
+                        SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
+                    ],
+                  ),
+                  showPerformanceOverlay: DebugFlags.instance.showPerformanceOverlay,
+                  showSemanticsDebugger: DebugFlags.instance.showSemanticsDebugger,
+                  theme: context.prismLightTheme(),
+                  darkTheme: context.prismDarkTheme(),
+                  themeMode: context.prismThemeMode(),
+                  themeAnimationDuration: context.motion(PrismDurations.slow),
+                  themeAnimationCurve: PrismCurves.move,
                 ),
-                showPerformanceOverlay: DebugFlags.instance.showPerformanceOverlay,
-                showSemanticsDebugger: DebugFlags.instance.showSemanticsDebugger,
-                theme: context.prismLightTheme(),
-                darkTheme: context.prismDarkTheme(),
-                themeMode: context.prismThemeMode(),
-                themeAnimationDuration: context.motion(PrismDurations.slow),
-                themeAnimationCurve: PrismCurves.move,
               ),
             ),
           ),
