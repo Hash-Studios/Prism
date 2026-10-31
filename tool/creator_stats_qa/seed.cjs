@@ -23,6 +23,10 @@ async function main() {
       profilePhoto: `http://${imageHost}:9198/avatar.png`, followers: [], following: [], links: {}, coins: 0,
       loggedIn: true, badges: [], subPrisms: [], transactions: [], uploadsWeekStart: '', uploadsThisWeek: 0});
     await db.doc(`usersv2/${uid}/private/session`).set({postAlerts: true});
+    // Same shape as projectedProfile in functions/src/profiles.ts; the profile trigger is not in this sandbox.
+    await db.doc(`profiles/${uid}`).set({followerCount: 0, followingCount: 0, name: `QA ${account}`,
+      username: `qa${account}`, profilePhoto: `http://${imageHost}:9198/avatar.png`, bio: 'Local emulator fixture',
+      badges: []});
     if (account === 'empty') continue;
     const id = `QA-${account.toUpperCase()}`;
     const ref = db.doc(`walls/qa-${account}`);
