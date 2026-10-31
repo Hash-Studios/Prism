@@ -2036,7 +2036,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 if (state.tipperCount >= _minTippersShown)
                   Padding(
                     padding: const EdgeInsetsDirectional.only(start: 6),
-                    child: Text(context.l10n.wallTippedBy(state.tipperCount), style: dimmedHeadline),
+                    child: Text(
+                      context.l10n.wallTippedBy(state.tipperCount),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: secondary.withValues(alpha: _secondaryAlpha)),
+                    ),
                   ),
               ],
             ),

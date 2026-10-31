@@ -23,7 +23,13 @@ async function main() {
   await db.doc(`profiles/${uid}`).update({name: 'Ben'});
   await db.doc('usersv2/qa-stats-creator').update({name: 'Ava', coins: 40});
   await db.doc('profiles/qa-stats-creator').update({name: 'Ava'});
-  await db.doc('walls/qa-creator').update({title: 'Neon rain', by: 'Ava', uploadedBy: 'Ava', wallpaper_provider: 'Prism'});
+  // 3.8.0+ clients list only protected walls. The conversion trigger is not in the emulator, so stamp its result.
+  const protectedWall = {originalProtected: true, wallpaper_url: '', wallpaper_path: '', wallpaper_sha: '', thumb_path: '',
+    thumb_sha: ''};
+  await db.doc('walls/qa-creator').update({...protectedWall, title: 'Neon rain', by: 'Ava', uploadedBy: 'Ava'});
+  await db.doc('walls/qa-other').update(protectedWall);
+  // Two earlier tippers, so the fan's real tip takes the public line to 3 and it shows.
+  await db.doc('wallpaper_stats/QA-CREATOR').set({tippers: 2}, {merge: true});
   const user = await admin.auth().getUser(uid);
   console.log(`Tips seed ready: ${uid} created ${user.metadata.creationTime}, 60 coins. Creator Ava has 40 coins.`);
   await admin.app().delete();
