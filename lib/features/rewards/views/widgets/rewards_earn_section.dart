@@ -62,9 +62,10 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<CoinEarnFlags>(
-      valueListenable: CoinsService.instance.earnFlagsNotifier,
-      builder: (context, flags, _) => _buildRows(context, flags),
+    final coins = CoinsService.instance;
+    return ListenableBuilder(
+      listenable: Listenable.merge([coins.earnFlagsNotifier, coins.adsRemainingNotifier]),
+      builder: (context, _) => _buildRows(context, coins.earnFlagsNotifier.value),
     );
   }
 

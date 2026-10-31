@@ -547,6 +547,53 @@ void main() {
       expect(retained.single['sessionId'], 'old-session');
     });
 
+    test('recovering yesterday reward keeps today first-ad quote', () async {
+      service.resetSession();
+      final owner = app_state.prismUser.id;
+      await getIt<SettingsLocalDataSource>().set(
+        'verifiedRewardSession_v1.$owner',
+        jsonEncode([
+          {
+            'userId': owner,
+            'requestId': 'yesterday-request',
+            'sessionId': 'yesterday-session',
+            'placement': 'rewards',
+            'createdAtMs': DateTime.now().subtract(const Duration(days: 1)).millisecondsSinceEpoch,
+          },
+        ]),
+      );
+      backend.onCall = (_, _) async => {
+        'version': 1,
+        'sessionId': 'yesterday-session',
+        'status': 'settled',
+        'rewardCoins': 20,
+        'currentBalance': 120,
+        'adsRemaining': 20,
+      };
+      expect(await service.reconcileRewardedSession(), isTrue);
+      expect(service.balanceNotifier.value, 120);
+      expect(service.adsRewardNow, 20);
+    });
+
+    test('ad capacity and quotes belong to the account that received them', () async {
+      service.resetSession();
+      backend.onCall = (_, _) async => {
+        'version': 1,
+        'status': 'unavailable',
+        'reason': 'daily_limit',
+        'adsRemaining': 0,
+      };
+      await service.beginRewardedSession('rewards');
+      expect(service.adsRemainingToday, 0);
+      expect(service.adsRewardNow, 10);
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'new-ad-owner'
+        ..loggedIn = true;
+      expect(service.adsRemainingToday, isNull);
+      expect(service.adsRewardNow, 20);
+      service.resetSession();
+    });
+
     test('unavailable reasons are not stored as accepted pending rewards', () async {
       for (final reason in ['daily_limit', 'cooldown', 'disabled', 'active_session']) {
         backend.onCall = (name, parameters) async => {
