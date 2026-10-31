@@ -433,6 +433,13 @@ service cloud.firestore {
       }
     }
 
+    // Creator directory: the server projection of public profiles and walls (functions/src/creatorDirectory.ts).
+    // Only the Admin SDK writes it. The app hides blocked creators on its side.
+    match /creatorDirectory/{uid} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
     // Public profile documents contain only the server-projected profile allowlist.
     // Writes use the Admin SDK, which bypasses these client rules.
     match /profiles/{uid} {
