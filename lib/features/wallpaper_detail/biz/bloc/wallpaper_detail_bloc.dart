@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -30,7 +31,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     this._pexelsRepository,
     this._recordPrismWallpaperViewsUsecase,
     this._paletteRepository,
-    this._getWallpaperSetCountUseCase, [
+    this._getWallpaperCountsUseCase, [
     @ignoreParam OfflineWallpaperCatalog? offlineCatalog,
     @ignoreParam WallpaperRecommendationRepository? recommendations,
   ]) : _offlineCatalog = offlineCatalog ?? OfflineWallpaperCatalog.instance,
@@ -54,7 +55,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   final PexelsWallpaperRepository _pexelsRepository;
   final RecordPrismWallpaperViewsUsecase _recordPrismWallpaperViewsUsecase;
   final PaletteRepository _paletteRepository;
-  final GetWallpaperSetCountUseCase _getWallpaperSetCountUseCase;
+  final GetWallpaperCountsUseCase _getWallpaperCountsUseCase;
   final OfflineWallpaperCatalog _offlineCatalog;
   final WallpaperRecommendationRepository _recommendations;
   static int _nextVisit = 0;
@@ -208,11 +209,13 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
       return;
     }
 
-    final result = await _getWallpaperSetCountUseCase(currentState.entity.id);
+    final result = await _getWallpaperCountsUseCase(currentState.entity.id);
     final latestState = state;
     if (emit.isDone || latestState is! WallpaperDetailLoaded || latestState.entity.id != currentState.entity.id) return;
-    final count = result.data;
-    if (result.isSuccess && count != null) emit(latestState.copyWith(setCount: count));
+    final WallpaperCounts? counts = result.data;
+    if (result.isSuccess && counts != null) {
+      emit(latestState.copyWith(setCount: counts.sets, tipperCount: counts.tippers));
+    }
   }
 
   void _onSelectAccentColor(SelectAccentColor event, Emitter<WallpaperDetailState> emit) {

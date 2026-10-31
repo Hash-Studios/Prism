@@ -55,6 +55,8 @@ void main() {
       'dropPack': 'Drop pack',
       'boostWall': 'Boost',
       'giftPremiumPass': 'Gift: 24 h pass',
+      'tipSent': 'Tip sent',
+      'tipReceived': 'Tip received',
       'drawTicket': 'Draw ticket',
       'shopItem': 'Shop',
     };

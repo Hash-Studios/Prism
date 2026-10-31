@@ -18942,6 +18942,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{metric}, eight weeks. {summary}'**
   String statsChartSummary(String metric, String summary);
+
+  /// Wall detail: opens the sheet to tip the wall's creator coins
+  ///
+  /// In en, this message translates to:
+  /// **'Tip creator'**
+  String get tipAction;
+
+  /// Creator profile overflow menu item that opens the tip sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Send a tip'**
+  String get tipMenuItem;
+
+  /// No description provided for @tipTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip {name}'**
+  String tipTitle(String name);
+
+  /// No description provided for @tipMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an amount. {name} gets every coin and sees your name.'**
+  String tipMessage(String name);
+
+  /// Accessibility label for the group of tip amount choices
+  ///
+  /// In en, this message translates to:
+  /// **'Tip amount'**
+  String get tipAmountsLabel;
+
+  /// No description provided for @tipBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Your balance: {balance, plural, =1{1 coin} other{{balance} coins}}'**
+  String tipBalance(int balance);
+
+  /// No description provided for @tipShortBy.
+  ///
+  /// In en, this message translates to:
+  /// **'You need {amount, plural, =1{1 more coin} other{{amount} more coins}}.'**
+  String tipShortBy(int amount);
+
+  /// No description provided for @tipSendButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip {amount} coins'**
+  String tipSendButton(int amount);
+
+  /// Tip sheet: opens Rewards when the balance is too low
+  ///
+  /// In en, this message translates to:
+  /// **'Earn coins'**
+  String get tipEarnCoins;
+
+  /// Tip sheet success headline
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks for your tip'**
+  String get tipThanksTitle;
+
+  /// No description provided for @tipThanksMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} got your {amount} coins.'**
+  String tipThanksMessage(String name, int amount);
+
+  /// Closes the tip sheet after a tip
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get tipDone;
+
+  /// Toast when the balance is short
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have enough coins for this tip.'**
+  String get tipNotEnoughCoins;
+
+  /// Toast when the sender hit the daily tip cap
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve sent all your tips for today. Try again tomorrow.'**
+  String get tipDailyLimit;
+
+  /// No description provided for @tipPairLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You already tipped {name} today. Try again tomorrow.'**
+  String tipPairLimit(String name);
+
+  /// No description provided for @tipCreatorLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} can\'t get more tips today. Try again tomorrow.'**
+  String tipCreatorLimit(String name);
+
+  /// Toast for accounts younger than 7 days
+  ///
+  /// In en, this message translates to:
+  /// **'You can send tips 7 days after you join Prism.'**
+  String get tipSenderTooNew;
+
+  /// Toast for guest or unverified accounts
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with a verified account to send tips.'**
+  String get tipSenderIneligible;
+
+  /// No description provided for @tipUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t tip {name} right now.'**
+  String tipUnavailable(String name);
+
+  /// Toast when the tip call fails
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send the tip. Try again.'**
+  String get tipFailed;
+
+  /// No description provided for @wallTippedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Tipped by {count} people'**
+  String wallTippedBy(int count);
+
+  /// Coin history row for a tip the user sent
+  ///
+  /// In en, this message translates to:
+  /// **'Tip sent'**
+  String get coreCoinTipSent;
+
+  /// Coin history row for a tip the user received
+  ///
+  /// In en, this message translates to:
+  /// **'Tip received'**
+  String get coreCoinTipReceived;
+
+  /// No description provided for @notifPushTipReceivedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{senderName} tipped you {amount} coins for {wallTitle}'**
+  String notifPushTipReceivedTitle(String senderName, String amount, String wallTitle);
+
+  /// No description provided for @notifPushTipReceivedTitleUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'{senderName} tipped you {amount} coins'**
+  String notifPushTipReceivedTitleUntitled(String senderName, String amount);
+
+  /// Body of the first tip push of the day
+  ///
+  /// In en, this message translates to:
+  /// **'See your tips in your creator stats.'**
+  String get notifPushTipReceivedBody;
+
+  /// No description provided for @notifTipsReceivedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You got {count} tips today'**
+  String notifTipsReceivedTitle(int count);
+
+  /// No description provided for @notifTipsReceivedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins} coins in all. See them in your creator stats.'**
+  String notifTipsReceivedBody(int coins);
+
+  /// Creator stats: tips section title
+  ///
+  /// In en, this message translates to:
+  /// **'Tips'**
+  String get statsTips;
+
+  /// No description provided for @statsTipsTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 tip} other{{count} tips}}, {coins} coins in all'**
+  String statsTipsTotal(int count, int coins);
+
+  /// No description provided for @statsTipsWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Week of {date}: {count, plural, =1{1 tip} other{{count} tips}}, {coins} coins'**
+  String statsTipsWeek(String date, int count, int coins);
+
+  /// No description provided for @statsTipsWall.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 tip} other{{count} tips}}, {coins} coins'**
+  String statsTipsWall(int count, int coins);
+
+  /// Creator stats: tips section with no tips
+  ///
+  /// In en, this message translates to:
+  /// **'No tips yet. Fans can tip you from your walls and your profile.'**
+  String get statsTipsEmpty;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

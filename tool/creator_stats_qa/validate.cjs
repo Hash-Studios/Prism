@@ -10,11 +10,11 @@ const run = (args, env = process.env) => {
 };
 run(['prepare.cjs', 'demo-prism']);
 run(['seed_test.cjs']);
-for (const file of ['prepare', 'local', 'seed', 'assert', 'capacity', 'native', 'images', 'bundle/index']) run(['--check', `${file}.cjs`]);
+for (const file of ['prepare', 'local', 'seed', 'seed_tips', 'assert', 'capacity', 'native', 'images', 'bundle/index']) run(['--check', `${file}.cjs`]);
 const env = {PATH: process.env.PATH, GCLOUD_PROJECT: 'demo-prism', GOOGLE_CLOUD_PROJECT: 'demo-prism'};
 run(['-e', `const assert = require('node:assert/strict');
   const bundle = require('./.runtime/index.cjs');
-  assert.deepEqual(Object.keys(bundle).sort(), ['getCreatorStats','onCreatorStatsDailyWritten','onCreatorStatsFolderCreated']);
+  assert.deepEqual(Object.keys(bundle).sort(), ['getCreatorStats','onCreatorStatsDailyWritten','onCreatorStatsFolderCreated','tipCreator']);
   const daily = require('./.runtime/lib/creatorStatsDaily.js');
   assert.equal(bundle.onCreatorStatsDailyWritten, daily.onCreatorStatsDailyWritten);
   assert.equal(typeof daily.enqueueCreatorStatsDaily, 'function');

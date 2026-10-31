@@ -109,6 +109,9 @@ class DeepLinkDispatcher {
     if (data['notification_kind']?.toString() == 'folder_digest') {
       _record(FolderPushOpenedEvent(folderCount: int.tryParse(data['folder_count']?.toString() ?? '') ?? 1));
     }
+    if (data['notification_kind']?.toString() == 'tip_received') {
+      _record(const TipReceivedPushOpenedEvent());
+    }
     // A gallery push still carries the lead wall's link for builds without the gallery page.
     final Uri? gallery = NotificationRouteMapper.galleryLinkFor(data);
     if (gallery != null) {

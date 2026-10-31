@@ -576,6 +576,45 @@ void main() {
     });
   });
 
+  group('tipCreator', () {
+    test('sent returns the amount and sends the params', () async {
+      reply((_, _) => _paid(extra: <String, Object?>{'amount': 25}));
+      final TipResult result = await service.tipCreator(creatorUid: 'maker', amount: 25, wallId: 'neon');
+      expect((result.outcome, result.amount), (TipOutcome.sent, 25));
+      final Map<String, dynamic> params = calls.single.$2;
+      expect(calls.single.$1, 'tipCreator');
+      expect((params['creatorUid'], params['amount'], params['wallId']), ('maker', 25, 'neon'));
+      expect(params['requestId'], isA<String>());
+    });
+
+    test('no wallId is not sent', () async {
+      reply((_, _) => _paid(extra: <String, Object?>{'amount': 10}));
+      await service.tipCreator(creatorUid: 'maker', amount: 10);
+      expect(calls.single.$2.containsKey('wallId'), isFalse);
+    });
+
+    test('refusals map to outcomes', () async {
+      final Map<String, TipOutcome> cases = <String, TipOutcome>{
+        'tip_daily_limit': TipOutcome.dailyLimit,
+        'tip_pair_limit': TipOutcome.pairLimit,
+        'tip_creator_limit': TipOutcome.creatorLimit,
+        'tip_sender_too_new': TipOutcome.senderTooNew,
+        'tip_sender_ineligible': TipOutcome.senderIneligible,
+        'tip_blocked': TipOutcome.blocked,
+        'tip_creator_unavailable': TipOutcome.unavailable,
+        'tip_wall_invalid': TipOutcome.unavailable,
+      };
+      for (final MapEntry<String, TipOutcome> c in cases.entries) {
+        reply((_, _) => _refused(c.key));
+        expect((await service.tipCreator(creatorUid: 'maker', amount: 25)).outcome, c.value, reason: c.key);
+      }
+      reply((_, _) => _refused('tip_insufficient_balance', insufficient: true));
+      expect((await service.tipCreator(creatorUid: 'maker', amount: 25)).outcome, TipOutcome.insufficient);
+      backend.onCall = (_, _) async => throw FirebaseFunctionsException(code: 'invalid-argument', message: 'tip_self');
+      expect((await service.tipCreator(creatorUid: 'maker', amount: 25)).outcome, TipOutcome.failed);
+    });
+  });
+
   group('buyDrawTicket', () {
     test('bought returns the ticket count', () async {
       reply(

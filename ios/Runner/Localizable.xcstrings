@@ -2241,6 +2241,126 @@
         }
       }
     },
+    "notif_push_tip_received_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ tipped you %2$@ coins for %3$@"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ memberi Anda %2$@ koin untuk %3$@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ enviou %2$@ moedas de gorjeta por %3$@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ hat dir %2$@ Coins für %3$@ als Trinkgeld gegeben"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ ने आपको %3$@ के लिए %2$@ कॉइन्स टिप किए"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ te dio %2$@ monedas por %3$@"
+          }
+        }
+      }
+    },
+    "notif_push_tip_received_title_untitled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ tipped you %2$@ coins"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ memberi Anda %2$@ koin"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ enviou %2$@ moedas de gorjeta para você"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ hat dir %2$@ Coins als Trinkgeld gegeben"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ ने आपको %2$@ कॉइन्स टिप किए"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ te dio %2$@ monedas"
+          }
+        }
+      }
+    },
+    "notif_push_tip_received_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See your tips in your creator stats."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lihat tip Anda di statistik kreator Anda."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veja suas gorjetas nas suas estatísticas de criador."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Trinkgelder findest du in deinen Creator-Statistiken."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अपनी टिप्स क्रिएटर स्टैट्स में देखें।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consulta tus propinas en tus estadísticas de creador."
+          }
+        }
+      }
+    },
     "notif_push_report_needs_review_title": {
       "localizations": {
         "en": {

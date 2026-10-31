@@ -14,3 +14,4 @@ const daily = require('./lib/creatorStatsDaily.js');
 exports.getCreatorStats = stats.getCreatorStats;
 exports.onCreatorStatsDailyWritten = daily.onCreatorStatsDailyWritten;
 exports.onCreatorStatsFolderCreated = history.onCreatorStatsFolderCreated;
+exports.tipCreator = require('./fnlib/tips.js').tipCreator;

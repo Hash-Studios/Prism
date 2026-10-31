@@ -7,6 +7,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -52,7 +53,7 @@ class _MockRecordViews extends Mock implements RecordPrismWallpaperViewsUsecase 
 
 class _MockPaletteRepository extends Mock implements PaletteRepository {}
 
-class _MockSetCount extends Mock implements GetWallpaperSetCountUseCase {}
+class _MockSetCount extends Mock implements GetWallpaperCountsUseCase {}
 
 const double _screenWidth = 390;
 const double _screenHeight = 844;
@@ -192,7 +193,7 @@ void main() {
       final palette = _MockPaletteRepository();
       final views = _MockRecordViews();
       final setCount = _MockSetCount();
-      when(() => setCount(any())).thenAnswer((_) async => Result.success<int?>(null));
+      when(() => setCount(any())).thenAnswer((_) async => Result.success<WallpaperCounts?>(null));
       when(() => views(any())).thenAnswer((_) async => Result.success('7'));
       when(() => palette.generatePalette(any())).thenAnswer((_) async => paletteResult);
       analytics = FakeAppAnalytics();

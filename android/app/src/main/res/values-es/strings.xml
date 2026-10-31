@@ -64,6 +64,9 @@
     <string name="notif_push_draw_winner_body">Un mes de Pro y el marco de Prism son tuyos.</string>
     <string name="notif_push_gift_received_title">%1$s te envió un pase Pro de 24 horas</string>
     <string name="notif_push_gift_received_body">Las colecciones prémium y los fondos prémium estarán disponibles hasta mañana.</string>
+    <string name="notif_push_tip_received_title">%1$s te dio %2$s monedas por %3$s</string>
+    <string name="notif_push_tip_received_title_untitled">%1$s te dio %2$s monedas</string>
+    <string name="notif_push_tip_received_body">Consulta tus propinas en tus estadísticas de creador.</string>
     <string name="notif_push_report_needs_review_title">Hay un reporte pendiente de revisión</string>
     <string name="notif_push_report_needs_review_body">Un reporte de contenido lleva más de 12 horas pendiente de revisión.</string>
     <string name="notif_push_new_content_report_title">Nuevo reporte de contenido</string>

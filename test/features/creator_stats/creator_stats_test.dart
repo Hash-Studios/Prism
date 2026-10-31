@@ -62,6 +62,23 @@ Map<String, Object?> fixture({bool empty = false}) {
   };
 }
 
+/// Tips for [stats]: 2 tips and 35 coins in the last week, 1 tip and 25 coins on wall 'one'.
+Map<String, Object?> tipsFixture(Map<String, Object?> stats) {
+  final weeks = (stats['weeks']! as List).cast<Map<String, Object?>>();
+  final last = weeks.length - 1;
+  return {
+    'count': 2,
+    'coins': 35,
+    'weeks': [
+      for (var i = 0; i < weeks.length; i++)
+        {'week': weeks[i]['week'], 'start': weeks[i]['start'], 'count': i == last ? 2 : 0, 'coins': i == last ? 35 : 0},
+    ],
+    'walls': [
+      {'wallId': 'one', 'count': 1, 'coins': 25},
+    ],
+  };
+}
+
 void main() {
   late FakeAppAnalytics analytics;
   setUp(() {
@@ -143,6 +160,31 @@ void main() {
     final raw = fixture();
     raw['totals'] = {'views': -1};
     expect(() => parseCreatorStats(raw), throwsFormatException);
+  });
+  test('payload without tips parses as no tips', () {
+    final stats = parseCreatorStats(fixture());
+    expect(stats.tips.count, 0);
+    expect(stats.tips.weeks, isEmpty);
+  });
+  test('parses tips per week and per wall', () {
+    final raw = fixture();
+    raw['tips'] = tipsFixture(raw);
+    final stats = parseCreatorStats(raw);
+    expect(stats.tips.count, 2);
+    expect(stats.tips.coins, 35);
+    expect(stats.tips.weeks, hasLength(8));
+    expect(stats.tips.weeks.last.count, 2);
+    expect(stats.tips.walls['one']!.coins, 25);
+  });
+  test('tip weeks must match the stats weeks and counts must not be negative', () {
+    final badWeek = fixture();
+    badWeek['tips'] = tipsFixture(badWeek);
+    (((badWeek['tips']! as Map)['weeks'] as List).first as Map<String, Object?>)['week'] = '2026-W99';
+    expect(() => parseCreatorStats(badWeek), throwsFormatException);
+
+    final negative = fixture();
+    negative['tips'] = tipsFixture(negative)..['count'] = -1;
+    expect(() => parseCreatorStats(negative), throwsFormatException);
   });
   blocTest<CreatorStatsBloc, CreatorStatsState>(
     'callable failure is retryable',
@@ -315,6 +357,23 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+  testWidgets('tips summary shows totals, the last week and the wall', (tester) async {
+    final raw = fixture();
+    raw['tips'] = tipsFixture(raw);
+    await pump(tester, CreatorStatsState(data: parseCreatorStats(raw)));
+    await tester.scrollUntilVisible(find.text('Tips'), 300);
+    expect(find.text('Tips'), findsOneWidget);
+    expect(find.text('2 tips, 35 coins in all'), findsOneWidget);
+    final week = find.textContaining('Week of ');
+    expect(week, findsOneWidget);
+    expect(tester.widget<Text>(week).data, contains('2 tips, 35 coins'));
+    expect(find.text('Blue sky: 1 tip, 25 coins'), findsOneWidget);
+  });
+  testWidgets('tips summary shows the empty copy without tips', (tester) async {
+    await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())));
+    await tester.scrollUntilVisible(find.text('Tips'), 300);
+    expect(find.text('No tips yet. Fans can tip you from your walls and your profile.'), findsOneWidget);
+  });
   testWidgets('metric switch dispatches and tracks typed event', (tester) async {
     final bloc = await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())));
     await tester.scrollUntilVisible(find.widgetWithText(ChoiceChip, 'Saves'), 300);

@@ -3350,6 +3350,60 @@ class GiftSentEvent extends AnalyticsEvent {
   }
 }
 
+class TipSheetOpenedEvent extends AnalyticsEvent {
+  const TipSheetOpenedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'tip_sheet_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class TipSentEvent extends AnalyticsEvent {
+  const TipSentEvent({required this.amount});
+
+  final int amount;
+
+  @override
+  String get eventName => 'tip_sent';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'amount': amount};
+  }
+}
+
+class TipFailedEvent extends AnalyticsEvent {
+  const TipFailedEvent({required this.reason});
+
+  final String reason;
+
+  @override
+  String get eventName => 'tip_failed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'reason': reason};
+  }
+}
+
+class TipReceivedPushOpenedEvent extends AnalyticsEvent {
+  const TipReceivedPushOpenedEvent();
+
+  @override
+  String get eventName => 'tip_received_push_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
 class DrawTicketBoughtEvent extends AnalyticsEvent {
   const DrawTicketBoughtEvent({required this.weekKey, required this.tickets});
 

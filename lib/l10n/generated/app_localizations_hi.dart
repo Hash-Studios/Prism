@@ -11911,4 +11911,142 @@ class AppLocalizationsHi extends AppLocalizations {
   String statsChartSummary(String metric, String summary) {
     return '$metric, आठ हफ़्ते। $summary';
   }
+
+  @override
+  String get tipAction => 'क्रिएटर को टिप दें';
+
+  @override
+  String get tipMenuItem => 'टिप भेजें';
+
+  @override
+  String tipTitle(String name) {
+    return '$name को टिप दें';
+  }
+
+  @override
+  String tipMessage(String name) {
+    return 'एक रकम चुनें। $name को सारे कॉइन्स मिलेंगे और उन्हें आपका नाम दिखेगा।';
+  }
+
+  @override
+  String get tipAmountsLabel => 'टिप की रकम';
+
+  @override
+  String tipBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance कॉइन्स', one: '1 कॉइन');
+    return 'आपका बैलेंस: $_temp0';
+  }
+
+  @override
+  String tipShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount और कॉइन्स', one: '1 और कॉइन');
+    return 'आपको $_temp0 चाहिए।';
+  }
+
+  @override
+  String tipSendButton(int amount) {
+    return '$amount कॉइन्स की टिप दें';
+  }
+
+  @override
+  String get tipEarnCoins => 'कॉइन्स कमाएँ';
+
+  @override
+  String get tipThanksTitle => 'टिप के लिए धन्यवाद';
+
+  @override
+  String tipThanksMessage(String name, int amount) {
+    return '$name को आपके $amount कॉइन्स मिल गए।';
+  }
+
+  @override
+  String get tipDone => 'हो गया';
+
+  @override
+  String get tipNotEnoughCoins => 'इस टिप के लिए आपके पास पर्याप्त कॉइन्स नहीं हैं।';
+
+  @override
+  String get tipDailyLimit => 'आज की सारी टिप्स आप भेज चुके हैं। कल फिर कोशिश करें।';
+
+  @override
+  String tipPairLimit(String name) {
+    return 'आप आज $name को पहले ही टिप दे चुके हैं। कल फिर कोशिश करें।';
+  }
+
+  @override
+  String tipCreatorLimit(String name) {
+    return '$name आज और टिप्स नहीं पा सकते। कल फिर कोशिश करें।';
+  }
+
+  @override
+  String get tipSenderTooNew => 'Prism से जुड़ने के 7 दिन बाद आप टिप्स भेज सकते हैं।';
+
+  @override
+  String get tipSenderIneligible => 'टिप भेजने के लिए सत्यापित खाते से साइन इन करें।';
+
+  @override
+  String tipUnavailable(String name) {
+    return 'अभी आप $name को टिप नहीं दे सकते।';
+  }
+
+  @override
+  String get tipFailed => 'टिप नहीं भेजी जा सकी। फिर से कोशिश करें।';
+
+  @override
+  String wallTippedBy(int count) {
+    return '$count लोगों ने टिप दी';
+  }
+
+  @override
+  String get coreCoinTipSent => 'टिप भेजी गई';
+
+  @override
+  String get coreCoinTipReceived => 'टिप मिली';
+
+  @override
+  String notifPushTipReceivedTitle(String senderName, String amount, String wallTitle) {
+    return '$senderName ने $wallTitle के लिए आपको $amount कॉइन्स की टिप दी';
+  }
+
+  @override
+  String notifPushTipReceivedTitleUntitled(String senderName, String amount) {
+    return '$senderName ने आपको $amount कॉइन्स की टिप दी';
+  }
+
+  @override
+  String get notifPushTipReceivedBody => 'अपने क्रिएटर स्टैट्स में अपनी टिप्स देखें।';
+
+  @override
+  String notifTipsReceivedTitle(int count) {
+    return 'आज आपको $count टिप्स मिलीं';
+  }
+
+  @override
+  String notifTipsReceivedBody(int coins) {
+    return 'कुल $coins कॉइन्स। इन्हें अपने क्रिएटर स्टैट्स में देखें।';
+  }
+
+  @override
+  String get statsTips => 'टिप्स';
+
+  @override
+  String statsTipsTotal(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count टिप्स', one: '1 टिप');
+    return '$_temp0, कुल $coins कॉइन्स';
+  }
+
+  @override
+  String statsTipsWeek(String date, int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count टिप्स', one: '1 टिप');
+    return '$date से शुरू हफ़्ता: $_temp0, $coins कॉइन्स';
+  }
+
+  @override
+  String statsTipsWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count टिप्स', one: '1 टिप');
+    return '$_temp0, $coins कॉइन्स';
+  }
+
+  @override
+  String get statsTipsEmpty => 'अभी कोई टिप नहीं है। प्रशंसक आपके वॉलपेपर और प्रोफ़ाइल से आपको टिप दे सकते हैं।';
 }

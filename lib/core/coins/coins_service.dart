@@ -3323,6 +3323,40 @@ class CoinsService with WidgetsBindingObserver {
     );
   }
 
+  /// Tips [creatorUid] a fixed [amount] of coins, linked to [wallId] (the wall document ID) when it is set.
+  Future<TipResult> tipCreator({required String creatorUid, required int amount, String? wallId}) async {
+    if (!_canMutateCoins()) return const TipResult(TipOutcome.failed, reason: 'not_logged_in');
+    // The scope leaves out the amount, so a retry after a lost reply replays the first tip instead of sending a second.
+    final _EconomyReply? reply = await _economyPurchase(
+      'tipCreator',
+      '${creatorUid}_${wallId ?? ''}',
+      <String, Object?>{'creatorUid': creatorUid, 'amount': amount, if (wallId != null) 'wallId': wallId},
+      sourceTag: 'coins.tip',
+    );
+    if (reply == null) return const TipResult(TipOutcome.failed, reason: 'session_changed');
+    final String reason = reply.reason;
+    if (reply.success) {
+      final int sent = parseIntOr(reply.data['amount'], fallback: -reply.delta);
+      if (reply.changed) _logSpend(action: CoinSpendAction.tipCreator, amount: sent, sourceTag: 'coins.tip');
+      return TipResult(TipOutcome.sent, amount: sent, reason: reason);
+    }
+    return TipResult(
+      reply.insufficient
+          ? TipOutcome.insufficient
+          : switch (reason) {
+              'tip_daily_limit' => TipOutcome.dailyLimit,
+              'tip_pair_limit' => TipOutcome.pairLimit,
+              'tip_creator_limit' => TipOutcome.creatorLimit,
+              'tip_sender_too_new' => TipOutcome.senderTooNew,
+              'tip_sender_ineligible' => TipOutcome.senderIneligible,
+              'tip_blocked' => TipOutcome.blocked,
+              'tip_creator_unavailable' || 'tip_wall_invalid' => TipOutcome.unavailable,
+              _ => TipOutcome.failed,
+            },
+      reason: reason,
+    );
+  }
+
   /// Buys one ticket for this week's Prism Draw.
   Future<DrawTicketResult> buyDrawTicket() async {
     if (!_canMutateCoins()) return const DrawTicketResult(DrawTicketOutcome.failed, reason: 'not_logged_in');

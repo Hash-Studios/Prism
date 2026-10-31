@@ -23,6 +23,7 @@ import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
 import 'package:Prism/features/creator_stats/views/widgets/stats_entry_button.dart';
+import 'package:Prism/features/creator_tips/views/widgets/tip_sheet.dart';
 import 'package:Prism/features/folders/views/widgets/profile_folders_row.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
@@ -224,7 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-enum _ProfileMenuAction { report, block }
+enum _ProfileMenuAction { tip, report, block }
 
 class _ProfileChild extends StatefulWidget {
   const _ProfileChild({required this.profile, required this.ownProfile, this.onProfileEdited});
@@ -399,6 +400,20 @@ class _ProfileChildState extends State<_ProfileChild> {
   Future<void> _onMenuSelected(_ProfileMenuAction action) async {
     final String uid = _profile.id.trim();
     switch (action) {
+      case _ProfileMenuAction.tip:
+        if (uid.isEmpty) {
+          return;
+        }
+        await showTipSheet(
+          context,
+          creatorUid: uid,
+          creatorName: creatorLabel(
+            name: _profile.name,
+            username: _profile.username,
+            fallback: context.l10n.accountCreatorFallback,
+          ),
+          source: 'profile',
+        );
       case _ProfileMenuAction.report:
         if (uid.isEmpty) {
           return;
@@ -578,6 +593,12 @@ class _ProfileChildState extends State<_ProfileChild> {
                           icon: const _CircleIcon(icon: JamIcons.more_vertical),
                           onSelected: _onMenuSelected,
                           itemBuilder: (BuildContext context) => <PopupMenuEntry<_ProfileMenuAction>>[
+                            if (app_state.prismUser.loggedIn &&
+                                context.read<PublicProfileBloc>().state.walls.isNotEmpty)
+                              PopupMenuItem<_ProfileMenuAction>(
+                                value: _ProfileMenuAction.tip,
+                                child: Text(context.l10n.tipMenuItem),
+                              ),
                             PopupMenuItem<_ProfileMenuAction>(
                               value: _ProfileMenuAction.report,
                               child: Text(context.l10n.accountReportUser),

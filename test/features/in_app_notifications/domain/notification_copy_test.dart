@@ -130,6 +130,56 @@ void main() {
     }
   });
 
+  test('a tip names the sender, the amount and the wall', () {
+    expect(
+      localizedNotificationCopyData(
+        'tipReceived',
+        const <String, Object?>{'senderName': 'Ava', 'amount': 25, 'wallTitle': 'Neon rain'},
+        fallbackTitle: '',
+        fallbackBody: '',
+        l10n: l10n,
+      ),
+      (title: 'Ava tipped you 25 coins for Neon rain', body: 'See your tips in your creator stats.'),
+    );
+  });
+
+  test('a tip without a wall title omits the wall', () {
+    expect(
+      localizedNotificationCopyData(
+        'tipReceived',
+        const <String, Object?>{'senderName': 'Ava', 'amount': 25, 'wallTitle': ''},
+        fallbackTitle: '',
+        fallbackBody: '',
+        l10n: l10n,
+      ),
+      (title: 'Ava tipped you 25 coins', body: 'See your tips in your creator stats.'),
+    );
+  });
+
+  test('a tip amount given as an int is shown as digits', () {
+    final copy = localizedNotificationCopyData(
+      'tipReceived',
+      const <String, Object?>{'senderName': 'Ava', 'amount': 25, 'wallTitle': ''},
+      fallbackTitle: '',
+      fallbackBody: '',
+      l10n: l10n,
+    );
+    expect(copy.title, contains('25'));
+  });
+
+  test('a daily tip digest counts the tips and the coins', () {
+    expect(
+      localizedNotificationCopyData(
+        'tipsReceived',
+        const <String, Object?>{'tipCount': 3, 'coins': 60},
+        fallbackTitle: '',
+        fallbackBody: '',
+        l10n: l10n,
+      ),
+      (title: 'You got 3 tips today', body: '60 coins in all. See them in your creator stats.'),
+    );
+  });
+
   test('a filled wall request shows the request text as the body', () {
     expect(
       localizedNotificationCopyData(

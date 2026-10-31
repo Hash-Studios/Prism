@@ -86,7 +86,7 @@ void main() {
   group('recordWallpaperView', () {
     test('invalid ids never call the backend and a server rejection can be retried', () async {
       expect((await repository.recordWallpaperView(' ')).isFailure, isTrue);
-      expect((await repository.fetchWallpaperSetCount(' ')).isFailure, isTrue);
+      expect((await repository.fetchWallpaperCounts(' ')).isFailure, isTrue);
       expect(calls, isEmpty);
       failure = FirebaseFunctionsException(code: 'permission-denied', message: 'Denied');
       expect((await repository.recordWallpaperView('abc')).failure!.message, contains('Denied'));
@@ -268,29 +268,29 @@ void main() {
     });
   });
 
-  group('fetchWallpaperSetCount', () {
-    test('reads sets from wallpaper_stats by the upper-case id', () async {
+  group('fetchWallpaperCounts', () {
+    test('reads sets and tippers from wallpaper_stats by the upper-case id', () async {
       firestore.docs['wallpaper_stats'] = <String, Map<String, dynamic>>{
-        'ABC12': <String, dynamic>{'views': 90, 'sets': 17},
+        'ABC12': <String, dynamic>{'views': 90, 'sets': 17, 'tippers': 3},
       };
 
-      final result = await repository.fetchWallpaperSetCount('abc12');
+      final result = await repository.fetchWallpaperCounts('abc12');
 
       expect(result.isSuccess, isTrue);
-      expect(result.data, 17);
+      expect(result.data, (sets: 17, tippers: 3));
     });
 
-    test('is null when the wall has no stats or no sets field', () async {
+    test('is null when the wall has no stats, and sets is null without a sets field', () async {
       firestore.docs['wallpaper_stats'] = <String, Map<String, dynamic>>{
         'NOSETS': <String, dynamic>{'views': 3},
       };
 
-      expect((await repository.fetchWallpaperSetCount('missing')).data, isNull);
-      expect((await repository.fetchWallpaperSetCount('nosets')).data, isNull);
+      expect((await repository.fetchWallpaperCounts('missing')).data, isNull);
+      expect((await repository.fetchWallpaperCounts('nosets')).data, (sets: null, tippers: 0));
     });
 
     test('a Firestore error is a failure, never thrown', () async {
-      final result = await FirebaseViewStatsRepository(_ThrowingFirestore()).fetchWallpaperSetCount('abc');
+      final result = await FirebaseViewStatsRepository(_ThrowingFirestore()).fetchWallpaperCounts('abc');
 
       expect(result.isFailure, isTrue);
     });
