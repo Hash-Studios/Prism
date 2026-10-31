@@ -39,17 +39,21 @@ class CreatorFollowButton extends StatelessWidget {
 
   Widget _button(BuildContext context, bool following) {
     final String name = creator.displayName;
+    Future<void> onTap() async {
+      if (await requireSignedInAction(context) && context.mounted) _toggle(context, follow: !following);
+    }
+
+    // excludeSemantics drops the button's own tap action, so the wrapper carries it for screen readers.
     return Semantics(
       button: true,
       label: following ? context.l10n.accountUnfollowPerson(name) : context.l10n.accountFollowPerson(name),
       excludeSemantics: true,
+      onTap: onTap,
       child: PrismButton(
         label: following ? context.l10n.accountFollowing : context.l10n.accountFollow,
         variant: following ? PrismButtonVariant.ghost : PrismButtonVariant.tonal,
         size: PrismButtonSize.compact,
-        onPressed: () async {
-          if (await requireSignedInAction(context) && context.mounted) _toggle(context, follow: !following);
-        },
+        onPressed: onTap,
       ),
     );
   }
@@ -90,9 +94,10 @@ class CreatorIdentity extends StatelessWidget {
       button: true,
       label: context.l10n.creatorsOpenProfile(name),
       excludeSemantics: true,
+      onTap: () => _open(context),
       child: InkWell(
         borderRadius: BorderRadius.circular(PrismRadius.sm),
-        onTap: () => context.router.push(ProfileRoute(profileIdentifier: creator.uid)),
+        onTap: () => _open(context),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 44),
           child: Row(
@@ -120,6 +125,8 @@ class CreatorIdentity extends StatelessWidget {
       ),
     );
   }
+
+  void _open(BuildContext context) => context.router.push(ProfileRoute(profileIdentifier: creator.uid));
 }
 
 /// Who the creator is and a Follow button. At large text sizes the button moves under the name, so the name keeps

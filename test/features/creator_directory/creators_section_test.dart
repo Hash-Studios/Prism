@@ -92,6 +92,38 @@ void main() {
     expect(repo.fetchCalls, hasLength(2));
   });
 
+  testWidgets('screen readers can follow and open the profile from a card', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final bloc = publicProfileBlocWith();
+    repo.pages[(null, null)] = creatorPage(<DirectoryCreator>[directoryCreator('a')]);
+    await _pumpSection(tester, repo: repo, bloc: bloc);
+
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('Follow Creator a')),
+      matchesSemantics(label: 'Follow Creator a', isButton: true, hasTapAction: true),
+    );
+    expect(
+      tester.getSemantics(find.bySemanticsLabel("Open Creator a's profile")),
+      matchesSemantics(label: "Open Creator a's profile", isButton: true, hasTapAction: true),
+    );
+
+    tester.semantics.tap(find.semantics.byLabel('Follow Creator a'));
+    await tester.pump();
+    verify(
+      () => bloc.add(
+        PublicProfileEvent.followChangeRequested(
+          follow: true,
+          currentUserId: app_state.prismUser.id,
+          currentUserEmail: app_state.prismUser.email,
+          targetUserId: 'a',
+          targetUserEmail: '',
+          targetName: 'Creator a',
+        ),
+      ),
+    ).called(1);
+    semantics.dispose();
+  });
+
   testWidgets('Follow sends followChangeRequested for that creator', (tester) async {
     final bloc = publicProfileBlocWith();
     repo.pages[(null, null)] = creatorPage(<DirectoryCreator>[directoryCreator('a')]);
