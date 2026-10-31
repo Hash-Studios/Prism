@@ -20,6 +20,7 @@ import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_re
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
+import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:auto_route/auto_route.dart';
 
 /// Resolves a catalog-validated URL to a real page route. Object arguments are fetched from repositories or replaced
@@ -248,6 +249,8 @@ Future<PageRouteInfo?> _previewRoute({
       wallpaperId: entity.id,
       wallpaperSource: entity.source,
       thumbnailUrl: display?.thumbnail ?? entity.thumbnailUrl,
+      duoReveal: isDuoWallpaper(entity),
+      allowDuo: isLandscapeWallpaper(entity.wallpaperCore),
     );
   }
   return ReviewPhotoPreviewRoute(url: previewUrl, thumbUrl: display?.thumbnail ?? entity.thumbnailUrl);

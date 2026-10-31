@@ -11,6 +11,41 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get economyAd => 'Anzeige';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Anzeige für $rewardString Münzen ansehen';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Dir fehlen noch $countString Münzen.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Nach der Anzeige fehlen dir möglicherweise noch $countString Münzen';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'Wenn dein Guthaben nach der Belohnung den Preis deckt, wird dieser Artikel automatisch gekauft.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Deine Anzeigenbelohnung wird geprüft. Nach der Bestätigung erscheinen die Münzen.';
+
+  @override
   String get foldersLibraryEmptyTitle => 'Noch keine Ordner';
 
   @override
@@ -91,6 +126,116 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
+  String get duoTitle => 'Duo-Überraschung';
+
+  @override
+  String get duoAiFormatLabel => 'Eine Duo-Überraschung erstellen';
+
+  @override
+  String get duoPresetNotice =>
+      'Prism zeigt im zugeklappten Zustand eine Vorschau der rechten Bildseite. Richte das gespeicherte Original manuell aus und prüfe beide Ansichten in der Hintergrundbildvorschau des Systems. Dies ist eine Prism-Voreinstellung, kein automatischer Bildzuschnitt von iOS.';
+
+  @override
+  String get duoFoldedPromptLabel => 'Zugeklappte Ansicht';
+
+  @override
+  String get duoFoldedPromptExample => 'Eine schläfrige Katze neben einem Fenster';
+
+  @override
+  String get duoRevealedPromptLabel => 'Aufgeklappte Überraschung';
+
+  @override
+  String get duoRevealedPromptExample => 'Ein winziges Raumschiff vor dem Fenster';
+
+  @override
+  String get duoPromptValidation => 'Beschreibe beide Ansichten mit jeweils 1 bis 160 Zeichen.';
+
+  @override
+  String get duoMoodBody => 'Ein Hintergrundbild. Aufgeklappt mehr entdecken.';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'Handy';
+
+  @override
+  String get duoFold => 'Zuklappen';
+
+  @override
+  String get duoUnfold => 'Aufklappen';
+
+  @override
+  String get duoFolded => 'Zugeklappt';
+
+  @override
+  String get duoUnfolded => 'Aufgeklappt';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'Prism zeigt im zugeklappten Zustand eine Vorschau der rechten Bildseite. Android schneidet das Bild möglicherweise anders zu. Prüfe die Hintergrundbildvorschau des Systems, bevor du es anwendest.';
+
+  @override
+  String get duoGetOnPrism => 'Auf Prism entdecken';
+
+  @override
+  String get duoGuideTitle => 'Deine Duo-Überraschung einrichten';
+
+  @override
+  String get duoGuideOpen =>
+      'Öffne das gespeicherte Original in Fotos, tippe auf Teilen und dann auf Als Hintergrundbild.';
+
+  @override
+  String get duoGuideAlign =>
+      'Richte das vollständige Bild manuell so aus, dass im zugeklappten Zustand die rechte Seite zu sehen ist.';
+
+  @override
+  String get duoGuideCheck =>
+      'Prüfe die zugeklappte und die aufgeklappte Ansicht in der Systemvorschau und füge dann das Hintergrundbild hinzu.';
+
+  @override
+  String get duoWebTitle => 'iPhone Duo Hintergrundbilder | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'Ein Hintergrundbild mit einer verborgenen zweiten Szene. Entdecke originelle Hintergrundbilder mit Duo-Überraschung in Prism.';
+
+  @override
+  String get duoWebHeading => 'Ein Hintergrundbild. Eine Geschichte, die sich entfaltet.';
+
+  @override
+  String get duoWebIntro =>
+      'Eine ruhige Szene im zugeklappten Zustand. Eine zweite Geschichte beim Aufklappen. Sieh dir beide Ansichten jedes Original-Hintergrundbilds an.';
+
+  @override
+  String get duoWebEmpty => 'Die erste Duo-Kollektion wird geprüft.';
+
+  @override
+  String get duoWebEmptyBody => 'Entdecke Prism, während wir jedes Hintergrundbild in beiden Ansichten prüfen.';
+
+  @override
+  String get duoWebFolded => 'Zugeklappte Vorschau';
+
+  @override
+  String get duoWebUnfolded => 'Aufgeklapptes Original';
+
+  @override
+  String get duoWebPresetNotice =>
+      'Diese Vorschauen nutzen die Prism-Voreinstellung für die rechte Bildseite, keinen automatischen Bildzuschnitt von Apple. Speichere das vollständige Original, richte es manuell aus und prüfe die zugeklappte und die aufgeklappte Ansicht in der Hintergrundbildvorschau des Systems.';
+
+  @override
+  String get duoWebOpenPrism => 'In Prism öffnen';
+
+  @override
+  String get duoWebExplore => 'Prism entdecken';
+
+  @override
+  String get duoWebAppStore => 'Im App Store laden';
+
+  @override
+  String get duoWebPlayStore => 'Bei Google Play herunterladen';
 
   @override
   String get economyExportFailedLabel => 'Export fehlgeschlagen';

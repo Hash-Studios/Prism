@@ -32,7 +32,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
     _blockListUnknown = _userBlockRepository.blockedCreators is UnknownBlockedCreators;
     _blockedCreatorsSub = _userBlockRepository.watchBlockedCreators().skip(1).listen((blocked) {
       if (blocked is UnknownBlockedCreators) _blockListUnknown = true;
-      add(CategoryFeedEvent.blockedCreatorsChanged(blocked: blocked is KnownBlockedCreators ? blocked.uids : const {}));
+      add(const CategoryFeedEvent.blockedCreatorsChanged());
     });
   }
 

@@ -27,7 +27,12 @@ void main() {
     brazilian.remove('@@locale');
 
     expect(base, brazilian);
-    expect(brazilian.values.every((value) => value is String && value.trim().isNotEmpty), isTrue);
+    expect(
+      brazilian.entries
+          .where((entry) => !entry.key.startsWith('@'))
+          .every((entry) => entry.value is String && (entry.value as String).trim().isNotEmpty),
+      isTrue,
+    );
   });
 
   test('pt-BR resolves as a supported locale and context-free loader honors its region', () async {

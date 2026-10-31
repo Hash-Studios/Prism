@@ -1,14 +1,20 @@
+import 'dart:async';
+
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ads/biz/bloc/ads_bloc.j.dart';
 import 'package:Prism/features/ads/biz/rewarded_ad_flow.dart' as flow;
 import 'package:Prism/features/ads/data/ad_consent.dart';
+import 'package:Prism/features/ads/data/repositories/ads_repository_impl.dart';
+import 'package:Prism/features/ads/domain/repositories/ads_repository.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
 /// Everything the coin gate needs from the outside world. Production uses [AppCoinGatePort]; tests use a fake.
 abstract interface class CoinGatePort {
+  Future<CoinMutationResult> watchVerifiedReward(String placement);
   bool get isPremium;
   int get balance;
 
@@ -51,9 +57,90 @@ abstract interface class CoinGatePort {
 
 class AppCoinGatePort implements CoinGatePort {
   /// [ads] is read lazily so a gate can run without an [AdsBloc] until an ad is actually needed.
-  AppCoinGatePort(this._ads);
+  AppCoinGatePort(this._ads, {this.confirmRewardQuote, this.isPresentationCurrent});
 
   final AdsBloc Function() _ads;
+  final Future<bool> Function(int rewardCoins)? confirmRewardQuote;
+  final bool Function()? isPresentationCurrent;
+  static bool _watching = false;
+
+  @override
+  Future<CoinMutationResult> watchVerifiedReward(String placement) => _watchVerifiedReward(placement);
+
+  Future<CoinMutationResult> _watchVerifiedReward(String placement) async {
+    CoinMutationResult pending() => CoinMutationResult.noChange(
+      balance: balance,
+      success: false,
+      reason: 'reward_pending',
+      unknownOutcomeTransactionId: 'verified_session',
+    );
+    if (_watching) return pending();
+    _watching = true;
+    bool fullscreenStarted = false;
+    final int displayedEstimate = CoinsService.instance.adsRewardNow;
+    try {
+      final session = await CoinsService.instance.beginRewardedSession(placement);
+      if (session == null) {
+        final String? reason = CoinsService.instance.rewardedSessionUnavailableReason;
+        return reason == null
+            ? pending()
+            : CoinMutationResult.noChange(
+                balance: balance,
+                success: false,
+                reason: reason == 'daily_limit' ? 'rewarded_ad_limit' : 'ad_noFill',
+              );
+      }
+      if (session.rewardCoins != displayedEstimate && !(await confirmRewardQuote?.call(session.rewardCoins) ?? false)) {
+        return CoinMutationResult.noChange(balance: balance, success: false, reason: 'reward_quote_cancelled');
+      }
+      final repository = getIt<AdsRepository>();
+      if (repository is! AdsRepositoryImpl) return pending();
+      final loaded = await repository.prepareSession(session, placement: session.placement);
+      if (loaded.data?.adLoaded != true) {
+        return CoinMutationResult.noChange(
+          balance: balance,
+          success: false,
+          reason: 'ad_${loaded.data?.failureReason?.name ?? 'other'}',
+        );
+      }
+      if (!(isPresentationCurrent?.call() ?? true)) {
+        return CoinMutationResult.noChange(balance: balance, success: false, reason: 'reward_quote_cancelled');
+      }
+      Future<CoinMutationResult> finishFullscreen() async {
+        final shown = await repository.showRewardedAd();
+        await CoinsService.instance.reconcileRewardedSession();
+        final deadline = DateTime.now().add(const Duration(seconds: 10));
+        while (shown.data?.rewardPending == true &&
+            app_state.prismUser.id == session.userId &&
+            !CoinsService.instance.rewardSessionSettled(session.sessionId) &&
+            DateTime.now().isBefore(deadline)) {
+          await Future<void>.delayed(const Duration(seconds: 2));
+          if (app_state.prismUser.id != session.userId) break;
+          await CoinsService.instance.reconcileRewardedSession();
+        }
+        final bool settled =
+            app_state.prismUser.id == session.userId && CoinsService.instance.rewardSessionSettled(session.sessionId);
+        final int rewardCoins = settled ? CoinsService.instance.confirmedRewardCoins(session.sessionId) : 0;
+        return settled
+            ? CoinMutationResult(
+                success: true,
+                changed: true,
+                previousBalance: balance - rewardCoins,
+                currentBalance: balance,
+                delta: rewardCoins,
+              )
+            : shown.data?.rewardPending == true
+            ? pending()
+            : CoinMutationResult.noChange(balance: balance, success: false, reason: 'ad_not_completed');
+      }
+
+      fullscreenStarted = true;
+      final completion = finishFullscreen().whenComplete(() => _watching = false);
+      return await completion.timeout(const Duration(seconds: 60), onTimeout: pending);
+    } finally {
+      if (!fullscreenStarted) _watching = false;
+    }
+  }
 
   @override
   bool get isPremium => app_state.prismUser.premium;

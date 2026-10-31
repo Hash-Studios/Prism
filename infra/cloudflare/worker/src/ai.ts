@@ -1,4 +1,6 @@
 import { stylePromptSuffix } from './ai_style_prompt';
+import {composeDuoPrompt, parseDuoPrompt, imageDimensions, type DuoPromptFields} from './ai_duo_prompt';
+import {DUO_REVEAL_SPEC as duo, hasBannedDuoPhrase} from './duo_reveal_spec';
 import { verifyFirebaseIdTokenFromRequest } from './firebase_auth';
 
 export interface AiEnvBindings {
@@ -50,6 +52,9 @@ interface AuthContext {
 }
 
 interface AiGenerateRequest {
+  format?: 'duo-reveal';
+  foldedPrompt?: string;
+  revealedPrompt?: string;
   prompt: string;
   stylePreset: string;
   qualityTier: AiQualityTier;
@@ -66,6 +71,9 @@ interface AiVariationRequest {
 }
 
 interface AiGenerationRecord {
+  format?: 'duo-reveal';
+  foldedPrompt?: string;
+  revealedPrompt?: string;
   generationId: string;
   userId: string;
   createdAt: string;
@@ -1113,6 +1121,7 @@ async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Res
   }
 
   const params: ExecuteGenerationParams = {
+    ...duoMetadata(parsed),
     env,
     auth,
     chargeTxId: charge,
@@ -1207,18 +1216,22 @@ async function handleVariation(request: Request, env: AiEnvBindings, parentGener
   const mergedPrompt = variationPrompt.length === 0
     ? original.prompt
     : `${original.prompt}. Variation request (${strength.toFixed(2)}): ${variationPrompt}`;
+  if (original.format === 'duo-reveal' && hasBannedDuoPhrase(mergedPrompt)) {
+    return aiError('unsafe_prompt', 422, 'Duo variation rejected by originality guard');
+  }
   if (!isPromptSafe(`${mergedPrompt}, ${stylePromptSuffix(original.stylePreset)}`)) {
     return aiError('unsafe_prompt', 422, 'Variation prompt rejected by safety policy');
   }
 
   return executeGeneration({
+    ...duoMetadata(original),
     env,
     auth,
     chargeTxId: charge,
     prompt: mergedPrompt,
     stylePreset: original.stylePreset,
     qualityTier: original.qualityTier,
-    targetSize: `${original.width}x${original.height}`,
+    targetSize: original.format === 'duo-reveal' ? `${duo.canvasWidth}x${duo.canvasHeight}` : `${original.width}x${original.height}`,
     seed: randomSeed(),
     parentGenerationId: parentGenerationId,
     providerDeadlineAt,
@@ -1258,6 +1271,9 @@ async function handlePrefill(request: Request, env: AiEnvBindings): Promise<Resp
 }
 
 interface ExecuteGenerationParams {
+  format?: 'duo-reveal';
+  foldedPrompt?: string;
+  revealedPrompt?: string;
   env: AiEnvBindings;
   auth: AuthContext;
   prompt: string;
@@ -1443,6 +1459,10 @@ function firestoreNumber(field: Record<string, unknown> | undefined): number | n
 }
 
 async function runQuotaGatedGeneration(params: ExecuteGenerationParams): Promise<Response> {
+  if (params.format === 'duo-reveal' &&
+    (!isNonEmptyString(params.env.BROWSER_RENDERING_ACCOUNT_ID) || !isNonEmptyString(params.env.BROWSER_RENDERING_API_TOKEN))) {
+    return aiError('service_disabled', 503, 'Duo exact output requires the existing browser renderer');
+  }
   const config = await readRoutingConfig(params.env);
   if (!config.enabled) {
     return aiError('service_disabled', 503, 'AI generation is disabled');
@@ -1582,7 +1602,7 @@ async function runGenerationAttempts(
       billing.billed = true;
     };
     try {
-      const result = await adapter.generate({
+      let result = await adapter.generate({
         prompt: params.prompt,
         qualityTier: effectiveQualityTier,
         model,
@@ -1597,6 +1617,25 @@ async function runGenerationAttempts(
       });
 
       await markBilled();
+
+      if (params.format === 'duo-reveal') {
+        const dimensions = imageDimensions(result.imageBytes);
+        if (!dimensions || dimensions.width < duo.canvasWidth || dimensions.height < duo.canvasHeight) {
+          throw new Error('duo_native_size_unavailable');
+        }
+        if (dimensions.width !== duo.canvasWidth || dimensions.height !== duo.canvasHeight) {
+          const deadline = createDeadlineContext(params.watermarkDeadlineAt);
+          try {
+            const normalized = await tryRenderWatermarkWithBrowserRendering(result.imageBytes, result.contentType,
+              duo.canvasWidth, duo.canvasHeight, params.env, deadline, false);
+            const actual = normalized && imageDimensions(normalized.bytes);
+            if (!normalized || actual?.width !== duo.canvasWidth || actual.height !== duo.canvasHeight) {
+              throw new Error('duo_exact_normalization_failed');
+            }
+            result = {...result, imageBytes: normalized.bytes, contentType: normalized.contentType, ...actual};
+          } finally { deadline.dispose(); }
+        } else { result = {...result, ...dimensions}; }
+      }
 
       if (!isOutputSafe(result.imageBytes, result.contentType)) {
         lastErrorCode = 'unsafe_output';
@@ -1614,6 +1653,7 @@ async function runGenerationAttempts(
       const latencyMs = Date.now() - startedAt;
 
       const record: AiGenerationRecord = {
+        ...duoMetadata(params),
         generationId,
         userId: params.auth.userId,
         createdAt: new Date().toISOString(),
@@ -1665,6 +1705,7 @@ async function runGenerationAttempts(
       });
 
       return aiJson({
+        ...duoMetadata(record),
         generationId: record.generationId,
         provider: record.provider,
         model: record.model,
@@ -1721,7 +1762,8 @@ async function runGenerationAttempts(
 }
 
 function normalizeGenerateRequest(body: AiGenerateRequest): (AiGenerateRequest & { seed: number }) | null {
-  if (!isJsonObject(body) || !isNonEmptyString(body.prompt) ||
+  if (!isJsonObject(body) || (body.format !== undefined && body.format !== 'duo-reveal') ||
+    (body.format === undefined && (!isNonEmptyString(body.prompt) || body.foldedPrompt !== undefined || body.revealedPrompt !== undefined)) ||
     (body.stylePreset !== undefined && typeof body.stylePreset !== 'string') ||
     (body.targetSize !== undefined && (typeof body.targetSize !== 'string' ||
       !/^\d{2,5}x\d{2,5}$/i.test(body.targetSize.trim()))) ||
@@ -1732,17 +1774,26 @@ function normalizeGenerateRequest(body: AiGenerateRequest): (AiGenerateRequest &
   if (qualityTier == null) {
     return null;
   }
+  const fields = body.format === 'duo-reveal' ? parseDuoPrompt(body) : null;
+  if (body.format === 'duo-reveal' && (!fields || hasBannedDuoPhrase(body.stylePreset ?? ''))) return null;
   return {
-    prompt: clipText(sanitizeText(body.prompt), 160),
+    ...(fields ?? {}),
+    prompt: fields ? composeDuoPrompt(fields) : clipText(sanitizeText(body.prompt), 160),
     stylePreset: clipText(sanitizeText(body.stylePreset ?? 'abstract'), 40),
     qualityTier,
-    targetSize: normalizeTargetSize(body.targetSize),
+    targetSize: fields ? `${duo.canvasWidth}x${duo.canvasHeight}` : normalizeTargetSize(body.targetSize),
     seed: Number.isInteger(body.seed) ? Number(body.seed) : randomSeed(),
   };
 }
 
 function isJsonObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function duoMetadata(value: {format?: 'duo-reveal'; foldedPrompt?: string; revealedPrompt?: string}): Partial<DuoPromptFields> {
+  return value.format === 'duo-reveal' ? {
+    format: value.format, foldedPrompt: value.foldedPrompt, revealedPrompt: value.revealedPrompt,
+  } : {};
 }
 
 function normalizeQualityTier(value: unknown): AiQualityTier | null {
@@ -2243,6 +2294,7 @@ interface FalModel {
 }
 
 interface StudioGenerateRequest {
+  duoPresetId?: string;
   id: string;
   prompt: string;
   model: string;
@@ -2333,7 +2385,8 @@ function falModelCost(model: FalModel, width: number, height: number): number {
 }
 
 function falRequestSize(model: string, targetSize: string): { width: number; height: number } {
-  const requested = parseSize(targetSize);
+  const requested = targetSize === `${duo.canvasWidth}x${duo.canvasHeight}` && model.includes('gpt-image')
+    ? {width: Math.ceil(duo.canvasWidth / 32) * 32, height: Math.ceil(duo.canvasHeight / 16) * 16} : parseSize(targetSize);
   const known = Object.hasOwn(FAL_MODELS, model) ? FAL_MODELS[model] : undefined;
   return known?.imageSize?.(requested.width, requested.height)
     ?? (model.includes('seedream') ? seedreamImageSize(requested.width, requested.height) : requested);
@@ -2456,6 +2509,9 @@ async function handleStudioGenerate(request: Request, env: AiEnvBindings): Promi
   if (parsed == null) {
     return aiError('invalid_request', 400, 'Invalid studio generation payload');
   }
+  if (hasBannedDuoPhrase(parsed.prompt)) {
+    return aiError('unsafe_prompt', 422, 'Studio prompt rejected by originality guard');
+  }
   if (FAL_MODELS[parsed.model]?.studioAllowed !== true) {
     return aiError('invalid_request', 400, 'Unsupported studio model');
   }
@@ -2497,6 +2553,7 @@ async function handleStudioGenerate(request: Request, env: AiEnvBindings): Promi
 }
 
 function normalizeStudioGenerateRequest(body: Partial<StudioGenerateRequest>): StudioGenerateRequest | null {
+  if (body.duoPresetId !== undefined && body.duoPresetId !== duo.presetId) return null;
   const { id, prompt, model, width, height, seed } = body;
   if (typeof id !== 'string' || !STUDIO_ID_REGEX.test(id)) {
     return null;
@@ -2510,7 +2567,7 @@ function normalizeStudioGenerateRequest(body: Partial<StudioGenerateRequest>): S
   if (seed != null && !(Number.isInteger(seed) && seed >= 0 && seed <= STUDIO_MAX_SEED)) {
     return null;
   }
-  return { id, prompt, model, width, height, seed: seed ?? undefined };
+  return { id, prompt, model, width, height, seed: seed ?? undefined, duoPresetId: body.duoPresetId };
 }
 
 function isStudioEdge(value: unknown): value is number {
@@ -2993,6 +3050,7 @@ async function tryRenderWatermarkWithBrowserRendering(
   height: number,
   env: AiEnvBindings,
   deadline?: DeadlineContext,
+  watermark = true,
 ): Promise<{ bytes: Uint8Array; contentType: string } | null> {
   if (!isNonEmptyString(env.BROWSER_RENDERING_ACCOUNT_ID) || !isNonEmptyString(env.BROWSER_RENDERING_API_TOKEN)) {
     return null;
@@ -3008,7 +3066,7 @@ async function tryRenderWatermarkWithBrowserRendering(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        html: renderAiWatermarkHtml(imageDataUrl, width, height),
+        html: renderAiWatermarkHtml(imageDataUrl, width, height, watermark),
         gotoOptions: {
           waitUntil: 'load',
           timeout: 25000,
@@ -3016,6 +3074,7 @@ async function tryRenderWatermarkWithBrowserRendering(
         viewport: {
           width,
           height,
+          deviceScaleFactor: 1,
         },
         screenshotOptions: {
           type: 'png',
@@ -3134,7 +3193,7 @@ function drawRoundedRect(
   ctx.closePath();
 }
 
-function renderAiWatermarkHtml(imageDataUrl: string, width: number, height: number): string {
+function renderAiWatermarkHtml(imageDataUrl: string, width: number, height: number, watermark = true): string {
   return `<!doctype html>
 <html>
 <head>
@@ -3143,12 +3202,13 @@ function renderAiWatermarkHtml(imageDataUrl: string, width: number, height: numb
   * { box-sizing: border-box; }
   html, body { margin: 0; width: ${width}px; height: ${height}px; overflow: hidden; background: #000; }
   body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+  body > div { display: ${watermark ? 'block' : 'none'}; }
 </style>
 </head>
 <body>
   <img src="${imageDataUrl}" alt="wallpaper" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" />
   <div style="position:absolute;right:${Math.max(10, Math.round(Math.min(width, height) * 0.018))}px;bottom:${Math.max(10, Math.round(Math.min(width, height) * 0.018))}px;padding:${Math.max(8, Math.round(Math.min(width, height) * 0.012))}px ${Math.max(12, Math.round(Math.min(width, height) * 0.018))}px;border-radius:${Math.max(8, Math.round(Math.min(width, height) * 0.018))}px;background:rgba(9,12,18,.52);color:rgba(255,255,255,.92);font-size:${Math.max(14, Math.round(Math.min(width, height) * 0.032))}px;font-weight:700;line-height:1;letter-spacing:.1px;box-shadow:0 6px 18px rgba(0,0,0,.38);">
-    Made with Prism AI
+    ${watermark ? 'Made with Prism AI' : ''}
   </div>
 </body>
 </html>`;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
@@ -11,7 +13,17 @@ import 'package:injectable/injectable.dart';
 class MoodsCubit extends Cubit<List<MoodList>> {
   MoodsCubit(this._repository, {@ignoreParam Future<int?> Function()? iosMajor})
     : _iosMajor = iosMajor ?? deviceIosMajor,
-      super(const <MoodList>[]);
+      super(const <MoodList>[]) {
+    _visibility = _repository.watchVisibilityChanges().listen((_) => unawaited(load()));
+  }
+
+  late final StreamSubscription<void> _visibility;
+
+  @override
+  Future<void> close() async {
+    await _visibility.cancel();
+    return super.close();
+  }
 
   final MoodRepository _repository;
   final Future<int?> Function() _iosMajor;
@@ -26,7 +38,7 @@ class MoodsCubit extends Cubit<List<MoodList>> {
       if (isClosed || loadVersion != _loadVersion) return;
       emit(<MoodList>[
         for (final MoodList list in moods)
-          if (list.mood.shownOn(iosMajor: iosMajor)) list,
+          if (list.wallIds.isNotEmpty && list.mood.shownOn(iosMajor: iosMajor)) list,
       ]);
     } catch (error, stackTrace) {
       if (loadVersion != _loadVersion) return;
@@ -35,12 +47,16 @@ class MoodsCubit extends Cubit<List<MoodList>> {
   }
 }
 
-/// Up to two moods for the rows in the For you grid. They move on one place each day, so Home changes daily.
+/// Duo owns the first available row. Other moods rotate daily through the remaining slots, up to two rows total.
 List<MoodList> rowMoodsFor(List<MoodList> moods, DateTime now) {
-  if (moods.length <= 2) return moods;
+  final List<MoodList> visible = moods.where((list) => list.wallIds.isNotEmpty).toList();
+  final List<MoodList> duo = visible.where((list) => list.mood == WallMood.duoReveal).take(1).toList();
+  final List<MoodList> rotating = visible.where((list) => list.mood != WallMood.duoReveal).toList();
+  final int slots = 2 - duo.length;
+  if (rotating.length <= slots) return <MoodList>[...duo, ...rotating];
   final int day = DateTime.utc(now.year, now.month, now.day).difference(DateTime.utc(2026)).inDays;
-  final int start = day % moods.length;
-  return <MoodList>[moods[start], moods[(start + 1) % moods.length]];
+  final int start = day % rotating.length;
+  return <MoodList>[...duo, for (int i = 0; i < slots; i++) rotating[(start + i) % rotating.length]];
 }
 
 /// Null on Android and the web. 0 on iOS when the version cannot be read.

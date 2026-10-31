@@ -1,6 +1,5 @@
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 
 /// How bright a wall looks overall.
 enum QuizTone { dark, light }
@@ -51,7 +50,7 @@ class QuizWall {
   final QuizDensity? density;
   final QuizMood? mood;
 
-  String get key => PersonalizedRankingService.canonicalKey(item);
+  String get key => item.canonicalKey;
 }
 
 class QuizRound {

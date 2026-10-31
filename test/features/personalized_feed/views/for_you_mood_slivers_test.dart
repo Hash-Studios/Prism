@@ -32,4 +32,16 @@ void main() {
       (12, 36, minimal),
     ]);
   });
+
+  test('ad follows row 14 only when another complete row follows', () {
+    expect(forYouAdIndex(44, 3), isNull);
+    expect(forYouAdIndex(45, 3), 42);
+    expect(forYouAdIndex(29, 2), isNull);
+    expect(forYouAdIndex(30, 2), 28);
+    expect(forYouAdIndex(30, 0), isNull);
+    final chunks = forYouChunks(45, 3, <MoodList>[dreamy, minimal]);
+    expect(chunks.last.$1, 36);
+    expect(chunks.last.$2, 45);
+    expect(chunks.last.$1 < forYouAdIndex(45, 3)!, isTrue);
+  });
 }

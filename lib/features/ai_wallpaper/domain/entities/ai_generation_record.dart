@@ -25,6 +25,9 @@ class AiGenerationRecord {
     this.submittedWallId,
     this.submittedAt,
     this.remixOf,
+    this.format,
+    this.foldedPrompt,
+    this.revealedPrompt,
     this.challengeId,
     this.challengeTheme,
   });
@@ -33,6 +36,11 @@ class AiGenerationRecord {
   final String userId;
   final DateTime createdAt;
   final String prompt;
+  final String? format;
+  final String? foldedPrompt;
+  final String? revealedPrompt;
+
+  bool get isDuoReveal => format == 'duo-reveal';
   final AiStylePreset stylePreset;
   final AiQualityTier qualityTier;
   final String provider;
@@ -62,6 +70,9 @@ class AiGenerationRecord {
       'userId': userId,
       'createdAt': createdAt.toUtc(),
       'prompt': prompt,
+      if (format != null) 'format': format,
+      if (foldedPrompt != null) 'foldedPrompt': foldedPrompt,
+      if (revealedPrompt != null) 'revealedPrompt': revealedPrompt,
       'stylePreset': stylePreset.apiValue,
       'qualityTier': qualityTier.apiValue,
       'provider': provider,
@@ -91,6 +102,9 @@ class AiGenerationRecord {
       userId: parseString(json['userId']),
       createdAt: parseDate(json['createdAt']),
       prompt: parseString(json['prompt']),
+      format: _nonEmptyOrNull(json['format']),
+      foldedPrompt: _nonEmptyOrNull(json['foldedPrompt']),
+      revealedPrompt: _nonEmptyOrNull(json['revealedPrompt']),
       stylePreset: AiStylePreset.fromApiValue(parseString(json['stylePreset'], fallback: 'abstract')),
       qualityTier: AiQualityTier.fromApiValue(parseString(json['qualityTier'], fallback: 'balanced')),
       provider: parseString(json['provider']),
@@ -127,6 +141,9 @@ class AiGenerationRecord {
       userId: userId,
       createdAt: createdAt,
       prompt: prompt,
+      format: format,
+      foldedPrompt: foldedPrompt,
+      revealedPrompt: revealedPrompt,
       stylePreset: stylePreset,
       qualityTier: qualityTier,
       provider: provider,

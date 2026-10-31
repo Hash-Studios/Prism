@@ -2386,6 +2386,42 @@ class DataSaverToggledEvent extends AnalyticsEvent {
   }
 }
 
+class AdJourneyEvent extends AnalyticsEvent {
+  const AdJourneyEvent({
+    required this.placement,
+    required this.watchId,
+    required this.format,
+    required this.outcome,
+    this.paidValueMicros,
+    this.currency,
+    this.precision,
+  });
+
+  final String placement;
+  final String watchId;
+  final String format;
+  final String outcome;
+  final double? paidValueMicros;
+  final String? currency;
+  final String? precision;
+
+  @override
+  String get eventName => 'ad_journey';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'placement': placement,
+      'watch_id': watchId,
+      'format': format,
+      'outcome': outcome,
+      if (paidValueMicros != null) 'paid_value_micros': paidValueMicros!,
+      if (currency != null) 'currency': currency!,
+      if (precision != null) 'precision': precision!,
+    };
+  }
+}
+
 class AdLoadResultEvent extends AnalyticsEvent {
   const AdLoadResultEvent({required this.result, this.reason});
 
@@ -2749,6 +2785,80 @@ class MoodChipTappedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'mood_id': moodId, 'position': position};
+  }
+}
+
+class DuoPreviewOpenedEvent extends AnalyticsEvent {
+  const DuoPreviewOpenedEvent({required this.contentId, required this.source, required this.presetId});
+
+  final String contentId;
+  final String source;
+  final String presetId;
+
+  @override
+  String get eventName => 'duo_preview_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'content_id': contentId, 'source': source, 'preset_id': presetId};
+  }
+}
+
+class DuoFoldToggledEvent extends AnalyticsEvent {
+  const DuoFoldToggledEvent({required this.contentId, required this.unfolded});
+
+  final String contentId;
+  final bool unfolded;
+
+  @override
+  String get eventName => 'duo_fold_toggled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'content_id': contentId, 'unfolded': unfolded ? 1 : 0};
+  }
+}
+
+class DuoAiGeneratedEvent extends AnalyticsEvent {
+  const DuoAiGeneratedEvent({required this.generationId, required this.qualityTier});
+
+  final String generationId;
+  final String qualityTier;
+
+  @override
+  String get eventName => 'duo_ai_generated';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'generation_id': generationId, 'quality_tier': qualityTier};
+  }
+}
+
+class DuoShareCardMadeEvent extends AnalyticsEvent {
+  const DuoShareCardMadeEvent({required this.contentId});
+
+  final String contentId;
+
+  @override
+  String get eventName => 'duo_share_card_made';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'content_id': contentId};
+  }
+}
+
+class DuoRowOpenedEvent extends AnalyticsEvent {
+  const DuoRowOpenedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'duo_row_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
   }
 }
 

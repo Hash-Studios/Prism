@@ -18,7 +18,23 @@ import '../../../support/fake_app_analytics.dart';
 import '../../../support/favourite_test_scope.dart';
 import 'mood_test_support.dart';
 
-const MoodList _dreamy = MoodList(mood: WallMood.dreamy, wallIds: <String>['wall-0', 'wall-1', 'wall-2']);
+const MoodList _dreamy = MoodList(
+  mood: WallMood.dreamy,
+  wallIds: <String>[
+    'wall-0',
+    'wall-1',
+    'wall-2',
+    'wall-3',
+    'wall-4',
+    'wall-5',
+    'wall-6',
+    'wall-7',
+    'wall-8',
+    'wall-9',
+    'wall-10',
+    'wall-11',
+  ],
+);
 
 class _MoodSpecificWallsRepository extends FakeMoodRepository {
   _MoodSpecificWallsRepository({required super.moods});
@@ -30,6 +46,19 @@ class _MoodSpecificWallsRepository extends FakeMoodRepository {
     requestedWallIds.add(List<String>.of(ids));
     return ids.map(mockMoodWall).toList();
   }
+}
+
+class _MutableDuoRepository extends FakeMoodRepository {
+  _MutableDuoRepository() : super();
+
+  final visibility = StreamController<void>.broadcast();
+  List<PrismWallpaper> visible = <PrismWallpaper>[mockMoodWall('duo')];
+
+  @override
+  Stream<void> watchVisibilityChanges() => visibility.stream;
+
+  @override
+  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async => visible;
 }
 
 void _registerRepository(FakeMoodRepository repository) {
@@ -63,7 +92,7 @@ void main() {
     await getIt.reset();
   });
 
-  testWidgets('shows a skeleton while the walls load', (tester) async {
+  testWidgets('shows a skeleton while existing mood walls load', (tester) async {
     _registerRepository(FakeMoodRepository(moods: const [_dreamy], gate: Completer<void>().future));
 
     await _pumpRow(tester);
@@ -72,8 +101,8 @@ void main() {
     expect(find.byType(WallpaperTile), findsNothing);
   });
 
-  testWidgets('shows the title, the body line, See all and the wall strip when loaded', (tester) async {
-    _registerRepository(FakeMoodRepository(moods: const [_dreamy], walls: mockMoodWalls(5)));
+  testWidgets('shows an existing mood with three visible walls', (tester) async {
+    _registerRepository(FakeMoodRepository(moods: const [_dreamy], walls: mockMoodWalls(3)));
 
     await _pumpRow(tester);
 
@@ -116,7 +145,23 @@ void main() {
 
     expect(repository.requestedWallIds, <List<String>>[_dreamy.wallIds]);
 
-    const MoodList refreshed = MoodList(mood: WallMood.dreamy, wallIds: <String>['fresh-0', 'fresh-1', 'fresh-2']);
+    const MoodList refreshed = MoodList(
+      mood: WallMood.dreamy,
+      wallIds: <String>[
+        'fresh-0',
+        'fresh-1',
+        'fresh-2',
+        'fresh-3',
+        'fresh-4',
+        'fresh-5',
+        'fresh-6',
+        'fresh-7',
+        'fresh-8',
+        'fresh-9',
+        'fresh-10',
+        'fresh-11',
+      ],
+    );
     await pump(refreshed);
 
     expect(repository.requestedWallIds, <List<String>>[_dreamy.wallIds, refreshed.wallIds]);
@@ -146,8 +191,63 @@ void main() {
     expect(find.byType(WallpaperTile), findsNothing);
   });
 
+  testWidgets('hides Duo while visibility is unresolved', (tester) async {
+    const duo = MoodList(mood: WallMood.duoReveal, wallIds: <String>['duo']);
+    _registerRepository(FakeMoodRepository(moods: const [duo], gate: Completer<void>().future));
+    await tester.pumpWidget(
+      moodTestApp(
+        const Scaffold(
+          body: SingleChildScrollView(child: MoodRow(list: duo, slot: 0)),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.byType(PrismSkeleton), findsNothing);
+    expect(find.text('Duo reveal'), findsNothing);
+  });
+
+  testWidgets('Duo shows one visible wall and disappears when visibility filtering removes it', (tester) async {
+    const duo = MoodList(mood: WallMood.duoReveal, wallIds: <String>['duo']);
+    final repository = _MutableDuoRepository();
+    addTearDown(repository.visibility.close);
+    _registerRepository(repository);
+    await tester.pumpWidget(
+      moodTestApp(
+        const Scaffold(
+          body: SingleChildScrollView(child: MoodRow(list: duo, slot: 0)),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Duo reveal'), findsOneWidget);
+    expect(find.byType(WallpaperTile), findsOneWidget);
+    repository.visible = <PrismWallpaper>[];
+    repository.visibility.add(null);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Duo reveal'), findsNothing);
+    expect(find.byType(WallpaperTile), findsNothing);
+  });
+
   testWidgets('tracks the new mood when the row is reused', (tester) async {
-    const MoodList bold = MoodList(mood: WallMood.brightBold, wallIds: <String>['bold-0', 'bold-1', 'bold-2']);
+    const MoodList bold = MoodList(
+      mood: WallMood.brightBold,
+      wallIds: <String>[
+        'bold-0',
+        'bold-1',
+        'bold-2',
+        'bold-3',
+        'bold-4',
+        'bold-5',
+        'bold-6',
+        'bold-7',
+        'bold-8',
+        'bold-9',
+        'bold-10',
+        'bold-11',
+      ],
+    );
     _registerRepository(_MoodSpecificWallsRepository(moods: const <MoodList>[_dreamy, bold]));
 
     await tester.pumpWidget(
@@ -183,8 +283,24 @@ void main() {
   });
 
   testWidgets('keeps overlapping mood-row impressions and feed heroes scoped', (tester) async {
-    const MoodList bold = MoodList(mood: WallMood.brightBold, wallIds: <String>['wall-0', 'wall-1', 'wall-2']);
-    _registerRepository(FakeMoodRepository(moods: const <MoodList>[_dreamy, bold], walls: mockMoodWalls(5)));
+    const MoodList bold = MoodList(
+      mood: WallMood.brightBold,
+      wallIds: <String>[
+        'wall-0',
+        'wall-1',
+        'wall-2',
+        'wall-3',
+        'wall-4',
+        'wall-5',
+        'wall-6',
+        'wall-7',
+        'wall-8',
+        'wall-9',
+        'wall-10',
+        'wall-11',
+      ],
+    );
+    _registerRepository(FakeMoodRepository(moods: const <MoodList>[_dreamy, bold], walls: mockMoodWalls(12)));
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -229,7 +345,7 @@ void main() {
   });
 
   testWidgets('tracks the row when a later tile becomes visible before the first tile', (tester) async {
-    _registerRepository(FakeMoodRepository(moods: const <MoodList>[_dreamy], walls: mockMoodWalls(5)));
+    _registerRepository(FakeMoodRepository(moods: const <MoodList>[_dreamy], walls: mockMoodWalls(12)));
 
     await tester.pumpWidget(
       moodTestApp(

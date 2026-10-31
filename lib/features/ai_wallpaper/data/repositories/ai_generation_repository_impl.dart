@@ -96,6 +96,9 @@ class AiGenerationRepositoryImpl {
     required AiChargeMode chargeMode,
     required int coinsSpent,
     int? seed,
+    String? format,
+    String? foldedPrompt,
+    String? revealedPrompt,
     String? chargeTxId,
     String? remixOf,
   }) async {
@@ -107,6 +110,9 @@ class AiGenerationRepositoryImpl {
       'stylePreset': stylePreset.apiValue,
       'qualityTier': qualityTier.apiValue,
       'targetSize': targetSize,
+      if (format != null) 'format': format,
+      if (foldedPrompt != null) 'foldedPrompt': foldedPrompt.trim(),
+      if (revealedPrompt != null) 'revealedPrompt': revealedPrompt.trim(),
       if (seed != null) 'seed': seed,
       if (chargeTxId != null && chargeTxId.isNotEmpty) 'chargeTxId': chargeTxId,
       // The worker owns the one free trial per account; a repeat replays the first image.
@@ -133,6 +139,7 @@ class AiGenerationRepositoryImpl {
 
   Future<AiGenerationRecord> generateVariation({
     required String generationId,
+    AiGenerationRecord? originalRecord,
     required AiChargeMode chargeMode,
     required int coinsSpent,
     String variationPrompt = '',
@@ -143,7 +150,7 @@ class AiGenerationRepositoryImpl {
     final user = _requireUser();
     final int ownerGeneration = _generationFor(user.uid);
 
-    final AiGenerationRecord? original = await _fetchById(generationId);
+    final AiGenerationRecord? original = originalRecord ?? await _fetchById(generationId);
     final payload = <String, dynamic>{
       'variationPrompt': variationPrompt,
       'strength': strength,
@@ -484,6 +491,9 @@ class AiGenerationRepositoryImpl {
       userId: userId,
       createdAt: DateTime.now().toUtc(),
       prompt: prompt,
+      format: data['format']?.toString(),
+      foldedPrompt: data['foldedPrompt']?.toString(),
+      revealedPrompt: data['revealedPrompt']?.toString(),
       stylePreset: stylePreset,
       qualityTier: responseQualityTier,
       provider: (data['provider'] ?? 'unknown').toString(),

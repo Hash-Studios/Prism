@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 
 import {DEFAULT_CATEGORY, DEFAULT_COLLECTION, detectLabels, mapLabelsToCategory} from "../wallCategory";
 import {categoryCollection, isCommunityOnly, refreshCollectionCovers} from "../wallCollections";
-import {premiumCollections} from "../wallOfTheDay";
+import {premiumCollections} from "../wallEligibility";
 
 export type CollectionBackfillOptions = {
   apply: boolean;

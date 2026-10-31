@@ -41,16 +41,18 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
   }
 
   Future<void> _watchRewardedAdAndCreditCoins() async {
-    final int reward = CoinsService.instance.adsRewardNow;
+    final String owner = app_state.prismUser.id;
+    int creditedCoins = 0;
     final bool credited = await CoinGate.forContext(context).watchAdForCoins(
       sourceTag: 'coins.hub.rewarded_ad',
       upsellSource: 'coin_hub_rewarded_ad',
       isMounted: () => mounted,
       adErrorMessage: context.l10n.economyAdNotCompleted,
+      onCredited: (amount) => creditedCoins = amount,
     );
     if (!mounted) return;
-    if (credited) {
-      toasts.success(context.l10n.economyCoinsEarned(reward));
+    if (credited && owner == app_state.prismUser.id && creditedCoins > 0) {
+      toasts.success(context.l10n.economyCoinsEarned(creditedCoins));
     }
   }
 
@@ -93,17 +95,15 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
         ),
       _EarnRow(
         icon: Icons.play_circle_outline_rounded,
-        title: context.l10n.economyWatchVideo,
+        title: context.l10n.economyAd,
         subtitle: _loadingReward
             ? context.l10n.economyLoadingVideo
-            : context.l10n.economyAdRewardDetails(
-                CoinPolicy.rewardedAdFirstOfDay,
-                CoinPolicy.rewardedAd,
-                EconomyConfig.current.award.rewardedAdMaxPerDay,
-              ),
+            : CoinsService.instance.adsRemainingToday == 0
+            ? context.l10n.economyAdDailyLimit
+            : context.l10n.economyWatchAdForCoins(CoinsService.instance.adsRewardNow),
         reward: context.l10n.economyCoinsEarned(CoinsService.instance.adsRewardNow),
         loading: _loadingReward,
-        onTap: _onWatchAdTapped,
+        onTap: CoinsService.instance.adsRemainingToday == 0 ? null : _onWatchAdTapped,
       ),
       _EarnRow(
         icon: Icons.group_add_outlined,

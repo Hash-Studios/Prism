@@ -46,6 +46,18 @@ class FakeCoinGatePort implements CoinGatePort {
   Future<bool> adsAllowed() async => consentGiven;
 
   @override
+  Future<CoinMutationResult> watchVerifiedReward(String placement) async {
+    final watched = await watchRewardedAdResult();
+    if (!watched.earned)
+      return CoinMutationResult.noChange(
+        balance: balance,
+        success: false,
+        reason: adFailure == null ? 'ad_not_completed' : 'ad_${adFailure!.name}',
+      );
+    return award(CoinEarnAction.rewardedAd, sourceTag: placement);
+  }
+
+  @override
   Future<RewardedAdResult> watchRewardedAdResult() async {
     log.add('ad');
     if (adThrows) throw StateError('ad failed');

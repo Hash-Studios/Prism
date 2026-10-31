@@ -187,20 +187,11 @@ void main() {
     expect(find.text('Open Prism every day. Pro earns x1.5.'), findsOneWidget);
   });
 
-  testWidgets('earn section labels the first video of the day and the daily cap', (tester) async {
+  testWidgets('earn section shows the current ad reward', (tester) async {
     await tester.binding.setSurfaceSize(const Size(400, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.light));
-    expect(
-      find.text(
-        AppLocalizationsEn().economyAdRewardDetails(
-          CoinPolicy.rewardedAdFirstOfDay,
-          CoinPolicy.rewardedAd,
-          EconomyConfig.current.award.rewardedAdMaxPerDay,
-        ),
-      ),
-      findsOneWidget,
-    );
+    expect(find.text(AppLocalizationsEn().economyWatchAdForCoins(CoinsService.instance.adsRewardNow)), findsOneWidget);
     expect(find.text(AppLocalizationsEn().economyCoinsEarned(CoinsService.instance.adsRewardNow)), findsOneWidget);
   });
 
@@ -420,7 +411,7 @@ void main() {
 
         expect(find.text('Earn coins'), findsOneWidget);
         expect(find.text('Daily streak'), findsOneWidget);
-        expect(find.text('Watch a video'), findsOneWidget);
+        expect(find.text('Ad'), findsOneWidget);
         expect(find.text('Invite a friend'), findsOneWidget);
         expect(find.text('First upload'), findsOneWidget);
         expect(find.text('Complete your profile'), findsOneWidget);

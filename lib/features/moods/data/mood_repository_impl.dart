@@ -5,6 +5,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
@@ -15,8 +16,6 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
-import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart'
-    show personalizedFeedSettingsRevision;
 import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
@@ -84,7 +83,16 @@ class MoodRepositoryImpl implements MoodRepository {
       if (ids.isEmpty || moods.any((list) => list.mood == mood)) continue;
       moods.add(MoodList(mood: mood, wallIds: ids));
     }
-    return moods;
+    final MoodList? duo = moods.firstWhereOrNull((list) => list.mood == WallMood.duoReveal);
+    if (duo == null) return moods;
+    final List<PrismWallpaper> visible = await fetchMoodWalls(duo.wallIds, keepOrder: true);
+    return <MoodList>[
+      for (final MoodList list in moods)
+        if (list.mood != WallMood.duoReveal)
+          list
+        else if (visible.isNotEmpty)
+          MoodList(mood: list.mood, wallIds: visible.map((wall) => wall.id).toList(growable: false)),
+    ];
   }
 
   @override
@@ -92,6 +100,7 @@ class MoodRepositoryImpl implements MoodRepository {
     return Stream<void>.multi((controller) {
       BlockedCreators blocked = _userBlockRepository.blockedCreators;
       bool showAi = AiContentFilter.showsAi(_settingsLocal);
+      bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
       final StreamSubscription<BlockedCreators> subscription = _userBlockRepository.watchBlockedCreators().listen(
         (next) {
           if (next == blocked) return;
@@ -103,8 +112,10 @@ class MoodRepositoryImpl implements MoodRepository {
       );
       void onSettingsChanged() {
         final bool nextShowAi = AiContentFilter.showsAi(_settingsLocal);
-        if (nextShowAi == showAi) return;
+        final bool nextShowAnime = AnimeContentFilter.showsAnime(_settingsLocal);
+        if (nextShowAi == showAi && nextShowAnime == showAnime) return;
         showAi = nextShowAi;
+        showAnime = nextShowAnime;
         controller.add(null);
       }
 

@@ -71,11 +71,58 @@ Map<String, Object?> encodeFeedItem(FeedItemEntity item) => item.when(
 
 /// Returns null for entries that are malformed or of an unknown type.
 FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
-  final String type = map['type']?.toString() ?? '';
-  final String id = map['id']?.toString() ?? '';
+  final Object? type = map['type'];
+  final Object? id = map['id'];
   final Map<String, dynamic> wallpaper = toJsonMap(map['wallpaper'] ?? map['wall']);
-  if (type.isEmpty || id.isEmpty || wallpaper.isEmpty) {
+  if (type is! String || id is! String || id.trim().isEmpty || wallpaper.isEmpty) {
     return null;
+  }
+
+  final Object? rawCore = wallpaper['core'];
+  if (rawCore is! Map) return null;
+  final Map<String, dynamic> core = toJsonMap(rawCore);
+  if (core['id'] is! String ||
+      (core['id'] as String).isEmpty ||
+      core['source'] is! String ||
+      core['fullUrl'] is! String ||
+      core['thumbnailUrl'] is! String) {
+    return null;
+  }
+  final WallpaperSource source = WallpaperSourceX.fromWire(core['source']);
+  if (source == WallpaperSource.unknown || source.wireValue != type) return null;
+
+  bool validNumbers(Map<String, dynamic> values, List<String> keys) => keys.every((key) {
+    final Object? value = values[key];
+    return value == null || value is num && value.isFinite;
+  });
+  bool validLists(Map<String, dynamic> values, List<String> keys) => keys.every((key) {
+    final Object? value = values[key];
+    return value == null || value is List && value.every((entry) => entry is String);
+  });
+  bool validMaps(Map<String, dynamic> values, List<String> keys) =>
+      keys.every((key) => values[key] == null || values[key] is Map);
+  bool validBools(Map<String, dynamic> values, List<String> keys) =>
+      keys.every((key) => values[key] == null || values[key] is bool);
+  bool validStringMap(Object? value) =>
+      value == null || value is Map && value.values.every((entry) => entry == null || entry is String);
+
+  if (!validNumbers(core, const <String>['sizeBytes', 'width', 'height', 'favourites'])) return null;
+  switch (type) {
+    case 'prism':
+      if (!validLists(wallpaper, const <String>['collections', 'tags']) ||
+          !validNumbers(wallpaper, const <String>['requiredStreakDays', 'streakShopCoinCost', 'remixCount']) ||
+          !validBools(wallpaper, const <String>['review', 'isStreakExclusive', 'isAiGenerated']) ||
+          !validMaps(wallpaper, const <String>['aiMetadata', 'spatial', 'aiSource'])) {
+        return null;
+      }
+    case 'wallhaven':
+      if (!validLists(wallpaper, const <String>['colors', 'tags']) ||
+          !validNumbers(wallpaper, const <String>['views', 'favorites', 'dimensionX', 'dimensionY', 'sizeBytes']) ||
+          !validStringMap(wallpaper['thumbs'])) {
+        return null;
+      }
+    case 'pexels':
+      if (!validStringMap(wallpaper['src'])) return null;
   }
 
   List<String>? strings(Object? value) => (value as List?)?.map((e) => e.toString()).toList(growable: false);
@@ -88,7 +135,7 @@ FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
       return PrismFeedItem(
         id: id,
         wallpaper: PrismWallpaper(
-          core: _decodeCore(toJsonMap(wallpaper['core'])),
+          core: _decodeCore(core),
           title: wallpaper['title']?.toString(),
           collections: strings(wallpaper['collections']),
           review: wallpaper['review'] as bool?,
@@ -112,7 +159,7 @@ FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
       return WallhavenFeedItem(
         id: id,
         wallpaper: WallhavenWallpaper(
-          core: _decodeCore(toJsonMap(wallpaper['core'])),
+          core: _decodeCore(core),
           views: integer(wallpaper['views']),
           favorites: integer(wallpaper['favorites']),
           dimensionX: integer(wallpaper['dimensionX']),
@@ -128,7 +175,7 @@ FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
       return PexelsFeedItem(
         id: id,
         wallpaper: PexelsWallpaper(
-          core: _decodeCore(toJsonMap(wallpaper['core'])),
+          core: _decodeCore(core),
           photographer: wallpaper['photographer']?.toString(),
           photographerUrl: wallpaper['photographerUrl']?.toString(),
           src: src.isEmpty

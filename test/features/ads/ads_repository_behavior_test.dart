@@ -2,19 +2,30 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/in_memory_log_sink.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/features/ads/biz/coin_gate_port.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
+import 'package:Prism/features/ads/data/ad_experiment_service.dart';
 import 'package:Prism/features/ads/data/repositories/ads_repository_impl.dart';
 import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
+import 'package:Prism/features/ads/domain/entities/rewarded_session.dart';
+import 'package:Prism/features/ads/domain/repositories/ads_repository.dart';
 import 'package:Prism/logger/app_logger.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:google_mobile_ads/src/ad_instance_manager.dart' show AdMessageCodec;
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
+import '../../support/wait_for_real_io.dart';
 
 class _ThrowingConsent extends AdConsent {
   @override
@@ -34,7 +45,7 @@ void main() {
   late bool throwLoad;
   final codec = StandardMethodCodec(AdMessageCodec());
 
-  Future<void> adEvent(int id, String event, {LoadAdError? error}) async {
+  Future<void> adEvent(int id, String event, {LoadAdError? error, RewardItem? reward}) async {
     final done = Completer<void>();
     messenger.handlePlatformMessage(
       channel,
@@ -43,6 +54,7 @@ void main() {
           'adId': id,
           'eventName': event,
           if (error != null) 'loadAdError': error,
+          if (reward != null) 'rewardItem': reward,
         }),
       ),
       (_) => done.complete(),
@@ -113,6 +125,334 @@ void main() {
       'result': 'failed',
       'reason': 'not_loaded',
     });
+  });
+
+  testWidgets('concurrent preloads share the final loaded result', (tester) async {
+    final first = repository.createRewardedAd();
+    final second = repository.createRewardedAd();
+    expect(identical(first, second), isTrue);
+    await tester.pump();
+    expect(loadIds, hasLength(1));
+    await adEvent(loadIds.single, 'onAdLoaded');
+    expect((await first).data?.adLoaded, isTrue);
+    expect((await second).data?.adLoaded, isTrue);
+  });
+
+  testWidgets('signed-in show configures SSV on the exact ad before showing', (tester) async {
+    final owner = app_state.prismUser;
+    await CoinsTestBackend().install();
+    addTearDown(() async {
+      app_state.prismUser = owner;
+      await getIt.reset();
+    });
+    final loaded = repository.prepareSession(
+      RewardedSession(
+        sessionId: 'session',
+        userId: app_state.prismUser.id,
+        customData: 'token',
+        adUnitId: 'server-unit',
+        watchId: 'watch',
+        rewardCoins: 10,
+        adsRemaining: 3,
+        placement: 'download',
+        callbackBeforeMs: DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch,
+        showBeforeMs: DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch,
+      ),
+    );
+    await tester.pump();
+    final id = loadIds.single;
+    await adEvent(id, 'onAdLoaded');
+    await loaded;
+    final shown = repository.showRewardedAd();
+    await tester.pump();
+    expect(nativeMethods.indexOf('setServerSideVerificationOptions'), greaterThanOrEqualTo(0));
+    expect(
+      nativeMethods.indexOf('setServerSideVerificationOptions'),
+      lessThan(nativeMethods.indexOf('showAdWithoutView')),
+    );
+    await adEvent(id, 'onAdDismissedFullScreenContent');
+    await shown;
+  });
+
+  testWidgets('fullscreen show records spacing even without an impression callback', (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final loaded = repository.createRewardedAd();
+    await tester.pump();
+    final id = loadIds.single;
+    await adEvent(id, 'onAdLoaded');
+    await loaded;
+    final shown = repository.showRewardedAd();
+    await tester.pump();
+    final before = DateTime.now();
+    await adEvent(id, 'onAdShowedFullScreenContent');
+    await tester.pump();
+    expect((await AdExperimentService.instance.lastFullscreen())!.isBefore(before), isFalse);
+    await adEvent(id, 'onAdDismissedFullScreenContent');
+    await shown;
+  });
+
+  testWidgets('late SDK reward after both old timeouts waits for dismissal and disposes once', (tester) async {
+    final loaded = repository.createRewardedAd();
+    await tester.pump();
+    final id = loadIds.single;
+    await adEvent(id, 'onAdLoaded');
+    await loaded;
+    Result<AdsEntity>? result;
+    repository.showRewardedAd().then((value) => result = value);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 61));
+    expect(result, isNull);
+    expect(disposedIds, isNot(contains(id)));
+    expect((await repository.showRewardedAd()).isFailure, isTrue);
+    await adEvent(id, 'onRewardedAdUserEarnedReward', reward: RewardItem(10, 'coins'));
+    expect(result, isNull);
+    await adEvent(id, 'onAdDismissedFullScreenContent');
+    await tester.pump();
+    expect(result?.data?.rewardEarned, isTrue);
+    expect(disposedIds.where((value) => value == id), hasLength(1));
+  });
+
+  testWidgets('UI pending at 60 seconds retains fullscreen ownership and late verified reward', (tester) async {
+    final owner = app_state.prismUser;
+    final backend = CoinsTestBackend();
+    await backend.install();
+    CoinsService.instance.resetSession();
+    getIt.registerSingleton<AdsRepository>(repository);
+    addTearDown(() async {
+      app_state.prismUser = owner;
+      await getIt.reset();
+    });
+    bool verified = false;
+    int begins = 0;
+    backend.onCall = (name, parameters) async {
+      if (name == 'beginRewardedSession') {
+        begins++;
+        return {
+          'version': 1,
+          'status': 'reserved',
+          'sessionId': 'session',
+          'userId': app_state.prismUser.id,
+          'customData': 'token',
+          'adUnitId': 'server-unit',
+          'rewardCoins': 7,
+          'adsRemaining': 3,
+          'showBeforeMs': DateTime.now().add(const Duration(minutes: 10)).millisecondsSinceEpoch,
+        };
+      }
+      expectSync(name, 'getRewardedSession');
+      return {
+        'version': 1,
+        'sessionId': 'session',
+        'status': verified ? 'settled' : 'reserved',
+        'rewardCoins': 7,
+        'currentBalance': verified ? 107 : 100,
+        'adsRemaining': 3,
+      };
+    };
+    final quotes = <int>[];
+    final port = AppCoinGatePort(
+      () => throw StateError('No UI bloc should be required'),
+      confirmRewardQuote: (coins) async {
+        quotes.add(coins);
+        return true;
+      },
+    );
+    CoinMutationResult? uiResult;
+    port.watchVerifiedReward('download').then((value) => uiResult = value);
+    await tester.pump();
+    final id = loadIds.single;
+    await adEvent(id, 'onAdLoaded');
+    await tester.pump();
+    expect(nativeMethods, contains('showAdWithoutView'));
+    expect(quotes, [7]);
+    await tester.pump(const Duration(seconds: 61));
+    expect(uiResult?.reason, 'reward_pending');
+    expect((await port.watchVerifiedReward('another')).reason, 'reward_pending');
+    expect(begins, 1);
+    expect(disposedIds, isNot(contains(id)));
+    await adEvent(id, 'onRewardedAdUserEarnedReward', reward: RewardItem(7, 'coins'));
+    await tester.pump();
+    expect(CoinsService.instance.balanceNotifier.value, 100);
+    verified = true;
+    await adEvent(id, 'onAdDismissedFullScreenContent');
+    await tester.pump();
+    expect(CoinsService.instance.balanceNotifier.value, 107);
+    expect(CoinsService.instance.confirmedRewardCoins('session'), 7);
+    expect(disposedIds.where((value) => value == id), hasLength(1));
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('delayed SSV settlement after dismissal completes the verified watch', (tester) async {
+    final owner = app_state.prismUser;
+    final backend = CoinsTestBackend();
+    await backend.install();
+    CoinsService.instance.resetSession();
+    getIt.registerSingleton<AdsRepository>(repository);
+    addTearDown(() async {
+      app_state.prismUser = owner;
+      await getIt.reset();
+    });
+    bool verified = false;
+    int begins = 0;
+    backend.onCall = (name, parameters) async {
+      if (name == 'beginRewardedSession') {
+        begins++;
+        return {
+          'version': 1,
+          'status': 'reserved',
+          'sessionId': 'session',
+          'userId': app_state.prismUser.id,
+          'customData': 'token',
+          'adUnitId': 'server-unit',
+          'rewardCoins': 7,
+          'adsRemaining': 3,
+          'showBeforeMs': DateTime.now().add(const Duration(minutes: 10)).millisecondsSinceEpoch,
+        };
+      }
+      expectSync(name, 'getRewardedSession');
+      return {
+        'version': 1,
+        'sessionId': 'session',
+        'status': verified ? 'settled' : 'reserved',
+        'rewardCoins': 7,
+        'currentBalance': verified ? 107 : 100,
+        'adsRemaining': 3,
+      };
+    };
+    final quotes = <int>[];
+    final port = AppCoinGatePort(
+      () => throw StateError('No UI bloc should be required'),
+      confirmRewardQuote: (coins) async {
+        quotes.add(coins);
+        return true;
+      },
+    );
+    CoinMutationResult? uiResult;
+    port.watchVerifiedReward('download').then((value) => uiResult = value);
+    await tester.pump();
+    final id = loadIds.single;
+    await adEvent(id, 'onAdLoaded');
+    await tester.pump();
+    expect(nativeMethods, contains('showAdWithoutView'));
+    expect(quotes, [7]);
+    await adEvent(id, 'onRewardedAdUserEarnedReward', reward: RewardItem(7, 'coins'));
+    await adEvent(id, 'onAdDismissedFullScreenContent');
+    await tester.pump();
+    expect(uiResult, isNull);
+    verified = true;
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pump();
+    await waitForRealIo(
+      tester,
+      () => uiResult != null,
+      reason: 'delayed signed reward',
+      pumpDuration: const Duration(milliseconds: 100),
+    );
+    expect(begins, 1);
+    expect(uiResult?.changed, isTrue);
+    expect(uiResult?.delta, 7);
+    expect(CoinsService.instance.balanceNotifier.value, 107);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('changed reward quote must be accepted before loading and a declined reservation can be reused', (
+    tester,
+  ) async {
+    final owner = app_state.prismUser;
+    final backend = CoinsTestBackend();
+    await backend.install();
+    CoinsService.instance.resetSession();
+    addTearDown(() async {
+      app_state.prismUser = owner;
+      await getIt.reset();
+    });
+    int begins = 0;
+    backend.onCall = (name, parameters) async {
+      if (name == 'getRewardedSession') {
+        return {
+          'version': 1,
+          'sessionId': 'session',
+          'status': 'reserved',
+          'rewardCoins': 7,
+          'currentBalance': 100,
+          'adsRemaining': 3,
+        };
+      }
+      begins++;
+      return {
+        'version': 1,
+        'status': 'reserved',
+        'sessionId': 'session',
+        'userId': app_state.prismUser.id,
+        'customData': 'token',
+        'adUnitId': 'server-unit',
+        'rewardCoins': 7,
+        'adsRemaining': 3,
+        'showBeforeMs': DateTime.now().add(const Duration(minutes: 10)).millisecondsSinceEpoch,
+      };
+    };
+    final quotes = <int>[];
+    final port = AppCoinGatePort(
+      () => throw StateError('No UI bloc should be required'),
+      confirmRewardQuote: (coins) async {
+        quotes.add(coins);
+        return false;
+      },
+    );
+    expect((await port.watchVerifiedReward('download')).reason, 'reward_quote_cancelled');
+    expect((await port.watchVerifiedReward('download')).reason, 'reward_quote_cancelled');
+    expect(begins, 1);
+    expect(quotes, [7, 7]);
+    expect(loadIds, isEmpty);
+    expect(nativeMethods, isNot(contains('showAdWithoutView')));
+    await getIt<SettingsLocalDataSource>().delete('verifiedRewardSession_v1.${app_state.prismUser.id}');
+    await CoinsService.instance.reconcileRewardedSession();
+  });
+
+  testWidgets('privacy invalidation during final consent query prevents native show', (tester) async {
+    final finalConsent = Completer<bool>();
+    int queries = 0;
+    AdConsent.instance = AdConsent(
+      requestInfoUpdate: () async {},
+      showFormIfRequired: () async {},
+      canRequestAds: () async => ++queries == 4 ? finalConsent.future : true,
+      showPrivacyOptions: () async {},
+    );
+    repository = AdsRepositoryImpl();
+    final loaded = repository.createRewardedAd();
+    await tester.pump();
+    await adEvent(loadIds.single, 'onAdLoaded');
+    await loaded;
+    final showing = repository.showRewardedAd();
+    await tester.pump();
+    expect(queries, 4);
+    await AdConsent.instance.showPrivacyOptions();
+    finalConsent.complete(true);
+    expect((await showing).isFailure, isTrue);
+    expect(nativeMethods, isNot(contains('showAdWithoutView')));
+  });
+
+  testWidgets('privacy choices invalidate loaded ads and successful consent cache', (tester) async {
+    bool allowed = true;
+    AdConsent.instance = AdConsent(
+      requestInfoUpdate: () async {},
+      showFormIfRequired: () async {},
+      canRequestAds: () async => allowed,
+      showPrivacyOptions: () async {
+        allowed = false;
+      },
+    );
+    repository = AdsRepositoryImpl();
+    final loaded = repository.createRewardedAd();
+    await tester.pump();
+    final id = loadIds.single;
+    await adEvent(id, 'onAdLoaded');
+    await loaded;
+    await AdConsent.instance.showPrivacyOptions();
+    expect(await AdConsent.instance.ensure(), isFalse);
+    expect((await repository.showRewardedAd()).isFailure, isTrue);
+    expect(disposedIds, contains(id));
+    expect(nativeMethods, isNot(contains('showAdWithoutView')));
   });
 
   testWidgets('a native load that never answers times out and clears its loading state', (tester) async {

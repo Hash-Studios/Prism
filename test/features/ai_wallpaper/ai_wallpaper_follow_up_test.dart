@@ -131,6 +131,9 @@ class _FollowUpRepository extends Fake implements AiGenerationRepositoryImpl {
     required AiChargeMode chargeMode,
     required int coinsSpent,
     int? seed,
+    String? format,
+    String? foldedPrompt,
+    String? revealedPrompt,
     String? chargeTxId,
     String? remixOf,
   }) async => _record(id: 'hero-1', quality: heroQuality).copyWith(remixOf: remixOf);
@@ -138,6 +141,7 @@ class _FollowUpRepository extends Fake implements AiGenerationRepositoryImpl {
   @override
   Future<AiGenerationRecord> generateVariation({
     required String generationId,
+    AiGenerationRecord? originalRecord,
     required AiChargeMode chargeMode,
     required int coinsSpent,
     String variationPrompt = '',

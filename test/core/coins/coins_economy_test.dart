@@ -153,10 +153,37 @@ void main() {
   });
 
   group('rewarded ad', () {
+    Future<void> settleAd() async {
+      reply(
+        (name, _) => name == 'beginRewardedSession'
+            ? <String, Object?>{
+                'version': 1,
+                'status': 'reserved',
+                'sessionId': 'session',
+                'userId': app_state.prismUser.id,
+                'customData': 'token',
+                'adUnitId': 'server-unit',
+                'rewardCoins': 20,
+                'showBeforeMs': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch,
+                'adsRemaining': 19,
+              }
+            : <String, Object?>{
+                'version': 1,
+                'status': 'settled',
+                'sessionId': 'session',
+                'currentBalance': 120,
+                'adsRemaining': 19,
+                'rewardCoins': 20,
+              },
+      );
+      expect(await service.beginRewardedSession('test'), isNotNull);
+      expect(await service.reconcileRewardedSession(), isTrue);
+    }
+
     test('first ad of the day pays the first-of-day amount, then the base amount', () async {
       expect(service.adsRewardNow, 20);
       reply((_, _) => _paid(after: 120, extra: <String, Object?>{'adsRemaining': 19}));
-      await service.award(CoinEarnAction.rewardedAd);
+      await settleAd();
       expect(service.adsRewardNow, 10);
     });
 
@@ -184,9 +211,36 @@ void main() {
           },
         ),
       );
-      await service.award(CoinEarnAction.rewardedAd);
+      await settleAd();
       expect(service.questsNotifier.value?.bonus?.claimed, isTrue);
-      expect(calls.map(((String, Map<String, dynamic>) c) => c.$1), <String>['awardCoins']);
+      expect(calls.map(((String, Map<String, dynamic>) c) => c.$1), <String>[
+        'beginRewardedSession',
+        'getRewardedSession',
+      ]);
+    });
+    test('a replayed reservation past its show window is kept and a fresh one is reserved', () async {
+      int begins = 0;
+      reply((name, _) {
+        if (name == 'getRewardedSession') {
+          return <String, Object?>{'version': 1, 'status': 'reserved', 'sessionId': 'old', 'currentBalance': 100};
+        }
+        begins++;
+        return <String, Object?>{
+          'version': 1,
+          'status': 'reserved',
+          'sessionId': begins == 1 ? 'old' : 'fresh',
+          'userId': app_state.prismUser.id,
+          'customData': 'token',
+          'adUnitId': 'server-unit',
+          'rewardCoins': 10,
+          'showBeforeMs': DateTime.now().add(Duration(minutes: begins == 1 ? -1 : 5)).millisecondsSinceEpoch,
+        };
+      });
+      final session = await service.beginRewardedSession('test');
+      expect(session?.sessionId, 'fresh');
+      final begun = calls.where(((String, Map<String, dynamic>) c) => c.$1 == 'beginRewardedSession').toList();
+      expect(begun, hasLength(2));
+      expect(begun.first.$2['requestId'], isNot(begun.last.$2['requestId']));
     });
   });
 

@@ -11,6 +11,41 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get economyAd => 'Ad';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Watch ad for $rewardString coins';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'You need $countString more coins.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'You may still need $countString coins after the ad';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'If your balance after the reward covers the price, this item will be purchased automatically.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Your ad reward is awaiting verification. Coins will appear once it is confirmed.';
+
+  @override
   String get foldersLibraryEmptyTitle => 'No folders yet';
 
   @override
@@ -89,6 +124,113 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
+  String get duoTitle => 'Duo reveal';
+
+  @override
+  String get duoAiFormatLabel => 'Create a Duo reveal';
+
+  @override
+  String get duoPresetNotice =>
+      'Prism previews the right side when folded. Align the saved original manually and check both views in the system wallpaper preview. This is a Prism preset, not an automatic iOS crop.';
+
+  @override
+  String get duoFoldedPromptLabel => 'Folded view';
+
+  @override
+  String get duoFoldedPromptExample => 'A sleepy cat beside a window';
+
+  @override
+  String get duoRevealedPromptLabel => 'Unfolded reveal';
+
+  @override
+  String get duoRevealedPromptExample => 'A tiny spaceship outside the window';
+
+  @override
+  String get duoPromptValidation => 'Describe both views using 1 to 160 characters each.';
+
+  @override
+  String get duoMoodBody => 'One wallpaper. A wider reveal.';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'Phone';
+
+  @override
+  String get duoFold => 'Fold';
+
+  @override
+  String get duoUnfold => 'Unfold';
+
+  @override
+  String get duoFolded => 'Folded';
+
+  @override
+  String get duoUnfolded => 'Unfolded';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'Prism previews the right side when folded. Android may crop it differently. Check the system wallpaper preview before applying.';
+
+  @override
+  String get duoGetOnPrism => 'Get it on Prism';
+
+  @override
+  String get duoGuideTitle => 'Set up your Duo reveal';
+
+  @override
+  String get duoGuideOpen => 'Open the saved original in Photos, tap Share, then Use as Wallpaper.';
+
+  @override
+  String get duoGuideAlign => 'Align the full image manually so the folded view shows the right side.';
+
+  @override
+  String get duoGuideCheck => 'Check both folded and unfolded views in the system preview, then add the wallpaper.';
+
+  @override
+  String get duoWebTitle => 'iPhone Duo wallpapers | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'One wallpaper, a hidden second scene. Explore original Duo reveal wallpapers in Prism.';
+
+  @override
+  String get duoWebHeading => 'One wallpaper. A wider story.';
+
+  @override
+  String get duoWebIntro =>
+      'A quiet scene when folded. A second story when unfolded. Preview both views of each original wallpaper.';
+
+  @override
+  String get duoWebEmpty => 'The first Duo collection is in review.';
+
+  @override
+  String get duoWebEmptyBody => 'Explore Prism while each wallpaper is checked in both views.';
+
+  @override
+  String get duoWebFolded => 'Folded preview';
+
+  @override
+  String get duoWebUnfolded => 'Unfolded original';
+
+  @override
+  String get duoWebPresetNotice =>
+      'These previews use Prism\'s right-side preset, not an automatic Apple crop. Save the full original, align it manually, and check both folded and unfolded views in the system wallpaper preview.';
+
+  @override
+  String get duoWebOpenPrism => 'Open in Prism';
+
+  @override
+  String get duoWebExplore => 'Explore Prism';
+
+  @override
+  String get duoWebAppStore => 'Download on the App Store';
+
+  @override
+  String get duoWebPlayStore => 'Get it on Google Play';
 
   @override
   String get economyExportFailedLabel => 'Export failed';

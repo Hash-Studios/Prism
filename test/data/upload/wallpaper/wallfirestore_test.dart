@@ -8,6 +8,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wallfirestore;
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

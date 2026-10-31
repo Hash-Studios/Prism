@@ -35,12 +35,14 @@ import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wallstore;
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/ai_rollout.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_duo_composition.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_follow_up.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart' show AiQualityTier;
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/ai_prompt_pools.dart';
 import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_duo_fields.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_error_copy.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_generate_bar.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart';
@@ -55,6 +57,8 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_style_sheet.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/features/weekly_challenges/biz/challenge_admission_tracker.dart';
 import 'package:Prism/features/weekly_challenges/biz/confirm_challenge_submission.dart';
 import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
@@ -105,7 +109,7 @@ class AiWallpaperTabPage extends StatefulWidget {
 
   /// Opens the share sheet. Tests replace it.
   final ShareSheetOpen? shareSheet;
-  final Future<wallstore.WallSubmissionResult> Function()? submitForTesting;
+  final Future<WallSubmissionResult> Function()? submitForTesting;
 
   @override
   State<AiWallpaperTabPage> createState() => _AiWallpaperTabPageState();
@@ -115,6 +119,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   late final AiGenerationRepositoryImpl _repository = widget.repository ?? getIt<AiGenerationRepositoryImpl>();
   final Random _random = Random();
   final TextEditingController _promptController = TextEditingController();
+  final TextEditingController _foldedController = TextEditingController();
+  final TextEditingController _revealedController = TextEditingController();
+  bool _duoReveal = false;
   final TextEditingController _variationController = TextEditingController();
   final FocusNode _promptFocus = FocusNode();
   final ScrollController _scroll = ScrollController();
@@ -229,6 +236,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     _promptSaveTimer?.cancel();
     unawaited(_sessionSubscription?.cancel());
     _promptController.dispose();
+    _foldedController.dispose();
+    _revealedController.dispose();
     _variationController.dispose();
     _promptFocus.dispose();
     _scroll.dispose();
@@ -266,6 +275,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     final AppLocalizations? messages = _promptMessages;
     if (messages != null) _setPrompt(AiPromptPools.randomPrompt(messages, _selectedStyle, _random));
     _variationController.clear();
+    _duoReveal = false;
+    _foldedController.clear();
+    _revealedController.clear();
     if (_remixLink != null && fromGuest) {
       _setPrompt(promptBeforeSwitch, userInitiated: true, updateSeed: false);
     } else {
@@ -392,6 +404,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           ? null
           : ChallengeSeed(id: record.challengeId!, theme: record.challengeTheme ?? '');
     });
+    if (record.isDuoReveal) unawaited(_openDuo(record));
   }
 
   void _selectTake(AiGenerationRecord record) {
@@ -406,6 +419,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           : ChallengeSeed(id: record.challengeId!, theme: record.challengeTheme ?? '');
     });
     analytics.track(AiStripSwappedEvent(position: position, count: _session.length));
+    if (record.isDuoReveal) unawaited(_openDuo(record));
   }
 
   void _closeResult() => setState(() => _hero = null);
@@ -521,7 +535,18 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   Future<void> _generate() async {
     if (!_canStartGeneration()) return;
 
-    final String prompt = _promptController.text.trim();
+    final AiDuoComposition? duo;
+    if (_duoReveal) {
+      if (!AiDuoComposition.isValidPrompt(_foldedController.text) ||
+          !AiDuoComposition.isValidPrompt(_revealedController.text)) {
+        toasts.error(context.l10n.duoPromptValidation);
+        return;
+      }
+      duo = AiDuoComposition(foldedPrompt: _foldedController.text, revealedPrompt: _revealedController.text);
+    } else {
+      duo = null;
+    }
+    final String prompt = duo?.foldedPrompt ?? _promptController.text.trim();
     if (prompt.isEmpty) {
       _promptFocus.requestFocus();
       return;
@@ -532,10 +557,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     }
     final AiStylePreset style = _selectedStyle;
     final AiQualityTier qualityTier = _selectedQualityTier;
-    final String targetSize = aiTargetSize(
-      size: MediaQuery.sizeOf(context),
-      devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
-    );
+    final String targetSize = duo != null
+        ? AiDuoComposition.targetSize
+        : aiTargetSize(size: MediaQuery.sizeOf(context), devicePixelRatio: MediaQuery.devicePixelRatioOf(context));
     await _runGeneration(
       prompt: prompt,
       style: style,
@@ -545,6 +569,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         stylePreset: style,
         qualityTier: qualityTier,
         targetSize: targetSize,
+        format: duo == null ? null : AiDuoComposition.format,
+        foldedPrompt: duo?.foldedPrompt,
+        revealedPrompt: duo?.revealedPrompt,
         chargeMode: mode,
         coinsSpent: coinsSpent,
         chargeTxId: chargeTxId,
@@ -586,6 +613,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       request: (AiChargeMode mode, int coinsSpent, String? chargeTxId, String? remixOf) =>
           _repository.generateVariation(
             generationId: latest.id,
+            originalRecord: latest,
             chargeMode: mode,
             coinsSpent: coinsSpent,
             variationPrompt: prompt,
@@ -868,6 +896,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       if (mounted) {
         onSuccess(generated);
         showGlintToast(context);
+        if (generated.isDuoReveal) {
+          analytics.track(DuoAiGeneratedEvent(generationId: generated.id, qualityTier: generated.qualityTier.apiValue));
+          unawaited(_openDuo(generated));
+        }
       }
     } catch (error, stackTrace) {
       if (generationSucceeded) {
@@ -921,6 +953,35 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     }
   }
 
+  Future<void> _openDuo(AiGenerationRecord record) async {
+    if (_applying || !mounted || !_isLoggedIn || record.userId != app_state.prismUser.id) return;
+    final int ownerSession = CoinsService.instance.economySession;
+    bool ownsSession() =>
+        mounted &&
+        _isLoggedIn &&
+        record.userId == app_state.prismUser.id &&
+        ownerSession == CoinsService.instance.economySession;
+    setState(() => _applying = true);
+    try {
+      final String displayUrl = record.displayUrl(isPremium: app_state.prismUser.premium);
+      final String link = hideSetWallpaperUi ? displayUrl : (await aiDownloadToTempFile(displayUrl)).path;
+      if (!mounted || !ownsSession()) return;
+      setState(() => _applying = false);
+      await showDuoPreview(
+        context,
+        link: link,
+        file: !hideSetWallpaperUi,
+        wallpaperId: record.id,
+        wallpaperSource: WallpaperSource.downloaded,
+        saveAction: (label) => PrismButton(label: label, onPressed: () => _save(record)),
+      );
+    } catch (error) {
+      if (mounted && ownsSession()) toasts.error(aiDownloadFailureMessage(context.l10n, error));
+    } finally {
+      if (mounted) setState(() => _applying = false);
+    }
+  }
+
   /// Android opens the Set screen with this wall and no crop step. iOS saves it to Photos and shows the set guide.
   Future<void> _apply(AiGenerationRecord record) async {
     if (_applying || !_isLoggedIn || record.userId != app_state.prismUser.id) return;
@@ -931,6 +992,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         record.userId == app_state.prismUser.id &&
         ownerSession == CoinsService.instance.economySession;
     analytics.track(AiResultAppliedEvent(platform: hideSetWallpaperUi ? 'ios' : 'android', from: _heroFrom));
+    if (record.isDuoReveal) return _openDuo(record);
     setState(() => _applying = true);
     try {
       if (hideSetWallpaperUi) {
@@ -986,7 +1048,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           }
         }());
         toasts.success(wallpaperSavedMessage(l10n));
-        if (mounted) await showIosSetWallpaperGuide(context);
+        if (mounted) await showIosSetWallpaperGuide(context, duoReveal: record.isDuoReveal);
         if (ownsSession()) unawaited(RatePromptService.instance.maybePrompt(RatePromptTrigger.aiWallpaperSaved));
       } else if (isPhotosPermissionDenied(result.errorCode)) {
         if (mounted) showPhotosPermissionDenied(context);
@@ -1014,6 +1076,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           link: 'https://prismwalls.com',
           brandName: l10n.appTitle,
           contextLine: l10n.economyAiMadeWithPrism,
+          duoReveal: record.isDuoReveal,
+          contentId: record.id,
+          foldedLabel: l10n.duoFolded,
+          unfoldedLabel: l10n.duoUnfolded,
+          cta: l10n.duoGetOnPrism,
         ),
         'ai_wallpaper',
       );
@@ -1071,7 +1138,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       analytics.track(AiSubmitStartedEvent(generationId: record.id));
       final AiSubmissionMetadata metadata = await _repository.prefillSubmissionMetadata(
         generationId: record.id,
-        defaultTags: <String>[record.stylePreset.apiValue],
+        defaultTags: <String>[
+          record.stylePreset.apiValue,
+          if (record.isDuoReveal) ...<String>['duo', 'duo-reveal'],
+        ],
       );
       if (!mounted || app_state.prismUser.id != record.userId) return;
       final AiSubmissionMetadata? edited = await showAiSubmitSheet(
@@ -1090,7 +1160,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       final String communityId = aiCommunityId(record.id);
       final String wallpaperUrl = record.displayUrl(isPremium: app_state.prismUser.premium);
       submissionStarted = true;
-      final wallstore.WallSubmissionResult submissionResult =
+      final WallSubmissionResult submissionResult =
           await (widget.submitForTesting?.call() ??
               wallstore.createRecord(
                 communityId,
@@ -1103,7 +1173,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 edited.category,
                 edited.description,
                 false,
-                wallpaperTags: edited.tags,
+                wallpaperTags: <String>{
+                  ...edited.tags,
+                  if (record.isDuoReveal) ...<String>['duo', 'duo-reveal'],
+                }.toList(),
                 isAiGenerated: true,
                 aiGenerationId: record.id,
                 aiProvider: record.provider,
@@ -1119,7 +1192,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 challengeId: record.challengeId ?? '',
                 docId: record.challengeId == null ? null : 'wall_$communityId',
               ));
-      if (submissionResult == wallstore.WallSubmissionResult.quotaExceeded) {
+      if (submissionResult == WallSubmissionResult.quotaExceeded) {
         return;
       }
       submissionConfirmed = true;
@@ -1285,14 +1358,23 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                     AiRemixChip(seed: _remixLink!, onDrop: busy ? null : _dropRemixLink),
                     const SizedBox(height: PrismSpace.sm),
                   ],
-                  AiPromptField(
-                    controller: _promptController,
-                    focusNode: _promptFocus,
-                    maxChars: _maxPromptChars,
-                    enabled: !busy,
-                    onShuffle: _shufflePrompt,
-                    onSceneIdea: _useSceneIdea,
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(context.l10n.duoAiFormatLabel, style: PrismTextStyles.rowTitle(context)),
+                    value: _duoReveal,
+                    onChanged: busy ? null : (value) => setState(() => _duoReveal = value),
                   ),
+                  if (_duoReveal)
+                    AiDuoFields(folded: _foldedController, revealed: _revealedController, enabled: !busy)
+                  else
+                    AiPromptField(
+                      controller: _promptController,
+                      focusNode: _promptFocus,
+                      maxChars: _maxPromptChars,
+                      enabled: !busy,
+                      onShuffle: _shufflePrompt,
+                      onSceneIdea: _useSceneIdea,
+                    ),
                 ],
               ),
             ),
@@ -1403,11 +1485,14 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     return ValueListenableBuilder<int>(
       valueListenable: CoinsService.instance.balanceNotifier,
       builder: (BuildContext context, int coinBalance, _) => ListenableBuilder(
-        listenable: _promptController,
+        listenable: Listenable.merge(<Listenable>[_promptController, _foldedController, _revealedController]),
         builder: (BuildContext context, _) => AiGenerateBar(
           cost: _selectedQualityTier.costFor(isPro: app_state.prismUser.premium),
           balance: coinBalance,
-          hasPrompt: _promptController.text.trim().isNotEmpty,
+          hasPrompt: _duoReveal
+              ? AiDuoComposition.isValidPrompt(_foldedController.text) &&
+                    AiDuoComposition.isValidPrompt(_revealedController.text)
+              : _promptController.text.trim().isNotEmpty,
           loading: _loadingGeneration,
           onGenerate: _generate,
           onGetCoins: () => context.router.push(RewardsRoute(scrollToEarn: true)),
