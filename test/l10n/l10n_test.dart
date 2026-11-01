@@ -41,4 +41,68 @@ void main() {
     expect(messages.localeName, 'en');
     expect(messages.actionRetry, 'Try again');
   });
+
+  testWidgets('localizationsFor prefers inherited non-English messages over the device locale', (tester) async {
+    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('de')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    late BuildContext localizedContext;
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('es'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) {
+          localizedContext = context;
+          return child!;
+        },
+        home: const SizedBox.shrink(),
+      ),
+    );
+
+    final AppLocalizations messages = await localizationsFor(localizedContext);
+
+    expect(messages, same(localizedContext.l10n));
+    expect(messages.localeName, 'es');
+    expect(messages.actionRetry, 'Intentar de nuevo');
+  });
+
+  testWidgets('localizationsFor above MaterialApp uses the supported preferred device locale', (tester) async {
+    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('fr'), Locale('es', 'MX')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    late BuildContext aboveAppContext;
+    await tester.pumpWidget(
+      Builder(
+        builder: (context) {
+          aboveAppContext = context;
+          return const MaterialApp(home: SizedBox.shrink());
+        },
+      ),
+    );
+
+    final AppLocalizations messages = await localizationsFor(aboveAppContext);
+
+    expect(messages.localeName, 'es');
+    expect(messages.actionRetry, 'Intentar de nuevo');
+  });
+
+  testWidgets('localizationsFor above MaterialApp falls back to English for unsupported device locales', (
+    tester,
+  ) async {
+    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('fr'), Locale('ja')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    late BuildContext aboveAppContext;
+    await tester.pumpWidget(
+      Builder(
+        builder: (context) {
+          aboveAppContext = context;
+          return const MaterialApp(home: SizedBox.shrink());
+        },
+      ),
+    );
+
+    final AppLocalizations messages = await localizationsFor(aboveAppContext);
+
+    expect(messages.localeName, 'en');
+    expect(messages.actionRetry, 'Try again');
+  });
 }

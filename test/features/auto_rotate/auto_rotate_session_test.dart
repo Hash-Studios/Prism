@@ -504,12 +504,52 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('a pro lapse above MaterialApp still shows the localized reason', (tester) async {
-    await _expectProLapseToast(tester, aboveMaterialApp: true);
+    await _expectAutoRotateToast(tester, aboveMaterialApp: true);
   });
 
   testWidgets('a pro lapse under MaterialApp shows the localized reason', (tester) async {
-    await _expectProLapseToast(tester, aboveMaterialApp: false);
+    await _expectAutoRotateToast(tester);
   });
+
+  testWidgets('a pro lapse in the app builder uses the app locale over the device locale', (tester) async {
+    await _expectAutoRotateToast(
+      tester,
+      locale: const Locale('es'),
+      deviceLocales: const <Locale>[Locale('de')],
+      expectedLocale: const Locale('es'),
+    );
+  });
+
+  testWidgets('a pro lapse above MaterialApp uses the first supported preferred device locale', (tester) async {
+    await _expectAutoRotateToast(
+      tester,
+      aboveMaterialApp: true,
+      locale: const Locale('de'),
+      deviceLocales: const <Locale>[Locale('fr'), Locale('es', 'MX')],
+      expectedLocale: const Locale('es'),
+    );
+  });
+
+  testWidgets('a pro lapse above MaterialApp falls back to English for unsupported device locales', (tester) async {
+    await _expectAutoRotateToast(
+      tester,
+      aboveMaterialApp: true,
+      locale: const Locale('es'),
+      deviceLocales: const <Locale>[Locale('fr'), Locale('ja')],
+    );
+  });
+
+  for (final AutoRotateStopReason reason in AutoRotateStopReason.values) {
+    testWidgets('a ${reason.name} stop in the app builder shows the folder name and acknowledges once', (tester) async {
+      await _expectAutoRotateToast(
+        tester,
+        locale: const Locale('es'),
+        deviceLocales: const <Locale>[Locale('de')],
+        expectedLocale: const Locale('es'),
+        folderStop: (reason: reason, folderName: 'Calm'),
+      );
+    });
+  }
 
   testWidgets('resume retries a failed signed-out stop without RevenueCat refresh', (tester) async {
     final _FakeAutoRotateRepository repository = _FakeAutoRotateRepository(
@@ -570,7 +610,18 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }
 
-Future<void> _expectProLapseToast(WidgetTester tester, {required bool aboveMaterialApp}) async {
+Future<void> _expectAutoRotateToast(
+  WidgetTester tester, {
+  bool aboveMaterialApp = false,
+  Locale? locale,
+  List<Locale>? deviceLocales,
+  Locale expectedLocale = const Locale('en'),
+  AutoRotateFolderStop? folderStop,
+}) async {
+  if (deviceLocales != null) {
+    tester.platformDispatcher.localesTestValue = deviceLocales;
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+  }
   final _MockAutoRotateBloc autoRotateBloc = _MockAutoRotateBloc();
   final _MockSessionBloc sessionBloc = _MockSessionBloc();
   final _MockFavouriteWallsBloc favouriteWallsBloc = _MockFavouriteWallsBloc();
@@ -594,6 +645,7 @@ Future<void> _expectProLapseToast(WidgetTester tester, {required bool aboveMater
   });
 
   final Widget app = MaterialApp(
+    locale: locale,
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     builder: aboveMaterialApp
@@ -614,14 +666,39 @@ Future<void> _expectProLapseToast(WidgetTester tester, {required bool aboveMater
   );
   toasts.overlayResolver = () => tester.state<OverlayState>(find.byType(Overlay).first);
 
-  final AutoRotateState lapsed = AutoRotateState.initial().copyWith(proLapsed: true);
-  when(() => autoRotateBloc.state).thenReturn(lapsed);
-  states.add(lapsed);
+  final AutoRotateState announced = AutoRotateState.initial().copyWith(
+    proLapsed: folderStop == null,
+    folderStop: folderStop,
+  );
+  when(() => autoRotateBloc.state).thenReturn(announced);
+  states.add(announced);
   await tester.pump();
   await tester.pump();
 
-  expect(find.text(lookupAppLocalizations(const Locale('en')).wallpaperAutoRotateOffEnded), findsOneWidget);
-  verify(() => autoRotateBloc.add(const AutoRotateEvent.proLapseAcknowledged())).called(1);
+  final AppLocalizations messages = lookupAppLocalizations(expectedLocale);
+  final String text = folderStop == null
+      ? messages.wallpaperAutoRotateOffEnded
+      : switch (folderStop.reason) {
+          AutoRotateStopReason.folderDeleted => messages.wallpaperAutoRotateStoppedFolderDeleted(folderStop.folderName),
+          AutoRotateStopReason.folderEmpty => messages.wallpaperAutoRotateStoppedFolderEmpty(folderStop.folderName),
+        };
+  expect(find.text(text), findsOneWidget);
+
+  states.add(announced.copyWith(favouriteCount: 1));
+  await tester.pump();
+  expect(find.text(text), findsOneWidget);
+  if (folderStop == null) {
+    verify(() => autoRotateBloc.add(const AutoRotateEvent.proLapseAcknowledged())).called(1);
+    verifyNever(() => autoRotateBloc.add(const AutoRotateEvent.folderStopAcknowledged()));
+  } else {
+    verify(() => autoRotateBloc.add(const AutoRotateEvent.folderStopAcknowledged())).called(1);
+    verifyNever(() => autoRotateBloc.add(const AutoRotateEvent.proLapseAcknowledged()));
+  }
+
+  // Let the toast release its overlay entry before the next test replaces the app.
+  await tester.pump(const Duration(seconds: 20));
+  await tester.pump(const Duration(seconds: 1));
+  await tester.pumpWidget(const SizedBox.shrink());
 }
 
 Widget _listenerTree(AutoRotateBloc autoRotateBloc, SessionBloc sessionBloc, FavouriteWallsBloc favouriteWallsBloc) {
