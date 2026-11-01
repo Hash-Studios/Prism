@@ -45,7 +45,7 @@ export function buildAndroidIntentUrl(canonicalUrl: string, fallbackUrl: string)
  */
 export function iosUniversalLinkUrl(canonicalUrl: string, pageHost: string): string {
   const target = new URL(canonicalUrl);
-  if (target.host !== pageHost) return canonicalUrl;
+  if (target.host !== pageHost || !['prismwalls.com', 'www.prismwalls.com'].includes(target.host)) return canonicalUrl;
   target.host = target.host.startsWith('www.') ? target.host.slice(4) : `www.${target.host}`;
   return target.toString();
 }

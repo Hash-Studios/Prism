@@ -5,6 +5,8 @@ import worker from '../src/index.ts';
 
 const DESKTOP_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36';
 const ANDROID_UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/126.0 Mobile Safari/537.36';
+const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1';
+const IPADOS_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 Version/18.0 Safari/605.1.15';
 const FIRESTORE_PREFIX = 'https://firestore.googleapis.com/v1/projects/prism-test/databases/(default)/documents/';
 const PREVIEW_PREFIX = 'https://us-central1-prism-test.cloudfunctions.net/wallpaperPreview';
 const THUMB = 'https://img.prismwalls.com/previews/aaa.img';
@@ -224,6 +226,18 @@ function stubClock(t) {
 
 function ldJson(body) {
   return [...body.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((match) => JSON.parse(match[1]));
+}
+
+function runOpenAppScript(html, navigator, host, hrefs) {
+  const script = html.match(/<script>(if\(\/android[^<]*)<\/script>/)[1];
+  const links = [...html.matchAll(/<a\b[^>]*href="([^"]*)"[^>]*data-android="([^"]*)"[^>]*>/g)];
+  const anchors = (hrefs ?? links.map((link) => link[1])).map((href, index) => ({
+    href,
+    getAttribute: (name) => name === 'data-android' ? links[index % links.length][2].replaceAll('&amp;', '&') : null,
+  }));
+  assert.ok(anchors.length > 0, 'the rendered page has an Open in Prism anchor');
+  vm.runInNewContext(script, { URL, navigator, location: { host }, document: { querySelectorAll: () => anchors } });
+  return anchors.map((anchor) => anchor.href);
 }
 
 test('wall page renders the public metadata, structured data and related grid', async (t) => {
@@ -468,21 +482,95 @@ test('cache key ignores query strings and user agents', async (t) => {
 
 test('on iOS the open link moves to the other associated host, so Safari hands it to the app', async (t) => {
   const h = setup(t);
+  const devices = [
+    { userAgent: IPHONE_UA, platform: 'iPhone', maxTouchPoints: 5 },
+    { userAgent: 'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X)', platform: 'iPad', maxTouchPoints: 5 },
+    { userAgent: 'Mozilla/5.0 (iPod; CPU iPhone OS 18_0 like Mac OS X)', platform: 'iPod', maxTouchPoints: 5 },
+    { userAgent: IPADOS_UA, platform: 'MacIntel', maxTouchPoints: 5 },
+  ];
+  for (const path of ['/wallpaper/W1', '/folder/F1']) {
+    const html = await (await h.get(path)).text();
+    await h.flush();
+    for (const device of devices) {
+      assert.deepEqual(runOpenAppScript(html, device, 'prismwalls.com'), [`https://www.prismwalls.com${path}`]);
+      assert.deepEqual(runOpenAppScript(html, device, 'www.prismwalls.com'), [`https://prismwalls.com${path}`]);
+    }
+  }
+});
+
+test('the emitted script preserves the Android intent fallback and desktop canonical links on both hosts', async (t) => {
+  const h = setup(t);
   const html = await (await h.get('/wallpaper/W1')).text();
   await h.flush();
-  const script = html.match(/<script>(if\(\/android[^<]*)<\/script>/)[1];
-  const run = (userAgent, host) => {
-    const anchor = { href: 'https://prismwalls.com/wallpaper/W1', getAttribute: () => 'intent://x' };
-    vm.runInNewContext(script, {
-      URL, navigator: { userAgent, platform: 'iPhone', maxTouchPoints: 5 }, location: { host },
-      document: { querySelectorAll: () => [anchor] },
-    });
-    return anchor.href;
-  };
-  const iphone = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1';
-  assert.equal(run(iphone, 'prismwalls.com'), 'https://www.prismwalls.com/wallpaper/W1');
-  assert.equal(run(iphone, 'www.prismwalls.com'), 'https://prismwalls.com/wallpaper/W1');
-  assert.equal(run(ANDROID_UA, 'prismwalls.com'), 'intent://x');
+  for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
+    assert.deepEqual(runOpenAppScript(html, { userAgent: ANDROID_UA, platform: 'Linux armv8l', maxTouchPoints: 5 }, host), [
+      'intent://prismwalls.com/wallpaper/W1#Intent;scheme=https;package=com.hash.prism;'
+        + 'S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.hash.prism;end',
+    ]);
+    for (const device of [
+      { userAgent: DESKTOP_UA, platform: 'Linux x86_64', maxTouchPoints: 0 },
+      { userAgent: IPADOS_UA, platform: 'MacIntel', maxTouchPoints: 0 },
+    ]) {
+      assert.deepEqual(runOpenAppScript(html, device, host), ['https://prismwalls.com/wallpaper/W1']);
+    }
+  }
+});
+
+test('iOS host switching preserves the path, query and fragment for either Prism host', async (t) => {
+  const h = setup(t);
+  const html = await (await h.get('/wallpaper/W1')).text();
+  await h.flush();
+  const device = { userAgent: IPHONE_UA, platform: 'iPhone', maxTouchPoints: 5 };
+  for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
+    assert.deepEqual(runOpenAppScript(html, device, host, [
+      'https://prismwalls.com/wallpaper/W1?ref=a%2Fb&source=x#preview',
+      'https://www.prismwalls.com/folder/F1?ref=a%2Fb&source=x#preview',
+    ]), host === 'prismwalls.com' ? [
+      'https://www.prismwalls.com/wallpaper/W1?ref=a%2Fb&source=x#preview',
+      'https://www.prismwalls.com/folder/F1?ref=a%2Fb&source=x#preview',
+    ] : [
+      'https://prismwalls.com/wallpaper/W1?ref=a%2Fb&source=x#preview',
+      'https://prismwalls.com/folder/F1?ref=a%2Fb&source=x#preview',
+    ]);
+  }
+});
+
+test('the emitted iOS script never rewrites non-Prism hosts, even when they match the page host', async (t) => {
+  const h = setup(t);
+  const html = await (await h.get('/wallpaper/W1')).text();
+  await h.flush();
+  const device = { userAgent: IPHONE_UA, platform: 'iPhone', maxTouchPoints: 5 };
+  for (const host of ['external.example', 'www.external.example', 'prismwalls.com.evil.example', 'sub.prismwalls.com']) {
+    const external = `https://${host}/wallpaper/W1?ref=a%2Fb#preview`;
+    for (const pageHost of ['prismwalls.com', host]) {
+      assert.deepEqual(runOpenAppScript(html, device, pageHost, [external]), [external]);
+    }
+  }
+  assert.deepEqual(runOpenAppScript(html, device, 'prismwalls.com', [
+    'https://prismwalls.com/wallpaper/W1', 'mailto:hello@example.com', 'javascript:void(0)',
+  ]), ['https://www.prismwalls.com/wallpaper/W1', 'mailto:hello@example.com', 'javascript:void(0)']);
+});
+
+test('cold and cached catalogue HTML is identical across both Prism hosts and all device classes', async (t) => {
+  const h = setup(t);
+  const expected = await (await h.get('/wallpaper/W1')).text();
+  await h.flush();
+  const ctx = { waitUntil(promise) { h.state.pending.push(promise); } };
+  for (const cold of [false, true]) {
+    for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
+      for (const ua of [IPHONE_UA, IPADOS_UA, ANDROID_UA, DESKTOP_UA]) {
+        if (cold) h.cache.entries.clear();
+        const before = h.state.reads.length;
+        const response = await worker.fetch(new Request(`https://${host}/wallpaper/W1`, {
+          headers: { 'user-agent': ua },
+        }), h.env, ctx);
+        assert.equal(response.status, 200);
+        assert.equal(await response.text(), expected);
+        await h.flush();
+        assert.equal(h.state.reads.length - before, cold ? 2 : 0);
+      }
+    }
+  }
 });
 
 test('host, request headers, and unrelated queries cannot alter the cached page body', async (t) => {

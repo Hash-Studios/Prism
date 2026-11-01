@@ -9,6 +9,7 @@ import {hasBannedDuoPhrase} from '../src/duo_reveal_spec.ts';
 import { verifyFirebaseIdTokenFromRequest } from '../src/firebase_auth.ts';
 import worker from '../src/index.ts';
 import { formatCount, renderOgCardHtml } from '../src/og_card.ts';
+import { iosUniversalLinkUrl } from '../src/page_kit.ts';
 
 globalThis.crypto ??= webcrypto;
 
@@ -253,6 +254,73 @@ test('share landing page offers the universal link and App Store on iOS, both st
   assert.match(desktop, /Get it on Google Play/);
   assert.match(desktop, /Download on the App Store/);
   assert.doesNotMatch(desktop, />Open in Prism</);
+});
+
+test('iOS universal links switch only the exact Prism hosts', () => {
+  const suffix = '/share?id=wall-1&utm_campaign=warm%2Fwood#preview';
+  for (const [pageHost, otherHost] of [
+    ['prismwalls.com', 'www.prismwalls.com'],
+    ['www.prismwalls.com', 'prismwalls.com'],
+  ]) {
+    assert.equal(iosUniversalLinkUrl(`https://${pageHost}${suffix}`, pageHost), `https://${otherHost}${suffix}`);
+    assert.equal(iosUniversalLinkUrl(`https://${otherHost}${suffix}`, pageHost), `https://${otherHost}${suffix}`);
+  }
+  for (const target of [
+    'https://example.com/share?id=wall-1',
+    'https://www.example.com/share?id=wall-1',
+    'https://prismwalls.com.example.com/share?id=wall-1',
+    'https://prismwalls.com:8443/share?id=wall-1',
+  ]) {
+    assert.equal(iosUniversalLinkUrl(target, new URL(target).host), target, target);
+  }
+});
+
+test('legacy iOS landings hand off to a different associated host without changing the canonical host', async () => {
+  const env = workerEnv({
+    PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+    APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
+    LINKS_KV: new MemoryKv([storedLink('AbCdEfGh', 'share', '/share?id=wall-1', {})]),
+  });
+  for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
+    for (const path of ['/share?id=wall-1', '/user/alice', '/setup/desk', '/refer/alice',
+      '/dashboard/search?utm_campaign=warm%2Fwood', '/l/AbCdEfGh']) {
+      const response = await worker.fetch(
+        new Request(`https://${host}${path}`, { headers: { 'user-agent': IOS_UA } }), env, { waitUntil() {} },
+      );
+      assert.equal(response.status, 200, `${host}${path}`);
+      const body = await response.text();
+      const openUrl = new URL(body.match(/href="([^"]+)"[^>]*>Open in Prism/)[1].replaceAll('&amp;', '&'));
+      assert.equal(openUrl.host, host === 'prismwalls.com' ? 'www.prismwalls.com' : 'prismwalls.com', `${host}${path}`);
+      assert.equal(openUrl.pathname, path.startsWith('/l/') ? '/share' : new URL(`https://${host}${path}`).pathname);
+      assert.match(body, /<link rel="canonical" href="https:\/\/prismwalls\.com\//);
+      assert.match(body, /app-id=6670200846, app-argument=https:\/\/prismwalls\.com\//);
+      assert.doesNotMatch(body, /Get it on Google Play/);
+    }
+  }
+});
+
+test('both universal-link hosts retain Worker routes, AASA paths and app entitlements', async () => {
+  const routes = [...readFileSync(new URL('../wrangler.toml', import.meta.url), 'utf8').matchAll(/^pattern = "([^"]+)"$/gm)]
+    .map((match) => match[1]);
+  const entitlements = readFileSync(new URL('../../../../ios/Runner/Runner.entitlements', import.meta.url), 'utf8');
+  const matchesGlob = (value, pattern) => new RegExp(`^${pattern.split('*')
+    .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`).test(value);
+  for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
+    assert.ok(entitlements.includes(`<string>applinks:${host}</string>`), host);
+    for (const associationPath of ['/.well-known/apple-app-site-association', '/apple-app-site-association']) {
+      assert.ok(routes.some((route) => matchesGlob(`${host}${associationPath}`, route)), `${host}${associationPath}`);
+      const response = await worker.fetch(new Request(`https://${host}${associationPath}`), workerEnv(), { waitUntil() {} });
+      assert.equal(response.status, 200);
+      const details = (await response.json()).applinks.details[0];
+      assert.equal(details.appID, 'X2955Z4CKQ.com.hash.prism');
+      for (const path of ['/wallpaper/wall-1', '/folder/folder-1', '/share', '/user/alice', '/setup/desk', '/refer/alice',
+        '/dashboard/search', '/l/AbCdEfGh']) {
+        assert.ok(details.paths.some((pattern) => matchesGlob(path, pattern)), `${host}${path} must be associated`);
+        assert.ok(routes.some((route) => matchesGlob(`${host}${path}`, route)), `${host}${path} must reach the Worker`);
+      }
+    }
+    assert.ok(routes.some((route) => matchesGlob(`${host}/creator/alice`, route)), `${host}/creator/alice`);
+  }
 });
 
 test('share landing page drops preview images from hosts that are not allowlisted', async () => {

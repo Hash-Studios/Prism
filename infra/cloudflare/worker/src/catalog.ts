@@ -887,7 +887,7 @@ function documentHtml(input: PageInput): string {
  */
 const OPEN_APP_SCRIPT = `if(/android/i.test(navigator.userAgent))document.querySelectorAll('[data-android]').forEach(function(a){a.href=a.getAttribute('data-android')});`
   + `else if(/iphone|ipad|ipod/i.test(navigator.userAgent)||navigator.maxTouchPoints>1&&/mac/i.test(navigator.platform))`
-  + `document.querySelectorAll('[data-android]').forEach(function(a){var u=new URL(a.href);if(u.host===location.host){`
+  + `document.querySelectorAll('[data-android]').forEach(function(a){var u=new URL(a.href);if(u.host===location.host&&(u.host==='${DOMAIN}'||u.host==='www.${DOMAIN}')){`
   + `u.host=u.host.indexOf('www.')===0?u.host.slice(4):'www.'+u.host;a.href=u.href}})`;
 
 function actionsHtml(appUrl: string, label: string, env: CatalogEnv): string {
