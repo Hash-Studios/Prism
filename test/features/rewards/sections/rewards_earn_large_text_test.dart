@@ -34,6 +34,8 @@ void main() {
             final reward = find.descendant(of: rowFinder, matching: find.byKey(const ValueKey<String>('reward')));
             final textColumn = find.ancestor(of: title, matching: find.byType(Column)).first;
             expect(tester.getSize(textColumn).width, greaterThan(100));
+            // Redeem a code has no fixed reward, so it has no pill to place.
+            if (row.title == 'Redeem a code' || row.title == 'Resgatar um código') continue;
             expect(tester.getTopLeft(reward).dy, greaterThanOrEqualTo(tester.getBottomLeft(subtitle).dy));
           }
         });

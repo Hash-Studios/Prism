@@ -13,6 +13,8 @@ import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
+import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
+import 'package:Prism/features/promo_codes/views/redeem_code_sheet.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -129,6 +131,12 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
         done: flags.profileCompletionRewarded,
         onTap: () => context.router.root.push(const EditProfilePanelRoute()),
       ),
+      _EarnRow(
+        icon: Icons.redeem_rounded,
+        title: context.l10n.promoRewardsRowTitle,
+        subtitle: context.l10n.promoRewardsRowSubtitle,
+        onTap: () => showRedeemCodeSheet(context, source: RedeemSheetSource.rewards),
+      ),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,7 +156,7 @@ class _EarnRow extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.reward,
+    this.reward,
     this.onTap,
     this.loading = false,
     this.done = false,
@@ -157,7 +165,9 @@ class _EarnRow extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final String reward;
+
+  /// Null for a row with no fixed coin reward, so no reward pill shows.
+  final String? reward;
   final VoidCallback? onTap;
   final bool loading;
   final bool done;
@@ -175,8 +185,10 @@ class _EarnRow extends StatelessWidget {
         dimension: 20,
         child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
       );
+    } else if (reward == null) {
+      trailing = const SizedBox.shrink(key: ValueKey<String>('no-reward'));
     } else {
-      trailing = _RewardPill(key: const ValueKey<String>('reward'), reward: reward);
+      trailing = _RewardPill(key: const ValueKey<String>('reward'), reward: reward!);
     }
     return LayoutBuilder(
       builder: (context, constraints) => PrismRow(

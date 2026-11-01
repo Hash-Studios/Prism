@@ -19710,6 +19710,420 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Others can find your profile and top wallpapers'**
   String get creatorsShowMeBody;
+
+  /// Title of the sheet where the user enters a Prism promo code.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem a code'**
+  String get promoRedeemTitle;
+
+  /// Line under the redeem sheet title.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a code from a Prism post or giveaway.'**
+  String get promoRedeemMessage;
+
+  /// Line under the redeem sheet title on iPhone and iPad, where only coin codes work.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a coin code from a Prism post or giveaway.'**
+  String get promoRedeemMessageIos;
+
+  /// Label of the promo code text field.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get promoCodeFieldLabel;
+
+  /// Hint text in the empty promo code field.
+  ///
+  /// In en, this message translates to:
+  /// **'For example, 7KQ2 MPXR 4D'**
+  String get promoCodeFieldHint;
+
+  /// Tooltip and screen reader label of the paste button in the code field.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste code'**
+  String get promoPasteCode;
+
+  /// Main button that redeems the code.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem'**
+  String get promoRedeemAction;
+
+  /// Screen reader label while the redeem request runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeeming code'**
+  String get promoRedeeming;
+
+  /// Button that closes the sheet after a code works.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get promoDone;
+
+  /// Button after an error that clears the field.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another code'**
+  String get promoTryAnother;
+
+  /// Headline after a coin code works.
+  ///
+  /// In en, this message translates to:
+  /// **'You got {count, plural, one{1 coin} other{{count} coins}}'**
+  String promoSuccessCoins(int count);
+
+  /// Line under the coin success headline.
+  ///
+  /// In en, this message translates to:
+  /// **'They\'re in your balance now.'**
+  String get promoSuccessCoinsMessage;
+
+  /// Headline after a Pro code works.
+  ///
+  /// In en, this message translates to:
+  /// **'You got {days, plural, one{1 day} other{{days} days}} of Pro'**
+  String promoSuccessPro(int days);
+
+  /// Line under the Pro success headline.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Pro pass now runs until {date}.'**
+  String promoSuccessProMessage(String date);
+
+  /// No description provided for @promoErrorInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That isn\'t a Prism code. Codes have 10 or more letters and numbers.'**
+  String get promoErrorInvalid;
+
+  /// No description provided for @promoErrorNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'We can\'t find that code. Check it and try again.'**
+  String get promoErrorNotFound;
+
+  /// No description provided for @promoErrorDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'This code is turned off.'**
+  String get promoErrorDisabled;
+
+  /// No description provided for @promoErrorExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This code has expired.'**
+  String get promoErrorExpired;
+
+  /// No description provided for @promoErrorLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'This code has no uses left.'**
+  String get promoErrorLimitReached;
+
+  /// No description provided for @promoErrorAlreadyRedeemed.
+  ///
+  /// In en, this message translates to:
+  /// **'You already used this code.'**
+  String get promoErrorAlreadyRedeemed;
+
+  /// No description provided for @promoErrorAccountTooNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account is too new for this code.'**
+  String get promoErrorAccountTooNew;
+
+  /// No description provided for @promoErrorNewUsersOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'This code is for new accounts only.'**
+  String get promoErrorNewUsersOnly;
+
+  /// No description provided for @promoErrorPremiumNotOnIos.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro codes don\'t work on iPhone or iPad. Use an App Store code instead.'**
+  String get promoErrorPremiumNotOnIos;
+
+  /// No description provided for @promoErrorAlreadyPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have Pro, so this code isn\'t needed.'**
+  String get promoErrorAlreadyPremium;
+
+  /// No description provided for @promoErrorRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many tries. Wait an hour, then try again.'**
+  String get promoErrorRateLimited;
+
+  /// No description provided for @promoErrorBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Lots of people are redeeming right now. Try again in a moment.'**
+  String get promoErrorBusy;
+
+  /// No description provided for @promoErrorSignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to redeem a code.'**
+  String get promoErrorSignedOut;
+
+  /// No description provided for @promoErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach Prism. Check your connection and try again.'**
+  String get promoErrorNetwork;
+
+  /// No description provided for @promoErrorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get promoErrorUnknown;
+
+  /// Settings section title for promo and store codes.
+  ///
+  /// In en, this message translates to:
+  /// **'Codes'**
+  String get promoSettingsGroup;
+
+  /// Settings row that opens the redeem sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem a Prism code'**
+  String get promoSettingsRedeemTitle;
+
+  /// Subtitle of that row on Android.
+  ///
+  /// In en, this message translates to:
+  /// **'Coins or Pro days from our posts and giveaways'**
+  String get promoSettingsRedeemSubtitle;
+
+  /// Subtitle of that row on iPhone and iPad.
+  ///
+  /// In en, this message translates to:
+  /// **'Coins from our posts and giveaways'**
+  String get promoSettingsRedeemSubtitleIos;
+
+  /// iOS settings row that opens Apple's code sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem an App Store code'**
+  String get promoAppStoreCodeTitle;
+
+  /// Subtitle of that row.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro offer codes from Apple'**
+  String get promoAppStoreCodeSubtitle;
+
+  /// Android settings row that opens Google Play's redeem page.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem a Play code'**
+  String get promoPlayCodeTitle;
+
+  /// Subtitle of that row.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro offer codes from Google Play'**
+  String get promoPlayCodeSubtitle;
+
+  /// One line under the Codes group on iOS that says which code goes where.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism codes give coins. App Store codes give Pro.'**
+  String get promoCodesFootnoteIos;
+
+  /// Same line on Android.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism codes give coins or Pro days. Play codes give Pro.'**
+  String get promoCodesFootnoteAndroid;
+
+  /// Toast when the store code sheet or page does not open.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the code page. Try again.'**
+  String get promoStoreCodeFailed;
+
+  /// Rewards earn row that opens the redeem sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem a code'**
+  String get promoRewardsRowTitle;
+
+  /// Subtitle of that row.
+  ///
+  /// In en, this message translates to:
+  /// **'Got a code from a post or giveaway?'**
+  String get promoRewardsRowSubtitle;
+
+  /// Admin screen title.
+  ///
+  /// In en, this message translates to:
+  /// **'Promo codes'**
+  String get promoAdminTitle;
+
+  /// Admin entry that opens the promo code screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Promo codes'**
+  String get promoAdminEntry;
+
+  /// Button that creates a code.
+  ///
+  /// In en, this message translates to:
+  /// **'Create code'**
+  String get promoAdminCreate;
+
+  /// No description provided for @promoAdminTypeCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Coins'**
+  String get promoAdminTypeCoins;
+
+  /// No description provided for @promoAdminTypePro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro days'**
+  String get promoAdminTypePro;
+
+  /// Field: coins (1 to 1000) or Pro days (1 to 90).
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get promoAdminAmount;
+
+  /// No description provided for @promoAdminAmountHelpCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'1 to 1,000 coins'**
+  String get promoAdminAmountHelpCoins;
+
+  /// No description provided for @promoAdminAmountHelpPro.
+  ///
+  /// In en, this message translates to:
+  /// **'1 to 90 days. Android only.'**
+  String get promoAdminAmountHelpPro;
+
+  /// No description provided for @promoAdminMaxRedemptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Max redemptions'**
+  String get promoAdminMaxRedemptions;
+
+  /// No description provided for @promoAdminExpiresInDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires in (days)'**
+  String get promoAdminExpiresInDays;
+
+  /// No description provided for @promoAdminMinAccountAge.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum account age (days)'**
+  String get promoAdminMinAccountAge;
+
+  /// No description provided for @promoAdminNewUsersOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'New accounts only'**
+  String get promoAdminNewUsersOnly;
+
+  /// No description provided for @promoAdminNewUsersDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Account at most (days old)'**
+  String get promoAdminNewUsersDays;
+
+  /// Help: leave empty to generate one.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom code (optional)'**
+  String get promoAdminCustomCode;
+
+  /// No description provided for @promoAdminCustomCodeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'10 to 32 letters and numbers, no I, O, 0 or 1. Leave empty to make one.'**
+  String get promoAdminCustomCodeHelp;
+
+  /// Field for an admin note such as the post the code is for.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get promoAdminLabel;
+
+  /// Toast after create.
+  ///
+  /// In en, this message translates to:
+  /// **'Created {code}'**
+  String promoAdminCreated(String code);
+
+  /// Toast after copying a code.
+  ///
+  /// In en, this message translates to:
+  /// **'Code copied'**
+  String get promoAdminCopied;
+
+  /// Tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy code'**
+  String get promoAdminCopy;
+
+  /// No description provided for @promoAdminRedemptions.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {max} used'**
+  String promoAdminRedemptions(int used, int max);
+
+  /// No description provided for @promoAdminExpires.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires {date}'**
+  String promoAdminExpires(String date);
+
+  /// Badge on a turned-off code.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get promoAdminDisabled;
+
+  /// Action.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get promoAdminDisable;
+
+  /// Action.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get promoAdminEnable;
+
+  /// No description provided for @promoAdminEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No codes yet.'**
+  String get promoAdminEmpty;
+
+  /// No description provided for @promoAdminLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load codes. Pull to try again.'**
+  String get promoAdminLoadFailed;
+
+  /// No description provided for @promoAdminCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create the code: {reason}'**
+  String promoAdminCreateFailed(String reason);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

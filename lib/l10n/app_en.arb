@@ -11926,5 +11926,237 @@
   "creatorsShowMeBody": "Others can find your profile and top wallpapers",
   "@creatorsShowMeBody": {
     "description": "Subtitle of the creator directory settings switch."
+  },
+  "promoRedeemTitle": "Redeem a code",
+  "@promoRedeemTitle": {
+    "description": "Title of the sheet where the user enters a Prism promo code."
+  },
+  "promoRedeemMessage": "Enter a code from a Prism post or giveaway.",
+  "@promoRedeemMessage": {
+    "description": "Line under the redeem sheet title."
+  },
+  "promoRedeemMessageIos": "Enter a coin code from a Prism post or giveaway.",
+  "@promoRedeemMessageIos": {
+    "description": "Line under the redeem sheet title on iPhone and iPad, where only coin codes work."
+  },
+  "promoCodeFieldLabel": "Code",
+  "@promoCodeFieldLabel": {
+    "description": "Label of the promo code text field."
+  },
+  "promoCodeFieldHint": "For example, 7KQ2 MPXR 4D",
+  "@promoCodeFieldHint": {
+    "description": "Hint text in the empty promo code field."
+  },
+  "promoPasteCode": "Paste code",
+  "@promoPasteCode": {
+    "description": "Tooltip and screen reader label of the paste button in the code field."
+  },
+  "promoRedeemAction": "Redeem",
+  "@promoRedeemAction": {
+    "description": "Main button that redeems the code."
+  },
+  "promoRedeeming": "Redeeming code",
+  "@promoRedeeming": {
+    "description": "Screen reader label while the redeem request runs."
+  },
+  "promoDone": "Done",
+  "@promoDone": {
+    "description": "Button that closes the sheet after a code works."
+  },
+  "promoTryAnother": "Try another code",
+  "@promoTryAnother": {
+    "description": "Button after an error that clears the field."
+  },
+  "promoSuccessCoins": "You got {count, plural, one{1 coin} other{{count} coins}}",
+  "@promoSuccessCoins": {
+    "description": "Headline after a coin code works.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessCoinsMessage": "They're in your balance now.",
+  "@promoSuccessCoinsMessage": {
+    "description": "Line under the coin success headline."
+  },
+  "promoSuccessPro": "You got {days, plural, one{1 day} other{{days} days}} of Pro",
+  "@promoSuccessPro": {
+    "description": "Headline after a Pro code works.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessProMessage": "Your Pro pass now runs until {date}.",
+  "@promoSuccessProMessage": {
+    "description": "Line under the Pro success headline.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoErrorInvalid": "That isn't a Prism code. Codes have 10 or more letters and numbers.",
+  "promoErrorNotFound": "We can't find that code. Check it and try again.",
+  "promoErrorDisabled": "This code is turned off.",
+  "promoErrorExpired": "This code has expired.",
+  "promoErrorLimitReached": "This code has no uses left.",
+  "promoErrorAlreadyRedeemed": "You already used this code.",
+  "promoErrorAccountTooNew": "Your account is too new for this code.",
+  "promoErrorNewUsersOnly": "This code is for new accounts only.",
+  "promoErrorPremiumNotOnIos": "Pro codes don't work on iPhone or iPad. Use an App Store code instead.",
+  "promoErrorAlreadyPremium": "You already have Pro, so this code isn't needed.",
+  "promoErrorRateLimited": "Too many tries. Wait an hour, then try again.",
+  "promoErrorBusy": "Lots of people are redeeming right now. Try again in a moment.",
+  "promoErrorSignedOut": "Sign in to redeem a code.",
+  "promoErrorNetwork": "Can't reach Prism. Check your connection and try again.",
+  "promoErrorUnknown": "Something went wrong. Try again.",
+  "promoSettingsGroup": "Codes",
+  "@promoSettingsGroup": {
+    "description": "Settings section title for promo and store codes."
+  },
+  "promoSettingsRedeemTitle": "Redeem a Prism code",
+  "@promoSettingsRedeemTitle": {
+    "description": "Settings row that opens the redeem sheet."
+  },
+  "promoSettingsRedeemSubtitle": "Coins or Pro days from our posts and giveaways",
+  "@promoSettingsRedeemSubtitle": {
+    "description": "Subtitle of that row on Android."
+  },
+  "promoSettingsRedeemSubtitleIos": "Coins from our posts and giveaways",
+  "@promoSettingsRedeemSubtitleIos": {
+    "description": "Subtitle of that row on iPhone and iPad."
+  },
+  "promoAppStoreCodeTitle": "Redeem an App Store code",
+  "@promoAppStoreCodeTitle": {
+    "description": "iOS settings row that opens Apple's code sheet."
+  },
+  "promoAppStoreCodeSubtitle": "Pro offer codes from Apple",
+  "@promoAppStoreCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoPlayCodeTitle": "Redeem a Play code",
+  "@promoPlayCodeTitle": {
+    "description": "Android settings row that opens Google Play's redeem page."
+  },
+  "promoPlayCodeSubtitle": "Pro offer codes from Google Play",
+  "@promoPlayCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoCodesFootnoteIos": "Prism codes give coins. App Store codes give Pro.",
+  "@promoCodesFootnoteIos": {
+    "description": "One line under the Codes group on iOS that says which code goes where."
+  },
+  "promoCodesFootnoteAndroid": "Prism codes give coins or Pro days. Play codes give Pro.",
+  "@promoCodesFootnoteAndroid": {
+    "description": "Same line on Android."
+  },
+  "promoStoreCodeFailed": "Couldn't open the code page. Try again.",
+  "@promoStoreCodeFailed": {
+    "description": "Toast when the store code sheet or page does not open."
+  },
+  "promoRewardsRowTitle": "Redeem a code",
+  "@promoRewardsRowTitle": {
+    "description": "Rewards earn row that opens the redeem sheet."
+  },
+  "promoRewardsRowSubtitle": "Got a code from a post or giveaway?",
+  "@promoRewardsRowSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoAdminTitle": "Promo codes",
+  "@promoAdminTitle": {
+    "description": "Admin screen title."
+  },
+  "promoAdminEntry": "Promo codes",
+  "@promoAdminEntry": {
+    "description": "Admin entry that opens the promo code screen."
+  },
+  "promoAdminCreate": "Create code",
+  "@promoAdminCreate": {
+    "description": "Button that creates a code."
+  },
+  "promoAdminTypeCoins": "Coins",
+  "promoAdminTypePro": "Pro days",
+  "promoAdminAmount": "Amount",
+  "@promoAdminAmount": {
+    "description": "Field: coins (1 to 1000) or Pro days (1 to 90)."
+  },
+  "promoAdminAmountHelpCoins": "1 to 1,000 coins",
+  "promoAdminAmountHelpPro": "1 to 90 days. Android only.",
+  "promoAdminMaxRedemptions": "Max redemptions",
+  "promoAdminExpiresInDays": "Expires in (days)",
+  "promoAdminMinAccountAge": "Minimum account age (days)",
+  "promoAdminNewUsersOnly": "New accounts only",
+  "promoAdminNewUsersDays": "Account at most (days old)",
+  "promoAdminCustomCode": "Custom code (optional)",
+  "@promoAdminCustomCode": {
+    "description": "Help: leave empty to generate one."
+  },
+  "promoAdminCustomCodeHelp": "10 to 32 letters and numbers, no I, O, 0 or 1. Leave empty to make one.",
+  "promoAdminLabel": "Note",
+  "@promoAdminLabel": {
+    "description": "Field for an admin note such as the post the code is for."
+  },
+  "promoAdminCreated": "Created {code}",
+  "@promoAdminCreated": {
+    "description": "Toast after create.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminCopied": "Code copied",
+  "@promoAdminCopied": {
+    "description": "Toast after copying a code."
+  },
+  "promoAdminCopy": "Copy code",
+  "@promoAdminCopy": {
+    "description": "Tooltip."
+  },
+  "promoAdminRedemptions": "{used} of {max} used",
+  "@promoAdminRedemptions": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "promoAdminExpires": "Expires {date}",
+  "@promoAdminExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminDisabled": "Off",
+  "@promoAdminDisabled": {
+    "description": "Badge on a turned-off code."
+  },
+  "promoAdminDisable": "Turn off",
+  "@promoAdminDisable": {
+    "description": "Action."
+  },
+  "promoAdminEnable": "Turn on",
+  "@promoAdminEnable": {
+    "description": "Action."
+  },
+  "promoAdminEmpty": "No codes yet.",
+  "promoAdminLoadFailed": "Couldn't load codes. Pull to try again.",
+  "promoAdminCreateFailed": "Couldn't create the code: {reason}",
+  "@promoAdminCreateFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
   }
 }

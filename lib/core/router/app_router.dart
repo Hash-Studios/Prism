@@ -48,6 +48,8 @@ import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/search_tab_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
 import 'package:Prism/features/premium/views/pages/premium_page.dart';
+import 'package:Prism/features/promo_codes/data/promo_code_repository.dart';
+import 'package:Prism/features/promo_codes/views/promo_codes_admin_page.dart';
 import 'package:Prism/features/public_profile/views/pages/followers_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/following_list_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
@@ -216,6 +218,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/admin-review/swipe', page: SwipeReviewRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/admin-review/image', page: FullScreenImageRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/admin-firestore-telemetry', page: FirestoreTelemetryRoute.page, guards: [_adminGuard]),
+    AutoRoute(path: '/admin-promo-codes', page: PromoCodesAdminRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/debug-panel', page: DebugPanelRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/auto-rotate', page: AutoRotateRoute.page, guards: [_signedInGuard]),

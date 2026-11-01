@@ -59,14 +59,32 @@ test("giftPremiumPass validates its input", async (t) => {
 test("giftPremiumPass refuses a missing or deleted recipient", async (t) => {
   const {store, sent} = setup(t, {
     "usersv2/gone": {coins: 0, deleted: true},
+    "creatorDeletionState/deleting": {closed: true},
+    "usersv2/deleting": {coins: 0},
   });
-  for (const recipientUid of ["nobody", "gone"]) {
+  for (const recipientUid of ["nobody", "gone", "deleting"]) {
     await assert.rejects(
       run({recipientUid, requestId: REQ}),
       (err: HttpsError) =>
         err.code === "not-found" && err.message === "gift_recipient_not_found",
     );
   }
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(sent.length, 0);
+});
+
+test("giftPremiumPass refuses a deleted or deleting sender", async (t) => {
+  const {store, sent} = setup(t, {
+    "usersv2/u1": {coins: 200, deleted: true},
+  });
+  await assert.rejects(run({recipientUid: "u2", requestId: REQ}), {code: "not-found"});
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(sent.length, 0);
+});
+
+test("giftPremiumPass refuses a sender with an account deletion barrier", async (t) => {
+  const {store, sent} = setup(t, {"creatorDeletionState/u1": {closed: true}});
+  await assert.rejects(run({recipientUid: "u2", requestId: REQ}), {code: "not-found"});
   assert.equal(store.get("usersv2/u1")?.coins, 200);
   assert.equal(sent.length, 0);
 });
@@ -222,6 +240,18 @@ test("a replay returns the stored result, charges once and does not notify again
   assert.equal(sent.length, 1);
 });
 
+for (const uid of ["u1", "u2"]) {
+  test(`a gift replay refuses the deletion barrier for ${uid === "u1" ? "the sender" : "the recipient"}`, async (t) => {
+    const {store, sent} = setup(t);
+    await run({recipientUid: "u2", requestId: REQ});
+    store.set(`creatorDeletionState/${uid}`, {closed: true});
+    await assert.rejects(run({recipientUid: "u2", requestId: REQ}), {code: "not-found"});
+    assert.equal(store.get("usersv2/u1")?.coins, 200 - PRICE);
+    assert.equal(store.get("giftRateDaily/u1_2026-01-10")?.count, 1);
+    assert.equal(sent.length, 1);
+  });
+}
+
 test("a sender may gift 3 passes a UTC day", async (t) => {
   const {store, sent} = setup(t, {
     "usersv2/u1": {coins: 1000},
@@ -252,4 +282,15 @@ test("a failed notification does not fail the gift", async (t) => {
   const result = await run({recipientUid: "u2", requestId: REQ});
   assert.equal(result.success, true);
   assert.equal(store.get("usersv2/u1")?.coins, 200 - PRICE);
+});
+
+test("a gift never shortens a longer pass, such as one from a promo code", async (t) => {
+  const passUntil = NOW.getTime() + 10 * DAY;
+  const expiresAt = passUntil;
+  const {store} = setup(t, {"usersv2/u2/private/economy": {passes: {premiumPassUntil: passUntil}}});
+  const result = await run({recipientUid: "u2", requestId: REQ});
+  assert.equal(result.success, true);
+  assert.equal(result.expiresAt, expiresAt);
+  const economy = store.get("usersv2/u2/private/economy");
+  assert.equal((economy?.passes as { premiumPassUntil: number }).premiumPassUntil, expiresAt);
 });

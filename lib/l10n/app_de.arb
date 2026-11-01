@@ -11473,5 +11473,237 @@
   "creatorsShowMeBody": "Andere können dein Profil und deine besten Hintergrundbilder finden",
   "@creatorsShowMeBody": {
     "description": "Subtitle of the creator directory settings switch."
+  },
+  "promoRedeemTitle": "Code einlösen",
+  "@promoRedeemTitle": {
+    "description": "Title of the sheet where the user enters a Prism promo code."
+  },
+  "promoRedeemMessage": "Gib einen Code aus einem Prism-Beitrag oder einem Gewinnspiel ein.",
+  "@promoRedeemMessage": {
+    "description": "Line under the redeem sheet title."
+  },
+  "promoRedeemMessageIos": "Gib einen Münzcode aus einem Prism-Beitrag oder einem Gewinnspiel ein.",
+  "@promoRedeemMessageIos": {
+    "description": "Line under the redeem sheet title on iPhone and iPad, where only coin codes work."
+  },
+  "promoCodeFieldLabel": "Code",
+  "@promoCodeFieldLabel": {
+    "description": "Label of the promo code text field."
+  },
+  "promoCodeFieldHint": "Zum Beispiel 7KQ2 MPXR 4D",
+  "@promoCodeFieldHint": {
+    "description": "Hint text in the empty promo code field."
+  },
+  "promoPasteCode": "Code einfügen",
+  "@promoPasteCode": {
+    "description": "Tooltip and screen reader label of the paste button in the code field."
+  },
+  "promoRedeemAction": "Einlösen",
+  "@promoRedeemAction": {
+    "description": "Main button that redeems the code."
+  },
+  "promoRedeeming": "Code wird eingelöst",
+  "@promoRedeeming": {
+    "description": "Screen reader label while the redeem request runs."
+  },
+  "promoDone": "Fertig",
+  "@promoDone": {
+    "description": "Button that closes the sheet after a code works."
+  },
+  "promoTryAnother": "Anderen Code versuchen",
+  "@promoTryAnother": {
+    "description": "Button after an error that clears the field."
+  },
+  "promoSuccessCoins": "Du hast {count, plural, one{1 Münze} other{{count} Münzen}} erhalten",
+  "@promoSuccessCoins": {
+    "description": "Headline after a coin code works.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessCoinsMessage": "Die Münzen sind jetzt in deinem Guthaben.",
+  "@promoSuccessCoinsMessage": {
+    "description": "Line under the coin success headline."
+  },
+  "promoSuccessPro": "Du hast {days, plural, one{1 Tag} other{{days} Tage}} Pro erhalten",
+  "@promoSuccessPro": {
+    "description": "Headline after a Pro code works.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessProMessage": "Dein Pro-Pass läuft jetzt bis {date}.",
+  "@promoSuccessProMessage": {
+    "description": "Line under the Pro success headline.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoErrorInvalid": "Das ist kein Prism-Code. Codes haben 10 oder mehr Buchstaben und Zahlen.",
+  "promoErrorNotFound": "Wir finden diesen Code nicht. Prüfe ihn und versuche es erneut.",
+  "promoErrorDisabled": "Dieser Code ist deaktiviert.",
+  "promoErrorExpired": "Dieser Code ist abgelaufen.",
+  "promoErrorLimitReached": "Für diesen Code sind keine Einlösungen mehr übrig.",
+  "promoErrorAlreadyRedeemed": "Du hast diesen Code bereits eingelöst.",
+  "promoErrorAccountTooNew": "Dein Konto ist zu neu für diesen Code.",
+  "promoErrorNewUsersOnly": "Dieser Code ist nur für neue Konten.",
+  "promoErrorPremiumNotOnIos": "Pro-Codes funktionieren nicht auf dem iPhone oder iPad. Verwende stattdessen einen App-Store-Code.",
+  "promoErrorAlreadyPremium": "Du hast bereits Pro, daher wird dieser Code nicht benötigt.",
+  "promoErrorRateLimited": "Zu viele Versuche. Warte eine Stunde und versuche es dann erneut.",
+  "promoErrorBusy": "Gerade lösen sehr viele Leute Codes ein. Versuche es gleich noch einmal.",
+  "promoErrorSignedOut": "Melde dich an, um einen Code einzulösen.",
+  "promoErrorNetwork": "Prism ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.",
+  "promoErrorUnknown": "Etwas ist schiefgelaufen. Versuche es erneut.",
+  "promoSettingsGroup": "Codes",
+  "@promoSettingsGroup": {
+    "description": "Settings section title for promo and store codes."
+  },
+  "promoSettingsRedeemTitle": "Prism-Code einlösen",
+  "@promoSettingsRedeemTitle": {
+    "description": "Settings row that opens the redeem sheet."
+  },
+  "promoSettingsRedeemSubtitle": "Münzen oder Pro-Tage aus unseren Beiträgen und Gewinnspielen",
+  "@promoSettingsRedeemSubtitle": {
+    "description": "Subtitle of that row on Android."
+  },
+  "promoSettingsRedeemSubtitleIos": "Münzen aus unseren Beiträgen und Gewinnspielen",
+  "@promoSettingsRedeemSubtitleIos": {
+    "description": "Subtitle of that row on iPhone and iPad."
+  },
+  "promoAppStoreCodeTitle": "App-Store-Code einlösen",
+  "@promoAppStoreCodeTitle": {
+    "description": "iOS settings row that opens Apple's code sheet."
+  },
+  "promoAppStoreCodeSubtitle": "Pro-Angebotscodes von Apple",
+  "@promoAppStoreCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoPlayCodeTitle": "Play-Code einlösen",
+  "@promoPlayCodeTitle": {
+    "description": "Android settings row that opens Google Play's redeem page."
+  },
+  "promoPlayCodeSubtitle": "Pro-Angebotscodes von Google Play",
+  "@promoPlayCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoCodesFootnoteIos": "Prism-Codes geben Münzen. App-Store-Codes geben Pro.",
+  "@promoCodesFootnoteIos": {
+    "description": "One line under the Codes group on iOS that says which code goes where."
+  },
+  "promoCodesFootnoteAndroid": "Prism-Codes geben Münzen oder Pro-Tage. Play-Codes geben Pro.",
+  "@promoCodesFootnoteAndroid": {
+    "description": "Same line on Android."
+  },
+  "promoStoreCodeFailed": "Die Codeseite konnte nicht geöffnet werden. Versuche es erneut.",
+  "@promoStoreCodeFailed": {
+    "description": "Toast when the store code sheet or page does not open."
+  },
+  "promoRewardsRowTitle": "Code einlösen",
+  "@promoRewardsRowTitle": {
+    "description": "Rewards earn row that opens the redeem sheet."
+  },
+  "promoRewardsRowSubtitle": "Code aus einem Beitrag oder Gewinnspiel erhalten?",
+  "@promoRewardsRowSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoAdminTitle": "Promo-Codes",
+  "@promoAdminTitle": {
+    "description": "Admin screen title."
+  },
+  "promoAdminEntry": "Promo-Codes",
+  "@promoAdminEntry": {
+    "description": "Admin entry that opens the promo code screen."
+  },
+  "promoAdminCreate": "Code erstellen",
+  "@promoAdminCreate": {
+    "description": "Button that creates a code."
+  },
+  "promoAdminTypeCoins": "Münzen",
+  "promoAdminTypePro": "Pro-Tage",
+  "promoAdminAmount": "Betrag",
+  "@promoAdminAmount": {
+    "description": "Field: coins (1 to 1000) or Pro days (1 to 90)."
+  },
+  "promoAdminAmountHelpCoins": "1 bis 1.000 Münzen",
+  "promoAdminAmountHelpPro": "1 bis 90 Tage. Nur Android.",
+  "promoAdminMaxRedemptions": "Max. Einlösungen",
+  "promoAdminExpiresInDays": "Läuft ab in (Tagen)",
+  "promoAdminMinAccountAge": "Mindestalter des Kontos (Tage)",
+  "promoAdminNewUsersOnly": "Nur neue Konten",
+  "promoAdminNewUsersDays": "Konto höchstens (Tage alt)",
+  "promoAdminCustomCode": "Eigener Code (optional)",
+  "@promoAdminCustomCode": {
+    "description": "Help: leave empty to generate one."
+  },
+  "promoAdminCustomCodeHelp": "10 bis 32 Buchstaben und Zahlen, ohne I, O, 0 oder 1. Leer lassen, um einen zu erstellen.",
+  "promoAdminLabel": "Notiz",
+  "@promoAdminLabel": {
+    "description": "Field for an admin note such as the post the code is for."
+  },
+  "promoAdminCreated": "{code} erstellt",
+  "@promoAdminCreated": {
+    "description": "Toast after create.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminCopied": "Code kopiert",
+  "@promoAdminCopied": {
+    "description": "Toast after copying a code."
+  },
+  "promoAdminCopy": "Code kopieren",
+  "@promoAdminCopy": {
+    "description": "Tooltip."
+  },
+  "promoAdminRedemptions": "{used} von {max} eingelöst",
+  "@promoAdminRedemptions": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "promoAdminExpires": "Läuft ab {date}",
+  "@promoAdminExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminDisabled": "Aus",
+  "@promoAdminDisabled": {
+    "description": "Badge on a turned-off code."
+  },
+  "promoAdminDisable": "Deaktivieren",
+  "@promoAdminDisable": {
+    "description": "Action."
+  },
+  "promoAdminEnable": "Aktivieren",
+  "@promoAdminEnable": {
+    "description": "Action."
+  },
+  "promoAdminEmpty": "Noch keine Codes.",
+  "promoAdminLoadFailed": "Codes konnten nicht geladen werden. Zum erneuten Versuch nach unten ziehen.",
+  "promoAdminCreateFailed": "Der Code konnte nicht erstellt werden: {reason}",
+  "@promoAdminCreateFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -12221,4 +12221,233 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get creatorsShowMeBody => 'Others can find your profile and top wallpapers';
+
+  @override
+  String get promoRedeemTitle => 'Redeem a code';
+
+  @override
+  String get promoRedeemMessage => 'Enter a code from a Prism post or giveaway.';
+
+  @override
+  String get promoRedeemMessageIos => 'Enter a coin code from a Prism post or giveaway.';
+
+  @override
+  String get promoCodeFieldLabel => 'Code';
+
+  @override
+  String get promoCodeFieldHint => 'For example, 7KQ2 MPXR 4D';
+
+  @override
+  String get promoPasteCode => 'Paste code';
+
+  @override
+  String get promoRedeemAction => 'Redeem';
+
+  @override
+  String get promoRedeeming => 'Redeeming code';
+
+  @override
+  String get promoDone => 'Done';
+
+  @override
+  String get promoTryAnother => 'Try another code';
+
+  @override
+  String promoSuccessCoins(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString coins', one: '1 coin');
+    return 'You got $_temp0';
+  }
+
+  @override
+  String get promoSuccessCoinsMessage => 'They\'re in your balance now.';
+
+  @override
+  String promoSuccessPro(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString days', one: '1 day');
+    return 'You got $_temp0 of Pro';
+  }
+
+  @override
+  String promoSuccessProMessage(String date) {
+    return 'Your Pro pass now runs until $date.';
+  }
+
+  @override
+  String get promoErrorInvalid => 'That isn\'t a Prism code. Codes have 10 or more letters and numbers.';
+
+  @override
+  String get promoErrorNotFound => 'We can\'t find that code. Check it and try again.';
+
+  @override
+  String get promoErrorDisabled => 'This code is turned off.';
+
+  @override
+  String get promoErrorExpired => 'This code has expired.';
+
+  @override
+  String get promoErrorLimitReached => 'This code has no uses left.';
+
+  @override
+  String get promoErrorAlreadyRedeemed => 'You already used this code.';
+
+  @override
+  String get promoErrorAccountTooNew => 'Your account is too new for this code.';
+
+  @override
+  String get promoErrorNewUsersOnly => 'This code is for new accounts only.';
+
+  @override
+  String get promoErrorPremiumNotOnIos => 'Pro codes don\'t work on iPhone or iPad. Use an App Store code instead.';
+
+  @override
+  String get promoErrorAlreadyPremium => 'You already have Pro, so this code isn\'t needed.';
+
+  @override
+  String get promoErrorRateLimited => 'Too many tries. Wait an hour, then try again.';
+
+  @override
+  String get promoErrorBusy => 'Lots of people are redeeming right now. Try again in a moment.';
+
+  @override
+  String get promoErrorSignedOut => 'Sign in to redeem a code.';
+
+  @override
+  String get promoErrorNetwork => 'Can\'t reach Prism. Check your connection and try again.';
+
+  @override
+  String get promoErrorUnknown => 'Something went wrong. Try again.';
+
+  @override
+  String get promoSettingsGroup => 'Codes';
+
+  @override
+  String get promoSettingsRedeemTitle => 'Redeem a Prism code';
+
+  @override
+  String get promoSettingsRedeemSubtitle => 'Coins or Pro days from our posts and giveaways';
+
+  @override
+  String get promoSettingsRedeemSubtitleIos => 'Coins from our posts and giveaways';
+
+  @override
+  String get promoAppStoreCodeTitle => 'Redeem an App Store code';
+
+  @override
+  String get promoAppStoreCodeSubtitle => 'Pro offer codes from Apple';
+
+  @override
+  String get promoPlayCodeTitle => 'Redeem a Play code';
+
+  @override
+  String get promoPlayCodeSubtitle => 'Pro offer codes from Google Play';
+
+  @override
+  String get promoCodesFootnoteIos => 'Prism codes give coins. App Store codes give Pro.';
+
+  @override
+  String get promoCodesFootnoteAndroid => 'Prism codes give coins or Pro days. Play codes give Pro.';
+
+  @override
+  String get promoStoreCodeFailed => 'Couldn\'t open the code page. Try again.';
+
+  @override
+  String get promoRewardsRowTitle => 'Redeem a code';
+
+  @override
+  String get promoRewardsRowSubtitle => 'Got a code from a post or giveaway?';
+
+  @override
+  String get promoAdminTitle => 'Promo codes';
+
+  @override
+  String get promoAdminEntry => 'Promo codes';
+
+  @override
+  String get promoAdminCreate => 'Create code';
+
+  @override
+  String get promoAdminTypeCoins => 'Coins';
+
+  @override
+  String get promoAdminTypePro => 'Pro days';
+
+  @override
+  String get promoAdminAmount => 'Amount';
+
+  @override
+  String get promoAdminAmountHelpCoins => '1 to 1,000 coins';
+
+  @override
+  String get promoAdminAmountHelpPro => '1 to 90 days. Android only.';
+
+  @override
+  String get promoAdminMaxRedemptions => 'Max redemptions';
+
+  @override
+  String get promoAdminExpiresInDays => 'Expires in (days)';
+
+  @override
+  String get promoAdminMinAccountAge => 'Minimum account age (days)';
+
+  @override
+  String get promoAdminNewUsersOnly => 'New accounts only';
+
+  @override
+  String get promoAdminNewUsersDays => 'Account at most (days old)';
+
+  @override
+  String get promoAdminCustomCode => 'Custom code (optional)';
+
+  @override
+  String get promoAdminCustomCodeHelp => '10 to 32 letters and numbers, no I, O, 0 or 1. Leave empty to make one.';
+
+  @override
+  String get promoAdminLabel => 'Note';
+
+  @override
+  String promoAdminCreated(String code) {
+    return 'Created $code';
+  }
+
+  @override
+  String get promoAdminCopied => 'Code copied';
+
+  @override
+  String get promoAdminCopy => 'Copy code';
+
+  @override
+  String promoAdminRedemptions(int used, int max) {
+    return '$used of $max used';
+  }
+
+  @override
+  String promoAdminExpires(String date) {
+    return 'Expires $date';
+  }
+
+  @override
+  String get promoAdminDisabled => 'Off';
+
+  @override
+  String get promoAdminDisable => 'Turn off';
+
+  @override
+  String get promoAdminEnable => 'Turn on';
+
+  @override
+  String get promoAdminEmpty => 'No codes yet.';
+
+  @override
+  String get promoAdminLoadFailed => 'Couldn\'t load codes. Pull to try again.';
+
+  @override
+  String promoAdminCreateFailed(String reason) {
+    return 'Couldn\'t create the code: $reason';
+  }
 }
