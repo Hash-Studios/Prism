@@ -258,37 +258,12 @@ test('wall page renders the public metadata, structured data and related grid', 
 
   assert.equal(body.match(/<li><a href="\/wallpaper\/N\d+"/g)?.length, 12);
   assert.ok(!body.includes('<li><a href="/wallpaper/W1"'), 'the wall does not list itself');
-  assert.equal(h.state.reads.length, 3);
+  assert.equal(h.state.reads.length, 2);
   assert.ok(h.state.reads[0].endsWith('/webWalls/W1'));
   assert.ok(h.state.reads[1].endsWith('/webPages/category~nature~1'));
-  assert.ok(h.state.reads[2].endsWith('/webPages/creator~sam~1'));
 });
 
-test('wall and folder omit creator links when the creator page is stale or missing', async (t) => {
-  const h = setup(t);
-  delete h.state.docs['webPages/creator~sam~1'];
-  h.state.docs['webPages/folder~F1'].owner.hasPage = true;
-
-  const wall = await (await h.get('/wallpaper/W1')).text();
-  assert.doesNotMatch(wall, /href="\/creator\/sam"/);
-  assert.doesNotMatch(JSON.stringify(ldJson(wall)), /creator\/sam/);
-
-  const folder = await (await h.get('/folder/F1')).text();
-  assert.doesNotMatch(folder, /href="\/creator\/sam"/);
-});
-
-test('gated walls do not link to a missing creator page', async (t) => {
-  const h = setup(t);
-  delete h.state.docs['webPages/creator~sam~1'];
-
-  const response = await h.get('/wallpaper/G1');
-  const body = await response.text();
-
-  assert.equal(response.status, 200);
-  assert.doesNotMatch(body, /href="\/creator\/sam"/);
-});
-
-test('wall and folder creator lookups are case-insensitive', async (t) => {
+test('wall and folder creator links keep the stored username case', async (t) => {
   const h = setup(t);
   h.state.docs['webWalls/W1'].creator.username = 'SAM';
   h.state.docs['webPages/folder~F1'].owner.username = 'SAM';
@@ -299,24 +274,6 @@ test('wall and folder creator lookups are case-insensitive', async (t) => {
   assert.match(wall, /href="\/creator\/SAM"/);
   assert.match(folder, /href="\/creator\/SAM"/);
 });
-
-for (const username of ['.', '..']) {
-  test(`creator username ${username} that normalizes as a path segment never becomes a link`, async (t) => {
-    const h = setup(t);
-    h.state.docs['webWalls/W1'].creator.username = username;
-    h.state.docs['webPages/folder~F1'].owner.username = username;
-    h.state.docs[`webPages/creator~${username}~1`] = {
-      kind: 'creator', page: 1, pages: 1, total: 1, items: [],
-      creator: { username, name: 'Dot', bio: '', photo: '' },
-    };
-
-    const wall = await (await h.get('/wallpaper/W1')).text();
-    const folder = await (await h.get('/folder/F1')).text();
-    assert.doesNotMatch(wall, /href="\/creator\//);
-    assert.doesNotMatch(JSON.stringify(ldJson(wall)), /creator\//);
-    assert.doesNotMatch(folder, /href="\/creator\//);
-  });
-}
 
 test('gated wall shows the blurred landing and no preview image', async (t) => {
   const h = setup(t);
@@ -376,7 +333,7 @@ test('a folder owner without a creator page is plain text, not a link', async (t
   assert.ok(!body.includes('/creator/sam'));
 });
 
-test('a folder owner explicitly marked without a creator page is not looked up or linked', async (t) => {
+test('a folder owner marked without a creator page is not linked', async (t) => {
   const h = setup(t);
   h.state.docs['webPages/folder~F1'].owner.hasPage = false;
   const readsBefore = h.state.reads.length;
@@ -385,7 +342,7 @@ test('a folder owner explicitly marked without a creator page is not looked up o
 
   assert.ok(body.includes('A folder by Sam K · '));
   assert.doesNotMatch(body, /href="\/creator\/sam"/);
-  assert.equal(h.state.reads.length - readsBefore, 1, 'false hasPage avoids a creator document read');
+  assert.equal(h.state.reads.length - readsBefore, 1, 'a folder page reads only its own document');
 });
 
 test('a creator photo outside the profile photo hosts is dropped and the page still renders', async (t) => {
@@ -566,7 +523,7 @@ test('concurrent stale hits share one background refresh per cache key', async (
   h.state.firestoreGate = null;
   release();
   await h.flush();
-  assert.equal(h.state.reads.length - before, 3, 'one wall render reads wall, related page and profile once');
+  assert.equal(h.state.reads.length - before, 2, 'one wall render reads wall and related page once');
 });
 
 test('a Firestore outage keeps the old landing for walls and answers 503 for hubs', async (t) => {
@@ -693,19 +650,6 @@ test('sitemaps list the page sitemap and each wall sitemap with its lastmod', as
   const missing = await h.get('/sitemaps/walls-9.xml');
   await missing.text();
   assert.equal(missing.status, 404);
-});
-
-test('sitemaps omit creator URLs that normalize as path segments', async (t) => {
-  const h = setup(t);
-  h.state.docs['webPages/sitemap~creators-1'] = {
-    kind: 'sitemap', entries: '/creator/.\t2026-10-30T00:00:00.000Z\n/creator/..\t2026-10-30T00:00:00.000Z\n/creator/sam\t2026-10-30T00:00:00.000Z',
-  };
-
-  const body = await (await h.get('/sitemaps/creators-1.xml')).text();
-
-  assert.doesNotMatch(body, /\/creator\/\.\./);
-  assert.doesNotMatch(body, /\/creator\/\./);
-  assert.match(body, /\/creator\/sam/);
 });
 
 test('wall text is escaped in HTML and JSON-LD and sitemap entries cannot break XML', async (t) => {

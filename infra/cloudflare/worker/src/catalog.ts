@@ -363,6 +363,7 @@ function publicThumb(value: string, configuredBase?: string): boolean {
   }
 }
 
+// Matches the builder's allowlist in functions/src/webCatalog.ts, so a stored photo on any other host never prints.
 const PROFILE_PHOTO_HOSTS = ['raw.githubusercontent.com', 'firebasestorage.googleapis.com'];
 
 function publicProfilePhoto(value: string): boolean {
@@ -373,14 +374,6 @@ function publicProfilePhoto(value: string): boolean {
   } catch {
     return false;
   }
-}
-
-async function creatorPageExists(env: CatalogEnv, username: string): Promise<boolean> {
-  if (!USERNAME.test(username) || username === '.' || username === '..') return false;
-  const stored = await readDoc<unknown>(env, `webPages/creator~${username.toLowerCase()}~1`);
-  if (stored == null) return false;
-  const page = parseListPage(stored, env);
-  return page.kind === 'creator' && page.creator?.username.toLowerCase() === username.toLowerCase();
 }
 
 function parseWall(value: unknown, env: CatalogEnv): WebWall {
@@ -510,7 +503,6 @@ async function renderWall(id: string, env: CatalogEnv): Promise<Response> {
   const canonical = `${SITE}/wallpaper/${id}`;
   const heading = wall.title || `${category} wallpaper`;
   const creatorName = wall.creator?.name || wall.creatorName || '';
-  const hasCreatorPage = wall.creator != null && await creatorPageExists(env, wall.creator.username);
   const resolution = wall.width && wall.height ? `${wall.width} × ${wall.height}` : '';
   const title = `${wall.title || `${category} wallpaper ${id}`}${creatorName ? ` by ${creatorName}` : ''} | Prism`;
   const description = clip(live
@@ -524,7 +516,7 @@ async function renderWall(id: string, env: CatalogEnv): Promise<Response> {
   const height = wall.width && wall.height ? wall.height : THUMB_HEIGHT;
   // wallpaperPreview fits the wall inside a 2560 px square and never enlarges it.
   const previewWidth = Math.round(width * Math.min(1, 2560 / Math.max(width, height)));
-  const creatorLink = hasCreatorPage && wall.creator
+  const creatorLink = wall.creator
     ? `<a href="/creator/${encodeURIComponent(wall.creator.username)}">${escapeHtml(creatorName)}</a>`
     : escapeHtml(creatorName);
 
@@ -583,7 +575,7 @@ ${related.length ? `<section class="shelf">
       ...(wall.createdAt ? { uploadDate: wall.createdAt } : {}),
       ...(wall.tags?.length ? { keywords: wall.tags.join(', ') } : {}),
       ...(creatorName ? {
-        creator: { '@type': 'Person', name: creatorName, ...(hasCreatorPage && wall.creator ? { url: `${SITE}/creator/${wall.creator.username}` } : {}) },
+        creator: { '@type': 'Person', name: creatorName, ...(wall.creator ? { url: `${SITE}/creator/${wall.creator.username}` } : {}) },
         creditText: creatorName,
         copyrightNotice: `© ${creatorName}`,
       } : {}),
@@ -603,7 +595,6 @@ async function renderFolder(id: string, env: CatalogEnv): Promise<Response> {
   if (folder == null) return renderMissing(404, 'folder', env);
   const canonical = `${SITE}/folder/${id}`;
   const owner = folder.owner;
-  const ownerHasPage = owner?.hasPage === true && await creatorPageExists(env, owner.username);
   const count = `${formatCount(folder.total)} ${folder.total === 1 ? 'wallpaper' : 'wallpapers'}`;
   const title = `${folder.name}${owner ? ` by ${owner.name}` : ''}: ${count} | Prism`;
   const description = clip(`${folder.name} is a public Prism folder${owner ? ` by ${owner.name}` : ''} with ${count}. `
@@ -617,7 +608,7 @@ async function renderFolder(id: string, env: CatalogEnv): Promise<Response> {
     <div class="folder-info">
       ${breadcrumbHtml([['Wallpapers', `${SITE}/wallpapers`], [folder.name, canonical]])}
       <h1>${escapeHtml(folder.name)}</h1>
-      <p class="byline">${owner ? `A folder by ${ownerHasPage
+      <p class="byline">${owner ? `A folder by ${owner.hasPage
     ? `<a href="/creator/${encodeURIComponent(owner.username)}">${escapeHtml(owner.name)}</a>`
     : escapeHtml(owner.name)} · ` : ''}${escapeHtml(count)}</p>
       ${actionsHtml(canonical, 'Open in Prism', env)}
@@ -749,16 +740,7 @@ async function renderSitemap(name: string, env: CatalogEnv): Promise<Response> {
   if (stored == null) return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
   const doc = record(stored);
   if (typeof doc.entries !== 'string') throw new FirestoreUnavailable('invalid sitemap entries');
-  const urls = doc.entries.split('\n').filter(Boolean).filter((line) => {
-    const path = line.split('\t', 1)[0];
-    if (!path.startsWith('/creator/')) return true;
-    try {
-      const username = decodeURIComponent(path.slice('/creator/'.length));
-      return USERNAME.test(username) && username !== '.' && username !== '..';
-    } catch {
-      return false;
-    }
-  }).map((line) => {
+  const urls = doc.entries.split('\n').filter(Boolean).map((line) => {
     const [path, lastmod] = line.split('\t');
     return `  <url><loc>${escapeHtml(`${SITE}${path}`)}</loc>${lastmod ? `<lastmod>${escapeHtml(lastmod)}</lastmod>` : ''}</url>`;
   });

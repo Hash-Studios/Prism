@@ -87,7 +87,7 @@ This is the same gate that public folders use.
 | State | When | Page | Indexed |
 |---|---|---|---|
 | `live` | The wall passes the gate. | 200. Full page with the hero image. | Yes. It is in the sitemaps. |
-| `gated` | The wall is approved but fails the gate. | 200. Blurred image and a **Get it in Prism** button. | No. It is not in the sitemaps. |
+| `gated` | The wall is approved but fails the gate. | 200. Blurred image, or only a lock placeholder if there is no blur. A **Get it in Prism** button. | No. It is not in the sitemaps. |
 | `hidden` | `review` is not `true`, or two approved walls share the id. | 404. | No. |
 | `gone` | The wall document is deleted. | 410. | No. |
 
@@ -96,12 +96,14 @@ This is the same gate that public folders use.
 - The hero image of a live wall uses `/api/catalog/preview/<id>.jpg`. This is the `wallpaperPreview` derivative. It fits inside 2560 px. The original file is never served.
 - The 540 px thumbnail is in `srcset`. The page uses it when the preview fails to load.
 - A gated wall shows a 24 px blurred JPEG as a data URL. It has no image URL.
+- If the wall has no valid thumbnail, or if the blur step fails, the projection has no blur. Then the page shows only a lock placeholder.
 - The share card is at `/og/wall/<id>.jpg`. The Worker renders it once, with `og_card.ts` and Browser Rendering. It keeps the result in the `prismwalls-og-images` R2 bucket.
 
 ### Caching
 
 - The Worker caches each page in the edge Cache API. The cache key is the parsed route. Query strings and the user agent do not change the key. The `page` number is part of the route.
 - A page is fresh for 10 minutes. After that, the Worker serves the stale copy for up to one day. One request refreshes the copy in the background.
+- Thus the first request after the 10 minutes can still get the old page of a withdrawn wall. The next requests get the 404 or 410. If Firestore fails during the refresh, the old page can stay for up to one day.
 - 404 and 410 responses are cached for 5 minutes.
 - The HTML is the same for every visitor. For Android, a small inline script changes the **Open in Prism** link to the intent link.
 - If Firestore fails, a wall page or a folder page falls back to the old app landing. A hub, creator or sitemap page returns 503 with `retry-after: 60`. If a stored copy exists, the Worker serves it first.
@@ -135,7 +137,7 @@ At 2,534 approved walls and 12 builds a day, the wall reads come to about 61,000
 ## Limits
 
 - A new public folder or a renamed creator appears at the next build, up to 2 hours later.
-- A hub page can show a withdrawn wall until the next build. The wall page returns 404 or 410 within about 10 minutes.
+- A hub page can show a withdrawn wall until the next build. The wall page returns 404 or 410 at the first refresh after 10 minutes. If Firestore fails, the old wall page can stay for up to one day.
 - Creator profiles become public on the open web. This shows the name, username, bio and photo. The product owner approved this on 2026-11-01. A profile opt-out is not available yet.
 - The pages use system fonts, not Manrope.
 - Wallhaven and Pexels walls are not in the catalogue. Their links keep the app landing.
