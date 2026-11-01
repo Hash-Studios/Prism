@@ -101,10 +101,10 @@ const APP_PAGE_PATHS = [
   '/premium', '/paywall',
   '/blocked-accounts', '/about', '/fav-walls', '/downloads', '/library', '/upload-wall', '/edit-wall', '/review',
   '/coin-transactions', '/theme', '/notifications', '/collection-view', '/gallery', '/requests', '/creators', '/followers', '/following',
-  '/admin-review', '/admin-review/swipe', '/admin-review/image', '/admin-firestore-telemetry', '/debug-panel',
+  '/admin-review', '/admin-review/swipe', '/admin-review/image', '/admin-firestore-telemetry', '/admin-promo-codes', '/debug-panel',
   '/daily-moment', '/daily-chest', '/spin-wheel', '/photo-preview', '/clock-preview', '/quick-tile-settings',
   '/auto-rotate', '/ios-shortcuts', '/wallpaper-history', '/wallpaper-position', '/live-wallpaper', '/rewards',
-  '/coin-history', '/shop', '/drops', '/leaderboard', '/draw', '/streak', '/creator-stats', '/not-found',
+  '/coin-history', '/shop', '/drops', '/leaderboard', '/draw', '/streak', '/creator-stats', '/not-found', '/redeem',
 ];
 const APP_LINK_PATHS = [
   '/share', '/user', '/fprofile', '/follower-profile', '/profile', '/setup', '/share-setup', '/refer', '/referral',
@@ -134,6 +134,7 @@ const PAGE_QUERY_KEYS = new Map<string, Set<string>>([
   ['/wallpaper', new Set(['wallpaperId', 'source', 'provider', 'entryPoint'])],
   ['/photo-preview', new Set(['wallpaperId', 'source', 'provider'])],
   ['/clock-preview', new Set(['wallpaperId', 'source', 'provider'])],
+  ['/redeem', new Set(['code'])],
 ]);
 const PAGE_UTM_KEYS = new Set(['utm_source', 'utm_medium', 'utm_campaign']);
 const PREVIEW_IMAGE_HOSTS = new Set([
@@ -562,7 +563,7 @@ async function readLinkRecord(code: string, env: Env): Promise<LinkRecord | null
       code,
       recordType: obj.type,
       canonicalType: inferredType,
-      canonical: canonical.toString(),
+      canonicalPath: canonical.pathname,
     });
   }
 
@@ -1682,6 +1683,7 @@ function html(markup: string, status = 200): Response {
     headers: {
       'content-type': 'text/html; charset=utf-8',
       'cache-control': 'private, no-store, max-age=0',
+      'referrer-policy': 'no-referrer',
     },
   });
 }

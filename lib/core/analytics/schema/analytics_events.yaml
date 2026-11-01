@@ -399,6 +399,45 @@ enums:
       - studio
       - user
 
+  - name: redeem_sheet_source
+    dart_type: RedeemSheetSource
+    import: package:Prism/features/promo_codes/domain/entities/promo_code.dart
+    values:
+      - settings
+      - rewards
+      - link
+  - name: promo_reward_type
+    dart_type: PromoRewardType
+    import: package:Prism/features/promo_codes/domain/entities/promo_code.dart
+    values:
+      - coins
+      - premium_days
+  - name: redeem_failure_reason
+    dart_type: RedeemFailureReason
+    import: package:Prism/features/promo_codes/domain/entities/promo_code.dart
+    values:
+      - invalid_code
+      - not_found
+      - disabled
+      - expired
+      - limit_reached
+      - already_redeemed
+      - account_too_new
+      - new_users_only
+      - premium_not_on_ios
+      - already_premium
+      - rate_limited
+      - busy
+      - signed_out
+      - network
+      - unknown
+  - name: store_code_platform
+    dart_type: StoreCodePlatform
+    import: package:Prism/features/promo_codes/domain/entities/promo_code.dart
+    values:
+      - ios
+      - android
+
 events:
   - id: content_report_submit
     fields:
@@ -2812,3 +2851,27 @@ events:
       - name: content_id
         key: content_id
         type: string
+  - id: redeem_sheet_opened
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: RedeemSheetSource
+  - id: redeem_succeeded
+    fields:
+      - name: type
+        key: type
+        type: enum
+        enum: PromoRewardType
+  - id: redeem_failed
+    fields:
+      - name: reason
+        key: reason
+        type: enum
+        enum: RedeemFailureReason
+  - id: store_code_sheet_opened
+    fields:
+      - name: platform
+        key: platform
+        type: enum
+        enum: StoreCodePlatform

@@ -11927,6 +11927,238 @@
   "@creatorsShowMeBody": {
     "description": "Subtitle of the creator directory settings switch."
   },
+  "promoRedeemTitle": "कोड रिडीम करें",
+  "@promoRedeemTitle": {
+    "description": "Title of the sheet where the user enters a Prism promo code."
+  },
+  "promoRedeemMessage": "Prism की किसी पोस्ट या गिवअवे से मिला कोड डालें।",
+  "@promoRedeemMessage": {
+    "description": "Line under the redeem sheet title."
+  },
+  "promoRedeemMessageIos": "Prism की किसी पोस्ट या गिवअवे से मिला सिक्कों वाला कोड डालें।",
+  "@promoRedeemMessageIos": {
+    "description": "Line under the redeem sheet title on iPhone and iPad, where only coin codes work."
+  },
+  "promoCodeFieldLabel": "कोड",
+  "@promoCodeFieldLabel": {
+    "description": "Label of the promo code text field."
+  },
+  "promoCodeFieldHint": "जैसे, 7KQ2 MPXR 4D",
+  "@promoCodeFieldHint": {
+    "description": "Hint text in the empty promo code field."
+  },
+  "promoPasteCode": "कोड पेस्ट करें",
+  "@promoPasteCode": {
+    "description": "Tooltip and screen reader label of the paste button in the code field."
+  },
+  "promoRedeemAction": "रिडीम करें",
+  "@promoRedeemAction": {
+    "description": "Main button that redeems the code."
+  },
+  "promoRedeeming": "कोड रिडीम हो रहा है",
+  "@promoRedeeming": {
+    "description": "Screen reader label while the redeem request runs."
+  },
+  "promoDone": "हो गया",
+  "@promoDone": {
+    "description": "Button that closes the sheet after a code works."
+  },
+  "promoTryAnother": "दूसरा कोड आज़माएँ",
+  "@promoTryAnother": {
+    "description": "Button after an error that clears the field."
+  },
+  "promoSuccessCoins": "आपको {count, plural, one{1 सिक्का} other{{count} सिक्के}} मिले",
+  "@promoSuccessCoins": {
+    "description": "Headline after a coin code works.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessCoinsMessage": "अब ये आपके बैलेंस में हैं।",
+  "@promoSuccessCoinsMessage": {
+    "description": "Line under the coin success headline."
+  },
+  "promoSuccessPro": "आपको Pro के {days, plural, one{1 दिन} other{{days} दिन}} मिले",
+  "@promoSuccessPro": {
+    "description": "Headline after a Pro code works.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessProMessage": "आपका Pro पास अब {date} तक चलेगा।",
+  "@promoSuccessProMessage": {
+    "description": "Line under the Pro success headline.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoErrorInvalid": "यह Prism का कोड नहीं है। कोड में 10 या उससे ज़्यादा अक्षर और अंक होते हैं।",
+  "promoErrorNotFound": "यह कोड नहीं मिला। इसे जाँचें और फिर से कोशिश करें।",
+  "promoErrorDisabled": "यह कोड बंद कर दिया गया है।",
+  "promoErrorExpired": "इस कोड की मियाद खत्म हो चुकी है।",
+  "promoErrorLimitReached": "इस कोड के अब और उपयोग बाकी नहीं हैं।",
+  "promoErrorAlreadyRedeemed": "आप यह कोड पहले ही इस्तेमाल कर चुके हैं।",
+  "promoErrorAccountTooNew": "आपका खाता इस कोड के लिए बहुत नया है।",
+  "promoErrorNewUsersOnly": "यह कोड केवल नए खातों के लिए है।",
+  "promoErrorPremiumNotOnIos": "Pro कोड iPhone या iPad पर काम नहीं करते। इसके बजाय App Store कोड इस्तेमाल करें।",
+  "promoErrorAlreadyPremium": "आपके पास पहले से Pro है, इसलिए यह कोड ज़रूरी नहीं है।",
+  "promoErrorRateLimited": "बहुत ज़्यादा कोशिशें हो गईं। एक घंटा रुकें, फिर कोशिश करें।",
+  "promoErrorBusy": "इस समय बहुत लोग कोड रिडीम कर रहे हैं। थोड़ी देर बाद फिर कोशिश करें।",
+  "promoErrorSignedOut": "कोड रिडीम करने के लिए साइन इन करें।",
+  "promoErrorNetwork": "Prism तक नहीं पहुँच पा रहे। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
+  "promoErrorUnknown": "कुछ गड़बड़ हो गई। फिर से कोशिश करें।",
+  "promoSettingsGroup": "कोड",
+  "@promoSettingsGroup": {
+    "description": "Settings section title for promo and store codes."
+  },
+  "promoSettingsRedeemTitle": "Prism कोड रिडीम करें",
+  "@promoSettingsRedeemTitle": {
+    "description": "Settings row that opens the redeem sheet."
+  },
+  "promoSettingsRedeemSubtitle": "हमारी पोस्ट और गिवअवे से सिक्के या Pro के दिन",
+  "@promoSettingsRedeemSubtitle": {
+    "description": "Subtitle of that row on Android."
+  },
+  "promoSettingsRedeemSubtitleIos": "हमारी पोस्ट और गिवअवे से सिक्के",
+  "@promoSettingsRedeemSubtitleIos": {
+    "description": "Subtitle of that row on iPhone and iPad."
+  },
+  "promoAppStoreCodeTitle": "App Store कोड रिडीम करें",
+  "@promoAppStoreCodeTitle": {
+    "description": "iOS settings row that opens Apple's code sheet."
+  },
+  "promoAppStoreCodeSubtitle": "Apple से Pro ऑफ़र कोड",
+  "@promoAppStoreCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoPlayCodeTitle": "Play कोड रिडीम करें",
+  "@promoPlayCodeTitle": {
+    "description": "Android settings row that opens Google Play's redeem page."
+  },
+  "promoPlayCodeSubtitle": "Google Play से Pro ऑफ़र कोड",
+  "@promoPlayCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoCodesFootnoteIos": "Prism कोड सिक्के देते हैं। App Store कोड Pro देते हैं।",
+  "@promoCodesFootnoteIos": {
+    "description": "One line under the Codes group on iOS that says which code goes where."
+  },
+  "promoCodesFootnoteAndroid": "Prism कोड सिक्के या Pro के दिन देते हैं। Play कोड Pro देते हैं।",
+  "@promoCodesFootnoteAndroid": {
+    "description": "Same line on Android."
+  },
+  "promoStoreCodeFailed": "कोड वाला पेज नहीं खुल सका। फिर से कोशिश करें।",
+  "@promoStoreCodeFailed": {
+    "description": "Toast when the store code sheet or page does not open."
+  },
+  "promoRewardsRowTitle": "कोड रिडीम करें",
+  "@promoRewardsRowTitle": {
+    "description": "Rewards earn row that opens the redeem sheet."
+  },
+  "promoRewardsRowSubtitle": "किसी पोस्ट या गिवअवे से कोड मिला है?",
+  "@promoRewardsRowSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoAdminTitle": "प्रोमो कोड",
+  "@promoAdminTitle": {
+    "description": "Admin screen title."
+  },
+  "promoAdminEntry": "प्रोमो कोड",
+  "@promoAdminEntry": {
+    "description": "Admin entry that opens the promo code screen."
+  },
+  "promoAdminCreate": "कोड बनाएँ",
+  "@promoAdminCreate": {
+    "description": "Button that creates a code."
+  },
+  "promoAdminTypeCoins": "सिक्के",
+  "promoAdminTypePro": "Pro के दिन",
+  "promoAdminAmount": "राशि",
+  "@promoAdminAmount": {
+    "description": "Field: coins (1 to 1000) or Pro days (1 to 90)."
+  },
+  "promoAdminAmountHelpCoins": "1 से 1,000 सिक्के",
+  "promoAdminAmountHelpPro": "1 से 90 दिन। केवल Android।",
+  "promoAdminMaxRedemptions": "अधिकतम रिडेम्पशन",
+  "promoAdminExpiresInDays": "इतने दिनों में खत्म (दिन)",
+  "promoAdminMinAccountAge": "न्यूनतम खाता आयु (दिन)",
+  "promoAdminNewUsersOnly": "केवल नए खाते",
+  "promoAdminNewUsersDays": "खाता अधिकतम (दिन पुराना)",
+  "promoAdminCustomCode": "कस्टम कोड (वैकल्पिक)",
+  "@promoAdminCustomCode": {
+    "description": "Help: leave empty to generate one."
+  },
+  "promoAdminCustomCodeHelp": "10 से 32 अक्षर और अंक, I, O, 0 या 1 के बिना। खाली छोड़ें तो कोड अपने आप बनेगा।",
+  "promoAdminLabel": "नोट",
+  "@promoAdminLabel": {
+    "description": "Field for an admin note such as the post the code is for."
+  },
+  "promoAdminCreated": "{code} बनाया गया",
+  "@promoAdminCreated": {
+    "description": "Toast after create.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminCopied": "कोड कॉपी हो गया",
+  "@promoAdminCopied": {
+    "description": "Toast after copying a code."
+  },
+  "promoAdminCopy": "कोड कॉपी करें",
+  "@promoAdminCopy": {
+    "description": "Tooltip."
+  },
+  "promoAdminRedemptions": "{max} में से {used} इस्तेमाल हुए",
+  "@promoAdminRedemptions": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "promoAdminExpires": "{date} को खत्म होगा",
+  "@promoAdminExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminDisabled": "बंद",
+  "@promoAdminDisabled": {
+    "description": "Badge on a turned-off code."
+  },
+  "promoAdminDisable": "बंद करें",
+  "@promoAdminDisable": {
+    "description": "Action."
+  },
+  "promoAdminEnable": "चालू करें",
+  "@promoAdminEnable": {
+    "description": "Action."
+  },
+  "promoAdminEmpty": "अभी तक कोई कोड नहीं।",
+  "promoAdminLoadFailed": "कोड लोड नहीं हो सके। फिर से कोशिश करने के लिए नीचे खींचें।",
+  "promoAdminCreateFailed": "कोड नहीं बन सका: {reason}",
+  "@promoAdminCreateFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "desktopVersionChip": "डेस्कटॉप वर्शन",
   "@desktopVersionChip": {
     "description": "Chip on the wallpaper detail screen. Opens the desktop version of the wallpaper."

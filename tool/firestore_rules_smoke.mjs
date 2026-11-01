@@ -851,6 +851,16 @@ const cases = [
   ['creator cannot delete own directory entry', () => req('DELETE', 'creatorDirectory/a', null, A), 403],
   ['viewer cannot read the followed-by cache', () => req('GET', 'followedByCache/b_a', null, Bu), 403],
   ['viewer cannot write the followed-by cache', () => req('PATCH', 'followedByCache/b_a', { count: { integerValue: '9' } }, Bu), 403],
+  ['user cannot read a promo code', () => req('GET', 'promoCodes/c1', null, Bu), 403],
+  ['user cannot write a promo code', () => req('PATCH', 'promoCodes/c1', { redemptionCount: { integerValue: '0' } }, Bu), 403],
+  ['admin cannot read a promo code directly', () => req('GET', 'promoCodes/c1', null, ADM), 403],
+  ['admin cannot write a promo code directly', () => req('PATCH', 'promoCodes/c1', { redemptionCount: { integerValue: '0' } }, ADM), 403],
+  ['user cannot read own promo redemption', () => req('GET', 'promoCodes/c1/redemptions/b', null, Bu), 403],
+  ['user cannot write own promo redemption', () => req('PATCH', 'promoCodes/c1/redemptions/b', { uid: { stringValue: 'b' } }, Bu), 403],
+  ['user cannot list promo codes', () => runCollectionQuery(Bu, 'promoCodes'), 403],
+  ['user cannot list promo redemptions across codes', () => runCollectionQuery(Bu, 'redemptions', 'promoCodes/c1'), 403],
+  ['user cannot read a promo rate counter', () => req('GET', 'promoRedeemRate/u_b_1', null, Bu), 403],
+  ['user cannot write a promo rate counter', () => req('PATCH', 'promoRedeemRate/u_b_1', { count: { integerValue: '0' } }, Bu), 403],
 ];
 await seed();
 let bad = 0;

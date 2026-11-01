@@ -7,6 +7,7 @@ import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
+import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
@@ -60,6 +61,10 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'wall_request_source': WallRequestSourceValue.values.map((value) => value.wireValue).toList(),
   'wall_request_filler': WallRequestFillerValue.values.map((value) => value.wireValue).toList(),
   'remix_source_type': RemixSourceType.values.map((value) => value.wireValue).toList(),
+  'redeem_sheet_source': RedeemSheetSource.values.map((value) => value.wireValue).toList(),
+  'promo_reward_type': PromoRewardType.values.map((value) => value.wireValue).toList(),
+  'redeem_failure_reason': RedeemFailureReason.values.map((value) => value.wireValue).toList(),
+  'store_code_platform': StoreCodePlatform.values.map((value) => value.wireValue).toList(),
 };
 
 class ContentReportSubmitEvent extends AnalyticsEvent {
@@ -4284,5 +4289,61 @@ class DesktopSendToComputerEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'content_id': contentId};
+  }
+}
+
+class RedeemSheetOpenedEvent extends AnalyticsEvent {
+  const RedeemSheetOpenedEvent({required this.source});
+
+  final RedeemSheetSource source;
+
+  @override
+  String get eventName => 'redeem_sheet_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
+  }
+}
+
+class RedeemSucceededEvent extends AnalyticsEvent {
+  const RedeemSucceededEvent({required this.type});
+
+  final PromoRewardType type;
+
+  @override
+  String get eventName => 'redeem_succeeded';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'type': type.wireValue};
+  }
+}
+
+class RedeemFailedEvent extends AnalyticsEvent {
+  const RedeemFailedEvent({required this.reason});
+
+  final RedeemFailureReason reason;
+
+  @override
+  String get eventName => 'redeem_failed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'reason': reason.wireValue};
+  }
+}
+
+class StoreCodeSheetOpenedEvent extends AnalyticsEvent {
+  const StoreCodeSheetOpenedEvent({required this.platform});
+
+  final StoreCodePlatform platform;
+
+  @override
+  String get eventName => 'store_code_sheet_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'platform': platform.wireValue};
   }
 }

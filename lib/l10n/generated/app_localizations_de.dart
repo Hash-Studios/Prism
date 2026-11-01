@@ -12404,6 +12404,237 @@ class AppLocalizationsDe extends AppLocalizations {
   String get creatorsShowMeBody => 'Andere können dein Profil und deine besten Hintergrundbilder finden';
 
   @override
+  String get promoRedeemTitle => 'Code einlösen';
+
+  @override
+  String get promoRedeemMessage => 'Gib einen Code aus einem Prism-Beitrag oder einem Gewinnspiel ein.';
+
+  @override
+  String get promoRedeemMessageIos => 'Gib einen Münzcode aus einem Prism-Beitrag oder einem Gewinnspiel ein.';
+
+  @override
+  String get promoCodeFieldLabel => 'Code';
+
+  @override
+  String get promoCodeFieldHint => 'Zum Beispiel 7KQ2 MPXR 4D';
+
+  @override
+  String get promoPasteCode => 'Code einfügen';
+
+  @override
+  String get promoRedeemAction => 'Einlösen';
+
+  @override
+  String get promoRedeeming => 'Code wird eingelöst';
+
+  @override
+  String get promoDone => 'Fertig';
+
+  @override
+  String get promoTryAnother => 'Anderen Code versuchen';
+
+  @override
+  String promoSuccessCoins(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString Münzen', one: '1 Münze');
+    return 'Du hast $_temp0 erhalten';
+  }
+
+  @override
+  String get promoSuccessCoinsMessage => 'Die Münzen sind jetzt in deinem Guthaben.';
+
+  @override
+  String promoSuccessPro(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString Tage', one: '1 Tag');
+    return 'Du hast $_temp0 Pro erhalten';
+  }
+
+  @override
+  String promoSuccessProMessage(String date) {
+    return 'Dein Pro-Pass läuft jetzt bis $date.';
+  }
+
+  @override
+  String get promoErrorInvalid => 'Das ist kein Prism-Code. Codes haben 10 oder mehr Buchstaben und Zahlen.';
+
+  @override
+  String get promoErrorNotFound => 'Wir finden diesen Code nicht. Prüfe ihn und versuche es erneut.';
+
+  @override
+  String get promoErrorDisabled => 'Dieser Code ist deaktiviert.';
+
+  @override
+  String get promoErrorExpired => 'Dieser Code ist abgelaufen.';
+
+  @override
+  String get promoErrorLimitReached => 'Für diesen Code sind keine Einlösungen mehr übrig.';
+
+  @override
+  String get promoErrorAlreadyRedeemed => 'Du hast diesen Code bereits eingelöst.';
+
+  @override
+  String get promoErrorAccountTooNew => 'Dein Konto ist zu neu für diesen Code.';
+
+  @override
+  String get promoErrorNewUsersOnly => 'Dieser Code ist nur für neue Konten.';
+
+  @override
+  String get promoErrorPremiumNotOnIos =>
+      'Pro-Codes funktionieren nicht auf dem iPhone oder iPad. Verwende stattdessen einen App-Store-Code.';
+
+  @override
+  String get promoErrorAlreadyPremium => 'Du hast bereits Pro, daher wird dieser Code nicht benötigt.';
+
+  @override
+  String get promoErrorRateLimited => 'Zu viele Versuche. Warte eine Stunde und versuche es dann erneut.';
+
+  @override
+  String get promoErrorBusy => 'Gerade lösen sehr viele Leute Codes ein. Versuche es gleich noch einmal.';
+
+  @override
+  String get promoErrorSignedOut => 'Melde dich an, um einen Code einzulösen.';
+
+  @override
+  String get promoErrorNetwork => 'Prism ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String get promoErrorUnknown => 'Etwas ist schiefgelaufen. Versuche es erneut.';
+
+  @override
+  String get promoSettingsGroup => 'Codes';
+
+  @override
+  String get promoSettingsRedeemTitle => 'Prism-Code einlösen';
+
+  @override
+  String get promoSettingsRedeemSubtitle => 'Münzen oder Pro-Tage aus unseren Beiträgen und Gewinnspielen';
+
+  @override
+  String get promoSettingsRedeemSubtitleIos => 'Münzen aus unseren Beiträgen und Gewinnspielen';
+
+  @override
+  String get promoAppStoreCodeTitle => 'App-Store-Code einlösen';
+
+  @override
+  String get promoAppStoreCodeSubtitle => 'Pro-Angebotscodes von Apple';
+
+  @override
+  String get promoPlayCodeTitle => 'Play-Code einlösen';
+
+  @override
+  String get promoPlayCodeSubtitle => 'Pro-Angebotscodes von Google Play';
+
+  @override
+  String get promoCodesFootnoteIos => 'Prism-Codes geben Münzen. App-Store-Codes geben Pro.';
+
+  @override
+  String get promoCodesFootnoteAndroid => 'Prism-Codes geben Münzen oder Pro-Tage. Play-Codes geben Pro.';
+
+  @override
+  String get promoStoreCodeFailed => 'Die Codeseite konnte nicht geöffnet werden. Versuche es erneut.';
+
+  @override
+  String get promoRewardsRowTitle => 'Code einlösen';
+
+  @override
+  String get promoRewardsRowSubtitle => 'Code aus einem Beitrag oder Gewinnspiel erhalten?';
+
+  @override
+  String get promoAdminTitle => 'Promo-Codes';
+
+  @override
+  String get promoAdminEntry => 'Promo-Codes';
+
+  @override
+  String get promoAdminCreate => 'Code erstellen';
+
+  @override
+  String get promoAdminTypeCoins => 'Münzen';
+
+  @override
+  String get promoAdminTypePro => 'Pro-Tage';
+
+  @override
+  String get promoAdminAmount => 'Betrag';
+
+  @override
+  String get promoAdminAmountHelpCoins => '1 bis 1.000 Münzen';
+
+  @override
+  String get promoAdminAmountHelpPro => '1 bis 90 Tage. Nur Android.';
+
+  @override
+  String get promoAdminMaxRedemptions => 'Max. Einlösungen';
+
+  @override
+  String get promoAdminExpiresInDays => 'Läuft ab in (Tagen)';
+
+  @override
+  String get promoAdminMinAccountAge => 'Mindestalter des Kontos (Tage)';
+
+  @override
+  String get promoAdminNewUsersOnly => 'Nur neue Konten';
+
+  @override
+  String get promoAdminNewUsersDays => 'Konto höchstens (Tage alt)';
+
+  @override
+  String get promoAdminCustomCode => 'Eigener Code (optional)';
+
+  @override
+  String get promoAdminCustomCodeHelp =>
+      '10 bis 32 Buchstaben und Zahlen, ohne I, O, 0 oder 1. Leer lassen, um einen zu erstellen.';
+
+  @override
+  String get promoAdminLabel => 'Notiz';
+
+  @override
+  String promoAdminCreated(String code) {
+    return '$code erstellt';
+  }
+
+  @override
+  String get promoAdminCopied => 'Code kopiert';
+
+  @override
+  String get promoAdminCopy => 'Code kopieren';
+
+  @override
+  String promoAdminRedemptions(int used, int max) {
+    return '$used von $max eingelöst';
+  }
+
+  @override
+  String promoAdminExpires(String date) {
+    return 'Läuft ab $date';
+  }
+
+  @override
+  String get promoAdminDisabled => 'Aus';
+
+  @override
+  String get promoAdminDisable => 'Deaktivieren';
+
+  @override
+  String get promoAdminEnable => 'Aktivieren';
+
+  @override
+  String get promoAdminEmpty => 'Noch keine Codes.';
+
+  @override
+  String get promoAdminLoadFailed => 'Codes konnten nicht geladen werden. Zum erneuten Versuch nach unten ziehen.';
+
+  @override
+  String promoAdminCreateFailed(String reason) {
+    return 'Der Code konnte nicht erstellt werden: $reason';
+  }
+
+  @override
   String get desktopVersionChip => 'Desktop-Version';
 
   @override
