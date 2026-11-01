@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/google_profile_sync.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/account/username_service.dart';
@@ -37,8 +38,13 @@ String uploadFileName(String uid, String basename, {int? epochMs}) =>
 
 /// The photo on the signed-in Firebase user. Google sign-in keeps it equal to the Google account photo.
 @visibleForTesting
-String? Function() signedInAccountPhoto = () =>
-    FirebaseInit.hasDefaultApp ? FirebaseAuth.instance.currentUser?.photoURL : null;
+Future<String?> Function() signedInAccountPhoto = () async {
+  if (!FirebaseInit.hasDefaultApp) {
+    final bool ready = await FirebaseInit.waitUntilReady();
+    if (!ready || !FirebaseInit.hasDefaultApp) throw const FirebaseUnavailableException();
+  }
+  return FirebaseAuth.instance.currentUser?.photoURL;
+};
 
 @RoutePage(name: 'EditProfilePanelRoute')
 class EditProfilePanel extends StatefulWidget {
@@ -155,17 +161,24 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   /// The custom photo stays when the write fails.
   Future<void> _removePhoto() async {
     final AppLocalizations l10n = context.l10n;
-    final String photo = photoOrPlaceholder(signedInAccountPhoto());
+    final PrismUsersV2 user = app_state.prismUser;
+    final String ownerId = user.id;
+    bool ownsSession() => mounted && identical(app_state.prismUser, user) && user.id == ownerId;
     try {
-      await _updateCurrentUser(<String, dynamic>{'profilePhoto': photo}, 'profile.edit.removePhoto');
+      final String photo = photoOrPlaceholder(await signedInAccountPhoto());
+      if (!ownsSession()) return;
+      await firestoreClient.updateDoc(FirebaseCollections.usersV2, ownerId, <String, dynamic>{
+        'profilePhoto': photo,
+      }, sourceTag: 'profile.edit.removePhoto');
+      if (!ownsSession()) return;
+      user.profilePhoto = photo;
+      app_state.persistPrismUser();
     } catch (e) {
       logger.d(e.toString());
-      toasts.error(l10n.coreProfileSaveFailed);
+      if (ownsSession()) toasts.error(l10n.coreProfileSaveFailed);
       return;
     }
-    app_state.prismUser.profilePhoto = photo;
-    app_state.persistPrismUser();
-    if (mounted) setState(() {});
+    if (ownsSession()) setState(() {});
   }
 
   Future<void> _updateCurrentUser(Map<String, dynamic> data, String sourceTag) {

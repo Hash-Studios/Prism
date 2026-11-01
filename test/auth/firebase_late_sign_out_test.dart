@@ -121,7 +121,6 @@ void main() {
     expect(await auth.signOutGoogle(), isTrue);
     expect(app_state.prismUser.id, isEmpty);
     expect(Firebase.apps, isEmpty);
-    // The first deferred operation is now stale. Only this newer one may sign out Firebase later.
     expect(await auth.signOutGoogle(), isTrue);
     await Firebase.initializeApp(
       options: const FirebaseOptions(apiKey: 'test', appId: 'test', messagingSenderId: 'test', projectId: 'test'),

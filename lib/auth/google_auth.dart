@@ -123,12 +123,13 @@ class GoogleAuth {
 
   Future<SignInOutcome> signInWithGoogle() async {
     logger.i('signInWithGoogle start', tag: 'GoogleAuth');
+    final SignInSession session = SignInSession();
     if (await _authOrWait() == null) {
       const FirebaseUnavailableException error = FirebaseUnavailableException();
       logger.e('signInWithGoogle failed', tag: 'GoogleAuth', error: error);
       throw error;
     }
-    final SignInSession session = SignInSession(authenticatedUid: () => _auth.currentUser?.uid);
+    session.bindAuthenticatedUid(() => _auth.currentUser?.uid);
     bool firebaseSignedIn = false;
     try {
       await _ensureGoogleSignInInitialized();
@@ -258,9 +259,13 @@ class GoogleAuth {
   /// failed after Firebase accepted the credential). Server writes and topic
   /// unsubscribes run first, while the Firebase session can still authorize them.
   Future<bool> signOutGoogle({SignInSession? session}) async {
-    final FirebaseAuth? auth = await _authOrWait();
-    final SignInSession operation = session ?? SignInSession(authenticatedUid: () => auth?.currentUser?.uid);
+    final SignInSession operation = session ?? SignInSession();
+    FirebaseAuth? auth = await _authOrWait();
     if (!operation.isCurrent) return false;
+    if (session == null && auth != null) {
+      final FirebaseAuth initialAuth = auth;
+      operation.bindAuthenticatedUid(() => initialAuth.currentUser?.uid);
+    }
     WallpaperService.invalidatePendingHistoryWrites();
     final PrismUsersV2 existingUser = app_state.prismUser;
     final User? authenticatedUser = auth?.currentUser;
@@ -338,6 +343,12 @@ class GoogleAuth {
     // here too. Used for Apple-signed-in users as well, not just Google.
     bool firebaseSignOutSucceeded = true;
     try {
+      if (auth == null && FirebaseInit.hasDefaultApp) {
+        final FirebaseAuth lateAuth = _resolvedAuth = FirebaseAuth.instance;
+        if (!operation.isCurrent) return false;
+        if (session == null) operation.bindAuthenticatedUid(() => lateAuth.currentUser?.uid);
+        auth = lateAuth;
+      }
       if (auth != null) await auth.signOut();
     } catch (e, st) {
       firebaseSignOutSucceeded = false;
@@ -388,7 +399,20 @@ class GoogleAuth {
     }
     if (!operation.isCurrent) return false;
     logger.d('User Sign Out');
+    if (auth == null && session == null) unawaited(_signOutWhenFirebaseReady(operation));
     return firebaseSignOutSucceeded;
+  }
+
+  Future<void> _signOutWhenFirebaseReady(SignInSession operation) async {
+    try {
+      if (!await FirebaseInit.readyFuture || !operation.isCurrent || !FirebaseInit.hasDefaultApp) return;
+      final FirebaseAuth auth = _resolvedAuth ?? FirebaseAuth.instance;
+      _resolvedAuth = auth;
+      operation.bindAuthenticatedUid(() => auth.currentUser?.uid);
+      await auth.signOut();
+    } catch (error, stackTrace) {
+      logger.w('Deferred Firebase sign-out failed.', tag: 'GoogleAuth', error: error, stackTrace: stackTrace);
+    }
   }
 
   /// Firestore writes made offline only complete when the server acks them, so
@@ -530,9 +554,13 @@ class GoogleAuth {
   /// Required before sensitive operations like account deletion.
   /// Throws [WrongAccountException] if the user selects a different Google account.
   Future<void> reauthenticateCurrentUser() async {
+    final SignInSession session = SignInSession();
     if (await _authOrWait() == null) throw const FirebaseUnavailableException();
+    session.bindAuthenticatedUid(() => _auth.currentUser?.uid);
     await _ensureGoogleSignInInitialized();
+    session.requireCurrent();
     final GoogleSignInAccount googleSignInAccount = await googleSignIn.authenticate();
+    session.requireCurrent();
     final String? currentEmail = _auth.currentUser?.email;
     if (currentEmail != null && googleSignInAccount.email != currentEmail) {
       throw WrongAccountException(selectedEmail: googleSignInAccount.email, expectedEmail: currentEmail);
@@ -544,6 +572,7 @@ class GoogleAuth {
     }
     final AuthCredential credential = GoogleAuthProvider.credential(idToken: idToken);
     await _auth.currentUser!.reauthenticateWithCredential(credential);
+    session.requireCurrent();
   }
 
   Future<bool> isSignedIn() async {

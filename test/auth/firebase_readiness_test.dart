@@ -8,8 +8,8 @@ import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
-import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/session_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -106,9 +106,9 @@ class _Google extends Fake implements GoogleSignIn {
   }
 
   @override
-  Future<GoogleSignInAccount> authenticate({List<String> scopeHint = const <String>[]}) async {
+  Future<GoogleSignInAccount> authenticate({List<String> scopeHint = const <String>[]}) {
     authenticateCalls++;
-    throw const GoogleSignInException(code: GoogleSignInExceptionCode.canceled);
+    return Future<GoogleSignInAccount>.error(const GoogleSignInException(code: GoogleSignInExceptionCode.canceled));
   }
 
   @override
@@ -173,9 +173,9 @@ void main() {
       ..uid = null
       ..signOutCalls = 0;
     appleCalls = 0;
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(appleChannel, (_) async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(appleChannel, (_) {
       appleCalls++;
-      throw PlatformException(code: 'authorization-error/canceled');
+      return Future<Object?>.error(PlatformException(code: 'authorization-error/canceled'));
     });
   });
 

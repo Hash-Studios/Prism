@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/account/username_service.dart';
 import 'package:Prism/core/constants/app_constants.dart';
@@ -430,7 +431,7 @@ void main() {
     const String googlePhoto = 'https://lh3.googleusercontent.com/a/me=s96-c';
     const String customPhoto = 'https://raw.githubusercontent.com/Hash-Studios/walls/main/me_1_me.jpg';
 
-    tearDown(() => signedInAccountPhoto = () => null);
+    tearDown(() => signedInAccountPhoto = () async => null);
 
     for (final String photo in <String>[defaultProfilePhotoUrl, googlePhoto]) {
       testWidgets('is not offered for ${photo == googlePhoto ? 'the Google photo' : 'no photo'}', (tester) async {
@@ -445,7 +446,7 @@ void main() {
       testWidgets('asks first, then puts back ${accountPhoto == null ? 'no photo' : 'the Google photo'}', (
         tester,
       ) async {
-        signedInAccountPhoto = () => accountPhoto;
+        signedInAccountPhoto = () async => accountPhoto;
         app_state.prismUser.profilePhoto = customPhoto;
         await pumpPanel(tester);
 
@@ -465,7 +466,7 @@ void main() {
     testWidgets('keeps the custom photo when the write fails', (tester) async {
       await getIt.reset();
       getIt.registerSingleton<FirestoreClient>(_FailingWriteFirestore());
-      signedInAccountPhoto = () => googlePhoto;
+      signedInAccountPhoto = () async => googlePhoto;
       app_state.prismUser.profilePhoto = customPhoto;
       await pumpPanel(tester);
 
@@ -479,6 +480,46 @@ void main() {
       expect(find.text('Remove photo'), findsOneWidget);
       // The error toast runs a timer.
       await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('keeps the custom photo when Firebase readiness fails', (tester) async {
+      signedInAccountPhoto = () async => throw const FirebaseUnavailableException();
+      app_state.prismUser.profilePhoto = customPhoto;
+      await pumpPanel(tester);
+
+      await tester.tap(find.text('Remove photo'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(app_state.prismUser.profilePhoto, customPhoto);
+      expect(firestore.writes, isEmpty);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('does not write or replace another account photo when the session changes during readiness', (
+      tester,
+    ) async {
+      final Completer<String?> accountPhoto = Completer<String?>();
+      signedInAccountPhoto = () => accountPhoto.future;
+      app_state.prismUser.profilePhoto = customPhoto;
+      await pumpPanel(tester);
+
+      await tester.tap(find.text('Remove photo'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove'));
+      await tester.pump();
+
+      final PrismUsersV2 replacement = profileUser(id: 'another-user', profilePhoto: googlePhoto);
+      app_state.prismUser = replacement;
+      accountPhoto.complete(googlePhoto);
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(app_state.prismUser, same(replacement));
+      expect(replacement.profilePhoto, googlePhoto);
+      expect(firestore.writes, isEmpty);
     });
   });
 

@@ -1,3 +1,5 @@
+import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/account/local_account_data_cleaner.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -40,25 +42,54 @@ class DeleteAccountService {
   ///      Firebase Auth user server-side
   ///   3. Signs out of the Google SDK and clears local persistence
   Future<void> deleteAccount() async {
-    final userId = app_state.prismUser.id;
+    final PrismUsersV2 owner = app_state.prismUser;
+    final String userId = owner.id;
+    final bool ownerLoggedIn = owner.loggedIn;
     if (userId.isEmpty) throw StateError('No signed-in user to delete.');
+    bool ownsLocalAccount() =>
+        identical(app_state.prismUser, owner) &&
+        app_state.prismUser.id == userId &&
+        app_state.prismUser.loggedIn == ownerLoggedIn;
+    void requireOwner() {
+      if (!ownsLocalAccount()) throw StateError('The account deletion session changed.');
+    }
 
     logger.i('[DeleteAccount] Starting deletion for userId=$userId', tag: 'DeleteAccount');
 
     // If the user cancels re-authentication this throws and we never reach the server.
     await _reauthenticate();
+    requireOwner();
     await _deleteOnServer();
+    requireOwner();
 
     // Sign out from Google SDK so silent re-auth doesn't recreate the account.
-    await _signOut();
+    final bool signedOut = await _signOut();
+    final bool isGuest = app_state.prismUser.id.isEmpty && !app_state.prismUser.loggedIn;
+    if (!signedOut || (!ownsLocalAccount() && !isGuest)) {
+      throw StateError('The account deletion session changed.');
+    }
     await _clearLocalData(userId);
 
     logger.i('[DeleteAccount] Done', tag: 'DeleteAccount');
   }
 
   static Future<void> _reauthenticateWithProvider() async {
-    final User? user = FirebaseInit.hasDefaultApp ? FirebaseAuth.instance.currentUser : null;
-    final Set<String> providerIds = user?.providerData.map((provider) => provider.providerId).toSet() ?? {};
+    final PrismUsersV2 owner = app_state.prismUser;
+    final String userId = owner.id;
+    final bool ownerLoggedIn = owner.loggedIn;
+    if (!FirebaseInit.hasDefaultApp) {
+      final bool firebaseReady = await FirebaseInit.waitUntilReady();
+      if (!firebaseReady || !FirebaseInit.hasDefaultApp) throw const FirebaseUnavailableException();
+    }
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw StateError('No signed-in user to delete.');
+    if (!identical(app_state.prismUser, owner) ||
+        app_state.prismUser.id != userId ||
+        app_state.prismUser.loggedIn != ownerLoggedIn ||
+        user.uid != userId) {
+      throw StateError('The account deletion session changed.');
+    }
+    final Set<String> providerIds = user.providerData.map((provider) => provider.providerId).toSet();
     if (providerIds.contains('apple.com')) {
       await globalAppleAuth.reauthenticateCurrentUser();
     } else {

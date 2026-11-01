@@ -50,8 +50,9 @@ class AppleAuth {
 
   Future<SignInOutcome> signInWithApple() async {
     logger.i('signInWithApple start', tag: 'AppleAuth');
+    final SignInSession session = SignInSession();
     await _requireAuth();
-    final SignInSession session = SignInSession(authenticatedUid: () => _auth.currentUser?.uid);
+    session.bindAuthenticatedUid(() => _auth.currentUser?.uid);
     bool firebaseSignedIn = false;
     try {
       final rawNonce = _generateNonce();
@@ -179,20 +180,25 @@ class AppleAuth {
   /// with Apple authorization. Required by Apple before account deletion
   /// (HIG: apps must let users revoke "Sign in with Apple" on deletion).
   Future<void> reauthenticateCurrentUser() async {
+    final SignInSession session = SignInSession();
     await _requireAuth();
+    session.bindAuthenticatedUid(() => _auth.currentUser?.uid);
     final rawNonce = _generateNonce();
     final credential = await SignInWithApple.getAppleIDCredential(
       scopes: [AppleIDAuthorizationScopes.email],
       nonce: _sha256ofString(rawNonce),
     );
+    session.requireCurrent();
     final oauthCredential = AppleAuthProvider.credentialWithIDToken(
       credential.identityToken!,
       rawNonce,
       AppleFullPersonName(),
     );
     await _auth.currentUser!.reauthenticateWithCredential(oauthCredential);
+    session.requireCurrent();
     if (credential.authorizationCode.isNotEmpty) {
       await _auth.revokeTokenWithAuthorizationCode(credential.authorizationCode);
+      session.requireCurrent();
     }
   }
 }

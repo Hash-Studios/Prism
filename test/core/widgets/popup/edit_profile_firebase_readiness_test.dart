@@ -2,7 +2,6 @@
 
 import 'dart:async';
 
-import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
@@ -124,9 +123,8 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
           builder: (context) => TextButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const EditProfilePanel()),
-            ),
+            onPressed: () =>
+                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const EditProfilePanel())),
             child: const Text('open'),
           ),
         ),

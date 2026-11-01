@@ -12,7 +12,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -100,9 +99,9 @@ class _UnexpectedGoogleSignIn extends GoogleSignInPlatform {
   Future<void> init(InitParameters params) async => calls.add('google.init');
 
   @override
-  Future<AuthenticationResults> authenticate(AuthenticateParameters params) async {
+  Future<AuthenticationResults> authenticate(AuthenticateParameters params) {
     calls.add('google.authenticate');
-    throw StateError('An Apple account must not open Google authentication.');
+    return Future<AuthenticationResults>.error(StateError('An Apple account must not open Google authentication.'));
   }
 
   @override
@@ -219,6 +218,27 @@ void main() {
     await build().deleteAccount();
 
     expect(calls, <String>['reauth', 'server', 'signOut', 'clear:user-1']);
+  });
+
+  test('a successful sign-out clears the deleted owner while preserving its guest session', () async {
+    final guest = app_constants.createGuestPrismUser();
+    final service = DeleteAccountService(
+      reauthenticate: () async => calls.add('reauth'),
+      deleteOnServer: () async => calls.add('server'),
+      signOut: () async {
+        calls.add('signOut');
+        app_state.prismUser = guest;
+        return true;
+      },
+      clearLocalData: (userId) async => calls.add('clear:$userId'),
+    );
+
+    await service.deleteAccount();
+
+    expect(calls, <String>['reauth', 'server', 'signOut', 'clear:user-1']);
+    expect(app_state.prismUser, same(guest));
+    expect(app_state.prismUser.id, isEmpty);
+    expect(app_state.prismUser.loggedIn, isFalse);
   });
 
   test('a cancelled re-authentication stops before the server and leaves local data alone', () async {
