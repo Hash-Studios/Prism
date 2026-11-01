@@ -12124,10 +12124,6 @@
   "@wrappedShareCard": {
     "description": "Accessible label for the share icon on a Wrapped card."
   },
-  "wrappedDone": "Done",
-  "@wrappedDone": {
-    "description": "Button that closes Wrapped after the last card."
-  },
   "wrappedPause": "Pause",
   "@wrappedPause": {
     "description": "Button that pauses the Wrapped card auto-advance."

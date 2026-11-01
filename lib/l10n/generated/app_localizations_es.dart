@@ -12548,9 +12548,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wrappedShareCard => 'Compartir esta tarjeta';
 
   @override
-  String get wrappedDone => 'Listo';
-
-  @override
   String get wrappedPause => 'Pausar';
 
   @override

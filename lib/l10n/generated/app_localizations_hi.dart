@@ -12532,9 +12532,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wrappedShareCard => 'यह कार्ड शेयर करें';
 
   @override
-  String get wrappedDone => 'हो गया';
-
-  @override
   String get wrappedPause => 'रोकें';
 
   @override

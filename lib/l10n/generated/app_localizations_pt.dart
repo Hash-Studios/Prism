@@ -12734,9 +12734,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wrappedShareCard => 'Compartilhar este card';
 
   @override
-  String get wrappedDone => 'Concluído';
-
-  @override
   String get wrappedPause => 'Pausar';
 
   @override
@@ -25505,9 +25502,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wrappedShareCard => 'Compartilhar este card';
-
-  @override
-  String get wrappedDone => 'Concluído';
 
   @override
   String get wrappedPause => 'Pausar';

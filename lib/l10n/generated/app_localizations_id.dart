@@ -12432,9 +12432,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get wrappedShareCard => 'Bagikan kartu ini';
 
   @override
-  String get wrappedDone => 'Selesai';
-
-  @override
   String get wrappedPause => 'Jeda';
 
   @override

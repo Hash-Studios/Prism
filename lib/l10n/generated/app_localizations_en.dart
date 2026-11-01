@@ -12390,9 +12390,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wrappedShareCard => 'Share this card';
 
   @override
-  String get wrappedDone => 'Done';
-
-  @override
   String get wrappedPause => 'Pause';
 
   @override

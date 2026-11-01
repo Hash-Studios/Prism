@@ -23,6 +23,9 @@ class Env {
   // Debug builds only: loads the AI style samples from http://localhost:8765. See docs/features/ai-wallpaper.md.
   static const bool aiStyleSamplesLocal = bool.fromEnvironment('AI_STYLE_SAMPLES_LOCAL');
 
+  // Debug builds only: shows the Wrapped Home card outside its Remote Config window, for QA before 1 December.
+  static const bool wrappedQaOpen = bool.fromEnvironment('WRAPPED_QA_OPEN');
+
   static const bool creatorStatsEmulator = bool.fromEnvironment('CREATOR_STATS_EMULATOR');
   static const String creatorStatsEmulatorHost = String.fromEnvironment(
     'CREATOR_STATS_EMULATOR_HOST',

@@ -12571,9 +12571,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wrappedShareCard => 'Diese Karte teilen';
 
   @override
-  String get wrappedDone => 'Fertig';
-
-  @override
   String get wrappedPause => 'Pausieren';
 
   @override

@@ -19879,12 +19879,6 @@ abstract class AppLocalizations {
   /// **'Share this card'**
   String get wrappedShareCard;
 
-  /// Button that closes Wrapped after the last card.
-  ///
-  /// In en, this message translates to:
-  /// **'Done'**
-  String get wrappedDone;
-
   /// Button that pauses the Wrapped card auto-advance.
   ///
   /// In en, this message translates to:

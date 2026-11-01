@@ -1,4 +1,5 @@
 import 'package:Prism/core/startup/firebase_init.dart';
+import 'package:Prism/env/env.dart';
 import 'package:flutter/foundation.dart';
 
 /// Remote Config gate for Wrapped: an on/off flag plus the window the Home card shows in. Dates are local calendar days,
@@ -28,6 +29,7 @@ class WrappedConfig {
 
   /// True while the flag is on and [now] falls on a day from [start] to [end].
   static bool isOpen(DateTime now) {
+    if (kDebugMode && Env.wrappedQaOpen && override == null) return true;
     final DateTime day = DateTime(now.year, now.month, now.day);
     return enabled && !day.isBefore(_day(start)) && !day.isAfter(_day(end));
   }

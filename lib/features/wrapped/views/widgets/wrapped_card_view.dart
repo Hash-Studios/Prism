@@ -63,12 +63,10 @@ class WrappedCardView extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   stops: const <double>[0, 0.18, 0.4, 1],
-                  colors: <Color>[
-                    const Color(0x73000000),
-                    const Color(0x00000000),
-                    const Color(0x1A000000),
-                    const Color(0xE6000000).withValues(alpha: copy.rows.isEmpty ? 0.86 : 0.92),
-                  ],
+                  // The summary sits on a busy collage, so its scrim is darker.
+                  colors: copy.rows.isEmpty
+                      ? const <Color>[Color(0x73000000), Color(0x00000000), Color(0x1A000000), Color(0xDB000000)]
+                      : const <Color>[Color(0x73000000), Color(0x26000000), Color(0x99000000), Color(0xF2000000)],
                 ),
               ),
             ),

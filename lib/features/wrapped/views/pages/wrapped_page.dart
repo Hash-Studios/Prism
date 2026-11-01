@@ -6,6 +6,7 @@ import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wrapped/biz/bloc/wrapped_bloc.j.dart';
 import 'package:Prism/features/wrapped/domain/wrapped.dart';
@@ -17,6 +18,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// The analytics source for a deep-link or notification intent source.
@@ -62,8 +64,8 @@ class _PrismWrappedPageState extends State<PrismWrappedPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(brightness: Brightness.dark),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: edgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.light),
       child: Scaffold(
         backgroundColor: WrappedCardStyle.backdrop,
         body: BlocConsumer<WrappedBloc, WrappedState>(
@@ -358,23 +360,11 @@ class _WrappedStoryState extends State<WrappedStory> with TickerProviderStateMix
                 left: PrismSpace.lg,
                 right: PrismSpace.lg,
                 bottom: safe.bottom + PrismSpace.lg,
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: PrismButton(
-                        label: l10n.wrappedShare,
-                        icon: Icons.ios_share_rounded,
-                        expand: true,
-                        onPressed: () => _share(copy),
-                      ),
-                    ),
-                    const SizedBox(width: PrismSpace.sm),
-                    PrismButton(
-                      label: l10n.wrappedDone,
-                      variant: PrismButtonVariant.tonal,
-                      onPressed: () => Navigator.of(context).maybePop(),
-                    ),
-                  ],
+                child: PrismButton(
+                  label: l10n.wrappedShare,
+                  icon: Icons.ios_share_rounded,
+                  expand: true,
+                  onPressed: () => _share(copy),
                 ),
               ),
           ],
