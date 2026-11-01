@@ -670,7 +670,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
           if (pickUpAt < chunks[i].$2) ...gridWithAd(pickUpAt, chunks[i].$2),
         ] else if (i == 1 && creatorsAt != null) ...<Widget>[
           ...gridWithAd(chunks[i].$1, creatorsAt),
-          const SliverToBoxAdapter(child: CreatorsSection(source: 'home')),
+          SliverToBoxAdapter(
+            child: CreatorsSection(source: 'home', refreshRevision: _moodRowsRevision),
+          ),
           if (creatorsAt < chunks[i].$2) ...gridWithAd(creatorsAt, chunks[i].$2),
         ] else
           ...gridWithAd(chunks[i].$1, chunks[i].$2),
@@ -682,7 +684,10 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
               slot: i,
             ),
           ),
-        if (i == 0 && chunks.length == 1) const SliverToBoxAdapter(child: CreatorsSection(source: 'home')),
+        if (i == 0 && chunks.length == 1)
+          SliverToBoxAdapter(
+            child: CreatorsSection(source: 'home', refreshRevision: _moodRowsRevision),
+          ),
       ],
       SliverToBoxAdapter(child: _bottomState(context, state, crossAxisCount)),
     ];
