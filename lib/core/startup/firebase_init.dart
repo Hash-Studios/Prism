@@ -37,6 +37,9 @@ class FirebaseInit {
   /// The default app exists. False while startup is still initializing Firebase, and after init failed or was skipped.
   static bool get hasDefaultApp => Firebase.apps.isNotEmpty;
 
+  /// True at once when the default app exists, otherwise waits for startup like [waitUntilReady].
+  static Future<bool> defaultAppReady() async => hasDefaultApp || await waitUntilReady();
+
   static FirebaseRemoteConfig? get remoteConfigIfInitialized {
     if (!_initialized || Env.localQa) return null;
     try {

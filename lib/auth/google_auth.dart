@@ -85,8 +85,7 @@ class GoogleAuth {
        _messaging = messaging,
        _clearShortcutsFavourites = clearShortcutsFavourites ?? ShortcutsFavouritesStore.clear,
        _clearShortcutsFolders = clearShortcutsFolders ?? ShortcutsFoldersStore.clear,
-       _firebaseReady =
-           firebaseReady ?? (() async => FirebaseInit.hasDefaultApp || await FirebaseInit.waitUntilReady());
+       _firebaseReady = firebaseReady ?? FirebaseInit.defaultAppReady;
 
   final FirebaseAuth? _authOverride;
   FirebaseAuth? _resolvedAuth;

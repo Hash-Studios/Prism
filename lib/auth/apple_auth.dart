@@ -17,7 +17,7 @@ class AppleAuth {
   AppleAuth({FirebaseAuth? auth, GoogleAuth? googleAuth, Future<bool> Function()? firebaseReady})
     : _authOverride = auth,
       _googleAuth = googleAuth,
-      _firebaseReady = firebaseReady ?? (() async => FirebaseInit.hasDefaultApp || await FirebaseInit.waitUntilReady());
+      _firebaseReady = firebaseReady ?? FirebaseInit.defaultAppReady;
 
   final FirebaseAuth? _authOverride;
   FirebaseAuth? _resolvedAuth;

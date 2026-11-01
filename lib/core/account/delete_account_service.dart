@@ -71,14 +71,12 @@ class DeleteAccountService {
   /// get the Google reauthentication.
   @visibleForTesting
   static Future<Set<String>> signedInProviderIds({
-    Future<bool> Function() firebaseReady = _firebaseReady,
+    Future<bool> Function() firebaseReady = FirebaseInit.defaultAppReady,
     User? Function() currentUser = _currentFirebaseUser,
   }) async {
     if (!await firebaseReady()) throw const FirebaseUnavailableException();
     return currentUser()?.providerData.map((provider) => provider.providerId).toSet() ?? <String>{};
   }
-
-  static Future<bool> _firebaseReady() async => FirebaseInit.hasDefaultApp || await FirebaseInit.waitUntilReady();
 
   static User? _currentFirebaseUser() => FirebaseAuth.instance.currentUser;
 
