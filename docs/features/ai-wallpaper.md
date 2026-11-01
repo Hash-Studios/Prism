@@ -18,6 +18,50 @@ The AI tab. Code: `lib/features/ai_wallpaper/`. The worker side is in `docs/feat
 |---|---|---|
 | Android and iOS | Pays coins for each image. The image has a Prism watermark. | Pays half the coins for each image, rounded up. No watermark. |
 
+## Result screen
+
+The result fills the screen. The page opens on the prompt. It does not open on the last result.
+
+### Opening and closing
+
+- A successful generation or variation opens the result. The new wallpaper is the hero.
+- A tap on a Recent wallpaper opens it full screen.
+- "Edit prompt" returns to the prompt. Back does the same. The prompt text stays.
+- Recent history stays below the prompt. Loading history does not open a result.
+
+### Session strip
+
+- The strip shows the wallpapers made on this page visit. The oldest comes first. The newest comes last.
+- The strip shows when there are 2 or more wallpapers.
+- A tap swaps the wallpaper. The swap does not generate or download anything.
+
+### Actions
+
+- Apply is the main action.
+- On Android, Apply opens the Set screen with this wallpaper. The last target you picked is already selected.
+- On Android, press Set to apply the wallpaper. Adjust is optional.
+- The Set screen remembers the last target in `wallpaper.lastApplyTarget` for every entry point. This does not apply when a default target is saved.
+- On iOS, Apply saves the wallpaper to Photos. Then the app shows the set guide.
+- Save shows only on Android. On iOS, Apply already saves.
+- Share, Submit and Try another stay on both platforms.
+
+### Follow-up chips
+
+- The result shows five chips: As watercolour, Night version, More minimal, Warmer and Add depth.
+- The chips show only when `ai_variations_enabled` is true in Remote Config.
+- The chips are off while a wallpaper is being made.
+- A tap runs the variation path. The charge uses the price of the shown wallpaper's tier.
+- The first tap asks first. The same sheet appears when the price goes up.
+- The app stores the confirmed price in `ai.followUpConfirmedCost`.
+- The sheet asks "Make a new take?" with "Make it" and "Cancel".
+- The prompt sent to the worker is in English. Only the chip label is translated.
+
+### Analytics
+
+- `ai_result_applied` has `platform` and `from`. The `from` value is `hero` or `strip`.
+- `ai_follow_up_used` has `chip_id`.
+- `ai_strip_swapped` has `position` and `count`.
+
 ## How it works
 
 ### Coin cost
@@ -55,7 +99,7 @@ When the text already speaks about coins, the app adds no second refund note. Ot
 
 ### Try another
 
-The old button "Refine" suggested that the new image keeps the old one. It does not. The worker only adds your words to the prompt and uses a new seed. The button is now "Try another". The sheet says that the result can look quite different. The event name `ai_variation_used` is the same.
+The old button "Refine" suggested that the new image keeps the old one. It does not. The worker only adds your words to the prompt and uses a new seed. The button is now "Try another". It sits in the result actions. The sheet says that the result can look quite different. The event name `ai_variation_used` is the same.
 
 ### Sign-in
 
@@ -64,6 +108,10 @@ A signed-out user who taps Generate or Submit gets the sign-in sheet, not a toas
 ### Get coins
 
 When the balance is under the price, the button reads "Get coins · need N". It opens Rewards and scrolls to the "Earn coins" section (`RewardsRoute(scrollToEarn: true)`).
+
+### Remix
+
+A remix opens this tab from an approved wallpaper that has a prompt. The prompt and the tier fill in. The style fills in only when the original stores one. Studio walls and older walls store no style, so the current style stays. A chip shows the original. Its x drops the link, and the prompt stays. The app never generates by itself. Normal cost and coin rules apply. The details are in [remix.md](remix.md).
 
 ## Style text in the prompt
 

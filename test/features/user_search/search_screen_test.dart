@@ -7,6 +7,7 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -36,6 +37,7 @@ import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/favourite_test_scope.dart';
 import '../../support/in_memory_local_store.dart';
+import '../creator_directory/creator_directory_test_support.dart';
 
 class _MockWallpaperSearchService extends Mock implements WallpaperSearchService {}
 
@@ -46,6 +48,14 @@ FeedItemEntity _wallpaper(String id) => PexelsFeedItem(
   id: id,
   wallpaper: PexelsWallpaper(
     core: WallpaperCore(id: id, source: WallpaperSource.pexels, fullUrl: '', thumbnailUrl: '', authorName: id),
+  ),
+);
+
+FeedItemEntity _aiWallpaper(String id) => FeedItemEntity.prism(
+  id: id,
+  wallpaper: PrismWallpaper(
+    core: WallpaperCore(id: id, source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+    isAiGenerated: true,
   ),
 );
 
@@ -81,6 +91,7 @@ void main() {
     stubDiscovery(SearchDiscoveryState.initial());
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
+    registerCreatorDirectoryFakes();
   });
 
   tearDown(() async {
@@ -267,6 +278,34 @@ void main() {
 
     expect(find.text(AppLocalizationsEn().accountNoWallpapersFoundForQuery('zzzz')), findsOneWidget);
     expect(find.text("Couldn't search right now"), findsNothing);
+  });
+
+  testWidgets('a settings change reruns an empty search that was captured while AI was hidden', (tester) async {
+    final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+    await settings.set('showAiWallpapers', false);
+    int calls = 0;
+    when(() => service.search('ai', filters: any(named: 'filters'))).thenAnswer((_) async {
+      calls++;
+      return calls == 1
+          ? _page(const <FeedItemEntity>[], provider: SearchProviderValue.prism)
+          : _page(
+              const <FeedItemEntity>[],
+              provider: SearchProviderValue.prism,
+              prismResults: <FeedItemEntity>[_aiWallpaper('ai-result')],
+            );
+    });
+
+    await submit(tester, 'ai');
+    await tester.pump();
+    expect(find.byType(GlintState), findsOneWidget);
+    expect(calls, 1);
+
+    await setShowAiWallpapers(settings, true);
+    await tester.pump();
+    await tester.pump();
+
+    expect(calls, 2);
+    expect(find.byKey(const ValueKey<String>('prism-ai-result')), findsOneWidget);
   });
 
   testWidgets('shows a From Prism row before the provider results', (tester) async {

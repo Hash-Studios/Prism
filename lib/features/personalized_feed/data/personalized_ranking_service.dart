@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
@@ -26,7 +25,7 @@ enum CandidatePool {
 
 class RankingCandidate {
   RankingCandidate({required this.item, required this.pool, List<String> extraTerms = const <String>[]})
-    : key = PersonalizedRankingService.canonicalKey(item),
+    : key = item.canonicalKey,
       creator = tasteCreatorOf(item.wallpaperCore),
       terms = <String>{...termsOf(item), ...extraTerms.map((e) => e.toLowerCase())}.toList(growable: false);
 
@@ -153,14 +152,6 @@ class PersonalizedRankingService {
       }
     }
     return best;
-  }
-
-  static String canonicalKey(FeedItemEntity item) {
-    final String normalizedUrl = item.wallpaperCore.fullUrl.trim().toLowerCase();
-    if (normalizedUrl.isNotEmpty) {
-      return normalizedUrl;
-    }
-    return '${item.source.wireValue}:${item.id.trim().toLowerCase()}';
   }
 }
 

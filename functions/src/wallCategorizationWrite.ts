@@ -3,7 +3,7 @@ import {isDeepStrictEqual} from "node:util";
 import {db} from "./common";
 import {DEFAULT_CATEGORY, DEFAULT_COLLECTION} from "./wallCategory";
 import {collectionFor} from "./wallCollections";
-import {premiumCollections} from "./wallOfTheDay";
+import {premiumCollections} from "./wallEligibility";
 import {type WallDepth} from "./wallDepth";
 import {type WallSpatial} from "./wallSpatial";
 

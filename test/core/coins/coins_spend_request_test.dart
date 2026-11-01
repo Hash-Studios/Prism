@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -32,7 +33,136 @@ void main() {
     service.balanceNotifier.value = 100;
   });
   tearDown(() async {
+    app_state.prismUser.id = backend.userId;
     await getIt<SettingsLocalDataSource>().delete('pendingAiRefunds');
+  });
+
+  test('a payer refund waits for that account and retries exactly once when it signs back in', () async {
+    final String payer = app_state.prismUser.id;
+    final settings = getIt<SettingsLocalDataSource>();
+    final calls = <Map<String, dynamic>>[];
+    final callers = <String>[];
+    backend.onCall = (name, parameters) async {
+      expect(name, 'awardCoins');
+      calls.add(parameters);
+      callers.add(app_state.prismUser.id);
+      return <String, Object>{..._spent, 'delta': 5, 'currentBalance': 100};
+    };
+    app_state.prismUser.id = 'other-account';
+
+    final result = await service.refundSpend(
+      CoinSpendAction.premiumFilter,
+      sourceTag: 'test',
+      transactionId: 'filter-refund',
+      userId: payer,
+      reason: 'premium_filter_export_failed_refund',
+    );
+
+    expect(result.changed, isFalse);
+    expect(result.success, isFalse);
+    expect(result.reason, 'refund_queued');
+    expect(calls, isEmpty);
+    final entry = (jsonDecode(settings.get<String>('pendingAiRefunds', defaultValue: '')) as List).single as Map;
+    expect(entry['transactionId'], 'filter-refund');
+    expect(entry['userId'], payer);
+    expect(entry['action'], 'premiumFilter');
+    expect(entry['reason'], 'premium_filter_export_failed_refund');
+    await service.retryPendingRefunds();
+    expect(calls, isEmpty);
+
+    app_state.prismUser.id = payer;
+    await service.retryPendingRefunds();
+    await service.retryPendingRefunds();
+
+    expect(calls, hasLength(1));
+    expect(callers, <String>[payer]);
+    expect(calls.single['action'], 'refund');
+    expect(calls.single['transactionId'], 'filter-refund');
+    expect(calls.single['reason'], 'premium_filter_export_failed_refund');
+    expect(settings.get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
+  });
+
+  test('a payer refund queues for the payer if the account changes during the call', () async {
+    final String payer = app_state.prismUser.id;
+    var calls = 0;
+    backend.onCall = (name, parameters) async {
+      expect(name, 'awardCoins');
+      expect(app_state.prismUser.id, payer);
+      calls++;
+      app_state.prismUser.id = 'other-account';
+      return <String, Object>{..._spent, 'delta': 5, 'currentBalance': 100};
+    };
+
+    final result = await service.refundSpend(
+      CoinSpendAction.premiumFilter,
+      sourceTag: 'test',
+      transactionId: 'switch-during-refund',
+      userId: payer,
+    );
+
+    expect(calls, 1);
+    expect(result.reason, 'refund_queued');
+    final stored = getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: '');
+    final entry = (jsonDecode(stored) as List).single as Map;
+    expect(entry['userId'], payer);
+    expect(entry['transactionId'], 'switch-during-refund');
+    expect(entry['reason'], 'refund_premiumFilter');
+  });
+
+  test('a payer refund queues retryable failures but not failed-precondition', () async {
+    final String payer = app_state.prismUser.id;
+    final settings = getIt<SettingsLocalDataSource>();
+    backend.onCall = (name, parameters) async =>
+        throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
+
+    final retryable = await service.refundSpend(
+      CoinSpendAction.premiumFilter,
+      sourceTag: 'test',
+      transactionId: 'offline-filter-refund',
+      userId: payer,
+    );
+
+    expect(retryable.reason, 'refund_queued');
+    final entry = (jsonDecode(settings.get<String>('pendingAiRefunds', defaultValue: '')) as List).single as Map;
+    expect(entry['userId'], payer);
+    expect(entry['transactionId'], 'offline-filter-refund');
+    await settings.delete('pendingAiRefunds');
+    backend.onCall = (name, parameters) async =>
+        throw FirebaseFunctionsException(code: 'failed-precondition', message: 'Not refundable');
+
+    final denied = await service.refundSpend(
+      CoinSpendAction.premiumFilter,
+      sourceTag: 'test',
+      transactionId: 'denied-filter-refund',
+      userId: payer,
+    );
+
+    expect(denied.reason, 'failed-precondition');
+    expect(settings.get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
+  });
+
+  test('a premium filter spend with no reply queues its deterministic refund after both attempts', () async {
+    final String payer = app_state.prismUser.id;
+    final requestIds = <String>[];
+    backend.onCall = (name, parameters) {
+      expect(name, 'spendCoins');
+      requestIds.add(parameters['requestId'] as String);
+      return Future<dynamic>.error(FirebaseFunctionsException(code: 'unavailable', message: 'lost reply'));
+    };
+
+    final result = await service.spend(CoinSpendAction.premiumFilter);
+
+    expect(requestIds, hasLength(2));
+    expect(requestIds[0], requestIds[1]);
+    final String expectedId = 'spend_${payer}_${requestIds.first}';
+    expect(result.success, isFalse);
+    expect(result.unknownOutcomeTransactionId, expectedId);
+    final stored = getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: '');
+    expect(stored, isNotEmpty);
+    final entry = (jsonDecode(stored) as List).single as Map;
+    expect(entry['transactionId'], expectedId);
+    expect(entry['userId'], payer);
+    expect(entry['action'], 'premiumFilter');
   });
 
   test('every spend sends a fresh requestId that fits the server pattern', () async {

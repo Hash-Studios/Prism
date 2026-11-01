@@ -1,4 +1,5 @@
 import type {Rng} from "./ids";
+import {DUO_REVEAL_SPEC, hasBannedDuoPhrase} from "../duo_reveal_spec";
 import {DEFAULT_CATEGORY} from "../wallCategory";
 import {REQUEST_CATEGORIES, type StudioRequestPick} from "../wallRequests";
 import {
@@ -13,6 +14,7 @@ export const STUDIO_CATEGORY_CAP = 2;
 export const STUDIO_CATEGORY_CAP_MAX_COUNT = 10;
 
 export interface StudioPlanItem {
+  duoPresetId?: string;
   seriesId: string;
   subjectId: string;
   paletteId: string;
@@ -30,6 +32,7 @@ export const STUDIO_REQUEST_SERIES = "request";
 const CLASSIFIER_CATEGORY: Record<string, string> = {Aesthetic: "Abstract", Forest: "Nature", AMOLED: "Dark"};
 
 export interface StudioPlanInput {
+  manualSeriesId?: string;
   series: StudioSeries[];
   count: number;
   /** Series id -> weight. A series that is not in the map has weight 1; weight 0 leaves it out. */
@@ -79,6 +82,14 @@ export function studioTitle(subject: StudioSubject, palette: StudioPalette): str
 }
 
 export function studioPrompt(series: StudioSeries, subject: StudioSubject, palette: StudioPalette): string {
+  if (series.duoReveal) {
+    if (hasBannedDuoPhrase([subject.id, subject.title, subject.prompt, subject.category, ...subject.tags,
+      series.id, series.name, series.category, series.style, ...series.tags,
+      palette.id, palette.prompt, palette.name, ...palette.tags, subject.foldedPrompt, subject.revealedPrompt].join(" "))) {
+      throw new Error("Duo catalog contains a banned phrase.");
+    }
+    return `${subject.prompt}, ${palette.prompt}. ${series.style}`;
+  }
   return `${subject.prompt}, ${palette.prompt}. ${series.style} ${series.depth ? STUDIO_DEPTH_COMPOSITION : STUDIO_COMPOSITION}`;
 }
 
@@ -111,7 +122,8 @@ export function requestPlanItem(pick: StudioRequestPick, rng: Rng): StudioPlanIt
 export function buildDailyPlan(input: StudioPlanInput): StudioPlanItem[] {
   const {recentSubjectIds, rng} = input;
   const count = Math.max(0, Math.trunc(input.count));
-  const eligible = input.series.filter((s) => (input.weights[s.id] ?? 1) > 0 && s.subjects.length > 0 &&
+  const eligible = input.series.filter((s) => (!s.manualOnly || input.manualSeriesId === s.id) &&
+    (input.weights[s.id] ?? 1) > 0 && s.subjects.length > 0 &&
     s.palettes.length > 0);
   if (count === 0 || eligible.length === 0) return [];
 
@@ -136,6 +148,7 @@ export function buildDailyPlan(input: StudioPlanInput): StudioPlanItem[] {
     perCategory.set(category, (perCategory.get(category) ?? 0) + 1);
     return {
       seriesId: series.id,
+      ...(series.duoReveal ? {duoPresetId: DUO_REVEAL_SPEC.presetId} : {}),
       subjectId: subject.id,
       paletteId: palette.id,
       prompt: studioPrompt(series, subject, palette),

@@ -48,11 +48,11 @@ function writePrivate(
 
 interface ProgressQuestRequest { event?: unknown; eventId?: unknown; requestId?: unknown }
 
-interface Awarded { id: string; coins: number; xp: number }
+export interface Awarded { id: string; coins: number; xp: number }
 
 /** `event` null means sync only; `ignoredReason` is then the reply reason. */
 async function runProgress(uid: string, event: QuestEvent | null, eventId: string | null, ignoredReason: string, nowMs: number,
-  pendingFavourite?: admin.firestore.DocumentReference) {
+  pendingFavourite?: admin.firestore.DocumentReference, actionReceipt?: admin.firestore.DocumentReference) {
   const config = await loadEconomy();
   const today = dayKey(nowMs);
   const userRef = db.collection(USERS).doc(uid);
@@ -60,6 +60,18 @@ async function runProgress(uid: string, event: QuestEvent | null, eventId: strin
   const rateRef = event ? db.collection(EVENT_RATE).doc(`${uid}_${today}_${event}`) : null;
 
   return db.runTransaction(async (tx) => {
+    if (actionReceipt) {
+      const [deletion, user] = await Promise.all([
+        tx.get(db.collection("creatorDeletionState").doc(uid)), tx.get(userRef),
+      ]);
+      if (deletion.data()?.closed === true || !user.exists || user.data()?.deleted === true) return null;
+      const receipt = await tx.get(actionReceipt);
+      if (receipt.exists) return {awarded: receipt.data()?.awarded as Awarded[]};
+      if (dayKey(Date.now()) !== today) {
+        tx.set(actionReceipt, {awarded: []});
+        return {awarded: [] as Awarded[]};
+      }
+    }
     if (pendingFavourite) {
       const pending = await tx.get(pendingFavourite);
       if (!pending.exists) return null;
@@ -157,6 +169,7 @@ async function runProgress(uid: string, event: QuestEvent | null, eventId: strin
 
     // Consuming the durable work and paying the quest share a commit, including duplicate/rate-limited no-ops.
     if (pendingFavourite) tx.delete(pendingFavourite);
+    if (actionReceipt) tx.set(actionReceipt, {awarded});
     return {
       success: true,
       changed: awarded.length > 0,
@@ -210,6 +223,18 @@ export async function progressQuestForUser(uid: string, event: QuestEvent, event
   } catch (err) {
     logger.warn("Could not record the quest event.", {event, err});
     return false;
+  }
+}
+
+export async function progressWallpaperActionQuest(
+  uid: string, event: QuestEvent, eventId: string, nowMs: number, receipt: admin.firestore.DocumentReference,
+): Promise<Awarded[] | null> {
+  try {
+    const result = await runProgress(uid, event, eventId, "quest_synced", nowMs, undefined, receipt);
+    return result?.awarded ?? null;
+  } catch (err) {
+    logger.warn("Could not record the wallpaper action quest.", {event, err});
+    return null;
   }
 }
 

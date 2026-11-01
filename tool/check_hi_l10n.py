@@ -60,6 +60,7 @@ UNCHANGED_ENGLISH = {
     'coreShareTargetInstagram': 'Instagram',
     'coreThemeAmoled': 'AMOLED',
     'coreWallpaperSavedWithTip': '{saved} {tip}',
+    'duoDeviceName': 'iPhone Duo',
     'economyAiPromptSceneOnly': '{scene}, {suffix}',
     'economyCreatorMilestoneProgress': '{label}: {current} / {target}',
     'economyCreatorWeekRange': '{start} – {end} UTC',

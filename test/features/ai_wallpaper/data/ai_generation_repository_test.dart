@@ -131,6 +131,135 @@ void main() {
   setUp(() => getIt.registerSingleton<FirestoreClient>(FakeFirestoreClient()));
   tearDown(getIt.reset);
 
+  test('a replayed phone result does not inherit Duo metadata from the new request', () async {
+    final repository = _repository(MockClient((_) async => http.Response(_okBody, 200)));
+    final result = await repository.generate(
+      prompt: 'fox',
+      stylePreset: AiStylePreset.nature,
+      qualityTier: AiQualityTier.fast,
+      targetSize: '2670x1878',
+      chargeMode: AiChargeMode.freeTrial,
+      coinsSpent: 0,
+      format: 'duo-reveal',
+      foldedPrompt: 'fox',
+      revealedPrompt: 'forest village',
+    );
+    expect(result.id, 'gen-1');
+    expect(result.isDuoReveal, isFalse);
+    expect(result.format, isNull);
+    expect(result.foldedPrompt, isNull);
+    expect(result.revealedPrompt, isNull);
+  });
+
+  test('Duo request, restored history and variation preserve composition and tier', () async {
+    final Directory directory = await Directory.systemTemp.createTemp('prism-ai-duo-test');
+    addTearDown(() => directory.delete(recursive: true));
+    final List<Map<String, dynamic>> payloads = <Map<String, dynamic>>[];
+    int count = 0;
+    final repository = AiGenerationRepositoryImpl.forTest(
+      client: MockClient((request) async {
+        payloads.add(jsonDecode(request.body) as Map<String, dynamic>);
+        return http.Response(
+          jsonEncode(<String, Object?>{
+            ...jsonDecode(_okBody) as Map<String, dynamic>,
+            'generationId': 'duo-${++count}',
+            'width': 2670,
+            'height': 1878,
+            'format': 'duo-reveal',
+            'foldedPrompt': 'cat',
+            'revealedPrompt': 'spaceship',
+          }),
+          200,
+        );
+      }),
+      auth: _FakeAuth(),
+      localStore: DurableJsonStore('duo', directory: directory),
+    );
+    final original = await repository.generate(
+      prompt: 'cat',
+      stylePreset: AiStylePreset.nature,
+      qualityTier: AiQualityTier.quality,
+      targetSize: '2670x1878',
+      chargeMode: AiChargeMode.coinSpend,
+      coinsSpent: 50,
+      format: 'duo-reveal',
+      foldedPrompt: ' cat ',
+      revealedPrompt: ' spaceship ',
+    );
+    expect(payloads.single['targetSize'], '2670x1878');
+    expect(payloads.single['qualityTier'], 'quality');
+    expect(payloads.single['format'], 'duo-reveal');
+    expect(payloads.single['foldedPrompt'], 'cat');
+    expect(payloads.single['revealedPrompt'], 'spaceship');
+    final restored = (await repository.fetchLocalHistory(userId: 'user-1')).single;
+    final variation = await repository.generateVariation(
+      generationId: original.id,
+      originalRecord: restored,
+      chargeMode: AiChargeMode.coinSpend,
+      coinsSpent: 50,
+      variationPrompt: 'warmer',
+    );
+    expect(variation.format, 'duo-reveal');
+    expect(variation.foldedPrompt, 'cat');
+    expect(variation.revealedPrompt, 'spaceship');
+    expect(variation.qualityTier, AiQualityTier.quality);
+    expect(variation.width, 2670);
+    final histories = await repository.fetchLocalHistory(userId: 'user-1');
+    expect(histories, hasLength(2));
+    expect(histories.every((record) => record.isDuoReveal && record.revealedPrompt == 'spaceship'), isTrue);
+    final firestore = getIt<FirestoreClient>() as FakeFirestoreClient;
+    expect(firestore.docs['aiGenerations']?['duo-2']?['format'], 'duo-reveal');
+  });
+
+  test('charged Duo retry keeps composition in pending local history when remote persistence fails', () async {
+    await getIt.unregister<FirestoreClient>();
+    getIt.registerSingleton<FirestoreClient>(_FailingHistorySaveFirestoreClient());
+    final Directory directory = await Directory.systemTemp.createTemp('prism-ai-duo-pending-test');
+    addTearDown(() => directory.delete(recursive: true));
+    final store = DurableJsonStore('duo_pending', directory: directory);
+    final List<Map<String, dynamic>> payloads = <Map<String, dynamic>>[];
+    final repository = AiGenerationRepositoryImpl.forTest(
+      client: MockClient((request) async {
+        payloads.add(jsonDecode(request.body) as Map<String, dynamic>);
+        if (payloads.length == 1) throw TimeoutException('retry charged request');
+        return http.Response(
+          jsonEncode(<String, Object?>{
+            ...jsonDecode(_okBody) as Map<String, dynamic>,
+            'width': 2670,
+            'height': 1878,
+            'format': 'duo-reveal',
+            'foldedPrompt': 'cat',
+            'revealedPrompt': 'spaceship',
+          }),
+          200,
+        );
+      }),
+      auth: _FakeAuth(),
+      localStore: store,
+    );
+    await repository.generate(
+      prompt: 'cat',
+      stylePreset: AiStylePreset.nature,
+      qualityTier: AiQualityTier.fast,
+      targetSize: '2670x1878',
+      chargeMode: AiChargeMode.coinSpend,
+      coinsSpent: 10,
+      chargeTxId: 'charged-duo',
+      format: 'duo-reveal',
+      foldedPrompt: 'cat',
+      revealedPrompt: 'spaceship',
+    );
+    expect(payloads, hasLength(2));
+    expect(payloads.first, payloads.last);
+    expect((await store.readAll()).values.single['_syncState'], 'pending');
+    final restored = (await repository.fetchLocalHistory(userId: 'user-1')).single;
+    expect(restored.isDuoReveal, isTrue);
+    expect(restored.foldedPrompt, 'cat');
+    expect(restored.revealedPrompt, 'spaceship');
+    expect(restored.width, 2670);
+    expect(restored.height, 1878);
+  });
+
   test('repository construction does not access Firebase Auth before an online operation', () {
     expect(() => AiGenerationRepositoryImpl(), returnsNormally);
   });
@@ -663,9 +792,58 @@ void main() {
     expect(await repository.fetchLocalHistory(userId: 'user-1'), isEmpty);
   });
 
-  test('clearing an owner prevents a late generation response from restoring local history', () async {
+  test('a linked generation stores remixOf on its first local and remote history write', () async {
+    final Directory directory = await Directory.systemTemp.createTemp('prism-ai-remix-history-test');
+    addTearDown(() => directory.delete(recursive: true));
+    final FakeFirestoreClient firestore = getIt<FirestoreClient>() as FakeFirestoreClient;
+    final AiGenerationRepositoryImpl repository = AiGenerationRepositoryImpl.forTest(
+      client: MockClient((_) async => http.Response(_okBody, 200)),
+      auth: _FakeAuth(),
+      localStore: DurableJsonStore('ai_remix_history_test', directory: directory),
+    );
+
+    final AiGenerationRecord generated = await repository.generate(
+      prompt: 'misty peaks',
+      stylePreset: AiStylePreset.nature,
+      qualityTier: AiQualityTier.fast,
+      targetSize: '1080x1920',
+      chargeMode: AiChargeMode.coinSpend,
+      coinsSpent: 10,
+      remixOf: 'orig_1',
+    );
+    final List<AiGenerationRecord> local = await repository.fetchLocalHistory(userId: 'user-1');
+
+    expect(generated.remixOf, 'orig_1');
+    expect(local.single.remixOf, 'orig_1');
+    expect(firestore.docs['aiGenerations']?['gen-1']?['remixOf'], 'orig_1');
+  });
+
+  test('a variation made while linked stores remixOf in history', () async {
+    final Directory directory = await Directory.systemTemp.createTemp('prism-ai-remix-variation-test');
+    addTearDown(() => directory.delete(recursive: true));
+    final FakeFirestoreClient firestore = getIt<FirestoreClient>() as FakeFirestoreClient;
+    final AiGenerationRepositoryImpl repository = AiGenerationRepositoryImpl.forTest(
+      client: MockClient((_) async => http.Response(_okBody, 200)),
+      auth: _FakeAuth(),
+      localStore: DurableJsonStore('ai_remix_variation_test', directory: directory),
+    );
+
+    final AiGenerationRecord generated = await repository.generateVariation(
+      generationId: 'gen-0',
+      chargeMode: AiChargeMode.coinSpend,
+      coinsSpent: 10,
+      remixOf: 'orig_1',
+    );
+
+    expect(generated.remixOf, 'orig_1');
+    expect((await repository.fetchLocalHistory(userId: 'user-1')).single.remixOf, 'orig_1');
+    expect(firestore.docs['aiGenerations']?['gen-1']?['remixOf'], 'orig_1');
+  });
+
+  test('clearing an owner prevents a late linked generation response from restoring history', () async {
     final Directory directory = await Directory.systemTemp.createTemp('prism-ai-late-generation-test');
     addTearDown(() => directory.delete(recursive: true));
+    final FakeFirestoreClient firestore = getIt<FirestoreClient>() as FakeFirestoreClient;
     final Completer<void> requestStarted = Completer<void>();
     final Completer<http.Response> responseGate = Completer<http.Response>();
     final AiGenerationRepositoryImpl repository = AiGenerationRepositoryImpl.forTest(
@@ -684,13 +862,16 @@ void main() {
       targetSize: '1080x1920',
       chargeMode: AiChargeMode.coinSpend,
       coinsSpent: 10,
+      remixOf: 'orig_1',
     );
     await requestStarted.future;
     await repository.clearForUser('user-1');
     responseGate.complete(http.Response(_okBody, 200));
-    await generation;
+    final AiGenerationRecord generated = await generation;
 
+    expect(generated.remixOf, 'orig_1');
     expect(await repository.fetchLocalHistory(userId: 'user-1'), isEmpty);
+    expect(firestore.writes, isEmpty);
   });
 
   test('a stalled remote history write does not block local prompt saves or clear', () async {

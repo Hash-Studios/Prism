@@ -5,8 +5,12 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
@@ -78,22 +82,38 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
 
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: personalizedFeedSettingsRevision,
+      builder: (context, _, _) => _buildGrid(context),
+    );
+  }
+
+  Widget _buildGrid(BuildContext context) {
     final CategoryFeedState state = context.watch<CategoryFeedBloc>().state;
+    final bool showAi = AiContentFilter.showsAi(getIt<SettingsLocalDataSource>());
     final List<FeedItemEntity> walls = state.items
         .where((item) => item is T || (widget.includePrism && item is PrismFeedItem))
+        .where((item) => showAi || item is! PrismFeedItem || !AiContentFilter.isAi(item.wallpaper))
         .toList(growable: false);
 
     if (walls.isEmpty) {
       if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
         return const LoadingCards();
       }
-      final bool failed = state.status == LoadStatus.failure;
+      final bool failed = state.status == LoadStatus.failure || state.actionStatus == ActionStatus.failure;
+      final bool canContinue = state.status == LoadStatus.success && state.hasMore;
       return RefreshableGlintState(
         kind: failed ? GlintStateKind.error : GlintStateKind.empty,
         title: failed ? context.l10n.wallpaperFeedWallsLoadError : context.l10n.wallpaperCategoryFeedEmptyTitle,
         body: failed ? context.l10n.wallpaperCheckConnection : context.l10n.wallpaperCategoryFeedEmptyBody,
-        actionLabel: failed ? context.l10n.wallpaperTryAgain : context.l10n.wallpaperRefresh,
-        onAction: () => unawaited(_refresh()),
+        actionLabel: failed || canContinue ? context.l10n.wallpaperTryAgain : context.l10n.wallpaperRefresh,
+        onAction: () {
+          if (canContinue) {
+            _loadMore();
+          } else {
+            unawaited(_refresh());
+          }
+        },
         onRefresh: _refresh,
       );
     }

@@ -7,7 +7,9 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
@@ -39,7 +41,8 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController searchController = TextEditingController();
   final FocusNode _focus = FocusNode();
   final GlobalKey _fieldKey = GlobalKey();
-  late final RecentSearchesStore _recents = RecentSearchesStore(getIt<SettingsLocalDataSource>());
+  late final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
+  late final RecentSearchesStore _recents = RecentSearchesStore(_settingsLocal);
   late List<String> _recentSearches = _recents.read();
   // One bloc for the screen, so "Trending now" does not reload each time the user returns from a search.
   late final SearchDiscoveryBloc _discoveryBloc = getIt<SearchDiscoveryBloc>()
@@ -49,6 +52,14 @@ class _SearchScreenState extends State<SearchScreen> {
   String? _searchId;
   SearchFilters _filters = const SearchFilters();
   bool isSubmitted = false;
+  late bool _showAi;
+
+  void _onFeedSettingsChanged() {
+    final bool showAi = AiContentFilter.showsAi(_settingsLocal);
+    if (showAi == _showAi) return;
+    _showAi = showAi;
+    if (mounted && isSubmitted) _triggerSearch(_submittedQuery, sourceContext: 'search_ai_setting');
+  }
 
   int _queryWordCount(String query) {
     return query.trim().split(RegExp(r'\s+')).where((segment) => segment.trim().isNotEmpty).length;
@@ -259,6 +270,8 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
+    _showAi = AiContentFilter.showsAi(_settingsLocal);
+    personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
     pendingTagSearch.addListener(_consumePendingTag);
     if (pendingTagSearch.value != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _consumePendingTag());
@@ -267,6 +280,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
+    personalizedFeedSettingsRevision.removeListener(_onFeedSettingsChanged);
     pendingTagSearch.removeListener(_consumePendingTag);
     searchController.dispose();
     _focus.dispose();

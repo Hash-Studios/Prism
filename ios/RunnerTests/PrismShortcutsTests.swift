@@ -125,44 +125,6 @@ struct PrismShortcutsTests {
     #expect(parsed.last?.id == "w199")
   }
 
-  @Test func pickReturnsNilWithoutFavourites() {
-    #expect(PrismShortcutFavourites.pick(from: [], excluding: nil) == nil)
-    #expect(PrismShortcutFavourites.pick(from: [], excluding: "a") == nil)
-  }
-
-  @Test func pickReturnsTheOnlyFavouriteEvenWhenItWasLast() {
-    let only = [favourite("a")]
-    #expect(PrismShortcutFavourites.pick(from: only, excluding: "a") == favourite("a"))
-    #expect(PrismShortcutFavourites.pick(from: only, excluding: nil) == favourite("a"))
-  }
-
-  @Test func pickAvoidsTheLastPickedFavourite() {
-    let all = [favourite("a"), favourite("b"), favourite("c")]
-    for index in 0..<2 {
-      let picked = PrismShortcutFavourites.pick(from: all, excluding: "a", randomIndex: { _ in index })
-      #expect(picked?.id != "a")
-    }
-    #expect(PrismShortcutFavourites.pick(from: all, excluding: "a", randomIndex: { _ in 0 }) == favourite("b"))
-    #expect(PrismShortcutFavourites.pick(from: all, excluding: "a", randomIndex: { _ in 1 }) == favourite("c"))
-  }
-
-  @Test func pickDrawsFromAllWhenThereIsNoLastPick() {
-    let all = [favourite("a"), favourite("b")]
-    #expect(PrismShortcutFavourites.pick(from: all, excluding: nil, randomIndex: { _ in 0 }) == favourite("a"))
-    #expect(PrismShortcutFavourites.pick(from: all, excluding: nil, randomIndex: { _ in 1 }) == favourite("b"))
-  }
-
-  @Test func pickFallsBackWhenEveryEntryIsTheLastPick() {
-    let duplicates = [favourite("a"), favourite("a")]
-    #expect(PrismShortcutFavourites.pick(from: duplicates, excluding: "a") == favourite("a"))
-  }
-
-  @Test func pickClampsOutOfRangeIndexes() {
-    let all = [favourite("a"), favourite("b")]
-    #expect(PrismShortcutFavourites.pick(from: all, excluding: nil, randomIndex: { _ in 99 }) == favourite("b"))
-    #expect(PrismShortcutFavourites.pick(from: all, excluding: nil, randomIndex: { _ in -3 }) == favourite("a"))
-  }
-
   @Test func documentURLHasFirestoreRESTShape() throws {
     let url = try #require(
       PrismFirestoreREST.documentURL(

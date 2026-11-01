@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/guest_browsing_policy.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -303,6 +304,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   void _onGuestBrowseStarted(_GuestBrowseStarted event, Emitter<OnboardingV2State> emit) {
+    if (!guestBrowsingAllowed) return;
     emit(
       state.copyWith(
         isGuest: true,

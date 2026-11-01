@@ -45,7 +45,9 @@ void main() {
   testWidgets('quota-blocked upload emits only its error outcome haptic', (tester) async {
     final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
-    app_state.prismUser = app_constants.createGuestPrismUser();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user'
+      ..loggedIn = true;
     for (int i = 0; i < UploadQuota.freeUploadsPerWeek; i++) {
       await UploadQuota.incrementWeeklyUploads();
     }

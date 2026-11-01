@@ -2,6 +2,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_chip.dart';
+import 'package:Prism/core/widgets/prism/prism_slider.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
@@ -110,8 +111,6 @@ class EditAdjustmentsCard extends StatelessWidget {
   }
 }
 
-// Each slider gets its own semantics container: without one, popping this screen on iOS left the engine's
-// accessibility root empty (zero size, no children), so VoiceOver saw nothing in the app until a restart.
 class _SliderRow extends StatelessWidget {
   const _SliderRow({
     required this.label,
@@ -142,30 +141,27 @@ class _SliderRow extends StatelessWidget {
               Text(valueFormat.format(value), style: PrismTextStyles.caption(context)),
             ],
           ),
-          Semantics(
-            container: true,
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                showValueIndicator: ShowValueIndicator.never,
-                trackHeight: 4,
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-                activeTrackColor: cs.primary,
-                inactiveTrackColor: cs.onSurface.withValues(alpha: 0.12),
-                thumbColor: cs.primary,
-                overlayColor: cs.primary.withValues(alpha: 0.12),
-              ),
-              child: SizedBox(
-                height: 32,
-                child: Slider(
-                  label: '$label ${valueFormat.format(value)}',
-                  semanticFormatterCallback: (double value) => valueFormat.format(value),
-                  onChanged: onChanged,
-                  onChangeEnd: (_) => PrismHaptics.selection(),
-                  divisions: 50,
-                  value: value,
-                  min: min,
-                  max: max,
-                ),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              showValueIndicator: ShowValueIndicator.never,
+              trackHeight: 4,
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+              activeTrackColor: cs.primary,
+              inactiveTrackColor: cs.onSurface.withValues(alpha: 0.12),
+              thumbColor: cs.primary,
+              overlayColor: cs.primary.withValues(alpha: 0.12),
+            ),
+            child: SizedBox(
+              height: 32,
+              child: PrismSlider(
+                label: '$label ${valueFormat.format(value)}',
+                semanticFormatterCallback: (double value) => valueFormat.format(value),
+                onChanged: onChanged,
+                onChangeEnd: (_) => PrismHaptics.selection(),
+                divisions: 50,
+                value: value,
+                min: min,
+                max: max,
               ),
             ),
           ),

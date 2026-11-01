@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
@@ -10,7 +11,6 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
-import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -82,6 +82,9 @@ void main() {
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
 
   setUp(() {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'signed-in-user'
+      ..loggedIn = true;
     directory = Directory.systemTemp.createTempSync('edit_button_test_');
     cacheManager = _MockCacheManager();
     temporaryDirectoryCalls = 0;
@@ -134,6 +137,46 @@ void main() {
       expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
       expect(tester.takeException(), isNull);
       await tester.pump(const Duration(seconds: 1));
+    });
+  }
+
+  for (final source in <WallpaperSource>[
+    WallpaperSource.prism,
+    WallpaperSource.wallhaven,
+    WallpaperSource.pexels,
+    WallpaperSource.downloaded,
+  ]) {
+    testWidgets('guest local Pro cannot prepare or open the editor for $source', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+      final signIn = signedInActionSignIn;
+      addTearDown(() => signedInActionSignIn = signIn);
+      var prompts = 0;
+      signedInActionSignIn = (_) async {
+        prompts++;
+        return false;
+      };
+      var preparations = 0;
+      final router = _MockStackRouter();
+      await tester.pumpWidget(
+        _host(
+          router,
+          '/local.png',
+          source: source,
+          prepareSource: () async {
+            preparations++;
+            return '/prepared.png';
+          },
+        ),
+      );
+
+      await tester.tap(find.byType(EditButton));
+      await tester.pump();
+
+      expect(prompts, 1);
+      expect(preparations, 0);
+      expect(temporaryDirectoryCalls, 0);
+      verifyNever(() => cacheManager.getSingleFile(any()));
+      verifyNever(() => router.push(any()));
     });
   }
 
@@ -198,10 +241,10 @@ void main() {
         }
         throw FirebaseFunctionsException(code: 'permission-denied', message: 'Denied');
       };
-      final signIn = originalSignIn;
-      addTearDown(() => originalSignIn = signIn);
+      final signIn = signedInActionSignIn;
+      addTearDown(() => signedInActionSignIn = signIn);
       var signIns = 0;
-      originalSignIn = (_) async {
+      signedInActionSignIn = (_) async {
         signIns++;
         if (signsIn) app_state.prismUser = signedInUser;
         return signsIn;

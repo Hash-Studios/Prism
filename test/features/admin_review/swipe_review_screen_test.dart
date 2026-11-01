@@ -4,6 +4,8 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
 import 'package:Prism/features/admin_review/views/pages/swipe_review_screen.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_wallpaper_card.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
+import 'package:Prism/features/wallpaper_upload/domain/usecases/wall_metadata_actions.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +17,8 @@ import 'package:mocktail/mocktail.dart';
 class _MockReviewBatchBloc extends MockBloc<ReviewBatchEvent, ReviewBatchState> implements ReviewBatchBloc {}
 
 class _FakeEvent extends Fake implements ReviewBatchEvent {}
+
+class _MetadataActions extends Mock implements WallMetadataActions {}
 
 FirestoreDocument _wall(
   String id,
@@ -39,6 +43,9 @@ void main() {
 
   setUp(() {
     bloc = _MockReviewBatchBloc();
+    final actions = _MetadataActions();
+    when(() => actions.contexts(any())).thenAnswer((_) async => <String, WallResubmissionContext>{});
+    when(() => bloc.metadataActions).thenReturn(actions);
     when(() => bloc.close()).thenAnswer((_) async {});
     GetIt.I.registerSingleton<ReviewBatchBloc>(bloc);
   });

@@ -6,16 +6,18 @@ import 'package:Prism/auth/transaction_model.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
-import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
@@ -25,8 +27,6 @@ import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
-import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart'
-    show personalizedFeedSettingsRevision;
 import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/session/views/pages/settings_screen.dart';
@@ -50,6 +50,7 @@ import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
 import '../../support/wait_for_real_io.dart';
+import '../creator_directory/creator_directory_test_support.dart';
 
 class _MockCacheMaintenanceService extends Mock implements CacheMaintenanceService {}
 
@@ -61,6 +62,14 @@ class _FailingViewingPreferenceStore extends InMemoryLocalStore {
   @override
   Future<void> set(String key, Object? value) async {
     if (key == PersistenceKeys.settings(PersistenceKeys.viewedHistoryEnabled)) throw StateError('disk full');
+    await super.set(key, value);
+  }
+}
+
+class _FailingAiSettingStore extends InMemoryLocalStore {
+  @override
+  Future<void> set(String key, Object? value) async {
+    if (key == PersistenceKeys.settings(AiContentFilter.settingKey)) throw StateError('disk full');
     await super.set(key, value);
   }
 }
@@ -163,6 +172,7 @@ void main() {
     sessionRepository = _MockSessionRepository();
     when(() => sessionRepository.currentUser).thenReturn(testUser());
     getIt.registerSingleton<SessionRepository>(sessionRepository);
+    registerCreatorDirectoryFakes(profileBloc: false);
     originalSignOut = settingsSignOut;
     originalDeleteService = DeleteAccountService.instance;
   });
@@ -193,6 +203,28 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
   }
+
+  testWidgets('the AI switch goes back on and shows an error when the save fails', (tester) async {
+    useTallSurface(tester);
+    await getIt.unregister<SettingsLocalDataSource>();
+    getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(_FailingAiSettingStore()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SettingsScreen(),
+      ),
+    );
+    expect(switchOf(tester, 'Show AI-generated wallpapers').value, isTrue);
+
+    await tester.tap(find.text('Show AI-generated wallpapers'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(switchOf(tester, 'Show AI-generated wallpapers').value, isTrue);
+    expect(messages, contains('Could not save feed settings. Try again.'));
+    await tester.pump(const Duration(seconds: 1));
+  });
 
   testWidgets('haptics switch persists off and enabling it plays one selection', (tester) async {
     useTallSurface(tester);
@@ -228,43 +260,20 @@ void main() {
     expect(haptics, <String>['HapticFeedbackType.selectionClick']);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
-  testWidgets('a guest restore acknowledges local access and explains the sign-in limitation', (tester) async {
+  testWidgets('a guest restore requires sign-in and cancellation leaves store access untouched', (tester) async {
     await getIt.unregister<SessionRepository>();
     final backend = CoinsTestBackend();
     await backend.install();
     app_state.prismUser = testUser(loggedIn: false)..id = '';
-    final entitlement = <String, Object?>{
-      'identifier': 'prism_v3_pro_access',
-      'isActive': true,
-      'willRenew': true,
-      'latestPurchaseDate': '2026-10-01T00:00:00Z',
-      'originalPurchaseDate': '2026-10-01T00:00:00Z',
-      'productIdentifier': 'prism_pro_yearly',
-      'isSandbox': false,
-      'expirationDate': '2027-10-01T00:00:00Z',
-    };
-    final customer = <String, Object?>{
-      'entitlements': <String, Object?>{
-        'all': <String, Object?>{'prism_v3_pro_access': entitlement},
-        'active': <String, Object?>{'prism_v3_pro_access': entitlement},
-      },
-      'allPurchaseDates': <String, Object?>{},
-      'activeSubscriptions': <String>[],
-      'allPurchasedProductIdentifiers': <String>[],
-      'nonSubscriptionTransactions': <Object?>[],
-      'firstSeen': '',
-      'originalAppUserId': 'anonymous-store-user',
-      'allExpirationDates': <String, Object?>{},
-      'requestDate': '',
-    };
+    app_state.prismUser.premium = true;
     var syncs = 0;
     backend.onCall = (_, _) {
       syncs++;
       throw StateError('A guest must not sync paid server access.');
     };
+    final storeCalls = <String>[];
     messenger.setMockMethodCallHandler(purchasesChannel, (call) async {
-      if (call.method == 'restorePurchases') return customer;
-      if (call.method == 'getCustomerInfo') throw StateError('Restore must use the store result.');
+      storeCalls.add(call.method);
       return null;
     });
     useTallSurface(tester);
@@ -279,14 +288,16 @@ void main() {
     await tester.ensureVisible(find.text('Restore purchases'));
     await tester.pumpAndSettle();
     await tester.runAsync(() => tester.tap(find.text('Restore purchases')));
-    await waitForRealIo(tester, () => messages.length > 1, reason: 'guest restore result');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
-    expect(messages, <String>[
-      'Restoring purchases…',
-      'Your store purchase is active on this device. Sign in to use account-based Pro features.',
-    ]);
+    expect(find.text('Continue with Google'), findsOneWidget);
+    expect(storeCalls, isEmpty);
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+    expect(messages, isEmpty);
     expect(app_state.prismUser.premium, isTrue);
-    expect(await tester.runAsync(PurchasesService.instance.restore), PurchaseEntitlementStatus.guestSignInRequired);
+    expect(storeCalls, isEmpty);
     expect(syncs, 0);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
@@ -352,12 +363,22 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   }
 
-  for (final outcome in <String>['confirmed', 'pending', 'empty']) {
+  for (final outcome in <String>['confirmed', 'after_sign_in', 'pending', 'empty']) {
     testWidgets('restore reports the $outcome store result', (tester) async {
       await getIt.unregister<SessionRepository>();
       final backend = CoinsTestBackend();
       await backend.install();
       app_state.prismUser.profilePhoto = '';
+      if (outcome == 'after_sign_in') {
+        final signedInUser = app_state.prismUser;
+        app_state.prismUser = testUser(loggedIn: false)..id = '';
+        final originalSignIn = signedInActionSignIn;
+        addTearDown(() => signedInActionSignIn = originalSignIn);
+        signedInActionSignIn = (_) async {
+          app_state.prismUser = signedInUser;
+          return true;
+        };
+      }
       final paid = outcome != 'empty';
       final entitlement = <String, Object?>{
         'identifier': 'prism_v3_pro_access',
@@ -427,7 +448,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       final expected = switch (outcome) {
-        'confirmed' => 'Purchases restored.',
+        'confirmed' || 'after_sign_in' => 'Purchases restored.',
         'pending' => 'Purchases restored. Pro can take a minute to unlock.',
         _ => 'No purchases to restore for this account.',
       };
@@ -649,6 +670,31 @@ void main() {
     expect(getIt<SettingsLocalDataSource>().get<int>('WHcategories', defaultValue: 100), 110);
     verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
     expect(switchOf(tester, 'Show anime wallpapers').value, isTrue);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('the AI switch is on by default, stores false when turned off and shows its footnote', (tester) async {
+    useTallSurface(tester);
+    final bloc = _MockCategoryFeedBloc();
+    when(() => bloc.state).thenReturn(CategoryFeedState.initial());
+    final revision = personalizedFeedSettingsRevision.value;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: BlocProvider<CategoryFeedBloc>.value(value: bloc, child: const SettingsScreen()),
+      ),
+    );
+
+    expect(switchOf(tester, 'Show AI-generated wallpapers').value, isTrue);
+    expect(find.text('Hiding AI wallpapers never hides your own uploads or favourites.'), findsOneWidget);
+
+    await tester.tap(find.text('Show AI-generated wallpapers'));
+    await tester.pump();
+
+    expect(AiContentFilter.showsAi(getIt<SettingsLocalDataSource>()), isFalse);
+    expect(personalizedFeedSettingsRevision.value, revision + 1);
+    verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
+    expect(switchOf(tester, 'Show AI-generated wallpapers').value, isFalse);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   test('storage sizes read in B, KB, MB and GB', () {
@@ -897,6 +943,37 @@ void main() {
     });
   });
 
+  group('codes', () {
+    const androidFootnote = 'Prism codes give coins or Pro days. Play codes give Pro.';
+    const iosFootnote = 'Prism codes give coins. App Store codes give Pro.';
+
+    for (final platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {
+      for (final loggedIn in <bool>[true, false]) {
+        testWidgets('the Codes group on ${platform.name} ${loggedIn ? 'for a signed-in user' : 'for a guest'}', (
+          tester,
+        ) async {
+          signInAs(loggedIn: loggedIn);
+          await pumpSettings(tester);
+          final bool ios = platform == TargetPlatform.iOS;
+
+          await tester.scrollUntilVisible(find.text('Codes'), 300, scrollable: find.byType(Scrollable).first);
+          await tester.ensureVisible(find.text('Codes'));
+
+          expect(find.text('Redeem a Prism code'), findsOneWidget);
+          expect(find.text(ios ? androidFootnote : iosFootnote), findsNothing);
+          expect(find.text(ios ? iosFootnote : androidFootnote), findsOneWidget);
+          if (ios) {
+            expect(find.text('Redeem an App Store code'), findsOneWidget);
+            expect(find.text('Redeem a Play code'), findsNothing);
+          } else {
+            expect(find.text('Redeem a Play code'), findsOneWidget);
+            expect(find.text('Redeem an App Store code'), findsNothing);
+          }
+        }, variant: TargetPlatformVariant.only(platform));
+      }
+    }
+  });
+
   group('privacy and data', () {
     testWidgets('lists the policy, terms, learned taste and delete account', (tester) async {
       await pumpSettings(tester);
@@ -1035,7 +1112,7 @@ void main() {
       expect(find.text('Restart app'), findsNothing);
     });
 
-    testWidgets('Report a problem opens the preview sheet', (tester) async {
+    testWidgets('Report a problem opens the report form', (tester) async {
       messenger.setMockMethodCallHandler(const MethodChannel('dev.fluttercommunity.plus/package_info'), (call) async {
         return <String, Object?>{
           'appName': 'Prism',
@@ -1052,9 +1129,14 @@ void main() {
       await tester.tap(find.text('Report a problem'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('It has no email address or sign-in tokens.'), findsOneWidget);
-      expect(find.byKey(const Key('report_problem_preview')), findsOneWidget);
-      expect(find.text('Share'), findsOneWidget);
+      expect(
+        find.text(
+          'Tell us what went wrong. Prism never adds your email address or sign-in tokens. Check any screenshot before you send it.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Crash/freeze'), findsOneWidget);
+      expect(find.text('Send report'), findsOneWidget);
     });
   });
 
@@ -1374,7 +1456,9 @@ void main() {
       for (final old in <String>['Clear Cache', 'Clear all Downloads', 'Delete Account', 'Logout', 'Review Status']) {
         expect(find.text(old), findsNothing, reason: old);
       }
-      expect(find.textContaining('walls'), findsNothing);
+      // The AI row subtitle is the one fixed copy that says "walls".
+      expect(find.textContaining('walls'), findsOneWidget);
+      expect(find.text('Turn off to see only human-made walls'), findsOneWidget);
     });
   });
 

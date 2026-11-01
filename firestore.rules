@@ -61,6 +61,7 @@ service cloud.firestore {
           && request.resource.data.get('username', '') == ''
           && !('usernameLower' in request.resource.data)
           && ownerAppOpenValuesOk(request.resource.data)
+          && request.resource.data.get('creatorDirectoryOptOut', false) is bool
           && request.resource.data.get('coins', 0) == 0
           && request.resource.data.get('premium', false) == false
           && request.resource.data.get('subscriptionTier', 'free') == 'free'
@@ -126,12 +127,48 @@ service cloud.firestore {
         || validThemePrefs(request.resource.data.themePrefs);
     }
 
+    function ownerDirectoryOptOutOk() {
+      return !('creatorDirectoryOptOut' in request.resource.data.diff(resource.data).affectedKeys())
+        || request.resource.data.creatorDirectoryOptOut is bool;
+    }
+
     function wallServerKeysAbsent() {
-      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms']);
+      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount']);
     }
 
     function wallServerKeysUntouched() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId']);
+    }
+
+    // Optional link to the wall this one remixes. The server removes a link it cannot verify.
+    function validRemixOf() {
+      return !('remixOf' in request.resource.data)
+          || (request.resource.data.remixOf is string
+              && request.resource.data.remixOf.matches('^[A-Za-z0-9_-]{1,64}$'));
+    }
+
+    function validResubmitOf() {
+      return !('resubmitOf' in request.resource.data)
+          || (request.resource.data.resubmitOf is string
+              && request.resource.data.resubmitOf.size() <= 1024
+              && request.resource.data.resubmitOf.matches('^[^/\\\\\\p{C}]+$')
+              && !request.resource.data.resubmitOf.matches('^__.*')
+              && request.resource.data.resubmitOf != '.'
+              && request.resource.data.resubmitOf != '..');
+    }
+
+    function validChallengeId() {
+      return !('challengeId' in request.resource.data)
+          || (request.resource.data.challengeId is string
+              && request.resource.data.challengeId.matches('^[A-Za-z0-9_-]{1,128}$'));
+    }
+
+    match /weeklyChallenges/{challengeId} {
+      allow read: if true;
+      allow write: if false;
+      match /{privatePath=**} {
+        allow read, write: if false;
+      }
     }
 
     // Wall of the Day — public read, admin-only write (set via Cloud Function)
@@ -173,18 +210,21 @@ service cloud.firestore {
       allow get: if resource == null || wallReadable();
       allow list: if resource == null || wallReadable();
       // Admins re-create a rejected wall when they undo the rejection.
-      allow create: if isConfiguredAdmin()
+      allow create: if validChallengeId() && (isConfiguredAdmin()
           || (isSignedIn()
               && isEmailOwner(request.resource.data.email)
               && request.resource.data.review != true
-              && wallServerKeysAbsent());
+              && wallServerKeysAbsent()
+              && validRemixOf()
+              && validResubmitOf()));
       // delete: request.resource is null — do not use request.resource.data here.
-      allow update: if isConfiguredAdmin()
+      allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny(['challengeId'])
+          && (isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
               && wallServerKeysUntouched()
               && request.resource.data.email == resource.data.email
               && resource.data.review != true
-              && request.resource.data.review != true);
+              && request.resource.data.review != true));
       allow delete: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email) && resource.data.review != true);
     }
@@ -248,8 +288,8 @@ service cloud.firestore {
             'name', 'profilePhoto', 'coverPhoto', 'bio', 'links', 'lastLoginAt', 'loggedIn',
             'interestCategories', 'onboardingV2', 'uploadsWeekStart',
             'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'coinState',
-            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs'
-          ]) && ownerCoinStateOk() && ownerAppOpenOk() && ownerThemePrefsOk())
+            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs', 'creatorDirectoryOptOut'
+          ]) && ownerCoinStateOk() && ownerAppOpenOk() && ownerThemePrefsOk() && ownerDirectoryOptOutOk())
           || isConfiguredAdmin();
       allow delete: if isConfiguredAdmin();
 
@@ -418,6 +458,13 @@ service cloud.firestore {
       }
     }
 
+    // Creator directory: the server projection of public profiles and walls (functions/src/creatorDirectory.ts).
+    // Only the Admin SDK writes it. The app hides blocked creators on its side.
+    match /creatorDirectory/{uid} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
     // Public profile documents contain only the server-projected profile allowlist.
     // Writes use the Admin SDK, which bypasses these client rules.
     match /profiles/{uid} {
@@ -459,6 +506,17 @@ service cloud.firestore {
     // and any signed-in user could otherwise read every code in the collection.
     match /codes/{docId} {
       allow read, write: if isConfiguredAdmin();
+    }
+
+    // Promo codes and their redemptions are server-only: redeemCode and the admin callables own every read and write.
+    match /promoCodes/{codeId} {
+      allow read, write: if false;
+      match /redemptions/{uid} {
+        allow read, write: if false;
+      }
+    }
+    match /promoRedeemRate/{docId} {
+      allow read, write: if false;
     }
 
     // AI generation history is private per user.
@@ -563,6 +621,22 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // The public web catalogue (webCatalog.ts). The links Worker reads it with no sign-in, so it holds only public
+    // fields. Its build state lists every page key and stays server-only.
+    match /webWalls/{shareId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /webPages/{pageKey} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /webCatalogState/{docId} {
+      allow read, write: if false;
+    }
+
     // Username registry (claimUsername callable). Signed-in users can read it.
     match /usernames/{name} {
       allow read: if isSignedIn();
@@ -617,6 +691,15 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if false;
     }
+
+    match /creatorStatsHistory/{document=**} { allow read, write: if false; }
+    match /creatorStatsCache/{document=**} { allow read, write: if false; }
+    match /creatorStatsDailyCheckpoints/{document=**} { allow read, write: if false; }
+    match /creatorStatsFolderMarkers/{document=**} { allow read, write: if false; }
+    match /creatorStatsRemixMarkers/{document=**} { allow read, write: if false; }
+    match /creatorStatsWeeklyMarkers/{document=**} { allow read, write: if false; }
+    match /creatorStatsDailyQueue/{document=**} { allow read, write: if false; }
+    match /creatorStatsProcessorState/{document=**} { allow read, write: if false; }
 
     // Deny everything else by default.
     match /{document=**} {

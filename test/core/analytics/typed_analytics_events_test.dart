@@ -6,6 +6,18 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/recording_analytics_provider.dart';
 
 void main() {
+  test('metadata edit events serialize only the changed field names', () {
+    const event = WallApprovedMetadataEditedEvent(assetId: 'wall_a', fields: ['title', 'tags']);
+    expect(event.eventName, 'wall_approved_metadata_edited');
+    expect(event.toWireParameters(), <String, Object?>{
+      'asset_id': 'wall_a',
+      'fields': ['title', 'tags'],
+    });
+    expect(const WallPendingEditedEvent(assetId: 'wall_b', fields: ['category']).toWireParameters(), <String, Object?>{
+      'asset_id': 'wall_b',
+      'fields': ['category'],
+    });
+  });
   test('coin_earned serializes the domain action wire value', () {
     const CoinEarnedEvent event = CoinEarnedEvent(
       action: CoinEarnAction.rewardedAd,

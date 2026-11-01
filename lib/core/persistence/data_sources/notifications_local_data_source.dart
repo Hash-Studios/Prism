@@ -88,7 +88,9 @@ class NotificationsLocalDataSource {
       final record = await _store.read(key) ?? <String, Object?>{'schemaVersion': _schemaVersion};
       if (!_isCurrent(owner, generation) || !isCurrentSession()) return;
       final List<InAppNotificationEntity> current = _decodeItems(record['items']);
-      final Set<String> readIds = current.where((item) => item.read).map((item) => item.id).toSet();
+      final Map<String, DateTime> readAt = {
+        for (final item in current.where((item) => item.read)) item.id: item.createdAt,
+      };
       final Set<String> incomingIds = incoming.map((item) => item.id).toSet();
       final List<InAppNotificationEntity> localOnly = current
           .where((item) => item.id.startsWith('local_') && !incomingIds.contains(item.id))
@@ -99,7 +101,7 @@ class NotificationsLocalDataSource {
       ]);
       if (!_isCurrent(owner, generation) || !isCurrentSession()) return;
       final List<InAppNotificationEntity> merged =
-          filtered.map((item) => readIds.contains(item.id) ? item.copyWith(read: true) : item).toList()
+          filtered.map((item) => _stillRead(readAt[item.id], item) ? item.copyWith(read: true) : item).toList()
             ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       if (!_isCurrent(owner, generation) || !isCurrentSession()) return;
       record['items'] = _boundedItems(merged, key, record);
@@ -119,13 +121,19 @@ class NotificationsLocalDataSource {
       final byId = <String, InAppNotificationEntity>{for (final item in existing) item.id: item};
       for (final item in incoming) {
         final previous = byId[item.id];
-        byId[item.id] = previous != null && previous.read ? item.copyWith(read: true) : item;
+        byId[item.id] = previous != null && previous.read && _stillRead(previous.createdAt, item)
+            ? item.copyWith(read: true)
+            : item;
       }
       final merged = byId.values.toList(growable: false)..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       record['items'] = _boundedItems(merged, key, record);
       await _store.write(key, record);
     });
   }
+
+  /// A doc the server rewrote with a newer time (the daily tips item) is news again, so it turns unread.
+  static bool _stillRead(DateTime? readCreatedAt, InAppNotificationEntity item) =>
+      readCreatedAt != null && !item.createdAt.isAfter(readCreatedAt);
 
   Future<void> markAsRead(String id) => _updateItems(
     (items) => items.map((item) => item.id == id ? item.copyWith(read: true) : item).toList(growable: false),

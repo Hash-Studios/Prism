@@ -109,7 +109,7 @@ void main() {
       const MethodChannel('PonnamKarthik/fluttertoast'),
       (_) async => true,
     );
-    app_state.prismUser = profileUser(id: '', loggedIn: false);
+    app_state.prismUser = profileUser(id: 'user', loggedIn: true);
     repository = _Favourites();
     counts = _Counts();
     cubit = FavouriteCountsCubit(counts);
@@ -122,7 +122,7 @@ void main() {
     getIt.registerSingleton<FavouriteCountsCubit>(cubit);
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
-    bloc.add(const FavouriteWallsEvent.started(userId: ''));
+    bloc.add(const FavouriteWallsEvent.started(userId: 'user'));
     await bloc.stream.firstWhere((state) => state.status == LoadStatus.success);
   });
 
@@ -337,13 +337,13 @@ void main() {
 
   testWidgets('initial favourite does not add twice, same-length sync and account switch update heart', (tester) async {
     final item = _item(WallpaperSource.prism);
-    bloc.add(FavouriteWallsEvent.synced(userId: '', items: [FavouriteWallEntity.fromFeedItem(item)]));
+    bloc.add(FavouriteWallsEvent.synced(userId: 'user', items: [FavouriteWallEntity.fromFeedItem(item)]));
     await pump(tester, item);
     expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
     expect(find.text('8'), findsOneWidget);
     bloc.add(
       FavouriteWallsEvent.synced(
-        userId: '',
+        userId: 'user',
         items: [FavouriteWallEntity.fromFeedItem(_item(WallpaperSource.prism, id: 'other'))],
       ),
     );
@@ -375,7 +375,7 @@ void main() {
   });
 
   testWidgets('failed membership load retains a locally saved heart', (tester) async {
-    await getIt<FavoritesLocalDataSource>().setWallFavourite('', 'wall', true);
+    await getIt<FavoritesLocalDataSource>().setWallFavourite('user', 'wall', true);
     repository.fetchFails = true;
     bloc.add(const FavouriteWallsEvent.refreshRequested());
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));

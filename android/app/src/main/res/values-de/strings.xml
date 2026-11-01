@@ -64,6 +64,9 @@
     <string name="notif_push_draw_winner_body">Ein Monat Pro und der Prism-Rahmen gehören dir.</string>
     <string name="notif_push_gift_received_title">%1$s hat dir einen 24-Stunden-Pro-Pass gesendet</string>
     <string name="notif_push_gift_received_body">Premium-Sammlungen und Premium-Hintergrundbilder sind bis morgen freigeschaltet.</string>
+    <string name="notif_push_tip_received_title">%1$s hat dir %2$s Coins für %3$s als Trinkgeld gegeben</string>
+    <string name="notif_push_tip_received_title_untitled">%1$s hat dir %2$s Coins als Trinkgeld gegeben</string>
+    <string name="notif_push_tip_received_body">Deine Trinkgelder findest du in deinen Creator-Statistiken.</string>
     <string name="notif_push_report_needs_review_title">Meldung wartet auf Prüfung</string>
     <string name="notif_push_report_needs_review_body">Eine Inhaltsmeldung wartet seit über 12 Stunden auf Prüfung.</string>
     <string name="notif_push_new_content_report_title">Neue Inhaltsmeldung</string>

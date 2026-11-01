@@ -203,6 +203,10 @@ pattern = "prismwalls.com/requests*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/creators*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "prismwalls.com/followers*"
 zone_name = "prismwalls.com"
 
@@ -220,6 +224,14 @@ zone_name = "prismwalls.com"
 
 [[routes]]
 pattern = "prismwalls.com/admin-firestore-telemetry*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/admin-promo-codes*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/redeem*"
 zone_name = "prismwalls.com"
 
 [[routes]]
@@ -275,6 +287,10 @@ pattern = "prismwalls.com/mood/*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/challenges/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "prismwalls.com/leaderboard*"
 zone_name = "prismwalls.com"
 
@@ -282,6 +298,9 @@ zone_name = "prismwalls.com"
 pattern = "prismwalls.com/draw*"
 zone_name = "prismwalls.com"
 
+[[routes]]
+pattern = "prismwalls.com/daily-moment*"
+zone_name = "prismwalls.com"
 [[routes]]
 pattern = "prismwalls.com/daily-chest*"
 zone_name = "prismwalls.com"
@@ -304,7 +323,23 @@ pattern = "prismwalls.com/streak*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/creator-stats*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "prismwalls.com/not-found*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/creator/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/sitemap.xml"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/sitemaps/*"
 zone_name = "prismwalls.com"
 
 [[routes]]
@@ -508,6 +543,10 @@ pattern = "www.prismwalls.com/requests*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "www.prismwalls.com/creators*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "www.prismwalls.com/followers*"
 zone_name = "prismwalls.com"
 
@@ -525,6 +564,14 @@ zone_name = "prismwalls.com"
 
 [[routes]]
 pattern = "www.prismwalls.com/admin-firestore-telemetry*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/admin-promo-codes*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/redeem*"
 zone_name = "prismwalls.com"
 
 [[routes]]
@@ -580,6 +627,10 @@ pattern = "www.prismwalls.com/mood/*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "www.prismwalls.com/challenges/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "www.prismwalls.com/leaderboard*"
 zone_name = "prismwalls.com"
 
@@ -587,6 +638,9 @@ zone_name = "prismwalls.com"
 pattern = "www.prismwalls.com/draw*"
 zone_name = "prismwalls.com"
 
+[[routes]]
+pattern = "www.prismwalls.com/daily-moment*"
+zone_name = "prismwalls.com"
 [[routes]]
 pattern = "www.prismwalls.com/daily-chest*"
 zone_name = "prismwalls.com"
@@ -609,7 +663,23 @@ pattern = "www.prismwalls.com/streak*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "www.prismwalls.com/creator-stats*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "www.prismwalls.com/not-found*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/creator/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/sitemap.xml"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/sitemaps/*"
 zone_name = "prismwalls.com"
 
 [vars]

@@ -1,3 +1,4 @@
+import 'package:Prism/env/env.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 
 class FirebaseInit {
@@ -14,7 +15,7 @@ class FirebaseInit {
         _initialized = initialized;
         return initialized;
       },
-      onError: (Object _, StackTrace __) {
+      onError: (Object _, StackTrace _) {
         _initialized = false;
         return false;
       },
@@ -33,7 +34,7 @@ class FirebaseInit {
       readyFuture.timeout(timeout, onTimeout: () => false);
 
   static FirebaseRemoteConfig? get remoteConfigIfInitialized {
-    if (!_initialized) return null;
+    if (!_initialized || Env.localQa) return null;
     try {
       return FirebaseRemoteConfig.instance;
     } catch (_) {

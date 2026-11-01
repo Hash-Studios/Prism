@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -8,7 +9,6 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
-import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart';
@@ -202,6 +202,8 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
   }
 
   Future<void> _offerUnlock(LiveWallpaperBloc bloc) async {
+    if (!await requireSignedInAction(context) || !mounted) return;
+    final String owner = app_state.prismUser.id;
     final (String id, String label) = _lockedStyle;
     final _UnlockChoice? choice = await showPrismSheet<_UnlockChoice>(
       context,
@@ -226,13 +228,9 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
         ],
       ),
     );
-    if (!mounted || choice == null) return;
+    if (!mounted || !app_state.prismUser.loggedIn || owner != app_state.prismUser.id || choice == null) return;
     switch (choice) {
       case _UnlockChoice.coins:
-        if (!app_state.prismUser.loggedIn) {
-          googleSignInPopUp(context, () {});
-          return;
-        }
         final CoinMutationResult result = await CoinsService.instance.spend(
           CoinSpendAction.liveWallpaperStyle,
           styleId: id,
@@ -258,6 +256,8 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
   }
 
   Future<void> _chooseVideo(BuildContext context) async {
+    if (!await requireSignedInAction(context) || !context.mounted) return;
+    final String owner = app_state.prismUser.id;
     final LiveWallpaperBloc bloc = context.read<LiveWallpaperBloc>();
     String? path;
     try {
@@ -265,10 +265,13 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
     } catch (_) {
       path = null;
     }
-    if (path != null) bloc.add(LiveWallpaperEvent.videoPicked(path));
+    if (mounted && app_state.prismUser.loggedIn && owner == app_state.prismUser.id && path != null) {
+      bloc.add(LiveWallpaperEvent.videoPicked(path));
+    }
   }
 
-  void _apply(BuildContext context) {
+  Future<void> _apply(BuildContext context) async {
+    if (!await requireSignedInAction(context) || !context.mounted) return;
     final LiveWallpaperBloc bloc = context.read<LiveWallpaperBloc>();
     PrismHaptics.tap();
     switch (_mode) {

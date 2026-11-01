@@ -43,11 +43,17 @@ class PersistenceKeys {
   // Default target when the user taps Set: 'ask' | 'home' | 'lock' | 'both'.
   static const String defaultApplyTarget = 'wallpaper.defaultApplyTarget';
 
+  // The target the user last picked on the Set screen: 'home' | 'lock' | 'both'.
+  static const String lastApplyTarget = 'wallpaper.lastApplyTarget';
+
   // Icon style the home screen preview showed last: a PreviewIconStyle name.
   static const String previewIconStyle = 'wallpaper.previewIconStyle';
 
   // JSON list of applied wallpapers, newest first. Owned by wallpaper_history.
   static const String wallpaperHistoryItems = 'wallpaper.history.items';
+
+  // The highest follow-up chip price the user confirmed.
+  static const String aiFollowUpConfirmedCost = 'ai.followUpConfirmedCost';
 
   // Recently viewed walls on this device, newest first, and the Save viewing history setting.
   static const String viewedHistoryItems = 'history.viewed.items';
@@ -93,4 +99,10 @@ class PersistenceKeys {
   // JSON list of {id, url} for the user's favourites, newest first. Written as a raw string so the iOS
   // Shortcuts intent reads it from UserDefaults as `flutter.shortcuts.favourites`.
   static const String shortcutsFavourites = 'shortcuts.favourites';
+  // JSON snapshot of the user's folders and their newest walls, read by the iOS intent.
+  static const String shortcutsFolders = 'shortcuts.folders';
+  // The folder id the "Rotation folder" source shuffles.
+  static const String shortcutsRotationFolder = 'shortcuts.rotation_folder';
+  // The iOS intent writes it. Prism only removes it.
+  static const String shortcutsShuffleBags = 'shortcuts.shuffle_bags';
 }

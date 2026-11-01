@@ -35,6 +35,20 @@ class AdConsent {
   final Duration updateTimeout;
 
   Future<bool>? _pending;
+  int generation = 0;
+  bool privacyOptionsOpen = false;
+  final Set<void Function()> invalidationListeners = <void Function()>{};
+
+  Future<bool> canShow() async {
+    try {
+      if (privacyOptionsOpen) return false;
+      final before = generation;
+      final allowed = await _canRequestAds();
+      return allowed && !privacyOptionsOpen && before == generation;
+    } catch (_) {
+      return false;
+    }
+  }
 
   /// Runs the consent flow once per session. A refused result is not kept, so the next call tries again.
   Future<bool> ensure() {
@@ -59,10 +73,23 @@ class AdConsent {
 
   /// Opens the UMP privacy options form. It never throws.
   Future<void> showPrivacyOptions() async {
+    privacyOptionsOpen = true;
+    _pending = null;
+    generation++;
+    for (final listener in invalidationListeners.toList()) {
+      listener();
+    }
     try {
       await _showPrivacyOptions();
     } catch (error, stackTrace) {
       logger.w('Could not show the privacy options.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
+    } finally {
+      privacyOptionsOpen = false;
+      _pending = null;
+      generation++;
+      for (final listener in invalidationListeners.toList()) {
+        listener();
+      }
     }
   }
 

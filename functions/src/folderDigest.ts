@@ -7,7 +7,7 @@ import {notificationCopyPayload} from "./notificationCatalog";
 import {sendToUser} from "./notificationHelper";
 import {FOLLOWED_FOLDERS, PUBLIC_FOLDERS, projectedItem, publicFolderDeps, publicFolderName} from "./publicFolders";
 import {galleryTags, galleryWall, tagsLine, type GalleryWall} from "./pushGallery";
-import {premiumCollections} from "./wallOfTheDay";
+import {premiumCollections} from "./wallEligibility";
 
 /** 13:00 local, away from the 19:00 follow digest, so one person never gets both in the same minute. */
 const FOLDER_DIGEST_MINUTE = 13 * 60;

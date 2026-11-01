@@ -95,6 +95,9 @@ const commitDocs = async (auth, docs) => {
   return r.status;
 };
 const seed = () => Promise.all([
+  req('PATCH', 'walls/challenge-src', { email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('2026-11-02') }, 'owner'),
+  req('PATCH', 'weeklyChallenges/2026-11-02', { theme: str('Quiet horizons'), state: str('open') }, 'owner'),
+  req('PATCH', 'weeklyChallenges/2026-11-02/entries/entry', { creatorUid: str('b') }, 'owner'),
   req('PATCH', 'usersv2/a', { id: str('a'), email: str('a@x.com'), followers: arr(['c@x.com']), following: arr([]) }, 'owner'),
   req('PATCH', 'profiles/a', {
     name: str('A'), username: str('a'), profilePhoto: str(''), bio: str(''), links: { mapValue: { fields: {} } },
@@ -128,6 +131,7 @@ const seed = () => Promise.all([
   }, 'owner'),
   req('PATCH', 'walls/w12', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, depth: depth('auto') }, 'owner'),
   req('PATCH', 'walls/w14', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, searchTerms: arr(['sunset']), visionLabels: arr(['sky']), spatial: spatial('great') }, 'owner'),
+  req('PATCH', 'walls/remix-src', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, title: { stringValue: 'Remix source' }, remixOf: { stringValue: 'orig_1' } }, 'owner'),
   req('PATCH', 'setups/s9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw1', { email: { stringValue: 'b@x.com' } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw2', { email: { stringValue: 'b@x.com' } }, 'owner'),
@@ -136,6 +140,9 @@ const seed = () => Promise.all([
   req('PATCH', 'moods/current', { updatedAt: { stringValue: 'x' } }, 'owner'),
   req('PATCH', 'moods/delete-probe', { moods: arr([]) }, 'owner'),
   req('PATCH', 'popular/current', { updatedAt: { stringValue: 'x' } }, 'owner'),
+  req('PATCH', 'webWalls/W1', { state: { stringValue: 'live' } }, 'owner'),
+  req('PATCH', 'webPages/latest~1', { kind: { stringValue: 'latest' } }, 'owner'),
+  req('PATCH', 'webCatalogState/pages', { builtAt: { stringValue: 'x' } }, 'owner'),
   req('PATCH', 'appConfig/app', { minBuild: { integerValue: '1' } }, 'owner'),
   req('PATCH', 'usernames/samk', { uid: { stringValue: 'a' } }, 'owner'),
   req('PATCH', 'economyConfig/current', { version: { integerValue: '2' } }, 'owner'),
@@ -152,6 +159,8 @@ const seed = () => Promise.all([
   req('PATCH', 'creatorWallCredits/test-wall', { creatorUid: { stringValue: 'b' } }, 'owner'),
   req('PATCH', 'creatorDeletionState/b', { closed: { booleanValue: false } }, 'owner'),
   req('PATCH', 'creatorMemberRateDaily/b_2026-10-18', { memberUid: { stringValue: 'b' } }, 'owner'),
+  req('PATCH', 'creatorStatsDailyQueue/rule-probe', { state: str('ready') }, 'owner'),
+  req('PATCH', 'creatorStatsProcessorState/daily', { owner: str('probe') }, 'owner'),
   req('PATCH', 'usersv2/b/private/economy/creatorMembers/a', { memberUid: { stringValue: 'a' } }, 'owner'),
   req('PATCH', 'folders/fb', folderFields('b'), 'owner'),
   req('PATCH', 'wallRequests/open', requestFields('b'), 'owner'),
@@ -163,6 +172,8 @@ const seed = () => Promise.all([
   req('PATCH', 'folders/absent/items/wallhaven_orphan', itemFields('b', 'orphan'), 'owner'),
   req('PATCH', 'folders/pf1', folderFields('a', 'Night', { public: { booleanValue: true }, itemCount: { integerValue: '1' }, covers: arr(['https://img.prismwalls.com/previews/x.img']) }), 'owner'),
   req('PATCH', 'folders/pf1/items/prism_w1', itemFields('a', 'w1', 'Prism'), 'owner'),
+  req('PATCH', 'creatorDirectory/a', { uid: str('a'), name: str('A'), rank: { integerValue: '1' }, categories: arr(['Nature']) }, 'owner'),
+  req('PATCH', 'followedByCache/b_a', { count: { integerValue: '1' } }, 'owner'),
   req('PATCH', 'publicFolders/pf1', { ownerId: str('a'), name: str('Night'), itemCount: { integerValue: '1' }, covers: arr(['https://img.prismwalls.com/previews/x.img']), followerCount: { integerValue: '0' }, updatedAt: ts() }, 'owner'),
   req('PATCH', 'publicFolders/pf1/items/prism_w1', { id: str('w1'), provider: str('Prism'), thumb: str('https://img.prismwalls.com/previews/x.img'), wallpaperDocumentId: str('W1') }, 'owner'),
   req('PATCH', 'publicFolders/pf1/followers/b', { uid: str('b') }, 'owner'),
@@ -182,6 +193,41 @@ const themeFields = {
 const themeNoChangedAt = Object.fromEntries(Object.entries(themeFields).filter(([k]) => k !== 'changedAt'));
 const themeMap = (fields) => ({ themePrefs: { mapValue: { fields } } });
 const cases = [
+  ['new wall accepts valid challenge and resubmission links together', () => req('PATCH', 'walls/linked-challenge', {
+    email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('2026-11-02'), resubmitOf: str('wall_old.png'),
+  }, Bu), 200],
+  ['valid challenge does not bypass resubmission validation', () => req('PATCH', 'walls/invalid-linked-resubmit', {
+    email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('2026-11-02'), resubmitOf: str('nested/path'),
+  }, Bu), 403],
+  ['valid resubmission does not bypass challenge validation', () => req('PATCH', 'walls/invalid-linked-challenge', {
+    email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('nested/path'), resubmitOf: str('wall_old.png'),
+  }, Bu), 403],
+  ['resubmission pointer accepts real long filename IDs', () => req('PATCH', 'walls/resubmit-valid', {
+    email: str('b@x.com'), review: { booleanValue: false }, resubmitOf: str(`wall_uid_1790000000000_${'photo.'.repeat(30)}jpg`),
+  }, Bu), 200],
+  ['resubmission pointer accepts real Unicode filenames with spaces', () => req('PATCH', 'walls/resubmit-unicode', {
+    email: str('b@x.com'), review: { booleanValue: false }, resubmitOf: str('wall_uid_1790000000000_café scene (2).jpg'),
+  }, Bu), 200],
+  ...['', '.', '..', 'nested/path', 'nested\\path', '__reserved__', 'hidden\u202e', 'a'.repeat(1025)].map((value, i) => [
+    `resubmission pointer rejects malformed value ${i}`, () => req('PATCH', `walls/resubmit-invalid-${i}`, {
+      email: str('b@x.com'), review: { booleanValue: false }, resubmitOf: str(value),
+    }, Bu), 403,
+  ]),
+  ['owner cannot change a resubmission pointer', () => req('PATCH', 'walls/resubmit-valid', { resubmitOf: str('different') }, Bu, ['resubmitOf']), 403],
+  ['owner cannot remove a resubmission pointer', () => req('PATCH', 'walls/resubmit-valid', {}, Bu, ['resubmitOf']), 403],
+  ['owner cannot add a resubmission pointer', () => req('PATCH', 'walls/w8', { resubmitOf: str('parent') }, Bu, ['resubmitOf']), 403],
+  ['owner can edit all four pending metadata fields', () => req('PATCH', 'walls/resubmit-valid', {
+    title: str('Calm'), desc: str('Blue'), tags: arr(['forest']), category: str('Nature'),
+  }, Bu, ['title', 'desc', 'tags', 'category']), 200],
+  ['owner cannot edit approved metadata directly', () => req('PATCH', 'walls/w9', {
+    title: str('Changed'), desc: str('Changed'), tags: arr(['changed']),
+  }, Bu, ['title', 'desc', 'tags']), 403],
+  ...['wallMetadataEdits', 'wallMetadataOperations', 'wallMetadataEditRates', 'wallResubmissionRoots',
+    'wallResubmissions', 'wallResubmissionOperations', 'wallResubmissionConsumptions'].flatMap((collection) =>
+    [['owner', Bu], ['admin client', ADM], ['guest', undefined]].flatMap(([role, auth]) => [
+      [`${role} cannot read ${collection}`, () => req('GET', `${collection}/private`, null, auth), 403],
+      [`${role} cannot write ${collection}`, () => req('PATCH', `${collection}/private`, { ownerUid: str('b') }, auth), 403],
+    ])),
   ['stranger can get a public profile', () => req('GET', 'profiles/a', null, Bu), 200],
   ['public profile carries no email key', () => profileHasNoEmail('profiles/a', Bu), 200],
   ['stranger can list public profiles', () => runCollectionQuery(Bu, 'profiles'), 200],
@@ -447,12 +493,31 @@ const cases = [
   ['owner stamps a west-of-UTC offset', () => req('PATCH', 'usersv2/b', {
     appOpenTimezoneOffsetMinutes: { integerValue: '-300' },
   }, Bu, ['appOpenTimezoneOffsetMinutes']), 200],
+  ...[
+    ['directory-optout-true', { booleanValue: true }, 200],
+    ['directory-optout-false', { booleanValue: false }, 200],
+    ['directory-optout-string', str('yes'), 403],
+    ['directory-optout-map', { mapValue: { fields: {} } }, 403],
+  ].map(([uid, value, expected]) => [
+    `new profile validates creator directory opt-out (${uid})`,
+    () => req('PATCH', `usersv2/${uid}`, { id: str(uid), creatorDirectoryOptOut: value }, tok(uid, `${uid}@x.com`)),
+    expected,
+  ]),
+  ['owner opts out of the creator directory', () => req('PATCH', 'usersv2/b', { creatorDirectoryOptOut: { booleanValue: true } }, Bu, ['creatorDirectoryOptOut']), 200],
+  ['owner cannot write a non-bool directory opt-out', () => req('PATCH', 'usersv2/b', { creatorDirectoryOptOut: str('yes') }, Bu, ['creatorDirectoryOptOut']), 403],
+  ['stranger cannot opt another user out', () => req('PATCH', 'usersv2/b', { creatorDirectoryOptOut: { booleanValue: true } }, A, ['creatorDirectoryOptOut']), 403],
   ['owner writes a valid themePrefs map', () => req('PATCH', 'usersv2/b', themeMap(themeFields), Bu, ['themePrefs']), 200],
   ['owner writes themePrefs with an extra key', () => req('PATCH', 'usersv2/b', themeMap({ ...themeFields, extra: str('x') }), Bu, ['themePrefs']), 403],
   ['owner writes themePrefs with mode sepia', () => req('PATCH', 'usersv2/b', themeMap({ ...themeFields, mode: str('sepia') }), Bu, ['themePrefs']), 403],
   ['owner writes themePrefs with a string lightAccent', () => req('PATCH', 'usersv2/b', themeMap({ ...themeFields, lightAccent: str('4293228183') }), Bu, ['themePrefs']), 403],
   ['owner writes themePrefs missing changedAt', () => req('PATCH', 'usersv2/b', themeMap(themeNoChangedAt), Bu, ['themePrefs']), 403],
   ['stranger writes themePrefs on another user doc', () => req('PATCH', 'usersv2/a', themeMap(themeFields), Bu, ['themePrefs']), 403],
+  ...['tipRateDaily', 'wallTippers', 'creatorTips'].flatMap((collection) => [
+    [`user reads private ${collection}`, () => req('GET', `${collection}/b`, null, Bu), 403],
+    [`user writes private ${collection}`, () => req('PATCH', `${collection}/b`, {
+      count: { integerValue: '100' }, senderUid: str('b'), creatorUid: str('b'),
+    }, Bu), 403],
+  ]),
   ['user writes a coin ledger entry', () => req('PATCH', 'coinTransactions/t1', {
     userId: { stringValue: 'b' }, delta: { integerValue: '500' },
   }, Bu), 403],
@@ -465,6 +530,23 @@ const cases = [
   ['owner cannot change protected upload markers', () => req('PATCH', 'walls/w8', { originalProtected: { booleanValue: true }, originalObjectId: { stringValue: 'a'.repeat(64) } }, Bu, ['originalProtected', 'originalObjectId']), 403],
   ['owner cannot forge moderation signals on create', () => req('PATCH', 'walls/forged-moderation', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, moderation: { mapValue: { fields: { v: { integerValue: '1' } } } } }, Bu), 403],
   ['owner cannot change moderation signals', () => req('PATCH', 'walls/w8', { moderation: { mapValue: { fields: { v: { integerValue: '1' } } } } }, Bu, ['moderation']), 403],
+  ['own new wall accepts challengeId', () => req('PATCH', 'walls/challenge-create', { email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('2026-11-02') }, Bu), 200],
+  ['challengeId rejects slash', () => req('PATCH', 'walls/challenge-invalid', { email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('a/b') }, Bu), 403],
+  ['owner cannot attach old wall', () => req('PATCH', 'walls/remix-src', { challengeId: str('2026-11-02') }, Bu, ['challengeId']), 403],
+  ['owner cannot change challengeId', () => req('PATCH', 'walls/challenge-src', { challengeId: str('2026-11-09') }, Bu, ['challengeId']), 403],
+  ['admin cannot change challengeId', () => req('PATCH', 'walls/challenge-src', { challengeId: str('2026-11-09') }, ADM, ['challengeId']), 403],
+  ['public challenge is readable', () => req('GET', 'weeklyChallenges/2026-11-02'), 200],
+  ['private challenge entry is not readable', () => req('GET', 'weeklyChallenges/2026-11-02/entries/entry', null, Bu), 403],
+  ['challenge client writes denied', () => req('PATCH', 'weeklyChallenges/2026-11-02', { state: str('archived') }, ADM, ['state']), 403],
+  ['user creates own unreviewed wall with remixOf', () => req('PATCH', 'walls/remix-create-ok', { email: str('b@x.com'), review: { booleanValue: false }, remixOf: str('orig_1') }, Bu), 200],
+  ['user creates wall with a 65-char remixOf', () => req('PATCH', 'walls/remix-create-long', { email: str('b@x.com'), review: { booleanValue: false }, remixOf: str('a'.repeat(65)) }, Bu), 403],
+  ['user creates wall with a slash in remixOf', () => req('PATCH', 'walls/remix-create-slash', { email: str('b@x.com'), review: { booleanValue: false }, remixOf: str('a/b') }, Bu), 403],
+  ['user creates wall with an integer remixOf', () => req('PATCH', 'walls/remix-create-int', { email: str('b@x.com'), review: { booleanValue: false }, remixOf: { integerValue: '5' } }, Bu), 403],
+  ['user creates wall with an empty remixOf', () => req('PATCH', 'walls/remix-create-empty', { email: str('b@x.com'), review: { booleanValue: false }, remixOf: str('') }, Bu), 403],
+  ['user creates wall with remixCount', () => req('PATCH', 'walls/remix-create-count', { email: str('b@x.com'), review: { booleanValue: false }, remixCount: { integerValue: '3' } }, Bu), 403],
+  ['owner cannot change remixOf on own unreviewed wall', () => req('PATCH', 'walls/remix-src', { remixOf: str('orig_2') }, Bu, ['remixOf']), 403],
+  ['owner cannot add remixCount to own unreviewed wall', () => req('PATCH', 'walls/remix-src', { remixCount: { integerValue: '3' } }, Bu, ['remixCount']), 403],
+  ['owner updates title and leaves remixOf untouched', () => req('PATCH', 'walls/remix-src', { title: str('Remixed') }, Bu, ['title']), 200],
   ['owner unpublishes own approved wall', () => req('PATCH', 'walls/w9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false } }, Bu), 403],
   ['owner unpublishes own approved setup', () => req('PATCH', 'setups/s9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false } }, Bu), 403],
   ['owner deletes own rejected wall', () => req('DELETE', 'rejectedWalls/rw1', null, Bu), 200],
@@ -481,6 +563,12 @@ const cases = [
   ['user deletes a mood document', () => req('DELETE', 'moods/delete-probe', null, Bu), 403],
   ['signed-out reads popular/current', () => req('GET', 'popular/current', null, null), 200],
   ['user writes popular/current', () => req('PATCH', 'popular/current', { wallIds: arr(['A']) }, Bu), 403],
+  ['signed-out reads a web catalogue wall', () => req('GET', 'webWalls/W1', null, null), 200],
+  ['signed-out reads a web catalogue page', () => req('GET', 'webPages/latest~1', null, null), 200],
+  ['user writes a web catalogue wall', () => req('PATCH', 'webWalls/W1', { state: str('live') }, Bu), 403],
+  ['user writes a web catalogue page', () => req('PATCH', 'webPages/latest~1', { kind: str('latest') }, Bu), 403],
+  ['signed-out reads the web catalogue build state', () => req('GET', 'webCatalogState/pages', null, null), 403],
+  ['user reads the web catalogue build state', () => req('GET', 'webCatalogState/pages', null, Bu), 403],
   ['signed-out reads appConfig/app', () => req('GET', 'appConfig/app', null, null), 200],
   ['user writes appConfig/app', () => req('PATCH', 'appConfig/app', { minBuild: { integerValue: '999' } }, Bu), 403],
   ['signed-in user reads the username registry', () => req('GET', 'usernames/samk', null, Bu), 200],
@@ -531,6 +619,14 @@ const cases = [
     [`signed-out cannot read server creator store ${path}`, () => req('GET', path, null, null), 403],
     [`owner cannot write server creator store ${path}`, () => req('PATCH', path, { closed: { booleanValue: true } }, Bu), 403],
     [`admin client cannot write server creator store ${path}`, () => req('PATCH', path, { closed: { booleanValue: true } }, ADM), 403],
+  ]),
+  ...['creatorStatsHistory/probe', 'creatorStatsCache/probe', 'creatorStatsDailyCheckpoints/probe',
+    'creatorStatsFolderMarkers/probe', 'creatorStatsRemixMarkers/probe', 'creatorStatsWeeklyMarkers/probe',
+    'creatorStatsDailyQueue/rule-probe', 'creatorStatsProcessorState/daily'].flatMap((path) => [
+    [`owner cannot read private creator stats ${path}`, () => req('GET', path, null, Bu), 403],
+    [`signed-out cannot read private creator stats ${path}`, () => req('GET', path, null, null), 403],
+    [`owner cannot write private creator stats ${path}`, () => req('PATCH', path, { probe: str('client') }, Bu), 403],
+    [`signed-out cannot write private creator stats ${path}`, () => req('PATCH', path, { probe: str('client') }, null), 403],
   ]),
   ['shipped favourite create remains allowed', () => req('PATCH', 'usersv2/b/images/shipped-wall', {
     id: { stringValue: 'shipped-wall' }, provider: { stringValue: 'Prism' },
@@ -768,6 +864,24 @@ const cases = [
   ['stranger can list public folders by owner', () => runQuery(Bu, [ownerFilter('a')], 'publicFolders', '', newestFirst('updatedAt')), 200],
   ['blocked user cannot list public folders by owner', () => runQuery(C, [ownerFilter('a')], 'publicFolders', '', newestFirst('updatedAt')), 403],
   ['owner-blocked user cannot list public folders by owner', () => runQuery(D, [ownerFilter('a')], 'publicFolders', '', newestFirst('updatedAt')), 403],
+  ['signed-out user cannot get a creator directory entry', () => req('GET', 'creatorDirectory/a'), 403],
+  ['signed-in user can get a creator directory entry', () => req('GET', 'creatorDirectory/a', null, Bu), 200],
+  ['signed-in user can list the creator directory', () => runCollectionQuery(Bu, 'creatorDirectory'), 200],
+  ['creator cannot write own directory entry', () => req('PATCH', 'creatorDirectory/a', { rank: { integerValue: '0' } }, A, ['rank']), 403],
+  ['user cannot create a directory entry', () => req('PATCH', 'creatorDirectory/b', { uid: str('b') }, Bu), 403],
+  ['creator cannot delete own directory entry', () => req('DELETE', 'creatorDirectory/a', null, A), 403],
+  ['viewer cannot read the followed-by cache', () => req('GET', 'followedByCache/b_a', null, Bu), 403],
+  ['viewer cannot write the followed-by cache', () => req('PATCH', 'followedByCache/b_a', { count: { integerValue: '9' } }, Bu), 403],
+  ['user cannot read a promo code', () => req('GET', 'promoCodes/c1', null, Bu), 403],
+  ['user cannot write a promo code', () => req('PATCH', 'promoCodes/c1', { redemptionCount: { integerValue: '0' } }, Bu), 403],
+  ['admin cannot read a promo code directly', () => req('GET', 'promoCodes/c1', null, ADM), 403],
+  ['admin cannot write a promo code directly', () => req('PATCH', 'promoCodes/c1', { redemptionCount: { integerValue: '0' } }, ADM), 403],
+  ['user cannot read own promo redemption', () => req('GET', 'promoCodes/c1/redemptions/b', null, Bu), 403],
+  ['user cannot write own promo redemption', () => req('PATCH', 'promoCodes/c1/redemptions/b', { uid: { stringValue: 'b' } }, Bu), 403],
+  ['user cannot list promo codes', () => runCollectionQuery(Bu, 'promoCodes'), 403],
+  ['user cannot list promo redemptions across codes', () => runCollectionQuery(Bu, 'redemptions', 'promoCodes/c1'), 403],
+  ['user cannot read a promo rate counter', () => req('GET', 'promoRedeemRate/u_b_1', null, Bu), 403],
+  ['user cannot write a promo rate counter', () => req('PATCH', 'promoRedeemRate/u_b_1', { count: { integerValue: '0' } }, Bu), 403],
 ];
 await seed();
 let bad = 0;

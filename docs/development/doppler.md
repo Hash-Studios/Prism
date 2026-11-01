@@ -77,6 +77,13 @@ Do not print the configuration or enable shell tracing.
 When it is empty, the Instagram Stories share target is hidden. The owner adds it
 to Doppler `dev` and `prd`.
 
+For iOS releases, add `ADMOB_IOS_APP_ID` and `ADMOB_IOS_REWARDED_AD_UNIT_ID`
+for the registered iOS app to Doppler `prd`. The build checks their formats and
+rejects the existing Android IDs and Google's sample publisher. The app ID is
+passed to Xcode for `GADApplicationIdentifier`; the rewarded ID is a Dart define.
+Debug and profile builds use Google's iOS sample app ID. Direct Xcode release builds must
+supply `PRISM_ADMOB_IOS_APP_ID` and the encoded rewarded Dart define as well.
+
 ```sh
 DOPPLER_CONFIG=prd python3 tool/flutter_with_doppler.py --release-platform ios -- \
   fvm flutter build ios --config-only --release --build-number=401

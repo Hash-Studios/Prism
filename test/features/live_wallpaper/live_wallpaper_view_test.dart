@@ -1,3 +1,4 @@
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
@@ -11,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/profile_user_fixture.dart';
 import 'fake_live_wallpaper_repository.dart';
 
 void main() {
@@ -50,7 +52,11 @@ void main() {
     await tester.pump();
   }
 
-  setUp(() => repository = FakeLiveWallpaperRepository());
+  setUp(() {
+    app_state.prismUser = profileUser();
+    repository = FakeLiveWallpaperRepository();
+  });
+  tearDown(() => app_state.prismUser = profileUser(loggedIn: false));
 
   testWidgets('shows a clear empty state when the device cannot do live wallpapers', (tester) async {
     repository.capabilities = LiveCapabilities.none;

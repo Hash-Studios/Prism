@@ -65,7 +65,9 @@ void main() {
     getIt.registerSingleton<InAppNotificationsBloc>(notifications);
     getIt.registerSingleton<BadgeRepository>(badges);
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
-    app_state.prismUser = constants.createGuestPrismUser();
+    app_state.prismUser = constants.createGuestPrismUser()
+      ..id = 'test-user'
+      ..loggedIn = true;
     final router = _Router();
     tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(() async {

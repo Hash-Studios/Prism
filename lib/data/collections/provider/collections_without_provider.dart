@@ -3,6 +3,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/data/offline/offline_snapshot_codec.dart';
@@ -63,7 +64,7 @@ Future<void> getCollectionWithName(String name) {
     if (generation != _collectionGeneration) return;
     final List<Map<String, dynamic>> items = cached == null
         ? <Map<String, dynamic>>[]
-        : await _filterBlockedWalls(cached.items);
+        : (await _filterBlockedWalls(cached.items)).walls;
     if (generation != _collectionGeneration) return;
     _hasCollectionSnapshot = cached != null;
     anyCollectionWalls = items;
@@ -153,14 +154,13 @@ Future<void> _loadCollectionPage({
   try {
     rows = hasSnapshot ? await request.timeout(_offlineQueryTimeout) : await request;
   } catch (_) {
-    if (generation != _collectionGeneration || hasSnapshot) return;
+    if (generation != _collectionGeneration || (hasSnapshot && replace)) return;
     rethrow;
   }
   if (generation != _collectionGeneration) return;
-  final List<Map<String, dynamic>> pageItems = await _filterBlockedWalls(
-    rows.map((row) => row.data).toList(growable: false),
-  );
+  final filteredPage = await _filterBlockedWalls(rows.map((row) => row.data).toList(growable: false));
   if (generation != _collectionGeneration) return;
+  final List<Map<String, dynamic>> pageItems = filteredPage.walls;
   final List<Map<String, dynamic>> items = <Map<String, dynamic>>[if (!replace) ...previousItems, ...pageItems];
   final String? lastDocId = rows.isNotEmpty ? rows.last.docId : (replace ? null : startAfterDocId);
   final bool hasMore = rows.length == _pageSize;
@@ -168,15 +168,18 @@ Future<void> _loadCollectionPage({
   _lastCollectionCursorDocId = lastDocId;
   collectionHasMore = hasMore;
   _hasCollectionSnapshot = true;
-  try {
-    await _writeCollectionWalls(
-      name,
-      items: items,
-      lastDocId: lastDocId,
-      hasMore: hasMore,
-      preserveLastItemsCount: pageItems.length,
-    );
-  } catch (_) {}
+  final UserBlockRepository? blocks = getIt.isRegistered<UserBlockRepository>() ? getIt<UserBlockRepository>() : null;
+  if (filteredPage.blocked is KnownBlockedCreators && blocks?.blockedCreators == filteredPage.blocked) {
+    try {
+      await _writeCollectionWalls(
+        name,
+        items: items,
+        lastDocId: lastDocId,
+        hasMore: hasMore,
+        preserveLastItemsCount: pageItems.length,
+      );
+    } catch (_) {}
+  }
 }
 
 Future<List<Map<String, dynamic>>?> _readCollectionIndex() async {
@@ -206,12 +209,21 @@ Future<CachedCollectionWalls?> _readCollectionWalls(String name) async {
   }
 }
 
-Future<List<Map<String, dynamic>>> _filterBlockedWalls(List<Map<String, dynamic>> walls) async {
-  if (!getIt.isRegistered<UserBlockRepository>()) return walls;
-  final Set<String> blocked = await getIt<UserBlockRepository>().getBlockedCreatorUids(waitForInitialLoad: true);
-  return walls
-      .where((wall) => !BlockedCreatorsFilter.hidesCreatorUid(wall['creatorUid']?.toString(), blocked))
-      .toList(growable: false);
+Future<({List<Map<String, dynamic>> walls, BlockedCreators blocked})> _filterBlockedWalls(
+  List<Map<String, dynamic>> walls,
+) async {
+  final UserBlockRepository? repository = getIt.isRegistered<UserBlockRepository>()
+      ? getIt<UserBlockRepository>()
+      : null;
+  final BlockedCreators blocked = repository != null
+      ? await repository.loadBlockedCreators()
+      : const UnknownBlockedCreators();
+  return (
+    walls: walls
+        .where((wall) => !BlockedCreatorsFilter.hidesCreatorUid(wall['creatorUid']?.toString(), blocked))
+        .toList(growable: false),
+    blocked: blocked,
+  );
 }
 
 Future<void> _writeCollectionWalls(

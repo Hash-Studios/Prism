@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -23,6 +25,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/favourite_test_scope.dart';
+import '../../support/in_memory_local_store.dart';
 
 class _MockCategoryFeedBloc extends MockBloc<CategoryFeedEvent, CategoryFeedState> implements CategoryFeedBloc {}
 
@@ -41,8 +44,14 @@ void main() {
     registerFallbackValue(const CategoryFeedEvent.started());
     registerFallbackValue(WallpaperDetailRoute());
   });
-  setUp(() => AnalyticsRuntime.instance = FakeAppAnalytics());
-  tearDown(AnalyticsRuntime.reset);
+  setUp(() {
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+  });
+  tearDown(() async {
+    AnalyticsRuntime.reset();
+    if (getIt.isRegistered<SettingsLocalDataSource>()) await getIt.unregister<SettingsLocalDataSource>();
+  });
 
   testWidgets('source grid feed keeps filtered tile indexes and excludes the see-more footer', (tester) async {
     const FeedItemEntity prism = FeedItemEntity.prism(

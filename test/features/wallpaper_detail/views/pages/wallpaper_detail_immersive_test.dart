@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -715,6 +716,10 @@ void main() {
   });
 
   testWidgets('a cold detail hold menu loads the saved pin before choosing the action', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'pinned-wallpaper-user'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
     final FeedItemEntity a = _prism('a');
     blocWalls.add(a);
     final DateTime pinnedAt = DateTime.utc(2026);

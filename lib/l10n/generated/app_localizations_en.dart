@@ -11,6 +11,41 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get economyAd => 'Ad';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Watch ad for $rewardString coins';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'You need $countString more coins.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'You may still need $countString coins after the ad';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'If your balance after the reward covers the price, this item will be purchased automatically.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Your ad reward is awaiting verification. Coins will appear once it is confirmed.';
+
+  @override
   String get foldersLibraryEmptyTitle => 'No folders yet';
 
   @override
@@ -89,6 +124,113 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
+  String get duoTitle => 'Duo reveal';
+
+  @override
+  String get duoAiFormatLabel => 'Create a Duo reveal';
+
+  @override
+  String get duoPresetNotice =>
+      'Prism previews the right side when folded. Align the saved original manually and check both views in the system wallpaper preview. This is a Prism preset, not an automatic iOS crop.';
+
+  @override
+  String get duoFoldedPromptLabel => 'Folded view';
+
+  @override
+  String get duoFoldedPromptExample => 'A sleepy cat beside a window';
+
+  @override
+  String get duoRevealedPromptLabel => 'Unfolded reveal';
+
+  @override
+  String get duoRevealedPromptExample => 'A tiny spaceship outside the window';
+
+  @override
+  String get duoPromptValidation => 'Describe both views using 1 to 160 characters each.';
+
+  @override
+  String get duoMoodBody => 'One wallpaper. A wider reveal.';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'Phone';
+
+  @override
+  String get duoFold => 'Fold';
+
+  @override
+  String get duoUnfold => 'Unfold';
+
+  @override
+  String get duoFolded => 'Folded';
+
+  @override
+  String get duoUnfolded => 'Unfolded';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'Prism previews the right side when folded. Android may crop it differently. Check the system wallpaper preview before applying.';
+
+  @override
+  String get duoGetOnPrism => 'Get it on Prism';
+
+  @override
+  String get duoGuideTitle => 'Set up your Duo reveal';
+
+  @override
+  String get duoGuideOpen => 'Open the saved original in Photos, tap Share, then Use as Wallpaper.';
+
+  @override
+  String get duoGuideAlign => 'Align the full image manually so the folded view shows the right side.';
+
+  @override
+  String get duoGuideCheck => 'Check both folded and unfolded views in the system preview, then add the wallpaper.';
+
+  @override
+  String get duoWebTitle => 'iPhone Duo wallpapers | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'One wallpaper, a hidden second scene. Explore original Duo reveal wallpapers in Prism.';
+
+  @override
+  String get duoWebHeading => 'One wallpaper. A wider story.';
+
+  @override
+  String get duoWebIntro =>
+      'A quiet scene when folded. A second story when unfolded. Preview both views of each original wallpaper.';
+
+  @override
+  String get duoWebEmpty => 'The first Duo collection is in review.';
+
+  @override
+  String get duoWebEmptyBody => 'Explore Prism while each wallpaper is checked in both views.';
+
+  @override
+  String get duoWebFolded => 'Folded preview';
+
+  @override
+  String get duoWebUnfolded => 'Unfolded original';
+
+  @override
+  String get duoWebPresetNotice =>
+      'These previews use Prism\'s right-side preset, not an automatic Apple crop. Save the full original, align it manually, and check both folded and unfolded views in the system wallpaper preview.';
+
+  @override
+  String get duoWebOpenPrism => 'Open in Prism';
+
+  @override
+  String get duoWebExplore => 'Explore Prism';
+
+  @override
+  String get duoWebAppStore => 'Download on the App Store';
+
+  @override
+  String get duoWebPlayStore => 'Get it on Google Play';
 
   @override
   String get economyExportFailedLabel => 'Export failed';
@@ -1102,12 +1244,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountReportAProblem => 'Report a problem';
 
   @override
-  String accountReportPreviewNotice(String email) {
-    return 'This report has your app version, device and recent logs. It has no email address or sign-in tokens. Read it, then share it with $email.';
-  }
-
-  @override
-  String get accountReportProblemSubtitle => 'Share your app logs with the Prism team';
+  String get accountReportProblemSubtitle => 'Send a bug report to the Prism team';
 
   @override
   String get accountReportUser => 'Report user';
@@ -1216,9 +1353,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountSettings => 'Settings';
-
-  @override
-  String get accountShare => 'Share';
 
   @override
   String get accountShareInvite => 'Share invite';
@@ -3903,6 +4037,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiLiveActivityOpen => 'Open in Prism';
+
+  @override
+  String get aiResultApply => 'Apply';
+
+  @override
+  String get aiResultEditPrompt => 'Edit prompt';
+
+  @override
+  String get aiSessionStripLabel => 'Wallpapers from this session';
+
+  @override
+  String aiSessionTake(int index, int count) {
+    final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String indexString = indexNumberFormat.format(index);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Take $indexString of $countString';
+  }
+
+  @override
+  String get aiFollowUpWatercolour => 'As watercolour';
+
+  @override
+  String get aiFollowUpNight => 'Night version';
+
+  @override
+  String get aiFollowUpMinimal => 'More minimal';
+
+  @override
+  String get aiFollowUpWarmer => 'Warmer';
+
+  @override
+  String get aiFollowUpDepth => 'Add depth';
+
+  @override
+  String aiFollowUpCostLabel(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'Each new take costs $costString coins';
+  }
+
+  @override
+  String get aiFollowUpConfirmTitle => 'Make a new take?';
+
+  @override
+  String aiFollowUpConfirmBody(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'A follow-up makes a new wallpaper from this one. Each one costs $costString coins.';
+  }
+
+  @override
+  String get aiFollowUpConfirmAction => 'Make it';
 
   @override
   String get economyAiDailyLimit => 'You reached today\'s AI limit.';
@@ -7539,9 +7729,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperApplyTo => 'Apply to';
 
   @override
-  String get wallpaperAutoRotateAndroidOnly => 'Auto-rotate is only available on Android.';
-
-  @override
   String get wallpaperAutoRotateApplyTo => 'Apply to';
 
   @override
@@ -9161,33 +9348,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperShareLink => 'Share link';
 
   @override
-  String get wallpaperShortcutsAddActionsSteps =>
-      'Add the action \"Get Prism Wallpaper\". Then add the action \"Set Wallpaper\".';
-
-  @override
-  String get wallpaperShortcutsBody =>
-      'Use Shortcuts to set a wallpaper on a schedule or trigger. Prepare the source below before running it.';
-
-  @override
   String get wallpaperShortcutsChoosePrismData => 'Pick what Prism sends';
 
   @override
-  String get wallpaperShortcutsChooseTriggerSteps =>
-      'In the shortcut editor, open Automation if needed. Choose and configure a trigger, such as Time of Day, opening an app, or connecting a charger.';
-
-  @override
-  String get wallpaperShortcutsDisableConfirmationSteps =>
-      'Review the run options shown and save the shortcut or automation. If \"Ask Before Running\" appears, turn it off for automatic runs.';
-
-  @override
-  String get wallpaperShortcutsHeadline => 'Change your wallpaper automatically';
-
-  @override
   String get wallpaperShortcutsOpenAction => 'Open Shortcuts';
-
-  @override
-  String get wallpaperShortcutsOpenAutomationSteps =>
-      'Open Shortcuts. If there is an Automation tab, tap it, then New Automation. Otherwise, tap Add (+), then Edit if shown.';
 
   @override
   String get wallpaperShortcutsOpenError => 'Could not open Shortcuts. Open the app yourself.';
@@ -9196,18 +9360,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperShortcutsSourceFavourite => 'Random favourite';
 
   @override
-  String get wallpaperShortcutsSourceFavouriteDescription =>
-      'A random favourite available to Shortcuts. Heart wallpapers in Prism first. Some protected wallpapers may not be available. It avoids the last pick when another favourite is available.';
-
-  @override
   String get wallpaperShortcutsSourceWotd => 'Wall of the Day';
 
   @override
   String get wallpaperShortcutsSourceWotdDescription =>
       'Today\'s Prism pick. Download today\'s original in Prism first. When the daily pick changes, download the new original before running this source.';
-
-  @override
-  String get wallpaperShortcutsSteps => 'Steps';
 
   @override
   String get wallpaperShortcutsTitle => 'Change automatically';
@@ -11080,4 +11237,1217 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminFillsRequest => 'Fills request';
+
+  @override
+  String get wallRemixAction => 'Remix';
+
+  @override
+  String get wallRemixActionTooltip => 'Remix this wallpaper with AI';
+
+  @override
+  String wallRemixingChip(String title, String creator) {
+    return 'Remixing $title by $creator';
+  }
+
+  @override
+  String get wallRemixDropLinkTooltip => 'Remove remix link';
+
+  @override
+  String get wallRemixUntitled => 'Untitled';
+
+  @override
+  String get wallRemixUnknownCreator => 'a Prism creator';
+
+  @override
+  String get wallRemixesTitle => 'Remixes';
+
+  @override
+  String wallRemixesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count remixes', one: '1 remix');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRemixOpenRemixLabel(String creator) {
+    return 'Open remix by $creator';
+  }
+
+  @override
+  String wallRemixOfLabel(String title, String creator) {
+    return 'Remix of $title by $creator';
+  }
+
+  @override
+  String get wallRemixOfTooltip => 'Open the original wallpaper';
+
+  @override
+  String get economyAiSubmitPromptNotice => 'Anyone can see your prompt and remix this wallpaper.';
+
+  @override
+  String get notifPushWallRemixedTitle => 'Your wallpaper was remixed';
+
+  @override
+  String notifPushWallRemixedBody(String remixerName, String wallTitle) {
+    return '$remixerName remixed $wallTitle.';
+  }
+
+  @override
+  String notifPushWallRemixedBodyUntitled(String remixerName) {
+    return '$remixerName remixed your wallpaper.';
+  }
+
+  @override
+  String get wallMetadataDescription => 'Description';
+
+  @override
+  String get wallMetadataEdit => 'Edit details';
+
+  @override
+  String get wallResubmitAction => 'Fix and resubmit';
+
+  @override
+  String get wallResubmitChooseImage => 'Choose image';
+
+  @override
+  String get wallResubmitImageMissing => 'The original image is no longer available. Choose it again to keep editing.';
+
+  @override
+  String get wallResubmitImageKept => 'Original image ready';
+
+  @override
+  String get wallResubmitTitle => 'Fix your upload';
+
+  @override
+  String get wallUploadUseLastDetails => 'Use last details';
+
+  @override
+  String get wallUploadLastDetailsUnavailable => 'No previous details on this device.';
+
+  @override
+  String get wallUploadWithdraw => 'Withdraw upload';
+
+  @override
+  String get wallUploadWithdrawTitle => 'Withdraw this upload?';
+
+  @override
+  String get wallUploadWithdrawBody => 'This removes the upload from review and deletes its uploaded files.';
+
+  @override
+  String get wallUploadWithdrawn => 'Upload withdrawn';
+
+  @override
+  String get wallUploadDeleteHistory => 'Delete from history';
+
+  @override
+  String get wallMetadataInvalid => 'Check the text and tags, then try again.';
+
+  @override
+  String get wallUploadOwnerChanged => 'Your account changed. Open this upload again.';
+
+  @override
+  String get wallResubmitLimit => 'This wallpaper has reached its three linked resubmissions.';
+
+  @override
+  String get wallResubmitUnsupported => 'Choose the original image again. AI source details cannot be reused.';
+
+  @override
+  String get wallResubmitUnavailable => 'Unable to load this rejected upload. Try again.';
+
+  @override
+  String get wallMetadataEditDetails => 'Edit details';
+
+  @override
+  String get wallMetadataApprovedHelp =>
+      'Change the title, description and tags. The image and category stay the same.';
+
+  @override
+  String get wallMetadataPendingHelp => 'Update these details before your wallpaper is reviewed.';
+
+  @override
+  String get wallMetadataSave => 'Save details';
+
+  @override
+  String get wallMetadataSaved => 'Details saved';
+
+  @override
+  String get wallMetadataDiscardTitle => 'Discard changes?';
+
+  @override
+  String get wallMetadataDiscardBody => 'Your unsaved details will be lost.';
+
+  @override
+  String get wallMetadataDiscard => 'Discard changes';
+
+  @override
+  String get wallMetadataReload => 'Reload details';
+
+  @override
+  String get wallMetadataReloadTitle => 'Reload current details?';
+
+  @override
+  String get wallMetadataReloadBody => 'This replaces your unsaved details with the current version.';
+
+  @override
+  String get wallMetadataConflict =>
+      'These details changed elsewhere. Your edits are still here. Reload the current details before saving.';
+
+  @override
+  String get wallMetadataStatusChanged =>
+      'This wallpaper is no longer in the same review state. Your edits have not been saved.';
+
+  @override
+  String get wallMetadataMissing => 'This wallpaper is no longer available. Your edits have not been saved.';
+
+  @override
+  String get wallMetadataDenied => 'You do not have permission to edit this wallpaper.';
+
+  @override
+  String get wallMetadataSignedOut => 'Sign in again to edit this wallpaper.';
+
+  @override
+  String get wallMetadataDailyLimit => 'You have reached today\'s edit limit. Try again tomorrow.';
+
+  @override
+  String get wallMetadataUnavailable => 'Unable to save details. Check your connection and try again.';
+
+  @override
+  String get wallMetadataLoadFailed => 'Unable to load details';
+
+  @override
+  String get wallMetadataHistory => 'Edit history';
+
+  @override
+  String get wallMetadataHistoryEmpty => 'No metadata edits yet';
+
+  @override
+  String get wallMetadataHistoryEmptyBody => 'Changes to the approved title, description and tags appear here.';
+
+  @override
+  String get wallMetadataHistoryFailed => 'Unable to load edit history';
+
+  @override
+  String get wallMetadataBefore => 'Before';
+
+  @override
+  String get wallMetadataAfter => 'After';
+
+  @override
+  String get wallMetadataRevert => 'Revert edit';
+
+  @override
+  String get wallMetadataRevertTitle => 'Revert this edit?';
+
+  @override
+  String get wallMetadataRevertBody =>
+      'Restore only the previous title, description and tags shown here. The image and review state will not change.';
+
+  @override
+  String get wallMetadataReverted => 'Edit reverted';
+
+  @override
+  String get wallMetadataLoadMore => 'Load more edits';
+
+  @override
+  String get wallMetadataAbsent => 'Not set';
+
+  @override
+  String wallMetadataResubmitted(int attempt) {
+    return 'Resubmitted · attempt $attempt of 3';
+  }
+
+  @override
+  String get wallMetadataPreviousReason => 'Previous rejection reason';
+
+  @override
+  String get wallMetadataContextUnavailable => 'Resubmission details unavailable';
+
+  @override
+  String get reportSheetMessage =>
+      'Tell us what went wrong. Prism never adds your email address or sign-in tokens. Check any screenshot before you send it.';
+
+  @override
+  String get reportTopicCrashFreeze => 'Crash/freeze';
+
+  @override
+  String get reportTopicWallpaperWontSet => 'Wallpaper won\'t set';
+
+  @override
+  String get reportTopicLooksBroken => 'Looks broken';
+
+  @override
+  String get reportTopicSlow => 'Slow';
+
+  @override
+  String get reportTopicOther => 'Other';
+
+  @override
+  String get reportNoteHint => 'What happened? What did you expect?';
+
+  @override
+  String get reportScreenshotTitle => 'Screenshot';
+
+  @override
+  String get reportScreenshotEmpty => 'Show us what you see.';
+
+  @override
+  String get reportScreenshotAttached => 'Tap to view. Check it before you send.';
+
+  @override
+  String get reportAddScreenshot => 'Add screenshot';
+
+  @override
+  String get reportRemoveScreenshot => 'Remove';
+
+  @override
+  String get reportViewScreenshot => 'View screenshot';
+
+  @override
+  String get reportIncludeDiagnostics => 'Include device info & recent logs';
+
+  @override
+  String get reportShowDiagnostics => 'Show what\'s included';
+
+  @override
+  String get reportHideDiagnostics => 'Hide details';
+
+  @override
+  String get reportSend => 'Send report';
+
+  @override
+  String get reportShareAsFile => 'Share as file';
+
+  @override
+  String reportSent(String reference) {
+    return 'Thanks, report sent. Reference $reference';
+  }
+
+  @override
+  String get reportCouldNotSend => 'Couldn\'t send';
+
+  @override
+  String get reportCouldNotSendBody => 'Check your connection and try again, or share the report as a file.';
+
+  @override
+  String get reportShareInstead => 'Share instead';
+
+  @override
+  String get reportShakeToReport => 'Shake to report';
+
+  @override
+  String get reportShakeToReportSubtitle => 'Shake your phone on any screen to report a problem';
+
+  @override
+  String get accountShowAiWallpapers => 'Show AI-generated wallpapers';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'Turn off to see only human-made walls';
+
+  @override
+  String get accountShowAiWallpapersFootnote => 'Hiding AI wallpapers never hides your own uploads or favourites.';
+
+  @override
+  String get wallpaperFeedHideAi => 'Hide AI';
+
+  @override
+  String get wallpaperAiGenerated => 'AI-generated';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return 'Made with $model';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'Made with AI';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'Report wrong label';
+
+  @override
+  String get feedNoHumanWalls => 'No human-made walls here yet';
+
+  @override
+  String get feedShowAiWalls => 'Show AI walls';
+
+  @override
+  String get dailyMomentTitle => 'Daily moment';
+
+  @override
+  String get dailyMomentStreakTitle => 'Daily streak';
+
+  @override
+  String get dailyMomentChestTitle => 'Daily chest';
+
+  @override
+  String get dailyMomentSpinTitle => 'Free spin';
+
+  @override
+  String get dailyMomentUnavailable => 'This reward is no longer available today.';
+
+  @override
+  String get dailyMomentError => 'Could not load your reward. Try again.';
+
+  @override
+  String dailyMomentStreakReceipt(int coins, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins coins earned',
+      one: '$coins coin earned',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'streak of $days days',
+      one: 'streak of $days day',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String get challengeTitle => 'Weekly challenge';
+
+  @override
+  String get challengeRules => 'Up to 3 entries, each reviewed before appearing.';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'Vote for other creators until $date UTC.';
+  }
+
+  @override
+  String get challengeUpload => 'Upload an entry';
+
+  @override
+  String get challengeAi => 'Create with AI';
+
+  @override
+  String get challengeTop => 'Top';
+
+  @override
+  String get challengeNew => 'New';
+
+  @override
+  String get challengePast => 'Past challenges';
+
+  @override
+  String get challengeEmpty => 'Approved entries will appear here.';
+
+  @override
+  String get challengeWaiting => 'Voting has closed. We are waiting for entry reviews before choosing a winner.';
+
+  @override
+  String get challengeClosed => 'This challenge has ended.';
+
+  @override
+  String get challengeScheduled => 'This challenge has not opened yet.';
+
+  @override
+  String get challengeNoWinner => 'No winner for this challenge.';
+
+  @override
+  String challengeWinner(String name) {
+    return 'Winner · $name';
+  }
+
+  @override
+  String get challengeVote => 'Vote';
+
+  @override
+  String get challengeUnvote => 'Remove vote';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votes',
+      one: '1 vote',
+      zero: '0 votes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentCosmetic => 'Cosmetic added to your collection';
+
+  @override
+  String dailyMomentReward(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins coins earned',
+      one: '$coins coin earned',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentChestBody => 'Open today’s chest when you’re ready.';
+
+  @override
+  String get dailyMomentSpinBody => 'Your free spin is ready.';
+
+  @override
+  String dailyMomentBalance(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins coins', one: '$coins coin');
+    return 'Balance: $_temp0';
+  }
+
+  @override
+  String get dailyMomentDone => 'Done';
+
+  @override
+  String get dailyMomentRetry => 'Try again';
+
+  @override
+  String get dailyMomentContinue => 'Continue';
+
+  @override
+  String get dailyMomentOpenFree => 'Open free chest';
+
+  @override
+  String dailyMomentOpenChest(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins coins', one: '$coins coin');
+    return 'Open for $_temp0';
+  }
+
+  @override
+  String get dailyMomentSpinAction => 'Take free spin';
+
+  @override
+  String get dailyMomentClose => 'Close daily moment';
+
+  @override
+  String get dailyMomentToday => 'Today';
+
+  @override
+  String get dailyMomentReady => 'Daily rewards are ready';
+
+  @override
+  String get dailyMomentComplete => 'Today is complete';
+
+  @override
+  String get dailyMomentResume => 'Continue daily moment';
+
+  @override
+  String get dailyMomentMore => 'More';
+
+  @override
+  String get dailyMomentQuests => 'Quests';
+
+  @override
+  String get dailyMomentChestLeft => 'Daily chest available';
+
+  @override
+  String get dailyMomentSpinLeft => 'Free spin available';
+
+  @override
+  String get dailyMomentStreakLeft => 'Daily streak available';
+
+  @override
+  String get challengeShare => 'Share challenge';
+
+  @override
+  String get challengeRemove => 'Remove challenge';
+
+  @override
+  String challengeContext(String theme) {
+    return 'Challenge · $theme';
+  }
+
+  @override
+  String get challengeError => 'We could not load this challenge. Try again.';
+
+  @override
+  String get challengeVoteError => 'Your vote could not be saved. Try again.';
+
+  @override
+  String get challengeSignIn => 'Sign in to enter or vote.';
+
+  @override
+  String get challengeLimit => 'You have entered 3 wallpapers in this challenge.';
+
+  @override
+  String get challengeRetry => 'Try again';
+
+  @override
+  String get challengeOwnEntry => 'You cannot vote for your own entry.';
+
+  @override
+  String get challengeDailyLimit => 'Your daily voting limit is reached.';
+
+  @override
+  String get challengeMissing => 'This challenge or entry is no longer available.';
+
+  @override
+  String get challengeBadge => 'Challenge Winner';
+
+  @override
+  String get challengeBadgeDescription => 'Win a weekly challenge';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'Your wallpaper won';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'Your entry won the weekly challenge: $theme.';
+  }
+
+  @override
+  String get statsTitle => 'Your stats';
+
+  @override
+  String get statsEntry => 'Stats';
+
+  @override
+  String get statsViews => 'Views';
+
+  @override
+  String get statsSaves => 'Saves';
+
+  @override
+  String get statsSets => 'Sets';
+
+  @override
+  String get statsDownloads => 'Downloads';
+
+  @override
+  String get statsShares => 'Shares';
+
+  @override
+  String get statsFolderAdds => 'Folder additions';
+
+  @override
+  String get statsRemixes => 'Remixes';
+
+  @override
+  String get statsLoading => 'Loading your stats';
+
+  @override
+  String get statsError => 'Your stats could not load. Please try again.';
+
+  @override
+  String get statsRetry => 'Try again';
+
+  @override
+  String get statsEmptyTitle => 'Your first wall starts here';
+
+  @override
+  String get statsEmptyBody => 'Upload a wallpaper. Its stats will appear after approval.';
+
+  @override
+  String get statsUpload => 'Upload a wallpaper';
+
+  @override
+  String get statsWeekNote => 'This week so far compared with last week. Weeks start on Monday, UTC.';
+
+  @override
+  String get statsHistoryNote =>
+      'Eight weeks, oldest first. A dash means unavailable history. Tracking can begin partway through a week, so recorded weeks may be partial. The current week is incomplete.';
+
+  @override
+  String get statsTopWalls => 'Top walls this week';
+
+  @override
+  String get statsUntitled => 'Untitled wall';
+
+  @override
+  String get statsCountingNote =>
+      'Save totals count current favourites; weekly saves count additions. Remix totals count current credited remixes; weekly remixes count first accepted credits. Folder additions are recorded only from the start of tracking.';
+
+  @override
+  String get statsUnavailable => 'Unavailable';
+
+  @override
+  String get statsWeeklyTitle => 'Your walls this week';
+
+  @override
+  String statsWeeklyBody(String week) {
+    return 'See how your walls did in $week.';
+  }
+
+  @override
+  String statsWallValue(String metric, String value) {
+    return '$metric: $value this week';
+  }
+
+  @override
+  String statsComparison(String current, String previous) {
+    return '$current this week · $previous last week';
+  }
+
+  @override
+  String statsTotal(String value) {
+    return 'Total: $value';
+  }
+
+  @override
+  String statsChange(String value) {
+    return '$value compared with last week';
+  }
+
+  @override
+  String statsUpdated(String date) {
+    return 'Updated $date UTC';
+  }
+
+  @override
+  String statsChartWeek(String date, String value) {
+    return 'Week of $date: $value';
+  }
+
+  @override
+  String statsChartSummary(String metric, String summary) {
+    return '$metric, eight weeks. $summary';
+  }
+
+  @override
+  String get shortcutsGuideHeadline => 'A new wallpaper every day';
+
+  @override
+  String get shortcutsGuideBody =>
+      'Set up Shortcuts once. Each day it sets a wallpaper from your rotation folder. Its 200 newest walls each show once before any repeats.';
+
+  @override
+  String get shortcutsSourceRotation => 'Rotation folder';
+
+  @override
+  String get shortcutsSourceRotationDescription => 'Shuffles the folder you picked above.';
+
+  @override
+  String get shortcutsSourceFolder => 'Folder';
+
+  @override
+  String get shortcutsSourceFolderDescription => 'Shuffles a folder that you pick in Shortcuts.';
+
+  @override
+  String get shortcutsSourceFavouriteDescription =>
+      'Shuffles your favourites. Each one shows once before any repeats. Some protected wallpapers may not be available.';
+
+  @override
+  String get shortcutsRotationNone => 'No folder picked';
+
+  @override
+  String get shortcutsRotationNoneBody => 'Pick the folder that the shortcut shuffles.';
+
+  @override
+  String get shortcutsRotationPick => 'Pick a folder';
+
+  @override
+  String get shortcutsRotationChange => 'Change';
+
+  @override
+  String get shortcutsRotationStop => 'Stop';
+
+  @override
+  String shortcutsStepLabel(int number, String title) {
+    return 'Step $number, $title';
+  }
+
+  @override
+  String get shortcutsStepAddTitle => 'Add the Prism shortcut';
+
+  @override
+  String get shortcutsStepAddBody => 'It gets a wall from your rotation folder and sets it as your wallpaper.';
+
+  @override
+  String get shortcutsStepAddAction => 'Add the shortcut';
+
+  @override
+  String get shortcutsStepAddManualBody => 'Make it in Shortcuts with 2 actions.';
+
+  @override
+  String get shortcutsManualNew => 'In Shortcuts, tap + to make a new shortcut.';
+
+  @override
+  String get shortcutsManualGet => 'Add \"Get Prism Wallpaper\". Set Source to Rotation folder.';
+
+  @override
+  String get shortcutsManualSet => 'Add \"Set Wallpaper Photo\". Tap the arrow on it, then turn off Show Preview.';
+
+  @override
+  String shortcutsManualName(String name) {
+    return 'Name the shortcut \"$name\".';
+  }
+
+  @override
+  String get shortcutsStepAutomationTitle => 'Run it every day';
+
+  @override
+  String get shortcutsAutomationOpen => 'In Shortcuts, tap Automation, then tap +.';
+
+  @override
+  String get shortcutsAutomationTime => 'Tap Time of Day. Pick a time, then choose Daily.';
+
+  @override
+  String get shortcutsAutomationRun => 'Choose Run Immediately, then tap Next.';
+
+  @override
+  String shortcutsAutomationPick(String name) {
+    return 'Pick \"$name\" to run.';
+  }
+
+  @override
+  String shortcutsAutomationNoTab(String name) {
+    return 'No Automation tab? Open \"$name\", tap Edit, then tap Automation.';
+  }
+
+  @override
+  String get shortcutsStepTestTitle => 'Test it now';
+
+  @override
+  String shortcutsStepTestBody(String name) {
+    return 'Runs \"$name\" once, so you can see the new wallpaper now.';
+  }
+
+  @override
+  String get shortcutsStepTestAction => 'Run the shortcut';
+
+  @override
+  String get foldersRotateDaily => 'Rotate this folder daily';
+
+  @override
+  String get autoRotateIosTitle => 'Change wallpapers with Shortcuts';
+
+  @override
+  String get autoRotateIosBody => 'On iPhone, a Shortcuts automation sets a new wallpaper from your folder every day.';
+
+  @override
+  String get autoRotateIosAction => 'Set up Shortcuts';
+
+  @override
+  String get shortcutsAutomationIos16 => 'On iOS 16 there is no Run Immediately. Turn off Ask Before Running instead.';
+
+  @override
+  String get tipAction => 'Tip creator';
+
+  @override
+  String get tipMenuItem => 'Send a tip';
+
+  @override
+  String tipTitle(String name) {
+    return 'Tip $name';
+  }
+
+  @override
+  String tipMessage(String name) {
+    return 'Pick an amount. $name gets every coin and sees your name.';
+  }
+
+  @override
+  String get tipAmountsLabel => 'Tip amount';
+
+  @override
+  String tipBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance coins', one: '1 coin');
+    return 'Your balance: $_temp0';
+  }
+
+  @override
+  String tipShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount more coins', one: '1 more coin');
+    return 'You need $_temp0.';
+  }
+
+  @override
+  String tipSendButton(int amount) {
+    return 'Tip $amount coins';
+  }
+
+  @override
+  String get tipEarnCoins => 'Earn coins';
+
+  @override
+  String get tipThanksTitle => 'Thanks for your tip';
+
+  @override
+  String tipThanksMessage(String name, int amount) {
+    return '$name got your $amount coins.';
+  }
+
+  @override
+  String get tipDone => 'Done';
+
+  @override
+  String get tipNotEnoughCoins => 'You don\'t have enough coins for this tip.';
+
+  @override
+  String get tipDailyLimit => 'You\'ve sent all your tips for today. Try again tomorrow.';
+
+  @override
+  String tipPairLimit(String name) {
+    return 'You already tipped $name today. Try again tomorrow.';
+  }
+
+  @override
+  String tipCreatorLimit(String name) {
+    return '$name can\'t get more tips today. Try again tomorrow.';
+  }
+
+  @override
+  String get tipSenderTooNew => 'You can send tips 7 days after you join Prism.';
+
+  @override
+  String get tipSenderIneligible => 'Sign in with a verified account to send tips.';
+
+  @override
+  String tipUnavailable(String name) {
+    return 'You can\'t tip $name right now.';
+  }
+
+  @override
+  String get tipFailed => 'Couldn\'t send the tip. Try again.';
+
+  @override
+  String wallTippedBy(int count) {
+    return 'Tipped by $count people';
+  }
+
+  @override
+  String get coreCoinTipSent => 'Tip sent';
+
+  @override
+  String get coreCoinTipReceived => 'Tip received';
+
+  @override
+  String notifPushTipReceivedTitle(String senderName, String amount, String wallTitle) {
+    return '$senderName tipped you $amount coins for $wallTitle';
+  }
+
+  @override
+  String notifPushTipReceivedTitleUntitled(String senderName, String amount) {
+    return '$senderName tipped you $amount coins';
+  }
+
+  @override
+  String get notifPushTipReceivedBody => 'See your tips in your creator stats.';
+
+  @override
+  String notifTipsReceivedTitle(int count) {
+    return 'You got $count tips today';
+  }
+
+  @override
+  String notifTipsReceivedBody(int coins) {
+    return '$coins coins in all. See them in your creator stats.';
+  }
+
+  @override
+  String get statsTips => 'Tips';
+
+  @override
+  String statsTipsTotal(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count tips', one: '1 tip');
+    return '$_temp0, $coins coins in all';
+  }
+
+  @override
+  String statsTipsWeek(String date, int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count tips', one: '1 tip');
+    return 'Week of $date: $_temp0, $coins coins';
+  }
+
+  @override
+  String statsTipsWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count tips', one: '1 tip');
+    return '$_temp0, $coins coins';
+  }
+
+  @override
+  String get statsTipsEmpty => 'No tips yet. Fans can tip you from your walls and your profile.';
+
+  @override
+  String get creatorsToFollow => 'Creators to follow';
+
+  @override
+  String get creatorsSeeAll => 'See all';
+
+  @override
+  String get creatorsTitle => 'Creators';
+
+  @override
+  String get creatorsFilterAll => 'All';
+
+  @override
+  String get creatorsEmptyTitle => 'No creators here yet';
+
+  @override
+  String get creatorsEmptyBody => 'Try another category.';
+
+  @override
+  String get creatorsLoadError => 'Couldn\'t load creators';
+
+  @override
+  String creatorsOpenProfile(String name) {
+    return 'Open $name\'s profile';
+  }
+
+  @override
+  String creatorsWallBy(String name) {
+    return 'Wallpaper by $name';
+  }
+
+  @override
+  String creatorsFollowedByOne(String first) {
+    return 'Followed by $first';
+  }
+
+  @override
+  String creatorsFollowedByTwo(String first, String second) {
+    return 'Followed by $first and $second';
+  }
+
+  @override
+  String creatorsFollowedByMany(String first, String second, int others) {
+    String _temp0 = intl.Intl.pluralLogic(
+      others,
+      locale: localeName,
+      other: '$others others you follow',
+      one: '1 other you follow',
+    );
+    return 'Followed by $first, $second and $_temp0';
+  }
+
+  @override
+  String creatorsMoreLike(String name) {
+    return 'More like $name';
+  }
+
+  @override
+  String get creatorsSimilarSubtitle => 'Creators with a similar style';
+
+  @override
+  String get creatorsShowMeTitle => 'Show me in Creators to follow';
+
+  @override
+  String get creatorsShowMeBody => 'Others can find your profile and top wallpapers';
+
+  @override
+  String get promoRedeemTitle => 'Redeem a code';
+
+  @override
+  String get promoRedeemMessage => 'Enter a code from a Prism post or giveaway.';
+
+  @override
+  String get promoRedeemMessageIos => 'Enter a coin code from a Prism post or giveaway.';
+
+  @override
+  String get promoCodeFieldLabel => 'Code';
+
+  @override
+  String get promoCodeFieldHint => 'For example, 7KQ2 MPXR 4D';
+
+  @override
+  String get promoPasteCode => 'Paste code';
+
+  @override
+  String get promoRedeemAction => 'Redeem';
+
+  @override
+  String get promoRedeeming => 'Redeeming code';
+
+  @override
+  String get promoDone => 'Done';
+
+  @override
+  String get promoTryAnother => 'Try another code';
+
+  @override
+  String promoSuccessCoins(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString coins', one: '1 coin');
+    return 'You got $_temp0';
+  }
+
+  @override
+  String get promoSuccessCoinsMessage => 'They\'re in your balance now.';
+
+  @override
+  String promoSuccessPro(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString days', one: '1 day');
+    return 'You got $_temp0 of Pro';
+  }
+
+  @override
+  String promoSuccessProMessage(String date) {
+    return 'Your Pro pass now runs until $date.';
+  }
+
+  @override
+  String get promoErrorInvalid => 'That isn\'t a Prism code. Codes have 10 or more letters and numbers.';
+
+  @override
+  String get promoErrorNotFound => 'We can\'t find that code. Check it and try again.';
+
+  @override
+  String get promoErrorDisabled => 'This code is turned off.';
+
+  @override
+  String get promoErrorExpired => 'This code has expired.';
+
+  @override
+  String get promoErrorLimitReached => 'This code has no uses left.';
+
+  @override
+  String get promoErrorAlreadyRedeemed => 'You already used this code.';
+
+  @override
+  String get promoErrorAccountTooNew => 'Your account is too new for this code.';
+
+  @override
+  String get promoErrorNewUsersOnly => 'This code is for new accounts only.';
+
+  @override
+  String get promoErrorPremiumNotOnIos => 'Pro codes don\'t work on iPhone or iPad. Use an App Store code instead.';
+
+  @override
+  String get promoErrorAlreadyPremium => 'You already have Pro, so this code isn\'t needed.';
+
+  @override
+  String get promoErrorRateLimited => 'Too many tries. Wait an hour, then try again.';
+
+  @override
+  String get promoErrorBusy => 'Lots of people are redeeming right now. Try again in a moment.';
+
+  @override
+  String get promoErrorSignedOut => 'Sign in to redeem a code.';
+
+  @override
+  String get promoErrorNetwork => 'Can\'t reach Prism. Check your connection and try again.';
+
+  @override
+  String get promoErrorUnknown => 'Something went wrong. Try again.';
+
+  @override
+  String get promoSettingsGroup => 'Codes';
+
+  @override
+  String get promoSettingsRedeemTitle => 'Redeem a Prism code';
+
+  @override
+  String get promoSettingsRedeemSubtitle => 'Coins or Pro days from our posts and giveaways';
+
+  @override
+  String get promoSettingsRedeemSubtitleIos => 'Coins from our posts and giveaways';
+
+  @override
+  String get promoAppStoreCodeTitle => 'Redeem an App Store code';
+
+  @override
+  String get promoAppStoreCodeSubtitle => 'Pro offer codes from Apple';
+
+  @override
+  String get promoPlayCodeTitle => 'Redeem a Play code';
+
+  @override
+  String get promoPlayCodeSubtitle => 'Pro offer codes from Google Play';
+
+  @override
+  String get promoCodesFootnoteIos => 'Prism codes give coins. App Store codes give Pro.';
+
+  @override
+  String get promoCodesFootnoteAndroid => 'Prism codes give coins or Pro days. Play codes give Pro.';
+
+  @override
+  String get promoStoreCodeFailed => 'Couldn\'t open the code page. Try again.';
+
+  @override
+  String get promoRewardsRowTitle => 'Redeem a code';
+
+  @override
+  String get promoRewardsRowSubtitle => 'Got a code from a post or giveaway?';
+
+  @override
+  String get promoAdminTitle => 'Promo codes';
+
+  @override
+  String get promoAdminEntry => 'Promo codes';
+
+  @override
+  String get promoAdminCreate => 'Create code';
+
+  @override
+  String get promoAdminTypeCoins => 'Coins';
+
+  @override
+  String get promoAdminTypePro => 'Pro days';
+
+  @override
+  String get promoAdminAmount => 'Amount';
+
+  @override
+  String get promoAdminAmountHelpCoins => '1 to 1,000 coins';
+
+  @override
+  String get promoAdminAmountHelpPro => '1 to 90 days. Android only.';
+
+  @override
+  String get promoAdminMaxRedemptions => 'Max redemptions';
+
+  @override
+  String get promoAdminExpiresInDays => 'Expires in (days)';
+
+  @override
+  String get promoAdminMinAccountAge => 'Minimum account age (days)';
+
+  @override
+  String get promoAdminNewUsersOnly => 'New accounts only';
+
+  @override
+  String get promoAdminNewUsersDays => 'Account at most (days old)';
+
+  @override
+  String get promoAdminCustomCode => 'Custom code (optional)';
+
+  @override
+  String get promoAdminCustomCodeHelp => '10 to 32 letters and numbers, no I, O, 0 or 1. Leave empty to make one.';
+
+  @override
+  String get promoAdminLabel => 'Note';
+
+  @override
+  String promoAdminCreated(String code) {
+    return 'Created $code';
+  }
+
+  @override
+  String get promoAdminCopied => 'Code copied';
+
+  @override
+  String get promoAdminCopy => 'Copy code';
+
+  @override
+  String promoAdminRedemptions(int used, int max) {
+    return '$used of $max used';
+  }
+
+  @override
+  String promoAdminExpires(String date) {
+    return 'Expires $date';
+  }
+
+  @override
+  String get promoAdminDisabled => 'Off';
+
+  @override
+  String get promoAdminDisable => 'Turn off';
+
+  @override
+  String get promoAdminEnable => 'Turn on';
+
+  @override
+  String get promoAdminEmpty => 'No codes yet.';
+
+  @override
+  String get promoAdminLoadFailed => 'Couldn\'t load codes. Pull to try again.';
+
+  @override
+  String promoAdminCreateFailed(String reason) {
+    return 'Couldn\'t create the code: $reason';
+  }
 }

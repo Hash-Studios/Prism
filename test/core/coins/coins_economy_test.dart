@@ -153,10 +153,37 @@ void main() {
   });
 
   group('rewarded ad', () {
+    Future<void> settleAd() async {
+      reply(
+        (name, _) => name == 'beginRewardedSession'
+            ? <String, Object?>{
+                'version': 1,
+                'status': 'reserved',
+                'sessionId': 'session',
+                'userId': app_state.prismUser.id,
+                'customData': 'token',
+                'adUnitId': 'server-unit',
+                'rewardCoins': 20,
+                'showBeforeMs': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch,
+                'adsRemaining': 19,
+              }
+            : <String, Object?>{
+                'version': 1,
+                'status': 'settled',
+                'sessionId': 'session',
+                'currentBalance': 120,
+                'adsRemaining': 19,
+                'rewardCoins': 20,
+              },
+      );
+      expect(await service.beginRewardedSession('test'), isNotNull);
+      expect(await service.reconcileRewardedSession(), isTrue);
+    }
+
     test('first ad of the day pays the first-of-day amount, then the base amount', () async {
       expect(service.adsRewardNow, 20);
       reply((_, _) => _paid(after: 120, extra: <String, Object?>{'adsRemaining': 19}));
-      await service.award(CoinEarnAction.rewardedAd);
+      await settleAd();
       expect(service.adsRewardNow, 10);
     });
 
@@ -184,9 +211,36 @@ void main() {
           },
         ),
       );
-      await service.award(CoinEarnAction.rewardedAd);
+      await settleAd();
       expect(service.questsNotifier.value?.bonus?.claimed, isTrue);
-      expect(calls.map(((String, Map<String, dynamic>) c) => c.$1), <String>['awardCoins']);
+      expect(calls.map(((String, Map<String, dynamic>) c) => c.$1), <String>[
+        'beginRewardedSession',
+        'getRewardedSession',
+      ]);
+    });
+    test('a replayed reservation past its show window is kept and a fresh one is reserved', () async {
+      int begins = 0;
+      reply((name, _) {
+        if (name == 'getRewardedSession') {
+          return <String, Object?>{'version': 1, 'status': 'reserved', 'sessionId': 'old', 'currentBalance': 100};
+        }
+        begins++;
+        return <String, Object?>{
+          'version': 1,
+          'status': 'reserved',
+          'sessionId': begins == 1 ? 'old' : 'fresh',
+          'userId': app_state.prismUser.id,
+          'customData': 'token',
+          'adUnitId': 'server-unit',
+          'rewardCoins': 10,
+          'showBeforeMs': DateTime.now().add(Duration(minutes: begins == 1 ? -1 : 5)).millisecondsSinceEpoch,
+        };
+      });
+      final session = await service.beginRewardedSession('test');
+      expect(session?.sessionId, 'fresh');
+      final begun = calls.where(((String, Map<String, dynamic>) c) => c.$1 == 'beginRewardedSession').toList();
+      expect(begun, hasLength(2));
+      expect(begun.first.$2['requestId'], isNot(begun.last.$2['requestId']));
     });
   });
 
@@ -519,6 +573,83 @@ void main() {
       expect((await service.giftPremiumPass('friend')).outcome, GiftOutcome.insufficient);
       backend.onCall = (_, _) async => throw FirebaseFunctionsException(code: 'invalid-argument', message: 'self');
       expect((await service.giftPremiumPass('friend')).outcome, GiftOutcome.failed);
+    });
+  });
+
+  group('tipCreator', () {
+    test('eligibility refusal does not replace the wallet with its placeholder zero', () async {
+      final firestore = CoinsTestFirestore()..userData = <String, dynamic>{'coins': 100};
+      getIt.registerSingleton<FirestoreClient>(firestore);
+      reply((_, _) => <String, Object?>{..._refused('tip_sender_too_new'), 'currentBalance': 0});
+
+      await service.tipCreator(creatorUid: 'maker', amount: 25);
+
+      expect(service.balanceNotifier.value, 100);
+      expect(app_state.prismUser.coins, 100);
+    });
+
+    test('replayed tip refreshes the wallet instead of restoring its historical balance', () async {
+      final firestore = CoinsTestFirestore()..userData = <String, dynamic>{'coins': 40};
+      getIt.registerSingleton<FirestoreClient>(firestore);
+      reply((_, _) => _paid(after: 75, extra: <String, Object?>{'amount': 25}));
+
+      final result = await service.tipCreator(creatorUid: 'maker', amount: 50);
+
+      expect(result.amount, 25);
+      expect(service.balanceNotifier.value, 40);
+      expect(app_state.prismUser.coins, 40);
+    });
+
+    test('sent returns the amount and sends the params', () async {
+      reply((_, _) => _paid(extra: <String, Object?>{'amount': 25}));
+      final TipResult result = await service.tipCreator(creatorUid: 'maker', amount: 25, wallId: 'neon');
+      expect((result.outcome, result.amount), (TipOutcome.sent, 25));
+      final Map<String, dynamic> params = calls.single.$2;
+      expect(calls.single.$1, 'tipCreator');
+      expect((params['creatorUid'], params['amount'], params['wallId']), ('maker', 25, 'neon'));
+      expect(params['requestId'], isA<String>());
+    });
+
+    test('a lost reply retried with another amount retains the request id', () async {
+      final requests = <Map<String, dynamic>>[];
+      backend.onCall = (name, params) async {
+        requests.add(params);
+        if (requests.length == 1) throw FirebaseFunctionsException(code: 'unavailable', message: 'lost');
+        return _paid(after: 75, extra: <String, Object?>{'amount': 25});
+      };
+
+      expect((await service.tipCreator(creatorUid: 'maker', amount: 25)).outcome, TipOutcome.failed);
+      final result = await service.tipCreator(creatorUid: 'maker', amount: 50);
+
+      expect(requests[0]['requestId'], requests[1]['requestId']);
+      expect(result.amount, 25);
+    });
+
+    test('no wallId is not sent', () async {
+      reply((_, _) => _paid(extra: <String, Object?>{'amount': 10}));
+      await service.tipCreator(creatorUid: 'maker', amount: 10);
+      expect(calls.single.$2.containsKey('wallId'), isFalse);
+    });
+
+    test('refusals map to outcomes', () async {
+      final Map<String, TipOutcome> cases = <String, TipOutcome>{
+        'tip_daily_limit': TipOutcome.dailyLimit,
+        'tip_pair_limit': TipOutcome.pairLimit,
+        'tip_creator_limit': TipOutcome.creatorLimit,
+        'tip_sender_too_new': TipOutcome.senderTooNew,
+        'tip_sender_ineligible': TipOutcome.senderIneligible,
+        'tip_blocked': TipOutcome.blocked,
+        'tip_creator_unavailable': TipOutcome.unavailable,
+        'tip_wall_invalid': TipOutcome.unavailable,
+      };
+      for (final MapEntry<String, TipOutcome> c in cases.entries) {
+        reply((_, _) => _refused(c.key));
+        expect((await service.tipCreator(creatorUid: 'maker', amount: 25)).outcome, c.value, reason: c.key);
+      }
+      reply((_, _) => _refused('tip_insufficient_balance', insufficient: true));
+      expect((await service.tipCreator(creatorUid: 'maker', amount: 25)).outcome, TipOutcome.insufficient);
+      backend.onCall = (_, _) async => throw FirebaseFunctionsException(code: 'invalid-argument', message: 'tip_self');
+      expect((await service.tipCreator(creatorUid: 'maker', amount: 25)).outcome, TipOutcome.failed);
     });
   });
 

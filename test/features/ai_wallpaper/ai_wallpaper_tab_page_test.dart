@@ -13,15 +13,20 @@ import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
-import 'package:Prism/features/ai_wallpaper/views/widgets/ai_preview_stage.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
+import 'package:Prism/features/weekly_challenges/biz/challenge_admission_tracker.dart';
+import 'package:Prism/features/weekly_challenges/biz/confirm_challenge_submission.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -83,6 +88,14 @@ class _LocalAiAssetStore extends OfflineAssetStore {
   }
 }
 
+class _RecordingChallengeConfirmation extends Fake implements ConfirmChallengeSubmission {
+  final List<({String uid, String challengeId, String wallId})> calls = [];
+  @override
+  Future<void> call({required String uid, required String challengeId, required String wallId}) async {
+    calls.add((uid: uid, challengeId: challengeId, wallId: wallId));
+  }
+}
+
 class _FakeAiGenerationRepository extends Fake implements AiGenerationRepositoryImpl {
   _FakeAiGenerationRepository(this.record, this.metadata, {this.history, this.savedPrompt, this.local = const []});
 
@@ -126,11 +139,13 @@ AiGenerationRecord _record({
   String userId = 'user-1',
   String imageUrl = '',
   String watermarkedImageUrl = '',
+  String? format,
 }) => AiGenerationRecord(
   id: id,
   userId: userId,
   createdAt: DateTime.utc(2026),
   prompt: 'A quiet mountain lake',
+  format: format,
   stylePreset: AiStylePreset.nature,
   qualityTier: AiQualityTier.fast,
   provider: 'test',
@@ -187,6 +202,13 @@ class _LocaleTestAppState extends State<_LocaleTestApp> {
   );
 }
 
+Future<void> _openRecent(WidgetTester tester) async {
+  final Finder thumb = find.descendant(of: find.byType(AiHistoryStrip), matching: find.byType(AiGenerationThumb)).first;
+  await tester.ensureVisible(thumb);
+  await tester.tap(thumb);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUp(AnalyticsRuntime.reset);
   tearDown(AnalyticsRuntime.reset);
@@ -221,8 +243,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(remoteCalls, 0);
-    expect(find.text('Save'), findsOneWidget);
-    expect(tester.widget<AiPreviewStage>(find.byType(AiPreviewStage)).record?.id, 'generation-1');
+    expect(find.byType(AiResultView), findsNothing);
+    expect(tester.widget<AiHistoryStrip>(find.byType(AiHistoryStrip)).history.first.id, 'generation-1');
     expect(tester.takeException(), isNull);
   });
 
@@ -277,7 +299,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Save'));
+      await _openRecent(tester);
+      await tester.tap(find.byTooltip('Save'));
       await tester.pumpAndSettle();
       expect(requests, hasLength(1));
       expect(requests.single.link, file.path);
@@ -374,9 +397,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save'));
+    await _openRecent(tester);
+    await tester.tap(find.byTooltip('Save'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.byTooltip('Save'));
     await tester.pumpAndSettle();
 
     expect(assets.resolveCalls, 2);
@@ -423,6 +447,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     expect(tester.takeException(), isNull);
     final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
@@ -449,6 +474,88 @@ void main() {
     expect(analytics.events.whereType<InviteShareTappedEvent>(), hasLength(2));
     expect(analytics.events.whereType<InviteShareResultEvent>(), isEmpty);
   });
+
+  testWidgets('Duo apply opens the preview and preserves existing apply analytics', (tester) async {
+    tester.view.physicalSize = const Size(600, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    final analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(
+          repository: _FakeAiGenerationRepository(_record(format: 'duo-reveal'), Completer<AiSubmissionMetadata>()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _openRecent(tester);
+    Navigator.of(tester.element(find.byType(ClockOverlay))).pop();
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Apply'));
+    await tester.tap(find.text('Apply'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ClockOverlay, skipOffstage: false), findsOneWidget);
+    expect(analytics.events.whereType<AiResultAppliedEvent>().map((event) => event.platform), <String>['ios']);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('Duo AI share opens the Duo card sheet rather than reopening preview', (tester) async {
+    tester.view.physicalSize = const Size(600, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    var shareCalls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(
+          repository: _FakeAiGenerationRepository(
+            _record(
+              format: 'duo-reveal',
+              imageUrl: 'https://cdn/full.png',
+              watermarkedImageUrl: 'https://cdn/watermarked.png',
+            ),
+            Completer<AiSubmissionMetadata>(),
+          ),
+          shareSheet: (_, content, sourceContext) async {
+            shareCalls++;
+            expect(content.duoReveal, isTrue);
+            expect(content.contentId, 'generation-1');
+            expect(content.imageUrl, 'https://cdn/watermarked.png');
+            expect(content.foldedLabel, 'Folded');
+            expect(content.unfoldedLabel, 'Unfolded');
+            expect(content.cta, 'Get it on Prism');
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _openRecent(tester);
+    expect(find.byType(ClockOverlay), findsOneWidget);
+    Navigator.of(tester.element(find.byType(ClockOverlay))).pop();
+    await tester.pumpAndSettle();
+    final Finder shareButton = find.byTooltip('Share');
+    await tester.ensureVisible(shareButton);
+    await tester.tap(shareButton);
+    await tester.pumpAndSettle();
+    expect(shareCalls, 1);
+    expect(find.byType(ClockOverlay), findsNothing);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('AI share failure records failure and restores the action', (tester) async {
     final analytics = FakeAppAnalytics();
@@ -492,6 +599,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
@@ -539,6 +647,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
@@ -587,6 +696,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
@@ -625,6 +735,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
@@ -758,6 +869,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     expect(find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview), findsOneWidget);
 
     final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
@@ -806,6 +918,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
     await tester.ensureVisible(submitButton);
     await tester.tap(submitButton);
@@ -857,6 +970,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
     await tester.ensureVisible(submitButton);
     await tester.tap(submitButton);
@@ -865,13 +979,74 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(submissions, 1);
+    await tester.tap(find.text(AppLocalizationsEn().aiResultEditPrompt));
+    await tester.pumpAndSettle();
     final Future<void> refresh = tester.state<RefreshIndicatorState>(find.byType(RefreshIndicator)).show();
     await tester.pumpAndSettle();
     await refresh;
+    await _openRecent(tester);
 
     expect(find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview), findsNothing);
     expect(submissions, 1);
     expect(toastCalls, isNotEmpty);
+  });
+
+  testWidgets('history submission keeps its own challenge rather than the current form seed', (tester) async {
+    tester.view.physicalSize = const Size(1000, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    final store = InMemoryLocalStore();
+    final confirmation = _RecordingChallengeConfirmation();
+    getIt.registerSingleton<ConfirmChallengeSubmission>(confirmation);
+    getIt.registerSingleton<ChallengeAdmissionTracker>(ChallengeAdmissionTracker(store));
+    addTearDown(getIt.reset);
+    const toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    final record = _record().copyWith(challengeId: '2026-10-19', challengeTheme: 'Morning light', remixOf: 'original');
+    final repository = _FakeAiGenerationRepository(record, Completer<AiSubmissionMetadata>()..complete(_emptyMetadata));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(
+          repository: repository,
+          challengeSeed: const ChallengeSeed(id: '2026-10-26', theme: 'Quiet oceans'),
+          submitForTesting: () async => WallSubmissionResult.submitted,
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await _openRecent(tester);
+    final submit = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+      find.descendant(of: find.byType(PrismSheetBody), matching: find.text('Challenge · Morning light')),
+      findsOneWidget,
+    );
+    await tester.tap(find.text(AppLocalizationsEn().economyAiSubmitForReview));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(repository.savedRecords.single.challengeId, '2026-10-19');
+    expect(confirmation.calls.single.challengeId, '2026-10-19');
+    expect(confirmation.calls.single.wallId, startsWith('wall_AI'));
+    expect(repository.savedRecords.single.remixOf, 'original');
+    expect(store.data.keys.where((key) => key.startsWith('challenge.entry.user-1.2026-10-19.')), hasLength(1));
+    expect(store.data.keys.where((key) => key.startsWith('challenge.entry.user-1.2026-10-26.')), isEmpty);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 10));
   });
 
   testWidgets('quota-exceeded stays retryable but an unconfirmed submission does not', (tester) async {
@@ -910,6 +1085,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
 
     Future<void> submitOnce() async {
       final button = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
@@ -958,6 +1134,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
     await tester.ensureVisible(submitButton);
     await tester.tap(submitButton);
@@ -1001,6 +1178,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openRecent(tester);
     final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
     await tester.ensureVisible(submitButton);
     await tester.tap(submitButton);
@@ -1051,6 +1229,9 @@ void main() {
       getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
       final firestore = FakeFirestoreClient();
       final localStore = InMemoryLocalStore();
+      final confirmation = _RecordingChallengeConfirmation();
+      getIt.registerSingleton<ConfirmChallengeSubmission>(confirmation);
+      getIt.registerSingleton<ChallengeAdmissionTracker>(ChallengeAdmissionTracker(localStore));
       getIt.registerSingleton<FirestoreClient>(firestore);
       getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(localStore));
       app_state.prismUser = app_constants.createGuestPrismUser()
@@ -1060,7 +1241,10 @@ void main() {
         ..premium = initialPremium;
       toastArguments.clear();
       final repository = _FakeAiGenerationRepository(
-        _record(id: generation, imageUrl: originalUrl, watermarkedImageUrl: previewUrl),
+        _record(id: generation, imageUrl: originalUrl, watermarkedImageUrl: previewUrl).copyWith(
+          challengeId: initialPremium && confirmationPremium ? '2026-10-26' : null,
+          challengeTheme: initialPremium && confirmationPremium ? 'Quiet oceans' : null,
+        ),
         Completer<AiSubmissionMetadata>()..complete(_emptyMetadata),
       );
       await tester.pumpWidget(
@@ -1071,6 +1255,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await _openRecent(tester);
       final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
       await tester.ensureVisible(submitButton);
       await tester.tap(submitButton);
@@ -1087,6 +1272,13 @@ void main() {
       );
       final wall = wallWrites.single.data!;
       expect(wall['id'], 'AI2B83C297CF7C420FF33FA03823705EA95');
+      if (initialPremium && confirmationPremium) {
+        expect(wall['challengeId'], '2026-10-26');
+        expect(wallWrites.single.id, 'wall_AI2B83C297CF7C420FF33FA03823705EA95');
+        expect(confirmation.calls.single.wallId, wallWrites.single.id);
+      } else {
+        expect(wall.containsKey('challengeId'), isFalse);
+      }
       expect(wall['aiGenerationId'], generation);
       expect(wall['isAiGenerated'], true);
       expect(wall['wallpaper_url'], confirmationPremium ? originalUrl : previewUrl);

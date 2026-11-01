@@ -34,6 +34,7 @@ import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -2068,6 +2069,23 @@ void main() {
   });
 
   group('guest path', () {
+    setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.iOS);
+    tearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'Android rejects a direct guest event without writing completion or navigating',
+      setUp: () => debugDefaultTargetPlatformOverride = TargetPlatform.android,
+      build: buildBloc,
+      act: (bloc) => bloc.add(const OnboardingV2Event.guestBrowseStarted()),
+      expect: () => <OnboardingV2State>[],
+      verify: (bloc) {
+        expect(bloc.state.isGuest, isFalse);
+        expect(bloc.state.step, OnboardingV2Step.auth);
+        expect(bloc.state.navRequest, isNull);
+        verifyNever(() => settingsLocalDataSource.set(any(), any()));
+      },
+    );
+
     Future<void> startAsGuest(OnboardingV2Bloc bloc) async {
       bloc.add(const OnboardingV2Event.started());
       await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);

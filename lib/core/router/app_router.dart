@@ -11,7 +11,6 @@ import 'package:Prism/core/share/share_sheet.dart' show ShareSheetOpen;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/popup/edit_profile_panel.dart';
 import 'package:Prism/data/upload/github_content_api.dart' show GitHubContent;
-import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' show WallSubmissionResult;
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/firestore_telemetry_screen.dart';
@@ -22,7 +21,10 @@ import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.da
 import 'package:Prism/features/auto_rotate/views/pages/auto_rotate_screen.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
+import 'package:Prism/features/creator_directory/views/pages/creators_page.dart';
+import 'package:Prism/features/creator_stats/views/pages/creator_stats_page.dart';
 import 'package:Prism/features/daily_chest/views/pages/daily_chest_page.dart';
+import 'package:Prism/features/daily_flow/views/daily_moment_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
 import 'package:Prism/features/deep_link_input/views/pages/deep_link_input_page.dart';
@@ -46,6 +48,8 @@ import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/search_tab_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
 import 'package:Prism/features/premium/views/pages/premium_page.dart';
+import 'package:Prism/features/promo_codes/data/promo_code_repository.dart';
+import 'package:Prism/features/promo_codes/views/promo_codes_admin_page.dart';
 import 'package:Prism/features/public_profile/views/pages/followers_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/following_list_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
@@ -63,6 +67,7 @@ import 'package:Prism/features/user_blocks/views/blocked_accounts_screen.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
 import 'package:Prism/features/wall_of_the_day/views/pages/wotd_archive_page.dart';
+import 'package:Prism/features/wall_remix/domain/wall_remix.dart' show AiRemixSeed;
 import 'package:Prism/features/wall_requests/views/pages/wall_requests_page.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_wallpaper_screen.dart';
@@ -72,10 +77,12 @@ import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_position/views/pages/wallpaper_position_screen.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/edit_wall_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/review_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/review_photo_preview.dart';
+import 'package:Prism/features/weekly_challenges/views/pages/weekly_challenge_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -89,6 +96,9 @@ class AppRouter extends RootStackRouter {
 
   final SignedInGuard _signedInGuard = const SignedInGuard();
   final AdminGuard _adminGuard = const AdminGuard();
+
+  @override
+  List<AutoRouteGuard> get guards => const [PlatformAccountGuard()];
 
   /// iOS keeps the Cupertino slide so the edge back-swipe works (a custom route has no back gesture). Android fades
   /// in and slides 24px from the right.
@@ -135,7 +145,7 @@ class AppRouter extends RootStackRouter {
           ],
         ),
         // Rewards tab (was Streak)
-        AutoRoute(path: 'rewards', page: RewardsTabRoute.page),
+        AutoRoute(path: 'rewards', page: RewardsTabRoute.page, guards: [_signedInGuard]),
         RedirectRoute(path: 'streak', redirectTo: 'rewards'),
         // Collection tab
         AutoRoute(path: 'collection', page: CollectionTabRoute.page),
@@ -143,19 +153,24 @@ class AppRouter extends RootStackRouter {
     ),
 
     // Global routes (pushed over entire shell as full-screen dialogs)
-    AutoRoute(path: '/ai', page: AiTabRoute.page),
+    AutoRoute(path: '/ai', page: AiTabRoute.page, guards: [_signedInGuard]),
     CustomRoute(
       path: '/wallpaper-detail',
       page: WallpaperDetailRoute.page,
       customRouteBuilder: wallpaperDetailRouteBuilder,
     ),
     AutoRoute(path: '/wotd-archive', page: WotdArchiveRoute.page),
-    AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
-    AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page),
-    AutoRoute(path: '/choose-wallpaper', page: DeepLinkInputRoute.page),
+    AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/choose-wallpaper', page: DeepLinkInputRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/premium', page: PremiumRoute.page),
     RedirectRoute(path: '/paywall', redirectTo: '/premium'),
-    AutoRoute(path: '/photo-preview', page: ReviewPhotoPreviewRoute.page, fullscreenDialog: true),
+    AutoRoute(
+      path: '/photo-preview',
+      page: ReviewPhotoPreviewRoute.page,
+      fullscreenDialog: true,
+      guards: [_signedInGuard],
+    ),
     CustomRoute(
       path: '/clock-preview',
       page: ClockPreviewRoute.page,
@@ -179,20 +194,23 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/settings', page: SettingsRoute.page),
     AutoRoute(path: '/blocked-accounts', page: BlockedAccountsRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/about', page: AboutRoute.page),
-    AutoRoute(path: '/fav-walls', page: FavouriteWallpaperRoute.page),
-    AutoRoute(path: '/downloads', page: DownloadRoute.page),
-    AutoRoute(path: '/library', page: LibraryRoute.page),
+    AutoRoute(path: '/fav-walls', page: FavouriteWallpaperRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/downloads', page: DownloadRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/library', page: LibraryRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/folder/:folderId', page: FolderRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/upload-wall', page: UploadWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/edit-wall', page: EditWallRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/creator-stats', page: CreatorStatsRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/review', page: ReviewRoute.page, guards: [_signedInGuard]),
     RedirectRoute(path: '/coin-transactions', redirectTo: '/rewards'),
     AutoRoute(path: '/theme', page: ThemeViewRoute.page),
-    AutoRoute(path: '/notifications', page: NotificationRoute.page),
+    AutoRoute(path: '/notifications', page: NotificationRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/collection-view', page: CollectionViewRoute.page),
     AutoRoute(path: '/mood/:moodId', page: MoodRoute.page),
     AutoRoute(path: '/gallery', page: GalleryRoute.page),
     AutoRoute(path: '/requests', page: WallRequestsRoute.page),
+    AutoRoute(path: '/creators', page: CreatorsRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/challenges/:challengeId', page: WeeklyChallengeRoute.page),
     AutoRoute(path: '/user/:identifier', page: ProfileRoute.page),
     AutoRoute(path: '/followers', page: FollowersRoute.page),
     AutoRoute(path: '/following', page: FollowingListRoute.page),
@@ -200,13 +218,15 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/admin-review/swipe', page: SwipeReviewRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/admin-review/image', page: FullScreenImageRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/admin-firestore-telemetry', page: FirestoreTelemetryRoute.page, guards: [_adminGuard]),
+    AutoRoute(path: '/admin-promo-codes', page: PromoCodesAdminRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/debug-panel', page: DebugPanelRoute.page, guards: [_adminGuard]),
-    AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page),
-    AutoRoute(path: '/auto-rotate', page: AutoRotateRoute.page),
-    AutoRoute(path: '/ios-shortcuts', page: IosShortcutsGuideRoute.page),
-    AutoRoute(path: '/wallpaper-position', page: WallpaperPositionRoute.page),
-    AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page),
-    AutoRoute(path: '/rewards', page: RewardsRoute.page),
+    AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/auto-rotate', page: AutoRotateRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/ios-shortcuts', page: IosShortcutsGuideRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/wallpaper-position', page: WallpaperPositionRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/rewards', page: RewardsRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/daily-moment', page: DailyMomentRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/coin-history', page: CoinHistoryRoute.page, guards: [_signedInGuard]),
     CustomRoute(
       path: '/daily-chest',

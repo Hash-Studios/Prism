@@ -28,6 +28,18 @@ void main() {
   late AppLocalizations l10n;
   late String unavailable;
 
+  test('winner notification opens a validated challenge with or without url', () async {
+    for (final url in ['', 'https://prismwalls.com/challenges/2026-10-26']) {
+      final action = await mapper.actionFromPayload({
+        'route': 'challenge',
+        'challenge_id': '2026-10-26',
+        'url': url,
+      }, sourceTag: 'test.challenge');
+      final route = await const DeepLinkNavigation().mapActionToRoute(action!);
+      expect(route, isA<WeeklyChallengeRoute>());
+    }
+  });
+
   setUpAll(() async {
     l10n = await AppLocalizations.delegate.load(const Locale('en'));
     unavailable = l10n.coreContentNotAvailable;

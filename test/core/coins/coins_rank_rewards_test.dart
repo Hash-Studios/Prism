@@ -570,7 +570,7 @@ void main() {
       return inventoryReply(7, <String>['frame_ring', 'glow_aurora']);
     };
 
-    await coins.award(CoinEarnAction.rewardedAd);
+    await coins.award(CoinEarnAction.dailyLogin);
     await reconciled.future;
     await coins.reconcileRankRewards();
 

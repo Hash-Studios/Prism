@@ -194,7 +194,7 @@ class _ChannelSlider extends StatelessWidget {
         ExcludeSemantics(child: Text(label, style: PrismTextStyles.rowTitle(context))),
         Semantics(
           label: label,
-          child: Slider(
+          child: PrismSlider(
             value: value,
             max: max,
             activeColor: color,

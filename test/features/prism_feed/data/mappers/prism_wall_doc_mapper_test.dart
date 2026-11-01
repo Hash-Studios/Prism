@@ -10,6 +10,8 @@ void main() {
   test('classifier category survives DTO JSON without using the description', () {
     final dto = PrismWallDocDto.fromJson(<String, dynamic>{'category': 'Nature', 'desc': 'A lake at dawn'});
     expect(PrismWallDocDto.fromJson(dto.toJson()).toDomain(docId: 'lake').core.category, 'Nature');
+    expect(PrismWallDocDto.fromJson(dto.toJson()).toDomain(docId: 'lake').description, 'A lake at dawn');
+    expect(const PrismWallDocDto().toDomain(docId: 'empty').description, isNull);
     expect(const PrismWallDocDto(desc: 'Unclassified prose').toDomain(docId: 'x').core.category, isNull);
   });
   test('Firestore Prism walls cannot spoof an external provider', () {
@@ -22,6 +24,22 @@ void main() {
       }).toDomain(docId: 'w1');
       expect(wall.source, WallpaperSource.prism);
       expect(wall.fullUrl, isEmpty);
+    }
+  });
+
+  test('a missing or wrongly typed AI flag defaults false without losing AI metadata', () {
+    for (final Object? flag in <Object?>[null, 'true', 1, <String>[]]) {
+      final PrismWallDocDto dto = PrismWallDocDto.fromJson(<String, dynamic>{
+        'wallpaper_url': 'https://x/y.jpg',
+        'aiMetadata': <String, Object?>{'prompt': 'a lake'},
+        'aiModel': 42,
+        if (flag != null) 'isAiGenerated': flag,
+      });
+
+      final wall = dto.toDomain(docId: 'w1');
+      expect(wall.isAiGenerated, isFalse);
+      expect(wall.aiModel, isNull);
+      expect(wall.aiMetadata, <String, Object?>{'prompt': 'a lake'});
     }
   });
 

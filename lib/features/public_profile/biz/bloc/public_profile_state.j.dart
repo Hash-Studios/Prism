@@ -65,5 +65,6 @@ abstract class FollowOutcome with _$FollowOutcome {
     required bool follow,
     required bool success,
     @Default('') String targetName,
+    @Default('') String targetUserId,
   }) = _FollowOutcome;
 }

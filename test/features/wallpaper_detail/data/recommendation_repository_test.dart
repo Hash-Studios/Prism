@@ -5,7 +5,9 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -30,9 +32,13 @@ class _Firestore extends Fake implements FirestoreClient {
   final specs = <FirestoreQuerySpec>[];
   List<Map<String, dynamic>> rows = [];
   bool fail = false;
+  Completer<void>? queryEntered;
+  Completer<void>? queryGate;
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
     specs.add(spec);
+    queryEntered?.complete();
+    await queryGate?.future;
     if (fail) throw StateError('offline');
     return rows.map((row) => map(row, 'doc-${row['id']}')).toList();
   }
@@ -80,7 +86,7 @@ void main() {
     wallhaven = _Wallhaven();
     pexels = _Pexels();
     blocks = _Blocks();
-    when(() => blocks.getBlockedCreatorUids(waitForInitialLoad: true)).thenAnswer((_) async => {'blocked-uid'});
+    when(() => blocks.loadBlockedCreators()).thenAnswer((_) async => KnownBlockedCreators({'blocked-uid'}));
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     local = [];
     repository = WallpaperRecommendationRepositoryImpl(
@@ -118,6 +124,77 @@ void main() {
       ('category', 'Nature'),
       ('review', true),
     ]);
+  });
+
+  test('AI recommendations hide walls with metadata even when the legacy flag is absent', () async {
+    await AiContentFilter.setShowsAi(settings, false);
+    firestore.rows = [
+      {
+        'id': 'metadata-ai',
+        'category': 'Nature',
+        'review': true,
+        'aiMetadata': {'prompt': 'a fox'},
+      },
+      {'id': 'flag-ai', 'category': 'Nature', 'review': true, 'isAiGenerated': true},
+      {'id': 'human', 'category': 'Nature', 'review': true},
+    ];
+
+    final RecommendationPage page = await repository.load(current: _item('current'), sessionKey: 'ai-filter');
+
+    expect(page.items.map((item) => item.id), ['human']);
+    expect(page.nextCursor, isNull);
+  });
+
+  test('AI setting is applied when an in-flight recommendation query completes', () async {
+    await AiContentFilter.setShowsAi(settings, true);
+    firestore.rows = [
+      {
+        'id': 'metadata-ai',
+        'category': 'Nature',
+        'review': true,
+        'aiMetadata': {'prompt': 'a fox'},
+      },
+      {'id': 'human', 'category': 'Nature', 'review': true},
+    ];
+    firestore.queryEntered = Completer<void>();
+    firestore.queryGate = Completer<void>();
+
+    final pendingPage = repository.load(current: _item('current'), sessionKey: 'ai-toggle-race');
+    await firestore.queryEntered!.future;
+    await AiContentFilter.setShowsAi(settings, false);
+    firestore.queryGate!.complete();
+
+    final page = await pendingPage;
+    expect(page.items.map((item) => item.id), ['human']);
+  });
+
+  test('an unknown block list drops Prism rows with a creator and keeps Wallhaven discovery', () async {
+    when(() => blocks.loadBlockedCreators()).thenAnswer((_) async => const UnknownBlockedCreators());
+    firestore.rows = [
+      {'id': 'blocked', 'category': 'Nature', 'review': true, 'creatorUid': 'blocked-uid'},
+      {'id': 'kept', 'category': 'Nature', 'review': true, 'creatorUid': ''},
+    ];
+    final page = await repository.load(current: _item('current'), sessionKey: 'a');
+    expect(page.items.map((item) => item.id), ['kept']);
+
+    when(
+      () => wallhaven.fetchFeed(
+        categoryName: 'space',
+        refresh: any(named: 'refresh'),
+        paginationKey: any(named: 'paginationKey'),
+        startPage: any(named: 'startPage'),
+        categories: 100,
+        purity: 100,
+      ),
+    ).thenAnswer(
+      (_) async => Result.success([(_item('found', source: WallpaperSource.wallhaven) as WallhavenFeedItem).wallpaper]),
+    );
+    when(() => wallhaven.hasMoreForCategory('space', paginationKey: any(named: 'paginationKey'))).thenReturn(true);
+    final wallhavenPage = await repository.load(
+      current: _item('current', source: WallpaperSource.wallhaven, tags: [' space ', 'SPACE']),
+      sessionKey: 'visit-wh',
+    );
+    expect(wallhavenPage.items.map((item) => item.id), ['found']);
   });
 
   test('Wallhaven visits do not share each other or search cursors; release is scoped', () async {

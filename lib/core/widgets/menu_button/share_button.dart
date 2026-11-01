@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/share/share_card.dart';
 import 'package:Prism/core/share/share_sheet.dart';
 import 'package:Prism/core/share/share_text.dart';
@@ -35,6 +36,7 @@ class ShareButton extends StatefulWidget {
 
   /// Shows a caption under the round button.
   final bool labelled;
+  final bool duoReveal;
   const ShareButton({
     required this.id,
     required this.source,
@@ -46,6 +48,7 @@ class ShareButton extends StatefulWidget {
     this.createLink,
     this.openSheet = showShareSheet,
     this.labelled = false,
+    this.duoReveal = false,
     super.key,
   });
 
@@ -78,6 +81,7 @@ class _ShareButtonState extends State<ShareButton> {
 
   Future<void> onShare() async {
     if (isLoading) return;
+    if (!await requireSignedInAction(context) || !mounted) return;
 
     final String? id = widget.id;
     final WallpaperSource source = widget.source;
@@ -168,6 +172,11 @@ class _ShareButtonState extends State<ShareButton> {
           creator: creator,
           creatorLine: creator == null ? null : l10n.coreShareCardBy(creator),
           palette: palette,
+          duoReveal: widget.duoReveal,
+          contentId: itemId,
+          foldedLabel: l10n.duoFolded,
+          unfoldedLabel: l10n.duoUnfolded,
+          cta: l10n.duoGetOnPrism,
         ),
         'wallpaper_screen',
       );
