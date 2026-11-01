@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// On iOS, keeps the favourites list that the Shortcuts intent reads in step with the signed-in user's favourites.
+/// Leaving the app saves it again, so an original downloaded since then can be shuffled.
 class ShortcutsFavouritesListener extends StatefulWidget {
   const ShortcutsFavouritesListener({required this.child, super.key});
 
@@ -17,7 +18,7 @@ class ShortcutsFavouritesListener extends StatefulWidget {
   State<ShortcutsFavouritesListener> createState() => _ShortcutsFavouritesListenerState();
 }
 
-class _ShortcutsFavouritesListenerState extends State<ShortcutsFavouritesListener> {
+class _ShortcutsFavouritesListenerState extends State<ShortcutsFavouritesListener> with WidgetsBindingObserver {
   late bool _wasLoggedIn;
   late String _lastUserId;
 
@@ -30,8 +31,20 @@ class _ShortcutsFavouritesListenerState extends State<ShortcutsFavouritesListene
     final session = sessionState.session;
     _wasLoggedIn = session.loggedIn;
     _lastUserId = session.userId;
+    WidgetsBinding.instance.addObserver(this);
     if (_enabled && _isResolvedGuest(sessionState)) _run(ShortcutsFavouritesStore.clear);
     _sync();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.hidden) _sync();
   }
 
   void _sync() {

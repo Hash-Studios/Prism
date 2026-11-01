@@ -63,6 +63,8 @@ void main() {
   tearDown(() async {
     OfflineAssetStore.testOverride = null;
     NativeAssetPathsStore.supportDirectoryOverride = null;
+    NativeAssetPathsStore.documentsDirectoryOverride = null;
+    NativeAssetPathsStore.downloadedOriginalOverride = null;
     if (await offlineDirectory.exists()) await offlineDirectory.delete(recursive: true);
   });
 
@@ -187,6 +189,26 @@ void main() {
       expect(jsonDecode(prefs.getString('${NativeAssetPathsStore.preferenceKey}.favourites')!), isEmpty);
       expect(prefs.getString(QuickTileConfigService.wotdRetainedKey), isNull);
       expect(metadataWritten, isFalse);
+    });
+
+    test('save keeps a protected favourite with a downloaded original as an asset and maps its path', () async {
+      NativeAssetPathsStore.documentsDirectoryOverride = Directory('${offlineDirectory.path}/documents');
+      NativeAssetPathsStore.downloadedOriginalOverride = (FavouriteWallEntity wall) async =>
+          wall.id == 'protected' ? File('${offlineDirectory.path}/documents/PrismDownloads/protected.jpg') : null;
+
+      await ShortcutsFavouritesStore.save(<FavouriteWallEntity>[
+        _wall('protected', url: '', at: DateTime.utc(2026, 3)),
+        _wall('missing', url: '', at: DateTime.utc(2026, 2)),
+      ]);
+
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String key = NativeAssetPathsStore.originalAssetKey(_wall('protected', url: ''));
+      expect(_decode(prefs.getString(PersistenceKeys.shortcutsFavourites)!), <Map<String, Object?>>[
+        <String, Object?>{'id': 'protected', 'asset': key},
+      ]);
+      expect(jsonDecode(prefs.getString('offline.native_asset_paths.shortcuts')!), <String, String>{
+        key: 'protected.jpg',
+      });
     });
 
     test('save writes the raw string under the shared contract key', () async {

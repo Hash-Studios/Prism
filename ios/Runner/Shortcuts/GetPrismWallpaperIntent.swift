@@ -63,6 +63,7 @@ enum PrismShortcutError: Error, CustomLocalizedStringResourceConvertible {
   case favouriteUnavailable
   case noRotationFolder
   case folderEmpty
+  case folderNeedsDownload
   case folderNotFound
   case folderWallUnavailable
   case unsupportedImage
@@ -79,6 +80,8 @@ enum PrismShortcutError: Error, CustomLocalizedStringResourceConvertible {
       return "No rotation folder yet. Open Prism, open a folder, and tap Rotate this folder daily."
     case .folderEmpty:
       return "This folder is empty. Open Prism and save wallpapers to it."
+    case .folderNeedsDownload:
+      return "Download the walls in this folder in Prism first. Then run the shortcut again."
     case .folderNotFound:
       return "Prism cannot find this folder. Open Prism to refresh your folders, then pick the folder again."
     case .folderWallUnavailable:
@@ -176,6 +179,8 @@ struct GetPrismWallpaperIntent: AppIntent {
       throw PrismShortcutError.noRotationFolder
     } catch PrismShortcutFolderError.empty {
       throw PrismShortcutError.folderEmpty
+    } catch PrismShortcutFolderError.needsDownload {
+      throw PrismShortcutError.folderNeedsDownload
     } catch {
       throw PrismShortcutError.folderNotFound
     }
@@ -205,7 +210,7 @@ struct GetPrismWallpaperIntent: AppIntent {
         from: walls.map(\.id), key: bagKey, defaults: defaults,
         load: { id in
           guard let wall = walls.first(where: { $0.id == id }) else { throw unavailable }
-          return try await PrismShortcutWallpaperLoader.imageData(from: wall.url)
+          return try await PrismShortcutWallpaperLoader.imageData(for: wall)
         },
         validate: { _ = try Self.file(from: $0) },
         isCurrent: isCurrent

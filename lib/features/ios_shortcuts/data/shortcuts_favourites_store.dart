@@ -14,16 +14,24 @@ class ShortcutsFavouritesStore {
   static const int maxItems = 200;
   static const String nativeAssetPathsKey = 'offline.native_asset_paths';
 
-  /// A JSON array of `{"id", "url"}`, newest first, at most [maxItems]. Walls without an id or https URL are left out.
-  static String encode(Iterable<FavouriteWallEntity> items) {
+  /// A JSON array of `{"id", "url"}`, newest first, at most [maxItems]. A wall without an https URL is kept as
+  /// `{"id", "asset"}` only when [originals] has its downloaded original's asset key. Walls without an id are left out.
+  static String encode(Iterable<FavouriteWallEntity> items, {Set<String> originals = const <String>{}}) {
     final List<FavouriteWallEntity> sorted = items.toList()..sort(compareByCreatedAtDesc);
     final Set<String> seen = <String>{};
     final List<Map<String, String>> entries = <Map<String, String>>[];
     for (final FavouriteWallEntity item in sorted) {
       final String id = item.id.trim();
       final String url = item.fullUrl.trim();
-      if (id.isEmpty || !url.startsWith('https://') || !seen.add(id)) continue;
-      entries.add(<String, String>{'id': id, 'url': url});
+      final String asset = NativeAssetPathsStore.originalAssetKey(item);
+      if (id.isEmpty || !seen.add(id)) continue;
+      if (url.startsWith('https://')) {
+        entries.add(<String, String>{'id': id, 'url': url});
+      } else if (originals.contains(asset)) {
+        entries.add(<String, String>{'id': id, 'asset': asset});
+      } else {
+        continue;
+      }
       if (entries.length == maxItems) break;
     }
     return jsonEncode(entries);
@@ -38,14 +46,19 @@ class ShortcutsFavouritesStore {
     final List<FavouriteWallEntity> selected = items.toList()..sort(compareByCreatedAtDesc);
     return _enqueue(() async {
       if (generation != _generation) return;
-      final String encoded = encode(selected);
       final SharedPreferences prefs = await SharedPreferences.getInstance();
+      Map<String, String> originals = <String, String>{};
+      try {
+        originals = await NativeAssetPathsStore.downloadedOriginalPaths(selected);
+      } catch (_) {}
+      final String encoded = encode(selected, originals: originals.keys.toSet());
       Map<String, String> relativePaths = <String, String>{};
       try {
         relativePaths = await NativeAssetPathsStore.retainedRelativePaths(
           selected.where((item) => item.id.trim().isNotEmpty).map((item) => item.fullUrl.trim()),
         );
       } catch (_) {}
+      relativePaths.addAll(originals);
       if (generation != _generation) return;
       await NativeAssetPathsStore.replaceGroup('shortcuts', relativePaths);
       if (generation != _generation) return;

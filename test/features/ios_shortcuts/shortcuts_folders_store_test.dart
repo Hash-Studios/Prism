@@ -104,8 +104,21 @@ void main() {
     app_state.prismUser = profileUser(id: '', loggedIn: false);
     OfflineAssetStore.testOverride = null;
     NativeAssetPathsStore.supportDirectoryOverride = null;
+    NativeAssetPathsStore.documentsDirectoryOverride = null;
+    NativeAssetPathsStore.downloadedOriginalOverride = null;
     if (await offlineDirectory.exists()) await offlineDirectory.delete(recursive: true);
   });
+
+  /// Protected walls whose ids are in [downloaded] have an original under `<documents>/PrismDownloads`.
+  void downloadedOriginals(Set<String> downloaded) {
+    NativeAssetPathsStore.documentsDirectoryOverride = Directory('${offlineDirectory.path}/documents');
+    NativeAssetPathsStore.downloadedOriginalOverride = (FavouriteWallEntity wall) async =>
+        downloaded.contains(wall.id) ? File('${offlineDirectory.path}/documents/PrismDownloads/${wall.id}.jpg') : null;
+  }
+
+  Future<Map<String, dynamic>> folderPaths() async =>
+      jsonDecode((await SharedPreferences.getInstance()).getString('offline.native_asset_paths.folders')!)
+          as Map<String, dynamic>;
 
   group('sync', () {
     test('a late folder fetch cannot write after app state becomes guest without a clear or session event', () async {
@@ -248,6 +261,49 @@ void main() {
       expect(ids, hasLength(ShortcutsFoldersStore.maxFolders));
       expect(ids, contains('f0'));
       expect(await ShortcutsFoldersStore.rotationFolderId(), 'f0');
+    });
+
+    test('keeps a protected wall with a downloaded original as an asset and maps its path', () async {
+      downloadedOriginals(<String>{'protected'});
+      final _FakeFetcher fetcher = _FakeFetcher(<String, List<FavouriteWallEntity>?>{
+        'f1': <FavouriteWallEntity>[_wall('protected', url: ''), _wall('missing', url: '')],
+      });
+      await ShortcutsFoldersStore.sync(
+        ownerId: 'owner-a',
+        folders: <FolderEntity>[_folder('f1', itemCount: 2)],
+        fetchItems: fetcher.call,
+      );
+
+      final String key = NativeAssetPathsStore.originalAssetKey(_wall('protected', url: ''));
+      expect(key, 'original:${folderItemKey(_wall('protected'))}');
+      expect(_entry(await _snapshot(), 'f1')['items'], <Map<String, String>>[
+        <String, String>{'id': folderItemKey(_wall('protected')), 'asset': key},
+      ]);
+      expect(await folderPaths(), <String, String>{key: 'protected.jpg'});
+    });
+
+    test('a folder with protected walls is read again, so a new download joins it', () async {
+      final DateTime at = DateTime.utc(2026, 2);
+      final _FakeFetcher fetcher = _FakeFetcher(<String, List<FavouriteWallEntity>?>{
+        'f1': <FavouriteWallEntity>[_wall('protected', url: '')],
+      });
+      downloadedOriginals(<String>{});
+      await ShortcutsFoldersStore.sync(
+        ownerId: 'owner-a',
+        folders: <FolderEntity>[_folder('f1', updatedAt: at)],
+        fetchItems: fetcher.call,
+      );
+      expect(_itemIds(_entry(await _snapshot(), 'f1')), isEmpty);
+
+      downloadedOriginals(<String>{'protected'});
+      await ShortcutsFoldersStore.sync(
+        ownerId: 'owner-a',
+        folders: <FolderEntity>[_folder('f1', updatedAt: at)],
+        fetchItems: fetcher.call,
+      );
+
+      expect(fetcher.calls['f1'], 2);
+      expect(_itemIds(_entry(await _snapshot(), 'f1')), <String>[folderItemKey(_wall('protected'))]);
     });
 
     test('a folder with the same update time and count is not fetched again and keeps its items', () async {

@@ -2,9 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -21,6 +25,44 @@ class NativeAssetPathsStore {
   static int _generation = 0;
   @visibleForTesting
   static Directory? supportDirectoryOverride;
+  @visibleForTesting
+  static Directory? documentsDirectoryOverride;
+  @visibleForTesting
+  static Future<File?> Function(FavouriteWallEntity wall)? downloadedOriginalOverride;
+
+  /// The key the Shortcuts intent reads a wall's downloaded original by. A protected wall has no public URL.
+  static String originalAssetKey(FavouriteWallEntity wall) => 'original:${folderItemKey(wall)}';
+
+  /// The downloaded original of each wall in [walls] that has no https URL, keyed by [originalAssetKey], as a path
+  /// under the retained or downloads root. Only originals the user already got are used, so no coin gate is skipped.
+  static Future<Map<String, String>> downloadedOriginalPaths(Iterable<FavouriteWallEntity> walls) async {
+    final List<FavouriteWallEntity> protected = walls
+        .where((wall) => wall.id.trim().isNotEmpty && !wall.fullUrl.trim().startsWith('https://'))
+        .toList();
+    final Map<String, String> relativePaths = <String, String>{};
+    if (protected.isEmpty) return relativePaths;
+    final Future<File?> Function(FavouriteWallEntity wall)? lookup =
+        downloadedOriginalOverride ??
+        (getIt.isRegistered<DownloadedWallIndex>()
+            ? (wall) => getIt<DownloadedWallIndex>().localFileForIdentity(id: wall.id, source: wall.source)
+            : null);
+    if (lookup == null) return relativePaths;
+    final Directory supportDirectory = supportDirectoryOverride ?? await getApplicationSupportDirectory();
+    final Directory documentsDirectory = documentsDirectoryOverride ?? await getApplicationDocumentsDirectory();
+    final String retainedRoot = path.join(supportDirectory.path, 'prism', 'offline', 'assets');
+    final String downloadsRoot = path.join(documentsDirectory.path, 'PrismDownloads');
+    for (final FavouriteWallEntity wall in protected) {
+      final File? original = await lookup(wall);
+      if (original == null) continue;
+      final String root = path.isWithin(retainedRoot, original.path) ? retainedRoot : downloadsRoot;
+      final String relativePath = path.relative(original.path, from: root);
+      if (path.isAbsolute(relativePath) || relativePath == '..' || relativePath.startsWith('..${path.separator}')) {
+        continue;
+      }
+      relativePaths[originalAssetKey(wall)] = relativePath;
+    }
+    return relativePaths;
+  }
 
   /// Each https source in [sources] with a retained offline copy, mapped to its path under the retained root.
   static Future<Map<String, String>> retainedRelativePaths(Iterable<String> sources) async {
