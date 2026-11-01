@@ -86,7 +86,7 @@ void main() {
 
     expect(find.text('ABCDEFGH23'), findsOneWidget);
     expect(find.textContaining('3 of 10 used'), findsOneWidget);
-    expect(find.textContaining('100 Coins'), findsOneWidget);
+    expect(find.textContaining('100 coins'), findsOneWidget);
   });
 
   testWidgets('shows the empty state when there are no codes', (WidgetTester tester) async {

@@ -81,7 +81,9 @@ class PrismTextField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: hint,
         helperText: helper,
+        helperMaxLines: 8,
         errorText: error,
+        errorMaxLines: 8,
         prefixIcon: prefixIcon == null ? null : Icon(prefixIcon, size: 20),
         prefixText: prefixText,
         prefixStyle: PrismTextStyles.body(context).copyWith(fontSize: 16),

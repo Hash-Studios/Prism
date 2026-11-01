@@ -263,7 +263,7 @@ class _PromoCodesAdminPageState extends State<PromoCodesAdminPage> {
   PrismRow _codeRow(AppLocalizations l10n, PromoCodeSummary code) {
     final String locale = Localizations.localeOf(context).toLanguageTag();
     final String reward = switch (code.reward) {
-      CoinsReward(:final coins) => '$coins ${l10n.promoAdminTypeCoins}',
+      CoinsReward(:final coins) => l10n.economyCoins(coins),
       PremiumDaysReward(:final days) => '$days ${l10n.promoAdminTypePro}',
     };
     final String details = <String>[

@@ -8,6 +8,7 @@ import 'package:Prism/features/promo_codes/views/redeem_code_sheet.dart';
 import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -217,6 +218,22 @@ void main() {
       expect(redeemed, isEmpty);
     });
   }
+
+  testWidgets('a long error wraps under the field instead of being cut off', (tester) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    fake.reply = _failReply('premium_not_on_ios');
+    await openSheet(tester, textScale: 1.5);
+
+    await enterCode(tester, 'ABCDEFGH23');
+    await tapRedeem(tester);
+
+    final RenderParagraph error = tester.renderObject<RenderParagraph>(
+      find.text("Pro codes don't work on iPhone or iPad. Use an App Store code instead."),
+    );
+    expect(error.didExceedMaxLines, isFalse);
+  });
 
   testWidgets('a code with the wrong shape is refused before any call', (tester) async {
     await openSheet(tester);
