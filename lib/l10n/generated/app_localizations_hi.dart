@@ -12594,4 +12594,41 @@ class AppLocalizationsHi extends AppLocalizations {
   String promoAdminCreateFailed(String reason) {
     return 'कोड नहीं बन सका: $reason';
   }
+
+  @override
+  String get desktopVersionChip => 'डेस्कटॉप वर्शन';
+
+  @override
+  String get desktopVersionChipSemantic => 'डेस्कटॉप वर्शन खोलें';
+
+  @override
+  String get desktopVersionSheetTitle => 'डेस्कटॉप वर्शन';
+
+  @override
+  String desktopVersionSheetBody(int width, int height) {
+    return 'वही दृश्य, कंप्यूटर स्क्रीन के लिए चौड़ा किया गया। $width × $height.';
+  }
+
+  @override
+  String get desktopVersionPreviewSemantic => 'कंप्यूटर स्क्रीन पर डेस्कटॉप वर्शन';
+
+  @override
+  String get desktopVersionSendToComputer => 'मेरे कंप्यूटर पर भेजें';
+
+  @override
+  String desktopVersionShareText(String url) {
+    return 'अपने कंप्यूटर के लिए यह वॉलपेपर पाएँ: $url';
+  }
+
+  @override
+  String get desktopVersionShareSubject => 'Prism का डेस्कटॉप वॉलपेपर';
+
+  @override
+  String get desktopVersionSetOnTablet => 'डेस्कटॉप वर्शन लगाएँ';
+
+  @override
+  String get desktopVersionSaveOnTablet => 'डेस्कटॉप वर्शन फ़ोटो में सेव करें';
+
+  @override
+  String get desktopVersionUnavailable => 'डेस्कटॉप वर्शन नहीं मिल सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।';
 }

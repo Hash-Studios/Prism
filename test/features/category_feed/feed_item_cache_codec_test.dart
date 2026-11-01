@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_desktop.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -126,6 +127,35 @@ void main() {
       isA<PrismFeedItem>().having((decoded) => decoded.wallpaper.spatial, 'spatial', isNull),
     );
     expect(encodeFeedItem(unchecked)['wallpaper'], isNot(contains('spatial')));
+  });
+
+  test('desktop companion version survives a category feed cache JSON round trip', () {
+    final item = FeedItemEntity.prism(
+      id: 'desktop-wall',
+      wallpaper: PrismWallpaper(
+        core: _core('desktop-wall', WallpaperSource.prism),
+        desktop: const WallDesktopVariant(
+          version: '0123456789abcdef',
+          thumbnailUrl: 'https://img.prismwalls.com/previews/desktop.jpg',
+          width: 2560,
+          height: 1600,
+        ),
+      ),
+    );
+
+    expect(
+      decodeFeedItem(_viaJson(item)),
+      isA<PrismFeedItem>().having(
+        (decoded) => decoded.wallpaper.desktop,
+        'desktop',
+        const WallDesktopVariant(
+          version: '0123456789abcdef',
+          thumbnailUrl: 'https://img.prismwalls.com/previews/desktop.jpg',
+          width: 2560,
+          height: 1600,
+        ),
+      ),
+    );
   });
 
   test('wallhaven item survives a JSON round trip', () {

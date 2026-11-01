@@ -369,7 +369,7 @@ Future<void> main() async {
                   BlocProvider<ThemeBloc>(create: (_) => getIt<ThemeBloc>()..add(const ThemeEvent.started())),
                   BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
                 ],
-                child: AutoRotateSessionListener(child: _MyApp()),
+                child: _MyApp(),
               ),
             ),
           ),
@@ -958,10 +958,14 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
                     final ThemeData theme = Theme.of(context);
                     return Theme(
                       data: theme.copyWith(snackBarTheme: prismSnackBarThemeFor(context, theme.snackBarTheme)),
-                      child: FolderWriteFailureListener(
-                        child: ShakeToReportListener(
-                          navigatorKey: _appRouter.navigatorKey,
-                          child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                      // This builder is under MaterialApp's Localizations. The auto-rotate toasts read those messages,
+                      // so the listener cannot sit above _MyApp.
+                      child: AutoRotateSessionListener(
+                        child: FolderWriteFailureListener(
+                          child: ShakeToReportListener(
+                            navigatorKey: _appRouter.navigatorKey,
+                            child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                          ),
                         ),
                       ),
                     );

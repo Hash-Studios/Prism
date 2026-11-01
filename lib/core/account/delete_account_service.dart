@@ -1,14 +1,17 @@
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/account/local_account_data_cleaner.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/session_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 typedef _Step = Future<void> Function();
 
@@ -56,14 +59,26 @@ class DeleteAccountService {
   }
 
   static Future<void> _reauthenticateWithProvider() async {
-    final providerIds =
-        FirebaseAuth.instance.currentUser?.providerData.map((provider) => provider.providerId).toSet() ?? {};
+    final Set<String> providerIds = await signedInProviderIds();
     if (providerIds.contains('apple.com')) {
       await globalAppleAuth.reauthenticateCurrentUser();
     } else {
       await globalGoogleAuth.reauthenticateCurrentUser();
     }
   }
+
+  /// Waits for Firebase startup first. A user restored late would otherwise read as no user, and an Apple user would
+  /// get the Google reauthentication.
+  @visibleForTesting
+  static Future<Set<String>> signedInProviderIds({
+    Future<bool> Function() firebaseReady = FirebaseInit.defaultAppReady,
+    User? Function() currentUser = _currentFirebaseUser,
+  }) async {
+    if (!await firebaseReady()) throw const FirebaseUnavailableException();
+    return currentUser()?.providerData.map((provider) => provider.providerId).toSet() ?? <String>{};
+  }
+
+  static User? _currentFirebaseUser() => FirebaseAuth.instance.currentUser;
 
   static Future<void> _callDeleteAccount() async {
     await appFunctions

@@ -11705,5 +11705,62 @@
         "type": "String"
       }
     }
+  },
+  "desktopVersionChip": "Desktop-Version",
+  "@desktopVersionChip": {
+    "description": "Chip on the wallpaper detail screen. Opens the desktop version of the wallpaper."
+  },
+  "desktopVersionChipSemantic": "Desktop-Version öffnen",
+  "@desktopVersionChipSemantic": {
+    "description": "Screen reader label of the Desktop version chip."
+  },
+  "desktopVersionSheetTitle": "Desktop-Version",
+  "@desktopVersionSheetTitle": {
+    "description": "Title of the sheet that shows the wide desktop version of a wallpaper."
+  },
+  "desktopVersionSheetBody": "Dieselbe Szene, breit für einen Computerbildschirm. {width} × {height}.",
+  "@desktopVersionSheetBody": {
+    "description": "Body of the desktop version sheet. width and height are pixels, for example 2560 × 1600.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopVersionPreviewSemantic": "Desktop-Version auf einem Computerbildschirm",
+  "@desktopVersionPreviewSemantic": {
+    "description": "Screen reader label of the desktop preview image."
+  },
+  "desktopVersionSendToComputer": "An meinen Computer senden",
+  "@desktopVersionSendToComputer": {
+    "description": "Button. Shares a link to the wallpaper's web page, where the desktop version can be downloaded."
+  },
+  "desktopVersionShareText": "Hol dir dieses Hintergrundbild für deinen Computer: {url}",
+  "@desktopVersionShareText": {
+    "description": "Text shared with the link to the desktop download page. url is the page address.",
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "desktopVersionShareSubject": "Desktop-Hintergrundbild von Prism",
+  "@desktopVersionShareSubject": {
+    "description": "Email subject used when the desktop link is shared by email."
+  },
+  "desktopVersionSetOnTablet": "Desktop-Version festlegen",
+  "@desktopVersionSetOnTablet": {
+    "description": "Tablet button. Sets the wide desktop version as the tablet wallpaper."
+  },
+  "desktopVersionSaveOnTablet": "Desktop-Version in Fotos speichern",
+  "@desktopVersionSaveOnTablet": {
+    "description": "iPad button. Saves the wide desktop version to Photos."
+  },
+  "desktopVersionUnavailable": "Die Desktop-Version kann gerade nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
+  "@desktopVersionUnavailable": {
+    "description": "Error toast when the desktop version cannot be downloaded."
   }
 }

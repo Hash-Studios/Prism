@@ -20124,6 +20124,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t create the code: {reason}'**
   String promoAdminCreateFailed(String reason);
+
+  /// Chip on the wallpaper detail screen. Opens the desktop version of the wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version'**
+  String get desktopVersionChip;
+
+  /// Screen reader label of the Desktop version chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the desktop version'**
+  String get desktopVersionChipSemantic;
+
+  /// Title of the sheet that shows the wide desktop version of a wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version'**
+  String get desktopVersionSheetTitle;
+
+  /// Body of the desktop version sheet. width and height are pixels, for example 2560 × 1600.
+  ///
+  /// In en, this message translates to:
+  /// **'The same scene, made wide for a computer screen. {width} × {height}.'**
+  String desktopVersionSheetBody(int width, int height);
+
+  /// Screen reader label of the desktop preview image.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version on a computer screen'**
+  String get desktopVersionPreviewSemantic;
+
+  /// Button. Shares a link to the wallpaper's web page, where the desktop version can be downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to my computer'**
+  String get desktopVersionSendToComputer;
+
+  /// Text shared with the link to the desktop download page. url is the page address.
+  ///
+  /// In en, this message translates to:
+  /// **'Get this wallpaper for your computer: {url}'**
+  String desktopVersionShareText(String url);
+
+  /// Email subject used when the desktop link is shared by email.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop wallpaper from Prism'**
+  String get desktopVersionShareSubject;
+
+  /// Tablet button. Sets the wide desktop version as the tablet wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Set desktop version'**
+  String get desktopVersionSetOnTablet;
+
+  /// iPad button. Saves the wide desktop version to Photos.
+  ///
+  /// In en, this message translates to:
+  /// **'Save desktop version'**
+  String get desktopVersionSaveOnTablet;
+
+  /// Error toast when the desktop version cannot be downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to get the desktop version. Check your connection and try again.'**
+  String get desktopVersionUnavailable;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
