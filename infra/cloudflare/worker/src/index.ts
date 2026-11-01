@@ -1,6 +1,8 @@
 import { AiQuotaCoordinator, type AiEnvBindings, bumpRateLimit, handleAiApiRequest } from './ai';
 import { maybeHandleAssociationRequest } from './association_files';
+import { handleCatalogRequest } from './catalog';
 import { formatCount, type OgCard, type OgChip, type OgStat, renderOgCardHtml } from './og_card';
+import { buildAndroidIntentUrl, detectPlatform, escapeAttribute, escapeHtml, screenshotCard } from './page_kit';
 
 export interface Env extends AiEnvBindings {
   LINKS_KV: KVNamespace;
@@ -13,6 +15,8 @@ export interface Env extends AiEnvBindings {
   OG_FALLBACK_IMAGE?: string;
   BROWSER_RENDERING_ACCOUNT_ID?: string;
   BROWSER_RENDERING_API_TOKEN?: string;
+  CATALOG_FIRESTORE_ORIGIN?: string;
+  CATALOG_PREVIEW_ORIGIN?: string;
 }
 
 type LinkType = 'share' | 'user' | 'setup' | 'refer' | 'page';
@@ -131,7 +135,6 @@ const PAGE_QUERY_KEYS = new Map<string, Set<string>>([
   ['/clock-preview', new Set(['wallpaperId', 'source', 'provider'])],
 ]);
 const PAGE_UTM_KEYS = new Set(['utm_source', 'utm_medium', 'utm_campaign']);
-const ANDROID_PACKAGE = 'com.hash.prism';
 const PREVIEW_IMAGE_HOSTS = new Set([
   'raw.githubusercontent.com',
   'images.pexels.com',
@@ -185,6 +188,11 @@ export default {
     const aiResponse = await handleAiApiRequest(request, url, env);
     if (aiResponse != null) {
       return aiResponse;
+    }
+
+    const catalogResponse = await handleCatalogRequest(request, url, env, ctx, () => renderDirectLanding(url, request, env));
+    if (catalogResponse != null) {
+      return catalogResponse;
     }
 
     if (request.method === 'POST' && url.pathname === '/api/links') {
@@ -1273,40 +1281,8 @@ async function renderOgImageWithBrowserRendering(record: LinkRecord, env: Env): 
   if (!isNonEmptyString(env.BROWSER_RENDERING_ACCOUNT_ID) || !isNonEmptyString(env.BROWSER_RENDERING_API_TOKEN)) {
     return null;
   }
-
-  const endpoint = `https://api.cloudflare.com/client/v4/accounts/${env.BROWSER_RENDERING_ACCOUNT_ID}/browser-rendering/screenshot`;
   const stats = await fetchWallpaperStats(record, env);
-  const htmlTemplate = renderOgCardHtml(ogCardFromRecord(record, stats));
-
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.BROWSER_RENDERING_API_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      html: htmlTemplate,
-      viewport: {
-        width: 1200,
-        height: 630,
-      },
-      // Fonts and images load from the network; wait for them before the screenshot.
-      gotoOptions: {
-        waitUntil: 'networkidle0',
-      },
-      screenshotOptions: {
-        type: 'jpeg',
-        quality: 85,
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    console.warn('Browser rendering screenshot failed', response.status, await response.text());
-    return null;
-  }
-
-  return new Uint8Array(await response.arrayBuffer());
+  return screenshotCard(renderOgCardHtml(ogCardFromRecord(record, stats)), env);
 }
 
 /** Public counters for a Prism wallpaper. Other sources and failures give null, so the card shows no counts. */
@@ -1577,25 +1553,6 @@ ${LANDING_STYLE}
 </html>`;
 }
 
-type Platform = 'android' | 'ios' | 'other';
-
-function detectPlatform(request: Request): Platform {
-  const userAgent = request.headers.get('user-agent')?.toLowerCase() ?? '';
-  if (userAgent.includes('iphone') || userAgent.includes('ipad') || userAgent.includes('ipod')) {
-    return 'ios';
-  }
-  if (userAgent.includes('android')) {
-    return 'android';
-  }
-  return 'other';
-}
-
-function buildAndroidIntentUrl(canonicalUrl: string, fallbackUrl: string): string {
-  const target = new URL(canonicalUrl);
-  const path = `${target.host}${target.pathname}${target.search}`.replaceAll(';', '%3B');
-  return `intent://${path}#Intent;scheme=https;package=${ANDROID_PACKAGE};S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end`;
-}
-
 function isCrawlerRequest(request: Request): boolean {
   const userAgent = request.headers.get('user-agent')?.toLowerCase() ?? '';
   return BOT_UA_FRAGMENTS.some((fragment) => userAgent.includes(fragment));
@@ -1682,19 +1639,6 @@ function isValidType(type: unknown): type is LinkType {
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
-
-function escapeAttribute(value: string): string {
-  return escapeHtml(value).replaceAll('`', '&#96;');
 }
 
 function toBase64(data: Uint8Array): string {
