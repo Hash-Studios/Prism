@@ -130,7 +130,7 @@ function dimensions(resolution: unknown): {width: number; height: number} {
 
 function publicProfile(data: Doc | undefined): PublicProfile | null {
   const username = str(data?.username).trim();
-  if (!USERNAME.test(username)) return null;
+  if (!isCreatorUsername(username)) return null;
   return {
     username,
     name: cleanText(data?.name, 60) || username,
@@ -139,8 +139,11 @@ function publicProfile(data: Doc | undefined): PublicProfile | null {
   };
 }
 
-// Users write profilePhoto themselves. The app only sets Prism uploads (GitHub raw), Google account photos and the
-// default photo in Firebase Storage; any other host would let a public page embed an image Prism never served.
+function isCreatorUsername(username: string): boolean {
+  return USERNAME.test(username) && username !== "." && username !== "..";
+}
+
+// Users control profilePhoto, so public embeds stay on hosts used by Prism's profile flows.
 const PROFILE_PHOTO_HOSTS = ["raw.githubusercontent.com", "firebasestorage.googleapis.com"];
 
 function isProfilePhotoUrl(value: string): boolean {
@@ -313,7 +316,8 @@ export function buildPages(
   const live = [...walls].filter(([, wall]) => wall.state === "live").sort(newest);
   // Popular ids and folder items carry the share id in upper case, the way wallpaper_stats keys it.
   const liveById = new Map(live.map((entry): [string, [string, WebWall]] => [entry[0].toUpperCase(), entry]));
-  const profileByName = new Map([...creators.values()].map((p) => [p.username.toLowerCase(), p]));
+  const profileByName = new Map([...creators.values()].filter((p) => isCreatorUsername(p.username))
+    .map((p) => [p.username.toLowerCase(), p]));
   const cards = (entries: Array<[string, WebWall]>) => entries.map(([id, wall]) => cardOf(id, wall));
   const byCategory = new Map<string, Array<[string, WebWall]>>();
   const byCreator = new Map<string, Array<[string, WebWall]>>();
@@ -323,7 +327,6 @@ export function buildPages(
     const username = entry[1].creator?.username.toLowerCase();
     if (username) byCreator.set(username, [...(byCreator.get(username) ?? []), entry]);
   }
-  // A creator page exists only for a profile with at least one live wall; a folder owner without one has no page.
   const hasCreatorPage = (username: string) => byCreator.has(username.toLowerCase()) &&
     profileByName.has(username.toLowerCase());
   const categories = [...byCategory].map(([slug, entries]) => ({

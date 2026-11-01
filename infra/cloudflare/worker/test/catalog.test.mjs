@@ -258,10 +258,65 @@ test('wall page renders the public metadata, structured data and related grid', 
 
   assert.equal(body.match(/<li><a href="\/wallpaper\/N\d+"/g)?.length, 12);
   assert.ok(!body.includes('<li><a href="/wallpaper/W1"'), 'the wall does not list itself');
-  assert.equal(h.state.reads.length, 2);
+  assert.equal(h.state.reads.length, 3);
   assert.ok(h.state.reads[0].endsWith('/webWalls/W1'));
   assert.ok(h.state.reads[1].endsWith('/webPages/category~nature~1'));
+  assert.ok(h.state.reads[2].endsWith('/webPages/creator~sam~1'));
 });
+
+test('wall and folder omit creator links when the creator page is stale or missing', async (t) => {
+  const h = setup(t);
+  delete h.state.docs['webPages/creator~sam~1'];
+  h.state.docs['webPages/folder~F1'].owner.hasPage = true;
+
+  const wall = await (await h.get('/wallpaper/W1')).text();
+  assert.doesNotMatch(wall, /href="\/creator\/sam"/);
+  assert.doesNotMatch(JSON.stringify(ldJson(wall)), /creator\/sam/);
+
+  const folder = await (await h.get('/folder/F1')).text();
+  assert.doesNotMatch(folder, /href="\/creator\/sam"/);
+});
+
+test('gated walls do not link to a missing creator page', async (t) => {
+  const h = setup(t);
+  delete h.state.docs['webPages/creator~sam~1'];
+
+  const response = await h.get('/wallpaper/G1');
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.doesNotMatch(body, /href="\/creator\/sam"/);
+});
+
+test('wall and folder creator lookups are case-insensitive', async (t) => {
+  const h = setup(t);
+  h.state.docs['webWalls/W1'].creator.username = 'SAM';
+  h.state.docs['webPages/folder~F1'].owner.username = 'SAM';
+
+  const wall = await (await h.get('/wallpaper/W1')).text();
+  const folder = await (await h.get('/folder/F1')).text();
+
+  assert.match(wall, /href="\/creator\/SAM"/);
+  assert.match(folder, /href="\/creator\/SAM"/);
+});
+
+for (const username of ['.', '..']) {
+  test(`creator username ${username} that normalizes as a path segment never becomes a link`, async (t) => {
+    const h = setup(t);
+    h.state.docs['webWalls/W1'].creator.username = username;
+    h.state.docs['webPages/folder~F1'].owner.username = username;
+    h.state.docs[`webPages/creator~${username}~1`] = {
+      kind: 'creator', page: 1, pages: 1, total: 1, items: [],
+      creator: { username, name: 'Dot', bio: '', photo: '' },
+    };
+
+    const wall = await (await h.get('/wallpaper/W1')).text();
+    const folder = await (await h.get('/folder/F1')).text();
+    assert.doesNotMatch(wall, /href="\/creator\//);
+    assert.doesNotMatch(JSON.stringify(ldJson(wall)), /creator\//);
+    assert.doesNotMatch(folder, /href="\/creator\//);
+  });
+}
 
 test('gated wall shows the blurred landing and no preview image', async (t) => {
   const h = setup(t);
@@ -321,6 +376,18 @@ test('a folder owner without a creator page is plain text, not a link', async (t
   assert.ok(!body.includes('/creator/sam'));
 });
 
+test('a folder owner explicitly marked without a creator page is not looked up or linked', async (t) => {
+  const h = setup(t);
+  h.state.docs['webPages/folder~F1'].owner.hasPage = false;
+  const readsBefore = h.state.reads.length;
+
+  const body = await (await h.get('/folder/F1')).text();
+
+  assert.ok(body.includes('A folder by Sam K · '));
+  assert.doesNotMatch(body, /href="\/creator\/sam"/);
+  assert.equal(h.state.reads.length - readsBefore, 1, 'false hasPage avoids a creator document read');
+});
+
 test('a creator photo outside the profile photo hosts is dropped and the page still renders', async (t) => {
   const h = setup(t);
   h.state.docs['webPages/creator~sam~1'].creator.photo = 'https://tracker.example/pixel.gif';
@@ -332,6 +399,55 @@ test('a creator photo outside the profile photo hosts is dropped and the page st
   assert.ok(!body.includes('tracker.example'));
   assert.ok(body.includes('class="avatar initial"'));
 });
+
+for (const photo of [
+  'https://raw.githubusercontent.com.evil.example/avatar.jpg',
+  'https://user@raw.githubusercontent.com/avatar.jpg',
+  'https://user:password@raw.githubusercontent.com/avatar.jpg',
+  'https://raw.githubusercontent.com:8443/avatar.jpg',
+  'http://raw.githubusercontent.com/avatar.jpg',
+  'https://evil.googleusercontent.com.example/avatar.jpg',
+  'https://evilgoogleusercontent.com/avatar.jpg',
+  'https://googleusercontent.com/avatar.jpg',
+  'https://googleusercontent.com。evil.example/avatar.jpg',
+  'https://googlеusercontent.com/avatar.jpg',
+]) {
+  test(`creator photo rejects allowlist lookalike ${photo}`, async (t) => {
+    const h = setup(t);
+    h.state.docs['webPages/creator~sam~1'].creator.photo = photo;
+
+    const response = await h.get('/creator/sam');
+    const body = await response.text();
+    const profile = ldJson(body).find((entry) => entry['@type'] === 'ProfilePage');
+
+    assert.equal(response.status, 200);
+    assert.equal((body.match(/property="og:image"/g) ?? []).length, 1);
+    assert.ok(body.includes('property="og:image" content="https://prismwalls.com/assets/og/home.jpg"'));
+    assert.ok(!body.includes(photo));
+    assert.equal(profile.mainEntity.image, undefined);
+    assert.ok(body.includes('class="avatar initial"'));
+  });
+}
+
+for (const photo of [
+  'https://raw.githubusercontent.com/avatar.jpg',
+  'https://FIREBASESTORAGE.GOOGLEAPIS.COM/avatar.jpg',
+  'https://LH3.GOOGLEUSERCONTENT.COM/avatar.jpg',
+]) {
+  test(`creator photo accepts allowlisted host ${photo}`, async (t) => {
+    const h = setup(t);
+    h.state.docs['webPages/creator~sam~1'].creator.photo = photo;
+
+    const response = await h.get('/creator/sam');
+    const body = await response.text();
+    const profile = ldJson(body).find((entry) => entry['@type'] === 'ProfilePage');
+
+    assert.equal(response.status, 200);
+    assert.ok(body.includes(`class="avatar" src="${photo}"`));
+    assert.ok(body.includes(`property="og:image" content="${photo}"`));
+    assert.equal(profile.mainEntity.image, photo);
+  });
+}
 
 test('cache headers: 200 is fresh for ten minutes, misses for five, and the stored-at marker never leaks', async (t) => {
   const h = setup(t);
@@ -450,7 +566,7 @@ test('concurrent stale hits share one background refresh per cache key', async (
   h.state.firestoreGate = null;
   release();
   await h.flush();
-  assert.equal(h.state.reads.length - before, 2, 'one wall render reads wall and related page once');
+  assert.equal(h.state.reads.length - before, 3, 'one wall render reads wall, related page and profile once');
 });
 
 test('a Firestore outage keeps the old landing for walls and answers 503 for hubs', async (t) => {
@@ -577,6 +693,19 @@ test('sitemaps list the page sitemap and each wall sitemap with its lastmod', as
   const missing = await h.get('/sitemaps/walls-9.xml');
   await missing.text();
   assert.equal(missing.status, 404);
+});
+
+test('sitemaps omit creator URLs that normalize as path segments', async (t) => {
+  const h = setup(t);
+  h.state.docs['webPages/sitemap~creators-1'] = {
+    kind: 'sitemap', entries: '/creator/.\t2026-10-30T00:00:00.000Z\n/creator/..\t2026-10-30T00:00:00.000Z\n/creator/sam\t2026-10-30T00:00:00.000Z',
+  };
+
+  const body = await (await h.get('/sitemaps/creators-1.xml')).text();
+
+  assert.doesNotMatch(body, /\/creator\/\.\./);
+  assert.doesNotMatch(body, /\/creator\/\./);
+  assert.match(body, /\/creator\/sam/);
 });
 
 test('wall text is escaped in HTML and JSON-LD and sitemap entries cannot break XML', async (t) => {

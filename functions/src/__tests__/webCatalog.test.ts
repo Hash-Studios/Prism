@@ -151,6 +151,17 @@ test("syncWebWall gates a wall in a premium collection and blurs it without a th
   assert.equal("thumb" in doc, false);
 });
 
+test("syncWebWall preserves the creator identity on a gated wall", async (t) => {
+  stubDeps(t);
+  installFakeDb(t, {"walls/d1": liveWall({collections: ["abstract"]}), "profiles/u1": samProfile});
+
+  await syncWebWall("W1");
+
+  const doc = (await db.collection("webWalls").doc("W1").get()).data() as Doc;
+  assert.equal(doc.state, "gated");
+  assert.deepEqual(doc.creator, {username: "sam", name: "Sam K"});
+});
+
 test("syncWebWall does not reuse a non-image value as a cached blurred preview", async (t) => {
   stubDeps(t);
   const blurKey = createHash("sha256").update(THUMB).digest("hex").slice(0, 16);
@@ -397,6 +408,65 @@ test("buildPages marks a folder owner's creator page only when the owner has liv
   assert.equal(pages.has("creator~ana~1"), false);
 });
 
+test("buildPages matches folder owners to creator page keys without case sensitivity", () => {
+  const walls = new Map<string, WebWall>([
+    ["W01", liveCard(1, {creator: {username: "Sam", name: "Sam"}})],
+  ]);
+  const owner = {username: "sAM", name: "Sam", bio: "", photo: ""};
+  const pages = buildPages(walls, [], [{id: "F1", name: "Faves", owner, wallIds: [], updatedAt: NOW}],
+    new Map([["u1", {username: "sam", name: "Sam", bio: "", photo: ""}]]));
+
+  assert.equal(pageOf(pages, "folder~F1").owner?.hasPage, true);
+  assert.ok(pages.has("creator~sam~1"));
+  assert.ok(JSON.stringify([...pages.values()]).includes("/creator/sam"));
+});
+
+test("buildPages does not emit creator links for dot-segment usernames", () => {
+  const walls = new Map<string, WebWall>([
+    ["W01", liveCard(1, {creator: {username: "..", name: "Dot"}})],
+  ]);
+  const dot = {username: "..", name: "Dot", bio: "", photo: ""};
+  const pages = buildPages(walls, [], [{id: "F1", name: "Faves", owner: dot, wallIds: [], updatedAt: NOW}],
+    new Map([["u1", dot]]));
+
+  assert.equal(pageOf(pages, "folder~F1").owner?.hasPage, false);
+  assert.equal(pages.has("creator~..~1"), false);
+  assert.equal(JSON.stringify([...pages.values()]).includes("/creator/.."), false);
+});
+
+test("buildPages does not mark folder owners with gated-only walls as creator pages", () => {
+  const walls = new Map<string, WebWall>([["G1", {
+    ...liveCard(1, {creator: {username: "sam", name: "Sam"}}), state: "gated",
+  }]]);
+  const sam = {username: "sam", name: "Sam", bio: "", photo: ""};
+  const pages = buildPages(walls, [], [{id: "F1", name: "Faves", owner: sam, wallIds: [], updatedAt: NOW}],
+    new Map([["u1", sam]]));
+
+  assert.equal(pageOf(pages, "folder~F1").owner?.hasPage, false);
+  assert.equal(pages.has("creator~sam~1"), false);
+});
+
+test("buildPages does not link a creator-tagged wall when its profile is missing", () => {
+  const walls = new Map<string, WebWall>([
+    ["W01", liveCard(1, {creator: {username: "sam", name: "Sam"}})],
+  ]);
+  const sam = {username: "sam", name: "Sam", bio: "", photo: ""};
+  const pages = buildPages(walls, [], [{id: "F1", name: "Faves", owner: sam, wallIds: [], updatedAt: NOW}], new Map());
+
+  assert.equal(pageOf(pages, "folder~F1").owner?.hasPage, false);
+  assert.equal(pages.has("creator~sam~1"), false);
+  assert.equal(pages.has("sitemap~creators-1"), false);
+});
+
+test("buildPages sitemap targets exist in an empty catalogue", () => {
+  const pages = buildPages(new Map(), [], [], new Map());
+
+  assert.ok(pages.has("latest~1"));
+  assert.ok(pages.has("popular~1"));
+  const entries = pageOf(pages, "sitemap~categories-1").entries.split("\n").map((line) => line.split("\t")[0]);
+  assert.deepEqual(entries, ["/wallpapers", "/wallpapers/popular"]);
+});
+
 test("rebuildWebCatalog publishes only profile photos from the app's photo hosts", async (t) => {
   stubDeps(t);
   const store = installFakeDb(t, {
@@ -407,6 +477,38 @@ test("rebuildWebCatalog publishes only profile photos from the app's photo hosts
   await rebuildWebCatalog();
 
   assert.equal((store.get("webPages/creator~sam~1")?.creator as {photo: string}).photo, "");
+});
+
+test("rebuildWebCatalog rejects profile photo host tricks and keeps approved hosts", async (t) => {
+  stubDeps(t);
+  const urls = [
+    "https://raw.githubusercontent.com.attacker.example/photo.jpg",
+    "https://firebasestorage.googleapis.com.attacker.example/photo.jpg",
+    "https://lh3.googleusercontent.com.attacker.example/photo.jpg",
+    "https://user@raw.githubusercontent.com/photo.jpg",
+    "https://raw.githubusercontent.com:8443/photo.jpg",
+    "https://trusted。googleusercontent.com.attacker.example/photo.jpg",
+  ];
+  const store = installFakeDb(t, {
+    "walls/d1": liveWall(),
+    "profiles/u1": {...samProfile, profilePhoto: urls[0]},
+  });
+
+  for (const profilePhoto of urls) {
+    store.set("profiles/u1", {...samProfile, profilePhoto});
+    await rebuildWebCatalog();
+    assert.equal((store.get("webPages/creator~sam~1")?.creator as {photo: string}).photo, "", profilePhoto);
+  }
+  for (const profilePhoto of [
+    "https://raw.githubusercontent.com/Hash-Studios/Prism/photo.jpg",
+    "https://lh3.googleusercontent.com/photo.jpg",
+    "https://LH3.GOOGLEUSERCONTENT.COM/photo.jpg",
+    "https://firebasestorage.googleapis.com/v0/b/prism/o/photo.jpg",
+  ]) {
+    store.set("profiles/u1", {...samProfile, profilePhoto});
+    await rebuildWebCatalog();
+    assert.equal((store.get("webPages/creator~sam~1")?.creator as {photo: string}).photo, profilePhoto);
+  }
 });
 
 test("buildPages folder page lists live walls only and counts every saved wall", () => {
@@ -501,6 +603,46 @@ test("rebuildWebCatalog does not refresh a folder page when its header has no up
 
   assert.equal(second.written, 0);
   assert.deepEqual(store.get("webPages/folder~F1"), folderPage);
+});
+
+test("rebuildWebCatalog rewrites a legacy folder doc missing hasPage and then stabilizes", async (t) => {
+  stubDeps(t);
+  const store = installFakeDb(t, {
+    "walls/d1": liveWall(),
+    "profiles/u1": samProfile,
+    "publicFolders/F1": {ownerId: "u1", name: "Faves", updatedAt: admin.firestore.Timestamp.fromMillis(Date.parse(NOW))},
+    "publicFolders/F1/items/i1": {id: "W1"},
+  });
+
+  await rebuildWebCatalog();
+  const legacyPage = store.get("webPages/folder~F1") as Doc;
+  const legacyOwner = legacyPage.owner as Doc;
+  delete legacyOwner.hasPage;
+  const legacyHash = createHash("sha256").update(JSON.stringify(legacyPage, (_, value) =>
+    value && typeof value === "object" && !Array.isArray(value) ?
+      Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) : value)).digest("hex").slice(0, 20);
+  store.set("webPages/folder~F1", legacyPage);
+  const state = store.get("webCatalogState/pages") as Doc;
+  store.set("webCatalogState/pages", {hashes: {...state.hashes as Doc, "folder~F1": legacyHash}});
+
+  const rewritten = await rebuildWebCatalog();
+
+  assert.equal((store.get("webPages/folder~F1")?.owner as {hasPage?: boolean}).hasPage, true);
+  assert.equal(rewritten.written, 1);
+  assert.equal((await rebuildWebCatalog()).written, 0);
+});
+
+test("rebuildWebCatalog rejects dot-segment profile names before publishing creator URLs", async (t) => {
+  stubDeps(t);
+  const store = installFakeDb(t, {
+    "walls/d1": liveWall(),
+    "profiles/u1": {...samProfile, username: ".."},
+  });
+
+  await rebuildWebCatalog();
+
+  assert.equal(store.has("webPages/creator~..~1"), false);
+  assert.equal(JSON.stringify([...store.entries()]).includes("/creator/.."), false);
 });
 
 test("rebuildWebCatalog scrubs old fields from retained terminal projections", async (t) => {
