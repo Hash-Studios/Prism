@@ -53,13 +53,44 @@ test("ISO UTC weeks handle Sunday, Monday, and ISO year boundaries", () => {
   assert.equal(weeks[7].week, "2025-W01");
   assert.equal(weeks[7].endExclusive, "2025-01-06T00:00:00.000Z");
 });
-test("missing history remains null during wall and creator aggregation", async (t) => {
+test("missing history keeps weeks before tracking unknown, but folder adds are a real 0", async (t) => {
   installFakeDb(t, seed({"walls/second": wall({id: "SECOND"})}));
   await putHistory({views: 7});
   const stats = await readCreatorStats("alice", {}, NOW);
   assert.equal(stats.weeks[6].metrics.views, null);
-  assert.equal(stats.totals.folderAdds, null);
+  assert.equal(stats.totals.folderAdds, 0);
   assert.equal(stats.coverage.views.weeklyFrom, null);
+});
+test("from the first tracked week, a wall with no events counts 0, and earlier weeks stay unknown", async (t) => {
+  installFakeDb(t, seed());
+  const stats = await readCreatorStats("alice", {}, Date.parse("2026-11-10T09:00:00Z"));
+  const week = (start: string) => stats.weeks.find((w) => w.start === start)?.metrics.views;
+  assert.equal(week("2026-11-09T00:00:00.000Z"), 0);
+  assert.equal(week("2026-11-02T00:00:00.000Z"), 0);
+  assert.equal(week("2026-10-26T00:00:00.000Z"), null);
+  assert.equal(stats.walls[0].weeks.find((w) => w.start === "2026-11-02T00:00:00.000Z")?.metrics.shares, 0);
+});
+test("a counter field that was never written totals 0 across the account", async (t) => {
+  installFakeDb(t, seed({"walls/second": wall({id: "SECOND"}), "wallpaper_stats/WALL": {views: 10, favs: 3},
+    "wallpaper_stats/SECOND": {views: 4}, "walls/third": wall({id: "THIRD"})}));
+  const result = await readCreatorStats("alice", {}, NOW);
+  assert.deepEqual(result.totals, {views: 14, saves: 3, sets: 0, downloads: 0, shares: 0, folderAdds: 0, remixes: 6});
+});
+test("invalid counters stay unknown", async (t) => {
+  installFakeDb(t, seed({"walls/wall": wall({remixCount: "bad"}), "wallpaper_stats/WALL": {views: Number.NaN}}),
+    undefined, {createTimes: {"walls/wall": admin.firestore.Timestamp.fromMillis(5),
+      "wallpaper_stats/WALL": admin.firestore.Timestamp.fromMillis(5)}});
+  const result = await readCreatorStats("alice", {}, NOW);
+  assert.equal(result.totals.views, null);
+  assert.equal(result.totals.shares, 0);
+  assert.equal(result.totals.remixes, null);
+});
+test("a stats doc older than the wall stays unknown", async (t) => {
+  installFakeDb(t, seed(), undefined, {createTimes: {"walls/wall": admin.firestore.Timestamp.fromMillis(9),
+    "wallpaper_stats/WALL": admin.firestore.Timestamp.fromMillis(5)}});
+  const stale = await readCreatorStats("alice", {}, NOW);
+  assert.equal(stale.totals.views, null);
+  assert.equal(stale.totals.shares, null);
 });
 test("empty creator has zero totals, eight weeks, and no walls", async (t) => {
   installFakeDb(t, seed());
@@ -269,12 +300,11 @@ test("creation order compares nanoseconds without rounding to milliseconds", () 
 });
 
 
-test("missing individual lifetime fields and remix counters stay unavailable beside genuine zero", async (t) => {
+test("missing individual lifetime fields and remix counters count as 0, like a genuine zero", async (t) => {
   installFakeDb(t, seed({"walls/wall": wall({remixCount: undefined}),
     "wallpaper_stats/WALL": {views: 0, favs: "0"}}));
   const result = await readCreatorStats("alice", {}, NOW);
-  assert.deepEqual(result.totals, {views: 0, saves: 0, sets: null, downloads: null, shares: null,
-    folderAdds: null, remixes: null});
+  assert.deepEqual(result.totals, {views: 0, saves: 0, sets: 0, downloads: 0, shares: 0, folderAdds: 0, remixes: 0});
 });
 
 

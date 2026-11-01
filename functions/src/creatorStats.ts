@@ -11,6 +11,8 @@ import {activeOwner, atOrAfter, canonicalWall, count, hash, historyRef, incarnat
 
 const MAX_WALLS = 500;
 const CACHE_MS = 5 * 60000;
+// Daily tracking went live on 2026-11-01. From the next ISO week on, a week with no recorded event is a real 0.
+const TRACKING_FROM = "2026-11-02T00:00:00.000Z";
 type Week = ReturnType<typeof weekWindows>[number] & {metrics: Counts};
 type WallStats = {wallId: string; title: string; thumbnailUrl: string; totals: Counts; weeks: Week[]};
 type Coverage = {weeklyFrom: string | null; totalBasis: "recordedLifetime" | "currentMembership" | "since"; totalFrom: string | null};
@@ -68,24 +70,27 @@ async function wallStats(tx: admin.firestore.Transaction, wall: admin.firestore.
   const raw = (await tx.get(historyRef(wall))).data() as History | undefined;
   const history = raw?.creatorUid === uid && raw.wallPath === wall.ref.path && raw.incarnation === incarnation(wall) ? raw : undefined;
   const statsSnap = unique ? await tx.get(db.doc(`wallpaper_stats/${statsId}`)) : undefined;
-  const stats = statsSnap?.createTime && wall.createTime && atOrAfter(statsSnap.createTime, wall.createTime) ?
-    statsSnap.data() : undefined;
+  // No stats doc means nothing was ever recorded. A doc older than the wall belongs to an earlier wall, so it is unknown.
+  const stats = statsSnap && !statsSnap.exists ? {} :
+    statsSnap?.createTime && wall.createTime && atOrAfter(statsSnap.createTime, wall.createTime) ? statsSnap.data() : undefined;
   const fields = {views: "views", saves: "favs", sets: "sets", downloads: "downloads", shares: "shares"} as const;
   const totals = counts((metric) => {
+    // A counter that was never written is 0. Only a value that is present and invalid is unknown.
     if (metric === "remixes") {
-      return typeof data.remixCount === "number" &&
+      return data.remixCount === undefined ? 0 : typeof data.remixCount === "number" &&
       Number.isSafeInteger(data.remixCount) && data.remixCount >= 0 ? data.remixCount : null;
     }
-    if (metric === "folderAdds") return history ? count(history.folderAdds) : null;
+    if (metric === "folderAdds") return history ? count(history.folderAdds) : 0;
     if (!unique || !stats) return null;
     const raw = stats[fields[metric]];
+    if (raw === undefined) return 0;
     const value = typeof raw === "string" && /^\d+$/.test(raw) ? Number(raw) : raw;
     return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
   });
   const weeks = weekWindows(now).map((window) => ({...window, metrics: counts((metric) => {
     const recorded = history?.weeks[window.week]?.[metric];
     if (recorded !== undefined) return count(recorded);
-    return history && window.start >= history.from ? 0 : null;
+    return history && window.start >= history.from || window.start >= TRACKING_FROM ? 0 : null;
   })}));
   const row: WallStats = {wallId: wall.id, title: str(data.title), thumbnailUrl: str(data.wallpaper_thumb), totals, weeks};
   const cache: CachedWall = {at: now, row, from: history?.from ?? null};
