@@ -73,6 +73,11 @@ class _TrialTimelinePageState extends State<TrialTimelinePage> {
     final int? reminderDay = _reminderDay;
     return PrismPage(
       title: l10n.trialTimelineTitle,
+      // The title is long in every language and wraps at large text sizes. It must never lose words.
+      titleWidget: Semantics(
+        header: true,
+        child: Text(l10n.trialTimelineTitle, style: PrismTextStyles.screenTitle(context)),
+      ),
       showBack: false,
       actions: <Widget>[
         PrismIconButton(

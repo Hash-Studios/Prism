@@ -260,6 +260,8 @@ void main() {
     final double closeTop = tester.getRect(find.byTooltip('Close')).top;
     expect(closeTop, greaterThanOrEqualTo(0));
     expect(closeTop, lessThan(200));
+    final Text title = tester.widget<Text>(find.text('How your free trial works'));
+    expect(title.maxLines, isNull, reason: 'the title wraps and never loses words at large text');
   });
 
   testWidgets('a two-day trial has no reminder step or switch', (tester) async {
