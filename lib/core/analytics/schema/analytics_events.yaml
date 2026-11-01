@@ -78,6 +78,9 @@ enums:
       - cancelled
       - purchased
       - restored
+      - guest_sign_in_required
+      - rc_error
+      - unknown
   - name: wrapped_source
     dart_type: WrappedSourceValue
     values:
@@ -85,9 +88,6 @@ enums:
       - push
       - inbox
       - deep_link
-      - guest_sign_in_required
-      - rc_error
-      - unknown
   - name: subscription_entitlement_refresh_result
     dart_type: SubscriptionEntitlementRefreshResultValue
     values:
