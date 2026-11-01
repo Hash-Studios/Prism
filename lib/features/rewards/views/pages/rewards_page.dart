@@ -56,6 +56,7 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
   final ScrollController _scroll = ScrollController();
   bool? _tabWasActive;
   bool _redeemSheetOpened = false;
+  bool _redeemSheetActive = false;
 
   @override
   void initState() {
@@ -74,10 +75,28 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
     }
   }
 
-  void _openRedeemLink() {
-    if (!mounted || _redeemSheetOpened) return;
+  @override
+  void didUpdateWidget(covariant RewardsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.redeemCode != null && widget.redeemCode != oldWidget.redeemCode) {
+      _redeemSheetOpened = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _openRedeemLink());
+    }
+  }
+
+  Future<void> _openRedeemLink() async {
+    if (!mounted || _redeemSheetOpened || _redeemSheetActive) return;
+    final String? code = widget.redeemCode;
     _redeemSheetOpened = true;
-    unawaited(showRedeemCodeSheet(context, source: RedeemSheetSource.link, initialCode: widget.redeemCode));
+    _redeemSheetActive = true;
+    try {
+      await showRedeemCodeSheet(context, source: RedeemSheetSource.link, initialCode: code);
+    } finally {
+      _redeemSheetActive = false;
+      if (mounted && widget.redeemCode != null && widget.redeemCode != code) {
+        unawaited(_openRedeemLink());
+      }
+    }
   }
 
   void _scheduleCreatorProgressRefresh() {

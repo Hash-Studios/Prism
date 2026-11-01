@@ -40,7 +40,7 @@ test("dry run prints the plan and calls no write, file or code path", async () =
     now: () => NOW,
     log: (line) => lines.push(line),
     claimFile: () => calls.push("claimFile"),
-    writeFile: () => calls.push("writeFile"),
+    appendFile: () => calls.push("appendFile"),
     write: async () => {
       calls.push("write");
       return "UNUSED";
@@ -53,4 +53,33 @@ test("dry run prints the plan and calls no write, file or code path", async () =
   assert.match(output, /3/);
   assert.match(output, /coins/);
   assert.doesNotMatch(output, /[A-HJ-NP-Z2-9]{10}/);
+});
+
+test("batch failure preserves earlier codes in the CSV without printing codes or backend errors", async () => {
+  const lines: string[] = [];
+  let csv = "";
+  let writes = 0;
+  const deps: CreatePromoCodesDeps = {
+    now: () => NOW,
+    log: (line) => lines.push(line),
+    claimFile: () => undefined,
+    appendFile: (_path, data) => {
+      csv += data;
+    },
+    write: async () => {
+      if (++writes === 2) {
+        assert.match(csv, /ABCDEFGH23,coins,100,1,/);
+        throw new Error("Backend included secret JKLMNPQR45");
+      }
+      return "ABCDEFGH23";
+    },
+  };
+  await assert.rejects(run(["--project", "demo-prism", "--count", "3", "--type", "coins", "--amount", "100",
+    "--expires-days", "30", "--out", "codes.csv"], deps), (error: Error) => {
+    assert.match(error.message, /Stopped after 1 of 3 codes/);
+    assert.doesNotMatch(error.message, /JKLMNPQR45|Backend/);
+    return true;
+  });
+  assert.match(csv, /^code,type,amount,maxRedemptions,expiresAt\nABCDEFGH23,coins,100,1,/);
+  assert.doesNotMatch(lines.join("\n"), /ABCDEFGH23|JKLMNPQR45/);
 });

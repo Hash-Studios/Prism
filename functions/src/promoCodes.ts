@@ -15,7 +15,7 @@ export const GENERATED_CODE_LENGTH = 10;
 const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
 export const ATTEMPTS_PER_USER_HOUR = 10;
-// Only misses count per IP, so a carrier NAT full of people redeeming one real code is never blocked.
+// Only misses add to the IP counter. Once it reaches 30, new attempts from that IP are refused for the hour.
 export const MISSES_PER_IP_HOUR = 30;
 const MAX_COINS = 1_000;
 const MAX_DAYS = 90;
@@ -123,9 +123,10 @@ function ageFailure(code: PromoCode, createdMs: number, nowMs: number): RedeemFa
   return null;
 }
 
-function replayOf(data: admin.firestore.DocumentData, requestId: string): RedeemResponse {
+function replayOf(data: admin.firestore.DocumentData, requestId: string, platform: "ios" | "android"): RedeemResponse {
   const reward = parseReward(data.reward);
   if (data.requestId !== requestId || !reward) return {ok: false, reason: "already_redeemed"};
+  if (platform === "ios" && reward.type === "premiumDays") return {ok: false, reason: "premium_not_on_ios"};
   return {
     ok: true,
     reward,
@@ -135,10 +136,7 @@ function replayOf(data: admin.firestore.DocumentData, requestId: string): Redeem
   };
 }
 
-/**
- * Google's front end appends the address it saw to X-Forwarded-For, so the last hop is the one a client cannot
- * forge; earlier hops are whatever the client sent.
- */
+/** Uses the final forwarded hop. Its trustworthiness depends on the deployed proxy chain. */
 export function clientIp(rawRequest: {headers?: Record<string, unknown>; ip?: unknown} | undefined): string {
   const header = rawRequest?.headers?.["x-forwarded-for"];
   const hops = (Array.isArray(header) ? header.join(",") : str(header)).split(",").map((hop) => hop.trim());
@@ -155,20 +153,32 @@ function rateRefs(uid: string, ip: string, nowMs: number) {
   };
 }
 
-/** Counts this attempt for the user. False when the user or the IP is over the hourly limit. */
+/** Counts this attempt for the user. False when the user's hourly limit is already exhausted. */
 async function takeAttempt(refs: ReturnType<typeof rateRefs>): Promise<boolean> {
   return db.runTransaction(async (tx) => {
-    const [userSnap, ipSnap] = await Promise.all([tx.get(refs.user), refs.ip ? tx.get(refs.ip) : null]);
+    const userSnap = await tx.get(refs.user);
     const used = int(userSnap.data()?.count, 0);
-    if (used >= ATTEMPTS_PER_USER_HOUR || int(ipSnap?.data()?.count, 0) >= MISSES_PER_IP_HOUR) return false;
+    if (used >= ATTEMPTS_PER_USER_HOUR) return false;
     tx.set(refs.user, {count: used + 1, expiresAt: refs.expiresAt});
     return true;
   });
 }
 
-async function recordMiss(refs: ReturnType<typeof rateRefs>): Promise<void> {
-  if (!refs.ip) return;
-  await refs.ip.set({count: admin.firestore.FieldValue.increment(1), expiresAt: refs.expiresAt}, {merge: true});
+/** Checks the IP miss budget and looks up a code in one transaction, so parallel guesses cannot outrun the cap. */
+async function lookupPromo(refs: ReturnType<typeof rateRefs>, codeRef: admin.firestore.DocumentReference | null):
+  Promise<{promo: PromoCode | null; failure: "invalid_code" | "not_found" | "rate_limited" | null}> {
+  return db.runTransaction(async (tx) => {
+    const ipSnap = refs.ip ? await tx.get(refs.ip) : null;
+    const count = int(ipSnap?.data()?.count, 0);
+    if (count >= MISSES_PER_IP_HOUR) return {promo: null, failure: "rate_limited"};
+    const codeSnap = codeRef ? await tx.get(codeRef) : null;
+    const promo = codeRef ? parseStoredCode(codeSnap?.data()) : null;
+    if (!promo) {
+      if (refs.ip) tx.set(refs.ip, {count: count + 1, expiresAt: refs.expiresAt});
+      return {promo: null, failure: codeRef ? "not_found" : "invalid_code"};
+    }
+    return {promo, failure: null};
+  });
 }
 
 function errorCode(err: unknown): unknown {
@@ -178,6 +188,20 @@ function errorCode(err: unknown): unknown {
 /** The transaction gave up after its retries, usually a burst on one document. Nothing was written. */
 function isAborted(err: unknown): boolean {
   return errorCode(err) === 10 || errorCode(err) === "aborted";
+}
+
+async function promoAccountCreatedMs(uid: string): Promise<number> {
+  try {
+    const createdMs = await promoIo.accountCreatedMs(uid);
+    if (!Number.isFinite(createdMs)) throw new Error("Invalid Auth creation time.");
+    return createdMs;
+  } catch (err) {
+    if (errorCode(err) === "auth/user-not-found") {
+      throw new HttpsError("not-found", "User profile was not found.");
+    }
+    logger.error("redeemCode: account lookup failed.", {err});
+    throw new HttpsError("unavailable", "Try again in a moment.");
+  }
 }
 
 /** Redeems a promo code for the signed-in user. Every refusal is a `reason`; retries with one requestId are safe. */
@@ -200,7 +224,26 @@ export const redeemCode = onCall(
     const redemptionRef = codeRef?.collection("redemptions").doc(uid) ?? null;
     if (redemptionRef) {
       const earlier = await redemptionRef.get();
-      if (earlier.exists) return replayOf(earlier.data() ?? {}, requestId);
+      if (earlier.exists) {
+        await promoAccountCreatedMs(uid);
+        const userRef = db.collection("usersv2").doc(uid);
+        const deletionRef = db.collection("creatorDeletionState").doc(uid);
+        try {
+          return await db.runTransaction(async (tx) => {
+            const [redemptionSnap, userSnap, deletionSnap] = await Promise.all([
+              tx.get(redemptionRef), tx.get(userRef), tx.get(deletionRef),
+            ]);
+            const user = userSnap.data();
+            if (!user || user.deleted === true || deletionSnap.exists) {
+              throw new HttpsError("not-found", "User profile was not found.");
+            }
+            return replayOf(redemptionSnap.data() ?? {}, requestId, platform);
+          });
+        } catch (err) {
+          if (isAborted(err)) return {ok: false, reason: "busy"};
+          throw err;
+        }
+      }
     }
 
     const refs = rateRefs(uid, clientIp(request.rawRequest), nowMs);
@@ -210,41 +253,28 @@ export const redeemCode = onCall(
       if (isAborted(err)) return {ok: false, reason: "busy"};
       throw err;
     }
-    if (!codeRef || !redemptionRef) {
-      await recordMiss(refs);
-      return {ok: false, reason: "invalid_code"};
+    let lookup: Awaited<ReturnType<typeof lookupPromo>>;
+    try {
+      lookup = await lookupPromo(refs, codeRef);
+    } catch (err) {
+      if (isAborted(err)) return {ok: false, reason: "busy"};
+      throw err;
     }
-    const promo = parseStoredCode((await codeRef.get()).data());
-    if (!promo) {
-      await recordMiss(refs);
-      return {ok: false, reason: "not_found"};
-    }
-    const early = codeFailure(promo, nowMs);
-    if (early) return {ok: false, reason: early};
-    // Apple App Review 3.1.1: Pro access on iOS goes through In-App Purchase and App Store offer codes only.
-    if (promo.reward.type === "premiumDays" && platform === "ios") return {ok: false, reason: "premium_not_on_ios"};
-    if (promo.minAccountAgeDays > 0 || promo.newUsersOnlyDays !== null) {
-      let createdMs: number;
-      try {
-        createdMs = await promoIo.accountCreatedMs(uid);
-      } catch (err) {
-        logger.error("redeemCode: account lookup failed.", {err});
-        throw new HttpsError("unavailable", "Try again in a moment.");
-      }
-      if (!Number.isFinite(createdMs)) throw new HttpsError("unavailable", "Try again in a moment.");
-      const tooYoungOrOld = ageFailure(promo, createdMs, nowMs);
-      if (tooYoungOrOld) return {ok: false, reason: tooYoungOrOld};
-    }
+    if (lookup.failure) return {ok: false, reason: lookup.failure};
+    const promo = lookup.promo as PromoCode;
+    const codeDocRef = codeRef as admin.firestore.DocumentReference;
+    const redemptionDocRef = redemptionRef as admin.firestore.DocumentReference;
+    const createdMs = await promoAccountCreatedMs(uid);
 
     const userRef = db.collection("usersv2").doc(uid);
     const privateRef = userRef.collection("private").doc("economy");
-    const ledgerRef = db.collection("coinTransactions").doc(`ctx_promo_${codeRef.id}_${uid}`);
+    const ledgerRef = db.collection("coinTransactions").doc(`ctx_promo_${codeDocRef.id}_${uid}`);
     const deletionRef = db.collection("creatorDeletionState").doc(uid);
     try {
       return await db.runTransaction(async (tx): Promise<RedeemResponse> => {
         const [codeSnap, redemptionSnap, userSnap, deletionSnap, privateSnap] = await Promise.all([
-          tx.get(codeRef),
-          tx.get(redemptionRef),
+          tx.get(codeDocRef),
+          tx.get(redemptionDocRef),
           tx.get(userRef),
           tx.get(deletionRef),
           promo.reward.type === "premiumDays" ? tx.get(privateRef) : null,
@@ -253,12 +283,18 @@ export const redeemCode = onCall(
         if (!user || user.deleted === true || deletionSnap.exists) {
           throw new HttpsError("not-found", "User profile was not found.");
         }
-        if (redemptionSnap.exists) return replayOf(redemptionSnap.data() ?? {}, requestId);
+        if (redemptionSnap.exists) return replayOf(redemptionSnap.data() ?? {}, requestId, platform);
         const current = parseStoredCode(codeSnap.data());
         if (!current) return {ok: false, reason: "not_found"};
         const late = codeFailure(current, nowMs);
         if (late) return {ok: false, reason: late};
         const reward = current.reward;
+        // Apple App Review 3.1.1: Pro access on iOS goes through In-App Purchase and App Store offer codes only.
+        if (reward.type === "premiumDays" && platform === "ios") return {ok: false, reason: "premium_not_on_ios"};
+        if (current.minAccountAgeDays > 0 || current.newUsersOnlyDays !== null) {
+          const tooYoungOrOld = ageFailure(current, createdMs, nowMs);
+          if (tooYoungOrOld) return {ok: false, reason: tooYoungOrOld};
+        }
         if (reward.type === "premiumDays" && user.premium === true) return {ok: false, reason: "already_premium"};
 
         const at = admin.firestore.Timestamp.fromMillis(nowMs);
@@ -286,8 +322,8 @@ export const redeemCode = onCall(
           tx.set(privateRef, {rev: int(economy.rev, 0) + 1, passes: {...passes, premiumPassUntil: premiumUntil}}, {merge: true});
           grant = {premiumUntil};
         }
-        tx.update(codeRef, {redemptionCount: current.redemptionCount + 1, lastRedeemedAt: at});
-        tx.create(redemptionRef, {uid, requestId, reward, platform, redeemedAt: at, ...grant});
+        tx.update(codeDocRef, {redemptionCount: current.redemptionCount + 1, lastRedeemedAt: at});
+        tx.create(redemptionDocRef, {uid, requestId, reward, platform, redeemedAt: at, ...grant});
         return {
           ok: true,
           reward,
@@ -298,7 +334,21 @@ export const redeemCode = onCall(
     } catch (err) {
       // Two calls from one user raced: the other one created the redemption first.
       if (errorCode(err) === 6 || errorCode(err) === "already-exists") {
-        return replayOf((await redemptionRef.get()).data() ?? {}, requestId);
+        try {
+          return await db.runTransaction(async (tx) => {
+            const [redemptionSnap, userSnap, deletionSnap] = await Promise.all([
+              tx.get(redemptionDocRef), tx.get(userRef), tx.get(deletionRef),
+            ]);
+            const user = userSnap.data();
+            if (!user || user.deleted === true || deletionSnap.exists) {
+              throw new HttpsError("not-found", "User profile was not found.");
+            }
+            return replayOf(redemptionSnap.data() ?? {}, requestId, platform);
+          });
+        } catch (replayErr) {
+          if (isAborted(replayErr)) return {ok: false, reason: "busy"};
+          throw replayErr;
+        }
       }
       if (isAborted(err)) return {ok: false, reason: "busy"};
       throw err;

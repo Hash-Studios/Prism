@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/promo_codes/data/promo_code_repository.dart';
 import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
+import 'package:Prism/features/promo_codes/views/store_code_redemption.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -168,7 +169,9 @@ class _PromoCodesAdminPageState extends State<PromoCodesAdminPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           PrismSegmented<PromoRewardType>(
-            values: PromoRewardType.values,
+            values: storeCodePlatform == StoreCodePlatform.ios
+                ? const <PromoRewardType>[PromoRewardType.coins]
+                : PromoRewardType.values,
             selected: _type,
             labelOf: (PromoRewardType type) =>
                 type == PromoRewardType.coins ? l10n.promoAdminTypeCoins : l10n.promoAdminTypePro,

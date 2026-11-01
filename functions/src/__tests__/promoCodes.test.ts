@@ -59,8 +59,8 @@ const redeem = (data: Doc = {}, uid = "u1", ip = IP) =>
     rawRequest: {headers: {"x-forwarded-for": ip}},
   } as never);
 
-// Eight letters plus two alphabet characters: never the real code, and distinct for every index below 31.
-const missCode = (i: number) => `JKLMNPQR${PROMO_ALPHABET.slice(i, i + 2)}`;
+// Eight letters plus two alphabet characters: never the real code, and distinct for these test indices.
+const missCode = (i: number) => `JKLMNPQR${PROMO_ALPHABET[Math.floor(i / PROMO_ALPHABET.length)]}${PROMO_ALPHABET[i % PROMO_ALPHABET.length]}`;
 
 const passUntil = (store: Map<string, Doc>) =>
   (store.get("usersv2/u1/private/economy")?.passes as Doc | undefined)?.premiumPassUntil;
@@ -174,12 +174,88 @@ test("a user redeems a code once, even under a new requestId", async (t) => {
   assert.equal(store.get("usersv2/u1")?.coins, 150);
 });
 
+test("only one caller takes the last redemption slot", async (t) => {
+  const store = setup(t, {
+    [CODE_PATH]: codeDoc({maxRedemptions: 1}),
+    "usersv2/u2": {coins: 50},
+  });
+  const results = await Promise.all([
+    redeem({requestId: "request_0001"}, "u1"),
+    redeem({requestId: "request_0002"}, "u2"),
+  ]);
+  assert.equal(results.filter((result) => result.ok).length, 1);
+  assert.equal(results.filter((result) => !result.ok && result.reason === "limit_reached").length, 1);
+  assert.equal(store.get(CODE_PATH)?.redemptionCount, 1);
+});
+
+for (const sameRequest of [true, false]) {
+  test(`a late lookup after the last slot ${sameRequest ? "replays the same request" : "refuses another request"}`, async (t) => {
+    const store = setup(t, {[CODE_PATH]: codeDoc({maxRedemptions: 1})});
+    const real = db.runTransaction.bind(db);
+    let resume!: () => void;
+    let entered!: () => void;
+    const paused = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    const released = new Promise<void>((resolve) => {
+      resume = resolve;
+    });
+    let first = true;
+    t.mock.method(db, "runTransaction", async (callback: Parameters<typeof real>[0]) => {
+      const shouldPause = first;
+      first = false;
+      const result = await real(callback);
+      if (shouldPause) {
+        entered();
+        await released;
+      }
+      return result;
+    });
+    // The retry already saw no redemption, but cannot look up the code until the winner exhausts it.
+    const delayed = redeem({requestId: sameRequest ? REQ : "request_0002"});
+    await paused;
+    try {
+      assert.equal((await redeem()).ok, true);
+    } finally {
+      resume();
+    }
+    assert.deepEqual(await delayed, sameRequest ?
+      {ok: true, reward: {type: "coins", coins: 100}, coinBalance: 150, replayed: true} :
+      {ok: false, reason: "already_redeemed"});
+    assert.equal(store.get("usersv2/u1")?.coins, 150);
+    assert.equal(store.get(CODE_PATH)?.redemptionCount, 1);
+    assert.equal([...store.keys()].filter((path) => path.startsWith("coinTransactions/")).length, 1);
+  });
+}
+
+test("different concurrent requestIds for one code grant only one redemption", async (t) => {
+  const store = setup(t);
+  const results = await Promise.all([
+    redeem({requestId: "request_0001"}),
+    redeem({requestId: "request_0002"}),
+  ]);
+  assert.equal(results.filter((result) => result.ok).length, 1);
+  assert.equal(results.filter((result) => !result.ok && result.reason === "already_redeemed").length, 1);
+  assert.equal(store.get("usersv2/u1")?.coins, 150);
+  assert.equal(store.get(CODE_PATH)?.redemptionCount, 1);
+});
+
 test("a retry with the same requestId replays the result without a second credit", async (t) => {
   const store = setup(t);
   await redeem();
   assert.deepEqual(await redeem(), {ok: true, reward: {type: "coins", coins: 100}, coinBalance: 150, replayed: true});
   assert.equal(store.get("usersv2/u1")?.coins, 150);
   assert.equal(store.get(CODE_PATH)?.redemptionCount, 1);
+});
+
+test("an iOS retry does not replay a Pro grant", async (t) => {
+  setup(t, {
+    [CODE_PATH]: codeDoc(PREMIUM_3),
+    [`${CODE_PATH}/redemptions/u1`]: {
+      uid: "u1", requestId: REQ, reward: {type: "premiumDays", days: 3}, premiumUntil: NOW_MS + 3 * DAY,
+    },
+  });
+  assert.deepEqual(await redeem({platform: "ios"}), {ok: false, reason: "premium_not_on_ios"});
 });
 
 test("a replay is checked before the code's limits", async (t) => {
@@ -191,6 +267,28 @@ test("a replay is checked before the code's limits", async (t) => {
   assert.equal(store.get(CODE_PATH)?.redemptionCount, 1);
 });
 
+test("a deleted account cannot replay a previous redemption", async (t) => {
+  const store = setup(t, {
+    "usersv2/u1": {coins: 150, deleted: true},
+    [`${CODE_PATH}/redemptions/u1`]: {
+      uid: "u1", requestId: REQ, reward: {type: "coins", coins: 100}, coinBalance: 150,
+    },
+  });
+  await assert.rejects(redeem(), {code: "not-found"});
+  assert.equal(store.get("usersv2/u1")?.coins, 150);
+});
+
+test("an account with a deletion barrier cannot replay a previous redemption", async (t) => {
+  const store = setup(t, {
+    [`${CODE_PATH}/redemptions/u1`]: {
+      uid: "u1", requestId: REQ, reward: {type: "coins", coins: 100}, coinBalance: 150,
+    },
+    "creatorDeletionState/u1": {closed: true},
+  });
+  await assert.rejects(redeem(), {code: "not-found"});
+  assert.equal(store.get("usersv2/u1")?.coins, 50);
+});
+
 test("a user gets 10 attempts an hour, and the next hour starts fresh", async (t) => {
   setup(t);
   for (let i = 0; i < 10; i++) {
@@ -200,6 +298,15 @@ test("a user gets 10 attempts an hour, and the next hour starts fresh", async (t
   assert.deepEqual(await redeem({code: CODE}), {ok: false, reason: "rate_limited"});
   t.mock.timers.tick(HOUR);
   assert.equal((await redeem()).ok, true);
+});
+
+test("parallel attempts by one user cannot exceed the hourly cap", async (t) => {
+  const store = setup(t);
+  const results = await Promise.all(Array.from({length: 25}, (_, i) => redeem({code: missCode(i)})));
+  assert.equal(results.filter((result) => !result.ok && result.reason === "not_found").length, 10);
+  assert.equal(results.filter((result) => !result.ok && result.reason === "rate_limited").length, 15);
+  assert.equal(store.get(`promoRedeemRate/u_u1_${Math.floor(NOW_MS / HOUR)}`)?.count, 10);
+  assert.equal(store.has(LEDGER), false);
 });
 
 test("an IP gets 30 misses an hour across accounts, and a different IP is unaffected", async (t) => {
@@ -215,6 +322,36 @@ test("an IP gets 30 misses an hour across accounts, and a different IP is unaffe
   assert.deepEqual(await redeem({}, "u5", "198.51.100.7"), {ok: true, reward: {type: "coins", coins: 100},
     coinBalance: 150, replayed: false});
   assert.equal(store.get("usersv2/u5")?.coins, 150);
+});
+
+test("parallel misses from many accounts cannot exceed the IP limit", async (t) => {
+  const users = Object.fromEntries(Array.from({length: 60}, (_, i) => [`usersv2/u${i}`, {coins: 0}]));
+  const store = setup(t, {...users, "usersv2/valid": {coins: 50}});
+  const collection = db.collection.bind(db);
+  let codeReads = 0;
+  t.mock.method(db, "collection", (path: string) => {
+    const result = collection(path);
+    if (path !== "promoCodes") return result;
+    const doc = result.doc.bind(result);
+    t.mock.method(result, "doc", (id: string) => {
+      const ref = doc(id);
+      const get = ref.get.bind(ref);
+      t.mock.method(ref, "get", () => {
+        codeReads++;
+        return get();
+      });
+      return ref;
+    });
+    return result;
+  });
+  const results = await Promise.all(Array.from({length: 60}, (_, i) => redeem({code: missCode(i)}, `u${i}`)));
+  assert.equal(results.filter((result) => !result.ok && result.reason === "not_found").length, 30);
+  assert.equal(results.filter((result) => !result.ok && result.reason === "rate_limited").length, 30);
+  assert.equal(codeReads, 30);
+  assert.equal([...store.entries()].find(([path]) => path.startsWith("promoRedeemRate/ip_"))?.[1].count, 30);
+  assert.deepEqual(await redeem({}, "valid"), {ok: false, reason: "rate_limited"});
+  assert.equal(codeReads, 30, "an exhausted IP cannot look up even a valid code");
+  assert.equal(store.get("usersv2/valid")?.coins, 50);
 });
 
 test("clientIp trusts the last X-Forwarded-For hop", () => {
@@ -279,20 +416,99 @@ test("a deleted account is rejected as not found", async (t) => {
   await assert.rejects(redeem(), {code: "not-found"});
 });
 
-test("a transaction that gives up reports busy and writes nothing", async (t) => {
+test("a deleted Auth user cannot redeem a code with no account-age rule", async (t) => {
   const store = setup(t);
-  const real = db.runTransaction.bind(db);
-  let calls = 0;
-  t.mock.method(db, "runTransaction", (callback: Parameters<typeof real>[0]) => {
-    calls += 1;
-    // The first transaction is the rate-limit attempt; the second is the redemption itself.
-    if (calls === 1) return real(callback);
-    return Promise.reject(Object.assign(new Error("aborted"), {code: 10}));
+  t.mock.method(promoIo, "accountCreatedMs", async () => {
+    throw Object.assign(new Error("User not found"), {code: "auth/user-not-found"});
   });
-  assert.deepEqual(await redeem(), {ok: false, reason: "busy"});
+  await assert.rejects(redeem(), {code: "not-found"});
   assert.equal(store.get("usersv2/u1")?.coins, 50);
   assert.equal(store.has(`${CODE_PATH}/redemptions/u1`), false);
 });
+
+test("a deleted Auth user cannot replay a previous redemption", async (t) => {
+  const store = setup(t);
+  await redeem();
+  t.mock.method(promoIo, "accountCreatedMs", async () => {
+    throw Object.assign(new Error("User not found"), {code: "auth/user-not-found"});
+  });
+  await assert.rejects(redeem(), {code: "not-found"});
+  assert.equal(store.get("usersv2/u1")?.coins, 150);
+  assert.equal(store.get(CODE_PATH)?.redemptionCount, 1);
+});
+
+for (const [stage, abortAt] of [["lookup", 2], ["grant", 3]] as const) {
+  test(`an aborted ${stage} transaction reports busy and grants nothing`, async (t) => {
+    const store = setup(t);
+    const real = db.runTransaction.bind(db);
+    let calls = 0;
+    t.mock.method(db, "runTransaction", (callback: Parameters<typeof real>[0]) => {
+      if (++calls === abortAt) return Promise.reject(Object.assign(new Error("aborted"), {code: 10}));
+      return real(callback);
+    });
+    assert.deepEqual(await redeem(), {ok: false, reason: "busy"});
+    assert.equal(calls, abortAt);
+    assert.equal(store.get("usersv2/u1")?.coins, 50);
+    assert.equal(store.get(CODE_PATH)?.redemptionCount, 0);
+    assert.equal(store.has(LEDGER), false);
+    assert.equal(store.has(`${CODE_PATH}/redemptions/u1`), false);
+  });
+}
+
+test("an aborted replay transaction reports busy without another credit", async (t) => {
+  const store = setup(t);
+  await redeem();
+  t.mock.method(db, "runTransaction", () => Promise.reject(Object.assign(new Error("aborted"), {code: "aborted"})));
+  assert.deepEqual(await redeem(), {ok: false, reason: "busy"});
+  assert.equal(store.get("usersv2/u1")?.coins, 150);
+  assert.equal(store.get(CODE_PATH)?.redemptionCount, 1);
+});
+
+test("an existing ledger create collision never credits or counts a second grant", async (t) => {
+  const ledger = {delta: 100, balanceBefore: 50, balanceAfter: 150};
+  const store = setup(t, {[LEDGER]: ledger});
+  assert.deepEqual(await redeem(), {ok: false, reason: "already_redeemed"});
+  assert.equal(store.get("usersv2/u1")?.coins, 50);
+  assert.equal(store.get(CODE_PATH)?.redemptionCount, 0);
+  assert.equal(store.has(`${CODE_PATH}/redemptions/u1`), false);
+  assert.deepEqual(store.get(LEDGER), ledger);
+});
+
+for (const mode of ["replay", "deletion", "aborted"]) {
+  const outcome = mode === "deletion" ? "checks the deletion barrier before replay" :
+    mode === "aborted" ? "reports busy when replay aborts" : "replays only the winning grant";
+  test(`a redemption create collision ${outcome}`, async (t) => {
+    const store = setup(t);
+    const real = db.runTransaction.bind(db);
+    let collisions = 0;
+    t.mock.method(db, "runTransaction", (callback: Parameters<typeof real>[0]) => {
+      if (collisions && mode === "aborted") return Promise.reject(Object.assign(new Error("aborted"), {code: 10}));
+      return real(async (tx) => {
+        const create = tx.create.bind(tx);
+        t.mock.method(tx, "create", (ref: admin.firestore.DocumentReference, data: admin.firestore.DocumentData) => {
+          if (ref.path === `${CODE_PATH}/redemptions/u1`) {
+            // Another writer commits after our reads. The real fake-DB create precondition rejects this transaction.
+            collisions++;
+            store.set(ref.path, {...data});
+            store.set("usersv2/u1", {coins: 150});
+            store.set(CODE_PATH, codeDoc({redemptionCount: 1}));
+            store.set(LEDGER, {delta: 100, balanceBefore: 50, balanceAfter: 150});
+            if (mode === "deletion") store.set("creatorDeletionState/u1", {closed: true});
+          }
+          return create(ref, data);
+        });
+        return callback(tx);
+      });
+    });
+    if (mode === "deletion") await assert.rejects(redeem(), {code: "not-found"});
+    else if (mode === "aborted") assert.deepEqual(await redeem(), {ok: false, reason: "busy"});
+    else assert.deepEqual(await redeem(), {ok: true, reward: {type: "coins", coins: 100}, coinBalance: 150, replayed: true});
+    assert.equal(collisions, 1);
+    assert.equal(store.get("usersv2/u1")?.coins, 150);
+    assert.equal(store.get(CODE_PATH)?.redemptionCount, 1);
+    assert.equal(store.get(LEDGER)?.balanceAfter, 150);
+  });
+}
 
 test("a rate-limit transaction that gives up reports busy and redeems nothing", async (t) => {
   const store = setup(t);

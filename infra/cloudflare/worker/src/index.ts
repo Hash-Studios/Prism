@@ -555,7 +555,7 @@ async function readLinkRecord(code: string, env: Env): Promise<LinkRecord | null
       code,
       recordType: obj.type,
       canonicalType: inferredType,
-      canonical: canonical.toString(),
+      canonicalPath: canonical.pathname,
     });
   }
 
@@ -1675,6 +1675,7 @@ function html(markup: string, status = 200): Response {
     headers: {
       'content-type': 'text/html; charset=utf-8',
       'cache-control': 'private, no-store, max-age=0',
+      'referrer-policy': 'no-referrer',
     },
   });
 }

@@ -542,9 +542,30 @@ test('redeem deep link returns the direct app landing that carries the code to t
     }),
   );
   assert.equal(response.status, 200);
+  assert.equal(response.headers.get('referrer-policy'), 'no-referrer');
   const body = await response.text();
   assert.match(body, /Open in Prism/);
   assert.match(body, /prismwalls\.com\/redeem\?code=ABCDEFGH23/);
+});
+
+test('redeem short links do not print codes when stored record types drift', async () => {
+  const warnings = [];
+  const originalWarn = console.warn;
+  console.warn = (...args) => warnings.push(args);
+  try {
+    const env = workerEnv({
+      LINKS_KV: new MemoryKv([storedLink('AbCdEfGh', 'share', '/redeem?code=ABCDEFGH23', {})]),
+      PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+      APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+    });
+    const response = await getShare(ANDROID_UA, '/l/AbCdEfGh', env);
+    assert.equal(response.status, 200);
+    assert.equal(warnings.length, 1);
+    assert.doesNotMatch(JSON.stringify(warnings), /ABCDEFGH23/);
+    assert.equal(response.headers.get('referrer-policy'), 'no-referrer');
+  } finally {
+    console.warn = originalWarn;
+  }
 });
 
 test('short link page for a stored share record renders the same landing', async () => {

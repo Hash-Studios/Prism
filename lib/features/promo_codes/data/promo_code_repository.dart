@@ -148,7 +148,11 @@ class PromoCodeRepository {
     if (reply['ok'] != true) return RedeemFailed(RedeemFailureReason.fromWire(reply['reason']));
     final PromoReward? reward = _rewardFrom(reply['reward'], reply['premiumUntil']);
     if (reward == null) return const RedeemFailed(RedeemFailureReason.unknown);
-    return RedeemSucceeded(reward, coinBalance: reply['coinBalance'] is int ? reply['coinBalance'] as int : null);
+    return RedeemSucceeded(
+      reward,
+      coinBalance: reply['coinBalance'] is int ? reply['coinBalance'] as int : null,
+      replayed: reply['replayed'] == true,
+    );
   }
 
   Future<List<PromoCodeSummary>> listCodes() async {

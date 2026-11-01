@@ -106,6 +106,8 @@ export const giftPremiumPass = onCall(
       .doc(`recv_${recipientUid}_${today}`);
     const blockRef = recipientRef.collection("blockedUsers").doc(uid);
     const txRef = db.collection("coinTransactions").doc(txId);
+    const senderDeletionRef = db.collection("creatorDeletionState").doc(uid);
+    const recipientDeletionRef = db.collection("creatorDeletionState").doc(recipientUid);
 
     let response: GiftResponse | null = null;
     let notice: { senderName: string; recipientEmail: string } | null = null;
@@ -114,7 +116,9 @@ export const giftPremiumPass = onCall(
       notice = null;
       const [
         senderSnap,
+        senderDeletionSnap,
         recipientSnap,
+        recipientDeletionSnap,
         economySnap,
         rateSnap,
         receivedSnap,
@@ -122,15 +126,21 @@ export const giftPremiumPass = onCall(
         txSnap,
       ] = await Promise.all([
         tx.get(senderRef),
+        tx.get(senderDeletionRef),
         tx.get(recipientRef),
+        tx.get(recipientDeletionRef),
         tx.get(economyRef),
         tx.get(rateRef),
         tx.get(receivedRef),
         tx.get(blockRef),
         tx.get(txRef),
       ]);
-      if (!senderSnap.exists) {
+      if (!senderSnap.exists || senderSnap.data()?.deleted === true || senderDeletionSnap.exists) {
         throw new HttpsError("not-found", "User profile was not found.");
+      }
+      const recipient = recipientSnap.data();
+      if (!recipientSnap.exists || !recipient || recipient.deleted === true || recipientDeletionSnap.exists) {
+        throw new HttpsError("not-found", "gift_recipient_not_found");
       }
       const sender = senderSnap.data() ?? {};
       const previous = int(sender.coins, 0);
@@ -162,10 +172,6 @@ export const giftPremiumPass = onCall(
         return;
       }
 
-      const recipient = recipientSnap.data();
-      if (!recipientSnap.exists || !recipient || recipient.deleted === true) {
-        throw new HttpsError("not-found", "gift_recipient_not_found");
-      }
       if (recipient.premium === true) {
         response = {...base, reason: "gift_recipient_premium"};
         return;

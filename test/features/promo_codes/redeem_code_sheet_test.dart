@@ -1,5 +1,6 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/promo_codes/data/promo_code_repository.dart';
 import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
@@ -11,16 +12,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/profile_user_fixture.dart';
 
 /// Records every callable and answers with [reply], or throws [error] when it is set.
 class _FakeCallable {
   final List<(String, Map<String, Object?>)> calls = <(String, Map<String, Object?>)>[];
   Object? reply;
   Object? error;
+  void Function()? onReply;
 
   Future<Object?> call(String name, Map<String, Object?> data) async {
     calls.add((name, data));
     if (error != null) throw error!;
+    onReply?.call();
     return reply;
   }
 
@@ -132,6 +136,39 @@ void main() {
     expect(find.text('Done'), findsOneWidget);
     expect(redeemed, hasLength(1));
     expect(redeemed.single.coinBalance, 150);
+  });
+
+  testWidgets('a response for an account that signed out is not applied to the next account', (tester) async {
+    final previousUser = app_state.prismUser;
+    app_state.prismUser = profileUser(id: 'account-a');
+    fake.reply = _coinsReply(150);
+    fake.onReply = () => app_state.prismUser = profileUser(id: 'account-b');
+    addTearDown(() => app_state.prismUser = previousUser);
+    await openSheet(tester);
+
+    await enterCode(tester, 'ABCDEFGH23');
+    await tapRedeem(tester);
+
+    expect(redeemed, isEmpty);
+    expect(find.text('Sign in to redeem a code.'), findsOneWidget);
+
+    fake.onReply = null;
+    await tapRedeem(tester);
+
+    expect(redeemed, hasLength(1));
+    expect(fake.redeemData, hasLength(2));
+    expect(fake.redeemData.last['requestId'], isNot(fake.redeemData.first['requestId']));
+  });
+
+  testWidgets('a replayed grant is identified so old totals are not applied as current state', (tester) async {
+    fake.reply = <String, Object?>{..._coinsReply(150), 'replayed': true};
+    await openSheet(tester);
+
+    await enterCode(tester, 'ABCDEFGH23');
+    await tapRedeem(tester);
+
+    expect(redeemed, hasLength(1));
+    expect(redeemed.single.replayed, isTrue);
   });
 
   testWidgets('a Pro code shows the Pro success headline', (tester) async {

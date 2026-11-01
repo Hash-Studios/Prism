@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import {writeFileSync} from "node:fs";
+import {appendFileSync, writeFileSync} from "node:fs";
 import type {PromoCodeInput} from "../promoCodes";
 
 const DAY_MS = 86_400_000;
@@ -35,7 +35,7 @@ export interface CreatePromoCodesDeps {
   log: (line: string) => void;
   /** Creates the empty CSV file. Throws when it already exists, before any code is written. */
   claimFile: (path: string) => void;
-  writeFile: (path: string, data: string) => void;
+  appendFile: (path: string, data: string) => void;
   write: (input: PromoCodeInput, createdBy: string, nowMs: number) => Promise<string>;
 }
 
@@ -99,7 +99,7 @@ export const defaultDeps: CreatePromoCodesDeps = {
   now: () => Date.now(),
   log: (line) => console.log(line),
   claimFile: (path) => writeFileSync(path, "", {mode: 0o600, flag: "wx"}),
-  writeFile: (path, data) => writeFileSync(path, data, {mode: 0o600, flag: "w"}),
+  appendFile: (path, data) => appendFileSync(path, data),
   // Loaded lazily: promoCodes loads common, which starts the default app, and main must select the project first.
   write: async (input, createdBy, nowMs) =>
     (await import("../promoCodes.js")).writePromoCode(input, createdBy, nowMs),
@@ -142,17 +142,16 @@ export async function run(argv: readonly string[], deps: CreatePromoCodesDeps = 
     throw err;
   }
   const codes: string[] = [];
+  deps.appendFile(out, "code,type,amount,maxRedemptions,expiresAt\n");
   try {
     for (let i = 0; i < options.count; i++) {
-      codes.push(await deps.write(input, "cli:createPromoCodes", now));
+      const code = await deps.write(input, "cli:createPromoCodes", now);
+      codes.push(code);
+      deps.appendFile(out, [code, options.type, options.amount, options.maxRedemptions, expiresAt].join(",") + "\n");
     }
-  } catch (err) {
-    // The codes already written cannot be recovered from this run; the count says how many to clean up.
-    const message = err instanceof Error ? err.message : String(err);
-    throw new Error(`Stopped after ${codes.length} of ${options.count} codes; the CSV was not written. ${message}`);
+  } catch {
+    throw new Error(`Stopped after ${codes.length} of ${options.count} codes; check the partial CSV at ${out} before retrying.`);
   }
-  const rows = codes.map((code) => [code, options.type, options.amount, options.maxRedemptions, expiresAt].join(","));
-  deps.writeFile(out, ["code,type,amount,maxRedemptions,expiresAt", ...rows].join("\n") + "\n");
   deps.log(`Created ${codes.length} promo codes and wrote them to ${out}.`);
 }
 

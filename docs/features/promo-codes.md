@@ -27,14 +27,17 @@ The Codes group has one line that says which code goes where. On iOS: "Prism cod
 
 App Review guideline 3.1.1 requires In-App Purchase for Pro access on iOS. The old Enter Code feature was removed for this reason (commit `460bd315a`). The server refuses a `premiumDays` code when the client sends `platform: ios`, with the reason `premium_not_on_ios`. Coin codes work on both platforms. On iOS, Pro offers go through App Store offer codes.
 
+`platform` is supplied by the client, not attested. This rejects normal iOS app requests, but does not stop a modified client from claiming Android or an Android pass from later being used on iOS.
+
 ## Limits
 
 | Limit | Rule | Reason |
 |---|---|---|
 | Sign-in | Signed in, verified email, provider is not anonymous | `unauthenticated` error |
+| Auth account | Auth account still exists, checked for every valid grant and replay even when no age rule is set | `not-found` error |
 | Format | Uppercase, spaces and `-` removed. 10 to 32 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`. This is the uppercase part of the short-link alphabet, so it has no I, O, 0 or 1. | `invalid_code` |
 | Rate, user | 10 attempts an hour. Every attempt counts, also a success. | `rate_limited` |
-| Rate, IP | 30 misses an hour (`invalid_code` and `not_found` only). Successes do not count, so many people behind one carrier NAT can redeem one real code. | `rate_limited` |
+| Rate, IP | 30 misses an hour (`invalid_code` and `not_found` only). Successes do not count. Once the miss limit is reached, all new attempts from that IP are refused until the next hour, including valid codes. | `rate_limited` |
 | Exists | `promoCodes/{codeId}` | `not_found` |
 | Turned off | `disabled: true` | `disabled` |
 | Expiry | `expiresAt` is in the future | `expired` |
@@ -64,9 +67,11 @@ The old `codes` collection is not used. Its documents had one `code`, a `redeeme
 ## Idempotency and races
 
 - The client sends a `requestId`. It keeps the same `requestId` while it retries one code after `network`, `busy` or `unknown`. It makes a new one for a new code or after a definite answer.
-- The server reads the user's redemption document first, before the rate limit and before any other limit. When it exists with the same `requestId`, the server returns the stored grant with `replayed: true`. This also works after the code expired, ran out, or the user subscribed. With another `requestId` the answer is `already_redeemed`.
-- One Firestore transaction reads the code, the redemption, the profile and the deletion barrier. It then writes the grant, the ledger or the pass, the count and the redemption. Firestore runs the transactions one at a time on the code document. At the last redemption exactly one transaction wins. The others run again on fresh data and get `limit_reached`.
-- The redemption and ledger documents are created with `create`. When two calls from one user race, the second call gets the replay.
+- The server reads the user's redemption document before rate limiting. A replay still requires a live Auth account and a transaction that checks the profile, deletion barrier and stored redemption. The platform rule also applies: iOS cannot replay a Pro grant. With the same `requestId`, an eligible caller gets the stored grant with `replayed: true`, even after the code expired, ran out, or the user subscribed. With another `requestId` the answer is `already_redeemed`.
+- After checking Auth existence, one Firestore grant transaction reads the code, redemption, profile and deletion barrier. It checks code limits, account-age eligibility, platform and paid-subscriber status before writing the grant, ledger or pass, count and redemption. At the last redemption exactly one transaction wins. Other users retry against fresh data and get `limit_reached`.
+- The redemption and ledger documents are created with `create`. Same-user retries check the redemption before code limits. Collision recovery rechecks profile, deletion and platform before replaying the stored grant; Auth was checked before the grant attempt.
+
+Known client limitation: a `CoinsService.refreshBalance` started before a fresh Pro grant can complete later and overwrite the new pass with stale state. This needs refresh ordering in `lib/core/coins/coins_service.dart`; the race remains unresolved.
 
 ## Abuse review
 
@@ -75,18 +80,22 @@ Before code, a reviewer checked the model for brute force, alt-account farming a
 | Question | Verdict | Change |
 |---|---|---|
 | Can someone guess codes? | Random codes have 32^10 (about 10^15) values. Short vanity codes are the risk. | Minimum length 10 for all codes. The user rate limit counts every attempt in a transaction before the lookup, so parallel calls cannot pass it. |
-| Is the IP real? | The last `X-Forwarded-For` hop is the address Google's front end saw. Earlier hops come from the client. This is not proven on a live deploy yet. | The IP limit counts misses only, so a wrong IP cannot block real redemptions. Check it after deploy (see below). |
+| Is the IP real? | The implementation uses the last `X-Forwarded-For` hop. Its identity and resistance to spoofing are not proven on a live deploy yet. | Successes do not add to the miss counter, but hitting the counter blocks valid codes too. A shared proxy address can block unrelated users. Check it after deploy (see below). |
 | Alt-account farming | Account age only delays it. Each alt still needs a verified email. | Verified email required. The real control is the budget: `maxRedemptions` times the amount. Keep giveaway codes small. |
 | Race at the limit | Firestore transactions are serializable. | A burst on one hot code can give `busy`. The client retries with the same `requestId`. |
 | Retry after a limit changed | The first model checked the redemption last, so a retry after expiry said `expired`. | The redemption is checked first. |
-| Pass shortening | `giftPremiumPass` wrote `now + 24 h` over a longer pass. A gift cut a 90-day promo pass to one day. | `giftPremiumPass` now extends from `max(now, current end)`, like the auto-rotate pass. |
+| Pass shortening | `giftPremiumPass` wrote `now + 24 h` over a longer pass. A gift cut a 90-day promo pass to one day. | `giftPremiumPass` keeps `max(now + 24 h, current end)`. Gifts do not shorten a longer pass, but do not add a day to it either. Promo days stack from the current end. |
 | Leaks | A code in a document ID, a ledger ID or a log can leak it. | `codeId` is a hash. Analytics events carry the source, type, reason or platform, never the code. |
-| Deleted users | Not checked in the first model. | Refused like `awardCoins` refuses them. |
+| Deleted users | Not checked in the first model. | Grants and replays require Auth existence and a live profile with no deletion barrier. Gifts check sender and recipient profiles and deletion barriers. |
 | Kill switch | Not in the first model. | `disabled` and `setPromoCodeDisabled`. |
+
+The review keeps the existing farming policy: verified email and optional Auth-age rules slow account creation, but do not establish one human per account. The code's redemption limit and reward amount bound the giveaway budget. No stronger identity or device restriction was added.
 
 ## Admin
 
 Admins open Admin review, then Promo codes (`/admin-promo-codes`, `_adminGuard`).
+
+On iOS, the admin form offers coin codes only; existing Pro codes can still be listed and enabled or disabled.
 
 | Callable | What it does |
 |---|---|
@@ -104,7 +113,7 @@ npm run promo:create -- --project <id> --count 50 --type coins --amount 100 --ex
 npm run promo:create -- --project <id> --count 50 --type coins --amount 100 --expires-days 30 --label "Giveaway" --out codes.csv
 ```
 
-`--dry-run` prints the plan and writes nothing. Without it, the script writes the codes to the `--out` CSV file (mode 600). It prints only the count and the path, never the codes, so codes do not get into terminal or CI logs. Other flags: `--max`, `--min-age-days`, `--new-users-days`.
+`--dry-run` prints the plan and writes nothing. Without it, the script writes each created code to the `--out` CSV file (mode 600) before creating the next. A failed batch leaves prior rows in a partial CSV; inspect it before retrying. A process or file-system failure between creating a code and saving its row can still leave that code absent from the CSV. The script prints only the count and the path, never codes or backend error details, so codes do not get into terminal or CI logs. Other flags: `--max`, `--min-age-days`, `--new-users-days`.
 
 ## Analytics
 
@@ -117,13 +126,19 @@ npm run promo:create -- --project <id> --count 50 --type coins --amount 100 --ex
 
 No event carries the code.
 
+## Local verification boundary
+
+Functions unit tests cover promo grants, gifts and batch failures. Worker tests cover redeem landings and log redaction. Flutter tests cover the redeem flow and route contract. Builds and linters are separate checks. These local checks do not prove deployed proxy headers, real Firestore contention, device behavior or App Review acceptance; live Firebase and device verification are separate gates.
+
 ## Deploy order
 
 All of these go before the store build that ships the redeem UI:
 
 1. Firestore rules (`firestore.rules`): server-only `promoCodes`, `redemptions` and `promoRedeemRate`.
 2. Firestore indexes (`firestore.indexes.json`): the TTL policy on `promoRedeemRate.expiresAt`.
-3. Functions: `redeemCode`, `createPromoCode`, `listPromoCodes`, `setPromoCodeDisabled` (new), and `giftPremiumPass` (stacks on a longer pass).
+3. Functions: `redeemCode`, `createPromoCode`, `listPromoCodes`, `setPromoCodeDisabled` (new), and `giftPremiumPass` (preserves a longer pass).
 4. Cloudflare Worker: `/redeem` as an app page, `/redeem` and `/redeem/*` in the Apple app site association.
 
-After the functions deploy, call `redeemCode` once from a phone with a wrong code. Then look at the `promoRedeemRate` document IDs in the console: one `ip_` document must appear per phone, not one for all phones. If all calls share one `ip_` document, the IP source is wrong. The IP limit then counts misses from everyone together, and it must be fixed before a giveaway.
+Before a giveaway, verify the trusted proxy chain on the actual callable deployment. Google's external Application Load Balancer can append both the client IP and load balancer IP to `X-Forwarded-For`, so its last hop is not universally the client. Do not switch blindly to another hop without checking which proxies are trusted.
+
+After the functions deploy, send wrong-code requests from phones on different public networks and inspect the `promoRedeemRate` document IDs. They must not all share one `ip_` counter. Also check that adding an attacker-supplied `X-Forwarded-For` prefix does not change the counter for the same client. A shared proxy address can block unrelated users after 30 misses; a spoofable address lets attackers evade the limit. Both must be resolved before a giveaway. Local mocked headers do not prove either property.

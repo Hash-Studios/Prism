@@ -19,12 +19,21 @@ const int _maxInputLength = 40;
 
 void _applyGrant(RedeemSucceeded result) {
   final CoinsService coins = CoinsService.instance;
+  if (result.replayed) {
+    // A replay contains the original transaction totals, not necessarily today's balance or pass state.
+    unawaited(coins.refreshBalance().catchError((Object _) => app_state.prismUser.coins));
+    return;
+  }
   switch (result.reward) {
     case CoinsReward():
       final int? balance = result.coinBalance;
       if (balance != null) coins.applyServerBalance(balance, ownerId: app_state.prismUser.id);
     case PremiumDaysReward(:final until):
-      if (until != null) coins.passesNotifier.value = coins.passesNotifier.value.copyWith(premiumPassUntil: until);
+      if (until != null) {
+        final DateTime? currentUntil = coins.passesNotifier.value.premiumPassUntil;
+        final DateTime longerUntil = currentUntil != null && currentUntil.isAfter(until) ? currentUntil : until;
+        coins.passesNotifier.value = coins.passesNotifier.value.copyWith(premiumPassUntil: longerUntil);
+      }
   }
 }
 
@@ -146,6 +155,7 @@ class _RedeemCodeBodyState extends State<RedeemCodeBody> {
     final ({String code, String requestId})? last = _lastAttempt;
     final String requestId = last != null && last.code == code ? last.requestId : newPromoRequestId();
     _lastAttempt = (code: code, requestId: requestId);
+    final String ownerId = app_state.prismUser.id;
     setState(() => _phase = const _Redeeming());
     final RedeemOutcome outcome = await widget.repository.redeem(
       code,
@@ -155,6 +165,11 @@ class _RedeemCodeBodyState extends State<RedeemCodeBody> {
     if (!mounted) return;
     switch (outcome) {
       case RedeemSucceeded(:final reward):
+        if (ownerId != app_state.prismUser.id) {
+          _lastAttempt = null;
+          _fail(RedeemFailureReason.signedOut);
+          return;
+        }
         unawaited(analytics.track(RedeemSucceededEvent(type: reward.type)));
         widget.onRedeemed(outcome);
         unawaited(HapticFeedback.mediumImpact());

@@ -61,12 +61,15 @@ sealed class RedeemOutcome {
 }
 
 final class RedeemSucceeded extends RedeemOutcome {
-  const RedeemSucceeded(this.reward, {this.coinBalance});
+  const RedeemSucceeded(this.reward, {this.coinBalance, this.replayed = false});
 
   final PromoReward reward;
 
   /// The balance after a coin code, from the server.
   final int? coinBalance;
+
+  /// True when the server returned a stored result for an earlier request. Its totals may now be stale.
+  final bool replayed;
 }
 
 final class RedeemFailed extends RedeemOutcome {

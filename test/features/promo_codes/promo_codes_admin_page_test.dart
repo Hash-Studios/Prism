@@ -150,6 +150,17 @@ void main() {
     expect(fake.dataFor('createPromoCode')['amount'], 7);
   });
 
+  testWidgets('on iOS the admin form offers only coin codes', (WidgetTester tester) async {
+    final _FakeCallable fake = _FakeCallable();
+    await pumpPage(tester, fake);
+
+    expect(find.text('Pro days'), findsNothing);
+    expect(find.text('Coins'), findsOneWidget);
+    await enter(tester, amountField, '100');
+    await tapText(tester, 'Create code');
+    expect(fake.dataFor('createPromoCode')['type'], 'coins');
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
   testWidgets('New accounts only sends newUsersOnlyDays', (WidgetTester tester) async {
     final _FakeCallable fake = _FakeCallable();
     await pumpPage(tester, fake);
