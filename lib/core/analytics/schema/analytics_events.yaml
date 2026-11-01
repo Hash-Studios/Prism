@@ -2953,3 +2953,51 @@ events:
         key: source
         type: enum
         enum: WrappedSourceValue
+  - id: trial_timeline_shown
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+      - name: product_id
+        key: product_id
+        type: string
+      - name: trial_days
+        key: trial_days
+        type: int
+  - id: trial_reminder_toggled
+    fields:
+      - name: enabled
+        key: enabled
+        type: bool
+  - id: trial_not_eligible_shown
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+      - name: reason
+        key: reason
+        type: string
+  - id: trial_started
+    fields:
+      - name: product_id
+        key: product_id
+        type: string
+  - id: trial_converted
+    fields:
+      - name: product_id
+        key: product_id
+        type: string
+  - id: trial_cancelled
+    fields:
+      - name: product_id
+        key: product_id
+        type: string
+      - name: reason
+        key: reason
+        type: string

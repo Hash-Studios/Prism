@@ -1,16 +1,24 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/purchases/annual_trial.dart';
 import 'package:Prism/core/purchases/purchase_analytics.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
+import 'package:Prism/core/purchases/trial_reminder.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
+import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
+import 'package:Prism/features/premium/views/pages/trial_timeline_page.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
@@ -39,6 +47,9 @@ class PaywallOrchestrator {
   bool get _rcPaywallsEnabled => app_state.useRcPaywalls;
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
   int _activePresentations = 0;
+
+  /// The root navigator context. The trial timeline is a Flutter page, and many callers pass no context.
+  BuildContext? Function()? navigatorContext;
 
   Future<PaywallResultValue> present({
     required String placement,
@@ -180,55 +191,48 @@ class PaywallOrchestrator {
         return PaywallResultValue.noOffering;
       }
 
-      Package? selectedPackage;
-      final PaywallResult paywallResult = await RevenueCatUI.presentPaywall(
-        offering: offering,
-        onPurchaseStarted: (package) => selectedPackage = package,
-        onPurchaseCompleted: (customerInfo, transaction) {
-          const String transactionKey = 'analytics_verified_purchase_transactions';
-          final List<String> recorded = List<String>.from(
-            _settings.get<List<Object?>>(transactionKey, defaultValue: const <Object?>[]),
+      PaywallResultValue? timelineResult;
+      final TrialOfferLookup trial = await PurchasesService.instance.trialOffer(offering).timeout(_loadTimeout);
+      if (!isCurrentAccount()) return PaywallResultValue.error;
+      final TrialOffer? trialOffer = trial.offer;
+      final BuildContext? timelineContext = navigatorContext?.call();
+      if (trialOffer != null && timelineContext != null && timelineContext.mounted) {
+        timelineResult = await _presentTrialTimeline(
+          timelineContext,
+          offer: trialOffer,
+          placement: placement,
+          source: source,
+        );
+        if (timelineResult == PaywallResultValue.cancelled) {
+          analytics.track(
+            PaywallResultEvent(
+              source: source,
+              placement: placement,
+              result: PaywallResultValue.cancelled,
+              rcOrFallback: RcOrFallbackValue.rc,
+            ),
           );
-          final events = verifiedPurchaseEvents(
-            transaction: transaction,
-            selectedPackage: selectedPackage,
-            recordedTransactions: recorded,
-            source: source,
-            placement: placement,
-            subscriptionTier: PurchasesService.instance.tierFromCustomerInfo(customerInfo).name,
-          );
-          if (events.isEmpty) return;
-          _settings.set(transactionKey, recorded);
-          for (final event in events) {
-            analytics.track(event);
-          }
-        },
-        onRestoreCompleted: (customerInfo) {
-          for (final event in restoredPurchaseEvents(
-            customerInfo.entitlements.active.values.map((e) => e.productIdentifier),
-          )) {
-            analytics.track(event);
-          }
-        },
-        customVariables: <String, CustomVariableValue>{
-          'placement': CustomVariableValue.string(placement),
-          'source': CustomVariableValue.string(source),
-        },
-      );
+          return isCurrentAccount() ? PaywallResultValue.cancelled : PaywallResultValue.error;
+        }
+      } else if (trial.reason != null && trial.reason != TrialUnavailableReason.noAnnualPackage) {
+        analytics.track(TrialNotEligibleShownEvent(source: source, placement: placement, reason: trial.reason!.name));
+      }
 
-      if (paywallResult == PaywallResult.notPresented || paywallResult == PaywallResult.error) {
+      final PaywallResultValue resultValue =
+          timelineResult ?? await _presentRevenueCatSheet(offering, placement: placement, source: source);
+      if (resultValue == PaywallResultValue.notPresented || resultValue == PaywallResultValue.error) {
         analytics.track(
           PaywallResultEvent(
             source: source,
             placement: placement,
-            result: paywallResultValueFromSdkName(paywallResult.name),
+            result: resultValue,
             rcOrFallback: RcOrFallbackValue.rc,
           ),
         );
-        return isCurrentAccount() ? paywallResultValueFromSdkName(paywallResult.name) : PaywallResultValue.error;
+        return isCurrentAccount() ? resultValue : PaywallResultValue.error;
       }
 
-      final bool completed = paywallResult == PaywallResult.purchased || paywallResult == PaywallResult.restored;
+      final bool completed = resultValue == PaywallResultValue.purchased || resultValue == PaywallResultValue.restored;
       final PurchaseEntitlementStatus status = isCurrentAccount() && completed
           ? await PurchasesService.instance.checkPurchaseEntitlement()
           : PurchaseEntitlementStatus.none;
@@ -241,7 +245,7 @@ class PaywallOrchestrator {
         PaywallResultEvent(
           source: source,
           placement: placement,
-          result: paywallResultValueFromSdkName(paywallResult.name),
+          result: resultValue,
           entitlementSynced: confirmedForCurrentAccount ? 1 : 0,
           entitlement: PurchaseConstants.entitlementV3ProAccess,
           rcOrFallback: RcOrFallbackValue.rc,
@@ -263,7 +267,7 @@ class PaywallOrchestrator {
         }
         return PaywallResultValue.error;
       }
-      return paywallResultValueFromSdkName(paywallResult.name);
+      return resultValue;
     } catch (error) {
       if (!isCurrentAccount()) return PaywallResultValue.error;
       analytics.track(
@@ -276,6 +280,123 @@ class PaywallOrchestrator {
         ),
       );
       return PaywallResultValue.rcError;
+    }
+  }
+
+  Future<PaywallResultValue> _presentRevenueCatSheet(
+    Offering offering, {
+    required String placement,
+    required String source,
+  }) async {
+    Package? selectedPackage;
+    final PaywallResult paywallResult = await RevenueCatUI.presentPaywall(
+      offering: offering,
+      onPurchaseStarted: (package) => selectedPackage = package,
+      onPurchaseCompleted: (customerInfo, transaction) =>
+          _recordVerifiedPurchase(transaction, selectedPackage, customerInfo, source: source, placement: placement),
+      onRestoreCompleted: (customerInfo) {
+        for (final event in restoredPurchaseEvents(
+          customerInfo.entitlements.active.values.map((e) => e.productIdentifier),
+        )) {
+          analytics.track(event);
+        }
+      },
+      customVariables: <String, CustomVariableValue>{
+        'placement': CustomVariableValue.string(placement),
+        'source': CustomVariableValue.string(source),
+      },
+    );
+    return paywallResultValueFromSdkName(paywallResult.name);
+  }
+
+  void _recordVerifiedPurchase(
+    StoreTransaction transaction,
+    Package? selectedPackage,
+    CustomerInfo customerInfo, {
+    required String source,
+    required String placement,
+  }) {
+    const String transactionKey = 'analytics_verified_purchase_transactions';
+    final List<String> recorded = List<String>.from(
+      _settings.get<List<Object?>>(transactionKey, defaultValue: const <Object?>[]),
+    );
+    final events = verifiedPurchaseEvents(
+      transaction: transaction,
+      selectedPackage: selectedPackage,
+      recordedTransactions: recorded,
+      source: source,
+      placement: placement,
+      subscriptionTier: PurchasesService.instance.tierFromCustomerInfo(customerInfo).name,
+    );
+    if (events.isEmpty) return;
+    _settings.set(transactionKey, recorded);
+    for (final event in events) {
+      analytics.track(event);
+    }
+  }
+
+  /// Starting the trial buys the annual package from the timeline. "See all plans" returns null, so the RevenueCat
+  /// paywall shows next.
+  Future<PaywallResultValue?> _presentTrialTimeline(
+    BuildContext context, {
+    required TrialOffer offer,
+    required String placement,
+    required String source,
+  }) async {
+    analytics.track(
+      TrialTimelineShownEvent(source: source, placement: placement, productId: offer.productId, trialDays: offer.days),
+    );
+    await TrialReminder.instance.setOptIn(true);
+    if (!context.mounted) return null;
+    final TrialTimelineChoice? choice = await Navigator.of(context, rootNavigator: true).push<TrialTimelineChoice>(
+      MaterialPageRoute<TrialTimelineChoice>(
+        fullscreenDialog: true,
+        builder: (BuildContext pageContext) => TrialTimelinePage(
+          offer: offer,
+          onReminderToggled: (bool enabled) {
+            analytics.track(TrialReminderToggledEvent(enabled: enabled));
+            unawaited(TrialReminder.instance.setOptIn(enabled));
+          },
+          onStartTrial: ({required bool remind}) =>
+              _purchaseTrial(offer, remind: remind, placement: placement, source: source),
+        ),
+      ),
+    );
+    return switch (choice) {
+      TrialTimelineChoice.started => PaywallResultValue.purchased,
+      TrialTimelineChoice.seeAllPlans => null,
+      TrialTimelineChoice.closed || null => PaywallResultValue.cancelled,
+    };
+  }
+
+  Future<bool> _purchaseTrial(
+    TrialOffer offer, {
+    required bool remind,
+    required String placement,
+    required String source,
+  }) async {
+    try {
+      final PurchaseResult result = await Purchases.purchase(PurchaseParams.package(offer.package));
+      _recordVerifiedPurchase(
+        result.storeTransaction,
+        offer.package,
+        result.customerInfo,
+        source: source,
+        placement: placement,
+      );
+      if (remind) {
+        try {
+          await const NotificationPermissionGateway().request();
+        } catch (error) {
+          logger.w('Notification permission request failed.', error: error);
+        }
+      }
+      return true;
+    } on PlatformException catch (error) {
+      if (PurchasesErrorHelper.getErrorCode(error) == PurchasesErrorCode.purchaseCancelledError) return false;
+      logger.w('Trial purchase failed.', error: error);
+      toasts.error((await loadDeviceAppLocalizations()).trialTimelineStartFailed);
+      return false;
     }
   }
 }

@@ -7,9 +7,11 @@ import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/purchases/annual_trial.dart';
 import 'package:Prism/core/purchases/purchase_analytics.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
+import 'package:Prism/core/purchases/trial_reminder.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/env/env.dart';
 import 'package:Prism/logger/logger.dart';
@@ -35,7 +37,8 @@ class PurchasesService {
       _configurePurchases = Purchases.configure,
       _logIn = Purchases.logIn,
       _getCustomerInfo = Purchases.getCustomerInfo,
-      _apiKey = _resolveApiKey;
+      _apiKey = _resolveApiKey,
+      _onCustomerInfo = TrialReminder.instance.apply;
 
   @visibleForTesting
   PurchasesService.forTesting({
@@ -48,6 +51,7 @@ class PurchasesService {
     Future<void> Function(String userId)? logIn,
     Future<CustomerInfo> Function()? getCustomerInfo,
     String Function()? apiKey,
+    Future<void> Function(CustomerInfo info, {required String userId})? onCustomerInfo,
   }) : _addCustomerInfoListener = addCustomerInfoListener,
        _syncSubscriptionOverride = syncSubscription,
        _syncRetryBackoff = syncRetryBackoff,
@@ -56,7 +60,10 @@ class PurchasesService {
        _configurePurchases = configurePurchases ?? Purchases.configure,
        _logIn = logIn ?? Purchases.logIn,
        _getCustomerInfo = getCustomerInfo ?? Purchases.getCustomerInfo,
-       _apiKey = apiKey ?? _resolveApiKey;
+       _apiKey = apiKey ?? _resolveApiKey,
+       _onCustomerInfo = onCustomerInfo ?? _ignoreCustomerInfo;
+
+  static Future<void> _ignoreCustomerInfo(CustomerInfo info, {required String userId}) async {}
 
   static final PurchasesService instance = PurchasesService._();
 
@@ -73,6 +80,12 @@ class PurchasesService {
   final Future<dynamic> Function(String userId) _logIn;
   final Future<CustomerInfo> Function() _getCustomerInfo;
   final String Function() _apiKey;
+
+  /// The free trial in the last CustomerInfo applied for the current user, or null.
+  final ValueNotifier<ActiveTrial?> activeTrial = ValueNotifier<ActiveTrial?>(null);
+
+  /// Keeps the trial reminder and trial analytics in step with each CustomerInfo the app applies.
+  final Future<void> Function(CustomerInfo info, {required String userId}) _onCustomerInfo;
   Future<void> _setupQueue = Future<void>.value();
   bool _configured = false;
   bool _customerInfoListenerRegistered = false;
@@ -424,6 +437,14 @@ class PurchasesService {
     app_state.prismUser.premium = isPremium;
     app_state.prismUser.subscriptionTier = tier.name;
     app_state.persistPrismUser();
+    activeTrial.value = activeTrialFrom(info);
+    if (loggedIn && userId.isNotEmpty) {
+      unawaited(
+        _onCustomerInfo(info, userId: userId).catchError((Object error, StackTrace stackTrace) {
+          logger.w('Unable to update the trial reminder.', error: error, stackTrace: stackTrace);
+        }),
+      );
+    }
     final _SubscriptionPersistResult syncResult = await _persistSubscriptionStateToFirestore(
       isPremium: isPremium,
       tier: tier,
@@ -495,6 +516,23 @@ class PurchasesService {
     }
   }
 
+  /// The annual free trial this user can start, from the store's own eligibility answer.
+  Future<TrialOfferLookup> trialOffer(Offering offering) async {
+    if (!Platform.isIOS) return trialOfferFor(offering, isIos: false);
+    final Package? annual = offering.annual;
+    if (annual == null || freeTrialDays(annual.storeProduct, isIos: true) == null) {
+      return trialOfferFor(offering, isIos: true);
+    }
+    IntroEligibilityStatus? status;
+    try {
+      final String productId = annual.storeProduct.identifier;
+      status = (await Purchases.checkTrialOrIntroductoryPriceEligibility(<String>[productId]))[productId]?.status;
+    } on PlatformException catch (e) {
+      logger.d('checkTrialOrIntroductoryPriceEligibility failed: $e');
+    }
+    return trialOfferFor(offering, isIos: true, iosEligibility: status);
+  }
+
   Future<Offerings?> getOfferings() async {
     if (kDebugMode && Env.localQa) return null;
     try {
@@ -540,6 +578,7 @@ class PurchasesService {
         logger.w('Skipping RevenueCat logout for anonymous user.');
       }
       _configuredUserId = '';
+      activeTrial.value = null;
     } finally {
       _identityTransitionInProgress = false;
     }
