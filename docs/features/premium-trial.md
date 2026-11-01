@@ -99,26 +99,32 @@ Old versions use the same `v3_default` offering and the RevenueCat paywall. Afte
 
 ## Store and RevenueCat setup
 
-Do these steps in this order. Do the store steps before the release that ships this change.
+Do these steps in this order. The app release can come before or after them: without a store offer, the app shows the normal paywall. Change the RevenueCat paywall first, so that old app versions show trial text only when the store gives a trial.
 
-### 1. App Store Connect: 7 days free on annual, in all territories
+### 1. RevenueCat
+
+1. In Product catalog, open the `v3_default` offering. Make sure the `$rc_annual` package has the iOS annual product and the Play annual product with base plan `<BASE_PLAN_ID>`. Do not change the monthly or lifetime packages. Do not change the current offering.
+2. Open the `v3_default` paywall. Put all trial text inside an "Introductory offer" rule, with the normal price text as the fallback. Use `{{ product.offer_period }}` and `{{ product.offer_price_with_zero }}`. Do not add static trial text. Do not promise a reminder, because old app versions do not schedule one.
+3. Check the paywall preview with an eligible and an ineligible sandbox account.
+
+### 2. App Store Connect: 7 days free on annual, in all territories
+
+The iOS annual product is `prism_v3_pro_annual` (read from the live `v3_default` offering on 2026-11-01). `asc` takes a product ID with `--app`.
 
 ```sh
-asc subscriptions groups list --app "$ASC_APP_ID"
-asc subscriptions list --group-id "<GROUP_ID>"                 # find the annual subscription ID
-asc subscriptions offers introductory list --subscription-id "<ANNUAL_SUB_ID>"
-asc subscriptions offers introductory create --subscription-id "<ANNUAL_SUB_ID>" \
+asc subscriptions offers introductory list --app "$ASC_APP_ID" --subscription-id prism_v3_pro_annual --output table
+asc subscriptions offers introductory create --app "$ASC_APP_ID" --subscription-id prism_v3_pro_annual \
   --all-territories --offer-duration ONE_WEEK --offer-mode FREE_TRIAL --number-of-periods 1 --dry-run
-asc subscriptions offers introductory create --subscription-id "<ANNUAL_SUB_ID>" \
+asc subscriptions offers introductory create --app "$ASC_APP_ID" --subscription-id prism_v3_pro_annual \
   --all-territories --offer-duration ONE_WEEK --offer-mode FREE_TRIAL --number-of-periods 1
-asc subscriptions offers introductory list --subscription-id "<ANNUAL_SUB_ID>" --output table
+asc subscriptions offers introductory list --app "$ASC_APP_ID" --subscription-id prism_v3_pro_annual --output table
 ```
 
 - Make sure the `list` shows no other introductory offer on annual before you create one. A territory can have only one.
 - Do not add an offer to the monthly subscription.
 - Apple gives an introductory offer one time for each subscription group. A user who had any subscription in the group is not eligible.
 
-### 2. Google Play: 7-day free trial for new customers
+### 3. Google Play: 7-day free trial for new customers
 
 In Play Console, open Monetize, Subscriptions, the annual subscription, and the yearly base plan. Add an offer:
 
@@ -131,12 +137,6 @@ In Play Console, open Monetize, Subscriptions, the annual subscription, and the 
 | Regions | All regions of the base plan |
 
 Then activate the offer. Do not change the monthly subscription or the lifetime product.
-
-### 3. RevenueCat
-
-1. In Product catalog, open the `v3_default` offering. Make sure the `$rc_annual` package has the iOS annual product and the Play annual product with base plan `<BASE_PLAN_ID>`. Do not change the monthly or lifetime packages. Do not change the current offering.
-2. Open the `v3_default` paywall. Put all trial text inside an "Introductory offer" rule, with the normal price text as the fallback. Use `{{ product.offer_period }}` and `{{ product.offer_price_with_zero }}`. Do not add static trial text. Do not promise a reminder, because old app versions do not schedule one.
-3. Check the paywall preview with an eligible and an ineligible sandbox account.
 
 ### 4. Check before the release
 
