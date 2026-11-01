@@ -1,5 +1,11 @@
 ## Changelog
 
+### v3.18.1
+- Open a desktop version of a wallpaper, and send it to your computer
+- Your iPhone Shortcut now rotates walls you have downloaded, including protected ones
+- Pull to refresh now shows new Creators to follow
+- Security and stability fixes
+
 ### v3.18.0
 - Find creators to follow in the new creator directory
 - Send coins to thank a creator for a wallpaper you love
