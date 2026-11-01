@@ -44,17 +44,17 @@ export interface StudioProcessDeps {
 }
 
 /** The candidate can try again: network error, timeout, worker 409, 429 other than budget_exhausted, 5xx. */
-class TransientError extends Error {}
+export class TransientError extends Error {}
 
 /** The candidate cannot succeed; it is marked failed with `code`. */
-class PermanentError extends Error {
+export class PermanentError extends Error {
   constructor(readonly code: string, message: string) {
     super(message);
   }
 }
 
 /** The provider refused to return the image (worker 502 unsafe_output); the candidate is rejected with `code`. */
-class RejectedError extends PermanentError {}
+export class RejectedError extends PermanentError {}
 
 interface WorkerImage {
   imageUrl: string;
@@ -88,7 +88,7 @@ export function workerBaseUrl(): string {
 }
 
 async function workerFetch(
-  deps: StudioProcessDeps, what: string, path: string, init: RequestInit, timeoutMs: number,
+  deps: Pick<StudioProcessDeps, "worker">, what: string, path: string, init: RequestInit, timeoutMs: number,
 ): Promise<Response> {
   try {
     return await fetch(`${deps.worker.base}${path}`, {
@@ -120,7 +120,8 @@ async function workerError(response: Response, what: string): Promise<Error> {
   return new PermanentError(code || `http_${response.status}`, text);
 }
 
-async function generate(deps: StudioProcessDeps, candidateId: string, c: admin.firestore.DocumentData) {
+export async function generate(deps: Pick<StudioProcessDeps, "worker">, candidateId: string,
+  c: admin.firestore.DocumentData) {
   if (c.duoPresetId && (c.duoPresetId !== duo.presetId || hasBannedDuoPhrase(str(c.prompt)))) {
     throw new PermanentError("duo_prompt", "Duo prompt failed the originality guard.");
   }
@@ -149,7 +150,7 @@ async function generate(deps: StudioProcessDeps, candidateId: string, c: admin.f
   } satisfies WorkerImage;
 }
 
-async function download(url: string): Promise<Buffer> {
+export async function download(url: string): Promise<Buffer> {
   let response: Response;
   try {
     response = await fetch(url, {signal: AbortSignal.timeout(TRANSFER_TIMEOUT_MS)});
@@ -172,7 +173,7 @@ async function putAsset(deps: StudioProcessDeps, key: string, bytes: Buffer): Pr
   return url.startsWith("https://") ? url : `${PUBLIC_ASSET_BASE}/${key}`;
 }
 
-async function deleteAsset(deps: StudioProcessDeps, key: string): Promise<void> {
+export async function deleteAsset(deps: Pick<StudioProcessDeps, "worker">, key: string): Promise<void> {
   if (!RAW_ASSET_KEY.test(key)) {
     logger.warn("studio: not deleting an asset with an unexpected key.", {key});
     return;

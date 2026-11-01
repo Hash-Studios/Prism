@@ -550,7 +550,8 @@ test("rebuildWebCatalog writes the catalogue once, then writes nothing on a seco
   }, writes);
   const first = await rebuildWebCatalog();
   assert.equal(first.walls, 1);
-  assert.equal(first.pages, 8);
+  assert.equal(first.pages, 9);
+  assert.deepEqual(store.get("webPages/desktop~1")?.items, []);
   assert.ok(store.has("webWalls/W1"));
   assert.ok(store.has("webPages/latest~1"));
   assert.ok(store.has("webPages/sitemap~index"));

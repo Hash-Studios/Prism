@@ -7,6 +7,7 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {db, REGION, str} from "./common";
 import {isPreviewUrl} from "./pushGallery";
 import {r2Secrets} from "./r2Storage";
+import {parseDesktopVariant} from "./studio/desktop";
 import {PALETTE} from "./wallColors";
 import {isWotdEligible, parseCollectionList} from "./wallEligibility";
 
@@ -31,7 +32,7 @@ const HIDDEN_TEXT = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}]/gu;
 const PALETTE_HEX = new Map(PALETTE.map(({id, hex}) => [id, `#${hex}`]));
 const RELEVANT_FIELDS = ["id", "review", "originalProtected", "is_streak_exclusive", "dropReserved", "dropWeek",
   "collections", "wallpaper_thumb", "title", "desc", "tags", "category", "colors", "resolution", "by", "creatorUid",
-  "createdAt"];
+  "createdAt", "desktopVariant"];
 
 type Doc = admin.firestore.DocumentData;
 
@@ -57,9 +58,14 @@ export interface WebWall {
   thumb?: string;
   blur?: string;
   blurKey?: string;
+  /** Live walls only: the desktop companion's public thumbnail and version. */
+  desktop?: WebDesktop;
 }
 
+export interface WebDesktop {v: string; thumb: string; width: number; height: number}
+
 export interface WebCard {id: string; title: string; thumb: string; width: number; height: number}
+export interface WebDesktopCard extends WebCard {desktop: string}
 
 interface PublicProfile {username: string; name: string; bio: string; photo: string}
 
@@ -188,7 +194,11 @@ export async function projectWall(
     creatorName: profile?.name || cleanText(wall.by, 60),
     creator: profile ? {username: profile.username, name: profile.name} : null,
   };
-  if (live) return {...projected, thumb};
+  if (live) {
+    const desktop = parseDesktopVariant(wall.desktopVariant);
+    return {...projected, thumb,
+      ...(desktop ? {desktop: {v: desktop.v, thumb: desktop.thumb, width: desktop.width, height: desktop.height}} : {})};
+  }
   if (!isPreviewUrl(thumb)) return projected;
   const blurKey = createHash("sha256").update(thumb).digest("hex").slice(0, 16);
   if (previous?.blurKey === blurKey && isBlurDataUrl(previous.blur)) return {...projected, blur: previous.blur, blurKey};
@@ -345,6 +355,10 @@ export function buildPages(
   for (const [slug, entries] of byCategory) {
     add(paged(`category~${slug}`, {kind: "category", slug, name: entries[0][1].category, categories}, cards(entries)));
   }
+  // One list serves both /desktop-wallpapers and /matching-sets: the same walls, shown as desktops or as pairs.
+  const desktops = live.filter(([, wall]) => wall.desktop);
+  add(paged("desktop", {kind: "desktop"}, desktops.map(([id, wall]): WebDesktopCard =>
+    ({...cardOf(id, wall), desktop: wall.desktop?.thumb ?? ""}))));
 
   const publicFolders = folders.map((folder) => {
     const items = folder.wallIds.flatMap((id) => {
@@ -379,6 +393,8 @@ export function buildPages(
     ["/wallpapers/popular", maxDate(popular.map(([, w]) => w.updatedAt))],
     ...[...byCategory].map(([slug, entries]): [string, string] =>
       [`/wallpapers/${slug}`, maxDate(entries.map(([, w]) => w.updatedAt))]),
+    ...(desktops.length ? ["/desktop-wallpapers", "/matching-sets"].map((path): [string, string] =>
+      [path, maxDate(desktops.map(([, w]) => w.updatedAt))]) : []),
   ];
   const folderEntries = publicFolders.filter((f) => f.items.length > 0)
     .map((f): [string, string] => [`/folder/${f.id}`, f.updatedAt]);
