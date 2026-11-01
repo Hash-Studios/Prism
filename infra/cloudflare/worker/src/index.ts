@@ -17,6 +17,7 @@ export interface Env extends AiEnvBindings {
   BROWSER_RENDERING_API_TOKEN?: string;
   CATALOG_FIRESTORE_ORIGIN?: string;
   CATALOG_PREVIEW_ORIGIN?: string;
+  MIXPANEL_TOKEN?: string;
 }
 
 type LinkType = 'share' | 'user' | 'setup' | 'refer' | 'page';
@@ -191,7 +192,8 @@ export default {
       return aiResponse;
     }
 
-    const catalogResponse = await handleCatalogRequest(request, url, env, ctx, () => renderDirectLanding(url, request, env));
+    const catalogResponse = await handleCatalogRequest(request, url, env, ctx, () => renderDirectLanding(url, request, env),
+      (ip) => limitDownloads(ip, env));
     if (catalogResponse != null) {
       return catalogResponse;
     }
@@ -496,6 +498,12 @@ function renderDirectLanding(url: URL, request: Request, env: Env): Response {
     version: DEFAULT_OG_VERSION,
   };
   return html(renderHumanLandingHtml(record.canonical_url, record, request, env));
+}
+
+/** Web downloads: their own counters, apart from the link API's. */
+async function limitDownloads(ip: string, env: Env): Promise<boolean> {
+  if (!(await bumpRateLimit(env, `rl:dl:10m:${ip}`, 30, 600))) return false;
+  return bumpRateLimit(env, `rl:dl:1d:${ip}`, 300, 86400);
 }
 
 async function enforceCreateRateLimits(ip: string, env: Env): Promise<boolean> {

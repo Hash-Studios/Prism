@@ -3457,5 +3457,16 @@
   "promoAdminEnable": "Activar",
   "promoAdminEmpty": "Aún no hay códigos.",
   "promoAdminLoadFailed": "No se pudieron cargar los códigos. Desliza hacia abajo para reintentar.",
-  "promoAdminCreateFailed": "No se pudo crear el código: {reason}"
+  "promoAdminCreateFailed": "No se pudo crear el código: {reason}",
+  "desktopVersionChip": "Versión para escritorio",
+  "desktopVersionChipSemantic": "Abrir la versión para escritorio",
+  "desktopVersionSheetTitle": "Versión para escritorio",
+  "desktopVersionSheetBody": "La misma escena, en formato ancho para la pantalla de un ordenador. {width} × {height}.",
+  "desktopVersionPreviewSemantic": "Versión para escritorio en la pantalla de un ordenador",
+  "desktopVersionSendToComputer": "Enviar a mi ordenador",
+  "desktopVersionShareText": "Consigue este fondo de pantalla para tu ordenador: {url}",
+  "desktopVersionShareSubject": "Fondo de pantalla para escritorio de Prism",
+  "desktopVersionSetOnTablet": "Configurar versión para escritorio",
+  "desktopVersionSaveOnTablet": "Guardar versión para escritorio en Fotos",
+  "desktopVersionUnavailable": "No se pudo obtener la versión para escritorio. Comprueba tu conexión e inténtalo de nuevo."
 }

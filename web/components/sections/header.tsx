@@ -32,6 +32,19 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-1">
+        {/* Served by the links Worker: deploy it before this site. */}
+        <a
+          className="hidden md:flex items-center text-base font-semibold py-2.5 px-4 rounded-3xl transition-colors text-white/80 hover:text-white hover:bg-white/10"
+          href="/wallpapers"
+        >
+          Wallpapers
+        </a>
+        <a
+          className="hidden md:flex items-center text-base font-semibold py-2.5 px-4 rounded-3xl transition-colors text-white/80 hover:text-white hover:bg-white/10"
+          href="/desktop-wallpapers"
+        >
+          Desktop
+        </a>
         <a
           className="flex items-center text-base justify-center font-semibold gap-2 py-2.5 px-4 rounded-xl sm:rounded-3xl transition-all shrink-0 cursor-pointer bg-accent/10 hover:bg-accent/20 text-accent"
           target="_blank"

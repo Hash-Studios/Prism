@@ -2836,6 +2836,21 @@ events:
       - name: creator_id
         key: creator_id
         type: string
+  - id: desktop_chip_shown
+    fields:
+      - name: content_id
+        key: content_id
+        type: string
+  - id: desktop_sheet_opened
+    fields:
+      - name: content_id
+        key: content_id
+        type: string
+  - id: desktop_send_to_computer
+    fields:
+      - name: content_id
+        key: content_id
+        type: string
   - id: redeem_sheet_opened
     fields:
       - name: source

@@ -29,15 +29,19 @@ Future<OriginalAccessQuote?> quoteOriginalWithConsent(
   required String label,
   String? requestId,
   Future<OriginalAccessQuote> Function()? quoteProvider,
+  bool desktop = false,
+  String? desktopVersion,
 }) async {
   if (!await requireSignedInAction(context)) return null;
   final service = OriginalAccessService.instance;
-  if (!OriginalAccessService.requiresGrant(url, wallpaperId, wallpaperSource)) {
+  if (!OriginalAccessService.requiresGrant(url, wallpaperId, wallpaperSource, desktop: desktop)) {
     return const OriginalAccessQuote(0, 0);
   }
   final owner = app_state.prismUser.id;
   while (context.mounted && _isSignedInOwner(owner)) {
-    final quote = await (quoteProvider?.call() ?? service.quote(wallpaperId: wallpaperId!, action: action));
+    final quote =
+        await (quoteProvider?.call() ??
+            service.quote(wallpaperId: wallpaperId!, action: action, desktop: desktop, desktopVersion: desktopVersion));
     if (!context.mounted || !_isSignedInOwner(owner)) return null;
     CoinsService.instance.applyServerBalance(quote.currentBalance, ownerId: owner);
     if (quote.requiredCoins > 0) {
@@ -97,6 +101,8 @@ Future<String?> resolveOriginalWithConsent(
   required OriginalAccessAction action,
   required String label,
   String? requestId,
+  bool desktop = false,
+  String? desktopVersion,
 }) async {
   if (!await signInForOriginal(context, url: url, wallpaperId: wallpaperId, wallpaperSource: wallpaperSource) ||
       !context.mounted) {
@@ -112,6 +118,8 @@ Future<String?> resolveOriginalWithConsent(
       action: action,
       label: label,
       requestId: requestId,
+      desktop: desktop,
+      desktopVersion: desktopVersion,
     );
     if (quote == null || !context.mounted || !_isSignedInOwner(owner)) return null;
     try {
@@ -122,6 +130,8 @@ Future<String?> resolveOriginalWithConsent(
         action: action,
         requestId: requestId,
         maxCoins: quote.requiredCoins,
+        desktop: desktop,
+        desktopVersion: desktopVersion,
       );
       return context.mounted && _isSignedInOwner(owner) ? resolved : null;
     } on OriginalAccessInsufficientBalance {

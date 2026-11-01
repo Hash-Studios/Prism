@@ -4250,6 +4250,48 @@ class SimilarCreatorFollowedEvent extends AnalyticsEvent {
   }
 }
 
+class DesktopChipShownEvent extends AnalyticsEvent {
+  const DesktopChipShownEvent({required this.contentId});
+
+  final String contentId;
+
+  @override
+  String get eventName => 'desktop_chip_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'content_id': contentId};
+  }
+}
+
+class DesktopSheetOpenedEvent extends AnalyticsEvent {
+  const DesktopSheetOpenedEvent({required this.contentId});
+
+  final String contentId;
+
+  @override
+  String get eventName => 'desktop_sheet_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'content_id': contentId};
+  }
+}
+
+class DesktopSendToComputerEvent extends AnalyticsEvent {
+  const DesktopSendToComputerEvent({required this.contentId});
+
+  final String contentId;
+
+  @override
+  String get eventName => 'desktop_send_to_computer';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'content_id': contentId};
+  }
+}
+
 class RedeemSheetOpenedEvent extends AnalyticsEvent {
   const RedeemSheetOpenedEvent({required this.source});
 

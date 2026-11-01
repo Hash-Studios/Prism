@@ -12494,4 +12494,41 @@ class AppLocalizationsId extends AppLocalizations {
   String promoAdminCreateFailed(String reason) {
     return 'Kode tidak bisa dibuat: $reason';
   }
+
+  @override
+  String get desktopVersionChip => 'Versi desktop';
+
+  @override
+  String get desktopVersionChipSemantic => 'Buka versi desktop';
+
+  @override
+  String get desktopVersionSheetTitle => 'Versi desktop';
+
+  @override
+  String desktopVersionSheetBody(int width, int height) {
+    return 'Gambar yang sama, dibuat lebar untuk layar komputer. $width × $height.';
+  }
+
+  @override
+  String get desktopVersionPreviewSemantic => 'Versi desktop di layar komputer';
+
+  @override
+  String get desktopVersionSendToComputer => 'Kirim ke komputer saya';
+
+  @override
+  String desktopVersionShareText(String url) {
+    return 'Dapatkan wallpaper ini untuk komputer Anda: $url';
+  }
+
+  @override
+  String get desktopVersionShareSubject => 'Wallpaper desktop dari Prism';
+
+  @override
+  String get desktopVersionSetOnTablet => 'Pasang versi desktop';
+
+  @override
+  String get desktopVersionSaveOnTablet => 'Simpan versi desktop ke Foto';
+
+  @override
+  String get desktopVersionUnavailable => 'Versi desktop tidak dapat diambil. Periksa koneksi Anda, lalu coba lagi.';
 }
