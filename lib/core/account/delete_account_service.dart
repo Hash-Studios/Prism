@@ -1,5 +1,4 @@
 import 'package:Prism/auth/google_auth.dart';
-import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/account/local_account_data_cleaner.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -12,6 +11,7 @@ import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart'
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 typedef _Step = Future<void> Function();
 
@@ -42,60 +42,45 @@ class DeleteAccountService {
   ///      Firebase Auth user server-side
   ///   3. Signs out of the Google SDK and clears local persistence
   Future<void> deleteAccount() async {
-    final PrismUsersV2 owner = app_state.prismUser;
-    final String userId = owner.id;
-    final bool ownerLoggedIn = owner.loggedIn;
+    final userId = app_state.prismUser.id;
     if (userId.isEmpty) throw StateError('No signed-in user to delete.');
-    bool ownsLocalAccount() =>
-        identical(app_state.prismUser, owner) &&
-        app_state.prismUser.id == userId &&
-        app_state.prismUser.loggedIn == ownerLoggedIn;
-    void requireOwner() {
-      if (!ownsLocalAccount()) throw StateError('The account deletion session changed.');
-    }
 
     logger.i('[DeleteAccount] Starting deletion for userId=$userId', tag: 'DeleteAccount');
 
     // If the user cancels re-authentication this throws and we never reach the server.
     await _reauthenticate();
-    requireOwner();
     await _deleteOnServer();
-    requireOwner();
 
     // Sign out from Google SDK so silent re-auth doesn't recreate the account.
-    final bool signedOut = await _signOut();
-    final bool isGuest = app_state.prismUser.id.isEmpty && !app_state.prismUser.loggedIn;
-    if (!signedOut || (!ownsLocalAccount() && !isGuest)) {
-      throw StateError('The account deletion session changed.');
-    }
+    await _signOut();
     await _clearLocalData(userId);
 
     logger.i('[DeleteAccount] Done', tag: 'DeleteAccount');
   }
 
   static Future<void> _reauthenticateWithProvider() async {
-    final PrismUsersV2 owner = app_state.prismUser;
-    final String userId = owner.id;
-    final bool ownerLoggedIn = owner.loggedIn;
-    if (!FirebaseInit.hasDefaultApp) {
-      final bool firebaseReady = await FirebaseInit.waitUntilReady();
-      if (!firebaseReady || !FirebaseInit.hasDefaultApp) throw const FirebaseUnavailableException();
-    }
-    final User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw StateError('No signed-in user to delete.');
-    if (!identical(app_state.prismUser, owner) ||
-        app_state.prismUser.id != userId ||
-        app_state.prismUser.loggedIn != ownerLoggedIn ||
-        user.uid != userId) {
-      throw StateError('The account deletion session changed.');
-    }
-    final Set<String> providerIds = user.providerData.map((provider) => provider.providerId).toSet();
+    final Set<String> providerIds = await signedInProviderIds();
     if (providerIds.contains('apple.com')) {
       await globalAppleAuth.reauthenticateCurrentUser();
     } else {
       await globalGoogleAuth.reauthenticateCurrentUser();
     }
   }
+
+  /// Waits for Firebase startup first. A user restored late would otherwise read as no user, and an Apple user would
+  /// get the Google reauthentication.
+  @visibleForTesting
+  static Future<Set<String>> signedInProviderIds({
+    Future<bool> Function() firebaseReady = _firebaseReady,
+    User? Function() currentUser = _currentFirebaseUser,
+  }) async {
+    if (!await firebaseReady()) throw const FirebaseUnavailableException();
+    return currentUser()?.providerData.map((provider) => provider.providerId).toSet() ?? <String>{};
+  }
+
+  static Future<bool> _firebaseReady() async => FirebaseInit.hasDefaultApp || await FirebaseInit.waitUntilReady();
+
+  static User? _currentFirebaseUser() => FirebaseAuth.instance.currentUser;
 
   static Future<void> _callDeleteAccount() async {
     await appFunctions

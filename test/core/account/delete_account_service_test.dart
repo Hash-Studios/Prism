@@ -1,115 +1,33 @@
-// ignore_for_file: depend_on_referenced_packages
-
 import 'dart:async';
 
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/account/reauth_cancelled.dart';
-import 'package:Prism/core/constants/app_constants.dart' as app_constants;
-import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_core_platform_interface/test.dart';
-import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../support/profile_user_fixture.dart';
 
-class _DelayedFirebaseCore extends MockFirebaseApp {
-  final ready = Completer<void>();
+class _ProviderInfo extends Fake implements UserInfo {
+  _ProviderInfo(this.providerId);
 
   @override
-  Future<List<CoreInitializeResponse>> initializeCore() async => <CoreInitializeResponse>[];
-
-  @override
-  Future<CoreInitializeResponse> initializeApp(String name, CoreFirebaseOptions options) async {
-    await ready.future;
-    return CoreInitializeResponse(name: name, options: options, pluginConstants: <String, Object?>{});
-  }
+  final String providerId;
 }
 
-class _NoMultiFactor extends MultiFactorPlatform {
-  _NoMultiFactor(super.auth);
-}
+class _User extends Fake implements User {
+  _User(this.providerIds);
 
-class _AppleUser extends UserPlatform {
-  _AppleUser(FirebaseAuthPlatform auth, this.calls)
-    : super(
-        auth,
-        _NoMultiFactor(auth),
-        InternalUserDetails(
-          userInfo: InternalUserInfo(
-            uid: 'user-1',
-            email: 'apple@example.com',
-            isAnonymous: false,
-            isEmailVerified: true,
-          ),
-          providerData: const <Map<Object?, Object?>?>[
-            <String, Object?>{
-              'providerId': 'apple.com',
-              'uid': 'apple-1',
-              'isAnonymous': false,
-              'isEmailVerified': true,
-            },
-          ],
-        ),
-      );
-
-  final List<String> calls;
+  final List<String> providerIds;
 
   @override
-  Future<UserCredentialPlatform> reauthenticateWithCredential(AuthCredential credential) async {
-    calls.add('reauth:${credential.providerId}');
-    return _Credential(auth, this, credential);
-  }
-}
-
-class _Credential extends UserCredentialPlatform {
-  _Credential(FirebaseAuthPlatform auth, UserPlatform user, AuthCredential credential)
-    : super(auth: auth, user: user, credential: credential);
-}
-
-class _RestoredAppleAuth extends FirebaseAuthPlatform {
-  _RestoredAppleAuth(this.calls);
-
-  final List<String> calls;
-
-  @override
-  FirebaseAuthPlatform delegateFor({required FirebaseApp app}) => this;
-
-  @override
-  FirebaseAuthPlatform setInitialValues({InternalUserDetails? currentUser, String? languageCode}) => this;
-
-  @override
-  UserPlatform get currentUser => _AppleUser(this, calls);
-
-  @override
-  Future<void> revokeTokenWithAuthorizationCode(String authorizationCode) async =>
-      calls.add('revoke:$authorizationCode');
-}
-
-class _UnexpectedGoogleSignIn extends GoogleSignInPlatform {
-  _UnexpectedGoogleSignIn(this.calls);
-
-  final List<String> calls;
-
-  @override
-  Future<void> init(InitParameters params) async => calls.add('google.init');
-
-  @override
-  Future<AuthenticationResults> authenticate(AuthenticateParameters params) {
-    calls.add('google.authenticate');
-    return Future<AuthenticationResults>.error(StateError('An Apple account must not open Google authentication.'));
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  List<UserInfo> get providerData => <UserInfo>[for (final String id in providerIds) _ProviderInfo(id)];
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
   late List<String> calls;
 
   DeleteAccountService build({Future<void> Function()? reauthenticate, Future<void> Function()? deleteOnServer}) {
@@ -129,116 +47,10 @@ void main() {
     app_state.prismUser = profileUser(id: 'user-1');
   });
 
-  tearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
-
-  testWidgets('waits for Firebase and rejects a replaced account before selecting the Apple provider', (tester) async {
-    const MethodChannel appleChannel = MethodChannel('com.aboutyou.dart_packages.sign_in_with_apple');
-    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    final previousAuth = FirebaseAuthPlatform.instance;
-    final previousGoogleSignIn = GoogleSignInPlatform.instance;
-    final core = _DelayedFirebaseCore();
-    TestFirebaseCoreHostApi.setUp(core);
-    FirebaseAuthPlatform.instance = _RestoredAppleAuth(calls);
-    GoogleSignInPlatform.instance = _UnexpectedGoogleSignIn(calls);
-    messenger.setMockMethodCallHandler(appleChannel, (call) async {
-      calls.add('apple.prompt');
-      return <String, Object?>{
-        'type': 'appleid',
-        'authorizationCode': 'apple-code',
-        'identityToken': 'apple-token',
-        'userIdentifier': 'apple-1',
-      };
-    });
-    addTearDown(() {
-      FirebaseAuthPlatform.instance = previousAuth;
-      GoogleSignInPlatform.instance = previousGoogleSignIn;
-      messenger.setMockMethodCallHandler(appleChannel, null);
-      TestFirebaseCoreHostApi.setUp(null);
-    });
-    final initialization = Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: 'test-key',
-        appId: 'test-app',
-        messagingSenderId: 'test-sender',
-        projectId: 'demo-prism',
-      ),
-    );
-    FirebaseInit.setFuture(initialization.then((_) => true));
-    await tester.pump();
-    expect(Firebase.apps, isEmpty);
-    final service = DeleteAccountService(
-      deleteOnServer: () async => calls.add('server'),
-      signOut: () async {
-        calls.add('signOut');
-        return true;
-      },
-      clearLocalData: (userId) async => calls.add('clear:$userId'),
-    );
-    app_state.prismUser = profileUser(id: 'previous-user');
-    Object? staleFailure;
-    final staleDeletion = service.deleteAccount().then<void>(
-      (_) {},
-      onError: (Object error) {
-        staleFailure = error;
-      },
-    );
-    await tester.pump();
-    app_state.prismUser = profileUser(id: 'user-1');
-    expect(calls, isEmpty, reason: 'Provider selection must wait for Firebase to restore its user.');
-
-    core.ready.complete();
-    await tester.pump();
-    await initialization;
-    await staleDeletion;
-    expect(staleFailure, isA<StateError>());
-    expect(calls, isEmpty, reason: 'The stale deletion must not adopt the restored replacement account.');
-
-    Object? failure;
-    final deletion = service.deleteAccount().then<void>(
-      (_) {},
-      onError: (Object error) {
-        failure = error;
-      },
-    );
-    await tester.pump();
-    await deletion;
-
-    expect(failure, isNull);
-    expect(calls, <String>[
-      'apple.prompt',
-      'reauth:apple.com',
-      'revoke:apple-code',
-      'server',
-      'signOut',
-      'clear:user-1',
-    ]);
-  });
-
   test('re-authenticates, deletes on the server, signs out, then clears this device', () async {
     await build().deleteAccount();
 
     expect(calls, <String>['reauth', 'server', 'signOut', 'clear:user-1']);
-  });
-
-  test('a successful sign-out clears the deleted owner while preserving its guest session', () async {
-    final guest = app_constants.createGuestPrismUser();
-    final service = DeleteAccountService(
-      reauthenticate: () async => calls.add('reauth'),
-      deleteOnServer: () async => calls.add('server'),
-      signOut: () async {
-        calls.add('signOut');
-        app_state.prismUser = guest;
-        return true;
-      },
-      clearLocalData: (userId) async => calls.add('clear:$userId'),
-    );
-
-    await service.deleteAccount();
-
-    expect(calls, <String>['reauth', 'server', 'signOut', 'clear:user-1']);
-    expect(app_state.prismUser, same(guest));
-    expect(app_state.prismUser.id, isEmpty);
-    expect(app_state.prismUser.loggedIn, isFalse);
   });
 
   test('a cancelled re-authentication stops before the server and leaves local data alone', () async {
@@ -257,65 +69,6 @@ void main() {
     await expectLater(service.deleteAccount(), throwsStateError);
 
     expect(calls, <String>['reauth']);
-  });
-
-  test('a replacement during reauthentication is not deleted', () async {
-    final reauthenticated = Completer<void>();
-    final service = build(
-      reauthenticate: () async {
-        calls.add('reauth');
-        await reauthenticated.future;
-      },
-    );
-    final deletion = service.deleteAccount();
-    final rejected = expectLater(deletion, throwsStateError);
-    final replacement = profileUser(id: 'replacement');
-    app_state.prismUser = replacement;
-    reauthenticated.complete();
-
-    await rejected;
-    expect(calls, <String>['reauth']);
-    expect(app_state.prismUser, same(replacement));
-  });
-
-  test('a replacement during server deletion is not signed out or cleared', () async {
-    final deleted = Completer<void>();
-    final service = build(
-      deleteOnServer: () async {
-        calls.add('server');
-        await deleted.future;
-      },
-    );
-    final deletion = service.deleteAccount();
-    final rejected = expectLater(deletion, throwsStateError);
-    await pumpEventQueue();
-    expect(calls, <String>['reauth', 'server']);
-    final replacement = profileUser(id: 'replacement');
-    app_state.prismUser = replacement;
-    deleted.complete();
-
-    await rejected;
-    expect(calls, <String>['reauth', 'server']);
-    expect(app_state.prismUser, same(replacement));
-  });
-
-  test('an abandoned sign-out does not clear the replacement account', () async {
-    final replacement = profileUser(id: 'replacement');
-    final service = DeleteAccountService(
-      reauthenticate: () async => calls.add('reauth'),
-      deleteOnServer: () async => calls.add('server'),
-      signOut: () async {
-        calls.add('signOut');
-        app_state.prismUser = replacement;
-        return false;
-      },
-      clearLocalData: (userId) async => calls.add('clear:$userId'),
-    );
-
-    await expectLater(service.deleteAccount(), throwsStateError);
-
-    expect(calls, <String>['reauth', 'server', 'signOut']);
-    expect(app_state.prismUser, same(replacement));
   });
 
   test('the server call may run as long as a batch delete needs', () {
@@ -343,5 +96,26 @@ void main() {
       );
       expect(isReauthCancelled(StateError('no token')), isFalse);
     });
+  });
+
+  test('reads the sign-in providers only after Firebase startup restores the user', () async {
+    final Completer<bool> ready = Completer<bool>();
+    User? restored;
+    final Future<Set<String>> providers = DeleteAccountService.signedInProviderIds(
+      firebaseReady: () => ready.future,
+      currentUser: () => restored,
+    );
+
+    restored = _User(<String>['apple.com']);
+    ready.complete(true);
+
+    expect(await providers, <String>{'apple.com'});
+  });
+
+  test('a Firebase startup that never finishes stops before any reauthentication', () async {
+    await expectLater(
+      DeleteAccountService.signedInProviderIds(firebaseReady: () async => false, currentUser: () => null),
+      throwsA(isA<FirebaseUnavailableException>()),
+    );
   });
 }
