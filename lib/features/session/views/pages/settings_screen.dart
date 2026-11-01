@@ -34,6 +34,9 @@ import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/ios_widgets/views/widget_guide_sheet.dart';
 import 'package:Prism/features/library/views/pages/library_screen.dart' show LibraryTab;
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
+import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
+import 'package:Prism/features/promo_codes/views/redeem_code_sheet.dart';
+import 'package:Prism/features/promo_codes/views/store_code_redemption.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/session/data/report_problem_service.dart' show ReportTrigger;
@@ -712,6 +715,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  List<Widget> _codeRows() {
+    final bool ios = defaultTargetPlatform == TargetPlatform.iOS;
+    return <Widget>[
+      PrismRow(
+        icon: Icons.redeem_rounded,
+        title: context.l10n.promoSettingsRedeemTitle,
+        subtitle: ios ? context.l10n.promoSettingsRedeemSubtitleIos : context.l10n.promoSettingsRedeemSubtitle,
+        onTap: () => showRedeemCodeSheet(context, source: RedeemSheetSource.settings),
+      ),
+      PrismRow(
+        icon: ios ? Icons.apple_rounded : Icons.shop_rounded,
+        title: ios ? context.l10n.promoAppStoreCodeTitle : context.l10n.promoPlayCodeTitle,
+        subtitle: ios ? context.l10n.promoAppStoreCodeSubtitle : context.l10n.promoPlayCodeSubtitle,
+        onTap: () => openStoreCodeRedemption(context),
+      ),
+    ];
+  }
+
   List<Widget> _purchaseRows() => <Widget>[
     if (!app_state.prismUser.premium)
       PrismRow(
@@ -1087,6 +1108,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _group(context.l10n.accountNotifications, _notificationRows()),
               _group(context.l10n.accountStorage, _storageRows()),
               _group(context.l10n.accountPurchases, _purchaseRows()),
+              _group(
+                context.l10n.promoSettingsGroup,
+                _codeRows(),
+                footnote: defaultTargetPlatform == TargetPlatform.iOS
+                    ? context.l10n.promoCodesFootnoteIos
+                    : context.l10n.promoCodesFootnoteAndroid,
+              ),
               _group(context.l10n.accountPrivacyAndData, _privacyRows()),
               if (app_state.isAdminUser()) _group(context.l10n.accountAdmin, _adminRows()),
               _group(context.l10n.accountHelp, _helpRows()),

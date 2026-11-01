@@ -500,6 +500,17 @@ service cloud.firestore {
       allow read, write: if isConfiguredAdmin();
     }
 
+    // Promo codes and their redemptions are server-only: redeemCode and the admin callables own every read and write.
+    match /promoCodes/{codeId} {
+      allow read, write: if false;
+      match /redemptions/{uid} {
+        allow read, write: if false;
+      }
+    }
+    match /promoRedeemRate/{docId} {
+      allow read, write: if false;
+    }
+
     // AI generation history is private per user.
     match /aiGenerations/{docId} {
       allow read: if isConfiguredAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);

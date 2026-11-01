@@ -43,6 +43,22 @@ void main() {
     }
   });
 
+  test('redeem links carry one code into the rewards sheet and reject other query keys', () async {
+    expect(DeepLinkRouteCatalog.match(Uri.parse('/redeem?code=ABCDEFGH23'))?.target, DeepLinkPageTarget.redeemCode);
+    expect(DeepLinkRouteCatalog.match(Uri.parse('/redeem'))?.target, DeepLinkPageTarget.redeemCode);
+    expect(DeepLinkRouteCatalog.match(Uri.parse('/redeem?code=ABCDEFGH23&evil=1')), isNull);
+
+    final action = parser.parse(Uri.parse('https://prismwalls.com/redeem?code=ABCDEFGH23'));
+    expect(action, isA<PageLinkIntent>());
+    final route = await routeForPageLink(action as PageLinkIntent);
+    expect(route, isA<RewardsRoute>());
+    expect((route! as RewardsRoute).args!.redeemCode, 'ABCDEFGH23');
+
+    final bare = await routeForPageLink(parser.parse(Uri.parse('https://prismwalls.com/redeem')) as PageLinkIntent);
+    expect(bare, isA<RewardsRoute>());
+    expect((bare! as RewardsRoute).args!.redeemCode, '');
+  });
+
   test('daily reward links preserve the requested step with the flag on', () async {
     DailyMomentConfig.enabledOverride = true;
     for (final entry in <String, DailyMomentStep>{
@@ -615,6 +631,7 @@ String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (targe
   DeepLinkPageTarget.adminReview => 'AdminReviewRoute',
   DeepLinkPageTarget.swipeReview => 'SwipeReviewRoute',
   DeepLinkPageTarget.adminTelemetry => 'FirestoreTelemetryRoute',
+  DeepLinkPageTarget.adminPromoCodes => 'PromoCodesAdminRoute',
   DeepLinkPageTarget.debugPanel => 'DebugPanelRoute',
   DeepLinkPageTarget.quickTileSettings => 'QuickTileSettingsRoute',
   DeepLinkPageTarget.autoRotate => 'AutoRotateRoute',
@@ -624,6 +641,7 @@ String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (targe
   DeepLinkPageTarget.clockPreview => 'ClockPreviewRoute',
   DeepLinkPageTarget.adminImage => 'FullScreenImageRoute',
   DeepLinkPageTarget.rewards => 'RewardsRoute',
+  DeepLinkPageTarget.redeemCode => 'RewardsRoute',
   DeepLinkPageTarget.coinHistory => 'CoinHistoryRoute',
   DeepLinkPageTarget.shop => 'ShopRoute',
   DeepLinkPageTarget.drops => 'DropsRoute',

@@ -12,7 +12,7 @@ const ASSETLINKS_PAYLOAD = [
 const APP_LINK_PATHS = [
   '/share', '/share/*', '/user', '/user/*', '/fprofile', '/fprofile/*', '/follower-profile', '/follower-profile/*',
   '/profile', '/profile/*', '/setup', '/setup/*', '/share-setup', '/share-setup/*', '/refer', '/refer/*',
-  '/referral', '/referral/*', '/collection', '/collection/*', '/category', '/category/*', '/wallpaper', '/wallpaper/*',
+  '/referral', '/referral/*', '/redeem', '/redeem/*', '/collection', '/collection/*', '/category', '/category/*', '/wallpaper', '/wallpaper/*',
   '/folder/*', '/mood/*', '/challenges/*',
   '/l', '/l/*', '/onboarding/v2', '/dashboard', '/dashboard/home', '/dashboard/search', '/dashboard/search/users',
   '/dashboard/rewards', '/dashboard/streak', '/dashboard/collection', '/ai',
@@ -20,7 +20,7 @@ const APP_LINK_PATHS = [
   '/edit-profile', '/share-prism',
   '/settings', '/blocked-accounts', '/about', '/fav-walls', '/downloads', '/library', '/upload-wall', '/edit-wall',
   '/review', '/coin-transactions', '/theme', '/notifications', '/collection-view', '/gallery', '/requests', '/creators', '/wrapped', '/followers', '/following',
-  '/admin-review', '/admin-review/swipe', '/admin-review/image', '/admin-firestore-telemetry', '/debug-panel',
+  '/admin-review', '/admin-review/swipe', '/admin-review/image', '/admin-firestore-telemetry', '/admin-promo-codes', '/debug-panel',
   '/daily-moment', '/daily-chest', '/spin-wheel',
   '/photo-preview', '/clock-preview', '/quick-tile-settings',
   '/auto-rotate', '/ios-shortcuts', '/wallpaper-history', '/wallpaper-position', '/live-wallpaper', '/rewards',

@@ -11506,6 +11506,238 @@
   "@creatorsShowMeBody": {
     "description": "Subtitle of the creator directory settings switch."
   },
+  "promoRedeemTitle": "Tukarkan kode",
+  "@promoRedeemTitle": {
+    "description": "Title of the sheet where the user enters a Prism promo code."
+  },
+  "promoRedeemMessage": "Masukkan kode dari postingan atau giveaway Prism.",
+  "@promoRedeemMessage": {
+    "description": "Line under the redeem sheet title."
+  },
+  "promoRedeemMessageIos": "Masukkan kode koin dari postingan atau giveaway Prism.",
+  "@promoRedeemMessageIos": {
+    "description": "Line under the redeem sheet title on iPhone and iPad, where only coin codes work."
+  },
+  "promoCodeFieldLabel": "Kode",
+  "@promoCodeFieldLabel": {
+    "description": "Label of the promo code text field."
+  },
+  "promoCodeFieldHint": "Contoh, 7KQ2 MPXR 4D",
+  "@promoCodeFieldHint": {
+    "description": "Hint text in the empty promo code field."
+  },
+  "promoPasteCode": "Tempel kode",
+  "@promoPasteCode": {
+    "description": "Tooltip and screen reader label of the paste button in the code field."
+  },
+  "promoRedeemAction": "Tukarkan",
+  "@promoRedeemAction": {
+    "description": "Main button that redeems the code."
+  },
+  "promoRedeeming": "Menukarkan kode",
+  "@promoRedeeming": {
+    "description": "Screen reader label while the redeem request runs."
+  },
+  "promoDone": "Selesai",
+  "@promoDone": {
+    "description": "Button that closes the sheet after a code works."
+  },
+  "promoTryAnother": "Coba kode lain",
+  "@promoTryAnother": {
+    "description": "Button after an error that clears the field."
+  },
+  "promoSuccessCoins": "Kamu mendapat {count, plural, one{1 koin} other{{count} koin}}",
+  "@promoSuccessCoins": {
+    "description": "Headline after a coin code works.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessCoinsMessage": "Koin sudah masuk ke saldomu.",
+  "@promoSuccessCoinsMessage": {
+    "description": "Line under the coin success headline."
+  },
+  "promoSuccessPro": "Kamu mendapat {days, plural, one{1 hari} other{{days} hari}} Pro",
+  "@promoSuccessPro": {
+    "description": "Headline after a Pro code works.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessProMessage": "Paket Pro-mu sekarang berlaku sampai {date}.",
+  "@promoSuccessProMessage": {
+    "description": "Line under the Pro success headline.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoErrorInvalid": "Itu bukan kode Prism. Kode memiliki 10 huruf atau angka atau lebih.",
+  "promoErrorNotFound": "Kami tidak menemukan kode itu. Periksa lagi dan coba lagi.",
+  "promoErrorDisabled": "Kode ini dinonaktifkan.",
+  "promoErrorExpired": "Kode ini sudah kedaluwarsa.",
+  "promoErrorLimitReached": "Kode ini sudah tidak bisa digunakan lagi.",
+  "promoErrorAlreadyRedeemed": "Kamu sudah menggunakan kode ini.",
+  "promoErrorAccountTooNew": "Akunmu terlalu baru untuk kode ini.",
+  "promoErrorNewUsersOnly": "Kode ini hanya untuk akun baru.",
+  "promoErrorPremiumNotOnIos": "Kode Pro tidak berfungsi di iPhone atau iPad. Gunakan kode App Store sebagai gantinya.",
+  "promoErrorAlreadyPremium": "Kamu sudah punya Pro, jadi kode ini tidak diperlukan.",
+  "promoErrorRateLimited": "Terlalu banyak percobaan. Tunggu satu jam, lalu coba lagi.",
+  "promoErrorBusy": "Banyak orang sedang menukarkan kode. Coba lagi sebentar lagi.",
+  "promoErrorSignedOut": "Masuk untuk menukarkan kode.",
+  "promoErrorNetwork": "Tidak bisa terhubung ke Prism. Periksa koneksimu dan coba lagi.",
+  "promoErrorUnknown": "Terjadi kesalahan. Coba lagi.",
+  "promoSettingsGroup": "Kode",
+  "@promoSettingsGroup": {
+    "description": "Settings section title for promo and store codes."
+  },
+  "promoSettingsRedeemTitle": "Tukarkan kode Prism",
+  "@promoSettingsRedeemTitle": {
+    "description": "Settings row that opens the redeem sheet."
+  },
+  "promoSettingsRedeemSubtitle": "Koin atau hari Pro dari postingan dan giveaway kami",
+  "@promoSettingsRedeemSubtitle": {
+    "description": "Subtitle of that row on Android."
+  },
+  "promoSettingsRedeemSubtitleIos": "Koin dari postingan dan giveaway kami",
+  "@promoSettingsRedeemSubtitleIos": {
+    "description": "Subtitle of that row on iPhone and iPad."
+  },
+  "promoAppStoreCodeTitle": "Tukarkan kode App Store",
+  "@promoAppStoreCodeTitle": {
+    "description": "iOS settings row that opens Apple's code sheet."
+  },
+  "promoAppStoreCodeSubtitle": "Kode penawaran Pro dari Apple",
+  "@promoAppStoreCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoPlayCodeTitle": "Tukarkan kode Play",
+  "@promoPlayCodeTitle": {
+    "description": "Android settings row that opens Google Play's redeem page."
+  },
+  "promoPlayCodeSubtitle": "Kode penawaran Pro dari Google Play",
+  "@promoPlayCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoCodesFootnoteIos": "Kode Prism memberi koin. Kode App Store memberi Pro.",
+  "@promoCodesFootnoteIos": {
+    "description": "One line under the Codes group on iOS that says which code goes where."
+  },
+  "promoCodesFootnoteAndroid": "Kode Prism memberi koin atau hari Pro. Kode Play memberi Pro.",
+  "@promoCodesFootnoteAndroid": {
+    "description": "Same line on Android."
+  },
+  "promoStoreCodeFailed": "Halaman kode tidak bisa dibuka. Coba lagi.",
+  "@promoStoreCodeFailed": {
+    "description": "Toast when the store code sheet or page does not open."
+  },
+  "promoRewardsRowTitle": "Tukarkan kode",
+  "@promoRewardsRowTitle": {
+    "description": "Rewards earn row that opens the redeem sheet."
+  },
+  "promoRewardsRowSubtitle": "Punya kode dari postingan atau giveaway?",
+  "@promoRewardsRowSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoAdminTitle": "Kode promo",
+  "@promoAdminTitle": {
+    "description": "Admin screen title."
+  },
+  "promoAdminEntry": "Kode promo",
+  "@promoAdminEntry": {
+    "description": "Admin entry that opens the promo code screen."
+  },
+  "promoAdminCreate": "Buat kode",
+  "@promoAdminCreate": {
+    "description": "Button that creates a code."
+  },
+  "promoAdminTypeCoins": "Koin",
+  "promoAdminTypePro": "Hari Pro",
+  "promoAdminAmount": "Jumlah",
+  "@promoAdminAmount": {
+    "description": "Field: coins (1 to 1000) or Pro days (1 to 90)."
+  },
+  "promoAdminAmountHelpCoins": "1 sampai 1.000 koin",
+  "promoAdminAmountHelpPro": "1 sampai 90 hari. Khusus Android.",
+  "promoAdminMaxRedemptions": "Maks. penukaran",
+  "promoAdminExpiresInDays": "Kedaluwarsa dalam (hari)",
+  "promoAdminMinAccountAge": "Usia akun minimum (hari)",
+  "promoAdminNewUsersOnly": "Hanya akun baru",
+  "promoAdminNewUsersDays": "Akun paling lama (hari)",
+  "promoAdminCustomCode": "Kode kustom (opsional)",
+  "@promoAdminCustomCode": {
+    "description": "Help: leave empty to generate one."
+  },
+  "promoAdminCustomCodeHelp": "10 sampai 32 huruf dan angka, tanpa I, O, 0, atau 1. Kosongkan untuk membuat kode otomatis.",
+  "promoAdminLabel": "Catatan",
+  "@promoAdminLabel": {
+    "description": "Field for an admin note such as the post the code is for."
+  },
+  "promoAdminCreated": "{code} dibuat",
+  "@promoAdminCreated": {
+    "description": "Toast after create.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminCopied": "Kode disalin",
+  "@promoAdminCopied": {
+    "description": "Toast after copying a code."
+  },
+  "promoAdminCopy": "Salin kode",
+  "@promoAdminCopy": {
+    "description": "Tooltip."
+  },
+  "promoAdminRedemptions": "{used} dari {max} digunakan",
+  "@promoAdminRedemptions": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "promoAdminExpires": "Kedaluwarsa {date}",
+  "@promoAdminExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminDisabled": "Nonaktif",
+  "@promoAdminDisabled": {
+    "description": "Badge on a turned-off code."
+  },
+  "promoAdminDisable": "Nonaktifkan",
+  "@promoAdminDisable": {
+    "description": "Action."
+  },
+  "promoAdminEnable": "Aktifkan",
+  "@promoAdminEnable": {
+    "description": "Action."
+  },
+  "promoAdminEmpty": "Belum ada kode.",
+  "promoAdminLoadFailed": "Kode tidak bisa dimuat. Tarik ke bawah untuk mencoba lagi.",
+  "promoAdminCreateFailed": "Kode tidak bisa dibuat: {reason}",
+  "@promoAdminCreateFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "wrappedTitle": "Prism Wrapped {year}",
   "wrappedIntroHeadline": "Tahun Anda dalam wallpaper",
   "wrappedIntroBody": "Beberapa kartu tentang wallpaper yang Anda sukai tahun ini.",

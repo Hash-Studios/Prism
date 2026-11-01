@@ -943,6 +943,37 @@ void main() {
     });
   });
 
+  group('codes', () {
+    const androidFootnote = 'Prism codes give coins or Pro days. Play codes give Pro.';
+    const iosFootnote = 'Prism codes give coins. App Store codes give Pro.';
+
+    for (final platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {
+      for (final loggedIn in <bool>[true, false]) {
+        testWidgets('the Codes group on ${platform.name} ${loggedIn ? 'for a signed-in user' : 'for a guest'}', (
+          tester,
+        ) async {
+          signInAs(loggedIn: loggedIn);
+          await pumpSettings(tester);
+          final bool ios = platform == TargetPlatform.iOS;
+
+          await tester.scrollUntilVisible(find.text('Codes'), 300, scrollable: find.byType(Scrollable).first);
+          await tester.ensureVisible(find.text('Codes'));
+
+          expect(find.text('Redeem a Prism code'), findsOneWidget);
+          expect(find.text(ios ? androidFootnote : iosFootnote), findsNothing);
+          expect(find.text(ios ? iosFootnote : androidFootnote), findsOneWidget);
+          if (ios) {
+            expect(find.text('Redeem an App Store code'), findsOneWidget);
+            expect(find.text('Redeem a Play code'), findsNothing);
+          } else {
+            expect(find.text('Redeem a Play code'), findsOneWidget);
+            expect(find.text('Redeem an App Store code'), findsNothing);
+          }
+        }, variant: TargetPlatformVariant.only(platform));
+      }
+    }
+  });
+
   group('privacy and data', () {
     testWidgets('lists the policy, terms, learned taste and delete account', (tester) async {
       await pumpSettings(tester);

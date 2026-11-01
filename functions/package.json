@@ -25,6 +25,7 @@
     "job:wrapped": "npm run build && node lib/scripts/buildWrapped.js",
     "economy:config": "node lib/scripts/economyConfig.js",
     "drops:reserve": "npm run build && node lib/scripts/reserveDrop.js",
+    "promo:create": "npm run build && node lib/scripts/createPromoCodes.js",
     "studio:account": "npm run build && node lib/scripts/setupStudioAccount.js",
     "studio:run": "npm run build && node lib/scripts/runStudioBatch.js"
   },

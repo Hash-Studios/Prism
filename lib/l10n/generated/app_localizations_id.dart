@@ -12265,6 +12265,237 @@ class AppLocalizationsId extends AppLocalizations {
   String get creatorsShowMeBody => 'Orang lain dapat menemukan profil dan wallpaper teratas Anda';
 
   @override
+  String get promoRedeemTitle => 'Tukarkan kode';
+
+  @override
+  String get promoRedeemMessage => 'Masukkan kode dari postingan atau giveaway Prism.';
+
+  @override
+  String get promoRedeemMessageIos => 'Masukkan kode koin dari postingan atau giveaway Prism.';
+
+  @override
+  String get promoCodeFieldLabel => 'Kode';
+
+  @override
+  String get promoCodeFieldHint => 'Contoh, 7KQ2 MPXR 4D';
+
+  @override
+  String get promoPasteCode => 'Tempel kode';
+
+  @override
+  String get promoRedeemAction => 'Tukarkan';
+
+  @override
+  String get promoRedeeming => 'Menukarkan kode';
+
+  @override
+  String get promoDone => 'Selesai';
+
+  @override
+  String get promoTryAnother => 'Coba kode lain';
+
+  @override
+  String promoSuccessCoins(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString koin', one: '1 koin');
+    return 'Kamu mendapat $_temp0';
+  }
+
+  @override
+  String get promoSuccessCoinsMessage => 'Koin sudah masuk ke saldomu.';
+
+  @override
+  String promoSuccessPro(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString hari', one: '1 hari');
+    return 'Kamu mendapat $_temp0 Pro';
+  }
+
+  @override
+  String promoSuccessProMessage(String date) {
+    return 'Paket Pro-mu sekarang berlaku sampai $date.';
+  }
+
+  @override
+  String get promoErrorInvalid => 'Itu bukan kode Prism. Kode memiliki 10 huruf atau angka atau lebih.';
+
+  @override
+  String get promoErrorNotFound => 'Kami tidak menemukan kode itu. Periksa lagi dan coba lagi.';
+
+  @override
+  String get promoErrorDisabled => 'Kode ini dinonaktifkan.';
+
+  @override
+  String get promoErrorExpired => 'Kode ini sudah kedaluwarsa.';
+
+  @override
+  String get promoErrorLimitReached => 'Kode ini sudah tidak bisa digunakan lagi.';
+
+  @override
+  String get promoErrorAlreadyRedeemed => 'Kamu sudah menggunakan kode ini.';
+
+  @override
+  String get promoErrorAccountTooNew => 'Akunmu terlalu baru untuk kode ini.';
+
+  @override
+  String get promoErrorNewUsersOnly => 'Kode ini hanya untuk akun baru.';
+
+  @override
+  String get promoErrorPremiumNotOnIos =>
+      'Kode Pro tidak berfungsi di iPhone atau iPad. Gunakan kode App Store sebagai gantinya.';
+
+  @override
+  String get promoErrorAlreadyPremium => 'Kamu sudah punya Pro, jadi kode ini tidak diperlukan.';
+
+  @override
+  String get promoErrorRateLimited => 'Terlalu banyak percobaan. Tunggu satu jam, lalu coba lagi.';
+
+  @override
+  String get promoErrorBusy => 'Banyak orang sedang menukarkan kode. Coba lagi sebentar lagi.';
+
+  @override
+  String get promoErrorSignedOut => 'Masuk untuk menukarkan kode.';
+
+  @override
+  String get promoErrorNetwork => 'Tidak bisa terhubung ke Prism. Periksa koneksimu dan coba lagi.';
+
+  @override
+  String get promoErrorUnknown => 'Terjadi kesalahan. Coba lagi.';
+
+  @override
+  String get promoSettingsGroup => 'Kode';
+
+  @override
+  String get promoSettingsRedeemTitle => 'Tukarkan kode Prism';
+
+  @override
+  String get promoSettingsRedeemSubtitle => 'Koin atau hari Pro dari postingan dan giveaway kami';
+
+  @override
+  String get promoSettingsRedeemSubtitleIos => 'Koin dari postingan dan giveaway kami';
+
+  @override
+  String get promoAppStoreCodeTitle => 'Tukarkan kode App Store';
+
+  @override
+  String get promoAppStoreCodeSubtitle => 'Kode penawaran Pro dari Apple';
+
+  @override
+  String get promoPlayCodeTitle => 'Tukarkan kode Play';
+
+  @override
+  String get promoPlayCodeSubtitle => 'Kode penawaran Pro dari Google Play';
+
+  @override
+  String get promoCodesFootnoteIos => 'Kode Prism memberi koin. Kode App Store memberi Pro.';
+
+  @override
+  String get promoCodesFootnoteAndroid => 'Kode Prism memberi koin atau hari Pro. Kode Play memberi Pro.';
+
+  @override
+  String get promoStoreCodeFailed => 'Halaman kode tidak bisa dibuka. Coba lagi.';
+
+  @override
+  String get promoRewardsRowTitle => 'Tukarkan kode';
+
+  @override
+  String get promoRewardsRowSubtitle => 'Punya kode dari postingan atau giveaway?';
+
+  @override
+  String get promoAdminTitle => 'Kode promo';
+
+  @override
+  String get promoAdminEntry => 'Kode promo';
+
+  @override
+  String get promoAdminCreate => 'Buat kode';
+
+  @override
+  String get promoAdminTypeCoins => 'Koin';
+
+  @override
+  String get promoAdminTypePro => 'Hari Pro';
+
+  @override
+  String get promoAdminAmount => 'Jumlah';
+
+  @override
+  String get promoAdminAmountHelpCoins => '1 sampai 1.000 koin';
+
+  @override
+  String get promoAdminAmountHelpPro => '1 sampai 90 hari. Khusus Android.';
+
+  @override
+  String get promoAdminMaxRedemptions => 'Maks. penukaran';
+
+  @override
+  String get promoAdminExpiresInDays => 'Kedaluwarsa dalam (hari)';
+
+  @override
+  String get promoAdminMinAccountAge => 'Usia akun minimum (hari)';
+
+  @override
+  String get promoAdminNewUsersOnly => 'Hanya akun baru';
+
+  @override
+  String get promoAdminNewUsersDays => 'Akun paling lama (hari)';
+
+  @override
+  String get promoAdminCustomCode => 'Kode kustom (opsional)';
+
+  @override
+  String get promoAdminCustomCodeHelp =>
+      '10 sampai 32 huruf dan angka, tanpa I, O, 0, atau 1. Kosongkan untuk membuat kode otomatis.';
+
+  @override
+  String get promoAdminLabel => 'Catatan';
+
+  @override
+  String promoAdminCreated(String code) {
+    return '$code dibuat';
+  }
+
+  @override
+  String get promoAdminCopied => 'Kode disalin';
+
+  @override
+  String get promoAdminCopy => 'Salin kode';
+
+  @override
+  String promoAdminRedemptions(int used, int max) {
+    return '$used dari $max digunakan';
+  }
+
+  @override
+  String promoAdminExpires(String date) {
+    return 'Kedaluwarsa $date';
+  }
+
+  @override
+  String get promoAdminDisabled => 'Nonaktif';
+
+  @override
+  String get promoAdminDisable => 'Nonaktifkan';
+
+  @override
+  String get promoAdminEnable => 'Aktifkan';
+
+  @override
+  String get promoAdminEmpty => 'Belum ada kode.';
+
+  @override
+  String get promoAdminLoadFailed => 'Kode tidak bisa dimuat. Tarik ke bawah untuk mencoba lagi.';
+
+  @override
+  String promoAdminCreateFailed(String reason) {
+    return 'Kode tidak bisa dibuat: $reason';
+  }
+
+  @override
   String wrappedTitle(String year) {
     return 'Prism Wrapped $year';
   }

@@ -82,7 +82,7 @@ void main() {
 
   Future<void> pumpPage(WidgetTester tester, {required bool enabled, bool showBack = false}) async {
     DailyMomentConfig.enabledOverride = enabled;
-    tester.view.physicalSize = const Size(1000, 4000);
+    tester.view.physicalSize = const Size(1000, 4400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(

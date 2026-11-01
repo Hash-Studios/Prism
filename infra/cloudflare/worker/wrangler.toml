@@ -231,6 +231,14 @@ pattern = "prismwalls.com/admin-firestore-telemetry*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/admin-promo-codes*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/redeem*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "prismwalls.com/debug-panel*"
 zone_name = "prismwalls.com"
 
@@ -564,6 +572,14 @@ zone_name = "prismwalls.com"
 
 [[routes]]
 pattern = "www.prismwalls.com/admin-firestore-telemetry*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/admin-promo-codes*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/redeem*"
 zone_name = "prismwalls.com"
 
 [[routes]]

@@ -1949,6 +1949,55 @@ class ProfileRouteArgs {
 }
 
 /// generated route for
+/// [PromoCodesAdminPage]
+class PromoCodesAdminRoute extends PageRouteInfo<PromoCodesAdminRouteArgs> {
+  PromoCodesAdminRoute({
+    Key? key,
+    PromoCodeRepository? repository,
+    List<PageRouteInfo>? children,
+  }) : super(
+         PromoCodesAdminRoute.name,
+         args: PromoCodesAdminRouteArgs(key: key, repository: repository),
+         initialChildren: children,
+       );
+
+  static const String name = 'PromoCodesAdminRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<PromoCodesAdminRouteArgs>(
+        orElse: () => const PromoCodesAdminRouteArgs(),
+      );
+      return PromoCodesAdminPage(key: args.key, repository: args.repository);
+    },
+  );
+}
+
+class PromoCodesAdminRouteArgs {
+  const PromoCodesAdminRouteArgs({this.key, this.repository});
+
+  final Key? key;
+
+  final PromoCodeRepository? repository;
+
+  @override
+  String toString() {
+    return 'PromoCodesAdminRouteArgs{key: $key, repository: $repository}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! PromoCodesAdminRouteArgs) return false;
+    return key == other.key && repository == other.repository;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ repository.hashCode;
+}
+
+/// generated route for
 /// [QuickTileSettingsScreen]
 class QuickTileSettingsRoute extends PageRouteInfo<void> {
   const QuickTileSettingsRoute({List<PageRouteInfo>? children})
@@ -2111,6 +2160,7 @@ class RewardsRoute extends PageRouteInfo<RewardsRouteArgs> {
     Key? key,
     bool showBack = true,
     bool scrollToEarn = false,
+    String? redeemCode,
     List<PageRouteInfo>? children,
   }) : super(
          RewardsRoute.name,
@@ -2118,6 +2168,7 @@ class RewardsRoute extends PageRouteInfo<RewardsRouteArgs> {
            key: key,
            showBack: showBack,
            scrollToEarn: scrollToEarn,
+           redeemCode: redeemCode,
          ),
          initialChildren: children,
        );
@@ -2134,6 +2185,7 @@ class RewardsRoute extends PageRouteInfo<RewardsRouteArgs> {
         key: args.key,
         showBack: args.showBack,
         scrollToEarn: args.scrollToEarn,
+        redeemCode: args.redeemCode,
       );
     },
   );
@@ -2144,6 +2196,7 @@ class RewardsRouteArgs {
     this.key,
     this.showBack = true,
     this.scrollToEarn = false,
+    this.redeemCode,
   });
 
   final Key? key;
@@ -2152,9 +2205,11 @@ class RewardsRouteArgs {
 
   final bool scrollToEarn;
 
+  final String? redeemCode;
+
   @override
   String toString() {
-    return 'RewardsRouteArgs{key: $key, showBack: $showBack, scrollToEarn: $scrollToEarn}';
+    return 'RewardsRouteArgs{key: $key, showBack: $showBack, scrollToEarn: $scrollToEarn, redeemCode: $redeemCode}';
   }
 
   @override
@@ -2163,11 +2218,16 @@ class RewardsRouteArgs {
     if (other is! RewardsRouteArgs) return false;
     return key == other.key &&
         showBack == other.showBack &&
-        scrollToEarn == other.scrollToEarn;
+        scrollToEarn == other.scrollToEarn &&
+        redeemCode == other.redeemCode;
   }
 
   @override
-  int get hashCode => key.hashCode ^ showBack.hashCode ^ scrollToEarn.hashCode;
+  int get hashCode =>
+      key.hashCode ^
+      showBack.hashCode ^
+      scrollToEarn.hashCode ^
+      redeemCode.hashCode;
 }
 
 /// generated route for
