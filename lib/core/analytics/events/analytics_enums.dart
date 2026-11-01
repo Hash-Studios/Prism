@@ -1,6 +1,7 @@
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
+import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 
 extension WallpaperTargetWire on WallpaperTarget {
   String get wireValue => _snakeCase(name);
@@ -24,6 +25,7 @@ extension CoinSpendActionWire on CoinSpendAction {
     CoinSpendAction.dropPack => 'drop_pack',
     CoinSpendAction.boostWall => 'boost_wall',
     CoinSpendAction.giftPremiumPass => 'gift_premium_pass',
+    CoinSpendAction.tipCreator => 'tip_creator',
     CoinSpendAction.drawTicket => 'draw_ticket',
     CoinSpendAction.shopItem => 'shop_item',
     CoinSpendAction.spinWheel => 'spin_wheel',
@@ -35,9 +37,20 @@ extension AiChargeModeWire on AiChargeMode {
   String get wireValue => value;
 }
 
+extension RemixSourceTypeWire on RemixSourceType {
+  String get wireValue => name;
+}
+
 enum BinaryResultValue {
   success,
   failure;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum AiApplyFromValue {
+  hero,
+  strip;
 
   String get wireValue => _snakeCase(name);
 }
@@ -116,6 +129,7 @@ enum SubscriptionEntitlementRefreshResultValue {
 
 enum SettingValue {
   animeWallpapers,
+  aiWallpapers,
   sketchyWallpapers,
   recommendationsNotifications,
   haptics;
@@ -242,6 +256,7 @@ enum ShareChannelValue {
 }
 
 enum ShareFormatValue {
+  duoReveal,
   story,
   post,
   clean,
@@ -417,6 +432,14 @@ enum WallRequestFillerValue {
   studio;
 
   String get wireValue => _snakeCase(name);
+}
+
+enum DailyMomentStepValue {
+  streak,
+  chest,
+  spin;
+
+  String get wireValue => name;
 }
 
 String _snakeCase(String name) => name.replaceAllMapped(RegExp('[A-Z]'), (Match m) => '_${m[0]!.toLowerCase()}');

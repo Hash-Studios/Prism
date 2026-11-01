@@ -32,6 +32,16 @@ void main() {
   };
 
   group('text', () {
+    test('Duo search uses the existing tags and retains color and depth filtering', () async {
+      firestore.onQuery = (_) => <FakeDocRow>[
+        (id: 'duo', data: doc('duo', colors: <String>['blue'], tier: 'auto')),
+        (id: 'wrong-color', data: doc('wrong-color', colors: <String>['red'], tier: 'auto')),
+      ];
+      final walls = await search.search('Duo-Reveal', colorId: 'blue', depthOnly: true);
+      expect(walls.map((wall) => wall.id), <String>['duo']);
+      expect(firestore.querySpecs.single.filters.last.field, 'tags');
+      expect(firestore.querySpecs.single.filters.last.value, <String>['duo', 'duo-reveal']);
+    });
     test('sends the singular lowercase words of the query as one array-contains-any filter on searchTerms', () async {
       await search.search('Boats at Sunset');
 
@@ -134,6 +144,18 @@ void main() {
       final walls = await search.search('boat sunset', limit: 1);
 
       expect(walls.map((wall) => wall.id), <String>['two']);
+    });
+
+    test('with an unknown block list, a search keeps only the wall without a creator', () async {
+      firestore.onQuery = (spec) => <FakeDocRow>[
+        (id: 'by-creator', data: doc('by-creator', searchTerms: <String>['boat'])..['creatorUid'] = 'creator1'),
+        (id: 'no-creator', data: doc('no-creator', searchTerms: <String>['boat'])..['creatorUid'] = ''),
+      ];
+      search = PrismWallSearch(firestore, FakeUserBlockRepository.pending()..timeOutInitialLoad());
+
+      final walls = await search.search('boat');
+
+      expect(walls.map((wall) => wall.id), <String>['no-creator']);
     });
   });
 

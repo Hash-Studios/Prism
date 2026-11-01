@@ -374,6 +374,40 @@ void main() {
     expect((await SharedPreferences.getInstance()).getString(PersistenceKeys.shortcutsFavourites), '[]');
   });
 
+  test('clears the Shortcuts folders snapshot on iOS sign-out', () async {
+    final List<String> cleared = <String>[];
+    app_state.prismUser = profileUser();
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    auth = GoogleAuth(
+      auth: _FakeAuth(),
+      googleSignIn: _FakeGoogleSignIn(),
+      messaging: _FakeMessaging(),
+      clearShortcutsFolders: () async => cleared.add('folders'),
+    );
+
+    await auth.signOutGoogle();
+
+    expect(cleared, <String>['folders']);
+  });
+
+  test('does not clear the Shortcuts folders snapshot on Android sign-out', () async {
+    final List<String> cleared = <String>[];
+    app_state.prismUser = profileUser();
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    auth = GoogleAuth(
+      auth: _FakeAuth(),
+      googleSignIn: _FakeGoogleSignIn(),
+      messaging: _FakeMessaging(),
+      clearShortcutsFolders: () async => cleared.add('folders'),
+    );
+
+    await auth.signOutGoogle();
+
+    expect(cleared, isEmpty);
+  });
+
   test('clears the iOS streak widget snapshot so the next user does not inherit it', () async {
     final _FakeWidgetApi widgets = _FakeWidgetApi();
     IosWidgetChannel.api = widgets;

@@ -1,3 +1,4 @@
+import 'package:Prism/core/auth/guest_browsing_policy.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/animated/shake_once.dart';
@@ -191,10 +192,11 @@ class _F0AuthPageState extends State<F0AuthPage> {
                                             ? null
                                             : () => _gated(context, widget.onGoogle, provider: _Provider.google),
                                       ),
-                                      WelcomeTextButton(
-                                        label: context.l10n.onboardingBrowseGuest,
-                                        onPressed: () => _gated(context, widget.onBrowse),
-                                      ),
+                                      if (guestBrowsingAllowed)
+                                        WelcomeTextButton(
+                                          label: context.l10n.onboardingBrowseGuest,
+                                          onPressed: () => _gated(context, widget.onBrowse),
+                                        ),
                                     ],
                                   );
                                 },

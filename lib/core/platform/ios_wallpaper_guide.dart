@@ -18,6 +18,7 @@ const String photosPermissionDeniedCode = 'PHOTO_PERMISSION_DENIED';
 // ignore: avoid_classes_with_only_static_members
 abstract final class IosWallpaperGuideSession {
   static bool shown = false;
+  static bool duoShown = false;
 }
 
 bool isPhotosPermissionDenied(String? errorCode) => errorCode == photosPermissionDeniedCode;
@@ -30,13 +31,19 @@ Future<void> showIosSetWallpaperGuide(
   BuildContext context, {
   WallDepthTier? depthTier,
   WallSpatialTier? spatialTier,
+  bool duoReveal = false,
 }) async {
-  if (!hideSetWallpaperUi || IosWallpaperGuideSession.shown) return;
+  if (!hideSetWallpaperUi) return;
+  if (duoReveal ? IosWallpaperGuideSession.duoShown : IosWallpaperGuideSession.shown) return;
   if (!context.mounted) return;
-  IosWallpaperGuideSession.shown = true;
+  if (duoReveal) {
+    IosWallpaperGuideSession.duoShown = true;
+  } else {
+    IosWallpaperGuideSession.shown = true;
+  }
   await showPrismSheet<void>(
     context,
-    builder: (_) => IosWallpaperGuideSheet(depthTier: depthTier, spatialTier: spatialTier),
+    builder: (_) => IosWallpaperGuideSheet(depthTier: depthTier, spatialTier: spatialTier, duoReveal: duoReveal),
   );
 }
 
@@ -90,10 +97,17 @@ Future<void> _launch(String url) async {
 }
 
 class IosWallpaperGuideSheet extends StatelessWidget {
-  const IosWallpaperGuideSheet({super.key, this.depthTier, this.spatialTier});
+  const IosWallpaperGuideSheet({super.key, this.depthTier, this.spatialTier, this.duoReveal = false});
 
   final WallDepthTier? depthTier;
   final WallSpatialTier? spatialTier;
+  final bool duoReveal;
+
+  static List<String> duoSteps(AppLocalizations l10n) => <String>[
+    l10n.duoGuideOpen,
+    l10n.duoGuideAlign,
+    l10n.duoGuideCheck,
+  ];
 
   static List<String> steps(AppLocalizations l10n) => <String>[
     l10n.corePhotosStepOpen,
@@ -110,14 +124,16 @@ class IosWallpaperGuideSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
-    final List<String> steps = <String>[
-      ...IosWallpaperGuideSheet.steps(l10n),
-      ?_depthStepFor(depthTier, l10n),
-      if (_suitsSpatialScene(spatialTier)) l10n.wallpaperSpatialStepButton,
-    ];
+    final List<String> steps = duoReveal
+        ? duoSteps(l10n)
+        : <String>[
+            ...IosWallpaperGuideSheet.steps(l10n),
+            ?_depthStepFor(depthTier, l10n),
+            if (_suitsSpatialScene(spatialTier)) l10n.wallpaperSpatialStepButton,
+          ];
     return PrismSheetBody(
-      title: l10n.coreSetItAsWallpaper,
-      message: l10n.coreIosWallpaperGuideBody,
+      title: duoReveal ? l10n.duoGuideTitle : l10n.coreSetItAsWallpaper,
+      message: duoReveal ? l10n.duoPresetNotice : l10n.coreIosWallpaperGuideBody,
       actions: <Widget>[
         FilledButton(
           onPressed: () {

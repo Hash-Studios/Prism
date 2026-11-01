@@ -12,6 +12,7 @@ class PrismRow extends StatelessWidget {
     this.subtitle,
     this.value,
     this.trailing,
+    this.trailingBelow = false,
     this.onTap,
     this.destructive = false,
     this.showChevron,
@@ -32,6 +33,9 @@ class PrismRow extends StatelessWidget {
 
   /// Replaces the chevron, for example a [Switch].
   final Widget? trailing;
+
+  /// Places the trailing widget below the subtitle instead of beside the text.
+  final bool trailingBelow;
   final VoidCallback? onTap;
 
   /// Draws the row in the error colour.
@@ -76,6 +80,7 @@ class PrismRow extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(subtitle!, style: PrismTextStyles.caption(context).copyWith(fontSize: 13, height: 1.3)),
                   ],
+                  if (trailingBelow && trailing != null) ...<Widget>[const SizedBox(height: PrismSpace.xxs), trailing!],
                 ],
               ),
             ),
@@ -83,7 +88,7 @@ class PrismRow extends StatelessWidget {
               const SizedBox(width: PrismSpace.sm),
               Text(value!, style: PrismTextStyles.body(context)),
             ],
-            if (trailing != null) ...<Widget>[const SizedBox(width: PrismSpace.sm), trailing!],
+            if (!trailingBelow && trailing != null) ...<Widget>[const SizedBox(width: PrismSpace.sm), trailing!],
             if (chevron) ...<Widget>[
               const SizedBox(width: PrismSpace.xxs),
               Icon(Icons.chevron_right_rounded, size: 20, color: cs.onSurface.withValues(alpha: 0.35)),

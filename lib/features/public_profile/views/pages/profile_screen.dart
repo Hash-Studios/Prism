@@ -11,6 +11,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/side_safe_column.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/string_extensions.dart';
@@ -21,6 +22,9 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
+import 'package:Prism/features/creator_directory/views/widgets/followed_by_line.dart';
+import 'package:Prism/features/creator_stats/views/widgets/stats_entry_button.dart';
+import 'package:Prism/features/creator_tips/views/widgets/tip_sheet.dart';
 import 'package:Prism/features/folders/views/widgets/profile_folders_row.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
@@ -34,11 +38,11 @@ import 'package:Prism/features/public_profile/views/widgets/profile_bio_text.dar
 import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_parts.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -198,11 +202,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   );
                 }
-                return StreamBuilder<Set<String>>(
-                  stream: getIt<UserBlockRepository>().watchBlockedCreatorUids(),
-                  builder: (BuildContext context, AsyncSnapshot<Set<String>> snapshot) {
-                    final bool isBlocked = snapshot.data?.contains(profile.id) == true;
-                    if (isBlocked) {
+                final UserBlockRepository blocks = getIt<UserBlockRepository>();
+                return StreamBuilder<BlockedCreators>(
+                  initialData: blocks.blockedCreators,
+                  stream: blocks.watchBlockedCreators(),
+                  builder: (BuildContext context, AsyncSnapshot<BlockedCreators> snapshot) {
+                    final BlockedCreators? blocked = snapshot.data;
+                    if (blocked is! KnownBlockedCreators) return const ProfileSkeleton();
+                    if (blocked.uids.contains(profile.id)) {
                       final String display = creatorLabel(
                         name: profile.name,
                         username: profile.username,
@@ -219,7 +226,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-enum _ProfileMenuAction { report, block }
+enum _ProfileMenuAction { tip, report, block }
 
 class _ProfileChild extends StatefulWidget {
   const _ProfileChild({required this.profile, required this.ownProfile, this.onProfileEdited});
@@ -394,6 +401,20 @@ class _ProfileChildState extends State<_ProfileChild> {
   Future<void> _onMenuSelected(_ProfileMenuAction action) async {
     final String uid = _profile.id.trim();
     switch (action) {
+      case _ProfileMenuAction.tip:
+        if (uid.isEmpty) {
+          return;
+        }
+        await showTipSheet(
+          context,
+          creatorUid: uid,
+          creatorName: creatorLabel(
+            name: _profile.name,
+            username: _profile.username,
+            fallback: context.l10n.accountCreatorFallback,
+          ),
+          source: 'profile',
+        );
       case _ProfileMenuAction.report:
         if (uid.isEmpty) {
           return;
@@ -541,6 +562,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                     )
                   : editButton,
               actions: <Widget>[
+                StatsEntryButton(source: 'profile', visible: ownProfile),
                 if (!ownProfile)
                   Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -572,6 +594,12 @@ class _ProfileChildState extends State<_ProfileChild> {
                           icon: const _CircleIcon(icon: JamIcons.more_vertical),
                           onSelected: _onMenuSelected,
                           itemBuilder: (BuildContext context) => <PopupMenuEntry<_ProfileMenuAction>>[
+                            if (app_state.prismUser.loggedIn &&
+                                context.read<PublicProfileBloc>().state.walls.isNotEmpty)
+                              PopupMenuItem<_ProfileMenuAction>(
+                                value: _ProfileMenuAction.tip,
+                                child: Text(context.l10n.tipMenuItem),
+                              ),
                             PopupMenuItem<_ProfileMenuAction>(
                               value: _ProfileMenuAction.report,
                               child: Text(context.l10n.accountReportUser),
@@ -722,6 +750,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                         const SizedBox(height: 2),
                       ],
                       ProfileBadgeRow(badgeIds: _profile.badges),
+                      if (!ownProfile) FollowedByLine(creatorUid: _profile.id),
                       const SizedBox(height: 8),
                       SizedBox(
                         width: headerWidth * 0.9,

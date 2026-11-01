@@ -12,11 +12,30 @@ class Env {
     return value;
   }
 
+  // Disposable demo-prism emulators only. Never accepted outside a debug build.
+  static const bool localQa = bool.fromEnvironment('PRISM_LOCAL_QA');
+  static const String localQaUser = String.fromEnvironment('PRISM_LOCAL_QA_USER', defaultValue: 'viewer');
+  static const String localQaCertificate = String.fromEnvironment('PRISM_LOCAL_QA_CERTIFICATE');
+
   // Measurement-only flow driver for profile builds; see lib/core/debug/perf_autodrive.dart.
   static const bool perfAutodrive = bool.fromEnvironment('PRISM_PERF_AUTODRIVE');
 
   // Debug builds only: loads the AI style samples from http://localhost:8765. See docs/features/ai-wallpaper.md.
   static const bool aiStyleSamplesLocal = bool.fromEnvironment('AI_STYLE_SAMPLES_LOCAL');
+
+  static const bool creatorStatsEmulator = bool.fromEnvironment('CREATOR_STATS_EMULATOR');
+  static const String creatorStatsEmulatorHost = String.fromEnvironment(
+    'CREATOR_STATS_EMULATOR_HOST',
+    defaultValue: '127.0.0.1',
+  );
+  static const String creatorStatsEmulatorProject = String.fromEnvironment(
+    'CREATOR_STATS_EMULATOR_PROJECT',
+    defaultValue: 'demo-prism',
+  );
+  static const String creatorStatsEmulatorAccount = String.fromEnvironment(
+    'CREATOR_STATS_EMULATOR_ACCOUNT',
+    defaultValue: 'creator',
+  );
 
   // GitHub
   static const String ghRepoWalls = String.fromEnvironment('GH_REPO_WALLS');
@@ -27,6 +46,9 @@ class Env {
   static const String rcApiKey = String.fromEnvironment('RC_API_KEY');
   static const String rcAndroidApiKey = String.fromEnvironment('RC_ANDROID_API_KEY');
   static const String rcIosApiKey = String.fromEnvironment('RC_IOS_API_KEY');
+
+  // AdMob
+  static const String admobIosRewardedAdUnitId = String.fromEnvironment('ADMOB_IOS_REWARDED_AD_UNIT_ID');
 
   // Pexels
   static const String pexelsApiKey = String.fromEnvironment('PEXELS_API_KEY');

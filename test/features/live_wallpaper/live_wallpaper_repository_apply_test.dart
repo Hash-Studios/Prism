@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 
 import 'package:Prism/features/live_wallpaper/data/live_texture_preparer.dart';
 import 'package:Prism/features/live_wallpaper/data/repositories/live_wallpaper_repository_impl.dart';
@@ -10,6 +11,8 @@ import 'package:async_wallpaper/src/wallpaper_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../support/profile_user_fixture.dart';
 
 class _Client extends Mock implements WallpaperClient {}
 
@@ -35,6 +38,7 @@ void main() {
     registerFallbackValue(const aw.VideoWallpaperRequest(source: aw.WallpaperSource.filePath('/video.mp4')));
   });
   setUp(() {
+    app_state.prismUser = profileUser();
     client = _Client();
     texture = _Texture();
     repository = LiveWallpaperRepositoryImpl(texturePreparer: texture);
@@ -42,8 +46,44 @@ void main() {
     directory = Directory.systemTemp.createTempSync('prism_live_apply_test_');
   });
   tearDown(() {
+    app_state.prismUser = profileUser(loggedIn: false);
     aw.AsyncWallpaper.debugResetClient();
     directory.deleteSync(recursive: true);
+  });
+
+  test('guest local premium cannot prepare textures or invoke any native live apply', () async {
+    app_state.prismUser = profileUser(loggedIn: false, premium: true);
+    final motion = await repository.applyMotion(
+      imageUrl: '/local.jpg',
+      style: MotionStyle.drift,
+      palette: palette,
+      screenAspectRatio: 0.5,
+      batterySaver: false,
+    );
+    final gradient = await repository.applyGradient(style: GradientStyle.aurora, palette: palette, batterySaver: false);
+    final video = await repository.applyVideo('/local.mp4');
+
+    expect(<LiveApplyStatus>[motion.status, gradient.status, video.status], everyElement(LiveApplyStatus.cancelled));
+    verifyZeroInteractions(texture);
+    verifyZeroInteractions(client);
+  });
+
+  test('losing the session during texture preparation cancels before native apply', () async {
+    when(() => texture.prepare('/local.jpg', 0.5)).thenAnswer((_) async {
+      app_state.prismUser.loggedIn = false;
+      return '/prepared.png';
+    });
+
+    final result = await repository.applyMotion(
+      imageUrl: '/local.jpg',
+      style: MotionStyle.drift,
+      palette: palette,
+      screenAspectRatio: 0.5,
+      batterySaver: false,
+    );
+
+    expect(result.status, LiveApplyStatus.cancelled);
+    verifyZeroInteractions(client);
   });
 
   test('capabilities reflect the host and gradient request uses battery saver without textures', () async {

@@ -391,6 +391,49 @@ test("awardCoins refund: credits once and counts it toward the daily cap", async
   await assert.rejects(() => run(awardCoins, refundReq), {code: "failed-precondition"});
 });
 
+test("awardCoins refund: a premium filter debit is credited once", async (t) => {
+  const store = refundStore(t);
+  store.set("coinTransactions/tx1", {...store.get("coinTransactions/tx1"), action: "premiumFilter", delta: -5});
+  const result = await run(awardCoins, refundReq);
+  assert.equal(result.delta, 5);
+  assert.equal(store.get("usersv2/u")?.coins, 15);
+  assert.equal(store.get("coinTransactions/tx1")?.status, "refunded");
+  await assert.rejects(() => run(awardCoins, refundReq), {code: "failed-precondition"});
+  assert.equal(store.get("usersv2/u")?.coins, 15);
+});
+
+test("awardCoins refund: a premium filter refund ignores the client amount", async (t) => {
+  const store = refundStore(t);
+  store.set("coinTransactions/tx1", {...store.get("coinTransactions/tx1"), action: "premiumFilter", delta: -5});
+  const result = await run(awardCoins, {...refundReq, data: {...refundReq.data, amount: 999}});
+  assert.equal(result.delta, 5);
+  assert.equal(store.get("usersv2/u")?.coins, 15);
+  assert.equal(store.get("coinTransactions/tx1")?.status, "refunded");
+});
+
+test("awardCoins refund: a premium filter debit rejects a different caller", async (t) => {
+  const store = refundStore(t, {"usersv2/v": {coins: 10}});
+  store.set("coinTransactions/tx1", {...store.get("coinTransactions/tx1"), action: "premiumFilter", delta: -5});
+  await assert.rejects(() => run(awardCoins, {...refundReq, auth: {uid: "v"}}), {code: "failed-precondition"});
+  assert.equal(store.get("usersv2/u")?.coins, 10);
+  assert.equal(store.get("usersv2/v")?.coins, 10);
+  assert.equal(store.get("coinTransactions/tx1")?.status, "completed");
+  assert.equal((await run(awardCoins, refundReq)).delta, 5);
+});
+
+test("awardCoins refund: a premium filter debit older than the window is rejected", async (t) => {
+  const store = refundStore(t);
+  const debit = {...store.get("coinTransactions/tx1"), action: "premiumFilter", delta: -5};
+  store.set("coinTransactions/tx1", {
+    ...debit, createdAt: admin.firestore.Timestamp.fromMillis(Date.now() - 11 * 60_000),
+  });
+  await assert.rejects(() => run(awardCoins, refundReq), {code: "failed-precondition"});
+  assert.equal(store.get("usersv2/u")?.coins, 10);
+  assert.equal(store.get("coinTransactions/tx1")?.status, "completed");
+  store.set("coinTransactions/tx1", debit);
+  assert.equal((await run(awardCoins, refundReq)).delta, 5);
+});
+
 test("awardCoins refund: the sixth refund of the day is skipped and the debit stays completed", async (t) => {
   const day = new Date().toISOString().slice(0, 10);
   const store = refundStore(t, {[`coinRefundDaily/u_${day}`]: {day, count: 5}});

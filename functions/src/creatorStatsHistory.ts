@@ -1,0 +1,150 @@
+import * as admin from "firebase-admin";
+import {createHash} from "node:crypto";
+import {onDocumentCreated} from "firebase-functions/v2/firestore";
+import {db, REGION, str} from "./common";
+import {HttpsError} from "firebase-functions/v2/https";
+import {logger} from "firebase-functions/v2";
+import {normalizeId} from "./viewStats";
+
+export const METRICS = ["views", "saves", "sets", "downloads", "shares", "folderAdds", "remixes"] as const;
+export type Metric = typeof METRICS[number];
+export type Counts = Record<Metric, number | null>;
+export type History = {
+  wallPath: string; incarnation: string; creatorUid: string;
+  from: string; weeks: Record<string, Partial<Record<Metric, number>>>;
+  folderAdds: number;
+};
+const WEEK_MS = 7 * 86400000;
+export const count = (value: unknown): number => typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : 0;
+export const hash = (value: string): string => createHash("sha256").update(value).digest("hex");
+export const incarnation = (snap: admin.firestore.DocumentSnapshot): string =>
+  snap.createTime ? `${snap.createTime.seconds}:${snap.createTime.nanoseconds}` : "";
+export const atOrAfter = (a: admin.firestore.Timestamp, b: admin.firestore.Timestamp): boolean =>
+  a.seconds > b.seconds || a.seconds === b.seconds && a.nanoseconds >= b.nanoseconds;
+export const historyRef = (snap: admin.firestore.DocumentSnapshot) =>
+  db.collection("creatorStatsHistory").doc(hash(`${snap.ref.path}:${incarnation(snap)}`));
+
+export function weekStart(ms: number): number {
+  const d = new Date(ms);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.getTime() - ((d.getUTCDay() + 6) % 7) * 86400000;
+}
+export function isoWeek(ms: number): string {
+  const thursday = new Date(weekStart(ms) + 3 * 86400000);
+  const year = thursday.getUTCFullYear();
+  const first = weekStart(Date.UTC(year, 0, 4));
+  return `${year}-W${String(1 + Math.round((weekStart(ms) - first) / WEEK_MS)).padStart(2, "0")}`;
+}
+export function weekWindows(now: number) {
+  return Array.from({length: 8}, (_, i) => {
+    const start = weekStart(now) - (7 - i) * WEEK_MS;
+    return {week: isoWeek(start), start: new Date(start).toISOString(), endExclusive: new Date(start + WEEK_MS).toISOString()};
+  });
+}
+export function addHistory(
+  wall: admin.firestore.DocumentSnapshot, previous: History | undefined,
+  metricDeltas: Partial<Record<Metric, number>>, eventMs: number, now: number,
+): History {
+  const valid = previous?.wallPath === wall.ref.path && previous.incarnation === incarnation(wall) &&
+    previous.creatorUid === wall.data()?.creatorUid;
+  const from = valid ? previous.from : new Date(now).toISOString();
+  const keep = new Set(Array.from({length: 9}, (_, i) => isoWeek(weekStart(now) - i * WEEK_MS)));
+  const weeks = Object.fromEntries(Object.entries(valid ? previous.weeks : {}).filter(([key]) => keep.has(key)));
+  const key = isoWeek(eventMs);
+  if (keep.has(key)) {
+    const row = {...weeks[key]};
+    for (const metric of METRICS) if (metricDeltas[metric]) row[metric] = count(row[metric]) + count(metricDeltas[metric]);
+    weeks[key] = row;
+  }
+  return {wallPath: wall.ref.path, incarnation: incarnation(wall), creatorUid: str(wall.data()?.creatorUid),
+    from, weeks, folderAdds: (valid ? count(previous.folderAdds) : 0) + count(metricDeltas.folderAdds)};
+}
+
+export async function activeOwner(tx: admin.firestore.Transaction, uid: string): Promise<boolean> {
+  if (!uid || uid.includes("/")) return false;
+  const [user, barrier] = await Promise.all([
+    tx.get(db.doc(`usersv2/${uid}`)), tx.get(db.doc(`creatorDeletionState/${uid}`)),
+  ]);
+  return user.exists && user.data()?.deleted !== true && barrier.data()?.closed !== true;
+}
+
+export class IdentityCapacityError extends HttpsError {
+  constructor() {
+    super("resource-exhausted", "Creator stats global identity capacity exceeded. Contact support.");
+  }
+}
+
+async function projectHistoryEvent(path: string, project: () => Promise<void>): Promise<void> {
+  try {
+    await project();
+  } catch (error) {
+    if (!(error instanceof IdentityCapacityError)) throw error;
+    logger.error("Creator stats history skipped because identity capacity was exceeded.", {path});
+  }
+}
+
+export const MAX_IDENTITY_WALLS = 20000;
+export async function readWallIdentities(tx: admin.firestore.Transaction) {
+  const walls = await tx.get(db.collection("walls").select("id", "creatorUid", "review").limit(MAX_IDENTITY_WALLS + 1));
+  if (walls.size > MAX_IDENTITY_WALLS) {
+    throw new IdentityCapacityError();
+  }
+  const identities = new Map<string, admin.firestore.QueryDocumentSnapshot | null>();
+  for (const wall of walls.docs) {
+    let id: string;
+    try {
+      id = normalizeId(wall.data().id);
+    } catch {
+      continue;
+    }
+    identities.set(id, identities.has(id) ? null : wall);
+  }
+  return identities;
+}
+
+export function canonicalWall(identities: Awaited<ReturnType<typeof readWallIdentities>>, id: string) {
+  return identities.get(id) ?? undefined;
+}
+
+export async function countFolderCreation(source: admin.firestore.DocumentSnapshot, now = Date.now()): Promise<void> {
+  const item = source.data();
+  if (!item || !source.createTime || !["prism", "wall_of_the_day", "walloftheday"].includes(str(item.provider).toLowerCase())) return;
+  const createdAt = source.createTime;
+  const parts = source.ref.path.split("/");
+  if (parts.length !== 4 || parts[0] !== "folders" || parts[2] !== "items") return;
+  const marker = db.collection("creatorStatsFolderMarkers").doc(hash(`${source.ref.path}:${incarnation(source)}`));
+  await db.runTransaction(async (tx) => {
+    const [seen, folder] = await Promise.all([tx.get(marker), tx.get(db.doc(`folders/${parts[1]}`))]);
+    if (seen.exists || !folder.exists || !item.ownerId || folder.data()?.ownerId !== item.ownerId ||
+      !await activeOwner(tx, str(item.ownerId))) return;
+    let id: string;
+    try {
+      id = normalizeId(item.id);
+    } catch {
+      return;
+    }
+    const docId = str(item.wallpaperDocumentId);
+    if (docId.includes("/")) return;
+    const wall = docId ? await tx.get(db.doc(`walls/${docId}`)) : canonicalWall(await readWallIdentities(tx), id);
+    let wallId: string;
+    try {
+      wallId = normalizeId(wall?.data()?.id);
+    } catch {
+      return;
+    }
+    if (!wall?.exists || wallId !== id || wall.data()?.review !== true ||
+      !wall.createTime || !atOrAfter(createdAt, wall.createTime) ||
+      !await activeOwner(tx, str(wall.data()?.creatorUid))) return;
+    const ref = historyRef(wall);
+    const history = await tx.get(ref);
+    tx.set(ref, addHistory(wall, history.data() as History | undefined, {folderAdds: 1}, createdAt.toMillis(), now));
+    tx.create(marker, {counted: true});
+  });
+}
+export const onCreatorStatsFolderCreated = onDocumentCreated(
+  {document: "folders/{folderId}/items/{itemId}", region: REGION, retry: true},
+  async (event) => {
+    const source = event.data;
+    if (source) await projectHistoryEvent(source.ref.path, () => countFolderCreation(source));
+  },
+);

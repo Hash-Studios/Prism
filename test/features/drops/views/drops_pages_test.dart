@@ -465,7 +465,12 @@ void main() {
 
       expect(find.text('Unlock all 4 for 100'), findsOneWidget);
       expect(find.text('You have 30 coins'), findsOneWidget);
-      expect(find.textContaining('Watch a video (+'), findsOneWidget);
+      expect(find.textContaining('Watch ad for'), findsOneWidget);
+      expect(find.text('You need 70 more coins.'), findsOneWidget);
+      expect(
+        find.text('You may still need ${70 - CoinsService.instance.adsRewardNow} coins after the ad'),
+        findsOneWidget,
+      );
       expect(find.text('Earn coins'), findsOneWidget);
     });
 
@@ -496,7 +501,7 @@ void main() {
       CoinsService.instance.balanceNotifier.value = 5;
       await openSheet(tester, loaded(dropEntity()), wallId: 'A');
 
-      expect(find.textContaining('Watch a video (+'), findsOneWidget);
+      expect(find.textContaining('Watch ad for'), findsOneWidget);
       expect(find.text('Earn coins'), findsOneWidget);
     });
 

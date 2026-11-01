@@ -20,6 +20,7 @@ class ModerationCard extends StatefulWidget {
     this.onToggleReserve,
     this.reserved = false,
     this.moderation,
+    this.details,
   });
 
   final String previewUrl;
@@ -36,6 +37,7 @@ class ModerationCard extends StatefulWidget {
 
   /// The server check. Null when the wall was not checked yet.
   final WallModeration? moderation;
+  final Widget? details;
 
   @override
   State<ModerationCard> createState() => _ModerationCardState();
@@ -116,6 +118,7 @@ class _ModerationCardState extends State<ModerationCard> {
                       for (final (String label, String value) in widget.facts)
                         ModerationFact(label: label, value: value),
                       ModerationSignals(moderation: widget.moderation, onImage: false),
+                      if (widget.details != null) widget.details!,
                     ],
                   ),
                 ),

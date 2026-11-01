@@ -28,6 +28,7 @@ enum CoinSpendAction {
   dropPack,
   boostWall,
   giftPremiumPass,
+  tipCreator,
   drawTicket,
   shopItem,
   spinWheel,
@@ -91,6 +92,8 @@ extension CoinSpendActionX on CoinSpendAction {
         return CoinPolicy.boostWall;
       case CoinSpendAction.giftPremiumPass:
         return CoinPolicy.giftPremiumPass;
+      case CoinSpendAction.tipCreator:
+        return 0;
       case CoinSpendAction.drawTicket:
         return CoinPolicy.drawTicket;
       case CoinSpendAction.shopItem:

@@ -28,6 +28,8 @@ abstract class PublicProfileWallEntity with _$PublicProfileWallEntity {
     List<String>? collections,
     DateTime? createdAt,
     @Default(false) bool review,
+    @Default(false) bool isAiGenerated,
+    String? aiModel,
     WallDepthTier? depthTier,
     WallSpatial? spatial,
   }) = _PublicProfileWallEntity;
@@ -52,6 +54,8 @@ abstract class PublicProfileWallEntity with _$PublicProfileWallEntity {
       collections: collections,
       firestoreDocumentId: firestoreDocumentId,
       review: review,
+      isAiGenerated: isAiGenerated,
+      aiModel: aiModel,
       depthTier: depthTier,
       spatial: spatial,
     );

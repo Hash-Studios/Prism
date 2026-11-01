@@ -102,7 +102,11 @@ class AiGenerationRepositoryImpl {
     required AiChargeMode chargeMode,
     required int coinsSpent,
     int? seed,
+    String? format,
+    String? foldedPrompt,
+    String? revealedPrompt,
     String? chargeTxId,
+    String? remixOf,
   }) async {
     final user = _requireUser();
     final int ownerGeneration = _generationFor(user.uid);
@@ -112,6 +116,9 @@ class AiGenerationRepositoryImpl {
       'stylePreset': stylePreset.apiValue,
       'qualityTier': qualityTier.apiValue,
       'targetSize': targetSize,
+      if (format != null) 'format': format,
+      if (foldedPrompt != null) 'foldedPrompt': foldedPrompt.trim(),
+      if (revealedPrompt != null) 'revealedPrompt': revealedPrompt.trim(),
       if (seed != null) 'seed': seed,
       if (chargeTxId != null && chargeTxId.isNotEmpty) 'chargeTxId': chargeTxId,
       // The worker owns the one free trial per account; a repeat replays the first image.
@@ -126,6 +133,7 @@ class AiGenerationRepositoryImpl {
       qualityTier: qualityTier,
       chargeMode: chargeMode,
       coinsSpent: coinsSpent,
+      remixOf: remixOf,
     );
     try {
       await _saveHistoryRecord(record, ownerGeneration);
@@ -137,16 +145,18 @@ class AiGenerationRepositoryImpl {
 
   Future<AiGenerationRecord> generateVariation({
     required String generationId,
+    AiGenerationRecord? originalRecord,
     required AiChargeMode chargeMode,
     required int coinsSpent,
     String variationPrompt = '',
     double strength = 0.45,
     String? chargeTxId,
+    String? remixOf,
   }) async {
     final user = _requireUser();
     final int ownerGeneration = _generationFor(user.uid);
 
-    final AiGenerationRecord? original = await _fetchById(generationId);
+    final AiGenerationRecord? original = originalRecord ?? await _fetchById(generationId);
     final payload = <String, dynamic>{
       'variationPrompt': variationPrompt,
       'strength': strength,
@@ -166,6 +176,7 @@ class AiGenerationRepositoryImpl {
       chargeMode: chargeMode,
       coinsSpent: coinsSpent,
       parentGenerationId: generationId,
+      remixOf: remixOf,
     );
     try {
       await _saveHistoryRecord(record, ownerGeneration);
@@ -459,6 +470,7 @@ class AiGenerationRepositoryImpl {
     required AiChargeMode chargeMode,
     required int coinsSpent,
     String? parentGenerationId,
+    String? remixOf,
   }) {
     final imageUrls = data['imageUrls'] is Map<String, dynamic>
         ? data['imageUrls'] as Map<String, dynamic>
@@ -485,6 +497,9 @@ class AiGenerationRepositoryImpl {
       userId: userId,
       createdAt: DateTime.now().toUtc(),
       prompt: prompt,
+      format: data['format']?.toString(),
+      foldedPrompt: data['foldedPrompt']?.toString(),
+      revealedPrompt: data['revealedPrompt']?.toString(),
       stylePreset: stylePreset,
       qualityTier: responseQualityTier,
       provider: (data['provider'] ?? 'unknown').toString(),
@@ -498,6 +513,7 @@ class AiGenerationRepositoryImpl {
       coinsSpent: coinsSpent,
       status: 'success',
       parentGenerationId: parentGenerationId,
+      remixOf: remixOf,
     );
   }
 }

@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -18,6 +23,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/fake_app_analytics.dart';
+import '../../../../support/in_memory_local_store.dart';
 
 class _MockPrismRepository extends Mock implements PrismWallpaperRepository {}
 
@@ -34,6 +40,42 @@ PrismWallpaper _wall(String id) => PrismWallpaper(
 
 PersonalizedFeedPage _page(List<String> ids, {bool hasMore = false}) => PersonalizedFeedPage(
   items: ids.map((id) => PrismFeedItem(id: id, wallpaper: _wall(id))).toList(),
+  hasMore: hasMore,
+);
+
+/// Serves fixed pages. Ids that start with `ai` are AI walls.
+class _ScriptedFeedBloc extends PagedFeedBloc {
+  _ScriptedFeedBloc(this.pages, {Set<int>? failedPages, this.pageSequences, this.pendingLoads})
+    : failedPages = failedPages ?? <int>{},
+      super(surface: AnalyticsSurfaceValue.values.first, sourceContext: 'test_scripted');
+
+  final Map<int, PersonalizedFeedPage> pages;
+  final Set<int> failedPages;
+  final Map<int, List<PersonalizedFeedPage>>? pageSequences;
+  final Map<int, Completer<Result<PersonalizedFeedPage>>>? pendingLoads;
+  final List<int> requested = <int>[];
+
+  @override
+  Future<Result<PersonalizedFeedPage>> loadPage(int page) async {
+    requested.add(page);
+    if (failedPages.remove(page)) return Result.error(const NetworkFailure('offline'));
+    final Completer<Result<PersonalizedFeedPage>>? pending = pendingLoads?.remove(page);
+    if (pending != null) return pending.future;
+    final List<PersonalizedFeedPage>? sequence = pageSequences?[page];
+    if (sequence != null && sequence.isNotEmpty) return Result.success(sequence.removeAt(0));
+    return Result.success(pages[page]!);
+  }
+}
+
+PersonalizedFeedPage _mixedPage(List<String> ids, {bool hasMore = true}) => PersonalizedFeedPage(
+  items: ids
+      .map(
+        (id) => PrismFeedItem(
+          id: id,
+          wallpaper: PrismWallpaper(core: _wall(id).core, isAiGenerated: id.startsWith('ai')),
+        ),
+      )
+      .toList(),
   hasMore: hasMore,
 );
 
@@ -230,6 +272,356 @@ void main() {
         analytics.events.whereType<SurfaceContentLoadedEvent>().single.surface,
         AnalyticsSurfaceValue.homePopularGrid,
       );
+    });
+  });
+
+  group('AI walls hidden', () {
+    setUp(() async {
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      await AiContentFilter.setShowsAi(settings, false);
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    });
+    tearDown(() => getIt.unregister<SettingsLocalDataSource>());
+
+    test('a prefiltered empty page still loads the next page to fill the feed', () async {
+      final repository = _MockPersonalizedRepository();
+      when(
+        () => repository.fetchFollowing(page: 1),
+      ).thenAnswer((_) async => Result.success(_page(<String>[], hasMore: true)));
+      when(
+        () => repository.fetchFollowing(page: 2),
+      ).thenAnswer((_) async => Result.success(_page(<String>['human-2'])));
+      final bloc = FollowingFeedBloc(repository);
+      addTearDown(bloc.close);
+
+      bloc.add(const PagedFeedEvent.started());
+      for (int i = 0; i < 4; i++) {
+        await _settle();
+      }
+
+      verifyInOrder(<void Function()>[
+        () => repository.fetchFollowing(page: 1),
+        () => repository.fetchFollowing(page: 2),
+      ]);
+      expect(bloc.state.items.map((item) => item.id), <String>['human-2']);
+      expect(bloc.state.page, 2);
+    });
+
+    test('a first page of only AI walls loads the next page instead of stalling', () async {
+      final bloc = _ScriptedFeedBloc(<int, PersonalizedFeedPage>{
+        1: _mixedPage(<String>['ai-1', 'ai-2']),
+        2: _mixedPage(<String>['ai-3', 'human-4'], hasMore: false),
+      });
+      addTearDown(bloc.close);
+
+      bloc.add(const PagedFeedEvent.started());
+      await _settle();
+      await _settle();
+
+      expect(bloc.requested, <int>[1, 2]);
+      expect(bloc.state.page, 2);
+      expect(bloc.state.items.map((item) => item.id), <String>['ai-1', 'ai-2', 'ai-3', 'human-4']);
+      expect(bloc.state.hasMore, isFalse);
+    });
+
+    test('fetching more skips AI-only pages, at most five pages per request', () async {
+      final bloc = _ScriptedFeedBloc(<int, PersonalizedFeedPage>{
+        1: _mixedPage(<String>[for (int i = 0; i < 12; i++) 'human-1-$i']),
+        for (int page = 2; page <= 8; page++) page: _mixedPage(<String>['ai-$page']),
+      });
+      addTearDown(bloc.close);
+      bloc.add(const PagedFeedEvent.started());
+      await _settle();
+
+      bloc.add(const PagedFeedEvent.fetchMoreRequested());
+      for (int i = 0; i < 6; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1, 2, 3, 4, 5, 6]);
+      expect(bloc.state.page, 6);
+      expect(bloc.state.hasMore, isTrue);
+    });
+
+    test('a short first page thinned by AI walls fetches more until it can fill the screen', () async {
+      final bloc = _ScriptedFeedBloc(<int, PersonalizedFeedPage>{
+        1: _mixedPage(<String>['human-1', 'ai-1', 'ai-2']),
+        2: _mixedPage(<String>[for (int i = 0; i < 12; i++) 'human-2-$i', 'ai-3']),
+        3: _mixedPage(<String>['human-3']),
+      });
+      addTearDown(bloc.close);
+
+      bloc.add(const PagedFeedEvent.started());
+      for (int i = 0; i < 4; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1, 2], reason: '13 visible walls after page 2 is enough');
+      expect(bloc.state.page, 2);
+      expect(bloc.state.items, hasLength(16));
+    });
+
+    test('merging hidden pages keeps each wallpaper once', () async {
+      final bloc = _ScriptedFeedBloc(<int, PersonalizedFeedPage>{
+        1: _mixedPage(<String>['human-1', 'ai-1']),
+        2: _mixedPage(<String>['human-1', 'human-2'], hasMore: false),
+      });
+      addTearDown(bloc.close);
+
+      bloc.add(const PagedFeedEvent.started());
+      for (int i = 0; i < 4; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1, 2]);
+      expect(bloc.state.items.map((item) => item.id), <String>['human-1', 'ai-1', 'human-2']);
+    });
+
+    test('duplicate ids do not count toward the visible-page fill target', () async {
+      final bloc = _ScriptedFeedBloc(<int, PersonalizedFeedPage>{
+        1: _mixedPage(<String>[...List<String>.filled(12, 'human-1'), 'ai-1']),
+        2: _mixedPage(<String>['human-2'], hasMore: false),
+      });
+      addTearDown(bloc.close);
+
+      bloc.add(const PagedFeedEvent.started());
+      for (int i = 0; i < 4; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1, 2]);
+      expect(bloc.state.items.map((item) => item.id), <String>['human-1', 'ai-1', 'human-2']);
+    });
+
+    test('a request started with AI shown loads one page even if the setting changes', () async {
+      await AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), true);
+      final Completer<Result<PersonalizedFeedPage>> pendingPage = Completer<Result<PersonalizedFeedPage>>();
+      final bloc = _ScriptedFeedBloc(
+        <int, PersonalizedFeedPage>{
+          2: _mixedPage(<String>['ai-2'], hasMore: false),
+        },
+        pendingLoads: <int, Completer<Result<PersonalizedFeedPage>>>{1: pendingPage},
+      );
+      addTearDown(bloc.close);
+
+      bloc.add(const PagedFeedEvent.started());
+      await _settle();
+      await AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), false);
+      pendingPage.complete(Result.success(_mixedPage(<String>['ai-1'])));
+      await _settle();
+
+      expect(bloc.requested, <int>[1]);
+    });
+
+    test('AI-hidden page failure preserves progress and retries the same page', () async {
+      final bloc = _ScriptedFeedBloc(
+        <int, PersonalizedFeedPage>{
+          1: _mixedPage(<String>['human-1', 'ai-1']),
+          2: _mixedPage(<String>[for (int i = 0; i < 12; i++) 'human-2-$i'], hasMore: false),
+        },
+        failedPages: <int>{2},
+      );
+      addTearDown(bloc.close);
+
+      bloc.add(const PagedFeedEvent.started());
+      for (int i = 0; i < 4; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1, 2]);
+      expect(bloc.state.page, 1);
+      expect(bloc.state.items.map((item) => item.id), <String>['human-1', 'ai-1']);
+      expect(bloc.state.hasMore, isTrue);
+      expect(bloc.state.actionStatus, ActionStatus.failure);
+      expect(bloc.state.failure, isA<NetworkFailure>());
+
+      bloc.add(const PagedFeedEvent.fetchMoreRequested());
+      for (int i = 0; i < 4; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1, 2, 2]);
+      expect(bloc.state.page, 2);
+      expect(bloc.state.items, hasLength(14));
+      expect(bloc.state.hasMore, isFalse);
+      expect(bloc.state.actionStatus, ActionStatus.success);
+      expect(bloc.state.failure, isNull);
+    });
+
+    test('a later hidden-page failure keeps fetched pages and retries the next page', () async {
+      final bloc = _ScriptedFeedBloc(
+        <int, PersonalizedFeedPage>{
+          1: _mixedPage(<String>[for (int i = 0; i < 12; i++) 'human-1-$i']),
+          2: _mixedPage(<String>['ai-2']),
+          3: _mixedPage(<String>[for (int i = 0; i < 12; i++) 'human-3-$i'], hasMore: false),
+        },
+        failedPages: <int>{3},
+      );
+      addTearDown(bloc.close);
+
+      bloc.add(const PagedFeedEvent.started());
+      for (int i = 0; i < 4; i++) {
+        await _settle();
+      }
+      bloc.add(const PagedFeedEvent.fetchMoreRequested());
+      for (int i = 0; i < 4; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1, 2, 3]);
+      expect(bloc.state.page, 2);
+      expect(bloc.state.items, hasLength(13));
+      expect(bloc.state.hasMore, isTrue);
+      expect(bloc.state.actionStatus, ActionStatus.failure);
+      expect(bloc.state.failure, isA<NetworkFailure>());
+
+      bloc.add(const PagedFeedEvent.fetchMoreRequested());
+      for (int i = 0; i < 4; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1, 2, 3, 3]);
+      expect(bloc.state.page, 3);
+      expect(bloc.state.items, hasLength(25));
+      expect(bloc.state.hasMore, isFalse);
+      expect(bloc.state.actionStatus, ActionStatus.success);
+      expect(bloc.state.failure, isNull);
+    });
+
+    test('an empty fetched page advances the retry cursor after the next page fails', () async {
+      final bloc = _ScriptedFeedBloc(
+        <int, PersonalizedFeedPage>{
+          1: _mixedPage(<String>[]),
+          2: _mixedPage(<String>[for (int i = 0; i < 12; i++) 'human-2-$i'], hasMore: false),
+        },
+        failedPages: <int>{2},
+      );
+      addTearDown(bloc.close);
+
+      bloc.add(const PagedFeedEvent.started());
+      for (int i = 0; i < 4; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1, 2]);
+      expect(bloc.state.status, LoadStatus.success);
+      expect(bloc.state.page, 1);
+      expect(bloc.state.items, isEmpty);
+      expect(bloc.state.hasMore, isTrue);
+      expect(bloc.state.actionStatus, ActionStatus.failure);
+
+      bloc.add(const PagedFeedEvent.fetchMoreRequested());
+      for (int i = 0; i < 4; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1, 2, 2]);
+      expect(bloc.state.page, 2);
+      expect(bloc.state.items, hasLength(12));
+      expect(bloc.state.actionStatus, ActionStatus.success);
+    });
+
+    test('an empty page with AI shown still requests exactly one page', () async {
+      await AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), true);
+      final bloc = _ScriptedFeedBloc(<int, PersonalizedFeedPage>{
+        1: _mixedPage(<String>[]),
+        2: _mixedPage(<String>['human-2']),
+      });
+      addTearDown(bloc.close);
+
+      bloc.add(const PagedFeedEvent.started());
+      for (int i = 0; i < 4; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1]);
+      expect(bloc.state.items, isEmpty);
+      expect(bloc.state.hasMore, isTrue);
+    });
+
+    test('a refresh supersedes a pending hidden-page scan', () async {
+      final Completer<Result<PersonalizedFeedPage>> pendingPage = Completer<Result<PersonalizedFeedPage>>();
+      final PersonalizedFeedPage firstPage = _mixedPage(<String>['human-old', 'ai-old']);
+      final PersonalizedFeedPage refreshedPage = _mixedPage(<String>[for (int i = 0; i < 12; i++) 'human-new-$i']);
+      final bloc = _ScriptedFeedBloc(
+        <int, PersonalizedFeedPage>{
+          1: refreshedPage,
+          2: _mixedPage(<String>['human-stale']),
+          3: _mixedPage(<String>['human-stale-2']),
+        },
+        pageSequences: <int, List<PersonalizedFeedPage>>{
+          1: <PersonalizedFeedPage>[firstPage, refreshedPage],
+        },
+        pendingLoads: <int, Completer<Result<PersonalizedFeedPage>>>{2: pendingPage},
+      );
+      addTearDown(bloc.close);
+
+      bloc.add(const PagedFeedEvent.started());
+      await _settle();
+      expect(bloc.requested, <int>[1, 2]);
+
+      bloc.add(const PagedFeedEvent.refreshRequested());
+      await _settle();
+      expect(bloc.state.items.map((item) => item.id), refreshedPage.items.map((item) => item.id));
+      pendingPage.complete(Result.success(_mixedPage(<String>['human-stale'])));
+      for (int i = 0; i < 4; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1, 2, 1]);
+      expect(bloc.state.items.map((item) => item.id), refreshedPage.items.map((item) => item.id));
+      expect(bloc.state.page, 1);
+    });
+
+    test('closing during a hidden-page scan prevents more page requests', () async {
+      final Completer<Result<PersonalizedFeedPage>> pendingPage = Completer<Result<PersonalizedFeedPage>>();
+      final bloc = _ScriptedFeedBloc(
+        <int, PersonalizedFeedPage>{
+          1: _mixedPage(<String>['human-1', 'ai-1']),
+          2: _mixedPage(<String>['human-2']),
+          3: _mixedPage(<String>['human-3']),
+        },
+        pendingLoads: <int, Completer<Result<PersonalizedFeedPage>>>{2: pendingPage},
+      );
+
+      bloc.add(const PagedFeedEvent.started());
+      await _settle();
+      expect(bloc.requested, <int>[1, 2]);
+      final Future<void> close = bloc.close();
+      pendingPage.complete(Result.success(_mixedPage(<String>['human-2'])));
+      await close;
+      for (int i = 0; i < 4; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1, 2]);
+    });
+
+    test('overlapping fetch-more events start only one page scan', () async {
+      final Completer<Result<PersonalizedFeedPage>> pendingPage = Completer<Result<PersonalizedFeedPage>>();
+      final bloc = _ScriptedFeedBloc(
+        <int, PersonalizedFeedPage>{
+          1: _mixedPage(<String>[for (int i = 0; i < 12; i++) 'human-1-$i']),
+          for (int page = 2; page <= 8; page++) page: _mixedPage(<String>['ai-$page']),
+        },
+        pendingLoads: <int, Completer<Result<PersonalizedFeedPage>>>{2: pendingPage},
+      );
+      addTearDown(bloc.close);
+
+      bloc.add(const PagedFeedEvent.started());
+      await _settle();
+      bloc
+        ..add(const PagedFeedEvent.fetchMoreRequested())
+        ..add(const PagedFeedEvent.fetchMoreRequested());
+      await _settle();
+      expect(bloc.requested, <int>[1, 2]);
+      pendingPage.complete(Result.success(_mixedPage(<String>['ai-2'])));
+      for (int i = 0; i < 6; i++) {
+        await _settle();
+      }
+
+      expect(bloc.requested, <int>[1, 2, 3, 4, 5, 6]);
+      expect(bloc.state.page, 6);
     });
   });
 }

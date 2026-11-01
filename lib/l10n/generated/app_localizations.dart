@@ -105,6 +105,42 @@ abstract class AppLocalizations {
     Locale('pt', 'BR'),
   ];
 
+  /// Label identifying a rewarded advertisement.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad'**
+  String get economyAd;
+
+  /// Offer for the currently quoted rewarded ad amount.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch ad for {reward} coins'**
+  String economyWatchAdForCoins(int reward);
+
+  /// Coins missing for the selected purchase.
+  ///
+  /// In en, this message translates to:
+  /// **'You need {count} more coins.'**
+  String economyCoinsMissing(int count);
+
+  /// Estimated remaining shortfall after the quoted ad reward.
+  ///
+  /// In en, this message translates to:
+  /// **'You may still need {count} coins after the ad'**
+  String economyCoinsRemainAfterAd(int count);
+
+  /// Disclosure of the shop's automatic purchase after a credited ad.
+  ///
+  /// In en, this message translates to:
+  /// **'If your balance after the reward covers the price, this item will be purchased automatically.'**
+  String get economyAdAutomaticPurchase;
+
+  /// A completed ad reward is awaiting server verification.
+  ///
+  /// In en, this message translates to:
+  /// **'Your ad reward is awaiting verification. Coins will appear once it is confirmed.'**
+  String get economyAdVerificationPending;
+
   /// Title of the empty Folders tab in the Library.
   ///
   /// In en, this message translates to:
@@ -224,6 +260,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wallhaven'**
   String get wallpaperProviderWallhaven;
+
+  /// Shared title for Prism Duo reveal wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'Duo reveal'**
+  String get duoTitle;
+
+  /// AI composition format switch. Normal quality and coin prices still apply.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a Duo reveal'**
+  String get duoAiFormatLabel;
+
+  /// Shared notice explaining the user-approved Prism crop preset, not an Apple crop claim.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism previews the right side when folded. Align the saved original manually and check both views in the system wallpaper preview. This is a Prism preset, not an automatic iOS crop.'**
+  String get duoPresetNotice;
+
+  /// Visible label for the 1 to 160 character subject visible in the right-side crop.
+  ///
+  /// In en, this message translates to:
+  /// **'Folded view'**
+  String get duoFoldedPromptLabel;
+
+  /// Brief example for the folded-view prompt, not its label.
+  ///
+  /// In en, this message translates to:
+  /// **'A sleepy cat beside a window'**
+  String get duoFoldedPromptExample;
+
+  /// Visible label for the 1 to 160 character scene revealed by the wider canvas.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfolded reveal'**
+  String get duoRevealedPromptLabel;
+
+  /// Brief example for the unfolded-view prompt, not its label.
+  ///
+  /// In en, this message translates to:
+  /// **'A tiny spaceship outside the window'**
+  String get duoRevealedPromptExample;
+
+  /// Validation before a Duo AI generation. Both trimmed prompts must contain 1 to 160 characters.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe both views using 1 to 160 characters each.'**
+  String get duoPromptValidation;
+
+  /// One-line Home mood row description for Duo reveal wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'One wallpaper. A wider reveal.'**
+  String get duoMoodBody;
+
+  /// Duo device preview selector. Product name remains unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'iPhone Duo'**
+  String get duoDeviceName;
+
+  /// Standard phone preview selector.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get duoPhoneDevice;
+
+  /// Button and accessibility label to fold the Duo preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Fold'**
+  String get duoFold;
+
+  /// Button and accessibility label to unfold the Duo preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfold'**
+  String get duoUnfold;
+
+  /// Label above the folded view on a share card.
+  ///
+  /// In en, this message translates to:
+  /// **'Folded'**
+  String get duoFolded;
+
+  /// Label above the unfolded view on a share card.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfolded'**
+  String get duoUnfolded;
+
+  /// Android Duo preview caveat. Standard Home, Lock and Both targets remain available.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism previews the right side when folded. Android may crop it differently. Check the system wallpaper preview before applying.'**
+  String get duoAndroidCropNotice;
+
+  /// Call to action printed on the exported Duo reveal share card.
+  ///
+  /// In en, this message translates to:
+  /// **'Get it on Prism'**
+  String get duoGetOnPrism;
+
+  /// Title of setup guide shown only after a successful iOS Photos save.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up your Duo reveal'**
+  String get duoGuideTitle;
+
+  /// First of three Duo wallpaper setup steps.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the saved original in Photos, tap Share, then Use as Wallpaper.'**
+  String get duoGuideOpen;
+
+  /// Second of three steps. Manual alignment, not an automatic Apple crop.
+  ///
+  /// In en, this message translates to:
+  /// **'Align the full image manually so the folded view shows the right side.'**
+  String get duoGuideAlign;
+
+  /// Third of three steps. User must check both system previews.
+  ///
+  /// In en, this message translates to:
+  /// **'Check both folded and unfolded views in the system preview, then add the wallpaper.'**
+  String get duoGuideCheck;
+
+  /// Duo website browser and search title
+  ///
+  /// In en, this message translates to:
+  /// **'iPhone Duo wallpapers | Prism'**
+  String get duoWebTitle;
+
+  /// Duo website metadata description
+  ///
+  /// In en, this message translates to:
+  /// **'One wallpaper, a hidden second scene. Explore original Duo reveal wallpapers in Prism.'**
+  String get duoWebDescription;
+
+  /// Duo website heading
+  ///
+  /// In en, this message translates to:
+  /// **'One wallpaper. A wider story.'**
+  String get duoWebHeading;
+
+  /// Duo website introduction
+  ///
+  /// In en, this message translates to:
+  /// **'A quiet scene when folded. A second story when unfolded. Preview both views of each original wallpaper.'**
+  String get duoWebIntro;
+
+  /// Empty approved Duo website collection
+  ///
+  /// In en, this message translates to:
+  /// **'The first Duo collection is in review.'**
+  String get duoWebEmpty;
+
+  /// Empty Duo website next step
+  ///
+  /// In en, this message translates to:
+  /// **'Explore Prism while each wallpaper is checked in both views.'**
+  String get duoWebEmptyBody;
+
+  /// Website folded preview caption
+  ///
+  /// In en, this message translates to:
+  /// **'Folded preview'**
+  String get duoWebFolded;
+
+  /// Website unfolded preview caption
+  ///
+  /// In en, this message translates to:
+  /// **'Unfolded original'**
+  String get duoWebUnfolded;
+
+  /// Website notice about the approved Prism crop
+  ///
+  /// In en, this message translates to:
+  /// **'These previews use Prism\'s right-side preset, not an automatic Apple crop. Save the full original, align it manually, and check both folded and unfolded views in the system wallpaper preview.'**
+  String get duoWebPresetNotice;
+
+  /// Website wallpaper deep link action
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Prism'**
+  String get duoWebOpenPrism;
+
+  /// Website homepage action
+  ///
+  /// In en, this message translates to:
+  /// **'Explore Prism'**
+  String get duoWebExplore;
+
+  /// Website App Store link
+  ///
+  /// In en, this message translates to:
+  /// **'Download on the App Store'**
+  String get duoWebAppStore;
+
+  /// Website Google Play link
+  ///
+  /// In en, this message translates to:
+  /// **'Get it on Google Play'**
+  String get duoWebPlayStore;
 
   /// Failed filter export action inserted before refund status.
   ///
@@ -1905,16 +2145,10 @@ abstract class AppLocalizations {
   /// **'Report a problem'**
   String get accountReportAProblem;
 
-  /// Privacy explanation shown before sharing a diagnostic report.
-  ///
-  /// In en, this message translates to:
-  /// **'This report has your app version, device and recent logs. It has no email address or sign-in tokens. Read it, then share it with {email}.'**
-  String accountReportPreviewNotice(String email);
-
   /// Subtitle for reporting a problem.
   ///
   /// In en, this message translates to:
-  /// **'Share your app logs with the Prism team'**
+  /// **'Send a bug report to the Prism team'**
   String get accountReportProblemSubtitle;
 
   /// Profile menu report action label.
@@ -2108,12 +2342,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings'**
   String get accountSettings;
-
-  /// Share action label.
-  ///
-  /// In en, this message translates to:
-  /// **'Share'**
-  String get accountShare;
 
   /// Share invite action label.
   ///
@@ -6890,6 +7118,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open in Prism'**
   String get aiLiveActivityOpen;
+
+  /// Primary button on a finished AI wallpaper. On Android it opens the Set screen; on iOS it saves to Photos.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get aiResultApply;
+
+  /// Button on the full-screen AI result that returns to the prompt editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit prompt'**
+  String get aiResultEditPrompt;
+
+  /// Screen reader label for the strip of thumbnails made in this session.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpapers from this session'**
+  String get aiSessionStripLabel;
+
+  /// Screen reader label for one thumbnail in the session strip.
+  ///
+  /// In en, this message translates to:
+  /// **'Take {index} of {count}'**
+  String aiSessionTake(int index, int count);
+
+  /// Follow-up chip. Makes a new take of the wallpaper as a watercolour painting.
+  ///
+  /// In en, this message translates to:
+  /// **'As watercolour'**
+  String get aiFollowUpWatercolour;
+
+  /// Follow-up chip. Makes a night-time take.
+  ///
+  /// In en, this message translates to:
+  /// **'Night version'**
+  String get aiFollowUpNight;
+
+  /// Follow-up chip. Makes a simpler take.
+  ///
+  /// In en, this message translates to:
+  /// **'More minimal'**
+  String get aiFollowUpMinimal;
+
+  /// Follow-up chip. Makes a take with warmer colours.
+  ///
+  /// In en, this message translates to:
+  /// **'Warmer'**
+  String get aiFollowUpWarmer;
+
+  /// Follow-up chip. Makes a take with more depth and layers.
+  ///
+  /// In en, this message translates to:
+  /// **'Add depth'**
+  String get aiFollowUpDepth;
+
+  /// Screen reader label for the coin price shown next to the follow-up chips.
+  ///
+  /// In en, this message translates to:
+  /// **'Each new take costs {cost} coins'**
+  String aiFollowUpCostLabel(int cost);
+
+  /// Title of the sheet shown the first time a follow-up chip is tapped.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a new take?'**
+  String get aiFollowUpConfirmTitle;
+
+  /// No description provided for @aiFollowUpConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A follow-up makes a new wallpaper from this one. Each one costs {cost} coins.'**
+  String aiFollowUpConfirmBody(int cost);
+
+  /// Confirm button on the follow-up cost sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Make it'**
+  String get aiFollowUpConfirmAction;
 
   /// No description provided for @economyAiDailyLimit.
   ///
@@ -11713,12 +12019,6 @@ abstract class AppLocalizations {
   /// **'Apply to'**
   String get wallpaperApplyTo;
 
-  /// Message shown when auto-rotate is opened on an unsupported platform.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto-rotate is only available on Android.'**
-  String get wallpaperAutoRotateAndroidOnly;
-
   /// Auto-rotate target setting section label.
   ///
   /// In en, this message translates to:
@@ -14431,53 +14731,17 @@ abstract class AppLocalizations {
   /// **'Share link'**
   String get wallpaperShareLink;
 
-  /// Step to add the Prism wallpaper and system wallpaper actions in Shortcuts.
-  ///
-  /// In en, this message translates to:
-  /// **'Add the action \"Get Prism Wallpaper\". Then add the action \"Set Wallpaper\".'**
-  String get wallpaperShortcutsAddActionsSteps;
-
-  /// Explanation of how iOS Shortcuts can change wallpapers automatically.
-  ///
-  /// In en, this message translates to:
-  /// **'Use Shortcuts to set a wallpaper on a schedule or trigger. Prepare the source below before running it.'**
-  String get wallpaperShortcutsBody;
-
   /// Section title for choosing wallpaper data in Shortcuts.
   ///
   /// In en, this message translates to:
   /// **'Pick what Prism sends'**
   String get wallpaperShortcutsChoosePrismData;
 
-  /// Step to choose a trigger for an iOS Shortcuts wallpaper automation.
-  ///
-  /// In en, this message translates to:
-  /// **'In the shortcut editor, open Automation if needed. Choose and configure a trigger, such as Time of Day, opening an app, or connecting a charger.'**
-  String get wallpaperShortcutsChooseTriggerSteps;
-
-  /// Step to disable confirmation and save an iOS Shortcuts automation.
-  ///
-  /// In en, this message translates to:
-  /// **'Review the run options shown and save the shortcut or automation. If \"Ask Before Running\" appears, turn it off for automatic runs.'**
-  String get wallpaperShortcutsDisableConfirmationSteps;
-
-  /// Headline describing automatic wallpaper changes through Shortcuts.
-  ///
-  /// In en, this message translates to:
-  /// **'Change your wallpaper automatically'**
-  String get wallpaperShortcutsHeadline;
-
   /// Action to open Apple's Shortcuts app.
   ///
   /// In en, this message translates to:
   /// **'Open Shortcuts'**
   String get wallpaperShortcutsOpenAction;
-
-  /// First step in creating a wallpaper automation in iOS Shortcuts.
-  ///
-  /// In en, this message translates to:
-  /// **'Open Shortcuts. If there is an Automation tab, tap it, then New Automation. Otherwise, tap Add (+), then Edit if shown.'**
-  String get wallpaperShortcutsOpenAutomationSteps;
 
   /// Message shown when the Shortcuts app cannot be opened.
   ///
@@ -14491,12 +14755,6 @@ abstract class AppLocalizations {
   /// **'Random favourite'**
   String get wallpaperShortcutsSourceFavourite;
 
-  /// Description of the random favourite Shortcuts source.
-  ///
-  /// In en, this message translates to:
-  /// **'A random favourite available to Shortcuts. Heart wallpapers in Prism first. Some protected wallpapers may not be available. It avoids the last pick when another favourite is available.'**
-  String get wallpaperShortcutsSourceFavouriteDescription;
-
   /// Shortcuts source option for the daily wallpaper pick.
   ///
   /// In en, this message translates to:
@@ -14508,12 +14766,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Today\'s Prism pick. Download today\'s original in Prism first. When the daily pick changes, download the new original before running this source.'**
   String get wallpaperShortcutsSourceWotdDescription;
-
-  /// Section title for iOS Shortcuts setup instructions.
-  ///
-  /// In en, this message translates to:
-  /// **'Steps'**
-  String get wallpaperShortcutsSteps;
 
   /// Title of the iOS Shortcuts guide screen.
   ///
@@ -17802,6 +18054,2076 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fills request'**
   String get adminFillsRequest;
+
+  /// Short label of the button that opens the AI tab with this wallpaper's prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Remix'**
+  String get wallRemixAction;
+
+  /// Tooltip of the Remix button on an AI wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Remix this wallpaper with AI'**
+  String get wallRemixActionTooltip;
+
+  /// Chip in the AI tab that names the wallpaper being remixed.
+  ///
+  /// In en, this message translates to:
+  /// **'Remixing {title} by {creator}'**
+  String wallRemixingChip(String title, String creator);
+
+  /// Tooltip of the x on the remix chip. It removes the link to the original wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove remix link'**
+  String get wallRemixDropLinkTooltip;
+
+  /// Name used for a wallpaper that has no title, inside remix copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled'**
+  String get wallRemixUntitled;
+
+  /// Name used for a creator with no public name, inside remix copy.
+  ///
+  /// In en, this message translates to:
+  /// **'a Prism creator'**
+  String get wallRemixUnknownCreator;
+
+  /// Heading of the row of remixes on a wallpaper's details.
+  ///
+  /// In en, this message translates to:
+  /// **'Remixes'**
+  String get wallRemixesTitle;
+
+  /// Number of remixes next to the Remixes heading.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 remix} other{{count} remixes}}'**
+  String wallRemixesCount(int count);
+
+  /// Screen reader label of one remix in the Remixes row.
+  ///
+  /// In en, this message translates to:
+  /// **'Open remix by {creator}'**
+  String wallRemixOpenRemixLabel(String creator);
+
+  /// Credit row on a remix. It opens the original wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Remix of {title} by {creator}'**
+  String wallRemixOfLabel(String title, String creator);
+
+  /// Tooltip of the credit row on a remix.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the original wallpaper'**
+  String get wallRemixOfTooltip;
+
+  /// Note on the AI submit sheet. Shared AI wallpapers show their prompt to anyone who remixes them.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone can see your prompt and remix this wallpaper.'**
+  String get economyAiSubmitPromptNotice;
+
+  /// Inbox title when another creator's remix of your wallpaper is approved.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallpaper was remixed'**
+  String get notifPushWallRemixedTitle;
+
+  /// Inbox body when another creator remixes your wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'{remixerName} remixed {wallTitle}.'**
+  String notifPushWallRemixedBody(String remixerName, String wallTitle);
+
+  /// Inbox body when another creator remixes your untitled wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'{remixerName} remixed your wallpaper.'**
+  String notifPushWallRemixedBodyUntitled(String remixerName);
+
+  /// No description provided for @wallMetadataDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get wallMetadataDescription;
+
+  /// No description provided for @wallMetadataEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit details'**
+  String get wallMetadataEdit;
+
+  /// No description provided for @wallResubmitAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix and resubmit'**
+  String get wallResubmitAction;
+
+  /// No description provided for @wallResubmitChooseImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose image'**
+  String get wallResubmitChooseImage;
+
+  /// No description provided for @wallResubmitImageMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The original image is no longer available. Choose it again to keep editing.'**
+  String get wallResubmitImageMissing;
+
+  /// No description provided for @wallResubmitImageKept.
+  ///
+  /// In en, this message translates to:
+  /// **'Original image ready'**
+  String get wallResubmitImageKept;
+
+  /// No description provided for @wallResubmitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix your upload'**
+  String get wallResubmitTitle;
+
+  /// No description provided for @wallUploadUseLastDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Use last details'**
+  String get wallUploadUseLastDetails;
+
+  /// No description provided for @wallUploadLastDetailsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No previous details on this device.'**
+  String get wallUploadLastDetailsUnavailable;
+
+  /// No description provided for @wallUploadWithdraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw upload'**
+  String get wallUploadWithdraw;
+
+  /// No description provided for @wallUploadWithdrawTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw this upload?'**
+  String get wallUploadWithdrawTitle;
+
+  /// No description provided for @wallUploadWithdrawBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the upload from review and deletes its uploaded files.'**
+  String get wallUploadWithdrawBody;
+
+  /// No description provided for @wallUploadWithdrawn.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload withdrawn'**
+  String get wallUploadWithdrawn;
+
+  /// No description provided for @wallUploadDeleteHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete from history'**
+  String get wallUploadDeleteHistory;
+
+  /// No description provided for @wallMetadataInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the text and tags, then try again.'**
+  String get wallMetadataInvalid;
+
+  /// No description provided for @wallUploadOwnerChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account changed. Open this upload again.'**
+  String get wallUploadOwnerChanged;
+
+  /// No description provided for @wallResubmitLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'This wallpaper has reached its three linked resubmissions.'**
+  String get wallResubmitLimit;
+
+  /// No description provided for @wallResubmitUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the original image again. AI source details cannot be reused.'**
+  String get wallResubmitUnsupported;
+
+  /// No description provided for @wallResubmitUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load this rejected upload. Try again.'**
+  String get wallResubmitUnavailable;
+
+  /// No description provided for @wallMetadataEditDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit details'**
+  String get wallMetadataEditDetails;
+
+  /// No description provided for @wallMetadataApprovedHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the title, description and tags. The image and category stay the same.'**
+  String get wallMetadataApprovedHelp;
+
+  /// No description provided for @wallMetadataPendingHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Update these details before your wallpaper is reviewed.'**
+  String get wallMetadataPendingHelp;
+
+  /// No description provided for @wallMetadataSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save details'**
+  String get wallMetadataSave;
+
+  /// No description provided for @wallMetadataSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Details saved'**
+  String get wallMetadataSaved;
+
+  /// No description provided for @wallMetadataDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get wallMetadataDiscardTitle;
+
+  /// No description provided for @wallMetadataDiscardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your unsaved details will be lost.'**
+  String get wallMetadataDiscardBody;
+
+  /// No description provided for @wallMetadataDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes'**
+  String get wallMetadataDiscard;
+
+  /// No description provided for @wallMetadataReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload details'**
+  String get wallMetadataReload;
+
+  /// No description provided for @wallMetadataReloadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload current details?'**
+  String get wallMetadataReloadTitle;
+
+  /// No description provided for @wallMetadataReloadBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This replaces your unsaved details with the current version.'**
+  String get wallMetadataReloadBody;
+
+  /// No description provided for @wallMetadataConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'These details changed elsewhere. Your edits are still here. Reload the current details before saving.'**
+  String get wallMetadataConflict;
+
+  /// No description provided for @wallMetadataStatusChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'This wallpaper is no longer in the same review state. Your edits have not been saved.'**
+  String get wallMetadataStatusChanged;
+
+  /// No description provided for @wallMetadataMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This wallpaper is no longer available. Your edits have not been saved.'**
+  String get wallMetadataMissing;
+
+  /// No description provided for @wallMetadataDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have permission to edit this wallpaper.'**
+  String get wallMetadataDenied;
+
+  /// No description provided for @wallMetadataSignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to edit this wallpaper.'**
+  String get wallMetadataSignedOut;
+
+  /// No description provided for @wallMetadataDailyLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You have reached today\'s edit limit. Try again tomorrow.'**
+  String get wallMetadataDailyLimit;
+
+  /// No description provided for @wallMetadataUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to save details. Check your connection and try again.'**
+  String get wallMetadataUnavailable;
+
+  /// No description provided for @wallMetadataLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load details'**
+  String get wallMetadataLoadFailed;
+
+  /// No description provided for @wallMetadataHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit history'**
+  String get wallMetadataHistory;
+
+  /// No description provided for @wallMetadataHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No metadata edits yet'**
+  String get wallMetadataHistoryEmpty;
+
+  /// No description provided for @wallMetadataHistoryEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes to the approved title, description and tags appear here.'**
+  String get wallMetadataHistoryEmptyBody;
+
+  /// No description provided for @wallMetadataHistoryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load edit history'**
+  String get wallMetadataHistoryFailed;
+
+  /// No description provided for @wallMetadataBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Before'**
+  String get wallMetadataBefore;
+
+  /// No description provided for @wallMetadataAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'After'**
+  String get wallMetadataAfter;
+
+  /// No description provided for @wallMetadataRevert.
+  ///
+  /// In en, this message translates to:
+  /// **'Revert edit'**
+  String get wallMetadataRevert;
+
+  /// No description provided for @wallMetadataRevertTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Revert this edit?'**
+  String get wallMetadataRevertTitle;
+
+  /// No description provided for @wallMetadataRevertBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore only the previous title, description and tags shown here. The image and review state will not change.'**
+  String get wallMetadataRevertBody;
+
+  /// No description provided for @wallMetadataReverted.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit reverted'**
+  String get wallMetadataReverted;
+
+  /// No description provided for @wallMetadataLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more edits'**
+  String get wallMetadataLoadMore;
+
+  /// No description provided for @wallMetadataAbsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get wallMetadataAbsent;
+
+  /// No description provided for @wallMetadataResubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Resubmitted · attempt {attempt} of 3'**
+  String wallMetadataResubmitted(int attempt);
+
+  /// No description provided for @wallMetadataPreviousReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous rejection reason'**
+  String get wallMetadataPreviousReason;
+
+  /// No description provided for @wallMetadataContextUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Resubmission details unavailable'**
+  String get wallMetadataContextUnavailable;
+
+  /// Intro text in the report a problem sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what went wrong. Prism never adds your email address or sign-in tokens. Check any screenshot before you send it.'**
+  String get reportSheetMessage;
+
+  /// Report topic chip: app crashed or froze.
+  ///
+  /// In en, this message translates to:
+  /// **'Crash/freeze'**
+  String get reportTopicCrashFreeze;
+
+  /// Report topic chip: wallpaper could not be set.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpaper won\'t set'**
+  String get reportTopicWallpaperWontSet;
+
+  /// Report topic chip: something looks visually broken.
+  ///
+  /// In en, this message translates to:
+  /// **'Looks broken'**
+  String get reportTopicLooksBroken;
+
+  /// Report topic chip: app is slow.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow'**
+  String get reportTopicSlow;
+
+  /// Report topic chip: any other problem.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get reportTopicOther;
+
+  /// Hint text of the note field in the report sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'What happened? What did you expect?'**
+  String get reportNoteHint;
+
+  /// Title of the screenshot row in the report sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Screenshot'**
+  String get reportScreenshotTitle;
+
+  /// Subtitle of the screenshot row when no screenshot is attached.
+  ///
+  /// In en, this message translates to:
+  /// **'Show us what you see.'**
+  String get reportScreenshotEmpty;
+
+  /// Subtitle of the screenshot row when a screenshot is attached.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to view. Check it before you send.'**
+  String get reportScreenshotAttached;
+
+  /// Button to add a screenshot to the report.
+  ///
+  /// In en, this message translates to:
+  /// **'Add screenshot'**
+  String get reportAddScreenshot;
+
+  /// Button to remove the attached screenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get reportRemoveScreenshot;
+
+  /// Tooltip or label to view the attached screenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'View screenshot'**
+  String get reportViewScreenshot;
+
+  /// Switch label to include device info and recent logs in the report.
+  ///
+  /// In en, this message translates to:
+  /// **'Include device info & recent logs'**
+  String get reportIncludeDiagnostics;
+
+  /// Button to expand the list of included diagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Show what\'s included'**
+  String get reportShowDiagnostics;
+
+  /// Button to collapse the list of included diagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide details'**
+  String get reportHideDiagnostics;
+
+  /// Button that sends the report.
+  ///
+  /// In en, this message translates to:
+  /// **'Send report'**
+  String get reportSend;
+
+  /// Button that shares the report as a file.
+  ///
+  /// In en, this message translates to:
+  /// **'Share as file'**
+  String get reportShareAsFile;
+
+  /// Confirmation after the report is sent, with a short reference code.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks, report sent. Reference {reference}'**
+  String reportSent(String reference);
+
+  /// Title of the dialog shown when the report fails to send.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send'**
+  String get reportCouldNotSend;
+
+  /// Body of the dialog shown when the report fails to send.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again, or share the report as a file.'**
+  String get reportCouldNotSendBody;
+
+  /// Dialog action to share the report as a file after a send failure.
+  ///
+  /// In en, this message translates to:
+  /// **'Share instead'**
+  String get reportShareInstead;
+
+  /// Settings toggle label for shake to report.
+  ///
+  /// In en, this message translates to:
+  /// **'Shake to report'**
+  String get reportShakeToReport;
+
+  /// Settings toggle subtitle for shake to report.
+  ///
+  /// In en, this message translates to:
+  /// **'Shake your phone on any screen to report a problem'**
+  String get reportShakeToReportSubtitle;
+
+  /// Content preference that shows or hides AI-generated Prism walls.
+  ///
+  /// In en, this message translates to:
+  /// **'Show AI-generated wallpapers'**
+  String get accountShowAiWallpapers;
+
+  /// Subtitle under the AI-generated wallpapers switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off to see only human-made walls'**
+  String get accountShowAiWallpapersSubtitle;
+
+  /// Footnote under the AI-generated wallpapers switch. Says what still shows when the switch is off.
+  ///
+  /// In en, this message translates to:
+  /// **'Hiding AI wallpapers never hides your own uploads or favourites.'**
+  String get accountShowAiWallpapersFootnote;
+
+  /// Chip in the Tune your feed sheet that hides AI-generated walls. Same setting as the Settings switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide AI'**
+  String get wallpaperFeedHideAi;
+
+  /// Tag on the wallpaper detail screen for a wall that was made with AI.
+  ///
+  /// In en, this message translates to:
+  /// **'AI-generated'**
+  String get wallpaperAiGenerated;
+
+  /// Sheet line that names the AI model that made the wall.
+  ///
+  /// In en, this message translates to:
+  /// **'Made with {model}'**
+  String wallpaperAiMadeWith(String model);
+
+  /// Sheet line for an AI wall that did not record its model.
+  ///
+  /// In en, this message translates to:
+  /// **'Made with AI'**
+  String get wallpaperAiMadeWithUnknown;
+
+  /// Row in the AI-generated sheet that opens the report sheet for a wrong AI label.
+  ///
+  /// In en, this message translates to:
+  /// **'Report wrong label'**
+  String get wallpaperAiReportWrongLabel;
+
+  /// Empty state when every wall in a feed is AI-generated and AI walls are hidden.
+  ///
+  /// In en, this message translates to:
+  /// **'No human-made walls here yet'**
+  String get feedNoHumanWalls;
+
+  /// Action in the empty state that turns AI-generated walls back on.
+  ///
+  /// In en, this message translates to:
+  /// **'Show AI walls'**
+  String get feedShowAiWalls;
+
+  /// Daily moment: Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily moment'**
+  String get dailyMomentTitle;
+
+  /// Daily moment: StreakTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily streak'**
+  String get dailyMomentStreakTitle;
+
+  /// Daily moment: ChestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily chest'**
+  String get dailyMomentChestTitle;
+
+  /// Daily moment: SpinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Free spin'**
+  String get dailyMomentSpinTitle;
+
+  /// Daily moment: Unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This reward is no longer available today.'**
+  String get dailyMomentUnavailable;
+
+  /// Daily moment: Error.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load your reward. Try again.'**
+  String get dailyMomentError;
+
+  /// Daily moment: StreakReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins, plural, one{{coins} coin earned} other{{coins} coins earned}} · {days, plural, one{streak of {days} day} other{streak of {days} days}}'**
+  String dailyMomentStreakReceipt(int coins, int days);
+
+  /// No description provided for @challengeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly challenge'**
+  String get challengeTitle;
+
+  /// No description provided for @challengeRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 3 entries, each reviewed before appearing.'**
+  String get challengeRules;
+
+  /// No description provided for @challengeVotingRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Vote for other creators until {date} UTC.'**
+  String challengeVotingRules(String date);
+
+  /// No description provided for @challengeUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload an entry'**
+  String get challengeUpload;
+
+  /// No description provided for @challengeAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Create with AI'**
+  String get challengeAi;
+
+  /// No description provided for @challengeTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Top'**
+  String get challengeTop;
+
+  /// No description provided for @challengeNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get challengeNew;
+
+  /// No description provided for @challengePast.
+  ///
+  /// In en, this message translates to:
+  /// **'Past challenges'**
+  String get challengePast;
+
+  /// No description provided for @challengeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved entries will appear here.'**
+  String get challengeEmpty;
+
+  /// No description provided for @challengeWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Voting has closed. We are waiting for entry reviews before choosing a winner.'**
+  String get challengeWaiting;
+
+  /// No description provided for @challengeClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'This challenge has ended.'**
+  String get challengeClosed;
+
+  /// No description provided for @challengeScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'This challenge has not opened yet.'**
+  String get challengeScheduled;
+
+  /// No description provided for @challengeNoWinner.
+  ///
+  /// In en, this message translates to:
+  /// **'No winner for this challenge.'**
+  String get challengeNoWinner;
+
+  /// No description provided for @challengeWinner.
+  ///
+  /// In en, this message translates to:
+  /// **'Winner · {name}'**
+  String challengeWinner(String name);
+
+  /// No description provided for @challengeVote.
+  ///
+  /// In en, this message translates to:
+  /// **'Vote'**
+  String get challengeVote;
+
+  /// No description provided for @challengeUnvote.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove vote'**
+  String get challengeUnvote;
+
+  /// No description provided for @challengeVotes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{0 votes} =1{1 vote} other{{count} votes}}'**
+  String challengeVotes(int count);
+
+  /// Daily moment: Cosmetic.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmetic added to your collection'**
+  String get dailyMomentCosmetic;
+
+  /// Daily moment: Reward.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins, plural, one{{coins} coin earned} other{{coins} coins earned}}'**
+  String dailyMomentReward(int coins);
+
+  /// Daily moment: ChestBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Open today’s chest when you’re ready.'**
+  String get dailyMomentChestBody;
+
+  /// Daily moment: SpinBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your free spin is ready.'**
+  String get dailyMomentSpinBody;
+
+  /// Daily moment: Balance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance: {coins, plural, one{{coins} coin} other{{coins} coins}}'**
+  String dailyMomentBalance(int coins);
+
+  /// Daily moment: Done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get dailyMomentDone;
+
+  /// Daily moment: Retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get dailyMomentRetry;
+
+  /// Daily moment: Continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get dailyMomentContinue;
+
+  /// Daily moment: OpenFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Open free chest'**
+  String get dailyMomentOpenFree;
+
+  /// Daily moment: OpenChest.
+  ///
+  /// In en, this message translates to:
+  /// **'Open for {coins, plural, one{{coins} coin} other{{coins} coins}}'**
+  String dailyMomentOpenChest(int coins);
+
+  /// Daily moment: SpinAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Take free spin'**
+  String get dailyMomentSpinAction;
+
+  /// Daily moment: Close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close daily moment'**
+  String get dailyMomentClose;
+
+  /// Daily moment: Today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get dailyMomentToday;
+
+  /// Daily moment: Ready.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily rewards are ready'**
+  String get dailyMomentReady;
+
+  /// Daily moment: Complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Today is complete'**
+  String get dailyMomentComplete;
+
+  /// Daily moment: Resume.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue daily moment'**
+  String get dailyMomentResume;
+
+  /// Daily moment: More.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get dailyMomentMore;
+
+  /// Daily moment: Quests.
+  ///
+  /// In en, this message translates to:
+  /// **'Quests'**
+  String get dailyMomentQuests;
+
+  /// Daily moment: ChestLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily chest available'**
+  String get dailyMomentChestLeft;
+
+  /// Daily moment: SpinLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Free spin available'**
+  String get dailyMomentSpinLeft;
+
+  /// Daily moment: StreakLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily streak available'**
+  String get dailyMomentStreakLeft;
+
+  /// No description provided for @challengeShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share challenge'**
+  String get challengeShare;
+
+  /// No description provided for @challengeRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove challenge'**
+  String get challengeRemove;
+
+  /// No description provided for @challengeContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge · {theme}'**
+  String challengeContext(String theme);
+
+  /// No description provided for @challengeError.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not load this challenge. Try again.'**
+  String get challengeError;
+
+  /// No description provided for @challengeVoteError.
+  ///
+  /// In en, this message translates to:
+  /// **'Your vote could not be saved. Try again.'**
+  String get challengeVoteError;
+
+  /// No description provided for @challengeSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to enter or vote.'**
+  String get challengeSignIn;
+
+  /// No description provided for @challengeLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You have entered 3 wallpapers in this challenge.'**
+  String get challengeLimit;
+
+  /// No description provided for @challengeRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get challengeRetry;
+
+  /// No description provided for @challengeOwnEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot vote for your own entry.'**
+  String get challengeOwnEntry;
+
+  /// No description provided for @challengeDailyLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Your daily voting limit is reached.'**
+  String get challengeDailyLimit;
+
+  /// No description provided for @challengeMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This challenge or entry is no longer available.'**
+  String get challengeMissing;
+
+  /// No description provided for @challengeBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge Winner'**
+  String get challengeBadge;
+
+  /// No description provided for @challengeBadgeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Win a weekly challenge'**
+  String get challengeBadgeDescription;
+
+  /// No description provided for @challengeWinnerNotificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallpaper won'**
+  String get challengeWinnerNotificationTitle;
+
+  /// No description provided for @challengeWinnerNotificationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your entry won the weekly challenge: {theme}.'**
+  String challengeWinnerNotificationBody(String theme);
+
+  /// Creator dashboard: statsTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Your stats'**
+  String get statsTitle;
+
+  /// Creator dashboard: statsEntry
+  ///
+  /// In en, this message translates to:
+  /// **'Stats'**
+  String get statsEntry;
+
+  /// Creator dashboard: statsViews
+  ///
+  /// In en, this message translates to:
+  /// **'Views'**
+  String get statsViews;
+
+  /// Creator dashboard: statsSaves
+  ///
+  /// In en, this message translates to:
+  /// **'Saves'**
+  String get statsSaves;
+
+  /// Creator dashboard: statsSets
+  ///
+  /// In en, this message translates to:
+  /// **'Sets'**
+  String get statsSets;
+
+  /// Creator dashboard: statsDownloads
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get statsDownloads;
+
+  /// Creator dashboard: statsShares
+  ///
+  /// In en, this message translates to:
+  /// **'Shares'**
+  String get statsShares;
+
+  /// Creator dashboard: statsFolderAdds
+  ///
+  /// In en, this message translates to:
+  /// **'Folder additions'**
+  String get statsFolderAdds;
+
+  /// Creator dashboard: statsRemixes
+  ///
+  /// In en, this message translates to:
+  /// **'Remixes'**
+  String get statsRemixes;
+
+  /// Creator dashboard: statsLoading
+  ///
+  /// In en, this message translates to:
+  /// **'Loading your stats'**
+  String get statsLoading;
+
+  /// Creator dashboard: statsError
+  ///
+  /// In en, this message translates to:
+  /// **'Your stats could not load. Please try again.'**
+  String get statsError;
+
+  /// Creator dashboard: statsRetry
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get statsRetry;
+
+  /// Creator dashboard: statsEmptyTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Your first wall starts here'**
+  String get statsEmptyTitle;
+
+  /// Creator dashboard: statsEmptyBody
+  ///
+  /// In en, this message translates to:
+  /// **'Upload a wallpaper. Its stats will appear after approval.'**
+  String get statsEmptyBody;
+
+  /// Creator dashboard: statsUpload
+  ///
+  /// In en, this message translates to:
+  /// **'Upload a wallpaper'**
+  String get statsUpload;
+
+  /// Creator dashboard: statsWeekNote
+  ///
+  /// In en, this message translates to:
+  /// **'This week so far compared with last week. Weeks start on Monday, UTC.'**
+  String get statsWeekNote;
+
+  /// Creator dashboard: statsHistoryNote
+  ///
+  /// In en, this message translates to:
+  /// **'Eight weeks, oldest first. A dash means unavailable history. Tracking can begin partway through a week, so recorded weeks may be partial. The current week is incomplete.'**
+  String get statsHistoryNote;
+
+  /// Creator dashboard: statsTopWalls
+  ///
+  /// In en, this message translates to:
+  /// **'Top walls this week'**
+  String get statsTopWalls;
+
+  /// Creator dashboard: statsUntitled
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled wall'**
+  String get statsUntitled;
+
+  /// Creator dashboard: statsCountingNote
+  ///
+  /// In en, this message translates to:
+  /// **'Save totals count current favourites; weekly saves count additions. Remix totals count current credited remixes; weekly remixes count first accepted credits. Folder additions are recorded only from the start of tracking.'**
+  String get statsCountingNote;
+
+  /// Creator dashboard: statsUnavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get statsUnavailable;
+
+  /// Creator dashboard: statsWeeklyTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Your walls this week'**
+  String get statsWeeklyTitle;
+
+  /// Creator dashboard: statsWeeklyBody
+  ///
+  /// In en, this message translates to:
+  /// **'See how your walls did in {week}.'**
+  String statsWeeklyBody(String week);
+
+  /// Creator dashboard: statsWallValue
+  ///
+  /// In en, this message translates to:
+  /// **'{metric}: {value} this week'**
+  String statsWallValue(String metric, String value);
+
+  /// Creator dashboard: statsComparison
+  ///
+  /// In en, this message translates to:
+  /// **'{current} this week · {previous} last week'**
+  String statsComparison(String current, String previous);
+
+  /// Creator dashboard: statsTotal
+  ///
+  /// In en, this message translates to:
+  /// **'Total: {value}'**
+  String statsTotal(String value);
+
+  /// Creator dashboard: statsChange
+  ///
+  /// In en, this message translates to:
+  /// **'{value} compared with last week'**
+  String statsChange(String value);
+
+  /// Creator dashboard: statsUpdated
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {date} UTC'**
+  String statsUpdated(String date);
+
+  /// Creator dashboard: statsChartWeek
+  ///
+  /// In en, this message translates to:
+  /// **'Week of {date}: {value}'**
+  String statsChartWeek(String date, String value);
+
+  /// Creator dashboard: statsChartSummary
+  ///
+  /// In en, this message translates to:
+  /// **'{metric}, eight weeks. {summary}'**
+  String statsChartSummary(String metric, String summary);
+
+  /// Headline of the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'A new wallpaper every day'**
+  String get shortcutsGuideHeadline;
+
+  /// Body under the iOS Shortcuts guide headline.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up Shortcuts once. Each day it sets a wallpaper from your rotation folder. Its 200 newest walls each show once before any repeats.'**
+  String get shortcutsGuideBody;
+
+  /// Section title on the iOS Shortcuts guide, and the name of the Shortcuts source that shuffles the folder picked in Prism. Must match the iOS intent's source name.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotation folder'**
+  String get shortcutsSourceRotation;
+
+  /// Description of the Rotation folder source in the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffles the folder you picked above.'**
+  String get shortcutsSourceRotationDescription;
+
+  /// Name of the Shortcuts source that shuffles a folder picked inside Shortcuts. Must match the iOS intent's source name.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder'**
+  String get shortcutsSourceFolder;
+
+  /// Description of the Folder source in the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffles a folder that you pick in Shortcuts.'**
+  String get shortcutsSourceFolderDescription;
+
+  /// Description of the Random favourite source in the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffles your favourites. Each one shows once before any repeats. Some protected wallpapers may not be available.'**
+  String get shortcutsSourceFavouriteDescription;
+
+  /// Rotation folder card title on the iOS Shortcuts guide when no folder is picked.
+  ///
+  /// In en, this message translates to:
+  /// **'No folder picked'**
+  String get shortcutsRotationNone;
+
+  /// Rotation folder card body when no folder is picked.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the folder that the shortcut shuffles.'**
+  String get shortcutsRotationNoneBody;
+
+  /// Button on the rotation folder card that opens the folder picker when no folder is picked.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a folder'**
+  String get shortcutsRotationPick;
+
+  /// Button on the rotation folder card that picks another folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get shortcutsRotationChange;
+
+  /// Button on the rotation folder card that stops using the folder for Shortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get shortcutsRotationStop;
+
+  /// Screen reader label of a numbered step heading in the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {number}, {title}'**
+  String shortcutsStepLabel(int number, String title);
+
+  /// Step 1 title in the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the Prism shortcut'**
+  String get shortcutsStepAddTitle;
+
+  /// Step 1 body when a shared shortcut link is available.
+  ///
+  /// In en, this message translates to:
+  /// **'It gets a wall from your rotation folder and sets it as your wallpaper.'**
+  String get shortcutsStepAddBody;
+
+  /// Button that opens the shared iCloud shortcut link.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the shortcut'**
+  String get shortcutsStepAddAction;
+
+  /// Step 1 body when there is no shared shortcut link.
+  ///
+  /// In en, this message translates to:
+  /// **'Make it in Shortcuts with 2 actions.'**
+  String get shortcutsStepAddManualBody;
+
+  /// Manual step to build the shortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'In Shortcuts, tap + to make a new shortcut.'**
+  String get shortcutsManualNew;
+
+  /// Manual step to build the shortcut. Keep the quoted action name and "Rotation folder" as iOS shows them.
+  ///
+  /// In en, this message translates to:
+  /// **'Add \"Get Prism Wallpaper\". Set Source to Rotation folder.'**
+  String get shortcutsManualGet;
+
+  /// Manual step to build the shortcut. Use the action and option names that Apple's Shortcuts app shows in this language.
+  ///
+  /// In en, this message translates to:
+  /// **'Add \"Set Wallpaper Photo\". Tap the arrow on it, then turn off Show Preview.'**
+  String get shortcutsManualSet;
+
+  /// Manual step to build the shortcut. The name stays in English so Prism can run it.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the shortcut \"{name}\".'**
+  String shortcutsManualName(String name);
+
+  /// Step 2 title in the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Run it every day'**
+  String get shortcutsStepAutomationTitle;
+
+  /// Step 2 line. Use Apple's Shortcuts labels in this language.
+  ///
+  /// In en, this message translates to:
+  /// **'In Shortcuts, tap Automation, then tap +.'**
+  String get shortcutsAutomationOpen;
+
+  /// Step 2 line. Use Apple's Shortcuts labels in this language.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Time of Day. Pick a time, then choose Daily.'**
+  String get shortcutsAutomationTime;
+
+  /// Step 2 line. Use Apple's Shortcuts labels in this language.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Run Immediately, then tap Next.'**
+  String get shortcutsAutomationRun;
+
+  /// Step 2 line. The shortcut name stays in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick \"{name}\" to run.'**
+  String shortcutsAutomationPick(String name);
+
+  /// Note for newer iOS versions without an Automation tab.
+  ///
+  /// In en, this message translates to:
+  /// **'No Automation tab? Open \"{name}\", tap Edit, then tap Automation.'**
+  String shortcutsAutomationNoTab(String name);
+
+  /// Step 3 title in the iOS Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Test it now'**
+  String get shortcutsStepTestTitle;
+
+  /// Step 3 body.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs \"{name}\" once, so you can see the new wallpaper now.'**
+  String shortcutsStepTestBody(String name);
+
+  /// Button that runs the shortcut in the Shortcuts app.
+  ///
+  /// In en, this message translates to:
+  /// **'Run the shortcut'**
+  String get shortcutsStepTestAction;
+
+  /// Folder page menu item on iPhone. Makes this the Shortcuts rotation folder and opens the guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate this folder daily'**
+  String get foldersRotateDaily;
+
+  /// Title on the auto-rotate page on iPhone, where Shortcuts changes the wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Change wallpapers with Shortcuts'**
+  String get autoRotateIosTitle;
+
+  /// Body on the auto-rotate page on iPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'On iPhone, a Shortcuts automation sets a new wallpaper from your folder every day.'**
+  String get autoRotateIosBody;
+
+  /// Button on the auto-rotate page on iPhone that opens the Shortcuts guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up Shortcuts'**
+  String get autoRotateIosAction;
+
+  /// Note under the Step 2 automation lines for iOS 16, which has no Run Immediately option. Use the Shortcuts labels in this language.
+  ///
+  /// In en, this message translates to:
+  /// **'On iOS 16 there is no Run Immediately. Turn off Ask Before Running instead.'**
+  String get shortcutsAutomationIos16;
+
+  /// Wall detail: opens the sheet to tip the wall's creator coins
+  ///
+  /// In en, this message translates to:
+  /// **'Tip creator'**
+  String get tipAction;
+
+  /// Creator profile overflow menu item that opens the tip sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Send a tip'**
+  String get tipMenuItem;
+
+  /// No description provided for @tipTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip {name}'**
+  String tipTitle(String name);
+
+  /// No description provided for @tipMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an amount. {name} gets every coin and sees your name.'**
+  String tipMessage(String name);
+
+  /// Accessibility label for the group of tip amount choices
+  ///
+  /// In en, this message translates to:
+  /// **'Tip amount'**
+  String get tipAmountsLabel;
+
+  /// No description provided for @tipBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Your balance: {balance, plural, =1{1 coin} other{{balance} coins}}'**
+  String tipBalance(int balance);
+
+  /// No description provided for @tipShortBy.
+  ///
+  /// In en, this message translates to:
+  /// **'You need {amount, plural, =1{1 more coin} other{{amount} more coins}}.'**
+  String tipShortBy(int amount);
+
+  /// No description provided for @tipSendButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip {amount} coins'**
+  String tipSendButton(int amount);
+
+  /// Tip sheet: opens Rewards when the balance is too low
+  ///
+  /// In en, this message translates to:
+  /// **'Earn coins'**
+  String get tipEarnCoins;
+
+  /// Tip sheet success headline
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks for your tip'**
+  String get tipThanksTitle;
+
+  /// No description provided for @tipThanksMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} got your {amount} coins.'**
+  String tipThanksMessage(String name, int amount);
+
+  /// Closes the tip sheet after a tip
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get tipDone;
+
+  /// Toast when the balance is short
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have enough coins for this tip.'**
+  String get tipNotEnoughCoins;
+
+  /// Toast when the sender hit the daily tip cap
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve sent all your tips for today. Try again tomorrow.'**
+  String get tipDailyLimit;
+
+  /// No description provided for @tipPairLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You already tipped {name} today. Try again tomorrow.'**
+  String tipPairLimit(String name);
+
+  /// No description provided for @tipCreatorLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} can\'t get more tips today. Try again tomorrow.'**
+  String tipCreatorLimit(String name);
+
+  /// Toast for accounts younger than 7 days
+  ///
+  /// In en, this message translates to:
+  /// **'You can send tips 7 days after you join Prism.'**
+  String get tipSenderTooNew;
+
+  /// Toast for guest or unverified accounts
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with a verified account to send tips.'**
+  String get tipSenderIneligible;
+
+  /// No description provided for @tipUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t tip {name} right now.'**
+  String tipUnavailable(String name);
+
+  /// Toast when the tip call fails
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send the tip. Try again.'**
+  String get tipFailed;
+
+  /// No description provided for @wallTippedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Tipped by {count} people'**
+  String wallTippedBy(int count);
+
+  /// Coin history row for a tip the user sent
+  ///
+  /// In en, this message translates to:
+  /// **'Tip sent'**
+  String get coreCoinTipSent;
+
+  /// Coin history row for a tip the user received
+  ///
+  /// In en, this message translates to:
+  /// **'Tip received'**
+  String get coreCoinTipReceived;
+
+  /// No description provided for @notifPushTipReceivedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{senderName} tipped you {amount} coins for {wallTitle}'**
+  String notifPushTipReceivedTitle(String senderName, String amount, String wallTitle);
+
+  /// No description provided for @notifPushTipReceivedTitleUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'{senderName} tipped you {amount} coins'**
+  String notifPushTipReceivedTitleUntitled(String senderName, String amount);
+
+  /// Body of the first tip push of the day
+  ///
+  /// In en, this message translates to:
+  /// **'See your tips in your creator stats.'**
+  String get notifPushTipReceivedBody;
+
+  /// No description provided for @notifTipsReceivedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You got {count} tips today'**
+  String notifTipsReceivedTitle(int count);
+
+  /// No description provided for @notifTipsReceivedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins} coins in all. See them in your creator stats.'**
+  String notifTipsReceivedBody(int coins);
+
+  /// Creator stats: tips section title
+  ///
+  /// In en, this message translates to:
+  /// **'Tips'**
+  String get statsTips;
+
+  /// No description provided for @statsTipsTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 tip} other{{count} tips}}, {coins} coins in all'**
+  String statsTipsTotal(int count, int coins);
+
+  /// No description provided for @statsTipsWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Week of {date}: {count, plural, =1{1 tip} other{{count} tips}}, {coins} coins'**
+  String statsTipsWeek(String date, int count, int coins);
+
+  /// No description provided for @statsTipsWall.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 tip} other{{count} tips}}, {coins} coins'**
+  String statsTipsWall(int count, int coins);
+
+  /// Creator stats: tips section with no tips
+  ///
+  /// In en, this message translates to:
+  /// **'No tips yet. Fans can tip you from your walls and your profile.'**
+  String get statsTipsEmpty;
+
+  /// Title of the row of suggested creators on Home and Search.
+  ///
+  /// In en, this message translates to:
+  /// **'Creators to follow'**
+  String get creatorsToFollow;
+
+  /// Opens the full list of creators.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get creatorsSeeAll;
+
+  /// Title of the page that lists all creators.
+  ///
+  /// In en, this message translates to:
+  /// **'Creators'**
+  String get creatorsTitle;
+
+  /// Filter chip that shows creators from every category.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get creatorsFilterAll;
+
+  /// Empty state when no creator matches the selected category.
+  ///
+  /// In en, this message translates to:
+  /// **'No creators here yet'**
+  String get creatorsEmptyTitle;
+
+  /// Empty state body under creatorsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another category.'**
+  String get creatorsEmptyBody;
+
+  /// Error state when the creators list fails to load.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load creators'**
+  String get creatorsLoadError;
+
+  /// Screen reader label for a creator's avatar and name.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {name}\'s profile'**
+  String creatorsOpenProfile(String name);
+
+  /// Screen reader label for a wallpaper thumbnail on a creator card.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpaper by {name}'**
+  String creatorsWallBy(String name);
+
+  /// Profile social proof when one person the viewer follows follows this creator.
+  ///
+  /// In en, this message translates to:
+  /// **'Followed by {first}'**
+  String creatorsFollowedByOne(String first);
+
+  /// Profile social proof when two people the viewer follows follow this creator.
+  ///
+  /// In en, this message translates to:
+  /// **'Followed by {first} and {second}'**
+  String creatorsFollowedByTwo(String first, String second);
+
+  /// Profile social proof when three or more people the viewer follows follow this creator. others is the count beyond the two names.
+  ///
+  /// In en, this message translates to:
+  /// **'Followed by {first}, {second} and {others, plural, =1{1 other you follow} other{{others} others you follow}}'**
+  String creatorsFollowedByMany(String first, String second, int others);
+
+  /// Toast action and sheet title that suggest creators similar to the one just followed.
+  ///
+  /// In en, this message translates to:
+  /// **'More like {name}'**
+  String creatorsMoreLike(String name);
+
+  /// Subtitle of the similar creators sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Creators with a similar style'**
+  String get creatorsSimilarSubtitle;
+
+  /// Settings switch that lists the user in the creator directory.
+  ///
+  /// In en, this message translates to:
+  /// **'Show me in Creators to follow'**
+  String get creatorsShowMeTitle;
+
+  /// Subtitle of the creator directory settings switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Others can find your profile and top wallpapers'**
+  String get creatorsShowMeBody;
+
+  /// Title of the sheet where the user enters a Prism promo code.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem a code'**
+  String get promoRedeemTitle;
+
+  /// Line under the redeem sheet title.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a code from a Prism post or giveaway.'**
+  String get promoRedeemMessage;
+
+  /// Line under the redeem sheet title on iPhone and iPad, where only coin codes work.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a coin code from a Prism post or giveaway.'**
+  String get promoRedeemMessageIos;
+
+  /// Label of the promo code text field.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get promoCodeFieldLabel;
+
+  /// Hint text in the empty promo code field.
+  ///
+  /// In en, this message translates to:
+  /// **'For example, 7KQ2 MPXR 4D'**
+  String get promoCodeFieldHint;
+
+  /// Tooltip and screen reader label of the paste button in the code field.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste code'**
+  String get promoPasteCode;
+
+  /// Main button that redeems the code.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem'**
+  String get promoRedeemAction;
+
+  /// Screen reader label while the redeem request runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeeming code'**
+  String get promoRedeeming;
+
+  /// Button that closes the sheet after a code works.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get promoDone;
+
+  /// Button after an error that clears the field.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another code'**
+  String get promoTryAnother;
+
+  /// Headline after a coin code works.
+  ///
+  /// In en, this message translates to:
+  /// **'You got {count, plural, one{1 coin} other{{count} coins}}'**
+  String promoSuccessCoins(int count);
+
+  /// Line under the coin success headline.
+  ///
+  /// In en, this message translates to:
+  /// **'They\'re in your balance now.'**
+  String get promoSuccessCoinsMessage;
+
+  /// Headline after a Pro code works.
+  ///
+  /// In en, this message translates to:
+  /// **'You got {days, plural, one{1 day} other{{days} days}} of Pro'**
+  String promoSuccessPro(int days);
+
+  /// Line under the Pro success headline.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Pro pass now runs until {date}.'**
+  String promoSuccessProMessage(String date);
+
+  /// No description provided for @promoErrorInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That isn\'t a Prism code. Codes have 10 or more letters and numbers.'**
+  String get promoErrorInvalid;
+
+  /// No description provided for @promoErrorNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'We can\'t find that code. Check it and try again.'**
+  String get promoErrorNotFound;
+
+  /// No description provided for @promoErrorDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'This code is turned off.'**
+  String get promoErrorDisabled;
+
+  /// No description provided for @promoErrorExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This code has expired.'**
+  String get promoErrorExpired;
+
+  /// No description provided for @promoErrorLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'This code has no uses left.'**
+  String get promoErrorLimitReached;
+
+  /// No description provided for @promoErrorAlreadyRedeemed.
+  ///
+  /// In en, this message translates to:
+  /// **'You already used this code.'**
+  String get promoErrorAlreadyRedeemed;
+
+  /// No description provided for @promoErrorAccountTooNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account is too new for this code.'**
+  String get promoErrorAccountTooNew;
+
+  /// No description provided for @promoErrorNewUsersOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'This code is for new accounts only.'**
+  String get promoErrorNewUsersOnly;
+
+  /// No description provided for @promoErrorPremiumNotOnIos.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro codes don\'t work on iPhone or iPad. Use an App Store code instead.'**
+  String get promoErrorPremiumNotOnIos;
+
+  /// No description provided for @promoErrorAlreadyPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have Pro, so this code isn\'t needed.'**
+  String get promoErrorAlreadyPremium;
+
+  /// No description provided for @promoErrorRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many tries. Wait an hour, then try again.'**
+  String get promoErrorRateLimited;
+
+  /// No description provided for @promoErrorBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Lots of people are redeeming right now. Try again in a moment.'**
+  String get promoErrorBusy;
+
+  /// No description provided for @promoErrorSignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to redeem a code.'**
+  String get promoErrorSignedOut;
+
+  /// No description provided for @promoErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach Prism. Check your connection and try again.'**
+  String get promoErrorNetwork;
+
+  /// No description provided for @promoErrorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get promoErrorUnknown;
+
+  /// Settings section title for promo and store codes.
+  ///
+  /// In en, this message translates to:
+  /// **'Codes'**
+  String get promoSettingsGroup;
+
+  /// Settings row that opens the redeem sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem a Prism code'**
+  String get promoSettingsRedeemTitle;
+
+  /// Subtitle of that row on Android.
+  ///
+  /// In en, this message translates to:
+  /// **'Coins or Pro days from our posts and giveaways'**
+  String get promoSettingsRedeemSubtitle;
+
+  /// Subtitle of that row on iPhone and iPad.
+  ///
+  /// In en, this message translates to:
+  /// **'Coins from our posts and giveaways'**
+  String get promoSettingsRedeemSubtitleIos;
+
+  /// iOS settings row that opens Apple's code sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem an App Store code'**
+  String get promoAppStoreCodeTitle;
+
+  /// Subtitle of that row.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro offer codes from Apple'**
+  String get promoAppStoreCodeSubtitle;
+
+  /// Android settings row that opens Google Play's redeem page.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem a Play code'**
+  String get promoPlayCodeTitle;
+
+  /// Subtitle of that row.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro offer codes from Google Play'**
+  String get promoPlayCodeSubtitle;
+
+  /// One line under the Codes group on iOS that says which code goes where.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism codes give coins. App Store codes give Pro.'**
+  String get promoCodesFootnoteIos;
+
+  /// Same line on Android.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism codes give coins or Pro days. Play codes give Pro.'**
+  String get promoCodesFootnoteAndroid;
+
+  /// Toast when the store code sheet or page does not open.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the code page. Try again.'**
+  String get promoStoreCodeFailed;
+
+  /// Rewards earn row that opens the redeem sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem a code'**
+  String get promoRewardsRowTitle;
+
+  /// Subtitle of that row.
+  ///
+  /// In en, this message translates to:
+  /// **'Got a code from a post or giveaway?'**
+  String get promoRewardsRowSubtitle;
+
+  /// Admin screen title.
+  ///
+  /// In en, this message translates to:
+  /// **'Promo codes'**
+  String get promoAdminTitle;
+
+  /// Admin entry that opens the promo code screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Promo codes'**
+  String get promoAdminEntry;
+
+  /// Button that creates a code.
+  ///
+  /// In en, this message translates to:
+  /// **'Create code'**
+  String get promoAdminCreate;
+
+  /// No description provided for @promoAdminTypeCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Coins'**
+  String get promoAdminTypeCoins;
+
+  /// No description provided for @promoAdminTypePro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro days'**
+  String get promoAdminTypePro;
+
+  /// Field: coins (1 to 1000) or Pro days (1 to 90).
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get promoAdminAmount;
+
+  /// No description provided for @promoAdminAmountHelpCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'1 to 1,000 coins'**
+  String get promoAdminAmountHelpCoins;
+
+  /// No description provided for @promoAdminAmountHelpPro.
+  ///
+  /// In en, this message translates to:
+  /// **'1 to 90 days. Android only.'**
+  String get promoAdminAmountHelpPro;
+
+  /// No description provided for @promoAdminMaxRedemptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Max redemptions'**
+  String get promoAdminMaxRedemptions;
+
+  /// No description provided for @promoAdminExpiresInDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires in (days)'**
+  String get promoAdminExpiresInDays;
+
+  /// No description provided for @promoAdminMinAccountAge.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum account age (days)'**
+  String get promoAdminMinAccountAge;
+
+  /// No description provided for @promoAdminNewUsersOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'New accounts only'**
+  String get promoAdminNewUsersOnly;
+
+  /// No description provided for @promoAdminNewUsersDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Account at most (days old)'**
+  String get promoAdminNewUsersDays;
+
+  /// Help: leave empty to generate one.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom code (optional)'**
+  String get promoAdminCustomCode;
+
+  /// No description provided for @promoAdminCustomCodeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'10 to 32 letters and numbers, no I, O, 0 or 1. Leave empty to make one.'**
+  String get promoAdminCustomCodeHelp;
+
+  /// Field for an admin note such as the post the code is for.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get promoAdminLabel;
+
+  /// Toast after create.
+  ///
+  /// In en, this message translates to:
+  /// **'Created {code}'**
+  String promoAdminCreated(String code);
+
+  /// Toast after copying a code.
+  ///
+  /// In en, this message translates to:
+  /// **'Code copied'**
+  String get promoAdminCopied;
+
+  /// Tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy code'**
+  String get promoAdminCopy;
+
+  /// No description provided for @promoAdminRedemptions.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {max} used'**
+  String promoAdminRedemptions(int used, int max);
+
+  /// No description provided for @promoAdminExpires.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires {date}'**
+  String promoAdminExpires(String date);
+
+  /// Badge on a turned-off code.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get promoAdminDisabled;
+
+  /// Action.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get promoAdminDisable;
+
+  /// Action.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get promoAdminEnable;
+
+  /// No description provided for @promoAdminEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No codes yet.'**
+  String get promoAdminEmpty;
+
+  /// No description provided for @promoAdminLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load codes. Pull to try again.'**
+  String get promoAdminLoadFailed;
+
+  /// No description provided for @promoAdminCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create the code: {reason}'**
+  String promoAdminCreateFailed(String reason);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

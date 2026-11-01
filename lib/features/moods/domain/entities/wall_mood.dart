@@ -1,5 +1,6 @@
 /// A Home mood. [id] is its key in `moods/current`. The rule that picks its walls is in `functions/src/wallMoods.ts`.
 enum WallMood {
+  duoReveal('duo_reveal'),
   dreamy('dreamy'),
   darkQuiet('dark_quiet'),
   brightBold('bright_bold'),

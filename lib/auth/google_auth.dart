@@ -20,6 +20,7 @@ import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_favourites_store.dart';
+import 'package:Prism/features/ios_shortcuts/data/shortcuts_folders_store.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
@@ -77,12 +78,15 @@ class GoogleAuth {
     GoogleSignIn? googleSignIn,
     FirebaseMessaging? messaging,
     Future<void> Function()? clearShortcutsFavourites,
+    Future<void> Function()? clearShortcutsFolders,
     Future<bool> Function()? firebaseReady,
   }) : _authOverride = auth,
        googleSignIn = googleSignIn ?? GoogleSignIn.instance,
        _messaging = messaging,
        _clearShortcutsFavourites = clearShortcutsFavourites ?? ShortcutsFavouritesStore.clear,
-       _firebaseReady = firebaseReady ?? (() => FirebaseInit.waitUntilReady());
+       _clearShortcutsFolders = clearShortcutsFolders ?? ShortcutsFoldersStore.clear,
+       _firebaseReady =
+           firebaseReady ?? (() async => FirebaseInit.hasDefaultApp || await FirebaseInit.waitUntilReady());
 
   final FirebaseAuth? _authOverride;
   FirebaseAuth? _resolvedAuth;
@@ -90,6 +94,7 @@ class GoogleAuth {
   final GoogleSignIn googleSignIn;
   final FirebaseMessaging? _messaging;
   final Future<void> Function() _clearShortcutsFavourites;
+  final Future<void> Function() _clearShortcutsFolders;
   bool _googleSignInInitialized = false;
 
   /// Waits for startup to finish creating the default app. Returns null when Firebase will not start.
@@ -509,6 +514,12 @@ class GoogleAuth {
         await _clearShortcutsFavourites();
       } catch (e, st) {
         logger.w('Shortcuts favourites clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+      }
+      if (!operation.isCurrent) return;
+      try {
+        await _clearShortcutsFolders();
+      } catch (e, st) {
+        logger.w('Shortcuts folders clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
       }
       if (!operation.isCurrent) return;
       await StreakWidgetSync.clear();

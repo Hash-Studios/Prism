@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -84,6 +85,7 @@ Future<void> _dispatch(
   VoidCallback? onResetOriginal,
   VoidCallback? onTogglePin,
 }) async {
+  if (!await requireSignedInAction(context) || !context.mounted) return;
   switch (action) {
     case WallpaperQuickAction.favourite:
       final bool saved = getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, item.id);
@@ -97,6 +99,7 @@ Future<void> _dispatch(
           item.thumbnailUrl,
           title: wallpaperPreviewTitle(context.l10n, item),
           core: item.wallpaperCore,
+          context: context,
           l10n: context.l10n,
         ),
       );

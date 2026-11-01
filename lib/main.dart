@@ -12,7 +12,10 @@ import 'package:Prism/core/analytics/providers/mixpanel_analytics_provider.dart'
 import 'package:Prism/core/analytics/providers/noop_analytics_provider.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/bloc_debug_observer.dart';
+import 'package:Prism/core/debug/creator_stats_emulator.dart';
 import 'package:Prism/core/debug/debug_flags.dart';
+import 'package:Prism/core/debug/local_qa_adapters.dart';
+import 'package:Prism/core/debug/local_qa_runtime.dart';
 import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/core/debug/perf_autodrive.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
@@ -45,6 +48,7 @@ import 'package:Prism/core/router/short_link_retry.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/startup/notification_channels.dart';
 import 'package:Prism/core/startup/session_end_watcher.dart';
+import 'package:Prism/core/startup/session_ended_navigation.dart';
 import 'package:Prism/core/startup/session_ended_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
@@ -56,20 +60,24 @@ import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
+import 'package:Prism/features/ads/data/ad_sdk.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_session_listener.dart';
 import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
+import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_quick_tile_listener.dart';
 import 'package:Prism/features/folders/folders.dart';
 import 'package:Prism/features/folders/views/widgets/folder_write_failure_listener.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/ios_shortcuts/views/widgets/shortcuts_favourites_listener.dart';
+import 'package:Prism/features/ios_shortcuts/views/widgets/shortcuts_folders_listener.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
+import 'package:Prism/features/session/views/widgets/shake_to_report_listener.dart';
 import 'package:Prism/features/startup/services/resume_refresh_policy.dart';
 import 'package:Prism/features/startup/startup.dart';
 import 'package:Prism/features/theme_mode/data/theme_mode_migration.dart';
@@ -82,8 +90,8 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/local_notification.dart';
 import 'package:Prism/notifications/notification_signals.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -95,7 +103,6 @@ import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -108,6 +115,7 @@ const double _sentryReplayOnErrorSampleRate = 1.0;
 /// Avoid any UI work here — only lightweight processing.
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  if (CreatorStatsEmulator.enabled) return;
   // Firebase.initializeApp() is already called before main() is reached, but
   // in the background isolate we may need to re-initialise.  The guard inside
   // Firebase.initializeApp makes this safe to call multiple times.
@@ -159,7 +167,12 @@ int _colorValueFromPrefs(dynamic rawValue, {required int fallback}) {
 Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
-      WidgetsFlutterBinding.ensureInitialized();
+      if (Env.localQa) {
+        LocalQaRuntime.installNetworkPolicy();
+        LocalQaWidgetsBinding();
+      } else {
+        WidgetsFlutterBinding.ensureInitialized();
+      }
       PerformanceProbe.mark('startup.binding_ready');
       if (!kReleaseMode) {
         HttpsCallable.perfSink = (String name, int ms, bool ok) =>
@@ -186,12 +199,22 @@ Future<void> main() async {
       };
       installFlutterFrameworkErrorHandler();
 
-      const skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
+      const skipFirebaseInit = Env.skipFirebaseInit;
       final SentryConfig sentryConfig = _resolveSentryConfig();
+      MonitoringRuntime.config = sentryConfig;
 
       // Start Firebase early so it can initialize while persistence and monitoring run.
       // StartupRepositoryImpl.bootstrap() also awaits this future before accessing Remote Config.
-      if (!skipFirebaseInit) {
+      if (CreatorStatsEmulator.enabled) {
+        await CreatorStatsEmulator.connect();
+        // Keep Remote Config, economy remote config and FCM gates closed. The
+        // three emulated services are already connected before DI or runApp.
+        FirebaseInit.setFuture(Future<bool>.value(false));
+      } else if (Env.localQa) {
+        // Await directly: failure must stop QA before DI or the real router starts.
+        await LocalQaRuntime.initializeFirebase();
+        FirebaseInit.setFuture(Future<bool>.value(true));
+      } else if (!skipFirebaseInit) {
         FirebaseInit.setFuture(
           PerformanceProbe.measure(
             'startup',
@@ -230,12 +253,16 @@ Future<void> main() async {
       await PerformanceProbe.measure(
         'startup',
         'persistence_and_monitoring',
-        () => Future.wait(<Future<Object?>>[PersistenceBootstrap.initialize(), _initializeMonitoring(sentryConfig)]),
+        () => Future.wait(<Future<Object?>>[
+          if (Env.localQa) LocalQaRuntime.initializePersistence() else PersistenceBootstrap.initialize(),
+          if (!Env.localQa) _initializeMonitoring(sentryConfig),
+        ]),
       );
 
       // Defer MobileAds and Analytics to after first frame. Resolves firebaseInitialized
       // lazily once Firebase background init completes.
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (CreatorStatsEmulator.enabled || Env.localQa) return;
         unawaited(PurchasesService.instance.configureEarly());
         unawaited(
           FirebaseInit.readyFuture.then(
@@ -288,7 +315,10 @@ Future<void> main() async {
       }
 
       PerformanceProbe.mark('startup.before_di');
+      if (CreatorStatsEmulator.enabled) await CreatorStatsEmulator.signIn();
       configureDependencies();
+      if (CreatorStatsEmulator.enabled) await CreatorStatsEmulator.installFirestore();
+      if (Env.localQa) await LocalQaRuntime.installDependenciesAndSession();
       PerformanceProbe.mark('startup.di_ready');
       // The session repository has loaded persisted identity; set private notification stores before runApp reads them.
       final persistedUser = app_state.prismUser;
@@ -361,7 +391,7 @@ Future<void> _setIfChanged(SettingsLocalDataSource settings, String key, Object 
 Future<void> _deferredStartup({required bool firebaseInitialized}) async {
   unawaited(
     AdConsent.instance.ensure().then((bool canRequestAds) {
-      if (canRequestAds) unawaited(MobileAds.instance.initialize());
+      if (canRequestAds) unawaited(initializeMobileAds());
     }),
   );
   await _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);
@@ -378,7 +408,7 @@ SentryConfig _resolveSentryConfig() {
 }
 
 Future<void> _initializeMonitoring(SentryConfig config) async {
-  if (!config.enabled) {
+  if (CreatorStatsEmulator.enabled || !config.enabled) {
     MonitoringRuntime.reset();
     return;
   }
@@ -525,6 +555,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   DateTime? _lastCoinSyncAt;
 
   Future<bool> _restoreLoginStatus() async {
+    if (Env.localQa) return LocalQaRuntime.validateSession();
     if (!await FirebaseInit.readyFuture) return app_state.prismUser.loggedIn;
     final bool value = await globalGoogleAuth.isSignedIn();
     if (!value) {
@@ -631,6 +662,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _syncCoinEconomy({required String sourceTag}) async {
+    if (Env.localQa) return;
     if (_coinSyncInFlight) {
       return;
     }
@@ -691,11 +723,16 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
 
   Future<void> _handleSessionEnded() async {
     try {
-      _authContinuation.cancel();
-      await globalGoogleAuth.signOutGoogle();
-      final BuildContext? context = _appRouter.navigatorKey.currentContext;
-      if (!mounted || context == null || !context.mounted) return;
-      unawaited(showSessionEndedSheet(context, onSignedIn: () => RestartWidget.restartApp(context)));
+      await handleSessionEndedNavigation(
+        router: _appRouter,
+        signOut: globalGoogleAuth.signOutGoogle,
+        isMounted: () => mounted,
+        showGuestPrompt: () async {
+          final BuildContext? context = _appRouter.navigatorKey.currentContext;
+          if (context == null || !context.mounted) return;
+          await showSessionEndedSheet(context, onSignedIn: () => RestartWidget.restartApp(context));
+        },
+      );
     } catch (error, stackTrace) {
       logger.w('Session ended handling failed.', tag: 'Session', error: error, stackTrace: stackTrace);
     }
@@ -715,6 +752,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _listenForPushMessages() async {
+    if (Env.localQa) return;
     // Wait for Firebase to be ready before touching any Firebase APIs.
     final bool firebaseReady = await FirebaseInit.readyFuture;
     if (!firebaseReady) return;
@@ -723,14 +761,13 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     localNotification.listenForPushMessages(localizations: loadDeviceAppLocalizations);
 
     // Launched from terminated state by tapping a notification.
-    localNotification.routeInitialMessage().catchError((Object error, StackTrace stackTrace) {
-      logger.w('Reading the launch push failed.', tag: 'Push', error: error, stackTrace: stackTrace);
-    });
+    await localNotification.routeInitialMessage();
   }
 
   @override
   void initState() {
     super.initState();
+    DailyMomentPresentationGate.instance.launchIntentsReady = false;
     WidgetsBinding.instance.addObserver(this);
     _orientationPolicyObserver = OrientationPolicyObserver();
     unawaited(_orientationPolicyObserver.start());
@@ -778,16 +815,27 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       }),
     );
     unawaited(
-      localNotification.fetchNotificationData().catchError((Object error, StackTrace stackTrace) {
-        logger.w('Reading the launch notification failed.', tag: 'Push', error: error, stackTrace: stackTrace);
+      Future.wait<void>(<Future<void>>[
+        if (!CreatorStatsEmulator.enabled)
+          localNotification.fetchNotificationData().catchError((Object error, StackTrace stackTrace) {
+            logger.w('Reading the launch notification failed.', tag: 'Push', error: error, stackTrace: stackTrace);
+          }),
+        _listenForPushMessages().catchError((Object error, StackTrace stackTrace) {
+          logger.w('Reading the launch push failed.', tag: 'Push', error: error, stackTrace: stackTrace);
+        }),
+      ]).whenComplete(() {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) DailyMomentPresentationGate.instance.launchIntentsReady = true;
+        });
+        WidgetsBinding.instance.ensureVisualUpdate();
       }),
     );
-    unawaited(_listenForPushMessages());
     unawaited(_watchSession());
     unawaited(NotificationSignals.instance.onResumed());
   }
 
   Future<void> _refreshWotdTopics() async {
+    if (Env.localQa) return;
     try {
       if (!await FirebaseInit.readyFuture) return;
       await refreshWotdTopics(FirebaseMessaging.instance, getIt<SettingsLocalDataSource>());
@@ -897,46 +945,48 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       ],
       child: WotdQuickTileListener(
         child: ShortcutsFavouritesListener(
-          child: FavouriteQuickTileListener(
-            child: ListenableBuilder(
-              listenable: DebugFlags.instance,
-              builder: (context, _) => MaterialApp.router(
-                debugShowCheckedModeBanner: false,
-                localizationsDelegates: AppLocalizations.localizationsDelegates,
-                supportedLocales: AppLocalizations.supportedLocales,
-                builder: (context, child) {
-                  app_state.notchSize = MediaQuery.paddingOf(context).top;
-                  final ThemeData theme = Theme.of(context);
-                  final bool wide = MediaQuery.sizeOf(context).width > PrismLayout.panelWidth;
-                  return Theme(
-                    data: theme.copyWith(
-                      snackBarTheme: theme.snackBarTheme.copyWith(width: wide ? PrismLayout.panelWidth : null),
-                    ),
-                    // This builder is under MaterialApp's Localizations. The auto-rotate toasts read those messages,
-                    // so the listener cannot sit above _MyApp.
-                    child: AutoRotateSessionListener(
-                      child: FolderWriteFailureListener(
-                        child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+          child: ShortcutsFoldersListener(
+            child: FavouriteQuickTileListener(
+              child: ListenableBuilder(
+                listenable: DebugFlags.instance,
+                builder: (context, _) => MaterialApp.router(
+                  debugShowCheckedModeBanner: false,
+                  localizationsDelegates: AppLocalizations.localizationsDelegates,
+                  supportedLocales: AppLocalizations.supportedLocales,
+                  builder: (context, child) {
+                    app_state.notchSize = MediaQuery.paddingOf(context).top;
+                    final ThemeData theme = Theme.of(context);
+                    return Theme(
+                      data: theme.copyWith(snackBarTheme: prismSnackBarThemeFor(context, theme.snackBarTheme)),
+                      // This builder is under MaterialApp's Localizations. The auto-rotate toasts read those messages,
+                      // so the listener cannot sit above _MyApp.
+                      child: AutoRotateSessionListener(
+                        child: FolderWriteFailureListener(
+                          child: ShakeToReportListener(
+                            navigatorKey: _appRouter.navigatorKey,
+                            child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                          ),
+                        ),
                       ),
-                    ),
-                  );
-                },
-                routerConfig: _appRouter.config(
-                  deepLinkTransformer: (uri) async => _deepLinkParser.transform(uri),
-                  deepLinkBuilder: _routerDeepLinkBuilder,
-                  navigatorObservers: () => [
-                    ...AnalyticsRuntime.buildNavigatorObservers(),
-                    if (MonitoringRuntime.reporter.isEnabled)
-                      SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
-                  ],
+                    );
+                  },
+                  routerConfig: _appRouter.config(
+                    deepLinkTransformer: (uri) async => _deepLinkParser.transform(uri),
+                    deepLinkBuilder: _routerDeepLinkBuilder,
+                    navigatorObservers: () => [
+                      ...AnalyticsRuntime.buildNavigatorObservers(),
+                      if (MonitoringRuntime.reporter.isEnabled)
+                        SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
+                    ],
+                  ),
+                  showPerformanceOverlay: DebugFlags.instance.showPerformanceOverlay,
+                  showSemanticsDebugger: DebugFlags.instance.showSemanticsDebugger,
+                  theme: context.prismLightTheme(),
+                  darkTheme: context.prismDarkTheme(),
+                  themeMode: context.prismThemeMode(),
+                  themeAnimationDuration: context.motion(PrismDurations.slow),
+                  themeAnimationCurve: PrismCurves.move,
                 ),
-                showPerformanceOverlay: DebugFlags.instance.showPerformanceOverlay,
-                showSemanticsDebugger: DebugFlags.instance.showSemanticsDebugger,
-                theme: context.prismLightTheme(),
-                darkTheme: context.prismDarkTheme(),
-                themeMode: context.prismThemeMode(),
-                themeAnimationDuration: context.motion(PrismDurations.slow),
-                themeAnimationCurve: PrismCurves.move,
               ),
             ),
           ),

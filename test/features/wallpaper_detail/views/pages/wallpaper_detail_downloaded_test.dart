@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
@@ -12,6 +13,7 @@ import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/wallpaper_detail_route.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -217,6 +219,10 @@ void main() {
   });
 
   testWidgets('downloaded detail uses the local file for set, clock, and color swatches', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'downloaded-detail-user'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
     final bloc = _MockWallpaperDetailBloc();
     whenListen(
       bloc,

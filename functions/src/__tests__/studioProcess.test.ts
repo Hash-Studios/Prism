@@ -97,6 +97,24 @@ function setup(t: TestContext, opts: {
 const walls = (store: Map<string, Doc>) => [...store.entries()].filter(([path]) => path.startsWith("walls/"));
 const workerError = (status: number, error: string) => () => Response.json({error, message: "x"}, {status});
 
+test("Duo publishes exact wide original to normal review with no automatic Drop reserve", async (t) => {
+  const wide = await flatPng(2688, 1888);
+  const {store, run, cand, calls} = setup(t, {
+    seed: {[CAND_PATH]: candidate({seriesId: "duo-reveal", duoPresetId: "prism-right-v1", width: 2688, height: 1888,
+      tags: ["duo", "duo-reveal"]})},
+    image: async () => wide,
+  });
+  await run();
+  assert.equal(cand().status, "pending_review");
+  const wall = walls(store)[0][1];
+  assert.equal(wall.review, false);
+  assert.equal(wall.dropReserved, undefined);
+  assert.equal(wall.resolution, "2670x1878");
+  assert.equal(wall.duoPresetId, "prism-right-v1");
+  const body = calls.find((c) => c.method === "POST")?.body as Doc;
+  assert.equal(body.duoPresetId, "prism-right-v1");
+});
+
 test("a clean candidate becomes a pending wall with the app's fields, a signature doc and two uploads", async (t) => {
   const {store, calls, run, cand} = setup(t);
   await run();

@@ -1,5 +1,15 @@
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 
+abstract interface class FirestoreQueryCacheInvalidator {
+  void clearQueryCache();
+}
+
+extension FirestoreClientCache on FirestoreClient {
+  void invalidateQueryCache() {
+    if (this case final FirestoreQueryCacheInvalidator client) client.clearQueryCache();
+  }
+}
+
 abstract class FirestoreTransaction {
   Future<Map<String, dynamic>?> getDoc(String collection, String id);
 

@@ -33,7 +33,7 @@ class MoodRow extends StatefulWidget {
 class _MoodRowState extends State<MoodRow> {
   static const int _loadLimit = 30;
   static const int _stripLimit = 10;
-  static const int _minWalls = 3;
+  int get _minWalls => widget.list.mood == WallMood.duoReveal ? 1 : 3;
   static const double _visibleCards = 2.4;
 
   late final MoodWallsCubit _cubit;
@@ -74,6 +74,9 @@ class _MoodRowState extends State<MoodRow> {
   }
 
   void _open(BuildContext context) {
+    if (widget.list.mood == WallMood.duoReveal) {
+      unawaited(analytics.track(const DuoRowOpenedEvent(source: 'row')));
+    }
     unawaited(context.router.pushPath('/mood/${widget.list.mood.id}?source=row'));
   }
 
@@ -84,7 +87,9 @@ class _MoodRowState extends State<MoodRow> {
       builder: (context, state) {
         switch (state) {
           case MoodWallsLoading():
-            return _section(context, _skeletonStrip(context));
+            return widget.list.mood == WallMood.duoReveal
+                ? const SizedBox.shrink()
+                : _section(context, _skeletonStrip(context));
           case MoodWallsLoaded(:final walls) when walls.length >= _minWalls:
             return _section(context, _wallStrip(context, walls));
           case MoodWallsLoaded():

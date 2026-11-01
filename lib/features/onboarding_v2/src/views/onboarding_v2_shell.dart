@@ -7,6 +7,7 @@ import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/audio/app_sound_manager.dart';
+import 'package:Prism/core/auth/guest_browsing_policy.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
@@ -163,7 +164,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
         context.router.replaceAll([const SplashWidgetRoute()]);
 
       case OnboardingV2NavRequest.openDashboardAsGuest:
-        if (!context.mounted) return;
+        if (!context.mounted || !guestBrowsingAllowed) return;
         context.router.replaceAll([const DashboardRoute()]);
 
       case OnboardingV2NavRequest.exitApp:
@@ -287,9 +288,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     _settingsLocal.set(OnboardingV2Config.termsAcceptedKey, accepted);
   }
 
-  /// iOS-only guest path (Guideline 5.1.1(v)): browsing must not require an account. The guest picks interests
-  /// first, then the bloc marks onboarding done and the shell opens the dashboard signed out.
   void _handleBrowseWithoutAccount() {
+    if (!guestBrowsingAllowed) return;
     unawaited(analytics.track(const BrowseAsGuestTappedEvent()));
     _bloc.add(const OnboardingV2Event.guestBrowseStarted());
   }

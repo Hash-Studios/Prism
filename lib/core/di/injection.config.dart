@@ -49,6 +49,23 @@ import '../../features/category_feed/domain/repositories/category_feed_repositor
     as _i563;
 import '../../features/category_feed/domain/usecases/category_feed_usecases.dart'
     as _i301;
+import '../../features/creator_directory/biz/creator_directory_cubit.dart'
+    as _i361;
+import '../../features/creator_directory/biz/creator_directory_opt_out_cubit.dart'
+    as _i686;
+import '../../features/creator_directory/biz/followed_by_cubit.dart' as _i720;
+import '../../features/creator_directory/biz/similar_creators_offer_session.dart'
+    as _i147;
+import '../../features/creator_directory/data/creator_directory_repository_impl.dart'
+    as _i1049;
+import '../../features/creator_directory/domain/creator_directory_repository.dart'
+    as _i612;
+import '../../features/creator_stats/biz/bloc/creator_stats_bloc.j.dart'
+    as _i1061;
+import '../../features/creator_stats/data/creator_stats_repository_impl.dart'
+    as _i899;
+import '../../features/creator_stats/domain/creator_stats.dart' as _i330;
+import '../../features/creator_stats/domain/get_creator_stats.dart' as _i685;
 import '../../features/draw/biz/bloc/draw_bloc.j.dart' as _i269;
 import '../../features/draw/data/repositories/draw_repository_impl.dart'
     as _i342;
@@ -219,6 +236,9 @@ import '../../features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_use
     as _i398;
 import '../../features/wall_of_the_day/domain/usecases/fetch_wotd_archive_usecase.dart'
     as _i353;
+import '../../features/wall_remix/biz/remix_credit_cubit.dart' as _i1026;
+import '../../features/wall_remix/biz/remixes_cubit.dart' as _i405;
+import '../../features/wall_remix/data/wall_remix_repository.dart' as _i244;
 import '../../features/wall_requests/biz/wall_request_sheet_cubit.dart'
     as _i658;
 import '../../features/wall_requests/biz/wall_requests_cubit.dart' as _i1007;
@@ -254,6 +274,16 @@ import '../../features/wallpaper_position/data/repositories/wallpaper_position_r
     as _i536;
 import '../../features/wallpaper_position/domain/repositories/wallpaper_position_repository.dart'
     as _i307;
+import '../../features/weekly_challenges/biz/challenge_admission_tracker.dart'
+    as _i184;
+import '../../features/weekly_challenges/biz/confirm_challenge_submission.dart'
+    as _i360;
+import '../../features/weekly_challenges/biz/weekly_challenges_cubit.dart'
+    as _i666;
+import '../../features/weekly_challenges/data/weekly_challenges_repository_impl.dart'
+    as _i58;
+import '../../features/weekly_challenges/domain/repositories/weekly_challenges_repository.dart'
+    as _i836;
 import '../content_reports/content_report_repository.dart' as _i177;
 import '../firestore/firestore_client.dart' as _i349;
 import '../firestore/firestore_telemetry.dart' as _i393;
@@ -316,6 +346,9 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i307.WallpaperPositionRepository>(
     () => _i536.WallpaperPositionRepositoryImpl(),
   );
+  gh.lazySingleton<_i330.CreatorStatsRepository>(
+    () => _i899.CreatorStatsRepositoryImpl(),
+  );
   gh.lazySingleton<_i721.StartupRepository>(
     () => _i152.StartupRepositoryImpl(),
   );
@@ -327,6 +360,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i1073.SettingsLocalDataSource>(
     () => _i1073.SettingsLocalDataSource(gh<_i496.LocalStore>()),
+  );
+  gh.lazySingleton<_i184.ChallengeAdmissionTracker>(
+    () => _i184.ChallengeAdmissionTracker(gh<_i496.LocalStore>()),
   );
   gh.lazySingleton<_i663.WallRequestsRepository>(
     () => _i221.WallRequestsRepositoryImpl(),
@@ -398,6 +434,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i415.BootstrapAppUseCase>(
     () => _i415.BootstrapAppUseCase(gh<_i721.StartupRepository>()),
+  );
+  gh.factory<_i685.GetCreatorStats>(
+    () => _i685.GetCreatorStats(gh<_i330.CreatorStatsRepository>()),
   );
   gh.lazySingleton<_i366.SyncedHistoryStore>(
     () => _i366.SyncedHistoryStore(
@@ -480,6 +519,9 @@ _i174.GetIt initGetIt(
   gh.factory<_i688.LeaderboardBloc>(
     () => _i688.LeaderboardBloc(gh<_i655.LeaderboardRepository>()),
   );
+  gh.factory<_i1061.CreatorStatsBloc>(
+    () => _i1061.CreatorStatsBloc(gh<_i685.GetCreatorStats>()),
+  );
   gh.factory<_i313.StartupBloc>(
     () => _i313.StartupBloc(gh<_i415.BootstrapAppUseCase>()),
   );
@@ -512,8 +554,8 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i364.RecordWallpaperActionUseCase>(
     () => _i364.RecordWallpaperActionUseCase(gh<_i602.ViewStatsRepository>()),
   );
-  gh.lazySingleton<_i364.GetWallpaperSetCountUseCase>(
-    () => _i364.GetWallpaperSetCountUseCase(gh<_i602.ViewStatsRepository>()),
+  gh.lazySingleton<_i364.GetWallpaperCountsUseCase>(
+    () => _i364.GetWallpaperCountsUseCase(gh<_i602.ViewStatsRepository>()),
   );
   gh.lazySingleton<_i231.RecordPrismWallpaperViewsUsecase>(
     () =>
@@ -609,6 +651,12 @@ _i174.GetIt initGetIt(
       gh<_i112.UserBlockRepository>(),
     ),
   );
+  gh.lazySingleton<_i244.WallRemixRepository>(
+    () => _i244.WallRemixRepository(
+      gh<_i349.FirestoreClient>(),
+      gh<_i112.UserBlockRepository>(),
+    ),
+  );
   gh.lazySingleton<_i937.LoadThemeUseCase>(
     () => _i937.LoadThemeUseCase(gh<_i428.ThemeRepository>()),
   );
@@ -637,6 +685,12 @@ _i174.GetIt initGetIt(
       gh<_i312.PexelsWallpaperRepository>(),
     ),
   );
+  gh.lazySingleton<_i836.WeeklyChallengesRepository>(
+    () => _i58.WeeklyChallengesRepositoryImpl(
+      gh<_i244.WallRemixRepository>(),
+      gh<_i184.ChallengeAdmissionTracker>(),
+    ),
+  );
   gh.lazySingleton<_i301.LoadCategoriesUseCase>(
     () => _i301.LoadCategoriesUseCase(gh<_i563.CategoryFeedRepository>()),
   );
@@ -661,8 +715,14 @@ _i174.GetIt initGetIt(
       gh<_i312.PexelsWallpaperRepository>(),
       gh<_i231.RecordPrismWallpaperViewsUsecase>(),
       gh<_i652.PaletteRepository>(),
-      gh<_i364.GetWallpaperSetCountUseCase>(),
+      gh<_i364.GetWallpaperCountsUseCase>(),
     ),
+  );
+  gh.factory<_i1026.RemixCreditCubit>(
+    () => _i1026.RemixCreditCubit(gh<_i244.WallRemixRepository>()),
+  );
+  gh.factory<_i405.RemixesCubit>(
+    () => _i405.RemixesCubit(gh<_i244.WallRemixRepository>()),
   );
   gh.factory<_i733.UserSearchBloc>(
     () => _i733.UserSearchBloc(gh<_i750.SearchUsersUseCase>()),
@@ -684,6 +744,12 @@ _i174.GetIt initGetIt(
   gh.factory<_i203.TrendingBloc>(
     () => _i203.TrendingBloc(
       gh<_i886.FetchTrendingUseCase>(),
+      gh<_i112.UserBlockRepository>(),
+    ),
+  );
+  gh.lazySingleton<_i612.CreatorDirectoryRepository>(
+    () => _i1049.CreatorDirectoryRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
       gh<_i112.UserBlockRepository>(),
     ),
   );
@@ -724,6 +790,14 @@ _i174.GetIt initGetIt(
       gh<_i446.SearchUsersByUsernameUseCase>(),
     ),
   );
+  gh.lazySingleton<_i360.ConfirmChallengeSubmission>(
+    () => _i360.ConfirmChallengeSubmission(
+      gh<_i836.WeeklyChallengesRepository>(),
+    ),
+  );
+  gh.factory<_i666.WeeklyChallengesCubit>(
+    () => _i666.WeeklyChallengesCubit(gh<_i836.WeeklyChallengesRepository>()),
+  );
   gh.lazySingleton<_i489.WallOfTheDayRepository>(
     () => _i1070.WallOfTheDayRepositoryImpl(
       gh<_i349.FirestoreClient>(),
@@ -739,6 +813,19 @@ _i174.GetIt initGetIt(
       gh<_i649.GuestFavouritesMerger>(),
       gh<_i727.PrismWallpaperRepository>(),
     ),
+  );
+  gh.lazySingleton<_i147.SimilarCreatorsOfferSession>(
+    () => _i147.SimilarCreatorsOfferSession(
+      gh<_i612.CreatorDirectoryRepository>(),
+    ),
+  );
+  gh.factory<_i686.CreatorDirectoryOptOutCubit>(
+    () => _i686.CreatorDirectoryOptOutCubit(
+      gh<_i612.CreatorDirectoryRepository>(),
+    ),
+  );
+  gh.factory<_i720.FollowedByCubit>(
+    () => _i720.FollowedByCubit(gh<_i612.CreatorDirectoryRepository>()),
   );
   gh.lazySingleton<_i887.TasteQuizRepository>(
     () => _i939.TasteQuizRepositoryImpl(
@@ -774,6 +861,12 @@ _i174.GetIt initGetIt(
     () => _i195.CategoryFeedBloc(
       gh<_i301.LoadCategoriesUseCase>(),
       gh<_i301.FetchCategoryFeedUseCase>(),
+      gh<_i112.UserBlockRepository>(),
+    ),
+  );
+  gh.factory<_i361.CreatorDirectoryCubit>(
+    () => _i361.CreatorDirectoryCubit(
+      gh<_i612.CreatorDirectoryRepository>(),
       gh<_i112.UserBlockRepository>(),
     ),
   );

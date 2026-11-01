@@ -1,9 +1,16 @@
 import 'dart:async';
 
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
+import 'package:Prism/features/public_profile/domain/usecases/public_profile_usecases.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_grid.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -13,15 +20,35 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import '../../support/favourite_test_scope.dart';
+import '../../support/in_memory_local_store.dart';
 
 class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
 
+class _MockWalls extends Mock implements FetchPublicProfileWallsUseCase {}
+
+class _MockFollow extends Mock implements FollowUserUseCase {}
+
+class _MockUnfollow extends Mock implements UnfollowUserUseCase {}
+
+class _MockSummaries extends Mock implements FetchUserSummariesPageUseCase {}
+
+class _MockSearch extends Mock implements SearchUsersByUsernameUseCase {}
+
 void main() {
   setUpFavouriteCounts();
+  setUpAll(() {
+    registerFallbackValue(const PublicProfileEvent.refreshRequested());
+    registerFallbackValue(const FetchPublicProfileWallsParams(userId: '', refresh: false));
+  });
+  setUp(() => getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore())));
+  tearDown(() async {
+    if (getIt.isRegistered<SettingsLocalDataSource>()) await getIt.unregister<SettingsLocalDataSource>();
+  });
   late _MockPublicProfileBloc bloc;
 
   setUp(() {
     bloc = _MockPublicProfileBloc();
+    when(() => bloc.isClosed).thenReturn(false);
   });
 
   Future<void> pumpGrid(WidgetTester tester, PublicProfileState state, {bool ownProfile = false}) async {
@@ -195,4 +222,551 @@ void main() {
       semantics.dispose();
     }
   });
+
+  group('AI walls hidden', () {
+    final walls = <PublicProfileWallEntity>[
+      const PublicProfileWallEntity(id: 'ai-1', isAiGenerated: true, wallpaperUrl: 'https://example.com/ai.jpg'),
+      const PublicProfileWallEntity(id: 'human-1', wallpaperUrl: 'https://example.com/human.jpg'),
+    ];
+
+    Future<void> hideAi() => AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), false);
+
+    int tileCount(WidgetTester tester) =>
+        (tester.widget<SliverGrid>(find.byType(SliverGrid)).delegate as SliverChildBuilderDelegate).childCount!;
+
+    testWidgets("drops AI walls from another user's profile", (tester) async {
+      await hideAi();
+      await pumpGrid(
+        tester,
+        PublicProfileState.initial().copyWith(status: LoadStatus.success, walls: walls, hasMoreWalls: false),
+      );
+
+      expect(tileCount(tester), 1);
+    });
+
+    testWidgets("keeps AI walls on the signed-in user's own profile", (tester) async {
+      await hideAi();
+      await pumpGrid(
+        tester,
+        PublicProfileState.initial().copyWith(status: LoadStatus.success, walls: walls, hasMoreWalls: false),
+        ownProfile: true,
+      );
+
+      expect(tileCount(tester), 2);
+    });
+
+    testWidgets('shows the empty state with a switch back on when only AI walls are left', (tester) async {
+      await hideAi();
+      await pumpGrid(
+        tester,
+        PublicProfileState.initial().copyWith(
+          status: LoadStatus.success,
+          walls: walls.take(1).toList(),
+          hasMoreWalls: false,
+        ),
+      );
+
+      expect(find.text('No human-made walls here yet'), findsOneWidget);
+      await tester.tap(find.text('Show AI walls'));
+      await tester.pump();
+      expect(AiContentFilter.showsAi(getIt<SettingsLocalDataSource>()), isTrue);
+      verify(() => bloc.add(const PublicProfileEvent.refreshRequested())).called(1);
+    });
+
+    testWidgets('does not refresh a profile after the AI setting write completes post-disposal', (tester) async {
+      final InMemoryLocalStore store = InMemoryLocalStore();
+      final SettingsLocalDataSource initialSettings = SettingsLocalDataSource(store);
+      await AiContentFilter.setShowsAi(initialSettings, false);
+      await getIt.unregister<SettingsLocalDataSource>();
+      final _DelayedSettingsLocalDataSource settings = _DelayedSettingsLocalDataSource(store);
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+      await pumpGrid(
+        tester,
+        PublicProfileState.initial().copyWith(
+          status: LoadStatus.success,
+          walls: walls.take(1).toList(),
+          hasMoreWalls: false,
+        ),
+      );
+
+      await tester.tap(find.text('Show AI walls'));
+      await tester.pumpWidget(const SizedBox.shrink());
+      settings.release.complete();
+      await tester.pump();
+
+      verifyNever(() => bloc.add(const PublicProfileEvent.refreshRequested()));
+    });
+
+    testWidgets('shows retry after the next hidden page fails instead of claiming the profile is exhausted', (
+      tester,
+    ) async {
+      await hideAi();
+      await pumpGrid(
+        tester,
+        PublicProfileState.initial().copyWith(
+          status: LoadStatus.failure,
+          walls: walls.take(1).toList(),
+          hasMoreWalls: true,
+        ),
+      );
+
+      expect(find.text('Could not load wallpapers'), findsOneWidget);
+      expect(find.text('No human-made walls here yet'), findsNothing);
+      expect(find.text('Try again'), findsOneWidget);
+    });
+
+    testWidgets('See more keeps fetching while the new pages hold only AI walls', (tester) async {
+      await hideAi();
+      final states = StreamController<PublicProfileState>.broadcast(sync: true);
+      addTearDown(states.close);
+      var state = PublicProfileState.initial().copyWith(
+        status: LoadStatus.success,
+        profileId: 'profile',
+        walls: <PublicProfileWallEntity>[const PublicProfileWallEntity(id: 'human-1', wallpaperUrl: '')],
+        hasMoreWalls: true,
+      );
+      var fetchMoreCalls = 0;
+      whenListen(bloc, states.stream, initialState: state);
+      when(() => bloc.add(any())).thenAnswer((invocation) {
+        if (invocation.positionalArguments.single == const PublicProfileEvent.fetchMoreWallsRequested()) {
+          fetchMoreCalls++;
+        }
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: BlocProvider<PublicProfileBloc>.value(
+              value: bloc,
+              child: const CustomScrollView(slivers: <Widget>[UserProfileGrid()]),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      await tester.tap(find.text('See more'));
+      expect(fetchMoreCalls, 1);
+      personalizedFeedSettingsRevision.value += 1;
+      await tester.pump();
+      expect(fetchMoreCalls, 1, reason: 'an unrelated rebuild cannot spend another page before completion');
+
+      state = state.copyWith(isFetchingMoreWalls: true);
+      states.add(state);
+      await tester.pump();
+      state = state.copyWith(
+        isFetchingMoreWalls: false,
+        walls: <PublicProfileWallEntity>[
+          ...state.walls,
+          const PublicProfileWallEntity(id: 'ai-2', isAiGenerated: true, wallpaperUrl: ''),
+        ],
+      );
+      states.add(state);
+      await tester.pump();
+      await tester.pump();
+      expect(fetchMoreCalls, 2, reason: 'a page of only AI walls asks for the next one');
+
+      state = state.copyWith(
+        walls: <PublicProfileWallEntity>[
+          ...state.walls,
+          const PublicProfileWallEntity(id: 'human-3', wallpaperUrl: ''),
+        ],
+      );
+      states.add(state);
+      await tester.pump();
+      await tester.pump();
+      expect(fetchMoreCalls, 2, reason: 'a page with a visible wall stops the chain');
+      expect(tileCount(tester), 3, reason: 'two human walls plus See more');
+    });
+
+    testWidgets('hiding AI while a shown-AI request is in flight does not start a scan', (tester) async {
+      await AiContentFilter.setShowsAi(getIt<SettingsLocalDataSource>(), true);
+      final states = StreamController<PublicProfileState>.broadcast(sync: true);
+      addTearDown(states.close);
+      final PublicProfileState state = PublicProfileState.initial().copyWith(
+        status: LoadStatus.success,
+        profileId: 'profile',
+        walls: <PublicProfileWallEntity>[const PublicProfileWallEntity(id: 'human-1', wallpaperUrl: '')],
+        hasMoreWalls: true,
+      );
+      var fetchMoreCalls = 0;
+      whenListen(bloc, states.stream, initialState: state);
+      when(() => bloc.add(any())).thenAnswer((invocation) {
+        if (invocation.positionalArguments.single == const PublicProfileEvent.fetchMoreWallsRequested()) {
+          fetchMoreCalls++;
+        }
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: BlocProvider<PublicProfileBloc>.value(
+              value: bloc,
+              child: const CustomScrollView(slivers: <Widget>[UserProfileGrid()]),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      await tester.tap(find.text('See more'));
+      expect(fetchMoreCalls, 1);
+
+      states.add(state.copyWith(isFetchingMoreWalls: true));
+      await tester.pump();
+      await hideAi();
+      personalizedFeedSettingsRevision.value += 1;
+      await tester.pump();
+      states.add(state);
+      await tester.pump();
+      await tester.pump();
+
+      expect(fetchMoreCalls, 1, reason: 'hiding AI after the tap cannot turn the request into a bounded scan');
+    });
+
+    testWidgets('a See more retry continues after retained failure while its page is fetching', (tester) async {
+      await hideAi();
+      final _MockWalls walls = _MockWalls();
+      final PublicProfileBloc realBloc = PublicProfileBloc(
+        walls,
+        _MockFollow(),
+        _MockUnfollow(),
+        _MockSummaries(),
+        _MockSearch(),
+      );
+      addTearDown(realBloc.close);
+      var calls = 0;
+      when(() => walls(any())).thenAnswer((_) async {
+        calls++;
+        return switch (calls) {
+          1 => Result.success<({List<PublicProfileWallEntity> items, bool hasMore})>((
+            items: <PublicProfileWallEntity>[const PublicProfileWallEntity(id: 'human-1', wallpaperUrl: '')],
+            hasMore: true,
+          )),
+          2 => Result.error<({List<PublicProfileWallEntity> items, bool hasMore})>(const ServerFailure('offline')),
+          3 => Result.success<({List<PublicProfileWallEntity> items, bool hasMore})>((
+            items: <PublicProfileWallEntity>[
+              const PublicProfileWallEntity(id: 'ai-2', isAiGenerated: true, wallpaperUrl: ''),
+            ],
+            hasMore: true,
+          )),
+          _ => Result.success<({List<PublicProfileWallEntity> items, bool hasMore})>((
+            items: <PublicProfileWallEntity>[const PublicProfileWallEntity(id: 'human-3', wallpaperUrl: '')],
+            hasMore: true,
+          )),
+        };
+      });
+      realBloc.add(const PublicProfileEvent.started(identifier: 'profile'));
+      await tester.pump();
+      await tester.pump();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: BlocProvider<PublicProfileBloc>.value(
+              value: realBloc,
+              child: const CustomScrollView(slivers: <Widget>[UserProfileGrid()]),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(calls, 1);
+
+      await tester.tap(find.text('See more'));
+      await tester.pump();
+      await tester.pump();
+      expect(realBloc.state.status, LoadStatus.failure);
+      expect(realBloc.state.isFetchingMoreWalls, isFalse);
+      expect(find.text('Try again'), findsOneWidget);
+
+      await tester.tap(find.text('See more'));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+
+      expect(calls, 4, reason: 'the retry page contains only AI walls, so the hidden-AI chain fetches one more page');
+    });
+
+    testWidgets('an own profile never chains See more across an empty page', (tester) async {
+      await hideAi();
+      final states = StreamController<PublicProfileState>.broadcast(sync: true);
+      addTearDown(states.close);
+      final PublicProfileState state = PublicProfileState.initial().copyWith(
+        status: LoadStatus.success,
+        profileId: 'profile',
+        walls: <PublicProfileWallEntity>[const PublicProfileWallEntity(id: 'human-1', wallpaperUrl: '')],
+        hasMoreWalls: true,
+      );
+      var fetchMoreCalls = 0;
+      whenListen(bloc, states.stream, initialState: state);
+      when(() => bloc.add(any())).thenAnswer((invocation) {
+        if (invocation.positionalArguments.single == const PublicProfileEvent.fetchMoreWallsRequested()) {
+          fetchMoreCalls++;
+        }
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: BlocProvider<PublicProfileBloc>.value(
+              value: bloc,
+              child: const CustomScrollView(slivers: <Widget>[UserProfileGrid(ownProfile: true)]),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      await tester.tap(find.text('See more'));
+      states.add(state.copyWith(isFetchingMoreWalls: true));
+      await tester.pump();
+      states.add(state);
+      await tester.pump();
+
+      expect(fetchMoreCalls, 1, reason: 'the own-profile exception must not trigger empty-page chaining');
+    });
+
+    testWidgets('a continuation never pages a replacement profile', (tester) async {
+      await hideAi();
+      final states = StreamController<PublicProfileState>.broadcast(sync: true);
+      addTearDown(states.close);
+      var state = PublicProfileState.initial().copyWith(
+        status: LoadStatus.success,
+        profileId: 'profile-a',
+        walls: <PublicProfileWallEntity>[const PublicProfileWallEntity(id: 'human-1', wallpaperUrl: '')],
+        hasMoreWalls: true,
+      );
+      final List<String> requestedProfiles = <String>[];
+      whenListen(bloc, states.stream, initialState: state);
+      when(() => bloc.add(any())).thenAnswer((invocation) {
+        if (invocation.positionalArguments.single == const PublicProfileEvent.fetchMoreWallsRequested()) {
+          requestedProfiles.add(bloc.state.profileId);
+        }
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: BlocProvider<PublicProfileBloc>.value(
+              value: bloc,
+              child: const CustomScrollView(slivers: <Widget>[UserProfileGrid()]),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      await tester.tap(find.text('See more'));
+      states.add(state.copyWith(isFetchingMoreWalls: true));
+      await tester.pump();
+      tester.binding.addPostFrameCallback((_) {
+        state = state.copyWith(profileId: 'profile-b');
+        states.add(state);
+      });
+      state = state.copyWith(
+        walls: <PublicProfileWallEntity>[
+          ...state.walls,
+          const PublicProfileWallEntity(id: 'ai-2', isAiGenerated: true, wallpaperUrl: ''),
+        ],
+      );
+      states.add(state);
+      await tester.pump();
+      await tester.pump();
+
+      expect(requestedProfiles, <String>['profile-a', 'profile-a']);
+    });
+
+    testWidgets('refresh cancels an in-flight See more chain', (tester) async {
+      await hideAi();
+      final states = StreamController<PublicProfileState>.broadcast(sync: true);
+      addTearDown(states.close);
+      var state = PublicProfileState.initial().copyWith(
+        status: LoadStatus.success,
+        profileId: 'profile',
+        walls: <PublicProfileWallEntity>[const PublicProfileWallEntity(id: 'human-1', wallpaperUrl: '')],
+        hasMoreWalls: true,
+      );
+      var fetchMoreCalls = 0;
+      whenListen(bloc, states.stream, initialState: state);
+      when(() => bloc.add(any())).thenAnswer((invocation) {
+        if (invocation.positionalArguments.single == const PublicProfileEvent.fetchMoreWallsRequested()) {
+          fetchMoreCalls++;
+        }
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: BlocProvider<PublicProfileBloc>.value(
+              value: bloc,
+              child: const CustomScrollView(slivers: <Widget>[UserProfileGrid()]),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.text('See more'));
+      state = state.copyWith(isFetchingMoreWalls: true);
+      states.add(state);
+      await tester.pump();
+
+      state = state.copyWith(status: LoadStatus.loading, isFetchingMoreWalls: false);
+      states.add(state);
+      state = state.copyWith(status: LoadStatus.success);
+      states.add(state);
+      await tester.pump();
+      await tester.pump();
+
+      expect(fetchMoreCalls, 1, reason: 'a refresh starts a fresh sequence instead of continuing the old request');
+    });
+
+    testWidgets('showing AI cancels a See more continuation', (tester) async {
+      await hideAi();
+      final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+      final states = StreamController<PublicProfileState>.broadcast(sync: true);
+      addTearDown(states.close);
+      var state = PublicProfileState.initial().copyWith(
+        status: LoadStatus.success,
+        profileId: 'profile',
+        walls: <PublicProfileWallEntity>[const PublicProfileWallEntity(id: 'human-1', wallpaperUrl: '')],
+        hasMoreWalls: true,
+      );
+      var fetchMoreCalls = 0;
+      whenListen(bloc, states.stream, initialState: state);
+      when(() => bloc.add(any())).thenAnswer((invocation) {
+        if (invocation.positionalArguments.single == const PublicProfileEvent.fetchMoreWallsRequested()) {
+          fetchMoreCalls++;
+        }
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: BlocProvider<PublicProfileBloc>.value(
+              value: bloc,
+              child: const CustomScrollView(slivers: <Widget>[UserProfileGrid()]),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.text('See more'));
+      state = state.copyWith(isFetchingMoreWalls: true);
+      states.add(state);
+      await tester.pump();
+
+      await setShowAiWallpapers(settings, true);
+      state = state.copyWith(isFetchingMoreWalls: false);
+      states.add(state);
+      await tester.pump();
+      await tester.pump();
+
+      expect(fetchMoreCalls, 1, reason: 'the newly visible AI walls make the follow-up page unnecessary');
+    });
+
+    testWidgets('bounds hidden-page scans at five, exposes a fetching retry, and resets the cap on refresh', (
+      tester,
+    ) async {
+      await hideAi();
+      final states = StreamController<PublicProfileState>.broadcast(sync: true);
+      addTearDown(states.close);
+      var state = PublicProfileState.initial().copyWith(
+        status: LoadStatus.success,
+        profileId: 'profile',
+        walls: <PublicProfileWallEntity>[
+          const PublicProfileWallEntity(id: 'ai-0', isAiGenerated: true, wallpaperUrl: ''),
+        ],
+        hasMoreWalls: true,
+      );
+      var fetchMoreCalls = 0;
+      whenListen(bloc, states.stream, initialState: state);
+      when(() => bloc.isClosed).thenReturn(false);
+      when(() => bloc.close()).thenAnswer((_) async {});
+      when(() => bloc.add(any())).thenAnswer((invocation) {
+        if (invocation.positionalArguments.single == const PublicProfileEvent.fetchMoreWallsRequested()) {
+          fetchMoreCalls++;
+        }
+      });
+
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: BlocProvider<PublicProfileBloc>.value(
+              value: bloc,
+              child: const CustomScrollView(slivers: <Widget>[UserProfileGrid()]),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      for (var page = 1; page < 5; page++) {
+        state = state.copyWith(
+          walls: <PublicProfileWallEntity>[
+            ...state.walls,
+            PublicProfileWallEntity(id: 'ai-$page', isAiGenerated: true, wallpaperUrl: ''),
+          ],
+        );
+        states.add(state);
+        await tester.pump();
+        await tester.pump();
+      }
+
+      expect(fetchMoreCalls, 5);
+      state = state.copyWith(
+        walls: <PublicProfileWallEntity>[
+          ...state.walls,
+          const PublicProfileWallEntity(id: 'ai-cap', isAiGenerated: true, wallpaperUrl: ''),
+        ],
+      );
+      states.add(state);
+      await tester.pump();
+      expect(find.text('Try again'), findsOneWidget);
+      await tester.tap(find.text('Try again'));
+      expect(fetchMoreCalls, 6);
+      state = state.copyWith(isFetchingMoreWalls: true);
+      states.add(state);
+      await tester.pump();
+      expect(find.byType(LoadingCards), findsOneWidget);
+
+      state = state.copyWith(status: LoadStatus.loading, isFetchingMoreWalls: false);
+      states.add(state);
+      state = state.copyWith(status: LoadStatus.success);
+      states.add(state);
+      await tester.pump();
+      await tester.pump();
+
+      expect(fetchMoreCalls, 7);
+    });
+  });
+}
+
+class _DelayedSettingsLocalDataSource extends SettingsLocalDataSource {
+  _DelayedSettingsLocalDataSource(super.store);
+
+  final Completer<void> release = Completer<void>();
+
+  @override
+  Future<void> set(String key, Object? value) async {
+    await release.future;
+    await super.set(key, value);
+  }
 }

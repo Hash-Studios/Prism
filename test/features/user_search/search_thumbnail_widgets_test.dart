@@ -18,6 +18,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import '../../support/favourite_test_scope.dart';
+import '../creator_directory/creator_directory_test_support.dart';
 
 class _MockSearchDiscoveryBloc extends MockBloc<SearchDiscoveryEvent, SearchDiscoveryState>
     implements SearchDiscoveryBloc {}
@@ -72,6 +73,7 @@ void main() {
       await getIt.unregister<WallpaperSearchService>();
     }
     getIt.registerSingleton<WallpaperSearchService>(_MockWallpaperSearchService());
+    registerCreatorDirectoryFakes();
   });
 
   tearDown(() async {

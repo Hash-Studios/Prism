@@ -6,6 +6,8 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -27,8 +29,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
-import '../../support/in_memory_local_store.dart';
 import '../../support/favourite_test_scope.dart';
+import '../../support/in_memory_local_store.dart';
 
 class _MockWallpaperSearchService extends Mock implements WallpaperSearchService {}
 
@@ -51,6 +53,16 @@ FeedItemEntity _wallpaper(int index) {
     ),
   );
 }
+
+FeedItemEntity _prismWallpaper(String id, {bool isAiGenerated = false, Map<String, Object?>? aiMetadata}) =>
+    FeedItemEntity.prism(
+      id: id,
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(id: id, source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+        isAiGenerated: isAiGenerated,
+        aiMetadata: aiMetadata,
+      ),
+    );
 
 void main() {
   setUpFavouriteCounts();
@@ -170,6 +182,60 @@ void main() {
     );
 
     expect(find.byType(SeeMoreButton), findsNothing);
+  });
+
+  testWidgets('hides flagged and metadata AI search results immediately when the setting changes', (tester) async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    await setShowAiWallpapers(settings, true);
+    int pageFetches = 0;
+    when(
+      () => search.fetchPage(
+        any(),
+        any(),
+        refresh: any(named: 'refresh'),
+        filters: any(named: 'filters'),
+      ),
+    ).thenAnswer((_) async {
+      pageFetches++;
+      return <FeedItemEntity>[];
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: SearchGrid(
+            query: 'landscape',
+            provider: SearchProviderValue.pexels,
+            initialResults: <FeedItemEntity>[
+              _prismWallpaper('human'),
+              _prismWallpaper('flagged-ai', isAiGenerated: true),
+              _prismWallpaper('metadata-ai', aiMetadata: const <String, Object?>{'model': 'legacy'}),
+            ],
+            prismResults: <FeedItemEntity>[
+              _prismWallpaper('prism-ai', aiMetadata: const <String, Object?>{'v': 1}),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const ValueKey<String>('human')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('flagged-ai')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('metadata-ai')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('prism-prism-ai')), findsOneWidget);
+
+    await setShowAiWallpapers(settings, false);
+    await tester.pump();
+
+    expect(pageFetches, 0);
+    expect(find.byKey(const ValueKey<String>('human')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('flagged-ai')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('metadata-ai')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('prism-prism-ai')), findsNothing);
   });
 
   testWidgets('a refresh discards the older in-flight pagination response', (tester) async {

@@ -88,6 +88,27 @@ void main() {
     },
   );
 
+  test('a failed action refunds the payer captured before the spend after the account changes', () async {
+    final String payer = port.userId;
+    final CoinGateResult result = await CoinGate(port).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        isMounted: () => true,
+        perform: () async {
+          port.userId = 'other-account';
+          return false;
+        },
+        choose: (_) async => CoinGateChoice.cancel,
+      ),
+    );
+
+    expect(result, CoinGateResult.failedRefunded);
+    expect(port.refundUserIds, <String>[payer]);
+  });
+
   test('premium user skips the spend and runs the action', () async {
     port.isPremium = true;
     expect(await CoinGate(port).run(spec()), CoinGateResult.performedFree);
@@ -99,6 +120,39 @@ void main() {
     port.isPremium = true;
     expect(await CoinGate(port).run(spec(premiumBypass: false)), CoinGateResult.performed);
     expect(port.log, <String>['spend:x.spend']);
+  });
+
+  test('server premium bypass with zero delta is not refunded when the action fails', () async {
+    final List<String> paid = <String>[];
+    final CoinGateResult result = await CoinGate(port).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        isMounted: () => true,
+        perform: () async {
+          performed++;
+          return false;
+        },
+        choose: (_) async => CoinGateChoice.cancel,
+        spend: (_) async => CoinMutationResult(
+          success: true,
+          changed: false,
+          bypassed: true,
+          previousBalance: port.balance,
+          currentBalance: port.balance,
+          delta: 0,
+          reason: 'premiumFilter_premium_bypass',
+        ),
+        onPaid: paid.add,
+      ),
+    );
+
+    expect(result, CoinGateResult.failedNotRefunded);
+    expect(performed, 1);
+    expect(paid, isEmpty);
+    expect(port.log, isEmpty);
   });
 
   test('premium user pays for actions outside the config bypass set', () async {
@@ -261,20 +315,13 @@ void main() {
     port.balance = 1;
     choice = CoinGateChoice.watchAd;
     expect(await CoinGate(port).run(spec()), CoinGateResult.performed);
-    expect(port.log, <String>[
-      'spend:x.spend',
-      'nudge:x.low:5',
-      'ad',
-      'award:x.ad',
-      'watch:upsell',
-      'spend:x.retry.spend',
-    ]);
+    expect(port.log, <String>['spend:x.spend', 'nudge:x.low:5', 'ad', 'award:x.ad', 'spend:x.retry.spend']);
     expect(performed, 1);
   });
 
   test('premium reached during ad upsell still runs the custom unlock attempt', () async {
     port.balance = 1;
-    port.afterRecord = () async => port.isPremium = true;
+    port.afterAd = () async => port.isPremium = true;
     int attempts = 0;
     int customSpends = 0;
     final CoinGateSpec retry = CoinGateSpec(
@@ -549,7 +596,7 @@ void main() {
     );
 
     expect(await CoinGate(port).run(initial), CoinGateResult.cancelled);
-    expect(port.log, <String>['ad', 'award:x.ad', 'watch:upsell', 'spend:x.spend', 'nudge:x.low:5']);
+    expect(port.log, <String>['ad', 'award:x.ad', 'spend:x.spend', 'nudge:x.low:5']);
     expect(prompted, 2);
   });
 
@@ -637,7 +684,6 @@ void main() {
     expect(port.log, <String>[
       'ad',
       'award:x.ad',
-      'watch:upsell',
       'spend:x.auto.retry',
       'nudge:x.low:5',
       'spend:x.manual',
@@ -692,10 +738,43 @@ void main() {
   group('watchAdForCoins', () {
     bool mounted() => true;
 
-    test('credits coins and records the watch', () async {
+    test('confirmed receipt delivers exact coins once and callback failures cannot undo credit', () async {
+      port.awardAmount = 7;
+      final credited = <int>[];
+      expect(
+        await CoinGate(port).watchAdForCoins(
+          sourceTag: 's',
+          upsellSource: 'u',
+          isMounted: mounted,
+          onCredited: (coins) {
+            credited.add(coins);
+            throw StateError('toast failed');
+          },
+        ),
+        isTrue,
+      );
+      expect(credited, [7]);
+      expect(port.balance, 17);
+      expect(port.errors, isEmpty);
+    });
+
+    test('pending verification never emits a credited amount', () async {
+      port.awardChanges = false;
+      port.awardUnknownOutcome = 'verified-session';
+      final credited = <int>[];
+      expect(
+        await CoinGate(
+          port,
+        ).watchAdForCoins(sourceTag: 's', upsellSource: 'u', isMounted: mounted, onCredited: credited.add),
+        isFalse,
+      );
+      expect(credited, isEmpty);
+    });
+
+    test('credits coins without presenting an upsell', () async {
       expect(await CoinGate(port).watchAdForCoins(sourceTag: 's', upsellSource: 'u', isMounted: mounted), isTrue);
       expect(port.balance, 20);
-      expect(port.log, <String>['ad', 'award:s', 'watch:u']);
+      expect(port.log, <String>['ad', 'award:s']);
     });
 
     test('incomplete ad shows the ad toast', () async {
@@ -711,32 +790,32 @@ void main() {
       expect(port.log, contains('error:s'));
     });
 
-    test('ad provider exception is logged and reported as incomplete', () async {
+    test('ad provider exception is logged and reported as unconfirmed', () async {
       port.adThrows = true;
       expect(await CoinGate(port).watchAdForCoins(sourceTag: 's', upsellSource: 'u', isMounted: mounted), isFalse);
-      expect(port.errors, <String>['Ad was not completed.']);
+      expect(port.errors, <String>['Unable to credit coins right now.']);
       expect(port.log, <String>['ad', 'error:s']);
     });
 
-    test('upsell recording failure reports failure without awarding a second time', () async {
+    test('upsell recording failure cannot change a successful reward', () async {
       port.recordThrows = true;
-      expect(await CoinGate(port).watchAdForCoins(sourceTag: 's', upsellSource: 'u', isMounted: mounted), isFalse);
+      expect(await CoinGate(port).watchAdForCoins(sourceTag: 's', upsellSource: 'u', isMounted: mounted), isTrue);
       expect(port.balance, 20);
-      expect(port.log, <String>['ad', 'award:s', 'watch:u', 'error:s']);
-      expect(port.errors, <String>['Unable to credit coins right now.']);
+      expect(port.log, <String>['ad', 'award:s']);
+      expect(port.errors, isEmpty);
     });
 
-    test('filter-style ad flow does not credit after unmount', () async {
+    test('filter-style ad flow retains verified credit after unmount', () async {
       bool mountedNow = true;
       port.afterAd = () async => mountedNow = false;
       expect(
         await CoinGate(
           port,
         ).watchAdForCoins(sourceTag: 's', upsellSource: 'u', isMounted: () => mountedNow, creditAfterUnmount: false),
-        isFalse,
+        isTrue,
       );
-      expect(port.balance, 10);
-      expect(port.log, <String>['ad']);
+      expect(port.balance, 20);
+      expect(port.log, <String>['ad', 'award:s']);
     });
   });
 
@@ -925,6 +1004,7 @@ class _ThrowingRefundPort extends FakeCoinGatePort {
     required String sourceTag,
     required String transactionId,
     required String reason,
+    required String userId,
   }) {
     log.add('refund-threw');
     return Future<CoinMutationResult>.error(StateError('refund failed'));

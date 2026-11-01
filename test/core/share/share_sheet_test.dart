@@ -4,9 +4,12 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/share/share_card.dart';
 import 'package:Prism/core/share/share_sheet.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
@@ -128,7 +131,12 @@ void _mockChannels(WidgetTester tester, {List<MethodCall>? toastCalls}) {
   });
 }
 
-Future<void> _openSheet(WidgetTester tester, ShareSheetServices services) async {
+Future<void> _openSheet(
+  WidgetTester tester,
+  ShareSheetServices services, {
+  ShareCardContent content = _content,
+  VoidCallback? onShared,
+}) async {
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -138,7 +146,7 @@ Future<void> _openSheet(WidgetTester tester, ShareSheetServices services) async 
         builder: (BuildContext context) => Scaffold(
           body: Center(
             child: TextButton(
-              onPressed: () => showShareSheet(context, _content, 'wall_detail', services: services),
+              onPressed: () => showShareSheet(context, content, 'wall_detail', services: services, onShared: onShared),
               child: const Text('open'),
             ),
           ),
@@ -161,8 +169,84 @@ Finder _target(ShareTargetValue target) => find.byKey(ValueKey<ShareTargetValue>
 Finder _pages() => find.byKey(const ValueKey<String>('share-formats'));
 
 void main() {
-  setUp(AnalyticsRuntime.reset);
-  tearDown(AnalyticsRuntime.reset);
+  setUp(() {
+    AnalyticsRuntime.reset();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user'
+      ..loggedIn = true;
+  });
+  tearDown(() {
+    AnalyticsRuntime.reset();
+    app_state.prismUser = app_constants.createGuestPrismUser();
+  });
+
+  testWidgets('cancelling sign-in does not copy or save a share card', (tester) async {
+    _mockChannels(tester);
+    final fake = _Fake(await _writeCards(tester));
+    await _openSheet(tester, fake.services);
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final original = signedInActionSignIn;
+    var prompts = 0;
+    signedInActionSignIn = (_) async {
+      prompts++;
+      return false;
+    };
+    addTearDown(() => signedInActionSignIn = original);
+
+    await tester.tap(_target(ShareTargetValue.copyLink));
+    await _settle(tester);
+    await tester.tap(_target(ShareTargetValue.saveImage));
+    await _settle(tester);
+
+    expect(prompts, 2);
+    expect(fake.copied, isEmpty);
+    expect(fake.saved, isEmpty);
+  });
+
+  testWidgets('signing out while rendering prevents saving the image', (tester) async {
+    _mockChannels(tester);
+    final rendered = Completer<File>();
+    final fake = _Fake(await _writeCards(tester))..pendingRender = rendered.future;
+    await _openSheet(tester, fake.services);
+    await tester.tap(_target(ShareTargetValue.saveImage));
+    await tester.pump();
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    rendered.complete(fake.cards[ShareCardFormat.story]!);
+    await _settle(tester);
+    expect(fake.saved, isEmpty);
+  });
+
+  testWidgets('Duo opens its own card first and tracks only a successful render once', (tester) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(400, 900);
+    addTearDown(tester.view.reset);
+    _mockChannels(tester);
+    final FakeAppAnalytics analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    final _Fake fake = _Fake(await _writeCards(tester));
+    await _openSheet(
+      tester,
+      fake.services,
+      content: const ShareCardContent(
+        imageUrl: 'https://img.test/full.jpg',
+        link: _link,
+        brandName: 'Prism',
+        duoReveal: true,
+        contentId: 'duo-wall',
+        foldedLabel: 'Folded',
+        unfoldedLabel: 'Unfolded',
+        cta: 'Get it on Prism',
+      ),
+    );
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.duoReveal]);
+    expect(analytics.events.whereType<DuoShareCardMadeEvent>(), hasLength(1));
+    await tester.tap(_target(ShareTargetValue.saveImage));
+    await _settle(tester);
+    expect(fake.saved.single.path, fake.cards[ShareCardFormat.duoReveal]!.path);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.duoReveal]);
+    expect(analytics.events.whereType<DuoShareCardMadeEvent>(), hasLength(1));
+  });
 
   testWidgets('opening the sheet shows the three formats, the three targets, and renders Story once', (tester) async {
     tester.view
@@ -306,6 +390,40 @@ void main() {
     expect(event.result, EventResultValue.failure);
     expect(_target(ShareTargetValue.saveImage), findsOneWidget);
   });
+
+  for (final target in [ShareTargetValue.copyLink, ShareTargetValue.saveImage, ShareTargetValue.instagramStories]) {
+    testWidgets('successful $target does not prove a completed native share', (tester) async {
+      _mockChannels(tester);
+      final fake = _Fake(await _writeCards(tester))..instagram = true;
+      int observed = 0;
+      await _openSheet(tester, fake.services, onShared: () => observed++);
+      await tester.tap(_target(target));
+      await _settle(tester);
+      expect(observed, 0);
+      expect(
+        target == ShareTargetValue.copyLink
+            ? fake.copied
+            : target == ShareTargetValue.saveImage
+            ? fake.saved
+            : fake.instagramPaths,
+        isNotEmpty,
+      );
+    });
+  }
+
+  for (final status in ShareResultStatus.values) {
+    testWidgets('share callback requires observed success: $status', (tester) async {
+      _mockChannels(tester);
+      final cards = await _writeCards(tester);
+      final fake = _Fake(cards)..shareResult = ShareResult('', status);
+      int observed = 0;
+      await _openSheet(tester, fake.services, onShared: () => observed++);
+      expect(observed, 0);
+      await tester.tap(_target(ShareTargetValue.more));
+      await _settle(tester);
+      expect(observed, status == ShareResultStatus.success ? 1 : 0);
+    });
+  }
 
   testWidgets('More shares the rendered story with the link and tracks success', (tester) async {
     tester.view

@@ -70,7 +70,13 @@ Accessibility: each wall is a button with the label "Pick this wallpaper, 1 of 2
 
 ### Guest path (iOS only)
 
-Apple App Review Guideline 5.1.1(v) says browsing must not need an account. So iOS has "Browse without an account" under the sign-in buttons.
+iOS keeps "Browse without an account" under the sign-in buttons. Guests may browse the catalog, search,
+view wallpaper and creator details, and preview drops. Downloads, saves, favourites, shares, wallpaper tools,
+AI generation, rewards, purchases and restoring purchases require sign-in. Cancelling sign-in leaves the action
+unstarted. Account and library routes also require sign-in. Browse preferences and passive viewing history
+stay local; settings for appearance, accessibility, privacy and legal information remain available.
+
+[Apple App Review Guideline 5.1.1(v)](https://developer.apple.com/app-store/review/guidelines/#data-collection-and-storage) requires apps without significant account-based features to allow use without a login. It limits required personal information to what is directly relevant to core functionality or required by law. Whether Prism's account-based features meet that condition is Apple's decision. The owner chose this browse-only guest policy with the review risk understood. It is not a guarantee of Apple approval.
 
 1. The user ticks the box and taps "Browse without an account".
 2. The app shows "Pick your vibe". The picks save on the device only, in the key `onboarding_v2_interests`. The home feed already reads this key.
@@ -119,7 +125,7 @@ When the system asks for less motion (`MediaQuery.disableAnimations`):
 
 ## Limits
 
-- Android requires sign-in. This is an App Review decision, not a product wish. The Android guest path is off on purpose. Do not turn it on without the owner.
+- Android requires sign-in. The Android guest path is off on purpose. Do not turn it on without the owner.
 - The guest picks reach the server only when `completeSignIn` calls `syncLocalInterests`. Until that call exists, a guest who signs in later keeps the picks on the device only.
 - The guest path has no AI step, no starter pack and no first wallpaper. These need an account.
 - iOS cannot set the wallpaper from the app. The user finishes in Photos.
@@ -146,3 +152,6 @@ When the system asks for less motion (`MediaQuery.disableAnimations`):
 14. With a new account, pick 3 categories. Check that "This or that" shows "1 of 6" and two walls side by side. Pick 6 times. Check "Tuning your feed" and that the starter pack opens after it.
 15. Run 14 again and tap "Skip" in round 2. Check that the starter pack opens at once.
 16. Turn on airplane mode, confirm the categories, wait 5 s, then turn airplane mode off. The interests save waits for the network, and the quiz walls give up after 3 s. Check that the starter pack opens and no quiz or error shows.
+17. iOS guest: browse search, wallpaper details, creators and drop previews. Confirm they open without sign-in. Check appearance, accessibility, privacy and legal controls too.
+18. iOS guest: try download, favourite, share, wallpaper tools, AI, purchases and Restore purchases. Cancel sign-in. Check that no action starts, no store sheet opens and no purchased data changes.
+19. Repeat an account-required deep link and complete sign-in. Check that the exact destination resumes once. Repeat and cancel; check that it does not open later.

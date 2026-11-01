@@ -523,7 +523,7 @@ void main() {
       views.add(id);
       return id == 'B' ? oldView.future : Future.value(Result.success('200'));
     });
-    when(() => stats.fetchWallpaperSetCount(any())).thenAnswer((_) async => Result.success<int?>(null));
+    when(() => stats.fetchWallpaperCounts(any())).thenAnswer((_) async => Result.success<WallpaperCounts?>(null));
     final recommendations = _Recommendations();
     final blocs = <WallpaperDetailBloc>[];
     getIt.registerFactory<WallpaperDetailBloc>(() {
@@ -533,7 +533,7 @@ void main() {
         _PexelsRepository(),
         RecordPrismWallpaperViewsUsecase(stats),
         palette,
-        GetWallpaperSetCountUseCase(stats),
+        GetWallpaperCountsUseCase(stats),
         null,
         recommendations,
       );

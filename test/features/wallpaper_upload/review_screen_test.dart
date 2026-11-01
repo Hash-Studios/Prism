@@ -199,10 +199,12 @@ void main() {
       await tester.pumpWidget(_screen());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Delete wallpaper'));
+      final String action = rejected ? 'Delete from history' : 'Withdraw upload';
+      await tester.tap(find.byTooltip(action));
       await tester.pumpAndSettle();
-      expect(find.text('Delete this wallpaper?'), findsOneWidget);
-      await tester.tap(find.text('Delete wallpaper'));
+      expect(find.text(rejected ? 'Delete this wallpaper?' : 'Withdraw this upload?'), findsOneWidget);
+      expect(firestore.writes, isEmpty);
+      await tester.tap(find.text(action));
       await tester.pumpAndSettle();
 
       expect(firestore.writes, hasLength(1));
@@ -222,7 +224,7 @@ void main() {
     await tester.pumpWidget(_screen());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Delete wallpaper'));
+    await tester.tap(find.byTooltip('Delete from history'));
     await tester.pumpAndSettle();
     expect(find.text('Delete this wallpaper?'), findsOneWidget);
     await tester.tap(find.text('Cancel'));
@@ -260,6 +262,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
+    expect(find.text('Stats'), findsOneWidget);
     expect(find.text('Nothing here yet'), findsOneWidget);
     expect(find.text('Wallpapers you upload show their review status here.'), findsOneWidget);
     expect(find.text('Upload wallpaper'), findsOneWidget);

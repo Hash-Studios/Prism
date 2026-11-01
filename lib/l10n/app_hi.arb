@@ -1,4 +1,16 @@
 {
+  "economyAd": "विज्ञापन",
+  "@economyAd": {"description": "Label identifying a rewarded advertisement."},
+  "economyWatchAdForCoins": "{reward} सिक्कों के लिए विज्ञापन देखें",
+  "@economyWatchAdForCoins": {"description": "Offer for the currently quoted rewarded ad amount.", "placeholders": {"reward": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsMissing": "आपको {count} और सिक्के चाहिए।",
+  "@economyCoinsMissing": {"description": "Coins missing for the selected purchase.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsRemainAfterAd": "विज्ञापन के बाद भी आपको {count} सिक्के चाहिए हो सकते हैं",
+  "@economyCoinsRemainAfterAd": {"description": "Estimated remaining shortfall after the quoted ad reward.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyAdAutomaticPurchase": "अगर इनाम मिलने के बाद आपका बैलेंस कीमत पूरी करता है, तो यह आइटम अपने आप खरीदा जाएगा।",
+  "@economyAdAutomaticPurchase": {"description": "Disclosure of the shop's automatic purchase after a credited ad."},
+  "economyAdVerificationPending": "आपके विज्ञापन इनाम की पुष्टि बाकी है। पुष्टि होने पर सिक्के दिखेंगे।",
+  "@economyAdVerificationPending": {"description": "A completed ad reward is awaiting server verification."},
   "foldersLibraryEmptyTitle": "अभी कोई फ़ोल्डर नहीं",
   "@foldersLibraryEmptyTitle": {
     "description": "Title of the empty Folders tab in the Library."
@@ -90,6 +102,142 @@
   },
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "hi",
+  "duoTitle": "Duo का खुलता नज़ारा",
+  "@duoTitle": {
+    "description": "Shared title for Prism Duo reveal wallpapers."
+  },
+  "duoAiFormatLabel": "Duo का खुलता नज़ारा बनाएँ",
+  "@duoAiFormatLabel": {
+    "description": "AI composition format switch. Normal quality and coin prices still apply."
+  },
+  "duoPresetNotice": "Prism मुड़े हुए फ़ोन के लिए दाईं ओर का हिस्सा दिखाता है। सहेजे गए मूल चित्र को खुद सही जगह पर जमाएँ और सिस्टम के वॉलपेपर प्रीव्यू में दोनों दृश्य जाँचें। यह Prism की तय सेटिंग है, iOS की अपने-आप होने वाली क्रॉपिंग नहीं।",
+  "@duoPresetNotice": {
+    "description": "Shared notice explaining the user-approved Prism crop preset, not an Apple crop claim."
+  },
+  "duoFoldedPromptLabel": "मुड़े हुए फ़ोन का दृश्य",
+  "@duoFoldedPromptLabel": {
+    "description": "Visible label for the 1 to 160 character subject visible in the right-side crop."
+  },
+  "duoFoldedPromptExample": "खिड़की के पास एक उनींदी बिल्ली",
+  "@duoFoldedPromptExample": {
+    "description": "Brief example for the folded-view prompt, not its label."
+  },
+  "duoRevealedPromptLabel": "खोलने पर दिखने वाला नज़ारा",
+  "@duoRevealedPromptLabel": {
+    "description": "Visible label for the 1 to 160 character scene revealed by the wider canvas."
+  },
+  "duoRevealedPromptExample": "खिड़की के बाहर एक नन्हा अंतरिक्ष यान",
+  "@duoRevealedPromptExample": {
+    "description": "Brief example for the unfolded-view prompt, not its label."
+  },
+  "duoPromptValidation": "दोनों दृश्यों का वर्णन करें, हर एक के लिए 1 से 160 अक्षर लिखें।",
+  "@duoPromptValidation": {
+    "description": "Validation before a Duo AI generation. Both trimmed prompts must contain 1 to 160 characters."
+  },
+  "duoMoodBody": "एक वॉलपेपर। खोलने पर दिखे और भी बहुत कुछ।",
+  "@duoMoodBody": {
+    "description": "One-line Home mood row description for Duo reveal wallpapers."
+  },
+  "duoDeviceName": "iPhone Duo",
+  "@duoDeviceName": {
+    "description": "Duo device preview selector. Product name remains unchanged."
+  },
+  "duoPhoneDevice": "फ़ोन",
+  "@duoPhoneDevice": {
+    "description": "Standard phone preview selector."
+  },
+  "duoFold": "मोड़ें",
+  "@duoFold": {
+    "description": "Button and accessibility label to fold the Duo preview."
+  },
+  "duoUnfold": "खोलें",
+  "@duoUnfold": {
+    "description": "Button and accessibility label to unfold the Duo preview."
+  },
+  "duoFolded": "मुड़ा हुआ",
+  "@duoFolded": {
+    "description": "Label above the folded view on a share card."
+  },
+  "duoUnfolded": "खुला हुआ",
+  "@duoUnfolded": {
+    "description": "Label above the unfolded view on a share card."
+  },
+  "duoAndroidCropNotice": "Prism मुड़े हुए फ़ोन के लिए दाईं ओर का हिस्सा दिखाता है। Android इसे अलग तरह से क्रॉप कर सकता है। लगाने से पहले सिस्टम का वॉलपेपर प्रीव्यू जाँचें।",
+  "@duoAndroidCropNotice": {
+    "description": "Android Duo preview caveat. Standard Home, Lock and Both targets remain available."
+  },
+  "duoGetOnPrism": "Prism पर पाएँ",
+  "@duoGetOnPrism": {
+    "description": "Call to action printed on the exported Duo reveal share card."
+  },
+  "duoGuideTitle": "Duo का खुलता नज़ारा सेट करें",
+  "@duoGuideTitle": {
+    "description": "Title of setup guide shown only after a successful iOS Photos save."
+  },
+  "duoGuideOpen": "सहेजे गए मूल चित्र को Photos में खोलें, शेयर करें पर टैप करें, फिर वॉलपेपर के रूप में इस्तेमाल करें चुनें।",
+  "@duoGuideOpen": {
+    "description": "First of three Duo wallpaper setup steps."
+  },
+  "duoGuideAlign": "पूरे चित्र को खुद सही जगह पर जमाएँ ताकि मुड़े हुए फ़ोन पर दाईं ओर का हिस्सा दिखे।",
+  "@duoGuideAlign": {
+    "description": "Second of three steps. Manual alignment, not an automatic Apple crop."
+  },
+  "duoGuideCheck": "सिस्टम प्रीव्यू में मुड़े और खुले हुए, दोनों दृश्य जाँचें, फिर वॉलपेपर जोड़ें।",
+  "@duoGuideCheck": {
+    "description": "Third of three steps. User must check both system previews."
+  },
+  "duoWebTitle": "iPhone Duo के लिए वॉलपेपर | Prism",
+  "@duoWebTitle": {
+    "description": "Duo website browser and search title"
+  },
+  "duoWebDescription": "एक वॉलपेपर, जिसमें छिपा है दूसरा नज़ारा। Prism में Duo के लिए बने मौलिक वॉलपेपर देखें।",
+  "@duoWebDescription": {
+    "description": "Duo website metadata description"
+  },
+  "duoWebHeading": "एक वॉलपेपर। खुलती जाए कहानी।",
+  "@duoWebHeading": {
+    "description": "Duo website heading"
+  },
+  "duoWebIntro": "मोड़ने पर एक शांत नज़ारा। खोलने पर एक और कहानी। हर मौलिक वॉलपेपर के दोनों दृश्य देखें।",
+  "@duoWebIntro": {
+    "description": "Duo website introduction"
+  },
+  "duoWebEmpty": "पहले Duo संग्रह की समीक्षा चल रही है।",
+  "@duoWebEmpty": {
+    "description": "Empty approved Duo website collection"
+  },
+  "duoWebEmptyBody": "जब तक हम हर वॉलपेपर के दोनों दृश्य जाँच रहे हैं, Prism पर और वॉलपेपर देखें।",
+  "@duoWebEmptyBody": {
+    "description": "Empty Duo website next step"
+  },
+  "duoWebFolded": "मुड़े हुए फ़ोन का प्रीव्यू",
+  "@duoWebFolded": {
+    "description": "Website folded preview caption"
+  },
+  "duoWebUnfolded": "खुले हुए फ़ोन का मूल चित्र",
+  "@duoWebUnfolded": {
+    "description": "Website unfolded preview caption"
+  },
+  "duoWebPresetNotice": "ये प्रीव्यू Prism की दाईं ओर वाली तय सेटिंग इस्तेमाल करते हैं, Apple की अपने-आप होने वाली क्रॉपिंग नहीं। पूरा मूल चित्र सहेजें, उसे खुद सही जगह पर जमाएँ और सिस्टम के वॉलपेपर प्रीव्यू में मुड़े और खुले हुए, दोनों दृश्य जाँचें।",
+  "@duoWebPresetNotice": {
+    "description": "Website notice about the approved Prism crop"
+  },
+  "duoWebOpenPrism": "Prism में खोलें",
+  "@duoWebOpenPrism": {
+    "description": "Website wallpaper deep link action"
+  },
+  "duoWebExplore": "Prism देखें",
+  "@duoWebExplore": {
+    "description": "Website homepage action"
+  },
+  "duoWebAppStore": "App Store से डाउनलोड करें",
+  "@duoWebAppStore": {
+    "description": "Website App Store link"
+  },
+  "duoWebPlayStore": "Google Play पर पाएँ",
+  "@duoWebPlayStore": {
+    "description": "Website Google Play link"
+  },
   "economyAiMatchingScreenSize": "आपकी स्क्रीन के आकार से मेल बिठा रहे हैं…",
   "@economyAiMatchingScreenSize": {
     "description": "AI wallpaper generation status shown while matching the output to the device screen."
@@ -1435,16 +1583,7 @@
   "@accountReportAProblem": {
     "description": "Title for the report problem sheet and settings row."
   },
-  "accountReportPreviewNotice": "इस रिपोर्ट में आपके ऐप का वर्ज़न, डिवाइस और हाल के लॉग शामिल हैं। इसमें ईमेल पता या साइन-इन टोकन नहीं हैं। इसे पढ़ें, फिर {email} के साथ शेयर करें।",
-  "@accountReportPreviewNotice": {
-    "description": "Privacy explanation shown before sharing a diagnostic report.",
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
-  "accountReportProblemSubtitle": "Prism टीम के साथ अपने ऐप लॉग शेयर करें",
+  "accountReportProblemSubtitle": "Prism टीम को बग रिपोर्ट भेजें",
   "@accountReportProblemSubtitle": {
     "description": "Subtitle for reporting a problem."
   },
@@ -1595,10 +1734,6 @@
   "accountSettings": "सेटिंग्स",
   "@accountSettings": {
     "description": "Settings action label."
-  },
-  "accountShare": "शेयर करें",
-  "@accountShare": {
-    "description": "Share action label."
   },
   "accountShareInvite": "निमंत्रण शेयर करें",
   "@accountShareInvite": {
@@ -3347,6 +3482,80 @@
   "aiLiveActivityOpen": "Prism में खोलें",
   "@aiLiveActivityOpen": {
     "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiResultApply": "लागू करें",
+  "@aiResultApply": {
+    "description": "Primary button on a finished AI wallpaper. On Android it opens the Set screen; on iOS it saves to Photos."
+  },
+  "aiResultEditPrompt": "प्रॉम्प्ट संपादित करें",
+  "@aiResultEditPrompt": {
+    "description": "Button on the full-screen AI result that returns to the prompt editor."
+  },
+  "aiSessionStripLabel": "इस सत्र के वॉलपेपर",
+  "@aiSessionStripLabel": {
+    "description": "Screen reader label for the strip of thumbnails made in this session."
+  },
+  "aiSessionTake": "संस्करण {index}, कुल {count}",
+  "@aiSessionTake": {
+    "description": "Screen reader label for one thumbnail in the session strip.",
+    "placeholders": {
+      "index": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpWatercolour": "वॉटरकलर में",
+  "@aiFollowUpWatercolour": {
+    "description": "Follow-up chip. Makes a new take of the wallpaper as a watercolour painting."
+  },
+  "aiFollowUpNight": "रात वाला संस्करण",
+  "@aiFollowUpNight": {
+    "description": "Follow-up chip. Makes a night-time take."
+  },
+  "aiFollowUpMinimal": "और सरल",
+  "@aiFollowUpMinimal": {
+    "description": "Follow-up chip. Makes a simpler take."
+  },
+  "aiFollowUpWarmer": "गर्म रंग",
+  "@aiFollowUpWarmer": {
+    "description": "Follow-up chip. Makes a take with warmer colours."
+  },
+  "aiFollowUpDepth": "गहराई जोड़ें",
+  "@aiFollowUpDepth": {
+    "description": "Follow-up chip. Makes a take with more depth and layers."
+  },
+  "aiFollowUpCostLabel": "हर नए संस्करण की कीमत {cost} कॉइन है",
+  "@aiFollowUpCostLabel": {
+    "description": "Screen reader label for the coin price shown next to the follow-up chips.",
+    "placeholders": {
+      "cost": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpConfirmTitle": "नया संस्करण बनाएँ?",
+  "@aiFollowUpConfirmTitle": {
+    "description": "Title of the sheet shown the first time a follow-up chip is tapped."
+  },
+  "aiFollowUpConfirmBody": "इससे एक नया वॉलपेपर बनेगा। हर एक की कीमत {cost} कॉइन है।",
+  "@aiFollowUpConfirmBody": {
+    "description": null,
+    "placeholders": {
+      "cost": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpConfirmAction": "बनाएँ",
+  "@aiFollowUpConfirmAction": {
+    "description": "Confirm button on the follow-up cost sheet."
   },
   "economyAiDailyLimit": "आज की AI सीमा पूरी हो गई।",
   "economyAiDescribeChanges": "बताएँ कि क्या बदलना है, जैसे रंग, मूड या बारीकियाँ।",
@@ -6410,10 +6619,6 @@
   "@wallpaperApplyTo": {
     "description": "Setting label for choosing where to apply a wallpaper."
   },
-  "wallpaperAutoRotateAndroidOnly": "ऑटो-रोटेशन केवल Android पर उपलब्ध है।",
-  "@wallpaperAutoRotateAndroidOnly": {
-    "description": "Message shown when auto-rotate is opened on an unsupported platform."
-  },
   "wallpaperAutoRotateApplyTo": "यहाँ लागू करें",
   "@wallpaperAutoRotateApplyTo": {
     "description": "Auto-rotate target setting section label."
@@ -8534,37 +8739,13 @@
   "@wallpaperShareLink": {
     "description": "Wallpaper menu action to share its link."
   },
-  "wallpaperShortcutsAddActionsSteps": "\"Prism वॉलपेपर पाएँ\" ऐक्शन जोड़ें। फिर \"वॉलपेपर सेट करें\" ऐक्शन जोड़ें।",
-  "@wallpaperShortcutsAddActionsSteps": {
-    "description": "Step to add the Prism wallpaper and system wallpaper actions in Shortcuts."
-  },
-  "wallpaperShortcutsBody": "Shortcuts से किसी समय या ट्रिगर पर वॉलपेपर लगाएँ। चलाने से पहले नीचे दिया स्रोत तैयार करें।",
-  "@wallpaperShortcutsBody": {
-    "description": "Explanation of how iOS Shortcuts can change wallpapers automatically."
-  },
   "wallpaperShortcutsChoosePrismData": "चुनें कि Prism क्या भेजे",
   "@wallpaperShortcutsChoosePrismData": {
     "description": "Section title for choosing wallpaper data in Shortcuts."
   },
-  "wallpaperShortcutsChooseTriggerSteps": "शॉर्टकट संपादक में ज़रूरत हो तो ऑटोमेशन खोलें। ट्रिगर चुनकर सेट करें, जैसे दिन का समय, ऐप खोलना या चार्जर लगाना।",
-  "@wallpaperShortcutsChooseTriggerSteps": {
-    "description": "Step to choose a trigger for an iOS Shortcuts wallpaper automation."
-  },
-  "wallpaperShortcutsDisableConfirmationSteps": "दिखाए गए चलाने के विकल्प जाँचें और शॉर्टकट या ऑटोमेशन सहेजें। अगर \"चलाने से पहले पूछें\" दिखे, अपने-आप चलाने के लिए उसे बंद करें।",
-  "@wallpaperShortcutsDisableConfirmationSteps": {
-    "description": "Step to disable confirmation and save an iOS Shortcuts automation."
-  },
-  "wallpaperShortcutsHeadline": "अपना वॉलपेपर अपने-आप बदलें",
-  "@wallpaperShortcutsHeadline": {
-    "description": "Headline describing automatic wallpaper changes through Shortcuts."
-  },
   "wallpaperShortcutsOpenAction": "Shortcuts खोलें",
   "@wallpaperShortcutsOpenAction": {
     "description": "Action to open Apple's Shortcuts app."
-  },
-  "wallpaperShortcutsOpenAutomationSteps": "Shortcuts खोलें। अगर ऑटोमेशन टैब है, उस पर और फिर नया ऑटोमेशन पर टैप करें। वरना जोड़ें (+) पर और संपादित करें दिखे तो उस पर टैप करें।",
-  "@wallpaperShortcutsOpenAutomationSteps": {
-    "description": "First step in creating a wallpaper automation in iOS Shortcuts."
   },
   "wallpaperShortcutsOpenError": "Shortcuts नहीं खुल सका। ऐप खुद खोलें।",
   "@wallpaperShortcutsOpenError": {
@@ -8574,10 +8755,6 @@
   "@wallpaperShortcutsSourceFavourite": {
     "description": "Shortcuts source option for a random favourite wallpaper."
   },
-  "wallpaperShortcutsSourceFavouriteDescription": "Shortcuts के लिए उपलब्ध कोई रैंडम पसंदीदा। पहले Prism में वॉलपेपर पसंद करें। कुछ संरक्षित वॉलपेपर उपलब्ध नहीं हो सकते। कोई दूसरा पसंदीदा उपलब्ध होने पर पिछला चयन दोहराया नहीं जाता।",
-  "@wallpaperShortcutsSourceFavouriteDescription": {
-    "description": "Description of the random favourite Shortcuts source."
-  },
   "wallpaperShortcutsSourceWotd": "आज का वॉलपेपर",
   "@wallpaperShortcutsSourceWotd": {
     "description": "Shortcuts source option for the daily wallpaper pick."
@@ -8585,10 +8762,6 @@
   "wallpaperShortcutsSourceWotdDescription": "आज का Prism चयन। पहले Prism में आज का मूल वॉलपेपर डाउनलोड करें। दिन का चयन बदलने पर इस स्रोत को चलाने से पहले नया मूल वॉलपेपर डाउनलोड करें।",
   "@wallpaperShortcutsSourceWotdDescription": {
     "description": "Description of the Wall of the Day Shortcuts source."
-  },
-  "wallpaperShortcutsSteps": "कदम",
-  "@wallpaperShortcutsSteps": {
-    "description": "Section title for iOS Shortcuts setup instructions."
   },
   "wallpaperShortcutsTitle": "अपने-आप बदलें",
   "@wallpaperShortcutsTitle": {
@@ -10584,5 +10757,1406 @@
   "adminFillsRequest": "अनुरोध पूरा करता है",
   "@adminFillsRequest": {
     "description": "Admin review card label: the text of the request this wall says it fills."
+  },
+  "wallRemixAction": "रीमिक्स",
+  "@wallRemixAction": {
+    "description": "Short label of the button that opens the AI tab with this wallpaper's prompt."
+  },
+  "wallRemixActionTooltip": "इस वॉलपेपर को AI से रीमिक्स करें",
+  "@wallRemixActionTooltip": {
+    "description": "Tooltip of the Remix button on an AI wallpaper."
+  },
+  "wallRemixingChip": "{creator} के {title} को रीमिक्स कर रहे हैं",
+  "@wallRemixingChip": {
+    "description": "Chip in the AI tab that names the wallpaper being remixed.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRemixDropLinkTooltip": "रीमिक्स लिंक हटाएं",
+  "@wallRemixDropLinkTooltip": {
+    "description": "Tooltip of the x on the remix chip. It removes the link to the original wallpaper."
+  },
+  "wallRemixUntitled": "बिना शीर्षक",
+  "@wallRemixUntitled": {
+    "description": "Name used for a wallpaper that has no title, inside remix copy."
+  },
+  "wallRemixUnknownCreator": "एक Prism क्रिएटर",
+  "@wallRemixUnknownCreator": {
+    "description": "Name used for a creator with no public name, inside remix copy."
+  },
+  "wallRemixesTitle": "रीमिक्स",
+  "@wallRemixesTitle": {
+    "description": "Heading of the row of remixes on a wallpaper's details."
+  },
+  "wallRemixesCount": "{count, plural, =1{1 रीमिक्स} other{{count} रीमिक्स}}",
+  "@wallRemixesCount": {
+    "description": "Number of remixes next to the Remixes heading.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRemixOpenRemixLabel": "{creator} का रीमिक्स खोलें",
+  "@wallRemixOpenRemixLabel": {
+    "description": "Screen reader label of one remix in the Remixes row.",
+    "placeholders": {
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRemixOfLabel": "{creator} के {title} का रीमिक्स",
+  "@wallRemixOfLabel": {
+    "description": "Credit row on a remix. It opens the original wallpaper.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRemixOfTooltip": "मूल वॉलपेपर खोलें",
+  "@wallRemixOfTooltip": {
+    "description": "Tooltip of the credit row on a remix."
+  },
+  "economyAiSubmitPromptNotice": "कोई भी आपका प्रॉम्प्ट देख सकता है और इस वॉलपेपर को रीमिक्स कर सकता है।",
+  "@economyAiSubmitPromptNotice": {
+    "description": "Note on the AI submit sheet. Shared AI wallpapers show their prompt to anyone who remixes them."
+  },
+  "notifPushWallRemixedTitle": "आपके वॉलपेपर को रीमिक्स किया गया",
+  "@notifPushWallRemixedTitle": {
+    "description": "Inbox title when another creator's remix of your wallpaper is approved."
+  },
+  "notifPushWallRemixedBody": "{remixerName} ने {wallTitle} को रीमिक्स किया।",
+  "@notifPushWallRemixedBody": {
+    "description": "Inbox body when another creator remixes your wallpaper.",
+    "placeholders": {
+      "remixerName": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushWallRemixedBodyUntitled": "{remixerName} ने आपके वॉलपेपर को रीमिक्स किया।",
+  "@notifPushWallRemixedBodyUntitled": {
+    "description": "Inbox body when another creator remixes your untitled wallpaper.",
+    "placeholders": {
+      "remixerName": {
+        "type": "String"
+      }
+    }
+  },
+  "wallMetadataDescription": "विवरण",
+  "wallMetadataEdit": "जानकारी संपादित करें",
+  "wallResubmitAction": "सुधारें और फिर से भेजें",
+  "wallResubmitChooseImage": "चित्र चुनें",
+  "wallResubmitImageMissing": "मूल चित्र अब उपलब्ध नहीं है। संपादन जारी रखने के लिए उसे फिर से चुनें।",
+  "wallResubmitImageKept": "मूल चित्र तैयार है",
+  "wallResubmitTitle": "अपना अपलोड सुधारें",
+  "wallUploadUseLastDetails": "पिछली जानकारी का उपयोग करें",
+  "wallUploadLastDetailsUnavailable": "इस डिवाइस पर पिछली जानकारी नहीं है।",
+  "wallUploadWithdraw": "अपलोड वापस लें",
+  "wallUploadWithdrawTitle": "क्या यह अपलोड वापस लें?",
+  "wallUploadWithdrawBody": "इससे अपलोड समीक्षा से हट जाएगा और उसकी अपलोड की गई फ़ाइलें मिट जाएंगी।",
+  "wallUploadWithdrawn": "अपलोड वापस लिया गया",
+  "wallUploadDeleteHistory": "इतिहास से हटाएं",
+  "wallMetadataInvalid": "टेक्स्ट और टैग जांचें, फिर दोबारा कोशिश करें।",
+  "wallUploadOwnerChanged": "आपका खाता बदल गया है। यह अपलोड फिर से खोलें।",
+  "wallResubmitLimit": "इस वॉलपेपर के लिए तीन जुड़े हुए पुनः सबमिशन पूरे हो गए हैं।",
+  "wallResubmitUnsupported": "मूल चित्र फिर से चुनें। AI स्रोत की जानकारी दोबारा इस्तेमाल नहीं की जा सकती।",
+  "wallResubmitUnavailable": "यह अस्वीकृत अपलोड लोड नहीं हो सका। दोबारा कोशिश करें।",
+  "wallMetadataEditDetails": "जानकारी संपादित करें",
+  "wallMetadataApprovedHelp": "शीर्षक, विवरण और टैग बदलें। चित्र और श्रेणी वही रहेंगे।",
+  "wallMetadataPendingHelp": "वॉलपेपर की समीक्षा से पहले यह जानकारी अपडेट करें।",
+  "wallMetadataSave": "जानकारी सेव करें",
+  "wallMetadataSaved": "जानकारी सेव हुई",
+  "wallMetadataDiscardTitle": "बदलाव छोड़ें?",
+  "wallMetadataDiscardBody": "आपकी बिना सेव की गई जानकारी खो जाएगी।",
+  "wallMetadataDiscard": "बदलाव छोड़ें",
+  "wallMetadataReload": "जानकारी फिर लोड करें",
+  "wallMetadataReloadTitle": "मौजूदा जानकारी फिर लोड करें?",
+  "wallMetadataReloadBody": "इससे आपकी बिना सेव की गई जानकारी मौजूदा जानकारी से बदल जाएगी।",
+  "wallMetadataConflict": "यह जानकारी कहीं और बदल गई है। आपके बदलाव अभी भी यहां हैं। सेव करने से पहले मौजूदा जानकारी फिर लोड करें।",
+  "wallMetadataStatusChanged": "इस वॉलपेपर की समीक्षा स्थिति बदल गई है। आपके बदलाव सेव नहीं हुए हैं।",
+  "wallMetadataMissing": "यह वॉलपेपर अब उपलब्ध नहीं है। आपके बदलाव सेव नहीं हुए हैं।",
+  "wallMetadataDenied": "आपको इस वॉलपेपर को संपादित करने की अनुमति नहीं है।",
+  "wallMetadataSignedOut": "इस वॉलपेपर को संपादित करने के लिए फिर से साइन इन करें।",
+  "wallMetadataDailyLimit": "आप आज की संपादन सीमा तक पहुंच गए हैं। कल दोबारा कोशिश करें।",
+  "wallMetadataUnavailable": "जानकारी सेव नहीं हो सकी। अपना कनेक्शन जांचें और दोबारा कोशिश करें।",
+  "wallMetadataLoadFailed": "जानकारी लोड नहीं हो सकी",
+  "wallMetadataHistory": "संपादन इतिहास",
+  "wallMetadataHistoryEmpty": "अभी जानकारी में कोई बदलाव नहीं है",
+  "wallMetadataHistoryEmptyBody": "स्वीकृत शीर्षक, विवरण और टैग में बदलाव यहां दिखते हैं।",
+  "wallMetadataHistoryFailed": "संपादन इतिहास लोड नहीं हो सका",
+  "wallMetadataBefore": "पहले",
+  "wallMetadataAfter": "बाद में",
+  "wallMetadataRevert": "संपादन वापस करें",
+  "wallMetadataRevertTitle": "यह संपादन वापस करें?",
+  "wallMetadataRevertBody": "केवल यहां दिखाए गए पिछले शीर्षक, विवरण और टैग वापस लाएं। चित्र और समीक्षा स्थिति नहीं बदलेंगे।",
+  "wallMetadataReverted": "संपादन वापस किया गया",
+  "wallMetadataLoadMore": "और संपादन लोड करें",
+  "wallMetadataAbsent": "सेट नहीं है",
+  "wallMetadataResubmitted": "फिर से भेजा गया · प्रयास {attempt} / 3",
+  "wallMetadataPreviousReason": "पिछली अस्वीकृति का कारण",
+  "wallMetadataContextUnavailable": "फिर से भेजने की जानकारी उपलब्ध नहीं है",
+  "@wallMetadataResubmitted": {"placeholders": {"attempt": {"type": "int"}}},
+  "reportSheetMessage": "हमें बताएं कि क्या गड़बड़ हुई। Prism कभी आपका ईमेल पता या साइन-इन टोकन नहीं जोड़ता। भेजने से पहले स्क्रीनशॉट जांच लें।",
+  "@reportSheetMessage": {
+    "description": "Intro text in the report a problem sheet."
+  },
+  "reportTopicCrashFreeze": "क्रैश/फ़्रीज़",
+  "@reportTopicCrashFreeze": {
+    "description": "Report topic chip: app crashed or froze."
+  },
+  "reportTopicWallpaperWontSet": "वॉलपेपर सेट नहीं हो रहा",
+  "@reportTopicWallpaperWontSet": {
+    "description": "Report topic chip: wallpaper could not be set."
+  },
+  "reportTopicLooksBroken": "गड़बड़ दिखता है",
+  "@reportTopicLooksBroken": {
+    "description": "Report topic chip: something looks visually broken."
+  },
+  "reportTopicSlow": "धीमा",
+  "@reportTopicSlow": {
+    "description": "Report topic chip: app is slow."
+  },
+  "reportTopicOther": "अन्य",
+  "@reportTopicOther": {
+    "description": "Report topic chip: any other problem."
+  },
+  "reportNoteHint": "क्या हुआ? आपको क्या उम्मीद थी?",
+  "@reportNoteHint": {
+    "description": "Hint text of the note field in the report sheet."
+  },
+  "reportScreenshotTitle": "स्क्रीनशॉट",
+  "@reportScreenshotTitle": {
+    "description": "Title of the screenshot row in the report sheet."
+  },
+  "reportScreenshotEmpty": "हमें दिखाएं कि आपको क्या दिख रहा है।",
+  "@reportScreenshotEmpty": {
+    "description": "Subtitle of the screenshot row when no screenshot is attached."
+  },
+  "reportScreenshotAttached": "देखने के लिए टैप करें। भेजने से पहले जांच लें।",
+  "@reportScreenshotAttached": {
+    "description": "Subtitle of the screenshot row when a screenshot is attached."
+  },
+  "reportAddScreenshot": "स्क्रीनशॉट जोड़ें",
+  "@reportAddScreenshot": {
+    "description": "Button to add a screenshot to the report."
+  },
+  "reportRemoveScreenshot": "हटाएं",
+  "@reportRemoveScreenshot": {
+    "description": "Button to remove the attached screenshot."
+  },
+  "reportViewScreenshot": "स्क्रीनशॉट देखें",
+  "@reportViewScreenshot": {
+    "description": "Tooltip or label to view the attached screenshot."
+  },
+  "reportIncludeDiagnostics": "डिवाइस जानकारी और हाल के लॉग शामिल करें",
+  "@reportIncludeDiagnostics": {
+    "description": "Switch label to include device info and recent logs in the report."
+  },
+  "reportShowDiagnostics": "क्या शामिल है, दिखाएं",
+  "@reportShowDiagnostics": {
+    "description": "Button to expand the list of included diagnostics."
+  },
+  "reportHideDiagnostics": "विवरण छिपाएं",
+  "@reportHideDiagnostics": {
+    "description": "Button to collapse the list of included diagnostics."
+  },
+  "reportSend": "रिपोर्ट भेजें",
+  "@reportSend": {
+    "description": "Button that sends the report."
+  },
+  "reportShareAsFile": "फ़ाइल के रूप में शेयर करें",
+  "@reportShareAsFile": {
+    "description": "Button that shares the report as a file."
+  },
+  "reportSent": "धन्यवाद, रिपोर्ट भेज दी गई। रेफ़रेंस {reference}",
+  "@reportSent": {
+    "description": "Confirmation after the report is sent, with a short reference code.",
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCouldNotSend": "भेजा नहीं जा सका",
+  "@reportCouldNotSend": {
+    "description": "Title of the dialog shown when the report fails to send."
+  },
+  "reportCouldNotSendBody": "अपना कनेक्शन जांचें और फिर कोशिश करें, या रिपोर्ट को फ़ाइल के रूप में शेयर करें।",
+  "@reportCouldNotSendBody": {
+    "description": "Body of the dialog shown when the report fails to send."
+  },
+  "reportShareInstead": "इसके बजाय शेयर करें",
+  "@reportShareInstead": {
+    "description": "Dialog action to share the report as a file after a send failure."
+  },
+  "reportShakeToReport": "रिपोर्ट के लिए शेक करें",
+  "@reportShakeToReport": {
+    "description": "Settings toggle label for shake to report."
+  },
+  "reportShakeToReportSubtitle": "किसी भी स्क्रीन पर समस्या की रिपोर्ट करने के लिए फ़ोन को हिलाएं",
+  "@reportShakeToReportSubtitle": {
+    "description": "Settings toggle subtitle for shake to report."
+  },
+  "accountShowAiWallpapers": "AI से बने वॉलपेपर दिखाएँ",
+  "@accountShowAiWallpapers": {
+    "description": "Content preference that shows or hides AI-generated Prism walls."
+  },
+  "accountShowAiWallpapersSubtitle": "केवल इंसानों के बनाए वॉलपेपर देखने के लिए बंद करें",
+  "@accountShowAiWallpapersSubtitle": {
+    "description": "Subtitle under the AI-generated wallpapers switch."
+  },
+  "accountShowAiWallpapersFootnote": "AI वॉलपेपर छिपाने पर भी आपके अपलोड और पसंदीदा कभी नहीं छिपते।",
+  "@accountShowAiWallpapersFootnote": {
+    "description": "Footnote under the AI-generated wallpapers switch. Says what still shows when the switch is off."
+  },
+  "wallpaperFeedHideAi": "AI छिपाएँ",
+  "@wallpaperFeedHideAi": {
+    "description": "Chip in the Tune your feed sheet that hides AI-generated walls. Same setting as the Settings switch."
+  },
+  "wallpaperAiGenerated": "AI से बना",
+  "@wallpaperAiGenerated": {
+    "description": "Tag on the wallpaper detail screen for a wall that was made with AI."
+  },
+  "wallpaperAiMadeWith": "{model} से बना",
+  "@wallpaperAiMadeWith": {
+    "description": "Sheet line that names the AI model that made the wall.",
+    "placeholders": {
+      "model": {
+        "type": "String",
+        "example": "Seedream 5 Lite"
+      }
+    }
+  },
+  "wallpaperAiMadeWithUnknown": "AI से बना",
+  "@wallpaperAiMadeWithUnknown": {
+    "description": "Sheet line for an AI wall that did not record its model."
+  },
+  "wallpaperAiReportWrongLabel": "गलत लेबल की रिपोर्ट करें",
+  "@wallpaperAiReportWrongLabel": {
+    "description": "Row in the AI-generated sheet that opens the report sheet for a wrong AI label."
+  },
+  "feedNoHumanWalls": "यहाँ अभी इंसानों के बनाए वॉलपेपर नहीं हैं",
+  "@feedNoHumanWalls": {
+    "description": "Empty state when every wall in a feed is AI-generated and AI walls are hidden."
+  },
+  "feedShowAiWalls": "AI वॉलपेपर दिखाएँ",
+  "@feedShowAiWalls": {
+    "description": "Action in the empty state that turns AI-generated walls back on."
+  },
+  "dailyMomentTitle": "रोज़ का पल",
+  "@dailyMomentTitle": {
+    "description": "Daily moment: Title."
+  },
+  "dailyMomentStreakTitle": "रोज़ की स्ट्रीक",
+  "@dailyMomentStreakTitle": {
+    "description": "Daily moment: StreakTitle."
+  },
+  "dailyMomentChestTitle": "रोज़ का संदूक",
+  "@dailyMomentChestTitle": {
+    "description": "Daily moment: ChestTitle."
+  },
+  "dailyMomentSpinTitle": "मुफ़्त स्पिन",
+  "@dailyMomentSpinTitle": {
+    "description": "Daily moment: SpinTitle."
+  },
+  "dailyMomentUnavailable": "यह इनाम आज अब उपलब्ध नहीं है।",
+  "@dailyMomentUnavailable": {
+    "description": "Daily moment: Unavailable."
+  },
+  "dailyMomentError": "इनाम लोड नहीं हो सका। फिर कोशिश करें।",
+  "@dailyMomentError": {
+    "description": "Daily moment: Error."
+  },
+  "dailyMomentStreakReceipt": "{coins, plural, one{{coins} सिक्का मिला} other{{coins} सिक्के मिले}} · {days, plural, one{{days} दिन की स्ट्रीक} other{{days} दिनों की स्ट्रीक}}",
+  "@dailyMomentStreakReceipt": {
+    "description": "Daily moment: StreakReceipt.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeTitle": "साप्ताहिक चुनौती",
+  "challengeRules": "अधिकतम 3 प्रविष्टियाँ, दिखाने से पहले समीक्षा होगी।",
+  "challengeVotingRules": "अन्य रचनाकारों के लिए {date} UTC तक वोट दें।",
+  "@challengeVotingRules": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeUpload": "प्रविष्टि अपलोड करें",
+  "challengeAi": "AI से बनाएँ",
+  "challengeTop": "शीर्ष",
+  "challengeNew": "नई",
+  "challengePast": "पिछली चुनौतियाँ",
+  "challengeEmpty": "स्वीकृत प्रविष्टियाँ यहाँ दिखेंगी।",
+  "challengeWaiting": "वोटिंग बंद है। विजेता चुनने से पहले प्रविष्टियों की समीक्षा पूरी होगी।",
+  "challengeClosed": "यह चुनौती समाप्त हो गई है।",
+  "challengeScheduled": "यह चुनौती अभी शुरू नहीं हुई है।",
+  "challengeNoWinner": "इस चुनौती का कोई विजेता नहीं है।",
+  "challengeWinner": "विजेता · {name}",
+  "@challengeWinner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeVote": "वोट दें",
+  "challengeUnvote": "वोट हटाएँ",
+  "challengeVotes": "{count, plural, =0{0 वोट} =1{1 वोट} other{{count} वोट}}",
+  "@challengeVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentCosmetic": "सजावटी आइटम आपके संग्रह में जोड़ा गया",
+  "@dailyMomentCosmetic": {
+    "description": "Daily moment: Cosmetic."
+  },
+  "dailyMomentReward": "{coins, plural, one{{coins} सिक्का मिला} other{{coins} सिक्के मिले}}",
+  "@dailyMomentReward": {
+    "description": "Daily moment: Reward.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentChestBody": "जब चाहें आज का संदूक खोलें।",
+  "@dailyMomentChestBody": {
+    "description": "Daily moment: ChestBody."
+  },
+  "dailyMomentSpinBody": "आपका मुफ़्त स्पिन तैयार है।",
+  "@dailyMomentSpinBody": {
+    "description": "Daily moment: SpinBody."
+  },
+  "dailyMomentBalance": "शेष: {coins, plural, one{{coins} सिक्का} other{{coins} सिक्के}}",
+  "@dailyMomentBalance": {
+    "description": "Daily moment: Balance.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentDone": "हो गया",
+  "@dailyMomentDone": {
+    "description": "Daily moment: Done."
+  },
+  "dailyMomentRetry": "फिर कोशिश करें",
+  "@dailyMomentRetry": {
+    "description": "Daily moment: Retry."
+  },
+  "dailyMomentContinue": "जारी रखें",
+  "@dailyMomentContinue": {
+    "description": "Daily moment: Continue."
+  },
+  "dailyMomentOpenFree": "मुफ़्त संदूक खोलें",
+  "@dailyMomentOpenFree": {
+    "description": "Daily moment: OpenFree."
+  },
+  "dailyMomentOpenChest": "{coins, plural, one{{coins} सिक्के में खोलें} other{{coins} सिक्कों में खोलें}}",
+  "@dailyMomentOpenChest": {
+    "description": "Daily moment: OpenChest.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentSpinAction": "मुफ़्त स्पिन लें",
+  "@dailyMomentSpinAction": {
+    "description": "Daily moment: SpinAction."
+  },
+  "dailyMomentClose": "रोज़ का पल बंद करें",
+  "@dailyMomentClose": {
+    "description": "Daily moment: Close."
+  },
+  "dailyMomentToday": "आज",
+  "@dailyMomentToday": {
+    "description": "Daily moment: Today."
+  },
+  "dailyMomentReady": "रोज़ के इनाम तैयार हैं",
+  "@dailyMomentReady": {
+    "description": "Daily moment: Ready."
+  },
+  "dailyMomentComplete": "आज के इनाम पूरे हुए",
+  "@dailyMomentComplete": {
+    "description": "Daily moment: Complete."
+  },
+  "dailyMomentResume": "रोज़ का पल जारी रखें",
+  "@dailyMomentResume": {
+    "description": "Daily moment: Resume."
+  },
+  "dailyMomentMore": "और",
+  "@dailyMomentMore": {
+    "description": "Daily moment: More."
+  },
+  "dailyMomentQuests": "मिशन",
+  "@dailyMomentQuests": {
+    "description": "Daily moment: Quests."
+  },
+  "dailyMomentChestLeft": "रोज़ का संदूक उपलब्ध है",
+  "@dailyMomentChestLeft": {
+    "description": "Daily moment: ChestLeft."
+  },
+  "dailyMomentSpinLeft": "मुफ़्त स्पिन उपलब्ध है",
+  "@dailyMomentSpinLeft": {
+    "description": "Daily moment: SpinLeft."
+  },
+  "dailyMomentStreakLeft": "रोज़ की स्ट्रीक उपलब्ध है",
+  "@dailyMomentStreakLeft": {
+    "description": "Daily moment: StreakLeft."
+  },
+  "challengeShare": "चुनौती साझा करें",
+  "challengeRemove": "चुनौती हटाएँ",
+  "challengeContext": "चुनौती · {theme}",
+  "@challengeContext": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeError": "चुनौती लोड नहीं हुई। फिर कोशिश करें।",
+  "challengeVoteError": "वोट सहेजा नहीं गया। फिर कोशिश करें।",
+  "challengeSignIn": "भाग लेने या वोट देने के लिए साइन इन करें।",
+  "challengeLimit": "आपने इस चुनौती में 3 वॉलपेपर जमा किए हैं।",
+  "challengeRetry": "फिर कोशिश करें",
+  "challengeOwnEntry": "आप अपनी प्रविष्टि को वोट नहीं दे सकते।",
+  "challengeDailyLimit": "आज की वोटिंग सीमा पूरी हो गई है।",
+  "challengeMissing": "यह चुनौती या प्रविष्टि अब उपलब्ध नहीं है।",
+  "challengeBadge": "चुनौती विजेता",
+  "challengeBadgeDescription": "साप्ताहिक चुनौती जीतें",
+  "challengeWinnerNotificationTitle": "आपका वॉलपेपर जीत गया",
+  "challengeWinnerNotificationBody": "आपकी प्रविष्टि ने साप्ताहिक चुनौती जीती: {theme}।",
+  "@challengeWinnerNotificationBody": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "statsTitle": "आपके आँकड़े",
+  "statsEntry": "आँकड़े",
+  "statsViews": "व्यू",
+  "statsSaves": "सेव",
+  "statsSets": "सेट",
+  "statsDownloads": "डाउनलोड",
+  "statsShares": "शेयर",
+  "statsFolderAdds": "फ़ोल्डर में जोड़े गए",
+  "statsRemixes": "रीमिक्स",
+  "statsLoading": "आपके आँकड़े लोड हो रहे हैं",
+  "statsError": "आपके आँकड़े लोड नहीं हुए। फिर कोशिश करें।",
+  "statsRetry": "फिर कोशिश करें",
+  "statsEmptyTitle": "आपका पहला वॉलपेपर यहीं से शुरू होता है",
+  "statsEmptyBody": "वॉलपेपर अपलोड करें। मंज़ूरी के बाद उसके आँकड़े दिखेंगे।",
+  "statsUpload": "वॉलपेपर अपलोड करें",
+  "statsWeekNote": "इस हफ़्ते अब तक की तुलना पिछले हफ़्ते से। हफ़्ता सोमवार को UTC में शुरू होता है।",
+  "statsHistoryNote": "आठ हफ़्ते, सबसे पुराना पहले। डैश का अर्थ है डेटा उपलब्ध नहीं है। ट्रैकिंग हफ़्ते के बीच में शुरू हो सकती है, इसलिए दर्ज हफ़्तों के आँकड़े अधूरे हो सकते हैं। मौजूदा हफ़्ता अधूरा है।",
+  "statsTopWalls": "इस हफ़्ते के शीर्ष वॉलपेपर",
+  "statsUntitled": "बिना शीर्षक का वॉलपेपर",
+  "statsCountingNote": "कुल सेव मौजूदा पसंदीदा की संख्या है; साप्ताहिक सेव नए जोड़े गए पसंदीदा हैं। कुल रीमिक्स मौजूदा क्रेडिट वाले रीमिक्स हैं; साप्ताहिक रीमिक्स पहली बार स्वीकार किए गए क्रेडिट हैं। फ़ोल्डर में जोड़ने की गिनती ट्रैकिंग शुरू होने के बाद से है।",
+  "statsUnavailable": "उपलब्ध नहीं",
+  "statsWeeklyTitle": "इस हफ़्ते आपके वॉलपेपर",
+  "statsWeeklyBody": "{week} में अपने वॉलपेपर के आँकड़े देखें।",
+  "statsWallValue": "{metric}: इस हफ़्ते {value}",
+  "statsComparison": "इस हफ़्ते {current} · पिछले हफ़्ते {previous}",
+  "statsTotal": "कुल: {value}",
+  "statsChange": "पिछले हफ़्ते की तुलना में {value}",
+  "statsUpdated": "{date} UTC को अपडेट हुआ",
+  "statsChartWeek": "{date} से शुरू हफ़्ता: {value}",
+  "statsChartSummary": "{metric}, आठ हफ़्ते। {summary}",
+  "@statsTitle": {
+    "description": "Creator dashboard: statsTitle"
+  },
+  "@statsEntry": {
+    "description": "Creator dashboard: statsEntry"
+  },
+  "@statsViews": {
+    "description": "Creator dashboard: statsViews"
+  },
+  "@statsSaves": {
+    "description": "Creator dashboard: statsSaves"
+  },
+  "@statsSets": {
+    "description": "Creator dashboard: statsSets"
+  },
+  "@statsDownloads": {
+    "description": "Creator dashboard: statsDownloads"
+  },
+  "@statsShares": {
+    "description": "Creator dashboard: statsShares"
+  },
+  "@statsFolderAdds": {
+    "description": "Creator dashboard: statsFolderAdds"
+  },
+  "@statsRemixes": {
+    "description": "Creator dashboard: statsRemixes"
+  },
+  "@statsLoading": {
+    "description": "Creator dashboard: statsLoading"
+  },
+  "@statsError": {
+    "description": "Creator dashboard: statsError"
+  },
+  "@statsRetry": {
+    "description": "Creator dashboard: statsRetry"
+  },
+  "@statsEmptyTitle": {
+    "description": "Creator dashboard: statsEmptyTitle"
+  },
+  "@statsEmptyBody": {
+    "description": "Creator dashboard: statsEmptyBody"
+  },
+  "@statsUpload": {
+    "description": "Creator dashboard: statsUpload"
+  },
+  "@statsWeekNote": {
+    "description": "Creator dashboard: statsWeekNote"
+  },
+  "@statsHistoryNote": {
+    "description": "Creator dashboard: statsHistoryNote"
+  },
+  "@statsTopWalls": {
+    "description": "Creator dashboard: statsTopWalls"
+  },
+  "@statsUntitled": {
+    "description": "Creator dashboard: statsUntitled"
+  },
+  "@statsCountingNote": {
+    "description": "Creator dashboard: statsCountingNote"
+  },
+  "@statsUnavailable": {
+    "description": "Creator dashboard: statsUnavailable"
+  },
+  "@statsWeeklyTitle": {
+    "description": "Creator dashboard: statsWeeklyTitle"
+  },
+  "@statsWeeklyBody": {
+    "description": "Creator dashboard: statsWeeklyBody",
+    "placeholders": {
+      "week": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsWallValue": {
+    "description": "Creator dashboard: statsWallValue",
+    "placeholders": {
+      "metric": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsComparison": {
+    "description": "Creator dashboard: statsComparison",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "previous": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsTotal": {
+    "description": "Creator dashboard: statsTotal",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsChange": {
+    "description": "Creator dashboard: statsChange",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsUpdated": {
+    "description": "Creator dashboard: statsUpdated",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsChartWeek": {
+    "description": "Creator dashboard: statsChartWeek",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsChartSummary": {
+    "description": "Creator dashboard: statsChartSummary",
+    "placeholders": {
+      "metric": {
+        "type": "String"
+      },
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsGuideHeadline": "हर दिन एक नया वॉलपेपर",
+  "@shortcutsGuideHeadline": {
+    "description": "Headline of the iOS Shortcuts guide."
+  },
+  "shortcutsGuideBody": "Shortcuts को एक बार सेट करें। हर दिन ऑटोमेशन आपके रोटेशन फ़ोल्डर से एक वॉलपेपर लगाता है। इसके 200 सबसे नए वॉलपेपर दोबारा आने से पहले एक-एक बार दिखते हैं।",
+  "@shortcutsGuideBody": {
+    "description": "Body under the iOS Shortcuts guide headline."
+  },
+  "shortcutsSourceRotation": "रोटेशन फ़ोल्डर",
+  "@shortcutsSourceRotation": {
+    "description": "Section title on the iOS Shortcuts guide, and the name of the Shortcuts source that shuffles the folder picked in Prism. Must match the iOS intent's source name."
+  },
+  "shortcutsSourceRotationDescription": "ऊपर चुना गया फ़ोल्डर शफ़ल करता है।",
+  "@shortcutsSourceRotationDescription": {
+    "description": "Description of the Rotation folder source in the iOS Shortcuts guide."
+  },
+  "shortcutsSourceFolder": "फ़ोल्डर",
+  "@shortcutsSourceFolder": {
+    "description": "Name of the Shortcuts source that shuffles a folder picked inside Shortcuts. Must match the iOS intent's source name."
+  },
+  "shortcutsSourceFolderDescription": "Shortcuts में चुना गया एक फ़ोल्डर शफ़ल करता है।",
+  "@shortcutsSourceFolderDescription": {
+    "description": "Description of the Folder source in the iOS Shortcuts guide."
+  },
+  "shortcutsSourceFavouriteDescription": "आपके पसंदीदा शफ़ल करता है। हर एक वॉलपेपर एक बार दिखता है, उसके बाद ही कोई दोहराया जाता है। कुछ सुरक्षित वॉलपेपर उपलब्ध न हों।",
+  "@shortcutsSourceFavouriteDescription": {
+    "description": "Description of the Random favourite source in the iOS Shortcuts guide."
+  },
+  "shortcutsRotationNone": "कोई फ़ोल्डर नहीं चुना गया",
+  "@shortcutsRotationNone": {
+    "description": "Rotation folder card title on the iOS Shortcuts guide when no folder is picked."
+  },
+  "shortcutsRotationNoneBody": "वह फ़ोल्डर चुनें जिसे शॉर्टकट शफ़ल करता है।",
+  "@shortcutsRotationNoneBody": {
+    "description": "Rotation folder card body when no folder is picked."
+  },
+  "shortcutsRotationPick": "फ़ोल्डर चुनें",
+  "@shortcutsRotationPick": {
+    "description": "Button on the rotation folder card that opens the folder picker when no folder is picked."
+  },
+  "shortcutsRotationChange": "बदलें",
+  "@shortcutsRotationChange": {
+    "description": "Button on the rotation folder card that picks another folder."
+  },
+  "shortcutsRotationStop": "रोकें",
+  "@shortcutsRotationStop": {
+    "description": "Button on the rotation folder card that stops using the folder for Shortcuts."
+  },
+  "shortcutsStepLabel": "चरण {number}, {title}",
+  "@shortcutsStepLabel": {
+    "description": "Screen reader label of a numbered step heading in the iOS Shortcuts guide.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepAddTitle": "Prism शॉर्टकट जोड़ें",
+  "@shortcutsStepAddTitle": {
+    "description": "Step 1 title in the iOS Shortcuts guide."
+  },
+  "shortcutsStepAddBody": "यह आपके रोटेशन फ़ोल्डर से एक वॉल लेता है और उसे आपका वॉलपेपर सेट करता है।",
+  "@shortcutsStepAddBody": {
+    "description": "Step 1 body when a shared shortcut link is available."
+  },
+  "shortcutsStepAddAction": "शॉर्टकट जोड़ें",
+  "@shortcutsStepAddAction": {
+    "description": "Button that opens the shared iCloud shortcut link."
+  },
+  "shortcutsStepAddManualBody": "इसे Shortcuts में 2 क्रियाओं के साथ बनाएँ।",
+  "@shortcutsStepAddManualBody": {
+    "description": "Step 1 body when there is no shared shortcut link."
+  },
+  "shortcutsManualNew": "Shortcuts में + दबाकर नया शॉर्टकट बनाएँ।",
+  "@shortcutsManualNew": {
+    "description": "Manual step to build the shortcut."
+  },
+  "shortcutsManualGet": "\"Prism वॉलपेपर पाएँ\" जोड़ें। स्रोत को रोटेशन फ़ोल्डर पर सेट करें।",
+  "@shortcutsManualGet": {
+    "description": "Manual step to build the shortcut. Keep the quoted action name and \"Rotation folder\" as iOS shows them."
+  },
+  "shortcutsManualSet": "\"Set Wallpaper Photo\" जोड़ें। उसके तीर को दबाएँ, फिर \"Show Preview\" बंद करें।",
+  "@shortcutsManualSet": {
+    "description": "Manual step to build the shortcut. Use the action and option names that Apple's Shortcuts app shows in this language."
+  },
+  "shortcutsManualName": "शॉर्टकट का नाम \"{name}\" रखें।",
+  "@shortcutsManualName": {
+    "description": "Manual step to build the shortcut. The name stays in English so Prism can run it.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepAutomationTitle": "हर दिन चलाएँ",
+  "@shortcutsStepAutomationTitle": {
+    "description": "Step 2 title in the iOS Shortcuts guide."
+  },
+  "shortcutsAutomationOpen": "Shortcuts में ऑटोमेशन पर टैप करें, फिर + पर टैप करें।",
+  "@shortcutsAutomationOpen": {
+    "description": "Step 2 line. Use Apple's Shortcuts labels in this language."
+  },
+  "shortcutsAutomationTime": "दिन का समय पर टैप करें। एक समय चुनें, फिर प्रतिदिन चुनें।",
+  "@shortcutsAutomationTime": {
+    "description": "Step 2 line. Use Apple's Shortcuts labels in this language."
+  },
+  "shortcutsAutomationRun": "तुरंत चलाएँ चुनें, फिर अगला पर टैप करें।",
+  "@shortcutsAutomationRun": {
+    "description": "Step 2 line. Use Apple's Shortcuts labels in this language."
+  },
+  "shortcutsAutomationPick": "चलाने के लिए \"{name}\" चुनें।",
+  "@shortcutsAutomationPick": {
+    "description": "Step 2 line. The shortcut name stays in English.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsAutomationNoTab": "ऑटोमेशन टैब नहीं है? \"{name}\" खोलें, संपादित करें पर टैप करें, फिर ऑटोमेशन पर टैप करें।",
+  "@shortcutsAutomationNoTab": {
+    "description": "Note for newer iOS versions without an Automation tab.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepTestTitle": "अभी जाँचें",
+  "@shortcutsStepTestTitle": {
+    "description": "Step 3 title in the iOS Shortcuts guide."
+  },
+  "shortcutsStepTestBody": "\"{name}\" एक बार चलता है, ताकि आप नया वॉलपेपर अभी देख सकें।",
+  "@shortcutsStepTestBody": {
+    "description": "Step 3 body.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepTestAction": "शॉर्टकट चलाएँ",
+  "@shortcutsStepTestAction": {
+    "description": "Button that runs the shortcut in the Shortcuts app."
+  },
+  "foldersRotateDaily": "इस फ़ोल्डर को हर दिन रोटेट करें",
+  "@foldersRotateDaily": {
+    "description": "Folder page menu item on iPhone. Makes this the Shortcuts rotation folder and opens the guide."
+  },
+  "autoRotateIosTitle": "Shortcuts से वॉलपेपर बदलें",
+  "@autoRotateIosTitle": {
+    "description": "Title on the auto-rotate page on iPhone, where Shortcuts changes the wallpaper."
+  },
+  "autoRotateIosBody": "iPhone पर, एक Shortcuts ऑटोमेशन हर दिन आपके फ़ोल्डर से नया वॉलपेपर सेट करता है।",
+  "@autoRotateIosBody": {
+    "description": "Body on the auto-rotate page on iPhone."
+  },
+  "autoRotateIosAction": "Shortcuts सेट करें",
+  "@autoRotateIosAction": {
+    "description": "Button on the auto-rotate page on iPhone that opens the Shortcuts guide."
+  },
+  "shortcutsAutomationIos16": "iOS 16 में \"तुरंत चलाएँ\" नहीं है। इसके बजाय \"चलाने से पहले पूछें\" बंद करें।",
+  "@shortcutsAutomationIos16": {
+    "description": "Note under the Step 2 automation lines for iOS 16, which has no Run Immediately option. Use the Shortcuts labels in this language."
+  },
+  "tipAction": "क्रिएटर को टिप दें",
+  "@tipAction": {
+    "description": "Wall detail: opens the sheet to tip the wall's creator coins"
+  },
+  "tipMenuItem": "टिप भेजें",
+  "@tipMenuItem": {
+    "description": "Creator profile overflow menu item that opens the tip sheet"
+  },
+  "tipTitle": "{name} को टिप दें",
+  "@tipTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipMessage": "एक रकम चुनें। {name} को सारे कॉइन्स मिलेंगे और उन्हें आपका नाम दिखेगा।",
+  "@tipMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipAmountsLabel": "टिप की रकम",
+  "@tipAmountsLabel": {
+    "description": "Accessibility label for the group of tip amount choices"
+  },
+  "tipBalance": "आपका बैलेंस: {balance, plural, =1{1 कॉइन} other{{balance} कॉइन्स}}",
+  "@tipBalance": {
+    "placeholders": {
+      "balance": {
+        "type": "int"
+      }
+    }
+  },
+  "tipShortBy": "आपको {amount, plural, =1{1 और कॉइन} other{{amount} और कॉइन्स}} चाहिए।",
+  "@tipShortBy": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipSendButton": "{amount} कॉइन्स की टिप दें",
+  "@tipSendButton": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipEarnCoins": "कॉइन्स कमाएँ",
+  "@tipEarnCoins": {
+    "description": "Tip sheet: opens Rewards when the balance is too low"
+  },
+  "tipThanksTitle": "टिप के लिए धन्यवाद",
+  "@tipThanksTitle": {
+    "description": "Tip sheet success headline"
+  },
+  "tipThanksMessage": "{name} को आपके {amount} कॉइन्स मिल गए।",
+  "@tipThanksMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipDone": "हो गया",
+  "@tipDone": {
+    "description": "Closes the tip sheet after a tip"
+  },
+  "tipNotEnoughCoins": "इस टिप के लिए आपके पास पर्याप्त कॉइन्स नहीं हैं।",
+  "@tipNotEnoughCoins": {
+    "description": "Toast when the balance is short"
+  },
+  "tipDailyLimit": "आज की सारी टिप्स आप भेज चुके हैं। कल फिर कोशिश करें।",
+  "@tipDailyLimit": {
+    "description": "Toast when the sender hit the daily tip cap"
+  },
+  "tipPairLimit": "आप आज {name} को पहले ही टिप दे चुके हैं। कल फिर कोशिश करें।",
+  "@tipPairLimit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipCreatorLimit": "{name} आज और टिप्स नहीं पा सकते। कल फिर कोशिश करें।",
+  "@tipCreatorLimit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipSenderTooNew": "Prism से जुड़ने के 7 दिन बाद आप टिप्स भेज सकते हैं।",
+  "@tipSenderTooNew": {
+    "description": "Toast for accounts younger than 7 days"
+  },
+  "tipSenderIneligible": "टिप भेजने के लिए सत्यापित खाते से साइन इन करें।",
+  "@tipSenderIneligible": {
+    "description": "Toast for guest or unverified accounts"
+  },
+  "tipUnavailable": "अभी आप {name} को टिप नहीं दे सकते।",
+  "@tipUnavailable": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipFailed": "टिप नहीं भेजी जा सकी। फिर से कोशिश करें।",
+  "@tipFailed": {
+    "description": "Toast when the tip call fails"
+  },
+  "wallTippedBy": "{count} लोगों ने टिप दी",
+  "@wallTippedBy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "coreCoinTipSent": "टिप भेजी गई",
+  "@coreCoinTipSent": {
+    "description": "Coin history row for a tip the user sent"
+  },
+  "coreCoinTipReceived": "टिप मिली",
+  "@coreCoinTipReceived": {
+    "description": "Coin history row for a tip the user received"
+  },
+  "notifPushTipReceivedTitle": "{senderName} ने {wallTitle} के लिए आपको {amount} कॉइन्स की टिप दी",
+  "@notifPushTipReceivedTitle": {
+    "placeholders": {
+      "senderName": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTipReceivedTitleUntitled": "{senderName} ने आपको {amount} कॉइन्स की टिप दी",
+  "@notifPushTipReceivedTitleUntitled": {
+    "placeholders": {
+      "senderName": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTipReceivedBody": "अपने क्रिएटर स्टैट्स में अपनी टिप्स देखें।",
+  "@notifPushTipReceivedBody": {
+    "description": "Body of the first tip push of the day"
+  },
+  "notifTipsReceivedTitle": "आज आपको {count} टिप्स मिलीं",
+  "@notifTipsReceivedTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notifTipsReceivedBody": "कुल {coins} कॉइन्स। इन्हें अपने क्रिएटर स्टैट्स में देखें।",
+  "@notifTipsReceivedBody": {
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTips": "टिप्स",
+  "@statsTips": {
+    "description": "Creator stats: tips section title"
+  },
+  "statsTipsTotal": "{count, plural, =1{1 टिप} other{{count} टिप्स}}, कुल {coins} कॉइन्स",
+  "@statsTipsTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsWeek": "{date} से शुरू हफ़्ता: {count, plural, =1{1 टिप} other{{count} टिप्स}}, {coins} कॉइन्स",
+  "@statsTipsWeek": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsWall": "{count, plural, =1{1 टिप} other{{count} टिप्स}}, {coins} कॉइन्स",
+  "@statsTipsWall": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsEmpty": "अभी कोई टिप नहीं है। प्रशंसक आपके वॉलपेपर और प्रोफ़ाइल से आपको टिप दे सकते हैं।",
+  "@statsTipsEmpty": {
+    "description": "Creator stats: tips section with no tips"
+  },
+  "creatorsToFollow": "फ़ॉलो करने लायक क्रिएटर",
+  "@creatorsToFollow": {
+    "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "creatorsSeeAll": "सभी देखें",
+  "@creatorsSeeAll": {
+    "description": "Opens the full list of creators."
+  },
+  "creatorsTitle": "क्रिएटर",
+  "@creatorsTitle": {
+    "description": "Title of the page that lists all creators."
+  },
+  "creatorsFilterAll": "सभी",
+  "@creatorsFilterAll": {
+    "description": "Filter chip that shows creators from every category."
+  },
+  "creatorsEmptyTitle": "यहाँ अभी कोई क्रिएटर नहीं",
+  "@creatorsEmptyTitle": {
+    "description": "Empty state when no creator matches the selected category."
+  },
+  "creatorsEmptyBody": "कोई दूसरी श्रेणी आज़माएँ।",
+  "@creatorsEmptyBody": {
+    "description": "Empty state body under creatorsEmptyTitle."
+  },
+  "creatorsLoadError": "क्रिएटर लोड नहीं हो सके",
+  "@creatorsLoadError": {
+    "description": "Error state when the creators list fails to load."
+  },
+  "creatorsOpenProfile": "{name} की प्रोफ़ाइल खोलें",
+  "@creatorsOpenProfile": {
+    "description": "Screen reader label for a creator's avatar and name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsWallBy": "{name} का वॉलपेपर",
+  "@creatorsWallBy": {
+    "description": "Screen reader label for a wallpaper thumbnail on a creator card.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsFollowedByOne": "{first} फ़ॉलो करते हैं",
+  "@creatorsFollowedByOne": {
+    "description": "Profile social proof when one person the viewer follows follows this creator.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsFollowedByTwo": "{first} और {second} फ़ॉलो करते हैं",
+  "@creatorsFollowedByTwo": {
+    "description": "Profile social proof when two people the viewer follows follow this creator.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsFollowedByMany": "{first}, {second} और {others, plural, =1{आपके फ़ॉलो किए एक और व्यक्ति} other{आपके फ़ॉलो किए {others} और लोग}} फ़ॉलो करते हैं",
+  "@creatorsFollowedByMany": {
+    "description": "Profile social proof when three or more people the viewer follows follow this creator. others is the count beyond the two names.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      },
+      "others": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorsMoreLike": "{name} जैसे और",
+  "@creatorsMoreLike": {
+    "description": "Toast action and sheet title that suggest creators similar to the one just followed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsSimilarSubtitle": "मिलते-जुलते स्टाइल वाले क्रिएटर",
+  "@creatorsSimilarSubtitle": {
+    "description": "Subtitle of the similar creators sheet."
+  },
+  "creatorsShowMeTitle": "मुझे फ़ॉलो करने लायक क्रिएटर में दिखाएँ",
+  "@creatorsShowMeTitle": {
+    "description": "Settings switch that lists the user in the creator directory."
+  },
+  "creatorsShowMeBody": "दूसरे आपकी प्रोफ़ाइल और टॉप वॉलपेपर ढूँढ सकते हैं",
+  "@creatorsShowMeBody": {
+    "description": "Subtitle of the creator directory settings switch."
+  },
+  "promoRedeemTitle": "कोड रिडीम करें",
+  "@promoRedeemTitle": {
+    "description": "Title of the sheet where the user enters a Prism promo code."
+  },
+  "promoRedeemMessage": "Prism की किसी पोस्ट या गिवअवे से मिला कोड डालें।",
+  "@promoRedeemMessage": {
+    "description": "Line under the redeem sheet title."
+  },
+  "promoRedeemMessageIos": "Prism की किसी पोस्ट या गिवअवे से मिला सिक्कों वाला कोड डालें।",
+  "@promoRedeemMessageIos": {
+    "description": "Line under the redeem sheet title on iPhone and iPad, where only coin codes work."
+  },
+  "promoCodeFieldLabel": "कोड",
+  "@promoCodeFieldLabel": {
+    "description": "Label of the promo code text field."
+  },
+  "promoCodeFieldHint": "जैसे, 7KQ2 MPXR 4D",
+  "@promoCodeFieldHint": {
+    "description": "Hint text in the empty promo code field."
+  },
+  "promoPasteCode": "कोड पेस्ट करें",
+  "@promoPasteCode": {
+    "description": "Tooltip and screen reader label of the paste button in the code field."
+  },
+  "promoRedeemAction": "रिडीम करें",
+  "@promoRedeemAction": {
+    "description": "Main button that redeems the code."
+  },
+  "promoRedeeming": "कोड रिडीम हो रहा है",
+  "@promoRedeeming": {
+    "description": "Screen reader label while the redeem request runs."
+  },
+  "promoDone": "हो गया",
+  "@promoDone": {
+    "description": "Button that closes the sheet after a code works."
+  },
+  "promoTryAnother": "दूसरा कोड आज़माएँ",
+  "@promoTryAnother": {
+    "description": "Button after an error that clears the field."
+  },
+  "promoSuccessCoins": "आपको {count, plural, one{1 सिक्का} other{{count} सिक्के}} मिले",
+  "@promoSuccessCoins": {
+    "description": "Headline after a coin code works.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessCoinsMessage": "अब ये आपके बैलेंस में हैं।",
+  "@promoSuccessCoinsMessage": {
+    "description": "Line under the coin success headline."
+  },
+  "promoSuccessPro": "आपको Pro के {days, plural, one{1 दिन} other{{days} दिन}} मिले",
+  "@promoSuccessPro": {
+    "description": "Headline after a Pro code works.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessProMessage": "आपका Pro पास अब {date} तक चलेगा।",
+  "@promoSuccessProMessage": {
+    "description": "Line under the Pro success headline.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoErrorInvalid": "यह Prism का कोड नहीं है। कोड में 10 या उससे ज़्यादा अक्षर और अंक होते हैं।",
+  "promoErrorNotFound": "यह कोड नहीं मिला। इसे जाँचें और फिर से कोशिश करें।",
+  "promoErrorDisabled": "यह कोड बंद कर दिया गया है।",
+  "promoErrorExpired": "इस कोड की मियाद खत्म हो चुकी है।",
+  "promoErrorLimitReached": "इस कोड के अब और उपयोग बाकी नहीं हैं।",
+  "promoErrorAlreadyRedeemed": "आप यह कोड पहले ही इस्तेमाल कर चुके हैं।",
+  "promoErrorAccountTooNew": "आपका खाता इस कोड के लिए बहुत नया है।",
+  "promoErrorNewUsersOnly": "यह कोड केवल नए खातों के लिए है।",
+  "promoErrorPremiumNotOnIos": "Pro कोड iPhone या iPad पर काम नहीं करते। इसके बजाय App Store कोड इस्तेमाल करें।",
+  "promoErrorAlreadyPremium": "आपके पास पहले से Pro है, इसलिए यह कोड ज़रूरी नहीं है।",
+  "promoErrorRateLimited": "बहुत ज़्यादा कोशिशें हो गईं। एक घंटा रुकें, फिर कोशिश करें।",
+  "promoErrorBusy": "इस समय बहुत लोग कोड रिडीम कर रहे हैं। थोड़ी देर बाद फिर कोशिश करें।",
+  "promoErrorSignedOut": "कोड रिडीम करने के लिए साइन इन करें।",
+  "promoErrorNetwork": "Prism तक नहीं पहुँच पा रहे। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
+  "promoErrorUnknown": "कुछ गड़बड़ हो गई। फिर से कोशिश करें।",
+  "promoSettingsGroup": "कोड",
+  "@promoSettingsGroup": {
+    "description": "Settings section title for promo and store codes."
+  },
+  "promoSettingsRedeemTitle": "Prism कोड रिडीम करें",
+  "@promoSettingsRedeemTitle": {
+    "description": "Settings row that opens the redeem sheet."
+  },
+  "promoSettingsRedeemSubtitle": "हमारी पोस्ट और गिवअवे से सिक्के या Pro के दिन",
+  "@promoSettingsRedeemSubtitle": {
+    "description": "Subtitle of that row on Android."
+  },
+  "promoSettingsRedeemSubtitleIos": "हमारी पोस्ट और गिवअवे से सिक्के",
+  "@promoSettingsRedeemSubtitleIos": {
+    "description": "Subtitle of that row on iPhone and iPad."
+  },
+  "promoAppStoreCodeTitle": "App Store कोड रिडीम करें",
+  "@promoAppStoreCodeTitle": {
+    "description": "iOS settings row that opens Apple's code sheet."
+  },
+  "promoAppStoreCodeSubtitle": "Apple से Pro ऑफ़र कोड",
+  "@promoAppStoreCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoPlayCodeTitle": "Play कोड रिडीम करें",
+  "@promoPlayCodeTitle": {
+    "description": "Android settings row that opens Google Play's redeem page."
+  },
+  "promoPlayCodeSubtitle": "Google Play से Pro ऑफ़र कोड",
+  "@promoPlayCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoCodesFootnoteIos": "Prism कोड सिक्के देते हैं। App Store कोड Pro देते हैं।",
+  "@promoCodesFootnoteIos": {
+    "description": "One line under the Codes group on iOS that says which code goes where."
+  },
+  "promoCodesFootnoteAndroid": "Prism कोड सिक्के या Pro के दिन देते हैं। Play कोड Pro देते हैं।",
+  "@promoCodesFootnoteAndroid": {
+    "description": "Same line on Android."
+  },
+  "promoStoreCodeFailed": "कोड वाला पेज नहीं खुल सका। फिर से कोशिश करें।",
+  "@promoStoreCodeFailed": {
+    "description": "Toast when the store code sheet or page does not open."
+  },
+  "promoRewardsRowTitle": "कोड रिडीम करें",
+  "@promoRewardsRowTitle": {
+    "description": "Rewards earn row that opens the redeem sheet."
+  },
+  "promoRewardsRowSubtitle": "किसी पोस्ट या गिवअवे से कोड मिला है?",
+  "@promoRewardsRowSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoAdminTitle": "प्रोमो कोड",
+  "@promoAdminTitle": {
+    "description": "Admin screen title."
+  },
+  "promoAdminEntry": "प्रोमो कोड",
+  "@promoAdminEntry": {
+    "description": "Admin entry that opens the promo code screen."
+  },
+  "promoAdminCreate": "कोड बनाएँ",
+  "@promoAdminCreate": {
+    "description": "Button that creates a code."
+  },
+  "promoAdminTypeCoins": "सिक्के",
+  "promoAdminTypePro": "Pro के दिन",
+  "promoAdminAmount": "राशि",
+  "@promoAdminAmount": {
+    "description": "Field: coins (1 to 1000) or Pro days (1 to 90)."
+  },
+  "promoAdminAmountHelpCoins": "1 से 1,000 सिक्के",
+  "promoAdminAmountHelpPro": "1 से 90 दिन। केवल Android।",
+  "promoAdminMaxRedemptions": "अधिकतम रिडेम्पशन",
+  "promoAdminExpiresInDays": "इतने दिनों में खत्म (दिन)",
+  "promoAdminMinAccountAge": "न्यूनतम खाता आयु (दिन)",
+  "promoAdminNewUsersOnly": "केवल नए खाते",
+  "promoAdminNewUsersDays": "खाता अधिकतम (दिन पुराना)",
+  "promoAdminCustomCode": "कस्टम कोड (वैकल्पिक)",
+  "@promoAdminCustomCode": {
+    "description": "Help: leave empty to generate one."
+  },
+  "promoAdminCustomCodeHelp": "10 से 32 अक्षर और अंक, I, O, 0 या 1 के बिना। खाली छोड़ें तो कोड अपने आप बनेगा।",
+  "promoAdminLabel": "नोट",
+  "@promoAdminLabel": {
+    "description": "Field for an admin note such as the post the code is for."
+  },
+  "promoAdminCreated": "{code} बनाया गया",
+  "@promoAdminCreated": {
+    "description": "Toast after create.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminCopied": "कोड कॉपी हो गया",
+  "@promoAdminCopied": {
+    "description": "Toast after copying a code."
+  },
+  "promoAdminCopy": "कोड कॉपी करें",
+  "@promoAdminCopy": {
+    "description": "Tooltip."
+  },
+  "promoAdminRedemptions": "{max} में से {used} इस्तेमाल हुए",
+  "@promoAdminRedemptions": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "promoAdminExpires": "{date} को खत्म होगा",
+  "@promoAdminExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminDisabled": "बंद",
+  "@promoAdminDisabled": {
+    "description": "Badge on a turned-off code."
+  },
+  "promoAdminDisable": "बंद करें",
+  "@promoAdminDisable": {
+    "description": "Action."
+  },
+  "promoAdminEnable": "चालू करें",
+  "@promoAdminEnable": {
+    "description": "Action."
+  },
+  "promoAdminEmpty": "अभी तक कोई कोड नहीं।",
+  "promoAdminLoadFailed": "कोड लोड नहीं हो सके। फिर से कोशिश करने के लिए नीचे खींचें।",
+  "promoAdminCreateFailed": "कोड नहीं बन सका: {reason}",
+  "@promoAdminCreateFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -3,7 +3,10 @@ import 'dart:math';
 
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/personalization/taste_profile.dart';
+import 'package:Prism/features/moods/biz/gallery_walls_cubit.dart';
+import 'package:Prism/features/moods/biz/mood_walls_cubit.dart';
 import 'package:Prism/features/moods/data/mood_repository_impl.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
@@ -55,6 +58,7 @@ void main() {
   late Map<String, Map<String, dynamic>> walls;
   late FakeUserBlockRepository blocks;
   late _FakeFeedRepository feed;
+  late SettingsLocalDataSource settings;
   late MoodRepositoryImpl repository;
 
   setUp(() {
@@ -67,10 +71,11 @@ void main() {
     );
     blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
     feed = _FakeFeedRepository(TasteProfile.empty);
+    settings = SettingsLocalDataSource(InMemoryLocalStore());
     repository = MoodRepositoryImpl(
       client,
       blocks,
-      SettingsLocalDataSource(InMemoryLocalStore()),
+      settings,
       feed,
       random: Random(1),
       now: () => DateTime.utc(2026, 10, 28),
@@ -79,6 +84,9 @@ void main() {
 
   group('fetchMoods', () {
     test('keeps the stored order and skips unknown moods and entries without ids', () async {
+      walls = <String, Map<String, dynamic>>{
+        for (final String id in <String>['A', 'B', '0CFI', 'ab12']) id: _wall(id),
+      };
       client.docs['moods'] = <String, Map<String, dynamic>>{
         'current': <String, dynamic>{
           'moods': <Object?>[
@@ -108,9 +116,11 @@ void main() {
       expect(moods.map((list) => list.mood), <WallMood>[WallMood.minimal, WallMood.dreamy]);
       expect(moods.first.wallIds, <String>['A', 'B']);
       expect(moods.last.wallIds, <String>['0CFI', 'ab12']);
+      expect(client.querySpecs, isEmpty);
     });
 
     test('caps hand-edited mood ids at the server limit of 60', () async {
+      walls = <String, Map<String, dynamic>>{for (int i = 0; i < 75; i++) 'ID$i': _wall('ID$i')};
       client.docs['moods'] = <String, Map<String, dynamic>>{
         'current': <String, dynamic>{
           'moods': <Object?>[
@@ -130,6 +140,31 @@ void main() {
 
     test('returns an empty list when the doc is missing', () async {
       expect(await repository.fetchMoods(), isEmpty);
+    });
+
+    test('hides the Duo chip when all walls are missing or filtered', () async {
+      client.docs['moods'] = <String, Map<String, dynamic>>{
+        'current': <String, dynamic>{
+          'moods': <Object?>[
+            <String, Object?>{
+              'id': 'duo_reveal',
+              'wallIds': <String>['MISSING', 'BLOCKED', 'AI'],
+            },
+          ],
+        },
+      };
+      blocks.completeInitial(<String>{'blocked'});
+      await settings.set('showAiWallpapers', false);
+      walls = <String, Map<String, dynamic>>{
+        'BLOCKED': _wall('BLOCKED', creatorUid: 'blocked'),
+        'AI': <String, dynamic>{
+          ..._wall('AI'),
+          'aiMetadata': <String, Object?>{'prompt': 'cat'},
+        },
+      };
+      expect(await repository.fetchMoods(), isEmpty);
+      walls['MISSING'] = _wall('MISSING');
+      expect((await repository.fetchMoods()).single.wallIds, <String>['MISSING']);
     });
   });
 
@@ -160,6 +195,22 @@ void main() {
       blocks.completeInitial(<String>{'blocked-uid'});
 
       final List<String> ids = (await repository.fetchMoodWalls(<String>['A', 'B'])).map((wall) => wall.id).toList();
+
+      expect(ids, <String>['B']);
+    });
+
+    test('with an unknown block list, drops walls that have a creator and keeps one without', () async {
+      walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', creatorUid: '')};
+      final MoodRepositoryImpl unloaded = MoodRepositoryImpl(
+        client,
+        FakeUserBlockRepository.pending()..timeOutInitialLoad(),
+        SettingsLocalDataSource(InMemoryLocalStore()),
+        feed,
+        random: Random(1),
+        now: () => DateTime.utc(2026, 10, 28),
+      );
+
+      final List<String> ids = (await unloaded.fetchMoodWalls(<String>['A', 'B'])).map((wall) => wall.id).toList();
 
       expect(ids, <String>['B']);
     });
@@ -258,6 +309,29 @@ void main() {
     expect(changes, 2);
   });
 
+  test('watchVisibilityChanges fires once when an unknown block list becomes known, not for a repeat', () async {
+    final FakeUserBlockRepository pending = FakeUserBlockRepository.pending();
+    final MoodRepositoryImpl unloaded = MoodRepositoryImpl(
+      client,
+      pending,
+      SettingsLocalDataSource(InMemoryLocalStore()),
+      feed,
+      random: Random(1),
+      now: () => DateTime.utc(2026, 10, 28),
+    );
+    int changes = 0;
+    final StreamSubscription<void> sub = unloaded.watchVisibilityChanges().listen((_) => changes++);
+    addTearDown(sub.cancel);
+
+    pending.completeInitial(<String>{});
+    await pumpEventQueue();
+    expect(changes, 1);
+
+    pending.completeInitial(<String>{});
+    await pumpEventQueue();
+    expect(changes, 1);
+  });
+
   test('watchVisibilityChanges gives each listener an independent deduplication state', () async {
     final Stream<void> changes = repository.watchVisibilityChanges();
     int firstListenerChanges = 0;
@@ -304,5 +378,79 @@ void main() {
 
     expect(firstListenerChanges, 1);
     expect(secondListenerChanges, 1);
+  });
+
+  test('mood and gallery cubits refresh to human walls when the shared AI setting changes', () async {
+    personalizedFeedSettingsRevision.value = 0;
+    addTearDown(() => personalizedFeedSettingsRevision.value = 0);
+    await settings.set('showAiWallpapers', true);
+    client.docs['moods'] = <String, Map<String, dynamic>>{
+      'current': <String, dynamic>{
+        'moods': <Object?>[
+          <String, Object?>{
+            'id': 'dreamy',
+            'wallIds': <String>['HUMAN', 'AI'],
+          },
+        ],
+      },
+    };
+    walls = <String, Map<String, dynamic>>{
+      'HUMAN': _wall('HUMAN'),
+      'AI': <String, dynamic>{
+        ..._wall('AI'),
+        'aiMetadata': <String, Object?>{'prompt': 'a fox'},
+      },
+    };
+    final MoodWallsCubit mood = MoodWallsCubit(repository);
+    final GalleryWallsCubit gallery = GalleryWallsCubit(repository);
+    addTearDown(mood.close);
+    addTearDown(gallery.close);
+
+    await mood.load(WallMood.dreamy);
+    await gallery.load(<String>['HUMAN', 'AI']);
+    expect((mood.state as MoodWallsLoaded).walls.map((wall) => wall.id), <String>['HUMAN', 'AI']);
+    expect((gallery.state as GalleryWallsLoaded).walls.map((wall) => wall.id), <String>['HUMAN', 'AI']);
+
+    expect(await setShowAiWallpapers(settings, false), isTrue);
+    await pumpEventQueue();
+
+    expect((mood.state as MoodWallsLoaded).walls.map((wall) => wall.id), <String>['HUMAN']);
+    expect((gallery.state as GalleryWallsLoaded).walls.map((wall) => wall.id), <String>['HUMAN']);
+  });
+
+  test('watchVisibilityChanges ignores unrelated setting revisions and no-op AI writes', () async {
+    personalizedFeedSettingsRevision.value = 0;
+    addTearDown(() => personalizedFeedSettingsRevision.value = 0);
+    await settings.set('showAiWallpapers', true);
+    int changes = 0;
+    final StreamSubscription<void> subscription = repository.watchVisibilityChanges().listen((_) => changes++);
+    addTearDown(subscription.cancel);
+
+    personalizedFeedSettingsRevision.value += 1;
+    await pumpEventQueue();
+    expect(changes, 0);
+    expect(await setShowAiWallpapers(settings, true), isFalse);
+    expect(changes, 0);
+
+    expect(await setShowAiWallpapers(settings, false), isTrue);
+    await pumpEventQueue();
+    expect(changes, 1);
+    personalizedFeedSettingsRevision.value += 1;
+    await pumpEventQueue();
+    expect(changes, 1);
+  });
+
+  test('watchVisibilityChanges removes the setting listener after cancellation', () async {
+    personalizedFeedSettingsRevision.value = 0;
+    addTearDown(() => personalizedFeedSettingsRevision.value = 0);
+    await settings.set('showAiWallpapers', true);
+    int changes = 0;
+    final StreamSubscription<void> subscription = repository.watchVisibilityChanges().listen((_) => changes++);
+    await subscription.cancel();
+
+    await setShowAiWallpapers(settings, false);
+    await pumpEventQueue();
+
+    expect(changes, 0);
   });
 }

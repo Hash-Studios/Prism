@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/daily_chest/daily_chest.dart';
@@ -9,8 +10,8 @@ import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
 import 'package:Prism/features/quests/domain/quest_board.dart';
 import 'package:Prism/features/quests/domain/quest_catalog.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/wheel_palette.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -180,7 +181,8 @@ class _BoosterStripState extends State<_BoosterStrip> {
 
   Future<void> _watchAd() async {
     if (_loading) return;
-    final int reward = CoinsService.instance.adsRewardNow;
+    final String owner = app_state.prismUser.id;
+    int creditedCoins = 0;
     setState(() => _loading = true);
     final QuestsBloc bloc = context.read<QuestsBloc>();
     final bool credited = await CoinGate.forContext(context).watchAdForCoins(
@@ -188,9 +190,10 @@ class _BoosterStripState extends State<_BoosterStrip> {
       upsellSource: 'quests_bonus_ad',
       isMounted: () => mounted,
       adErrorMessage: context.l10n.economyAdNotCompleted,
+      onCredited: (amount) => creditedCoins = amount,
     );
-    if (credited) {
-      toasts.success(context.l10n.economyCoinsEarned(reward));
+    if (credited && mounted && owner == app_state.prismUser.id) {
+      if (creditedCoins > 0) toasts.success(context.l10n.economyCoinsEarned(creditedCoins));
       bloc.add(const QuestsEvent.refreshed());
     }
     if (mounted) setState(() => _loading = false);
@@ -204,9 +207,13 @@ class _BoosterStripState extends State<_BoosterStrip> {
         ? context.l10n.economyChestDoubled
         : pro
         ? questInfo('pro_spin', context.l10n).title
-        : watchAdOptionLabel(context.l10n);
+        : context.l10n.economyWatchAdForCoins(CoinsService.instance.adsRewardNow);
     // The strip only shows while the chest can still be opened, so a booster that is not done is always first.
-    final String caption = booster.claimed ? context.l10n.economyChestBonusDone : context.l10n.economyChestDoFirst;
+    final String caption = booster.claimed
+        ? context.l10n.economyChestBonusDone
+        : !pro && CoinsService.instance.adsRemainingToday == 0
+        ? context.l10n.economyAdDailyLimit
+        : context.l10n.economyChestDoFirst;
     final Widget description = Semantics(
       container: true,
       label: context.l10n.economyChestBoosterSemantics(title, caption),
@@ -235,7 +242,11 @@ class _BoosterStripState extends State<_BoosterStrip> {
             variant: PrismButtonVariant.tonal,
             size: PrismButtonSize.compact,
             loading: _loading,
-            onPressed: pro ? widget.onOpenSpin : _watchAd,
+            onPressed: pro
+                ? widget.onOpenSpin
+                : CoinsService.instance.adsRemainingToday == 0
+                ? null
+                : _watchAd,
           );
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {

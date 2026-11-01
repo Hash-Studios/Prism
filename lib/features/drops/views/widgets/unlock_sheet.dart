@@ -4,7 +4,6 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
-import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -89,7 +88,10 @@ class _DropUnlockSheetState extends State<DropUnlockSheet> {
     return ValueListenableBuilder<int>(
       valueListenable: CoinsService.instance.balanceNotifier,
       builder: (context, balance, _) {
-        final bool short = balance < (wall == null ? packPrice : wallPrice);
+        final int price = wall == null ? packPrice : wallPrice;
+        final int missing = math.max(0, price - balance);
+        final int remainder = math.max(0, missing - CoinsService.instance.adsRewardNow);
+        final bool short = missing > 0;
         return PrismSheetBody(
           title: wall == null || wall.title.isEmpty ? widget.drop.displayTitle(l10n) : wall.title,
           message: wall == null
@@ -113,9 +115,9 @@ class _DropUnlockSheetState extends State<DropUnlockSheet> {
                 trailing: const PrismCoinIcon(size: 18),
                 onPressed: _watching ? null : () => widget.onUnlock(null),
               ),
-            if (short)
+            if (short && CoinsService.instance.adsRemainingToday != 0)
               PrismButton(
-                label: watchAdOptionLabel(l10n),
+                label: l10n.economyWatchAdForCoins(CoinsService.instance.adsRewardNow),
                 expand: true,
                 variant: PrismButtonVariant.tonal,
                 loading: _watching,
@@ -162,6 +164,11 @@ class _DropUnlockSheetState extends State<DropUnlockSheet> {
                 },
               ),
               const SizedBox(height: PrismSpace.sm),
+              if (short) ...<Widget>[
+                Text(l10n.economyCoinsMissing(missing), style: PrismTextStyles.caption(context)),
+                if (remainder > 0 && CoinsService.instance.adsRemainingToday != 0)
+                  Text(l10n.economyCoinsRemainAfterAd(remainder), style: PrismTextStyles.caption(context)),
+              ],
               Wrap(
                 alignment: WrapAlignment.center,
                 crossAxisAlignment: WrapCrossAlignment.center,

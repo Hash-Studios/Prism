@@ -1284,7 +1284,7 @@ as bool,
 /// @nodoc
 mixin _$FollowOutcome {
 
- int get id; bool get follow; bool get success; String get targetName;
+ int get id; bool get follow; bool get success; String get targetName; String get targetUserId;
 /// Create a copy of FollowOutcome
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1295,16 +1295,16 @@ $FollowOutcomeCopyWith<FollowOutcome> get copyWith => _$FollowOutcomeCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FollowOutcome&&(identical(other.id, id) || other.id == id)&&(identical(other.follow, follow) || other.follow == follow)&&(identical(other.success, success) || other.success == success)&&(identical(other.targetName, targetName) || other.targetName == targetName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FollowOutcome&&(identical(other.id, id) || other.id == id)&&(identical(other.follow, follow) || other.follow == follow)&&(identical(other.success, success) || other.success == success)&&(identical(other.targetName, targetName) || other.targetName == targetName)&&(identical(other.targetUserId, targetUserId) || other.targetUserId == targetUserId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,follow,success,targetName);
+int get hashCode => Object.hash(runtimeType,id,follow,success,targetName,targetUserId);
 
 @override
 String toString() {
-  return 'FollowOutcome(id: $id, follow: $follow, success: $success, targetName: $targetName)';
+  return 'FollowOutcome(id: $id, follow: $follow, success: $success, targetName: $targetName, targetUserId: $targetUserId)';
 }
 
 
@@ -1315,7 +1315,7 @@ abstract mixin class $FollowOutcomeCopyWith<$Res>  {
   factory $FollowOutcomeCopyWith(FollowOutcome value, $Res Function(FollowOutcome) _then) = _$FollowOutcomeCopyWithImpl;
 @useResult
 $Res call({
- int id, bool follow, bool success, String targetName
+ int id, bool follow, bool success, String targetName, String targetUserId
 });
 
 
@@ -1332,12 +1332,13 @@ class _$FollowOutcomeCopyWithImpl<$Res>
 
 /// Create a copy of FollowOutcome
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? follow = null,Object? success = null,Object? targetName = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? follow = null,Object? success = null,Object? targetName = null,Object? targetUserId = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,follow: null == follow ? _self.follow : follow // ignore: cast_nullable_to_non_nullable
 as bool,success: null == success ? _self.success : success // ignore: cast_nullable_to_non_nullable
 as bool,targetName: null == targetName ? _self.targetName : targetName // ignore: cast_nullable_to_non_nullable
+as String,targetUserId: null == targetUserId ? _self.targetUserId : targetUserId // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }
@@ -1423,10 +1424,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  bool follow,  bool success,  String targetName)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  bool follow,  bool success,  String targetName,  String targetUserId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _FollowOutcome() when $default != null:
-return $default(_that.id,_that.follow,_that.success,_that.targetName);case _:
+return $default(_that.id,_that.follow,_that.success,_that.targetName,_that.targetUserId);case _:
   return orElse();
 
 }
@@ -1444,10 +1445,10 @@ return $default(_that.id,_that.follow,_that.success,_that.targetName);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  bool follow,  bool success,  String targetName)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  bool follow,  bool success,  String targetName,  String targetUserId)  $default,) {final _that = this;
 switch (_that) {
 case _FollowOutcome():
-return $default(_that.id,_that.follow,_that.success,_that.targetName);case _:
+return $default(_that.id,_that.follow,_that.success,_that.targetName,_that.targetUserId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1464,10 +1465,10 @@ return $default(_that.id,_that.follow,_that.success,_that.targetName);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  bool follow,  bool success,  String targetName)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  bool follow,  bool success,  String targetName,  String targetUserId)?  $default,) {final _that = this;
 switch (_that) {
 case _FollowOutcome() when $default != null:
-return $default(_that.id,_that.follow,_that.success,_that.targetName);case _:
+return $default(_that.id,_that.follow,_that.success,_that.targetName,_that.targetUserId);case _:
   return null;
 
 }
@@ -1479,13 +1480,14 @@ return $default(_that.id,_that.follow,_that.success,_that.targetName);case _:
 
 
 class _FollowOutcome implements FollowOutcome {
-  const _FollowOutcome({required this.id, required this.follow, required this.success, this.targetName = ''});
+  const _FollowOutcome({required this.id, required this.follow, required this.success, this.targetName = '', this.targetUserId = ''});
   
 
 @override final  int id;
 @override final  bool follow;
 @override final  bool success;
 @override@JsonKey() final  String targetName;
+@override@JsonKey() final  String targetUserId;
 
 /// Create a copy of FollowOutcome
 /// with the given fields replaced by the non-null parameter values.
@@ -1497,16 +1499,16 @@ _$FollowOutcomeCopyWith<_FollowOutcome> get copyWith => __$FollowOutcomeCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FollowOutcome&&(identical(other.id, id) || other.id == id)&&(identical(other.follow, follow) || other.follow == follow)&&(identical(other.success, success) || other.success == success)&&(identical(other.targetName, targetName) || other.targetName == targetName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FollowOutcome&&(identical(other.id, id) || other.id == id)&&(identical(other.follow, follow) || other.follow == follow)&&(identical(other.success, success) || other.success == success)&&(identical(other.targetName, targetName) || other.targetName == targetName)&&(identical(other.targetUserId, targetUserId) || other.targetUserId == targetUserId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,follow,success,targetName);
+int get hashCode => Object.hash(runtimeType,id,follow,success,targetName,targetUserId);
 
 @override
 String toString() {
-  return 'FollowOutcome(id: $id, follow: $follow, success: $success, targetName: $targetName)';
+  return 'FollowOutcome(id: $id, follow: $follow, success: $success, targetName: $targetName, targetUserId: $targetUserId)';
 }
 
 
@@ -1517,7 +1519,7 @@ abstract mixin class _$FollowOutcomeCopyWith<$Res> implements $FollowOutcomeCopy
   factory _$FollowOutcomeCopyWith(_FollowOutcome value, $Res Function(_FollowOutcome) _then) = __$FollowOutcomeCopyWithImpl;
 @override @useResult
 $Res call({
- int id, bool follow, bool success, String targetName
+ int id, bool follow, bool success, String targetName, String targetUserId
 });
 
 
@@ -1534,12 +1536,13 @@ class __$FollowOutcomeCopyWithImpl<$Res>
 
 /// Create a copy of FollowOutcome
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? follow = null,Object? success = null,Object? targetName = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? follow = null,Object? success = null,Object? targetName = null,Object? targetUserId = null,}) {
   return _then(_FollowOutcome(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,follow: null == follow ? _self.follow : follow // ignore: cast_nullable_to_non_nullable
 as bool,success: null == success ? _self.success : success // ignore: cast_nullable_to_non_nullable
 as bool,targetName: null == targetName ? _self.targetName : targetName // ignore: cast_nullable_to_non_nullable
+as String,targetUserId: null == targetUserId ? _self.targetUserId : targetUserId // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }

@@ -72,6 +72,8 @@ class ReleaseWorkflowsTest(fixture.ReleaseFixture, unittest.TestCase):
                     '--dart-define=PEXELS_API_KEY=' + value, '--dart-define=SENTRY_RELEASE=' + value]
                 if platform == 'android':
                     expected.append('--dart-define=SENTRY_ENABLED=true')
+                if 'ADMOB_IOS_REWARDED_AD_UNIT_ID' in self.values:
+                    expected.append('--dart-define=ADMOB_IOS_REWARDED_AD_UNIT_ID=' + fixture.IOS_ADMOB_UNIT)
                 self.assertEqual(argv, expected)
                 self.assertEqual(result.stdout + result.stderr, '')
                 self.assertFalse((self.work / 'OWNED').exists())

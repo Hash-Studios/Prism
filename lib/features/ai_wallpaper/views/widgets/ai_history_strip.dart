@@ -81,7 +81,7 @@ class AiHistoryStrip extends StatelessWidget {
           addAutomaticKeepAlives: false,
           itemCount: history.length,
           separatorBuilder: (_, _) => const SizedBox(width: PrismSpace.xs),
-          itemBuilder: (_, int index) => _Thumb(
+          itemBuilder: (_, int index) => AiGenerationThumb(
             record: history[index],
             selected: history[index].id == selectedId,
             isPremium: isPremium,
@@ -104,24 +104,41 @@ class AiHistoryStrip extends StatelessWidget {
   }
 }
 
-class _Thumb extends StatelessWidget {
-  const _Thumb({required this.record, required this.selected, required this.isPremium, required this.onTap});
+/// One past generation as a tappable thumbnail. The Recent row and the session strip both use it.
+class AiGenerationThumb extends StatelessWidget {
+  const AiGenerationThumb({
+    super.key,
+    required this.record,
+    required this.selected,
+    required this.isPremium,
+    required this.onTap,
+    this.width = AiHistoryStrip._thumbWidth,
+    this.height = AiHistoryStrip._thumbHeight,
+    this.semanticLabel,
+  });
 
   final AiGenerationRecord record;
   final bool selected;
   final bool isPremium;
   final VoidCallback onTap;
+  final double width;
+  final double height;
+
+  /// Replaces the default label, which names the day it was made.
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
     final BorderRadius radius = BorderRadius.circular(PrismRadius.xs);
-    final String date = DateFormat.MMMd(l10n.localeName).format(record.createdAt.toLocal());
+    final String label =
+        semanticLabel ??
+        l10n.economyAiGenerationFrom(DateFormat.MMMd(l10n.localeName).format(record.createdAt.toLocal()));
     return Semantics(
       button: true,
       selected: selected,
-      label: l10n.economyAiGenerationFrom(date),
+      label: label,
       excludeSemantics: true,
       onTap: onTap,
       child: PressScale(
@@ -131,8 +148,8 @@ class _Thumb extends StatelessWidget {
           child: AnimatedContainer(
             duration: context.motion(PrismDurations.fast),
             curve: PrismCurves.enter,
-            width: AiHistoryStrip._thumbWidth,
-            height: AiHistoryStrip._thumbHeight,
+            width: width,
+            height: height,
             foregroundDecoration: BoxDecoration(
               borderRadius: radius,
               border: Border.all(
@@ -144,8 +161,8 @@ class _Thumb extends StatelessWidget {
               borderRadius: radius,
               child: AiDecodedImage(
                 url: record.displayUrl(isPremium: isPremium),
-                logicalWidth: AiHistoryStrip._thumbWidth,
-                logicalHeight: AiHistoryStrip._thumbHeight,
+                logicalWidth: width,
+                logicalHeight: height,
                 filterQuality: FilterQuality.low,
               ),
             ),

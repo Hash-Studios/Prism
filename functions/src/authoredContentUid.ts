@@ -15,17 +15,18 @@ export function isActiveContentOwner(
  * Legacy creators whose usersv2 doc predates Firebase Auth. An admin maps them in
  * legacyCreatorUids/{lowercase email} = {uid}. No client rule matches that collection, so only the Admin SDK reads it.
  */
-async function legacyCreatorUid(email: string): Promise<string | null> {
-  const uid = (await db.collection("legacyCreatorUids").doc(email.toLowerCase()).get()).data()?.uid;
+async function legacyCreatorUid(email: string, tx?: admin.firestore.Transaction): Promise<string | null> {
+  const ref = db.collection("legacyCreatorUids").doc(email.toLowerCase());
+  const uid = (tx ? await tx.get(ref) : await ref.get()).data()?.uid;
   return typeof uid === "string" && uid ? uid : null;
 }
 
 /** Auth-verified UID for an email, or null. Never use usersv2.email for ownership. */
-export async function verifiedUidForEmail(email: string): Promise<string | null> {
+export async function verifiedUidForEmail(email: string, tx?: admin.firestore.Transaction): Promise<string | null> {
   // Prism Studio posts as a Firestore-only account; it has no Auth user to look up.
   if (email.toLowerCase() === STUDIO_ACCOUNT.email) return STUDIO_ACCOUNT.id;
   // An admin mapping wins over Auth, so a later account with the same email cannot take or clear the walls.
-  const legacy = await legacyCreatorUid(email);
+  const legacy = await legacyCreatorUid(email, tx);
   if (legacy) return legacy;
   try {
     const identity = await admin.auth().getUserByEmail(email);

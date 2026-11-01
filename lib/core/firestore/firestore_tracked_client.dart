@@ -89,7 +89,7 @@ class _FirestoreBatchBridge implements FirestoreBatch {
   }
 }
 
-class FirestoreTrackedClient implements FirestoreClient {
+class FirestoreTrackedClient implements FirestoreClient, FirestoreQueryCacheInvalidator {
   FirestoreTrackedClient(FirebaseFirestore firestore, this._telemetry)
     : _firestoreFactory = (() => firestore),
       _waitUntilReady = null,
@@ -142,6 +142,16 @@ class FirestoreTrackedClient implements FirestoreClient {
   final FirestoreTelemetrySink _telemetry;
   final Map<String, Future<_QueryCacheEntry>> _inflightQueries = <String, Future<_QueryCacheEntry>>{};
   final Map<String, _QueryCacheEntry> _queryCache = <String, _QueryCacheEntry>{};
+  int _queryCacheGeneration = 0;
+
+  @override
+  void clearQueryCache() {
+    _queryCacheGeneration++;
+    _queryCache.clear();
+    _cursorDocCache.clear();
+    _inflightQueries.clear();
+  }
+
   final Map<String, DocumentSnapshot<Map<String, dynamic>>> _cursorDocCache =
       <String, DocumentSnapshot<Map<String, dynamic>>>{};
 
@@ -350,6 +360,7 @@ class FirestoreTrackedClient implements FirestoreClient {
   }
 
   Future<_QueryCacheEntry> _executeNetworkQuery(FirestoreQuerySpec spec) {
+    final int cacheGeneration = _queryCacheGeneration;
     return _tracked<_QueryCacheEntry>(
       sourceTag: spec.sourceTag,
       operation: FirestoreOperation.queryGet,
@@ -365,13 +376,13 @@ class FirestoreTrackedClient implements FirestoreClient {
             ? await query.get(const GetOptions(source: Source.server))
             : await query.get();
         for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in result.docs) {
-          _cacheCursorDoc(doc, spec.collection);
+          if (cacheGeneration == _queryCacheGeneration) _cacheCursorDoc(doc, spec.collection);
         }
         final _QueryCacheEntry cached = _QueryCacheEntry(
           result.docs.map((doc) => _RawQueryDoc(doc.id, Map<String, dynamic>.from(doc.data()))).toList(growable: false),
           DateTime.now(),
         );
-        if (_canUseCache(spec)) {
+        if (_canUseCache(spec) && cacheGeneration == _queryCacheGeneration) {
           _saveQueryCache(_queryKey(spec), cached);
         }
         return cached;

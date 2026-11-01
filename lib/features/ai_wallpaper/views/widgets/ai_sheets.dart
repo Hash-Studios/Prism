@@ -43,9 +43,11 @@ Future<AiSubmissionMetadata?> showAiSubmitSheet(
           onPressed: () => Navigator.of(sheetContext).pop(),
         ),
       ],
-      child: record == null
-          ? null
-          : Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          if (record != null)
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 SizedBox(
@@ -86,6 +88,14 @@ Future<AiSubmissionMetadata?> showAiSubmitSheet(
                 ),
               ],
             ),
+          if (record?.challengeId != null) ...[
+            const SizedBox(height: PrismSpace.md),
+            Text(l10n.challengeContext(record!.challengeTheme ?? '')),
+          ],
+          const SizedBox(height: PrismSpace.md),
+          Text(l10n.economyAiSubmitPromptNotice, style: PrismTextStyles.caption(sheetContext)),
+        ],
+      ),
     ),
   );
 }
@@ -156,4 +166,38 @@ Future<void> showAiRefineSheet(
       ),
     ),
   );
+}
+
+/// Asks before the first follow-up chip spends coins, and again only when the price goes up. True means go ahead.
+Future<bool> showAiFollowUpConfirmSheet(BuildContext context, {required int cost}) async {
+  final AppLocalizations l10n = AppLocalizations.of(context);
+  final bool? confirmed = await showPrismSheet<bool>(
+    context,
+    builder: (sheetContext) => PrismSheetBody(
+      title: l10n.aiFollowUpConfirmTitle,
+      message: l10n.aiFollowUpConfirmBody(cost),
+      actions: <Widget>[
+        PrismButton(
+          label: l10n.aiFollowUpConfirmAction,
+          expand: true,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const PrismCoinIcon(size: 18),
+              const SizedBox(width: PrismSpace.xxs),
+              Text(formatLocalizedNumber(cost, l10n)),
+            ],
+          ),
+          onPressed: () => Navigator.of(sheetContext).pop(true),
+        ),
+        PrismButton(
+          label: l10n.economyCancel,
+          variant: PrismButtonVariant.ghost,
+          expand: true,
+          onPressed: () => Navigator.of(sheetContext).pop(false),
+        ),
+      ],
+    ),
+  );
+  return confirmed ?? false;
 }

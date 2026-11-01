@@ -4,6 +4,7 @@
 /// `deep_link_catalog_resolver.dart`. A successful match always names a concrete route family; there is no wildcard
 /// that turns arbitrary paths into navigation.
 enum DeepLinkPageTarget {
+  creatorStats,
   splash,
   onboarding,
   dashboard,
@@ -30,6 +31,8 @@ enum DeepLinkPageTarget {
   mood,
   gallery,
   wallRequests,
+  creators,
+  weeklyChallenge,
   uploadInput,
   editWallInput,
   review,
@@ -42,6 +45,7 @@ enum DeepLinkPageTarget {
   adminReview,
   swipeReview,
   adminTelemetry,
+  adminPromoCodes,
   debugPanel,
   quickTileSettings,
   autoRotate,
@@ -53,9 +57,11 @@ enum DeepLinkPageTarget {
   wallpaperPositionInput,
   liveWallpaperInput,
   rewards,
+  redeemCode,
   coinHistory,
   shop,
   drops,
+  dailyMoment,
   dailyChest,
   spinWheel,
   premium,
@@ -94,6 +100,7 @@ final class DeepLinkRouteCatalog {
   DeepLinkRouteMatch? resolve(Uri uri) => match(uri);
 
   static const List<DeepLinkRouteExample> examples = <DeepLinkRouteExample>[
+    DeepLinkRouteExample('/creator-stats', DeepLinkPageTarget.creatorStats),
     DeepLinkRouteExample('/', DeepLinkPageTarget.splash),
     DeepLinkRouteExample('/onboarding/v2', DeepLinkPageTarget.onboarding),
     DeepLinkRouteExample('/dashboard', DeepLinkPageTarget.dashboard),
@@ -133,6 +140,8 @@ final class DeepLinkRouteCatalog {
     DeepLinkRouteExample('/mood/dreamy', DeepLinkPageTarget.mood),
     DeepLinkRouteExample('/gallery?ids=a1,b2', DeepLinkPageTarget.gallery),
     DeepLinkRouteExample('/requests?tab=filled', DeepLinkPageTarget.wallRequests),
+    DeepLinkRouteExample('/creators', DeepLinkPageTarget.creators),
+    DeepLinkRouteExample('/challenges/2026-10-26', DeepLinkPageTarget.weeklyChallenge),
     DeepLinkRouteExample('/upload-wall', DeepLinkPageTarget.uploadInput),
     DeepLinkRouteExample('/edit-wall', DeepLinkPageTarget.editWallInput),
     DeepLinkRouteExample('/review', DeepLinkPageTarget.review),
@@ -149,6 +158,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkRouteExample('/admin-review', DeepLinkPageTarget.adminReview),
     DeepLinkRouteExample('/admin-review/swipe', DeepLinkPageTarget.swipeReview),
     DeepLinkRouteExample('/admin-firestore-telemetry', DeepLinkPageTarget.adminTelemetry),
+    DeepLinkRouteExample('/admin-promo-codes', DeepLinkPageTarget.adminPromoCodes),
     DeepLinkRouteExample('/debug-panel', DeepLinkPageTarget.debugPanel),
     DeepLinkRouteExample('/quick-tile-settings', DeepLinkPageTarget.quickTileSettings),
     DeepLinkRouteExample('/auto-rotate', DeepLinkPageTarget.autoRotate),
@@ -185,11 +195,13 @@ final class DeepLinkRouteCatalog {
     ),
     DeepLinkRouteExample('/wallpaper/wall1/live', DeepLinkPageTarget.liveWallpaperInput),
     DeepLinkRouteExample('/rewards', DeepLinkPageTarget.rewards),
+    DeepLinkRouteExample('/redeem?code=ABCDEFGH23', DeepLinkPageTarget.redeemCode),
     DeepLinkRouteExample('/coin-history', DeepLinkPageTarget.coinHistory),
     DeepLinkRouteExample('/shop', DeepLinkPageTarget.shop),
     DeepLinkRouteExample('/drops', DeepLinkPageTarget.drops),
     DeepLinkRouteExample('/drops/week-2026-10-19', DeepLinkPageTarget.dropDetail),
     DeepLinkRouteExample('/drops/week-2026-10-19/preview/wall1', DeepLinkPageTarget.dropPreview),
+    DeepLinkRouteExample('/daily-moment', DeepLinkPageTarget.dailyMoment),
     DeepLinkRouteExample('/daily-chest', DeepLinkPageTarget.dailyChest),
     DeepLinkRouteExample('/spin-wheel', DeepLinkPageTarget.spinWheel),
     DeepLinkRouteExample('/premium', DeepLinkPageTarget.premium),
@@ -216,6 +228,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkPageTarget.clockPreview: <String>{'wallpaperId', 'source', 'provider'},
     DeepLinkPageTarget.adminImage: <String>{'wallpaperId', 'source', 'provider'},
     DeepLinkPageTarget.debugPanel: <String>{'tab'},
+    DeepLinkPageTarget.redeemCode: <String>{'code'},
   };
 
   /// Returns null unless the URL matches a catalog route exactly and carries only supported scalar parameters.
@@ -255,6 +268,17 @@ final class DeepLinkRouteCatalog {
     } else if (segments.length == 2 && segments[0].toLowerCase() == 'user') {
       target = DeepLinkPageTarget.profile;
       pathParams['identifier'] = segments[1];
+    } else if (segments.length == 2 && segments[0].toLowerCase() == 'challenges') {
+      final String id = segments[1];
+      final DateTime? date = DateTime.tryParse(id);
+      if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(id) ||
+          date == null ||
+          date.weekday != DateTime.monday ||
+          date.toIso8601String().substring(0, 10) != id) {
+        return null;
+      }
+      target = DeepLinkPageTarget.weeklyChallenge;
+      pathParams['challengeId'] = id;
     } else if (segments.length == 2 && segments[0].toLowerCase() == 'drops') {
       target = DeepLinkPageTarget.dropDetail;
       pathParams['weekKey'] = segments[1];
@@ -427,6 +451,7 @@ final class DeepLinkRouteCatalog {
         const <String>{
           'user',
           'drops',
+          'challenges',
           'collection',
           'category',
           'wallpaper',
@@ -450,8 +475,10 @@ final class DeepLinkRouteCatalog {
   }
 
   static const Map<String, DeepLinkPageTarget> _staticTargets = <String, DeepLinkPageTarget>{
+    '/creator-stats': DeepLinkPageTarget.creatorStats,
     '/gallery': DeepLinkPageTarget.gallery,
     '/requests': DeepLinkPageTarget.wallRequests,
+    '/creators': DeepLinkPageTarget.creators,
     '/onboarding/v2': DeepLinkPageTarget.onboarding,
     '/dashboard': DeepLinkPageTarget.dashboard,
     '/dashboard/home': DeepLinkPageTarget.home,
@@ -487,6 +514,7 @@ final class DeepLinkRouteCatalog {
     '/admin-review': DeepLinkPageTarget.adminReview,
     '/admin-review/swipe': DeepLinkPageTarget.swipeReview,
     '/admin-firestore-telemetry': DeepLinkPageTarget.adminTelemetry,
+    '/admin-promo-codes': DeepLinkPageTarget.adminPromoCodes,
     '/debug-panel': DeepLinkPageTarget.debugPanel,
     '/quick-tile-settings': DeepLinkPageTarget.quickTileSettings,
     '/auto-rotate': DeepLinkPageTarget.autoRotate,
@@ -498,9 +526,11 @@ final class DeepLinkRouteCatalog {
     '/wallpaper-position': DeepLinkPageTarget.wallpaperPositionInput,
     '/live-wallpaper': DeepLinkPageTarget.liveWallpaperInput,
     '/rewards': DeepLinkPageTarget.rewards,
+    '/redeem': DeepLinkPageTarget.redeemCode,
     '/coin-history': DeepLinkPageTarget.coinHistory,
     '/shop': DeepLinkPageTarget.shop,
     '/drops': DeepLinkPageTarget.drops,
+    '/daily-moment': DeepLinkPageTarget.dailyMoment,
     '/daily-chest': DeepLinkPageTarget.dailyChest,
     '/spin-wheel': DeepLinkPageTarget.spinWheel,
     '/premium': DeepLinkPageTarget.premium,

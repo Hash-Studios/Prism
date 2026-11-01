@@ -28,6 +28,7 @@ Future<void> shareFolder(
       name: folder.name,
       description: description,
       shareImage: folder.shareImage,
+      coverImage: folder.covers.isEmpty ? '' : folder.covers.first,
     ).timeout(const Duration(seconds: 6));
   } catch (error, stackTrace) {
     logger.w('Folder short link unavailable; sharing the canonical URL.', error: error, stackTrace: stackTrace);

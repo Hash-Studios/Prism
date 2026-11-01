@@ -18,7 +18,11 @@ class RewardedAdResult {
 
 /// Loads an ad if needed and shows it. The result says whether the user earned the reward, and why not when no ad
 /// played.
-Future<RewardedAdResult> watchRewardedAdResult(AdsBloc bloc) async {
+Future<RewardedAdResult> watchRewardedAdResult(AdsBloc bloc) => _watchRewardedAdResult(
+  bloc,
+).timeout(rewardedAdWatchTimeout, onTimeout: () => const RewardedAdResult.notEarned(AdFailureReason.timeout));
+
+Future<RewardedAdResult> _watchRewardedAdResult(AdsBloc bloc) async {
   if (_activeWatches[bloc] == true) return const RewardedAdResult.notEarned();
   _activeWatches[bloc] = true;
   try {
@@ -28,15 +32,13 @@ Future<RewardedAdResult> watchRewardedAdResult(AdsBloc bloc) async {
     }
     bool watchRequested = false;
     try {
-      final Future<AdsState> completion = bloc.stream
-          .firstWhere(
-            (state) =>
-                state.shouldUnlockDownload ||
-                state.actionStatus == ActionStatus.success ||
-                state.actionStatus == ActionStatus.failure ||
-                state.ads.adFailed,
-          )
-          .timeout(rewardedAdWatchTimeout);
+      final Future<AdsState> completion = bloc.stream.firstWhere(
+        (state) =>
+            state.shouldUnlockDownload ||
+            state.actionStatus == ActionStatus.success ||
+            state.actionStatus == ActionStatus.failure ||
+            state.ads.adFailed,
+      );
       bloc.add(const AdsEvent.watchAdRequested());
       watchRequested = true;
       return (await completion).shouldUnlockDownload
@@ -66,14 +68,8 @@ Future<RewardedAdResult> watchRewardedAdResult(AdsBloc bloc) async {
 }
 
 Future<(bool, AdFailureReason?)> _ensureRewardedAdReady(AdsBloc bloc) async {
-  if (bloc.state.ads.adLoaded) {
-    return (true, null);
-  }
-  if (!bloc.state.ads.loadingAd) {
-    bloc.add(const AdsEvent.started());
-  }
   try {
-    final AdsState ready = await bloc.stream
+    final readyFuture = bloc.stream
         .firstWhere(
           (state) =>
               state.actionStatus != ActionStatus.inProgress &&
@@ -83,6 +79,8 @@ Future<(bool, AdFailureReason?)> _ensureRewardedAdReady(AdsBloc bloc) async {
                   state.ads.adFailed),
         )
         .timeout(rewardedAdLoadTimeout);
+    bloc.add(const AdsEvent.started());
+    final AdsState ready = await readyFuture;
     if (ready.ads.adLoaded) return (true, null);
     return (
       false,

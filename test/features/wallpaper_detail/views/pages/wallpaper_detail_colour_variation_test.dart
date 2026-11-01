@@ -1,10 +1,13 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -50,7 +53,7 @@ class _MockRecordViews extends Mock implements RecordPrismWallpaperViewsUsecase 
 
 class _MockPaletteRepository extends Mock implements PaletteRepository {}
 
-class _MockSetCount extends Mock implements GetWallpaperSetCountUseCase {}
+class _MockSetCount extends Mock implements GetWallpaperCountsUseCase {}
 
 const double _screenWidth = 390;
 const double _screenHeight = 844;
@@ -190,7 +193,7 @@ void main() {
       final palette = _MockPaletteRepository();
       final views = _MockRecordViews();
       final setCount = _MockSetCount();
-      when(() => setCount(any())).thenAnswer((_) async => Result.success<int?>(null));
+      when(() => setCount(any())).thenAnswer((_) async => Result.success<WallpaperCounts?>(null));
       when(() => views(any())).thenAnswer((_) async => Result.success('7'));
       when(() => palette.generatePalette(any())).thenAnswer((_) async => paletteResult);
       analytics = FakeAppAnalytics();
@@ -268,6 +271,10 @@ void main() {
         analytics.events.whereType<SurfaceActionTappedEvent>().map((event) => event.action).toList();
 
     testWidgets('a selected tint is reset to the original from the shared hold menu', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'colour-variation-user'
+        ..loggedIn = true;
+      addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
       final WallpaperDetailBloc bloc = await pumpWithRealBloc(tester, twoColours);
       expect(tintOnWallpaper(tester), isNull);
 
@@ -353,6 +360,10 @@ void main() {
     });
 
     testWidgets('a long press on a swatch copies its hex colour', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'colour-variation-user'
+        ..loggedIn = true;
+      addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
       await pumpDetail(tester, loaded(colors: const <Color>[Colors.teal], accent: Colors.teal));
       await showPalette(tester);
 

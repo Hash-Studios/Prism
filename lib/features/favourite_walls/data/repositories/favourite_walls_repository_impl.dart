@@ -158,24 +158,16 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
     required FavouriteWallEntity wall,
     required bool currentlyFavourited,
   }) async {
+    if (userId.isEmpty) return Result.error(const ValidationFailure('Sign in to change favourites.'));
     final bool add = !currentlyFavourited;
     final FavouriteWallEntity savedWall = add ? wall.withPinnedAt(null) : wall;
     try {
       if (_isBundledStarter(wall)) {
-        if (userId.isEmpty) {
-          if (add) {
-            await _guestStore.put(wall.id, favouriteWallToDoc(savedWall));
-          } else {
-            await _guestStore.remove(<String>[wall.id]);
-          }
-        }
         await _favoritesLocal.setWallFavourite(userId, wall.id, add);
-        if (userId.isNotEmpty) {
-          await _favoritesLocal.updateWallSnapshot(
-            userId,
-            (current) => <FavouriteWallEntity>[...current.where((item) => item.id != wall.id), if (add) savedWall],
-          );
-        }
+        await _favoritesLocal.updateWallSnapshot(
+          userId,
+          (current) => <FavouriteWallEntity>[...current.where((item) => item.id != wall.id), if (add) savedWall],
+        );
         return Result.success(add);
       }
       final Map<String, Object?> operation = await _favoritesLocal.createFavouriteOperation(
@@ -185,16 +177,6 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
         wall: Map<String, Object?>.from(favouriteWallToDoc(savedWall)),
       );
       final String operationId = operation['operationId']! as String;
-      if (userId.isEmpty) {
-        if (add) {
-          await _guestStore.put(wall.id, favouriteWallToDoc(savedWall));
-        } else {
-          await _guestStore.remove(<String>[wall.id]);
-        }
-        await _favoritesLocal.setWallFavourite(userId, wall.id, add);
-        await _favoritesLocal.updateFavouriteOperationStatus(userId, wall.id, operationId, status: 'synced');
-        return Result.success(add);
-      }
       await _favoritesLocal.setWallFavourite(userId, wall.id, add);
       if (add) {
         await _favoritesLocal.updateWallSnapshot(
@@ -270,18 +252,8 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
     required FavouriteWallEntity wall,
     DateTime? pinnedAt,
   }) async {
+    if (userId.isEmpty) return Result.error(const ValidationFailure('Sign in to change favourites.'));
     try {
-      if (userId.isEmpty) {
-        // Only the pin changes. The wall in the list can carry hydrated links that differ from the stored doc.
-        final Map<String, Object?>? stored = (await _guestStore.readAll())[wall.id];
-        if (stored == null) throw const ServerFailure('Cannot pin a wall that is not a favourite.');
-        await _guestStore.put(wall.id, <String, dynamic>{
-          for (final MapEntry<String, Object?> entry in stored.entries)
-            if (entry.key != 'pinnedAt') entry.key: entry.value,
-          if (pinnedAt != null) 'pinnedAt': pinnedAt,
-        });
-        return Result.success(null);
-      }
       // A bundled starter wall lives only on this device.
       if (_isBundledStarter(wall)) {
         await _favoritesLocal.updateWallSnapshot(
@@ -377,15 +349,9 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
 
   @override
   Future<Result<bool>> clearAll({required String userId, required List<String> wallIds}) async {
+    if (userId.isEmpty) return Result.error(const ValidationFailure('Sign in to change favourites.'));
     try {
       final List<String> ids = wallIds.map((id) => id.trim()).where((id) => id.isNotEmpty).toSet().toList();
-      if (userId.isEmpty) {
-        await _guestStore.remove(ids);
-        for (final String id in ids) {
-          await _favoritesLocal.setWallFavourite(userId, id, false);
-        }
-        return Result.success(true);
-      }
       for (int start = 0; start < ids.length; start += _maxBatchDeletes) {
         final List<String> chunk = ids.sublist(start, math.min(start + _maxBatchDeletes, ids.length));
         final Map<String, String> operationIds = <String, String>{};

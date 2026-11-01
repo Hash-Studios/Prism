@@ -49,6 +49,10 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
     ({String ownerId, int localGeneration, int tombstoneGeneration}) session,
   ) async {
     if (!_isCurrent(session)) return _sessionChanged();
+    if (!await pruneBlockedNotificationsCache(notificationsLocal: _notificationsLocal)) {
+      return Result.error(const ServerFailure('Unable to read notifications: blocked accounts did not load'));
+    }
+    if (!_isCurrent(session)) return _sessionChanged();
     return _successIfCurrent(session, await _readAll(session));
   }
 
@@ -56,10 +60,9 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   Future<Result<List<InAppNotificationEntity>>> fetchNotifications({required bool syncRemote}) async {
     final session = _captureSession();
     try {
-      if (syncRemote) {
-        await syncInAppNotificationsFromRemote(force: true);
-      } else {
-        await pruneBlockedNotificationsCache(waitForInitialLoad: true, notificationsLocal: _notificationsLocal);
+      if (syncRemote) await syncInAppNotificationsFromRemote(force: true);
+      if (!await pruneBlockedNotificationsCache(notificationsLocal: _notificationsLocal)) {
+        return Result.error(const ServerFailure('Unable to fetch notifications: blocked accounts did not load'));
       }
       return _successIfCurrent(session, await _readAll(session));
     } catch (error) {

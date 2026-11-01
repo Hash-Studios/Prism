@@ -145,7 +145,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('Unlock for 24 hours (-${CoinPolicy.premiumPreview24h})'), findsOneWidget);
-      expect(find.textContaining('Watch a video'), offersVideo ? findsOneWidget : findsNothing);
+      expect(find.textContaining('Watch ad for'), offersVideo ? findsOneWidget : findsNothing);
     });
   }
 

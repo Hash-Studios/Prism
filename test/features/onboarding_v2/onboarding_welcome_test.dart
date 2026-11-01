@@ -81,7 +81,7 @@ void main() {
     expect(find.text('Your screen, reimagined.'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
     expect(find.text('Continue with Apple'), findsNothing);
-    expect(find.text('Browse without an account'), findsOneWidget);
+    expect(find.text('Browse without an account'), findsNothing);
     expect(
       tester.getSemantics(find.byType(OnboardingTermsRow)).label,
       'By continuing you agree to the Terms and Privacy policy',
@@ -133,20 +133,16 @@ void main() {
     }
   });
 
-  testWidgets('Android allows guest browsing behind the terms gate', (tester) async {
+  testWidgets('Android never offers guest browsing, with or without accepted terms', (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     try {
       await pumpWelcome(tester, accepted: false);
       expect(find.text('Continue with Apple'), findsNothing);
-      expect(find.text('Browse without an account'), findsOneWidget);
-      await tester.tap(find.text('Browse without an account'));
-      await tester.pump();
+      expect(find.text('Browse without an account'), findsNothing);
       expect(browse, 0);
-      expect(find.text('Please agree to the Terms and Privacy policy first.'), findsOneWidget);
-      await tester.pump(const Duration(seconds: 8));
       await pumpWelcome(tester, accepted: true);
-      await tester.tap(find.text('Browse without an account'));
-      expect(browse, 1);
+      expect(find.text('Browse without an account'), findsNothing);
+      expect(browse, 0);
     } finally {
       debugDefaultTargetPlatformOverride = null;
     }

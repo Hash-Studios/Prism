@@ -7,8 +7,14 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/coin_pill.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/ads/data/ad_experiment_config.dart';
+import 'package:Prism/features/ads/views/widgets/experimental_inline_ad.dart';
 import 'package:Prism/features/badges/views/widgets/rewards_badges_section.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
+import 'package:Prism/features/daily_flow/views/daily_moment_today_card.dart';
 import 'package:Prism/features/drops/drops.dart';
+import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
+import 'package:Prism/features/promo_codes/views/redeem_code_sheet.dart';
 import 'package:Prism/features/quests/quests.dart';
 import 'package:Prism/features/rewards/views/widgets/balance_card.dart';
 import 'package:Prism/features/rewards/views/widgets/creator_progress_card.dart';
@@ -18,6 +24,7 @@ import 'package:Prism/features/rewards/views/widgets/rewards_activity_section.da
 import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_hero.dart';
+import 'package:Prism/features/rewards/views/widgets/streak_details.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_links_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_spend_section.dart';
 import 'package:Prism/features/spin_wheel/spin_wheel.dart';
@@ -28,9 +35,12 @@ import 'package:flutter/material.dart';
 /// Streak, freezes and coins in one page. It is the Rewards tab, and a pushed route with a back button.
 @RoutePage()
 class RewardsPage extends StatefulWidget {
-  const RewardsPage({super.key, this.showBack = true, this.scrollToEarn = false});
+  const RewardsPage({super.key, this.showBack = true, this.scrollToEarn = false, this.redeemCode});
 
   final bool showBack;
+
+  /// From a `/redeem?code=` link. Opens the redeem sheet with this code filled in; it never redeems by itself.
+  final String? redeemCode;
 
   /// Scrolls to "Earn coins" once the page is laid out.
   final bool scrollToEarn;
@@ -45,6 +55,8 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
 
   final ScrollController _scroll = ScrollController();
   bool? _tabWasActive;
+  bool _redeemSheetOpened = false;
+  bool _redeemSheetActive = false;
 
   @override
   void initState() {
@@ -57,6 +69,33 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
     });
     if (widget.scrollToEarn) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollTo(_earnKey));
+    }
+    if (widget.redeemCode != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _openRedeemLink());
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant RewardsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.redeemCode != null && widget.redeemCode != oldWidget.redeemCode) {
+      _redeemSheetOpened = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _openRedeemLink());
+    }
+  }
+
+  Future<void> _openRedeemLink() async {
+    if (!mounted || _redeemSheetOpened || _redeemSheetActive) return;
+    final String? code = widget.redeemCode;
+    _redeemSheetOpened = true;
+    _redeemSheetActive = true;
+    try {
+      await showRedeemCodeSheet(context, source: RedeemSheetSource.link, initialCode: code);
+    } finally {
+      _redeemSheetActive = false;
+      if (mounted && widget.redeemCode != null && widget.redeemCode != code) {
+        unawaited(_openRedeemLink());
+      }
     }
   }
 
@@ -125,10 +164,11 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
       showBack: widget.showBack,
       onBack: _back,
       actions: <Widget>[
-        ValueListenableBuilder<int>(
-          valueListenable: CoinsService.instance.balanceNotifier,
-          builder: (context, balance, _) => CoinBalancePill(balance: balance),
-        ),
+        if (!DailyMomentConfig.enabled)
+          ValueListenableBuilder<int>(
+            valueListenable: CoinsService.instance.balanceNotifier,
+            builder: (context, balance, _) => CoinBalancePill(balance: balance),
+          ),
         const SizedBox(width: PrismSpace.xs),
       ],
       body: CustomScrollView(
@@ -138,31 +178,90 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
             padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, bottom),
             sliver: SliverList.list(
               children: <Widget>[
-                const RewardsHero(),
-                gap,
-                const DropCard(),
-                RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
-                gap,
-                const CreatorProgressCard(),
-                gap,
-                TodayCard(onOpenSpin: () => unawaited(showSpinWheel(context))),
-                gap,
-                const SpinWheelCard(),
-                gap,
-                FreezeCard(onEarnCoins: () => _scrollTo(_earnKey)),
-                gap,
-                BalanceCard(onSeeUses: () => _scrollTo(_spendKey)),
-                KeyedSubtree(key: _earnKey, child: const RewardsEarnSection()),
-                KeyedSubtree(
-                  key: _spendKey,
-                  child: RewardsSpendSection(
-                    onStreakFreeze: () => buyStreakFreezeFlow(context, onEarnCoins: () => _scrollTo(_earnKey)),
+                if (DailyMomentConfig.enabled) ...<Widget>[
+                  const DailyMomentTodayCard(),
+                  KeyedSubtree(key: _earnKey, child: const RewardsEarnSection()),
+                  LayoutBuilder(
+                    builder: (context, constraints) => ExperimentalInlineAd(
+                      format: AdExperimentFormat.banner,
+                      active: widget.showBack || (_tabWasActive ?? false),
+                      availableWidth: constraints.maxWidth,
+                    ),
                   ),
-                ),
-                const RewardsLinksSection(),
-                const RewardsBadgesSection(),
-                const RewardsCollectionSection(),
-                const RewardsActivitySection(),
+                  KeyedSubtree(
+                    key: _spendKey,
+                    child: RewardsSpendSection(
+                      onStreakFreeze: () => buyStreakFreezeFlow(context, onEarnCoins: () => _scrollTo(_earnKey)),
+                    ),
+                  ),
+                  const SizedBox(height: PrismSpace.lg),
+                  ExpansionTile(
+                    key: const ValueKey<String>('rewards-more'),
+                    tilePadding: EdgeInsets.zero,
+                    title: Text(context.l10n.dailyMomentMore, style: PrismTextStyles.sectionTitle(context)),
+                    children: <Widget>[
+                      PrismRow(
+                        icon: Icons.calendar_today_outlined,
+                        title: context.l10n.economyDailyStreak,
+                        showChevron: true,
+                        onTap: () => showStreakDetails(context, onEarnCoins: () => _scrollTo(_earnKey)),
+                      ),
+                      gap,
+                      const DropCard(),
+                      RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
+                      gap,
+                      const CreatorProgressCard(),
+                      gap,
+                      TodayCard(onOpenSpin: () => unawaited(showSpinWheel(context))),
+                      gap,
+                      PrismRow(
+                        icon: Icons.toll_outlined,
+                        title: context.l10n.economySpinTheWheel,
+                        showChevron: true,
+                        onTap: () => context.router.root.push(SpinWheelRoute()),
+                      ),
+                      gap,
+                      FreezeCard(onEarnCoins: () => _scrollTo(_earnKey)),
+                      const RewardsLinksSection(),
+                      const RewardsBadgesSection(),
+                      const RewardsCollectionSection(),
+                      const RewardsActivitySection(),
+                    ],
+                  ),
+                ] else ...<Widget>[
+                  const RewardsHero(),
+                  gap,
+                  const DropCard(),
+                  RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
+                  gap,
+                  const CreatorProgressCard(),
+                  gap,
+                  TodayCard(onOpenSpin: () => unawaited(showSpinWheel(context))),
+                  gap,
+                  const SpinWheelCard(),
+                  gap,
+                  FreezeCard(onEarnCoins: () => _scrollTo(_earnKey)),
+                  gap,
+                  BalanceCard(onSeeUses: () => _scrollTo(_spendKey)),
+                  KeyedSubtree(key: _earnKey, child: const RewardsEarnSection()),
+                  LayoutBuilder(
+                    builder: (context, constraints) => ExperimentalInlineAd(
+                      format: AdExperimentFormat.banner,
+                      active: widget.showBack || (_tabWasActive ?? false),
+                      availableWidth: constraints.maxWidth,
+                    ),
+                  ),
+                  KeyedSubtree(
+                    key: _spendKey,
+                    child: RewardsSpendSection(
+                      onStreakFreeze: () => buyStreakFreezeFlow(context, onEarnCoins: () => _scrollTo(_earnKey)),
+                    ),
+                  ),
+                  const RewardsLinksSection(),
+                  const RewardsBadgesSection(),
+                  const RewardsCollectionSection(),
+                  const RewardsActivitySection(),
+                ],
               ],
             ),
           ),

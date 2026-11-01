@@ -12,17 +12,17 @@ class RecordWallpaperActionUseCase {
 
   final ViewStatsRepository _viewStatsRepository;
 
-  Future<Result<void>> call(String wallId, WallpaperAction action) {
+  Future<Result<WallpaperActionReceipt>> call(String wallId, WallpaperAction action) {
     return _viewStatsRepository.recordWallpaperAction(wallId, action);
   }
 }
 
-/// How many times a Prism wallpaper was set. Null when no one set it yet.
+/// How many times a Prism wallpaper was set and how many people tipped it.
 @lazySingleton
-class GetWallpaperSetCountUseCase {
-  GetWallpaperSetCountUseCase(this._viewStatsRepository);
+class GetWallpaperCountsUseCase {
+  GetWallpaperCountsUseCase(this._viewStatsRepository);
 
   final ViewStatsRepository _viewStatsRepository;
 
-  Future<Result<int?>> call(String wallId) => _viewStatsRepository.fetchWallpaperSetCount(wallId);
+  Future<Result<WallpaperCounts?>> call(String wallId) => _viewStatsRepository.fetchWallpaperCounts(wallId);
 }

@@ -145,7 +145,7 @@ void main() {
     backend.onCall = (name, _) async => name == 'awardCoins'
         ? <String, Object?>{'success': true, 'changed': false, 'currentBalance': 120, ...snapshot(130, 30)}
         : <String, Object?>{'success': false};
-    await coins.award(CoinEarnAction.rewardedAd);
+    await coins.award(CoinEarnAction.dailyLogin);
     expect(coins.xpNotifier.value.xp, 130);
     expect(coins.xpNotifier.value.weekXp, 30);
   });
@@ -160,7 +160,7 @@ void main() {
       }
       return <String, Object?>{'success': true, 'changed': false, 'currentBalance': 100};
     };
-    await coins.award(CoinEarnAction.rewardedAd);
+    await coins.award(CoinEarnAction.dailyLogin);
     await coins.reconcileRankRewards();
     expect(reconciliations, greaterThan(0));
     expect(coins.xpNotifier.value.xp, 115);

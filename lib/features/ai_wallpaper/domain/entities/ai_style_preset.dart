@@ -46,8 +46,14 @@ enum AiStylePreset {
 
   static String _key(String value) => value.trim().toLowerCase().replaceAll(RegExp('[ _]'), '');
 
-  static AiStylePreset fromApiValue(String value) {
-    final String key = _key(value);
-    return values.firstWhere((preset) => _key(preset.apiValue) == key, orElse: () => abstract);
+  static AiStylePreset fromApiValue(String value) => tryFromApiValue(value) ?? abstract;
+
+  static AiStylePreset? tryFromApiValue(String? value) {
+    final String key = _key(value ?? '');
+    if (key.isEmpty) return null;
+    for (final AiStylePreset preset in values) {
+      if (_key(preset.apiValue) == key) return preset;
+    }
+    return null;
   }
 }
