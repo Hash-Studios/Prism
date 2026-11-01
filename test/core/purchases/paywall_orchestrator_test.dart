@@ -6,6 +6,7 @@ import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
+import 'package:Prism/core/purchases/trial_reminder.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
 import 'package:Prism/features/premium/views/pages/trial_timeline_page.dart';
@@ -24,6 +25,7 @@ void main() {
   const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
   const purchasesChannel = MethodChannel('purchases_flutter');
   const paywallChannel = MethodChannel('purchases_ui_flutter');
+  const messagingChannel = MethodChannel('plugins.flutter.io/firebase_messaging');
   final orchestrator = PaywallOrchestrator.instance;
   late FakeAppAnalytics fakeAnalytics;
   late SettingsLocalDataSource settings;
@@ -55,6 +57,7 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(purchasesChannel, null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(paywallChannel, null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(messagingChannel, null);
     await getIt.reset();
     AnalyticsRuntime.reset();
     signedInActionSignIn = originalSignIn;
@@ -71,7 +74,13 @@ void main() {
       bool loginFails = false,
       bool includeV3 = true,
       bool offeringsFail = false,
+      Future<Object?> Function(Map<String, Object?> offers)? offeringsReply,
       void Function(MethodCall)? onPaywallCall,
+      void Function(MethodCall)? onPurchaseCall,
+      void Function()? onCustomerInfoCall,
+      Future<Object?> Function(Map<String, Object?> customer)? purchaseReply,
+      bool purchaseSucceeds = false,
+      bool purchaseThrows = false,
       String legacyOffering = 'v3_default',
       Map<String, Object?>? annualProduct,
     }) async {
@@ -144,12 +153,27 @@ void main() {
             return offering;
           case 'getOfferings':
             if (offeringsFail) throw PlatformException(code: 'offerings_failed');
-            return <String, Object?>{
+            final Map<String, Object?> offers = <String, Object?>{
               'all': <String, Object?>{legacyOffering: offering, if (includeV3) 'v3_default': v3Offering},
               'current': offering,
             };
+            return offeringsReply == null ? offers : offeringsReply(offers);
           case 'getCustomerInfo':
+            onCustomerInfoCall?.call();
             return customer;
+          case 'purchasePackage':
+            onPurchaseCall?.call(call);
+            if (purchaseThrows) throw StateError('native purchase bridge failed');
+            if (purchaseReply != null) return purchaseReply(customer);
+            if (!purchaseSucceeds) return null;
+            return <String, Object?>{
+              'customerInfo': customer,
+              'transaction': <String, Object?>{
+                'transactionIdentifier': 'trial-tx',
+                'productIdentifier': 'prism_pro_yearly',
+                'purchaseDate': '2026-10-19T00:00:00Z',
+              },
+            };
           default:
             return null;
         }
@@ -607,7 +631,7 @@ void main() {
           navigatorKey: navigatorKey,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const SizedBox(),
+          home: const Text('home'),
         ),
       );
 
@@ -691,6 +715,260 @@ void main() {
         expect(result, PaywallResultValue.cancelled);
         expect(paywallCalls, 1);
         expect(find.byType(TrialTimelinePage), findsNothing);
+
+        orchestrator.navigatorContext = null;
+        await installPaywall(annualProduct: annualProductJson(trialDays: 7), present: () async => 'CANCELLED');
+        result = null;
+        unawaited(
+          orchestrator
+              .present(context: navigatorKey.currentContext, placement: PaywallPlacement.mainUpsell, source: 'test')
+              .then((v) => result = v),
+        );
+        await pumpUntil(tester, () => find.byType(TrialTimelinePage).evaluate().isNotEmpty);
+        expect(find.text('Start 7-day free trial'), findsOneWidget);
+        await tester.tap(find.byTooltip('Close'));
+        await tester.pumpAndSettle();
+        await pumpUntil(tester, () => result != null);
+        expect(result, PaywallResultValue.cancelled);
+
+        paywallCalls = 0;
+        orchestrator.navigatorContext = () => navigatorKey.currentContext;
+        result = null;
+        unawaited(orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test').then((v) => result = v));
+        await pumpUntil(tester, () => find.byType(TrialTimelinePage).evaluate().isNotEmpty);
+        app_state.prismUser = profileUser()..id = 'different-user';
+        await tester.scrollUntilVisible(find.text('See all plans'), 200, scrollable: find.byType(Scrollable).last);
+        await tester.tap(find.text('See all plans'));
+        await pumpUntil(tester, () => result != null);
+        await tester.pumpAndSettle();
+        expect(result, PaywallResultValue.error);
+        expect(paywallCalls, 0);
+        app_state.prismUser = profileUser();
+
+        final Map<String, Object?> cachedEligibleProduct = annualProductJson(trialDays: 7);
+        var purchaseCalls = 0;
+        paywallCalls = 0;
+        await installPaywall(
+          annualProduct: cachedEligibleProduct,
+          onPaywallCall: (_) => paywallCalls++,
+          onPurchaseCall: (_) => purchaseCalls++,
+          present: () async => 'CANCELLED',
+        );
+        result = null;
+        unawaited(orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test').then((v) => result = v));
+        await pumpUntil(tester, () => find.byType(TrialTimelinePage).evaluate().isNotEmpty);
+        cachedEligibleProduct.remove('defaultOption');
+        await tester.tap(find.text('Start 7-day free trial'));
+        await pumpUntil(tester, () => paywallCalls == 1);
+        expect(purchaseCalls, 0);
+        await pumpUntil(tester, () => result != null);
+        await tester.pumpAndSettle();
+        expect(result, PaywallResultValue.cancelled);
+        expect(find.byType(TrialTimelinePage), findsNothing);
+
+        paywallCalls = 0;
+        purchaseCalls = 0;
+        var timeoutFetches = 0;
+        await installPaywall(
+          annualProduct: annualProductJson(trialDays: 7),
+          offeringsReply: (Map<String, Object?> offers) =>
+              ++timeoutFetches == 2 ? Completer<Object?>().future : Future<Object?>.value(offers),
+          onPaywallCall: (_) => paywallCalls++,
+          onPurchaseCall: (_) => purchaseCalls++,
+          present: () async => 'CANCELLED',
+        );
+        result = null;
+        unawaited(orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test').then((v) => result = v));
+        await pumpUntil(tester, () => find.byType(TrialTimelinePage).evaluate().isNotEmpty);
+        await tester.tap(find.text('Start 7-day free trial'));
+        await pumpUntil(tester, () => paywallCalls == 1);
+        await tester.pumpAndSettle();
+        await pumpUntil(tester, () => result != null);
+        expect(result, PaywallResultValue.cancelled);
+        expect(purchaseCalls, 0);
+        expect(find.byType(TrialTimelinePage), findsNothing);
+
+        toasts.clear();
+        await installPaywall(
+          annualProduct: annualProductJson(trialDays: 7),
+          purchaseThrows: true,
+          present: () async => 'CANCELLED',
+        );
+        result = null;
+        unawaited(orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test').then((v) => result = v));
+        await pumpUntil(tester, () => find.byType(TrialTimelinePage).evaluate().isNotEmpty);
+        await tester.tap(find.text('Start 7-day free trial'));
+        await pumpUntil(tester, () => toasts.isNotEmpty);
+        expect(toasts, <String>['Could not start the free trial. Try again.']);
+        await tester.pump(const Duration(seconds: 5));
+        await tester.tap(find.byTooltip('Close'));
+        await tester.pumpAndSettle();
+        await pumpUntil(tester, () => result != null);
+        expect(result, PaywallResultValue.cancelled);
+
+        purchaseCalls = 0;
+        await installPaywall(
+          annualProduct: annualProductJson(trialDays: 7),
+          onPurchaseCall: (_) => purchaseCalls++,
+          present: () async => 'CANCELLED',
+        );
+        result = null;
+        unawaited(orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test').then((v) => result = v));
+        await pumpUntil(tester, () => find.byType(TrialTimelinePage).evaluate().isNotEmpty);
+        app_state.prismUser = profileUser()..id = 'different-user';
+        await tester.tap(find.text('Start 7-day free trial'));
+        await tester.pump();
+        expect(purchaseCalls, 0);
+        await tester.tap(find.byTooltip('Close'));
+        await tester.pumpAndSettle();
+        await pumpUntil(tester, () => result != null);
+        expect(result, PaywallResultValue.error);
+        app_state.prismUser = profileUser();
+
+        for (final bool confirmed in <bool>[true, false]) {
+          final Completer<Object?>? delayedPermission = confirmed ? Completer<Object?>() : null;
+          if (confirmed) {
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+              messagingChannel,
+              (_) => delayedPermission!.future,
+            );
+          }
+          var customerInfoCalls = 0;
+          await installPaywall(
+            annualProduct: annualProductJson(trialDays: 7),
+            purchaseSucceeds: true,
+            confirmed: confirmed,
+            onCustomerInfoCall: () => customerInfoCalls++,
+            present: () async => 'CANCELLED',
+          );
+          result = null;
+          unawaited(
+            orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test').then((v) => result = v),
+          );
+          await pumpUntil(tester, () => find.byType(TrialTimelinePage).evaluate().isNotEmpty);
+          final Finder reminderToggle = find.byType(SwitchListTile);
+          if (reminderToggle.evaluate().isNotEmpty) {
+            await tester.tap(reminderToggle);
+            await tester.pump();
+          }
+          await tester.tap(find.text('Start 7-day free trial'));
+          await pumpUntil(tester, () => result != null);
+          await tester.pumpAndSettle();
+
+          expect(result, confirmed ? PaywallResultValue.purchased : PaywallResultValue.error);
+          await AnalyticsRuntime.instance.flush();
+          final PaywallResultEvent event = fakeAnalytics.events.whereType<PaywallResultEvent>().last;
+          expect(event.entitlementSynced, confirmed ? 1 : 0);
+          if (confirmed) {
+            final int beforePermissionResult = customerInfoCalls;
+            delayedPermission!.complete(<String, int>{
+              'authorizationStatus': 1,
+              'timeSensitive': 1,
+              'criticalAlert': 1,
+              'alert': 1,
+              'announcement': 1,
+              'badge': 1,
+              'carPlay': 1,
+              'lockScreen': 1,
+              'notificationCenter': 1,
+              'showPreviews': 1,
+              'sound': 1,
+              'providesAppNotificationSettings': 1,
+            });
+            await pumpUntil(tester, () => customerInfoCalls > beforePermissionResult);
+            expect(customerInfoCalls, greaterThan(beforePermissionResult));
+          }
+          await tester.pump(const Duration(seconds: 5));
+          if (confirmed) {
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+              messagingChannel,
+              null,
+            );
+          }
+        }
+
+        await settings.set(TrialReminder.optInKey, true);
+        bool? reminderOptInAtPurchase;
+        await installPaywall(
+          annualProduct: annualProductJson(trialDays: 2),
+          purchaseSucceeds: true,
+          onPurchaseCall: (_) {
+            reminderOptInAtPurchase = settings.get<bool>(TrialReminder.optInKey, defaultValue: true);
+          },
+          present: () async => 'CANCELLED',
+        );
+        result = null;
+        unawaited(orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test').then((v) => result = v));
+        await pumpUntil(tester, () => find.byType(TrialTimelinePage).evaluate().isNotEmpty);
+        expect(find.text('Start 2-day free trial'), findsOneWidget);
+        await tester.tap(find.text('Start 2-day free trial'));
+        await pumpUntil(tester, () => result != null);
+        expect(result, PaywallResultValue.purchased);
+        expect(reminderOptInAtPurchase, isFalse);
+        expect(settings.get<bool>(TrialReminder.optInKey, defaultValue: true), isFalse);
+        await tester.pumpAndSettle();
+
+        final Completer<void> purchaseEntered = Completer<void>();
+        final Completer<void> finishPurchase = Completer<void>();
+        await installPaywall(
+          annualProduct: annualProductJson(trialDays: 7),
+          purchaseReply: (Map<String, Object?> customer) async {
+            purchaseEntered.complete();
+            await finishPurchase.future;
+            return <String, Object?>{
+              'customerInfo': customer,
+              'transaction': <String, Object?>{
+                'transactionIdentifier': 'late-trial-tx',
+                'productIdentifier': 'prism_pro_yearly',
+                'purchaseDate': '2026-10-19T00:00:00Z',
+              },
+            };
+          },
+          present: () async => 'CANCELLED',
+        );
+        result = null;
+        unawaited(orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test').then((v) => result = v));
+        await pumpUntil(tester, () => find.byType(TrialTimelinePage).evaluate().isNotEmpty);
+        await tester.tap(find.text('Start 7-day free trial'));
+        await pumpUntil(tester, () => purchaseEntered.isCompleted);
+        await tester.pump();
+        await tester.tap(find.byTooltip('Close'));
+        await tester.pumpAndSettle();
+        expect(result, isNull);
+        finishPurchase.complete();
+        await pumpUntil(tester, () => result != null);
+        expect(result, PaywallResultValue.purchased);
+        await AnalyticsRuntime.instance.flush();
+        expect(fakeAnalytics.events.whereType<PaywallResultEvent>().last.entitlementSynced, 1);
+
+        final Completer<void> refreshStarted = Completer<void>();
+        final Completer<void> finishRefresh = Completer<void>();
+        var offeringFetches = 0;
+        var purchaseAfterCloseCalls = 0;
+        await installPaywall(
+          annualProduct: annualProductJson(trialDays: 7),
+          offeringsReply: (Map<String, Object?> offers) async {
+            if (++offeringFetches == 2) {
+              refreshStarted.complete();
+              await finishRefresh.future;
+            }
+            return offers;
+          },
+          onPurchaseCall: (_) => purchaseAfterCloseCalls++,
+          present: () async => 'CANCELLED',
+        );
+        result = null;
+        unawaited(orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test').then((v) => result = v));
+        await pumpUntil(tester, () => find.byType(TrialTimelinePage).evaluate().isNotEmpty);
+        await tester.tap(find.text('Start 7-day free trial'));
+        await pumpUntil(tester, () => refreshStarted.isCompleted);
+        await tester.tap(find.byTooltip('Close'));
+        await tester.pumpAndSettle();
+        finishRefresh.complete();
+        await pumpUntil(tester, () => result != null);
+        expect(result, PaywallResultValue.cancelled);
+        expect(purchaseAfterCloseCalls, 0);
+        expect(find.text('home'), findsOneWidget);
       });
     });
   });

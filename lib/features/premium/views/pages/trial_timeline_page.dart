@@ -12,6 +12,8 @@ enum TrialTimelineChoice { started, seeAllPlans, closed }
 const String _termsUrl = 'https://prismwalls.com/terms';
 const String _privacyUrl = 'https://prismwalls.com/privacy';
 
+DateTime _dateAfterDays(DateTime date, int days) => DateTime(date.year, date.month, date.day + days);
+
 /// Shows what happens on each day of the annual free trial before the user starts it. The close button stays visible.
 class TrialTimelinePage extends StatefulWidget {
   const TrialTimelinePage({
@@ -50,7 +52,9 @@ class _TrialTimelinePageState extends State<TrialTimelinePage> {
     setState(() => _starting = true);
     try {
       final bool started = await widget.onStartTrial(remind: _reminderDay != null && _remind);
-      if (started && mounted) Navigator.of(context).pop(TrialTimelineChoice.started);
+      if (started && mounted && ModalRoute.of(context)?.isCurrent == true) {
+        Navigator.of(context).pop(TrialTimelineChoice.started);
+      }
     } finally {
       if (mounted) setState(() => _starting = false);
     }
@@ -93,14 +97,14 @@ class _TrialTimelinePageState extends State<TrialTimelinePage> {
             _TimelineStep(
               icon: _remind ? Icons.notifications_active_rounded : Icons.notifications_off_rounded,
               label: l10n.trialTimelineDay(reminderDay),
-              date: date.format(_today.add(Duration(days: reminderDay))),
+              date: date.format(_dateAfterDays(_today, reminderDay)),
               body: _remind ? l10n.trialTimelineReminderBody : l10n.trialTimelineNoReminderBody,
               showLine: true,
             ),
           _TimelineStep(
             icon: Icons.workspace_premium_rounded,
             label: l10n.trialTimelineDay(days),
-            date: date.format(_today.add(Duration(days: days))),
+            date: date.format(_dateAfterDays(_today, days)),
             body: l10n.trialTimelineChargeBody(price),
             showLine: false,
           ),

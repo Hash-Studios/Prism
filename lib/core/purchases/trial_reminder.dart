@@ -8,6 +8,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/annual_trial.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -37,6 +38,8 @@ class TrialReminder {
     required Future<AppLocalizations> Function() localizations,
     required String storeName,
     DateTime Function()? now,
+    bool Function(String userId)? isCurrentUser,
+    bool Function(String userId)? isNotificationOwner,
   }) : _settings = settings,
        _schedule = schedule,
        _cancel = cancel,
@@ -46,7 +49,9 @@ class TrialReminder {
        _track = track,
        _localizations = localizations,
        _storeName = storeName,
-       _now = now ?? DateTime.now;
+       _now = now ?? DateTime.now,
+       _isCurrentUser = isCurrentUser ?? ((String _) => true),
+       _isNotificationOwner = isNotificationOwner ?? ((String _) => true);
 
   static final TrialReminder instance = TrialReminder(
     settings: () {
@@ -64,12 +69,16 @@ class TrialReminder {
     track: analytics.track,
     localizations: loadDeviceAppLocalizations,
     storeName: storeNameForPlatform(),
+    isCurrentUser: (String userId) => app_state.prismUser.loggedIn && app_state.prismUser.id.trim() == userId,
+    isNotificationOwner: (String userId) =>
+        getIt.isRegistered<NotificationsLocalDataSource>() && getIt<NotificationsLocalDataSource>().ownerId == userId,
   );
 
   static const int notificationId = 290729;
   static const Duration lead = Duration(days: 2);
   static const String optInKey = 'trialReminderOptIn';
   static const String _reminderKey = 'trialReminder';
+  static const String _deliveredPrefix = 'trialReminderDelivered.';
   static const String _statePrefix = 'trialState.';
   static const String channelId = 'subscription';
 
@@ -83,25 +92,49 @@ class TrialReminder {
   final Future<AppLocalizations> Function() _localizations;
   final String _storeName;
   final DateTime Function() _now;
+  final bool Function(String userId) _isCurrentUser;
+  final bool Function(String userId) _isNotificationOwner;
   Future<void> _queue = Future<void>.value();
+  int _generation = 0;
 
   /// The choice from the trial timeline toggle. It applies to the next trial this device sees.
   Future<void> setOptIn(bool enabled) async => _settings()?.set(optInKey, enabled);
 
   /// Safe to call for every CustomerInfo update: the result depends only on the info and the stored state.
   Future<void> apply(CustomerInfo info, {required String userId}) {
-    final Future<void> run = _queue.then((_) => _apply(info, userId));
+    final int generation = _generation;
+    final Future<void> run = _queue.then((_) => _apply(info, userId, generation));
     _queue = run.catchError((Object _) {});
     return run;
   }
 
-  Future<void> _apply(CustomerInfo info, String userId) async {
-    final SettingsLocalDataSource? settings = _settings();
-    if (settings == null || userId.isEmpty) return;
-    final ActiveTrial? trial = activeTrialFrom(info);
-    await _trackTransition(settings, info, trial, userId);
-    await _reconcile(settings, trial, userId);
+  /// Removes the device-level reminder when the RevenueCat identity changes. Trial analytics state is per-user and
+  /// remains intact, so clearing a reminder does not look like a trial ending.
+  Future<void> clear({String? keepUserId}) {
+    _generation++;
+    final Future<void> run = _queue.then((_) async {
+      final SettingsLocalDataSource? settings = _settings();
+      final String stored = settings?.get<String>(_reminderKey, defaultValue: '') ?? '';
+      final List<String> target = stored.split('|');
+      final String keepId = keepUserId?.trim() ?? '';
+      if (keepId.isNotEmpty && target.length == 3 && target[0] == keepId && target[2] == 'notification') return;
+      await _cancel();
+      await settings?.delete(_reminderKey);
+    });
+    _queue = run.catchError((Object _) {});
+    return run;
   }
+
+  Future<void> _apply(CustomerInfo info, String userId, int generation) async {
+    final SettingsLocalDataSource? settings = _settings();
+    if (settings == null || userId.isEmpty || !_isCurrent(userId, generation)) return;
+    final ActiveTrial? trial = activeTrialFrom(info, now: _now());
+    await _trackTransition(settings, info, trial, userId);
+    if (!_isCurrent(userId, generation)) return;
+    await _reconcile(settings, trial, userId, generation);
+  }
+
+  bool _isCurrent(String userId, int generation) => generation == _generation && _isCurrentUser(userId);
 
   Future<void> _trackTransition(
     SettingsLocalDataSource settings,
@@ -137,50 +170,76 @@ class TrialReminder {
     await settings.delete(key);
   }
 
-  Future<void> _reconcile(SettingsLocalDataSource settings, ActiveTrial? trial, String userId) async {
+  Future<void> _reconcile(SettingsLocalDataSource settings, ActiveTrial? trial, String userId, int generation) async {
     final String stored = settings.get<String>(_reminderKey, defaultValue: '');
     final bool wanted = trial != null && trial.willRenew && settings.get<bool>(optInKey, defaultValue: false);
     if (!wanted) {
-      if (stored.isNotEmpty) {
+      if (stored.isNotEmpty || await _isScheduled()) {
         await _cancel();
-        await settings.delete(_reminderKey);
+        if (stored.isNotEmpty) await settings.delete(_reminderKey);
       }
       return;
     }
     final DateTime now = _now();
     final DateTime remindAt = trial.endsAt.subtract(lead);
     final String target = '$userId|${trial.endsAt.millisecondsSinceEpoch}';
+    final String deliveredKey = _deliveredKey(userId, trial.endsAt);
     if (await _permissionGranted()) {
-      if (!remindAt.isAfter(now)) return;
+      if (!_isCurrent(userId, generation)) return;
+      if (!remindAt.isAfter(now)) {
+        if (stored != '$target|notification' && stored.endsWith('|notification')) {
+          await _cancel();
+          await settings.delete(_reminderKey);
+        }
+        return;
+      }
+      if (settings.get<bool>(deliveredKey, defaultValue: false)) return;
       if (stored == '$target|notification' && await _isScheduled()) return;
       final ({String title, String body}) copy = await _copy(trial);
+      if (!_isCurrent(userId, generation)) return;
       await _schedule(remindAt, copy.title, copy.body);
+      if (!_isCurrent(userId, generation)) {
+        await _cancel();
+        await settings.delete(_reminderKey);
+        return;
+      }
       await settings.set(_reminderKey, '$target|notification');
       return;
     }
-    if (stored.endsWith('|notification')) await _cancel();
-    if (now.isBefore(remindAt) || !now.isBefore(trial.endsAt) || stored == '$target|inbox') {
+    if (stored.endsWith('|notification')) {
+      if (await _isScheduled()) await _cancel();
+    }
+    if (!_isCurrent(userId, generation)) return;
+    if (now.isBefore(remindAt) ||
+        !now.isBefore(trial.endsAt) ||
+        stored == '$target|inbox' ||
+        settings.get<bool>(deliveredKey, defaultValue: false)) {
       if (stored.endsWith('|notification')) await settings.delete(_reminderKey);
       return;
     }
     final ({String title, String body}) copy = await _copy(trial);
+    if (!_isCurrent(userId, generation) || !_isNotificationOwner(userId)) return;
     await _postInbox(
       InAppNotificationEntity(
-        id: 'trial_reminder_${trial.endsAt.millisecondsSinceEpoch}',
+        id: 'local_trial_reminder_${userId}_${trial.endsAt.millisecondsSinceEpoch}',
         title: copy.title,
         body: copy.body,
         pageName: '',
         imageUrl: '',
         arguments: const <Object>[],
         url: '',
-        createdAt: now.toUtc(),
+        createdAt: remindAt.toUtc(),
         read: false,
         route: '/premium',
         kind: InAppNotificationKind.generic,
       ),
     );
+    if (!_isCurrent(userId, generation) || !_isNotificationOwner(userId)) return;
+    await settings.set(deliveredKey, true);
     await settings.set(_reminderKey, '$target|inbox');
   }
+
+  String _deliveredKey(String userId, DateTime endsAt) => '$_deliveredPrefix$userId.${endsAt.millisecondsSinceEpoch}';
 
   Future<({String title, String body})> _copy(ActiveTrial trial) async {
     final AppLocalizations l10n = await _localizations();

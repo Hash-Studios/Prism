@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/purchases/annual_trial.dart';
 import 'package:Prism/features/premium/views/pages/trial_timeline_page.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -103,6 +105,27 @@ void main() {
     expect(find.textContaining('₹1,499.00'), findsWidgets);
   });
 
+  testWidgets('timeline dates advance by calendar day across the spring DST change', (tester) async {
+    await tester.pumpWidget(
+      _app(
+        TrialTimelinePage(
+          offer: _offer(3),
+          now: DateTime(2026, 3, 7, 23, 30),
+          storeName: 'App Store',
+          onStartTrial: ({required bool remind}) async => false,
+          onReminderToggled: (_) {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Mar 7'), findsOneWidget);
+    expect(find.text('Day 1'), findsOneWidget);
+    expect(find.text('Mar 8'), findsOneWidget);
+    expect(find.text('Day 3'), findsOneWidget);
+    expect(find.text('Mar 10'), findsOneWidget);
+  });
+
   testWidgets('turning the reminder off passes false and shows the no-reminder copy', (tester) async {
     final List<bool> toggled = <bool>[];
     final List<bool> started = <bool>[];
@@ -141,13 +164,21 @@ void main() {
     expect(find.text('Start 7-day free trial'), findsNothing);
   });
 
-  testWidgets('a start that the store does not confirm keeps the page open', (tester) async {
-    await _pumpPushed(tester, _page(onStartTrial: ({required bool remind}) async => false));
+  testWidgets('a cancelled store purchase keeps the page open and can be retried', (tester) async {
+    int attempts = 0;
+    await _pumpPushed(tester, _page(onStartTrial: ({required bool remind}) async => ++attempts > 1));
 
     await tester.tap(find.text('Start 7-day free trial'));
     await tester.pumpAndSettle();
 
+    expect(attempts, 1);
     expect(find.text('Start 7-day free trial'), findsOneWidget);
+
+    await tester.tap(find.text('Start 7-day free trial'));
+    await tester.pumpAndSettle();
+
+    expect(attempts, 2);
+    expect(await _pushed, TrialTimelineChoice.started);
   });
 
   testWidgets('Close pops with closed', (tester) async {
@@ -157,6 +188,42 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(await _pushed, TrialTimelineChoice.closed);
+  });
+
+  testWidgets('closing while purchase is pending does not pop the underlying route on late success', (tester) async {
+    final Completer<bool> purchase = Completer<bool>();
+    await _pumpPushed(tester, _page(onStartTrial: ({required bool remind}) => purchase.future));
+
+    await tester.tap(find.text('Start 7-day free trial'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    purchase.complete(true);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(await _pushed, TrialTimelineChoice.closed);
+    expect(find.text('Open'), findsOneWidget);
+  });
+
+  testWidgets('system back while purchase is pending does not pop the underlying route on late success', (
+    tester,
+  ) async {
+    final Completer<bool> purchase = Completer<bool>();
+    await _pumpPushed(tester, _page(onStartTrial: ({required bool remind}) => purchase.future));
+
+    await tester.tap(find.text('Start 7-day free trial'));
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    purchase.complete(true);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(await _pushed, isNull);
+    expect(find.text('Open'), findsOneWidget);
   });
 
   testWidgets('See all plans pops with seeAllPlans', (tester) async {

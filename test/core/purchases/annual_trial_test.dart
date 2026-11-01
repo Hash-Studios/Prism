@@ -215,7 +215,7 @@ void main() {
         },
       );
 
-      final ActiveTrial? trial = activeTrialFrom(info);
+      final ActiveTrial? trial = activeTrialFrom(info, now: DateTime.utc(2026, 11, 8));
 
       expect(trial, isNotNull);
       expect(trial!.endsAt, DateTime.utc(2026, 11, 8, 10));
@@ -241,6 +241,49 @@ void main() {
       );
 
       expect(activeTrialFrom(info), isNull);
+    });
+
+    test('returns null when the trial has expired even if RevenueCat still lists it as active', () {
+      final CustomerInfo info = _customer(
+        active: <String, EntitlementInfo>{
+          'prism_v3_pro_access': const EntitlementInfo(
+            'prism_v3_pro_access',
+            true,
+            true,
+            '2026-11-01T10:00:00Z',
+            '2026-11-01T10:00:00Z',
+            'prism_pro_yearly',
+            false,
+            periodType: PeriodType.trial,
+            expirationDate: '2026-11-08T10:00:00Z',
+          ),
+        },
+      );
+
+      expect(activeTrialFrom(info, now: DateTime.utc(2026, 11, 8, 10)), isNull);
+    });
+
+    test('normalizes an offset expiration date to UTC before presenting a local date', () {
+      final CustomerInfo info = _customer(
+        active: <String, EntitlementInfo>{
+          'prism_v3_pro_access': const EntitlementInfo(
+            'prism_v3_pro_access',
+            true,
+            true,
+            '2026-11-01T10:00:00Z',
+            '2026-11-01T10:00:00Z',
+            'prism_pro_yearly',
+            false,
+            periodType: PeriodType.trial,
+            expirationDate: '2026-11-08T12:00:00+02:00',
+          ),
+        },
+      );
+
+      final ActiveTrial? trial = activeTrialFrom(info, now: DateTime.utc(2026, 11, 8));
+
+      expect(trial!.endsAt, DateTime.utc(2026, 11, 8, 10));
+      expect(trial.endsAt.toLocal(), DateTime.utc(2026, 11, 8, 10).toLocal());
     });
   });
 }

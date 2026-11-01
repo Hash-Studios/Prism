@@ -38,7 +38,8 @@ class PurchasesService {
       _logIn = Purchases.logIn,
       _getCustomerInfo = Purchases.getCustomerInfo,
       _apiKey = _resolveApiKey,
-      _onCustomerInfo = TrialReminder.instance.apply;
+      _onCustomerInfo = TrialReminder.instance.apply,
+      _resetTrialState = TrialReminder.instance.clear;
 
   @visibleForTesting
   PurchasesService.forTesting({
@@ -52,6 +53,7 @@ class PurchasesService {
     Future<CustomerInfo> Function()? getCustomerInfo,
     String Function()? apiKey,
     Future<void> Function(CustomerInfo info, {required String userId})? onCustomerInfo,
+    Future<void> Function({String? keepUserId})? resetTrialState,
   }) : _addCustomerInfoListener = addCustomerInfoListener,
        _syncSubscriptionOverride = syncSubscription,
        _syncRetryBackoff = syncRetryBackoff,
@@ -61,9 +63,11 @@ class PurchasesService {
        _logIn = logIn ?? Purchases.logIn,
        _getCustomerInfo = getCustomerInfo ?? Purchases.getCustomerInfo,
        _apiKey = apiKey ?? _resolveApiKey,
-       _onCustomerInfo = onCustomerInfo ?? _ignoreCustomerInfo;
+       _onCustomerInfo = onCustomerInfo ?? _ignoreCustomerInfo,
+       _resetTrialState = resetTrialState ?? _ignoreTrialStateReset;
 
   static Future<void> _ignoreCustomerInfo(CustomerInfo info, {required String userId}) async {}
+  static Future<void> _ignoreTrialStateReset({String? keepUserId}) async {}
 
   static final PurchasesService instance = PurchasesService._();
 
@@ -76,6 +80,7 @@ class PurchasesService {
   final Duration _confirmRetryDelay;
   final Duration _paidConfirmRetryDelay;
   static const int _confirmAttempts = 3;
+  static const Duration _customerInfoTimeout = Duration(seconds: 10);
   final Future<void> Function(PurchasesConfiguration configuration) _configurePurchases;
   final Future<dynamic> Function(String userId) _logIn;
   final Future<CustomerInfo> Function() _getCustomerInfo;
@@ -86,6 +91,7 @@ class PurchasesService {
 
   /// Keeps the trial reminder and trial analytics in step with each CustomerInfo the app applies.
   final Future<void> Function(CustomerInfo info, {required String userId}) _onCustomerInfo;
+  final Future<void> Function({String? keepUserId}) _resetTrialState;
   Future<void> _setupQueue = Future<void>.value();
   bool _configured = false;
   bool _customerInfoListenerRegistered = false;
@@ -195,10 +201,12 @@ class PurchasesService {
     final targetUserId = userId.trim();
     await _serializeSetup<void>(() async {
       if (!_configured) {
+        await _clearTrialState(keepUserId: targetUserId.isEmpty ? null : targetUserId);
         await _configure(targetUserId);
       } else if (targetUserId.isNotEmpty && targetUserId != _configuredUserId) {
         _identityTransitionInProgress = true;
         _identityRevision++;
+        await _clearTrialState(keepUserId: targetUserId);
         try {
           await _logIn(targetUserId);
           _configuredUserId = targetUserId;
@@ -208,6 +216,8 @@ class PurchasesService {
         } finally {
           _identityTransitionInProgress = false;
         }
+      } else if (targetUserId.isEmpty) {
+        await _clearTrialState();
       }
     });
   }
@@ -384,7 +394,7 @@ class PurchasesService {
       }
       final int requestedIdentityRevision = _identityRevision;
       final bool requestedLoggedIn = app_state.prismUser.loggedIn;
-      final info = await _getCustomerInfo();
+      final CustomerInfo info = await _getCustomerInfo().timeout(_customerInfoTimeout);
       if (requestedIdentityRevision != _identityRevision ||
           requestedUserId != _configuredUserId ||
           requestedUserId != app_state.prismUser.id.trim() ||
@@ -485,6 +495,15 @@ class PurchasesService {
         : PurchaseEntitlementStatus.pending;
   }
 
+  Future<void> _clearTrialState({String? keepUserId}) async {
+    activeTrial.value = null;
+    try {
+      await _resetTrialState(keepUserId: keepUserId);
+    } catch (error, stackTrace) {
+      logger.w('Unable to clear the trial reminder.', error: error, stackTrace: stackTrace);
+    }
+  }
+
   /// Restores store purchases while distinguishing local guest access from server confirmation.
   Future<PurchaseEntitlementStatus> restore() async {
     final String requestedUserId = app_state.prismUser.id.trim();
@@ -561,9 +580,13 @@ class PurchasesService {
   /// since there is no session to end and calling logOut before configure
   /// triggers a native fatalError on iOS.
   Future<void> logOut() => _serializeSetup<void>(() async {
-    if (!_configured) return;
+    if (!_configured) {
+      await _clearTrialState();
+      return;
+    }
     _identityTransitionInProgress = true;
     _identityRevision++;
+    await _clearTrialState();
     try {
       try {
         await Purchases.logOut();
@@ -578,7 +601,6 @@ class PurchasesService {
         logger.w('Skipping RevenueCat logout for anonymous user.');
       }
       _configuredUserId = '';
-      activeTrial.value = null;
     } finally {
       _identityTransitionInProgress = false;
     }

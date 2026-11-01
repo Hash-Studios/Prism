@@ -31,7 +31,7 @@ A user who cannot get the trial sees the normal paywall. The app adds no trial w
 
 ## The timeline
 
-The screen shows 3 steps. The dates come from the device clock and the trial length from the store product. The format follows the app language.
+The screen shows 3 steps. It uses the device's local calendar dates, so the dates still advance by one calendar day across daylight-saving changes. The trial length comes from the store product. The format follows the app language.
 
 1. **Today**: "You get full access to Prism Pro. You pay nothing today."
 2. **Day 5** (trial length minus 2): "We remind you that your trial ends soon." When the user turns off the reminder, the step reads "No reminder. You turned it off below." A trial of 2 days or less has no reminder step.
@@ -42,7 +42,7 @@ The screen also shows:
 - The plan summary: "Prism Pro yearly. 7 days free, then <price> a year."
 - The switch "Remind me 2 days before the trial ends". It is on by default.
 - The renewal terms, a link to the store subscription settings, Terms of use, and Privacy policy.
-- "Start 7-day free trial". This buys the annual package with `Purchases.purchase`.
+- "Start 7-day free trial". Before buying, the app checks that the account is still the one that opened the timeline and reloads the offer. It stops if the user is no longer eligible or the product, trial length, or price changed. It then buys the annual package with `Purchases.purchase`. A cancelled or failed purchase leaves the timeline open so the user can retry.
 - "See all plans". This opens the RevenueCat paywall with every plan.
 - A close button in the header. The header does not scroll, so the button is always visible.
 
@@ -63,13 +63,13 @@ The app logs `trial_timeline_shown` and `trial_reminder_toggled`.
 
 ## The reminder
 
-`TrialReminder.apply` runs for each `CustomerInfo` that `PurchasesService` applies: at app start, after a purchase or a restore, and on each update from RevenueCat. It is safe to run many times.
+`TrialReminder.apply` runs for each `CustomerInfo` that `PurchasesService` applies: at app start, after a purchase or a restore, and on each update from RevenueCat. It is safe to run many times. It ignores updates for a different signed-in account. An account change invalidates queued reminder work; logout clears the active trial and pending reminder. During startup, the app keeps a scheduled notification that belongs to the resolved account and clears one that belongs to another account. Trial analytics state stays saved. The app records an inbox fallback once per user and trial end date, and keeps that record when reminder state is reset. A missing scheduled request does not mean the operating system delivered a notification.
 
-1. The trial comes from the active paid entitlement with `periodType == trial`. The end date is its `expirationDate`, which is the date the store charges.
+1. The trial comes from an active, unexpired paid entitlement with `periodType == trial`. The end date is its `expirationDate`, which is the date the store charges. An expired trial is ignored.
 2. The reminder time is the end date minus 2 days. The app never uses the time of the tap.
 3. The app keeps the reminder only when the trial is active, auto-renew is on, and the user left the switch on.
-4. When notifications are allowed, the app schedules local notification `290729` on channel `subscription`. If the end date changes, the app moves the notification. If the reminder time is past, the app does not schedule it.
-5. When notifications are not allowed, the app puts the reminder in the in-app inbox. It does this on the first `apply` after the reminder time and before the end date, one time for each end date.
+4. When notifications are allowed, the app schedules local notification `290729` on channel `subscription`. If the end date changes, the app moves the notification. It does not schedule a new notification after the reminder time. If the matching request is still pending after that time, the app keeps it so a late operating-system delivery remains possible.
+5. When notifications are not allowed, the app puts the reminder in the in-app inbox after the reminder time and before the end date, once for each user and end date. If a previously scheduled request is missing, that alone does not suppress the inbox fallback. Its `local_` ID includes the user and end date. Inbox sync keeps local-only items, so a server refresh does not remove this reminder.
 6. When the trial converts, is cancelled, or is refunded, the app removes the notification.
 
 Text: "Your free trial ends on <date>" and "After that, you pay for Prism Pro yearly. To avoid the charge, cancel in <store> settings at least 24 hours before." A tap opens `/premium`.

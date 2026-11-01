@@ -44,6 +44,7 @@ class PaywallOrchestrator {
 
   /// A RevenueCat setup or offerings call that never settles must not leave the caller loading forever.
   static const Duration _loadTimeout = Duration(seconds: 10);
+  static const Duration _permissionRequestTimeout = Duration(seconds: 2);
   bool get _rcPaywallsEnabled => app_state.useRcPaywalls;
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
   int _activePresentations = 0;
@@ -58,12 +59,15 @@ class PaywallOrchestrator {
     BuildContext? context,
   }) async {
     if (!app_state.prismUser.loggedIn) {
-      if (context == null || !await requireSignedInAction(context)) return PaywallResultValue.guestSignInRequired;
+      if (context == null) return PaywallResultValue.guestSignInRequired;
+      final bool signedIn = await requireSignedInAction(context);
+      if (!signedIn || !context.mounted) return PaywallResultValue.guestSignInRequired;
     }
+    final BuildContext? presentationContext = context?.mounted == true ? context : null;
     _activePresentations++;
     DailyMomentPresentationGate.instance.purchaseActive = true;
     try {
-      return await _present(placement: placement, source: source, messages: messages);
+      return await _present(placement: placement, source: source, messages: messages, context: presentationContext);
     } finally {
       _activePresentations--;
       DailyMomentPresentationGate.instance.purchaseActive = _activePresentations > 0;
@@ -74,6 +78,7 @@ class PaywallOrchestrator {
     required String placement,
     required String source,
     AppLocalizations? messages,
+    BuildContext? context,
   }) async {
     final String normalizedPlacement = placement.trim().isEmpty ? PaywallPlacement.mainUpsell : placement.trim();
     _logPlacementTriggerContext(placement: normalizedPlacement, source: source);
@@ -87,7 +92,7 @@ class PaywallOrchestrator {
 
     // Without RevenueCat paywalls there is no fallback screen.
     final PaywallResultValue result = _rcPaywallsEnabled
-        ? await _presentRevenueCatPaywall(placement: normalizedPlacement, source: source)
+        ? await _presentRevenueCatPaywall(placement: normalizedPlacement, source: source, context: context)
         : PaywallResultValue.notPresented;
     if (_unavailableResults.contains(result)) {
       final AppLocalizations localized = messages ?? await loadDeviceAppLocalizations();
@@ -150,7 +155,11 @@ class PaywallOrchestrator {
     }
   }
 
-  Future<PaywallResultValue> _presentRevenueCatPaywall({required String placement, required String source}) async {
+  Future<PaywallResultValue> _presentRevenueCatPaywall({
+    required String placement,
+    required String source,
+    BuildContext? context,
+  }) async {
     final String requestedUserId = app_state.prismUser.id.trim();
     final bool requestedLoggedIn = app_state.prismUser.loggedIn;
     bool isCurrentAccount() =>
@@ -197,14 +206,16 @@ class PaywallOrchestrator {
           .timeout(_loadTimeout, onTimeout: () => (offer: null, reason: TrialUnavailableReason.eligibilityUnknown));
       if (!isCurrentAccount()) return PaywallResultValue.error;
       final TrialOffer? trialOffer = trial.offer;
-      final BuildContext? timelineContext = navigatorContext?.call();
+      final BuildContext? timelineContext = navigatorContext?.call() ?? context;
       if (trialOffer != null && timelineContext != null && timelineContext.mounted) {
         timelineResult = await _presentTrialTimeline(
           timelineContext,
           offer: trialOffer,
           placement: placement,
           source: source,
+          isCurrentAccount: isCurrentAccount,
         );
+        if (!isCurrentAccount()) return PaywallResultValue.error;
         if (timelineResult == PaywallResultValue.cancelled) {
           analytics.track(
             PaywallResultEvent(
@@ -220,6 +231,7 @@ class PaywallOrchestrator {
         analytics.track(TrialNotEligibleShownEvent(source: source, placement: placement, reason: trial.reason!.name));
       }
 
+      if (!isCurrentAccount()) return PaywallResultValue.error;
       final PaywallResultValue resultValue =
           timelineResult ?? await _presentRevenueCatSheet(offering, placement: placement, source: source);
       if (resultValue == PaywallResultValue.notPresented || resultValue == PaywallResultValue.error) {
@@ -344,12 +356,14 @@ class PaywallOrchestrator {
     required TrialOffer offer,
     required String placement,
     required String source,
+    required bool Function() isCurrentAccount,
   }) async {
     analytics.track(
       TrialTimelineShownEvent(source: source, placement: placement, productId: offer.productId, trialDays: offer.days),
     );
     await TrialReminder.instance.setOptIn(true);
-    if (!context.mounted) return null;
+    if (!context.mounted || !isCurrentAccount()) return null;
+    Future<bool>? purchaseInFlight;
     final TrialTimelineChoice? choice = await Navigator.of(context, rootNavigator: true).push<TrialTimelineChoice>(
       MaterialPageRoute<TrialTimelineChoice>(
         fullscreenDialog: true,
@@ -359,15 +373,29 @@ class PaywallOrchestrator {
             analytics.track(TrialReminderToggledEvent(enabled: enabled));
             unawaited(TrialReminder.instance.setOptIn(enabled));
           },
-          onStartTrial: ({required bool remind}) =>
-              _purchaseTrial(offer, remind: remind, placement: placement, source: source),
+          onStartTrial: ({required bool remind}) => purchaseInFlight = _purchaseTrial(
+            offer,
+            remind: remind,
+            placement: placement,
+            source: source,
+            isCurrentAccount: isCurrentAccount,
+            isTimelineCurrent: () => pageContext.mounted && ModalRoute.of(pageContext)?.isCurrent == true,
+            dismissTimeline: (TrialTimelineChoice choice) {
+              if (pageContext.mounted && ModalRoute.of(pageContext)?.isCurrent == true) {
+                Navigator.of(pageContext, rootNavigator: true).pop(choice);
+              }
+            },
+          ),
         ),
       ),
     );
+    if (choice == TrialTimelineChoice.closed || choice == null) {
+      return await purchaseInFlight == true ? PaywallResultValue.purchased : PaywallResultValue.cancelled;
+    }
     return switch (choice) {
       TrialTimelineChoice.started => PaywallResultValue.purchased,
       TrialTimelineChoice.seeAllPlans => null,
-      TrialTimelineChoice.closed || null => PaywallResultValue.cancelled,
+      TrialTimelineChoice.closed => PaywallResultValue.cancelled,
     };
   }
 
@@ -376,29 +404,140 @@ class PaywallOrchestrator {
     required bool remind,
     required String placement,
     required String source,
+    required bool Function() isCurrentAccount,
+    required bool Function() isTimelineCurrent,
+    required ValueChanged<TrialTimelineChoice> dismissTimeline,
   }) async {
+    if (!isCurrentAccount()) {
+      dismissTimeline(TrialTimelineChoice.closed);
+      return false;
+    }
     try {
-      final PurchaseResult result = await Purchases.purchase(PurchaseParams.package(offer.package));
-      _recordVerifiedPurchase(
-        result.storeTransaction,
-        offer.package,
-        result.customerInfo,
-        source: source,
-        placement: placement,
+      await TrialReminder.instance.setOptIn(remind);
+      if (!isCurrentAccount()) {
+        dismissTimeline(TrialTimelineChoice.closed);
+        return false;
+      }
+      final Offerings? latestOfferings = await PurchasesService.instance.getOfferings().timeout(
+        _loadTimeout,
+        onTimeout: () => null,
       );
-      if (remind) {
+      if (!isCurrentAccount()) {
+        dismissTimeline(TrialTimelineChoice.closed);
+        return false;
+      }
+      if (!isTimelineCurrent()) return false;
+      final Offering? latestOffering = latestOfferings?.all[PurchaseConstants.offeringV3Default];
+      final TrialOfferLookup? latestLookup = latestOffering == null
+          ? null
+          : await PurchasesService.instance
+                .trialOffer(latestOffering)
+                .timeout(
+                  _loadTimeout,
+                  onTimeout: () => (offer: null, reason: TrialUnavailableReason.eligibilityUnknown),
+                );
+      if (!isCurrentAccount()) {
+        dismissTimeline(TrialTimelineChoice.closed);
+        return false;
+      }
+      if (!isTimelineCurrent()) return false;
+      final TrialOffer? latestOffer = latestLookup?.offer;
+      if (latestOffer == null) {
+        analytics.track(
+          TrialNotEligibleShownEvent(
+            source: source,
+            placement: placement,
+            reason: latestLookup?.reason?.name ?? TrialUnavailableReason.eligibilityUnknown.name,
+          ),
+        );
+        dismissTimeline(TrialTimelineChoice.seeAllPlans);
+        return false;
+      }
+      if (latestOffer.productId != offer.productId ||
+          latestOffer.days != offer.days ||
+          latestOffer.priceString != offer.priceString) {
+        dismissTimeline(TrialTimelineChoice.seeAllPlans);
+        return false;
+      }
+      if (!isTimelineCurrent()) return false;
+
+      final PurchaseResult result = await Purchases.purchase(PurchaseParams.package(latestOffer.package));
+      final bool currentAccount = isCurrentAccount();
+      if (currentAccount) {
+        _recordVerifiedPurchase(
+          result.storeTransaction,
+          latestOffer.package,
+          result.customerInfo,
+          source: source,
+          placement: placement,
+        );
+      }
+      if (remind && currentAccount) {
+        final Future<bool> permissionRequest = const NotificationPermissionGateway().request();
         try {
-          await const NotificationPermissionGateway().request();
+          await permissionRequest.timeout(_permissionRequestTimeout);
+        } on TimeoutException {
+          _refreshReminderAfterPermissionRequest(permissionRequest, isCurrentAccount: isCurrentAccount);
         } catch (error) {
           logger.w('Notification permission request failed.', error: error);
         }
       }
       return true;
     } on PlatformException catch (error) {
-      if (PurchasesErrorHelper.getErrorCode(error) == PurchasesErrorCode.purchaseCancelledError) return false;
-      logger.w('Trial purchase failed.', error: error);
-      toasts.error((await loadDeviceAppLocalizations()).trialTimelineStartFailed);
+      if (!isCurrentAccount()) {
+        dismissTimeline(TrialTimelineChoice.closed);
+        return false;
+      }
+      if (int.tryParse(error.code) == PurchasesErrorCode.purchaseCancelledError.index) return false;
+      await _showTrialPurchaseFailure(error, StackTrace.current, isCurrentAccount: isCurrentAccount);
       return false;
+    } catch (error, stackTrace) {
+      if (!isCurrentAccount()) {
+        dismissTimeline(TrialTimelineChoice.closed);
+        return false;
+      }
+      await _showTrialPurchaseFailure(error, stackTrace, isCurrentAccount: isCurrentAccount);
+      return false;
+    }
+  }
+
+  void _refreshReminderAfterPermissionRequest(
+    Future<bool> permissionRequest, {
+    required bool Function() isCurrentAccount,
+  }) {
+    unawaited(
+      permissionRequest
+          .then((_) async {
+            if (!isCurrentAccount()) return;
+            await PurchasesService.instance.checkAndPersistPremium();
+          })
+          .catchError((Object error, StackTrace stackTrace) {
+            logger.w(
+              'Unable to refresh trial reminder after permission request.',
+              error: error,
+              stackTrace: stackTrace,
+            );
+          }),
+    );
+  }
+
+  Future<void> _showTrialPurchaseFailure(
+    Object error,
+    StackTrace stackTrace, {
+    required bool Function() isCurrentAccount,
+  }) async {
+    logger.w('Trial purchase failed.', error: error, stackTrace: stackTrace);
+    try {
+      if (!isCurrentAccount()) return;
+      final AppLocalizations l10n = await loadDeviceAppLocalizations();
+      if (!isCurrentAccount()) return;
+      toasts.error(l10n.trialTimelineStartFailed);
+    } catch (localizationError, localizationStackTrace) {
+      logger.w(
+        'Unable to show the trial purchase error.',
+        error: localizationError,
+        stackTrace: localizationStackTrace,
+      );
     }
   }
 }

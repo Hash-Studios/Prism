@@ -71,12 +71,12 @@ class ActiveTrial {
   final bool willRenew;
 }
 
-ActiveTrial? activeTrialFrom(CustomerInfo info) {
+ActiveTrial? activeTrialFrom(CustomerInfo info, {DateTime? now}) {
   for (final String key in PurchaseConstants.paidEntitlementKeys) {
     final EntitlementInfo? entitlement = info.entitlements.active[key];
     if (entitlement == null || entitlement.periodType != PeriodType.trial) continue;
     final DateTime? endsAt = DateTime.tryParse(entitlement.expirationDate ?? '');
-    if (endsAt == null) continue;
+    if (endsAt == null || !endsAt.isAfter(now ?? DateTime.now())) continue;
     return ActiveTrial(
       productId: entitlement.productIdentifier,
       endsAt: endsAt.toUtc(),
