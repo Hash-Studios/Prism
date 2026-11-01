@@ -360,7 +360,7 @@ class _ShareSheetState extends State<ShareSheet> {
                   render: selected || _renders.containsKey(format) ? _render(format) : null,
                   onTap: selected
                       ? null
-                      : () => _pages.animateToPage(
+                      : () => _pages.animateOrJumpToPage(
                           index,
                           duration: context.motion(PrismDurations.base),
                           curve: PrismCurves.move,
