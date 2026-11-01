@@ -24,7 +24,7 @@ class ShortcutsFavouritesStore {
       final String id = item.id.trim();
       final String url = item.fullUrl.trim();
       final String asset = NativeAssetPathsStore.originalAssetKey(item);
-      if (id.isEmpty || !seen.add(id)) continue;
+      if (id.isEmpty || seen.contains(id)) continue;
       if (url.startsWith('https://')) {
         entries.add(<String, String>{'id': id, 'url': url});
       } else if (originals.contains(asset)) {
@@ -32,6 +32,7 @@ class ShortcutsFavouritesStore {
       } else {
         continue;
       }
+      seen.add(id);
       if (entries.length == maxItems) break;
     }
     return jsonEncode(entries);
@@ -43,14 +44,22 @@ class ShortcutsFavouritesStore {
   /// Writes run one after another. A save that was called before a [clear] is dropped, so it cannot land after it.
   static Future<void> save(Iterable<FavouriteWallEntity> items) {
     final int generation = _generation;
+    final bool loggedIn = app_state.prismUser.loggedIn;
+    final String owner = loggedIn ? app_state.prismUser.id.trim() : '';
+    bool current() =>
+        generation == _generation &&
+        app_state.prismUser.loggedIn == loggedIn &&
+        (!loggedIn || app_state.prismUser.id.trim() == owner);
     final List<FavouriteWallEntity> selected = items.toList()..sort(compareByCreatedAtDesc);
     return _enqueue(() async {
-      if (generation != _generation) return;
+      if (!current()) return;
       final SharedPreferences prefs = await SharedPreferences.getInstance();
+      if (!current()) return;
       Map<String, String> originals = <String, String>{};
       try {
         originals = await NativeAssetPathsStore.downloadedOriginalPaths(selected);
       } catch (_) {}
+      if (!current()) return;
       final String encoded = encode(selected, originals: originals.keys.toSet());
       Map<String, String> relativePaths = <String, String>{};
       try {
@@ -58,10 +67,10 @@ class ShortcutsFavouritesStore {
           selected.where((item) => item.id.trim().isNotEmpty).map((item) => item.fullUrl.trim()),
         );
       } catch (_) {}
+      if (!current()) return;
       relativePaths.addAll(originals);
-      if (generation != _generation) return;
-      await NativeAssetPathsStore.replaceGroup('shortcuts', relativePaths);
-      if (generation != _generation) return;
+      await NativeAssetPathsStore.replaceGroup('shortcuts', relativePaths, isCurrent: current);
+      if (!current()) return;
       if (!await prefs.setString(PersistenceKeys.shortcutsFavourites, encoded)) {
         throw StateError('Shortcuts favourites could not be persisted');
       }

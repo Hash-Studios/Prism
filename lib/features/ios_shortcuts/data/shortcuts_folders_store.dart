@@ -5,6 +5,7 @@ import 'dart:math' show min;
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
@@ -57,7 +58,7 @@ class ShortcutsFoldersStore {
       final String url = wall.fullUrl.trim();
       final String id = folderItemKey(wall);
       final String asset = NativeAssetPathsStore.originalAssetKey(wall);
-      if (wall.id.trim().isEmpty || !seen.add(id)) continue;
+      if (wall.id.trim().isEmpty || seen.contains(id)) continue;
       if (url.startsWith('https://')) {
         items.add(<String, String>{'id': id, 'url': url});
       } else if (originals.contains(asset)) {
@@ -65,6 +66,7 @@ class ShortcutsFoldersStore {
       } else {
         continue;
       }
+      seen.add(id);
       if (items.length == maxItems) break;
     }
     return items;
@@ -104,7 +106,6 @@ class ShortcutsFoldersStore {
         final Map<String, Object?>? old = previous[folder.id];
         final List<Map<String, String>> oldItems = _items(old?['items']);
         // A folder with protected walls is read again, so a new download joins and a deleted one leaves.
-        // ponytail: also re-reads folders with http-only walls on each sync; track skipped walls if reads matter.
         if (old != null &&
             old['updatedAt'] == folder.updatedAt.millisecondsSinceEpoch &&
             old['itemCount'] == folder.itemCount &&
@@ -119,10 +120,22 @@ class ShortcutsFoldersStore {
           // With no earlier copy, leave the folder out: the intent then says to open Prism, which syncs again, and
           // never reports a folder with walls as empty.
           if (old == null) continue;
-          // Keep what the last snapshot had. The epoch update time makes the next sync read the folder again.
+          Map<String, String> folderOriginals = const <String, String>{};
+          try {
+            folderOriginals = await NativeAssetPathsStore.downloadedOriginalPaths(_protectedWalls(oldItems));
+          } catch (_) {}
+          if (!current()) return;
+          originals.addAll(folderOriginals);
+          // The epoch update time makes the next sync read the folder again.
           entries.add((
             folder: folder.copyWith(updatedAt: DateTime.fromMillisecondsSinceEpoch(0)),
-            items: oldItems.where((item) => item.containsKey('url')).toList(),
+            items: oldItems
+                .where(
+                  (item) =>
+                      item.containsKey('url') ||
+                      (item['asset'] == 'original:${item['id']}' && folderOriginals.containsKey(item['asset'])),
+                )
+                .toList(),
           ));
           continue;
         }
@@ -261,6 +274,23 @@ class ShortcutsFoldersStore {
         else if (item is Map && item['id'] is String && item['asset'] is String)
           <String, String>{'id': item['id'] as String, 'asset': item['asset'] as String},
   ];
+
+  static Iterable<FavouriteWallEntity> _protectedWalls(List<Map<String, String>> items) sync* {
+    for (final Map<String, String> item in items) {
+      final String id = item['id']!;
+      if (item['asset'] != 'original:$id') continue;
+      final int separator = id.indexOf('_');
+      if (separator <= 0 || separator == id.length - 1) continue;
+      final WallpaperSource source = WallpaperSourceX.fromWire(id.substring(0, separator));
+      if (source == WallpaperSource.unknown) continue;
+      final FavouriteWallEntity wall = LegacyFavouriteWall(
+        id: id.substring(separator + 1),
+        source: source,
+        legacyPayload: const <String, Object?>{},
+      );
+      if (folderItemKey(wall) == id) yield wall;
+    }
+  }
 
   static bool _otherOwnerIsActive(String owner) {
     final String activeOwner = app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '';

@@ -111,6 +111,19 @@ void main() {
       );
       expect(out.map((entry) => entry['id']), <String>['ok']);
     });
+
+    test('an unusable duplicate does not reserve the id before a usable favourite', () {
+      final List<Map<String, dynamic>> out = _decode(
+        ShortcutsFavouritesStore.encode(<FavouriteWallEntity>[
+          _wall('same', url: ''),
+          _wall('same', url: 'https://example.com/public.jpg'),
+        ]),
+      );
+
+      expect(out, <Map<String, dynamic>>[
+        <String, dynamic>{'id': 'same', 'url': 'https://example.com/public.jpg'},
+      ]);
+    });
   });
 
   group('storage', () {
@@ -210,6 +223,38 @@ void main() {
         key: 'protected.jpg',
       });
     });
+
+    for (final bool switchToGuest in <bool>[false, true]) {
+      test('save does not write account A favourites after switching owner during original lookup '
+          '(guest: $switchToGuest)', () async {
+        app_state.prismUser = profileUser(id: 'owner-a');
+        final Completer<void> lookupStarted = Completer<void>();
+        final Completer<void> lookupGate = Completer<void>();
+        NativeAssetPathsStore.documentsDirectoryOverride = Directory('${offlineDirectory.path}/documents');
+        NativeAssetPathsStore.downloadedOriginalOverride = (FavouriteWallEntity wall) async {
+          lookupStarted.complete();
+          await lookupGate.future;
+          return File('${offlineDirectory.path}/documents/PrismDownloads/${wall.id}.jpg');
+        };
+        SharedPreferences.setMockInitialValues(<String, Object>{
+          PersistenceKeys.shortcutsFavourites: '[{"id":"owner-b","url":"https://example.com/b.jpg"}]',
+          NativeAssetPathsStore.privateOwnerKey: 'owner-b',
+        });
+
+        final Future<void> save = ShortcutsFavouritesStore.save(<FavouriteWallEntity>[_wall('owner-a', url: '')]);
+        await lookupStarted.future;
+        app_state.prismUser = switchToGuest ? profileUser(id: '', loggedIn: false) : profileUser(id: 'owner-b');
+        lookupGate.complete();
+        await save;
+
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        expect(
+          prefs.getString(PersistenceKeys.shortcutsFavourites),
+          '[{"id":"owner-b","url":"https://example.com/b.jpg"}]',
+        );
+        expect(prefs.getString('${NativeAssetPathsStore.preferenceKey}.shortcuts'), isNull);
+      });
+    }
 
     test('save writes the raw string under the shared contract key', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});

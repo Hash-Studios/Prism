@@ -61,7 +61,7 @@ struct PrismShortcutFoldersTests {
   }
 
   @Test func parseKeepsProtectedItemsByTheirDownloadedOriginal() {
-    let json = #"{"folders":[{"id":"f1","name":"Public","itemCount":3,"items":[{"id":"prism_p","asset":"original:prism_p"},{"id":"prism_x","asset":"https://example.com/x.jpg"},{"id":"prism_e","asset":""}]}]}"#
+    let json = #"{"folders":[{"id":"f1","name":"Public","itemCount":4,"items":[{"id":"prism_p","asset":"original:prism_p"},{"id":"prism_x","asset":"https://example.com/x.jpg"},{"id":"prism_e","asset":""},{"id":"prism_empty","asset":"original:"}]}]}"#
     let items = PrismShortcutFolders.parse(json).first?.items
     #expect(items == [PrismShortcutFavourite(id: "prism_p", asset: "original:prism_p")])
     #expect(items?.first?.url == nil)
@@ -315,9 +315,9 @@ struct PrismShortcutFoldersTests {
 
     let query = PrismFolderEntityQuery(suiteName: suite)
     let suggested = try await query.suggestedEntities()
-    #expect(suggested.map(\.id) == ["f1", "f2"])
-    #expect(suggested.map(\.name) == ["Calm", "Bold"])
-    #expect(suggested.map(\.itemCount) == [2, 5])
+    #expect(suggested.map(\.id) == ["f1", "f2", "f3"])
+    #expect(suggested.map(\.name) == ["Calm", "Bold", "New"])
+    #expect(suggested.map(\.itemCount) == [2, 5, 0])
 
     let found = try await query.entities(for: ["f2", "missing", "f1"])
     #expect(found.map(\.id) == ["f2", "f1"])

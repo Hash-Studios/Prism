@@ -39,7 +39,9 @@ enum PrismShortcutFavourites {
       if let link = object["url"] as? String, let url = httpsURL(link) {
         return PrismShortcutFavourite(id: id, url: url)
       }
-      if let asset = object["asset"] as? String, asset.hasPrefix(originalAssetPrefix) {
+      if let asset = object["asset"] as? String,
+        asset.hasPrefix(originalAssetPrefix), asset.count > originalAssetPrefix.count
+      {
         return PrismShortcutFavourite(id: id, asset: asset)
       }
       return nil

@@ -196,6 +196,23 @@ struct PrismShortcutsTests {
     #expect(PrismShortcutLocalFileResolver.resolve(path: "assets/invalid.png", roots: [root], maximumBytes: 1024) == nil)
   }
 
+  @Test func localFileResolverRejectsSymlinkEscape() throws {
+    let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: base) }
+    let root = base.appendingPathComponent("root", isDirectory: true)
+    let outside = base.appendingPathComponent("outside", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+    let image = outside.appendingPathComponent("wall.png")
+    try Data([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).write(to: image)
+    try FileManager.default.createSymbolicLink(
+      at: root.appendingPathComponent("escape", isDirectory: true),
+      withDestinationURL: outside
+    )
+
+    #expect(PrismShortcutLocalFileResolver.resolve(path: "escape/wall.png", roots: [root], maximumBytes: 1024) == nil)
+  }
+
   @Test func localFileResolverRejectsFilesAboveTheImageReadLimit() throws {
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

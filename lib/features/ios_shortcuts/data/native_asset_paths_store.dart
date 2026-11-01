@@ -36,6 +36,9 @@ class NativeAssetPathsStore {
   /// The downloaded original of each wall in [walls] that has no https URL, keyed by [originalAssetKey], as a path
   /// under the retained or downloads root. Only originals the user already got are used, so no coin gate is skipped.
   static Future<Map<String, String>> downloadedOriginalPaths(Iterable<FavouriteWallEntity> walls) async {
+    final String owner = app_state.prismUser.id.trim();
+    final bool loggedIn = app_state.prismUser.loggedIn;
+    bool ownerIsCurrent() => app_state.prismUser.loggedIn == loggedIn && app_state.prismUser.id.trim() == owner;
     final List<FavouriteWallEntity> protected = walls
         .where((wall) => wall.id.trim().isNotEmpty && !wall.fullUrl.trim().startsWith('https://'))
         .toList();
@@ -48,11 +51,14 @@ class NativeAssetPathsStore {
             : null);
     if (lookup == null) return relativePaths;
     final Directory supportDirectory = supportDirectoryOverride ?? await getApplicationSupportDirectory();
+    if (!ownerIsCurrent()) return <String, String>{};
     final Directory documentsDirectory = documentsDirectoryOverride ?? await getApplicationDocumentsDirectory();
+    if (!ownerIsCurrent()) return <String, String>{};
     final String retainedRoot = path.join(supportDirectory.path, 'prism', 'offline', 'assets');
     final String downloadsRoot = path.join(documentsDirectory.path, 'PrismDownloads');
     for (final FavouriteWallEntity wall in protected) {
       final File? original = await lookup(wall);
+      if (!ownerIsCurrent()) return <String, String>{};
       if (original == null) continue;
       final String root = path.isWithin(retainedRoot, original.path) ? retainedRoot : downloadsRoot;
       final String relativePath = path.relative(original.path, from: root);
@@ -61,7 +67,7 @@ class NativeAssetPathsStore {
       }
       relativePaths[originalAssetKey(wall)] = relativePath;
     }
-    return relativePaths;
+    return ownerIsCurrent() ? relativePaths : <String, String>{};
   }
 
   /// Each https source in [sources] with a retained offline copy, mapped to its path under the retained root.
@@ -92,11 +98,30 @@ class NativeAssetPathsStore {
   }) {
     if (!_groups.contains(group)) throw ArgumentError.value(group, 'group');
     final int generation = _generation;
+    final String owner = app_state.prismUser.id.trim();
+    final bool loggedIn = app_state.prismUser.loggedIn;
+    final bool privateGroup = _privateGroups.contains(group);
+    final bool privateOwnerWrite = loggedIn && owner.isNotEmpty && privateGroup;
     return _enqueue(() async {
-      bool current() => generation == _generation && isCurrent?.call() != false;
+      bool current() =>
+          generation == _generation &&
+          (!privateGroup || (app_state.prismUser.loggedIn == loggedIn && app_state.prismUser.id.trim() == owner)) &&
+          isCurrent?.call() != false;
       if (!current()) return;
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       if (!current()) return;
+      if (privateOwnerWrite && (prefs.getString(privateOwnerKey)?.trim() ?? '') != owner) {
+        for (final String privateGroup in _privateGroups) {
+          if (!current()) return;
+          if (!await prefs.setString('$preferenceKey.$privateGroup', '{}')) {
+            throw StateError('Private native retained asset paths could not be replaced');
+          }
+        }
+        if (!current()) return;
+        if (!await prefs.remove(QuickTileConfigService.wotdRetainedKey)) {
+          throw StateError('Private native retained asset paths could not be replaced');
+        }
+      }
       final Map<String, String> combined = <String, String>{};
       for (final String name in _groups) {
         final String raw = name == group ? jsonEncode(paths) : prefs.getString('$preferenceKey.$name') ?? '{}';
@@ -120,8 +145,10 @@ class NativeAssetPathsStore {
         throw StateError('Native retained asset paths could not be persisted');
       }
       if (!current()) return;
-      if (_privateGroups.contains(group) && app_state.prismUser.loggedIn) {
-        await prefs.setString(privateOwnerKey, app_state.prismUser.id.trim());
+      if (privateOwnerWrite) {
+        if (!await prefs.setString(privateOwnerKey, owner)) {
+          throw StateError('Private native retained asset paths could not be replaced');
+        }
       }
       if (current()) await afterReplace?.call();
     });

@@ -1,3 +1,4 @@
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_favourites_store.dart';
@@ -51,7 +52,14 @@ class _ShortcutsFavouritesListenerState extends State<ShortcutsFavouritesListene
     if (!_enabled) return;
     final session = context.read<SessionBloc>().state.session;
     final favourites = context.read<FavouriteWallsBloc>().state;
-    if (!session.loggedIn || session.userId != favourites.userId || favourites.status != LoadStatus.success) return;
+    if (!session.loggedIn ||
+        session.userId.trim().isEmpty ||
+        app_state.prismUser.id.trim() != session.userId.trim() ||
+        !app_state.prismUser.loggedIn ||
+        session.userId != favourites.userId ||
+        favourites.status != LoadStatus.success) {
+      return;
+    }
     _run(() => ShortcutsFavouritesStore.save(favourites.items));
   }
 
