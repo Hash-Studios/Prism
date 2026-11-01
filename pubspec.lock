@@ -704,10 +704,9 @@ packages:
   flutter_floating_bottom_bar:
     dependency: "direct main"
     description:
-      name: flutter_floating_bottom_bar
-      sha256: "3063f78c20486bb1a2b5017b1515b82e7aed79dde2efbd30a1c96ee3a84ff228"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/flutter_floating_bottom_bar"
+      relative: true
+    source: path
     version: "3.0.1"
   flutter_image_compress:
     dependency: "direct main"

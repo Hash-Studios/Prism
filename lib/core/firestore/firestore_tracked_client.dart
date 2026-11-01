@@ -331,13 +331,12 @@ class FirestoreTrackedClient implements FirestoreClient, FirestoreQueryCacheInva
       );
       return result;
     } catch (error) {
-      final FirestoreError mapped = mapFirestoreError(error);
-      if (mapped.code == 'permission-denied') {
-        logger.w(
-          '[Firestore] permission-denied on ${operation.name}, collection: $collection, sourceTag: $sourceTag',
-          error: mapped,
-        );
-      }
+      final FirestoreError mapped = _reportedError(
+        error,
+        operation: operation,
+        collection: collection,
+        sourceTag: sourceTag,
+      );
       unawaited(
         _telemetry.emit(
           FirestoreTelemetryEvent(
@@ -698,7 +697,12 @@ class FirestoreTrackedClient implements FirestoreClient, FirestoreQueryCacheInva
               StreamTransformer<({List<T> items, bool isFromCache}), ({List<T> items, bool isFromCache})>.fromHandlers(
                 handleError:
                     (Object error, StackTrace stackTrace, EventSink<({List<T> items, bool isFromCache})> sink) {
-                      final FirestoreError mapped = mapFirestoreError(error);
+                      final FirestoreError mapped = _reportedError(
+                        error,
+                        operation: FirestoreOperation.streamSubscribe,
+                        collection: spec.collection,
+                        sourceTag: spec.sourceTag,
+                      );
                       unawaited(
                         _telemetry.emit(
                           FirestoreTelemetryEvent(
@@ -739,7 +743,12 @@ class FirestoreTrackedClient implements FirestoreClient, FirestoreQueryCacheInva
         controller.onResume = subscription.resume;
       } catch (error, stackTrace) {
         if (cancelled) return;
-        final FirestoreError mapped = mapFirestoreError(error);
+        final FirestoreError mapped = _reportedError(
+          error,
+          operation: FirestoreOperation.streamSubscribe,
+          collection: spec.collection,
+          sourceTag: spec.sourceTag,
+        );
         unawaited(
           _telemetry.emit(
             FirestoreTelemetryEvent(
@@ -761,4 +770,31 @@ class FirestoreTrackedClient implements FirestoreClient, FirestoreQueryCacheInva
       }
     });
   }
+}
+
+FirestoreError _reportedError(
+  Object error, {
+  required FirestoreOperation operation,
+  required String collection,
+  required String sourceTag,
+}) {
+  final FirestoreError mapped = mapFirestoreError(
+    error,
+  ).withCall(operation: operation.name, collection: _redactFirestoreCollectionPath(collection), sourceTag: sourceTag);
+  if (mapped.code == 'permission-denied') {
+    logger.w(
+      '[Firestore] permission-denied on ${mapped.operation}, collection: ${mapped.collection}, sourceTag: ${mapped.sourceTag}',
+      error: mapped,
+    );
+  }
+  return mapped;
+}
+
+/// Keeps collection names and drops document ids, which can be user ids.
+String _redactFirestoreCollectionPath(String collection) {
+  final List<String> parts = collection.split('/');
+  return <String>[
+    for (var index = 0; index < parts.length; index++)
+      if (parts[index].isEmpty || index.isEven) parts[index] else '{id}',
+  ].join('/');
 }

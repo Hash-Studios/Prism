@@ -26,6 +26,8 @@ const CREATOR_FOLDERS = 12;
 // Keep serialized sitemap pages below Firestore's 1 MiB document limit, including worst-case URL lengths.
 const SITEMAP_SIZE = 3000;
 const WRITE_CHUNK = 100;
+// Walls projected at once in a rebuild. Each one can fetch and blur a thumbnail, so keep it below WRITE_CHUNK.
+const WALL_CHUNK = 40;
 const SHARE_ID = /^[A-Za-z0-9_-]{1,200}$/;
 const USERNAME = /^[A-Za-z0-9._-]{1,40}$/;
 const HIDDEN_TEXT = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}]/gu;
@@ -420,8 +422,8 @@ export function buildPages(
 
 const hashOf = (doc: PageDoc) => createHash("sha256").update(stableJson(doc)).digest("hex").slice(0, 20);
 
-async function inChunks<T>(values: T[], run: (value: T) => Promise<unknown>): Promise<void> {
-  for (let i = 0; i < values.length; i += WRITE_CHUNK) await Promise.all(values.slice(i, i + WRITE_CHUNK).map(run));
+async function inChunks<T>(values: T[], run: (value: T) => Promise<unknown>, size = WRITE_CHUNK): Promise<void> {
+  for (let i = 0; i < values.length; i += size) await Promise.all(values.slice(i, i + size).map(run));
 }
 
 /**
@@ -447,10 +449,11 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
   const ownerIds = folderDocs.docs.map((doc) => str(doc.data().ownerId));
   const profiles = await profilesOf([...[...byId.values()].flat().map((wall) => str(wall.creatorUid)), ...ownerIds]);
 
-  const walls = new Map<string, WebWall>();
   let written = 0;
-  const ids = new Set([...byId.keys(), ...previous.keys()]);
-  for (const id of ids) {
+  const ids = [...new Set([...byId.keys(), ...previous.keys()])];
+  const projected = new Map<string, WebWall>();
+  // One wall at a time could not finish a cold build of ~3,300 walls inside the timeout, so walls run in chunks.
+  await inChunks(ids, async (id) => {
     const rows = byId.get(id) ?? [];
     const wall = rows.length === 1 ? rows[0] : undefined;
     const candidate = rows.length > 1 ? {state: "hidden" as const, updatedAt: now.toISOString()} :
@@ -458,8 +461,8 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
         await projectWall(wall, premium, profiles.get(str(wall?.creatorUid)) ?? null, previous.get(id), now);
     const old = previous.get(id);
     if (sameWall(old, candidate)) {
-      walls.set(id, old as WebWall);
-      continue;
+      projected.set(id, old as WebWall);
+      return;
     }
     const ref = db.collection(WEB_WALLS).doc(id);
     const current = await db.runTransaction(async (tx) => {
@@ -473,14 +476,17 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
         publicProfile((await tx.get(db.collection("profiles").doc(uid))).data()) : null;
       const next = latestRows.size > 1 ? {state: "hidden" as const, updatedAt: now.toISOString()} :
         latestRows.size === 0 ? {state: "gone" as const, updatedAt: now.toISOString()} :
-          await projectWall(latestWall, premium, profile, currentPrevious, now, tx);
+          // The blur from the first projection is reused when the thumbnail is unchanged, so it is fetched once.
+          await projectWall(latestWall, premium, profile, candidate.blur ? candidate : currentPrevious, now, tx);
       if (sameWall(currentPrevious, next)) return {wall: currentPrevious as WebWall, written: false};
       tx.set(ref, next);
       return {wall: next, written: true};
     });
-    walls.set(id, current.wall);
+    projected.set(id, current.wall);
     if (current.written) written++;
-  }
+  }, WALL_CHUNK);
+  // Pages keep the same wall order on every run, so their hashes only change when the walls do.
+  const walls = new Map(ids.map((id) => [id, projected.get(id) as WebWall]));
 
   const folders = await Promise.all(folderDocs.docs.map(async (doc) => {
     const data = doc.data();
@@ -525,7 +531,7 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
 }
 
 export const buildWebCatalog = onSchedule(
-  {schedule: "20 */2 * * *", timeZone: "UTC", region: REGION, retryCount: 1, memory: "1GiB", timeoutSeconds: 540,
+  {schedule: "20 */2 * * *", timeZone: "UTC", region: REGION, retryCount: 1, memory: "1GiB", timeoutSeconds: 1800,
     secrets: r2Secrets},
   async () => {
     await rebuildWebCatalog();
