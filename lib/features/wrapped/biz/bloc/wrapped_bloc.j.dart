@@ -1,3 +1,8 @@
+import 'dart:async';
+
+import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/wrapped/domain/wrapped.dart';
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -24,21 +29,59 @@ sealed class WrappedEvent with _$WrappedEvent {
 class WrappedBloc extends Bloc<WrappedEvent, WrappedState> {
   WrappedBloc(this._repository) : super(const WrappedState.idle()) {
     on<LoadWrapped>((event, emit) async {
+      if (event.uid.isEmpty) {
+        _requestVersion++;
+        emit(const WrappedState.idle());
+        return;
+      }
       final bool current = switch (state) {
         WrappedLoading(:final uid) || WrappedReady(:final uid) || WrappedNotEligible(:final uid) => uid == event.uid,
         _ => false,
       };
-      if (current || event.uid.isEmpty) return;
+      if (current) return;
+      final int requestVersion = ++_requestVersion;
       emit(WrappedState.loading(event.uid));
       try {
         final WrappedYear? year = await _repository.fetch(event.uid, wrappedYear);
-        if (state != WrappedState.loading(event.uid)) return;
+        if (requestVersion != _requestVersion || state != WrappedState.loading(event.uid)) return;
         emit(year == null ? WrappedState.notEligible(event.uid) : WrappedState.ready(event.uid, year));
       } on Exception {
-        if (state == WrappedState.loading(event.uid)) emit(WrappedState.failed(event.uid));
+        if (requestVersion == _requestVersion && state == WrappedState.loading(event.uid)) {
+          emit(WrappedState.failed(event.uid));
+        }
       }
     });
+    if (getIt.isRegistered<SessionRepository>()) {
+      final SessionRepository sessions = getIt<SessionRepository>();
+      _sessionUid = _userId(sessions.currentUser);
+      _sessionChanges = sessions.watchCurrentUser().listen(_sessionChanged);
+    }
   }
 
   final WrappedRepository _repository;
+  final StreamController<String> _userChanges = StreamController<String>.broadcast(sync: true);
+  StreamSubscription<PrismUsersV2>? _sessionChanges;
+  late String _sessionUid;
+  int _requestVersion = 0;
+
+  Stream<String> get userChanges => _userChanges.stream;
+
+  void _sessionChanged(PrismUsersV2 user) {
+    final String uid = _userId(user);
+    final String previous = _sessionUid;
+    _sessionUid = uid;
+    if (previous == uid) return;
+    _requestVersion++;
+    add(const WrappedEvent.load(''));
+    _userChanges.add(uid);
+  }
+
+  String _userId(PrismUsersV2 user) => user.loggedIn ? user.id.trim() : '';
+
+  @override
+  Future<void> close() async {
+    await _sessionChanges?.cancel();
+    await _userChanges.close();
+    await super.close();
+  }
 }

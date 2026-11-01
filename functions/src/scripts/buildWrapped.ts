@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import {randomUUID} from "node:crypto";
 
 import {str} from "../common";
 import {notificationCopyPayload} from "../notificationCatalog";
@@ -9,6 +10,7 @@ import {
   readCreatorProfile,
   readWrappedSignals,
   topCreator,
+  WRAPPED_COLLECTION,
   WRAPPED_YEAR,
   wrappedDocPath,
   wrappedWindow,
@@ -29,9 +31,24 @@ type JobOptions = {
   concurrency?: number;
   now?: Date;
   log?: (line: string) => void;
+  beforeGuardTransaction?: (uid: string, operation: "write" | "remove") => Promise<void>;
 };
 
-export const USAGE = `Usage: node lib/scripts/buildWrapped.js [--apply] [--restart] [--notify] [--max-pages=N] [--concurrency=N]
+function validateOptions(options: Pick<JobOptions, "pageSize" | "maxPages" | "concurrency" | "now">): void {
+  if (options.pageSize !== undefined && (!Number.isInteger(options.pageSize) || options.pageSize < 1)) {
+    throw new Error("Invalid --page-size. Use a positive integer.");
+  }
+  if (options.maxPages !== undefined && (!Number.isInteger(options.maxPages) || options.maxPages < 1)) {
+    throw new Error("Invalid --max-pages. Use a positive integer.");
+  }
+  if (options.concurrency !== undefined &&
+    (!Number.isInteger(options.concurrency) || options.concurrency < 1 || options.concurrency > 50)) {
+    throw new Error("Invalid --concurrency. Use an integer from 1 to 50.");
+  }
+  if (options.now && !Number.isFinite(options.now.getTime())) throw new Error("Invalid build time.");
+}
+
+export const USAGE = `Usage: node lib/scripts/buildWrapped.js [--apply] [--restart] [--notify] [--page-size=N] [--max-pages=N] [--concurrency=N]
 
 Builds ${wrappedDocPath("<uid>")} for every eligible user, one page of usersv2 at a time in document id order.
 A dry run writes nothing and reports how many users are eligible. --apply writes the docs and keeps a checkpoint in
@@ -41,6 +58,7 @@ Credentials come from Application Default Credentials.`;
 
 /** Builds or rebuilds every user's doc. Each page commits its checkpoint only after every user in it is written. */
 export async function buildWrappedDocs(db: admin.firestore.Firestore, options: JobOptions): Promise<WrappedJobResult> {
+  validateOptions(options);
   const pageSize = options.pageSize ?? 200;
   const maxPages = options.maxPages ?? Number.MAX_SAFE_INTEGER;
   const log = options.log ?? console.log;
@@ -48,18 +66,21 @@ export async function buildWrappedDocs(db: admin.firestore.Firestore, options: J
   const now = options.now ?? new Date();
   let cursor: string | null = null;
   let endMs = wrappedWindow(now).endMs;
+  let runId: string | null = null;
   let removeStale = Boolean(options.restart);
   if (options.apply) {
     const run = await db.runTransaction(async (tx) => {
       const current = (await tx.get(runRef)).data();
       if (current && !options.restart) return current;
-      const fresh = {phase: "building", cursor: null, endMs, removeStale: Boolean(current), startedAt: now.getTime()};
+      const fresh = {phase: "building", cursor: null, endMs, removeStale: Boolean(current), startedAt: now.getTime(),
+        runId: randomUUID()};
       tx.set(runRef, fresh);
       return fresh;
     });
     if (run.phase === "built") return {phase: "built", cursor: null, scanned: 0, eligible: 0, removed: 0, skipped: 0};
     cursor = run.cursor ?? null;
     endMs = run.endMs;
+    runId = run.runId;
     removeStale = run.removeStale === true;
   }
   const window = {startMs: wrappedWindow(now).startMs, endMs};
@@ -86,20 +107,49 @@ export async function buildWrappedDocs(db: admin.firestore.Firestore, options: J
         counts.eligible += 1;
         log(`${user.id} eligible ${doc.cards.map((card) => card.id).join(",")}`);
         // Merge keeps notifiedAt, so a rebuild never sends the launch push again. Every built field is replaced.
-        if (options.apply) await ref.set(doc, {merge: true});
-      } else if (options.apply && removeStale && (await ref.get()).exists) {
-        counts.removed += 1;
-        await ref.delete();
+        if (options.apply) {
+          await options.beforeGuardTransaction?.(user.id, "write");
+          await db.runTransaction(async (tx) => {
+            const [account, deletion, marker, currentRun] = await Promise.all([
+              tx.get(db.doc(`usersv2/${user.id}`)), tx.get(db.doc(`creatorDeletionState/${user.id}`)),
+              tx.get(db.doc(`${WRAPPED_COLLECTION}/${user.id}`)), tx.get(runRef),
+            ]);
+            if (!account.exists || account.data()?.deleted === true || deletion.data()?.closed === true ||
+              currentRun.data()?.phase !== "building" || currentRun.data()?.runId !== runId ||
+              currentRun.data()?.endMs !== endMs) return;
+            const notifiedAt = marker.data()?.[`notifiedAt_${WRAPPED_YEAR}`];
+            tx.set(ref, notifiedAt ? {...doc, notifiedAt} : doc, {merge: true});
+          });
+        }
+      } else if (options.apply && removeStale) {
+        await options.beforeGuardTransaction?.(user.id, "remove");
+        const removed = await db.runTransaction(async (tx) => {
+          const markerRef = db.doc(`${WRAPPED_COLLECTION}/${user.id}`);
+          const [existing, marker, currentRun] = await Promise.all([tx.get(ref), tx.get(markerRef), tx.get(runRef)]);
+          if (currentRun.data()?.phase !== "building" || currentRun.data()?.runId !== runId ||
+            currentRun.data()?.endMs !== endMs) return false;
+          if (!existing.exists) return false;
+          const notifiedAt = existing.data()?.notifiedAt;
+          if (notifiedAt && !marker.data()?.[`notifiedAt_${WRAPPED_YEAR}`]) {
+            tx.set(markerRef, {[`notifiedAt_${WRAPPED_YEAR}`]: notifiedAt}, {merge: true});
+          }
+          tx.delete(ref);
+          return true;
+        });
+        if (removed) counts.removed += 1;
       }
     });
     const next = users.empty ? null : users.docs[users.size - 1].id;
     if (options.apply) {
-      await db.runTransaction(async (tx) => {
+      const advanced = await db.runTransaction(async (tx) => {
         const current = (await tx.get(runRef)).data();
         // A second runner must not move the checkpoint backwards or reopen a finished build.
-        if (current?.phase !== "building" || current.cursor !== cursor || current.endMs !== endMs) return;
+        if (current?.phase !== "building" || current.cursor !== cursor || current.endMs !== endMs ||
+          current.runId !== runId) return false;
         tx.update(runRef, users.empty ? {phase: "built", cursor: null} : {cursor: next});
+        return true;
       });
+      if (!advanced) return {phase: "superseded", cursor, ...counts};
     }
     if (users.empty) return {phase: options.apply ? "built" : "dry-run", cursor: null, ...counts};
     cursor = next;
@@ -109,11 +159,59 @@ export async function buildWrappedDocs(db: admin.firestore.Firestore, options: J
 
 export type NotifyResult = {phase: string; scanned: number; notified: number; cursor: string | null};
 
+/** Claims the yearly notification on the private parent doc so eligibility rebuilds cannot erase the claim. */
+export async function claimWrappedNotification(
+  db: admin.firestore.Firestore,
+  uid: string,
+  wrappedRef: admin.firestore.DocumentReference,
+  runId: string,
+  copy: ReturnType<typeof notificationCopyPayload>,
+): Promise<string | null> {
+  const accountRef = db.doc(`usersv2/${uid}`);
+  const deletionRef = db.doc(`creatorDeletionState/${uid}`);
+  const markerRef = db.doc(`${WRAPPED_COLLECTION}/${uid}`);
+  const runRef = db.doc(WRAPPED_RUN);
+  const inboxRef = db.doc(`notifications/wrapped_${WRAPPED_YEAR}_${uid}`);
+  const markerField = `notifiedAt_${WRAPPED_YEAR}`;
+  return db.runTransaction(async (tx) => {
+    const [wrapped, marker, account, deletion, run] = await Promise.all([
+      tx.get(wrappedRef), tx.get(markerRef), tx.get(accountRef), tx.get(deletionRef), tx.get(runRef),
+    ]);
+    if (!wrapped.exists || !account.exists || account.data()?.deleted === true || deletion.data()?.closed === true) {
+      return null;
+    }
+    if (run.data()?.phase !== "built" || run.data()?.runId !== runId) return null;
+    const email = str(account.data()?.email);
+    if (!email) return null;
+    const notifiedAt = wrapped.data()?.notifiedAt;
+    if (marker.data()?.[markerField] || notifiedAt) {
+      // Migrate claims made before the parent marker existed, without sending the notice again.
+      if (!marker.data()?.[markerField]) {
+        tx.set(markerRef, {[markerField]: notifiedAt}, {merge: true});
+      }
+      return null;
+    }
+    const claimedAt = admin.firestore.FieldValue.serverTimestamp();
+    tx.set(markerRef, {[markerField]: claimedAt}, {merge: true});
+    tx.update(wrappedRef, {notifiedAt: claimedAt});
+    tx.set(inboxRef, {
+      notification: {title: copy.title, body: copy.body},
+      message: {kind: copy.message.kind, args: copy.message.args},
+      data: {route: "wrapped", imageUrl: "", url: "", pageName: "", arguments: []},
+      modifier: email,
+      pushHandled: true,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return email;
+  });
+}
+
 /** Marks a doc notified before the send, so a crash can drop one push but never send two. */
 export async function notifyWrapped(
   db: admin.firestore.Firestore,
   options: Omit<JobOptions, "restart"> & {send?: typeof sendToUser},
 ): Promise<NotifyResult> {
+  validateOptions(options);
   const pageSize = options.pageSize ?? 200;
   const maxPages = options.maxPages ?? Number.MAX_SAFE_INTEGER;
   const send = options.send ?? sendToUser;
@@ -121,6 +219,7 @@ export async function notifyWrapped(
   const runRef = db.doc(WRAPPED_RUN);
   const run = (await runRef.get()).data();
   if (run?.phase !== "built") throw new Error("Finish the build before --notify.");
+  const runId = run.runId;
   let cursor: string | null = options.apply ? run.notifyCursor ?? null : null;
   const copy = notificationCopyPayload({kind: "wrappedReady", year: WRAPPED_YEAR});
   let scanned = 0;
@@ -142,27 +241,29 @@ export async function notifyWrapped(
         notified += 1;
         return;
       }
-      const claimed = await db.runTransaction(async (tx) => {
-        if ((await tx.get(doc.ref)).data()?.notifiedAt) return false;
-        tx.update(doc.ref, {notifiedAt: admin.firestore.FieldValue.serverTimestamp()});
-        return true;
-      });
-      if (!claimed) return;
+      const claimedEmail = await claimWrappedNotification(db, uid, doc.ref, runId, copy);
+      if (!claimedEmail) return;
       const session = (await db.doc(`usersv2/${uid}/private/session`).get()).data();
       await send({
         ...copy,
         data: {route: "wrapped"},
-        modifier: email,
+        modifier: claimedEmail,
         channelId: "recommendations",
         scoreKind: "wrapped",
         docId: `wrapped_${WRAPPED_YEAR}_${uid}`,
         collapseKey: `wrapped_${WRAPPED_YEAR}`,
-      }, {uid, email, loggedOut: user.loggedIn === false}, session?.marketingPushes !== false);
+        pushOnly: true,
+      }, {uid, email: claimedEmail, loggedOut: user.loggedIn === false}, session?.marketingPushes !== false);
       notified += 1;
       log(`${uid} notified`);
     });
     const next = docs.empty ? null : docs.docs[docs.size - 1].ref.path;
-    if (options.apply) await runRef.update({notifyCursor: next});
+    if (options.apply) {
+      await db.runTransaction(async (tx) => {
+        const current = (await tx.get(runRef)).data();
+        if (current?.phase === "built" && current.runId === runId) tx.update(runRef, {notifyCursor: next});
+      });
+    }
     if (docs.empty) return {phase: options.apply ? "notified" : "dry-run", scanned, notified, cursor: null};
     cursor = next;
   }
@@ -175,10 +276,15 @@ if (require.main === module) {
     console.log(USAGE);
   } else {
     const number = (name: string) => {
-      const raw = args.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3);
-      return raw === undefined ? undefined : Number(raw);
+      const matches = args.filter((arg) => arg === `--${name}` || arg.startsWith(`--${name}=`));
+      if (matches.length === 0) return undefined;
+      if (matches.length !== 1 || !matches[0].startsWith(`--${name}=`)) {
+        throw new Error(`Invalid --${name}. Use --${name}=N.`);
+      }
+      return Number(matches[0].slice(name.length + 3));
     };
-    const options = {apply: args.includes("--apply"), maxPages: number("max-pages"), concurrency: number("concurrency")};
+    const options = {apply: args.includes("--apply"), pageSize: number("page-size"), maxPages: number("max-pages"),
+      concurrency: number("concurrency")};
     const job = args.includes("--notify") ?
       notifyWrapped(admin.firestore(), options) :
       buildWrappedDocs(admin.firestore(), {...options, restart: args.includes("--restart")});

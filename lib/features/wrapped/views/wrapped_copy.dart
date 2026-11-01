@@ -41,9 +41,7 @@ WrappedCopy wrappedCopy(AppLocalizations l10n, String locale, WrappedYear year, 
   String colour(int i) => prismPaletteColorDisplayName(card.colours[i], l10n);
   // Colour names are capitalized labels; mid-sentence they read as nouns only in German.
   String inSentence(int i) => locale.startsWith('de') ? colour(i) : colour(i).toLowerCase();
-  final String creatorName = card.creator == null
-      ? ''
-      : (card.creator!.name.isNotEmpty ? card.creator!.name : '@${card.creator!.username}');
+  final String creatorHandle = card.creator == null ? '' : '@${card.creator!.username}';
   return switch (card.kind) {
     WrappedCardKind.intro => WrappedCopy(
       kicker: l10n.wrappedTitle(y),
@@ -64,7 +62,7 @@ WrappedCopy wrappedCopy(AppLocalizations l10n, String locale, WrappedYear year, 
     WrappedCardKind.creator => WrappedCopy(
       kicker: l10n.wrappedCreatorLabel,
       display: '@${card.creator!.username}',
-      body: l10n.wrappedCreatorBody(card.value, creatorName),
+      body: l10n.wrappedCreatorBody(card.value, creatorHandle),
     ),
     WrappedCardKind.streak => WrappedCopy(
       kicker: l10n.wrappedStreakLabel,
@@ -115,7 +113,7 @@ WrappedCopy wrappedCopy(AppLocalizations l10n, String locale, WrappedYear year, 
         for (final WrappedCard stat in year.cards.where(_summarised).take(4))
           () {
             final WrappedCopy c = wrappedCopy(l10n, locale, year, stat);
-            return (c.kicker, c.display);
+            return (c.kicker, c.since == null ? c.display : '${c.display} (${c.since})');
           }(),
       ],
     ),

@@ -29,6 +29,52 @@ void main() {
     expect(parseWrappedYear(doc), isNull);
   });
 
+  test('returns null when the server sends more than seven stat cards', () {
+    final Map<String, dynamic> doc = fixtureWrappedDoc();
+    final List<Map<String, dynamic>> cards = (doc['cards'] as List<Map<String, dynamic>>)
+        .where((Map<String, dynamic> card) => card['id'] != 'ai' && card['id'] != 'mystery')
+        .toList();
+    cards.insertAll(5, <Map<String, dynamic>>[
+      <String, dynamic>{'id': 'folders', 'value': 1},
+      <String, dynamic>{'id': 'onScreen', 'value': 1},
+      <String, dynamic>{'id': 'challenges', 'value': 1},
+      <String, dynamic>{'id': 'tips', 'value': 1},
+    ]);
+    doc['cards'] = cards;
+
+    expect(parseWrappedYear(doc), isNull);
+  });
+
+  test('returns null when intro or summary cards are duplicated', () {
+    final Map<String, dynamic> duplicateIntro = fixtureWrappedDoc();
+    final List<Map<String, dynamic>> introCards = List<Map<String, dynamic>>.from(
+      duplicateIntro['cards'] as List<Map<String, dynamic>>,
+    );
+    introCards.insert(1, Map<String, dynamic>.from(introCards.first));
+    duplicateIntro['cards'] = introCards;
+
+    final Map<String, dynamic> duplicateSummary = fixtureWrappedDoc();
+    final List<Map<String, dynamic>> summaryCards = List<Map<String, dynamic>>.from(
+      duplicateSummary['cards'] as List<Map<String, dynamic>>,
+    );
+    summaryCards.insert(summaryCards.length - 1, Map<String, dynamic>.from(summaryCards.last));
+    duplicateSummary['cards'] = summaryCards;
+
+    expect(parseWrappedYear(duplicateIntro), isNull);
+    expect(parseWrappedYear(duplicateSummary), isNull);
+  });
+
+  test('returns null when a stat card id is duplicated', () {
+    final Map<String, dynamic> doc = fixtureWrappedDoc();
+    final List<Map<String, dynamic>> cards = List<Map<String, dynamic>>.from(
+      doc['cards'] as List<Map<String, dynamic>>,
+    );
+    cards.insert(2, Map<String, dynamic>.from(cards[1]));
+    doc['cards'] = cards;
+
+    expect(parseWrappedYear(doc), isNull);
+  });
+
   test('returns null for another year or another doc version', () {
     final Map<String, dynamic> wrongYear = fixtureWrappedDoc()..['year'] = 2025;
     final Map<String, dynamic> wrongVersion = fixtureWrappedDoc()..['version'] = 2;

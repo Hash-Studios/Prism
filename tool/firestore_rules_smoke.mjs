@@ -496,6 +496,7 @@ const cases = [
     }, Bu), 403],
   ]),
   ['owner reads own Wrapped', () => req('GET', 'wrapped/b/years/2026', null, Bu), 200],
+  ['owner cannot read Wrapped notification marker', () => req('GET', 'wrapped/b', null, Bu), 403],
   ['another user reads a Wrapped', () => req('GET', 'wrapped/b/years/2026', null, A), 403],
   ['signed-out read of a Wrapped', () => req('GET', 'wrapped/b/years/2026', null), 403],
   ['owner writes own Wrapped', () => req('PATCH', 'wrapped/b/years/2026', { year: { integerValue: '2027' } }, Bu), 403],

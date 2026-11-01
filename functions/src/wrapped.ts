@@ -50,7 +50,7 @@ export function wrappedWindow(now: Date, year = WRAPPED_YEAR): WrappedWindow {
 
 export type SavedWall = {wallId: string; prism: boolean; thumb: string; savedAt: number; category: string};
 export type WallInfo = {colors: string[]; creatorUid: string; category: string; thumb: string};
-export type CreatorProfile = {uid: string; username: string; name: string; photo: string};
+export type CreatorProfile = {uid: string; username: string};
 
 export type WrappedSignals = {
   uid: string;
@@ -82,6 +82,8 @@ export type WrappedDoc = {
 };
 
 const PALETTE_ORDER = new Map(PALETTE.map((color, index) => [color.id, index]));
+const compareKeys = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
+const SIGNAL_PAGE_SIZE = 500;
 
 export function normalizeWallId(raw: string): string {
   return raw.trim().toUpperCase();
@@ -108,7 +110,7 @@ export function topCreator(signals: Pick<WrappedSignals, "uid" | "saves" | "wall
     const creator = save.prism ? signals.walls.get(normalizeWallId(save.wallId))?.creatorUid ?? "" : "";
     return creator === signals.uid ? "" : creator;
   });
-  const [top] = rank(tally, (a, b) => a.localeCompare(b));
+  const [top] = rank(tally, compareKeys);
   return top ? {uid: top[0], count: top[1].count} : null;
 }
 
@@ -153,7 +155,7 @@ export function buildWrapped(
   window: WrappedWindow,
   builtAt: Date,
 ): WrappedDoc | null {
-  const saves = [...signals.saves].sort((a, b) => b.savedAt - a.savedAt || a.wallId.localeCompare(b.wallId));
+  const saves = [...signals.saves].sort((a, b) => b.savedAt - a.savedAt || compareKeys(a.wallId, b.wallId));
   const thumbOf = (wallId: string) => {
     const id = normalizeWallId(wallId);
     return saves.find((save) => normalizeWallId(save.wallId) === id)?.thumb || signals.walls.get(id)?.thumb || "";
@@ -172,12 +174,18 @@ export function buildWrapped(
 
   const colours = topColours(saves, signals.walls);
   const creatorTop = topCreator({...signals, saves});
-  const [category] = rank(tallyBy(saves, (save) => categoryOf(save, signals.walls)), (a, b) => a.localeCompare(b));
+  const [category] = rank(tallyBy(saves, (save) => categoryOf(save, signals.walls)), compareKeys);
   const streak = longestRun(signals.claimDays);
   const savedIds = new Set(saves.filter((save) => save.prism).map((save) => normalizeWallId(save.wallId)));
+  const lastSavedAt = new Map<string, number>();
+  for (const save of saves) {
+    const id = normalizeWallId(save.wallId);
+    lastSavedAt.set(id, Math.max(lastSavedAt.get(id) ?? 0, save.savedAt));
+  }
   const [onScreen] = [...signals.uses.entries()]
     .filter(([id]) => savedIds.has(id))
-    .sort(([a, ua], [b, ub]) => ub - ua || a.localeCompare(b));
+    .sort(([a, ua], [b, ub]) => ub - ua || (lastSavedAt.get(b) ?? 0) - (lastSavedAt.get(a) ?? 0) || compareKeys(a, b));
+  const onScreenThumb = onScreen ? thumbOf(onScreen[0]) : "";
 
   const values: Record<StatCardId, number> = {
     saves: saves.length,
@@ -192,41 +200,50 @@ export function buildWrapped(
     tips: signals.tips.count,
   };
   const actions = saves.length + signals.ai.count + signals.folders.count + signals.challenges.count + signals.tips.count;
-  const strong = SIGNALS.filter((signal) => values[signal.id] >= signal.min).slice(0, MAX_STAT_CARDS);
+  const strong = SIGNALS.filter((signal) => values[signal.id] >= signal.min &&
+    (signal.id !== "onScreen" || Boolean(onScreenThumb))).slice(0, MAX_STAT_CARDS);
   if (actions < MIN_ACTIONS || strong.length < MIN_STAT_CARDS) return null;
+  if (strong.some((signal) => signal.id === "onScreen")) used.add(onScreenThumb);
 
-  const intro: WrappedCard = {id: "intro", hero: hero(...anySave())};
+  const ownSignalHeroes = [
+    {url: signals.ai.image},
+    {url: signals.folders.cover},
+    {url: thumbOf(signals.challenges.wallId), wallId: signals.challenges.wallId},
+  ];
+  const intro: WrappedCard = {id: "intro", hero: hero(...anySave(), ...ownSignalHeroes)};
   const stats = strong.map((signal): WrappedCard => {
     const since = Date.parse(`${signal.start}T00:00:00Z`) > window.startMs ? {since: signal.start} : {};
     switch (signal.id) {
     case "saves":
-      return {id: "saves", value: values.saves, hero: hero(saveHero(saves[saves.length - 1]), ...anySave())};
+      return {id: "saves", value: values.saves, hero: hero(saveHero(saves[saves.length - 1]), ...anySave(), ...ownSignalHeroes)};
     case "colours":
       return {id: "colours", colours: colours.ids, value: values.colours, hero: hero(...saves
         .filter((save) => save.prism && signals.walls.get(normalizeWallId(save.wallId))?.colors[0] === colours.ids[0])
-        .map(saveHero), ...anySave())};
+        .map(saveHero), ...anySave(), ...ownSignalHeroes)};
     case "creator":
-      return {id: "creator", value: values.creator, creator: {...creator}, hero: hero(...saves
+      return {id: "creator", value: values.creator, creator: {username: creator!.username}, hero: hero(...saves
         .filter((save) => save.prism && signals.walls.get(normalizeWallId(save.wallId))?.creatorUid === creator?.uid)
-        .map(saveHero), ...anySave())};
+        .map(saveHero), ...anySave(), ...ownSignalHeroes)};
     case "streak":
-      return {id: "streak", value: streak, ...since, hero: hero(...anySave())};
+      return {id: "streak", value: streak, ...since, hero: hero(...anySave(), ...ownSignalHeroes)};
     case "ai":
-      return {id: "ai", value: signals.ai.count, ...since, hero: hero({url: signals.ai.image}, ...anySave())};
+      return {id: "ai", value: signals.ai.count, ...since,
+        hero: hero({url: signals.ai.image}, ...anySave(), ...ownSignalHeroes)};
     case "category":
       return {id: "category", value: values.category, category: category[0], hero: hero(...saves
-        .filter((save) => categoryOf(save, signals.walls) === category[0]).map(saveHero), ...anySave())};
+        .filter((save) => categoryOf(save, signals.walls) === category[0]).map(saveHero), ...anySave(), ...ownSignalHeroes)};
     case "folders":
       return {id: "folders", value: signals.folders.count, ...since,
-        hero: hero({url: signals.folders.cover}, ...anySave())};
+        hero: hero({url: signals.folders.cover}, ...anySave(), ...ownSignalHeroes)};
     case "onScreen":
       return {id: "onScreen", value: values.onScreen, ...since,
-        hero: hero({url: thumbOf(onScreen[0]), wallId: onScreen[0]}, ...anySave())};
+        hero: {url: onScreenThumb, wallId: onScreen[0]}};
     case "challenges":
       return {id: "challenges", value: signals.challenges.count, ...since,
-        hero: hero({url: thumbOf(signals.challenges.wallId), wallId: signals.challenges.wallId}, ...anySave())};
+        hero: hero({url: thumbOf(signals.challenges.wallId), wallId: signals.challenges.wallId}, ...anySave(), ...ownSignalHeroes)};
     case "tips":
-      return {id: "tips", value: signals.tips.count, coins: signals.tips.coins, ...since, hero: hero(...anySave())};
+      return {id: "tips", value: signals.tips.count, coins: signals.tips.coins, ...since,
+        hero: hero(...anySave(), ...ownSignalHeroes)};
     }
   });
   const thumbs = [...new Set([intro, ...stats].map((card) => card.hero.url).filter(Boolean))].slice(0, 4);
@@ -238,7 +255,7 @@ export function buildWrapped(
     builtAt: admin.firestore.Timestamp.fromDate(builtAt),
     actions,
     accents: values.colours > 0 ? colours.ids : [],
-    cards: [intro, ...stats, {id: "summary", hero: {url: thumbs[0] ?? ""}, thumbs}],
+    cards: [intro, ...stats, {id: "summary", hero: {url: thumbs[0] ?? ownSignalHeroes.find((item) => item.url)?.url ?? ""}, thumbs}],
   };
 }
 
@@ -259,26 +276,34 @@ const inWindow = (ms: number | null, window: WrappedWindow): ms is number =>
 /** Every Prism wall, read once per run so per-user lookups cost nothing. */
 export async function loadWallIndex(db: admin.firestore.Firestore): Promise<Map<string, WallInfo>> {
   const walls = new Map<string, WallInfo>();
-  const snap = await db.collection("walls").select("id", "colors", "creatorUid", "category", "wallpaper_thumb").get();
-  for (const doc of snap.docs) {
-    const data = doc.data();
-    const logical = str(data.id) || doc.id;
-    const id = normalizeWallId(logical);
-    // After a dedupe the doc whose id matches its own id field is the canonical one.
-    if (walls.has(id) && logical !== doc.id) continue;
-    walls.set(id, {
-      colors: Array.isArray(data.colors) ? data.colors.filter((c: unknown): c is string => typeof c === "string") : [],
-      creatorUid: str(data.creatorUid),
-      category: str(data.category),
-      thumb: str(data.wallpaper_thumb),
-    });
+  const pageSize = 500;
+  let cursor: admin.firestore.QueryDocumentSnapshot | undefined;
+  while (true) {
+    let query = db.collection("walls").select("id", "colors", "creatorUid", "category", "wallpaper_thumb")
+      .orderBy(admin.firestore.FieldPath.documentId()).limit(pageSize);
+    if (cursor) query = query.startAfter(cursor);
+    const snap = await query.get();
+    for (const doc of snap.docs) {
+      const data = doc.data();
+      const logical = str(data.id) || doc.id;
+      const id = normalizeWallId(logical);
+      // After a dedupe the doc whose id matches its own id field is the canonical one.
+      if (walls.has(id) && logical !== doc.id) continue;
+      walls.set(id, {
+        colors: Array.isArray(data.colors) ? data.colors.filter((c: unknown): c is string => typeof c === "string") : [],
+        creatorUid: str(data.creatorUid),
+        category: str(data.category),
+        thumb: str(data.wallpaper_thumb),
+      });
+    }
+    if (snap.size < pageSize) return walls;
+    cursor = snap.docs[snap.docs.length - 1];
   }
-  return walls;
 }
 
 /**
  * Reads one user's signals. A save counts on `favouritedAt`, or on `createdAt` for saves made before 8 Oct 2026. For a
- * Prism wall that older `createdAt` is the upload date, which is never after the save, so the count can only be low.
+ * 2026 build, that older `createdAt` upload date cannot count a save from a later year. A post-year restart can.
  */
 export async function readWrappedSignals(
   db: admin.firestore.Firestore,
@@ -290,11 +315,9 @@ export async function readWrappedSignals(
   const start = admin.firestore.Timestamp.fromMillis(window.startMs);
   const end = admin.firestore.Timestamp.fromMillis(window.endMs);
   const images = db.collection(`usersv2/${uid}/images`);
-  const [byFavourited, byCreated, coins, aiCount, aiLatest, folders, entries, receipts] = await Promise.all([
+  const [byFavourited, byCreated, aiCount, aiLatest, folders, entries, receipts] = await Promise.all([
     images.where("favouritedAt", ">=", start).where("favouritedAt", "<", end).get(),
     images.where("createdAt", ">=", start).where("createdAt", "<", end).get(),
-    db.collection("coinTransactions").where("userId", "==", uid)
-      .where("createdAt", ">=", start).where("createdAt", "<", end).get(),
     db.collection("aiGenerations").where("userId", "==", uid)
       .where("createdAt", ">=", start).where("createdAt", "<", end).count().get(),
     db.collection("aiGenerations").where("userId", "==", uid)
@@ -320,17 +343,27 @@ export async function readWrappedSignals(
   }
 
   const offset = storedTimezoneOffset(user.coinState) ?? 0;
-  const claimDays: string[] = [];
+  const claimDays = new Set<string>();
   const tips = {count: 0, coins: 0};
-  for (const doc of coins.docs) {
-    const data = doc.data();
-    const at = toMillis(data.createdAt);
-    if (!inWindow(at, window)) continue;
-    if (data.action === "dailyLogin") claimDays.push(localDateKeyFromUtc(new Date(at), offset));
-    if (data.action === "tipSent" && typeof data.delta === "number" && data.delta < 0) {
-      tips.count += 1;
-      tips.coins += -data.delta;
+  const coinQuery = db.collection("coinTransactions").where("userId", "==", uid)
+    .where("createdAt", ">=", start).where("createdAt", "<", end);
+  let coinCursor: admin.firestore.QueryDocumentSnapshot | undefined;
+  while (true) {
+    let pageQuery = coinQuery.orderBy("createdAt").limit(SIGNAL_PAGE_SIZE);
+    if (coinCursor) pageQuery = pageQuery.startAfter(coinCursor);
+    const page = await pageQuery.get();
+    for (const doc of page.docs) {
+      const data = doc.data();
+      const at = toMillis(data.createdAt);
+      if (!inWindow(at, window)) continue;
+      if (data.action === "dailyLogin") claimDays.add(localDateKeyFromUtc(new Date(at), offset));
+      if (data.action === "tipSent" && typeof data.delta === "number" && data.delta < 0) {
+        tips.count += 1;
+        tips.coins += -data.delta;
+      }
     }
+    if (page.size < SIGNAL_PAGE_SIZE) break;
+    coinCursor = page.docs[page.docs.length - 1];
   }
 
   const ai = aiLatest.docs[0]?.data();
@@ -351,7 +384,7 @@ export async function readWrappedSignals(
     uid,
     saves: [...saves.values()],
     walls,
-    claimDays,
+    claimDays: [...claimDays],
     ai: {count: aiCount.data().count, image: str(ai?.watermarkedImageUrl) || str(ai?.imageUrl)},
     folders: {
       count: made.length,
@@ -370,6 +403,6 @@ export async function readCreatorProfile(db: admin.firestore.Firestore, uid: str
   const [profile, account] = await Promise.all([db.doc(`profiles/${uid}`).get(), db.doc(`usersv2/${uid}`).get()]);
   const data = profile.data();
   const username = str(data?.username).trim();
-  if (!data || !username || account.data()?.deleted === true) return null;
-  return {uid, username, name: str(data.name).trim(), photo: str(data.profilePhoto)};
+  if (!data || !username || !account.exists || account.data()?.deleted === true) return null;
+  return {uid, username};
 }

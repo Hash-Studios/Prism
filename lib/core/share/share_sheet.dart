@@ -3,10 +3,10 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
-import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/share/instagram_stories.dart';
 import 'package:Prism/core/share/share_card.dart';
@@ -66,6 +66,8 @@ Future<void> showShareSheet(
   VoidCallback? onShared,
   List<ShareCardFormat>? formats,
   ValueChanged<ShareTargetValue>? onTargetDone,
+  String? ownerUserId,
+  Stream<String>? ownerChanges,
 }) {
   return showPrismSheet<void>(
     context,
@@ -89,6 +91,8 @@ Future<void> showShareSheet(
       onShared: onShared,
       formats: formats,
       onTargetDone: onTargetDone,
+      ownerUserId: ownerUserId,
+      ownerChanges: ownerChanges,
     ),
   );
 }
@@ -101,6 +105,8 @@ class ShareSheet extends StatefulWidget {
     this.onShared,
     this.formats,
     this.onTargetDone,
+    this.ownerUserId,
+    this.ownerChanges,
     super.key,
   });
 
@@ -114,6 +120,12 @@ class ShareSheet extends StatefulWidget {
 
   /// Called with the target after a share action succeeds.
   final ValueChanged<ShareTargetValue>? onTargetDone;
+
+  /// Binds a private share to the account that owns the content. Public shares leave this unset.
+  final String? ownerUserId;
+
+  /// Business-level identity changes for a private share.
+  final Stream<String>? ownerChanges;
 
   @override
   State<ShareSheet> createState() => _ShareSheetState();
@@ -135,12 +147,30 @@ class _ShareSheetState extends State<ShareSheet> {
   bool _instagram = false;
   ShareTargetValue? _busy;
   String? _actionUserId;
+  StreamSubscription<String>? _ownerSessionSubscription;
+  bool _ownerInvalidated = false;
 
-  bool get _actionSessionValid => mounted && app_state.prismUser.loggedIn && app_state.prismUser.id == _actionUserId;
+  bool get _ownerSessionValid =>
+      !_ownerInvalidated &&
+      (widget.ownerUserId == null || (app_state.prismUser.loggedIn && app_state.prismUser.id == widget.ownerUserId));
+  bool get _actionSessionValid =>
+      mounted &&
+      _ownerSessionValid &&
+      app_state.prismUser.loggedIn &&
+      app_state.prismUser.id == _actionUserId &&
+      (widget.ownerUserId == null || _actionUserId == widget.ownerUserId);
 
   @override
   void initState() {
     super.initState();
+    final String? ownerUserId = widget.ownerUserId;
+    if (ownerUserId != null) {
+      _ownerInvalidated = !app_state.prismUser.loggedIn || app_state.prismUser.id != ownerUserId;
+      _ownerSessionSubscription = widget.ownerChanges?.listen((uid) {
+        if (uid == ownerUserId) return;
+        _invalidateOwnerSession();
+      });
+    }
     unawaited(_checkInstagram());
   }
 
@@ -156,9 +186,24 @@ class _ShareSheetState extends State<ShareSheet> {
 
   @override
   void dispose() {
+    unawaited(_ownerSessionSubscription?.cancel());
     _pages.dispose();
     if (_busy == null) _deleteRenders();
     super.dispose();
+  }
+
+  void _invalidateOwnerSession() {
+    if (_ownerInvalidated) return;
+    _ownerInvalidated = true;
+    if (_busy == null) {
+      _deleteRenders();
+      _renders.clear();
+    }
+    if (mounted) {
+      setState(() {
+        _failedRenders.clear();
+      });
+    }
   }
 
   void _deleteRenders() {
@@ -171,6 +216,7 @@ class _ShareSheetState extends State<ShareSheet> {
 
   /// Keeps successful renders, but lets an explicit target action retry a failed preview.
   Future<File> _render(ShareCardFormat format, {bool retry = false}) {
+    if (!_ownerSessionValid) return Future<File>.error(StateError('share owner session changed'));
     if (retry && _failedRenders.remove(format)) _renders.remove(format);
     return _renders.putIfAbsent(
       format,
@@ -209,7 +255,9 @@ class _ShareSheetState extends State<ShareSheet> {
   }
 
   Future<void> _run(ShareTargetValue target, Future<bool> Function() action) async {
+    if (!_ownerSessionValid) return;
     if (!await requireSignedInAction(context) || !mounted) return;
+    if (!_ownerSessionValid) return;
     if (_busy != null) return;
     _actionUserId = app_state.prismUser.id;
     PrismHaptics.tap();
@@ -221,6 +269,10 @@ class _ShareSheetState extends State<ShareSheet> {
       _actionUserId = null;
       if (mounted) {
         setState(() => _busy = null);
+        if (_ownerInvalidated) {
+          _deleteRenders();
+          _renders.clear();
+        }
       } else {
         _deleteRenders();
       }
@@ -230,7 +282,7 @@ class _ShareSheetState extends State<ShareSheet> {
   }
 
   Future<bool> _copyLink() async {
-    if (!_actionSessionValid) return false;
+    if (!mounted || !_actionSessionValid) return false;
     final AppLocalizations l10n = context.l10n;
     try {
       await widget.services.copyText(widget.content.link);
@@ -302,7 +354,7 @@ class _ShareSheetState extends State<ShareSheet> {
     } catch (error, stackTrace) {
       logger.w('Share card failed; sharing text', error: error, stackTrace: stackTrace);
     }
-    if (!_actionSessionValid) return false;
+    if (!mounted || !_actionSessionValid) return false;
     try {
       ShareResult sent;
       if (file == null) {
@@ -347,6 +399,7 @@ class _ShareSheetState extends State<ShareSheet> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.ownerUserId != null && !_ownerSessionValid) return const SizedBox.shrink();
     final AppLocalizations l10n = context.l10n;
     final double height = (MediaQuery.sizeOf(context).height * 0.46).clamp(240.0, 440.0);
     return PrismSheetBody(
@@ -372,7 +425,7 @@ class _ShareSheetState extends State<ShareSheet> {
                   format: format,
                   label: _formatLabel(l10n, format),
                   selected: selected,
-                  render: selected || _renders.containsKey(format) ? _render(format) : null,
+                  render: _ownerSessionValid && (selected || _renders.containsKey(format)) ? _render(format) : null,
                   onTap: selected
                       ? null
                       : () => _pages.animateToPage(

@@ -47,23 +47,38 @@ class PrismWrappedPage extends StatefulWidget {
 class _PrismWrappedPageState extends State<PrismWrappedPage> {
   final WrappedBloc _bloc = getIt<WrappedBloc>();
   final String _uid = app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '';
+  StreamSubscription<String>? _userChanges;
+  late String _activeUid;
+  bool _notEligibleHandled = false;
 
   @override
   void initState() {
     super.initState();
+    _activeUid = _uid;
     _bloc.add(WrappedEvent.load(_uid));
-    // The Home card may have loaded this user already, so a known "no Wrapped" emits nothing new.
-    final WrappedState state = _bloc.state;
-    if (_uid.isEmpty || (state is WrappedNotEligible && state.uid == _uid)) {
+    _userChanges = _bloc.userChanges.listen((uid) {
+      if (uid == _activeUid) return;
+      _activeUid = uid;
+      if (mounted) {
+        setState(() {});
+        if (ModalRoute.of(context)?.isCurrent ?? true) unawaited(Navigator.of(context).maybePop());
+      }
+    });
+    if (_uid.isEmpty) WidgetsBinding.instance.addPostFrameCallback((_) => _leave());
+    if (_bloc.state case WrappedNotEligible(uid: final uid) when uid == _uid) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _leave());
     }
   }
 
-  bool _left = false;
+  @override
+  void dispose() {
+    unawaited(_userChanges?.cancel());
+    super.dispose();
+  }
 
   void _leave() {
-    if (!mounted || _left) return;
-    _left = true;
+    if (!mounted || _notEligibleHandled) return;
+    _notEligibleHandled = true;
     analytics.track(WrappedNotEligibleEvent(source: widget.source));
     toasts.info(context.l10n.wrappedNotEligible);
     unawaited(Navigator.of(context).maybePop());
@@ -79,11 +94,22 @@ class _PrismWrappedPageState extends State<PrismWrappedPage> {
           bloc: _bloc,
           listenWhen: (_, state) => state is WrappedNotEligible && state.uid == _uid,
           listener: (_, _) => _leave(),
-          builder: (context, state) => switch (state) {
-            WrappedReady(:final uid, :final year) when uid == _uid => WrappedStory(year: year, source: widget.source),
-            WrappedFailed(:final uid) when uid == _uid => _Failed(onRetry: () => _bloc.add(WrappedEvent.load(_uid))),
-            _ => const Center(child: CircularProgressIndicator(color: WrappedCardStyle.text)),
-          },
+          builder: (context, state) => _activeUid != _uid
+              ? const SizedBox.shrink()
+              : state is WrappedNotEligible && state.uid == _uid
+              ? const SizedBox.shrink()
+              : switch (state) {
+                  WrappedReady(:final uid, :final year) when uid == _uid => WrappedStory(
+                    year: year,
+                    source: widget.source,
+                    ownerUserId: uid,
+                    ownerChanges: _bloc.userChanges,
+                  ),
+                  WrappedFailed(:final uid) when uid == _uid => _Failed(
+                    onRetry: () => _bloc.add(WrappedEvent.load(_uid)),
+                  ),
+                  _ => const Center(child: CircularProgressIndicator(color: WrappedCardStyle.text)),
+                },
         ),
       ),
     );
@@ -133,15 +159,26 @@ class _Failed extends StatelessWidget {
 
 /// The story itself, for a loaded [year].
 class WrappedStory extends StatefulWidget {
-  const WrappedStory({required this.year, required this.source, this.share = shareWrappedCard, super.key});
+  const WrappedStory({
+    required this.year,
+    required this.source,
+    required this.ownerUserId,
+    this.ownerChanges,
+    this.share = shareWrappedCard,
+    super.key,
+  });
 
   final WrappedYear year;
   final WrappedSourceValue source;
+  final String ownerUserId;
+  final Stream<String>? ownerChanges;
   final Future<void> Function(
     BuildContext, {
     required WrappedCard card,
     required WrappedCopy copy,
     required Color accent,
+    required String ownerUserId,
+    Stream<String>? ownerChanges,
   })
   share;
 
@@ -266,7 +303,14 @@ class _WrappedStoryState extends State<WrappedStory> with TickerProviderStateMix
 
   Future<void> _share(WrappedCopy copy) async {
     _hold(true);
-    await widget.share(context, card: _card, copy: copy, accent: _accent);
+    await widget.share(
+      context,
+      card: _card,
+      copy: copy,
+      accent: _accent,
+      ownerUserId: widget.ownerUserId,
+      ownerChanges: widget.ownerChanges,
+    );
     if (mounted) _hold(false);
   }
 
@@ -285,7 +329,7 @@ class _WrappedStoryState extends State<WrappedStory> with TickerProviderStateMix
     final AppLocalizations l10n = context.l10n;
     final WrappedCopy copy = wrappedCopy(l10n, Localizations.localeOf(context).toLanguageTag(), widget.year, _card);
     final EdgeInsets safe = MediaQuery.paddingOf(context);
-    final Duration fade = context.motion(PrismDurations.base);
+    final Duration fade = _still ? Duration.zero : context.motion(PrismDurations.base);
     return LayoutBuilder(
       builder: (context, constraints) => AnimatedBuilder(
         animation: _drag,
@@ -348,7 +392,7 @@ class _WrappedStoryState extends State<WrappedStory> with TickerProviderStateMix
               right: PrismSpace.sm,
               child: AnimatedOpacity(
                 opacity: _held ? 0 : 1,
-                duration: context.motion(PrismDurations.fast),
+                duration: _still ? Duration.zero : context.motion(PrismDurations.fast),
                 child: _Chrome(
                   count: _cards.length,
                   index: _index,

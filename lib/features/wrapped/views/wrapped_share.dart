@@ -28,12 +28,16 @@ Future<void> shareWrappedCard(
   required WrappedCard card,
   required WrappedCopy copy,
   required Color accent,
+  required String ownerUserId,
+  Stream<String>? ownerChanges,
   ShareSheetServices? services,
 }) => showShareSheet(
   context,
   ShareCardContent(imageUrl: card.heroUrl, link: wrappedShareLink, brandName: 'Prism', contentId: card.id),
   'wrapped',
   formats: const <ShareCardFormat>[ShareCardFormat.story],
+  ownerUserId: ownerUserId,
+  ownerChanges: ownerChanges,
   services:
       services ?? ShareSheetServices(render: (_, _) => renderWrappedShareFile(copy, wrappedCardImages(card), accent)),
   onTargetDone: (target) => analytics.track(WrappedCardSharedEvent(cardId: card.id, target: target)),

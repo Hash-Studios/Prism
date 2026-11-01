@@ -26,8 +26,8 @@ A server job builds one private document for each eligible user: `wrapped/{uid}/
 |---|---|---|---|
 | Saves | Walls saved | `usersv2/{uid}/images`, on `favouritedAt`, else `createdAt` | 1 Jan (count can be low, see below) |
 | Colours | Top 3 colours of saved Prism walls | `walls.colors` | 1 Jan |
-| Creator | Most saved creator, not the user | `walls.creatorUid`, then `profiles/{uid}` | 1 Jan |
-| Streak | Longest run of days with a daily claim | `coinTransactions`, `action: dailyLogin`, by local day | 2 Mar 2026 |
+| Creator | Most saved creator, not the user; only the public username is stored | `walls.creatorUid`, then `profiles/{uid}` | 1 Jan |
+| Streak | Longest run of days with a daily claim, using the user's currently stored fixed UTC offset | `coinTransactions`, `action: dailyLogin` | 2 Mar 2026 |
 | AI | AI walls made | `aiGenerations`, `userId` | 19 Feb 2026 |
 | Category | Most saved category, not General | `walls.category`, else the save's `category` | 1 Jan |
 | Folders | Folders made | `folders`, `ownerId` | 27 Oct 2026 |
@@ -35,7 +35,7 @@ A server job builds one private document for each eligible user: `wrapped/{uid}/
 | Challenges | Weekly challenges with an approved entry | `entries` collection group, `creatorUid` | 30 Oct 2026 |
 | Tips | Tips sent | `coinTransactions`, `action: tipSent` | 1 Nov 2026 |
 
-Before 8 October 2026, a Prism save stored the wall's upload date in `createdAt`, not the save date. That date is never after the save. So the saves count can be lower than the real count, but it never counts a save from another year.
+Before 8 October 2026, a Prism save stored the wall's upload date in `createdAt`, not the save date. At a build time in 2026, that fallback cannot count a save made in a later year, so it is a lower-bound count. If the job is restarted after 2026, a post-year save may be attributed to 2026 because its actual save date is unavailable. Do not treat a post-year rebuild as exact.
 
 Ties use the higher count, then the most recent save, then the id. Colours score 3, 2 and 1 by dominance, and ties use the palette order.
 
@@ -49,26 +49,30 @@ npm run job:wrapped -- --apply --restart  # new build with a new window end; rem
 npm run job:wrapped -- --notify --apply # after a finished build: one push and inbox item for each user
 ```
 
-The job pages `usersv2` by document id. It moves its checkpoint (`wrappedRuns/2026`) only after every user on the page is written. If it stops, run it again and it continues. It skips deleted accounts. A rebuild keeps `notifiedAt`, so a user never gets the launch push twice.
+The job pages `usersv2` by document id. It moves its checkpoint (`wrappedRuns/2026`) only after every user on the page is written. If it stops, run it again and it continues. It skips deleted accounts. A yearly notification marker on `wrapped/{uid}` survives deletion of the year doc, so a user cannot get the launch push twice after losing and regaining eligibility.
 
-`--notify` marks a doc as notified before it sends. A crash can drop one push, but it cannot send two. The inbox item has a fixed id (`wrapped_2026_{uid}`). The push obeys the marketing push setting (`marketingPushes`).
+`--notify` atomically claims the yearly marker and creates the inbox item with fixed id (`wrapped_2026_{uid}`) before it sends. A crash can drop one push, but it cannot send two. The push obeys the marketing push setting (`marketingPushes`).
 
 ### Read cost
 
-All walls are read once for each run. Each user then costs these reads:
+All wall metadata is read once per run, in pages of 500 documents. A full page causes one final empty query to detect the end. The full index remains in memory for lookups. Each user then costs these reads (empty queries still cost one read):
 
 | Read | Cost |
 |---|---|
 | User page | 1 |
-| Saves (2 range queries) | 2 minimum, plus 1 for each save in 2026 |
-| Coin ledger in 2026 | 1 minimum, plus 1 for each row (daily claims are most of them) |
-| AI walls | 2 (a count and the latest) |
-| Folders | 1 minimum, plus 1 for each folder |
-| Challenge entries | 1 minimum, plus 1 for each entry |
-| Receipts in 2026 | 1 minimum, plus 1 for each receipt |
-| Top creator | 2, only when there is a top creator |
+| Saves | `max(1, F) + max(1, C)`, where `F` and `C` are the matching documents in the `favouritedAt` and `createdAt` queries. A document matching both queries is read twice before it is deduplicated. |
+| Coin ledger in 2026 | One read per matching row, with a one-read minimum; add one read when the row count is a positive multiple of 500 because the final empty page detects the end. Only one page is held while daily claims and tips are aggregated. Claim days are deduplicated, so at most 367 day keys are retained. |
+| AI walls | Count query: `max(1, ceil(index entries / 1,000))`; plus `max(1, latest documents)`. The latest query is limited to one document, so it costs exactly one read whether empty or not. |
+| Folders | `max(1, all folders owned by the user)`; the query is not date-bounded, then `createdAt` is filtered in memory. |
+| Challenge entries | `max(1, all matching entries for the creator)`; the query is not date-bounded, then state and source-wall `createTime` are filtered in memory. |
+| Receipts in 2026 | `max(1, matching receipts)` |
+| Top creator | 2, only when there is a top creator: the public profile and account deletion check. |
 
-A user with no activity costs 9 reads. A heavy user (300 saves, 300 claims) costs about 650 reads.
+A user with no activity costs 9 reads, excluding the shared wall index. The 300-save/300-claim case depends on which save timestamps are present: if all saves match both save queries, that is 600 save reads, not 300. Folder and challenge reads also include all-time matching documents.
+
+For 200,000 quiet users, the user pages and per-user signal queries cost about 1.8 million reads, before the shared wall index, apply guards and page checkpoints. A 200,000-wall index adds 200,001 reads because 400 full pages need an empty query to detect the end; its 200,000 metadata entries also remain in memory. The default 200-user page size needs 1,001 checkpoint transactions to finish those users, each with one read and one write, plus one run-state read at start. Every completed build queries one final empty user page, even when its last non-empty page was partial. Apply adds 4 transaction reads and one Wrapped write for each eligible user. On a restart, every ineligible user also incurs 3 transaction reads (the existing Wrapped year doc, parent marker and run state), even if there is no year doc to remove. If a stale year doc exists, it is deleted; if it has a legacy `notifiedAt` value not yet copied to the parent marker, that marker is written too.
+
+`--notify` reads the run state once. Its `years` collection-group scan costs one read per returned document, including paths later skipped, plus one terminal empty query for every completed scan. For each valid unnotified Wrapped doc it reads the user once, reads 5 docs in the atomic claim transaction, and reads the private session once for push settings. When push is enabled and the user is logged in, `sendToUser` additionally reads `usersv2/{uid}` to confirm the account can receive a personal push and reads the private session again for its token. The claim writes the year doc, parent marker, and fixed-id inbox item. Each notify-page checkpoint adds one read and one write. These counts exclude helper push-accounting writes and external FCM delivery.
 
 ## Access and deletion
 

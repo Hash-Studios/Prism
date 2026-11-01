@@ -84,7 +84,7 @@ class FeedCarousel extends StatefulWidget {
   State<FeedCarousel> createState() => _FeedCarouselState();
 }
 
-class _FeedCarouselState extends State<FeedCarousel> {
+class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver {
   int _current = 0;
   List<String> _pageIds = const <String>[];
   final CarouselSliderController _controller = CarouselSliderController();
@@ -97,19 +97,53 @@ class _FeedCarouselState extends State<FeedCarousel> {
 
   final WrappedBloc _wrapped = getIt<WrappedBloc>();
   StreamSubscription<WrappedState>? _wrappedChanges;
+  StreamSubscription<String>? _wrappedUserChanges;
+  Timer? _wrappedWindowTimer;
+  String _wrappedUid = '';
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scheduleDropEnd();
     _scheduleSeasonEnd();
-    final String uid = app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '';
-    if (uid.isNotEmpty && WrappedConfig.isOpen(DateTime.now())) {
-      _wrappedChanges = _wrapped.stream.listen((_) {
-        if (mounted) setState(() {});
-      });
-      _wrapped.add(WrappedEvent.load(uid));
+    _wrappedUid = _currentWrappedUid;
+    _wrappedUserChanges = _wrapped.userChanges.listen((uid) {
+      if (uid == _wrappedUid) return;
+      _wrappedUid = uid;
+      _refreshWrapped();
+    });
+    _refreshWrapped();
+  }
+
+  String get _currentWrappedUid => app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '';
+
+  void _watchWrapped() {
+    _wrappedChanges ??= _wrapped.stream.listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  void _refreshWrapped() {
+    final bool isOpen = WrappedConfig.isOpen(DateTime.now());
+    if (_wrappedUid.isNotEmpty && isOpen) {
+      _watchWrapped();
+      _wrapped.add(WrappedEvent.load(_wrappedUid));
     }
+    if (mounted) setState(() {});
+    _scheduleWrappedWindowCheck();
+  }
+
+  void _scheduleWrappedWindowCheck() {
+    _wrappedWindowTimer?.cancel();
+    final DateTime now = DateTime.now();
+    final DateTime nextDay = DateTime(now.year, now.month, now.day + 1);
+    _wrappedWindowTimer = Timer(nextDay.difference(now), _refreshWrapped);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refreshWrapped();
   }
 
   @override
@@ -123,7 +157,10 @@ class _FeedCarouselState extends State<FeedCarousel> {
   void dispose() {
     _dropEndTimer?.cancel();
     _seasonEndTimer?.cancel();
+    _wrappedWindowTimer?.cancel();
     unawaited(_wrappedChanges?.cancel());
+    unawaited(_wrappedUserChanges?.cancel());
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -229,11 +266,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
     final double width = _carouselWidth(context);
     final int columns = _carouselColumns(context);
     final int memCacheHeight = (height * MediaQuery.devicePixelRatioOf(context)).round();
-    final WrappedYear? wrapped = wrappedForHome(
-      _wrapped.state,
-      app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '',
-      DateTime.now(),
-    );
+    final WrappedYear? wrapped = wrappedForHome(_wrapped.state, _currentWrappedUid, DateTime.now());
     final List<SeasonalTheme> seasons = seasonalThemes
         .where((season) => season.inSeason() && !season.isActive(context))
         .toList();

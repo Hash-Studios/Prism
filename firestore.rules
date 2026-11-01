@@ -510,13 +510,13 @@ service cloud.firestore {
       allow delete: if isConfiguredAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
 
-    // Coin transaction ledger is private per user.
     // Prism Wrapped: built by the server job, read only by its owner.
     match /wrapped/{uid}/years/{year} {
       allow read: if isSignedIn() && request.auth.uid == uid;
       allow write: if false;
     }
 
+    // Coin transaction ledger is private per user.
     match /coinTransactions/{docId} {
       allow read: if isConfiguredAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow write: if false;

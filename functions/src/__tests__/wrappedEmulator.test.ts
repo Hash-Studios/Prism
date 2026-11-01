@@ -10,7 +10,8 @@ const at = (iso: string) => admin.firestore.Timestamp.fromDate(new Date(`${iso}T
 
 async function clear() {
   await Promise.all(["usersv2", "walls", "profiles", "wrapped", "wrappedRuns", "coinTransactions", "aiGenerations",
-    "folders", "weeklyChallenges", "notifications"].map((name) => db.recursiveDelete(db.collection(name))));
+    "folders", "weeklyChallenges", "notifications", "creatorDeletionState"]
+    .map((name) => db.recursiveDelete(db.collection(name))));
 }
 
 /** heavy: 12 saves and more; light: 10 saves and a 3-day run; quiet: 3 saves; gone: a deleted account. */
@@ -82,23 +83,66 @@ test("the Wrapped job builds private docs, resumes, stays idempotent and notifie
   assert.equal(again.phase, "built", "a finished build does nothing without --restart");
 
   const sent: string[] = [];
-  const send = async (_payload: unknown, recipient: {uid?: string}) => {
+  const sentPayloads: Array<{pushOnly?: boolean}> = [];
+  const send = async (payload: unknown, recipient: {uid?: string}) => {
     sent.push(recipient.uid ?? "");
+    sentPayloads.push(payload as {pushOnly?: boolean});
     return true;
   };
   await notifyWrapped(db, {apply: true, send, log: quiet});
   assert.deepEqual(sent.sort(), ["heavy", "light"]);
+  assert.ok(sentPayloads.every((payload) => payload.pushOnly === true), "the generic helper sends push only");
   await notifyWrapped(db, {apply: true, send, log: quiet});
   assert.equal(sent.length, 2, "a second notify run sends nothing");
   await db.doc(WRAPPED_RUN).update({phase: "building"});
   await assert.rejects(() => notifyWrapped(db, {apply: true, send, log: quiet}), /Finish the build/);
   await db.doc(WRAPPED_RUN).update({phase: "built"});
 
-  await db.doc("usersv2/light/images/W1").delete();
-  await db.doc("usersv2/light/images/W2").delete();
-  const rebuilt = await buildWrappedDocs(db, {apply: true, restart: true, now: NOW, log: quiet});
-  assert.equal(rebuilt.removed, 1, "a restart removes a doc whose owner is no longer eligible");
+  // Losing eligibility removes the year doc, but its notice claim survives on the parent.
+  const savedLightWalls = await Promise.all(["W1", "W2"].map((id) => db.doc(`usersv2/light/images/${id}`).get()));
+  await db.doc("wrapped/light").delete(); // Simulate a legacy doc with no parent marker.
+  await Promise.all(["W1", "W2"].map((id) => db.doc(`usersv2/light/images/${id}`).delete()));
+  const ineligible = await buildWrappedDocs(db, {apply: true, restart: true, now: NOW, log: quiet});
+  assert.equal(ineligible.removed, 1, "a restart removes a doc whose owner is no longer eligible");
   assert.equal((await db.doc(wrappedDocPath("light")).get()).exists, false);
+  assert.ok((await db.doc("wrapped/light").get()).data()?.notifiedAt_2026,
+    "removing a legacy notified doc preserves its claim on the parent");
+  await Promise.all(savedLightWalls.map((wall, index) =>
+    db.doc(`usersv2/light/images/W${index + 1}`).set(wall.data() ?? {})));
+  await buildWrappedDocs(db, {apply: true, restart: true, now: NOW, log: quiet});
+  const eligibleAgain = (await db.doc(wrappedDocPath("light")).get()).data();
+  assert.ok(eligibleAgain, "the user becomes eligible again");
+  assert.ok(eligibleAgain.notifiedAt, "the rebuilt year doc restores its durable notification marker");
+  await notifyWrapped(db, {apply: true, send, log: quiet});
+  assert.equal(sent.length, 2, "ineligible then eligible rebuilds do not send a second notice");
   assert.ok((await db.doc(wrappedDocPath("heavy")).get()).data()?.notifiedAt, "a rebuild keeps notifiedAt");
+
+  // Close the deletion barrier after signal reads but before the guarded write transaction starts.
+  await db.doc(wrappedDocPath("heavy")).delete();
+  let closedDuringWrite = false;
+  await buildWrappedDocs(db, {apply: true, restart: true, now: NOW, log: quiet,
+    beforeGuardTransaction: async (uid, operation) => {
+      if (uid !== "heavy" || operation !== "write" || closedDuringWrite) return;
+      closedDuringWrite = true;
+      await db.doc("creatorDeletionState/heavy").set({closed: true});
+      await db.recursiveDelete(db.doc(wrappedDocPath("heavy")));
+    }});
+  assert.equal(closedDuringWrite, true);
+  assert.equal((await db.doc(wrappedDocPath("heavy")).get()).exists, false,
+    "the guarded write sees the closed deletion barrier and cannot recreate Wrapped");
+
+  // A same-endMs restart takes ownership while old cleanup is paused before its guarded delete transaction.
+  await db.doc("creatorDeletionState/heavy").delete();
+  await Promise.all(["W1", "W2"].map((id) => db.doc(`usersv2/light/images/${id}`).delete()));
+  let restartedDuringRemove = false;
+  const stale = await buildWrappedDocs(db, {apply: true, restart: true, now: NOW, log: quiet,
+    beforeGuardTransaction: async (uid, operation) => {
+      if (uid !== "light" || operation !== "remove" || restartedDuringRemove) return;
+      restartedDuringRemove = true;
+      await buildWrappedDocs(db, {apply: true, restart: true, now: NOW, log: quiet});
+    }});
+  assert.equal(restartedDuringRemove, true);
+  assert.equal(stale.phase, "superseded", "the stale runner stops after a same-window restart takes ownership");
+  assert.equal((await db.doc(WRAPPED_RUN).get()).data()?.phase, "built");
   await clear();
 });

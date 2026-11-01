@@ -13,15 +13,19 @@ import 'wrapped_fixture.dart';
 class _FakeShare {
   final List<WrappedCard> cards = <WrappedCard>[];
   final List<WrappedCopy> copies = <WrappedCopy>[];
+  final List<String> ownerUserIds = <String>[];
 
   Future<void> call(
     BuildContext context, {
     required WrappedCard card,
     required WrappedCopy copy,
     required Color accent,
+    required String ownerUserId,
+    Stream<String>? ownerChanges,
   }) async {
     cards.add(card);
     copies.add(copy);
+    ownerUserIds.add(ownerUserId);
   }
 }
 
@@ -39,7 +43,12 @@ class _Home extends StatelessWidget {
         onPressed: () => Navigator.of(context).push<void>(
           MaterialPageRoute<void>(
             builder: (_) => Scaffold(
-              body: WrappedStory(year: year, source: WrappedSourceValue.home, share: share.call),
+              body: WrappedStory(
+                year: year,
+                source: WrappedSourceValue.home,
+                ownerUserId: 'test-user',
+                share: share.call,
+              ),
             ),
           ),
         ),
@@ -49,7 +58,12 @@ class _Home extends StatelessWidget {
   );
 }
 
-Future<void> _pumpStory(WidgetTester tester, {required _FakeShare share, bool reduceMotion = false}) async {
+Future<void> _pumpStory(
+  WidgetTester tester, {
+  required _FakeShare share,
+  bool reduceMotion = false,
+  bool accessibleNavigation = false,
+}) async {
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -57,7 +71,9 @@ Future<void> _pumpStory(WidgetTester tester, {required _FakeShare share, bool re
       locale: const Locale('en'),
       // Above the Navigator, so the pushed story route inherits the flag.
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
+        data: MediaQuery.of(
+          context,
+        ).copyWith(disableAnimations: reduceMotion, accessibleNavigation: accessibleNavigation),
         child: child!,
       ),
       home: _Home(year: fixtureWrappedYear(), share: share),
@@ -153,6 +169,13 @@ void main() {
     expect(find.text('You saved 12 walls in 2026.'), findsOneWidget);
   });
 
+  testWidgets('screen-reader navigation disables story transitions', (tester) async {
+    await _pumpStory(tester, share: _FakeShare(), accessibleNavigation: true);
+
+    expect(tester.widget<AnimatedSwitcher>(find.byType(AnimatedSwitcher)).duration, Duration.zero);
+    expect(tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).duration, Duration.zero);
+  });
+
   testWidgets('swipe down closes the story and returns to the home page', (tester) async {
     await _pumpStory(tester, share: _FakeShare());
 
@@ -185,6 +208,7 @@ void main() {
     expect(share.cards, hasLength(1));
     expect(share.cards.single.kind, WrappedCardKind.saves);
     expect(share.copies.single.body, 'You saved 12 walls in 2026.');
+    expect(share.ownerUserIds, <String>['test-user']);
   });
 
   testWidgets('tracks open, one view per card and a single finish', (tester) async {

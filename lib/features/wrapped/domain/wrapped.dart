@@ -75,6 +75,7 @@ abstract interface class WrappedRepository {
 
 const int wrappedYear = 2026;
 const int _minStatCards = 4;
+const int _maxStatCards = 7;
 
 /// Parses the server doc. Cards the app cannot show are dropped; a doc left with fewer than four stats is treated as no
 /// Wrapped at all, so the user never sees a thin or zero recap.
@@ -84,8 +85,14 @@ WrappedYear? parseWrappedYear(Map<String, dynamic> data, {int year = wrappedYear
   final Object? rawCards = data['cards'];
   if (rawCards is! List) return null;
   final List<WrappedCard> cards = rawCards.whereType<Map<Object?, Object?>>().map(_card).nonNulls.toList();
-  final int stats = cards.where((c) => c.kind != WrappedCardKind.intro && c.kind != WrappedCardKind.summary).length;
+  final List<WrappedCard> statCards = cards
+      .where((c) => c.kind != WrappedCardKind.intro && c.kind != WrappedCardKind.summary)
+      .toList();
+  final int stats = statCards.length;
   if (stats < _minStatCards ||
+      stats > _maxStatCards ||
+      cards.length != stats + 2 ||
+      cards.map((c) => c.kind).toSet().length != cards.length ||
       cards.first.kind != WrappedCardKind.intro ||
       cards.last.kind != WrappedCardKind.summary) {
     return null;
