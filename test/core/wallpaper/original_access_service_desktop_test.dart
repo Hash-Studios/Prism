@@ -103,11 +103,7 @@ void main() {
       isTrue,
     );
     expect(
-      OriginalAccessService.requiresGrant(
-        'https://img.example/starter.jpg',
-        'starter-prism',
-        WallpaperSource.prism,
-      ),
+      OriginalAccessService.requiresGrant('https://img.example/starter.jpg', 'starter-prism', WallpaperSource.prism),
       isFalse,
     );
   });

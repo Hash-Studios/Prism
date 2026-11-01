@@ -39,8 +39,9 @@ Future<OriginalAccessQuote?> quoteOriginalWithConsent(
   }
   final owner = app_state.prismUser.id;
   while (context.mounted && _isSignedInOwner(owner)) {
-    final quote = await (quoteProvider?.call() ??
-        service.quote(wallpaperId: wallpaperId!, action: action, desktop: desktop, desktopVersion: desktopVersion));
+    final quote =
+        await (quoteProvider?.call() ??
+            service.quote(wallpaperId: wallpaperId!, action: action, desktop: desktop, desktopVersion: desktopVersion));
     if (!context.mounted || !_isSignedInOwner(owner)) return null;
     CoinsService.instance.applyServerBalance(quote.currentBalance, ownerId: owner);
     if (quote.requiredCoins > 0) {

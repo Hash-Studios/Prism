@@ -283,8 +283,7 @@ class OriginalAccessService {
   static bool requiresGrant(String url, String? id, WallpaperSource? source, {bool desktop = false}) =>
       source == WallpaperSource.prism &&
       (desktop ||
-          (!(id != null && BundledWallpapers.isStarterIdentity(id, source!)) &&
-              !isUnlockedDropUrl(url, id, source)));
+          (!(id != null && BundledWallpapers.isStarterIdentity(id, source!)) && !isUnlockedDropUrl(url, id, source)));
 
   Future<String> resolve({
     required String url,
