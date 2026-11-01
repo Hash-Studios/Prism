@@ -812,7 +812,7 @@ void main() {
       isA<PublicProfileState>().having(
         (s) => s.followOutcome,
         'outcome',
-        const FollowOutcome(id: 1, follow: true, success: true, targetName: 'Ann'),
+        const FollowOutcome(id: 1, follow: true, success: true, targetName: 'Ann', targetUserId: 'a-id'),
       ),
     ],
     verify: (_) {

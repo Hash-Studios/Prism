@@ -194,7 +194,7 @@ return blockedCreatorsChanged();case _:
 
 class _Started implements TrendingEvent {
   const _Started();
-
+  
 
 
 
@@ -226,7 +226,7 @@ String toString() {
 
 class _RefreshRequested implements TrendingEvent {
   const _RefreshRequested();
-
+  
 
 
 
@@ -258,7 +258,7 @@ String toString() {
 
 class _StartupRetryRequested implements TrendingEvent {
   const _StartupRetryRequested({required this.requestId, required this.generation});
-
+  
 
  final  int requestId;
  final  int generation;
@@ -326,7 +326,7 @@ as int,
 
 class _BlockedCreatorsChanged implements TrendingEvent {
   const _BlockedCreatorsChanged();
-
+  
 
 
 
@@ -551,7 +551,7 @@ return $default(_that.status,_that.walls,_that.failure);case _:
 
 class _TrendingState implements TrendingState {
   const _TrendingState({required this.status, required final  List<PrismWallpaper> walls, this.failure}): _walls = walls;
-
+  
 
 @override final  LoadStatus status;
  final  List<PrismWallpaper> _walls;

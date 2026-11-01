@@ -78,4 +78,12 @@ void main() {
       expect(match!.guards.whereType<SignedInGuard>(), isEmpty, reason: path);
     }
   });
+
+  test('guests are sent to sign in before the Creators page, which needs a signed-in directory read', () {
+    final RouteMatch? match = AppRouter().matcher.match('/creators')?.last;
+
+    expect(match?.name, CreatorsRoute.name);
+    final SignedInGuard guard = match!.guards.whereType<SignedInGuard>().single;
+    expect(guard.allowGuests, isFalse);
+  });
 }

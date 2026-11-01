@@ -126,6 +126,8 @@ export const getRewardedSession = onCall(options, async (request: CallableReques
 });
 
 export async function settleVerifiedReward(params: URLSearchParams): Promise<void> {
+  // AdMob's "Verify URL" probe is Google-signed but has no user_id or custom_data. Acknowledge it; credit nothing.
+  if (!params.has("user_id") && !params.has("custom_data")) return;
   const required = ["ad_network", "ad_unit", "custom_data", "reward_amount", "reward_item", "timestamp", "transaction_id", "user_id"];
   const allowed = new Set([...required, "signature", "key_id"]);
   if (required.some((name) => !params.get(name)) || [...params.keys()].some((key) => !allowed.has(key)) ||

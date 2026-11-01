@@ -249,6 +249,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
         follow: event.follow,
         success: result.isSuccess,
         targetName: event.targetName,
+        targetUserId: targetKey,
       );
       unawaited(
         analytics.track(

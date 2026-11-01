@@ -27,6 +27,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
+import 'package:Prism/features/creator_directory/views/widgets/creator_directory_opt_out_row.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
@@ -284,6 +285,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitle: context.l10n.accountManageBlockedPeople,
       onTap: () => context.router.push(const BlockedAccountsRoute()),
     ),
+    const CreatorDirectoryOptOutRow(),
     PrismRow(
       icon: Icons.ios_share_rounded,
       title: context.l10n.accountShareYourProfile,

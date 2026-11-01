@@ -16,6 +16,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../features/creator_directory/creator_directory_test_support.dart';
+
 class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
 
 class _MockPublicProfileRepository extends Mock implements PublicProfileRepository {}
@@ -84,6 +86,7 @@ void main() {
     getIt.registerSingleton<PublicProfileBloc>(bloc);
     getIt.registerSingleton<PublicProfileRepository>(profileRepository);
     getIt.registerSingleton<UserBlockRepository>(blockRepository);
+    registerCreatorDirectoryFakes(profileBloc: false);
     addTearDown(() => tester.pumpWidget(const SizedBox()));
 
     await tester.pumpWidget(
