@@ -1,5 +1,6 @@
 import 'package:Prism/core/wallpaper/wall_ai_source.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_desktop.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -23,6 +24,7 @@ final class PrismWallpaper {
     this.boostedUntil,
     this.depthTier,
     this.spatial,
+    this.desktop,
     this.aiSource,
     this.remixOf,
     this.remixCount = 0,
@@ -61,6 +63,9 @@ final class PrismWallpaper {
 
   /// Spatial Scene tier and depth map from `walls.spatial`. Null when the wall was not checked.
   final WallSpatial? spatial;
+
+  /// Desktop companion from `walls.desktopVariant`. Null when the wall has none.
+  final WallDesktopVariant? desktop;
 
   /// The prompt and style of an AI wall. Null on walls that are not AI.
   final WallAiSource? aiSource;

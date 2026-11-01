@@ -3268,5 +3268,16 @@
   "creatorsMoreLike": "Mais como {name}",
   "creatorsSimilarSubtitle": "Criadores com um estilo parecido",
   "creatorsShowMeTitle": "Me mostrar em Criadores para seguir",
-  "creatorsShowMeBody": "Outras pessoas podem encontrar seu perfil e seus melhores papéis de parede"
+  "creatorsShowMeBody": "Outras pessoas podem encontrar seu perfil e seus melhores papéis de parede",
+  "desktopVersionChip": "Versão para computador",
+  "desktopVersionChipSemantic": "Abrir a versão para computador",
+  "desktopVersionSheetTitle": "Versão para computador",
+  "desktopVersionSheetBody": "A mesma cena, em formato largo para a tela do computador. {width} × {height}.",
+  "desktopVersionPreviewSemantic": "Versão para computador na tela de um computador",
+  "desktopVersionSendToComputer": "Enviar para o meu computador",
+  "desktopVersionShareText": "Baixe este papel de parede para o seu computador: {url}",
+  "desktopVersionShareSubject": "Papel de parede para computador do Prism",
+  "desktopVersionSetOnTablet": "Definir versão para computador",
+  "desktopVersionSaveOnTablet": "Salvar versão para computador em Fotos",
+  "desktopVersionUnavailable": "Não foi possível obter a versão para computador. Verifique sua conexão e tente novamente."
 }

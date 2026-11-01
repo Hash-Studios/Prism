@@ -110,15 +110,29 @@ class OriginalAccessService {
     await _settings?.delete('$key.until');
   }
 
-  Future<OriginalAccessQuote> quote({required String wallpaperId, required OriginalAccessAction action}) async {
+  /// Request ids of the desktop companion are kept apart from the phone original's.
+  static String _grantKey(String wallpaperId, bool desktop) => desktop ? '$wallpaperId~desktop' : wallpaperId;
+
+  Future<OriginalAccessQuote> quote({
+    required String wallpaperId,
+    required OriginalAccessAction action,
+    bool desktop = false,
+  }) async {
     final owner = _owner();
-    if (await _acquiredLocal(wallpaperId) != null) return OriginalAccessQuote(0, app_state.prismUser.coins);
-    final requestId = await _requestId(owner, wallpaperId, action, null, acquire: false);
+    final key = _grantKey(wallpaperId, desktop);
+    if (!desktop && await _acquiredLocal(wallpaperId) != null) return OriginalAccessQuote(0, app_state.prismUser.coins);
+    final requestId = await _requestId(owner, key, action, null, acquire: false);
     if (_owner() != owner) throw StateError('Original access unavailable');
     final reply = await _callForOperation(
-      {'assetId': wallpaperId, 'action': action.name, 'requestId': requestId, 'mode': 'quote'},
+      {
+        'assetId': wallpaperId,
+        'action': action.name,
+        'requestId': requestId,
+        'mode': 'quote',
+        if (desktop) 'variant': 'desktop',
+      },
       owner,
-      wallpaperId,
+      key,
       action,
     );
     if (_owner() != owner ||
@@ -276,6 +290,7 @@ class OriginalAccessService {
     required OriginalAccessAction action,
     String? requestId,
     int? maxCoins,
+    bool desktop = false,
   }) async {
     final scheme = Uri.tryParse(url.trim())?.scheme.toLowerCase();
     if ((wallpaperSource == null ||
@@ -289,9 +304,12 @@ class OriginalAccessService {
     if (owner.isEmpty || wallpaperId == null || wallpaperId.trim().isEmpty) {
       throw StateError('Original access unavailable');
     }
-    final local = await _acquiredLocal(wallpaperId);
-    if (local != null) return local;
-    final stableRequestId = await _requestId(owner, wallpaperId, action, requestId);
+    final key = _grantKey(wallpaperId, desktop);
+    if (!desktop) {
+      final local = await _acquiredLocal(wallpaperId);
+      if (local != null) return local;
+    }
+    final stableRequestId = await _requestId(owner, key, action, requestId);
     if (_owner() != owner) throw StateError('Original access unavailable');
     final reply = await _callForOperation(
       {
@@ -299,14 +317,15 @@ class OriginalAccessService {
         'action': action.name,
         'requestId': stableRequestId,
         if (maxCoins != null) 'maxCoins': maxCoins,
+        if (desktop) 'variant': 'desktop',
       },
       owner,
-      wallpaperId,
+      key,
       action,
     );
     if (_owner() != owner) throw StateError('Original access unavailable');
     if (reply['status'] == 'insufficient_balance' || reply['status'] == 'price_changed') {
-      await complete(owner: owner, wallpaperId: wallpaperId, action: action);
+      await complete(owner: owner, wallpaperId: key, action: action);
       throw OriginalAccessInsufficientBalance(
         (reply['requiredCoins'] as num).toInt(),
         (reply['currentBalance'] as num).toInt(),

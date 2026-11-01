@@ -12379,4 +12379,42 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get creatorsShowMeBody => 'Otros pueden encontrar tu perfil y tus mejores fondos de pantalla';
+
+  @override
+  String get desktopVersionChip => 'Versión para escritorio';
+
+  @override
+  String get desktopVersionChipSemantic => 'Abrir la versión para escritorio';
+
+  @override
+  String get desktopVersionSheetTitle => 'Versión para escritorio';
+
+  @override
+  String desktopVersionSheetBody(int width, int height) {
+    return 'La misma escena, en formato ancho para la pantalla de un ordenador. $width × $height.';
+  }
+
+  @override
+  String get desktopVersionPreviewSemantic => 'Versión para escritorio en la pantalla de un ordenador';
+
+  @override
+  String get desktopVersionSendToComputer => 'Enviar a mi ordenador';
+
+  @override
+  String desktopVersionShareText(String url) {
+    return 'Consigue este fondo de pantalla para tu ordenador: $url';
+  }
+
+  @override
+  String get desktopVersionShareSubject => 'Fondo de pantalla para escritorio de Prism';
+
+  @override
+  String get desktopVersionSetOnTablet => 'Configurar versión para escritorio';
+
+  @override
+  String get desktopVersionSaveOnTablet => 'Guardar versión para escritorio en Fotos';
+
+  @override
+  String get desktopVersionUnavailable =>
+      'No se pudo obtener la versión para escritorio. Comprueba tu conexión e inténtalo de nuevo.';
 }

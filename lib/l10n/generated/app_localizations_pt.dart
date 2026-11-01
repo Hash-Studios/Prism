@@ -12565,6 +12565,44 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get creatorsShowMeBody => 'Outras pessoas podem encontrar seu perfil e seus melhores papéis de parede';
+
+  @override
+  String get desktopVersionChip => 'Versão para computador';
+
+  @override
+  String get desktopVersionChipSemantic => 'Abrir a versão para computador';
+
+  @override
+  String get desktopVersionSheetTitle => 'Versão para computador';
+
+  @override
+  String desktopVersionSheetBody(int width, int height) {
+    return 'A mesma cena, em formato largo para a tela do computador. $width × $height.';
+  }
+
+  @override
+  String get desktopVersionPreviewSemantic => 'Versão para computador na tela de um computador';
+
+  @override
+  String get desktopVersionSendToComputer => 'Enviar para o meu computador';
+
+  @override
+  String desktopVersionShareText(String url) {
+    return 'Baixe este papel de parede para o seu computador: $url';
+  }
+
+  @override
+  String get desktopVersionShareSubject => 'Papel de parede para computador do Prism';
+
+  @override
+  String get desktopVersionSetOnTablet => 'Definir versão para computador';
+
+  @override
+  String get desktopVersionSaveOnTablet => 'Salvar versão para computador em Fotos';
+
+  @override
+  String get desktopVersionUnavailable =>
+      'Não foi possível obter a versão para computador. Verifique sua conexão e tente novamente.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -25126,4 +25164,42 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get creatorsShowMeBody => 'Outras pessoas podem encontrar seu perfil e seus melhores papéis de parede';
+
+  @override
+  String get desktopVersionChip => 'Versão para computador';
+
+  @override
+  String get desktopVersionChipSemantic => 'Abrir a versão para computador';
+
+  @override
+  String get desktopVersionSheetTitle => 'Versão para computador';
+
+  @override
+  String desktopVersionSheetBody(int width, int height) {
+    return 'A mesma cena, em formato largo para a tela do computador. $width × $height.';
+  }
+
+  @override
+  String get desktopVersionPreviewSemantic => 'Versão para computador na tela de um computador';
+
+  @override
+  String get desktopVersionSendToComputer => 'Enviar para o meu computador';
+
+  @override
+  String desktopVersionShareText(String url) {
+    return 'Baixe este papel de parede para o seu computador: $url';
+  }
+
+  @override
+  String get desktopVersionShareSubject => 'Papel de parede para computador do Prism';
+
+  @override
+  String get desktopVersionSetOnTablet => 'Definir versão para computador';
+
+  @override
+  String get desktopVersionSaveOnTablet => 'Salvar versão para computador em Fotos';
+
+  @override
+  String get desktopVersionUnavailable =>
+      'Não foi possível obter a versão para computador. Verifique sua conexão e tente novamente.';
 }

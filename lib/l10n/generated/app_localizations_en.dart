@@ -12221,4 +12221,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get creatorsShowMeBody => 'Others can find your profile and top wallpapers';
+
+  @override
+  String get desktopVersionChip => 'Desktop version';
+
+  @override
+  String get desktopVersionChipSemantic => 'Open the desktop version';
+
+  @override
+  String get desktopVersionSheetTitle => 'Desktop version';
+
+  @override
+  String desktopVersionSheetBody(int width, int height) {
+    return 'The same scene, made wide for a computer screen. $width × $height.';
+  }
+
+  @override
+  String get desktopVersionPreviewSemantic => 'Desktop version on a computer screen';
+
+  @override
+  String get desktopVersionSendToComputer => 'Send to my computer';
+
+  @override
+  String desktopVersionShareText(String url) {
+    return 'Get this wallpaper for your computer: $url';
+  }
+
+  @override
+  String get desktopVersionShareSubject => 'Desktop wallpaper from Prism';
+
+  @override
+  String get desktopVersionSetOnTablet => 'Set desktop version';
+
+  @override
+  String get desktopVersionSaveOnTablet => 'Save desktop version';
+
+  @override
+  String get desktopVersionUnavailable => 'Unable to get the desktop version. Check your connection and try again.';
 }

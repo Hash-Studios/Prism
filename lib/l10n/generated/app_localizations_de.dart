@@ -12402,4 +12402,42 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get creatorsShowMeBody => 'Andere können dein Profil und deine besten Hintergrundbilder finden';
+
+  @override
+  String get desktopVersionChip => 'Desktop-Version';
+
+  @override
+  String get desktopVersionChipSemantic => 'Desktop-Version öffnen';
+
+  @override
+  String get desktopVersionSheetTitle => 'Desktop-Version';
+
+  @override
+  String desktopVersionSheetBody(int width, int height) {
+    return 'Dieselbe Szene, breit für einen Computerbildschirm. $width × $height.';
+  }
+
+  @override
+  String get desktopVersionPreviewSemantic => 'Desktop-Version auf einem Computerbildschirm';
+
+  @override
+  String get desktopVersionSendToComputer => 'An meinen Computer senden';
+
+  @override
+  String desktopVersionShareText(String url) {
+    return 'Hol dir dieses Hintergrundbild für deinen Computer: $url';
+  }
+
+  @override
+  String get desktopVersionShareSubject => 'Desktop-Hintergrundbild von Prism';
+
+  @override
+  String get desktopVersionSetOnTablet => 'Desktop-Version festlegen';
+
+  @override
+  String get desktopVersionSaveOnTablet => 'Desktop-Version in Fotos speichern';
+
+  @override
+  String get desktopVersionUnavailable =>
+      'Die Desktop-Version kann gerade nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.';
 }
