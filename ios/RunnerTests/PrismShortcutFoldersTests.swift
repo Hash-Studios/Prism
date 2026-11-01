@@ -9,7 +9,7 @@ import Testing
 #endif
 
 struct PrismShortcutFoldersTests {
-  private static let snapshot = #"{"ownerId":"u1","folders":[{"id":"f1","name":"Calm","itemCount":2,"updatedAt":1,"items":[{"id":"prism_a","url":"https://example.com/a.jpg"}]},{"id":"f2","name":"Bold","itemCount":5,"updatedAt":2,"items":[]}]}"#
+  private static let snapshot = #"{"ownerId":"u1","folders":[{"id":"f1","name":"Calm","itemCount":2,"updatedAt":1,"items":[{"id":"prism_a","url":"https://example.com/a.jpg"}]},{"id":"f2","name":"Bold","itemCount":5,"updatedAt":2,"items":[]},{"id":"f3","name":"New","itemCount":0,"updatedAt":3,"items":[]}]}"#
 
   private func folder(_ id: String, items: [String] = ["w1"]) -> PrismShortcutFolder {
     PrismShortcutFolder(
@@ -22,7 +22,7 @@ struct PrismShortcutFoldersTests {
 
   @Test func parseKeepsFolderOrderAndValues() {
     let folders = PrismShortcutFolders.parse(Self.snapshot)
-    #expect(folders.map(\.id) == ["f1", "f2"])
+    #expect(folders.map(\.id) == ["f1", "f2", "f3"])
     #expect(folders.first?.name == "Calm")
     #expect(folders.first?.itemCount == 2)
     #expect(folders.first?.items == [
@@ -58,6 +58,13 @@ struct PrismShortcutFoldersTests {
     #expect(folders.map(\.id) == ["f1"])
     #expect(folders.first?.itemCount == 6)
     #expect(folders.first?.items.map(\.id) == ["ok1", "ok2"])
+  }
+
+  @Test func parseKeepsProtectedItemsByTheirDownloadedOriginal() {
+    let json = #"{"folders":[{"id":"f1","name":"Public","itemCount":4,"items":[{"id":"prism_p","asset":"original:prism_p"},{"id":"prism_x","asset":"https://example.com/x.jpg"},{"id":"prism_e","asset":""},{"id":"prism_empty","asset":"original:"}]}]}"#
+    let items = PrismShortcutFolders.parse(json).first?.items
+    #expect(items == [PrismShortcutFavourite(id: "prism_p", asset: "original:prism_p")])
+    #expect(items?.first?.url == nil)
   }
 
   @Test func parseClampsItemCountToZero() {
@@ -115,6 +122,13 @@ struct PrismShortcutFoldersTests {
   @Test func resolveFolderWithoutValidItemsThrowsEmpty() {
     #expect(throws: PrismShortcutFolderError.empty) {
       try PrismShortcutFolders.resolve("f1", in: [folder("f1", items: [])], rotation: false)
+    }
+  }
+
+  @Test func resolveFolderWithWallsButNoUsableItemsThrowsNeedsDownload() {
+    let protected = PrismShortcutFolder(id: "f1", name: "Public", itemCount: 8, items: [])
+    #expect(throws: PrismShortcutFolderError.needsDownload) {
+      try PrismShortcutFolders.resolve("f1", in: [protected], rotation: true)
     }
   }
 
@@ -301,9 +315,9 @@ struct PrismShortcutFoldersTests {
 
     let query = PrismFolderEntityQuery(suiteName: suite)
     let suggested = try await query.suggestedEntities()
-    #expect(suggested.map(\.id) == ["f1", "f2"])
-    #expect(suggested.map(\.name) == ["Calm", "Bold"])
-    #expect(suggested.map(\.itemCount) == [2, 5])
+    #expect(suggested.map(\.id) == ["f1", "f2", "f3"])
+    #expect(suggested.map(\.name) == ["Calm", "Bold", "New"])
+    #expect(suggested.map(\.itemCount) == [2, 5, 0])
 
     let found = try await query.entities(for: ["f2", "missing", "f1"])
     #expect(found.map(\.id) == ["f2", "f1"])
@@ -354,6 +368,9 @@ struct PrismShortcutFoldersTests {
     defaults.set(Self.snapshot, forKey: PrismShortcutFolders.defaultsKey)
 
     await #expect(throws: PrismShortcutError.folderEmpty) {
+      try await GetPrismWallpaperIntent.folderImage(id: "f3", rotation: false, defaults: defaults)
+    }
+    await #expect(throws: PrismShortcutError.folderNeedsDownload) {
       try await GetPrismWallpaperIntent.folderImage(id: "f2", rotation: false, defaults: defaults)
     }
 
@@ -364,6 +381,7 @@ struct PrismShortcutFoldersTests {
   @Test func folderErrorsHaveEnglishMessages() {
     #expect(String(localized: PrismShortcutError.noRotationFolder.localizedStringResource).contains("Rotate this folder daily"))
     #expect(String(localized: PrismShortcutError.folderEmpty.localizedStringResource).contains("empty"))
+    #expect(String(localized: PrismShortcutError.folderNeedsDownload.localizedStringResource).contains("Download"))
     #expect(String(localized: PrismShortcutError.folderNotFound.localizedStringResource).contains("cannot find"))
   }
 

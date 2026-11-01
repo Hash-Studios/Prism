@@ -11,6 +11,8 @@ enum PrismShortcutFolderError: Error, Equatable {
   case noRotationFolder
   case notFound
   case empty
+  /// The folder has walls, but none the shortcut can use yet: protected walls need their original downloaded.
+  case needsDownload
 }
 
 enum PrismShortcutFolders {
@@ -53,7 +55,9 @@ enum PrismShortcutFolders {
       throw rotation ? PrismShortcutFolderError.noRotationFolder : PrismShortcutFolderError.notFound
     }
     guard let folder = folders.first(where: { $0.id == id }) else { throw PrismShortcutFolderError.notFound }
-    guard !folder.items.isEmpty else { throw PrismShortcutFolderError.empty }
+    guard !folder.items.isEmpty else {
+      throw folder.itemCount > 0 ? PrismShortcutFolderError.needsDownload : PrismShortcutFolderError.empty
+    }
     return folder
   }
 
