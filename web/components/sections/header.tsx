@@ -34,12 +34,6 @@ export function Header() {
       <div className="flex items-center gap-1">
         <a
           className="flex items-center text-base justify-center font-semibold gap-2 py-2.5 px-4 rounded-xl sm:rounded-3xl transition-all shrink-0 cursor-pointer bg-accent/10 hover:bg-accent/20 text-accent"
-          href="/wallpapers"
-        >
-          Wallpapers
-        </a>
-        <a
-          className="flex items-center text-base justify-center font-semibold gap-2 py-2.5 px-4 rounded-xl sm:rounded-3xl transition-all shrink-0 cursor-pointer bg-accent/10 hover:bg-accent/20 text-accent"
           target="_blank"
           rel="noopener noreferrer"
           href={PLAY_STORE_URL}

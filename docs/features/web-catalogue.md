@@ -106,9 +106,10 @@ This is the same gate that public folders use.
 
 ### Sitemaps
 
-- `/sitemap.xml` is the index. It lists `/sitemap-pages.xml` and the shard files. `/sitemap-pages.xml` holds the static Next pages. It was at `/sitemap.xml` before.
+- The Worker serves `/sitemap.xml` as the index. It lists `/sitemap-pages.xml` and the shard files. `/sitemap-pages.xml` holds the static Next pages.
+- The website also keeps its static `/sitemap.xml`. Before the Worker deploy, crawlers get that file. After the Worker deploy, the Worker route takes `/sitemap.xml`, and the static file is not served. Thus you can deploy the website and the Worker in either order.
 - The shard files are `/sitemaps/walls-<n>.xml`, `/sitemaps/categories-<n>.xml`, `/sitemaps/folders-<n>.xml` and `/sitemaps/creators-<n>.xml`.
-- Each shard holds at most 5,000 URLs. The limit for one sitemap file is 50,000 URLs.
+- Each shard holds at most 3,000 URLs, so that each document stays below the 1 MiB Firestore limit. The limit for one sitemap file is 50,000 URLs.
 - Each `lastmod` comes from the projected `updatedAt` of the wall, folder or creator.
 - The sitemaps list only live walls, and the folders and creators that have live walls.
 - `robots.txt` already points at `/sitemap.xml`.
@@ -139,13 +140,13 @@ At 2,534 approved walls and 12 builds a day, the wall reads come to about 61,000
 
 ## Deploy order
 
-Nothing in this change is deployed. Deploy in this order:
+The website deploys automatically when the change merges to `master`, because `deploy_web.yml` runs on each push that changes `web/**`. The website change is safe before the other steps: it only adds `/sitemap-pages.xml`. Deploy the backend in this order:
 
 1. Deploy the Firestore rules with `firebase deploy --only firestore:rules`.
 2. Deploy the functions with `make functions-deploy`. This deploys `onWallWebCatalog` and `buildWebCatalog`.
 3. In Cloud Scheduler, run `buildWebCatalog` once with **Run now**. This writes the `webWalls` and `webPages` documents.
 4. Deploy the links Worker with `npx wrangler deploy` in `infra/cloudflare/worker`. This adds the routes `/creator/*`, `/sitemap.xml` and `/sitemaps/*`.
-5. Deploy the website with `deploy_web.yml`. After this, the website stops serving `/sitemap.xml`.
+5. After step 4, add a **Wallpapers** link to the website header (`web/components/sections/header.tsx`) that goes to `/wallpapers`. Do not add it before step 4: until then, `/wallpapers` returns 404.
 
 No new Firestore index is needed.
 
