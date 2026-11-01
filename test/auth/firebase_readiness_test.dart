@@ -373,6 +373,43 @@ void main() {
     expect(appleCalls, 0);
   });
 
+  test('Google reauthentication cannot adopt a replacement account during readiness', () async {
+    await initializeFirebase();
+    final ready = Completer<bool>();
+    final google = _Google();
+    final pending = GoogleAuth(googleSignIn: google, firebaseReady: () => ready.future).reauthenticateCurrentUser();
+    final rejected = expectLater(pending, throwsStateError);
+    await pumpEventQueue();
+    expect(google.authenticateCalls, 0);
+    final replacement = profileUser(id: 'replacement');
+    app_state.prismUser = replacement;
+    platformAuth.uid = 'replacement';
+    ready.complete(true);
+
+    await rejected;
+    expect(google.authenticateCalls, 0);
+    expect(FirebaseAuth.instance.currentUser?.uid, 'replacement');
+    expect(app_state.prismUser, same(replacement));
+  });
+
+  test('Apple reauthentication cannot adopt a replacement account during readiness', () async {
+    await initializeFirebase();
+    final ready = Completer<bool>();
+    final pending = AppleAuth(firebaseReady: () => ready.future).reauthenticateCurrentUser();
+    final rejected = expectLater(pending, throwsStateError);
+    await pumpEventQueue();
+    expect(appleCalls, 0);
+    final replacement = profileUser(id: 'replacement');
+    app_state.prismUser = replacement;
+    platformAuth.uid = 'replacement';
+    ready.complete(true);
+
+    await rejected;
+    expect(appleCalls, 0);
+    expect(FirebaseAuth.instance.currentUser?.uid, 'replacement');
+    expect(app_state.prismUser, same(replacement));
+  });
+
   testWidgets('three-second Firebase timeout permits retry when initialization later completes', (tester) async {
     final google = _Google();
     final auth = GoogleAuth(googleSignIn: google, firebaseReady: FirebaseInit.waitUntilReady);
