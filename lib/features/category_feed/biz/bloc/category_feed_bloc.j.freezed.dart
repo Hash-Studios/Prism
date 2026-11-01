@@ -200,7 +200,7 @@ return blockedCreatorsChanged();case _:
 
 class _Started implements CategoryFeedEvent {
   const _Started();
-
+  
 
 
 
@@ -232,7 +232,7 @@ String toString() {
 
 class _CategorySelected implements CategoryFeedEvent {
   const _CategorySelected({required this.category});
-
+  
 
  final  CategoryEntity category;
 
@@ -298,7 +298,7 @@ as CategoryEntity,
 
 class _FetchMoreRequested implements CategoryFeedEvent {
   const _FetchMoreRequested();
-
+  
 
 
 
@@ -330,7 +330,7 @@ String toString() {
 
 class _RefreshRequested implements CategoryFeedEvent {
   const _RefreshRequested();
-
+  
 
 
 
@@ -362,7 +362,7 @@ String toString() {
 
 class _BlockedCreatorsChanged implements CategoryFeedEvent {
   const _BlockedCreatorsChanged();
-
+  
 
 
 
@@ -592,7 +592,7 @@ return $default(_that.status,_that.actionStatus,_that.categories,_that.selectedC
 
 class _CategoryFeedState implements CategoryFeedState {
   const _CategoryFeedState({required this.status, required this.actionStatus, required final  List<CategoryEntity> categories, required this.selectedCategory, required final  List<FeedItemEntity> items, required this.hasMore, required this.isFetchingMore, this.failure}): _categories = categories,_items = items;
-
+  
 
 @override final  LoadStatus status;
 @override final  ActionStatus actionStatus;

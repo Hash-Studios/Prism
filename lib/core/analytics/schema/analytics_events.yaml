@@ -78,6 +78,13 @@ enums:
       - cancelled
       - purchased
       - restored
+  - name: wrapped_source
+    dart_type: WrappedSourceValue
+    values:
+      - home
+      - push
+      - inbox
+      - deep_link
       - guest_sign_in_required
       - rc_error
       - unknown
@@ -2797,3 +2804,32 @@ events:
       - name: creator_id
         key: creator_id
         type: string
+  - id: wrapped_opened
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: WrappedSourceValue
+  - id: wrapped_card_viewed
+    fields:
+      - name: card_id
+        key: card_id
+        type: string
+  - id: wrapped_card_shared
+    fields:
+      - name: card_id
+        key: card_id
+        type: string
+      - name: target
+        key: target
+        type: enum
+        enum: ShareTargetValue
+        required: false
+  - id: wrapped_finished
+    fields: []
+  - id: wrapped_not_eligible
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: WrappedSourceValue

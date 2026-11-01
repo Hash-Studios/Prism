@@ -284,6 +284,9 @@ import '../../features/weekly_challenges/data/weekly_challenges_repository_impl.
     as _i58;
 import '../../features/weekly_challenges/domain/repositories/weekly_challenges_repository.dart'
     as _i836;
+import '../../features/wrapped/biz/bloc/wrapped_bloc.j.dart' as _i813;
+import '../../features/wrapped/data/wrapped_repository_impl.dart' as _i1035;
+import '../../features/wrapped/domain/wrapped.dart' as _i655;
 import '../content_reports/content_report_repository.dart' as _i177;
 import '../firestore/firestore_client.dart' as _i349;
 import '../firestore/firestore_telemetry.dart' as _i393;
@@ -510,6 +513,9 @@ _i174.GetIt initGetIt(
       gh<_i321.ShowRewardedAdUseCase>(),
     ),
   );
+  gh.lazySingleton<_i655.WrappedRepository>(
+    () => _i1035.WrappedRepositoryImpl(gh<_i349.FirestoreClient>()),
+  );
   gh.lazySingleton<_i96.DropsRepository>(
     () => _i591.DropsRepositoryImpl(gh<_i349.FirestoreClient>()),
   );
@@ -575,6 +581,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i761.FavouriteCountsRepository>(
     () => _i931.FavouriteCountsRepositoryImpl(gh<_i349.FirestoreClient>()),
+  );
+  gh.lazySingleton<_i813.WrappedBloc>(
+    () => _i813.WrappedBloc(gh<_i655.WrappedRepository>()),
   );
   gh.lazySingleton<_i428.ThemeRepository>(
     () => _i593.ThemeRepositoryImpl(
@@ -685,6 +694,16 @@ _i174.GetIt initGetIt(
       gh<_i312.PexelsWallpaperRepository>(),
     ),
   );
+  gh.factory<_i618.WallpaperDetailBloc>(
+    () => _i618.WallpaperDetailBloc(
+      gh<_i727.PrismWallpaperRepository>(),
+      gh<_i604.WallhavenWallpaperRepository>(),
+      gh<_i312.PexelsWallpaperRepository>(),
+      gh<_i231.RecordPrismWallpaperViewsUsecase>(),
+      gh<_i652.PaletteRepository>(),
+      gh<_i364.GetWallpaperCountsUseCase>(),
+    ),
+  );
   gh.lazySingleton<_i836.WeeklyChallengesRepository>(
     () => _i58.WeeklyChallengesRepositoryImpl(
       gh<_i244.WallRemixRepository>(),
@@ -707,16 +726,6 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i465.FavouriteCountsCubit>(
     () => _i465.FavouriteCountsCubit(gh<_i761.FavouriteCountsRepository>()),
-  );
-  gh.factory<_i618.WallpaperDetailBloc>(
-    () => _i618.WallpaperDetailBloc(
-      gh<_i727.PrismWallpaperRepository>(),
-      gh<_i604.WallhavenWallpaperRepository>(),
-      gh<_i312.PexelsWallpaperRepository>(),
-      gh<_i231.RecordPrismWallpaperViewsUsecase>(),
-      gh<_i652.PaletteRepository>(),
-      gh<_i364.GetWallpaperCountsUseCase>(),
-    ),
   );
   gh.factory<_i1026.RemixCreditCubit>(
     () => _i1026.RemixCreditCubit(gh<_i244.WallRemixRepository>()),

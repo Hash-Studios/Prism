@@ -442,6 +442,15 @@ enum DailyMomentStepValue {
   String get wireValue => name;
 }
 
+enum WrappedSourceValue {
+  home,
+  push,
+  inbox,
+  deepLink;
+
+  String get wireValue => _snakeCase(name);
+}
+
 String _snakeCase(String name) => name.replaceAllMapped(RegExp('[A-Z]'), (Match m) => '_${m[0]!.toLowerCase()}');
 
 PaywallResultValue paywallResultValueFromSdkName(String rawResult) {

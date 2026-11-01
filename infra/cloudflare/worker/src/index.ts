@@ -99,7 +99,7 @@ const APP_PAGE_PATHS = [
   '/wotd-archive', '/download-wallpaper', '/wallpaper-filter', '/choose-wallpaper', '/edit-profile', '/share-prism', '/settings',
   '/premium', '/paywall',
   '/blocked-accounts', '/about', '/fav-walls', '/downloads', '/library', '/upload-wall', '/edit-wall', '/review',
-  '/coin-transactions', '/theme', '/notifications', '/collection-view', '/gallery', '/requests', '/creators', '/followers', '/following',
+  '/coin-transactions', '/theme', '/notifications', '/collection-view', '/gallery', '/requests', '/creators', '/wrapped', '/followers', '/following',
   '/admin-review', '/admin-review/swipe', '/admin-review/image', '/admin-firestore-telemetry', '/debug-panel',
   '/daily-moment', '/daily-chest', '/spin-wheel', '/photo-preview', '/clock-preview', '/quick-tile-settings',
   '/auto-rotate', '/ios-shortcuts', '/wallpaper-history', '/wallpaper-position', '/live-wallpaper', '/rewards',

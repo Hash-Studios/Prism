@@ -21,6 +21,7 @@ import 'package:Prism/features/public_profile/domain/entities/public_profile_ent
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
+import 'package:Prism/features/wrapped/views/pages/wrapped_page.dart';
 import 'package:auto_route/auto_route.dart';
 
 /// Resolves a catalog-validated URL to a real page route. Object arguments are fetched from repositories or replaced
@@ -89,6 +90,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.weeklyChallenge => WeeklyChallengeRoute(challengeId: match.pathParams['challengeId']!),
     DeepLinkPageTarget.wallRequests => WallRequestsRoute(tab: query['tab'] ?? 'top'),
     DeepLinkPageTarget.creators => CreatorsRoute(source: 'link'),
+    DeepLinkPageTarget.wrapped => PrismWrappedRoute(source: wrappedSourceFrom(intent.source)),
     DeepLinkPageTarget.uploadInput => _inputRoute(DeepLinkInputWorkflow.uploadWall),
     DeepLinkPageTarget.editWallInput => _inputRoute(DeepLinkInputWorkflow.editWall),
     DeepLinkPageTarget.review => ReviewRoute(),

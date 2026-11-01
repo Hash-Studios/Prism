@@ -1841,6 +1841,58 @@ class PremiumRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [PrismWrappedPage]
+class PrismWrappedRoute extends PageRouteInfo<PrismWrappedRouteArgs> {
+  PrismWrappedRoute({
+    Key? key,
+    WrappedSourceValue source = WrappedSourceValue.deepLink,
+    List<PageRouteInfo>? children,
+  }) : super(
+         PrismWrappedRoute.name,
+         args: PrismWrappedRouteArgs(key: key, source: source),
+         initialChildren: children,
+       );
+
+  static const String name = 'PrismWrappedRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<PrismWrappedRouteArgs>(
+        orElse: () => const PrismWrappedRouteArgs(),
+      );
+      return PrismWrappedPage(key: args.key, source: args.source);
+    },
+  );
+}
+
+class PrismWrappedRouteArgs {
+  const PrismWrappedRouteArgs({
+    this.key,
+    this.source = WrappedSourceValue.deepLink,
+  });
+
+  final Key? key;
+
+  final WrappedSourceValue source;
+
+  @override
+  String toString() {
+    return 'PrismWrappedRouteArgs{key: $key, source: $source}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! PrismWrappedRouteArgs) return false;
+    return key == other.key && source == other.source;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ source.hashCode;
+}
+
+/// generated route for
 /// [ProfileScreen]
 class ProfileRoute extends PageRouteInfo<ProfileRouteArgs> {
   ProfileRoute({

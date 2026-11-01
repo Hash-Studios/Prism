@@ -12565,6 +12565,218 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get creatorsShowMeBody => 'Outras pessoas podem encontrar seu perfil e seus melhores papéis de parede';
+
+  @override
+  String wrappedTitle(String year) {
+    return 'Prism Wrapped $year';
+  }
+
+  @override
+  String get wrappedIntroHeadline => 'Seu ano em papéis de parede';
+
+  @override
+  String get wrappedIntroBody => 'Alguns cards sobre os papéis de parede que você curtiu este ano.';
+
+  @override
+  String get wrappedSavesLabel => 'Salvos';
+
+  @override
+  String wrappedSavesBody(int count, String year) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você salvou $count papéis de parede em $year.',
+      one: 'Você salvou 1 papel de parede em $year.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedColoursLabel => 'Suas cores';
+
+  @override
+  String wrappedColoursBody(String first, String second, String third) {
+    return '$first, $second e $third apareceram mais nos seus salvos.';
+  }
+
+  @override
+  String get wrappedCreatorLabel => 'Seu criador favorito';
+
+  @override
+  String wrappedCreatorBody(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você salvou $count papéis de parede de $name.',
+      one: 'Você salvou 1 papel de parede de $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedStreakLabel => 'Sua sequência mais longa';
+
+  @override
+  String wrappedStreakBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você entrou $count dias seguidos.',
+      one: 'Você entrou 1 dia seguido.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count dias', one: '1 dia');
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedAiLabel => 'Feito com IA';
+
+  @override
+  String wrappedAiBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você criou $count papéis de parede com IA.',
+      one: 'Você criou 1 papel de parede com IA.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedCategoryLabel => 'Sua categoria principal';
+
+  @override
+  String wrappedCategoryBody(int count, String category) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você salvou $count papéis de parede de $category.',
+      one: 'Você salvou 1 papel de parede de $category.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedFoldersLabel => 'Pastas';
+
+  @override
+  String wrappedFoldersBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você criou $count pastas.',
+      one: 'Você criou 1 pasta.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedOnScreenLabel => 'Na sua tela';
+
+  @override
+  String wrappedOnScreenBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você definiu ou baixou este papel de parede $count vezes.',
+      one: 'Você definiu ou baixou este papel de parede 1 vez.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedChallengesLabel => 'Desafios semanais';
+
+  @override
+  String wrappedChallengesBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você participou de $count desafios semanais.',
+      one: 'Você participou de 1 desafio semanal.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedTipsLabel => 'Gorjetas';
+
+  @override
+  String wrappedTipsBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você enviou $count gorjetas para criadores.',
+      one: 'Você enviou 1 gorjeta para um criador.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedSince(String date) {
+    return 'Desde $date';
+  }
+
+  @override
+  String wrappedSummaryHeadline(String year) {
+    return 'Seu $year no Prism';
+  }
+
+  @override
+  String get wrappedShare => 'Compartilhar';
+
+  @override
+  String get wrappedShareCard => 'Compartilhar este card';
+
+  @override
+  String get wrappedDone => 'Concluído';
+
+  @override
+  String get wrappedPause => 'Pausar';
+
+  @override
+  String get wrappedPlay => 'Reproduzir';
+
+  @override
+  String get wrappedClose => 'Fechar';
+
+  @override
+  String get wrappedNextCard => 'Próximo card';
+
+  @override
+  String get wrappedPreviousCard => 'Card anterior';
+
+  @override
+  String wrappedCardPosition(int index, int count) {
+    return 'Card $index de $count';
+  }
+
+  @override
+  String wrappedHomeTitle(String year) {
+    return 'Seu $year no Prism';
+  }
+
+  @override
+  String get wrappedHomeSubtitle => 'Seu ano em papéis de parede está pronto.';
+
+  @override
+  String get wrappedNotEligible => 'Não há Wrapped para esta conta este ano.';
+
+  @override
+  String get wrappedLoadFailed => 'Não foi possível carregar seu Wrapped. Verifique sua conexão e tente de novo.';
+
+  @override
+  String notifPushWrappedReadyTitle(String year) {
+    return 'Seu $year no Prism chegou';
+  }
+
+  @override
+  String get notifPushWrappedReadyBody => 'Veja os papéis de parede que você salvou, suas cores e seus criadores.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -25126,4 +25338,216 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get creatorsShowMeBody => 'Outras pessoas podem encontrar seu perfil e seus melhores papéis de parede';
+
+  @override
+  String wrappedTitle(String year) {
+    return 'Prism Wrapped $year';
+  }
+
+  @override
+  String get wrappedIntroHeadline => 'Seu ano em papéis de parede';
+
+  @override
+  String get wrappedIntroBody => 'Alguns cards sobre os papéis de parede que você curtiu este ano.';
+
+  @override
+  String get wrappedSavesLabel => 'Salvos';
+
+  @override
+  String wrappedSavesBody(int count, String year) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você salvou $count papéis de parede em $year.',
+      one: 'Você salvou 1 papel de parede em $year.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedColoursLabel => 'Suas cores';
+
+  @override
+  String wrappedColoursBody(String first, String second, String third) {
+    return '$first, $second e $third apareceram mais nos seus salvos.';
+  }
+
+  @override
+  String get wrappedCreatorLabel => 'Seu criador favorito';
+
+  @override
+  String wrappedCreatorBody(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você salvou $count papéis de parede de $name.',
+      one: 'Você salvou 1 papel de parede de $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedStreakLabel => 'Sua sequência mais longa';
+
+  @override
+  String wrappedStreakBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você entrou $count dias seguidos.',
+      one: 'Você entrou 1 dia seguido.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count dias', one: '1 dia');
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedAiLabel => 'Feito com IA';
+
+  @override
+  String wrappedAiBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você criou $count papéis de parede com IA.',
+      one: 'Você criou 1 papel de parede com IA.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedCategoryLabel => 'Sua categoria principal';
+
+  @override
+  String wrappedCategoryBody(int count, String category) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você salvou $count papéis de parede de $category.',
+      one: 'Você salvou 1 papel de parede de $category.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedFoldersLabel => 'Pastas';
+
+  @override
+  String wrappedFoldersBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você criou $count pastas.',
+      one: 'Você criou 1 pasta.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedOnScreenLabel => 'Na sua tela';
+
+  @override
+  String wrappedOnScreenBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você definiu ou baixou este papel de parede $count vezes.',
+      one: 'Você definiu ou baixou este papel de parede 1 vez.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedChallengesLabel => 'Desafios semanais';
+
+  @override
+  String wrappedChallengesBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você participou de $count desafios semanais.',
+      one: 'Você participou de 1 desafio semanal.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedTipsLabel => 'Gorjetas';
+
+  @override
+  String wrappedTipsBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você enviou $count gorjetas para criadores.',
+      one: 'Você enviou 1 gorjeta para um criador.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedSince(String date) {
+    return 'Desde $date';
+  }
+
+  @override
+  String wrappedSummaryHeadline(String year) {
+    return 'Seu $year no Prism';
+  }
+
+  @override
+  String get wrappedShare => 'Compartilhar';
+
+  @override
+  String get wrappedShareCard => 'Compartilhar este card';
+
+  @override
+  String get wrappedDone => 'Concluído';
+
+  @override
+  String get wrappedPause => 'Pausar';
+
+  @override
+  String get wrappedPlay => 'Reproduzir';
+
+  @override
+  String get wrappedClose => 'Fechar';
+
+  @override
+  String get wrappedNextCard => 'Próximo card';
+
+  @override
+  String get wrappedPreviousCard => 'Card anterior';
+
+  @override
+  String wrappedCardPosition(int index, int count) {
+    return 'Card $index de $count';
+  }
+
+  @override
+  String wrappedHomeTitle(String year) {
+    return 'Seu $year no Prism';
+  }
+
+  @override
+  String get wrappedHomeSubtitle => 'Seu ano em papéis de parede está pronto.';
+
+  @override
+  String get wrappedNotEligible => 'Não há Wrapped para esta conta este ano.';
+
+  @override
+  String get wrappedLoadFailed => 'Não foi possível carregar seu Wrapped. Verifique sua conexão e tente novamente.';
+
+  @override
+  String notifPushWrappedReadyTitle(String year) {
+    return 'Seu $year no Prism chegou';
+  }
+
+  @override
+  String get notifPushWrappedReadyBody => 'Veja os papéis de parede que você salvou, suas cores e seus criadores.';
 }

@@ -23,6 +23,7 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'rc_or_fallback': RcOrFallbackValue.values.map((value) => value.wireValue).toList(),
   'live_wallpaper_style': LiveWallpaperStyleValue.values.map((value) => value.wireValue).toList(),
   'paywall_result': PaywallResultValue.values.map((value) => value.wireValue).toList(),
+  'wrapped_source': WrappedSourceValue.values.map((value) => value.wireValue).toList(),
   'subscription_entitlement_refresh_result': SubscriptionEntitlementRefreshResultValue.values
       .map((value) => value.wireValue)
       .toList(),
@@ -4242,5 +4243,74 @@ class SimilarCreatorFollowedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'creator_id': creatorId};
+  }
+}
+
+class WrappedOpenedEvent extends AnalyticsEvent {
+  const WrappedOpenedEvent({required this.source});
+
+  final WrappedSourceValue source;
+
+  @override
+  String get eventName => 'wrapped_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
+  }
+}
+
+class WrappedCardViewedEvent extends AnalyticsEvent {
+  const WrappedCardViewedEvent({required this.cardId});
+
+  final String cardId;
+
+  @override
+  String get eventName => 'wrapped_card_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'card_id': cardId};
+  }
+}
+
+class WrappedCardSharedEvent extends AnalyticsEvent {
+  const WrappedCardSharedEvent({required this.cardId, this.target});
+
+  final String cardId;
+  final ShareTargetValue? target;
+
+  @override
+  String get eventName => 'wrapped_card_shared';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'card_id': cardId, if (target != null) 'target': target!.wireValue};
+  }
+}
+
+class WrappedFinishedEvent extends AnalyticsEvent {
+  const WrappedFinishedEvent();
+
+  @override
+  String get eventName => 'wrapped_finished';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class WrappedNotEligibleEvent extends AnalyticsEvent {
+  const WrappedNotEligibleEvent({required this.source});
+
+  final WrappedSourceValue source;
+
+  @override
+  String get eventName => 'wrapped_not_eligible';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
   }
 }

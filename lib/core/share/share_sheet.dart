@@ -64,6 +64,8 @@ Future<void> showShareSheet(
   String sourceContext, {
   ShareSheetServices services = const ShareSheetServices(),
   VoidCallback? onShared,
+  List<ShareCardFormat>? formats,
+  ValueChanged<ShareTargetValue>? onTargetDone,
 }) {
   return showPrismSheet<void>(
     context,
@@ -85,6 +87,8 @@ Future<void> showShareSheet(
       sourceContext: sourceContext,
       services: services,
       onShared: onShared,
+      formats: formats,
+      onTargetDone: onTargetDone,
     ),
   );
 }
@@ -95,6 +99,8 @@ class ShareSheet extends StatefulWidget {
     required this.sourceContext,
     this.services = const ShareSheetServices(),
     this.onShared,
+    this.formats,
+    this.onTargetDone,
     super.key,
   });
 
@@ -102,6 +108,12 @@ class ShareSheet extends StatefulWidget {
   final String sourceContext;
   final ShareSheetServices services;
   final VoidCallback? onShared;
+
+  /// The card formats to offer. Defaults to every wallpaper format.
+  final List<ShareCardFormat>? formats;
+
+  /// Called with the target after a share action succeeds.
+  final ValueChanged<ShareTargetValue>? onTargetDone;
 
   @override
   State<ShareSheet> createState() => _ShareSheetState();
@@ -112,12 +124,14 @@ class _ShareSheetState extends State<ShareSheet> {
   final Map<ShareCardFormat, Future<File>> _renders = <ShareCardFormat, Future<File>>{};
   final Set<ShareCardFormat> _failedRenders = <ShareCardFormat>{};
   late ShareCardFormat _format = _formats.first;
-  List<ShareCardFormat> get _formats => <ShareCardFormat>[
-    if (widget.content.duoReveal) ShareCardFormat.duoReveal,
-    ShareCardFormat.story,
-    ShareCardFormat.post,
-    ShareCardFormat.clean,
-  ];
+  List<ShareCardFormat> get _formats =>
+      widget.formats ??
+      <ShareCardFormat>[
+        if (widget.content.duoReveal) ShareCardFormat.duoReveal,
+        ShareCardFormat.story,
+        ShareCardFormat.post,
+        ShareCardFormat.clean,
+      ];
   bool _instagram = false;
   ShareTargetValue? _busy;
   String? _actionUserId;
@@ -211,6 +225,7 @@ class _ShareSheetState extends State<ShareSheet> {
         _deleteRenders();
       }
     }
+    if (done) widget.onTargetDone?.call(target);
     if (done && mounted) Navigator.of(context).maybePop();
   }
 

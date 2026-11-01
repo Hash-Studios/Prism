@@ -12363,4 +12363,216 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get creatorsShowMeBody => 'दूसरे आपकी प्रोफ़ाइल और टॉप वॉलपेपर ढूँढ सकते हैं';
+
+  @override
+  String wrappedTitle(String year) {
+    return 'Prism Wrapped $year';
+  }
+
+  @override
+  String get wrappedIntroHeadline => 'इस साल के आपके वॉलपेपर';
+
+  @override
+  String get wrappedIntroBody => 'इस साल आपको पसंद आए वॉलपेपर के बारे में कुछ कार्ड।';
+
+  @override
+  String get wrappedSavesLabel => 'सहेजे गए';
+
+  @override
+  String wrappedSavesBody(int count, String year) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपने $year में $count वॉलपेपर सहेजे।',
+      one: 'आपने $year में 1 वॉलपेपर सहेजा।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedColoursLabel => 'आपके रंग';
+
+  @override
+  String wrappedColoursBody(String first, String second, String third) {
+    return 'आपके सहेजे गए वॉलपेपर में $first, $second और $third सबसे ज़्यादा दिखे।';
+  }
+
+  @override
+  String get wrappedCreatorLabel => 'आपके पसंदीदा क्रिएटर';
+
+  @override
+  String wrappedCreatorBody(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपने $name के $count वॉलपेपर सहेजे।',
+      one: 'आपने $name का 1 वॉलपेपर सहेजा।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedStreakLabel => 'आपकी सबसे लंबी लगातार शृंखला';
+
+  @override
+  String wrappedStreakBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आप $count दिन लगातार आए।',
+      one: 'आप 1 दिन लगातार आए।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count दिन', one: '1 दिन');
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedAiLabel => 'AI से बना';
+
+  @override
+  String wrappedAiBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपने $count AI वॉलपेपर बनाए।',
+      one: 'आपने 1 AI वॉलपेपर बनाया।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedCategoryLabel => 'आपकी सबसे पसंदीदा श्रेणी';
+
+  @override
+  String wrappedCategoryBody(int count, String category) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपने $category से $count वॉलपेपर सहेजे।',
+      one: 'आपने $category से 1 वॉलपेपर सहेजा।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedFoldersLabel => 'फ़ोल्डर';
+
+  @override
+  String wrappedFoldersBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपने $count फ़ोल्डर बनाए।',
+      one: 'आपने 1 फ़ोल्डर बनाया।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedOnScreenLabel => 'आपकी स्क्रीन पर';
+
+  @override
+  String wrappedOnScreenBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपने यह वॉलपेपर $count बार सेट या डाउनलोड किया।',
+      one: 'आपने यह वॉलपेपर 1 बार सेट या डाउनलोड किया।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedChallengesLabel => 'साप्ताहिक चुनौतियाँ';
+
+  @override
+  String wrappedChallengesBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आप $count साप्ताहिक चुनौतियों में शामिल हुए।',
+      one: 'आप 1 साप्ताहिक चुनौती में शामिल हुए।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedTipsLabel => 'टिप्स';
+
+  @override
+  String wrappedTipsBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपने क्रिएटर्स को $count टिप्स भेजीं।',
+      one: 'आपने एक क्रिएटर को 1 टिप भेजी।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedSince(String date) {
+    return '$date से';
+  }
+
+  @override
+  String wrappedSummaryHeadline(String year) {
+    return 'Prism पर आपका $year';
+  }
+
+  @override
+  String get wrappedShare => 'शेयर करें';
+
+  @override
+  String get wrappedShareCard => 'यह कार्ड शेयर करें';
+
+  @override
+  String get wrappedDone => 'हो गया';
+
+  @override
+  String get wrappedPause => 'रोकें';
+
+  @override
+  String get wrappedPlay => 'चलाएँ';
+
+  @override
+  String get wrappedClose => 'बंद करें';
+
+  @override
+  String get wrappedNextCard => 'अगला कार्ड';
+
+  @override
+  String get wrappedPreviousCard => 'पिछला कार्ड';
+
+  @override
+  String wrappedCardPosition(int index, int count) {
+    return '$count में से कार्ड $index';
+  }
+
+  @override
+  String wrappedHomeTitle(String year) {
+    return 'Prism पर आपका $year';
+  }
+
+  @override
+  String get wrappedHomeSubtitle => 'इस साल के आपके वॉलपेपर तैयार हैं।';
+
+  @override
+  String get wrappedNotEligible => 'इस साल इस खाते के लिए कोई Wrapped नहीं है।';
+
+  @override
+  String get wrappedLoadFailed => 'आपका Wrapped लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String notifPushWrappedReadyTitle(String year) {
+    return 'Prism पर आपका $year आ गया है';
+  }
+
+  @override
+  String get notifPushWrappedReadyBody => 'अपने सहेजे वॉलपेपर, अपने रंग और अपने क्रिएटर देखें।';
 }

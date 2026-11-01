@@ -230,7 +230,7 @@ return blockedCreatorsChanged();case _:
 
 class _Started implements PersonalizedFeedEvent {
   const _Started();
-
+  
 
 
 
@@ -262,7 +262,7 @@ String toString() {
 
 class _RefreshRequested implements PersonalizedFeedEvent {
   const _RefreshRequested();
-
+  
 
 
 
@@ -294,7 +294,7 @@ String toString() {
 
 class _FetchMoreRequested implements PersonalizedFeedEvent {
   const _FetchMoreRequested();
-
+  
 
 
 
@@ -326,7 +326,7 @@ String toString() {
 
 class _LessLikeThisRequested implements PersonalizedFeedEvent {
   const _LessLikeThisRequested(this.item);
-
+  
 
  final  FeedItemEntity item;
 
@@ -389,7 +389,7 @@ as FeedItemEntity,
 @override
 @pragma('vm:prefer-inline')
 $FeedItemEntityCopyWith<$Res> get item {
-
+  
   return $FeedItemEntityCopyWith<$Res>(_self.item, (value) {
     return _then(_self.copyWith(item: value));
   });
@@ -401,7 +401,7 @@ $FeedItemEntityCopyWith<$Res> get item {
 
 class _LessLikeThisUndone implements PersonalizedFeedEvent {
   const _LessLikeThisUndone(this.item, {required this.index});
-
+  
 
  final  FeedItemEntity item;
  final  int index;
@@ -466,7 +466,7 @@ as int,
 @override
 @pragma('vm:prefer-inline')
 $FeedItemEntityCopyWith<$Res> get item {
-
+  
   return $FeedItemEntityCopyWith<$Res>(_self.item, (value) {
     return _then(_self.copyWith(item: value));
   });
@@ -478,7 +478,7 @@ $FeedItemEntityCopyWith<$Res> get item {
 
 class _SettingsChanged implements PersonalizedFeedEvent {
   const _SettingsChanged();
-
+  
 
 
 
@@ -510,7 +510,7 @@ String toString() {
 
 class _ChipSelected implements PersonalizedFeedEvent {
   const _ChipSelected(this.chip);
-
+  
 
  final  HomeFeedChip chip;
 
@@ -576,7 +576,7 @@ as HomeFeedChip,
 
 class _TilesSeen implements PersonalizedFeedEvent {
   const _TilesSeen(final  List<String> keys): _keys = keys;
-
+  
 
  final  List<String> _keys;
  List<String> get keys {
@@ -648,7 +648,7 @@ as List<String>,
 
 class _LiveDropRequested implements PersonalizedFeedEvent {
   const _LiveDropRequested();
-
+  
 
 
 
@@ -680,7 +680,7 @@ String toString() {
 
 class _BlockedCreatorsChanged implements PersonalizedFeedEvent {
   const _BlockedCreatorsChanged();
-
+  
 
 
 
@@ -917,7 +917,7 @@ return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.
 
 class _PersonalizedFeedState implements PersonalizedFeedState {
   const _PersonalizedFeedState({required this.status, required this.actionStatus, required final  List<FeedItemEntity> items, required this.hasMore, required this.isFetchingMore, required this.page, required final  List<String> seenKeys, required this.chip, required this.isRefreshing, required this.refreshFailed, this.liveDrop, this.failure}): _items = items,_seenKeys = seenKeys;
-
+  
 
 @override final  LoadStatus status;
 @override final  ActionStatus actionStatus;

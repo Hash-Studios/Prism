@@ -5,6 +5,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -23,6 +24,10 @@ import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
+import 'package:Prism/features/wrapped/biz/bloc/wrapped_bloc.j.dart';
+import 'package:Prism/features/wrapped/domain/wrapped.dart';
+import 'package:Prism/features/wrapped/views/widgets/wrapped_home_card.dart';
+import 'package:Prism/features/wrapped/wrapped_config.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
@@ -52,7 +57,7 @@ int _carouselColumns(BuildContext context) {
 double feedCarouselCardHeight(BuildContext context) =>
     math.max(0, (_carouselWidth(context) / _carouselColumns(context) - 2 * PrismFeedLayout.gridSpacing) * 0.6);
 
-/// The home carousel: Wall of the Day, the live Drop, boosted walls, a card for each seasonal theme (in its season,
+/// The home carousel: Wall of the Day, the user's Wrapped (in its window), the live Drop, boosted walls, a card for each seasonal theme (in its season,
 /// while the theme is off), the promo banner and the first wallpapers as rounded pages, with page dots over the bottom of the
 /// image.
 class FeedCarousel extends StatefulWidget {
@@ -90,11 +95,21 @@ class _FeedCarouselState extends State<FeedCarousel> {
   Timer? _dropEndTimer;
   Timer? _seasonEndTimer;
 
+  final WrappedBloc _wrapped = getIt<WrappedBloc>();
+  StreamSubscription<WrappedState>? _wrappedChanges;
+
   @override
   void initState() {
     super.initState();
     _scheduleDropEnd();
     _scheduleSeasonEnd();
+    final String uid = app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '';
+    if (uid.isNotEmpty && WrappedConfig.isOpen(DateTime.now())) {
+      _wrappedChanges = _wrapped.stream.listen((_) {
+        if (mounted) setState(() {});
+      });
+      _wrapped.add(WrappedEvent.load(uid));
+    }
   }
 
   @override
@@ -108,6 +123,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
   void dispose() {
     _dropEndTimer?.cancel();
     _seasonEndTimer?.cancel();
+    unawaited(_wrappedChanges?.cancel());
     super.dispose();
   }
 
@@ -213,11 +229,17 @@ class _FeedCarouselState extends State<FeedCarousel> {
     final double width = _carouselWidth(context);
     final int columns = _carouselColumns(context);
     final int memCacheHeight = (height * MediaQuery.devicePixelRatioOf(context)).round();
+    final WrappedYear? wrapped = wrappedForHome(
+      _wrapped.state,
+      app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '',
+      DateTime.now(),
+    );
     final List<SeasonalTheme> seasons = seasonalThemes
         .where((season) => season.inSeason() && !season.isActive(context))
         .toList();
     final List<String> pageIds = <String>[
       if (hasWotd) 'wotd',
+      if (wrapped != null) 'wrapped',
       if (_showsDrop(widget.liveDrop)) 'drop',
       for (final PrismWallpaper wall in widget.boostedWalls) 'boosted:${wall.core.id}',
       for (final SeasonalTheme season in seasons) season.name,
@@ -235,6 +257,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
     _pageIds = pageIds;
     final List<Widget Function(int realIndex)> pages = <Widget Function(int)>[
       if (hasWotd) (_) => const WallOfTheDayCard(),
+      if (wrapped != null) (_) => WrappedHomeCard(year: wrapped, memCacheHeight: memCacheHeight),
       if (_showsDrop(widget.liveDrop))
         (_) => DropCarouselSlide(
           drop: widget.liveDrop!,
