@@ -781,7 +781,7 @@ async function renderDesktopHub(list: 'desktop' | 'sets', pageNumber: number, en
     <a href="/wallpapers">Phone</a>
   </nav>`;
   const cards = items.map((card, index) => {
-    const loading = index < 3 ? '' : 'loading="lazy" ';
+    const loading = index === 0 ? 'fetchpriority="high" ' : index < 3 ? '' : 'loading="lazy" ';
     const desktopImage = `<img class="desk" src="${escapeAttribute(card.desktop ?? '')}" width="${DESKTOP_THUMB_WIDTH}" height="${DESKTOP_THUMB_HEIGHT}" alt="" ${loading}decoding="async">`;
     const phoneImage = list === 'sets'
       ? `<img class="phone" src="${escapeAttribute(card.thumb)}" width="${THUMB_WIDTH}" height="${THUMB_HEIGHT}" alt="" ${loading}decoding="async">` : '';
@@ -1269,7 +1269,7 @@ h2{font-size:1.25rem;font-weight:700}
 .stores{display:flex;flex-wrap:wrap;gap:12px}
 .stores .btn{flex:1 1 150px}
 @media (min-width:600px){.actions .btn.primary{align-self:flex-start;min-width:220px}.stores .btn{flex:0 0 auto}}
-.wall-layout{display:grid;gap:24px;padding-top:8px}
+.wall-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;padding-top:8px}
 .wall-figure{margin:0;justify-self:center;width:min(100%,480px,calc(56svh * var(--ar,.5)))}
 .wall-img{width:100%;height:auto;border-radius:24px;background:var(--surface);box-shadow:0 30px 60px -20px rgba(0,0,0,.7)}
 .wall-img.gated{position:relative;display:grid;place-items:center;background-size:cover;background-position:center;overflow:hidden}
@@ -1289,7 +1289,7 @@ h2{font-size:1.25rem;font-weight:700}
   .wall-figure{position:sticky;top:24px;width:min(100%,calc(86svh * var(--ar,.5)));justify-self:start}
   .wall-info{padding-top:24px}
 }
-.wall-media{display:grid;gap:16px;justify-items:center;align-content:start;min-width:0}
+.wall-media{display:grid;gap:16px;justify-items:center;align-content:start;min-width:0;width:100%}
 .view-tabs{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--line)}
 .view-tabs button{font:inherit;font-weight:700;font-size:.92rem;color:var(--muted);background:none;border:0;border-radius:999px;min-height:40px;min-width:104px;padding:8px 20px;cursor:pointer;transition:background-color .15s ease-out,color .15s ease-out}
 .view-tabs button:hover{color:var(--text)}

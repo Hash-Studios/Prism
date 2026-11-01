@@ -19,6 +19,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [folders.md](folders.md) | Public folders: projection, follow, "New in" push, share links, reports |
 | [web-catalogue.md](web-catalogue.md) | Public web pages on prismwalls.com: walls, folders, hubs, creators, sitemaps, caching (web and backend) |
 | [creator-directory.md](creator-directory.md) | Creators to follow row, See all, card, Followed by, More like, daily directory job |
+| [desktop-companions.md](desktop-companions.md) | Desktop versions of Studio walls: 16:10 and 16:9 files, cost, backfill, Desktop version chip, deploy order |
 | [notifications.md](notifications.md) | Inbox, preferences, Wall of the Day at 09:00 local time |
 | [reliability.md](reliability.md) | Timeouts, offline banner, cache, error reports, ad consent, startup |
 | [backend-deploy.md](backend-deploy.md) | Deploy order for indexes, functions, worker, web and the app |
