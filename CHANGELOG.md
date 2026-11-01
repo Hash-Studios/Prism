@@ -1,5 +1,14 @@
 ## Changelog
 
+### v3.18.0
+- Find creators to follow in the new creator directory
+- Send coins to thank a creator for a wallpaper you love
+- See how your uploads perform with Your stats, plus a weekly summary in your inbox
+- Fix and resubmit a wallpaper that needs changes, or edit its details later
+- Redeem a Prism code for coins or Pro from Settings or Rewards
+- On iPhone, rotate wallpapers from a folder with a Shortcut
+- Security and stability fixes
+
 ### v3.17.0
 - Weekly Challenges: enter each week's theme and vote for your favourite entries
 - Make Duo reveal AI wallpapers, with one scene folded and another when you open it
