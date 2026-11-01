@@ -39,6 +39,17 @@ export function buildAndroidIntentUrl(canonicalUrl: string, fallbackUrl: string)
   return `intent://${path}#Intent;scheme=https;package=${ANDROID_PACKAGE};S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end`;
 }
 
+/**
+ * iOS opens a universal link in Safari when it points at the page's own host, so an "Open in Prism" link on
+ * prismwalls.com does nothing. Both hosts are associated with the app, so the link goes to the other one.
+ */
+export function iosUniversalLinkUrl(canonicalUrl: string, pageHost: string): string {
+  const target = new URL(canonicalUrl);
+  if (target.host !== pageHost) return canonicalUrl;
+  target.host = target.host.startsWith('www.') ? target.host.slice(4) : `www.${target.host}`;
+  return target.toString();
+}
+
 /** A 1200x630 JPEG of a card page, or null when Browser Rendering is not configured or fails. */
 export async function screenshotCard(htmlTemplate: string, env: ScreenshotEnv): Promise<Uint8Array | null> {
   if (!env.BROWSER_RENDERING_ACCOUNT_ID || !env.BROWSER_RENDERING_API_TOKEN) {

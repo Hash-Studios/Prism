@@ -859,7 +859,7 @@ function documentHtml(input: PageInput): string {
   <meta name="twitter:image" content="${escapeAttribute(input.ogImage)}">
   <meta name="theme-color" content="#0e0e12">
   <meta name="color-scheme" content="dark">
-  ${input.appUrl ? `<meta name="apple-itunes-app" content="app-id=1405860595, app-argument=${escapeAttribute(input.appUrl)}">` : ''}
+  ${input.appUrl ? `<meta name="apple-itunes-app" content="app-id=6670200846, app-argument=${escapeAttribute(input.appUrl)}">` : ''}
   <link rel="icon" href="/assets/ios.png">
   ${ld}
   <style>${STYLE}</style>
@@ -875,13 +875,20 @@ function documentHtml(input: PageInput): string {
     <p>Prism is a wallpaper app for Android and iPhone, made by Hash Studios.</p>
     <nav aria-label="Footer"><a href="/wallpapers">Wallpapers</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></nav>
   </footer>
-  <script>${ANDROID_SCRIPT}</script>
+  <script>${OPEN_APP_SCRIPT}</script>
 </body>
 </html>`;
 }
 
 /** Android opens the app through an intent link with a Play Store fallback. Swapping it in here keeps the HTML the same for every visitor. */
-const ANDROID_SCRIPT = `if(/android/i.test(navigator.userAgent))document.querySelectorAll('[data-android]').forEach(function(a){a.href=a.getAttribute('data-android')})`;
+/**
+ * iOS opens a universal link in Safari when it points at the page's own host, so on iOS the link goes to the other
+ * associated host (prismwalls.com and www.prismwalls.com). Without the app, that host serves the same page.
+ */
+const OPEN_APP_SCRIPT = `if(/android/i.test(navigator.userAgent))document.querySelectorAll('[data-android]').forEach(function(a){a.href=a.getAttribute('data-android')});`
+  + `else if(/iphone|ipad|ipod/i.test(navigator.userAgent)||navigator.maxTouchPoints>1&&/mac/i.test(navigator.platform))`
+  + `document.querySelectorAll('[data-android]').forEach(function(a){var u=new URL(a.href);if(u.host===location.host){`
+  + `u.host=u.host.indexOf('www.')===0?u.host.slice(4):'www.'+u.host;a.href=u.href}})`;
 
 function actionsHtml(appUrl: string, label: string, env: CatalogEnv): string {
   return `<div class="actions">

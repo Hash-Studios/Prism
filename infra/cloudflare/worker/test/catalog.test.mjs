@@ -1,3 +1,4 @@
+import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import worker from '../src/index.ts';
@@ -192,7 +193,7 @@ function setup(t, { firestoreStatus = null } = {}) {
     AI_STATE_KV: new MemoryKv(),
     FIREBASE_PROJECT_ID: 'prism-test',
     PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
-    APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+    APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
     OG_FALLBACK_IMAGE: 'https://prismwalls.com/assets/og/home.jpg',
   };
   const ctx = { waitUntil(promise) { state.pending.push(promise); } };
@@ -463,6 +464,25 @@ test('cache key ignores query strings and user agents', async (t) => {
   assert.equal(androidHtml, desktopHtml);
   assert.match(desktopHtml, /data-android="intent:\/\/prismwalls\.com\/wallpaper\/W1#Intent;scheme=https;package=com\.hash\.prism;/);
   assert.equal(desktopHtml.match(/intent:\/\//g)?.length, 1);
+});
+
+test('on iOS the open link moves to the other associated host, so Safari hands it to the app', async (t) => {
+  const h = setup(t);
+  const html = await (await h.get('/wallpaper/W1')).text();
+  await h.flush();
+  const script = html.match(/<script>(if\(\/android[^<]*)<\/script>/)[1];
+  const run = (userAgent, host) => {
+    const anchor = { href: 'https://prismwalls.com/wallpaper/W1', getAttribute: () => 'intent://x' };
+    vm.runInNewContext(script, {
+      URL, navigator: { userAgent, platform: 'iPhone', maxTouchPoints: 5 }, location: { host },
+      document: { querySelectorAll: () => [anchor] },
+    });
+    return anchor.href;
+  };
+  const iphone = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1';
+  assert.equal(run(iphone, 'prismwalls.com'), 'https://www.prismwalls.com/wallpaper/W1');
+  assert.equal(run(iphone, 'www.prismwalls.com'), 'https://prismwalls.com/wallpaper/W1');
+  assert.equal(run(ANDROID_UA, 'prismwalls.com'), 'intent://x');
 });
 
 test('host, request headers, and unrelated queries cannot alter the cached page body', async (t) => {
