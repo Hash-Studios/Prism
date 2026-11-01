@@ -11553,7 +11553,7 @@
   "promoErrorExpired": "Dieser Code ist abgelaufen.",
   "promoErrorLimitReached": "Für diesen Code sind keine Einlösungen mehr übrig.",
   "promoErrorAlreadyRedeemed": "Du hast diesen Code bereits eingelöst.",
-  "promoErrorAccountTooNew": "Dein Konto ist zu neu für diesen Code. Versuche es in ein paar Tagen erneut.",
+  "promoErrorAccountTooNew": "Dein Konto ist zu neu für diesen Code.",
   "promoErrorNewUsersOnly": "Dieser Code ist nur für neue Konten.",
   "promoErrorPremiumNotOnIos": "Pro-Codes funktionieren nicht auf dem iPhone oder iPad. Verwende stattdessen einen App-Store-Code.",
   "promoErrorAlreadyPremium": "Du hast bereits Pro, daher wird dieser Code nicht benötigt.",

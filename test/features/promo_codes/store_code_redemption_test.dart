@@ -16,6 +16,8 @@ void main() {
 
   late Future<void> Function() originalPresentAppStoreSheet;
   late Future<bool> Function(Uri uri) originalOpenExternal;
+  late Future<void> Function(String userId) originalEnsureConfigured;
+  late List<String> calls;
   late FakeAppAnalytics analytics;
   late int presentCount;
   late List<Uri> opened;
@@ -24,6 +26,9 @@ void main() {
   setUp(() {
     originalPresentAppStoreSheet = storeCodeIo.presentAppStoreSheet;
     originalOpenExternal = storeCodeIo.openExternal;
+    originalEnsureConfigured = storeCodeIo.ensureConfigured;
+    calls = <String>[];
+    storeCodeIo.ensureConfigured = (String userId) async => calls.add('configure');
     presentCount = 0;
     opened = <Uri>[];
     toasts = <String>[];
@@ -31,6 +36,7 @@ void main() {
     AnalyticsRuntime.instance = analytics;
     storeCodeIo.presentAppStoreSheet = () async {
       presentCount++;
+      calls.add('present');
     };
     storeCodeIo.openExternal = (Uri uri) async {
       opened.add(uri);
@@ -45,6 +51,7 @@ void main() {
   tearDown(() {
     storeCodeIo.presentAppStoreSheet = originalPresentAppStoreSheet;
     storeCodeIo.openExternal = originalOpenExternal;
+    storeCodeIo.ensureConfigured = originalEnsureConfigured;
     messenger.setMockMethodCallHandler(toastChannel, null);
     debugDefaultTargetPlatformOverride = null;
     AnalyticsRuntime.reset();
@@ -72,7 +79,7 @@ void main() {
   testWidgets('on iPhone the App Store code sheet opens and the Play page does not', (tester) async {
     await pumpAndTap(tester);
 
-    expect(presentCount, 1);
+    expect(calls, <String>['configure', 'present']);
     expect(opened, isEmpty);
     final List<AnalyticsEvent> sent = analytics.events;
     expect(sent.map((AnalyticsEvent e) => e.eventName), <String>['store_code_sheet_opened']);
@@ -89,6 +96,15 @@ void main() {
     expect(sent.map((AnalyticsEvent e) => e.eventName), <String>['store_code_sheet_opened']);
     expect(sent.single.toWireParameters(), <String, Object?>{'platform': 'android'});
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('on iPhone a RevenueCat setup failure shows the toast and never opens the sheet', (tester) async {
+    storeCodeIo.ensureConfigured = (String userId) async => throw StateError('not configured');
+    await pumpAndTap(tester);
+
+    expect(presentCount, 0);
+    expect(toasts, <String>["Couldn't open the code page. Try again."]);
+    await tester.pump(const Duration(seconds: 1));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('a Play page that does not open shows the failure toast', (tester) async {
     storeCodeIo.openExternal = (Uri uri) async => false;

@@ -12006,7 +12006,7 @@
   "promoErrorExpired": "इस कोड की मियाद खत्म हो चुकी है।",
   "promoErrorLimitReached": "इस कोड के अब और उपयोग बाकी नहीं हैं।",
   "promoErrorAlreadyRedeemed": "आप यह कोड पहले ही इस्तेमाल कर चुके हैं।",
-  "promoErrorAccountTooNew": "आपका खाता इस कोड के लिए बहुत नया है। कुछ दिनों बाद फिर कोशिश करें।",
+  "promoErrorAccountTooNew": "आपका खाता इस कोड के लिए बहुत नया है।",
   "promoErrorNewUsersOnly": "यह कोड केवल नए खातों के लिए है।",
   "promoErrorPremiumNotOnIos": "Pro कोड iPhone या iPad पर काम नहीं करते। इसके बजाय App Store कोड इस्तेमाल करें।",
   "promoErrorAlreadyPremium": "आपके पास पहले से Pro है, इसलिए यह कोड ज़रूरी नहीं है।",

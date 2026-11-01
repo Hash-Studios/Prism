@@ -12339,7 +12339,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get promoErrorAlreadyRedeemed => 'Kamu sudah menggunakan kode ini.';
 
   @override
-  String get promoErrorAccountTooNew => 'Akunmu terlalu baru untuk kode ini. Coba lagi dalam beberapa hari.';
+  String get promoErrorAccountTooNew => 'Akunmu terlalu baru untuk kode ini.';
 
   @override
   String get promoErrorNewUsersOnly => 'Kode ini hanya untuk akun baru.';

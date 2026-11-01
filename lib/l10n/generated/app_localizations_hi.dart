@@ -12439,7 +12439,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get promoErrorAlreadyRedeemed => 'आप यह कोड पहले ही इस्तेमाल कर चुके हैं।';
 
   @override
-  String get promoErrorAccountTooNew => 'आपका खाता इस कोड के लिए बहुत नया है। कुछ दिनों बाद फिर कोशिश करें।';
+  String get promoErrorAccountTooNew => 'आपका खाता इस कोड के लिए बहुत नया है।';
 
   @override
   String get promoErrorNewUsersOnly => 'यह कोड केवल नए खातों के लिए है।';

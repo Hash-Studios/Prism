@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/purchases/purchases_service.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -15,6 +17,8 @@ final Uri playRedeemUri = Uri.parse('https://play.google.com/redeem');
 
 /// Swapped in tests, which have no StoreKit or browser.
 class StoreCodeIo {
+  // The native sheet needs a configured RevenueCat; calling it before configuration ends the app, not a Dart error.
+  Future<void> Function(String userId) ensureConfigured = PurchasesService.instance.ensureConfigured;
   Future<void> Function() presentAppStoreSheet = Purchases.presentCodeRedemptionSheet;
   Future<bool> Function(Uri uri) openExternal = (Uri uri) => launchUrl(uri, mode: LaunchMode.externalApplication);
 }
@@ -32,7 +36,12 @@ Future<void> openStoreCodeRedemption(BuildContext context) async {
   unawaited(analytics.track(StoreCodeSheetOpenedEvent(platform: platform)));
   try {
     final bool opened = switch (platform) {
-      StoreCodePlatform.ios => await storeCodeIo.presentAppStoreSheet().then((_) => true),
+      StoreCodePlatform.ios =>
+        await storeCodeIo
+            .ensureConfigured(app_state.prismUser.id)
+            .timeout(const Duration(seconds: 10))
+            .then((_) => storeCodeIo.presentAppStoreSheet())
+            .then((_) => true),
       StoreCodePlatform.android => await storeCodeIo.openExternal(playRedeemUri),
     };
     if (!opened) toasts.error(failed);

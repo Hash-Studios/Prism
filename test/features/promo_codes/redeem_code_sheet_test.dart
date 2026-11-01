@@ -195,7 +195,7 @@ void main() {
     'already_redeemed': 'You already used this code.',
     'not_found': "We can't find that code. Check it and try again.",
     'limit_reached': 'This code has no uses left.',
-    'account_too_new': 'Your account is too new for this code. Try again in a few days.',
+    'account_too_new': 'Your account is too new for this code.',
     'new_users_only': 'This code is for new accounts only.',
     'premium_not_on_ios': "Pro codes don't work on iPhone or iPad. Use an App Store code instead.",
     'already_premium': "You already have Pro, so this code isn't needed.",

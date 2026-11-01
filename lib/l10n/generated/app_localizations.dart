@@ -19834,7 +19834,7 @@ abstract class AppLocalizations {
   /// No description provided for @promoErrorAccountTooNew.
   ///
   /// In en, this message translates to:
-  /// **'Your account is too new for this code. Try again in a few days.'**
+  /// **'Your account is too new for this code.'**
   String get promoErrorAccountTooNew;
 
   /// No description provided for @promoErrorNewUsersOnly.

@@ -12006,7 +12006,7 @@
   "promoErrorExpired": "This code has expired.",
   "promoErrorLimitReached": "This code has no uses left.",
   "promoErrorAlreadyRedeemed": "You already used this code.",
-  "promoErrorAccountTooNew": "Your account is too new for this code. Try again in a few days.",
+  "promoErrorAccountTooNew": "Your account is too new for this code.",
   "promoErrorNewUsersOnly": "This code is for new accounts only.",
   "promoErrorPremiumNotOnIos": "Pro codes don't work on iPhone or iPad. Use an App Store code instead.",
   "promoErrorAlreadyPremium": "You already have Pro, so this code isn't needed.",

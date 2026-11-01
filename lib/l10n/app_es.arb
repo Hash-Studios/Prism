@@ -3409,7 +3409,7 @@
   "promoErrorExpired": "Este código ha caducado.",
   "promoErrorLimitReached": "Este código ya no tiene usos disponibles.",
   "promoErrorAlreadyRedeemed": "Ya usaste este código.",
-  "promoErrorAccountTooNew": "Tu cuenta es demasiado nueva para este código. Inténtalo dentro de unos días.",
+  "promoErrorAccountTooNew": "Tu cuenta es demasiado nueva para este código.",
   "promoErrorNewUsersOnly": "Este código es solo para cuentas nuevas.",
   "promoErrorPremiumNotOnIos": "Los códigos Pro no funcionan en iPhone ni en iPad. Usa un código de la App Store.",
   "promoErrorAlreadyPremium": "Ya tienes Pro, así que este código no es necesario.",

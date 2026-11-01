@@ -11585,7 +11585,7 @@
   "promoErrorExpired": "Kode ini sudah kedaluwarsa.",
   "promoErrorLimitReached": "Kode ini sudah tidak bisa digunakan lagi.",
   "promoErrorAlreadyRedeemed": "Kamu sudah menggunakan kode ini.",
-  "promoErrorAccountTooNew": "Akunmu terlalu baru untuk kode ini. Coba lagi dalam beberapa hari.",
+  "promoErrorAccountTooNew": "Akunmu terlalu baru untuk kode ini.",
   "promoErrorNewUsersOnly": "Kode ini hanya untuk akun baru.",
   "promoErrorPremiumNotOnIos": "Kode Pro tidak berfungsi di iPhone atau iPad. Gunakan kode App Store sebagai gantinya.",
   "promoErrorAlreadyPremium": "Kamu sudah punya Pro, jadi kode ini tidak diperlukan.",

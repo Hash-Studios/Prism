@@ -12297,7 +12297,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get promoErrorAlreadyRedeemed => 'You already used this code.';
 
   @override
-  String get promoErrorAccountTooNew => 'Your account is too new for this code. Try again in a few days.';
+  String get promoErrorAccountTooNew => 'Your account is too new for this code.';
 
   @override
   String get promoErrorNewUsersOnly => 'This code is for new accounts only.';

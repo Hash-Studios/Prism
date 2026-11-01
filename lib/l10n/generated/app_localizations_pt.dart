@@ -12641,7 +12641,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get promoErrorAlreadyRedeemed => 'Você já usou este código.';
 
   @override
-  String get promoErrorAccountTooNew => 'Sua conta é nova demais para este código. Tente de novo em alguns dias.';
+  String get promoErrorAccountTooNew => 'Sua conta é nova demais para este código.';
 
   @override
   String get promoErrorNewUsersOnly => 'Este código é só para contas novas.';
@@ -25432,7 +25432,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get promoErrorAlreadyRedeemed => 'Você já usou este código.';
 
   @override
-  String get promoErrorAccountTooNew => 'Sua conta é nova demais para este código. Tente de novo em alguns dias.';
+  String get promoErrorAccountTooNew => 'Sua conta é nova demais para este código.';
 
   @override
   String get promoErrorNewUsersOnly => 'Este código é só para contas novas.';
