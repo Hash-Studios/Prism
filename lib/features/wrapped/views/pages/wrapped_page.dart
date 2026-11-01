@@ -413,7 +413,8 @@ class _Chrome extends StatelessWidget {
                       borderRadius: BorderRadius.circular(2),
                       child: SizedBox(
                         height: 3,
-                        child: i == index && !still
+                        // The last card (the summary) never times out, so its bar shows full.
+                        child: i == index && !still && i < count - 1
                             ? AnimatedBuilder(
                                 animation: progress,
                                 builder: (_, _) => _Bar(fill: progress.value),

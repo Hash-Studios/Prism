@@ -31,7 +31,7 @@ class WrappedCopy {
     if (body.isNotEmpty) body,
     for (final (String label, String value) in rows) '$label: $value',
     ?since,
-  ].join('. ');
+  ].map((part) => RegExp(r'[.!?。।]$').hasMatch(part) ? part : '$part.').join(' ');
 }
 
 WrappedCopy wrappedCopy(AppLocalizations l10n, String locale, WrappedYear year, WrappedCard card) {
@@ -39,6 +39,8 @@ WrappedCopy wrappedCopy(AppLocalizations l10n, String locale, WrappedYear year, 
   final String n = NumberFormat.decimalPattern(locale).format(card.value);
   final String? since = card.since == null ? null : l10n.wrappedSince(DateFormat.MMMd(locale).format(card.since!));
   String colour(int i) => prismPaletteColorDisplayName(card.colours[i], l10n);
+  // Colour names are capitalized labels; mid-sentence they read as nouns only in German.
+  String inSentence(int i) => locale.startsWith('de') ? colour(i) : colour(i).toLowerCase();
   final String creatorName = card.creator == null
       ? ''
       : (card.creator!.name.isNotEmpty ? card.creator!.name : '@${card.creator!.username}');
@@ -56,7 +58,7 @@ WrappedCopy wrappedCopy(AppLocalizations l10n, String locale, WrappedYear year, 
     WrappedCardKind.colours => WrappedCopy(
       kicker: l10n.wrappedColoursLabel,
       display: colour(0),
-      body: l10n.wrappedColoursBody(colour(0), colour(1), colour(2)),
+      body: l10n.wrappedColoursBody(colour(0), inSentence(1), inSentence(2)),
       swatches: card.colours.map((c) => c.color).toList(),
     ),
     WrappedCardKind.creator => WrappedCopy(
