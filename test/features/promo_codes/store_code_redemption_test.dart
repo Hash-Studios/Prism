@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/features/promo_codes/views/store_code_redemption.dart';
@@ -76,8 +78,18 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('on iPhone the App Store code sheet opens and the Play page does not', (tester) async {
+  testWidgets('on iPhone the App Store code sheet opens only after RevenueCat is configured', (tester) async {
+    final Completer<void> configured = Completer<void>();
+    storeCodeIo.ensureConfigured = (String userId) async {
+      calls.add('configure');
+      await configured.future;
+    };
     await pumpAndTap(tester);
+    expect(calls, <String>['configure']);
+
+    configured.complete();
+    await tester.pump();
+    await tester.pump();
 
     expect(calls, <String>['configure', 'present']);
     expect(opened, isEmpty);
