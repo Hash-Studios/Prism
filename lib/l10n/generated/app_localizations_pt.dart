@@ -12995,7 +12995,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wrappedNotEligible => 'Não há Wrapped para esta conta este ano.';
 
   @override
-  String get wrappedLoadFailed => 'Não foi possível carregar seu Wrapped. Verifique sua conexão e tente de novo.';
+  String get wrappedLoadFailed => 'Não foi possível carregar seu Wrapped. Verifique sua conexão e tente novamente.';
 
   @override
   String notifPushWrappedReadyTitle(String year) {

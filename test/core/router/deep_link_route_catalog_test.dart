@@ -223,7 +223,7 @@ void main() {
     expect(moment, isA<DailyMomentRoute>());
     reachablePages.addAll(_routeNames(moment!));
     final Set<String> appPages = _appRouteNames(AppRouter().routes)..remove('SplashWidgetRoute');
-    expect(appPages, hasLength(64));
+    expect(appPages, hasLength(65));
     expect(appPages, containsAll(<String>['CreatorStatsRoute', 'DailyMomentRoute', 'WeeklyChallengeRoute']));
     expect(
       appPages.difference(reachablePages),

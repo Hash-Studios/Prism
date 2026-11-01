@@ -95,7 +95,8 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
   Timer? _dropEndTimer;
   Timer? _seasonEndTimer;
 
-  final WrappedBloc _wrapped = getIt<WrappedBloc>();
+  /// Looked up only once the Wrapped window opens, so Home never touches Wrapped outside it.
+  WrappedBloc? _wrapped;
   StreamSubscription<WrappedState>? _wrappedChanges;
   StreamSubscription<String>? _wrappedUserChanges;
   Timer? _wrappedWindowTimer;
@@ -108,28 +109,27 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
     _scheduleDropEnd();
     _scheduleSeasonEnd();
     _wrappedUid = _currentWrappedUid;
-    _wrappedUserChanges = _wrapped.userChanges.listen((uid) {
-      if (uid == _wrappedUid) return;
-      _wrappedUid = uid;
-      _refreshWrapped();
-    });
     _refreshWrapped();
   }
 
   String get _currentWrappedUid => app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '';
 
-  void _watchWrapped() {
-    _wrappedChanges ??= _wrapped.stream.listen((_) {
+  WrappedBloc _watchWrapped() {
+    final WrappedBloc bloc = _wrapped ??= getIt<WrappedBloc>();
+    _wrappedChanges ??= bloc.stream.listen((_) {
       if (mounted) setState(() {});
     });
+    _wrappedUserChanges ??= bloc.userChanges.listen((uid) {
+      if (uid == _wrappedUid) return;
+      _wrappedUid = uid;
+      _refreshWrapped();
+    });
+    return bloc;
   }
 
   void _refreshWrapped() {
     final bool isOpen = WrappedConfig.isOpen(DateTime.now());
-    if (_wrappedUid.isNotEmpty && isOpen) {
-      _watchWrapped();
-      _wrapped.add(WrappedEvent.load(_wrappedUid));
-    }
+    if (_wrappedUid.isNotEmpty && isOpen) _watchWrapped().add(WrappedEvent.load(_wrappedUid));
     if (mounted) setState(() {});
     _scheduleWrappedWindowCheck();
   }
@@ -266,7 +266,10 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
     final double width = _carouselWidth(context);
     final int columns = _carouselColumns(context);
     final int memCacheHeight = (height * MediaQuery.devicePixelRatioOf(context)).round();
-    final WrappedYear? wrapped = wrappedForHome(_wrapped.state, _currentWrappedUid, DateTime.now());
+    final WrappedBloc? wrappedBloc = _wrapped;
+    final WrappedYear? wrapped = wrappedBloc == null
+        ? null
+        : wrappedForHome(wrappedBloc.state, _currentWrappedUid, DateTime.now());
     final List<SeasonalTheme> seasons = seasonalThemes
         .where((season) => season.inSeason() && !season.isActive(context))
         .toList();
