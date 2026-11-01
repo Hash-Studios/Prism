@@ -71,7 +71,7 @@ The old `codes` collection is not used. Its documents had one `code`, a `redeeme
 - After checking Auth existence, one Firestore grant transaction reads the code, redemption, profile and deletion barrier. It checks code limits, account-age eligibility, platform and paid-subscriber status before writing the grant, ledger or pass, count and redemption. At the last redemption exactly one transaction wins. Other users retry against fresh data and get `limit_reached`.
 - The redemption and ledger documents are created with `create`. Same-user retries check the redemption before code limits. Collision recovery rechecks profile, deletion and platform before replaying the stored grant; Auth was checked before the grant attempt.
 
-Known client limitation: a `CoinsService.refreshBalance` started before a fresh Pro grant can complete later and overwrite the new pass with stale state. This needs refresh ordering in `lib/core/coins/coins_service.dart`; the race remains unresolved.
+On the client, the sheet applies a Pro grant through `CoinsService.applyServerPremiumPass`. It only extends the pass, and it supersedes an economy refresh that started before the grant, so that refresh cannot put the old end back.
 
 ## Abuse review
 
