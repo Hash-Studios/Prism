@@ -50,14 +50,25 @@ export async function backfillDesktopCompanions(db: admin.firestore.Firestore, o
     for (const doc of snapshot.docs) {
       if (report.planned.length >= options.limit) break scan;
       report.scanned++;
+      const previousLast = report.last ?? options.startAfter;
       report.last = doc.id;
       const data = doc.data();
+      const shareId = str(data.id);
+      if (!/^[A-Za-z0-9_-]{1,200}$/.test(shareId)) {
+        skip("not_studio");
+        continue;
+      }
+      const manifest = (await db.collection(DESKTOP_COMPANIONS).doc(shareId).get()).data();
+      if (options.apply && ["ready", "rejected", "failed"].includes(str(manifest?.status)) &&
+          (manifest?.workerKey || manifest?.pendingObjects)) {
+        // make() only performs terminal cleanup here; it does not claim or spend for terminal manifests.
+        await deps.make(doc.ref.path);
+      }
       const eligible = desktopEligibility(data);
       if ("skip" in eligible) {
         skip(eligible.skip);
         continue;
       }
-      const manifest = (await db.collection(DESKTOP_COMPANIONS).doc(str(data.id)).get()).data();
       if (manifest?.status === "ready" || manifest?.status === "rejected" || manifest?.status === "failed") {
         skip(`manifest_${manifest.status}`);
         continue;
@@ -77,6 +88,7 @@ export async function backfillDesktopCompanions(db: admin.firestore.Firestore, o
       report.outcomes[outcome] = (report.outcomes[outcome] ?? 0) + 1;
       log(`${outcome} ${doc.id}`);
       if (outcome === "deferred") {
+        report.last = previousLast;
         log("The Studio budget is used up. Run again tomorrow: walls with a companion are skipped.");
         break scan;
       }

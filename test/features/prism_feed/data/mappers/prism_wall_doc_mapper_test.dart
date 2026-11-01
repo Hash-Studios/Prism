@@ -1,6 +1,8 @@
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_desktop.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
@@ -141,6 +143,29 @@ void main() {
       const WallSpatial(tier: WallSpatialTier.great, mapUrl: 'https://img.prismwalls.com/spatial/v1/w.png'),
     );
     expect(const PrismWallDocDto().toDomain(docId: 'a').spatial, isNull);
+  });
+
+  test('desktop companion version survives Firestore DTO JSON cache round trip', () {
+    final PrismWallDocDto dto = PrismWallDocDto.fromJson(<String, dynamic>{
+      'desktopVariant': <String, Object?>{
+        'v': '0123456789abcdef',
+        'thumb': 'https://img.prismwalls.com/previews/desktop.jpg',
+        'width': 2560,
+        'height': 1600,
+      },
+    });
+    final PrismWallpaper wallpaper = PrismWallDocDto.fromJson(dto.toJson()).toDomain(docId: 'wall');
+
+    expect(
+      wallpaper.desktop,
+      const WallDesktopVariant(
+        version: '0123456789abcdef',
+        thumbnailUrl: 'https://img.prismwalls.com/previews/desktop.jpg',
+        width: 2560,
+        height: 1600,
+      ),
+    );
+    expect(const PrismWallDocDto().toDomain(docId: 'empty').desktop, isNull);
   });
 
   group('depth', () {

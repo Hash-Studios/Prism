@@ -161,6 +161,18 @@ export async function download(url: string): Promise<Buffer> {
   return Buffer.from(await response.arrayBuffer());
 }
 
+/** Downloads a private Studio source through the authenticated Worker route. */
+export async function downloadStudioAsset(deps: Pick<StudioProcessDeps, "worker">, key: string): Promise<Buffer> {
+  if (!RAW_ASSET_KEY.test(key)) throw new PermanentError("studio_asset", "The Worker returned an unexpected asset key.");
+  const response = await workerFetch(deps, "download", `/api/ai/studio/assets/${key}`, {method: "GET"}, TRANSFER_TIMEOUT_MS);
+  if (!response.ok) throw new TransientError(`download: worker ${response.status}`);
+  try {
+    return Buffer.from(await response.arrayBuffer());
+  } catch (err) {
+    throw new TransientError(`download: ${message(err)}`);
+  }
+}
+
 /** Uploads a JPEG to the worker and returns its public URL. */
 async function putAsset(deps: StudioProcessDeps, key: string, bytes: Buffer): Promise<string> {
   const response = await workerFetch(deps, "upload", `/api/ai/studio/assets/${key}`, {

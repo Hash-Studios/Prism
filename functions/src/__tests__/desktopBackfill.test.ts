@@ -30,7 +30,7 @@ function seed(t: TestContext) {
       thumb: `${PREVIEW}/previews/desktop-${"cd".repeat(32)}.jpg`}}),
     "walls/A4": wall("A4", {tags: ["duo"]}),
     "walls/A5": wall("A5"),
-    "desktopCompanions/A5": {status: "ready"},
+    "desktopCompanions/A5": {status: "ready", workerKey: "ai/studio/raw/desk_asset.jpg"},
   });
 }
 
@@ -63,6 +63,17 @@ test("dry run with a higher limit plans every eligible wall and counts each skip
   assert.equal(make.mock.callCount(), 0);
 });
 
+test("dry run skips a Studio row with a malformed share id", async (t) => {
+  const store = seed(t);
+  store.set("walls/A0", wall(""));
+  const make = t.mock.fn(async (): Promise<DesktopOutcome> => "ready");
+
+  const report = await backfillDesktopCompanions(db, {apply: false, limit: 10}, {make, isStudio}, quiet);
+
+  assert.deepEqual(report.planned.map((plan) => plan.id), ["A1", "A2"]);
+  assert.equal(report.skipped.not_studio, 1);
+});
+
 test("apply stops at the first deferred wall, even with more eligible walls", async (t) => {
   const store = seed(t);
   store.set("walls/A6", wall("A6"));
@@ -78,6 +89,21 @@ test("apply stops at the first deferred wall, even with more eligible walls", as
   assert.equal(make.mock.callCount(), 2);
   assert.deepEqual(made, ["walls/A1", "walls/A2"]);
   assert.deepEqual(report.outcomes, {ready: 1, deferred: 1});
+  assert.equal(report.last, "A1");
+});
+
+test("apply invokes cleanup for a terminal manifest before skipping its wall", async (t) => {
+  seed(t);
+  const made: string[] = [];
+  const make = t.mock.fn(async (wallPath: string): Promise<DesktopOutcome> => {
+    made.push(wallPath);
+    return "skipped";
+  });
+
+  const report = await backfillDesktopCompanions(db, {apply: true, limit: 10}, {make, isStudio}, quiet);
+
+  assert.deepEqual(made, ["walls/A1", "walls/A2", "walls/A5"]);
+  assert.deepEqual(report.skipped, {exists: 1, duo: 1, manifest_ready: 1});
 });
 
 test("parseDesktopBackfillArgs refuses a limit below 1 and reads the flags", () => {

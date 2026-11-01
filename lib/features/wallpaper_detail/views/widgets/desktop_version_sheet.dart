@@ -52,6 +52,7 @@ class DesktopVersionActions {
         action: action,
         label: hideSetWallpaperUi ? l10n.desktopVersionSaveOnTablet : l10n.desktopVersionSetOnTablet,
         desktop: true,
+        desktopVersion: desktop.version,
       );
       if (url == null || !context.mounted) return;
       final file = await WallpaperService.resolveToLocalFile(url);

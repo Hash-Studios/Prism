@@ -7,7 +7,7 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {db, REGION, str} from "./common";
 import {isPreviewUrl} from "./pushGallery";
 import {r2Secrets} from "./r2Storage";
-import {parseDesktopVariant} from "./studio/desktop";
+import {parseDesktopVariant, readyDesktopCompanion} from "./studio/desktop";
 import {PALETTE} from "./wallColors";
 import {isWotdEligible, parseCollectionList} from "./wallEligibility";
 
@@ -172,6 +172,7 @@ function isBlurDataUrl(value: string | undefined): value is string {
  */
 export async function projectWall(
   wall: Doc | undefined, premium: string[], profile: PublicProfile | null, previous: WebWall | undefined, now: Date,
+  tx?: admin.firestore.Transaction,
 ): Promise<WebWall> {
   const updatedAt = now.toISOString();
   if (!wall) return {state: "gone", updatedAt};
@@ -195,7 +196,14 @@ export async function projectWall(
     creator: profile ? {username: profile.username, name: profile.name} : null,
   };
   if (live) {
-    const desktop = parseDesktopVariant(wall.desktopVariant);
+    let desktop = parseDesktopVariant(wall.desktopVariant);
+    if (desktop) {
+      try {
+        desktop = (await readyDesktopCompanion(str(wall.id), wall, tx)).variant;
+      } catch {
+        desktop = null;
+      }
+    }
     return {...projected, thumb,
       ...(desktop ? {desktop: {v: desktop.v, thumb: desktop.thumb, width: desktop.width, height: desktop.height}} : {})};
   }
@@ -259,7 +267,7 @@ export async function syncWebWall(shareId: string): Promise<void> {
       publicProfile((await tx.get(db.collection("profiles").doc(uid))).data()) : null;
     const next = rows.size > 1 ?
       {state: "hidden" as const, updatedAt: webCatalogDeps.now().toISOString()} :
-      await projectWall(wall, premium, profile, previous, webCatalogDeps.now());
+      await projectWall(wall, premium, profile, previous, webCatalogDeps.now(), tx);
     if (!sameWall(previous, next)) tx.set(ref, next);
   });
 }
@@ -465,7 +473,7 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
         publicProfile((await tx.get(db.collection("profiles").doc(uid))).data()) : null;
       const next = latestRows.size > 1 ? {state: "hidden" as const, updatedAt: now.toISOString()} :
         latestRows.size === 0 ? {state: "gone" as const, updatedAt: now.toISOString()} :
-          await projectWall(latestWall, premium, profile, currentPrevious, now);
+          await projectWall(latestWall, premium, profile, currentPrevious, now, tx);
       if (sameWall(currentPrevious, next)) return {wall: currentPrevious as WebWall, written: false};
       tx.set(ref, next);
       return {wall: next, written: true};

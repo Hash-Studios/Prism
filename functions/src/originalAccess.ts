@@ -43,6 +43,10 @@ export const originalAccessDelivery = {
       const walls = await db.collection("walls").where("id", "==", assetId).limit(2).get();
       if (walls.size !== 1) throw new Error("Desktop companion unavailable");
       const {original} = await readyDesktopCompanion(assetId, walls.docs[0].data());
+      const metadata = await new R2Storage().head("private", original.object);
+      if (!metadata || metadata.sha256 !== original.sha256 || metadata.size !== original.bytes) {
+        throw new Error("Desktop companion storage mismatch");
+      }
       const expiresAt = Date.now() + 120000;
       return {url: new R2Storage().presignGet(original.object, new Date(expiresAt)), expiresAt, objectId: original.sha256};
     } catch {

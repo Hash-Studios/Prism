@@ -11,6 +11,7 @@ const APP_STORE_URL = 'https://apps.apple.com/app/id1405860595';
 const THUMB = 'https://img.prismwalls.com/previews/aaa.img';
 const DESKTOP_THUMB = 'https://img.prismwalls.com/previews/desktop-bbb.jpg';
 const DESKTOP_V = '0123456789abcdef';
+const NEXT_DESKTOP_V = 'fedcba9876543210';
 const REFERER = 'https://prismwalls.com/wallpaper/LIVE1';
 
 class MemoryKv {
@@ -131,10 +132,13 @@ function setup(t) {
   const realFetch = globalThis.fetch;
   const state = {
     docs: seedDocs(),
+    reads: [],
     previewCalls: [],
+    previewStatus: 200,
     mixpanelCalls: [],
     otherFetches: [],
     pending: [],
+    rateLimits: new Map(),
   };
   const cache = new FakeCache();
 
@@ -142,13 +146,16 @@ function setup(t) {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     if (url.startsWith(FIRESTORE_PREFIX)) {
       const path = url.slice(FIRESTORE_PREFIX.length).split('/').map((segment) => decodeURIComponent(segment)).join('/');
+      state.reads.push(path);
       if (!Object.hasOwn(state.docs, path)) return new Response('{}', { status: 404, headers: { 'content-type': 'application/json' } });
       return Response.json({ fields: encodeFields(state.docs[path]) });
     }
     if (url.startsWith(PREVIEW_PREFIX)) {
       state.previewCalls.push(url);
       const variant = new URL(url).searchParams.get('variant') || 'phone';
-      return new Response(`JPEGBYTES-${variant}`, { status: 200, headers: { 'content-type': 'image/jpeg' } });
+      return new Response(state.previewStatus === 200 ? `JPEGBYTES-${variant}` : 'Not found', {
+        status: state.previewStatus, headers: { 'content-type': 'image/jpeg' },
+      });
     }
     if (url.startsWith(MIXPANEL_PREFIX)) {
       state.mixpanelCalls.push({ url, body: JSON.parse(init.body) });
@@ -166,10 +173,20 @@ function setup(t) {
   const env = {
     LINKS_KV: new MemoryKv(),
     AI_STATE_KV: new MemoryKv(),
-    // Makes the quota Durable Object fail, so index.ts falls back to the LINKS_KV counter.
+    // Minimal atomic Durable Object rate limiter for download tests.
     AI_QUOTA_DO: {
       idFromName: () => 'quota-object',
-      get: () => ({ fetch: async () => { throw new Error('quota DO unavailable in tests'); } }),
+      get: () => ({ fetch: async (_url, init) => {
+        const request = JSON.parse(init.body);
+        if (request.op !== 'rate_limit_bump') throw new Error('unexpected quota operation');
+        const now = Date.now();
+        const current = state.rateLimits.get(request.key);
+        const count = current && current.expiresAt > now ? current.count : 0;
+        if (count >= request.limit) return Response.json({ ok: true, allowed: false, current: count });
+        const next = count + 1;
+        state.rateLimits.set(request.key, { count: next, expiresAt: current?.expiresAt ?? now + request.ttlSeconds * 1000 });
+        return Response.json({ ok: true, allowed: true, current: next });
+      } }),
     },
     FIREBASE_PROJECT_ID: 'prism-test',
     PLAY_STORE_URL,
@@ -184,7 +201,7 @@ function setup(t) {
     env,
     get(path, headers = {}) {
       return worker.fetch(new Request(`https://prismwalls.com${path}`, {
-        headers: { 'user-agent': DESKTOP_UA, ...headers },
+        headers: { 'user-agent': DESKTOP_UA, 'cf-connecting-ip': '203.0.113.1', ...headers },
       }), env, ctx);
     },
     download(path, headers = {}) {
@@ -261,6 +278,37 @@ test('desktop download answers with attachment headers and is never cached', asy
   assert.ok(![...h.cache.entries.keys()].some((key) => key.includes('download')));
 });
 
+test('HEAD on downloads and rendition routes does no limiter, Firestore or preview work', async (t) => {
+  const h = setup(t);
+  h.env.MIXPANEL_TOKEN = 'tok';
+  const path = '/api/catalog/download/LIVE1/desktop.jpg';
+  const response = await worker.fetch(new Request(`https://prismwalls.com${path}`, {
+    method: 'HEAD', headers: { referer: REFERER, 'cf-connecting-ip': '203.0.113.11' },
+  }), h.env, { waitUntil(promise) { h.state.pending.push(promise); } });
+
+  assert.equal(response.status, 405);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.equal(h.state.reads.length, 0);
+  assert.equal(h.state.previewCalls.length, 0);
+  assert.equal(h.state.rateLimits.size, 0);
+  assert.equal(h.state.mixpanelCalls.length, 0);
+
+  const rendition = await worker.fetch(new Request('https://prismwalls.com/api/catalog/preview/LIVE1.jpg', {
+    method: 'HEAD',
+  }), h.env, { waitUntil(promise) { h.state.pending.push(promise); } });
+  assert.equal(rendition.status, 405);
+  assert.equal(h.state.reads.length, 0);
+  assert.equal(h.state.previewCalls.length, 0);
+
+  const desktop = await worker.fetch(new Request(`https://prismwalls.com/api/catalog/desktop/LIVE1.jpg?v=${DESKTOP_V}`, {
+    method: 'HEAD',
+  }), h.env, { waitUntil(promise) { h.state.pending.push(promise); } });
+  assert.equal(desktop.status, 405);
+  assert.equal(h.state.reads.length, 0);
+  assert.equal(h.state.previewCalls.length, 0);
+  assert.equal(h.state.mixpanelCalls.length, 0);
+});
+
 test('downloads from another site redirect to the wall page', async (t) => {
   const h = setup(t);
 
@@ -291,6 +339,43 @@ test('referer rules allow the site and its www host, and block lookalike hosts',
 
   const lookalike = await h.get(path, { referer: 'https://prismwalls.com.evil.example/' });
   assert.equal(lookalike.status, 302);
+
+  const contradictory = await h.get(path, {
+    referer: REFERER, 'sec-fetch-site': 'cross-site', 'cf-connecting-ip': '203.0.113.12',
+  });
+  assert.equal(contradictory.status, 302);
+});
+
+test('desktop rendition requires its current version and fails closed on origin errors', async (t) => {
+  const h = setup(t);
+  const current = await h.get(`/api/catalog/desktop/LIVE1.jpg?v=${DESKTOP_V}`);
+  assert.equal(current.status, 200);
+  assert.equal(current.headers.get('cache-control'), 'no-store');
+  assert.equal(await current.text(), 'JPEGBYTES-desktop');
+
+  const oldVersion = await h.get('/api/catalog/desktop/LIVE1.jpg?v=old-version');
+  assert.equal(oldVersion.status, 404);
+  assert.equal(h.state.previewCalls.length, 1);
+
+  h.state.docs['webWalls/LIVE1'] = { ...liveWall(), state: 'gated', desktop: { ...liveWall().desktop, v: NEXT_DESKTOP_V } };
+  const gated = await h.get(`/api/catalog/desktop/LIVE1.jpg?v=${DESKTOP_V}`);
+  assert.equal(gated.status, 404);
+  assert.equal(gated.headers.get('cache-control'), 'no-store');
+  assert.equal(h.state.previewCalls.length, 1);
+
+  h.state.docs['webWalls/LIVE1'] = liveWall({ desktop: { ...liveWall().desktop, v: NEXT_DESKTOP_V } });
+  h.state.previewStatus = 404;
+  const failedOrigin = await h.get(`/api/catalog/desktop/LIVE1.jpg?v=${NEXT_DESKTOP_V}`);
+  assert.equal(failedOrigin.status, 503);
+  assert.equal(failedOrigin.headers.get('cache-control'), 'no-store');
+  assert.equal(failedOrigin.headers.get('location'), null);
+  assert.equal(h.state.previewCalls.length, 2);
+
+  h.state.previewStatus = 200;
+  const currentVersion = await h.get(`/api/catalog/desktop/LIVE1.jpg?v=${NEXT_DESKTOP_V}`);
+  assert.equal(currentVersion.status, 200);
+  assert.equal(h.state.previewCalls.length, 3);
+  assert.equal(new URL(h.state.previewCalls[2]).searchParams.get('v'), NEXT_DESKTOP_V);
 });
 
 test('downloads are rate limited per IP', async (t) => {
@@ -311,6 +396,25 @@ test('downloads are rate limited per IP', async (t) => {
 
   const other = await h.get(path, { referer: REFERER, 'cf-connecting-ip': '198.51.100.7' });
   assert.equal(other.status, 200);
+});
+
+test('downloads fail closed when the trusted IP or atomic limiter is unavailable', async (t) => {
+  const h = setup(t);
+  const path = '/api/catalog/download/LIVE1/phone.jpg';
+  const noIp = await worker.fetch(new Request(`https://prismwalls.com${path}`, { headers: { referer: REFERER } }), h.env,
+    { waitUntil() {} });
+  assert.equal(noIp.status, 503);
+  assert.equal(h.state.previewCalls.length, 0);
+
+  let kvCalls = 0;
+  h.env.LINKS_KV = { get: async () => { kvCalls += 1; return null; }, put: async () => { kvCalls += 1; } };
+  h.env.AI_QUOTA_DO = { idFromName: () => 'quota-object', get: () => ({ fetch: async () => { throw new Error('DO down'); } }) };
+  const failed = await h.get(path, { referer: REFERER, 'cf-connecting-ip': '203.0.113.10' });
+  assert.equal(failed.status, 503);
+  assert.equal(failed.headers.get('cache-control'), 'no-store');
+  assert.equal(kvCalls, 0);
+  assert.equal(h.state.reads.length, 0);
+  assert.equal(h.state.previewCalls.length, 0);
 });
 
 test('gated walls are never downloadable and missing companions answer 404', async (t) => {
@@ -372,6 +476,18 @@ test('desktop hub lists desktop wallpapers and redirects the page-1 link', async
 
   const extra = await h.get('/desktop-wallpapers/extra');
   assert.equal(extra.status, 404);
+});
+
+test('desktop hub returns 404 when a later page has no desktop companions', async (t) => {
+  const h = setup(t);
+  h.state.docs['webPages/desktop~2'] = {
+    kind: 'desktop', page: 2, pages: 2, total: 2,
+    items: [{ id: 'LIVE2', title: 'Phone only', thumb: THUMB, width: 1440, height: 3200 }],
+  };
+
+  const response = await h.get('/matching-sets?page=2');
+  assert.equal(response.status, 404);
+  assert.equal(response.headers.get('x-robots-tag'), 'noindex');
 });
 
 test('matching sets hub shows the phone and desktop pair for each wall', async (t) => {

@@ -2961,6 +2961,14 @@ test('rate limit counter resets after its window', async () => {
   }
 });
 
+test('rate limit refuses a corrupt counter instead of treating NaN as available quota', async () => {
+  const storage = new MemoryStorage();
+  await storage.put('ratelimit:rl:test', { count: Number.NaN, expiresAt: Date.now() + 60_000 });
+  const coordinator = new AiQuotaCoordinator({ storage });
+  const response = await coordinator.fetch(quotaRequest({ op: 'rate_limit_bump', key: 'rl:test', limit: 1, ttlSeconds: 60 }));
+  assert.equal((await response.json()).allowed, false);
+});
+
 const STUDIO_SECRET = 'studio-test-secret';
 const STUDIO_MODEL = 'fal-ai/bytedance/seedream/v4.5/text-to-image';
 const STUDIO_ID = 'daily-2026-10-12';
@@ -3196,7 +3204,7 @@ test('studio generation sends the prompt as given, stores the raw image and retu
 
   assert.deepEqual(body, {
     id: STUDIO_ID,
-    imageUrl: `https://prismwalls.com/api/ai/assets/ai/studio/raw/${STUDIO_ID}.jpg`,
+    imageUrl: `https://prismwalls.com/api/ai/assets/${STUDIO_RAW_KEY.replace('.png', '.jpg')}`,
     key: `ai/studio/raw/${STUDIO_ID}.jpg`,
     width: 1440,
     height: 2560,
@@ -3208,6 +3216,9 @@ test('studio generation sends the prompt as given, stores the raw image and retu
     costUsd: 0.04,
   });
   assert.equal(stats.falRequest.url, `https://fal.run/${STUDIO_MODEL}`);
+  const rawKey = `ai/studio/raw/${STUDIO_ID}.jpg`;
+  const candidateRaw = await worker.fetch(new Request(`https://prismwalls.com/api/ai/assets/${rawKey}`), env, { waitUntil() {} });
+  assert.equal(candidateRaw.status, 200, 'candidate raw asset behavior remains unchanged');
   assert.equal(stats.falRequest.authorization, 'Key test-key');
   assert.deepEqual(stats.falRequest.body, {
     prompt: 'A quiet mountain lake at dawn',
@@ -3226,6 +3237,31 @@ test('studio generation sends the prompt as given, stores the raw image and retu
 
   assert.equal(await storage.get(`provider:studio:daily:${today()}`), 0.04);
   assert.equal(await storage.get(`provider:fal:daily:${today()}`), undefined);
+});
+
+test('desktop studio originals require the studio secret for GET and HEAD', async () => {
+  const id = 'desk_a1b2c3';
+  const key = `ai/studio/raw/${id}.jpg`;
+  const env = studioEnv();
+  const restore = mockFal({ contentType: 'image/jpeg' });
+  try {
+    const response = await postStudioGeneration(env, { id });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.imageUrl, `https://prismwalls.com/api/ai/studio/assets/${key}`);
+    for (const method of ['GET', 'HEAD']) {
+      const publicRead = await worker.fetch(new Request(`https://prismwalls.com/api/ai/assets/${key}`, { method }), env, { waitUntil() {} });
+      assert.equal(publicRead.status, 404, `${method} must not expose a desktop original`);
+      assert.equal(publicRead.headers.get('cache-control'), 'no-store');
+    }
+    assert.equal((await studioFetch(env, 'GET', `/api/ai/studio/assets/${key}`, { secret: null })).status, 401);
+    const secureRead = await studioFetch(env, 'GET', `/api/ai/studio/assets/${key}`);
+    assert.equal(secureRead.status, 200);
+    assert.equal(secureRead.headers.get('cache-control'), 'no-store');
+    assert.equal((await studioFetch(env, 'HEAD', `/api/ai/studio/assets/${key}`)).status, 200);
+  } finally {
+    restore();
+  }
 });
 
 test('studio generation with v5 lite sends no seed and falls back to the requested size', async () => {

@@ -111,7 +111,7 @@ type Route =
   | { kind: 'sitemap'; name: string }
   | { kind: 'og'; id: string }
   | { kind: 'preview'; id: string }
-  | { kind: 'desktop-image'; id: string }
+  | { kind: 'desktop-image'; id: string; version: string | null }
   | { kind: 'download'; id: string; file: DownloadKind }
   | { kind: 'redirect'; location: string }
   | { kind: 'not-found' };
@@ -132,11 +132,14 @@ export async function handleCatalogRequest(
   const route = matchRoute(url);
   if (route == null) return null;
   if (route.kind === 'redirect') return Response.redirect(route.location, 301);
+  if (request.method === 'HEAD' && ['download', 'preview', 'desktop-image'].includes(route.kind)) {
+    return new Response(null, { status: 405, headers: { 'cache-control': 'no-store', allow: 'GET' } });
+  }
   // Downloads never touch the page cache: every one checks the Referer, the rate limit and the wall's current state.
   if (route.kind === 'download') return withMethod(request, await handleDownload(request, url, route, env, ctx, limitDownload));
-
   const key = cacheKeyOf(route);
   try {
+    if (route.kind === 'desktop-image') return await renderDesktopImage(route.id, route.version, env);
     const response = await cached(key, ctx, () => route.kind === 'not-found'
       ? renderMissing(404, 'page', env)
       : render(route, env));
@@ -170,7 +173,7 @@ function matchRoute(url: URL): Route | null {
   const preview = /^\/api\/catalog\/preview\/([A-Za-z0-9_-]{1,200})\.jpg$/.exec(path);
   if (preview) return { kind: 'preview', id: preview[1] };
   const desktopImage = /^\/api\/catalog\/desktop\/([A-Za-z0-9_-]{1,200})\.jpg$/.exec(path);
-  if (desktopImage) return { kind: 'desktop-image', id: desktopImage[1] };
+  if (desktopImage) return { kind: 'desktop-image', id: desktopImage[1], version: url.searchParams.get('v') };
   const download = /^\/api\/catalog\/download\/([A-Za-z0-9_-]{1,200})\/(phone|desktop|desktop-16x9)\.jpg$/.exec(path);
   if (download) return { kind: 'download', id: download[1], file: download[2] as DownloadKind };
 
@@ -202,7 +205,8 @@ function matchList(segments: string[]): Route | null {
 /** Only the parsed route names the cache entry, never the raw URL: query strings and headers cannot pick a copy. */
 function cacheKeyOf(route: Route): string {
   switch (route.kind) {
-    case 'wall': case 'folder': case 'og': case 'preview': case 'desktop-image': return `${route.kind}/${route.id}`;
+    case 'wall': case 'folder': case 'og': case 'preview': return `${route.kind}/${route.id}`;
+    case 'desktop-image': return `${route.kind}/${route.id}/${route.version ?? 'unversioned'}`;
     case 'hub': return `hub/${route.list}/${route.slug}/${route.page}`;
     case 'desktop-hub': return `desktop-hub/${route.list}/${route.page}`;
     case 'download': return `download/${route.id}/${route.file}`;
@@ -295,7 +299,7 @@ async function render(route: Route, env: CatalogEnv): Promise<Response> {
     case 'sitemap': return renderSitemap(route.name, env);
     case 'og': return renderOgImage(route.id, env);
     case 'preview': return renderPreview(route.id, env);
-    case 'desktop-image': return renderDesktopImage(route.id, env);
+    case 'desktop-image': return renderDesktopImage(route.id, route.version, env);
     default: return renderMissing(404, 'page', env);
   }
 }
@@ -760,6 +764,7 @@ async function renderDesktopHub(list: 'desktop' | 'sets', pageNumber: number, en
   const data = stored == null ? null : parseListPage(stored, env);
   if (data == null || (data.items.length === 0 && pageNumber > 1)) return renderMissing(404, 'page', env);
   const items = data.items.filter((card) => card.desktop);
+  if (items.length === 0 && pageNumber > 1) return renderMissing(404, 'page', env);
   const base = list === 'desktop' ? '/desktop-wallpapers' : '/matching-sets';
   const canonical = `${SITE}${base}${pageNumber > 1 ? `?page=${pageNumber}` : ''}`;
   const heading = list === 'desktop' ? 'Desktop wallpapers' : 'Matching sets';
@@ -915,12 +920,16 @@ async function renderPreview(id: string, env: CatalogEnv): Promise<Response> {
 }
 
 /** The desktop web rendition, shown in the wall page's desktop mock. Same gate as the phone preview. */
-async function renderDesktopImage(id: string, env: CatalogEnv): Promise<Response> {
+async function renderDesktopImage(id: string, version: string | null, env: CatalogEnv): Promise<Response> {
   const wallDoc = await readDoc<unknown>(env, `webWalls/${id}`);
   const wall = wallDoc == null ? null : parseWall(wallDoc, env);
-  if (wall?.state !== 'live' || !wall.thumb || !wall.desktop) return new Response('Not found', { status: 404 });
+  if (wall?.state !== 'live' || !wall.thumb || !wall.desktop || version !== wall.desktop.v) {
+    return new Response('Not found', { status: 404, headers: { 'cache-control': 'no-store' } });
+  }
   const response = await fetchRendition(id, wall, 'desktop', env);
-  return response ? jpeg(response.body) : redirect(wall.desktop.thumb, 302);
+  return response
+    ? new Response(response.body, { status: 200, headers: { 'content-type': 'image/jpeg', 'cache-control': 'no-store' } })
+    : unavailable();
 }
 
 /** One web rendition from wallpaperPreview, which checks the wall again and never returns an original. */
@@ -954,9 +963,14 @@ async function handleDownload(request: Request, url: URL, route: { id: string; f
     return new Response(null, { status: 302, headers: { ...noStore,
       location: `${SITE}/wallpaper/${route.id}${route.file === 'phone' ? '' : '#desktop'}` } });
   }
+  const ip = request.headers.get('cf-connecting-ip')?.trim();
+  if (!ip) {
+    return new Response('Downloads are busy. Try again in a minute.', { status: 503,
+      headers: { ...noStore, 'content-type': 'text/plain; charset=utf-8', 'retry-after': '60' } });
+  }
   let allowed = false;
   try {
-    allowed = await limitDownload(request.headers.get('cf-connecting-ip') || 'unknown');
+    allowed = await limitDownload(ip);
   } catch (error) {
     console.warn('[catalog] download_limit_failed', `${error}`);
     return new Response('Downloads are busy. Try again in a minute.', { status: 503,
@@ -988,6 +1002,7 @@ async function handleDownload(request: Request, url: URL, route: { id: string; f
 
 /** True for a request that a prismwalls.com page made. Browsers set these headers, so this stops hotlinks, not scripts. */
 function fromSite(request: Request, url: URL): boolean {
+  if (request.headers.get('sec-fetch-site') === 'cross-site') return false;
   const referer = request.headers.get('referer');
   if (referer) {
     try {

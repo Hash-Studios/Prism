@@ -111,15 +111,17 @@ class OriginalAccessService {
   }
 
   /// Request ids of the desktop companion are kept apart from the phone original's.
-  static String _grantKey(String wallpaperId, bool desktop) => desktop ? '$wallpaperId~desktop' : wallpaperId;
+  static String _grantKey(String wallpaperId, bool desktop, String? desktopVersion) =>
+      desktop ? '$wallpaperId~desktop${desktopVersion == null ? '' : '~$desktopVersion'}' : wallpaperId;
 
   Future<OriginalAccessQuote> quote({
     required String wallpaperId,
     required OriginalAccessAction action,
     bool desktop = false,
+    String? desktopVersion,
   }) async {
     final owner = _owner();
-    final key = _grantKey(wallpaperId, desktop);
+    final key = _grantKey(wallpaperId, desktop, desktopVersion);
     if (!desktop && await _acquiredLocal(wallpaperId) != null) return OriginalAccessQuote(0, app_state.prismUser.coins);
     final requestId = await _requestId(owner, key, action, null, acquire: false);
     if (_owner() != owner) throw StateError('Original access unavailable');
@@ -278,10 +280,11 @@ class OriginalAccessService {
       url.isNotEmpty &&
       CoinsService.instance.currentDropUnlocks[id]?.url == url;
 
-  static bool requiresGrant(String url, String? id, WallpaperSource? source) =>
+  static bool requiresGrant(String url, String? id, WallpaperSource? source, {bool desktop = false}) =>
       source == WallpaperSource.prism &&
-      !(id != null && BundledWallpapers.isStarterIdentity(id, source!)) &&
-      !isUnlockedDropUrl(url, id, source);
+      (desktop ||
+          (!(id != null && BundledWallpapers.isStarterIdentity(id, source!)) &&
+              !isUnlockedDropUrl(url, id, source)));
 
   Future<String> resolve({
     required String url,
@@ -291,6 +294,7 @@ class OriginalAccessService {
     String? requestId,
     int? maxCoins,
     bool desktop = false,
+    String? desktopVersion,
   }) async {
     final scheme = Uri.tryParse(url.trim())?.scheme.toLowerCase();
     if ((wallpaperSource == null ||
@@ -299,12 +303,12 @@ class OriginalAccessService {
         (scheme == 'https' || scheme == 'http')) {
       throw StateError('Wallpaper source unavailable');
     }
-    if (!requiresGrant(url, wallpaperId, wallpaperSource)) return url;
+    if (!requiresGrant(url, wallpaperId, wallpaperSource, desktop: desktop)) return url;
     final owner = _owner();
     if (owner.isEmpty || wallpaperId == null || wallpaperId.trim().isEmpty) {
       throw StateError('Original access unavailable');
     }
-    final key = _grantKey(wallpaperId, desktop);
+    final key = _grantKey(wallpaperId, desktop, desktopVersion);
     if (!desktop) {
       final local = await _acquiredLocal(wallpaperId);
       if (local != null) return local;

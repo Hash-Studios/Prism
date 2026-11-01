@@ -501,8 +501,8 @@ function renderDirectLanding(url: URL, request: Request, env: Env): Response {
 
 /** Web downloads: their own counters, apart from the link API's. */
 async function limitDownloads(ip: string, env: Env): Promise<boolean> {
-  if (!(await bumpRateCounter(env, `rl:dl:10m:${ip}`, 30, 600))) return false;
-  return bumpRateCounter(env, `rl:dl:1d:${ip}`, 300, 86400);
+  if (!(await bumpRateLimit(env, `rl:dl:10m:${ip}`, 30, 600))) return false;
+  return bumpRateLimit(env, `rl:dl:1d:${ip}`, 300, 86400);
 }
 
 async function enforceCreateRateLimits(ip: string, env: Env): Promise<boolean> {
