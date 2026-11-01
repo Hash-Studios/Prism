@@ -7,7 +7,7 @@ const FIRESTORE_PREFIX = 'https://firestore.googleapis.com/v1/projects/prism-tes
 const PREVIEW_PREFIX = 'https://us-central1-prism-test.cloudfunctions.net/wallpaperPreview';
 const MIXPANEL_PREFIX = 'https://api-js.mixpanel.com/';
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.hash.prism';
-const APP_STORE_URL = 'https://apps.apple.com/app/id1405860595';
+const APP_STORE_URL = 'https://apps.apple.com/app/id6670200846';
 const THUMB = 'https://img.prismwalls.com/previews/aaa.img';
 const DESKTOP_THUMB = 'https://img.prismwalls.com/previews/desktop-bbb.jpg';
 const DESKTOP_V = '0123456789abcdef';

@@ -13,7 +13,7 @@ function mount(token, storage = new Map(), search = '?utm_source=launch&utm_camp
     closest(selector) { return selector === 'a' ? this.link : this.qr ? this : null; }
   }
   const site = { PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
-    APP_STORE_URL: 'https://apps.apple.com/app/id1405860595' };
+    APP_STORE_URL: 'https://apps.apple.com/app/id6670200846' };
   const source = fs.readFileSync(require.resolve('../components/analytics.tsx'), 'utf8');
   const compiled = ts.transpileModule(source, { compilerOptions: {
     module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX,

@@ -144,7 +144,7 @@ What changes in `web/`:
 |---|---|
 | Page deleted | `web/app/home-screen-setups/page.tsx`. The route and its SEO entry are removed. |
 | File added | `web/public/_redirects`. It sends `/home-screen-setups` and `/home-screen-setups/` to `/` with status 301. |
-| App Store badge | Hero and footer link to `APP_STORE_URL` (`https://apps.apple.com/app/id1405860595`). SEO data lists Android and iOS. |
+| App Store badge | Hero and footer link to `APP_STORE_URL` (`https://apps.apple.com/app/id6670200846`). SEO data lists Android and iOS. |
 
 Commands (from `web/README.md` and `web/package.json`):
 

@@ -2,7 +2,7 @@ import { AiQuotaCoordinator, type AiEnvBindings, bumpRateLimit, handleAiApiReque
 import { maybeHandleAssociationRequest } from './association_files';
 import { handleCatalogRequest } from './catalog';
 import { formatCount, type OgCard, type OgChip, type OgStat, renderOgCardHtml } from './og_card';
-import { buildAndroidIntentUrl, detectPlatform, escapeAttribute, escapeHtml, screenshotCard } from './page_kit';
+import { buildAndroidIntentUrl, detectPlatform, escapeAttribute, escapeHtml, iosUniversalLinkUrl, screenshotCard } from './page_kit';
 
 export interface Env extends AiEnvBindings {
   LINKS_KV: KVNamespace;
@@ -157,7 +157,7 @@ const OG_ASSET_BASE = 'https://raw.githubusercontent.com/Hash-Studios/Prism/mast
 const INVITE_GALLERY = [1, 2, 3].map((n) => `${OG_ASSET_BASE}/invite-${n}.jpg`);
 const GALLERY_MAX_ITEMS = 4;
 const WALLPAPER_STATS_TIMEOUT_MS = 4000;
-const IOS_APP_ID = '1405860595';
+const IOS_APP_ID = '6670200846';
 const CREATE_LINK_MAX_BODY_BYTES = 8 * 1024;
 const CAMPAIGN_MAX_KEYS = 10;
 const CAMPAIGN_MAX_TEXT_LENGTH = 100;
@@ -1479,7 +1479,8 @@ function renderHumanLandingHtml(shortUrl: string, record: LinkRecord, request: R
   const playUrl = escapeAttribute(env.PLAY_STORE_URL);
   const appStoreUrl = escapeAttribute(env.APP_STORE_URL);
   const openUrl = escapeAttribute(
-    platform === 'android' ? buildAndroidIntentUrl(canonicalUrl, env.PLAY_STORE_URL) : canonicalUrl,
+    platform === 'android' ? buildAndroidIntentUrl(canonicalUrl, env.PLAY_STORE_URL)
+      : platform === 'ios' ? iosUniversalLinkUrl(canonicalUrl, new URL(request.url).host) : canonicalUrl,
   );
 
   const buttons: string[] = [];
