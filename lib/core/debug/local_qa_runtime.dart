@@ -29,13 +29,17 @@ class LocalQaRuntime {
   static final store = LocalQaStore(Env.localQaUser);
   static const project = 'demo-prism';
   static const password = 'local-demo-only-password';
-  static String get uid => Env.localQaUser == 'creator' ? 'qa-creator-a' : 'qa-viewer';
+  static String get uid => switch (Env.localQaUser) {
+    'creator' => 'qa-creator-a',
+    'admin' => 'qa-admin',
+    _ => 'qa-viewer',
+  };
 
   static void installNetworkPolicy() {
     if (!kDebugMode || !Env.localQa || Env.skipFirebaseInit || kIsWeb) {
       throw StateError('Local QA requires a mobile debug build with Firebase initialization enabled.');
     }
-    if (!const <String>{'viewer', 'creator', 'guest'}.contains(Env.localQaUser)) {
+    if (!const <String>{'viewer', 'creator', 'admin', 'guest'}.contains(Env.localQaUser)) {
       throw StateError('Unknown local QA identity.');
     }
     if (base64Decode(Env.localQaCertificate).isEmpty) throw StateError('Missing exact fixture DER certificate.');

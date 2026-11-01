@@ -67,7 +67,7 @@ async function prepare() {
   fs.copyFileSync(path.join(repo, 'firestore.rules'), path.join(runtime, 'firestore.rules'));
   fs.copyFileSync(path.join(repo, 'firestore.indexes.json'), path.join(runtime, 'firestore.indexes.json'));
   write('functions/package.json', {name: 'prism-local-challenge-qa', private: true, main: 'index.cjs', engines: {node: '24'}});
-  write('functions/index.cjs', `'use strict';\nif (process.env.FUNCTIONS_EMULATOR !== 'true') throw Error('Emulator only');\nconst {challenge} = require('../backend.cjs').load(require('node:path').resolve(__dirname, '..'));\nfor (const name of ['listWeeklyChallenges', 'getWeeklyChallenge', 'setChallengeVote']) exports[name] = challenge[name];\n` + fs.readFileSync(path.join(__dirname, 'weekly_challenge_qa/admission_probe.cjs'), 'utf8'));
+  write('functions/index.cjs', `'use strict';\nif (process.env.FUNCTIONS_EMULATOR !== 'true') throw Error('Emulator only');\nconst {challenge} = require('../backend.cjs').load(require('node:path').resolve(__dirname, '..'));\nfor (const name of ['listWeeklyChallenges', 'getWeeklyChallenge', 'setChallengeVote']) exports[name] = challenge[name];\nconst promo = require('./lib/promoCodes.js');\nfor (const name of ['redeemCode', 'createPromoCode', 'listPromoCodes', 'setPromoCodeDisabled']) exports[name] = promo[name];\n` + fs.readFileSync(path.join(__dirname, 'weekly_challenge_qa/admission_probe.cjs'), 'utf8'));
   write('firebase.json', {functions: [{source: 'functions', codebase: 'local-qa'}],
     firestore: {rules: 'firestore.rules', indexes: 'firestore.indexes.json'},
     emulators: {auth: {host: '127.0.0.1', port: 19371}, firestore: {host: '127.0.0.1', port: 19372, websocketPort: 19377},
@@ -122,7 +122,7 @@ async function buildApk() {
   assert.equal(manifest.runtime, fs.realpathSync(runtime));
   const defines = read('dart-defines.json');
   assert.equal(defines.PRISM_LOCAL_QA, 'true', 'QA build must explicitly enable isolation');
-  assert.ok(['viewer', 'creator', 'guest'].includes(defines.PRISM_LOCAL_QA_USER), 'Unknown QA identity');
+  assert.ok(['viewer', 'creator', 'admin', 'guest'].includes(defines.PRISM_LOCAL_QA_USER), 'Unknown QA identity');
   assert.ok(Object.keys(defines).every(key => ['PRISM_LOCAL_QA', 'PRISM_LOCAL_QA_USER', 'PRISM_LOCAL_QA_CERTIFICATE'].includes(key)), 'Unexpected QA build define');
   const certificate = fs.readFileSync(path.join(runtime, 'cert.der'));
   assert.ok(certificate.length, 'Missing QA certificate');
@@ -148,7 +148,7 @@ async function buildApk() {
       originals.push({target, original, replacement});
       fs.writeFileSync(target, replacement);
     }
-    run('fvm', ['flutter', 'build', 'apk', '--debug', '--no-pub', '--target-platform=android-x64', '--dart-define-from-file=' + path.join(runtime, 'dart-defines.json')], {cwd: repo, env: {...process.env, GRADLE_OPTS: `${process.env.GRADLE_OPTS || ''} -Dorg.gradle.workers.max=2`}});
+    run('fvm', ['flutter', 'build', 'apk', '--debug', '--no-pub', '--target-platform=android-x64,android-arm64', '--dart-define-from-file=' + path.join(runtime, 'dart-defines.json')], {cwd: repo, env: {...process.env, GRADLE_OPTS: `${process.env.GRADLE_OPTS || ''} -Dorg.gradle.workers.max=2`}});
   } catch (error) {
     errors.push(error);
   }
@@ -390,6 +390,36 @@ async function publish() {
   await evidence();
   console.log('Published reserved wall with actual commitWotdPick. Date is the reserved fixture day; device clock was not changed.');
 }
-const commands = {preflight, prepare, emulators, 'build-apk': buildApk, serve, seed, close, 'publish-wotd': publish, 'probe-admission': probeAdmission, assert: evidence};
-if (!commands[command]) throw Error('Commands: preflight, prepare, emulators, build-apk, serve, seed, close, publish-wotd, probe-admission, assert');
+// Promo code fixtures: the admin identity, plus an expired code and a used-up code that the admin screen cannot make.
+async function seedPromo() {
+  const {admin, db} = load(runtime);
+  const promo = require(path.join(runtime, 'functions/lib/promoCodes.js'));
+  const now = Date.now();
+  const image = 'https://localhost:19375/wallpaper.jpg';
+  for (const uid of ['qa-admin', 'qa-viewer']) {
+    try { await admin.auth().createUser({uid, email: `${uid}@example.test`, password: 'local-demo-only-password', displayName: uid, emailVerified: true}); }
+    catch (e) { if (e.code !== 'auth/uid-already-exists' && e.code !== 'auth/email-already-exists') throw e; }
+    if (uid === 'qa-admin') await admin.auth().setCustomUserClaims(uid, {admin: true});
+    const ref = db.doc(`usersv2/${uid}`);
+    if ((await ref.get()).exists) continue;
+    const profile = {id: uid, email: `${uid}@example.test`, username: uid.replaceAll('-', ''), name: uid, loggedIn: true,
+      createdAt: new Date(now).toISOString(), lastLoginAt: new Date(now).toISOString(), premium: false, subscriptionTier: 'free',
+      links: {}, followers: [], following: [], profilePhoto: image, coverPhoto: image, bio: 'Local QA fixture',
+      badges: [], subPrisms: [], coins: 0, transactions: [], interestCategories: ['Nature'], onboardingV2: {completed: true}};
+    await ref.set(profile);
+    await db.doc(`usersv2/${uid}/private/session`).set({postAlerts: false});
+    await db.doc(`profiles/${uid}`).set({...profile, followersCount: 0, followingCount: 0});
+    await db.doc(`usernames/${profile.username}`).set({uid});
+  }
+  const fixtures = {EXPRD2QA7K: {expiresAt: now - 86400000, redemptionCount: 0, maxRedemptions: 10},
+    USEDUP2QA7: {expiresAt: now + 7 * 86400000, redemptionCount: 1, maxRedemptions: 1}};
+  for (const [code, fixture] of Object.entries(fixtures)) {
+    await db.doc(`promoCodes/${promo.promoCodeId(code)}`).set({code, reward: {type: 'coins', coins: 50}, maxRedemptions: fixture.maxRedemptions,
+      redemptionCount: fixture.redemptionCount, expiresAt: admin.firestore.Timestamp.fromMillis(fixture.expiresAt), minAccountAgeDays: 0,
+      newUsersOnlyDays: null, disabled: false, label: 'Local QA fixture', createdBy: 'qa-seed', createdAt: admin.firestore.Timestamp.fromMillis(now)});
+  }
+  console.log(`Seeded qa-admin (admin claim) and qa-viewer, plus fixture codes ${Object.keys(fixtures).join(', ')}.`);
+}
+const commands = {preflight, prepare, emulators, 'build-apk': buildApk, serve, seed, 'seed-promo': seedPromo, close, 'publish-wotd': publish, 'probe-admission': probeAdmission, assert: evidence};
+if (!commands[command]) throw Error('Commands: preflight, prepare, emulators, build-apk, serve, seed, seed-promo, close, publish-wotd, probe-admission, assert');
 commands[command]().catch(error => { console.error(error.stack); process.exitCode = 1; });
