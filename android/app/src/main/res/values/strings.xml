@@ -64,6 +64,9 @@
     <string name="notif_push_draw_winner_body">One month of Pro and the Prism frame are yours.</string>
     <string name="notif_push_gift_received_title">%1$s sent you a 24-hour Pro pass</string>
     <string name="notif_push_gift_received_body">Premium collections and premium walls are open until tomorrow.</string>
+    <string name="notif_push_tip_received_title">%1$s tipped you %2$s coins for %3$s</string>
+    <string name="notif_push_tip_received_title_untitled">%1$s tipped you %2$s coins</string>
+    <string name="notif_push_tip_received_body">See your tips in your creator stats.</string>
     <string name="notif_push_report_needs_review_title">Report waiting for review</string>
     <string name="notif_push_report_needs_review_body">A content report has been waiting for review for over 12 hours.</string>
     <string name="notif_push_new_content_report_title">New content report</string>

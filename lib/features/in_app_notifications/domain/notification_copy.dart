@@ -71,6 +71,13 @@ String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
     title: l10n.notifPushNewFollowerTitle,
     body: l10n.notifPushNewFollowerBody(_stringArg(args, 'followerName')),
   ),
+  'wallRemixed' => (
+    title: l10n.notifPushWallRemixedTitle,
+    body: _stringArg(args, 'wallTitle').trim().isEmpty
+        ? l10n.notifPushWallRemixedBodyUntitled(_stringArg(args, 'remixerName'))
+        : l10n.notifPushWallRemixedBody(_stringArg(args, 'remixerName'), _stringArg(args, 'wallTitle')),
+  ),
+  'creatorStatsWeekly' => (title: l10n.statsWeeklyTitle, body: l10n.statsWeeklyBody(_stringArg(args, 'week'))),
   'streakReminder' => (title: l10n.notifPushStreakReminderTitle, body: l10n.notifPushStreakReminderBody),
   'wotdForCreator' => (title: l10n.notifPushWotdCreatorTitle, body: l10n.notifPushWotdCreatorBody),
   'wotdForAudience' => (
@@ -105,9 +112,27 @@ String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
     body: l10n.notifPushDropLastCallBody(_stringArg(args, 'dropTitle'), _intArg(args, 'hoursLeft')),
   ),
   'drawWinner' => (title: l10n.notifPushDrawWinnerTitle, body: l10n.notifPushDrawWinnerBody),
+  'challengeWinner' => (
+    title: l10n.challengeWinnerNotificationTitle,
+    body: l10n.challengeWinnerNotificationBody(_stringArg(args, 'theme')),
+  ),
   'wallRequestFilled' => (
     title: l10n.notifPushWallRequestFilledTitle,
     body: l10n.notifPushWallRequestFilledBody(_stringArg(args, 'requestText')),
+  ),
+  'tipReceived' => (
+    title: _stringArg(args, 'wallTitle').trim().isEmpty
+        ? l10n.notifPushTipReceivedTitleUntitled(_stringArg(args, 'senderName'), '${_intArg(args, 'amount')}')
+        : l10n.notifPushTipReceivedTitle(
+            _stringArg(args, 'senderName'),
+            '${_intArg(args, 'amount')}',
+            _stringArg(args, 'wallTitle'),
+          ),
+    body: l10n.notifPushTipReceivedBody,
+  ),
+  'tipsReceived' => (
+    title: l10n.notifTipsReceivedTitle(_intArg(args, 'tipCount')),
+    body: l10n.notifTipsReceivedBody(_intArg(args, 'coins')),
   ),
   'giftReceived' => (
     title: l10n.notifPushGiftReceivedTitle(_stringArg(args, 'senderName')),

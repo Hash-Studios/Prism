@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
@@ -11,8 +12,9 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
-import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
+import 'package:Prism/features/wallpaper_upload/biz/upload_session.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
@@ -38,7 +40,90 @@ class _FailingUploadDraftStore extends UploadDraftStore {
     required String draftId,
     required File selectedFile,
     required SubmissionMetadata metadata,
+    UploadSession? session,
   }) async => throw StateError('disk full');
+}
+
+class _RecordingDraftStore extends UploadDraftStore {
+  final List<String> reads = [];
+
+  @override
+  Future<void> discard({required String owner, required String draftId}) async {}
+
+  @override
+  Future<UploadDraft?> read({required String owner, required String draftId}) async {
+    reads.add(draftId);
+    return null;
+  }
+
+  @override
+  Future<UploadDraft> save({
+    required String owner,
+    required String draftId,
+    required File selectedFile,
+    required SubmissionMetadata metadata,
+    UploadSession? session,
+  }) async => UploadDraft(owner: owner, draftId: draftId, file: selectedFile, metadata: metadata, session: session);
+}
+
+class _SessionDraftStore extends UploadDraftStore {
+  UploadDraft? saved;
+  final sessions = <UploadSession>[];
+
+  @override
+  Future<UploadDraft?> read({required String owner, required String draftId}) async => saved;
+
+  @override
+  Future<UploadDraft> save({
+    required String owner,
+    required String draftId,
+    required File selectedFile,
+    required SubmissionMetadata metadata,
+    UploadSession? session,
+  }) async {
+    if (session != null) sessions.add(session);
+    return saved = UploadDraft(
+      owner: owner,
+      draftId: draftId,
+      file: selectedFile,
+      metadata: metadata,
+      session: session,
+    );
+  }
+
+  @override
+  Future<void> discard({required String owner, required String draftId}) async {}
+}
+
+class _Defaults extends LastSubmissionDefaultsStore {
+  _Defaults({this.failSave = false});
+  final bool failSave;
+
+  @override
+  Future<SubmissionMetadata?> read(String owner) async =>
+      const SubmissionMetadata(category: 'Nature', tags: ['forest']);
+
+  @override
+  Future<void> save(String owner, SubmissionMetadata metadata) async {
+    if (failSave) throw StateError('defaults disk failure');
+  }
+}
+
+class _DirectUploadRouter extends AppRouter {
+  _DirectUploadRouter(this.screen);
+  final Widget screen;
+
+  @override
+  List<AutoRoute> get routes => <AutoRoute>[
+    AutoRoute(
+      path: '/',
+      page: PageInfo('DirectUpload', builder: (_) => screen),
+    ),
+    AutoRoute(
+      path: '/review',
+      page: PageInfo(ReviewRoute.name, builder: (_) => const Scaffold(body: Text('review-stub'))),
+    ),
+  ];
 }
 
 class _DraftStoreFixture {
@@ -81,8 +166,17 @@ class _UploadRouteHost extends StatelessWidget {
       TextButton(onPressed: () => context.router.push<Object?>(uploadRoute()), child: const Text('Open uploader'));
 }
 
+void signInUploadUser() {
+  final previousUser = app_state.prismUser;
+  app_state.prismUser = app_constants.createGuestPrismUser()
+    ..id = 'test-user'
+    ..loggedIn = true;
+  addTearDown(() => app_state.prismUser = previousUser);
+}
+
 /// Opens [route] from a host page inside a real [AppRouter], so a successful submit can push [ReviewRoute].
 Future<void> pumpRoutedUpload(WidgetTester tester, UploadWallRoute Function() route) async {
+  signInUploadUser();
   final router = _TestAppRouter(route);
   await tester.pumpWidget(
     MaterialApp.router(
@@ -150,6 +244,239 @@ void main() {
     addTearDown(() => tester.runAsync(() => root.delete(recursive: true)));
     return _DraftStoreFixture(root);
   }
+
+  testWidgets('last details change only category and tags and a defaults write failure does not fail submission', (
+    tester,
+  ) async {
+    signInUploadUser();
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    final drafts = _RecordingDraftStore();
+    SubmissionMetadata? submitted;
+    final resumed = UploadDraft(
+      owner: app_state.prismUser.id,
+      draftId: 'resume',
+      file: image,
+      metadata: const SubmissionMetadata(
+        title: 'Personal title',
+        description: 'Personal description',
+        tags: ['old'],
+        requestId: 'request-1',
+        requestText: 'A requested wall',
+      ),
+      session: const UploadSession(
+        operationId: 'operation-1',
+        logicalId: 'wall-1',
+        rejectedDocId: 'rejected-1',
+        previousReason: 'Fix the border',
+      ),
+    );
+    final router = _DirectUploadRouter(
+      UploadWallScreen(
+        image: image,
+        resumedDraft: resumed,
+        prepareImageForTesting: () async {},
+        draftStoreForTesting: drafts,
+        defaultsStoreForTesting: _Defaults(failSave: true),
+        uploadFileForTesting: ({required isThumbnail}) async => isThumbnail
+            ? const GitHubContent(downloadUrl: 'https://example.test/t', path: 'thumb', sha: 't')
+            : const GitHubContent(downloadUrl: 'https://example.test/w', path: 'wall', sha: 'w'),
+        createRecordWithMetadataForTesting: ({required id, required metadata}) async {
+          expect(id, 'wall-1');
+          submitted = metadata;
+          return WallSubmissionResult.submitted;
+        },
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(),
+      ),
+    );
+    await waitForRealIo(
+      tester,
+      () => find.text('Ready to submit').evaluate().isNotEmpty,
+      reason: 'prepare resumed upload',
+    );
+    await tester.ensureVisible(find.text('Use last details'));
+    await tester.tap(find.text('Use last details'));
+    await tester.pump();
+    expect(tester.widget<TextField>(find.widgetWithText(TextField, 'Title')).controller!.text, 'Personal title');
+    expect(
+      tester.widget<TextField>(find.widgetWithText(TextField, 'Description')).controller!.text,
+      'Personal description',
+    );
+    expect(find.text('Fix the border'), findsOneWidget);
+    await tester.ensureVisible(find.text('Upload'));
+    await tester.tap(find.text('Upload'));
+    await waitForRealIo(tester, () => submitted != null, reason: 'submit metadata');
+    await tester.pumpAndSettle();
+    expect(submitted!.title, 'Personal title');
+    expect(submitted!.description, 'Personal description');
+    expect(submitted!.category, 'Nature');
+    expect(submitted!.tags, ['forest']);
+    expect(submitted!.requestId, 'request-1');
+    expect(submitted!.requestText, 'A requested wall');
+    expect(find.text('Retry submit'), findsNothing);
+    expect(find.text('review-stub'), findsOneWidget);
+  });
+
+  testWidgets('response loss preserves operation and file receipts across restart', (tester) async {
+    signInUploadUser();
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    final drafts = _SessionDraftStore();
+    var uploads = 0;
+    var submissions = 0;
+    Widget screen({UploadDraft? resumed}) => UploadWallScreen(
+      image: image,
+      resumedDraft: resumed,
+      resubmission: const ResubmissionSeed(
+        rejectedDocId: 'rejected-1',
+        previousReason: 'Fix border',
+        metadata: SubmissionMetadata(title: 'Dunes'),
+      ),
+      prepareImageForTesting: () async {},
+      draftStoreForTesting: drafts,
+      defaultsStoreForTesting: _Defaults(),
+      uploadFileForTesting: ({required isThumbnail}) async {
+        uploads++;
+        return isThumbnail
+            ? const GitHubContent(downloadUrl: 'https://example.test/t', path: 'thumb', sha: 't')
+            : const GitHubContent(downloadUrl: 'https://example.test/w', path: 'wall', sha: 'w');
+      },
+      createRecordWithMetadataForTesting: ({required id, required metadata}) async {
+        submissions++;
+        if (submissions == 1) throw StateError('response lost');
+        return WallSubmissionResult.submitted;
+      },
+    );
+    Future<void> open(Widget child) async {
+      final router = _DirectUploadRouter(child);
+      await tester.pumpWidget(
+        MaterialApp.router(
+          key: UniqueKey(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router.config(),
+        ),
+      );
+    }
+
+    await open(screen());
+    await waitForRealIo(
+      tester,
+      () => find.text('Ready to submit').evaluate().isNotEmpty,
+      reason: 'prepare first attempt',
+    );
+    await tester.tap(find.text('Upload'));
+    await waitForRealIo(tester, () => find.text('Retry submit').evaluate().isNotEmpty, reason: 'first response lost');
+    final saved = drafts.saved!;
+    final first = saved.session!;
+    expect(first.submissionAttempted, isTrue);
+    expect(first.rejectedDocId, 'rejected-1');
+    expect(first.original!.path, 'wall');
+    expect(first.thumbnail!.path, 'thumb');
+    expect(uploads, 2);
+    await open(screen(resumed: saved));
+    await waitForRealIo(
+      tester,
+      () => find.text('Retry submit').evaluate().isNotEmpty,
+      reason: 'restore unresolved attempt',
+    );
+    await tester.ensureVisible(find.text('Retry submit'));
+    await tester.tap(find.text('Retry submit'));
+    await waitForRealIo(tester, () => submissions == 2, reason: 'retry saved attempt');
+    await tester.pumpAndSettle();
+    expect(uploads, 2);
+    final retry = drafts.sessions.last;
+    expect(retry.operationId, first.operationId);
+    expect(retry.logicalId, first.logicalId);
+    expect(retry.rejectedDocId, first.rejectedDocId);
+    expect(retry.original!.sha, first.original!.sha);
+    expect(retry.thumbnail!.sha, first.thumbnail!.sha);
+    expect(find.text('review-stub'), findsOneWidget);
+  });
+
+  testWidgets('identical image bytes use separate drafts for separate rejected submissions', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    final drafts = _RecordingDraftStore();
+    for (final rejectedId in ['rejected-a', 'rejected-b']) {
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: UploadWallScreen(
+            key: ValueKey(rejectedId),
+            image: image,
+            resubmission: ResubmissionSeed(
+              rejectedDocId: rejectedId,
+              previousReason: '',
+              metadata: const SubmissionMetadata(),
+            ),
+            prepareImageForTesting: () async {},
+            draftStoreForTesting: drafts,
+          ),
+        ),
+      );
+      await waitForRealIo(
+        tester,
+        () => drafts.reads.length == (rejectedId == 'rejected-a' ? 1 : 2),
+        reason: 'read lineage-specific draft',
+      );
+      await tester.pump();
+    }
+    expect(drafts.reads[0], isNot(drafts.reads[1]));
+  });
+
+  testWidgets('explicit resumed draft takes precedence over resubmission seed', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    final drafts = _RecordingDraftStore();
+    final resumed = UploadDraft(
+      owner: UploadDraftStore.guestOwner,
+      draftId: 'saved-draft',
+      file: image,
+      metadata: const SubmissionMetadata(title: 'Draft title', description: 'Draft description', tags: ['draft']),
+      session: const UploadSession(
+        operationId: 'saved-operation',
+        logicalId: 'saved-wall',
+        rejectedDocId: 'saved-rejection',
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: UploadWallScreen(
+          image: image,
+          resumedDraft: resumed,
+          resubmission: const ResubmissionSeed(
+            rejectedDocId: 'other-rejection',
+            previousReason: '',
+            metadata: SubmissionMetadata(title: 'Seed title', description: 'Seed description'),
+          ),
+          prepareImageForTesting: () async {},
+          draftStoreForTesting: drafts,
+        ),
+      ),
+    );
+    await waitForRealIo(
+      tester,
+      () => find.text('Ready to submit').evaluate().isNotEmpty,
+      reason: 'resume upload draft',
+    );
+    await tester.ensureVisible(find.widgetWithText(TextField, 'Title'));
+    expect(tester.widget<TextField>(find.widgetWithText(TextField, 'Title')).controller!.text, 'Draft title');
+    expect(
+      tester.widget<TextField>(find.widgetWithText(TextField, 'Description')).controller!.text,
+      'Draft description',
+    );
+    expect(drafts.reads, ['saved-draft']);
+  });
 
   testWidgets('restores a draft and discards only the current owner draft', (tester) async {
     await setViewport(tester);
@@ -299,7 +626,7 @@ void main() {
     await setViewport(tester);
     final image = await makeImage(tester);
     final fullUpload = Completer<GitHubContent>();
-    final save = Completer<wall_store.WallSubmissionResult>();
+    final save = Completer<WallSubmissionResult>();
     var uploadCalls = 0;
     var saveCalls = 0;
 
@@ -308,6 +635,7 @@ void main() {
       () => UploadWallRoute(
         image: image,
         prepareImageForTesting: () async {},
+        defaultsStoreForTesting: _Defaults(),
         uploadFileForTesting: ({required isThumbnail}) {
           uploadCalls++;
           if (isThumbnail) {
@@ -354,7 +682,7 @@ void main() {
     await tester.pump();
     expect(find.text('Submitting wallpaper'), findsOneWidget);
 
-    save.complete(wall_store.WallSubmissionResult.submitted);
+    save.complete(WallSubmissionResult.submitted);
     await tester.pumpAndSettle();
     expect(find.text('review-stub'), findsOneWidget);
     expect(find.text('Upload wallpaper'), findsNothing);
@@ -364,7 +692,7 @@ void main() {
   testWidgets('tracks a confirmed upload once when the screen was popped while saving', (tester) async {
     await setViewport(tester);
     final image = await makeImage(tester);
-    final save = Completer<wall_store.WallSubmissionResult>();
+    final save = Completer<WallSubmissionResult>();
     final recorder = FakeAppAnalytics();
     AnalyticsRuntime.instance = recorder;
 
@@ -413,7 +741,7 @@ void main() {
 
     Navigator.of(tester.element(find.text('Submitting wallpaper'))).pop();
     await tester.pumpAndSettle();
-    save.complete(wall_store.WallSubmissionResult.submitted);
+    save.complete(WallSubmissionResult.submitted);
     await tester.pump();
 
     final uploads = recorder.events.whereType<UploadWallpaperEvent>().toList();
@@ -430,6 +758,7 @@ void main() {
       () => UploadWallRoute(
         image: File('test-image.png'),
         prepareImageForTesting: () async {},
+        defaultsStoreForTesting: _Defaults(),
         uploadFileForTesting: ({required isThumbnail}) async => isThumbnail
             ? const GitHubContent(
                 downloadUrl: 'https://example.test/thumb.png',
@@ -441,7 +770,7 @@ void main() {
                 path: 'test-image.png',
                 sha: 'wall-sha',
               ),
-        createRecordForTesting: () async => wall_store.WallSubmissionResult.submitted,
+        createRecordForTesting: () async => WallSubmissionResult.submitted,
       ),
     );
     await tester.pumpAndSettle();
@@ -473,6 +802,7 @@ void main() {
       () => UploadWallRoute(
         image: image,
         prepareImageForTesting: () async {},
+        defaultsStoreForTesting: _Defaults(),
         uploadFileForTesting: ({required isThumbnail}) async {
           uploadedThumbnails.add(isThumbnail);
           return isThumbnail
@@ -485,7 +815,7 @@ void main() {
         },
         createRecordForTesting: () async {
           saveCalls++;
-          return wall_store.WallSubmissionResult.submitted;
+          return WallSubmissionResult.submitted;
         },
       ),
     );
@@ -616,7 +946,7 @@ void main() {
           },
           createRecordForTesting: () async {
             saveCalls++;
-            return wall_store.WallSubmissionResult.quotaExceeded;
+            return WallSubmissionResult.quotaExceeded;
           },
         ),
       ),
@@ -658,7 +988,7 @@ void main() {
           createRecordForTesting: () async {
             saveCalls++;
             if (saveCalls == 1) throw StateError('network response was lost');
-            return wall_store.WallSubmissionResult.quotaExceeded;
+            return WallSubmissionResult.quotaExceeded;
           },
         ),
       ),
@@ -703,7 +1033,7 @@ void main() {
             deleteCalls++;
             if (deleteCalls <= 2) throw StateError('temporary cleanup failure');
           },
-          createRecordForTesting: () async => wall_store.WallSubmissionResult.quotaExceeded,
+          createRecordForTesting: () async => WallSubmissionResult.quotaExceeded,
         ),
       ),
     );
@@ -760,7 +1090,7 @@ void main() {
               : const GitHubContent(downloadUrl: 'https://example.test/wall.png', path: 'pixel.png', sha: 'wall-sha'),
           createRecordForTesting: () {
             saveCalls++;
-            return Future<wall_store.WallSubmissionResult>.error(StateError('network response was lost'));
+            return Future<WallSubmissionResult>.error(StateError('network response was lost'));
           },
         ),
       ),
@@ -805,7 +1135,7 @@ void main() {
                   );
           },
           deleteFileForTesting: ({required path, required sha}) async => deletedFiles.add(path),
-          createRecordForTesting: () async => wall_store.WallSubmissionResult.submitted,
+          createRecordForTesting: () async => WallSubmissionResult.submitted,
         ),
       ),
     );
@@ -932,6 +1262,7 @@ void main() {
       () => UploadWallRoute(
         image: image,
         prepareImageForTesting: () async {},
+        defaultsStoreForTesting: _Defaults(),
         uploadFileForTesting: ({required isThumbnail}) async {
           if (isThumbnail) {
             thumbnailCalls++;
@@ -949,7 +1280,7 @@ void main() {
           );
         },
         deleteFileForTesting: ({required path, required sha}) async => deletedFiles.add(path),
-        createRecordForTesting: () async => wall_store.WallSubmissionResult.submitted,
+        createRecordForTesting: () async => WallSubmissionResult.submitted,
       ),
     );
     await pumpImagePreparation(tester);
@@ -988,6 +1319,7 @@ void main() {
       () => UploadWallRoute(
         image: image,
         prepareImageForTesting: () async {},
+        defaultsStoreForTesting: _Defaults(),
         uploadFileForTesting: ({required isThumbnail}) async {
           if (isThumbnail) {
             thumbnailCalls++;
@@ -1003,7 +1335,7 @@ void main() {
         },
         createRecordForTesting: () async {
           saveCalls++;
-          return wall_store.WallSubmissionResult.submitted;
+          return WallSubmissionResult.submitted;
         },
       ),
     );
@@ -1217,7 +1549,7 @@ void main() {
                       deleteFileForTesting: ({required path, required sha}) async => deletedFiles.add(path),
                       createRecordForTesting: () async {
                         saveCalls++;
-                        return wall_store.WallSubmissionResult.submitted;
+                        return WallSubmissionResult.submitted;
                       },
                     ),
                   ),
@@ -1249,6 +1581,42 @@ void main() {
     expect(deletedFiles, ['pixel.png', 'thumb_pixel.png']);
     expect(routeResult, isNull);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('challenge seed prefills upload metadata and can be removed independently', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    SubmissionMetadata? submitted;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: UploadWallScreen(
+          image: image,
+          prepareImageForTesting: () async {},
+          challengeSeed: const ChallengeSeed(id: '2026-10-26', theme: 'Quiet oceans'),
+          uploadFileForTesting: ({required isThumbnail}) async =>
+              GitHubContent(downloadUrl: 'https://example.com/image.png', path: 'image.png', sha: 'sha'),
+          createRecordWithMetadataForTesting: ({required id, required metadata}) async {
+            submitted = metadata;
+            return WallSubmissionResult.quotaExceeded;
+          },
+        ),
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.pump();
+    expect(find.text('Quiet oceans'), findsOneWidget);
+    await tester.scrollUntilVisible(find.byTooltip('Remove challenge'), 200, scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.byTooltip('Remove challenge'));
+    await tester.pump();
+    expect(find.byTooltip('Remove challenge'), findsNothing);
+    await tester.ensureVisible(find.text('Upload'));
+    await tester.tap(find.text('Upload'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(submitted?.challengeId, '');
+    expect(submitted?.title, 'Quiet oceans');
   });
 
   testWidgets('ready state shows the preview facts, the checklist and one Upload button', (tester) async {
@@ -1374,6 +1742,7 @@ void main() {
       () => UploadWallRoute(
         image: image,
         prepareImageForTesting: () async {},
+        defaultsStoreForTesting: _Defaults(),
         uploadFileForTesting: ({required isThumbnail}) async {
           uploadCalls++;
           return isThumbnail
@@ -1386,7 +1755,7 @@ void main() {
         },
         createRecordForTesting: () async {
           if (saveCalls++ == 0) throw StateError('network response was lost');
-          return wall_store.WallSubmissionResult.submitted;
+          return WallSubmissionResult.submitted;
         },
       ),
     );

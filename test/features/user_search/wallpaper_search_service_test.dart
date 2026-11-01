@@ -9,7 +9,9 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -156,6 +158,7 @@ Map<String, dynamic> _prismDoc(
   String? depthTier,
   String? spatialTier,
   String? category,
+  bool ai = false,
 }) => <String, dynamic>{
   'id': id,
   'wallpaper_url': 'https://prism/$id.jpg',
@@ -168,6 +171,7 @@ Map<String, dynamic> _prismDoc(
   'depth': ?(depthTier == null ? null : <String, dynamic>{'tier': depthTier}),
   'spatial': ?(spatialTier == null ? null : <String, dynamic>{'tier': spatialTier}),
   'category': ?category,
+  'isAiGenerated': ai,
 };
 
 void main() {
@@ -230,7 +234,7 @@ void main() {
   test('providers start while the local catalog scan is still waiting', () async {
     final Directory directory = await Directory.systemTemp.createTemp('wallpaper-search-slow-catalog-');
     addTearDown(() => directory.delete(recursive: true));
-    final Completer<Set<String>> blocked = Completer<Set<String>>();
+    final Completer<BlockedCreators> blocked = Completer<BlockedCreators>();
     final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
       store: DurableJsonStore('catalog', directory: directory),
       blockedUids: () => blocked.future,
@@ -252,9 +256,26 @@ void main() {
     expect(repository.calls, 1);
     expect(firestore.querySpecs, isNotEmpty);
 
-    blocked.complete(<String>{});
+    blocked.complete(KnownBlockedCreators(<String>{}));
     final page = await search;
     expect(page.results.map((wall) => wall.id), <String>['remote']);
+  });
+
+  test('search hides Prism walls from creators while the block list is unknown', () async {
+    final firestore = FakeFirestoreClient(onQuery: (spec) => <FakeDocRow>[(id: 'd1', data: _prismDoc('p1'))]);
+    final service = WallpaperSearchService(
+      _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('w')])),
+      _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
+      SettingsLocalDataSource(InMemoryLocalStore()),
+      PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{})),
+      null,
+      () => const UnknownBlockedCreators(),
+    );
+
+    final page = await service.search('nature');
+
+    expect(page.results.map((wall) => wall.id), <String>['w']);
+    expect(page.prismResults, isEmpty);
   });
 
   group('repeated search', () {
@@ -429,7 +450,7 @@ void main() {
       final firestore = FakeFirestoreClient(
         onQuery: (spec) => <FakeDocRow>[(id: 'd1', data: _prismDoc('p1', creatorUid: 'later-id'))],
       );
-      Set<String> blocked = <String>{};
+      BlockedCreators blocked = KnownBlockedCreators(<String>{});
       final service = WallpaperSearchService(
         _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')])),
         _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
@@ -440,7 +461,7 @@ void main() {
       );
 
       expect((await service.search('nature')).prismResults.map((wall) => wall.id), <String>['p1']);
-      blocked = <String>{'later-id'};
+      blocked = KnownBlockedCreators(<String>{'later-id'});
 
       expect((await service.search('nature')).prismResults, isEmpty);
     });
@@ -462,6 +483,27 @@ void main() {
 
       await SettingsLocalDataSource(store).set('WHcategories', 110);
       expect((await service.search('girl')).prismResults.map((wall) => wall.id), unorderedEquals(<String>['p1', 'p2']));
+    });
+
+    test('AI Prism walls are hidden while the AI setting is off', () async {
+      final store = InMemoryLocalStore();
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.terms'
+            ? <FakeDocRow>[(id: 'd1', data: _prismDoc('p1', ai: true)), (id: 'd2', data: _prismDoc('p2'))]
+            : const <FakeDocRow>[],
+      );
+      final service = _service(
+        wallhaven: Result.success(<WallhavenWallpaper>[_wallhaven('a')]),
+        store: store,
+        firestore: firestore,
+      );
+
+      expect((await service.search('girl')).prismResults.map((wall) => wall.id), unorderedEquals(<String>['p1', 'p2']));
+
+      await AiContentFilter.setShowsAi(SettingsLocalDataSource(store), false);
+      final hidden = await service.search('girl');
+      expect(hidden.prismResults.map((wall) => wall.id), <String>['p2']);
+      expect(hidden.results.map((wall) => wall.id), <String>['a']);
     });
 
     test('a failed search is not cached', () async {
@@ -835,6 +877,22 @@ void main() {
       expect(page.isLocal, isFalse);
       expect((wallhaven.calls, pexels.calls), (0, 0));
       expect(firestore.querySpecs.single.sourceTag, 'PrismWallSearch.depth');
+    });
+
+    test('AI Prism walls drop out of the depth results while the AI setting is off', () async {
+      final store = InMemoryLocalStore();
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => <FakeDocRow>[
+          (id: 'd1', data: _prismDoc('ai1', depthTier: 'auto', ai: true)),
+          (id: 'd2', data: _prismDoc('auto1', depthTier: 'auto')),
+        ],
+      );
+      final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[]), store: store, firestore: firestore);
+
+      expect((await service.search('', filters: depthOnly)).results.map((wall) => wall.id), <String>['ai1', 'auto1']);
+
+      await AiContentFilter.setShowsAi(SettingsLocalDataSource(store), false);
+      expect((await service.search('', filters: depthOnly)).results.map((wall) => wall.id), <String>['auto1']);
     });
 
     test('a depth browse asks Prism search for 48 walls and a text query keeps 12', () async {

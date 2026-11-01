@@ -131,7 +131,7 @@ The push has one image. The daily gallery cap allows one gallery push a day, and
 
 **Share folder** makes a short link with `createFolderLink`. The link type is `page` and the canonical URL is `https://prismwalls.com/folder/<id>`. The preview has the folder name, the count, the owner and the `shareImage`.
 
-The worker (`infra/cloudflare/worker/src/index.ts`) accepts the image only when it is `<R2_PREVIEW_BASE_URL>/push-gallery/v1/<64 hex>.jpg`. For a folder link, the worker uses that image as `og:image` (1200 x 545) and does not render a browser card. A direct `/folder/<id>` landing shows "A folder on Prism", not the folder id.
+When `shareImage` is missing, the short-link preview uses the newest cover. The worker (`infra/cloudflare/worker/src/index.ts`) accepts only `<R2_PREVIEW_BASE_URL>/push-gallery/v1/<64 hex>.jpg` strips or `<R2_PREVIEW_BASE_URL>/previews/<64 hex>.img` covers. It uses that image as `og:image` and does not render a browser card. Strips declare 1200 x 545 dimensions; covers omit dimensions. A direct `/folder/<id>` landing shows "A folder on Prism", not the folder id. Existing short links retain their stored image snapshot; sharing again creates a new link when the preview changes.
 
 The share sheet uses the `shareImage`, or the newest cover when there is no share image. With no covers, the app shares the name and the link as text.
 

@@ -1,14 +1,13 @@
-import 'dart:io';
-
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/purchase_analytics.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
+import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/widgets.dart';
@@ -39,8 +38,28 @@ class PaywallOrchestrator {
   static const Duration _loadTimeout = Duration(seconds: 10);
   bool get _rcPaywallsEnabled => app_state.useRcPaywalls;
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
+  int _activePresentations = 0;
 
   Future<PaywallResultValue> present({
+    required String placement,
+    required String source,
+    AppLocalizations? messages,
+    BuildContext? context,
+  }) async {
+    if (!app_state.prismUser.loggedIn) {
+      if (context == null || !await requireSignedInAction(context)) return PaywallResultValue.guestSignInRequired;
+    }
+    _activePresentations++;
+    DailyMomentPresentationGate.instance.purchaseActive = true;
+    try {
+      return await _present(placement: placement, source: source, messages: messages);
+    } finally {
+      _activePresentations--;
+      DailyMomentPresentationGate.instance.purchaseActive = _activePresentations > 0;
+    }
+  }
+
+  Future<PaywallResultValue> _present({
     required String placement,
     required String source,
     AppLocalizations? messages,
@@ -72,22 +91,14 @@ class PaywallOrchestrator {
     PaywallResultValue.rcError,
   };
 
-  /// Same as [present], but for a signed-out user it requires sign-in first
-  /// unless the platform allows guest browsing (iOS 5.1.1(v): purchases must
-  /// not require an account). Android has no guest path, so signed-out users
-  /// there always see the sign-in prompt.
   Future<PaywallResultValue?> presentOrRequireSignIn(
     BuildContext context, {
     required String placement,
     required String source,
   }) async {
-    if (app_state.prismUser.loggedIn || Platform.isIOS) {
-      return present(placement: placement, source: source, messages: AppLocalizations.of(context));
-    }
-    googleSignInPopUp(context, () {
-      present(placement: placement, source: source);
-    });
-    return null;
+    if (!await requireSignedInAction(context)) return null;
+    if (!context.mounted) return null;
+    return present(placement: placement, source: source, messages: AppLocalizations.of(context), context: context);
   }
 
   Future<void> recordRewardedAdWatchAndMaybeUpsell({required String source}) async {
@@ -141,28 +152,21 @@ class PaywallOrchestrator {
           .timeout(_loadTimeout);
       final Offerings? offerings = await PurchasesService.instance.getOfferings().timeout(_loadTimeout);
       if (!isCurrentAccount()) return PaywallResultValue.error;
-      final Offering? v3Offering = offerings?.all[PurchaseConstants.offeringV3Default];
-      Offering? offering;
-      if (v3Offering != null) {
-        offering = v3Offering;
-        if (placementOffering != null && placementOffering.identifier != PurchaseConstants.offeringV3Default) {
-          analytics.track(
-            PaywallResultEvent(
-              source: source,
-              placement: placement,
-              result: PaywallResultValue.placementOverriddenToV3,
-              placementOffering: placementOffering.identifier,
-              selectedOffering: v3Offering.identifier,
-              rcOrFallback: RcOrFallbackValue.rc,
-            ),
-          );
-        }
-      } else {
-        offering =
-            placementOffering ??
-            offerings?.all[PurchaseConstants.offeringUltra] ??
-            offerings?.all[PurchaseConstants.offeringDefault] ??
-            offerings?.current;
+      // Never substitute legacy pricing when the v3 catalog is unavailable.
+      final Offering? offering = offerings?.all[PurchaseConstants.offeringV3Default];
+      if (offering != null &&
+          placementOffering != null &&
+          placementOffering.identifier != PurchaseConstants.offeringV3Default) {
+        analytics.track(
+          PaywallResultEvent(
+            source: source,
+            placement: placement,
+            result: PaywallResultValue.placementOverriddenToV3,
+            placementOffering: placementOffering.identifier,
+            selectedOffering: offering.identifier,
+            rcOrFallback: RcOrFallbackValue.rc,
+          ),
+        );
       }
       if (offering == null) {
         analytics.track(

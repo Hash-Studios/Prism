@@ -1,4 +1,16 @@
 {
+  "economyAd": "Iklan",
+  "@economyAd": {"description": "Label identifying a rewarded advertisement."},
+  "economyWatchAdForCoins": "Tonton iklan untuk {reward} koin",
+  "@economyWatchAdForCoins": {"description": "Currently quoted rewarded ad amount.", "placeholders": {"reward": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsMissing": "Kamu membutuhkan {count} koin lagi.",
+  "@economyCoinsMissing": {"description": "Coins missing for the selected purchase.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsRemainAfterAd": "Kamu mungkin masih membutuhkan {count} koin setelah iklan",
+  "@economyCoinsRemainAfterAd": {"description": "Estimated remaining shortfall after the quoted ad reward.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyAdAutomaticPurchase": "Jika saldo setelah hadiah mencukupi harga, item ini akan dibeli secara otomatis.",
+  "@economyAdAutomaticPurchase": {"description": "Disclosure of automatic purchase after a credited ad."},
+  "economyAdVerificationPending": "Hadiah iklanmu sedang diverifikasi. Koin akan muncul setelah dikonfirmasi.",
+  "@economyAdVerificationPending": {"description": "Ad reward awaiting server verification."},
   "foldersLibraryEmptyTitle": "Belum ada folder",
   "@foldersLibraryEmptyTitle": {
     "description": "Title of the empty Folders tab in the Library."
@@ -90,6 +102,40 @@
   },
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "id",
+  "duoTitle": "Kejutan Duo",
+  "duoAiFormatLabel": "Buat kejutan Duo",
+  "duoPresetNotice": "Prism menampilkan sisi kanan saat ponsel dilipat. Atur posisi gambar asli yang disimpan secara manual dan periksa kedua tampilan di pratinjau wallpaper sistem. Ini adalah preset Prism, bukan pemotongan otomatis iOS.",
+  "duoFoldedPromptLabel": "Tampilan terlipat",
+  "duoFoldedPromptExample": "Kucing mengantuk di samping jendela",
+  "duoRevealedPromptLabel": "Kejutan saat dibuka",
+  "duoRevealedPromptExample": "Pesawat luar angkasa kecil di luar jendela",
+  "duoPromptValidation": "Jelaskan kedua tampilan, masing-masing dengan 1 hingga 160 karakter.",
+  "duoMoodBody": "Satu wallpaper. Lebih banyak kejutan saat dibuka.",
+  "duoDeviceName": "iPhone Duo",
+  "duoPhoneDevice": "Ponsel",
+  "duoFold": "Lipat",
+  "duoUnfold": "Buka lipatan",
+  "duoFolded": "Terlipat",
+  "duoUnfolded": "Terbuka",
+  "duoAndroidCropNotice": "Prism menampilkan sisi kanan saat ponsel dilipat. Android mungkin memotongnya secara berbeda. Periksa pratinjau wallpaper sistem sebelum menerapkannya.",
+  "duoGetOnPrism": "Dapatkan di Prism",
+  "duoGuideTitle": "Atur kejutan Duo Anda",
+  "duoGuideOpen": "Buka gambar asli yang disimpan di Foto, ketuk Bagikan, lalu Gunakan sebagai Wallpaper.",
+  "duoGuideAlign": "Atur posisi gambar utuh secara manual agar tampilan terlipat menampilkan sisi kanan.",
+  "duoGuideCheck": "Periksa tampilan terlipat dan terbuka di pratinjau sistem, lalu tambahkan wallpaper.",
+  "duoWebTitle": "Wallpaper iPhone Duo | Prism",
+  "duoWebDescription": "Satu wallpaper dengan adegan kedua yang tersembunyi. Jelajahi wallpaper kejutan Duo orisinal di Prism.",
+  "duoWebHeading": "Satu wallpaper. Cerita yang lebih luas.",
+  "duoWebIntro": "Adegan tenang saat dilipat. Cerita lain saat dibuka. Lihat kedua tampilan setiap wallpaper orisinal.",
+  "duoWebEmpty": "Koleksi Duo pertama sedang ditinjau.",
+  "duoWebEmptyBody": "Jelajahi Prism selagi kami memeriksa setiap wallpaper dalam kedua tampilan.",
+  "duoWebFolded": "Pratinjau terlipat",
+  "duoWebUnfolded": "Gambar asli saat terbuka",
+  "duoWebPresetNotice": "Pratinjau ini menggunakan preset sisi kanan Prism, bukan pemotongan otomatis Apple. Simpan gambar asli secara utuh, atur posisinya secara manual, dan periksa tampilan terlipat serta terbuka di pratinjau wallpaper sistem.",
+  "duoWebOpenPrism": "Buka di Prism",
+  "duoWebExplore": "Jelajahi Prism",
+  "duoWebAppStore": "Unduh di App Store",
+  "duoWebPlayStore": "Dapatkan di Google Play",
   "economyExportFailedLabel": "Ekspor gagal",
   "@economyExportFailedLabel": {
     "description": "Failed filter export action inserted before refund status."
@@ -1639,16 +1685,7 @@
   "@accountReportAProblem": {
     "description": "Title for the report problem sheet and settings row."
   },
-  "accountReportPreviewNotice": "Laporan ini berisi versi aplikasi, perangkat, dan log terbaru Anda. Tidak ada alamat email atau token masuk. Baca laporan, lalu bagikan kepada {email}.",
-  "@accountReportPreviewNotice": {
-    "description": "Privacy explanation shown before sharing a diagnostic report.",
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
-  "accountReportProblemSubtitle": "Bagikan log aplikasi Anda dengan tim Prism",
+  "accountReportProblemSubtitle": "Kirim laporan bug ke tim Prism",
   "@accountReportProblemSubtitle": {
     "description": "Subtitle for reporting a problem."
   },
@@ -1799,10 +1836,6 @@
   "accountSettings": "Setelan",
   "@accountSettings": {
     "description": "Settings action label."
-  },
-  "accountShare": "Bagikan",
-  "@accountShare": {
-    "description": "Share action label."
   },
   "accountShareInvite": "Bagikan undangan",
   "@accountShareInvite": {
@@ -3551,6 +3584,80 @@
   "aiLiveActivityOpen": "Buka di Prism",
   "@aiLiveActivityOpen": {
     "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
+  },
+  "aiResultApply": "Terapkan",
+  "@aiResultApply": {
+    "description": "Primary button on a finished AI wallpaper. On Android it opens the Set screen; on iOS it saves to Photos."
+  },
+  "aiResultEditPrompt": "Edit perintah",
+  "@aiResultEditPrompt": {
+    "description": "Button on the full-screen AI result that returns to the prompt editor."
+  },
+  "aiSessionStripLabel": "Wallpaper dari sesi ini",
+  "@aiSessionStripLabel": {
+    "description": "Screen reader label for the strip of thumbnails made in this session."
+  },
+  "aiSessionTake": "Versi {index} dari {count}",
+  "@aiSessionTake": {
+    "description": "Screen reader label for one thumbnail in the session strip.",
+    "placeholders": {
+      "index": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpWatercolour": "Sebagai cat air",
+  "@aiFollowUpWatercolour": {
+    "description": "Follow-up chip. Makes a new take of the wallpaper as a watercolour painting."
+  },
+  "aiFollowUpNight": "Versi malam",
+  "@aiFollowUpNight": {
+    "description": "Follow-up chip. Makes a night-time take."
+  },
+  "aiFollowUpMinimal": "Lebih minimalis",
+  "@aiFollowUpMinimal": {
+    "description": "Follow-up chip. Makes a simpler take."
+  },
+  "aiFollowUpWarmer": "Lebih hangat",
+  "@aiFollowUpWarmer": {
+    "description": "Follow-up chip. Makes a take with warmer colours."
+  },
+  "aiFollowUpDepth": "Tambah kedalaman",
+  "@aiFollowUpDepth": {
+    "description": "Follow-up chip. Makes a take with more depth and layers."
+  },
+  "aiFollowUpCostLabel": "Setiap versi baru biayanya {cost} koin",
+  "@aiFollowUpCostLabel": {
+    "description": "Screen reader label for the coin price shown next to the follow-up chips.",
+    "placeholders": {
+      "cost": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpConfirmTitle": "Buat versi baru?",
+  "@aiFollowUpConfirmTitle": {
+    "description": "Title of the sheet shown the first time a follow-up chip is tapped."
+  },
+  "aiFollowUpConfirmBody": "Versi lanjutan membuat wallpaper baru dari yang ini. Setiap versi biayanya {cost} koin.",
+  "@aiFollowUpConfirmBody": {
+    "description": null,
+    "placeholders": {
+      "cost": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpConfirmAction": "Buat",
+  "@aiFollowUpConfirmAction": {
+    "description": "Confirm button on the follow-up cost sheet."
   },
   "economyAiDailyLimit": "Anda mencapai batas AI hari ini.",
   "economyAiDescribeChanges": "Sebutkan perubahan yang Anda inginkan, seperti warna, suasana, atau detail.",
@@ -6631,10 +6738,6 @@
   "@wallpaperApplyTo": {
     "description": "Setting label for choosing where to apply a wallpaper."
   },
-  "wallpaperAutoRotateAndroidOnly": "Putar otomatis hanya tersedia di Android.",
-  "@wallpaperAutoRotateAndroidOnly": {
-    "description": "Message shown when auto-rotate is opened on an unsupported platform."
-  },
   "wallpaperAutoRotateApplyTo": "Terapkan ke",
   "@wallpaperAutoRotateApplyTo": {
     "description": "Auto-rotate target setting section label."
@@ -8749,37 +8852,13 @@
   "@wallpaperShareLink": {
     "description": "Wallpaper menu action to share its link."
   },
-  "wallpaperShortcutsAddActionsSteps": "Tambahkan tindakan \"Dapatkan Wallpaper Prism\". Lalu tambahkan tindakan \"Pasang Wallpaper\".",
-  "@wallpaperShortcutsAddActionsSteps": {
-    "description": "Step to add the Prism wallpaper and system wallpaper actions in Shortcuts."
-  },
-  "wallpaperShortcutsBody": "Gunakan Pintasan untuk memasang wallpaper sesuai jadwal atau pemicu. Siapkan sumber di bawah sebelum menjalankannya.",
-  "@wallpaperShortcutsBody": {
-    "description": "Explanation of how iOS Shortcuts can change wallpapers automatically."
-  },
   "wallpaperShortcutsChoosePrismData": "Pilih data yang dikirim Prism",
   "@wallpaperShortcutsChoosePrismData": {
     "description": "Section title for choosing wallpaper data in Shortcuts."
   },
-  "wallpaperShortcutsChooseTriggerSteps": "Di editor pintasan, buka Automasi jika perlu. Pilih dan atur pemicu, seperti Waktu, membuka app, atau menghubungkan pengisi daya.",
-  "@wallpaperShortcutsChooseTriggerSteps": {
-    "description": "Step to choose a trigger for an iOS Shortcuts wallpaper automation."
-  },
-  "wallpaperShortcutsDisableConfirmationSteps": "Tinjau opsi menjalankan yang ditampilkan dan simpan pintasan atau automasi. Jika \"Tanya Sebelum Menjalankan\" muncul, nonaktifkan agar berjalan otomatis.",
-  "@wallpaperShortcutsDisableConfirmationSteps": {
-    "description": "Step to disable confirmation and save an iOS Shortcuts automation."
-  },
-  "wallpaperShortcutsHeadline": "Ubah wallpaper secara otomatis",
-  "@wallpaperShortcutsHeadline": {
-    "description": "Headline describing automatic wallpaper changes through Shortcuts."
-  },
   "wallpaperShortcutsOpenAction": "Buka Pintasan",
   "@wallpaperShortcutsOpenAction": {
     "description": "Action to open Apple's Shortcuts app."
-  },
-  "wallpaperShortcutsOpenAutomationSteps": "Buka Pintasan. Jika ada tab Automasi, ketuk tab itu, lalu Automasi Baru. Jika tidak, ketuk Tambah (+), lalu Edit jika ditampilkan.",
-  "@wallpaperShortcutsOpenAutomationSteps": {
-    "description": "First step in creating a wallpaper automation in iOS Shortcuts."
   },
   "wallpaperShortcutsOpenError": "Pintasan tidak dapat dibuka. Buka app secara manual.",
   "@wallpaperShortcutsOpenError": {
@@ -8789,10 +8868,6 @@
   "@wallpaperShortcutsSourceFavourite": {
     "description": "Shortcuts source option for a random favourite wallpaper."
   },
-  "wallpaperShortcutsSourceFavouriteDescription": "Favorit acak yang tersedia untuk Pintasan. Sukai wallpaper di Prism terlebih dahulu. Beberapa wallpaper terlindungi mungkin tidak tersedia. Pilihan terakhir dihindari jika ada favorit lain yang tersedia.",
-  "@wallpaperShortcutsSourceFavouriteDescription": {
-    "description": "Description of the random favourite Shortcuts source."
-  },
   "wallpaperShortcutsSourceWotd": "Wallpaper Hari Ini",
   "@wallpaperShortcutsSourceWotd": {
     "description": "Shortcuts source option for the daily wallpaper pick."
@@ -8800,10 +8875,6 @@
   "wallpaperShortcutsSourceWotdDescription": "Pilihan Prism hari ini. Unduh gambar asli hari ini di Prism terlebih dahulu. Saat pilihan harian berubah, unduh gambar asli yang baru sebelum menjalankan sumber ini.",
   "@wallpaperShortcutsSourceWotdDescription": {
     "description": "Description of the Wall of the Day Shortcuts source."
-  },
-  "wallpaperShortcutsSteps": "Langkah-langkah",
-  "@wallpaperShortcutsSteps": {
-    "description": "Section title for iOS Shortcuts setup instructions."
   },
   "wallpaperShortcutsTitle": "Ubah secara otomatis",
   "@wallpaperShortcutsTitle": {
@@ -10515,5 +10586,1156 @@
   "adminFillsRequest": "Memenuhi permintaan",
   "@adminFillsRequest": {
     "description": "Admin review card label: the text of the request this wall says it fills."
+  },
+  "wallRemixAction": "Remix",
+  "@wallRemixAction": {
+    "description": "Short label of the button that opens the AI tab with this wallpaper's prompt."
+  },
+  "wallRemixActionTooltip": "Remix wallpaper ini dengan AI",
+  "@wallRemixActionTooltip": {
+    "description": "Tooltip of the Remix button on an AI wallpaper."
+  },
+  "wallRemixingChip": "Me-remix {title} oleh {creator}",
+  "@wallRemixingChip": {
+    "description": "Chip in the AI tab that names the wallpaper being remixed.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRemixDropLinkTooltip": "Hapus tautan remix",
+  "@wallRemixDropLinkTooltip": {
+    "description": "Tooltip of the x on the remix chip. It removes the link to the original wallpaper."
+  },
+  "wallRemixUntitled": "Tanpa judul",
+  "@wallRemixUntitled": {
+    "description": "Name used for a wallpaper that has no title, inside remix copy."
+  },
+  "wallRemixUnknownCreator": "kreator Prism",
+  "@wallRemixUnknownCreator": {
+    "description": "Name used for a creator with no public name, inside remix copy."
+  },
+  "wallRemixesTitle": "Remix",
+  "@wallRemixesTitle": {
+    "description": "Heading of the row of remixes on a wallpaper's details."
+  },
+  "wallRemixesCount": "{count, plural, other{{count} remix}}",
+  "@wallRemixesCount": {
+    "description": "Number of remixes next to the Remixes heading.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRemixOpenRemixLabel": "Buka remix oleh {creator}",
+  "@wallRemixOpenRemixLabel": {
+    "description": "Screen reader label of one remix in the Remixes row.",
+    "placeholders": {
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRemixOfLabel": "Remix dari {title} oleh {creator}",
+  "@wallRemixOfLabel": {
+    "description": "Credit row on a remix. It opens the original wallpaper.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRemixOfTooltip": "Buka wallpaper asli",
+  "@wallRemixOfTooltip": {
+    "description": "Tooltip of the credit row on a remix."
+  },
+  "economyAiSubmitPromptNotice": "Siapa pun dapat melihat prompt Anda dan me-remix wallpaper ini.",
+  "@economyAiSubmitPromptNotice": {
+    "description": "Note on the AI submit sheet. Shared AI wallpapers show their prompt to anyone who remixes them."
+  },
+  "notifPushWallRemixedTitle": "Wallpaper Anda di-remix",
+  "@notifPushWallRemixedTitle": {
+    "description": "Inbox title when another creator's remix of your wallpaper is approved."
+  },
+  "notifPushWallRemixedBody": "{remixerName} me-remix {wallTitle}.",
+  "@notifPushWallRemixedBody": {
+    "description": "Inbox body when another creator remixes your wallpaper.",
+    "placeholders": {
+      "remixerName": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushWallRemixedBodyUntitled": "{remixerName} me-remix wallpaper Anda.",
+  "@notifPushWallRemixedBodyUntitled": {
+    "description": "Inbox body when another creator remixes your untitled wallpaper.",
+    "placeholders": {
+      "remixerName": {
+        "type": "String"
+      }
+    }
+  },
+  "wallMetadataDescription": "Deskripsi",
+  "wallMetadataEdit": "Edit detail",
+  "wallResubmitAction": "Perbaiki dan kirim ulang",
+  "wallResubmitChooseImage": "Pilih gambar",
+  "wallResubmitImageMissing": "Gambar asli tidak lagi tersedia. Pilih lagi untuk melanjutkan pengeditan.",
+  "wallResubmitImageKept": "Gambar asli siap",
+  "wallResubmitTitle": "Perbaiki unggahan",
+  "wallUploadUseLastDetails": "Gunakan detail terakhir",
+  "wallUploadLastDetailsUnavailable": "Tidak ada detail sebelumnya di perangkat ini.",
+  "wallUploadWithdraw": "Tarik unggahan",
+  "wallUploadWithdrawTitle": "Tarik unggahan ini?",
+  "wallUploadWithdrawBody": "Tindakan ini menghapus unggahan dari peninjauan dan menghapus file yang diunggah.",
+  "wallUploadWithdrawn": "Unggahan ditarik",
+  "wallUploadDeleteHistory": "Hapus dari riwayat",
+  "wallMetadataInvalid": "Periksa teks dan tag, lalu coba lagi.",
+  "wallUploadOwnerChanged": "Akun Anda berubah. Buka unggahan ini lagi.",
+  "wallResubmitLimit": "Wallpaper ini telah mencapai tiga pengiriman ulang yang ditautkan.",
+  "wallResubmitUnsupported": "Pilih lagi gambar aslinya. Detail sumber AI tidak dapat digunakan kembali.",
+  "wallResubmitUnavailable": "Tidak dapat memuat unggahan yang ditolak ini. Coba lagi.",
+  "wallMetadataEditDetails": "Edit detail",
+  "wallMetadataApprovedHelp": "Ubah judul, deskripsi, dan tag. Gambar dan kategori tetap sama.",
+  "wallMetadataPendingHelp": "Perbarui detail ini sebelum wallpaper Anda ditinjau.",
+  "wallMetadataSave": "Simpan detail",
+  "wallMetadataSaved": "Detail disimpan",
+  "wallMetadataDiscardTitle": "Buang perubahan?",
+  "wallMetadataDiscardBody": "Detail yang belum disimpan akan hilang.",
+  "wallMetadataDiscard": "Buang perubahan",
+  "wallMetadataReload": "Muat ulang detail",
+  "wallMetadataReloadTitle": "Muat ulang detail saat ini?",
+  "wallMetadataReloadBody": "Tindakan ini mengganti detail yang belum disimpan dengan versi saat ini.",
+  "wallMetadataConflict": "Detail ini berubah di tempat lain. Suntingan Anda masih ada. Muat ulang detail saat ini sebelum menyimpan.",
+  "wallMetadataStatusChanged": "Status peninjauan wallpaper ini telah berubah. Suntingan Anda belum disimpan.",
+  "wallMetadataMissing": "Wallpaper ini tidak lagi tersedia. Suntingan Anda belum disimpan.",
+  "wallMetadataDenied": "Anda tidak memiliki izin untuk mengedit wallpaper ini.",
+  "wallMetadataSignedOut": "Masuk lagi untuk mengedit wallpaper ini.",
+  "wallMetadataDailyLimit": "Anda telah mencapai batas edit hari ini. Coba lagi besok.",
+  "wallMetadataUnavailable": "Tidak dapat menyimpan detail. Periksa koneksi Anda dan coba lagi.",
+  "wallMetadataLoadFailed": "Tidak dapat memuat detail",
+  "wallMetadataHistory": "Riwayat edit",
+  "wallMetadataHistoryEmpty": "Belum ada perubahan detail",
+  "wallMetadataHistoryEmptyBody": "Perubahan pada judul, deskripsi, dan tag yang disetujui muncul di sini.",
+  "wallMetadataHistoryFailed": "Tidak dapat memuat riwayat edit",
+  "wallMetadataBefore": "Sebelum",
+  "wallMetadataAfter": "Sesudah",
+  "wallMetadataRevert": "Urungkan edit",
+  "wallMetadataRevertTitle": "Urungkan edit ini?",
+  "wallMetadataRevertBody": "Pulihkan hanya judul, deskripsi, dan tag sebelumnya yang ditampilkan di sini. Gambar dan status peninjauan tidak akan berubah.",
+  "wallMetadataReverted": "Edit diurungkan",
+  "wallMetadataLoadMore": "Muat lebih banyak edit",
+  "wallMetadataAbsent": "Belum diatur",
+  "wallMetadataResubmitted": "Dikirim ulang · percobaan {attempt} dari 3",
+  "wallMetadataPreviousReason": "Alasan penolakan sebelumnya",
+  "wallMetadataContextUnavailable": "Detail pengiriman ulang tidak tersedia",
+  "@wallMetadataResubmitted": {"placeholders": {"attempt": {"type": "int"}}},
+  "reportSheetMessage": "Ceritakan apa yang salah. Prism tidak pernah menambahkan alamat email atau token masuk Anda. Periksa tangkapan layar sebelum mengirim.",
+  "@reportSheetMessage": {
+    "description": "Intro text in the report a problem sheet."
+  },
+  "reportTopicCrashFreeze": "Crash/macet",
+  "@reportTopicCrashFreeze": {
+    "description": "Report topic chip: app crashed or froze."
+  },
+  "reportTopicWallpaperWontSet": "Wallpaper tidak bisa diatur",
+  "@reportTopicWallpaperWontSet": {
+    "description": "Report topic chip: wallpaper could not be set."
+  },
+  "reportTopicLooksBroken": "Tampilan rusak",
+  "@reportTopicLooksBroken": {
+    "description": "Report topic chip: something looks visually broken."
+  },
+  "reportTopicSlow": "Lambat",
+  "@reportTopicSlow": {
+    "description": "Report topic chip: app is slow."
+  },
+  "reportTopicOther": "Lainnya",
+  "@reportTopicOther": {
+    "description": "Report topic chip: any other problem."
+  },
+  "reportNoteHint": "Apa yang terjadi? Apa yang Anda harapkan?",
+  "@reportNoteHint": {
+    "description": "Hint text of the note field in the report sheet."
+  },
+  "reportScreenshotTitle": "Tangkapan layar",
+  "@reportScreenshotTitle": {
+    "description": "Title of the screenshot row in the report sheet."
+  },
+  "reportScreenshotEmpty": "Tunjukkan apa yang Anda lihat.",
+  "@reportScreenshotEmpty": {
+    "description": "Subtitle of the screenshot row when no screenshot is attached."
+  },
+  "reportScreenshotAttached": "Ketuk untuk melihat. Periksa sebelum mengirim.",
+  "@reportScreenshotAttached": {
+    "description": "Subtitle of the screenshot row when a screenshot is attached."
+  },
+  "reportAddScreenshot": "Tambah tangkapan layar",
+  "@reportAddScreenshot": {
+    "description": "Button to add a screenshot to the report."
+  },
+  "reportRemoveScreenshot": "Hapus",
+  "@reportRemoveScreenshot": {
+    "description": "Button to remove the attached screenshot."
+  },
+  "reportViewScreenshot": "Lihat tangkapan layar",
+  "@reportViewScreenshot": {
+    "description": "Tooltip or label to view the attached screenshot."
+  },
+  "reportIncludeDiagnostics": "Sertakan info perangkat dan log terbaru",
+  "@reportIncludeDiagnostics": {
+    "description": "Switch label to include device info and recent logs in the report."
+  },
+  "reportShowDiagnostics": "Tampilkan yang disertakan",
+  "@reportShowDiagnostics": {
+    "description": "Button to expand the list of included diagnostics."
+  },
+  "reportHideDiagnostics": "Sembunyikan detail",
+  "@reportHideDiagnostics": {
+    "description": "Button to collapse the list of included diagnostics."
+  },
+  "reportSend": "Kirim laporan",
+  "@reportSend": {
+    "description": "Button that sends the report."
+  },
+  "reportShareAsFile": "Bagikan sebagai file",
+  "@reportShareAsFile": {
+    "description": "Button that shares the report as a file."
+  },
+  "reportSent": "Terima kasih, laporan terkirim. Referensi {reference}",
+  "@reportSent": {
+    "description": "Confirmation after the report is sent, with a short reference code.",
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCouldNotSend": "Tidak dapat mengirim",
+  "@reportCouldNotSend": {
+    "description": "Title of the dialog shown when the report fails to send."
+  },
+  "reportCouldNotSendBody": "Periksa koneksi Anda lalu coba lagi, atau bagikan laporan sebagai file.",
+  "@reportCouldNotSendBody": {
+    "description": "Body of the dialog shown when the report fails to send."
+  },
+  "reportShareInstead": "Bagikan saja",
+  "@reportShareInstead": {
+    "description": "Dialog action to share the report as a file after a send failure."
+  },
+  "reportShakeToReport": "Goyang untuk melapor",
+  "@reportShakeToReport": {
+    "description": "Settings toggle label for shake to report."
+  },
+  "reportShakeToReportSubtitle": "Goyangkan ponsel di layar mana pun untuk melaporkan masalah",
+  "@reportShakeToReportSubtitle": {
+    "description": "Settings toggle subtitle for shake to report."
+  },
+  "accountShowAiWallpapers": "Tampilkan wallpaper buatan AI",
+  "accountShowAiWallpapersSubtitle": "Matikan untuk melihat wallpaper buatan manusia saja",
+  "accountShowAiWallpapersFootnote": "Menyembunyikan wallpaper AI tidak pernah menyembunyikan unggahan dan favorit Anda.",
+  "wallpaperFeedHideAi": "Sembunyikan AI",
+  "wallpaperAiGenerated": "Buatan AI",
+  "wallpaperAiMadeWith": "Dibuat dengan {model}",
+  "wallpaperAiMadeWithUnknown": "Dibuat dengan AI",
+  "wallpaperAiReportWrongLabel": "Laporkan label salah",
+  "feedNoHumanWalls": "Belum ada wallpaper buatan manusia di sini",
+  "feedShowAiWalls": "Tampilkan wallpaper AI",
+  "dailyMomentTitle": "Momen harian",
+  "dailyMomentStreakTitle": "Runtun harian",
+  "dailyMomentChestTitle": "Peti harian",
+  "dailyMomentSpinTitle": "Putaran gratis",
+  "dailyMomentUnavailable": "Hadiah ini tidak lagi tersedia hari ini.",
+  "dailyMomentError": "Hadiah tidak dapat dimuat. Coba lagi.",
+  "dailyMomentStreakReceipt": "{coins} koin diperoleh · runtun {days} hari",
+  "@dailyMomentStreakReceipt": {
+    "description": "Daily moment: StreakReceipt.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeTitle": "Tantangan mingguan",
+  "challengeRules": "Maksimal 3 karya, ditinjau sebelum ditampilkan.",
+  "challengeVotingRules": "Pilih karya kreator lain hingga {date} UTC.",
+  "@challengeVotingRules": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeUpload": "Unggah karya",
+  "challengeAi": "Buat dengan AI",
+  "challengeTop": "Teratas",
+  "challengeNew": "Terbaru",
+  "challengePast": "Tantangan sebelumnya",
+  "challengeEmpty": "Karya yang disetujui akan muncul di sini.",
+  "challengeWaiting": "Pemungutan suara ditutup. Kami menunggu tinjauan karya sebelum memilih pemenang.",
+  "challengeClosed": "Tantangan ini telah berakhir.",
+  "challengeScheduled": "Tantangan ini belum dibuka.",
+  "challengeNoWinner": "Tidak ada pemenang untuk tantangan ini.",
+  "challengeWinner": "Pemenang · {name}",
+  "@challengeWinner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeVote": "Pilih",
+  "challengeUnvote": "Hapus suara",
+  "challengeVotes": "{count, plural, =0{0 suara} =1{1 suara} other{{count} suara}}",
+  "@challengeVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentCosmetic": "Item kosmetik ditambahkan ke koleksi",
+  "dailyMomentReward": "{coins} koin diperoleh",
+  "@dailyMomentReward": {
+    "description": "Daily moment: Reward.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentChestBody": "Buka peti hari ini saat kamu siap.",
+  "dailyMomentSpinBody": "Putaran gratismu siap.",
+  "dailyMomentBalance": "Saldo: {coins} koin",
+  "@dailyMomentBalance": {
+    "description": "Daily moment: Balance.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentDone": "Selesai",
+  "dailyMomentRetry": "Coba lagi",
+  "dailyMomentContinue": "Lanjutkan",
+  "dailyMomentOpenFree": "Buka peti gratis",
+  "dailyMomentOpenChest": "Buka dengan {coins} koin",
+  "@dailyMomentOpenChest": {
+    "description": "Daily moment: OpenChest.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentSpinAction": "Putar gratis",
+  "dailyMomentClose": "Tutup momen harian",
+  "dailyMomentToday": "Hari ini",
+  "dailyMomentReady": "Hadiah harian sudah siap",
+  "dailyMomentComplete": "Hari ini sudah selesai",
+  "dailyMomentResume": "Lanjutkan momen harian",
+  "dailyMomentMore": "Lainnya",
+  "dailyMomentQuests": "Misi",
+  "dailyMomentChestLeft": "Peti harian tersedia",
+  "dailyMomentSpinLeft": "Putaran gratis tersedia",
+  "dailyMomentStreakLeft": "Runtun harian tersedia",
+  "challengeShare": "Bagikan tantangan",
+  "challengeRemove": "Hapus tantangan",
+  "challengeContext": "Tantangan · {theme}",
+  "@challengeContext": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeError": "Tantangan tidak dapat dimuat. Coba lagi.",
+  "challengeVoteError": "Suara tidak dapat disimpan. Coba lagi.",
+  "challengeSignIn": "Masuk untuk ikut atau memilih.",
+  "challengeLimit": "Anda telah mengirim 3 wallpaper untuk tantangan ini.",
+  "challengeRetry": "Coba lagi",
+  "challengeOwnEntry": "Anda tidak dapat memilih karya sendiri.",
+  "challengeDailyLimit": "Batas suara harian telah tercapai.",
+  "challengeMissing": "Tantangan atau karya ini tidak lagi tersedia.",
+  "challengeBadge": "Pemenang Tantangan",
+  "challengeBadgeDescription": "Menangkan tantangan mingguan",
+  "challengeWinnerNotificationTitle": "Wallpaper Anda menang",
+  "challengeWinnerNotificationBody": "Karya Anda memenangkan tantangan mingguan: {theme}.",
+  "@challengeWinnerNotificationBody": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "statsTitle": "Statistik Anda",
+  "statsEntry": "Statistik",
+  "statsViews": "Dilihat",
+  "statsSaves": "Disimpan",
+  "statsSets": "Diterapkan",
+  "statsDownloads": "Unduhan",
+  "statsShares": "Dibagikan",
+  "statsFolderAdds": "Ditambahkan ke folder",
+  "statsRemixes": "Remix",
+  "statsLoading": "Memuat statistik Anda",
+  "statsError": "Statistik Anda tidak dapat dimuat. Coba lagi.",
+  "statsRetry": "Coba lagi",
+  "statsEmptyTitle": "Wallpaper pertama Anda dimulai di sini",
+  "statsEmptyBody": "Unggah wallpaper. Statistiknya muncul setelah disetujui.",
+  "statsUpload": "Unggah wallpaper",
+  "statsWeekNote": "Minggu ini sejauh ini dibanding minggu lalu. Minggu dimulai Senin, UTC.",
+  "statsHistoryNote": "Delapan minggu, yang terlama lebih dulu. Tanda pisah berarti data tidak tersedia. Pelacakan dapat dimulai di tengah minggu, jadi data mingguan bisa tidak lengkap. Minggu ini belum selesai.",
+  "statsTopWalls": "Wallpaper teratas minggu ini",
+  "statsUntitled": "Wallpaper tanpa judul",
+  "statsCountingNote": "Total simpan menghitung favorit saat ini; simpan mingguan menghitung penambahan. Total remix menghitung remix dengan kredit saat ini; remix mingguan menghitung kredit pertama yang diterima. Wallpaper yang ditambahkan ke folder dicatat sejak pelacakan dimulai.",
+  "statsUnavailable": "Tidak tersedia",
+  "statsWeeklyTitle": "Wallpaper Anda minggu ini",
+  "statsWeeklyBody": "Lihat hasil wallpaper Anda pada {week}.",
+  "statsWallValue": "{metric}: {value} minggu ini",
+  "statsComparison": "{current} minggu ini · {previous} minggu lalu",
+  "statsTotal": "Total: {value}",
+  "statsChange": "{value} dibanding minggu lalu",
+  "statsUpdated": "Diperbarui {date} UTC",
+  "statsChartWeek": "Minggu mulai {date}: {value}",
+  "statsChartSummary": "{metric}, delapan minggu. {summary}",
+  "shortcutsGuideHeadline": "Wallpaper baru setiap hari",
+  "@shortcutsGuideHeadline": {
+    "description": "Headline of the iOS Shortcuts guide."
+  },
+  "shortcutsGuideBody": "Atur Pintasan sekali saja. Setiap hari, otomatisasi memasang wallpaper dari folder rotasi Anda. 200 wallpaper terbarunya masing-masing tampil sekali sebelum ada yang terulang.",
+  "@shortcutsGuideBody": {
+    "description": "Body under the iOS Shortcuts guide headline."
+  },
+  "shortcutsSourceRotation": "Folder rotasi",
+  "@shortcutsSourceRotation": {
+    "description": "Section title on the iOS Shortcuts guide, and the name of the Shortcuts source that shuffles the folder picked in Prism. Must match the iOS intent's source name."
+  },
+  "shortcutsSourceRotationDescription": "Mengacak folder yang Anda pilih di atas.",
+  "@shortcutsSourceRotationDescription": {
+    "description": "Description of the Rotation folder source in the iOS Shortcuts guide."
+  },
+  "shortcutsSourceFolder": "Folder",
+  "@shortcutsSourceFolder": {
+    "description": "Name of the Shortcuts source that shuffles a folder picked inside Shortcuts. Must match the iOS intent's source name."
+  },
+  "shortcutsSourceFolderDescription": "Mengacak folder yang Anda pilih di Pintasan.",
+  "@shortcutsSourceFolderDescription": {
+    "description": "Description of the Folder source in the iOS Shortcuts guide."
+  },
+  "shortcutsSourceFavouriteDescription": "Mengacak favorit Anda. Setiap favorit tampil sekali sebelum ada yang diulang. Beberapa wallpaper yang dilindungi mungkin tidak tersedia.",
+  "@shortcutsSourceFavouriteDescription": {
+    "description": "Description of the Random favourite source in the iOS Shortcuts guide."
+  },
+  "shortcutsRotationNone": "Belum ada folder yang dipilih",
+  "@shortcutsRotationNone": {
+    "description": "Rotation folder card title on the iOS Shortcuts guide when no folder is picked."
+  },
+  "shortcutsRotationNoneBody": "Pilih folder yang diacak oleh pintasan.",
+  "@shortcutsRotationNoneBody": {
+    "description": "Rotation folder card body when no folder is picked."
+  },
+  "shortcutsRotationPick": "Pilih folder",
+  "@shortcutsRotationPick": {
+    "description": "Button on the rotation folder card that opens the folder picker when no folder is picked."
+  },
+  "shortcutsRotationChange": "Ubah",
+  "@shortcutsRotationChange": {
+    "description": "Button on the rotation folder card that picks another folder."
+  },
+  "shortcutsRotationStop": "Berhenti",
+  "@shortcutsRotationStop": {
+    "description": "Button on the rotation folder card that stops using the folder for Shortcuts."
+  },
+  "shortcutsStepLabel": "Langkah {number}, {title}",
+  "@shortcutsStepLabel": {
+    "description": "Screen reader label of a numbered step heading in the iOS Shortcuts guide.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepAddTitle": "Tambahkan pintasan Prism",
+  "@shortcutsStepAddTitle": {
+    "description": "Step 1 title in the iOS Shortcuts guide."
+  },
+  "shortcutsStepAddBody": "Pintasan ini mengambil wallpaper dari folder rotasi Anda dan menjadikannya wallpaper Anda.",
+  "@shortcutsStepAddBody": {
+    "description": "Step 1 body when a shared shortcut link is available."
+  },
+  "shortcutsStepAddAction": "Tambahkan pintasan",
+  "@shortcutsStepAddAction": {
+    "description": "Button that opens the shared iCloud shortcut link."
+  },
+  "shortcutsStepAddManualBody": "Buat di Pintasan dengan 2 tindakan.",
+  "@shortcutsStepAddManualBody": {
+    "description": "Step 1 body when there is no shared shortcut link."
+  },
+  "shortcutsManualNew": "Di Pintasan, ketuk + untuk membuat pintasan baru.",
+  "@shortcutsManualNew": {
+    "description": "Manual step to build the shortcut."
+  },
+  "shortcutsManualGet": "Tambahkan \"Dapatkan Wallpaper Prism\". Atur Sumber ke Folder rotasi.",
+  "@shortcutsManualGet": {
+    "description": "Manual step to build the shortcut. Keep the quoted action name and \"Rotation folder\" as iOS shows them."
+  },
+  "shortcutsManualSet": "Tambahkan \"Atur Foto Wallpaper\". Ketuk panah di sebelahnya, lalu nonaktifkan Tampilkan Pratinjau.",
+  "@shortcutsManualSet": {
+    "description": "Manual step to build the shortcut. Use the action and option names that Apple's Shortcuts app shows in this language."
+  },
+  "shortcutsManualName": "Beri nama pintasan \"{name}\".",
+  "@shortcutsManualName": {
+    "description": "Manual step to build the shortcut. The name stays in English so Prism can run it.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepAutomationTitle": "Jalankan setiap hari",
+  "@shortcutsStepAutomationTitle": {
+    "description": "Step 2 title in the iOS Shortcuts guide."
+  },
+  "shortcutsAutomationOpen": "Di Pintasan, ketuk Otomatisasi, lalu ketuk +.",
+  "@shortcutsAutomationOpen": {
+    "description": "Step 2 line. Use Apple's Shortcuts labels in this language."
+  },
+  "shortcutsAutomationTime": "Ketuk Waktu. Pilih jam, lalu pilih Harian.",
+  "@shortcutsAutomationTime": {
+    "description": "Step 2 line. Use Apple's Shortcuts labels in this language."
+  },
+  "shortcutsAutomationRun": "Pilih Jalankan Segera, lalu ketuk Berikutnya.",
+  "@shortcutsAutomationRun": {
+    "description": "Step 2 line. Use Apple's Shortcuts labels in this language."
+  },
+  "shortcutsAutomationPick": "Pilih \"{name}\" untuk dijalankan.",
+  "@shortcutsAutomationPick": {
+    "description": "Step 2 line. The shortcut name stays in English.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsAutomationNoTab": "Tidak ada tab Otomatisasi? Buka \"{name}\", ketuk Edit, lalu ketuk Otomatisasi.",
+  "@shortcutsAutomationNoTab": {
+    "description": "Note for newer iOS versions without an Automation tab.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepTestTitle": "Coba sekarang",
+  "@shortcutsStepTestTitle": {
+    "description": "Step 3 title in the iOS Shortcuts guide."
+  },
+  "shortcutsStepTestBody": "Menjalankan \"{name}\" sekali, supaya Anda bisa melihat wallpaper baru sekarang.",
+  "@shortcutsStepTestBody": {
+    "description": "Step 3 body.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepTestAction": "Jalankan pintasan",
+  "@shortcutsStepTestAction": {
+    "description": "Button that runs the shortcut in the Shortcuts app."
+  },
+  "foldersRotateDaily": "Putar folder ini setiap hari",
+  "@foldersRotateDaily": {
+    "description": "Folder page menu item on iPhone. Makes this the Shortcuts rotation folder and opens the guide."
+  },
+  "autoRotateIosTitle": "Ubah wallpaper dengan Pintasan",
+  "@autoRotateIosTitle": {
+    "description": "Title on the auto-rotate page on iPhone, where Shortcuts changes the wallpaper."
+  },
+  "autoRotateIosBody": "Di iPhone, otomatisasi Pintasan memasang wallpaper baru dari folder Anda setiap hari.",
+  "@autoRotateIosBody": {
+    "description": "Body on the auto-rotate page on iPhone."
+  },
+  "autoRotateIosAction": "Atur Pintasan",
+  "@autoRotateIosAction": {
+    "description": "Button on the auto-rotate page on iPhone that opens the Shortcuts guide."
+  },
+  "shortcutsAutomationIos16": "Di iOS 16 tidak ada \"Jalankan Segera\". Matikan \"Tanya Sebelum Menjalankan\" sebagai gantinya.",
+  "@shortcutsAutomationIos16": {
+    "description": "Note under the Step 2 automation lines for iOS 16, which has no Run Immediately option. Use the Shortcuts labels in this language."
+  },
+  "tipAction": "Beri tip kreator",
+  "@tipAction": {
+    "description": "Wall detail: opens the sheet to tip the wall's creator coins"
+  },
+  "tipMenuItem": "Kirim tip",
+  "@tipMenuItem": {
+    "description": "Creator profile overflow menu item that opens the tip sheet"
+  },
+  "tipTitle": "Beri tip {name}",
+  "@tipTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipMessage": "Pilih jumlah. {name} menerima semua koin dan melihat nama Anda.",
+  "@tipMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipAmountsLabel": "Jumlah tip",
+  "@tipAmountsLabel": {
+    "description": "Accessibility label for the group of tip amount choices"
+  },
+  "tipBalance": "Saldo Anda: {balance, plural, =1{1 koin} other{{balance} koin}}",
+  "@tipBalance": {
+    "placeholders": {
+      "balance": {
+        "type": "int"
+      }
+    }
+  },
+  "tipShortBy": "Anda perlu {amount, plural, =1{1 koin lagi} other{{amount} koin lagi}}.",
+  "@tipShortBy": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipSendButton": "Beri tip {amount} koin",
+  "@tipSendButton": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipEarnCoins": "Dapatkan koin",
+  "@tipEarnCoins": {
+    "description": "Tip sheet: opens Rewards when the balance is too low"
+  },
+  "tipThanksTitle": "Terima kasih atas tip Anda",
+  "@tipThanksTitle": {
+    "description": "Tip sheet success headline"
+  },
+  "tipThanksMessage": "{name} menerima {amount} koin Anda.",
+  "@tipThanksMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipDone": "Selesai",
+  "@tipDone": {
+    "description": "Closes the tip sheet after a tip"
+  },
+  "tipNotEnoughCoins": "Koin Anda tidak cukup untuk tip ini.",
+  "@tipNotEnoughCoins": {
+    "description": "Toast when the balance is short"
+  },
+  "tipDailyLimit": "Anda sudah mengirim semua tip hari ini. Coba lagi besok.",
+  "@tipDailyLimit": {
+    "description": "Toast when the sender hit the daily tip cap"
+  },
+  "tipPairLimit": "Anda sudah memberi tip kepada {name} hari ini. Coba lagi besok.",
+  "@tipPairLimit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipCreatorLimit": "{name} tidak bisa menerima tip lagi hari ini. Coba lagi besok.",
+  "@tipCreatorLimit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipSenderTooNew": "Anda bisa mengirim tip 7 hari setelah bergabung dengan Prism.",
+  "@tipSenderTooNew": {
+    "description": "Toast for accounts younger than 7 days"
+  },
+  "tipSenderIneligible": "Masuk dengan akun terverifikasi untuk mengirim tip.",
+  "@tipSenderIneligible": {
+    "description": "Toast for guest or unverified accounts"
+  },
+  "tipUnavailable": "Anda tidak bisa memberi tip kepada {name} saat ini.",
+  "@tipUnavailable": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipFailed": "Tip tidak bisa dikirim. Coba lagi.",
+  "@tipFailed": {
+    "description": "Toast when the tip call fails"
+  },
+  "wallTippedBy": "Diberi tip oleh {count} orang",
+  "@wallTippedBy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "coreCoinTipSent": "Tip terkirim",
+  "@coreCoinTipSent": {
+    "description": "Coin history row for a tip the user sent"
+  },
+  "coreCoinTipReceived": "Tip diterima",
+  "@coreCoinTipReceived": {
+    "description": "Coin history row for a tip the user received"
+  },
+  "notifPushTipReceivedTitle": "{senderName} memberi Anda tip {amount} koin untuk {wallTitle}",
+  "@notifPushTipReceivedTitle": {
+    "placeholders": {
+      "senderName": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTipReceivedTitleUntitled": "{senderName} memberi Anda tip {amount} koin",
+  "@notifPushTipReceivedTitleUntitled": {
+    "placeholders": {
+      "senderName": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTipReceivedBody": "Lihat tip Anda di statistik kreator.",
+  "@notifPushTipReceivedBody": {
+    "description": "Body of the first tip push of the day"
+  },
+  "notifTipsReceivedTitle": "Anda mendapat {count} tip hari ini",
+  "@notifTipsReceivedTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notifTipsReceivedBody": "Total {coins} koin. Lihat di statistik kreator Anda.",
+  "@notifTipsReceivedBody": {
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTips": "Tip",
+  "@statsTips": {
+    "description": "Creator stats: tips section title"
+  },
+  "statsTipsTotal": "{count, plural, =1{1 tip} other{{count} tip}}, total {coins} koin",
+  "@statsTipsTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsWeek": "Minggu {date}: {count, plural, =1{1 tip} other{{count} tip}}, {coins} koin",
+  "@statsTipsWeek": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsWall": "{count, plural, =1{1 tip} other{{count} tip}}, {coins} koin",
+  "@statsTipsWall": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsEmpty": "Belum ada tip. Penggemar bisa memberi tip dari wallpaper dan profil Anda.",
+  "@statsTipsEmpty": {
+    "description": "Creator stats: tips section with no tips"
+  },
+  "creatorsToFollow": "Kreator untuk diikuti",
+  "@creatorsToFollow": {
+    "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "creatorsSeeAll": "Lihat semua",
+  "@creatorsSeeAll": {
+    "description": "Opens the full list of creators."
+  },
+  "creatorsTitle": "Kreator",
+  "@creatorsTitle": {
+    "description": "Title of the page that lists all creators."
+  },
+  "creatorsFilterAll": "Semua",
+  "@creatorsFilterAll": {
+    "description": "Filter chip that shows creators from every category."
+  },
+  "creatorsEmptyTitle": "Belum ada kreator di sini",
+  "@creatorsEmptyTitle": {
+    "description": "Empty state when no creator matches the selected category."
+  },
+  "creatorsEmptyBody": "Coba kategori lain.",
+  "@creatorsEmptyBody": {
+    "description": "Empty state body under creatorsEmptyTitle."
+  },
+  "creatorsLoadError": "Kreator tidak dapat dimuat",
+  "@creatorsLoadError": {
+    "description": "Error state when the creators list fails to load."
+  },
+  "creatorsOpenProfile": "Buka profil {name}",
+  "@creatorsOpenProfile": {
+    "description": "Screen reader label for a creator's avatar and name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsWallBy": "Wallpaper oleh {name}",
+  "@creatorsWallBy": {
+    "description": "Screen reader label for a wallpaper thumbnail on a creator card.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsFollowedByOne": "Diikuti oleh {first}",
+  "@creatorsFollowedByOne": {
+    "description": "Profile social proof when one person the viewer follows follows this creator.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsFollowedByTwo": "Diikuti oleh {first} dan {second}",
+  "@creatorsFollowedByTwo": {
+    "description": "Profile social proof when two people the viewer follows follow this creator.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsFollowedByMany": "Diikuti oleh {first}, {second} dan {others, plural, =1{1 lainnya yang Anda ikuti} other{{others} lainnya yang Anda ikuti}}",
+  "@creatorsFollowedByMany": {
+    "description": "Profile social proof when three or more people the viewer follows follow this creator. others is the count beyond the two names.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      },
+      "others": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorsMoreLike": "Lainnya seperti {name}",
+  "@creatorsMoreLike": {
+    "description": "Toast action and sheet title that suggest creators similar to the one just followed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsSimilarSubtitle": "Kreator dengan gaya serupa",
+  "@creatorsSimilarSubtitle": {
+    "description": "Subtitle of the similar creators sheet."
+  },
+  "creatorsShowMeTitle": "Tampilkan saya di Kreator untuk diikuti",
+  "@creatorsShowMeTitle": {
+    "description": "Settings switch that lists the user in the creator directory."
+  },
+  "creatorsShowMeBody": "Orang lain dapat menemukan profil dan wallpaper teratas Anda",
+  "@creatorsShowMeBody": {
+    "description": "Subtitle of the creator directory settings switch."
+  },
+  "promoRedeemTitle": "Tukarkan kode",
+  "@promoRedeemTitle": {
+    "description": "Title of the sheet where the user enters a Prism promo code."
+  },
+  "promoRedeemMessage": "Masukkan kode dari postingan atau giveaway Prism.",
+  "@promoRedeemMessage": {
+    "description": "Line under the redeem sheet title."
+  },
+  "promoRedeemMessageIos": "Masukkan kode koin dari postingan atau giveaway Prism.",
+  "@promoRedeemMessageIos": {
+    "description": "Line under the redeem sheet title on iPhone and iPad, where only coin codes work."
+  },
+  "promoCodeFieldLabel": "Kode",
+  "@promoCodeFieldLabel": {
+    "description": "Label of the promo code text field."
+  },
+  "promoCodeFieldHint": "Contoh, 7KQ2 MPXR 4D",
+  "@promoCodeFieldHint": {
+    "description": "Hint text in the empty promo code field."
+  },
+  "promoPasteCode": "Tempel kode",
+  "@promoPasteCode": {
+    "description": "Tooltip and screen reader label of the paste button in the code field."
+  },
+  "promoRedeemAction": "Tukarkan",
+  "@promoRedeemAction": {
+    "description": "Main button that redeems the code."
+  },
+  "promoRedeeming": "Menukarkan kode",
+  "@promoRedeeming": {
+    "description": "Screen reader label while the redeem request runs."
+  },
+  "promoDone": "Selesai",
+  "@promoDone": {
+    "description": "Button that closes the sheet after a code works."
+  },
+  "promoTryAnother": "Coba kode lain",
+  "@promoTryAnother": {
+    "description": "Button after an error that clears the field."
+  },
+  "promoSuccessCoins": "Kamu mendapat {count, plural, one{1 koin} other{{count} koin}}",
+  "@promoSuccessCoins": {
+    "description": "Headline after a coin code works.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessCoinsMessage": "Koin sudah masuk ke saldomu.",
+  "@promoSuccessCoinsMessage": {
+    "description": "Line under the coin success headline."
+  },
+  "promoSuccessPro": "Kamu mendapat {days, plural, one{1 hari} other{{days} hari}} Pro",
+  "@promoSuccessPro": {
+    "description": "Headline after a Pro code works.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessProMessage": "Paket Pro-mu sekarang berlaku sampai {date}.",
+  "@promoSuccessProMessage": {
+    "description": "Line under the Pro success headline.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoErrorInvalid": "Itu bukan kode Prism. Kode memiliki 10 huruf atau angka atau lebih.",
+  "promoErrorNotFound": "Kami tidak menemukan kode itu. Periksa lagi dan coba lagi.",
+  "promoErrorDisabled": "Kode ini dinonaktifkan.",
+  "promoErrorExpired": "Kode ini sudah kedaluwarsa.",
+  "promoErrorLimitReached": "Kode ini sudah tidak bisa digunakan lagi.",
+  "promoErrorAlreadyRedeemed": "Kamu sudah menggunakan kode ini.",
+  "promoErrorAccountTooNew": "Akunmu terlalu baru untuk kode ini.",
+  "promoErrorNewUsersOnly": "Kode ini hanya untuk akun baru.",
+  "promoErrorPremiumNotOnIos": "Kode Pro tidak berfungsi di iPhone atau iPad. Gunakan kode App Store sebagai gantinya.",
+  "promoErrorAlreadyPremium": "Kamu sudah punya Pro, jadi kode ini tidak diperlukan.",
+  "promoErrorRateLimited": "Terlalu banyak percobaan. Tunggu satu jam, lalu coba lagi.",
+  "promoErrorBusy": "Banyak orang sedang menukarkan kode. Coba lagi sebentar lagi.",
+  "promoErrorSignedOut": "Masuk untuk menukarkan kode.",
+  "promoErrorNetwork": "Tidak bisa terhubung ke Prism. Periksa koneksimu dan coba lagi.",
+  "promoErrorUnknown": "Terjadi kesalahan. Coba lagi.",
+  "promoSettingsGroup": "Kode",
+  "@promoSettingsGroup": {
+    "description": "Settings section title for promo and store codes."
+  },
+  "promoSettingsRedeemTitle": "Tukarkan kode Prism",
+  "@promoSettingsRedeemTitle": {
+    "description": "Settings row that opens the redeem sheet."
+  },
+  "promoSettingsRedeemSubtitle": "Koin atau hari Pro dari postingan dan giveaway kami",
+  "@promoSettingsRedeemSubtitle": {
+    "description": "Subtitle of that row on Android."
+  },
+  "promoSettingsRedeemSubtitleIos": "Koin dari postingan dan giveaway kami",
+  "@promoSettingsRedeemSubtitleIos": {
+    "description": "Subtitle of that row on iPhone and iPad."
+  },
+  "promoAppStoreCodeTitle": "Tukarkan kode App Store",
+  "@promoAppStoreCodeTitle": {
+    "description": "iOS settings row that opens Apple's code sheet."
+  },
+  "promoAppStoreCodeSubtitle": "Kode penawaran Pro dari Apple",
+  "@promoAppStoreCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoPlayCodeTitle": "Tukarkan kode Play",
+  "@promoPlayCodeTitle": {
+    "description": "Android settings row that opens Google Play's redeem page."
+  },
+  "promoPlayCodeSubtitle": "Kode penawaran Pro dari Google Play",
+  "@promoPlayCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoCodesFootnoteIos": "Kode Prism memberi koin. Kode App Store memberi Pro.",
+  "@promoCodesFootnoteIos": {
+    "description": "One line under the Codes group on iOS that says which code goes where."
+  },
+  "promoCodesFootnoteAndroid": "Kode Prism memberi koin atau hari Pro. Kode Play memberi Pro.",
+  "@promoCodesFootnoteAndroid": {
+    "description": "Same line on Android."
+  },
+  "promoStoreCodeFailed": "Halaman kode tidak bisa dibuka. Coba lagi.",
+  "@promoStoreCodeFailed": {
+    "description": "Toast when the store code sheet or page does not open."
+  },
+  "promoRewardsRowTitle": "Tukarkan kode",
+  "@promoRewardsRowTitle": {
+    "description": "Rewards earn row that opens the redeem sheet."
+  },
+  "promoRewardsRowSubtitle": "Punya kode dari postingan atau giveaway?",
+  "@promoRewardsRowSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoAdminTitle": "Kode promo",
+  "@promoAdminTitle": {
+    "description": "Admin screen title."
+  },
+  "promoAdminEntry": "Kode promo",
+  "@promoAdminEntry": {
+    "description": "Admin entry that opens the promo code screen."
+  },
+  "promoAdminCreate": "Buat kode",
+  "@promoAdminCreate": {
+    "description": "Button that creates a code."
+  },
+  "promoAdminTypeCoins": "Koin",
+  "promoAdminTypePro": "Hari Pro",
+  "promoAdminAmount": "Jumlah",
+  "@promoAdminAmount": {
+    "description": "Field: coins (1 to 1000) or Pro days (1 to 90)."
+  },
+  "promoAdminAmountHelpCoins": "1 sampai 1.000 koin",
+  "promoAdminAmountHelpPro": "1 sampai 90 hari. Khusus Android.",
+  "promoAdminMaxRedemptions": "Maks. penukaran",
+  "promoAdminExpiresInDays": "Kedaluwarsa dalam (hari)",
+  "promoAdminMinAccountAge": "Usia akun minimum (hari)",
+  "promoAdminNewUsersOnly": "Hanya akun baru",
+  "promoAdminNewUsersDays": "Akun paling lama (hari)",
+  "promoAdminCustomCode": "Kode kustom (opsional)",
+  "@promoAdminCustomCode": {
+    "description": "Help: leave empty to generate one."
+  },
+  "promoAdminCustomCodeHelp": "10 sampai 32 huruf dan angka, tanpa I, O, 0, atau 1. Kosongkan untuk membuat kode otomatis.",
+  "promoAdminLabel": "Catatan",
+  "@promoAdminLabel": {
+    "description": "Field for an admin note such as the post the code is for."
+  },
+  "promoAdminCreated": "{code} dibuat",
+  "@promoAdminCreated": {
+    "description": "Toast after create.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminCopied": "Kode disalin",
+  "@promoAdminCopied": {
+    "description": "Toast after copying a code."
+  },
+  "promoAdminCopy": "Salin kode",
+  "@promoAdminCopy": {
+    "description": "Tooltip."
+  },
+  "promoAdminRedemptions": "{used} dari {max} digunakan",
+  "@promoAdminRedemptions": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "promoAdminExpires": "Kedaluwarsa {date}",
+  "@promoAdminExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminDisabled": "Nonaktif",
+  "@promoAdminDisabled": {
+    "description": "Badge on a turned-off code."
+  },
+  "promoAdminDisable": "Nonaktifkan",
+  "@promoAdminDisable": {
+    "description": "Action."
+  },
+  "promoAdminEnable": "Aktifkan",
+  "@promoAdminEnable": {
+    "description": "Action."
+  },
+  "promoAdminEmpty": "Belum ada kode.",
+  "promoAdminLoadFailed": "Kode tidak bisa dimuat. Tarik ke bawah untuk mencoba lagi.",
+  "promoAdminCreateFailed": "Kode tidak bisa dibuat: {reason}",
+  "@promoAdminCreateFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
   }
 }

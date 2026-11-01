@@ -7,6 +7,7 @@ import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -15,6 +16,7 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/wall_ai_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -26,6 +28,13 @@ import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/features/wall_remix/biz/remix_credit_cubit.dart';
+import 'package:Prism/features/wall_remix/biz/remixes_cubit.dart';
+import 'package:Prism/features/wall_remix/data/wall_remix_repository.dart';
+import 'package:Prism/features/wall_remix/views/widgets/remix_action_button.dart';
+import 'package:Prism/features/wall_remix/views/widgets/remix_credit_row.dart';
+import 'package:Prism/features/wall_remix/views/widgets/remixes_section.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
@@ -33,6 +42,7 @@ import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart'
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -86,6 +96,32 @@ class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperD
     implements WallpaperDetailBloc {}
 
 class _MockImageCacheManager extends Mock implements BaseCacheManager {}
+
+class _MockUserBlockRepository extends Mock implements UserBlockRepository {}
+
+class _RemixScreenRepository implements WallRemixRepository {
+  _RemixScreenRepository(this.userBlockRepository, this.original, this.remixes);
+
+  final UserBlockRepository userBlockRepository;
+  final PrismWallpaper original;
+  final List<PrismWallpaper> remixes;
+
+  @override
+  Future<PrismWallpaper?> fetchApprovedWall(String docId) async => original;
+
+  @override
+  Future<List<PrismWallpaper>> fetchRemixes(String originalDocId, {String? startAfterDocId}) async =>
+      startAfterDocId == null ? remixes : const <PrismWallpaper>[];
+
+  @override
+  Future<BlockedCreators> loadBlockedCreators() => userBlockRepository.loadBlockedCreators();
+
+  @override
+  BlockedCreators get blockedCreators => userBlockRepository.blockedCreators;
+
+  @override
+  Stream<BlockedCreators> watchBlockedCreators() => userBlockRepository.watchBlockedCreators();
+}
 
 Future<void> _installEmptyOfflineAssetStore() async {
   final Directory directory = Directory.systemTemp.createTempSync('detail_empty_offline_assets');
@@ -239,6 +275,224 @@ void main() {
       lessThanOrEqualTo(tester.view.physicalSize.height / tester.view.devicePixelRatio),
     );
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('the Remix action hides when the live block snapshot adds the creator', (tester) async {
+    final StreamController<BlockedCreators> blockedUids = StreamController<BlockedCreators>.broadcast(sync: true);
+    addTearDown(blockedUids.close);
+    BlockedCreators current = KnownBlockedCreators(const <String>{});
+    final _MockUserBlockRepository blocks = _MockUserBlockRepository();
+    when(() => blocks.watchBlockedCreators()).thenAnswer((_) => blockedUids.stream);
+    when(() => blocks.loadBlockedCreators()).thenAnswer((_) async => KnownBlockedCreators(const <String>{}));
+    when(() => blocks.blockedCreators).thenAnswer((_) => current);
+    const PrismWallpaper original = PrismWallpaper(
+      core: WallpaperCore(
+        id: 'ai-wall',
+        source: WallpaperSource.prism,
+        fullUrl: 'https://img.test/full.jpg',
+        thumbnailUrl: 'https://img.test/thumb.jpg',
+        authorUid: 'creator-uid',
+      ),
+      review: true,
+      firestoreDocumentId: 'ai-wall-doc',
+      aiSource: WallAiSource(prompt: 'a koi pond'),
+      remixCount: 1,
+    );
+    const FeedItemEntity entity = FeedItemEntity.prism(id: 'ai-wall', wallpaper: original);
+    const PrismWallpaper remix = PrismWallpaper(
+      core: WallpaperCore(
+        id: 'remix-wall',
+        source: WallpaperSource.prism,
+        fullUrl: 'https://img.test/remix.jpg',
+        thumbnailUrl: 'https://img.test/remix-thumb.jpg',
+        authorName: 'Remixer',
+        authorUid: 'remixer-uid',
+      ),
+      review: true,
+      firestoreDocumentId: 'remix-wall-doc',
+    );
+    getIt.registerSingleton<WallRemixRepository>(_RemixScreenRepository(blocks, original, <PrismWallpaper>[remix]));
+    getIt.registerFactory<RemixesCubit>(() => RemixesCubit(getIt<WallRemixRepository>()));
+    getIt.registerFactory<RemixCreditCubit>(() => RemixCreditCubit(getIt<WallRemixRepository>()));
+    await pumpDetail(
+      tester,
+      const WallpaperDetailLoaded(
+        recommendations: RecommendationState.exhausted(),
+        entity: entity,
+        paletteLoading: false,
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(RemixActionButton), findsOneWidget);
+    expect(find.text('Remixes'), findsOneWidget);
+
+    current = KnownBlockedCreators(const <String>{'creator-uid'});
+    blockedUids.add(current);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byType(RemixActionButton), findsNothing);
+    expect(find.text('Remixes'), findsNothing);
+  }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS, TargetPlatform.android}));
+
+  testWidgets('the Remix action waits until the block list is known', (tester) async {
+    final StreamController<BlockedCreators> blockedUids = StreamController<BlockedCreators>.broadcast(sync: true);
+    addTearDown(blockedUids.close);
+    BlockedCreators current = const UnknownBlockedCreators();
+    final _MockUserBlockRepository blocks = _MockUserBlockRepository();
+    when(() => blocks.watchBlockedCreators()).thenAnswer((_) => blockedUids.stream);
+    when(() => blocks.loadBlockedCreators()).thenAnswer((_) async => const UnknownBlockedCreators());
+    when(() => blocks.blockedCreators).thenAnswer((_) => current);
+    const PrismWallpaper original = PrismWallpaper(
+      core: WallpaperCore(
+        id: 'ai-wall',
+        source: WallpaperSource.prism,
+        fullUrl: 'https://img.test/full.jpg',
+        thumbnailUrl: 'https://img.test/thumb.jpg',
+        authorUid: 'creator-uid',
+      ),
+      review: true,
+      firestoreDocumentId: 'ai-wall-doc',
+      aiSource: WallAiSource(prompt: 'a koi pond'),
+      remixCount: 1,
+    );
+    const FeedItemEntity entity = FeedItemEntity.prism(id: 'ai-wall', wallpaper: original);
+    const PrismWallpaper remix = PrismWallpaper(
+      core: WallpaperCore(
+        id: 'remix-wall',
+        source: WallpaperSource.prism,
+        fullUrl: 'https://img.test/remix.jpg',
+        thumbnailUrl: 'https://img.test/remix-thumb.jpg',
+        authorName: 'Remixer',
+        authorUid: 'remixer-uid',
+      ),
+      review: true,
+      firestoreDocumentId: 'remix-wall-doc',
+    );
+    getIt.registerSingleton<WallRemixRepository>(_RemixScreenRepository(blocks, original, <PrismWallpaper>[remix]));
+    getIt.registerFactory<RemixesCubit>(() => RemixesCubit(getIt<WallRemixRepository>()));
+    getIt.registerFactory<RemixCreditCubit>(() => RemixCreditCubit(getIt<WallRemixRepository>()));
+    await pumpDetail(
+      tester,
+      const WallpaperDetailLoaded(
+        recommendations: RecommendationState.exhausted(),
+        entity: entity,
+        paletteLoading: false,
+      ),
+    );
+    blockedUids.add(const UnknownBlockedCreators());
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(RemixActionButton), findsNothing);
+    expect(find.text('Remixes'), findsNothing);
+
+    current = KnownBlockedCreators(const <String>{});
+    blockedUids.add(current);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byType(RemixActionButton), findsOneWidget);
+    expect(find.text('Remixes'), findsOneWidget);
+  }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS, TargetPlatform.android}));
+
+  testWidgets('remix rows stay hidden when the block list is unknown and the repository is missing', (tester) async {
+    const PrismWallpaper wallpaper = PrismWallpaper(
+      core: WallpaperCore(
+        id: 'ai-remix-wall',
+        source: WallpaperSource.prism,
+        fullUrl: 'https://img.test/full.jpg',
+        thumbnailUrl: 'https://img.test/thumb.jpg',
+      ),
+      review: true,
+      firestoreDocumentId: 'ai-remix-wall-doc',
+      aiSource: WallAiSource(prompt: 'a koi pond'),
+      remixOf: 'source-wall-doc',
+      remixCount: 1,
+    );
+
+    await pumpDetail(
+      tester,
+      const WallpaperDetailLoaded(
+        recommendations: RecommendationState.exhausted(),
+        entity: FeedItemEntity.prism(id: 'ai-remix-wall', wallpaper: wallpaper),
+        paletteLoading: false,
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(RemixCreditRow), findsNothing);
+    expect(find.byType(RemixesSection), findsNothing);
+    expect(tester.takeException(), isNull);
+  }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS, TargetPlatform.android}));
+
+  testWidgets('credit appears only for an AI child with a different original document', (tester) async {
+    final StreamController<BlockedCreators> blockedUids = StreamController<BlockedCreators>.broadcast(sync: true);
+    addTearDown(blockedUids.close);
+    final BlockedCreators current = KnownBlockedCreators(const <String>{});
+    final _MockUserBlockRepository blocks = _MockUserBlockRepository();
+    when(() => blocks.watchBlockedCreators()).thenAnswer((_) => blockedUids.stream);
+    when(() => blocks.loadBlockedCreators()).thenAnswer((_) async => KnownBlockedCreators(const <String>{}));
+    when(() => blocks.blockedCreators).thenAnswer((_) => current);
+    const PrismWallpaper original = PrismWallpaper(
+      core: WallpaperCore(
+        id: 'source-wall',
+        source: WallpaperSource.prism,
+        fullUrl: 'https://img.test/source.jpg',
+        thumbnailUrl: 'https://img.test/source-thumb.jpg',
+        authorName: 'Artist',
+        authorUid: 'source-uid',
+      ),
+      title: 'Original',
+      review: true,
+      firestoreDocumentId: 'source-doc',
+      aiSource: WallAiSource(prompt: 'a koi pond'),
+    );
+    getIt.registerSingleton<WallRemixRepository>(_RemixScreenRepository(blocks, original, const <PrismWallpaper>[]));
+    getIt.registerFactory<RemixesCubit>(() => RemixesCubit(getIt<WallRemixRepository>()));
+    getIt.registerFactory<RemixCreditCubit>(() => RemixCreditCubit(getIt<WallRemixRepository>()));
+
+    Future<void> pumpChild({
+      required String id,
+      required String docId,
+      required bool isAi,
+      required String? remixOf,
+    }) async {
+      final PrismWallpaper child = PrismWallpaper(
+        core: WallpaperCore(
+          id: id,
+          source: WallpaperSource.prism,
+          fullUrl: 'https://img.test/$id.jpg',
+          thumbnailUrl: 'https://img.test/$id-thumb.jpg',
+          authorUid: 'child-uid',
+        ),
+        review: true,
+        firestoreDocumentId: docId,
+        aiSource: isAi ? const WallAiSource(prompt: 'a koi pond') : null,
+        remixOf: remixOf,
+      );
+      await pumpDetail(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: FeedItemEntity.prism(id: id, wallpaper: child),
+          paletteLoading: false,
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+    }
+
+    await pumpChild(id: 'non-ai', docId: 'non-ai-doc', isAi: false, remixOf: 'source-doc');
+    expect(find.textContaining('Remix of'), findsNothing);
+
+    await pumpChild(id: 'self-remix', docId: 'self-doc', isAi: true, remixOf: 'self-doc');
+    expect(find.textContaining('Remix of'), findsNothing);
+
+    await pumpChild(id: 'valid-remix', docId: 'valid-doc', isAi: true, remixOf: 'source-doc');
+    expect(find.text('Remix of Original by Artist'), findsOneWidget);
+  }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS, TargetPlatform.android}));
 
   testWidgets('the action icons are bare 24 point glyphs beside the 30 point heart', (tester) async {
     await pumpDetail(
@@ -560,6 +814,10 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('iOS preview exposes Save to Photos with its current tinted variant', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'ios-preview-user'
+        ..loggedIn = true;
+      addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
       final File source = File('${directory.path}/ios-preview-wall.png');
       await tester.runAsync(() async => source.writeAsBytes(await _redAndBluePng()));
       final FeedItemEntity entity = FeedItemEntity.prism(
@@ -603,6 +861,57 @@ void main() {
       }))!;
       expect(hues, hasLength(2));
       expect(hues, everyElement(closeTo(120, 10)));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('an iOS guest opens the passive preview; its Save asks for sign-in', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await pumpDetail(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: _prism(),
+          paletteLoading: false,
+          colors: const <Color>[Colors.teal],
+          accent: Colors.teal,
+        ),
+      );
+
+      await tester.tap(find.byTooltip(AppLocalizationsEn().wallpaperPreviewOnScreen));
+      await tester.pumpAndSettle();
+
+      final Finder preview = find.byType(ClockOverlay);
+      expect(preview, findsOneWidget);
+      expect(find.text('Sign in to Prism'), findsNothing);
+      for (final Type action in <Type>[FavouriteWallpaperButton, ShareButton, EditButton, SetWallpaperButton]) {
+        expect(
+          find.descendant(of: preview, matching: find.byType(action)),
+          findsNothing,
+          reason: '$action is absent',
+        );
+      }
+
+      final Finder lockChoice = find.descendant(
+        of: preview,
+        matching: find.text(AppLocalizationsEn().wallpaperPreviewLock),
+      );
+      final Finder homeChoice = find.descendant(
+        of: preview,
+        matching: find.text(AppLocalizationsEn().wallpaperPreviewHome),
+      );
+      expect(lockChoice, findsOneWidget);
+      expect(homeChoice, findsOneWidget);
+      await tester.tap(homeChoice);
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.descendant(of: preview, matching: find.byType(HomePreviewLayer)), findsOneWidget);
+      await tester.tap(lockChoice);
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.descendant(of: preview, matching: find.byType(LockPreviewLayer)), findsOneWidget);
+
+      await tester.tap(find.descendant(of: preview, matching: find.byType(DownloadButton)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(find.text('Sign in to Prism'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('with the original showing, each action uses the wallpaper as it is', (tester) async {

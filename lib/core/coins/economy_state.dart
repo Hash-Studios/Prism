@@ -266,6 +266,29 @@ class GiftResult {
   final String reason;
 }
 
+enum TipOutcome {
+  sent,
+  insufficient,
+  dailyLimit,
+  pairLimit,
+  creatorLimit,
+  senderTooNew,
+  senderIneligible,
+  blocked,
+  unavailable,
+  failed,
+}
+
+class TipResult {
+  const TipResult(this.outcome, {this.amount = 0, this.reason = ''});
+
+  final TipOutcome outcome;
+
+  /// Coins the server moved. A retried request reports the first tip's amount.
+  final int amount;
+  final String reason;
+}
+
 enum DrawTicketOutcome { bought, limit, disabled, closed, proNotEligible, insufficient, failed }
 
 class DrawTicketResult {

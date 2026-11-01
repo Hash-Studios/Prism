@@ -45,6 +45,8 @@ else
       | sort -u
   )"
 fi
+# Local-only QA strings never ship (tool/flutter_with_doppler.py drops them), so no config needs them.
+required_keys="$(grep -Fxv -e PRISM_LOCAL_QA_USER -e PRISM_LOCAL_QA_CERTIFICATE <<<"$required_keys" || true)"
 available_keys="$(
   printf "%s\n" "$env_dump" \
     | awk -F= '/^[A-Za-z_][A-Za-z0-9_]*=/{print $1}' \

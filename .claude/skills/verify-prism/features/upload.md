@@ -32,6 +32,6 @@ Preconditions: signed in (ask the human). For gallery pick, put a photo in the s
 - Free users have a weekly upload quota (`wallpaperUploadFreeQuotaMessage`). The pick limit depends on premium.
 - Leaving mid-flow may save a draft. Then `Resume saved upload` shows next time.
 - Android uses the system photo picker. The label text differs by OS version, so use `describe`.
-- After the iOS photo picker closes, the app's accessibility tree is empty for both `axe` and agent-device until the app relaunches (seen 2026-10-29, iOS 27). Drive the edit and upload screens by screenshot and coordinates, then relaunch the app before the next recipe.
+- The photo picker does not empty the accessibility tree. Before PR #746, the `Edit wallpaper` sliders did, so the tree stayed empty until a relaunch (2026-10-29, iOS 27). If you see an empty tree on a build without that fix, relaunch before the next recipe.
 - A tap on the `Upload wallpaper` row by its tree label once landed above the sheet and closed it (wrong frame). If the picker does not open, screenshot and tap the row by its position.
 - Confirm every label with `describe` before tapping.

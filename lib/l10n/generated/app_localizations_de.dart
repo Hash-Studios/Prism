@@ -11,6 +11,41 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get economyAd => 'Anzeige';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Anzeige für $rewardString Münzen ansehen';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Dir fehlen noch $countString Münzen.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Nach der Anzeige fehlen dir möglicherweise noch $countString Münzen';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'Wenn dein Guthaben nach der Belohnung den Preis deckt, wird dieser Artikel automatisch gekauft.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Deine Anzeigenbelohnung wird geprüft. Nach der Bestätigung erscheinen die Münzen.';
+
+  @override
   String get foldersLibraryEmptyTitle => 'Noch keine Ordner';
 
   @override
@@ -91,6 +126,116 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
+  String get duoTitle => 'Duo-Überraschung';
+
+  @override
+  String get duoAiFormatLabel => 'Eine Duo-Überraschung erstellen';
+
+  @override
+  String get duoPresetNotice =>
+      'Prism zeigt im zugeklappten Zustand eine Vorschau der rechten Bildseite. Richte das gespeicherte Original manuell aus und prüfe beide Ansichten in der Hintergrundbildvorschau des Systems. Dies ist eine Prism-Voreinstellung, kein automatischer Bildzuschnitt von iOS.';
+
+  @override
+  String get duoFoldedPromptLabel => 'Zugeklappte Ansicht';
+
+  @override
+  String get duoFoldedPromptExample => 'Eine schläfrige Katze neben einem Fenster';
+
+  @override
+  String get duoRevealedPromptLabel => 'Aufgeklappte Überraschung';
+
+  @override
+  String get duoRevealedPromptExample => 'Ein winziges Raumschiff vor dem Fenster';
+
+  @override
+  String get duoPromptValidation => 'Beschreibe beide Ansichten mit jeweils 1 bis 160 Zeichen.';
+
+  @override
+  String get duoMoodBody => 'Ein Hintergrundbild. Aufgeklappt mehr entdecken.';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'Handy';
+
+  @override
+  String get duoFold => 'Zuklappen';
+
+  @override
+  String get duoUnfold => 'Aufklappen';
+
+  @override
+  String get duoFolded => 'Zugeklappt';
+
+  @override
+  String get duoUnfolded => 'Aufgeklappt';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'Prism zeigt im zugeklappten Zustand eine Vorschau der rechten Bildseite. Android schneidet das Bild möglicherweise anders zu. Prüfe die Hintergrundbildvorschau des Systems, bevor du es anwendest.';
+
+  @override
+  String get duoGetOnPrism => 'Auf Prism entdecken';
+
+  @override
+  String get duoGuideTitle => 'Deine Duo-Überraschung einrichten';
+
+  @override
+  String get duoGuideOpen =>
+      'Öffne das gespeicherte Original in Fotos, tippe auf Teilen und dann auf Als Hintergrundbild.';
+
+  @override
+  String get duoGuideAlign =>
+      'Richte das vollständige Bild manuell so aus, dass im zugeklappten Zustand die rechte Seite zu sehen ist.';
+
+  @override
+  String get duoGuideCheck =>
+      'Prüfe die zugeklappte und die aufgeklappte Ansicht in der Systemvorschau und füge dann das Hintergrundbild hinzu.';
+
+  @override
+  String get duoWebTitle => 'iPhone Duo Hintergrundbilder | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'Ein Hintergrundbild mit einer verborgenen zweiten Szene. Entdecke originelle Hintergrundbilder mit Duo-Überraschung in Prism.';
+
+  @override
+  String get duoWebHeading => 'Ein Hintergrundbild. Eine Geschichte, die sich entfaltet.';
+
+  @override
+  String get duoWebIntro =>
+      'Eine ruhige Szene im zugeklappten Zustand. Eine zweite Geschichte beim Aufklappen. Sieh dir beide Ansichten jedes Original-Hintergrundbilds an.';
+
+  @override
+  String get duoWebEmpty => 'Die erste Duo-Kollektion wird geprüft.';
+
+  @override
+  String get duoWebEmptyBody => 'Entdecke Prism, während wir jedes Hintergrundbild in beiden Ansichten prüfen.';
+
+  @override
+  String get duoWebFolded => 'Zugeklappte Vorschau';
+
+  @override
+  String get duoWebUnfolded => 'Aufgeklapptes Original';
+
+  @override
+  String get duoWebPresetNotice =>
+      'Diese Vorschauen nutzen die Prism-Voreinstellung für die rechte Bildseite, keinen automatischen Bildzuschnitt von Apple. Speichere das vollständige Original, richte es manuell aus und prüfe die zugeklappte und die aufgeklappte Ansicht in der Hintergrundbildvorschau des Systems.';
+
+  @override
+  String get duoWebOpenPrism => 'In Prism öffnen';
+
+  @override
+  String get duoWebExplore => 'Prism entdecken';
+
+  @override
+  String get duoWebAppStore => 'Im App Store laden';
+
+  @override
+  String get duoWebPlayStore => 'Bei Google Play herunterladen';
 
   @override
   String get economyExportFailedLabel => 'Export fehlgeschlagen';
@@ -1115,12 +1260,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get accountReportAProblem => 'Problem melden';
 
   @override
-  String accountReportPreviewNotice(String email) {
-    return 'Dieser Bericht enthält deine App-Version, dein Gerät und aktuelle Protokolle. Er enthält weder deine E-Mail-Adresse noch Anmeldetokens. Lies ihn durch und teile ihn anschließend mit $email.';
-  }
-
-  @override
-  String get accountReportProblemSubtitle => 'Teile deine App-Protokolle mit dem Prism-Team';
+  String get accountReportProblemSubtitle => 'Sende einen Fehlerbericht an das Prism-Team';
 
   @override
   String get accountReportUser => 'Person melden';
@@ -1229,9 +1369,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get accountSettings => 'Einstellungen';
-
-  @override
-  String get accountShare => 'Teilen';
 
   @override
   String get accountShareInvite => 'Einladung teilen';
@@ -3944,6 +4081,62 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get aiLiveActivityOpen => 'In Prism öffnen';
+
+  @override
+  String get aiResultApply => 'Übernehmen';
+
+  @override
+  String get aiResultEditPrompt => 'Prompt bearbeiten';
+
+  @override
+  String get aiSessionStripLabel => 'Wallpaper aus dieser Sitzung';
+
+  @override
+  String aiSessionTake(int index, int count) {
+    final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String indexString = indexNumberFormat.format(index);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Version $indexString von $countString';
+  }
+
+  @override
+  String get aiFollowUpWatercolour => 'Als Aquarell';
+
+  @override
+  String get aiFollowUpNight => 'Nachtversion';
+
+  @override
+  String get aiFollowUpMinimal => 'Minimalistischer';
+
+  @override
+  String get aiFollowUpWarmer => 'Wärmer';
+
+  @override
+  String get aiFollowUpDepth => 'Mehr Tiefe';
+
+  @override
+  String aiFollowUpCostLabel(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'Jede neue Version kostet $costString Coins';
+  }
+
+  @override
+  String get aiFollowUpConfirmTitle => 'Neue Version erstellen?';
+
+  @override
+  String aiFollowUpConfirmBody(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'Eine Folgeversion erstellt ein neues Wallpaper aus diesem. Jede kostet $costString Coins.';
+  }
+
+  @override
+  String get aiFollowUpConfirmAction => 'Erstellen';
 
   @override
   String get economyAiDailyLimit => 'Du hast das heutige KI-Limit erreicht.';
@@ -7625,9 +7818,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperApplyTo => 'Anwenden auf';
 
   @override
-  String get wallpaperAutoRotateAndroidOnly => 'Automatischer Wechsel ist nur unter Android verfügbar.';
-
-  @override
   String get wallpaperAutoRotateApplyTo => 'Anwenden auf';
 
   @override
@@ -9292,33 +9482,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperShareLink => 'Link teilen';
 
   @override
-  String get wallpaperShortcutsAddActionsSteps =>
-      'Füge die Aktion „Prism-Hintergrundbild abrufen“ hinzu. Füge dann die Aktion „Hintergrundbild festlegen“ hinzu.';
-
-  @override
-  String get wallpaperShortcutsBody =>
-      'Nutze Kurzbefehle, um ein Hintergrundbild nach Zeitplan oder Auslöser festzulegen. Bereite vorher die Quelle unten vor.';
-
-  @override
   String get wallpaperShortcutsChoosePrismData => 'Wähle aus, was Prism sendet';
 
   @override
-  String get wallpaperShortcutsChooseTriggerSteps =>
-      'Öffne im Kurzbefehl-Editor bei Bedarf Automation. Wähle und konfiguriere einen Auslöser, etwa Tageszeit, Öffnen einer App oder Anschließen eines Ladegeräts.';
-
-  @override
-  String get wallpaperShortcutsDisableConfirmationSteps =>
-      'Prüfe die angezeigten Ausführungsoptionen und speichere den Kurzbefehl oder die Automation. Falls \"Vor Ausführen bestätigen\" erscheint, schalte es für automatische Ausführungen aus.';
-
-  @override
-  String get wallpaperShortcutsHeadline => 'Hintergrundbild automatisch ändern';
-
-  @override
   String get wallpaperShortcutsOpenAction => 'Kurzbefehle öffnen';
-
-  @override
-  String get wallpaperShortcutsOpenAutomationSteps =>
-      'Öffne Kurzbefehle. Gibt es einen Tab \"Automation\", tippe darauf und dann auf \"Neue Automation\". Sonst tippe auf Hinzufügen (+) und auf Bearbeiten, falls es angezeigt wird.';
 
   @override
   String get wallpaperShortcutsOpenError => 'Kurzbefehle konnten nicht geöffnet werden. Öffne die App selbst.';
@@ -9327,18 +9494,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperShortcutsSourceFavourite => 'Zufälliger Favorit';
 
   @override
-  String get wallpaperShortcutsSourceFavouriteDescription =>
-      'Ein zufälliger, für Kurzbefehle verfügbarer Favorit. Markiere zuerst Hintergrundbilder in Prism mit einem Herz. Manche geschützten Bilder sind nicht verfügbar. Wenn ein anderer Favorit verfügbar ist, wird die letzte Auswahl übersprungen.';
-
-  @override
   String get wallpaperShortcutsSourceWotd => 'Hintergrundbild des Tages';
 
   @override
   String get wallpaperShortcutsSourceWotdDescription =>
       'Die heutige Prism-Auswahl. Lade zuerst das heutige Original in Prism herunter. Wenn die Tagesauswahl wechselt, lade vor der nächsten Nutzung dieser Quelle das neue Original herunter.';
-
-  @override
-  String get wallpaperShortcutsSteps => 'Schritte';
 
   @override
   String get wallpaperShortcutsTitle => 'Automatisch ändern';
@@ -11245,4 +11405,1232 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get adminFillsRequest => 'Erfüllt Wunsch';
+
+  @override
+  String get wallRemixAction => 'Remixen';
+
+  @override
+  String get wallRemixActionTooltip => 'Dieses Hintergrundbild mit KI remixen';
+
+  @override
+  String wallRemixingChip(String title, String creator) {
+    return 'Remix von $title von $creator';
+  }
+
+  @override
+  String get wallRemixDropLinkTooltip => 'Remix-Verknüpfung entfernen';
+
+  @override
+  String get wallRemixUntitled => 'Ohne Titel';
+
+  @override
+  String get wallRemixUnknownCreator => 'einem Prism-Creator';
+
+  @override
+  String get wallRemixesTitle => 'Remixe';
+
+  @override
+  String wallRemixesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Remixe', one: '1 Remix');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRemixOpenRemixLabel(String creator) {
+    return 'Remix von $creator öffnen';
+  }
+
+  @override
+  String wallRemixOfLabel(String title, String creator) {
+    return 'Remix von $title von $creator';
+  }
+
+  @override
+  String get wallRemixOfTooltip => 'Original-Hintergrundbild öffnen';
+
+  @override
+  String get economyAiSubmitPromptNotice => 'Alle können deinen Prompt sehen und dieses Hintergrundbild remixen.';
+
+  @override
+  String get notifPushWallRemixedTitle => 'Dein Hintergrundbild wurde geremixt';
+
+  @override
+  String notifPushWallRemixedBody(String remixerName, String wallTitle) {
+    return '$remixerName hat $wallTitle geremixt.';
+  }
+
+  @override
+  String notifPushWallRemixedBodyUntitled(String remixerName) {
+    return '$remixerName hat dein Hintergrundbild geremixt.';
+  }
+
+  @override
+  String get wallMetadataDescription => 'Beschreibung';
+
+  @override
+  String get wallMetadataEdit => 'Details bearbeiten';
+
+  @override
+  String get wallResubmitAction => 'Korrigieren und erneut einreichen';
+
+  @override
+  String get wallResubmitChooseImage => 'Bild auswählen';
+
+  @override
+  String get wallResubmitImageMissing =>
+      'Das Originalbild ist nicht mehr verfügbar. Wähle es erneut aus, um weiter zu bearbeiten.';
+
+  @override
+  String get wallResubmitImageKept => 'Originalbild bereit';
+
+  @override
+  String get wallResubmitTitle => 'Upload korrigieren';
+
+  @override
+  String get wallUploadUseLastDetails => 'Letzte Angaben verwenden';
+
+  @override
+  String get wallUploadLastDetailsUnavailable => 'Auf diesem Gerät gibt es keine vorherigen Angaben.';
+
+  @override
+  String get wallUploadWithdraw => 'Upload zurückziehen';
+
+  @override
+  String get wallUploadWithdrawTitle => 'Diesen Upload zurückziehen?';
+
+  @override
+  String get wallUploadWithdrawBody =>
+      'Der Upload wird aus der Prüfung entfernt und seine hochgeladenen Dateien werden gelöscht.';
+
+  @override
+  String get wallUploadWithdrawn => 'Upload zurückgezogen';
+
+  @override
+  String get wallUploadDeleteHistory => 'Aus dem Verlauf löschen';
+
+  @override
+  String get wallMetadataInvalid => 'Prüfe den Text und die Tags und versuche es erneut.';
+
+  @override
+  String get wallUploadOwnerChanged => 'Dein Konto hat sich geändert. Öffne diesen Upload erneut.';
+
+  @override
+  String get wallResubmitLimit =>
+      'Für dieses Hintergrundbild wurden bereits drei verknüpfte erneute Einreichungen erreicht.';
+
+  @override
+  String get wallResubmitUnsupported =>
+      'Wähle das Originalbild erneut aus. Angaben zur KI-Quelle können nicht wiederverwendet werden.';
+
+  @override
+  String get wallResubmitUnavailable => 'Dieser abgelehnte Upload konnte nicht geladen werden. Versuche es erneut.';
+
+  @override
+  String get wallMetadataEditDetails => 'Details bearbeiten';
+
+  @override
+  String get wallMetadataApprovedHelp => 'Ändere Titel, Beschreibung und Tags. Bild und Kategorie bleiben gleich.';
+
+  @override
+  String get wallMetadataPendingHelp => 'Aktualisiere diese Angaben, bevor dein Hintergrundbild geprüft wird.';
+
+  @override
+  String get wallMetadataSave => 'Details speichern';
+
+  @override
+  String get wallMetadataSaved => 'Details gespeichert';
+
+  @override
+  String get wallMetadataDiscardTitle => 'Änderungen verwerfen?';
+
+  @override
+  String get wallMetadataDiscardBody => 'Deine ungespeicherten Angaben gehen verloren.';
+
+  @override
+  String get wallMetadataDiscard => 'Änderungen verwerfen';
+
+  @override
+  String get wallMetadataReload => 'Details neu laden';
+
+  @override
+  String get wallMetadataReloadTitle => 'Aktuelle Details neu laden?';
+
+  @override
+  String get wallMetadataReloadBody => 'Deine ungespeicherten Angaben werden durch die aktuelle Version ersetzt.';
+
+  @override
+  String get wallMetadataConflict =>
+      'Diese Angaben wurden anderswo geändert. Deine Änderungen sind noch vorhanden. Lade die aktuellen Angaben vor dem Speichern neu.';
+
+  @override
+  String get wallMetadataStatusChanged =>
+      'Der Prüfstatus dieses Hintergrundbilds hat sich geändert. Deine Änderungen wurden nicht gespeichert.';
+
+  @override
+  String get wallMetadataMissing =>
+      'Dieses Hintergrundbild ist nicht mehr verfügbar. Deine Änderungen wurden nicht gespeichert.';
+
+  @override
+  String get wallMetadataDenied => 'Du hast keine Berechtigung, dieses Hintergrundbild zu bearbeiten.';
+
+  @override
+  String get wallMetadataSignedOut => 'Melde dich erneut an, um dieses Hintergrundbild zu bearbeiten.';
+
+  @override
+  String get wallMetadataDailyLimit => 'Du hast das heutige Bearbeitungslimit erreicht. Versuche es morgen erneut.';
+
+  @override
+  String get wallMetadataUnavailable =>
+      'Details konnten nicht gespeichert werden. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String get wallMetadataLoadFailed => 'Details konnten nicht geladen werden';
+
+  @override
+  String get wallMetadataHistory => 'Bearbeitungsverlauf';
+
+  @override
+  String get wallMetadataHistoryEmpty => 'Noch keine Änderungen an den Details';
+
+  @override
+  String get wallMetadataHistoryEmptyBody =>
+      'Änderungen am freigegebenen Titel, der Beschreibung und den Tags erscheinen hier.';
+
+  @override
+  String get wallMetadataHistoryFailed => 'Bearbeitungsverlauf konnte nicht geladen werden';
+
+  @override
+  String get wallMetadataBefore => 'Vorher';
+
+  @override
+  String get wallMetadataAfter => 'Nachher';
+
+  @override
+  String get wallMetadataRevert => 'Änderung rückgängig machen';
+
+  @override
+  String get wallMetadataRevertTitle => 'Diese Änderung rückgängig machen?';
+
+  @override
+  String get wallMetadataRevertBody =>
+      'Stelle nur den hier angezeigten vorherigen Titel, die Beschreibung und die Tags wieder her. Bild und Prüfstatus bleiben unverändert.';
+
+  @override
+  String get wallMetadataReverted => 'Änderung rückgängig gemacht';
+
+  @override
+  String get wallMetadataLoadMore => 'Weitere Änderungen laden';
+
+  @override
+  String get wallMetadataAbsent => 'Nicht festgelegt';
+
+  @override
+  String wallMetadataResubmitted(int attempt) {
+    return 'Erneut eingereicht · Versuch $attempt von 3';
+  }
+
+  @override
+  String get wallMetadataPreviousReason => 'Vorheriger Ablehnungsgrund';
+
+  @override
+  String get wallMetadataContextUnavailable => 'Details zur erneuten Einreichung nicht verfügbar';
+
+  @override
+  String get reportSheetMessage =>
+      'Sag uns, was schiefgelaufen ist. Prism fügt nie deine E-Mail-Adresse oder Anmeldetokens hinzu. Prüfe Screenshots, bevor du sie sendest.';
+
+  @override
+  String get reportTopicCrashFreeze => 'Absturz/Einfrieren';
+
+  @override
+  String get reportTopicWallpaperWontSet => 'Hintergrundbild lässt sich nicht setzen';
+
+  @override
+  String get reportTopicLooksBroken => 'Sieht kaputt aus';
+
+  @override
+  String get reportTopicSlow => 'Langsam';
+
+  @override
+  String get reportTopicOther => 'Sonstiges';
+
+  @override
+  String get reportNoteHint => 'Was ist passiert? Was hast du erwartet?';
+
+  @override
+  String get reportScreenshotTitle => 'Screenshot';
+
+  @override
+  String get reportScreenshotEmpty => 'Zeig uns, was du siehst.';
+
+  @override
+  String get reportScreenshotAttached => 'Zum Ansehen tippen. Prüfe ihn vor dem Senden.';
+
+  @override
+  String get reportAddScreenshot => 'Screenshot hinzufügen';
+
+  @override
+  String get reportRemoveScreenshot => 'Entfernen';
+
+  @override
+  String get reportViewScreenshot => 'Screenshot ansehen';
+
+  @override
+  String get reportIncludeDiagnostics => 'Geräteinfos und aktuelle Protokolle einschließen';
+
+  @override
+  String get reportShowDiagnostics => 'Zeigen, was enthalten ist';
+
+  @override
+  String get reportHideDiagnostics => 'Details ausblenden';
+
+  @override
+  String get reportSend => 'Bericht senden';
+
+  @override
+  String get reportShareAsFile => 'Als Datei teilen';
+
+  @override
+  String reportSent(String reference) {
+    return 'Danke, Bericht gesendet. Referenz $reference';
+  }
+
+  @override
+  String get reportCouldNotSend => 'Senden fehlgeschlagen';
+
+  @override
+  String get reportCouldNotSendBody =>
+      'Prüfe deine Verbindung und versuche es erneut, oder teile den Bericht als Datei.';
+
+  @override
+  String get reportShareInstead => 'Stattdessen teilen';
+
+  @override
+  String get reportShakeToReport => 'Schütteln zum Melden';
+
+  @override
+  String get reportShakeToReportSubtitle => 'Schüttle dein Handy auf jedem Bildschirm, um ein Problem zu melden';
+
+  @override
+  String get accountShowAiWallpapers => 'KI-generierte Hintergrundbilder anzeigen';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'Ausschalten, um nur von Menschen gemachte Walls zu sehen';
+
+  @override
+  String get accountShowAiWallpapersFootnote =>
+      'Wenn du KI-Hintergrundbilder ausblendest, bleiben deine eigenen Uploads und Favoriten sichtbar.';
+
+  @override
+  String get wallpaperFeedHideAi => 'KI ausblenden';
+
+  @override
+  String get wallpaperAiGenerated => 'KI-generiert';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return 'Erstellt mit $model';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'Mit KI erstellt';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'Falsches Label melden';
+
+  @override
+  String get feedNoHumanWalls => 'Hier gibt es noch keine von Menschen gemachten Walls';
+
+  @override
+  String get feedShowAiWalls => 'KI-Walls anzeigen';
+
+  @override
+  String get dailyMomentTitle => 'Täglicher Moment';
+
+  @override
+  String get dailyMomentStreakTitle => 'Tägliche Serie';
+
+  @override
+  String get dailyMomentChestTitle => 'Tägliche Truhe';
+
+  @override
+  String get dailyMomentSpinTitle => 'Gratisdreh';
+
+  @override
+  String get dailyMomentUnavailable => 'Diese Belohnung ist heute nicht mehr verfügbar.';
+
+  @override
+  String get dailyMomentError => 'Die Belohnung konnte nicht geladen werden. Versuche es erneut.';
+
+  @override
+  String dailyMomentStreakReceipt(int coins, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins Münzen erhalten',
+      one: '$coins Münze erhalten',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days Tage in Folge',
+      one: '$days Tag in Folge',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String get challengeTitle => 'Wochen-Challenge';
+
+  @override
+  String get challengeRules => 'Bis zu 3 Beiträge, die vor der Anzeige geprüft werden.';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'Stimme bis $date UTC für andere ab.';
+  }
+
+  @override
+  String get challengeUpload => 'Beitrag hochladen';
+
+  @override
+  String get challengeAi => 'Mit KI erstellen';
+
+  @override
+  String get challengeTop => 'Beliebt';
+
+  @override
+  String get challengeNew => 'Neu';
+
+  @override
+  String get challengePast => 'Frühere Challenges';
+
+  @override
+  String get challengeEmpty => 'Geprüfte Beiträge erscheinen hier.';
+
+  @override
+  String get challengeWaiting =>
+      'Die Abstimmung ist beendet. Nach der Prüfung aller Beiträge wird der Gewinner gewählt.';
+
+  @override
+  String get challengeClosed => 'Diese Challenge ist beendet.';
+
+  @override
+  String get challengeScheduled => 'Diese Challenge hat noch nicht begonnen.';
+
+  @override
+  String get challengeNoWinner => 'Für diese Challenge gibt es keinen Gewinner.';
+
+  @override
+  String challengeWinner(String name) {
+    return 'Gewinner · $name';
+  }
+
+  @override
+  String get challengeVote => 'Abstimmen';
+
+  @override
+  String get challengeUnvote => 'Stimme entfernen';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Stimmen',
+      one: '1 Stimme',
+      zero: '0 Stimmen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentCosmetic => 'Kosmetischer Gegenstand zu deiner Sammlung hinzugefügt';
+
+  @override
+  String dailyMomentReward(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins Münzen erhalten',
+      one: '$coins Münze erhalten',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentChestBody => 'Öffne die heutige Truhe, wenn du bereit bist.';
+
+  @override
+  String get dailyMomentSpinBody => 'Dein Gratisdreh ist bereit.';
+
+  @override
+  String dailyMomentBalance(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins Münzen', one: '$coins Münze');
+    return 'Guthaben: $_temp0';
+  }
+
+  @override
+  String get dailyMomentDone => 'Fertig';
+
+  @override
+  String get dailyMomentRetry => 'Erneut versuchen';
+
+  @override
+  String get dailyMomentContinue => 'Weiter';
+
+  @override
+  String get dailyMomentOpenFree => 'Gratis-Truhe öffnen';
+
+  @override
+  String dailyMomentOpenChest(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins Münzen', one: '$coins Münze');
+    return 'Für $_temp0 öffnen';
+  }
+
+  @override
+  String get dailyMomentSpinAction => 'Gratis drehen';
+
+  @override
+  String get dailyMomentClose => 'Täglichen Moment schließen';
+
+  @override
+  String get dailyMomentToday => 'Heute';
+
+  @override
+  String get dailyMomentReady => 'Tägliche Belohnungen sind bereit';
+
+  @override
+  String get dailyMomentComplete => 'Heute ist alles erledigt';
+
+  @override
+  String get dailyMomentResume => 'Täglichen Moment fortsetzen';
+
+  @override
+  String get dailyMomentMore => 'Mehr';
+
+  @override
+  String get dailyMomentQuests => 'Aufgaben';
+
+  @override
+  String get dailyMomentChestLeft => 'Tägliche Truhe verfügbar';
+
+  @override
+  String get dailyMomentSpinLeft => 'Gratisdreh verfügbar';
+
+  @override
+  String get dailyMomentStreakLeft => 'Tägliche Serie verfügbar';
+
+  @override
+  String get challengeShare => 'Challenge teilen';
+
+  @override
+  String get challengeRemove => 'Challenge entfernen';
+
+  @override
+  String challengeContext(String theme) {
+    return 'Challenge · $theme';
+  }
+
+  @override
+  String get challengeError => 'Die Challenge konnte nicht geladen werden. Versuche es erneut.';
+
+  @override
+  String get challengeVoteError => 'Deine Stimme konnte nicht gespeichert werden. Versuche es erneut.';
+
+  @override
+  String get challengeSignIn => 'Melde dich zum Mitmachen oder Abstimmen an.';
+
+  @override
+  String get challengeLimit => 'Du hast 3 Wallpaper für diese Challenge eingereicht.';
+
+  @override
+  String get challengeRetry => 'Erneut versuchen';
+
+  @override
+  String get challengeOwnEntry => 'Du kannst nicht für deinen eigenen Beitrag stimmen.';
+
+  @override
+  String get challengeDailyLimit => 'Dein tägliches Abstimmungslimit ist erreicht.';
+
+  @override
+  String get challengeMissing => 'Diese Challenge oder dieser Beitrag ist nicht mehr verfügbar.';
+
+  @override
+  String get challengeBadge => 'Challenge-Gewinner';
+
+  @override
+  String get challengeBadgeDescription => 'Gewinne eine Wochen-Challenge';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'Dein Wallpaper hat gewonnen';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'Dein Beitrag hat die Wochen-Challenge gewonnen: $theme.';
+  }
+
+  @override
+  String get statsTitle => 'Deine Statistik';
+
+  @override
+  String get statsEntry => 'Statistik';
+
+  @override
+  String get statsViews => 'Aufrufe';
+
+  @override
+  String get statsSaves => 'Gespeichert';
+
+  @override
+  String get statsSets => 'Festgelegt';
+
+  @override
+  String get statsDownloads => 'Downloads';
+
+  @override
+  String get statsShares => 'Geteilt';
+
+  @override
+  String get statsFolderAdds => 'Ordnerzugänge';
+
+  @override
+  String get statsRemixes => 'Remixe';
+
+  @override
+  String get statsLoading => 'Statistik wird geladen';
+
+  @override
+  String get statsError => 'Deine Statistik konnte nicht geladen werden. Versuche es erneut.';
+
+  @override
+  String get statsRetry => 'Erneut versuchen';
+
+  @override
+  String get statsEmptyTitle => 'Hier beginnt dein erstes Wallpaper';
+
+  @override
+  String get statsEmptyBody => 'Lade ein Wallpaper hoch. Nach der Freigabe erscheint seine Statistik.';
+
+  @override
+  String get statsUpload => 'Wallpaper hochladen';
+
+  @override
+  String get statsWeekNote => 'Diese Woche bisher im Vergleich zur letzten Woche. Wochen beginnen montags, UTC.';
+
+  @override
+  String get statsHistoryNote =>
+      'Acht Wochen, die älteste zuerst. Ein Strich bedeutet, dass Daten fehlen. Die Erfassung kann mitten in einer Woche beginnen; erfasste Wochen können daher unvollständig sein. Die aktuelle Woche ist noch nicht abgeschlossen.';
+
+  @override
+  String get statsTopWalls => 'Top-Wallpaper dieser Woche';
+
+  @override
+  String get statsUntitled => 'Wallpaper ohne Titel';
+
+  @override
+  String get statsCountingNote =>
+      'Gespeichert insgesamt zählt aktuelle Favoriten; wöchentlich zählen neue Favoriten. Remixe insgesamt zählt aktuell verknüpfte Remixe; wöchentlich zählen erstmals akzeptierte Zuordnungen. Ordnerzugänge werden erst seit Beginn der Erfassung gezählt.';
+
+  @override
+  String get statsUnavailable => 'Nicht verfügbar';
+
+  @override
+  String get statsWeeklyTitle => 'Deine Wallpaper diese Woche';
+
+  @override
+  String statsWeeklyBody(String week) {
+    return 'Sieh dir die Ergebnisse deiner Wallpaper für $week an.';
+  }
+
+  @override
+  String statsWallValue(String metric, String value) {
+    return '$metric: $value diese Woche';
+  }
+
+  @override
+  String statsComparison(String current, String previous) {
+    return '$current diese Woche · $previous letzte Woche';
+  }
+
+  @override
+  String statsTotal(String value) {
+    return 'Gesamt: $value';
+  }
+
+  @override
+  String statsChange(String value) {
+    return '$value im Vergleich zur letzten Woche';
+  }
+
+  @override
+  String statsUpdated(String date) {
+    return 'Aktualisiert am $date UTC';
+  }
+
+  @override
+  String statsChartWeek(String date, String value) {
+    return 'Woche ab $date: $value';
+  }
+
+  @override
+  String statsChartSummary(String metric, String summary) {
+    return '$metric, acht Wochen. $summary';
+  }
+
+  @override
+  String get shortcutsGuideHeadline => 'Jeden Tag ein neues Hintergrundbild';
+
+  @override
+  String get shortcutsGuideBody =>
+      'Richte Kurzbefehle einmal ein. Danach setzt die Automation jeden Tag ein Hintergrundbild aus deinem Rotationsordner. Seine 200 neuesten Bilder erscheinen je einmal, bevor sich eines wiederholt.';
+
+  @override
+  String get shortcutsSourceRotation => 'Rotationsordner';
+
+  @override
+  String get shortcutsSourceRotationDescription => 'Mischt den Ordner, den du oben gewählt hast.';
+
+  @override
+  String get shortcutsSourceFolder => 'Ordner';
+
+  @override
+  String get shortcutsSourceFolderDescription => 'Mischt einen Ordner, den du in Kurzbefehle auswählst.';
+
+  @override
+  String get shortcutsSourceFavouriteDescription =>
+      'Mischt deine Favoriten. Jeder erscheint einmal, bevor sich einer wiederholt. Einige geschützte Hintergrundbilder sind möglicherweise nicht verfügbar.';
+
+  @override
+  String get shortcutsRotationNone => 'Kein Ordner ausgewählt';
+
+  @override
+  String get shortcutsRotationNoneBody => 'Wähle den Ordner, den der Kurzbefehl mischt.';
+
+  @override
+  String get shortcutsRotationPick => 'Ordner auswählen';
+
+  @override
+  String get shortcutsRotationChange => 'Ändern';
+
+  @override
+  String get shortcutsRotationStop => 'Stopp';
+
+  @override
+  String shortcutsStepLabel(int number, String title) {
+    return 'Schritt $number, $title';
+  }
+
+  @override
+  String get shortcutsStepAddTitle => 'Füge den Prism-Kurzbefehl hinzu';
+
+  @override
+  String get shortcutsStepAddBody => 'Er holt ein Bild aus deinem Rotationsordner und setzt es als Hintergrundbild.';
+
+  @override
+  String get shortcutsStepAddAction => 'Kurzbefehl hinzufügen';
+
+  @override
+  String get shortcutsStepAddManualBody => 'Erstelle ihn in Kurzbefehle mit 2 Aktionen.';
+
+  @override
+  String get shortcutsManualNew => 'Tippe in Kurzbefehle auf +, um einen neuen Kurzbefehl zu erstellen.';
+
+  @override
+  String get shortcutsManualGet => 'Füge „Prism-Hintergrundbild abrufen“ hinzu. Setze Quelle auf Rotationsordner.';
+
+  @override
+  String get shortcutsManualSet =>
+      'Füge „Hintergrundbild festlegen“ hinzu. Tippe auf den Pfeil daneben und deaktiviere dann Vorschau zeigen.';
+
+  @override
+  String shortcutsManualName(String name) {
+    return 'Nenne den Kurzbefehl „$name“.';
+  }
+
+  @override
+  String get shortcutsStepAutomationTitle => 'Jeden Tag ausführen';
+
+  @override
+  String get shortcutsAutomationOpen => 'Tippe in Kurzbefehle auf Automation, dann auf +.';
+
+  @override
+  String get shortcutsAutomationTime => 'Tippe auf Tageszeit. Wähle eine Uhrzeit und dann Täglich.';
+
+  @override
+  String get shortcutsAutomationRun => 'Wähle Sofort ausführen und tippe dann auf Weiter.';
+
+  @override
+  String shortcutsAutomationPick(String name) {
+    return 'Wähle „$name“ zum Ausführen.';
+  }
+
+  @override
+  String shortcutsAutomationNoTab(String name) {
+    return 'Kein Tab Automation? Öffne „$name“, tippe auf Bearbeiten und dann auf Automation.';
+  }
+
+  @override
+  String get shortcutsStepTestTitle => 'Jetzt testen';
+
+  @override
+  String shortcutsStepTestBody(String name) {
+    return 'Führt „$name“ einmal aus, damit du das neue Hintergrundbild sofort siehst.';
+  }
+
+  @override
+  String get shortcutsStepTestAction => 'Kurzbefehl ausführen';
+
+  @override
+  String get foldersRotateDaily => 'Diesen Ordner täglich wechseln';
+
+  @override
+  String get autoRotateIosTitle => 'Hintergrundbilder mit Kurzbefehlen wechseln';
+
+  @override
+  String get autoRotateIosBody =>
+      'Auf dem iPhone setzt eine Kurzbefehle-Automation jeden Tag ein neues Hintergrundbild aus deinem Ordner.';
+
+  @override
+  String get autoRotateIosAction => 'Kurzbefehle einrichten';
+
+  @override
+  String get shortcutsAutomationIos16 =>
+      'Unter iOS 16 gibt es „Sofort ausführen“ nicht. Schalte stattdessen „Vor Ausführen bestätigen“ aus.';
+
+  @override
+  String get tipAction => 'Trinkgeld geben';
+
+  @override
+  String get tipMenuItem => 'Trinkgeld senden';
+
+  @override
+  String tipTitle(String name) {
+    return 'Trinkgeld für $name';
+  }
+
+  @override
+  String tipMessage(String name) {
+    return 'Wähle einen Betrag. $name bekommt alle Coins und sieht deinen Namen.';
+  }
+
+  @override
+  String get tipAmountsLabel => 'Trinkgeldbetrag';
+
+  @override
+  String tipBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance Coins', one: '1 Coin');
+    return 'Dein Guthaben: $_temp0';
+  }
+
+  @override
+  String tipShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount Coins', one: '1 Coin');
+    return 'Dir fehlen $_temp0.';
+  }
+
+  @override
+  String tipSendButton(int amount) {
+    return '$amount Coins als Trinkgeld geben';
+  }
+
+  @override
+  String get tipEarnCoins => 'Coins verdienen';
+
+  @override
+  String get tipThanksTitle => 'Danke für dein Trinkgeld';
+
+  @override
+  String tipThanksMessage(String name, int amount) {
+    return '$name hat deine $amount Coins erhalten.';
+  }
+
+  @override
+  String get tipDone => 'Fertig';
+
+  @override
+  String get tipNotEnoughCoins => 'Du hast nicht genug Coins für dieses Trinkgeld.';
+
+  @override
+  String get tipDailyLimit => 'Du hast heute alle deine Trinkgelder gesendet. Versuch es morgen noch einmal.';
+
+  @override
+  String tipPairLimit(String name) {
+    return 'Du hast $name heute schon ein Trinkgeld gegeben. Versuch es morgen noch einmal.';
+  }
+
+  @override
+  String tipCreatorLimit(String name) {
+    return '$name kann heute keine weiteren Trinkgelder bekommen. Versuch es morgen noch einmal.';
+  }
+
+  @override
+  String get tipSenderTooNew => 'Du kannst 7 Tage nach deinem Beitritt zu Prism Trinkgeld senden.';
+
+  @override
+  String get tipSenderIneligible => 'Melde dich mit einem verifizierten Konto an, um Trinkgeld zu senden.';
+
+  @override
+  String tipUnavailable(String name) {
+    return 'Du kannst $name gerade kein Trinkgeld geben.';
+  }
+
+  @override
+  String get tipFailed => 'Trinkgeld konnte nicht gesendet werden. Versuch es noch einmal.';
+
+  @override
+  String wallTippedBy(int count) {
+    return 'Trinkgeld von $count Personen';
+  }
+
+  @override
+  String get coreCoinTipSent => 'Trinkgeld gesendet';
+
+  @override
+  String get coreCoinTipReceived => 'Trinkgeld erhalten';
+
+  @override
+  String notifPushTipReceivedTitle(String senderName, String amount, String wallTitle) {
+    return '$senderName hat dir $amount Coins für $wallTitle als Trinkgeld gegeben';
+  }
+
+  @override
+  String notifPushTipReceivedTitleUntitled(String senderName, String amount) {
+    return '$senderName hat dir $amount Coins als Trinkgeld gegeben';
+  }
+
+  @override
+  String get notifPushTipReceivedBody => 'Deine Trinkgelder findest du in deinen Creator-Statistiken.';
+
+  @override
+  String notifTipsReceivedTitle(int count) {
+    return 'Du hast heute $count Trinkgelder bekommen';
+  }
+
+  @override
+  String notifTipsReceivedBody(int coins) {
+    return 'Insgesamt $coins Coins. Sieh sie dir in deinen Creator-Statistiken an.';
+  }
+
+  @override
+  String get statsTips => 'Trinkgelder';
+
+  @override
+  String statsTipsTotal(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Trinkgelder', one: '1 Trinkgeld');
+    return '$_temp0, insgesamt $coins Coins';
+  }
+
+  @override
+  String statsTipsWeek(String date, int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Trinkgelder', one: '1 Trinkgeld');
+    return 'Woche ab $date: $_temp0, $coins Coins';
+  }
+
+  @override
+  String statsTipsWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Trinkgelder', one: '1 Trinkgeld');
+    return '$_temp0, $coins Coins';
+  }
+
+  @override
+  String get statsTipsEmpty =>
+      'Noch keine Trinkgelder. Fans können dir über deine Wallpapers und dein Profil Trinkgeld geben.';
+
+  @override
+  String get creatorsToFollow => 'Kreative zum Folgen';
+
+  @override
+  String get creatorsSeeAll => 'Alle ansehen';
+
+  @override
+  String get creatorsTitle => 'Kreative';
+
+  @override
+  String get creatorsFilterAll => 'Alle';
+
+  @override
+  String get creatorsEmptyTitle => 'Noch keine Kreative hier';
+
+  @override
+  String get creatorsEmptyBody => 'Probiere eine andere Kategorie.';
+
+  @override
+  String get creatorsLoadError => 'Kreative konnten nicht geladen werden';
+
+  @override
+  String creatorsOpenProfile(String name) {
+    return 'Profil von $name öffnen';
+  }
+
+  @override
+  String creatorsWallBy(String name) {
+    return 'Hintergrundbild von $name';
+  }
+
+  @override
+  String creatorsFollowedByOne(String first) {
+    return 'Gefolgt von $first';
+  }
+
+  @override
+  String creatorsFollowedByTwo(String first, String second) {
+    return 'Gefolgt von $first und $second';
+  }
+
+  @override
+  String creatorsFollowedByMany(String first, String second, int others) {
+    String _temp0 = intl.Intl.pluralLogic(
+      others,
+      locale: localeName,
+      other: '$others weiteren, denen du folgst',
+      one: '1 weiteren, dem du folgst',
+    );
+    return 'Gefolgt von $first, $second und $_temp0';
+  }
+
+  @override
+  String creatorsMoreLike(String name) {
+    return 'Mehr wie $name';
+  }
+
+  @override
+  String get creatorsSimilarSubtitle => 'Kreative mit ähnlichem Stil';
+
+  @override
+  String get creatorsShowMeTitle => 'Mich in Kreative zum Folgen anzeigen';
+
+  @override
+  String get creatorsShowMeBody => 'Andere können dein Profil und deine besten Hintergrundbilder finden';
+
+  @override
+  String get promoRedeemTitle => 'Code einlösen';
+
+  @override
+  String get promoRedeemMessage => 'Gib einen Code aus einem Prism-Beitrag oder einem Gewinnspiel ein.';
+
+  @override
+  String get promoRedeemMessageIos => 'Gib einen Münzcode aus einem Prism-Beitrag oder einem Gewinnspiel ein.';
+
+  @override
+  String get promoCodeFieldLabel => 'Code';
+
+  @override
+  String get promoCodeFieldHint => 'Zum Beispiel 7KQ2 MPXR 4D';
+
+  @override
+  String get promoPasteCode => 'Code einfügen';
+
+  @override
+  String get promoRedeemAction => 'Einlösen';
+
+  @override
+  String get promoRedeeming => 'Code wird eingelöst';
+
+  @override
+  String get promoDone => 'Fertig';
+
+  @override
+  String get promoTryAnother => 'Anderen Code versuchen';
+
+  @override
+  String promoSuccessCoins(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString Münzen', one: '1 Münze');
+    return 'Du hast $_temp0 erhalten';
+  }
+
+  @override
+  String get promoSuccessCoinsMessage => 'Die Münzen sind jetzt in deinem Guthaben.';
+
+  @override
+  String promoSuccessPro(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString Tage', one: '1 Tag');
+    return 'Du hast $_temp0 Pro erhalten';
+  }
+
+  @override
+  String promoSuccessProMessage(String date) {
+    return 'Dein Pro-Pass läuft jetzt bis $date.';
+  }
+
+  @override
+  String get promoErrorInvalid => 'Das ist kein Prism-Code. Codes haben 10 oder mehr Buchstaben und Zahlen.';
+
+  @override
+  String get promoErrorNotFound => 'Wir finden diesen Code nicht. Prüfe ihn und versuche es erneut.';
+
+  @override
+  String get promoErrorDisabled => 'Dieser Code ist deaktiviert.';
+
+  @override
+  String get promoErrorExpired => 'Dieser Code ist abgelaufen.';
+
+  @override
+  String get promoErrorLimitReached => 'Für diesen Code sind keine Einlösungen mehr übrig.';
+
+  @override
+  String get promoErrorAlreadyRedeemed => 'Du hast diesen Code bereits eingelöst.';
+
+  @override
+  String get promoErrorAccountTooNew => 'Dein Konto ist zu neu für diesen Code.';
+
+  @override
+  String get promoErrorNewUsersOnly => 'Dieser Code ist nur für neue Konten.';
+
+  @override
+  String get promoErrorPremiumNotOnIos =>
+      'Pro-Codes funktionieren nicht auf dem iPhone oder iPad. Verwende stattdessen einen App-Store-Code.';
+
+  @override
+  String get promoErrorAlreadyPremium => 'Du hast bereits Pro, daher wird dieser Code nicht benötigt.';
+
+  @override
+  String get promoErrorRateLimited => 'Zu viele Versuche. Warte eine Stunde und versuche es dann erneut.';
+
+  @override
+  String get promoErrorBusy => 'Gerade lösen sehr viele Leute Codes ein. Versuche es gleich noch einmal.';
+
+  @override
+  String get promoErrorSignedOut => 'Melde dich an, um einen Code einzulösen.';
+
+  @override
+  String get promoErrorNetwork => 'Prism ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String get promoErrorUnknown => 'Etwas ist schiefgelaufen. Versuche es erneut.';
+
+  @override
+  String get promoSettingsGroup => 'Codes';
+
+  @override
+  String get promoSettingsRedeemTitle => 'Prism-Code einlösen';
+
+  @override
+  String get promoSettingsRedeemSubtitle => 'Münzen oder Pro-Tage aus unseren Beiträgen und Gewinnspielen';
+
+  @override
+  String get promoSettingsRedeemSubtitleIos => 'Münzen aus unseren Beiträgen und Gewinnspielen';
+
+  @override
+  String get promoAppStoreCodeTitle => 'App-Store-Code einlösen';
+
+  @override
+  String get promoAppStoreCodeSubtitle => 'Pro-Angebotscodes von Apple';
+
+  @override
+  String get promoPlayCodeTitle => 'Play-Code einlösen';
+
+  @override
+  String get promoPlayCodeSubtitle => 'Pro-Angebotscodes von Google Play';
+
+  @override
+  String get promoCodesFootnoteIos => 'Prism-Codes geben Münzen. App-Store-Codes geben Pro.';
+
+  @override
+  String get promoCodesFootnoteAndroid => 'Prism-Codes geben Münzen oder Pro-Tage. Play-Codes geben Pro.';
+
+  @override
+  String get promoStoreCodeFailed => 'Die Codeseite konnte nicht geöffnet werden. Versuche es erneut.';
+
+  @override
+  String get promoRewardsRowTitle => 'Code einlösen';
+
+  @override
+  String get promoRewardsRowSubtitle => 'Code aus einem Beitrag oder Gewinnspiel erhalten?';
+
+  @override
+  String get promoAdminTitle => 'Promo-Codes';
+
+  @override
+  String get promoAdminEntry => 'Promo-Codes';
+
+  @override
+  String get promoAdminCreate => 'Code erstellen';
+
+  @override
+  String get promoAdminTypeCoins => 'Münzen';
+
+  @override
+  String get promoAdminTypePro => 'Pro-Tage';
+
+  @override
+  String get promoAdminAmount => 'Betrag';
+
+  @override
+  String get promoAdminAmountHelpCoins => '1 bis 1.000 Münzen';
+
+  @override
+  String get promoAdminAmountHelpPro => '1 bis 90 Tage. Nur Android.';
+
+  @override
+  String get promoAdminMaxRedemptions => 'Max. Einlösungen';
+
+  @override
+  String get promoAdminExpiresInDays => 'Läuft ab in (Tagen)';
+
+  @override
+  String get promoAdminMinAccountAge => 'Mindestalter des Kontos (Tage)';
+
+  @override
+  String get promoAdminNewUsersOnly => 'Nur neue Konten';
+
+  @override
+  String get promoAdminNewUsersDays => 'Konto höchstens (Tage alt)';
+
+  @override
+  String get promoAdminCustomCode => 'Eigener Code (optional)';
+
+  @override
+  String get promoAdminCustomCodeHelp =>
+      '10 bis 32 Buchstaben und Zahlen, ohne I, O, 0 oder 1. Leer lassen, um einen zu erstellen.';
+
+  @override
+  String get promoAdminLabel => 'Notiz';
+
+  @override
+  String promoAdminCreated(String code) {
+    return '$code erstellt';
+  }
+
+  @override
+  String get promoAdminCopied => 'Code kopiert';
+
+  @override
+  String get promoAdminCopy => 'Code kopieren';
+
+  @override
+  String promoAdminRedemptions(int used, int max) {
+    return '$used von $max eingelöst';
+  }
+
+  @override
+  String promoAdminExpires(String date) {
+    return 'Läuft ab $date';
+  }
+
+  @override
+  String get promoAdminDisabled => 'Aus';
+
+  @override
+  String get promoAdminDisable => 'Deaktivieren';
+
+  @override
+  String get promoAdminEnable => 'Aktivieren';
+
+  @override
+  String get promoAdminEmpty => 'Noch keine Codes.';
+
+  @override
+  String get promoAdminLoadFailed => 'Codes konnten nicht geladen werden. Zum erneuten Versuch nach unten ziehen.';
+
+  @override
+  String promoAdminCreateFailed(String reason) {
+    return 'Der Code konnte nicht erstellt werden: $reason';
+  }
 }

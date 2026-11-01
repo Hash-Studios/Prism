@@ -57,12 +57,12 @@ void main() {
     OfflineAssetStore.testOverride = OfflineAssetStore(
       directory: Directory('${offlineDirectory.path}/prism/offline/assets'),
     );
-    ShortcutsFavouritesStore.supportDirectoryOverride = offlineDirectory;
+    NativeAssetPathsStore.supportDirectoryOverride = offlineDirectory;
   });
 
   tearDown(() async {
     OfflineAssetStore.testOverride = null;
-    ShortcutsFavouritesStore.supportDirectoryOverride = null;
+    NativeAssetPathsStore.supportDirectoryOverride = null;
     if (await offlineDirectory.exists()) await offlineDirectory.delete(recursive: true);
   });
 

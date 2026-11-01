@@ -17,6 +17,7 @@ export 'package:Prism/core/widgets/prism/prism_page.dart';
 export 'package:Prism/core/widgets/prism/prism_row.dart';
 export 'package:Prism/core/widgets/prism/prism_section.dart';
 export 'package:Prism/core/widgets/prism/prism_skeleton.dart';
+export 'package:Prism/core/widgets/prism/prism_slider.dart';
 export 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 export 'package:Prism/core/widgets/prism_image_tile.dart';
 export 'package:Prism/core/widgets/prism_sheet.dart';

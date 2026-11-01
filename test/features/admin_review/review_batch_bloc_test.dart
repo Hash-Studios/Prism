@@ -10,6 +10,7 @@ import 'package:Prism/features/admin_review/data/review_batch_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_firestore_client.dart';
+import 'fake_review_callables.dart';
 
 class _BatchFirestoreClient extends FakeFirestoreClient {
   _BatchFirestoreClient({super.docs});
@@ -114,7 +115,10 @@ void main() {
           in (client.docs[FirebaseCollections.walls] ?? const <String, Map<String, dynamic>>{}).entries)
         if (e.value['review'] == false) (id: e.key, data: Map<String, dynamic>.of(e.value)),
     ];
-    bloc = ReviewBatchBloc(ReviewBatchRepository(client), AdminModerationRepository(client));
+    bloc = ReviewBatchBloc(
+      ReviewBatchRepository(client),
+      AdminModerationRepository.withCaller(client, FakeReviewCallables(client.docs).call),
+    );
   });
 
   tearDown(() => bloc.close());

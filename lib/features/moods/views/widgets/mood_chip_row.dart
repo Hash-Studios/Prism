@@ -17,7 +17,8 @@ class MoodChipRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (moods.isEmpty) return const SizedBox.shrink();
+    final List<MoodList> visible = moods.where((list) => list.wallIds.isNotEmpty).toList(growable: false);
+    if (visible.isEmpty) return const SizedBox.shrink();
     final l10n = context.l10n;
     return Semantics(
       container: true,
@@ -33,10 +34,10 @@ class MoodChipRow extends StatelessWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: PrismFeedLayout.gridSpacing + PrismSpace.xxs),
-              itemCount: moods.length,
+              itemCount: visible.length,
               separatorBuilder: (_, _) => const SizedBox(width: 6),
               itemBuilder: (context, index) {
-                final WallMood mood = moods[index].mood;
+                final WallMood mood = visible[index].mood;
                 return PrismChip(label: mood.title(l10n), compact: true, onTap: () => _open(context, mood, index));
               },
             ),
@@ -47,6 +48,7 @@ class MoodChipRow extends StatelessWidget {
   }
 
   void _open(BuildContext context, WallMood mood, int index) {
+    if (mood == WallMood.duoReveal) unawaited(analytics.track(const DuoRowOpenedEvent(source: 'chip')));
     unawaited(analytics.track(MoodChipTappedEvent(moodId: mood.id, position: index)));
     unawaited(context.router.pushPath('/mood/${mood.id}?source=chip'));
   }

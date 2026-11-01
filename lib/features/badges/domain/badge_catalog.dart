@@ -9,6 +9,7 @@ class BadgeInfo {
   final IconData icon;
 
   String name(AppLocalizations l10n) => switch (id) {
+    'challenge_winner' => l10n.challengeBadge,
     'week_warrior' => l10n.economyBadgeWeekWarrior,
     'streak_master' => l10n.economyBadgeStreakMaster,
     'creator' => l10n.economyBadgeCreator,
@@ -22,6 +23,7 @@ class BadgeInfo {
   };
 
   String description(AppLocalizations l10n) => switch (id) {
+    'challenge_winner' => l10n.challengeBadgeDescription,
     'week_warrior' => l10n.economyBadgeWeekWarriorDescription,
     'streak_master' => l10n.economyBadgeStreakMasterDescription,
     'creator' => l10n.economyBadgeCreatorDescription,
@@ -36,6 +38,7 @@ class BadgeInfo {
 }
 
 const List<BadgeInfo> badgeCatalog = <BadgeInfo>[
+  BadgeInfo(id: 'challenge_winner', icon: Icons.emoji_events_outlined),
   BadgeInfo(id: 'week_warrior', icon: Icons.local_fire_department_rounded),
   BadgeInfo(id: 'streak_master', icon: Icons.whatshot_rounded),
   BadgeInfo(id: 'creator', icon: Icons.brush_rounded),

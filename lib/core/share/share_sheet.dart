@@ -6,11 +6,13 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/share/instagram_stories.dart';
 import 'package:Prism/core/share/share_card.dart';
 import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/share/share_text.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -61,6 +63,7 @@ Future<void> showShareSheet(
   ShareCardContent content,
   String sourceContext, {
   ShareSheetServices services = const ShareSheetServices(),
+  VoidCallback? onShared,
 }) {
   return showPrismSheet<void>(
     context,
@@ -73,9 +76,15 @@ Future<void> showShareSheet(
         creator: shareSafeText(content.creator),
         creatorLine: shareSafeText(content.creatorLine),
         palette: content.palette,
+        duoReveal: content.duoReveal,
+        contentId: content.contentId,
+        foldedLabel: shareSafeText(content.foldedLabel),
+        unfoldedLabel: shareSafeText(content.unfoldedLabel),
+        cta: shareSafeText(content.cta),
       ),
       sourceContext: sourceContext,
       services: services,
+      onShared: onShared,
     ),
   );
 }
@@ -85,12 +94,14 @@ class ShareSheet extends StatefulWidget {
     required this.content,
     required this.sourceContext,
     this.services = const ShareSheetServices(),
+    this.onShared,
     super.key,
   });
 
   final ShareCardContent content;
   final String sourceContext;
   final ShareSheetServices services;
+  final VoidCallback? onShared;
 
   @override
   State<ShareSheet> createState() => _ShareSheetState();
@@ -100,9 +111,18 @@ class _ShareSheetState extends State<ShareSheet> {
   final PageController _pages = PageController(viewportFraction: 0.62);
   final Map<ShareCardFormat, Future<File>> _renders = <ShareCardFormat, Future<File>>{};
   final Set<ShareCardFormat> _failedRenders = <ShareCardFormat>{};
-  ShareCardFormat _format = ShareCardFormat.values.first;
+  late ShareCardFormat _format = _formats.first;
+  List<ShareCardFormat> get _formats => <ShareCardFormat>[
+    if (widget.content.duoReveal) ShareCardFormat.duoReveal,
+    ShareCardFormat.story,
+    ShareCardFormat.post,
+    ShareCardFormat.clean,
+  ];
   bool _instagram = false;
   ShareTargetValue? _busy;
+  String? _actionUserId;
+
+  bool get _actionSessionValid => mounted && app_state.prismUser.loggedIn && app_state.prismUser.id == _actionUserId;
 
   @override
   void initState() {
@@ -140,10 +160,18 @@ class _ShareSheetState extends State<ShareSheet> {
     if (retry && _failedRenders.remove(format)) _renders.remove(format);
     return _renders.putIfAbsent(
       format,
-      () => widget.services.render(format, widget.content).onError((Object error, StackTrace stackTrace) {
-        _failedRenders.add(format);
-        Error.throwWithStackTrace(error, stackTrace);
-      }),
+      () => widget.services
+          .render(format, widget.content)
+          .then((file) {
+            if (format == ShareCardFormat.duoReveal) {
+              analytics.track(DuoShareCardMadeEvent(contentId: widget.content.contentId));
+            }
+            return file;
+          })
+          .onError((Object error, StackTrace stackTrace) {
+            _failedRenders.add(format);
+            Error.throwWithStackTrace(error, stackTrace);
+          }),
     );
   }
 
@@ -167,13 +195,16 @@ class _ShareSheetState extends State<ShareSheet> {
   }
 
   Future<void> _run(ShareTargetValue target, Future<bool> Function() action) async {
+    if (!await requireSignedInAction(context) || !mounted) return;
     if (_busy != null) return;
+    _actionUserId = app_state.prismUser.id;
     PrismHaptics.tap();
     setState(() => _busy = target);
     bool done = false;
     try {
       done = await action();
     } finally {
+      _actionUserId = null;
       if (mounted) {
         setState(() => _busy = null);
       } else {
@@ -184,6 +215,7 @@ class _ShareSheetState extends State<ShareSheet> {
   }
 
   Future<bool> _copyLink() async {
+    if (!_actionSessionValid) return false;
     final AppLocalizations l10n = context.l10n;
     try {
       await widget.services.copyText(widget.content.link);
@@ -203,7 +235,7 @@ class _ShareSheetState extends State<ShareSheet> {
     final AppLocalizations l10n = context.l10n;
     try {
       final File file = await _render(format, retry: true);
-      if (!mounted) return false;
+      if (!_actionSessionValid) return false;
       final OperationResult result = await widget.services.saveImage(file);
       if (result.success) {
         _track(ShareTargetValue.saveImage, EventResultValue.success, format: format.analytics);
@@ -231,7 +263,7 @@ class _ShareSheetState extends State<ShareSheet> {
     bool opened = false;
     try {
       final File file = await _render(format, retry: true);
-      if (!mounted) return false;
+      if (!_actionSessionValid) return false;
       opened = await widget.services.shareToInstagram(file.path);
     } catch (error, stackTrace) {
       logger.w('Instagram story share failed', error: error, stackTrace: stackTrace);
@@ -255,7 +287,7 @@ class _ShareSheetState extends State<ShareSheet> {
     } catch (error, stackTrace) {
       logger.w('Share card failed; sharing text', error: error, stackTrace: stackTrace);
     }
-    if (!mounted) return false;
+    if (!_actionSessionValid) return false;
     try {
       ShareResult sent;
       if (file == null) {
@@ -266,11 +298,13 @@ class _ShareSheetState extends State<ShareSheet> {
         } catch (error, stackTrace) {
           logger.w('Share card send failed; sharing text', error: error, stackTrace: stackTrace);
           if (!mounted) rethrow;
+          if (!_actionSessionValid) return false;
           file = null;
           sent = await widget.services.shareText(text: text, context: context);
         }
       }
       final bool dismissed = sent.status == ShareResultStatus.dismissed;
+      if (sent.status == ShareResultStatus.success) widget.onShared?.call();
       _track(
         ShareTargetValue.more,
         dismissed ? EventResultValue.cancelled : EventResultValue.success,
@@ -293,6 +327,7 @@ class _ShareSheetState extends State<ShareSheet> {
     ShareCardFormat.story => l10n.coreShareFormatStory,
     ShareCardFormat.post => l10n.coreShareFormatPost,
     ShareCardFormat.clean => l10n.coreShareFormatClean,
+    ShareCardFormat.duoReveal => l10n.duoTitle,
   };
 
   @override
@@ -309,13 +344,13 @@ class _ShareSheetState extends State<ShareSheet> {
             child: PageView.builder(
               key: const ValueKey<String>('share-formats'),
               controller: _pages,
-              itemCount: ShareCardFormat.values.length,
+              itemCount: _formats.length,
               onPageChanged: (int index) {
                 PrismHaptics.selection();
-                setState(() => _format = ShareCardFormat.values[index]);
+                setState(() => _format = _formats[index]);
               },
               itemBuilder: (BuildContext context, int index) {
-                final ShareCardFormat format = ShareCardFormat.values[index];
+                final ShareCardFormat format = _formats[index];
                 final bool selected = format == _format;
                 return _FormatPreview(
                   key: ValueKey<ShareCardFormat>(format),

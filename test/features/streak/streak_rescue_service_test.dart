@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
@@ -7,9 +11,12 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/streak/data/streak_rescue_service.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
+
+class _MockFirestoreClient extends Mock implements FirestoreClient {}
 
 StreakClaimResult _claim({bool broken = true, int previous = 9}) => StreakClaimResult(
   claimed: true,
@@ -30,6 +37,10 @@ StreakClaimResult _claim({bool broken = true, int previous = 9}) => StreakClaimR
 );
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue((Map<String, dynamic> _, String __) => null as StreakRescueOffer?);
+  });
+
   late FakeAppAnalytics analytics;
   late SettingsLocalDataSource settings;
   late List<Map<String, dynamic>> calls;
@@ -74,6 +85,75 @@ void main() {
     test('a short break or an unbroken streak is not offered', () {
       expect(StreakRescueOffer.fromClaim(_claim(previous: 6)), isNull);
       expect(StreakRescueOffer.fromClaim(_claim(broken: false)), isNull);
+    });
+  });
+
+  group('fetch', () {
+    late _MockFirestoreClient client;
+    late Map<String, dynamic> document;
+
+    setUp(() {
+      client = _MockFirestoreClient();
+      document = <String, dynamic>{};
+      when(
+        () => client.getById<StreakRescueOffer?>(
+          FirebaseCollections.usersV2,
+          'user-1',
+          any(),
+          sourceTag: 'streak_rescue.offer',
+        ),
+      ).thenAnswer((invocation) async {
+        final map = invocation.positionalArguments[2] as StreakRescueOffer? Function(Map<String, dynamic>, String);
+        return map(document, 'user-1');
+      });
+    });
+
+    test('reads only valid, unexpired offers with the expected source tag', () async {
+      final svc = StreakRescueService(client: client);
+      final future = DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch;
+      final past = DateTime.now().subtract(const Duration(hours: 1)).millisecondsSinceEpoch;
+      document = <String, dynamic>{
+        'coinState': <String, dynamic>{
+          'rescue': <String, dynamic>{'count': 7, 'expiresAtMs': future},
+        },
+      };
+      expect((await svc.fetch())?.count, 7);
+      document = <String, dynamic>{
+        'coinState': <String, dynamic>{
+          'rescue': <String, dynamic>{'count': 6, 'expiresAtMs': future},
+        },
+      };
+      expect(await svc.fetch(), isNull);
+      document = <String, dynamic>{
+        'coinState': <String, dynamic>{
+          'rescue': <String, dynamic>{'count': 9, 'expiresAtMs': past},
+        },
+      };
+      expect(await svc.fetch(), isNull);
+      verify(
+        () => client.getById<StreakRescueOffer?>(
+          FirebaseCollections.usersV2,
+          'user-1',
+          any(),
+          sourceTag: 'streak_rescue.offer',
+        ),
+      ).called(3);
+    });
+
+    test('discards an offer when the account changes while reading', () async {
+      final pending = Completer<StreakRescueOffer?>();
+      when(
+        () => client.getById<StreakRescueOffer?>(
+          FirebaseCollections.usersV2,
+          'user-1',
+          any(),
+          sourceTag: 'streak_rescue.offer',
+        ),
+      ).thenAnswer((_) => pending.future);
+      final result = StreakRescueService(client: client).fetch();
+      app_state.prismUser.id = 'user-2';
+      pending.complete(const StreakRescueOffer(9));
+      expect(await result, isNull);
     });
   });
 

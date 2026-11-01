@@ -3,7 +3,7 @@ import {createHash} from "node:crypto";
 import {onCall, HttpsError, type CallableRequest} from "firebase-functions/v2/https";
 import {coinTransactionDoc, db, int, CALLABLE_REGIONS} from "./common";
 import {loadEconomy, type EconomyConfig} from "./economy";
-import {parseCollectionList} from "./wallOfTheDay";
+import {parseCollectionList} from "./wallEligibility";
 import {ownedThumbnailUrl, signOriginalDelivery, stored, verifyStoredUploadRegistry} from "./ownedAssetDelivery";
 import {r2Secrets} from "./r2Storage";
 

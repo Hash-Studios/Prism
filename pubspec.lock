@@ -704,10 +704,9 @@ packages:
   flutter_floating_bottom_bar:
     dependency: "direct main"
     description:
-      name: flutter_floating_bottom_bar
-      sha256: "3063f78c20486bb1a2b5017b1515b82e7aed79dde2efbd30a1c96ee3a84ff228"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/flutter_floating_bottom_bar"
+      relative: true
+    source: path
     version: "3.0.1"
   flutter_image_compress:
     dependency: "direct main"
@@ -1668,6 +1667,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
+  sensors_plus:
+    dependency: "direct main"
+    description:
+      name: sensors_plus
+      sha256: "50a01f66846bff68de947bd5df225c3627c923c467f758867f3916350be059ac"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.1.1"
+  sensors_plus_platform_interface:
+    dependency: transitive
+    description:
+      name: sensors_plus_platform_interface
+      sha256: "9e12a92569bf14ae04b2f086c3e087177a47e527b7666ae1bbe5f70f8450ab19"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.2"
   sentry:
     dependency: transitive
     description:

@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/platform/wallpaper_set_feedback.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -74,6 +76,9 @@ void main() {
   late String newFilePath;
 
   setUp(() async {
+    app_state.prismUser = createGuestPrismUser()
+      ..id = 'user'
+      ..loggedIn = true;
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     store = WallpaperHistoryStore(settings);
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
@@ -100,6 +105,7 @@ void main() {
   });
 
   tearDown(() async {
+    app_state.prismUser = createGuestPrismUser();
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), null);
     messenger.setMockMethodCallHandler(SystemChannels.platform, null);

@@ -1,5 +1,6 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
@@ -11,9 +12,7 @@ import 'package:Prism/core/widgets/animated/favourite_icon.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
-import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
-import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -26,7 +25,6 @@ import 'package:mocktail/mocktail.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/favourite_test_scope.dart';
 import '../../support/in_memory_local_store.dart';
-import 'support/guest_store_fixture.dart';
 
 class _MockFetchFavouriteWallsUseCase extends Mock implements FetchFavouriteWallsUseCase {}
 
@@ -374,72 +372,26 @@ void main() {
   group('as a guest', () {
     setUp(() {
       app_state.prismUser = app_constants.createGuestPrismUser();
-      when(() => toggleUseCase(any())).thenAnswer((_) async {
-        await favorites.setWallFavourite('', 'wall_1', true);
-        return Result.success(true);
-      });
     });
 
-    Iterable<Object?> shownToasts() =>
-        toasts.where((call) => call.method == 'showToast').map((call) => (call.arguments as Map)['msg']);
-
-    testWidgets('the heart saves without asking for a sign-in', (tester) async {
-      getIt.registerSingleton<GuestFavouritesStore>(memoryGuestStore());
+    testWidgets('cancelling sign-in leaves the favourite unchanged', (tester) async {
+      var prompts = 0;
+      final original = signedInActionSignIn;
+      signedInActionSignIn = (_) async {
+        prompts++;
+        return false;
+      };
+      addTearDown(() => signedInActionSignIn = original);
       final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
       addTearDown(bloc.close);
 
       await tapFavourite(tester, bloc);
 
-      final params = verify(() => toggleUseCase(captureAny())).captured.single as ToggleFavouriteWallParams;
-      expect(params.userId, '');
-      expect(find.byType(AlertDialog), findsNothing);
-      expect(find.byType(PrismSheetBody), findsNothing);
-      expect(recordingAnalytics.events.whereType<FavouriteSavedAsGuestEvent>(), hasLength(1));
-      expect(recordingAnalytics.events.whereType<FavStatusChangedEvent>().single.isFavourite, isTrue);
-    });
-
-    testWidgets('the third guest save shows the sign-in nudge once', (tester) async {
-      final guests = memoryGuestStore();
-      getIt.registerSingleton<GuestFavouritesStore>(guests);
-      await guests.put('a', <String, dynamic>{'id': 'a'});
-      await guests.put('b', <String, dynamic>{'id': 'b'});
-      await guests.put('wall_1', <String, dynamic>{'id': 'wall_1'});
-      final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
-      addTearDown(bloc.close);
-
-      await tapFavourite(tester, bloc);
-
-      expect(shownToasts(), <Object?>['Sign in to keep your favourites on every device']);
-    });
-
-    testWidgets('a throwing onFavourited callback still shows the third-save nudge', (tester) async {
-      final guests = memoryGuestStore();
-      getIt.registerSingleton<GuestFavouritesStore>(guests);
-      await guests.put('a', <String, dynamic>{'id': 'a'});
-      await guests.put('b', <String, dynamic>{'id': 'b'});
-      await guests.put('wall_1', <String, dynamic>{'id': 'wall_1'});
-      final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
-      addTearDown(bloc.close);
-
-      await tapFavourite(tester, bloc, onFavourited: () => throw StateError('callback failed'));
-
-      expect(shownToasts(), <Object?>['Sign in to keep your favourites on every device']);
-      expect(recordingAnalytics.events.whereType<FavouriteSavedAsGuestEvent>(), hasLength(1));
+      expect(prompts, 1);
+      verifyNever(() => toggleUseCase(any()));
+      expect(recordingAnalytics.events.whereType<FavStatusChangedEvent>(), isEmpty);
       expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
-      expect(favorites.isWallFavourite('', 'wall_1'), isTrue);
-    });
-
-    testWidgets('the second guest save shows no nudge', (tester) async {
-      final guests = memoryGuestStore();
-      getIt.registerSingleton<GuestFavouritesStore>(guests);
-      await guests.put('a', <String, dynamic>{'id': 'a'});
-      await guests.put('wall_1', <String, dynamic>{'id': 'wall_1'});
-      final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
-      addTearDown(bloc.close);
-
-      await tapFavourite(tester, bloc);
-
-      expect(shownToasts(), isEmpty);
+      expect(favorites.isWallFavourite('', 'wall_1'), isFalse);
     });
   });
 

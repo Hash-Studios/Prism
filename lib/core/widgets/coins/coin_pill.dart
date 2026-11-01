@@ -57,7 +57,7 @@ class StatPill extends StatelessWidget {
           onTap: onTap,
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 44),
-            child: Center(widthFactor: 1, child: pill),
+            child: Center(widthFactor: 1, heightFactor: 1, child: pill),
           ),
         ),
       ),

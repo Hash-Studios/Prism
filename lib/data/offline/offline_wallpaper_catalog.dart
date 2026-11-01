@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -11,7 +12,7 @@ import 'package:Prism/features/user_blocks/domain/repositories/user_block_reposi
 import 'package:get_it/get_it.dart';
 
 class OfflineWallpaperCatalog {
-  OfflineWallpaperCatalog({DurableJsonStore? store, FutureOr<Set<String>> Function()? blockedUids})
+  OfflineWallpaperCatalog({DurableJsonStore? store, FutureOr<BlockedCreators> Function()? blockedUids})
     : _store = store ?? DurableJsonStore('wallpaper_catalog'),
       _blockedUids = blockedUids ?? _currentBlockedUids;
 
@@ -22,7 +23,7 @@ class OfflineWallpaperCatalog {
   static const int maxBytes = 2 * 1024 * 1024;
 
   final DurableJsonStore _store;
-  final FutureOr<Set<String>> Function() _blockedUids;
+  final FutureOr<BlockedCreators> Function() _blockedUids;
   final Map<String, _CatalogRecord> _records = <String, _CatalogRecord>{};
   Future<void>? _loading;
   Future<void> _mutationTail = Future<void>.value();
@@ -57,7 +58,7 @@ class OfflineWallpaperCatalog {
     final List<_CatalogRecord> matches =
         _records.values.where((record) => record.searchText.contains(normalizedQuery)).toList(growable: false)
           ..sort((a, b) => b.savedAtUtc.compareTo(a.savedAtUtc));
-    final Set<String> blocked = await _blockedUids();
+    final BlockedCreators blocked = await _blockedUids();
     return matches
         .where((record) => !BlockedCreatorsFilter.hidesFeedItem(record.item, blocked))
         .take(limit)
@@ -121,9 +122,9 @@ class OfflineWallpaperCatalog {
     return result;
   }
 
-  static Future<Set<String>> _currentBlockedUids() => GetIt.instance.isRegistered<UserBlockRepository>()
-      ? GetIt.instance<UserBlockRepository>().getBlockedCreatorUids(waitForInitialLoad: true)
-      : Future<Set<String>>.value(const <String>{});
+  static Future<BlockedCreators> _currentBlockedUids() => GetIt.instance.isRegistered<UserBlockRepository>()
+      ? GetIt.instance<UserBlockRepository>().loadBlockedCreators()
+      : Future<BlockedCreators>.value(KnownBlockedCreators(const <String>{}));
 
   static bool _isPublicCatalogSource(WallpaperSource source) =>
       source == WallpaperSource.prism || source == WallpaperSource.wallhaven || source == WallpaperSource.pexels;

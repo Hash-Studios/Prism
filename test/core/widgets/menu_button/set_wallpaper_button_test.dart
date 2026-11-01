@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -12,15 +13,14 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
-import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
 import 'package:Prism/core/widgets/menu_button/pair_picker_sheet.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:async_wallpaper/src/wallpaper_client.dart';
 import 'package:auto_route/auto_route.dart';
@@ -31,10 +31,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../../support/fake_app_analytics.dart';
 import '../../../support/coins_test_backend.dart';
+import '../../../support/fake_app_analytics.dart';
 import '../../../support/in_memory_local_store.dart';
 import '../../../support/offline_asset_fixture.dart';
+import '../../../support/profile_user_fixture.dart';
 
 final AppLocalizationsEn l10n = AppLocalizationsEn();
 
@@ -110,9 +111,10 @@ void main() {
   final studioOpener = SetWallpaperFlow.studioOpener;
   final pairPicker = SetWallpaperFlow.pairPicker;
   final screenOpener = SetWallpaperFlow.screenOpener;
-  final signIn = originalSignIn;
+  final signIn = signedInActionSignIn;
 
   setUp(() async {
+    app_state.prismUser = profileUser();
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
     analytics = FakeAppAnalytics();
@@ -127,10 +129,11 @@ void main() {
   });
 
   tearDown(() async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
     SetWallpaperFlow.studioOpener = studioOpener;
     SetWallpaperFlow.pairPicker = pairPicker;
     SetWallpaperFlow.screenOpener = screenOpener;
-    originalSignIn = signIn;
+    signedInActionSignIn = signIn;
     await getIt.reset();
     AnalyticsRuntime.reset();
     aw.AsyncWallpaper.debugResetClient();
@@ -282,7 +285,7 @@ void main() {
         };
       };
       signIns = 0;
-      originalSignIn = (_) async {
+      signedInActionSignIn = (_) async {
         signIns++;
         if (signsIn) app_state.prismUser = signedInUser;
         return signsIn;
@@ -299,44 +302,45 @@ void main() {
       await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
       await tester.pumpAndSettle();
 
-      expect(signIns, 0);
-      expect(setScreen, findsOneWidget);
-      await setOn(tester, WallpaperTarget.home);
-
       expect(signIns, 1);
+      expect(setScreen, findsNothing);
       expect(calls, isEmpty);
       expect(client.requests, isEmpty);
     });
 
-    testWidgets('closing the Set screen as a guest does not ask for sign-in', (tester) async {
+    testWidgets('opening the Set screen requires sign-in first', (tester) async {
       await asGuest(tester, signsIn: false);
       final client = _Client();
       aw.AsyncWallpaper.debugSetClient(client);
       await pumpButton(tester, source: WallpaperSource.prism, wallpaperId: 'protected-wall', url: '');
 
       await openSetScreen(tester);
-      expect(signIns, 0);
-      await tester.tap(find.byTooltip(l10n.setScreenClose));
-      await tester.pumpAndSettle();
-
-      expect(signIns, 0);
+      expect(signIns, 1);
+      expect(setScreen, findsNothing);
       expect(calls, isEmpty);
       expect(client.requests, isEmpty);
     });
 
-    testWidgets('a canceled Adjust authorization is not repeated when Set is chosen', (tester) async {
+    testWidgets('a cancelled sign-in never opens Adjust or prepares the image', (tester) async {
       await asGuest(tester, signsIn: false);
       final client = _Client();
       aw.AsyncWallpaper.debugSetClient(client);
-      await pumpButton(tester, source: WallpaperSource.prism, wallpaperId: 'protected-wall', url: '');
+      var preparations = 0;
+      await pumpButton(
+        tester,
+        source: WallpaperSource.prism,
+        wallpaperId: 'protected-wall',
+        url: '',
+        prepareSource: () async {
+          preparations++;
+          return wallFilePath;
+        },
+      );
 
       await openSetScreen(tester);
-      await tester.tap(find.byKey(const ValueKey<String>('set-screen-adjust')));
-      await tester.pumpAndSettle();
       expect(signIns, 1);
-      await setOn(tester, WallpaperTarget.home);
-
-      expect(signIns, 1);
+      expect(setScreen, findsNothing);
+      expect(preparations, 0);
       expect(calls, isEmpty);
       expect(client.requests, isEmpty);
     });
@@ -428,7 +432,7 @@ void main() {
       ]);
     });
 
-    testWidgets('Set on a wall that needs no grant does not ask a guest to sign in', (tester) async {
+    testWidgets('Set on a local wall still requires sign-in', (tester) async {
       await asGuest(tester, signsIn: false);
       await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
       final client = _Client();
@@ -438,8 +442,8 @@ void main() {
       await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
-      expect(signIns, 0);
-      expect(client.requests.map((r) => r.source.filePath), [wallFilePath]);
+      expect(signIns, 1);
+      expect(client.requests, isEmpty);
     });
 
     testWidgets('a prepared Wallhaven Set keeps its canonical history URL and can be undone', (tester) async {
@@ -685,9 +689,10 @@ void main() {
       SetWallpaperFlow.pairPicker = (context, {excludeUrl}) async => protectedPick();
       await pumpButton(tester);
 
-      await openPair(tester);
+      await openSetScreen(tester);
 
       expect(signIns, 1);
+      expect(setScreen, findsNothing);
       expect(calls, isEmpty);
       expect(client.requests, isEmpty);
     });

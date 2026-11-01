@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -55,6 +57,9 @@ void main() {
   final List<WallpaperDetailState> initialStates = <WallpaperDetailState>[];
 
   setUp(() {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'test-user'
+      ..loggedIn = true;
     blocs.clear();
     initialStates.clear();
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
@@ -73,6 +78,7 @@ void main() {
       await bloc.states.close();
     }
     await getIt.reset();
+    app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
   testWidgets('opening a recommendation passes its loaded recommendation page as the detail feed', (tester) async {

@@ -26,6 +26,19 @@ void main() {
     ));
   });
 
+  test('challenge winner uses the matched backend kind and theme argument', () {
+    expect(
+      localizedNotificationCopyData(
+        'challengeWinner',
+        {'theme': 'Quiet oceans'},
+        fallbackTitle: '',
+        fallbackBody: '',
+        l10n: l10n,
+      ),
+      (title: 'Your wallpaper won', body: 'Your entry won the weekly challenge: Quiet oceans.'),
+    );
+  });
+
   test('unknown and historical notifications keep stored copy', () {
     final InAppNotificationEntity item = notification(
       'legacy',
@@ -117,6 +130,56 @@ void main() {
     }
   });
 
+  test('a tip names the sender, the amount and the wall', () {
+    expect(
+      localizedNotificationCopyData(
+        'tipReceived',
+        const <String, Object?>{'senderName': 'Ava', 'amount': 25, 'wallTitle': 'Neon rain'},
+        fallbackTitle: '',
+        fallbackBody: '',
+        l10n: l10n,
+      ),
+      (title: 'Ava tipped you 25 coins for Neon rain', body: 'See your tips in your creator stats.'),
+    );
+  });
+
+  test('a tip without a wall title omits the wall', () {
+    expect(
+      localizedNotificationCopyData(
+        'tipReceived',
+        const <String, Object?>{'senderName': 'Ava', 'amount': 25, 'wallTitle': ''},
+        fallbackTitle: '',
+        fallbackBody: '',
+        l10n: l10n,
+      ),
+      (title: 'Ava tipped you 25 coins', body: 'See your tips in your creator stats.'),
+    );
+  });
+
+  test('a tip amount given as an int is shown as digits', () {
+    final copy = localizedNotificationCopyData(
+      'tipReceived',
+      const <String, Object?>{'senderName': 'Ava', 'amount': 25, 'wallTitle': ''},
+      fallbackTitle: '',
+      fallbackBody: '',
+      l10n: l10n,
+    );
+    expect(copy.title, contains('25'));
+  });
+
+  test('a daily tip digest counts the tips and the coins', () {
+    expect(
+      localizedNotificationCopyData(
+        'tipsReceived',
+        const <String, Object?>{'tipCount': 3, 'coins': 60},
+        fallbackTitle: '',
+        fallbackBody: '',
+        l10n: l10n,
+      ),
+      (title: 'You got 3 tips today', body: '60 coins in all. See them in your creator stats.'),
+    );
+  });
+
   test('a filled wall request shows the request text as the body', () {
     expect(
       localizedNotificationCopyData(
@@ -143,5 +206,28 @@ void main() {
         (title: l10n.notifPushWotdAudienceTitle, body: l10n.notifPushWotdAudienceBodyUntitled),
       );
     }
+  });
+
+  test('a wall remix names the remixer and the wall', () {
+    final InAppNotificationEntity item = notification(
+      'wall_remixed',
+      title: 'Legacy title',
+      body: 'Legacy body',
+    ).copyWith(copyKind: 'wallRemixed', copyArgs: const <String, Object?>{'remixerName': 'Asha', 'wallTitle': 'Koi'});
+
+    expect(localizedNotificationCopy(item, l10n), (title: l10n.notifPushWallRemixedTitle, body: 'Asha remixed Koi.'));
+  });
+
+  test('a wall remix with an empty wall title uses the untitled copy', () {
+    final InAppNotificationEntity item = notification(
+      'wall_remixed',
+      title: 'Legacy title',
+      body: 'Legacy body',
+    ).copyWith(copyKind: 'wallRemixed', copyArgs: const <String, Object?>{'remixerName': 'Asha', 'wallTitle': '  '});
+
+    expect(localizedNotificationCopy(item, l10n), (
+      title: l10n.notifPushWallRemixedTitle,
+      body: 'Asha remixed your wallpaper.',
+    ));
   });
 }

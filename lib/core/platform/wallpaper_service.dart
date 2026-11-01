@@ -149,6 +149,7 @@ class WallpaperService {
     String? wallpaperId,
     WallpaperSource? wallpaperSource,
   }) async {
+    if (!app_state.prismUser.loggedIn) return const WallpaperSetResult(WallpaperSetStatus.cancelled, '');
     final normalizedSource = _normalizeSource(source);
     final int historyWriteGeneration = _historyWriteGeneration;
     final bool historyOwnerLoggedIn = app_state.prismUser.loggedIn;
@@ -230,12 +231,20 @@ class WallpaperService {
         }
       }
       final bool canRecord = recordHistory && await _canRecord(recordedSource);
+      if (!app_state.prismUser.loggedIn || historyOwnerId != app_state.prismUser.id.trim()) {
+        return const WallpaperSetResult(WallpaperSetStatus.cancelled, '');
+      }
       final List<AppliedWallpaper?> previous = canRecord ? _previousFor(target) : const <AppliedWallpaper?>[];
       final aw.WallpaperSource platformSource = useSystemCropper
           ? aw.WallpaperSource.contentUri((await _cropChannel.invokeMethod<String>('contentUri', filePath))!)
           : aw.WallpaperSource.filePath(filePath);
+      if (!app_state.prismUser.loggedIn || historyOwnerId != app_state.prismUser.id.trim()) {
+        return const WallpaperSetResult(WallpaperSetStatus.cancelled, '');
+      }
       aw.WallpaperOperationResult result = await _apply(platformSource, target, scaleMode, firstStrategy);
-      if (!useSystemCropper &&
+      if (app_state.prismUser.loggedIn &&
+          historyOwnerId == app_state.prismUser.id.trim() &&
+          !useSystemCropper &&
           result.status == aw.WallpaperOperationStatus.failed &&
           canRetryWallpaperError(result.errorCode)) {
         result = await _apply(platformSource, target, scaleMode, aw.WallpaperApplyStrategy.automatic);

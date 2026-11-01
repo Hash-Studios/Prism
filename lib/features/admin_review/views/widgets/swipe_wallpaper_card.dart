@@ -1,6 +1,7 @@
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/utils/localized_relative_time.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/admin_review/views/widgets/wall_resubmission_notice.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ class SwipeWallpaperCard extends StatelessWidget {
   final String authorPhoto;
   final DateTime? uploadedAt;
   final bool isTopCard;
+  final String? wallDocId;
 
   /// Space around the card. The stamp overlay uses the same margin so the two line up.
   static const EdgeInsets margin = EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: PrismSpace.xs);
@@ -27,6 +29,7 @@ class SwipeWallpaperCard extends StatelessWidget {
     required this.authorPhoto,
     this.uploadedAt,
     this.isTopCard = true,
+    this.wallDocId,
   });
 
   factory SwipeWallpaperCard.fromDocument(FirestoreDocument wall, {bool isTopCard = true}) {
@@ -39,6 +42,7 @@ class SwipeWallpaperCard extends StatelessWidget {
       authorPhoto: wall.userPhoto,
       uploadedAt: uploadedAt,
       isTopCard: isTopCard,
+      wallDocId: wall.id,
     );
   }
 
@@ -83,6 +87,7 @@ class SwipeWallpaperCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (wallDocId != null) WallResubmissionNotice(wallDocId: wallDocId!, onImage: true),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: 5),
                       decoration: BoxDecoration(

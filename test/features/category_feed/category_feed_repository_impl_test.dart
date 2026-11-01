@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:Prism/core/constants/app_constants.dart';
-import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -18,15 +20,15 @@ import 'package:Prism/features/category_feed/domain/entities/category_feed_page.
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
-import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_feed_cache_local_data_source.dart';
-import '../../support/in_memory_local_store.dart';
 import '../../support/fake_user_block_repository.dart';
+import '../../support/in_memory_local_store.dart';
 
 class _MockPrism extends Mock implements PrismWallpaperRepository {}
 
@@ -84,12 +86,11 @@ WallhavenWallpaper _wall(String id, {String? email}) => WallhavenWallpaper(
 class _DelayedUserBlockRepository extends FakeUserBlockRepository {
   _DelayedUserBlockRepository() : super.pending();
 
-  final Completer<Set<String>> snapshot = Completer<Set<String>>();
+  final Completer<BlockedCreators> snapshot = Completer<BlockedCreators>();
   final Completer<void> initialLoadRequested = Completer<void>();
 
   @override
-  Future<Set<String>> getBlockedCreatorUids({bool waitForInitialLoad = false}) {
-    if (!waitForInitialLoad) return super.getBlockedCreatorUids();
+  Future<BlockedCreators> loadBlockedCreators() {
     if (!initialLoadRequested.isCompleted) initialLoadRequested.complete();
     return snapshot.future;
   }
@@ -242,9 +243,44 @@ void main() {
     pending.then((_) => completed = true);
     await blocks.initialLoadRequested.future;
     expect(completed, isFalse);
-    blocks.snapshot.complete(<String>{'blocked-uid'});
+    blocks.snapshot.complete(KnownBlockedCreators(<String>{'blocked-uid'}));
 
     expect((await pending).isFailure, isTrue);
+  });
+
+  test('an unknown block list drops cached Prism creators and keeps cached Wallhaven items', () async {
+    final FakeUserBlockRepository blocks = FakeUserBlockRepository.pending()..timeOutInitialLoad();
+    getIt.registerSingleton<UserBlockRepository>(blocks);
+    addTearDown(getIt.reset);
+    cache.snapshots['category/wallhaven.search.cyberpunk.100.100.portrait'] = FeedSnapshot(
+      payload: <String, Object?>{
+        'items': <Map<String, Object?>>[
+          encodeFeedItem(
+            PrismFeedItem(
+              id: 'blocked',
+              wallpaper: PrismWallpaper(
+                core: WallpaperCore(
+                  id: 'blocked',
+                  source: WallpaperSource.prism,
+                  fullUrl: 'https://prism.test/blocked.jpg',
+                  thumbnailUrl: 'https://prism.test/blocked-thumb.jpg',
+                  authorUid: 'blocked-uid',
+                ),
+              ),
+            ),
+          ),
+          encodeFeedItem(WallhavenFeedItem(id: 'wh', wallpaper: _wall('wh'))),
+        ],
+        'hasMore': false,
+      },
+      cachedAtUtc: DateTime.now().toUtc(),
+      ttlHours: 6,
+    );
+    offline = true;
+
+    final Result<CategoryFeedPage> result = await repository.fetchCategoryFeed(category: _cyberpunk, refresh: true);
+
+    expect(result.data!.items.map((item) => item.id), <String>['wh']);
   });
 
   test('the snapshot scope changes with the Wallhaven categories and purity filters', () async {
@@ -275,7 +311,7 @@ void main() {
       hasPrismWalls: true,
     );
 
-    PrismWallpaper prismWall(String id, {String? url, List<String>? tags}) => PrismWallpaper(
+    PrismWallpaper prismWall(String id, {String? url, List<String>? tags, bool ai = false}) => PrismWallpaper(
       core: WallpaperCore(
         id: id,
         source: WallpaperSource.prism,
@@ -283,6 +319,7 @@ void main() {
         thumbnailUrl: 't',
       ),
       tags: tags,
+      isAiGenerated: ai,
     );
 
     setUp(() {
@@ -300,6 +337,51 @@ void main() {
       expect(result.data!.items.map((item) => item.id), <String>['p1', 'p2', 'a']);
       expect(result.data!.items.take(2).every((item) => item is PrismFeedItem), isTrue);
       expect(result.data!.hasMore, isTrue);
+    });
+
+    test('an unknown block list does not overwrite the saved category page', () async {
+      final FakeUserBlockRepository blocks = FakeUserBlockRepository.pending()..timeOutInitialLoad();
+      getIt.registerSingleton<UserBlockRepository>(blocks);
+      addTearDown(getIt.reset);
+      final FeedSnapshot saved = FeedSnapshot(
+        payload: <String, Object?>{
+          'items': <Map<String, Object?>>[encodeFeedItem(WallhavenFeedItem(id: 'saved', wallpaper: _wall('saved')))],
+        },
+        cachedAtUtc: DateTime.now().toUtc(),
+        ttlHours: 6,
+      );
+      cache.snapshots['category/wallhaven.search.nature.100.100.portrait'] = saved;
+      when(
+        () => prism.fetchByCategory('Nature'),
+      ).thenAnswer((_) async => Result.success(<PrismWallpaper>[prismWall('p1')]));
+
+      await repository.fetchCategoryFeed(category: nature, refresh: true);
+
+      expect(cache.snapshots['category/wallhaven.search.nature.100.100.portrait'], same(saved));
+    });
+
+    test('a page started while blocks are unknown cannot overwrite the cache after recovery', () async {
+      final FakeUserBlockRepository blocks = FakeUserBlockRepository.pending();
+      getIt.registerSingleton<UserBlockRepository>(blocks);
+      addTearDown(getIt.reset);
+      final FeedSnapshot saved = FeedSnapshot(
+        payload: <String, Object?>{
+          'items': <Map<String, Object?>>[encodeFeedItem(WallhavenFeedItem(id: 'saved', wallpaper: _wall('saved')))],
+        },
+        cachedAtUtc: DateTime.now().toUtc(),
+        ttlHours: 6,
+      );
+      cache.snapshots['category/wallhaven.search.nature.100.100.portrait'] = saved;
+      final Completer<Result<List<PrismWallpaper>>> pendingPrism = Completer<Result<List<PrismWallpaper>>>();
+      when(() => prism.fetchByCategory('Nature')).thenAnswer((_) => pendingPrism.future);
+
+      final Future<Result<CategoryFeedPage>> result = repository.fetchCategoryFeed(category: nature, refresh: true);
+      await Future<void>.delayed(Duration.zero);
+      blocks.completeInitial(<String>{});
+      pendingPrism.complete(Result.success(<PrismWallpaper>[prismWall('p1')]));
+      await result;
+
+      expect(cache.snapshots['category/wallhaven.search.nature.100.100.portrait'], same(saved));
     });
 
     test('a wall that is in both lists shows once, in its Prism place', () async {
@@ -399,6 +481,56 @@ void main() {
       final cached = await repository.fetchCategoryFeed(category: community, refresh: true);
 
       expect(cached.data!.items.map((item) => item.id), <String>['p2']);
+    });
+
+    test('AI Prism walls stay out while the AI setting is off', () async {
+      when(
+        () => prism.fetchByCategory('Nature'),
+      ).thenAnswer((_) async => Result.success(<PrismWallpaper>[prismWall('p1', ai: true), prismWall('p2')]));
+
+      final shown = await repository.fetchCategoryFeed(category: nature, refresh: true);
+      expect(shown.data!.items.map((item) => item.id), <String>['p1', 'p2', 'a']);
+
+      await AiContentFilter.setShowsAi(SettingsLocalDataSource(store), false);
+      final hidden = await repository.fetchCategoryFeed(category: nature, refresh: true);
+      expect(hidden.data!.items.map((item) => item.id), <String>['p2', 'a']);
+    });
+
+    test('a hidden AI Prism wall does not swallow the provider wall that shares its image URL', () async {
+      when(
+        () => prism.fetchByCategory('Nature'),
+      ).thenAnswer((_) async => Result.success(<PrismWallpaper>[prismWall('p1', url: 'https://w/a.jpg', ai: true)]));
+      await AiContentFilter.setShowsAi(SettingsLocalDataSource(store), false);
+
+      final result = await repository.fetchCategoryFeed(category: nature, refresh: true);
+
+      expect(result.data!.items.map((item) => item.id), <String>['a']);
+    });
+
+    test('a snapshot saved while AI was on drops AI walls once it is off', () async {
+      const CategoryEntity community = CategoryEntity(
+        name: 'Community',
+        source: WallpaperSource.prism,
+        searchType: CategorySearchType.search,
+        image: '',
+        image2: '',
+      );
+      bool prismOffline = false;
+      when(() => prism.hasMore).thenReturn(false);
+      when(() => prism.fetchFeed(refresh: any(named: 'refresh'))).thenAnswer(
+        (_) async => prismOffline
+            ? Result.error<List<PrismWallpaper>>(const ServerFailure('503'))
+            : Result.success(<PrismWallpaper>[prismWall('p1', ai: true), prismWall('p2')]),
+      );
+      await repository.fetchCategoryFeed(category: community, refresh: true);
+      prismOffline = true;
+
+      final shown = await repository.fetchCategoryFeed(category: community, refresh: true);
+      expect(shown.data!.items.map((item) => item.id), <String>['p1', 'p2']);
+
+      await AiContentFilter.setShowsAi(SettingsLocalDataSource(store), false);
+      final hidden = await repository.fetchCategoryFeed(category: community, refresh: true);
+      expect(hidden.data!.items.map((item) => item.id), <String>['p2']);
     });
 
     test('getCategories marks the classifier names and adds an AMOLED tile', () async {

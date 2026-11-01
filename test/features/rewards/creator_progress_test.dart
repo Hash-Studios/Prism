@@ -1,7 +1,7 @@
 import 'package:Prism/features/rewards/domain/creator_progress.dart';
 import 'package:Prism/features/rewards/views/widgets/creator_progress_card.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -69,6 +69,24 @@ void main() {
     );
     expect(find.text('Approved wallpapers: 0 / 5'), findsOneWidget);
     expect(find.textContaining('Progress appears after your first qualifying contribution.'), findsNothing);
+  });
+
+  testWidgets('Rewards includes Stats while creator progress is unavailable', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: CreatorProgressView(
+            state: const CreatorProgressState(status: CreatorProgressStatus.unavailable),
+            now: DateTime.utc(2026, 10, 11),
+            onRefresh: () {},
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Stats'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('shows dated history and server milestones with no stale week relabeling', (tester) async {

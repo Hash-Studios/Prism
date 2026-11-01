@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_follow_up.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
@@ -37,6 +38,14 @@ String aiQualityLabel(AppLocalizations l10n, AiQualityTier tier) => switch (tier
   AiQualityTier.fast => l10n.economyAiQualityFast,
   AiQualityTier.balanced => l10n.economyAiQualityBalanced,
   AiQualityTier.quality => l10n.economyAiQualityHigh,
+};
+
+String aiFollowUpLabel(AppLocalizations l10n, AiFollowUp followUp) => switch (followUp) {
+  AiFollowUp.watercolour => l10n.aiFollowUpWatercolour,
+  AiFollowUp.night => l10n.aiFollowUpNight,
+  AiFollowUp.minimal => l10n.aiFollowUpMinimal,
+  AiFollowUp.warmer => l10n.aiFollowUpWarmer,
+  AiFollowUp.depth => l10n.aiFollowUpDepth,
 };
 
 bool isAiOfflineOrNetworkError(Object error) {

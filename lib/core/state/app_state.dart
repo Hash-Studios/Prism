@@ -4,9 +4,11 @@ import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/constants/admin_users.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/env/env.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
+import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 export 'package:Prism/core/utils/string_extensions.dart';
@@ -90,6 +92,8 @@ String get defaultProfilePhotoUrl => app_constants.defaultProfilePhotoUrl;
 
 bool isAdminUser([String? email]) {
   final String target = (email ?? prismUser.email).trim().toLowerCase();
+  // The local QA admin lives only in the Auth emulator; example.test is a reserved domain no real account can hold.
+  if (kDebugMode && Env.localQa && Env.localQaUser == 'admin' && target == 'qa-admin@example.test') return true;
   return isAdminEmail(target);
 }
 

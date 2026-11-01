@@ -47,7 +47,13 @@ void main() {
 
     await cubit.load();
 
-    expect(_shown(cubit), <WallMood>[WallMood.dreamy, WallMood.darkQuiet, WallMood.brightBold, WallMood.minimal]);
+    expect(_shown(cubit), <WallMood>[
+      WallMood.duoReveal,
+      WallMood.dreamy,
+      WallMood.darkQuiet,
+      WallMood.brightBold,
+      WallMood.minimal,
+    ]);
   });
 
   test('shows every mood on iOS 26', () async {
@@ -66,6 +72,7 @@ void main() {
     await cubit.load();
 
     expect(_shown(cubit), <WallMood>[
+      WallMood.duoReveal,
       WallMood.dreamy,
       WallMood.darkQuiet,
       WallMood.brightBold,
@@ -116,7 +123,7 @@ void main() {
     });
 
     test('moves the first mood one place each day and picks two distinct moods', () {
-      final List<MoodList> moods = _allMoods().take(4).toList();
+      final List<MoodList> moods = _allMoods().where((list) => list.mood != WallMood.duoReveal).take(4).toList();
 
       final List<MoodList> today = rowMoodsFor(moods, DateTime.utc(2026, 10, 28, 9));
       final List<MoodList> tomorrow = rowMoodsFor(moods, DateTime.utc(2026, 10, 29, 23));
@@ -125,6 +132,19 @@ void main() {
       expect(today.first.mood, isNot(today.last.mood));
       expect(tomorrow, hasLength(2));
       expect(tomorrow.first.mood, isNot(today.first.mood));
+    });
+
+    test('reserves the first of two slots for a nonempty Duo row every day', () {
+      final moods = _allMoods();
+      for (int day = 1; day <= 7; day++) {
+        final rows = rowMoodsFor(moods, DateTime.utc(2026, 10, day));
+        expect(rows, hasLength(2));
+        expect(rows.first.mood, WallMood.duoReveal);
+      }
+      expect(
+        rowMoodsFor(const <MoodList>[MoodList(mood: WallMood.duoReveal, wallIds: <String>[])], DateTime.utc(2026)),
+        isEmpty,
+      );
     });
   });
 }

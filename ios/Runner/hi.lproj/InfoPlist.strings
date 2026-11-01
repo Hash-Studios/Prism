@@ -1,3 +1,4 @@
 "NSPhotoLibraryUsageDescription" = "Prism को आपकी प्रोफ़ाइल और सेटअप के लिए तस्वीरें चुनने हेतु फ़ोटो लाइब्रेरी का ऐक्सेस चाहिए।";
 "NSPhotoLibraryAddUsageDescription" = "Prism को वॉलपेपर आपकी फ़ोटो लाइब्रेरी में सेव करने की अनुमति चाहिए।";
 "NSCameraUsageDescription" = "Prism को आपकी प्रोफ़ाइल तस्वीर लेने के लिए कैमरे का ऐक्सेस चाहिए।";
+"NSMotionUsageDescription" = "फ़ोन हिलाने पर Prism समस्या की रिपोर्ट खोलने के लिए मोशन का उपयोग करता है।";

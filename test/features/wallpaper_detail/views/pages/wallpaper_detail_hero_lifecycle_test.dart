@@ -8,6 +8,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/router/wallpaper_detail_route.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -49,7 +50,7 @@ class _PaletteRepository extends Mock implements PaletteRepository {}
 
 class _RecordViews extends Mock implements RecordPrismWallpaperViewsUsecase {}
 
-class _SetCount extends Mock implements GetWallpaperSetCountUseCase {}
+class _SetCount extends Mock implements GetWallpaperCountsUseCase {}
 
 class _Recommendations implements WallpaperRecommendationRepository {
   @override
@@ -143,7 +144,7 @@ void main() {
     final views = _RecordViews();
     when(() => views(any())).thenAnswer((_) async => Result.success('7'));
     final sets = _SetCount();
-    when(() => sets(any())).thenAnswer((_) async => Result.success<int?>(null));
+    when(() => sets(any())).thenAnswer((_) async => Result.success<WallpaperCounts?>(null));
     final bloc = WallpaperDetailBloc(
       prism,
       _WallhavenRepository(),

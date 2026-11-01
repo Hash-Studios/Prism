@@ -17,6 +17,8 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [wallpaper-detail.md](wallpaper-detail.md) | Action bar, More like this, tag chips, preview |
 | [library.md](library.md) | Library hub: favourites (sync, guest, export), downloads, history |
 | [folders.md](folders.md) | Public folders: projection, follow, "New in" push, share links, reports |
+| [web-catalogue.md](web-catalogue.md) | Public web pages on prismwalls.com: walls, folders, hubs, creators, sitemaps, caching (web and backend) |
+| [creator-directory.md](creator-directory.md) | Creators to follow row, See all, card, Followed by, More like, daily directory job |
 | [notifications.md](notifications.md) | Inbox, preferences, Wall of the Day at 09:00 local time |
 | [reliability.md](reliability.md) | Timeouts, offline banner, cache, error reports, ad consent, startup |
 | [backend-deploy.md](backend-deploy.md) | Deploy order for indexes, functions, worker, web and the app |
@@ -31,10 +33,14 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [profile.md](profile.md) | Profile links, username rules, share link, block and report |
 | [settings.md](settings.md) | Privacy and data, report a problem, data saver, rate prompt |
 | [coins-and-downloads.md](coins-and-downloads.md) | Price on the pill, already downloaded, ads, pending refunds and rewards |
+| [daily-moment.md](daily-moment.md) | Shared streak, chest, and free Pro spin sheet, reward contracts, old entry points, and release limits |
 | [coins-ledger.md](coins-ledger.md) | Ledger rows, labels, coin history screen, subscription reconcile |
+| [creator-tips.md](creator-tips.md) | Tip a creator 10, 25 or 50 coins from a wall or a profile, caps, ledger, daily push, Tipped by N |
+| [promo-codes.md](promo-codes.md) | Redeem a code for coins or Pro days, limits, rate limits, admin codes, store offer codes, `/redeem` link |
 | [streak-rescue.md](streak-rescue.md) | Restore a broken streak for coins |
 | [ai-wallpaper.md](ai-wallpaper.md) | AI tab errors, charge id, Try another |
 | [ai-charge.md](ai-charge.md) | AI charge check on the worker, refund evidence |
+| [remix.md](remix.md) | Remix an AI wallpaper: prompt and style, `remixOf`, remix count, Remixes row, inbox notice |
 | [studio.md](studio.md) | Prism Studio: daily AI wallpapers, checks, review queue, setup (backend) |
 | [popular-and-trending.md](popular-and-trending.md) | Engagement counters and the trending and popular lists (backend) |
 | [trending.md](trending.md) | Trending tab on home (the last 7 days; the all-time list is the Popular tab); boosted walls also show in the home carousel, after the Wall of the Day |

@@ -5,87 +5,14 @@ import {logger} from "firebase-functions/v2";
 import {sendNotification, sendToUserByEmail} from "./notificationHelper";
 import {db, REGION, utcDateString} from "./common";
 import {notificationCopyPayload} from "./notificationCatalog";
-import {getOwnedWallDelivery} from "./ownedAssetDelivery";
+import {premiumCollections, protectedWalls, readyWall, SIMILAR_FIELDS} from "./wallEligibility";
 import {dropOwnsGallery} from "./drops";
 import {buildPushGallery, galleryWall, isPreviewUrl, similarWallIds, tagsLine, type PushGallery} from "./pushGallery";
 import {r2Secrets} from "./r2Storage";
 
-const DEFAULT_PREMIUM_COLLECTIONS = [
-  "space",
-  "abstract",
-  "flat",
-  "mesh gradients",
-  "fluids",
-];
 const BUCKET_STEP_MINUTES = 15;
 const PUSH_LOCAL_MINUTE = 9 * 60;
 const MAX_PICK_AGE_MS = 30 * 60 * 60 * 1000;
-
-/** Approved walls with a private original: the only walls that 3.8.0 clients list and can set. */
-export const protectedWalls = () =>
-  db
-    .collection("walls")
-    .where("review", "==", true)
-    .where("originalProtected", "==", true)
-    .where("wallpaper_url", "==", "")
-    .where("wallpaper_path", "==", "")
-    .where("wallpaper_sha", "==", "")
-    .where("thumb_path", "==", "")
-    .where("thumb_sha", "==", "");
-
-/** Walls that a free user cannot open are never the free daily pick. Unconverted walls cannot be set, so they are not either. */
-export function isWotdEligible(
-  wall: admin.firestore.DocumentData,
-  premiumCollections: string[],
-): boolean {
-  if (wall.originalProtected !== true || wall.is_streak_exclusive === true || wall.dropReserved === true || wall.dropWeek) return false;
-  if (!Array.isArray(wall.collections) || wall.collections.some((entry) => typeof entry !== "string")) return false;
-  const collections: string[] = wall.collections;
-  return !collections.some((c) =>
-    premiumCollections.includes(String(c).trim()),
-  );
-}
-
-async function readyWall(wallId: string, premium: string[], data?: admin.firestore.DocumentData): Promise<boolean> {
-  if (!wallId || wallId.includes("/")) return false;
-  const wall = data ?? (await db.collection("walls").doc(wallId).get()).data();
-  if (!wall || wall.review !== true || !isWotdEligible(wall, premium)) return false;
-  try {
-    await getOwnedWallDelivery(typeof wall.id === "string" ? wall.id : wallId);
-    return true;
-  } catch (error) {
-    if (!(error instanceof Error) || !["Owned wall unavailable", "Invalid wall identity"].includes(error.message)) throw error;
-    logger.warn("wall_of_the_day: protected wall has no ready delivery.", {wallId});
-    return false;
-  }
-}
-
-/** Parses the app's Remote Config list format: `["a", "b"]` or `a, b`. */
-export function parseCollectionList(raw: string): string[] {
-  return raw
-    .replace(/["[\]]/g, "")
-    .split(",")
-    .map((e) => e.trim())
-    .filter((e) => e.length > 0);
-}
-
-export async function premiumCollections(): Promise<string[]> {
-  try {
-    const template = await admin.remoteConfig().getTemplate();
-    const value = (
-      template.parameters?.premiumCollections?.defaultValue as
-        { value?: string } | undefined
-    )?.value;
-    const parsed = value ? parseCollectionList(value) : [];
-    return parsed.length > 0 ? parsed : DEFAULT_PREMIUM_COLLECTIONS;
-  } catch (err) {
-    logger.warn(
-      "Could not read premiumCollections from Remote Config; using the app defaults.",
-      {err},
-    );
-    return DEFAULT_PREMIUM_COLLECTIONS;
-  }
-}
 
 /** Topic of the devices whose clock is `offsetMinutes` ahead of UTC, for example `wall_of_the_day_utc_p0530`. FCM topic names cannot hold `+`, so `p` marks east of UTC and `m` west. */
 export function wotdBucketTopic(offsetMinutes: number): string {
@@ -145,169 +72,210 @@ export const wallOfTheDay = onSchedule(
     retryCount: 2,
     secrets: r2Secrets,
   },
-  async (event) => {
-    const slotMs = scheduledAtMs(event.scheduleTime);
-    const premium = await premiumCollections();
-    const currentRef = db.collection("wall_of_the_day").doc("current");
-    const data = (await currentRef.get()).data();
-    if (data && isSameUtcDay(data.date, new Date()) && await readyWall(String(data.wallId ?? ""), premium)) {
-      if (data.pushedAt == null) {
-        logger.info(
-          "Today's wall of the day is set but not announced; announcing it.",
-          {wallId: data.wallId},
-        );
-        await announce(String(data.wallId ?? ""));
-      } else {
-        logger.info(
-          "Today's wall of the day is already set and announced; skipping.",
-          {wallId: data.wallId},
-        );
-      }
-      await sendDueBuckets(slotMs);
-      return;
-    }
-
-    try {
-      if (data) {
-        // Archive pointer only: `past_picks/{yyyy-MM-dd}` holds wallId + date for dedup queries.
-        const archiveDate =
-          firestoreTimestampToDateString(data.date) ?? yesterdayDateString();
-        const archivePayload = {
-          wallId: data.wallId ?? "",
-          date: data.date ?? admin.firestore.Timestamp.now(),
-        };
-        await db.collection("past_picks").doc(archiveDate).set(archivePayload);
-        logger.info(`Archived wall_of_the_day → past_picks/${archiveDate}`, {
-          wallId: data.wallId ?? null,
-        });
-      }
-    } catch (err) {
-      logger.warn("Could not archive current wall (may not exist yet).", {
-        err,
-      });
-    }
-
-    const excludedWallIds = new Set<string>();
-    try {
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 30);
-
-      const recentPicksSnap = await db
-        .collection("past_picks")
-        .where("date", ">=", admin.firestore.Timestamp.fromDate(cutoff))
-        .select("wallId")
-        .get();
-
-      recentPicksSnap.forEach((doc) => {
-        const wid = doc.data().wallId;
-        if (wid) excludedWallIds.add(wid);
-      });
-    } catch (err) {
-      logger.warn(
-        "Could not fetch past_picks for dedup; proceeding without exclusion.",
-        {err},
-      );
-    }
-
-    // Pick a random approved wall, retrying up to MAX_RETRIES times to avoid one from the last 30 days.
-    //   a) Count approved walls with a count() aggregate.
-    //   b) Fetch one doc at a random offset, ordered by document ID (stable, index-free).
-    //   c) If it was picked recently or is not eligible, retry with a fresh offset.
-    //   d) If every retry hit an excluded wall, take the first non-excluded wall from the 100 newest.
-    const MAX_RETRIES = 5;
-
-    let newWall: admin.firestore.DocumentData | null = null;
-    let newWallId: string | null = null;
-
-    const countSnap = await protectedWalls().count().get();
-    const totalCount = countSnap.data().count;
-    logger.info(`Total approved walls: ${totalCount}`);
-
-    if (totalCount > 0) {
-      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-        const randomOffset = Math.floor(Math.random() * totalCount);
-        const snap = await protectedWalls()
-          .orderBy(admin.firestore.FieldPath.documentId())
-          .offset(randomOffset)
-          .limit(1)
-          .get();
-
-        if (!snap.empty) {
-          const doc = snap.docs[0];
-          if (
-            !excludedWallIds.has(doc.id) &&
-            await readyWall(doc.id, premium, doc.data())
-          ) {
-            newWall = doc.data();
-            newWallId = doc.id;
-            logger.info(
-              `Selected wall on attempt ${attempt + 1} at offset ${randomOffset}.`,
-              {
-                wallId: newWallId,
-              },
-            );
-            break;
-          }
-          logger.info(
-            `Attempt ${attempt + 1}: wall ${doc.id} is excluded or not eligible, retrying.`,
-          );
-        }
-      }
-    }
-
-    if (!newWall) {
-      logger.warn(
-        `All ${MAX_RETRIES} random attempts hit excluded walls; falling back to newest-first scan.`,
-      );
-      const fallbackSnap = await protectedWalls()
-        .orderBy("createdAt", "desc")
-        .limit(100)
-        .get();
-
-      const eligible = [];
-      for (const doc of fallbackSnap.docs) {
-        if (await readyWall(doc.id, premium, doc.data())) eligible.push(doc);
-      }
-      const pick = eligible.find((doc) => !excludedWallIds.has(doc.id));
-      if (pick) {
-        newWall = pick.data();
-        newWallId = pick.id;
-      } else if (eligible.length > 0) {
-        // Last-resort: the latest eligible wall, even if it was a recent pick.
-        newWall = eligible[0].data();
-        newWallId = eligible[0].id;
-        logger.warn(
-          "Last-resort fallback: all eligible newest walls were recent picks; using latest.",
-          {
-            wallId: newWallId,
-          },
-        );
-      }
-    }
-
-    if (!newWall || !newWallId) {
-      logger.error("wall_of_the_day: no ready eligible wall; no pick or push sent.");
-      return;
-    }
-
-    const wotdDoc = {
-      wallId: newWallId,
-      date: admin.firestore.Timestamp.now(),
-    };
-
-    await currentRef.set(wotdDoc);
-    logger.info("wall_of_the_day/current updated", {
-      wallId: newWallId,
-    });
-    await announce(newWallId);
-    await sendDueBuckets(slotMs);
-  },
+  async (event) => pickWallOfTheDay(scheduledAtMs(event.scheduleTime)),
 );
+
+export async function pickWallOfTheDay(slotMs: number): Promise<void> {
+  if (new Date(slotMs).toISOString().slice(0, 10) !== utcDateString()) return;
+  const premium = await premiumCollections();
+  const currentRef = db.collection("wall_of_the_day").doc("current");
+  const {challengeAwardAvailable} = await import("./weeklyChallenges.js");
+  const currentSnapshot = await currentRef.get();
+  const data = currentSnapshot.data();
+  if (data && isSameUtcDay(data.date, new Date(slotMs)) &&
+    await db.runTransaction((tx) => challengeAwardAvailable(tx, utcDateString(new Date(slotMs)), String(data.wallId ?? "")), {readOnly: true}) &&
+    await readyWall(String(data.wallId ?? ""), premium)) {
+    if (data.pushedAt == null) {
+      logger.info(
+        "Today's wall of the day is set but not announced; announcing it.",
+        {wallId: data.wallId},
+      );
+      await announce(String(data.wallId ?? ""));
+    } else {
+      logger.info(
+        "Today's wall of the day is already set and announced; skipping.",
+        {wallId: data.wallId},
+      );
+    }
+    await sendDueBuckets(slotMs);
+    return;
+  }
+
+  try {
+    if (data) {
+      // Archive pointer only: `past_picks/{yyyy-MM-dd}` holds wallId + date for dedup queries.
+      const archiveDate =
+        firestoreTimestampToDateString(data.date) ?? yesterdayDateString();
+      const archivePayload = {
+        wallId: data.wallId ?? "",
+        date: data.date ?? admin.firestore.Timestamp.now(),
+      };
+      await db.collection("past_picks").doc(archiveDate).set(archivePayload);
+      logger.info(`Archived wall_of_the_day → past_picks/${archiveDate}`, {
+        wallId: data.wallId ?? null,
+      });
+    }
+  } catch (err) {
+    logger.warn("Could not archive current wall (may not exist yet).", {
+      err,
+    });
+  }
+
+  const excludedWallIds = new Set<string>();
+  try {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 30);
+
+    const recentPicksSnap = await db
+      .collection("past_picks")
+      .where("date", ">=", admin.firestore.Timestamp.fromDate(cutoff))
+      .select("wallId")
+      .get();
+
+    recentPicksSnap.forEach((doc) => {
+      const wid = doc.data().wallId;
+      if (wid) excludedWallIds.add(wid);
+    });
+  } catch (err) {
+    logger.warn(
+      "Could not fetch past_picks for dedup; proceeding without exclusion.",
+      {err},
+    );
+  }
+
+  // Pick a random approved wall, retrying up to MAX_RETRIES times to avoid one from the last 30 days.
+  //   a) Count approved walls with a count() aggregate.
+  //   b) Fetch one doc at a random offset, ordered by document ID (stable, index-free).
+  //   c) If it was picked recently or is not eligible, retry with a fresh offset.
+  //   d) If every retry hit an excluded wall, take the first non-excluded wall from the 100 newest.
+  const MAX_RETRIES = 5;
+
+  let newWall: admin.firestore.DocumentData | null = null;
+  let newWallId: string | null = null;
+  const {reservedChallengePick} = await import("./weeklyChallenges.js");
+  const reserved = await reservedChallengePick(utcDateString(new Date(slotMs)), premium);
+  if (reserved) {
+    newWallId = reserved.wallId;
+    newWall = (await db.collection("walls").doc(reserved.wallId).get()).data() ?? null;
+  }
+
+  const countSnap = await protectedWalls().count().get();
+  const totalCount = countSnap.data().count;
+  logger.info(`Total approved walls: ${totalCount}`);
+
+  if (!newWall && totalCount > 0) {
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      const randomOffset = Math.floor(Math.random() * totalCount);
+      const snap = await protectedWalls()
+        .orderBy(admin.firestore.FieldPath.documentId())
+        .offset(randomOffset)
+        .limit(1)
+        .get();
+
+      if (!snap.empty) {
+        const doc = snap.docs[0];
+        if (
+          !excludedWallIds.has(doc.id) &&
+          await readyWall(doc.id, premium, doc.data())
+        ) {
+          newWall = doc.data();
+          newWallId = doc.id;
+          logger.info(
+            `Selected wall on attempt ${attempt + 1} at offset ${randomOffset}.`,
+            {
+              wallId: newWallId,
+            },
+          );
+          break;
+        }
+        logger.info(
+          `Attempt ${attempt + 1}: wall ${doc.id} is excluded or not eligible, retrying.`,
+        );
+      }
+    }
+  }
+
+  if (!newWall) {
+    logger.warn(
+      `All ${MAX_RETRIES} random attempts hit excluded walls; falling back to newest-first scan.`,
+    );
+    const fallbackSnap = await protectedWalls()
+      .orderBy("createdAt", "desc")
+      .limit(100)
+      .get();
+
+    const eligible = [];
+    for (const doc of fallbackSnap.docs) {
+      if (await readyWall(doc.id, premium, doc.data())) eligible.push(doc);
+    }
+    const pick = eligible.find((doc) => !excludedWallIds.has(doc.id));
+    if (pick) {
+      newWall = pick.data();
+      newWallId = pick.id;
+    } else if (eligible.length > 0) {
+      // Last-resort: the latest eligible wall, even if it was a recent pick.
+      newWall = eligible[0].data();
+      newWallId = eligible[0].id;
+      logger.warn(
+        "Last-resort fallback: all eligible newest walls were recent picks; using latest.",
+        {
+          wallId: newWallId,
+        },
+      );
+    }
+  }
+
+  if (!newWall || !newWallId) {
+    logger.error("wall_of_the_day: no ready eligible wall; no pick or push sent.");
+    return;
+  }
+
+  const committed = await commitWotdPick(slotMs, newWallId, premium, Boolean(reserved), currentSnapshot);
+  if (!committed) return;
+  logger.info("wall_of_the_day/current updated", {
+    wallId: newWallId,
+  });
+  await announce(newWallId);
+  await sendDueBuckets(slotMs);
+}
+
+export async function commitWotdPick(slotMs: number, wallId: string, premium: string[], reserved: boolean,
+  unavailableCurrent?: admin.firestore.DocumentSnapshot): Promise<boolean> {
+  const currentRef = db.collection("wall_of_the_day").doc("current");
+  const {commitChallengeReservation, challengeAwardAvailable} = await import("./weeklyChallenges.js");
+  return db.runTransaction(async (tx) => {
+    const snapshot = await tx.get(currentRef);
+    const current = snapshot.data();
+    const day = utcDateString(new Date(slotMs));
+    if (current && current.date instanceof admin.firestore.Timestamp && current.date.toMillis() >= Date.parse(day)) {
+      if (current.date.toMillis() >= Date.parse(day) + 86_400_000 || !unavailableCurrent ||
+        JSON.stringify(snapshot.updateTime) !== JSON.stringify(unavailableCurrent.updateTime)) return false;
+      const currentWall = await tx.get(db.doc(`walls/${current.wallId}`));
+      if (await challengeAwardAvailable(tx, day, String(current.wallId)) &&
+        await readyWall(String(current.wallId), premium, currentWall.data())) return false;
+    }
+    if (!await commitChallengeReservation(tx, day, reserved ? wallId : null, premium)) {
+      throw new Error("Reserved challenge wall changed before publication; retry.");
+    }
+    tx.set(currentRef, {wallId, date: admin.firestore.Timestamp.fromMillis(slotMs)});
+    return true;
+  });
+}
 
 /** Sends the legacy global-topic push (with the in-app doc) and stamps `pushedAt`. Throws when the push fails. */
 async function announce(wallId: string): Promise<void> {
   const ready = await wotdPushPayload(wallId);
   if (!ready) return;
+  const ref = db.collection("wall_of_the_day").doc("current");
+  const claimId = randomUUID();
+  const claimed = await db.runTransaction(async (tx) => {
+    const data = (await tx.get(ref)).data();
+    if (data?.wallId !== wallId || data.pushedAt ||
+      (data.announceUntil instanceof admin.firestore.Timestamp && data.announceUntil.toMillis() > Date.now())) return false;
+    tx.update(ref, {announceClaim: claimId, announceUntil: admin.firestore.Timestamp.fromMillis(Date.now() + 5 * 60_000)});
+    return true;
+  });
+  if (!claimed) return;
   const {creatorEmail, ...payload} = ready;
   const delivered = await sendNotification({
     ...payload,
@@ -317,12 +285,18 @@ async function announce(wallId: string): Promise<void> {
     scoreKind: "wotd",
   });
   if (!delivered) {
+    await db.runTransaction(async (tx) => {
+      const current = (await tx.get(ref)).data();
+      if (current?.announceClaim === claimId) tx.update(ref, {announceUntil: admin.firestore.Timestamp.fromMillis(0)});
+    });
     throw new Error("Wall of the day push failed.");
   }
-  await db
-    .collection("wall_of_the_day")
-    .doc("current")
-    .update({pushedAt: admin.firestore.Timestamp.now()});
+  await db.runTransaction(async (tx) => {
+    const current = (await tx.get(ref)).data();
+    if (current?.wallId === wallId && current.announceClaim === claimId) {
+      tx.update(ref, {pushedAt: admin.firestore.Timestamp.now()});
+    }
+  });
   logger.info("WOTD notification sent and in-app doc written.", {wallId});
   await notifyCreator(wallId, creatorEmail, payload.data.url, payload.imageUrl);
 }
@@ -359,9 +333,6 @@ async function notifyCreator(
     logger.warn("WOTD creator notice failed.", {wallId, err});
   }
 }
-
-export const SIMILAR_FIELDS = ["id", "review", "createdAt", "colors", "visionLabels", "collections", "category", "spatial",
-  "depth", "originalProtected", "is_streak_exclusive", "dropReserved", "dropWeek", "wallpaper_thumb"];
 
 /**
  * Today's pick and up to three walls that share its moods or tags. The similar ids are chosen once per pick and kept on

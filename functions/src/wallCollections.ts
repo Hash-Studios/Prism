@@ -4,7 +4,7 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {db, REGION, str} from "./common";
 import {DEFAULT_COLLECTION} from "./wallCategory";
 import {refreshMoods} from "./wallMoods";
-import {premiumCollections} from "./wallOfTheDay";
+import {premiumCollections} from "./wallEligibility";
 
 /**
  * The collection that a wall category files a community wall into. A collection in the Remote Config premium list is

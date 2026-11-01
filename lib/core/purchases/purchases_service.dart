@@ -105,6 +105,7 @@ class PurchasesService {
   }
 
   Future<void> _configure(String userId) async {
+    if (kDebugMode && Env.localQa) throw StateError('Purchases are unavailable in local QA.');
     if (kDebugMode) {
       await Purchases.setLogLevel(LogLevel.debug);
     }
@@ -129,6 +130,7 @@ class PurchasesService {
   /// is open. Safe to call more than once.
   @visibleForTesting
   void registerCustomerInfoListener() {
+    if (kDebugMode && Env.localQa) return;
     if (_customerInfoListenerRegistered) return;
     _customerInfoListenerRegistered = true;
     _addCustomerInfoListener((CustomerInfo info) {
@@ -159,6 +161,7 @@ class PurchasesService {
   /// Configures RevenueCat after the first frame so startup is not blocked.
   /// No-op if already configured or if API key is empty.
   Future<void> configureEarly() async {
+    if (kDebugMode && Env.localQa) return;
     if (_apiKey().isEmpty) return;
     try {
       await PerformanceProbe.measure(
@@ -175,6 +178,7 @@ class PurchasesService {
 
   /// Ensures RevenueCat is configured and logged in as the given user.
   Future<void> ensureConfigured(String userId) async {
+    if (kDebugMode && Env.localQa) throw StateError('Purchases are unavailable in local QA.');
     final targetUserId = userId.trim();
     await _serializeSetup<void>(() async {
       if (!_configured) {
@@ -492,6 +496,7 @@ class PurchasesService {
   }
 
   Future<Offerings?> getOfferings() async {
+    if (kDebugMode && Env.localQa) return null;
     try {
       return await Purchases.getOfferings();
     } on PlatformException catch (e) {
@@ -501,6 +506,7 @@ class PurchasesService {
   }
 
   Future<Offering?> getCurrentOfferingForPlacement(String placementIdentifier) async {
+    if (kDebugMode && Env.localQa) return null;
     final String placement = placementIdentifier.trim();
     if (placement.isEmpty) {
       return null;

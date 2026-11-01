@@ -49,8 +49,12 @@ if grep -qE '^functions/(src/|package(-lock)?\.json$|tsconfig)' <<<"$changed"; t
   echo "pre-push: functions changed, running typecheck, lint and tests"
   out="$(mktemp -d)"
   trap 'rm -rf "$out"' EXIT
-  (cd functions && npx tsc --outDir "$out" && npm run lint)
-  PRISM_REPO_ROOT="$REPO_ROOT" NODE_PATH="$REPO_ROOT/functions/node_modules" node --test "$out"/__tests__/*.test.js
+  (cd functions && npx tsc --outDir "$out/functions/lib" && npm run lint)
+  # Preserve the repo layout for tests that read Dart sources beside functions/.
+  ln -s "$REPO_ROOT/lib" "$out/lib"
+  # Native dynamic imports do not use NODE_PATH.
+  ln -s "$REPO_ROOT/functions/node_modules" "$out/functions/node_modules"
+  (cd functions && PRISM_REPO_ROOT="$REPO_ROOT" NODE_PATH="$REPO_ROOT/functions/node_modules" node --test "$out"/functions/lib/__tests__/*.test.js)
 fi
 
 if grep -qE '^firestore\.rules$|^tool/firestore_rules_smoke\.mjs$' <<<"$changed"; then

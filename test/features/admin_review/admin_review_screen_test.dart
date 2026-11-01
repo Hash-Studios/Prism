@@ -19,7 +19,8 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/fake_firestore_client.dart';
 
 class _FakeAdminReviewRepository extends AdminModerationRepository {
-  _FakeAdminReviewRepository() : super(FakeFirestoreClient());
+  _FakeAdminReviewRepository()
+    : super.withCaller(FakeFirestoreClient(), (_, _) async => <String, Object?>{'contexts': <String, Object?>{}});
 
   final FirestoreDocument wall = const FirestoreDocument('wall-1', <String, dynamic>{
     'by': 'Creator',

@@ -8,6 +8,7 @@ import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -57,7 +58,7 @@ class _FakeFirestoreClient extends Fake implements FirestoreClient {
   }
 }
 
-Future<wall_store.WallSubmissionResult> _submit({DateTime Function()? now}) => wall_store.createRecord(
+Future<WallSubmissionResult> _submit({DateTime Function()? now}) => wall_store.createRecord(
   'wall',
   'Prism',
   'thumb',
@@ -71,8 +72,8 @@ Future<wall_store.WallSubmissionResult> _submit({DateTime Function()? now}) => w
   now: now,
 );
 
-const wall_store.WallSubmissionResult _submitted = wall_store.WallSubmissionResult.submitted;
-const wall_store.WallSubmissionResult _quotaExceeded = wall_store.WallSubmissionResult.quotaExceeded;
+const WallSubmissionResult _submitted = WallSubmissionResult.submitted;
+const WallSubmissionResult _quotaExceeded = WallSubmissionResult.quotaExceeded;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -137,7 +138,7 @@ void main() {
     var submissionCompleted = false;
     final submission = _submit(now: () => testNow)..then((_) => submissionCompleted = true);
 
-    wall_store.WallSubmissionResult? result;
+    WallSubmissionResult? result;
     try {
       await firestore.saveStarted!.future;
       firestore.saveGate!.complete();
@@ -279,8 +280,8 @@ void main() {
     firestore.saveStarted = Completer<void>();
     final first = _submit(now: () => testNow);
     final second = _submit(now: () => testNow);
-    wall_store.WallSubmissionResult? firstResult;
-    wall_store.WallSubmissionResult? secondResult;
+    WallSubmissionResult? firstResult;
+    WallSubmissionResult? secondResult;
     try {
       await firestore.saveStarted!.future;
       firestore.saveGate!.complete();

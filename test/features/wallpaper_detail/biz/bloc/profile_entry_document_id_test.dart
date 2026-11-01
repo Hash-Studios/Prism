@@ -5,6 +5,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -38,7 +39,7 @@ class _Views extends Mock implements RecordPrismWallpaperViewsUsecase {}
 
 class _Palette extends Mock implements PaletteRepository {}
 
-class _Count extends Mock implements GetWallpaperSetCountUseCase {}
+class _Count extends Mock implements GetWallpaperCountsUseCase {}
 
 /// Home and a creator profile open the same wall document. Both must reach the detail screen.
 void main() {
@@ -94,7 +95,7 @@ void main() {
     final palette = _Palette();
     when(() => palette.generatePalette(any())).thenAnswer((_) async => Result.error(const NetworkFailure('none')));
     final count = _Count();
-    when(() => count(any())).thenAnswer((_) async => Result.success<int?>(null));
+    when(() => count(any())).thenAnswer((_) async => Result.success<WallpaperCounts?>(null));
     final bloc = WallpaperDetailBloc(
       prism,
       _Wallhaven(),

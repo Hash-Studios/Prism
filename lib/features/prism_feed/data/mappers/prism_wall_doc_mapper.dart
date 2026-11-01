@@ -1,3 +1,4 @@
+import 'package:Prism/core/wallpaper/wall_ai_source.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -39,11 +40,14 @@ extension PrismWallDocMapper on PrismWallDocDto {
         createdAt: createdAt,
       ),
       title: cleanTitle == null || cleanTitle.isEmpty ? null : cleanTitle,
+      description: desc.trim().isEmpty ? null : desc.trim(),
       collections: collections.isEmpty ? null : collections,
       review: review,
       tags: mergedTags.isEmpty ? null : mergedTags,
       colors: colors.isEmpty ? null : colors,
       aiMetadata: aiMetadata.isEmpty ? null : aiMetadata,
+      isAiGenerated: isAiGenerated,
+      aiModel: aiModel.trim().isEmpty ? null : aiModel.trim(),
       isStreakExclusive: isStreakExclusive,
       requiredStreakDays: requiredStreakDays,
       streakShopCoinCost: streakShopCoinCost,
@@ -51,6 +55,15 @@ extension PrismWallDocMapper on PrismWallDocDto {
       boostedUntil: boostedUntil,
       depthTier: WallDepthTier.parse(depth['tier']),
       spatial: WallSpatial.parse(spatial),
+      aiSource: WallAiSource.parse(
+        isAiGenerated: isAiGenerated,
+        prompt: aiPrompt,
+        stylePreset: aiStylePreset,
+        model: aiModel,
+        origin: origin,
+      ),
+      remixOf: remixOf.trim().isEmpty ? null : remixOf.trim(),
+      remixCount: (remixCount ?? 0) < 0 ? 0 : remixCount ?? 0,
     );
   }
 }
