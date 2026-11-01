@@ -8,6 +8,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
+import 'package:Prism/features/premium/views/pages/trial_timeline_page.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -57,6 +58,7 @@ void main() {
     await getIt.reset();
     AnalyticsRuntime.reset();
     signedInActionSignIn = originalSignIn;
+    orchestrator.navigatorContext = null;
     app_state.prismUser = profileUser(id: '', loggedIn: false);
   });
 
@@ -71,6 +73,7 @@ void main() {
       bool offeringsFail = false,
       void Function(MethodCall)? onPaywallCall,
       String legacyOffering = 'v3_default',
+      Map<String, Object?>? annualProduct,
     }) async {
       final backend = CoinsTestBackend();
       await backend.install();
@@ -107,6 +110,20 @@ void main() {
         'metadata': <String, Object?>{},
         'availablePackages': <Object?>[],
       };
+      final Map<String, Object?>? annualPackage = annualProduct == null
+          ? null
+          : <String, Object?>{
+              'identifier': 'annual',
+              'packageType': 'ANNUAL',
+              'product': annualProduct,
+              'presentedOfferingContext': <String, Object?>{'offeringIdentifier': 'v3_default'},
+            };
+      final Map<String, Object?> v3Offering = <String, Object?>{
+        ...offering,
+        'identifier': 'v3_default',
+        'availablePackages': annualPackage == null ? <Object?>[] : <Object?>[annualPackage],
+        'annual': annualPackage,
+      };
       final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
       messenger.setMockDecodedMessageHandler<Object?>(
         const BasicMessageChannel<Object?>(
@@ -128,10 +145,7 @@ void main() {
           case 'getOfferings':
             if (offeringsFail) throw PlatformException(code: 'offerings_failed');
             return <String, Object?>{
-              'all': <String, Object?>{
-                legacyOffering: offering,
-                if (includeV3) 'v3_default': <String, Object?>{...offering, 'identifier': 'v3_default'},
-              },
+              'all': <String, Object?>{legacyOffering: offering, if (includeV3) 'v3_default': v3Offering},
               'current': offering,
             };
           case 'getCustomerInfo':
@@ -556,6 +570,128 @@ void main() {
         PaywallResultValue.rcError,
       }, contains(result));
       expect(toasts, <String>[messages.premiumPagePlansUnavailable]);
+    });
+
+    group('annual trial', () {
+      final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+      Map<String, Object?> annualProductJson({int? trialDays}) => <String, Object?>{
+        'identifier': 'prism_pro_yearly',
+        'description': '',
+        'title': '',
+        'price': 499,
+        'priceString': 'INR 499.00',
+        'currencyCode': 'INR',
+        if (trialDays != null)
+          'defaultOption': <String, Object?>{
+            'id': 'annual-base',
+            'storeProductId': 'prism_pro_yearly',
+            'productId': 'prism_pro_yearly',
+            'pricingPhases': <Object?>[],
+            'tags': <Object?>[],
+            'isBasePlan': true,
+            'billingPeriod': <String, Object?>{'unit': 'YEAR', 'value': 1, 'iso8601': 'P1Y'},
+            'isPrepaid': false,
+            'freePhase': <String, Object?>{
+              'billingPeriod': <String, Object?>{'unit': 'DAY', 'value': trialDays, 'iso8601': 'P${trialDays}D'},
+              'recurrenceMode': 3,
+              'billingCycleCount': 1,
+              'price': <String, Object?>{'formatted': 'INR 0.00', 'amountMicros': 0, 'currencyCode': 'INR'},
+              'offerPaymentMode': 'FREE_TRIAL',
+            },
+          },
+      };
+
+      Future<void> pumpApp(WidgetTester tester) => tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const SizedBox(),
+        ),
+      );
+
+      /// Pumps real time and fake frames until [condition] holds or 10 seconds pass.
+      Future<void> pumpUntil(WidgetTester tester, bool Function() condition) async {
+        final DateTime deadline = DateTime.now().add(const Duration(seconds: 10));
+        while (!condition() && DateTime.now().isBefore(deadline)) {
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      test('eligible with no navigator context: the RevenueCat paywall shows and no timeline', () async {
+        var paywallCalls = 0;
+        await installPaywall(
+          annualProduct: annualProductJson(trialDays: 7),
+          onPaywallCall: (_) => paywallCalls++,
+          present: () async => 'CANCELLED',
+        );
+        orchestrator.navigatorContext = null;
+
+        final result = await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
+
+        expect(result, PaywallResultValue.cancelled);
+        expect(paywallCalls, 1);
+        await AnalyticsRuntime.instance.flush();
+        expect(fakeAnalytics.events.whereType<TrialTimelineShownEvent>(), isEmpty);
+      });
+
+      // One widget test: PurchasesService is a singleton, and its setup queue does not survive between fake-async tests.
+      testWidgets('the timeline shows only to eligible users, and close or See all plans decides the paywall', (
+        tester,
+      ) async {
+        var paywallCalls = 0;
+        await pumpApp(tester);
+        orchestrator.navigatorContext = () => navigatorKey.currentContext;
+
+        await installPaywall(
+          annualProduct: annualProductJson(),
+          onPaywallCall: (_) => paywallCalls++,
+          present: () async => 'CANCELLED',
+        );
+        PaywallResultValue? result;
+        unawaited(orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test').then((v) => result = v));
+        await pumpUntil(tester, () => result != null);
+        expect(result, PaywallResultValue.cancelled);
+        expect(paywallCalls, 1);
+        expect(find.byType(TrialTimelinePage), findsNothing);
+        expect(
+          find.byWidgetPredicate((w) => w is Text && (w.data ?? '').toLowerCase().contains('free trial')),
+          findsNothing,
+        );
+        await AnalyticsRuntime.instance.flush();
+        expect(fakeAnalytics.events.whereType<TrialNotEligibleShownEvent>().single.reason, 'noTrialOffer');
+        expect(fakeAnalytics.events.whereType<TrialTimelineShownEvent>(), isEmpty);
+
+        paywallCalls = 0;
+        await installPaywall(
+          annualProduct: annualProductJson(trialDays: 7),
+          onPaywallCall: (_) => paywallCalls++,
+          present: () async => 'CANCELLED',
+        );
+        result = null;
+        unawaited(orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test').then((v) => result = v));
+        await pumpUntil(tester, () => find.byType(TrialTimelinePage).evaluate().isNotEmpty);
+        expect(find.text('Start 7-day free trial'), findsOneWidget);
+        expect(fakeAnalytics.events.whereType<TrialTimelineShownEvent>().single.trialDays, 7);
+        await tester.tap(find.byTooltip('Close'));
+        await tester.pumpAndSettle();
+        await pumpUntil(tester, () => result != null);
+        expect(result, PaywallResultValue.cancelled);
+        expect(paywallCalls, 0);
+
+        result = null;
+        unawaited(orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test').then((v) => result = v));
+        await pumpUntil(tester, () => find.byType(TrialTimelinePage).evaluate().isNotEmpty);
+        await tester.scrollUntilVisible(find.text('See all plans'), 200, scrollable: find.byType(Scrollable).last);
+        await tester.tap(find.text('See all plans'));
+        await pumpUntil(tester, () => result != null);
+        await tester.pumpAndSettle();
+        expect(result, PaywallResultValue.cancelled);
+        expect(paywallCalls, 1);
+        expect(find.byType(TrialTimelinePage), findsNothing);
+      });
     });
   });
 

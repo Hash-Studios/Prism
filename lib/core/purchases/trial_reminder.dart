@@ -12,6 +12,7 @@ import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notif
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 // zonedSchedule takes a TZDateTime. flutter_local_notifications depends on timezone, so this adds no package.
@@ -183,6 +184,8 @@ class TrialReminder {
 
   Future<({String title, String body})> _copy(ActiveTrial trial) async {
     final AppLocalizations l10n = await _localizations();
+    // This can run at app start, before the Material localizations load the date data.
+    await initializeDateFormatting(l10n.localeName);
     final String date = DateFormat.yMMMd(l10n.localeName).format(trial.endsAt.toLocal());
     return (title: l10n.trialReminderTitle(date), body: l10n.trialReminderBody(_storeName));
   }

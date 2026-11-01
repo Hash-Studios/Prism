@@ -192,7 +192,9 @@ class PaywallOrchestrator {
       }
 
       PaywallResultValue? timelineResult;
-      final TrialOfferLookup trial = await PurchasesService.instance.trialOffer(offering).timeout(_loadTimeout);
+      final TrialOfferLookup trial = await PurchasesService.instance
+          .trialOffer(offering)
+          .timeout(_loadTimeout, onTimeout: () => (offer: null, reason: TrialUnavailableReason.eligibilityUnknown));
       if (!isCurrentAccount()) return PaywallResultValue.error;
       final TrialOffer? trialOffer = trial.offer;
       final BuildContext? timelineContext = navigatorContext?.call();
