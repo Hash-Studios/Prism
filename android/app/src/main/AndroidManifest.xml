@@ -111,6 +111,7 @@
                 <data android:path="/share-setup" />
                 <data android:path="/refer" />
                 <data android:path="/referral" />
+                <data android:path="/redeem" />
                 <data android:path="/l" />
                 <data android:path="/onboarding/v2" />
                 <data android:path="/dashboard" />
@@ -237,6 +238,7 @@
                 <data android:path="/share-setup" />
                 <data android:path="/refer" />
                 <data android:path="/referral" />
+                <data android:path="/redeem" />
                 <data android:path="/l" />
                 <data android:path="/onboarding/v2" />
                 <data android:path="/dashboard" />
@@ -352,6 +354,7 @@
                 <data android:path="/share-setup" />
                 <data android:path="/refer" />
                 <data android:path="/referral" />
+                <data android:path="/redeem" />
                 <data android:path="/l" />
                 <data android:path="/onboarding/v2" />
                 <data android:path="/dashboard" />
@@ -467,6 +470,7 @@
                 <data android:path="/share-setup" />
                 <data android:path="/refer" />
                 <data android:path="/referral" />
+                <data android:path="/redeem" />
                 <data android:path="/l" />
                 <data android:path="/onboarding/v2" />
                 <data android:path="/dashboard" />
@@ -582,6 +586,7 @@
                 <data android:path="/share-setup" />
                 <data android:path="/refer" />
                 <data android:path="/referral" />
+                <data android:path="/redeem" />
                 <data android:path="/l" />
                 <data android:path="/onboarding/v2" />
                 <data android:path="/dashboard" />

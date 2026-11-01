@@ -1525,6 +1525,12 @@
       "indexes": []
     },
     {
+      "collectionGroup": "promoRedeemRate",
+      "fieldPath": "expiresAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
       "collectionGroup": "items",
       "fieldPath": "ownerId",
       "indexes": [

@@ -532,6 +532,21 @@ test('legacy user, setup and referral aliases remain safe on web landings', asyn
   }
 });
 
+test('redeem deep link returns the direct app landing that carries the code to the app', async () => {
+  const response = await getShare(
+    ANDROID_UA,
+    '/redeem?code=ABCDEFGH23',
+    workerEnv({
+      PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+      APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+    }),
+  );
+  assert.equal(response.status, 200);
+  const body = await response.text();
+  assert.match(body, /Open in Prism/);
+  assert.match(body, /prismwalls\.com\/redeem\?code=ABCDEFGH23/);
+});
+
 test('short link page for a stored share record renders the same landing', async () => {
   const links = new MemoryKv([['AbCdEfGh', JSON.stringify({
     code: 'AbCdEfGh',

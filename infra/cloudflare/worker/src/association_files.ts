@@ -12,7 +12,7 @@ const ASSETLINKS_PAYLOAD = [
 const APP_LINK_PATHS = [
   '/share', '/share/*', '/user', '/user/*', '/fprofile', '/fprofile/*', '/follower-profile', '/follower-profile/*',
   '/profile', '/profile/*', '/setup', '/setup/*', '/share-setup', '/share-setup/*', '/refer', '/refer/*',
-  '/referral', '/referral/*', '/collection', '/collection/*', '/category', '/category/*', '/wallpaper', '/wallpaper/*',
+  '/referral', '/referral/*', '/redeem', '/redeem/*', '/collection', '/collection/*', '/category', '/category/*', '/wallpaper', '/wallpaper/*',
   '/folder/*', '/mood/*', '/challenges/*',
   '/l', '/l/*', '/onboarding/v2', '/dashboard', '/dashboard/home', '/dashboard/search', '/dashboard/search/users',
   '/dashboard/rewards', '/dashboard/streak', '/dashboard/collection', '/ai',
