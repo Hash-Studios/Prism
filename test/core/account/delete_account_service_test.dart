@@ -48,7 +48,12 @@ class _AppleUser extends UserPlatform {
             isEmailVerified: true,
           ),
           providerData: const <Map<Object?, Object?>?>[
-            <String, Object?>{'providerId': 'apple.com', 'uid': 'apple-1'},
+            <String, Object?>{
+              'providerId': 'apple.com',
+              'uid': 'apple-1',
+              'isAnonymous': false,
+              'isEmailVerified': true,
+            },
           ],
         ),
       );
@@ -127,7 +132,7 @@ void main() {
 
   tearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
-  testWidgets('waits for Firebase before selecting the restored Apple deletion provider', (tester) async {
+  testWidgets('waits for Firebase and rejects a replaced account before selecting the Apple provider', (tester) async {
     const MethodChannel appleChannel = MethodChannel('com.aboutyou.dart_packages.sign_in_with_apple');
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     final previousAuth = FirebaseAuthPlatform.instance;
@@ -170,6 +175,25 @@ void main() {
       },
       clearLocalData: (userId) async => calls.add('clear:$userId'),
     );
+    app_state.prismUser = profileUser(id: 'previous-user');
+    Object? staleFailure;
+    final staleDeletion = service.deleteAccount().then<void>(
+      (_) {},
+      onError: (Object error) {
+        staleFailure = error;
+      },
+    );
+    await tester.pump();
+    app_state.prismUser = profileUser(id: 'user-1');
+    expect(calls, isEmpty, reason: 'Provider selection must wait for Firebase to restore its user.');
+
+    core.ready.complete();
+    await tester.pump();
+    await initialization;
+    await staleDeletion;
+    expect(staleFailure, isA<StateError>());
+    expect(calls, isEmpty, reason: 'The stale deletion must not adopt the restored replacement account.');
+
     Object? failure;
     final deletion = service.deleteAccount().then<void>(
       (_) {},
@@ -178,13 +202,9 @@ void main() {
       },
     );
     await tester.pump();
-    expect(calls, isEmpty, reason: 'Provider selection must wait for Firebase to restore its user.');
-
-    core.ready.complete();
-    await tester.pump();
-    await initialization;
     await deletion;
 
+    expect(failure, isNull);
     expect(calls, <String>[
       'apple.prompt',
       'reauth:apple.com',
@@ -193,7 +213,6 @@ void main() {
       'signOut',
       'clear:user-1',
     ]);
-    expect(failure, isNull);
   });
 
   test('re-authenticates, deletes on the server, signs out, then clears this device', () async {
@@ -218,6 +237,65 @@ void main() {
     await expectLater(service.deleteAccount(), throwsStateError);
 
     expect(calls, <String>['reauth']);
+  });
+
+  test('a replacement during reauthentication is not deleted', () async {
+    final reauthenticated = Completer<void>();
+    final service = build(
+      reauthenticate: () async {
+        calls.add('reauth');
+        await reauthenticated.future;
+      },
+    );
+    final deletion = service.deleteAccount();
+    final rejected = expectLater(deletion, throwsStateError);
+    final replacement = profileUser(id: 'replacement');
+    app_state.prismUser = replacement;
+    reauthenticated.complete();
+
+    await rejected;
+    expect(calls, <String>['reauth']);
+    expect(app_state.prismUser, same(replacement));
+  });
+
+  test('a replacement during server deletion is not signed out or cleared', () async {
+    final deleted = Completer<void>();
+    final service = build(
+      deleteOnServer: () async {
+        calls.add('server');
+        await deleted.future;
+      },
+    );
+    final deletion = service.deleteAccount();
+    final rejected = expectLater(deletion, throwsStateError);
+    await pumpEventQueue();
+    expect(calls, <String>['reauth', 'server']);
+    final replacement = profileUser(id: 'replacement');
+    app_state.prismUser = replacement;
+    deleted.complete();
+
+    await rejected;
+    expect(calls, <String>['reauth', 'server']);
+    expect(app_state.prismUser, same(replacement));
+  });
+
+  test('an abandoned sign-out does not clear the replacement account', () async {
+    final replacement = profileUser(id: 'replacement');
+    final service = DeleteAccountService(
+      reauthenticate: () async => calls.add('reauth'),
+      deleteOnServer: () async => calls.add('server'),
+      signOut: () async {
+        calls.add('signOut');
+        app_state.prismUser = replacement;
+        return false;
+      },
+      clearLocalData: (userId) async => calls.add('clear:$userId'),
+    );
+
+    await expectLater(service.deleteAccount(), throwsStateError);
+
+    expect(calls, <String>['reauth', 'server', 'signOut']);
+    expect(app_state.prismUser, same(replacement));
   });
 
   test('the server call may run as long as a batch delete needs', () {
