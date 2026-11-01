@@ -55,7 +55,7 @@ interface FolderPage {
   kind: 'folder';
   id: string;
   name: string;
-  owner: { username: string; name: string } | null;
+  owner: { username: string; name: string; hasPage: boolean } | null;
   total: number;
   items: Card[];
   updatedAt: string;
@@ -363,11 +363,14 @@ function publicThumb(value: string, configuredBase?: string): boolean {
   }
 }
 
+// Matches the builder's allowlist in functions/src/webCatalog.ts, so a stored photo on any other host never prints.
+const PROFILE_PHOTO_HOSTS = ['raw.githubusercontent.com', 'firebasestorage.googleapis.com'];
+
 function publicProfilePhoto(value: string): boolean {
-  if (!value) return true;
   try {
     const url = new URL(value);
-    return url.protocol === 'https:' && !url.username && !url.password;
+    return url.protocol === 'https:' && !url.username && !url.password && !url.port
+      && (PROFILE_PHOTO_HOSTS.includes(url.hostname) || url.hostname.endsWith('.googleusercontent.com'));
   } catch {
     return false;
   }
@@ -442,10 +445,9 @@ function parseListPage(value: unknown, env: CatalogEnv): ListPage {
   if (item.creator != null) {
     const value = record(item.creator);
     const photo = requiredString(value, 'photo');
-    if (!publicProfilePhoto(photo)) throw new FirestoreUnavailable('invalid creator photo');
     creator = {
       username: requiredString(value, 'username'), name: requiredString(value, 'name'),
-      bio: requiredString(value, 'bio'), photo,
+      bio: requiredString(value, 'bio'), photo: publicProfilePhoto(photo) ? photo : '',
     };
   }
   const folders = item.folders;
@@ -470,7 +472,9 @@ function parseFolderPage(value: unknown, env: CatalogEnv): FolderPage {
   let owner: FolderPage['owner'];
   if (item.owner != null) {
     const value = record(item.owner);
-    owner = { username: requiredString(value, 'username'), name: requiredString(value, 'name') };
+    owner = {
+      username: requiredString(value, 'username'), name: requiredString(value, 'name'), hasPage: value.hasPage === true,
+    };
   } else {
     owner = null;
   }
@@ -604,7 +608,9 @@ async function renderFolder(id: string, env: CatalogEnv): Promise<Response> {
     <div class="folder-info">
       ${breadcrumbHtml([['Wallpapers', `${SITE}/wallpapers`], [folder.name, canonical]])}
       <h1>${escapeHtml(folder.name)}</h1>
-      <p class="byline">${owner ? `A folder by <a href="/creator/${encodeURIComponent(owner.username)}">${escapeHtml(owner.name)}</a> · ` : ''}${escapeHtml(count)}</p>
+      <p class="byline">${owner ? `A folder by ${owner.hasPage
+    ? `<a href="/creator/${encodeURIComponent(owner.username)}">${escapeHtml(owner.name)}</a>`
+    : escapeHtml(owner.name)} · ` : ''}${escapeHtml(count)}</p>
       ${actionsHtml(canonical, 'Open in Prism', env)}
     </div>
   </header>

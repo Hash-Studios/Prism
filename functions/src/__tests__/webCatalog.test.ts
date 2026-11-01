@@ -84,7 +84,7 @@ function pageOf(pages: ReturnType<typeof buildPages>, key: string) {
   assert.ok(doc, `missing page ${key}`);
   return doc as unknown as {
     kind: string; page: number; pages: number; total: number; items: WebCard[]; entries: string;
-    sitemaps: Array<{name: string; lastmod: string}>;
+    sitemaps: Array<{name: string; lastmod: string}>; owner: {username: string; name: string; hasPage: boolean} | null;
   };
 }
 
@@ -378,6 +378,35 @@ test("buildPages makes a creator page keyed by lower-cased username", () => {
   const creator = pageOf(pages, "creator~sam~1");
   assert.equal(creator.kind, "creator");
   assert.deepEqual(creator.items.map((item) => item.id), ["W01"]);
+});
+
+test("buildPages marks a folder owner's creator page only when the owner has live walls", () => {
+  const walls = new Map<string, WebWall>([
+    ["W01", liveCard(1, {creator: {username: "Sam", name: "Sam"}, creatorName: "Sam"})],
+  ]);
+  const sam = {username: "Sam", name: "Sam", bio: "", photo: ""};
+  const ana = {username: "ana", name: "Ana", bio: "", photo: ""};
+  const folders = [
+    {id: "F1", name: "Faves", owner: sam, wallIds: ["W01"], updatedAt: NOW},
+    {id: "F2", name: "Saved", owner: ana, wallIds: ["W01"], updatedAt: NOW},
+  ];
+  const pages = buildPages(walls, [], folders, new Map([["u1", sam], ["u2", ana]]));
+
+  assert.deepEqual(pageOf(pages, "folder~F1").owner, {username: "Sam", name: "Sam", hasPage: true});
+  assert.deepEqual(pageOf(pages, "folder~F2").owner, {username: "ana", name: "Ana", hasPage: false});
+  assert.equal(pages.has("creator~ana~1"), false);
+});
+
+test("rebuildWebCatalog publishes only profile photos from the app's photo hosts", async (t) => {
+  stubDeps(t);
+  const store = installFakeDb(t, {
+    "walls/d1": liveWall(),
+    "profiles/u1": {...samProfile, profilePhoto: "https://tracker.example/pixel.gif"},
+  });
+
+  await rebuildWebCatalog();
+
+  assert.equal((store.get("webPages/creator~sam~1")?.creator as {photo: string}).photo, "");
 });
 
 test("buildPages folder page lists live walls only and counts every saved wall", () => {

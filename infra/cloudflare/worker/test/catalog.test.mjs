@@ -106,7 +106,7 @@ function seedDocs() {
       kind: 'folder',
       id: 'F1',
       name: 'Calm',
-      owner: { username: 'sam', name: 'Sam K' },
+      owner: { username: 'sam', name: 'Sam K', hasPage: true },
       total: 3,
       items: [card('W1', 'Sunset Ridge'), card('N2', 'Nature 2')],
       updatedAt: '2026-10-29T00:00:00.000Z',
@@ -309,6 +309,28 @@ test('folder page renders the owner and canonical, and a missing folder is 404',
   assert.equal(missing.status, 404);
   assert.equal(missing.headers.get('x-robots-tag'), 'noindex');
   assert.ok((await missing.text()).includes('<meta name="robots" content="noindex">'));
+});
+
+test('a folder owner without a creator page is plain text, not a link', async (t) => {
+  const h = setup(t);
+  h.state.docs['webPages/folder~F1'].owner = { username: 'sam', name: 'Sam K' };
+
+  const body = await (await h.get('/folder/F1')).text();
+
+  assert.ok(body.includes('A folder by Sam K · '));
+  assert.ok(!body.includes('/creator/sam'));
+});
+
+test('a creator photo outside the profile photo hosts is dropped and the page still renders', async (t) => {
+  const h = setup(t);
+  h.state.docs['webPages/creator~sam~1'].creator.photo = 'https://tracker.example/pixel.gif';
+
+  const response = await h.get('/creator/sam');
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.ok(!body.includes('tracker.example'));
+  assert.ok(body.includes('class="avatar initial"'));
 });
 
 test('cache headers: 200 is fresh for ten minutes, misses for five, and the stored-at marker never leaks', async (t) => {

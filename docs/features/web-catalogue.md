@@ -52,6 +52,8 @@ The keys in `webPages` are:
 
 - `latest~<n>`, `popular~<n>` and `category~<slug>~<n>` for the hubs.
 - `creator~<username>~<n>` for creator pages.
+  A creator page exists only for a profile that has at least one live wall. A folder page links its owner to the creator page only when that page exists (`owner.hasPage`). Otherwise, the owner name is plain text.
+  A creator photo is published only from `raw.githubusercontent.com` (photos uploaded in Prism), `*.googleusercontent.com` (Google account photos) or `firebasestorage.googleapis.com` (the default photo). For other hosts, the page shows the initial of the creator name.
 - `folder~<id>` for folder pages.
 - `sitemap~<name>-<n>` for sitemap files, and `sitemap~index` for the index.
 
@@ -134,7 +136,7 @@ At 2,534 approved walls and 12 builds a day, the wall reads come to about 61,000
 
 - A new public folder or a renamed creator appears at the next build, up to 2 hours later.
 - A hub page can show a withdrawn wall until the next build. The wall page returns 404 or 410 within about 10 minutes.
-- Creator profiles become public on the open web. This shows the name, username, bio and photo. This is a new exposure. It needs product sign-off before release.
+- Creator profiles become public on the open web. This shows the name, username, bio and photo. The product owner approved this on 2026-11-01. A profile opt-out is not available yet.
 - The pages use system fonts, not Manrope.
 - Wallhaven and Pexels walls are not in the catalogue. Their links keep the app landing.
 

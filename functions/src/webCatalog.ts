@@ -135,14 +135,19 @@ function publicProfile(data: Doc | undefined): PublicProfile | null {
     username,
     name: cleanText(data?.name, 60) || username,
     bio: cleanText(data?.bio, 300),
-    photo: isHttpsUrl(str(data?.profilePhoto)) ? str(data?.profilePhoto) : "",
+    photo: isProfilePhotoUrl(str(data?.profilePhoto)) ? str(data?.profilePhoto) : "",
   };
 }
 
-function isHttpsUrl(value: string): boolean {
+// Users write profilePhoto themselves. The app only sets Prism uploads (GitHub raw), Google account photos and the
+// default photo in Firebase Storage; any other host would let a public page embed an image Prism never served.
+const PROFILE_PHOTO_HOSTS = ["raw.githubusercontent.com", "firebasestorage.googleapis.com"];
+
+function isProfilePhotoUrl(value: string): boolean {
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && !url.username && !url.password;
+    return url.protocol === "https:" && !url.username && !url.password && !url.port &&
+      (PROFILE_PHOTO_HOSTS.includes(url.hostname) || url.hostname.endsWith(".googleusercontent.com"));
   } catch {
     return false;
   }
@@ -318,6 +323,9 @@ export function buildPages(
     const username = entry[1].creator?.username.toLowerCase();
     if (username) byCreator.set(username, [...(byCreator.get(username) ?? []), entry]);
   }
+  // A creator page exists only for a profile with at least one live wall; a folder owner without one has no page.
+  const hasCreatorPage = (username: string) => byCreator.has(username.toLowerCase()) &&
+    profileByName.has(username.toLowerCase());
   const categories = [...byCategory].map(([slug, entries]) => ({
     slug, name: entries[0][1].category ?? "General", count: entries.length, cover: entries[0][1].thumb ?? "",
   })).sort((a, b) => b.count - a.count || a.slug.localeCompare(b.slug));
@@ -345,7 +353,9 @@ export function buildPages(
   for (const folder of publicFolders) {
     pages.set(`folder~${folder.id}`, {
       kind: "folder", id: folder.id, name: folder.name, updatedAt: folder.updatedAt,
-      owner: folder.owner ? {username: folder.owner.username, name: folder.owner.name} : null,
+      owner: folder.owner ? {
+        username: folder.owner.username, name: folder.owner.name, hasPage: hasCreatorPage(folder.owner.username),
+      } : null,
       total: folder.total ?? folder.wallIds.length, items: folder.items,
     });
   }
