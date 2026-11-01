@@ -143,6 +143,28 @@ void main() {
     expect(coins.passesNotifier.value.premiumPassUntil?.millisecondsSinceEpoch, currentUntil.millisecondsSinceEpoch);
   });
 
+  testWidgets('an economy refresh that started before the grant does not shorten the new pass', (tester) async {
+    final DateTime grantedUntil = DateTime(2031);
+    final Completer<Map<String, dynamic>?> staleRead = Completer<Map<String, dynamic>?>();
+    firestore.privateEconomyResponse = staleRead.future;
+    final Future<int> refresh = coins.refreshBalance();
+    reply = premiumReply(replayed: false, until: grantedUntil);
+
+    await redeem(tester);
+    expect(coins.passesNotifier.value.premiumPassUntil?.millisecondsSinceEpoch, grantedUntil.millisecondsSinceEpoch);
+
+    await tester.runAsync(() async {
+      staleRead.complete(<String, dynamic>{
+        'rev': 1,
+        'passes': <String, dynamic>{'premiumPassUntil': currentUntil.millisecondsSinceEpoch},
+      });
+      await refresh;
+    });
+    await tester.pump();
+
+    expect(coins.passesNotifier.value.premiumPassUntil?.millisecondsSinceEpoch, grantedUntil.millisecondsSinceEpoch);
+  });
+
   testWidgets('a fresh premium receipt extends an earlier local pass', (tester) async {
     coins.passesNotifier.value = Passes(premiumPassUntil: oldUntil);
     reply = premiumReply(replayed: false, until: currentUntil);

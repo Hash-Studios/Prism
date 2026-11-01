@@ -3715,6 +3715,17 @@ class CoinsService with WidgetsBindingObserver {
     return rawKey.trim().toLowerCase();
   }
 
+  /// Applies a Premium pass end the server granted outside the coin callables, such as a promo code. It only extends
+  /// the pass, and it supersedes an economy refresh already in flight, which read the pass before this grant.
+  void applyServerPremiumPass(DateTime until, {required String ownerId}) {
+    if (!_canMutateCoins() || ownerId != app_state.prismUser.id) return;
+    final Passes passes = passesNotifier.value;
+    final DateTime? current = passes.premiumPassUntil;
+    if (current != null && !until.isAfter(current)) return;
+    _economyMutationGeneration++;
+    passesNotifier.value = passes.copyWith(premiumPassUntil: until);
+  }
+
   /// Applies a balance the server returned outside the coin callables, such as a badge reward.
   void applyServerBalance(int balance, {String? ownerId}) {
     if (!_canMutateCoins() || (ownerId != null && ownerId != app_state.prismUser.id)) return;

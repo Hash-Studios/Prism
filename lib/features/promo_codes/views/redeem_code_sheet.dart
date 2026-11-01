@@ -29,11 +29,7 @@ void _applyGrant(RedeemSucceeded result) {
       final int? balance = result.coinBalance;
       if (balance != null) coins.applyServerBalance(balance, ownerId: app_state.prismUser.id);
     case PremiumDaysReward(:final until):
-      if (until != null) {
-        final DateTime? currentUntil = coins.passesNotifier.value.premiumPassUntil;
-        final DateTime longerUntil = currentUntil != null && currentUntil.isAfter(until) ? currentUntil : until;
-        coins.passesNotifier.value = coins.passesNotifier.value.copyWith(premiumPassUntil: longerUntil);
-      }
+      if (until != null) coins.applyServerPremiumPass(until, ownerId: app_state.prismUser.id);
   }
 }
 
