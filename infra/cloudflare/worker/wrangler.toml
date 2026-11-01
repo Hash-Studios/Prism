@@ -335,6 +335,14 @@ pattern = "prismwalls.com/sitemaps/*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/desktop-wallpapers*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/matching-sets*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "www.prismwalls.com/api/*"
 zone_name = "prismwalls.com"
 
@@ -664,6 +672,14 @@ zone_name = "prismwalls.com"
 
 [[routes]]
 pattern = "www.prismwalls.com/sitemaps/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/desktop-wallpapers*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/matching-sets*"
 zone_name = "prismwalls.com"
 
 [vars]
