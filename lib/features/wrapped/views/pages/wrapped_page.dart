@@ -52,11 +52,18 @@ class _PrismWrappedPageState extends State<PrismWrappedPage> {
   void initState() {
     super.initState();
     _bloc.add(WrappedEvent.load(_uid));
-    if (_uid.isEmpty) WidgetsBinding.instance.addPostFrameCallback((_) => _leave());
+    // The Home card may have loaded this user already, so a known "no Wrapped" emits nothing new.
+    final WrappedState state = _bloc.state;
+    if (_uid.isEmpty || (state is WrappedNotEligible && state.uid == _uid)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _leave());
+    }
   }
 
+  bool _left = false;
+
   void _leave() {
-    if (!mounted) return;
+    if (!mounted || _left) return;
+    _left = true;
     analytics.track(WrappedNotEligibleEvent(source: widget.source));
     toasts.info(context.l10n.wrappedNotEligible);
     unawaited(Navigator.of(context).maybePop());

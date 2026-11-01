@@ -93,6 +93,37 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
   });
 
+  testWidgets('a user already known to have no Wrapped also leaves', (tester) async {
+    app_state.prismUser = profileUser(id: 'quiet');
+    final _Repository repository = _Repository(<String, WrappedYear?>{'quiet': null});
+    final WrappedBloc bloc = WrappedBloc(repository)..add(const WrappedEvent.load('quiet'));
+    await tester.runAsync(() => bloc.stream.firstWhere((state) => state is WrappedNotEligible));
+    getIt.registerSingleton<WrappedBloc>(bloc);
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navigator,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute<void>(builder: (_) => const PrismWrappedPage(source: WrappedSourceValue.home))),
+            child: const Text('Open Wrapped'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open Wrapped'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 100));
+
+    expect(repository.reads, <String>['quiet/2026']);
+    expect(find.byType(PrismWrappedPage), findsNothing);
+    expect(analytics.events.whereType<WrappedNotEligibleEvent>().single.source, WrappedSourceValue.home);
+    await tester.pump(const Duration(seconds: 5));
+  });
+
   testWidgets('the story shows only the signed-in user\'s own Wrapped', (tester) async {
     app_state.prismUser = profileUser(id: 'heavy');
     final _Repository repository = await open(tester, <String, WrappedYear?>{'heavy': fixtureWrappedYear()});
