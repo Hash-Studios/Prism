@@ -198,7 +198,8 @@ export const giftPremiumPass = onCall(
           economy.passes :
           {}
       ) as Record<string, unknown>;
-      const expiresAt = nowMs + PASS_MS;
+      // A gift is 24 hours from now, but never cuts a longer pass, such as one from a promo code, short.
+      const expiresAt = Math.max(nowMs + PASS_MS, int(passes.premiumPassUntil, 0));
       const current = previous - price;
       const reason = `gift_to_${recipientUid}`;
       const ledger = coinTransactionDoc({

@@ -253,3 +253,14 @@ test("a failed notification does not fail the gift", async (t) => {
   assert.equal(result.success, true);
   assert.equal(store.get("usersv2/u1")?.coins, 200 - PRICE);
 });
+
+test("a gift never shortens a longer pass, such as one from a promo code", async (t) => {
+  const passUntil = NOW.getTime() + 10 * DAY;
+  const expiresAt = passUntil;
+  const {store} = setup(t, {"usersv2/u2/private/economy": {passes: {premiumPassUntil: passUntil}}});
+  const result = await run({recipientUid: "u2", requestId: REQ});
+  assert.equal(result.success, true);
+  assert.equal(result.expiresAt, expiresAt);
+  const economy = store.get("usersv2/u2/private/economy");
+  assert.equal((economy?.passes as { premiumPassUntil: number }).premiumPassUntil, expiresAt);
+});
