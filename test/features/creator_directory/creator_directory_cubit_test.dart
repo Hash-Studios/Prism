@@ -243,6 +243,23 @@ void main() {
     await blocks.close();
   });
 
+  test('a same-size block change swaps which creator is hidden', () async {
+    final StreamController<BlockedCreators> blocks = StreamController<BlockedCreators>.broadcast();
+    final CreatorDirectoryCubit cubit = CreatorDirectoryCubit(repo, _StreamBlocks(blocks.stream));
+    cubit.show(<DirectoryCreator>[directoryCreator('a'), directoryCreator('b')]);
+
+    blocks.add(KnownBlockedCreators(<String>['a']));
+    await Future<void>.delayed(Duration.zero);
+    expect(uidsOf(cubit.state.creators), <String>['b']);
+
+    blocks.add(KnownBlockedCreators(<String>['b']));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(uidsOf(cubit.state.creators), <String>['a']);
+    await cubit.close();
+    await blocks.close();
+  });
+
   test('creators hidden while the block list is unknown come back when it loads', () async {
     final StreamController<BlockedCreators> blocks = StreamController<BlockedCreators>.broadcast();
     final CreatorDirectoryCubit cubit = CreatorDirectoryCubit(repo, _StreamBlocks(blocks.stream));

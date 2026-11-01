@@ -23,6 +23,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
+import 'package:Prism/features/creator_directory/biz/creator_directory_cubit.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_repository.dart';
 import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
@@ -51,6 +52,7 @@ import 'package:Prism/features/personalized_feed/views/widgets/paged_chip_sliver
 import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
+import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/session/data/app_session_tracker.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/trending/domain/usecases/fetch_trending_usecase.dart';
@@ -336,6 +338,44 @@ void main() {
 
   PersonalizedFeedBloc feedBloc(WidgetTester tester) =>
       tester.element(find.byType(CustomScrollView)).read<PersonalizedFeedBloc>();
+
+  CreatorDirectoryCubit homeCreatorsCubit(WidgetTester tester) => tester
+      .element(find.byType(BlocBuilder<CreatorDirectoryCubit, CreatorDirectoryState>, skipOffstage: false))
+      .read<CreatorDirectoryCubit>();
+
+  PublicProfileBloc homeProfileBloc(WidgetTester tester) => tester
+      .element(find.byType(BlocListener<PublicProfileBloc, PublicProfileState>, skipOffstage: false))
+      .read<PublicProfileBloc>();
+
+  Future<void> expectCreatorsRefreshPreservesSection(WidgetTester tester, {required bool hasMoodChunk}) async {
+    final FakeCreatorDirectoryRepository directory =
+        getIt<CreatorDirectoryRepository>() as FakeCreatorDirectoryRepository;
+    blockRepository.completeInitial(<String>{});
+    directory.pages[(null, null)] = creatorPage(<DirectoryCreator>[directoryCreator('a')]);
+    moodRepository.moods = hasMoodChunk
+        ? <MoodList>[MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i'))]
+        : const <MoodList>[];
+    when(
+      () => fetchUseCase(any()),
+    ).thenAnswer((_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))));
+    await pumpScreen(tester, viewSize: const Size(600, 9000));
+
+    final CreatorDirectoryCubit cubit = homeCreatorsCubit(tester);
+    final PublicProfileBloc profileBloc = homeProfileBloc(tester);
+    expect(directory.fetchCalls, hasLength(1));
+    expect(find.text('Creators to follow', skipOffstage: false), findsOneWidget);
+
+    await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await _settle(tester);
+    await tester.pump();
+
+    expect(directory.fetchCalls, hasLength(2));
+    expect(find.text('Creators to follow', skipOffstage: false), findsOneWidget);
+    expect(
+      <Object?>[identical(homeCreatorsCubit(tester), cubit), identical(homeProfileBloc(tester), profileBloc)],
+      <Object?>[true, true],
+    );
+  }
 
   testWidgets('the pickup row excludes this session and recomputes after clear and disable', (tester) async {
     final settings = SettingsLocalDataSource(InMemoryLocalStore());
@@ -854,6 +894,7 @@ void main() {
   testWidgets('pull to refresh on For you reloads a Creators row that first loaded empty', (tester) async {
     final FakeCreatorDirectoryRepository directory =
         getIt<CreatorDirectoryRepository>() as FakeCreatorDirectoryRepository;
+    blockRepository.completeInitial(<String>{});
     moodRepository.moods = <MoodList>[
       MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i')),
     ];
@@ -862,6 +903,8 @@ void main() {
     ).thenAnswer((_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))));
     await pumpScreen(tester, viewSize: const Size(600, 9000));
     await _settle(tester);
+    final CreatorDirectoryCubit cubit = homeCreatorsCubit(tester);
+    final PublicProfileBloc profileBloc = homeProfileBloc(tester);
     // The row sits below the first screen, in the built area past the viewport.
     expect(find.byType(CreatorsSection, skipOffstage: false), findsOneWidget);
     expect(find.text('Creators to follow', skipOffstage: false), findsNothing);
@@ -872,6 +915,19 @@ void main() {
     await _settle(tester);
 
     expect(find.text('Creators to follow', skipOffstage: false), findsOneWidget);
+    expect(cubit.state.status, CreatorDirectoryStatus.loaded);
+    expect(cubit.state.creators, hasLength(1));
+    expect(directory.fetchCalls, hasLength(2));
+    expect(homeCreatorsCubit(tester), same(cubit));
+    expect(homeProfileBloc(tester), same(profileBloc));
+  });
+
+  testWidgets('refresh preserves the Creators section after its second-chunk insertion point', (tester) async {
+    await expectCreatorsRefreshPreservesSection(tester, hasMoodChunk: true);
+  });
+
+  testWidgets('refresh preserves the Creators section after the only chunk', (tester) async {
+    await expectCreatorsRefreshPreservesSection(tester, hasMoodChunk: false);
   });
 
   testWidgets('refresh preserves impression dedupe while pending and failed, then resets on success', (tester) async {

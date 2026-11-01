@@ -7,6 +7,7 @@ import 'package:Prism/features/creator_directory/domain/creator_directory_entiti
 import 'package:Prism/features/creator_directory/domain/creator_directory_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
@@ -85,7 +86,7 @@ class CreatorDirectoryCubit extends Cubit<CreatorDirectoryState> {
     final List<DirectoryCreator> visible = _all
         .where((c) => !BlockedCreatorsFilter.hidesCreatorUid(c.uid, blocked))
         .toList(growable: false);
-    if (visible.length != state.creators.length) super.emit(state.copyWith(creators: visible));
+    if (!listEquals(visible, state.creators)) super.emit(state.copyWith(creators: visible));
   }
 
   /// Loads are already filtered by the repository. A status-only change passes the shown list back, so [_all] stays.
