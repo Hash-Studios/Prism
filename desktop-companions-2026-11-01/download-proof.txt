@@ -1,0 +1,27 @@
+# Local wrangler dev, 2026-11-01T11:14:15Z
+
+$ curl -sD - -o desktop.jpg -H "Referer: http://localhost:8787/wallpaper/0IAHBTMOSU" /api/catalog/download/0IAHBTMOSU/desktop.jpg
+HTTP/1.1 200 OK
+Content-Type: image/jpeg
+Cache-Control: no-store
+Content-Disposition: attachment; filename="prism-pier-cabin-noon-desktop.jpg"
+x-content-type-options: nosniff
+  dl-desktop.jpg: JPEG image data, baseline, precision 8, 1920x1200, components 3
+
+$ curl -sD - -o /dev/null -H "Referer: http://localhost:8787/wallpaper/0IAHBTMOSU" /api/catalog/download/0IAHBTMOSU/phone.jpg
+HTTP/1.1 200 OK
+Content-Disposition: attachment; filename="prism-pier-cabin-noon-phone.jpg"
+  dl-phone.jpg: JPEG image data, progressive, precision 8, 1152x2560, components 3
+
+$ curl -sD - -o /dev/null -H "Referer: https://evil.example/" /api/catalog/download/0IAHBTMOSU/desktop.jpg
+HTTP/1.1 302 Found
+Location: http://localhost:8787/wallpaper/0IAHBTMOSU#desktop
+Cache-Control: no-store
+
+$ gated wall A8JPFTVDZE (premium collection)
+  phone: 404
+  desktop: 404
+  page has download links: 0
+
+$ HEAD /api/catalog/download/0IAHBTMOSU/phone.jpg
+HTTP/1.1 405 Method Not Allowed
