@@ -4,7 +4,7 @@ Neu in Prism
 
 • Ordner. Sammle Wallpaper in privaten Ordnern, mach einen Ordner öffentlich oder folge den Ordnern anderer.
 • Live-Hintergrundbilder auf geeigneten Handys. Erwecke ein Bild zum Leben, probiere lebendige Farbverläufe oder den 3D-Stil, oder mach aus einem Video ein Wallpaper.
-• Automatischer Wechsel. Mit Pro oder einem 7-Tage-Pass für Coins tauscht Prism dein Hintergrundbild nach Zeitplan, direkt aus einem Ordner.
+• Automatischer Wechsel. Mit Pro tauscht Prism dein Hintergrundbild nach Zeitplan, direkt aus einem Ordner.
 • 3D-Vorschau. Kipp dein Handy und sieh die Tiefe eines Bildes, bevor du es festlegst.
 • KI-Stile und Remix. Beschreib eine Idee, sieh sie in jedem Stil und remixe die KI-Wallpaper, die dir gefallen.
 • Wöchentliche Challenges. Reiche ein Bild zum Thema der Woche ein und stimme für deine Favoriten. Der Gewinner wird Hintergrundbild des Tages.
@@ -21,7 +21,7 @@ Hintergründe in 4K und AMOLED
 
 Dein eigenes Wallpaper mit KI
 
-Schreib eine Idee auf, wähl einen Stil von Anime bis Ölgemälde, und Prism erstellt ein Hintergrundbild, das sonst niemand hat. Lass dir eine neue Variante zeigen, verfeinere sie mit einer Nachfrage oder remixe ein Bild von jemand anderem. KI-Wallpaper kosten Coins, und Coins verdienst du in der App.
+Schreib eine Idee auf, wähl einen Stil von Anime bis Ölgemälde, und Prism erstellt ein Hintergrundbild aus deiner Idee. Lass dir eine neue Variante zeigen, verfeinere sie mit einer Nachfrage oder remixe ein Bild von jemand anderem. KI-Wallpaper kosten Coins, und Coins verdienst du in der App.
 
 Deine Mediathek
 

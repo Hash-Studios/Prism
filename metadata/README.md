@@ -44,7 +44,7 @@ The check fails on a field over the store limit, an App Store keyword word that 
 | Brazil | `pt-BR` | `pt-BR` | `pt-BR` |
 | Portugal | `pt-PT` | `pt-PT` | `pt-PT` |
 
-Play also has an old `fr-FR` listing. It is not part of this set, so the push commands below leave it out.
+Play also has an older `fr-FR` listing. It is not rewritten for this set; only its false claims (Setups, giveaways, category counts, faster reviews) are removed, so it is safe to push with the rest.
 
 ## Copy rules
 
@@ -61,12 +61,12 @@ Research on 2026-11-01 from store search results and competitor titles in each c
 |---|---|---|
 | `en-GB` | lock, screen, hd, aesthetic, anime, dark, black, depth, effect, spatial, 3d, generator, home, minimalist, cool | Apple also reads `en-GB` keywords in other storefronts (for example India, Germany, Indonesia), so this set holds the English head terms the native fields leave out. "generator" pairs with "AI" in the name. "depth effect" and "spatial" match iOS features few competitors claim. |
 | `en-US` | backgrounds, hd, aesthetic, anime, dark, black, depth, effect, spatial, 3d, generator, home, minimalist, cool, art | The subtitle carries "lock screen widgets", the strongest US terms in competitor subtitles. "backgrounds" moves here from the `en-GB` subtitle. |
-| `de-DE` | hintergründe, hintergrund, wallpaper, amoled, dunkel, schwarz, ästhetisch, anime, 3d, tiefeneffekt, homescreen | "Hintergrundbilder" (name) and "Hintergründe" lead German competitor titles. German compounds index as one word, so each form is listed. "Wallpaper" is a common loanword. |
+| `de-DE` | hintergründe, wallpaper, amoled, dunkel, schwarz, ästhetisch, anime, 3d, tiefeneffekt, homescreen | "Hintergründe" (plural) leads German competitor titles. "Wallpaper" is a common loanword. |
 | `es-ES` | bloqueo, inicio, wallpaper, estético, anime, negro, 3d, profundidad, efecto, espacial, generador, minimalista | "fondos de pantalla" (name) is the head phrase in Spain. "bloqueo" and "inicio" complete "pantalla de bloqueo" and "pantalla de inicio" with "pantalla" from the name. |
-| `es-MX` | bloqueo, inicio, wallpaper, amoled, estéticos, anime, oscuro, 3d, profundidad, efecto, espacial, generador | Mexican listings say "celular" and "HD", so they sit in the subtitle. Apple also reads `es-MX` in the US storefront, which adds Spanish reach there. |
-| `hi` | लॉक, स्क्रीन, होम, डार्क, एनीमे, एचडी, 3डी, कूल, स्टाइलिश, stylish, cute, photo, hd, backgrounds | Indian titles are mostly English. Devanagari forms of the same terms cover Hindi keyboards. Religious terms are left out because the catalogue does not target them. |
+| `es-MX` | bloqueo, inicio, wallpaper, hd, amoled, estéticos, anime, oscuro, 3d, profundidad, efecto, espacial, generador | Mexican listings say "celular", so it sits in the subtitle. Apple also reads `es-MX` in the US storefront, which adds Spanish reach there. |
+| `hi` | लॉक, स्क्रीन, होम, डार्क, एनीमे, एचडी, 3डी, कूल, स्टाइलिश, पेंटिंग, cute, photo, hd, backgrounds | Indian titles are mostly English. Devanagari forms of the same terms cover Hindi keyboards. Religious terms are left out because the catalogue does not target them. |
 | `id` | hd, keren, kunci, layar, hp, 3d, anime, gelap, hitam, minimalis, aesthetic, background, efek, kedalaman, beranda | "wallpaper" (name) is the loanword Indonesians search. "HP" is the everyday word for phone. "kunci layar" and "keren" are common in local guides. |
-| `pt-BR` | papéis, wallpaper, amoled, anime, estético, escuro, preto, 3d, efeito, profundidade, inicial, celular, gerador | "papel de parede" (name) is the default. Brazil has strong widget competition, so "widgets" and "tela de bloqueio" sit in the subtitle. "papéis" covers the plural that many Brazilian titles use. |
+| `pt-BR` | fundo, wallpaper, amoled, anime, estético, escuro, preto, 3d, efeito, profundidade, inicial, celular, gerador | "papel de parede" (name) is the default. Brazil has strong widget competition, so "widgets" and "tela de bloqueio" sit in the subtitle. |
 | `pt-PT` | wallpaper, amoled, anime, escuro, preto, 3d, efeito, profundidade, espacial, bloqueio, inicial, telemóvel, gerador | The name uses "fundos de ecrã" for Portugal. Portuguese store titles are mostly Brazilian, so the subtitle adds "papel de parede". |
 
 ## Push (a person runs these, after approval)
@@ -84,8 +84,8 @@ Google Play. Push only after 3.18.0 is in production if any Play copy names a 3.
 
 ```sh
 gplay metadata validate --dir metadata/play --output table
-gplay metadata push --package com.hash.prism --dir metadata/play --locales en-GB,en-US,de-DE,es-ES,es-419,hi-IN,id,pt-BR,pt-PT --dry-run
-gplay metadata push --package com.hash.prism --dir metadata/play --locales en-GB,en-US,de-DE,es-ES,es-419,hi-IN,id,pt-BR,pt-PT --confirm
+gplay metadata push --package com.hash.prism --dir metadata/play --locales en-GB,en-US,de-DE,es-ES,es-419,fr-FR,hi-IN,id,pt-BR,pt-PT --dry-run
+gplay metadata push --package com.hash.prism --dir metadata/play --locales en-GB,en-US,de-DE,es-ES,es-419,fr-FR,hi-IN,id,pt-BR,pt-PT --confirm
 ```
 
 Pull again after a push to confirm the stores match the repo:

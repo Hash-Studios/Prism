@@ -242,8 +242,7 @@ class PrismSegmented<T> extends StatelessWidget {
   }
 }
 
-/// Wraps at spaces onto two lines and shrinks the text only when it still does not fit, so a long label such as
-/// "Startbildschirm" or "Pantalla de inicio" is never cut or broken mid-word.
+/// Wraps labels at spaces onto two lines and shrinks them when needed to keep localized choices readable.
 class _SegmentLabel extends StatelessWidget {
   const _SegmentLabel(this.label);
 

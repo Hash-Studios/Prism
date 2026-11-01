@@ -4,7 +4,7 @@ New in Prism
 
 • Folders. Save walls into private folders, make a folder public, or follow someone else's.
 • Live wallpapers on supported phones. Make a wall live, try a living gradient or the 3D style, or turn a video into a wallpaper.
-• Auto-rotate. With Pro or a 7-day coin pass, Prism changes your wallpaper on a schedule, straight from a folder.
+• Auto-rotate. With Pro, Prism changes your wallpaper on a schedule, straight from a folder.
 • 3D preview. Tilt your phone to see a wall's depth before you set it.
 • AI styles and remix. Describe an idea, see it in every style, then remix the AI walls you like.
 • Weekly challenges. Enter the theme of the week and vote for your favourites. The winner becomes the Wall of the Day.
@@ -21,7 +21,7 @@ New in Prism
 
 Make your own with AI
 
-Type an idea, pick a style from anime to oil painting, and Prism makes a wallpaper no one else has. Ask for another take, refine it with a follow-up, or remix a wall someone else made. AI wallpapers cost coins, and you can earn coins in the app.
+Type an idea, pick a style from anime to oil painting, and Prism creates a wallpaper from your idea. Ask for another take, refine it with a follow-up, or remix a wall someone else made. AI wallpapers cost coins, and you can earn coins in the app.
 
 Your library
 

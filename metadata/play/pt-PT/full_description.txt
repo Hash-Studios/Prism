@@ -4,7 +4,7 @@ Novidades no Prism
 
 • Pastas. Guarda fundos em pastas privadas, torna uma pasta pública ou segue as pastas de outras pessoas.
 • Fundos animados. Em telemóveis compatíveis, dá vida a uma imagem, experimenta um gradiente vivo ou o estilo 3D, ou transforma um vídeo num fundo de ecrã.
-• Troca automática. Com o Pro ou um passe de 7 dias com moedas, o Prism muda o teu fundo segundo um horário, diretamente a partir de uma pasta.
+• Troca automática. Com o Pro, o Prism muda o teu fundo segundo um horário, diretamente a partir de uma pasta.
 • Pré-visualização em 3D. Inclina o telemóvel para veres a profundidade de uma imagem antes de a definires.
 • Estilos com IA e remix. Descreve uma ideia, vê-a em todos os estilos e faz remix dos fundos com IA de que gostares.
 • Desafios semanais. Participa com o tema da semana e vota nos teus favoritos. O vencedor passa a ser o Papel de parede do dia.
@@ -21,7 +21,7 @@ Fundos 4K e AMOLED
 
 Cria o teu com IA
 
-Escreve uma ideia, escolhe um estilo, do anime à pintura a óleo, e o Prism cria um fundo que mais ninguém tem. Pede outra versão, afina-a com mais uma indicação ou faz remix da imagem de outra pessoa. Os fundos com IA custam moedas, e podes ganhar moedas na app.
+Escreve uma ideia, escolhe um estilo, do anime à pintura a óleo, e o Prism cria um fundo a partir da tua ideia. Pede outra versão, afina-a com mais uma indicação ou faz remix da imagem de outra pessoa. Os fundos com IA custam moedas, e podes ganhar moedas na app.
 
 A tua biblioteca
 

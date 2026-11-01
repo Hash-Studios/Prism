@@ -4,7 +4,7 @@ Novedades en Prism
 
 • Carpetas. Guarda fondos en carpetas privadas, haz pública una carpeta o sigue las de otras personas.
 • Fondos animados. En celulares compatibles, dale vida a un fondo, prueba un degradado vivo o el estilo 3D, o convierte un video en fondo de pantalla.
-• Cambio automático. Con Pro o un pase de 7 días con monedas, Prism cambia tu fondo según un horario, directamente desde una carpeta.
+• Cambio automático. Con Pro, Prism cambia tu fondo según un horario, directamente desde una carpeta.
 • Vista previa en 3D. Inclina tu celular para ver la profundidad de un fondo antes de ponerlo.
 • Estilos con IA y remezclas. Describe una idea, mírala en todos los estilos y remezcla los fondos con IA que más te gusten.
 • Retos semanales. Participa con el tema de la semana y vota tus favoritos. El ganador se convierte en el Fondo del día.
@@ -21,7 +21,7 @@ Fondos en 4K y AMOLED
 
 Crea el tuyo con IA
 
-Escribe una idea, elige un estilo, del anime a la pintura al óleo, y Prism crea un fondo que nadie más tiene. Pide otra versión, ajústala con una indicación más o remezcla un fondo de otra persona. Los fondos con IA cuestan monedas, y puedes ganar monedas en la app.
+Escribe una idea, elige un estilo, del anime a la pintura al óleo, y Prism crea un fondo a partir de tu idea. Pide otra versión, ajústala con una indicación más o remezcla un fondo de otra persona. Los fondos con IA cuestan monedas, y puedes ganar monedas en la app.
 
 Tu biblioteca
 

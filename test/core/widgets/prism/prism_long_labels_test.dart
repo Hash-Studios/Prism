@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
@@ -39,6 +40,17 @@ Widget _host(Locale locale, double scale, Widget Function(AppLocalizations l10n)
     ),
   ),
 );
+
+class _NonlinearTextScaler extends TextScaler {
+  const _NonlinearTextScaler();
+
+  @override
+  double scale(double fontSize) => fontSize * (fontSize <= 14 ? 2 : 3);
+
+  @override
+  @Deprecated('Use scale instead')
+  double get textScaleFactor => 2;
+}
 
 RenderParagraph _paragraph(WidgetTester tester, String text) =>
     tester.renderObject<RenderParagraph>(find.descendant(of: find.text(text), matching: find.byType(RichText)));
@@ -112,6 +124,36 @@ void main() {
     expect(_paragraph(tester, 'Lock').textScaler, const TextScaler.linear(1.3));
   });
 
+  testWidgets('localized labels fit under a nonlinear text scaler', (tester) async {
+    const _NonlinearTextScaler scaler = _NonlinearTextScaler();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: prismLightThemes.first.theme,
+        builder: (context, app) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: scaler),
+          child: app!,
+        ),
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 360,
+              child: PrismSegmented<int>(
+                values: const <int>[0, 1],
+                selected: 0,
+                labelOf: (value) => value == 0 ? 'Home screen' : 'Lock screen',
+                onChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final RenderParagraph paragraph = _paragraph(tester, 'Home screen');
+    expect(paragraph.didExceedMaxLines, isFalse);
+    expect(_lineCount(paragraph), lessThanOrEqualTo(2));
+  });
+
   testWidgets('the page title wraps instead of being cut at 2x text on a 360px phone', (tester) async {
     await tester.pumpWidget(
       _host(const Locale('en'), 2, (l10n) => PrismHeader(title: l10n.premiumPageTitle, onBack: () {})),
@@ -119,4 +161,34 @@ void main() {
 
     expect(_paragraph(tester, 'Prism Premium').didExceedMaxLines, isFalse);
   });
+
+  testWidgets('the localized ClockOverlay Set action wraps at 2x text on a 360px phone', (tester) async {
+    late String label;
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('de'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: prismLightThemes.first.theme,
+        builder: (context, app) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+          child: app!,
+        ),
+        home: Builder(
+          builder: (context) {
+            label = context.l10n.wallpaperPreviewSetHome;
+            return const ClockOverlay(
+              link: '',
+              file: true,
+              request: SetScreenRequest(url: ''),
+            );
+          },
+        ),
+      ),
+    );
+
+    final RenderParagraph paragraph = _paragraph(tester, label);
+    expect(paragraph.didExceedMaxLines, isFalse);
+    expect(_lineCount(paragraph), lessThanOrEqualTo(2));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }
