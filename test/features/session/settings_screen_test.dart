@@ -50,6 +50,7 @@ import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
 import '../../support/wait_for_real_io.dart';
+import '../creator_directory/creator_directory_test_support.dart';
 
 class _MockCacheMaintenanceService extends Mock implements CacheMaintenanceService {}
 
@@ -171,6 +172,7 @@ void main() {
     sessionRepository = _MockSessionRepository();
     when(() => sessionRepository.currentUser).thenReturn(testUser());
     getIt.registerSingleton<SessionRepository>(sessionRepository);
+    registerCreatorDirectoryFakes(profileBloc: false);
     originalSignOut = settingsSignOut;
     originalDeleteService = DeleteAccountService.instance;
   });

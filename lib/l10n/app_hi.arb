@@ -11823,5 +11823,108 @@
   "statsTipsEmpty": "अभी कोई टिप नहीं है। प्रशंसक आपके वॉलपेपर और प्रोफ़ाइल से आपको टिप दे सकते हैं।",
   "@statsTipsEmpty": {
     "description": "Creator stats: tips section with no tips"
+  },
+  "creatorsToFollow": "फ़ॉलो करने लायक क्रिएटर",
+  "@creatorsToFollow": {
+    "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "creatorsSeeAll": "सभी देखें",
+  "@creatorsSeeAll": {
+    "description": "Opens the full list of creators."
+  },
+  "creatorsTitle": "क्रिएटर",
+  "@creatorsTitle": {
+    "description": "Title of the page that lists all creators."
+  },
+  "creatorsFilterAll": "सभी",
+  "@creatorsFilterAll": {
+    "description": "Filter chip that shows creators from every category."
+  },
+  "creatorsEmptyTitle": "यहाँ अभी कोई क्रिएटर नहीं",
+  "@creatorsEmptyTitle": {
+    "description": "Empty state when no creator matches the selected category."
+  },
+  "creatorsEmptyBody": "कोई दूसरी श्रेणी आज़माएँ।",
+  "@creatorsEmptyBody": {
+    "description": "Empty state body under creatorsEmptyTitle."
+  },
+  "creatorsLoadError": "क्रिएटर लोड नहीं हो सके",
+  "@creatorsLoadError": {
+    "description": "Error state when the creators list fails to load."
+  },
+  "creatorsOpenProfile": "{name} की प्रोफ़ाइल खोलें",
+  "@creatorsOpenProfile": {
+    "description": "Screen reader label for a creator's avatar and name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsWallBy": "{name} का वॉलपेपर",
+  "@creatorsWallBy": {
+    "description": "Screen reader label for a wallpaper thumbnail on a creator card.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsFollowedByOne": "{first} फ़ॉलो करते हैं",
+  "@creatorsFollowedByOne": {
+    "description": "Profile social proof when one person the viewer follows follows this creator.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsFollowedByTwo": "{first} और {second} फ़ॉलो करते हैं",
+  "@creatorsFollowedByTwo": {
+    "description": "Profile social proof when two people the viewer follows follow this creator.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsFollowedByMany": "{first}, {second} और {others, plural, =1{आपके फ़ॉलो किए एक और व्यक्ति} other{आपके फ़ॉलो किए {others} और लोग}} फ़ॉलो करते हैं",
+  "@creatorsFollowedByMany": {
+    "description": "Profile social proof when three or more people the viewer follows follow this creator. others is the count beyond the two names.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      },
+      "others": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorsMoreLike": "{name} जैसे और",
+  "@creatorsMoreLike": {
+    "description": "Toast action and sheet title that suggest creators similar to the one just followed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsSimilarSubtitle": "मिलते-जुलते स्टाइल वाले क्रिएटर",
+  "@creatorsSimilarSubtitle": {
+    "description": "Subtitle of the similar creators sheet."
+  },
+  "creatorsShowMeTitle": "मुझे फ़ॉलो करने लायक क्रिएटर में दिखाएँ",
+  "@creatorsShowMeTitle": {
+    "description": "Settings switch that lists the user in the creator directory."
+  },
+  "creatorsShowMeBody": "दूसरे आपकी प्रोफ़ाइल और टॉप वॉलपेपर ढूँढ सकते हैं",
+  "@creatorsShowMeBody": {
+    "description": "Subtitle of the creator directory settings switch."
   }
 }

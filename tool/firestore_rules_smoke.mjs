@@ -169,6 +169,8 @@ const seed = () => Promise.all([
   req('PATCH', 'folders/absent/items/wallhaven_orphan', itemFields('b', 'orphan'), 'owner'),
   req('PATCH', 'folders/pf1', folderFields('a', 'Night', { public: { booleanValue: true }, itemCount: { integerValue: '1' }, covers: arr(['https://img.prismwalls.com/previews/x.img']) }), 'owner'),
   req('PATCH', 'folders/pf1/items/prism_w1', itemFields('a', 'w1', 'Prism'), 'owner'),
+  req('PATCH', 'creatorDirectory/a', { uid: str('a'), name: str('A'), rank: { integerValue: '1' }, categories: arr(['Nature']) }, 'owner'),
+  req('PATCH', 'followedByCache/b_a', { count: { integerValue: '1' } }, 'owner'),
   req('PATCH', 'publicFolders/pf1', { ownerId: str('a'), name: str('Night'), itemCount: { integerValue: '1' }, covers: arr(['https://img.prismwalls.com/previews/x.img']), followerCount: { integerValue: '0' }, updatedAt: ts() }, 'owner'),
   req('PATCH', 'publicFolders/pf1/items/prism_w1', { id: str('w1'), provider: str('Prism'), thumb: str('https://img.prismwalls.com/previews/x.img'), wallpaperDocumentId: str('W1') }, 'owner'),
   req('PATCH', 'publicFolders/pf1/followers/b', { uid: str('b') }, 'owner'),
@@ -463,6 +465,19 @@ const cases = [
   ['owner stamps a west-of-UTC offset', () => req('PATCH', 'usersv2/b', {
     appOpenTimezoneOffsetMinutes: { integerValue: '-300' },
   }, Bu, ['appOpenTimezoneOffsetMinutes']), 200],
+  ...[
+    ['directory-optout-true', { booleanValue: true }, 200],
+    ['directory-optout-false', { booleanValue: false }, 200],
+    ['directory-optout-string', str('yes'), 403],
+    ['directory-optout-map', { mapValue: { fields: {} } }, 403],
+  ].map(([uid, value, expected]) => [
+    `new profile validates creator directory opt-out (${uid})`,
+    () => req('PATCH', `usersv2/${uid}`, { id: str(uid), creatorDirectoryOptOut: value }, tok(uid, `${uid}@x.com`)),
+    expected,
+  ]),
+  ['owner opts out of the creator directory', () => req('PATCH', 'usersv2/b', { creatorDirectoryOptOut: { booleanValue: true } }, Bu, ['creatorDirectoryOptOut']), 200],
+  ['owner cannot write a non-bool directory opt-out', () => req('PATCH', 'usersv2/b', { creatorDirectoryOptOut: str('yes') }, Bu, ['creatorDirectoryOptOut']), 403],
+  ['stranger cannot opt another user out', () => req('PATCH', 'usersv2/b', { creatorDirectoryOptOut: { booleanValue: true } }, A, ['creatorDirectoryOptOut']), 403],
   ['owner writes a valid themePrefs map', () => req('PATCH', 'usersv2/b', themeMap(themeFields), Bu, ['themePrefs']), 200],
   ['owner writes themePrefs with an extra key', () => req('PATCH', 'usersv2/b', themeMap({ ...themeFields, extra: str('x') }), Bu, ['themePrefs']), 403],
   ['owner writes themePrefs with mode sepia', () => req('PATCH', 'usersv2/b', themeMap({ ...themeFields, mode: str('sepia') }), Bu, ['themePrefs']), 403],
@@ -815,6 +830,14 @@ const cases = [
   ['stranger can list public folders by owner', () => runQuery(Bu, [ownerFilter('a')], 'publicFolders', '', newestFirst('updatedAt')), 200],
   ['blocked user cannot list public folders by owner', () => runQuery(C, [ownerFilter('a')], 'publicFolders', '', newestFirst('updatedAt')), 403],
   ['owner-blocked user cannot list public folders by owner', () => runQuery(D, [ownerFilter('a')], 'publicFolders', '', newestFirst('updatedAt')), 403],
+  ['signed-out user cannot get a creator directory entry', () => req('GET', 'creatorDirectory/a'), 403],
+  ['signed-in user can get a creator directory entry', () => req('GET', 'creatorDirectory/a', null, Bu), 200],
+  ['signed-in user can list the creator directory', () => runCollectionQuery(Bu, 'creatorDirectory'), 200],
+  ['creator cannot write own directory entry', () => req('PATCH', 'creatorDirectory/a', { rank: { integerValue: '0' } }, A, ['rank']), 403],
+  ['user cannot create a directory entry', () => req('PATCH', 'creatorDirectory/b', { uid: str('b') }, Bu), 403],
+  ['creator cannot delete own directory entry', () => req('DELETE', 'creatorDirectory/a', null, A), 403],
+  ['viewer cannot read the followed-by cache', () => req('GET', 'followedByCache/b_a', null, Bu), 403],
+  ['viewer cannot write the followed-by cache', () => req('PATCH', 'followedByCache/b_a', { count: { integerValue: '9' } }, Bu), 403],
 ];
 await seed();
 let bad = 0;

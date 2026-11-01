@@ -218,7 +218,7 @@ return systemColorsChanged(_that.schemes);case _:
 
 class _Started implements ThemeEvent {
   const _Started();
-
+  
 
 
 
@@ -250,7 +250,7 @@ String toString() {
 
 class _AccountSynced implements ThemeEvent {
   const _AccountSynced({required this.preferences});
-
+  
 
  final  ThemePreferences preferences;
 
@@ -316,7 +316,7 @@ as ThemePreferences,
 
 class _LightThemeChanged implements ThemeEvent {
   const _LightThemeChanged({required this.themeId});
-
+  
 
  final  String themeId;
 
@@ -382,7 +382,7 @@ as String,
 
 class _LightAccentChanged implements ThemeEvent {
   const _LightAccentChanged({required this.accentColorValue});
-
+  
 
  final  int accentColorValue;
 
@@ -448,7 +448,7 @@ as int,
 
 class _DarkThemeChanged implements ThemeEvent {
   const _DarkThemeChanged({required this.themeId, this.mode});
-
+  
 
  final  String themeId;
  final  ThemeMode? mode;
@@ -516,7 +516,7 @@ as ThemeMode?,
 
 class _DarkAccentChanged implements ThemeEvent {
   const _DarkAccentChanged({required this.accentColorValue});
-
+  
 
  final  int accentColorValue;
 
@@ -582,7 +582,7 @@ as int,
 
 class _ModeChanged implements ThemeEvent {
   const _ModeChanged({required this.mode});
-
+  
 
  final  ThemeMode mode;
 
@@ -648,7 +648,7 @@ as ThemeMode,
 
 class _SystemColorsChanged implements ThemeEvent {
   const _SystemColorsChanged({this.schemes});
-
+  
 
  final  SystemColorSchemes? schemes;
 
@@ -912,7 +912,7 @@ return $default(_that.status,_that.actionStatus,_that.light,_that.dark,_that.mod
 
 class _ThemeState implements ThemeState {
   const _ThemeState({required this.status, required this.actionStatus, required this.light, required this.dark, required this.mode, this.failure, this.system});
-
+  
 
 @override final  LoadStatus status;
 @override final  ActionStatus actionStatus;
