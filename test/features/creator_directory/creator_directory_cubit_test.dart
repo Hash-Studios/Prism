@@ -243,6 +243,28 @@ void main() {
     await blocks.close();
   });
 
+  test('creators hidden while the block list is unknown come back when it loads', () async {
+    final StreamController<BlockedCreators> blocks = StreamController<BlockedCreators>.broadcast();
+    final CreatorDirectoryCubit cubit = CreatorDirectoryCubit(repo, _StreamBlocks(blocks.stream));
+    cubit.show(<DirectoryCreator>[directoryCreator('a', name: 'Ann'), directoryCreator('b', name: 'Ben')]);
+
+    blocks.add(const UnknownBlockedCreators());
+    await Future<void>.delayed(Duration.zero);
+    expect(cubit.state.creators, isEmpty);
+
+    // A status-only change while hidden must not forget the loaded list.
+    repo.fetchError = StateError('offline');
+    await cubit.loadRow();
+    expect(cubit.state.status, CreatorDirectoryStatus.failed);
+
+    blocks.add(KnownBlockedCreators(<String>['b']));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(uidsOf(cubit.state.creators), <String>['a']);
+    await cubit.close();
+    await blocks.close();
+  });
+
   test('the opt-out switch loads, saves, and goes back when the write fails', () async {
     repo.optedOut = true;
     final CreatorDirectoryOptOutCubit cubit = CreatorDirectoryOptOutCubit(repo);

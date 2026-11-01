@@ -670,7 +670,10 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
           if (pickUpAt < chunks[i].$2) ...gridWithAd(pickUpAt, chunks[i].$2),
         ] else if (i == 1 && creatorsAt != null) ...<Widget>[
           ...gridWithAd(chunks[i].$1, creatorsAt),
-          const SliverToBoxAdapter(child: CreatorsSection(source: 'home')),
+          // Keyed on the refresh, so a row that loaded before the directory existed loads again.
+          SliverToBoxAdapter(
+            child: CreatorsSection(key: ValueKey<String>('creators-$_moodRowsRevision'), source: 'home'),
+          ),
           if (creatorsAt < chunks[i].$2) ...gridWithAd(creatorsAt, chunks[i].$2),
         ] else
           ...gridWithAd(chunks[i].$1, chunks[i].$2),
@@ -682,7 +685,10 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
               slot: i,
             ),
           ),
-        if (i == 0 && chunks.length == 1) const SliverToBoxAdapter(child: CreatorsSection(source: 'home')),
+        if (i == 0 && chunks.length == 1)
+          SliverToBoxAdapter(
+            child: CreatorsSection(key: ValueKey<String>('creators-$_moodRowsRevision'), source: 'home'),
+          ),
       ],
       SliverToBoxAdapter(child: _bottomState(context, state, crossAxisCount)),
     ];

@@ -23,6 +23,8 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
+import 'package:Prism/features/creator_directory/domain/creator_directory_repository.dart';
+import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
@@ -847,6 +849,29 @@ void main() {
     verify(() => fetchUseCase(any())).called(1);
     verify(() => fetchTrending(any())).called(1);
     expect(moodRepository.fetchedWallIds, hasLength(2));
+  });
+
+  testWidgets('pull to refresh on For you reloads a Creators row that first loaded empty', (tester) async {
+    final FakeCreatorDirectoryRepository directory =
+        getIt<CreatorDirectoryRepository>() as FakeCreatorDirectoryRepository;
+    moodRepository.moods = <MoodList>[
+      MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i')),
+    ];
+    when(
+      () => fetchUseCase(any()),
+    ).thenAnswer((_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))));
+    await pumpScreen(tester, viewSize: const Size(600, 9000));
+    await _settle(tester);
+    // The row sits below the first screen, in the built area past the viewport.
+    expect(find.byType(CreatorsSection, skipOffstage: false), findsOneWidget);
+    expect(find.text('Creators to follow', skipOffstage: false), findsNothing);
+
+    // The directory gets its first creators after the row loaded empty.
+    directory.pages[(null, null)] = creatorPage(<DirectoryCreator>[directoryCreator('a')]);
+    await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await _settle(tester);
+
+    expect(find.text('Creators to follow', skipOffstage: false), findsOneWidget);
   });
 
   testWidgets('refresh preserves impression dedupe while pending and failed, then resets on success', (tester) async {

@@ -71,17 +71,28 @@ class CreatorDirectoryCubit extends Cubit<CreatorDirectoryState> {
   late final StreamSubscription<BlockedCreators> _blocks;
   int _load = 0;
 
+  /// The loaded creators before later block changes, so a creator hidden while the block list was unknown comes back.
+  List<DirectoryCreator> _all = const <DirectoryCreator>[];
+
   /// Shows a fixed list, for the More like sheet. Blocks still remove creators from it.
   void show(List<DirectoryCreator> creators) =>
       emit(CreatorDirectoryState(status: CreatorDirectoryStatus.loaded, creators: creators));
 
-  /// A creator the viewer blocks leaves the list at once, without a reload.
+  /// A creator the viewer blocks leaves the list at once, without a reload. Filtering [_all], not the shown list,
+  /// brings back creators that an unknown block list hid.
   void _hideBlocked(BlockedCreators blocked) {
     if (isClosed) return;
-    final List<DirectoryCreator> visible = state.creators
+    final List<DirectoryCreator> visible = _all
         .where((c) => !BlockedCreatorsFilter.hidesCreatorUid(c.uid, blocked))
         .toList(growable: false);
-    if (visible.length != state.creators.length) emit(state.copyWith(creators: visible));
+    if (visible.length != state.creators.length) super.emit(state.copyWith(creators: visible));
+  }
+
+  /// Loads are already filtered by the repository. A status-only change passes the shown list back, so [_all] stays.
+  @override
+  void emit(CreatorDirectoryState next) {
+    if (!identical(next.creators, state.creators)) _all = next.creators;
+    super.emit(next);
   }
 
   @override
