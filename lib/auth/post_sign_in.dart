@@ -34,7 +34,7 @@ class SignInSession {
 
   static int _latestGeneration = 0;
   final int _generation;
-  final String? Function()? _authenticatedUid;
+  String? Function()? _authenticatedUid;
   String? _expectedUid;
   String _ownerId = app_state.prismUser.id;
   bool _ownerLoggedIn = app_state.prismUser.loggedIn;
@@ -46,10 +46,18 @@ class SignInSession {
       app_state.prismUser.loggedIn == _ownerLoggedIn &&
       _economySession == CoinsService.instance.economySession;
 
-  bool get isCurrent => _ownsLocalSession && (_authenticatedUid == null || _authenticatedUid() == _expectedUid);
+  bool get isCurrent => _ownsLocalSession && (_authenticatedUid == null || _authenticatedUid?.call() == _expectedUid);
 
   void requireCurrent() {
     if (!isCurrent) throw StateError('The sign-in session changed.');
+  }
+
+  /// Reserve local ownership before waiting for Firebase, then bind its restored user once it is ready.
+  void bindAuthenticatedUid(String? Function() authenticatedUid) {
+    requireCurrent();
+    if (_authenticatedUid != null) throw StateError('The sign-in session already has an auth owner.');
+    _authenticatedUid = authenticatedUid;
+    _expectedUid = authenticatedUid();
   }
 
   /// Firebase itself changes the authenticated user while accepting our credential.
@@ -76,7 +84,7 @@ class SignInSession {
   bool finishSignOut({required bool firebaseSucceeded, required PrismUsersV2 guest}) {
     if (!_ownsLocalSession) return false;
     final String? expected = firebaseSucceeded ? null : _expectedUid;
-    if (_authenticatedUid != null && _authenticatedUid() != expected) return false;
+    if (_authenticatedUid != null && _authenticatedUid?.call() != expected) return false;
     _expectedUid = expected;
     publish(guest);
     CoinsService.instance.resetSession();

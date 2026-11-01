@@ -159,6 +159,12 @@ void main() {
     expect(firebaseAuth.currentUser, isNull);
   }
 
+  test('Apple sign-in fails before the Apple sheet when Firebase never starts', () async {
+    final AppleAuth auth = AppleAuth(firebaseReady: () async => false);
+
+    await expectLater(auth.signInWithApple(), throwsA(isA<FirebaseUnavailableException>()));
+  });
+
   test('Apple rolls Firebase back when post-credential analytics fails', () async {
     await runPostCredentialFailure(StateError('server unavailable'));
   });

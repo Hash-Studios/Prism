@@ -14,6 +14,19 @@ class _Auth extends Fake implements FirebaseAuth {
   User? get currentUser => null;
 }
 
+class _CountingGoogleSignIn extends Fake implements GoogleSignIn {
+  int authenticateCalls = 0;
+
+  @override
+  Future<void> initialize({String? clientId, String? serverClientId, String? nonce, String? hostedDomain}) async {}
+
+  @override
+  Future<GoogleSignInAccount> authenticate({List<String> scopeHint = const <String>[]}) {
+    authenticateCalls++;
+    return Future<GoogleSignInAccount>.error(StateError('Google sheet should not open'));
+  }
+}
+
 class _ThrowingGoogleSignIn extends Fake implements GoogleSignIn {
   _ThrowingGoogleSignIn(this.code);
 
@@ -39,6 +52,22 @@ void main() {
     );
 
     expect(await auth.signInWithGoogle(), SignInOutcome.cancelled);
+  });
+
+  test('sign-in fails when Firebase never starts, before the Google sheet', () async {
+    final _CountingGoogleSignIn google = _CountingGoogleSignIn();
+    final GoogleAuth auth = GoogleAuth(googleSignIn: google, firebaseReady: () async => false);
+
+    await expectLater(auth.signInWithGoogle(), throwsA(isA<FirebaseUnavailableException>()));
+    expect(google.authenticateCalls, 0);
+    expect(
+      googleSignInErrorMessage(const FirebaseUnavailableException(), l10n, platform: TargetPlatform.android),
+      'Google Play services on this device cannot sign in.',
+    );
+    expect(
+      googleSignInErrorMessage(const FirebaseUnavailableException(), l10n, platform: TargetPlatform.iOS),
+      genericSignInErrorMessage(l10n),
+    );
   });
 
   test('an unknown Google error is thrown so the screen can show a real message', () async {
