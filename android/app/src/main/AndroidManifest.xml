@@ -152,6 +152,7 @@
                 <data android:path="/admin-review" />
                 <data android:path="/admin-review/swipe" />
                 <data android:path="/admin-firestore-telemetry" />
+                <data android:path="/admin-promo-codes" />
                 <data android:path="/debug-panel" />
                 <data android:path="/quick-tile-settings" />
                 <data android:path="/auto-rotate" />
@@ -279,6 +280,7 @@
                 <data android:path="/admin-review" />
                 <data android:path="/admin-review/swipe" />
                 <data android:path="/admin-firestore-telemetry" />
+                <data android:path="/admin-promo-codes" />
                 <data android:path="/debug-panel" />
                 <data android:path="/quick-tile-settings" />
                 <data android:path="/auto-rotate" />
@@ -395,6 +397,7 @@
                 <data android:path="/admin-review" />
                 <data android:path="/admin-review/swipe" />
                 <data android:path="/admin-firestore-telemetry" />
+                <data android:path="/admin-promo-codes" />
                 <data android:path="/debug-panel" />
                 <data android:path="/quick-tile-settings" />
                 <data android:path="/auto-rotate" />
@@ -511,6 +514,7 @@
                 <data android:path="/admin-review" />
                 <data android:path="/admin-review/swipe" />
                 <data android:path="/admin-firestore-telemetry" />
+                <data android:path="/admin-promo-codes" />
                 <data android:path="/debug-panel" />
                 <data android:path="/quick-tile-settings" />
                 <data android:path="/auto-rotate" />
@@ -627,6 +631,7 @@
                 <data android:path="/admin-review" />
                 <data android:path="/admin-review/swipe" />
                 <data android:path="/admin-firestore-telemetry" />
+                <data android:path="/admin-promo-codes" />
                 <data android:path="/debug-panel" />
                 <data android:path="/quick-tile-settings" />
                 <data android:path="/auto-rotate" />

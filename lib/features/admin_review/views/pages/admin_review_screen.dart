@@ -107,6 +107,11 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
               tooltip: context.l10n.adminSwipeReview,
               onPressed: () => context.router.push(const SwipeReviewRoute()),
             ),
+            PrismIconButton(
+              icon: Icons.redeem_rounded,
+              tooltip: context.l10n.promoAdminEntry,
+              onPressed: () => context.router.push(PromoCodesAdminRoute()),
+            ),
           ],
           headerBottom: Padding(
             padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxs, PrismSpace.page, PrismSpace.sm),

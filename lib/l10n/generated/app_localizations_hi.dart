@@ -12363,4 +12363,235 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get creatorsShowMeBody => 'दूसरे आपकी प्रोफ़ाइल और टॉप वॉलपेपर ढूँढ सकते हैं';
+
+  @override
+  String get promoRedeemTitle => 'कोड रिडीम करें';
+
+  @override
+  String get promoRedeemMessage => 'Prism की किसी पोस्ट या गिवअवे से मिला कोड डालें।';
+
+  @override
+  String get promoRedeemMessageIos => 'Prism की किसी पोस्ट या गिवअवे से मिला सिक्कों वाला कोड डालें।';
+
+  @override
+  String get promoCodeFieldLabel => 'कोड';
+
+  @override
+  String get promoCodeFieldHint => 'जैसे, 7KQ2 MPXR 4D';
+
+  @override
+  String get promoPasteCode => 'कोड पेस्ट करें';
+
+  @override
+  String get promoRedeemAction => 'रिडीम करें';
+
+  @override
+  String get promoRedeeming => 'कोड रिडीम हो रहा है';
+
+  @override
+  String get promoDone => 'हो गया';
+
+  @override
+  String get promoTryAnother => 'दूसरा कोड आज़माएँ';
+
+  @override
+  String promoSuccessCoins(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString सिक्के', one: '1 सिक्का');
+    return 'आपको $_temp0 मिले';
+  }
+
+  @override
+  String get promoSuccessCoinsMessage => 'अब ये आपके बैलेंस में हैं।';
+
+  @override
+  String promoSuccessPro(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString दिन', one: '1 दिन');
+    return 'आपको Pro के $_temp0 मिले';
+  }
+
+  @override
+  String promoSuccessProMessage(String date) {
+    return 'आपका Pro पास अब $date तक चलेगा।';
+  }
+
+  @override
+  String get promoErrorInvalid => 'यह Prism का कोड नहीं है। कोड में 10 या उससे ज़्यादा अक्षर और अंक होते हैं।';
+
+  @override
+  String get promoErrorNotFound => 'यह कोड नहीं मिला। इसे जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get promoErrorDisabled => 'यह कोड बंद कर दिया गया है।';
+
+  @override
+  String get promoErrorExpired => 'इस कोड की मियाद खत्म हो चुकी है।';
+
+  @override
+  String get promoErrorLimitReached => 'इस कोड के अब और उपयोग बाकी नहीं हैं।';
+
+  @override
+  String get promoErrorAlreadyRedeemed => 'आप यह कोड पहले ही इस्तेमाल कर चुके हैं।';
+
+  @override
+  String get promoErrorAccountTooNew => 'आपका खाता इस कोड के लिए बहुत नया है। कुछ दिनों बाद फिर कोशिश करें।';
+
+  @override
+  String get promoErrorNewUsersOnly => 'यह कोड केवल नए खातों के लिए है।';
+
+  @override
+  String get promoErrorPremiumNotOnIos =>
+      'Pro कोड iPhone या iPad पर काम नहीं करते। इसके बजाय App Store कोड इस्तेमाल करें।';
+
+  @override
+  String get promoErrorAlreadyPremium => 'आपके पास पहले से Pro है, इसलिए यह कोड ज़रूरी नहीं है।';
+
+  @override
+  String get promoErrorRateLimited => 'बहुत ज़्यादा कोशिशें हो गईं। एक घंटा रुकें, फिर कोशिश करें।';
+
+  @override
+  String get promoErrorBusy => 'इस समय बहुत लोग कोड रिडीम कर रहे हैं। थोड़ी देर बाद फिर कोशिश करें।';
+
+  @override
+  String get promoErrorSignedOut => 'कोड रिडीम करने के लिए साइन इन करें।';
+
+  @override
+  String get promoErrorNetwork => 'Prism तक नहीं पहुँच पा रहे। अपना कनेक्शन जाँचें और फिर कोशिश करें।';
+
+  @override
+  String get promoErrorUnknown => 'कुछ गड़बड़ हो गई। फिर से कोशिश करें।';
+
+  @override
+  String get promoSettingsGroup => 'कोड';
+
+  @override
+  String get promoSettingsRedeemTitle => 'Prism कोड रिडीम करें';
+
+  @override
+  String get promoSettingsRedeemSubtitle => 'हमारी पोस्ट और गिवअवे से सिक्के या Pro के दिन';
+
+  @override
+  String get promoSettingsRedeemSubtitleIos => 'हमारी पोस्ट और गिवअवे से सिक्के';
+
+  @override
+  String get promoAppStoreCodeTitle => 'App Store कोड रिडीम करें';
+
+  @override
+  String get promoAppStoreCodeSubtitle => 'Apple से Pro ऑफ़र कोड';
+
+  @override
+  String get promoPlayCodeTitle => 'Play कोड रिडीम करें';
+
+  @override
+  String get promoPlayCodeSubtitle => 'Google Play से Pro ऑफ़र कोड';
+
+  @override
+  String get promoCodesFootnoteIos => 'Prism कोड सिक्के देते हैं। App Store कोड Pro देते हैं।';
+
+  @override
+  String get promoCodesFootnoteAndroid => 'Prism कोड सिक्के या Pro के दिन देते हैं। Play कोड Pro देते हैं।';
+
+  @override
+  String get promoStoreCodeFailed => 'कोड वाला पेज नहीं खुल सका। फिर से कोशिश करें।';
+
+  @override
+  String get promoRewardsRowTitle => 'कोड रिडीम करें';
+
+  @override
+  String get promoRewardsRowSubtitle => 'किसी पोस्ट या गिवअवे से कोड मिला है?';
+
+  @override
+  String get promoAdminTitle => 'प्रोमो कोड';
+
+  @override
+  String get promoAdminEntry => 'प्रोमो कोड';
+
+  @override
+  String get promoAdminCreate => 'कोड बनाएँ';
+
+  @override
+  String get promoAdminTypeCoins => 'सिक्के';
+
+  @override
+  String get promoAdminTypePro => 'Pro के दिन';
+
+  @override
+  String get promoAdminAmount => 'राशि';
+
+  @override
+  String get promoAdminAmountHelpCoins => '1 से 1,000 सिक्के';
+
+  @override
+  String get promoAdminAmountHelpPro => '1 से 90 दिन। केवल Android।';
+
+  @override
+  String get promoAdminMaxRedemptions => 'अधिकतम रिडेम्पशन';
+
+  @override
+  String get promoAdminExpiresInDays => 'इतने दिनों में खत्म (दिन)';
+
+  @override
+  String get promoAdminMinAccountAge => 'न्यूनतम खाता आयु (दिन)';
+
+  @override
+  String get promoAdminNewUsersOnly => 'केवल नए खाते';
+
+  @override
+  String get promoAdminNewUsersDays => 'खाता अधिकतम (दिन पुराना)';
+
+  @override
+  String get promoAdminCustomCode => 'कस्टम कोड (वैकल्पिक)';
+
+  @override
+  String get promoAdminCustomCodeHelp =>
+      '10 से 32 अक्षर और अंक, I, O, 0 या 1 के बिना। खाली छोड़ें तो कोड अपने आप बनेगा।';
+
+  @override
+  String get promoAdminLabel => 'नोट';
+
+  @override
+  String promoAdminCreated(String code) {
+    return '$code बनाया गया';
+  }
+
+  @override
+  String get promoAdminCopied => 'कोड कॉपी हो गया';
+
+  @override
+  String get promoAdminCopy => 'कोड कॉपी करें';
+
+  @override
+  String promoAdminRedemptions(int used, int max) {
+    return '$max में से $used इस्तेमाल हुए';
+  }
+
+  @override
+  String promoAdminExpires(String date) {
+    return '$date को खत्म होगा';
+  }
+
+  @override
+  String get promoAdminDisabled => 'बंद';
+
+  @override
+  String get promoAdminDisable => 'बंद करें';
+
+  @override
+  String get promoAdminEnable => 'चालू करें';
+
+  @override
+  String get promoAdminEmpty => 'अभी तक कोई कोड नहीं।';
+
+  @override
+  String get promoAdminLoadFailed => 'कोड लोड नहीं हो सके। फिर से कोशिश करने के लिए नीचे खींचें।';
+
+  @override
+  String promoAdminCreateFailed(String reason) {
+    return 'कोड नहीं बन सका: $reason';
+  }
 }

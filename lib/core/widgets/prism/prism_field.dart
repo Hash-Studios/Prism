@@ -27,6 +27,7 @@ class PrismTextField extends StatelessWidget {
     this.autofocus = false,
     this.enabled = true,
     this.autocorrect = true,
+    this.enableSuggestions = true,
   });
 
   final TextEditingController? controller;
@@ -54,6 +55,7 @@ class PrismTextField extends StatelessWidget {
   final bool autofocus;
   final bool enabled;
   final bool autocorrect;
+  final bool enableSuggestions;
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +66,7 @@ class PrismTextField extends StatelessWidget {
       autofocus: autofocus,
       enabled: enabled,
       autocorrect: autocorrect,
+      enableSuggestions: enableSuggestions,
       maxLines: maxLines,
       minLines: minLines,
       maxLength: maxLength,
