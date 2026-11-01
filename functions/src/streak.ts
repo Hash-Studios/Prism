@@ -617,7 +617,7 @@ export function resolveTimezoneOffset(
     clampTimezoneOffset(stored);
 }
 
-function storedTimezoneOffset(
+export function storedTimezoneOffset(
   raw: unknown,
   field = "streakTimezoneOffsetMinutes",
 ): number | undefined {

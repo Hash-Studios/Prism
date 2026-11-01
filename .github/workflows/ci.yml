@@ -302,7 +302,8 @@ jobs:
           functions/lib/__tests__/favouriteTransactionsEmulator.test.js
           functions/lib/__tests__/onUserCreated.test.js
           functions/lib/__tests__/claimUsername.test.js
-          functions/lib/__tests__/deleteAccount.test.js"
+          functions/lib/__tests__/deleteAccount.test.js
+          functions/lib/__tests__/wrappedEmulator.test.js"
 
   web:
     name: Web verify

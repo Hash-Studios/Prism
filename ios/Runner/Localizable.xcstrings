@@ -2601,6 +2601,86 @@
         }
       }
     },
+    "notif_push_wrapped_ready_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your %1$@ in Prism is here"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein %1$@ in Prism ist da"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu %1$@ en Prism ya está aquí"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपका %1$@ Prism में आ गया है"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ Anda di Prism sudah tiba"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu %1$@ no Prism chegou"
+          }
+        }
+      }
+    },
+    "notif_push_wrapped_ready_body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See the walls you saved, your colours and your creators."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sieh dir die gespeicherten Hintergrundbilder, deine Farben und deine Creator an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mira los fondos que guardaste, tus colores y tus creadores."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपके सहेजे गए वॉलपेपर, आपके रंग और आपके क्रिएटर देखें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lihat wallpaper yang Anda simpan, warna Anda, dan kreator Anda."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veja os papéis de parede que você salvou, suas cores e seus criadores."
+          }
+        }
+      }
+    },
     "notif_push_tip_received_title": {
       "localizations": {
         "en": {

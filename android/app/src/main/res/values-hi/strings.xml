@@ -64,6 +64,8 @@
     <string name="notif_push_draw_winner_body">एक महीने का Pro और Prism फ़्रेम अब आपके हैं।</string>
     <string name="notif_push_gift_received_title">%1$s ने आपको 24 घंटे का Pro पास भेजा</string>
     <string name="notif_push_gift_received_body">प्रीमियम कलेक्शन और वॉलपेपर कल तक उपलब्ध हैं।</string>
+    <string name="notif_push_wrapped_ready_title">आपका %1$s Prism में आ गया है</string>
+    <string name="notif_push_wrapped_ready_body">आपके सहेजे गए वॉलपेपर, आपके रंग और आपके क्रिएटर देखें।</string>
     <string name="notif_push_tip_received_title">%1$s ने आपको %3$s के लिए %2$s कॉइन्स टिप किए</string>
     <string name="notif_push_tip_received_title_untitled">%1$s ने आपको %2$s कॉइन्स टिप किए</string>
     <string name="notif_push_tip_received_body">अपनी टिप्स क्रिएटर स्टैट्स में देखें।</string>
