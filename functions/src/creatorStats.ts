@@ -61,7 +61,7 @@ async function wallStats(tx: admin.firestore.Transaction, wall: admin.firestore.
   const canonical = statsId ? canonicalWall(identities, statsId) : undefined;
   const unique = canonical?.ref.path === wall.ref.path;
   const key = hash(JSON.stringify([uid, wall.ref.path, incarnation(wall), data.id ?? null,
-    data.title ?? null, data.wallpaper_thumb ?? null, data.remixCount ?? null, unique]));
+    data.title ?? null, data.wallpaper_thumb ?? null, data.remixCount === undefined ? 0 : data.remixCount, unique]));
   const ref = db.collection("creatorStatsCache").doc(key);
   const cached = (await tx.get(ref)).data() as CachedWall | undefined;
   if (cached && cached.at <= now && now - cached.at < CACHE_MS && isoWeek(cached.at) === isoWeek(now)) {
@@ -80,7 +80,11 @@ async function wallStats(tx: admin.firestore.Transaction, wall: admin.firestore.
       return data.remixCount === undefined ? 0 : typeof data.remixCount === "number" &&
       Number.isSafeInteger(data.remixCount) && data.remixCount >= 0 ? data.remixCount : null;
     }
-    if (metric === "folderAdds") return history ? count(history.folderAdds) : 0;
+    if (metric === "folderAdds") {
+      const recorded = history?.folderAdds;
+      return recorded === undefined ? 0 : typeof recorded === "number" && Number.isSafeInteger(recorded) && recorded >= 0 ?
+        recorded : null;
+    }
     if (!unique || !stats) return null;
     const raw = stats[fields[metric]];
     if (raw === undefined) return 0;
@@ -89,7 +93,9 @@ async function wallStats(tx: admin.firestore.Transaction, wall: admin.firestore.
   });
   const weeks = weekWindows(now).map((window) => ({...window, metrics: counts((metric) => {
     const recorded = history?.weeks[window.week]?.[metric];
-    if (recorded !== undefined) return count(recorded);
+    if (recorded !== undefined) {
+      return typeof recorded === "number" && Number.isSafeInteger(recorded) && recorded >= 0 ? recorded : null;
+    }
     return history && window.start >= history.from || window.start >= TRACKING_FROM ? 0 : null;
   })}));
   const row: WallStats = {wallId: wall.id, title: str(data.title), thumbnailUrl: str(data.wallpaper_thumb), totals, weeks};
