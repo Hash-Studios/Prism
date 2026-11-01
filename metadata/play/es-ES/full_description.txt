@@ -1,80 +1,55 @@
-Prism es la app de fondos de pantalla para quienes quieren un móvil más bonito.
+Prism es la app de fondos de pantalla para quien cuida cómo se ve su móvil. Encuentra un fondo que te encante, crea el tuyo con IA y ponlo en la pantalla de inicio, en la de bloqueo o en las dos con un toque.
 
-Descubre fondos de IA, 4K, fondos AMOLED y setups creativos de pantalla de inicio en un solo lugar. Explora colecciones nuevas, encuentra tu estilo, personaliza tu look y aplica fondos en segundos.
+Novedades en Prism
 
-Ya busques fondos minimalistas, abstractos, oscuros, coloridos o futuristas, Prism te ayuda a encontrar fondos de alta calidad que encajen con tu estilo.
+• Carpetas. Guarda fondos en carpetas privadas, haz pública una carpeta o sigue las de otras personas.
+• Fondos animados. En móviles compatibles, dale vida a un fondo, prueba un degradado vivo o el estilo 3D, o convierte un vídeo en fondo de pantalla.
+• Cambio automático. Con Pro o un pase de 7 días con monedas, Prism cambia tu fondo según un horario, directamente desde una carpeta.
+• Vista previa en 3D. Inclina el móvil para ver la profundidad de un fondo antes de ponerlo.
+• Estilos con IA y remezclas. Describe una idea, mírala en todos los estilos y remezcla los fondos con IA que más te gusten.
+• Retos semanales. Participa con el tema de la semana y vota tus favoritos. El ganador se convierte en el Fondo del día.
+• Creadores. Sigue a los artistas que te gustan y ve sus fondos nuevos en tu feed Siguiendo.
 
-POR QUÉ PRISM
+Fondos en 4K y AMOLED
 
-• Explora fondos de IA, 4K y AMOLED
-• Descubre setups de pantalla de inicio premium de la comunidad
-• Navega por colecciones curadas en más de 30 categorías
-• Vista previa de fondos antes de aplicarlos
-• Guarda favoritos, descarga fondos y comparte lo que te gusta
-• Personaliza tu experiencia con temas, filtros y perfil
+• Fondos 4K nítidos y fondos AMOLED de negro puro
+• Un Fondo del día nuevo cada mañana
+• Explora por categoría y estado de ánimo, o busca por palabra, color o etiqueta
+• Un feed que aprende lo que te gusta
+• Mira cualquier fondo en una pantalla de inicio y de bloqueo reales antes de guardarlo
+• Ponlo en la pantalla de inicio, en la de bloqueo o en las dos, y deshazlo con un toque
 
-FONDOS QUE REALMENTE QUIERES USAR
+Crea el tuyo con IA
 
-Prism te da acceso a una gran variedad de fondos de alta calidad, desde diseños minimalistas hasta arte digital atrevido y paisajes cinematográficos.
+Escribe una idea, elige un estilo, del anime a la pintura al óleo, y Prism crea un fondo que nadie más tiene. Pide otra versión, ajústala con una indicación más o remezcla un fondo de otra persona. Los fondos con IA cuestan monedas, y puedes ganar monedas en la app.
 
-• Fondos 4K para pantallas nítidas y detalladas
-• Fondos AMOLED para negros profundos y un look limpio que ahorra batería
-• Fondos de IA generados a partir de tus ideas
-• Subidas de la comunidad de creadores de todo el mundo
-• 5 variantes por cada fondo
-• Búsqueda por palabra clave, color o etiquetas
-• Genera una paleta de colores desde cualquier fondo
-• Vista previa con reloj e iconos antes de aplicar
-• Establece como pantalla de inicio, de bloqueo o ambas
+Tu biblioteca
 
-CREAR FONDOS DE IA
+• Favoritos, Carpetas, Descargas e Historial en un solo lugar
+• Fija hasta 12 favoritos
+• Tu historial te acompaña cuando cambias de móvil
 
-Convierte tus ideas en fondos al instante.
+Hecho con la comunidad
 
-Escribe un concepto, un prompt o un estilo visual y genera fondos de IA únicos dentro de Prism. Perfecto para encontrar algo original cuando quieres un look fresco que nadie más tiene.
+• Sube tus propios fondos. Revisamos cada uno antes de publicarlo
+• Pide un fondo y vota las peticiones de los demás
+• Comparte un fondo como historia, publicación o tarjeta limpia, o envíalo a Instagram Stories
+• Denuncia contenido o bloquea usuarios cuando quieras
 
-SETUPS E INSPIRACIÓN
+A tu manera
 
-Ve más allá de los fondos estáticos con inspiración completa para la pantalla de inicio.
+• Temas claros y oscuros, negro AMOLED y tu propio color de acento
+• Un tema Material You que sigue los colores de tu fondo en Android 12 o posterior
+• Un widget del Fondo del día para la pantalla de inicio, con Establecer en un toque
 
-• Descubre setups con estilo creados por la comunidad
-• Explora nuevos setups destacados cada semana
-• Sube tus propios setups gratis
-• Participa en sorteos y drops de la comunidad
+Prism Pro
 
-COLECCIONES CURADAS
+Con Prism Pro tienes:
 
-Prism facilita el descubrimiento con colecciones de fondos seleccionadas para cada estado de ánimo y estética.
+• Todos los fondos y colecciones premium
+• Descargas y filtros gratis
+• Sin anuncios
+• Fondos con IA a mitad de monedas y sin marca de agua
+• Cambio automático de fondo
 
-• Colecciones actualizadas a diario
-• Joyas ocultas al azar
-• Más de 30 categorías: minimal, abstracto, paisajes, colorido y más
-
-TU PERFIL, TU ESTILO
-
-• Sube fondos y setups
-• Construye tu perfil de creador
-• Obtén la verificación
-• Comparte tu perfil y redes sociales
-• Crece en la comunidad Prism
-
-MÁS FUNCIONES
-
-• Modo oscuro integrado
-• Inicio de sesión con Google y sincronización en la nube
-• Más de 10 temas de app
-• Borrar caché, descargas o favoritos con un toque
-
-PRISM PREMIUM
-
-Desbloquea más con Prism Premium:
-
-• Aplicaciones de setup ilimitadas
-• Filtros de fondos
-• Revisiones de subida más rápidas
-• Sin anuncios en descargas
-• Insignia Premium
-• Acceso a colecciones premium
-• Sorteos exclusivos
-
-Si te gusta personalizar tu móvil con fondos de IA, 4K, AMOLED y setups destacados, Prism está hecho para ti.
+Política de privacidad: https://prismwalls.com/privacy

@@ -1,0 +1,41 @@
+{
+  "app-store": [
+    {
+      "file": "iphone-1-wallpaper",
+      "headline": "Walls worth a second look",
+      "subline": "4K and AMOLED walls, with a new pick every day"
+    },
+    {
+      "file": "iphone-2-collections",
+      "headline": "Find your vibe",
+      "subline": "Browse categories, moods and curated collections"
+    },
+    {
+      "file": "iphone-3-variants",
+      "headline": "Make it yours",
+      "subline": "Try a filter on any wall before you save it"
+    },
+    {
+      "file": "iphone-4-colors",
+      "headline": "Search by colour",
+      "subline": "Pull a palette from any wall, or pick a colour"
+    }
+  ],
+  "play": [
+    {
+      "file": "play-1",
+      "headline": "No more boring walls",
+      "subline": "4K and AMOLED walls, with a new pick every day"
+    },
+    {
+      "file": "play-2",
+      "headline": "Make walls with AI",
+      "subline": "Type an idea, pick a style, set it"
+    },
+    {
+      "file": "play-3",
+      "headline": "Find your vibe",
+      "subline": "Browse categories, moods and curated collections"
+    }
+  ]
+}

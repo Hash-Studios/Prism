@@ -1,80 +1,55 @@
-Prism ist die Hintergrundbild-App für alle, die ihr Handy schöner gestalten wollen.
+Prism ist die Wallpaper-App für alle, denen das Aussehen ihres Handys wichtig ist. Finde ein Hintergrundbild, das dir gefällt, gestalte dein eigenes mit KI und lege es mit einem Tipp auf den Startbildschirm, den Sperrbildschirm oder beide.
 
-Entdecke KI-Hintergrundbilder, 4K-Wallpaper, AMOLED-Hintergründe und kreative Homescreen-Setups an einem Ort. Durchstöbere frische Sammlungen, finde deinen Stil, gestalte dein Look und wende Hintergrundbilder in Sekunden an.
+Neu in Prism
 
-Ob minimalistisch, abstrakt, dunkel, bunt oder futuristisch – Prism hilft dir, hochwertige Hintergründe zu finden, die wirklich zu deinem Stil passen.
+• Ordner. Sammle Wallpaper in privaten Ordnern, mach einen Ordner öffentlich oder folge den Ordnern anderer.
+• Live-Hintergrundbilder auf geeigneten Handys. Erwecke ein Bild zum Leben, probiere lebendige Farbverläufe oder den 3D-Stil, oder mach aus einem Video ein Wallpaper.
+• Automatischer Wechsel. Mit Pro oder einem 7-Tage-Pass für Coins tauscht Prism dein Hintergrundbild nach Zeitplan, direkt aus einem Ordner.
+• 3D-Vorschau. Kipp dein Handy und sieh die Tiefe eines Bildes, bevor du es festlegst.
+• KI-Stile und Remix. Beschreib eine Idee, sieh sie in jedem Stil und remixe die KI-Wallpaper, die dir gefallen.
+• Wöchentliche Challenges. Reiche ein Bild zum Thema der Woche ein und stimme für deine Favoriten. Der Gewinner wird Hintergrundbild des Tages.
+• Kreative. Folge den Künstlern, die du magst, und sieh ihre neuen Wallpaper in deinem Feed „Ich folge“.
 
-WARUM PRISM
+Hintergründe in 4K und AMOLED
 
-• Erkunde KI-Hintergrundbilder, 4K-Wallpaper und AMOLED-Hintergründe
-• Entdecke Premium-Homescreen-Setups aus der Community
-• Durchstöbere kuratierte Sammlungen in über 30 Kategorien
-• Vorschau von Hintergrundbildern vor dem Anwenden
-• Speichere Favoriten, lade Hintergrundbilder herunter und teile, was du liebst
-• Personalisiere dein Erlebnis mit Themes, Filtern und Profilanpassung
+• Gestochen scharfe 4K-Bilder und tiefschwarze AMOLED-Hintergründe
+• Jeden Morgen ein neues Hintergrundbild des Tages
+• Stöbere nach Kategorie und Stimmung, oder suche nach Begriff, Farbe oder Tag
+• Ein Feed, der lernt, was dir gefällt
+• Sieh jedes Bild vorher auf einem echten Home- und Sperrbildschirm
+• Leg ein Bild auf den Startbildschirm, den Sperrbildschirm oder beide, und mach es mit einem Tipp rückgängig
 
-HINTERGRUNDBILDER, DIE DU WIRKLICH NUTZEN WILLST
+Dein eigenes Wallpaper mit KI
 
-Prism gibt dir Zugang zu einer riesigen Auswahl hochwertiger Hintergrundbilder – von minimalistischen Designs bis hin zu mutiger digitaler Kunst und cineastischen Landschaften.
+Schreib eine Idee auf, wähl einen Stil von Anime bis Ölgemälde, und Prism erstellt ein Hintergrundbild, das sonst niemand hat. Lass dir eine neue Variante zeigen, verfeinere sie mit einer Nachfrage oder remixe ein Bild von jemand anderem. KI-Wallpaper kosten Coins, und Coins verdienst du in der App.
 
-• 4K-Hintergrundbilder für scharfe, detailreiche Displays
-• AMOLED-Hintergrundbilder für tiefe Schwarztöne und batteriefreundliches Design
-• KI-Hintergrundbilder aus deinen Ideen generiert
-• Community-Uploads von Hintergrundbild-Kreatoren weltweit
-• 5 Varianten für jedes Hintergrundbild
-• Suche nach Stichwort, Farbe oder Tags
-• Generiere eine Farbpalette aus jedem Hintergrundbild
-• Vorschau mit Uhr und App-Icons vor dem Anwenden
-• Als Homescreen, Sperrbildschirm oder beides einrichten
+Deine Mediathek
 
-KI-HINTERGRUNDBILDER ERSTELLEN
+• Favoriten, Ordner, Downloads und Verlauf an einem Ort
+• Bis zu 12 Favoriten anheften
+• Dein Verlauf kommt mit, wenn du dich auf dem neuen Handy anmeldest
 
-Verwandle deine Ideen in Sekunden in Hintergrundbilder.
+Mit der Community
 
-Gib ein Vibe, einen Prompt oder einen visuellen Stil ein und generiere einzigartige KI-Hintergrundbilder direkt in Prism. Perfekt für etwas Originelles, wenn du einen frischen Look willst, den sonst niemand hat.
+• Lade eigene Wallpaper hoch. Jeder Upload wird geprüft, bevor er online geht
+• Wünsch dir ein Hintergrundbild und stimme über die Wünsche anderer ab
+• Teile ein Bild als Story, Post oder schlichte Karte, oder direkt in Instagram Stories
+• Melde Inhalte oder blockiere Nutzer jederzeit
 
-SETUPS & INSPIRATION
+Ganz nach deinem Geschmack
 
-Gehe über statische Hintergründe hinaus mit voller Homescreen-Inspiration.
+• Helle und dunkle Designs, AMOLED-Schwarz und deine eigene Akzentfarbe
+• Ein Material-You-Design, das ab Android 12 den Farben deines Wallpapers folgt
+• Ein Widget mit dem Hintergrundbild des Tages, festlegen mit einem Tipp
 
-• Entdecke stilvolle Community-Setups
-• Erkunde jede Woche neue Featured-Setups
-• Lade deine eigenen Setups kostenlos hoch
-• Nimm an Giveaway-Events und Community-Drops teil
+Prism Pro
 
-KURIERTE SAMMLUNGEN
+Mit Prism Pro bekommst du:
 
-Prism macht die Entdeckung einfach mit handverlesenen Hintergrundbild-Sammlungen für jede Stimmung und jeden Stil.
+• Alle Premium-Wallpaper und -Sammlungen
+• Kostenlose Downloads und Filter
+• Keine Werbung
+• KI-Wallpaper zum halben Coin-Preis und ohne Wasserzeichen
+• Automatischen Wechsel deines Hintergrundbilds
 
-• Täglich aktualisierte Sammlungen
-• Zufällige versteckte Schätze
-• Über 30 Kategorien: minimalistisch, abstrakt, Landschaften, bunt und mehr
-
-DEIN PROFIL, DEIN STIL
-
-• Lade Hintergrundbilder und Setups hoch
-• Baue dein Creator-Profil auf
-• Werde verifiziert
-• Teile dein Profil und deine Socials
-• Wachse in der Prism-Community
-
-WEITERE FUNKTIONEN
-
-• Integrierter Dark Mode
-• Google-Anmeldung und Cloud-Sync
-• Über 10 App-Themes
-• Ein-Tipp-Cache, Downloads oder Favoriten löschen
-
-PRISM PREMIUM
-
-Mehr aus Prism mit Premium:
-
-• Unbegrenzte Setup-Anwendungen
-• Hintergrundbild-Filter
-• Schnellere Upload-Reihenfolgen
-• Keine Download-Werbung
-• Premium-Badge
-• Zugang zu Premium-Sammlungen
-• Exklusive Giveaways
-
-Wenn du dein Handy mit KI-Hintergrundbildern, 4K-Wallpapern, AMOLED-Hintergründen und herausragenden Setups personalisieren willst, ist Prism für dich gemacht.
+Datenschutz: https://prismwalls.com/privacy
