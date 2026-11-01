@@ -224,7 +224,7 @@ class PrismSegmented<T> extends StatelessWidget {
                                   style: PrismTextStyles.rowTitle(
                                     context,
                                   ).copyWith(fontSize: 14, color: value == selected ? cs.surface : cs.onSurface),
-                                  child: Text(labelOf(value), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  child: _SegmentLabel(labelOf(value)),
                                 ),
                               ),
                             ],
@@ -240,4 +240,51 @@ class PrismSegmented<T> extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Wraps at spaces onto two lines and shrinks the text only when it still does not fit, so a long label such as
+/// "Startbildschirm" or "Pantalla de inicio" is never cut or broken mid-word.
+class _SegmentLabel extends StatelessWidget {
+  const _SegmentLabel(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final TextStyle style = DefaultTextStyle.of(context).style;
+      final double fontSize = style.fontSize ?? 14;
+      final double reader = MediaQuery.textScalerOf(context).scale(fontSize) / fontSize;
+      final TextDirection direction = Directionality.of(context);
+      bool fits(double scale) {
+        final TextPainter words = TextPainter(
+          text: TextSpan(text: label.replaceAll(' ', '\n'), style: style),
+          textDirection: direction,
+          textScaler: TextScaler.linear(scale),
+        )..layout();
+        final TextPainter lines = TextPainter(
+          text: TextSpan(text: label, style: style),
+          textDirection: direction,
+          textScaler: TextScaler.linear(scale),
+          maxLines: 2,
+        )..layout(maxWidth: constraints.maxWidth);
+        final bool ok = words.width <= constraints.maxWidth && !lines.didExceedMaxLines;
+        words.dispose();
+        lines.dispose();
+        return ok;
+      }
+
+      double scale = reader;
+      for (int i = 0; i < 12 && !fits(scale); i++) {
+        scale *= 0.92;
+      }
+      return Text(
+        label,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        textScaler: scale == reader ? null : TextScaler.linear(scale),
+      );
+    },
+  );
 }
