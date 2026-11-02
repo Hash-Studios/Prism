@@ -1,5 +1,3 @@
-// ignore_for_file: depend_on_referenced_packages
-
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;

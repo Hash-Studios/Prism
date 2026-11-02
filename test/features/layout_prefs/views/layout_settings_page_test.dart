@@ -198,7 +198,7 @@ void main() {
     expect(store.value.density, WallGridDensity.compact);
     expect(
       tester.getSemantics(find.text('Compact')),
-      containsSemantics(isSelected: true, isInMutuallyExclusiveGroup: true),
+      isSemantics(isSelected: true, isInMutuallyExclusiveGroup: true),
     );
   });
 
@@ -214,6 +214,6 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
 
-    expect(store.value.tabOrder.first, NavTab.collection);
+    expect(store.value.tabOrder, <NavTab>[NavTab.collection, NavTab.home, NavTab.search, NavTab.rewards]);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }
