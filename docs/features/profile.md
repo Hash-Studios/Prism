@@ -63,6 +63,24 @@ The "Followed by" line and the More like offer are covered in [creator-directory
 - **Share Prism** (`SharePrismScreen`) makes the invite link. The button shows **Creating link…** while it works. If it fails, the screen shows "Couldn't create the link." and **Try again**. A signed in user never sees a "Sign in" message. A signed out user does.
 - The invite preview reads "<Name> invited you to Prism" and shows the profile photo. Without a usable name it reads "Join Prism".
 
+## Pro badge
+
+A Prism Pro member shows a Pro badge on the public profile. The badge sits above the earned badges. Its screen reader label is "Prism Pro member".
+
+- `profiles/{uid}.proBadge` is true only when `usersv2.premium` is true and `usersv2.showProBadge` is not false.
+- `functions/src/profiles.ts` writes `proBadge` in `projectedProfile`.
+- `projectUserProfile` runs it on every `usersv2` write. So `syncSubscription`, the daily `reconcileSubscriptions`, gifts and promo codes all update the badge.
+- An expiry or an opt-out removes the badge.
+- `syncSubscription` does not write `profiles` directly. The projection rewrites the whole profile doc. A direct write could remove a field that another writer adds.
+- Clients cannot write `profiles`.
+
+### Opt out
+
+- Settings shows **Show Pro badge on my profile** to premium users only. The switch is on by default.
+- The switch writes `usersv2.showProBadge`. Firestore rules allow only a bool.
+- The change reaches the public profile through `projectUserProfile`.
+- Analytics: `pro_badge_toggled` with `shown`.
+
 ## Limits
 
 - The profile still keys follows and lookups by email. The email also stays on each approved wall. A later server change must add a `uid` field and remove the email. Until then, the email is readable in the wall record.
