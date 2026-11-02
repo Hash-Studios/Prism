@@ -150,6 +150,21 @@ test("original access charges server premium price once and binds request to ass
   await assert.rejects(() => resolveOriginalAccess.run(request()), {code: "failed-precondition"});
 });
 
+test("Remote Config reclassification invalidates earlier receipt retries", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: 1_000});
+  const store = setup(t);
+  let premiumCollections = "[\"premium\"]";
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {
+    premiumCollections: {defaultValue: {value: premiumCollections}},
+  }}));
+  const first = await resolveOriginalAccess.run(request());
+  assert(first.status === "granted");
+  premiumCollections = "[]";
+  t.mock.timers.setTime(61_000);
+  await assert.rejects(() => resolveOriginalAccess.run(request()), {code: "failed-precondition"});
+  assert.equal(store.get("usersv2/user")?.coins, 100 - DEFAULT_ECONOMY.spend.premiumWallpaperDownload);
+});
+
 test("original access refuses guests, anonymous auth and invalid inputs", async (t) => {
   setup(t);
   await assert.rejects(() => resolveOriginalAccess.run(request({}, null)), {code: "unauthenticated"});
@@ -215,6 +230,31 @@ test("Remote Config reclassification between quote and acquire uses current prem
   assert.equal(result.status, "price_changed");
   assert.equal("requiredCoins" in result && result.requiredCoins, DEFAULT_ECONOMY.spend.premiumWallpaperDownload);
   assert.deepEqual([...store.entries()], before);
+});
+
+test("the callable uses cached pricing before the TTL and refreshes at the actual expiry boundary", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: 1_000});
+  const store = setup(t, {collections: ["nature"]});
+  let premiumCollections = "[\"premium\"]";
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {
+    premiumCollections: {defaultValue: {value: premiumCollections}},
+  }}));
+  const first = await resolveOriginalAccess.run(request({mode: "quote"}));
+  assert(first.status === "quoted");
+  assert.equal(first.requiredCoins, DEFAULT_ECONOMY.spend.wallpaperDownload);
+  premiumCollections = "[\"premium\",\"nature\"]";
+  t.mock.timers.setTime(60_999);
+  const beforeExpiry = await resolveOriginalAccess.run(request({mode: "quote"}));
+  assert(beforeExpiry.status === "quoted");
+  assert.equal(beforeExpiry.requiredCoins, DEFAULT_ECONOMY.spend.wallpaperDownload);
+  t.mock.timers.setTime(61_000);
+  const afterExpiry = await resolveOriginalAccess.run(request({mode: "quote"}));
+  assert(afterExpiry.status === "quoted");
+  assert.equal(afterExpiry.requiredCoins, DEFAULT_ECONOMY.spend.premiumWallpaperDownload);
+  const beforeAcquire = structuredClone([...store.entries()]);
+  const acquire = await resolveOriginalAccess.run(request({maxCoins: DEFAULT_ECONOMY.spend.wallpaperDownload}));
+  assert.equal(acquire.status, "price_changed");
+  assert.deepEqual([...store.entries()], beforeAcquire);
 });
 
 test("Remote Config failure after a successful quote still fails acquisition closed", async (t) => {
@@ -295,6 +335,60 @@ test("the premium list is fetched once a minute and a failed fetch is not cached
   assert.deepEqual(await classification(61_999), ["premium"]);
   assert.equal(getTemplate.mock.callCount(), 2);
   assert.deepEqual(await classification(62_000), ["premium"]);
+  assert.equal(getTemplate.mock.callCount(), 3);
+});
+
+test("a malformed classification is not cached and the next call retries", async (t) => {
+  resetClassificationCache();
+  let fetches = 0;
+  const getTemplate = t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {
+    premiumCollections: {defaultValue: {value: ++fetches === 1 ? "[\"premium\"" : "[\"premium\"]"}},
+  }}));
+  await assert.rejects(() => classification(1_000), {code: "unavailable"});
+  assert.deepEqual(await classification(1_001), ["premium"]);
+  assert.equal(getTemplate.mock.callCount(), 2);
+});
+
+test("an empty premium list is cached as an explicit no-premium classification", async (t) => {
+  resetClassificationCache();
+  const getTemplate = t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {
+    premiumCollections: {defaultValue: {value: "[]"}},
+  }}));
+  assert.deepEqual(await classification(1_000), []);
+  assert.deepEqual(await classification(2_000), []);
+  assert.equal(getTemplate.mock.callCount(), 1);
+});
+
+test("an expired pending fetch cannot evict a newer classification", async (t) => {
+  resetClassificationCache();
+  let rejectOld!: (reason: Error) => void;
+  let resolveNew!: (value: {parameters: {premiumCollections: {defaultValue: {value: string}}}}) => void;
+  const oldFetch = new Promise<never>((_, reject) => rejectOld = reject);
+  const newFetch = new Promise<{parameters: {premiumCollections: {defaultValue: {value: string}}}}>((resolve) =>
+    resolveNew = resolve);
+  let calls = 0;
+  const getTemplate = t.mock.method(admin.remoteConfig(), "getTemplate", () => ++calls === 1 ? oldFetch : newFetch);
+  const old = classification(1_000);
+  const fresh = classification(61_000);
+  resolveNew({parameters: {premiumCollections: {defaultValue: {value: "[\"new\"]"}}}});
+  assert.deepEqual(await fresh, ["new"]);
+  rejectOld(new Error("older request failed"));
+  await assert.rejects(old, {code: "unavailable"});
+  assert.deepEqual(await classification(61_001), ["new"]);
+  assert.equal(getTemplate.mock.callCount(), 2);
+});
+
+test("a failed refresh after cached success is not reused and the next call retries", async (t) => {
+  resetClassificationCache();
+  let fetches = 0;
+  const getTemplate = t.mock.method(admin.remoteConfig(), "getTemplate", async () => {
+    fetches++;
+    if (fetches === 2) throw new Error("offline during refresh");
+    return {parameters: {premiumCollections: {defaultValue: {value: fetches === 1 ? "[\"old\"]" : "[\"new\"]"}}}};
+  });
+  assert.deepEqual(await classification(1_000), ["old"]);
+  await assert.rejects(() => classification(61_000), {code: "unavailable"});
+  assert.deepEqual(await classification(61_001), ["new"]);
   assert.equal(getTemplate.mock.callCount(), 3);
 });
 

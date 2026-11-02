@@ -78,11 +78,11 @@ export const recordWallpaperAction = onCall(
         if (action === "download") await progressQuestForUser(uid, "download", eventId, now);
       }
     };
+    await db.collection(WALLPAPER_STATS).doc(wallId).set({
+      [field]: admin.firestore.FieldValue.increment(1),
+      lastEventAt: admin.firestore.Timestamp.fromMillis(now),
+    }, {merge: true});
     await Promise.all([
-      db.collection(WALLPAPER_STATS).doc(wallId).set({
-        [field]: admin.firestore.FieldValue.increment(1),
-        lastEventAt: admin.firestore.Timestamp.fromMillis(now),
-      }, {merge: true}),
       bumpDaily(wallId, field, now).catch((err: unknown) => {
         logger.warn("Could not record the daily wallpaper action.", {err});
       }),

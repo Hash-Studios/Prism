@@ -182,21 +182,21 @@ test("a counted share feeds the share quest only", async (t) => {
   assert.equal(quests(store).weekly.progress, 0);
 });
 
-test("an action without a requestId writes its stats, daily doc and quests together", async (t) => {
+test("daily stats and quests can finish together after the primary stats write", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: NOW});
   const store = installFakeDb(t, {"usersv2/u1": {coins: 0}});
-  // The stats write holds until the quest transaction starts, so writes made one after another never finish.
+  // Hold the daily write until the quest transaction starts to prove those independent writes can overlap.
   let questStarted!: () => void;
   const questStart = new Promise<void>((resolve) => questStarted = resolve);
-  let statsWriteStarted = false;
+  let dailyWriteStarted = false;
   const collection = db.collection.bind(db);
   t.mock.method(db, "collection", (name: string) => {
     const target = collection(name);
-    if (name !== "wallpaper_stats") return target;
+    if (name !== "wallpaper_stats_daily") return target;
     return {...target, doc: (id: string) => {
       const ref = target.doc(id);
       return {...ref, set: async (...args: Parameters<typeof ref.set>) => {
-        statsWriteStarted = true;
+        dailyWriteStarted = true;
         await questStart;
         return ref.set(...args);
       }};
@@ -204,7 +204,7 @@ test("an action without a requestId writes its stats, daily doc and quests toget
   });
   const run = db.runTransaction.bind(db);
   t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
-    if (statsWriteStarted) questStarted();
+    if (dailyWriteStarted) questStarted();
     return run(callback);
   });
   let timer: NodeJS.Timeout | undefined;
@@ -215,6 +215,34 @@ test("an action without a requestId writes its stats, daily doc and quests toget
   assert.equal(store.get("wallpaper_stats/W1")?.downloads, 1);
   assert.equal(store.get(`wallpaper_stats_daily/${DAY}_W1`)?.downloads, 1);
   assert.equal(quests(store).weekly.progress, 1);
+});
+
+test("a primary stats failure does not commit daily stats or quest progress", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 0}});
+  const collection = db.collection.bind(db);
+  t.mock.method(db, "collection", (name: string) => {
+    const target = collection(name);
+    if (name !== "wallpaper_stats") return target;
+    return {...target, doc: (id: string) => {
+      const ref = target.doc(id);
+      return {...ref, set: async () => {
+        throw new Error("primary stats unavailable");
+      }};
+    }} as never;
+  });
+
+  await assert.rejects(() => call({wallId: "w1", action: "download"}), /primary stats unavailable/);
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  assert.equal(store.get(`wallpaper_stats_daily/${DAY}_W1`), undefined);
+  assert.equal(store.get("questEventRate/u1_2026-01-02_set_wallpaper"), undefined);
+  assert.equal(store.get("questEventRate/u1_2026-01-02_download"), undefined);
+  assert.equal(store.get("usersv2/u1/private/economy"), undefined);
+
+  assert.deepEqual(await call({wallId: "w1", action: "download"}), {counted: false});
+  assert.equal(store.get("wallpaper_stats/W1"), undefined);
+  assert.equal(store.get(`wallpaper_stats_daily/${DAY}_W1`), undefined);
+  assert.equal(store.get("usersv2/u1/private/economy"), undefined);
 });
 
 test("a quest failure does not fail the action", async (t) => {
