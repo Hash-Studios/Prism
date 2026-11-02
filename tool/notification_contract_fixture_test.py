@@ -18,7 +18,7 @@ class NotificationContractFixtureTest(unittest.TestCase):
     def test_contract_rejects_unregistered_backend_channel(self):
         with tempfile.TemporaryDirectory(prefix='prism-channel-contract-') as directory:
             work = Path(directory)
-            for name in ('pubspec.yaml', 'pubspec.lock', '.fvmrc'):
+            for name in ('pubspec.yaml', 'pubspec.lock', '.fvmrc', 'shorebird.yaml'):
                 shutil.copy(ROOT / name, work)
             for name in ('lib', 'assets', 'fonts', 'shaders'):
                 if (ROOT / name).exists():
