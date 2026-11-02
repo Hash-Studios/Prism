@@ -3,6 +3,12 @@ import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('fromMap repairs missing or wrongly typed tab lists', () {
+    for (final raw in <Map<Object?, Object?>>[{}, {'tabs': false, 'hidden': 'search'}]) {
+      expect(LayoutPrefs.fromMap(raw), const LayoutPrefs());
+    }
+  });
+
   test('defaults are the four tabs in order, none hidden, comfortable grid, For you feed', () {
     const LayoutPrefs prefs = LayoutPrefs();
 

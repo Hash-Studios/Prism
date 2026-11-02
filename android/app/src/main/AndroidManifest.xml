@@ -132,6 +132,7 @@
                 <data android:path="/edit-profile" />
                 <data android:path="/share-prism" />
                 <data android:path="/settings" />
+                <data android:path="/layout" />
                 <data android:path="/blocked-accounts" />
                 <data android:path="/about" />
                 <data android:path="/fav-walls" />
@@ -260,6 +261,7 @@
                 <data android:path="/edit-profile" />
                 <data android:path="/share-prism" />
                 <data android:path="/settings" />
+                <data android:path="/layout" />
                 <data android:path="/blocked-accounts" />
                 <data android:path="/about" />
                 <data android:path="/fav-walls" />
@@ -377,6 +379,7 @@
                 <data android:path="/edit-profile" />
                 <data android:path="/share-prism" />
                 <data android:path="/settings" />
+                <data android:path="/layout" />
                 <data android:path="/blocked-accounts" />
                 <data android:path="/about" />
                 <data android:path="/fav-walls" />
@@ -494,6 +497,7 @@
                 <data android:path="/edit-profile" />
                 <data android:path="/share-prism" />
                 <data android:path="/settings" />
+                <data android:path="/layout" />
                 <data android:path="/blocked-accounts" />
                 <data android:path="/about" />
                 <data android:path="/fav-walls" />
@@ -611,6 +615,7 @@
                 <data android:path="/edit-profile" />
                 <data android:path="/share-prism" />
                 <data android:path="/settings" />
+                <data android:path="/layout" />
                 <data android:path="/blocked-accounts" />
                 <data android:path="/about" />
                 <data android:path="/fav-walls" />
