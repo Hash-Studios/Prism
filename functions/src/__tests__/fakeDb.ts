@@ -97,7 +97,7 @@ const lost = (code: number) => Object.assign(new Error(`firestore ${code}`), {co
  * functions use. Returns the store so a test can seed and inspect documents by path.
  */
 export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
-  observed?: {reads: number; writes: number; outsideReads?: number; outsideWrites?: number},
+  observed?: {reads: number; writes: number; outsideReads?: number; outsideWrites?: number; readRounds?: number},
   options: {failCommits?: number; failCommitAt?: number; createTimes?: Record<string, admin.firestore.Timestamp>} = {}) {
   const store = new Map<string, Doc>(Object.entries(seed));
   const incarnations = new Map<string, number>(Object.keys(seed).map((path) => [path, 1]));
@@ -113,6 +113,14 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
   });
   const versions = new Map<string, number>();
   let auto = 0;
+  // With `observed.readRounds`, each read waits one macrotask and a read that starts while none is in flight opens a
+  // new round. Reads awaited one after another count one round each; reads started together share one.
+  let readsInFlight = 0;
+  const readRound = async (counter: {readRounds?: number}) => {
+    if (readsInFlight++ === 0) counter.readRounds = (counter.readRounds ?? 0) + 1;
+    await new Promise((resolve) => setImmediate(resolve));
+    readsInFlight--;
+  };
   const FieldValue = admin.firestore.FieldValue;
   t.mock.method(FieldValue, "increment", (n: number) => ({__op: "inc", n}));
   t.mock.method(FieldValue, "arrayRemove", (...xs: unknown[]) => ({__op: "arrayRemove", xs}));
@@ -157,6 +165,7 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
         if (!pending || transactionReadDepth === 0) {
           if (observed?.outsideReads !== undefined) observed.outsideReads++;
         }
+        if (observed?.readRounds !== undefined) await readRound(observed);
         return snap(path);
       },
       set: async (data: Doc, options?: {merge?: boolean}) => {
@@ -240,8 +249,10 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
         return {data: () => ({count: rows().length})};
       }}),
       get: async () => {
+        const outside = !pending || transactionReadDepth === 0;
+        if (observed?.readRounds !== undefined) await readRound(observed);
         const docs = rows();
-        if ((!pending || transactionReadDepth === 0) && observed?.outsideReads !== undefined) {
+        if (outside && observed?.outsideReads !== undefined) {
           observed.outsideReads += Math.max(1, docs.length);
         }
         const projection = state.projection;
@@ -296,22 +307,37 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
         failure ??= err;
       });
     };
+    const read = async (target: {get: () => Promise<unknown>}) => {
+      transactionReadDepth++;
+      let pendingRead: Promise<unknown>;
+      try {
+        pendingRead = target.get();
+      } finally {
+        transactionReadDepth--;
+      }
+      const result = await pendingRead;
+      if (observed) {
+        observed.reads += result && typeof result === "object" && "size" in result ?
+          Math.max(1, Number(result.size)) : 1;
+      }
+      return result;
+    };
+    // Like @google-cloud/firestore, the first read starts the transaction and later reads wait for it to return.
+    let firstRead: Promise<unknown> | undefined;
+    const startOrQueue = <T>(readAll: () => Promise<T>): Promise<T> => {
+      if (firstRead) return firstRead.then(readAll);
+      const result = readAll();
+      firstRead = result.catch(() => undefined);
+      return result;
+    };
     const tx = {
       get: async (target: {get: () => Promise<unknown>}) => {
         if (wrote) throw new Error("Firestore transaction reads must precede writes");
-        transactionReadDepth++;
-        let pendingRead: Promise<unknown>;
-        try {
-          pendingRead = target.get();
-        } finally {
-          transactionReadDepth--;
-        }
-        const result = await pendingRead;
-        if (observed) {
-          observed.reads += result && typeof result === "object" && "size" in result ?
-            Math.max(1, Number(result.size)) : 1;
-        }
-        return result;
+        return startOrQueue(() => read(target));
+      },
+      getAll: async (...targets: Array<{get: () => Promise<unknown>}>) => {
+        if (wrote) throw new Error("Firestore transaction reads must precede writes");
+        return startOrQueue(() => Promise.all(targets.map(read)));
       },
       set: guarded((r: FakeRef, data: Doc, options?: {merge?: boolean}) => r.set(data, options)),
       update: guarded((r: FakeRef, data: Doc) => r.update(data)),
