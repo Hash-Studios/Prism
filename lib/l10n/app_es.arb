@@ -3592,5 +3592,57 @@
   "notifChannelSubscription": "Suscripción",
   "notifChannelSubscriptionDescription": "Un recordatorio antes de que termine tu prueba gratuita",
   "premiumTrialEnds": "Prueba, termina el {date}",
-  "premiumTrialAutoRenewOff": "La renovación automática está desactivada. No se te cobrará cuando termine la prueba."
+  "premiumTrialAutoRenewOff": "La renovación automática está desactivada. No se te cobrará cuando termine la prueba.",
+  "editorsChoiceTitle": "Selección del editor",
+  "editorsChoiceRowBody": "Fondos de pantalla que a nuestros editores les encantan.",
+  "editorsChoiceEmptyTitle": "Aún no hay selecciones",
+  "editorsChoiceEmptyBody": "Vuelve pronto para ver nuevas selecciones.",
+  "editorsChoiceLoadError": "No se pudo cargar la Selección del editor",
+  "editorsChoiceLabelSemantics": "Elegido para la Selección del editor",
+  "editorsChoicePick": "Añadir a la Selección del editor",
+  "editorsChoiceUnpick": "Quitar de la Selección del editor",
+  "editorsChoicePicked": "Añadido a la Selección del editor",
+  "editorsChoiceUnpicked": "Quitado de la Selección del editor",
+  "editorsChoiceNotEligible": "Solo los fondos de pantalla gratuitos aprobados con el original listo pueden ser selecciones.",
+  "adminApproveAndPick": "Aprobar y elegir",
+  "adminApprovedPickLater": "Aprobado. Añádelo a la Selección del editor desde su página cuando su original esté listo.",
+  "wallCreditBy": "Por {name}",
+  "@wallCreditBy": {
+    "description": "Credit line naming the creator. {name} is the creator's display name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wallCreditPhotoBy": "Foto de {name}",
+  "@wallCreditPhotoBy": {
+    "description": "Credit line for a photo. {name} is the photographer's name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wallCreditByHashStudios": "Por Hash Studios",
+  "wallCreditPrismExclusive": "Exclusivo de Prism",
+  "wallCreditOnPexels": "De Pexels",
+  "wallCreditOnWallhaven": "De Wallhaven",
+  "wallCreditOpenProfileHint": "Abre el perfil",
+  "wallCreditOpenSourceHint": "Se abre en tu navegador",
+  "profileProBadge": "Pro",
+  "profileProBadgeSemantics": "Miembro de Prism Pro",
+  "settingsShowProBadgeTitle": "Mostrar la insignia Pro en mi perfil",
+  "settingsShowProBadgeBody": "Las personas que visitan tu perfil ven una insignia Pro.",
+  "notifPushEditorsChoiceTitle": "Tu fondo de pantalla está en la Selección del editor",
+  "notifPushEditorsChoiceBody": "Nuestros editores eligieron {wallTitle}. Todos pueden encontrarlo en Inicio.",
+  "@notifPushEditorsChoiceBody": {
+    "description": "Push notification body for an Editors' Choice pick. {wallTitle} is the wallpaper title.",
+    "placeholders": {
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushEditorsChoiceBodyUntitled": "Nuestros editores eligieron tu fondo de pantalla. Todos pueden encontrarlo en Inicio."
 }

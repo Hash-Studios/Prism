@@ -20,6 +20,7 @@ import 'package:Prism/features/ads/data/ad_experiment_config.dart';
 import 'package:Prism/features/ads/views/widgets/experimental_inline_ad.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
+import 'package:Prism/features/editors_choice/views/widgets/editors_choice_row.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
 import 'package:Prism/features/layout_prefs/views/widgets/pinch_density.dart';
@@ -59,6 +60,9 @@ const List<int> _moodRowGridRows = <int>[4, 12];
 
 /// Grid rows before the "Pick up where you left off" row.
 const int _pickUpGridRows = 2;
+
+/// Grid rows before the Editors' Choice row: between the two mood rows, ahead of the creators row.
+const int _editorsChoiceGridRows = 6;
 
 @visibleForTesting
 int? forYouAdIndex(int itemCount, int columns) {
@@ -668,21 +672,43 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         grid(start, end),
     ];
     // The creators row sits four wallpaper rows into the second chunk. With one chunk it goes after the whole chunk.
-    final int? creatorsAt = chunks.length > 1 ? math.min(chunks[1].$1 + 4 * crossAxisCount, chunks[1].$2) : null;
+    final int creatorsAt = chunks.length > 1
+        ? math.min(chunks[1].$1 + 4 * crossAxisCount, chunks[1].$2)
+        : chunks.first.$2;
+    final int? editorsChoiceAt = visibleItems.isEmpty
+        ? null
+        : math.min(_editorsChoiceGridRows * crossAxisCount, visibleItems.length);
+    // Rows inside the grid, in tile order. A row at the end of a chunk sits before that chunk's mood row.
+    final List<(int at, Widget row)> gridRows = <(int at, Widget row)>[
+      if (pickUpAt != null) (pickUpAt, SliverToBoxAdapter(child: PickUpRow(walls: pickUp))),
+      if (editorsChoiceAt != null)
+        (
+          editorsChoiceAt,
+          SliverToBoxAdapter(child: EditorsChoiceRow(key: ValueKey<String>('editors-choice-$_moodRowsRevision'))),
+        ),
+      (
+        creatorsAt,
+        SliverToBoxAdapter(
+          child: CreatorsSection(source: 'home', refreshRevision: _moodRowsRevision),
+        ),
+      ),
+    ];
+    List<Widget> chunkWithRows(int start, int end) {
+      final List<Widget> slivers = <Widget>[];
+      int cursor = start;
+      for (final (int at, Widget row) in gridRows) {
+        if (at < start || at > end || (at == start && start > 0)) continue;
+        if (cursor < at) slivers.addAll(gridWithAd(cursor, at));
+        slivers.add(row);
+        cursor = at;
+      }
+      if (cursor < end) slivers.addAll(gridWithAd(cursor, end));
+      return slivers;
+    }
+
     return <Widget>[
       for (int i = 0; i < chunks.length; i++) ...<Widget>[
-        if (i == 0 && pickUpAt != null) ...<Widget>[
-          ...gridWithAd(chunks[i].$1, pickUpAt),
-          SliverToBoxAdapter(child: PickUpRow(walls: pickUp)),
-          if (pickUpAt < chunks[i].$2) ...gridWithAd(pickUpAt, chunks[i].$2),
-        ] else if (i == 1 && creatorsAt != null) ...<Widget>[
-          ...gridWithAd(chunks[i].$1, creatorsAt),
-          SliverToBoxAdapter(
-            child: CreatorsSection(source: 'home', refreshRevision: _moodRowsRevision),
-          ),
-          if (creatorsAt < chunks[i].$2) ...gridWithAd(creatorsAt, chunks[i].$2),
-        ] else
-          ...gridWithAd(chunks[i].$1, chunks[i].$2),
+        ...chunkWithRows(chunks[i].$1, chunks[i].$2),
         if (chunks[i].$3 case final MoodList rowAfter)
           SliverToBoxAdapter(
             child: MoodRow(
@@ -690,10 +716,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
               list: rowAfter,
               slot: i,
             ),
-          ),
-        if (i == 0 && chunks.length == 1)
-          SliverToBoxAdapter(
-            child: CreatorsSection(source: 'home', refreshRevision: _moodRowsRevision),
           ),
       ],
       SliverToBoxAdapter(child: _bottomState(context, state, crossAxisCount)),

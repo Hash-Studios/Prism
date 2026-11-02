@@ -50,7 +50,8 @@ async function preflight() {
   console.log(`Local runtime Node ${process.versions.node}; production Functions target Node 24. Runtime parity is a separate gate.`);
   for (const port of [...PORTS, 19376, 19377, 19378, 19379]) await available(port);
   for (const file of ['functions/node_modules/firebase-admin/package.json', 'functions/lib/weeklyChallenges.js',
-    'functions/lib/wallOfTheDay.js', 'assets/images/wallpaper.jpg', 'firestore.rules', 'firestore.indexes.json']) {
+    'functions/lib/wallOfTheDay.js', 'functions/lib/editorsChoice.js', 'functions/lib/profiles.js',
+    'assets/images/wallpaper.jpg', 'firestore.rules', 'firestore.indexes.json']) {
     if (!fs.existsSync(path.join(repo, file))) throw Error(`Missing ${file}; no install or build is performed by this helper.`);
   }
   for (const binary of ['firebase', 'openssl', 'java']) run(binary, binary === 'java' ? ['-version'] : binary === 'firebase' ? ['--version'] : ['version']);
@@ -67,7 +68,7 @@ async function prepare() {
   fs.copyFileSync(path.join(repo, 'firestore.rules'), path.join(runtime, 'firestore.rules'));
   fs.copyFileSync(path.join(repo, 'firestore.indexes.json'), path.join(runtime, 'firestore.indexes.json'));
   write('functions/package.json', {name: 'prism-local-challenge-qa', private: true, main: 'index.cjs', engines: {node: '24'}});
-  write('functions/index.cjs', `'use strict';\nif (process.env.FUNCTIONS_EMULATOR !== 'true') throw Error('Emulator only');\nconst {challenge} = require('../backend.cjs').load(require('node:path').resolve(__dirname, '..'));\nfor (const name of ['listWeeklyChallenges', 'getWeeklyChallenge', 'setChallengeVote']) exports[name] = challenge[name];\nconst promo = require('./lib/promoCodes.js');\nfor (const name of ['redeemCode', 'createPromoCode', 'listPromoCodes', 'setPromoCodeDisabled']) exports[name] = promo[name];\n` + fs.readFileSync(path.join(__dirname, 'weekly_challenge_qa/admission_probe.cjs'), 'utf8'));
+  write('functions/index.cjs', `'use strict';\nif (process.env.FUNCTIONS_EMULATOR !== 'true') throw Error('Emulator only');\nconst {challenge} = require('../backend.cjs').load(require('node:path').resolve(__dirname, '..'));\nfor (const name of ['listWeeklyChallenges', 'getWeeklyChallenge', 'setChallengeVote']) exports[name] = challenge[name];\nconst promo = require('./lib/promoCodes.js');\nfor (const name of ['redeemCode', 'createPromoCode', 'listPromoCodes', 'setPromoCodeDisabled']) exports[name] = promo[name];\nconst ec = require('./lib/editorsChoice.js');\nconst profiles = require('./lib/profiles.js');\nconst wallEligibility = require('./lib/wallEligibility.js');\nexports.setEditorsChoice = ec.setEditorsChoice;\nexports.projectUserProfile = profiles.projectUserProfile;\n(${installEditorsChoiceSeams.toString()})(ec, require('firebase-admin').firestore(), require('node:path').resolve(__dirname, '..'), wallEligibility.isWotdEligible);\n` + fs.readFileSync(path.join(__dirname, 'weekly_challenge_qa/admission_probe.cjs'), 'utf8'));
   write('firebase.json', {functions: [{source: 'functions', codebase: 'local-qa'}],
     firestore: {rules: 'firestore.rules', indexes: 'firestore.indexes.json'},
     emulators: {auth: {host: '127.0.0.1', port: 19371}, firestore: {host: '127.0.0.1', port: 19372, websocketPort: 19377},
@@ -420,6 +421,150 @@ async function seedPromo() {
   }
   console.log(`Seeded qa-admin (admin claim) and qa-viewer, plus fixture codes ${Object.keys(fixtures).join(', ')}.`);
 }
-const commands = {preflight, prepare, emulators, 'build-apk': buildApk, serve, seed, 'seed-promo': seedPromo, close, 'publish-wotd': publish, 'probe-admission': probeAdmission, assert: evidence};
-if (!commands[command]) throw Error('Commands: preflight, prepare, emulators, build-apk, serve, seed, seed-promo, close, publish-wotd, probe-admission, assert');
+// Editors' Choice seams. The same function source is embedded in functions/index.cjs (emulator) and used by this process.
+function installEditorsChoiceSeams(ec, db, root, isWotdEligible) {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const crypto = require('node:crypto');
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
+  const fixtureSha256 = crypto.createHash('sha256').update(fs.readFileSync(path.join(root, 'wallpaper.jpg'))).digest('hex');
+  ec.editorsChoiceIo.premiumCollections = async () => [];
+  ec.editorsChoiceIo.readyWall = async (wallId, premium) => {
+    if (!wallId || wallId.includes('/')) return false;
+    const wall = (await db.collection('walls').doc(wallId).get()).data();
+    return !!wall && wall.qaFixture === 'ADMIN SEEDED' && wall.review === true &&
+      wall.wallpaper_thumb === 'https://localhost:19375/wallpaper.jpg' && fixtureSha256 === manifest.fixtureSha256 &&
+      ['wallpaper_url', 'wallpaper_path', 'wallpaper_sha', 'thumb_path', 'thumb_sha'].every(k => wall[k] === '') &&
+      isWotdEligible(wall, premium);
+  };
+}
+function loadEditorsChoice(db) {
+  const base = path.join(runtime, 'functions/lib');
+  const ec = require(path.join(base, 'editorsChoice.js'));
+  installEditorsChoiceSeams(ec, db, runtime, require(path.join(base, 'wallEligibility.js')).isWotdEligible);
+  return {ec, profiles: require(path.join(base, 'profiles.js')), backfill: require(path.join(base, 'scripts/backfillWallStudio.js'))};
+}
+function adminRequestAuth() {
+  return {uid: 'qa-admin', token: {admin: true, email: 'qa-admin@example.test', email_verified: true}};
+}
+async function docIdsWithPrefix(admin, db, collection, prefix) {
+  const id = admin.firestore.FieldPath.documentId();
+  const snap = await db.collection(collection).where(id, '>=', prefix).where(id, '<', `${prefix}`).get();
+  return snap.docs.map(doc => doc.id).sort();
+}
+async function ensureEditorsChoiceUser({admin, db, uid, email, name, auth = true, extra = {}}) {
+  const image = 'https://localhost:19375/wallpaper.jpg';
+  if (auth) {
+    try { await admin.auth().createUser({uid, email, password: 'local-demo-only-password', displayName: name, emailVerified: true}); }
+    catch (e) { if (e.code !== 'auth/uid-already-exists' && e.code !== 'auth/email-already-exists') throw e; }
+  }
+  const ref = db.doc(`usersv2/${uid}`);
+  if (!(await ref.get()).exists) {
+    const now = new Date().toISOString();
+    await ref.set({id: uid, email, username: uid.replaceAll('-', ''), name, loggedIn: true,
+      createdAt: now, lastLoginAt: now, premium: false, subscriptionTier: 'free',
+      links: {}, followers: [], following: [], profilePhoto: image, coverPhoto: image, bio: 'Local QA fixture',
+      badges: [], subPrisms: [], coins: 0, transactions: [], interestCategories: ['Nature'], onboardingV2: {completed: true}});
+    await db.doc(`usernames/${uid.replaceAll('-', '')}`).set({uid});
+  }
+  if (Object.keys(extra).length) await ref.set(extra, {merge: true});
+  await db.doc(`usersv2/${uid}/private/session`).set({postAlerts: false}, {merge: true});
+}
+// Editors' Choice fixtures: 14 approved walls, 5 real picks (4 creator walls notified, 1 Studio wall not), and the Studio backfill.
+async function seedEditorsChoice() {
+  const {admin, db} = load(runtime);
+  const {ec, profiles, backfill} = loadEditorsChoice(db);
+  const picked = await db.collection('walls').where('editorsChoiceAt', '!=', null).limit(1).get();
+  assert.equal(picked.empty, true, 'Refusing to overwrite existing Editors\' Choice picks');
+  const now = Date.now();
+  const stamp = admin.firestore.Timestamp.fromMillis;
+  const image = 'https://localhost:19375/wallpaper.jpg';
+  await ensureEditorsChoiceUser({admin, db, uid: 'qa-admin', email: 'qa-admin@example.test', name: 'qa-admin'});
+  await admin.auth().setCustomUserClaims('qa-admin', {admin: true});
+  await ensureEditorsChoiceUser({admin, db, uid: 'qa-viewer', email: 'qa-viewer@example.test', name: 'qa-viewer',
+    extra: {premium: true, subscriptionTier: 'pro'}});
+  await ensureEditorsChoiceUser({admin, db, uid: 'qa-creator-b', email: 'qa-creator-b@example.test', name: 'Noor QA',
+    extra: {name: 'Noor QA'}});
+  await ensureEditorsChoiceUser({admin, db, uid: 'prism-studio', email: 'studio@prismwalls.com', name: 'Prism Studio', auth: false});
+  // The real projection writes profiles/{uid}, including proBadge for qa-viewer.
+  for (const uid of ['qa-admin', 'qa-viewer', 'qa-creator-b', 'prism-studio']) {
+    assert.equal(await profiles.syncPublicProfile(uid), false, `Profile for ${uid} must not be removed`);
+  }
+  // Owners 07..13 use qa-creator-a only when the existing seed command made it.
+  const ownerA = (await db.doc('usersv2/qa-creator-a').get()).exists ? 'qa-creator-a' : 'qa-creator-b';
+  const titles = ['Dusk Ridge', 'Glass Tide', 'Paper Moon', 'Cedar Light', 'Night Harbour', 'Amber Field', 'Quiet Fern',
+    'Salt Bloom', 'Cobalt Drift', 'Ember Hall', 'Frost Line', 'Ivory Creek', 'Moss Arc', 'Signal Dawn'];
+  for (let n = 1; n <= 14; n++) {
+    const id = `ec-wall-${String(n).padStart(2, '0')}`;
+    const studio = n === 14;
+    const owner = n <= 6 ? 'qa-creator-b' : (studio ? 'prism-studio' : ownerA);
+    const byName = (await db.doc(`usersv2/${owner}`).get()).data().name;
+    const wall = {id, creatorUid: owner, email: studio ? 'studio@prismwalls.com' : `${owner}@example.test`, by: byName,
+      uploadedBy: owner, userPhoto: image, title: titles[n - 1], desc: 'ADMIN SEEDED Editors Choice fixture',
+      wallpaper_thumb: image, wallpaper_url: '', wallpaper_path: '', wallpaper_sha: '', thumb_path: '', thumb_sha: '',
+      wallpaper_provider: 'Prism', originalProtected: true, originalObjectId: `ec-object-${n}`,
+      collections: ['community'], category: 'Nature', tags: ['local'], colors: [], review: true, rejected: false,
+      resolution: '250x500', size: 'Local fixture', createdAt: stamp(now - (15 - n) * 43200000), qaFixture: 'ADMIN SEEDED'};
+    if (studio) Object.assign(wall, {origin: 'studio', studioRunId: 'qa-run', studioCandidateId: 'qa-cand'});
+    await db.doc(`walls/${id}`).create(wall);
+    if (studio) await db.doc('studioRuns/qa-run/candidates/qa-cand').create({wallId: id});
+  }
+  // Real Studio backfill stamps byStudio on the Studio wall.
+  await backfill.backfillWallStudio(db, {apply: true});
+  assert.equal((await db.doc('walls/ec-wall-14').get()).data().byStudio, true, 'Studio backfill must stamp ec-wall-14');
+  // Real callable, in-process, as the admin identity. Newest pick last.
+  const picks = ['ec-wall-01', 'ec-wall-02', 'ec-wall-03', 'ec-wall-04', 'ec-wall-14'];
+  for (const [index, wallId] of picks.entries()) {
+    if (index > 0) await new Promise(resolve => setTimeout(resolve, 1100));
+    await ec.setEditorsChoice.run({auth: adminRequestAuth(), data: {wallId, picked: true, requestId: `qa-pick-${wallId}`}});
+  }
+  const pickedWalls = (await db.collection('walls').where('editorsChoiceAt', '!=', null).get()).docs.map(doc => doc.id).sort();
+  const inboxDocs = await docIdsWithPrefix(admin, db, 'notifications', 'editors_choice_');
+  const noticeDocs = (await db.collection('editorsChoiceNotices').get()).docs.map(doc => doc.id).sort();
+  const viewerProfile = (await db.doc('profiles/qa-viewer').get()).data();
+  const expectedCreatorWalls = ['ec-wall-01', 'ec-wall-02', 'ec-wall-03', 'ec-wall-04'];
+  const checks = {
+    pickedCountIs5: pickedWalls.length === 5 && JSON.stringify(pickedWalls) === JSON.stringify([...picks].sort()),
+    inboxDocsForCreatorWallsOnly: JSON.stringify(inboxDocs) === JSON.stringify(expectedCreatorWalls.map(id => `editors_choice_${id}`)),
+    noticeDocsForCreatorWallsOnly: JSON.stringify(noticeDocs) === JSON.stringify(expectedCreatorWalls),
+    studioWallHasNoInboxOrNotice: !inboxDocs.includes('editors_choice_ec-wall-14') && !noticeDocs.includes('ec-wall-14'),
+    studioWallByStudio: (await db.doc('walls/ec-wall-14').get()).data().byStudio === true,
+    viewerProBadge: viewerProfile?.proBadge === true,
+  };
+  const summary = {project: PROJECT, checkedAt: new Date().toISOString(), pickedWalls, inboxDocs, noticeDocs,
+    viewerProBadge: viewerProfile?.proBadge ?? null, checks, ok: Object.values(checks).every(Boolean)};
+  write('editors-choice-evidence.json', summary);
+  console.log(JSON.stringify(summary, null, 2));
+  if (!summary.ok) throw Error('Editors Choice seed checks failed; see editors-choice-evidence.json');
+}
+async function proBadgeToggle(showProBadge) {
+  const {db} = load(runtime);
+  const {profiles} = loadEditorsChoice(db);
+  await db.doc('usersv2/qa-viewer').update({showProBadge});
+  assert.equal(await profiles.syncPublicProfile('qa-viewer'), false, 'qa-viewer profile must not be removed');
+  const profile = (await db.doc('profiles/qa-viewer').get()).data();
+  if (showProBadge) assert.equal(profile.proBadge, true);
+  else assert.equal(Object.hasOwn(profile, 'proBadge'), false, 'Opted-out profile must have no proBadge');
+  console.log(JSON.stringify({uid: 'qa-viewer', showProBadge, profile}, null, 2));
+}
+// Unpick then repick ec-wall-04: one notice and one inbox doc, so the creator is not pushed twice.
+async function ecUnpick() {
+  const {admin, db} = load(runtime);
+  const {ec} = loadEditorsChoice(db);
+  assert.ok((await db.doc('walls/ec-wall-04').get()).exists, 'Run seed-editors-choice first');
+  await ec.setEditorsChoice.run({auth: adminRequestAuth(), data: {wallId: 'ec-wall-04', picked: false, requestId: 'qa-unpick-04'}});
+  const cleared = (await db.doc('walls/ec-wall-04').get()).data().editorsChoiceAt === undefined;
+  await ec.setEditorsChoice.run({auth: adminRequestAuth(), data: {wallId: 'ec-wall-04', picked: true, requestId: 'qa-repick-04'}});
+  const repicked = (await db.doc('walls/ec-wall-04').get()).data().editorsChoiceAt != null;
+  const noticeCount = (await db.collection('editorsChoiceNotices').where('wallId', '==', 'ec-wall-04').get()).size;
+  const inboxCount = (await docIdsWithPrefix(admin, db, 'notifications', 'editors_choice_ec-wall-04')).length;
+  const summary = {wallId: 'ec-wall-04', noticeCount, inboxCount, checks: {cleared, repicked, noticeCountIs1: noticeCount === 1, inboxCountIs1: inboxCount === 1}};
+  summary.ok = Object.values(summary.checks).every(Boolean);
+  console.log(JSON.stringify(summary, null, 2));
+  if (!summary.ok) throw Error('Editors Choice unpick checks failed');
+}
+const commands = {preflight, prepare, emulators, 'build-apk': buildApk, serve, seed, 'seed-promo': seedPromo, 'seed-editors-choice': seedEditorsChoice,
+  'pro-badge-opt-out': () => proBadgeToggle(false), 'pro-badge-opt-in': () => proBadgeToggle(true), 'ec-unpick': ecUnpick,
+  close, 'publish-wotd': publish, 'probe-admission': probeAdmission, assert: evidence};
+if (!commands[command]) throw Error('Commands: preflight, prepare, emulators, build-apk, serve, seed, seed-promo, seed-editors-choice, pro-badge-opt-out, pro-badge-opt-in, ec-unpick, close, publish-wotd, probe-admission, assert');
 commands[command]().catch(error => { console.error(error.stack); process.exitCode = 1; });

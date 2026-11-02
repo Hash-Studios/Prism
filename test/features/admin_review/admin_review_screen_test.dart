@@ -382,6 +382,23 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('a pending wall offers Approve and pick', (WidgetTester tester) async {
+    await pumpReviewScreen(tester, _FakeAdminReviewRepository());
+
+    expect(find.widgetWithText(PrismButton, 'Approve and pick'), findsOneWidget);
+  });
+
+  testWidgets('a wall reserved for a Drop cannot be picked', (WidgetTester tester) async {
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()
+      ..wallsList = const <FirestoreDocument>[
+        FirestoreDocument('studio-1', <String, dynamic>{'origin': 'studio', 'review': false, 'dropReserved': true}),
+      ];
+    await pumpReviewScreen(tester, repository);
+
+    expect(find.widgetWithText(PrismButton, 'Approve and pick'), findsNothing);
+    expect(find.widgetWithText(PrismButton, 'Approve'), findsOneWidget);
+  });
+
   testWidgets('a community wall has no Reserve button', (WidgetTester tester) async {
     await pumpReviewScreen(tester, _FakeAdminReviewRepository());
 
@@ -618,8 +635,11 @@ void main() {
     ]);
     await tester.pump();
     expect(wallBCard, findsOneWidget);
-    expect(find.descendant(of: wallBCard, matching: find.byType(CircularProgressIndicator)), findsOneWidget);
-    final Finder approve = find.descendant(of: wallBCard, matching: find.byType(PrismButton));
+    final Finder approve = find.descendant(
+      of: wallBCard,
+      matching: find.byWidgetPredicate((Widget w) => w is PrismButton && w.label == 'Approve'),
+    );
+    expect(find.descendant(of: approve, matching: find.byType(CircularProgressIndicator)), findsOneWidget);
     expect(tester.widget<PrismButton>(approve).loading, isTrue);
     await tester.tap(approve, warnIfMissed: false);
     await tester.pump();
@@ -638,8 +658,16 @@ void main() {
     await tester.tap(find.text('Approve'));
     await tester.pump();
     expect(repository.approvals, 1);
-    expect(tester.widget<PrismButton>(find.byType(PrismButton)).loading, isTrue);
-    await tester.tap(find.byType(PrismButton), warnIfMissed: false);
+    expect(
+      tester
+          .widget<PrismButton>(find.byWidgetPredicate((Widget w) => w is PrismButton && w.label == 'Approve'))
+          .loading,
+      isTrue,
+    );
+    await tester.tap(
+      find.byWidgetPredicate((Widget w) => w is PrismButton && w.label == 'Approve'),
+      warnIfMissed: false,
+    );
     await tester.pump();
     expect(repository.approvals, 1);
 

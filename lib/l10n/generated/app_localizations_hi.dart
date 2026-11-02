@@ -13006,4 +13006,96 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get premiumTrialAutoRenewOff => 'ऑटो-रिन्यू बंद है। ट्रायल खत्म होने पर आपसे कोई शुल्क नहीं लिया जाएगा।';
+
+  @override
+  String get editorsChoiceTitle => 'संपादकों की पसंद';
+
+  @override
+  String get editorsChoiceRowBody => 'वे वॉलपेपर जो हमारे संपादकों को पसंद हैं।';
+
+  @override
+  String get editorsChoiceEmptyTitle => 'अभी कोई पसंद नहीं';
+
+  @override
+  String get editorsChoiceEmptyBody => 'नई पसंद के लिए जल्द फिर देखें।';
+
+  @override
+  String get editorsChoiceLoadError => 'संपादकों की पसंद लोड नहीं हो सकी';
+
+  @override
+  String get editorsChoiceLabelSemantics => 'संपादकों की पसंद के लिए चुना गया';
+
+  @override
+  String get editorsChoicePick => 'संपादकों की पसंद में जोड़ें';
+
+  @override
+  String get editorsChoiceUnpick => 'संपादकों की पसंद से हटाएं';
+
+  @override
+  String get editorsChoicePicked => 'संपादकों की पसंद में जोड़ा गया';
+
+  @override
+  String get editorsChoiceUnpicked => 'संपादकों की पसंद से हटाया गया';
+
+  @override
+  String get editorsChoiceNotEligible => 'केवल स्वीकृत, मुफ़्त वॉलपेपर, जिनका मूल संस्करण तैयार है, पसंद बन सकते हैं।';
+
+  @override
+  String get adminApproveAndPick => 'स्वीकृत करें और चुनें';
+
+  @override
+  String get adminApprovedPickLater =>
+      'स्वीकृत किया गया। मूल संस्करण तैयार होने पर इसके पेज से इसे संपादकों की पसंद में जोड़ें।';
+
+  @override
+  String wallCreditBy(String name) {
+    return '$name द्वारा';
+  }
+
+  @override
+  String wallCreditPhotoBy(String name) {
+    return '$name द्वारा फ़ोटो';
+  }
+
+  @override
+  String get wallCreditByHashStudios => 'Hash Studios द्वारा';
+
+  @override
+  String get wallCreditPrismExclusive => 'सिर्फ़ Prism पर';
+
+  @override
+  String get wallCreditOnPexels => 'Pexels से';
+
+  @override
+  String get wallCreditOnWallhaven => 'Wallhaven से';
+
+  @override
+  String get wallCreditOpenProfileHint => 'प्रोफ़ाइल खोलता है';
+
+  @override
+  String get wallCreditOpenSourceHint => 'आपके ब्राउज़र में खुलता है';
+
+  @override
+  String get profileProBadge => 'Pro';
+
+  @override
+  String get profileProBadgeSemantics => 'Prism Pro सदस्य';
+
+  @override
+  String get settingsShowProBadgeTitle => 'मेरी प्रोफ़ाइल पर Pro बैज दिखाएं';
+
+  @override
+  String get settingsShowProBadgeBody => 'आपकी प्रोफ़ाइल देखने वालों को Pro बैज दिखेगा।';
+
+  @override
+  String get notifPushEditorsChoiceTitle => 'आपका वॉलपेपर संपादकों की पसंद है';
+
+  @override
+  String notifPushEditorsChoiceBody(String wallTitle) {
+    return 'हमारे संपादकों ने $wallTitle को चुना है। सभी इसे होम पर पा सकते हैं।';
+  }
+
+  @override
+  String get notifPushEditorsChoiceBodyUntitled =>
+      'हमारे संपादकों ने आपका वॉलपेपर चुना है। सभी इसे होम पर पा सकते हैं।';
 }

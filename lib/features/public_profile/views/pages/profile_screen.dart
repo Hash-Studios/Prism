@@ -34,6 +34,7 @@ import 'package:Prism/features/public_profile/domain/repositories/public_profile
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
 import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
 import 'package:Prism/features/public_profile/views/widgets/gift_pass_sheet.dart';
+import 'package:Prism/features/public_profile/views/widgets/pro_profile_badge.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_bio_text.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_parts.dart';
@@ -90,6 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     badges: badges ?? app_state.prismUser.badges.map((b) => b.id).toList(growable: false),
     followerCount: graphProfile?.id == app_state.prismUser.id ? graphProfile!.followerCount : 0,
     followingCount: graphProfile?.id == app_state.prismUser.id ? graphProfile!.followingCount : 0,
+    proBadge: graphProfile?.id == app_state.prismUser.id && graphProfile!.proBadge,
   );
 
   @override
@@ -749,6 +751,8 @@ class _ProfileChildState extends State<_ProfileChild> {
                         ),
                         const SizedBox(height: 2),
                       ],
+                      if (_profile.proBadge)
+                        const Padding(padding: EdgeInsets.only(bottom: 6), child: ProProfileBadge()),
                       ProfileBadgeRow(badgeIds: _profile.badges),
                       if (!ownProfile) FollowedByLine(creatorUid: _profile.id),
                       const SizedBox(height: 8),

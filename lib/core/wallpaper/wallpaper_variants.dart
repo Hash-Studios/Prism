@@ -28,6 +28,8 @@ final class PrismWallpaper {
     this.aiSource,
     this.remixOf,
     this.remixCount = 0,
+    this.editorsChoiceAt,
+    this.byStudio = false,
   });
 
   final WallpaperCore core;
@@ -75,6 +77,12 @@ final class PrismWallpaper {
 
   /// Approved remixes by other creators. Only the server writes it.
   final int remixCount;
+
+  /// When an admin picked the wall for Editors' Choice. Null when it is not a pick. Only the server writes it.
+  final DateTime? editorsChoiceAt;
+
+  /// The server proved on approval that Prism Studio posted the wall. Only the server writes it.
+  final bool byStudio;
 
   bool isBoostedAt(DateTime now) => boostedUntil?.isAfter(now) ?? false;
 
