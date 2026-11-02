@@ -37,13 +37,15 @@ class FavouriteCountsRepositoryImpl implements FavouriteCountsRepository {
             null => 0,
             _ => null,
           };
-          final Object? rawComments = data['comments'];
           return MapEntry(
             id,
             PrismWallpaperStats(
               favourites: math.max(0, rawFavourites ?? 0),
               views: rawViews != null && rawViews >= 0 ? rawViews : null,
-              comments: rawComments is num && rawComments.isFinite ? math.max(0, rawComments.toInt()) : 0,
+              comments: switch (data['comments']) {
+                final num count when count.isFinite => math.max(0, count.toInt()),
+                _ => 0,
+              },
             ),
           );
         },
