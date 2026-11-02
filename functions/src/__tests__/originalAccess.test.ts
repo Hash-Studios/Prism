@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import * as admin from "firebase-admin";
-import {resolveOriginalAccess, originalAccessDelivery} from "../originalAccess";
+import {classification, resetClassificationCache, resolveOriginalAccess, originalAccessDelivery} from "../originalAccess";
 import {refundableDelta} from "../coinsCallables";
 import {resetEconomyCache, DEFAULT_ECONOMY} from "../economy";
 import {installFakeDb} from "./fakeDb";
@@ -22,6 +22,7 @@ function setup(t: Parameters<typeof installFakeDb>[0], wall = {}, user = {}, pri
     R2_SECRET_ACCESS_KEY: "secret", R2_PRIVATE_BUCKET: "private", R2_PREVIEW_BUCKET: "preview",
     R2_PREVIEW_BASE_URL: "https://images.example.com", GH_REPO_WALLS: "walls"});
   resetEconomyCache();
+  resetClassificationCache();
   t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {
     premiumCollections: {defaultValue: {value: "[\"premium\"]"}},
   }}));
@@ -209,6 +210,7 @@ test("Remote Config reclassification between quote and acquire uses current prem
   t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {
     premiumCollections: {defaultValue: {value: "[\"premium\",\"nature\"]"}},
   }}));
+  resetClassificationCache(); // Past the one-minute cache.
   const result = await resolveOriginalAccess.run(request({maxCoins: quote.requiredCoins}));
   assert.equal(result.status, "price_changed");
   assert.equal("requiredCoins" in result && result.requiredCoins, DEFAULT_ECONOMY.spend.premiumWallpaperDownload);
@@ -222,6 +224,7 @@ test("Remote Config failure after a successful quote still fails acquisition clo
   t.mock.method(admin.remoteConfig(), "getTemplate", async () => {
     throw new Error("offline after quote");
   });
+  resetClassificationCache(); // Past the one-minute cache.
   await assert.rejects(() => resolveOriginalAccess.run(request()), {code: "unavailable"});
   assert.deepEqual([...store.entries()], before);
 });
@@ -275,7 +278,24 @@ test("classification failure and duplicate canonical IDs fail closed", async (t)
   t.mock.method(admin.remoteConfig(), "getTemplate", async () => {
     throw new Error("offline");
   });
+  resetClassificationCache(); // Past the one-minute cache.
   await assert.rejects(() => resolveOriginalAccess.run(request()), {code: "unavailable"});
+});
+
+test("the premium list is fetched once a minute and a failed fetch is not cached", async (t) => {
+  resetClassificationCache();
+  let offline = true;
+  const getTemplate = t.mock.method(admin.remoteConfig(), "getTemplate", async () => {
+    if (offline) throw new Error("offline");
+    return {parameters: {premiumCollections: {defaultValue: {value: "[\"premium\"]"}}}};
+  });
+  await assert.rejects(() => classification(1_000), {code: "unavailable"});
+  offline = false;
+  assert.deepEqual(await Promise.all([classification(2_000), classification(2_000)]), [["premium"], ["premium"]]);
+  assert.deepEqual(await classification(61_999), ["premium"]);
+  assert.equal(getTemplate.mock.callCount(), 2);
+  assert.deepEqual(await classification(62_000), ["premium"]);
+  assert.equal(getTemplate.mock.callCount(), 3);
 });
 
 test("quotes expose only current server price and never sign or mutate state", async (t) => {

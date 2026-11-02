@@ -55,7 +55,25 @@ export const originalAccessDelivery = {
   },
 };
 
-async function classification(): Promise<string[]> {
+const CLASSIFICATION_CACHE_MS = 60_000;
+let classificationCache: {at: number; value: Promise<string[]>} | undefined;
+
+export function resetClassificationCache(): void {
+  classificationCache = undefined;
+}
+
+/** The premium collection list, cached for a minute per instance like the economy config. Failures are not cached. */
+export function classification(nowMs = Date.now()): Promise<string[]> {
+  if (classificationCache && nowMs - classificationCache.at < CLASSIFICATION_CACHE_MS) return classificationCache.value;
+  const entry = {at: nowMs, value: fetchClassification()};
+  classificationCache = entry;
+  entry.value.catch(() => {
+    if (classificationCache === entry) classificationCache = undefined;
+  });
+  return entry.value;
+}
+
+async function fetchClassification(): Promise<string[]> {
   try {
     const template = await admin.remoteConfig().getTemplate();
     const parameter = template.parameters?.premiumCollections;
