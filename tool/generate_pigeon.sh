@@ -40,9 +40,14 @@ fvm dart run pigeon \
   --dart_out=lib/core/platform/pigeon/prism_widget_api.g.dart \
   --swift_out=ios/Runner/Pigeon/PrismWidgetApi.swift
 
+fvm dart run pigeon \
+  --input=pigeons/prism_live_photo_api.dart \
+  --dart_out=lib/core/platform/pigeon/prism_live_photo_api.g.dart \
+  --swift_out=ios/Runner/Pigeon/PrismLivePhotoApi.swift
+
 fvm dart format --line-length=120 lib/core/platform/pigeon/prism_media_api.g.dart lib/core/platform/pigeon/prism_app_icon_api.g.dart \
   lib/core/platform/pigeon/prism_live_activity_api.g.dart lib/core/platform/pigeon/prism_share_api.g.dart \
-  lib/core/platform/pigeon/prism_widget_api.g.dart
+  lib/core/platform/pigeon/prism_widget_api.g.dart lib/core/platform/pigeon/prism_live_photo_api.g.dart
 
 echo "Pigeon generation complete!"
 echo "  - Dart: lib/core/platform/pigeon/prism_media_api.g.dart"
@@ -52,3 +57,4 @@ echo "  - App icon: lib/core/platform/pigeon/prism_app_icon_api.g.dart (+ Kotlin
 echo "  - Live Activities: lib/core/platform/pigeon/prism_live_activity_api.g.dart (+ Swift)"
 echo "  - Instagram Stories share: lib/core/platform/pigeon/prism_share_api.g.dart (+ Kotlin, Swift)"
 echo "  - Widgets: lib/core/platform/pigeon/prism_widget_api.g.dart (+ Swift)"
+echo "  - Live Photo: lib/core/platform/pigeon/prism_live_photo_api.g.dart (+ Swift)"

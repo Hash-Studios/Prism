@@ -13034,4 +13034,115 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get premiumTrialAutoRenewOff =>
       'Die automatische Verlängerung ist aus. Dir wird nach Ende der Testphase nichts berechnet.';
+
+  @override
+  String get livePhotoAction => 'Live-Foto';
+
+  @override
+  String get livePhotoActionTooltip => 'Als Live-Foto speichern';
+
+  @override
+  String get livePhotoTitle => 'Live-Foto';
+
+  @override
+  String get livePhotoBody =>
+      'Wähle, wie sich das Hintergrundbild bewegt. Prism speichert ein 3-Sekunden-Live-Foto in Fotos, bereit für deinen Sperrbildschirm.';
+
+  @override
+  String get livePhotoStyleGroup => 'Bewegungsstil';
+
+  @override
+  String livePhotoPreview(String style) {
+    return 'Vorschau: $style';
+  }
+
+  @override
+  String livePhotoStyleLocked(String style) {
+    return '$style, Pro-Stil';
+  }
+
+  @override
+  String get livePhotoSave => 'Live-Foto speichern';
+
+  @override
+  String get livePhotoRendering => 'Dein Live-Foto wird erstellt';
+
+  @override
+  String livePhotoProgress(String percent) {
+    return '$percent fertig';
+  }
+
+  @override
+  String get livePhotoSaving => 'Wird in Fotos gespeichert';
+
+  @override
+  String get livePhotoCancelling => 'Wird gestoppt';
+
+  @override
+  String get livePhotoRefusedTitle => 'Prism kann nicht in Fotos speichern';
+
+  @override
+  String get livePhotoRefusedBody =>
+      'Um ein Live-Foto zu speichern, erlaube Prism, Fotos hinzuzufügen. Tippe in den Einstellungen auf Fotos und dann auf „Nur Fotos hinzufügen“.';
+
+  @override
+  String get livePhotoRestrictedBody =>
+      'Der Zugriff auf Fotos ist auf diesem iPhone gesperrt, zum Beispiel durch die Bildschirmzeit. Prüfe die Einstellungen oder frag die Person, die dieses iPhone verwaltet.';
+
+  @override
+  String get livePhotoNotNow => 'Nicht jetzt';
+
+  @override
+  String get livePhotoFailedTitle => 'Live-Foto kann nicht erstellt werden';
+
+  @override
+  String get livePhotoFailedSource =>
+      'Dieses Hintergrundbild kann nicht geladen werden. Prüfe deine Verbindung und versuch es noch einmal.';
+
+  @override
+  String get livePhotoFailedTimeout =>
+      'Das hat zu lange gedauert. Versuch es noch einmal oder wähle einen anderen Stil.';
+
+  @override
+  String get livePhotoFailedSave => 'Fotos hat das Live-Foto nicht gespeichert. Versuch es noch einmal.';
+
+  @override
+  String get livePhotoFailedGeneric => 'Das Live-Foto kann nicht erstellt werden. Versuch es noch einmal.';
+
+  @override
+  String get livePhotoTryAgain => 'Erneut versuchen';
+
+  @override
+  String get livePhotoGuideTitle => 'Als Sperrbildschirm festlegen';
+
+  @override
+  String get livePhotoGuideBody =>
+      'Dein Live-Foto ist in Fotos. iOS erlaubt Apps nicht, dein Hintergrundbild zu ändern, also geh dort weiter:';
+
+  @override
+  String get livePhotoGuideStep1 => 'Öffne Fotos. Das neue Foto hat ein LIVE-Symbol.';
+
+  @override
+  String get livePhotoGuideStep2 => 'Tippe auf „Teilen“ und dann auf „Als Hintergrundbild verwenden“.';
+
+  @override
+  String get livePhotoGuideStep3 =>
+      'Stelle sicher, dass die Taste „Live-Foto“ unten eingeschaltet ist, und tippe dann auf „Hinzufügen“.';
+
+  @override
+  String get livePhotoGuideNotesTitle => 'Gut zu wissen';
+
+  @override
+  String get livePhotoGuideNoteWake =>
+      'Die Bewegung läuft auf dem Sperrbildschirm, wenn du dein iPhone aufweckst. Der Home-Bildschirm zeigt das Standbild.';
+
+  @override
+  String get livePhotoGuideNoteLowPower => 'Der Energiesparmodus schaltet die Bewegung auf dem Sperrbildschirm aus.';
+
+  @override
+  String get livePhotoGuideNoteNotAvailable =>
+      'Wenn iOS „Bewegung nicht verfügbar“ meldet, nutze es als Standbild-Hintergrundbild oder probiere einen anderen Stil.';
+
+  @override
+  String get livePhotoGuideNoteVersion => 'Die Bewegung auf dem Sperrbildschirm braucht iOS 17 oder neuer.';
 }

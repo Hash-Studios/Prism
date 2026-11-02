@@ -118,6 +118,10 @@ import '../../features/leaderboard/data/repositories/leaderboard_repository_impl
     as _i1008;
 import '../../features/leaderboard/domain/repositories/leaderboard_repository.dart'
     as _i655;
+import '../../features/live_photo/data/repositories/live_photo_repository_impl.dart'
+    as _i157;
+import '../../features/live_photo/domain/repositories/live_photo_repository.dart'
+    as _i574;
 import '../../features/live_wallpaper/data/live_texture_preparer.dart'
     as _i1003;
 import '../../features/live_wallpaper/data/repositories/live_wallpaper_repository_impl.dart'
@@ -302,6 +306,7 @@ import '../persistence/data_sources/session_local_data_source.dart' as _i704;
 import '../persistence/data_sources/settings_local_data_source.dart' as _i1073;
 import '../persistence/local_store.dart' as _i496;
 import '../personalization/taste_signals.dart' as _i731;
+import '../platform/pigeon/prism_live_photo_api.g.dart' as _i352;
 import '../platform/system_color_schemes.dart' as _i565;
 import '../view_stats/view_stats_repository.dart' as _i602;
 import 'injection_module.dart' as _i212;
@@ -423,6 +428,12 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i349.FirestoreClient>(
     () => appModule.firestoreClient(gh<_i393.FirestoreTelemetrySink>()),
+  );
+  gh.lazySingleton<_i574.LivePhotoRepository>(
+    () => _i157.LivePhotoRepositoryImpl(
+      texturePreparer: gh<_i1003.LiveTexturePreparer>(),
+      hostApi: gh<_i352.PrismLivePhotoHostApi>(),
+    ),
   );
   gh.lazySingleton<_i651.QuestsRepository>(() => _i419.QuestsRepositoryImpl());
   gh.lazySingleton<_i253.DrawRepository>(

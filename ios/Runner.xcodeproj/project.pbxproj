@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A77E00092F00000700E7E7E7 /* LivePhotoExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77E000A2F00000700E7E7E7 /* LivePhotoExportTests.swift */; };
+		A77E00072F00000700E7E7E7 /* PrismLivePhotoExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77E00082F00000700E7E7E7 /* PrismLivePhotoExporter.swift */; };
+		A77E00052F00000700E7E7E7 /* PrismLivePhotoRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77E00062F00000700E7E7E7 /* PrismLivePhotoRenderer.swift */; };
+		A77E00032F00000700E7E7E7 /* PrismLivePhotoHostApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77E00042F00000700E7E7E7 /* PrismLivePhotoHostApiImpl.swift */; };
+		A77E00012F00000700E7E7E7 /* PrismLivePhotoApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77E00022F00000700E7E7E7 /* PrismLivePhotoApi.swift */; };
 		0B704B4F4DBF6A607C2962CE /* PrismMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EDBBD0CEBAAD971688C94D8 /* PrismMark.swift */; };
 		0E6B440C28BE8144826905CE /* PrismLiveActivityHostApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22E99657F3D782CFA81804A0 /* PrismLiveActivityHostApiImpl.swift */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
@@ -124,6 +129,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A77E000A2F00000700E7E7E7 /* LivePhotoExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePhotoExportTests.swift; sourceTree = "<group>"; };
+		A77E00082F00000700E7E7E7 /* PrismLivePhotoExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PrismLivePhotoExporter.swift; path = LivePhoto/PrismLivePhotoExporter.swift; sourceTree = "<group>"; };
+		A77E00062F00000700E7E7E7 /* PrismLivePhotoRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PrismLivePhotoRenderer.swift; path = LivePhoto/PrismLivePhotoRenderer.swift; sourceTree = "<group>"; };
+		A77E00042F00000700E7E7E7 /* PrismLivePhotoHostApiImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismLivePhotoHostApiImpl.swift; sourceTree = "<group>"; };
+		A77E00022F00000700E7E7E7 /* PrismLivePhotoApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismLivePhotoApi.swift; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
 		155D09353231B7290DE73394 /* PrismNotificationService.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PrismNotificationService.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -287,6 +297,7 @@
 			children = (
 				331C807B294A618700263BE5 /* RunnerTests.swift */,
 				A11A00142F00000100A1A1A1 /* MediaFixture.swift */,
+				A77E000A2F00000700E7E7E7 /* LivePhotoExportTests.swift */,
 				A11A00162F00000100A1A1A1 /* MediaFilesTests.swift */,
 				A22B000E2F00000200B2B2B2 /* PrismShortcutsTests.swift */,
 				D8F0A1B42F10000100C0FFEE /* PrismShortcutFoldersTests.swift */,
@@ -376,6 +387,9 @@
 				A55D00022F00000500D5D5D5 /* PrismTiltStream.swift */,
 				A44D00042F00000400D4D4D4 /* PrismShareHostApiImpl.swift */,
 				A11A00122F00000100A1A1A1 /* PrismMediaFiles.swift */,
+				A77E00082F00000700E7E7E7 /* PrismLivePhotoExporter.swift */,
+				A77E00062F00000700E7E7E7 /* PrismLivePhotoRenderer.swift */,
+				A77E00042F00000700E7E7E7 /* PrismLivePhotoHostApiImpl.swift */,
 				A11A00052F00000100A1A1A1 /* Pigeon */,
 				A22B000F2F00000200B2B2B2 /* Shortcuts */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
@@ -393,6 +407,7 @@
 				A44D00032F00000400D4D4D4 /* PrismShareApi.swift */,
 				2ADD13323370451410076B0B /* PrismLiveActivityApi.swift */,
 				EAA7C1732C0AB38F7D41FF24 /* PrismWidgetApi.swift */,
+				A77E00022F00000700E7E7E7 /* PrismLivePhotoApi.swift */,
 			);
 			path = Pigeon;
 			sourceTree = "<group>";
@@ -763,6 +778,7 @@
 			files = (
 				331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */,
 				A11A00132F00000100A1A1A1 /* MediaFixture.swift in Sources */,
+				A77E00092F00000700E7E7E7 /* LivePhotoExportTests.swift in Sources */,
 				A11A00152F00000100A1A1A1 /* MediaFilesTests.swift in Sources */,
 				A22B000D2F00000200B2B2B2 /* PrismShortcutsTests.swift in Sources */,
 				D8F0A1B32F10000100C0FFEE /* PrismShortcutFoldersTests.swift in Sources */,
@@ -791,6 +807,9 @@
 				A44D00012F00000400D4D4D4 /* PrismShareApi.swift in Sources */,
 				A44D00022F00000400D4D4D4 /* PrismShareHostApiImpl.swift in Sources */,
 				A11A00112F00000100A1A1A1 /* PrismMediaFiles.swift in Sources */,
+				A77E00072F00000700E7E7E7 /* PrismLivePhotoExporter.swift in Sources */,
+				A77E00052F00000700E7E7E7 /* PrismLivePhotoRenderer.swift in Sources */,
+				A77E00032F00000700E7E7E7 /* PrismLivePhotoHostApiImpl.swift in Sources */,
 				A22B00012F00000200B2B2B2 /* PrismShortcutFavourites.swift in Sources */,
 				D8F0A1B12F10000100C0FFEE /* PrismShortcutFolders.swift in Sources */,
 				A22B00032F00000200B2B2B2 /* PrismShortcutImageKind.swift in Sources */,
@@ -808,6 +827,7 @@
 				678DAE84DEDA8AAE691AF970 /* PrismReviewAttributes.swift in Sources */,
 				D066A1779F936B19675AF526 /* PrismWidgetCore.swift in Sources */,
 				A48BE21768F58C734FE49EBC /* PrismWidgetApi.swift in Sources */,
+				A77E00012F00000700E7E7E7 /* PrismLivePhotoApi.swift in Sources */,
 				9D3DD7B66D74A8585E9A417B /* PrismWidgetHostApiImpl.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

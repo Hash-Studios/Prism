@@ -20664,6 +20664,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Auto-renew is off. You will not be charged when the trial ends.'**
   String get premiumTrialAutoRenewOff;
+
+  /// Button on the iOS Set screen. Opens the sheet that saves the wall as a Live Photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Photo'**
+  String get livePhotoAction;
+
+  /// Tooltip and screen reader hint for the Live Photo button on the iOS Set screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as a Live Photo'**
+  String get livePhotoActionTooltip;
+
+  /// Title of the sheet that saves the wall as a Live Photo with motion (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'Live Photo'**
+  String get livePhotoTitle;
+
+  /// Text under the Live Photo sheet title. Photos is the iOS app name.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick how the wall moves. Prism saves a 3-second Live Photo to Photos, ready for your Lock Screen.'**
+  String get livePhotoBody;
+
+  /// Screen reader label for the group of motion style chips.
+  ///
+  /// In en, this message translates to:
+  /// **'Motion style'**
+  String get livePhotoStyleGroup;
+
+  /// Screen reader label for the moving preview of the wall. {style} is a style name such as Drift.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview: {style}'**
+  String livePhotoPreview(String style);
+
+  /// Screen reader label for a style chip that needs Prism Pro or a coin unlock. {style} is the style name.
+  ///
+  /// In en, this message translates to:
+  /// **'{style}, Pro style'**
+  String livePhotoStyleLocked(String style);
+
+  /// Primary button. Renders the clip and saves it to Photos as a Live Photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Live Photo'**
+  String get livePhotoSave;
+
+  /// Status while the frames render.
+  ///
+  /// In en, this message translates to:
+  /// **'Making your Live Photo'**
+  String get livePhotoRendering;
+
+  /// Progress under the bar. {percent} is a formatted percentage such as 40%.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent} done'**
+  String livePhotoProgress(String percent);
+
+  /// Status after the frames render, while iOS saves the Live Photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving to Photos'**
+  String get livePhotoSaving;
+
+  /// Status after the user taps Cancel, until the render stops.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopping'**
+  String get livePhotoCancelling;
+
+  /// Title when the user refused Photos access.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism can\'t add to Photos'**
+  String get livePhotoRefusedTitle;
+
+  /// Body when the user refused Photos access. Settings, Photos and Add Photos Only are iOS labels: use the iOS words of this language.
+  ///
+  /// In en, this message translates to:
+  /// **'To save a Live Photo, allow Prism to add photos. In Settings, tap Photos, then Add Photos Only.'**
+  String get livePhotoRefusedBody;
+
+  /// Body when a device policy blocks Photos access.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos access is blocked on this iPhone, for example by Screen Time. Check Settings, or ask the person who manages this iPhone.'**
+  String get livePhotoRestrictedBody;
+
+  /// Secondary button that closes the Photos access message.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get livePhotoNotNow;
+
+  /// Title when the export failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to make the Live Photo'**
+  String get livePhotoFailedTitle;
+
+  /// Error when the wall image could not be downloaded or read.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load this wall. Check your connection and try again.'**
+  String get livePhotoFailedSource;
+
+  /// Error when the render hit its time limit.
+  ///
+  /// In en, this message translates to:
+  /// **'This took too long. Try again, or pick another style.'**
+  String get livePhotoFailedTimeout;
+
+  /// Error when iOS refused the save or saved it without motion.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos did not save the Live Photo. Try again.'**
+  String get livePhotoFailedSave;
+
+  /// Error for any other render or encode failure.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to render the Live Photo. Try again.'**
+  String get livePhotoFailedGeneric;
+
+  /// Button that goes back to the style picker after an error.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get livePhotoTryAgain;
+
+  /// Title of the guide sheet after the Live Photo is saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Set it as your Lock Screen'**
+  String get livePhotoGuideTitle;
+
+  /// Text under the guide title. Followed by numbered steps.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Live Photo is in Photos. iOS does not let apps change your wallpaper, so finish there:'**
+  String get livePhotoGuideBody;
+
+  /// Guide step 1. LIVE is the badge iOS shows on Live Photos: use the badge text iOS shows in this language.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Photos. The new photo has a LIVE badge.'**
+  String get livePhotoGuideStep1;
+
+  /// Guide step 2. Share and Use as Wallpaper are iOS menu labels: use the iOS words of this language.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Share, then Use as Wallpaper.'**
+  String get livePhotoGuideStep2;
+
+  /// Guide step 3. Live Photo and Add are iOS labels in the wallpaper editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Make sure the Live Photo button at the bottom is on, then tap Add.'**
+  String get livePhotoGuideStep3;
+
+  /// Heading above the honest notes in the guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Good to know'**
+  String get livePhotoGuideNotesTitle;
+
+  /// Guide note about where motion plays.
+  ///
+  /// In en, this message translates to:
+  /// **'Motion plays on the Lock Screen when you wake your iPhone. The Home Screen shows the still photo.'**
+  String get livePhotoGuideNoteWake;
+
+  /// Guide note. Low Power Mode is the iOS setting name.
+  ///
+  /// In en, this message translates to:
+  /// **'Low Power Mode turns off Lock Screen motion.'**
+  String get livePhotoGuideNoteLowPower;
+
+  /// Guide note. Motion not available is the message iOS shows: use the iOS words of this language.
+  ///
+  /// In en, this message translates to:
+  /// **'If iOS says Motion not available, use it as a still wallpaper or try another style.'**
+  String get livePhotoGuideNoteNotAvailable;
+
+  /// Guide note about the minimum iOS version.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock Screen motion needs iOS 17 or later.'**
+  String get livePhotoGuideNoteVersion;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

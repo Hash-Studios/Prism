@@ -13010,4 +13010,113 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get premiumTrialAutoRenewOff =>
       'La renovación automática está desactivada. No se te cobrará cuando termine la prueba.';
+
+  @override
+  String get livePhotoAction => 'Foto en directo';
+
+  @override
+  String get livePhotoActionTooltip => 'Guardar como foto en directo';
+
+  @override
+  String get livePhotoTitle => 'Foto en directo';
+
+  @override
+  String get livePhotoBody =>
+      'Elige cómo se mueve el fondo. Prism guarda una foto en directo de 3 segundos en Fotos, lista para tu pantalla bloqueada.';
+
+  @override
+  String get livePhotoStyleGroup => 'Estilo de movimiento';
+
+  @override
+  String livePhotoPreview(String style) {
+    return 'Vista previa: $style';
+  }
+
+  @override
+  String livePhotoStyleLocked(String style) {
+    return '$style, estilo Pro';
+  }
+
+  @override
+  String get livePhotoSave => 'Guardar foto en directo';
+
+  @override
+  String get livePhotoRendering => 'Creando tu foto en directo';
+
+  @override
+  String livePhotoProgress(String percent) {
+    return '$percent completado';
+  }
+
+  @override
+  String get livePhotoSaving => 'Guardando en Fotos';
+
+  @override
+  String get livePhotoCancelling => 'Deteniendo';
+
+  @override
+  String get livePhotoRefusedTitle => 'Prism no puede añadir a Fotos';
+
+  @override
+  String get livePhotoRefusedBody =>
+      'Para guardar una foto en directo, permite que Prism añada fotos. En Ajustes, toca Fotos y luego Añadir solo fotos.';
+
+  @override
+  String get livePhotoRestrictedBody =>
+      'El acceso a Fotos está bloqueado en este iPhone, por ejemplo por Tiempo de uso. Revisa Ajustes o pregunta a la persona que gestiona este iPhone.';
+
+  @override
+  String get livePhotoNotNow => 'Ahora no';
+
+  @override
+  String get livePhotoFailedTitle => 'No se puede crear la foto en directo';
+
+  @override
+  String get livePhotoFailedSource => 'No se puede cargar este fondo. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get livePhotoFailedTimeout => 'Ha tardado demasiado. Inténtalo de nuevo o elige otro estilo.';
+
+  @override
+  String get livePhotoFailedSave => 'Fotos no ha podido guardar la foto en directo. Inténtalo de nuevo.';
+
+  @override
+  String get livePhotoFailedGeneric => 'No se puede crear la foto en directo. Inténtalo de nuevo.';
+
+  @override
+  String get livePhotoTryAgain => 'Intentar de nuevo';
+
+  @override
+  String get livePhotoGuideTitle => 'Ponla como pantalla bloqueada';
+
+  @override
+  String get livePhotoGuideBody =>
+      'Tu foto en directo está en Fotos. iOS no permite que las apps cambien tu fondo, así que termina allí:';
+
+  @override
+  String get livePhotoGuideStep1 => 'Abre Fotos. La foto nueva tiene una insignia LIVE.';
+
+  @override
+  String get livePhotoGuideStep2 => 'Toca Compartir y luego Usar como fondo de pantalla.';
+
+  @override
+  String get livePhotoGuideStep3 =>
+      'Asegúrate de que el botón Foto en directo de abajo esté activado y luego toca Añadir.';
+
+  @override
+  String get livePhotoGuideNotesTitle => 'Conviene saber';
+
+  @override
+  String get livePhotoGuideNoteWake =>
+      'El movimiento se reproduce en la pantalla bloqueada cuando despiertas tu iPhone. La pantalla de inicio muestra la foto fija.';
+
+  @override
+  String get livePhotoGuideNoteLowPower => 'El modo de bajo consumo desactiva el movimiento en la pantalla bloqueada.';
+
+  @override
+  String get livePhotoGuideNoteNotAvailable =>
+      'Si iOS dice Movimiento no disponible, úsalo como fondo fijo o prueba otro estilo.';
+
+  @override
+  String get livePhotoGuideNoteVersion => 'El movimiento en la pantalla bloqueada necesita iOS 17 o posterior.';
 }

@@ -1,11 +1,8 @@
 import 'dart:io';
 
 import 'package:Prism/core/auth/require_signed_in_action.dart';
-import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
-import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
-import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
@@ -17,9 +14,9 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart'
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_picker.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_preview.dart';
+import 'package:Prism/features/live_wallpaper/views/widgets/live_style_unlock.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,8 +25,6 @@ import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 
 enum _LiveMode { photo, gradients, video }
-
-enum _UnlockChoice { coins, pro }
 
 String _liveModeLabel(AppLocalizations l10n, _LiveMode mode) => switch (mode) {
   _LiveMode.photo => l10n.wallpaperLiveModePhoto,
@@ -64,14 +59,6 @@ String _liveOutcomeMessage(AppLocalizations l10n, LiveApplyOutcome outcome) => s
   },
 };
 
-String _motionStyleLabel(AppLocalizations l10n, MotionStyle style) => switch (style) {
-  MotionStyle.drift => l10n.wallpaperLiveStyleDrift,
-  MotionStyle.breathe => l10n.wallpaperLiveStyleBreathe,
-  MotionStyle.ripple => l10n.wallpaperLiveStyleRipple,
-  MotionStyle.shimmer => l10n.wallpaperLiveStyleShimmer,
-  MotionStyle.depth => l10n.wallpaperLiveStyleDepth,
-};
-
 String _motionStyleDescription(AppLocalizations l10n, MotionStyle style) => switch (style) {
   MotionStyle.drift => l10n.wallpaperLiveStyleDriftDescription,
   MotionStyle.breathe => l10n.wallpaperLiveStyleBreatheDescription,
@@ -97,8 +84,6 @@ String _gradientStyleDescription(AppLocalizations l10n, GradientStyle style) => 
 };
 
 /// The paid styles the signed-in user unlocked with coins, each with the end of its unlock.
-Map<String, DateTime> liveStyleUnlocks() => CoinsService.instance.currentPasses.liveStyles;
-
 typedef VideoPicker = Future<String?> Function();
 
 Future<String?> _pickVideoFromGallery() async {
@@ -197,62 +182,17 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
   (String id, String label) get _lockedStyle {
     final LiveWallpaperState state = context.read<LiveWallpaperBloc>().state;
     return _mode == _LiveMode.photo
-        ? (state.motionStyle.name, _motionStyleLabel(context.l10n, state.motionStyle))
+        ? (state.motionStyle.name, liveMotionStyleLabel(context.l10n, state.motionStyle))
         : (state.gradientStyle.name, _gradientStyleLabel(context.l10n, state.gradientStyle));
   }
 
   Future<void> _offerUnlock(LiveWallpaperBloc bloc) async {
-    if (!await requireSignedInAction(context) || !mounted) return;
-    final String owner = app_state.prismUser.id;
     final (String id, String label) = _lockedStyle;
-    final _UnlockChoice? choice = await showPrismSheet<_UnlockChoice>(
-      context,
-      builder: (sheetContext) => PrismSheetBody(
-        title: context.l10n.wallpaperLiveUnlockStyleTitle(label),
-        message: context.l10n.wallpaperLiveUnlockStyleBody,
-        actions: <Widget>[
-          PrismButton(
-            label: context.l10n.wallpaperLiveUnlockStyleAction(
-              label,
-              NumberFormat.decimalPattern(context.l10n.localeName).format(CoinPolicy.liveWallpaperStyle),
-            ),
-            expand: true,
-            onPressed: () => Navigator.of(sheetContext).pop(_UnlockChoice.coins),
-          ),
-          PrismButton(
-            label: context.l10n.wallpaperSeePrismPro,
-            expand: true,
-            variant: PrismButtonVariant.ghost,
-            onPressed: () => Navigator.of(sheetContext).pop(_UnlockChoice.pro),
-          ),
-        ],
-      ),
-    );
-    if (!mounted || !app_state.prismUser.loggedIn || owner != app_state.prismUser.id || choice == null) return;
-    switch (choice) {
-      case _UnlockChoice.coins:
-        final CoinMutationResult result = await CoinsService.instance.spend(
-          CoinSpendAction.liveWallpaperStyle,
-          styleId: id,
-          sourceTag: 'live_wallpaper.style',
-        );
-        if (!mounted) return;
-        if (result.success) {
-          bloc.add(LiveWallpaperEvent.unlockedStylesChanged(liveStyleUnlocks()));
-          toasts.success(context.l10n.wallpaperLiveStyleUnlocked(label));
-        } else if (result.insufficientBalance) {
-          toasts.error(context.l10n.wallpaperInsufficientCoins);
-        } else {
-          toasts.error(context.l10n.wallpaperLiveUnlockError(label));
-        }
-      case _UnlockChoice.pro:
-        await PaywallOrchestrator.instance.presentOrRequireSignIn(
-          context,
-          placement: PaywallPlacement.mainUpsell,
-          source: 'live_wallpaper_screen',
-        );
-        bloc.add(LiveWallpaperEvent.proChanged(app_state.prismUser.premium));
-    }
+    await offerLiveStyleUnlock(context, styleId: id, label: label, source: 'live_wallpaper_screen');
+    if (!mounted) return;
+    bloc
+      ..add(LiveWallpaperEvent.unlockedStylesChanged(liveStyleUnlocks()))
+      ..add(LiveWallpaperEvent.proChanged(app_state.prismUser.premium));
   }
 
   Future<void> _chooseVideo(BuildContext context) async {
@@ -413,7 +353,7 @@ class _PhotoSection extends StatelessWidget {
       children: [
         LiveStylePreview(
           semanticLabel: context.l10n.wallpaperLiveApplyPhotoDescription(
-            _motionStyleLabel(context.l10n, state.motionStyle),
+            liveMotionStyleLabel(context.l10n, state.motionStyle),
           ),
           child: state.motionStyle.needsDepthMap && mapUrl != null
               ? SpatialTiltView(
@@ -436,7 +376,7 @@ class _PhotoSection extends StatelessWidget {
               if (!style.needsDepthMap || mapUrl != null) style,
           ],
           selected: state.motionStyle,
-          label: (style) => _motionStyleLabel(context.l10n, style),
+          label: (style) => liveMotionStyleLabel(context.l10n, style),
           isLocked: (style) => state.isLocked(style.name, isFree: style.isFree),
           onSelected: (style) => bloc.add(LiveWallpaperEvent.motionSelected(style)),
         ),

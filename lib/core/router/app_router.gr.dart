@@ -294,6 +294,7 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
     Widget Function(String)? saveAction,
     SetScreenRequest? request,
     String? spatialMapUrl,
+    void Function(BuildContext, ImageProvider<Object>?)? livePhotoAction,
     bool duoReveal = false,
     bool allowDuo = false,
     List<PageRouteInfo>? children,
@@ -310,6 +311,7 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
            saveAction: saveAction,
            request: request,
            spatialMapUrl: spatialMapUrl,
+           livePhotoAction: livePhotoAction,
            duoReveal: duoReveal,
            allowDuo: allowDuo,
          ),
@@ -333,6 +335,7 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
         saveAction: args.saveAction,
         request: args.request,
         spatialMapUrl: args.spatialMapUrl,
+        livePhotoAction: args.livePhotoAction,
         duoReveal: args.duoReveal,
         allowDuo: args.allowDuo,
       );
@@ -352,6 +355,7 @@ class ClockPreviewRouteArgs {
     this.saveAction,
     this.request,
     this.spatialMapUrl,
+    this.livePhotoAction,
     this.duoReveal = false,
     this.allowDuo = false,
   });
@@ -376,13 +380,15 @@ class ClockPreviewRouteArgs {
 
   final String? spatialMapUrl;
 
+  final void Function(BuildContext, ImageProvider<Object>?)? livePhotoAction;
+
   final bool duoReveal;
 
   final bool allowDuo;
 
   @override
   String toString() {
-    return 'ClockPreviewRouteArgs{key: $key, link: $link, file: $file, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource, thumbnailUrl: $thumbnailUrl, tint: $tint, saveAction: $saveAction, request: $request, spatialMapUrl: $spatialMapUrl, duoReveal: $duoReveal, allowDuo: $allowDuo}';
+    return 'ClockPreviewRouteArgs{key: $key, link: $link, file: $file, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource, thumbnailUrl: $thumbnailUrl, tint: $tint, saveAction: $saveAction, request: $request, spatialMapUrl: $spatialMapUrl, livePhotoAction: $livePhotoAction, duoReveal: $duoReveal, allowDuo: $allowDuo}';
   }
 
   @override

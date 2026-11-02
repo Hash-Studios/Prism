@@ -3287,6 +3287,76 @@ class LiveWallpaperAppliedEvent extends AnalyticsEvent {
   }
 }
 
+class LivePhotoExportStartedEvent extends AnalyticsEvent {
+  const LivePhotoExportStartedEvent({required this.style});
+
+  final LiveWallpaperStyleValue style;
+
+  @override
+  String get eventName => 'live_photo_export_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'style': style.wireValue};
+  }
+}
+
+class LivePhotoExportDoneEvent extends AnalyticsEvent {
+  const LivePhotoExportDoneEvent({required this.style, required this.durationMs});
+
+  final LiveWallpaperStyleValue style;
+  final int durationMs;
+
+  @override
+  String get eventName => 'live_photo_export_done';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'style': style.wireValue, 'duration_ms': durationMs};
+  }
+}
+
+class LivePhotoExportFailedEvent extends AnalyticsEvent {
+  const LivePhotoExportFailedEvent({required this.style, required this.reason});
+
+  final LiveWallpaperStyleValue style;
+  final String reason;
+
+  @override
+  String get eventName => 'live_photo_export_failed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'style': style.wireValue, 'reason': reason};
+  }
+}
+
+class LivePhotoExportCancelledEvent extends AnalyticsEvent {
+  const LivePhotoExportCancelledEvent({required this.style});
+
+  final LiveWallpaperStyleValue style;
+
+  @override
+  String get eventName => 'live_photo_export_cancelled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'style': style.wireValue};
+  }
+}
+
+class LivePhotoGuideOpenedEvent extends AnalyticsEvent {
+  const LivePhotoGuideOpenedEvent();
+
+  @override
+  String get eventName => 'live_photo_guide_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
 class AutoRotateRunResultEvent extends AnalyticsEvent {
   const AutoRotateRunResultEvent({required this.result});
 

@@ -12890,4 +12890,112 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get premiumTrialAutoRenewOff => 'Perpanjangan otomatis mati. Anda tidak akan ditagih saat uji coba berakhir.';
+
+  @override
+  String get livePhotoAction => 'Foto Live';
+
+  @override
+  String get livePhotoActionTooltip => 'Simpan sebagai Foto Live';
+
+  @override
+  String get livePhotoTitle => 'Foto Live';
+
+  @override
+  String get livePhotoBody =>
+      'Pilih cara wallpaper bergerak. Prism menyimpan Foto Live 3 detik ke Foto, siap untuk Layar Terkunci Anda.';
+
+  @override
+  String get livePhotoStyleGroup => 'Gaya gerakan';
+
+  @override
+  String livePhotoPreview(String style) {
+    return 'Pratinjau: $style';
+  }
+
+  @override
+  String livePhotoStyleLocked(String style) {
+    return '$style, gaya Pro';
+  }
+
+  @override
+  String get livePhotoSave => 'Simpan Foto Live';
+
+  @override
+  String get livePhotoRendering => 'Membuat Foto Live Anda';
+
+  @override
+  String livePhotoProgress(String percent) {
+    return '$percent selesai';
+  }
+
+  @override
+  String get livePhotoSaving => 'Menyimpan ke Foto';
+
+  @override
+  String get livePhotoCancelling => 'Menghentikan';
+
+  @override
+  String get livePhotoRefusedTitle => 'Prism tidak bisa menambahkan ke Foto';
+
+  @override
+  String get livePhotoRefusedBody =>
+      'Untuk menyimpan Foto Live, izinkan Prism menambahkan foto. Di Pengaturan, ketuk Foto, lalu Tambahkan Hanya Foto.';
+
+  @override
+  String get livePhotoRestrictedBody =>
+      'Akses Foto diblokir di iPhone ini, misalnya oleh Waktu Layar. Periksa Pengaturan, atau minta orang yang mengelola iPhone ini.';
+
+  @override
+  String get livePhotoNotNow => 'Nanti saja';
+
+  @override
+  String get livePhotoFailedTitle => 'Tidak bisa membuat Foto Live';
+
+  @override
+  String get livePhotoFailedSource => 'Tidak bisa memuat wallpaper ini. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
+  String get livePhotoFailedTimeout => 'Ini memakan waktu terlalu lama. Coba lagi, atau pilih gaya lain.';
+
+  @override
+  String get livePhotoFailedSave => 'Foto tidak bisa menyimpan Foto Live. Coba lagi.';
+
+  @override
+  String get livePhotoFailedGeneric => 'Tidak bisa membuat Foto Live. Coba lagi.';
+
+  @override
+  String get livePhotoTryAgain => 'Coba lagi';
+
+  @override
+  String get livePhotoGuideTitle => 'Atur sebagai Layar Terkunci Anda';
+
+  @override
+  String get livePhotoGuideBody =>
+      'Foto Live Anda ada di Foto. iOS tidak mengizinkan aplikasi mengubah wallpaper, jadi selesaikan di sana:';
+
+  @override
+  String get livePhotoGuideStep1 => 'Buka Foto. Foto baru memiliki lencana LIVE.';
+
+  @override
+  String get livePhotoGuideStep2 => 'Ketuk Bagikan, lalu Gunakan sebagai Wallpaper.';
+
+  @override
+  String get livePhotoGuideStep3 => 'Pastikan tombol Foto Live di bawah aktif, lalu ketuk Tambah.';
+
+  @override
+  String get livePhotoGuideNotesTitle => 'Perlu diketahui';
+
+  @override
+  String get livePhotoGuideNoteWake =>
+      'Gerakan diputar di Layar Terkunci saat Anda membangunkan iPhone. Layar Utama menampilkan foto diam.';
+
+  @override
+  String get livePhotoGuideNoteLowPower => 'Mode Daya Rendah mematikan gerakan di Layar Terkunci.';
+
+  @override
+  String get livePhotoGuideNoteNotAvailable =>
+      'Jika iOS mengatakan Gerakan tidak tersedia, gunakan sebagai wallpaper diam atau coba gaya lain.';
+
+  @override
+  String get livePhotoGuideNoteVersion => 'Gerakan di Layar Terkunci memerlukan iOS 17 atau lebih baru.';
 }

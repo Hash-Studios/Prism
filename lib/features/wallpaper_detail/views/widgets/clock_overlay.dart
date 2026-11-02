@@ -149,6 +149,7 @@ class ClockOverlay extends StatefulWidget {
     this.saveAction,
     this.request,
     this.spatialMapUrl,
+    this.livePhotoAction,
     this.duoReveal = false,
     this.allowDuo = false,
   });
@@ -172,6 +173,9 @@ class ClockOverlay extends StatefulWidget {
 
   /// The wall's depth map. When set, a 3D toggle shows the wall with a tilt parallax.
   final String? spatialMapUrl;
+
+  /// iOS only: opens the Live Photo sheet with the image this screen shows. Null hides the Live Photo button.
+  final void Function(BuildContext context, ImageProvider? preview)? livePhotoAction;
   final bool duoReveal;
   final bool allowDuo;
 
@@ -853,6 +857,20 @@ class _ClockOverlayState extends State<ClockOverlay> {
                                       ],
                                     ],
                                   ),
+                                  if (hideSetWallpaperUi && widget.livePhotoAction != null && !_duo) ...<Widget>[
+                                    const SizedBox(height: PrismSpace.xxs),
+                                    Center(
+                                      child: Tooltip(
+                                        message: l10n.livePhotoActionTooltip,
+                                        child: _QuietButton(
+                                          key: const ValueKey<String>('set-screen-live-photo'),
+                                          icon: Icons.motion_photos_on_rounded,
+                                          label: l10n.livePhotoAction,
+                                          onPressed: () => widget.livePhotoAction!(context, _provider),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                   if (widget.request != null && !hideSetWallpaperUi) ...<Widget>[
                                     const SizedBox(height: PrismSpace.xxs),
                                     _RememberCheck(
@@ -1354,6 +1372,7 @@ Future<void> pushClockPreview(
   Color? tint,
   Widget Function(String label)? saveAction,
   String? spatialMapUrl,
+  void Function(BuildContext context, ImageProvider? preview)? livePhotoAction,
   bool duoReveal = false,
   bool allowDuo = false,
 }) {
@@ -1370,6 +1389,7 @@ Future<void> pushClockPreview(
         tint: tint,
         saveAction: saveAction,
         spatialMapUrl: spatialMapUrl,
+        livePhotoAction: livePhotoAction,
         duoReveal: duoReveal,
         allowDuo: allowDuo,
       ),

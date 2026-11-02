@@ -12700,5 +12700,148 @@
   "premiumTrialAutoRenewOff": "Auto-renew is off. You will not be charged when the trial ends.",
   "@premiumTrialAutoRenewOff": {
     "description": "Premium screen note during a free trial that the user cancelled."
+  },
+  "livePhotoAction": "Live Photo",
+  "@livePhotoAction": {
+    "description": "Button on the iOS Set screen. Opens the sheet that saves the wall as a Live Photo."
+  },
+  "livePhotoActionTooltip": "Save as a Live Photo",
+  "@livePhotoActionTooltip": {
+    "description": "Tooltip and screen reader hint for the Live Photo button on the iOS Set screen."
+  },
+  "livePhotoTitle": "Live Photo",
+  "@livePhotoTitle": {
+    "description": "Title of the sheet that saves the wall as a Live Photo with motion (iOS)."
+  },
+  "livePhotoBody": "Pick how the wall moves. Prism saves a 3-second Live Photo to Photos, ready for your Lock Screen.",
+  "@livePhotoBody": {
+    "description": "Text under the Live Photo sheet title. Photos is the iOS app name."
+  },
+  "livePhotoStyleGroup": "Motion style",
+  "@livePhotoStyleGroup": {
+    "description": "Screen reader label for the group of motion style chips."
+  },
+  "livePhotoPreview": "Preview: {style}",
+  "@livePhotoPreview": {
+    "description": "Screen reader label for the moving preview of the wall. {style} is a style name such as Drift.",
+    "placeholders": {
+      "style": {
+        "type": "String"
+      }
+    }
+  },
+  "livePhotoStyleLocked": "{style}, Pro style",
+  "@livePhotoStyleLocked": {
+    "description": "Screen reader label for a style chip that needs Prism Pro or a coin unlock. {style} is the style name.",
+    "placeholders": {
+      "style": {
+        "type": "String"
+      }
+    }
+  },
+  "livePhotoSave": "Save Live Photo",
+  "@livePhotoSave": {
+    "description": "Primary button. Renders the clip and saves it to Photos as a Live Photo."
+  },
+  "livePhotoRendering": "Making your Live Photo",
+  "@livePhotoRendering": {
+    "description": "Status while the frames render."
+  },
+  "livePhotoProgress": "{percent} done",
+  "@livePhotoProgress": {
+    "description": "Progress under the bar. {percent} is a formatted percentage such as 40%.",
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "livePhotoSaving": "Saving to Photos",
+  "@livePhotoSaving": {
+    "description": "Status after the frames render, while iOS saves the Live Photo."
+  },
+  "livePhotoCancelling": "Stopping",
+  "@livePhotoCancelling": {
+    "description": "Status after the user taps Cancel, until the render stops."
+  },
+  "livePhotoRefusedTitle": "Prism can't add to Photos",
+  "@livePhotoRefusedTitle": {
+    "description": "Title when the user refused Photos access."
+  },
+  "livePhotoRefusedBody": "To save a Live Photo, allow Prism to add photos. In Settings, tap Photos, then Add Photos Only.",
+  "@livePhotoRefusedBody": {
+    "description": "Body when the user refused Photos access. Settings, Photos and Add Photos Only are iOS labels: use the iOS words of this language."
+  },
+  "livePhotoRestrictedBody": "Photos access is blocked on this iPhone, for example by Screen Time. Check Settings, or ask the person who manages this iPhone.",
+  "@livePhotoRestrictedBody": {
+    "description": "Body when a device policy blocks Photos access."
+  },
+  "livePhotoNotNow": "Not now",
+  "@livePhotoNotNow": {
+    "description": "Secondary button that closes the Photos access message."
+  },
+  "livePhotoFailedTitle": "Unable to make the Live Photo",
+  "@livePhotoFailedTitle": {
+    "description": "Title when the export failed."
+  },
+  "livePhotoFailedSource": "Unable to load this wall. Check your connection and try again.",
+  "@livePhotoFailedSource": {
+    "description": "Error when the wall image could not be downloaded or read."
+  },
+  "livePhotoFailedTimeout": "This took too long. Try again, or pick another style.",
+  "@livePhotoFailedTimeout": {
+    "description": "Error when the render hit its time limit."
+  },
+  "livePhotoFailedSave": "Photos did not save the Live Photo. Try again.",
+  "@livePhotoFailedSave": {
+    "description": "Error when iOS refused the save or saved it without motion."
+  },
+  "livePhotoFailedGeneric": "Unable to render the Live Photo. Try again.",
+  "@livePhotoFailedGeneric": {
+    "description": "Error for any other render or encode failure."
+  },
+  "livePhotoTryAgain": "Try again",
+  "@livePhotoTryAgain": {
+    "description": "Button that goes back to the style picker after an error."
+  },
+  "livePhotoGuideTitle": "Set it as your Lock Screen",
+  "@livePhotoGuideTitle": {
+    "description": "Title of the guide sheet after the Live Photo is saved."
+  },
+  "livePhotoGuideBody": "Your Live Photo is in Photos. iOS does not let apps change your wallpaper, so finish there:",
+  "@livePhotoGuideBody": {
+    "description": "Text under the guide title. Followed by numbered steps."
+  },
+  "livePhotoGuideStep1": "Open Photos. The new photo has a LIVE badge.",
+  "@livePhotoGuideStep1": {
+    "description": "Guide step 1. LIVE is the badge iOS shows on Live Photos: use the badge text iOS shows in this language."
+  },
+  "livePhotoGuideStep2": "Tap Share, then Use as Wallpaper.",
+  "@livePhotoGuideStep2": {
+    "description": "Guide step 2. Share and Use as Wallpaper are iOS menu labels: use the iOS words of this language."
+  },
+  "livePhotoGuideStep3": "Make sure the Live Photo button at the bottom is on, then tap Add.",
+  "@livePhotoGuideStep3": {
+    "description": "Guide step 3. Live Photo and Add are iOS labels in the wallpaper editor."
+  },
+  "livePhotoGuideNotesTitle": "Good to know",
+  "@livePhotoGuideNotesTitle": {
+    "description": "Heading above the honest notes in the guide."
+  },
+  "livePhotoGuideNoteWake": "Motion plays on the Lock Screen when you wake your iPhone. The Home Screen shows the still photo.",
+  "@livePhotoGuideNoteWake": {
+    "description": "Guide note about where motion plays."
+  },
+  "livePhotoGuideNoteLowPower": "Low Power Mode turns off Lock Screen motion.",
+  "@livePhotoGuideNoteLowPower": {
+    "description": "Guide note. Low Power Mode is the iOS setting name."
+  },
+  "livePhotoGuideNoteNotAvailable": "If iOS says Motion not available, use it as a still wallpaper or try another style.",
+  "@livePhotoGuideNoteNotAvailable": {
+    "description": "Guide note. Motion not available is the message iOS shows: use the iOS words of this language."
+  },
+  "livePhotoGuideNoteVersion": "Lock Screen motion needs iOS 17 or later.",
+  "@livePhotoGuideNoteVersion": {
+    "description": "Guide note about the minimum iOS version."
   }
 }

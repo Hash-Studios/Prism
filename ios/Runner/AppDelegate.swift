@@ -51,6 +51,10 @@ import WidgetKit
     )
     FlutterEventChannel(name: "prism/tilt", binaryMessenger: messenger).setStreamHandler(PrismTiltStream())
     PrismWidgetHostApiSetup.setUp(binaryMessenger: messenger, api: PrismWidgetHostApiImpl())
+    PrismLivePhotoHostApiSetup.setUp(
+      binaryMessenger: messenger,
+      api: PrismLivePhotoHostApiImpl(flutterApi: PrismLivePhotoFlutterApi(binaryMessenger: messenger))
+    )
     NotificationCenter.default.addObserver(
       forName: UIApplication.didBecomeActiveNotification,
       object: nil,

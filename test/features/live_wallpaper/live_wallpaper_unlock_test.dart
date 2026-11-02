@@ -3,6 +3,7 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart';
+import 'package:Prism/features/live_wallpaper/views/widgets/live_style_unlock.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_wallpaper_view.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';

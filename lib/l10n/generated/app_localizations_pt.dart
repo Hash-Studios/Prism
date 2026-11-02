@@ -13194,6 +13194,115 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get premiumTrialAutoRenewOff =>
       'A renovação automática está desativada. Você não será cobrado quando o teste terminar.';
+
+  @override
+  String get livePhotoAction => 'Foto Live';
+
+  @override
+  String get livePhotoActionTooltip => 'Salvar como Foto Live';
+
+  @override
+  String get livePhotoTitle => 'Foto Live';
+
+  @override
+  String get livePhotoBody =>
+      'Escolha como o papel de parede se move. O Prism salva uma Foto Live de 3 segundos em Fotos, pronta para a sua Tela Bloqueada.';
+
+  @override
+  String get livePhotoStyleGroup => 'Estilo de movimento';
+
+  @override
+  String livePhotoPreview(String style) {
+    return 'Prévia: $style';
+  }
+
+  @override
+  String livePhotoStyleLocked(String style) {
+    return '$style, estilo Pro';
+  }
+
+  @override
+  String get livePhotoSave => 'Salvar Foto Live';
+
+  @override
+  String get livePhotoRendering => 'Criando sua Foto Live';
+
+  @override
+  String livePhotoProgress(String percent) {
+    return '$percent concluído';
+  }
+
+  @override
+  String get livePhotoSaving => 'Salvando em Fotos';
+
+  @override
+  String get livePhotoCancelling => 'Parando';
+
+  @override
+  String get livePhotoRefusedTitle => 'O Prism não consegue adicionar em Fotos';
+
+  @override
+  String get livePhotoRefusedBody =>
+      'Para salvar uma Foto Live, permita que o Prism adicione fotos. Em Ajustes, toque em Fotos e depois em Somente Adicionar Fotos.';
+
+  @override
+  String get livePhotoRestrictedBody =>
+      'O acesso a Fotos está bloqueado neste iPhone, por exemplo pelo Tempo de Uso. Verifique em Ajustes ou peça à pessoa que gerencia este iPhone.';
+
+  @override
+  String get livePhotoNotNow => 'Agora não';
+
+  @override
+  String get livePhotoFailedTitle => 'Não foi possível criar a Foto Live';
+
+  @override
+  String get livePhotoFailedSource =>
+      'Não foi possível carregar este papel de parede. Verifique sua conexão e tente de novo.';
+
+  @override
+  String get livePhotoFailedTimeout => 'Demorou demais. Tente de novo ou escolha outro estilo.';
+
+  @override
+  String get livePhotoFailedSave => 'Fotos não conseguiu salvar a Foto Live. Tente de novo.';
+
+  @override
+  String get livePhotoFailedGeneric => 'Não foi possível criar a Foto Live. Tente de novo.';
+
+  @override
+  String get livePhotoTryAgain => 'Tentar de novo';
+
+  @override
+  String get livePhotoGuideTitle => 'Defina como sua Tela Bloqueada';
+
+  @override
+  String get livePhotoGuideBody =>
+      'Sua Foto Live está em Fotos. O iOS não permite que apps mudem seu papel de parede, então termine por lá:';
+
+  @override
+  String get livePhotoGuideStep1 => 'Abra Fotos. A foto nova tem um selo LIVE.';
+
+  @override
+  String get livePhotoGuideStep2 => 'Toque em Compartilhar e depois em Usar como Papel de Parede.';
+
+  @override
+  String get livePhotoGuideStep3 => 'Confirme se o botão Foto Live, embaixo, está ativado e toque em Adicionar.';
+
+  @override
+  String get livePhotoGuideNotesTitle => 'Bom saber';
+
+  @override
+  String get livePhotoGuideNoteWake =>
+      'O movimento aparece na Tela Bloqueada quando você acorda o iPhone. A Tela de Início mostra a foto parada.';
+
+  @override
+  String get livePhotoGuideNoteLowPower => 'O Modo de Economia de Energia desativa o movimento na Tela Bloqueada.';
+
+  @override
+  String get livePhotoGuideNoteNotAvailable =>
+      'Se o iOS disser Movimento indisponível, use a foto como papel de parede fixo ou tente outro estilo.';
+
+  @override
+  String get livePhotoGuideNoteVersion => 'O movimento na Tela Bloqueada precisa do iOS 17 ou posterior.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -26384,4 +26493,113 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get premiumTrialAutoRenewOff =>
       'A renovação automática está desativada. Você não será cobrado quando o teste terminar.';
+
+  @override
+  String get livePhotoAction => 'Foto Live';
+
+  @override
+  String get livePhotoActionTooltip => 'Salvar como Foto Live';
+
+  @override
+  String get livePhotoTitle => 'Foto Live';
+
+  @override
+  String get livePhotoBody =>
+      'Escolha como o papel de parede se move. O Prism salva uma Foto Live de 3 segundos em Fotos, pronta para a sua Tela Bloqueada.';
+
+  @override
+  String get livePhotoStyleGroup => 'Estilo de movimento';
+
+  @override
+  String livePhotoPreview(String style) {
+    return 'Prévia: $style';
+  }
+
+  @override
+  String livePhotoStyleLocked(String style) {
+    return '$style, estilo Pro';
+  }
+
+  @override
+  String get livePhotoSave => 'Salvar Foto Live';
+
+  @override
+  String get livePhotoRendering => 'Criando sua Foto Live';
+
+  @override
+  String livePhotoProgress(String percent) {
+    return '$percent concluído';
+  }
+
+  @override
+  String get livePhotoSaving => 'Salvando em Fotos';
+
+  @override
+  String get livePhotoCancelling => 'Parando';
+
+  @override
+  String get livePhotoRefusedTitle => 'O Prism não consegue adicionar em Fotos';
+
+  @override
+  String get livePhotoRefusedBody =>
+      'Para salvar uma Foto Live, permita que o Prism adicione fotos. Em Ajustes, toque em Fotos e depois em Somente Adicionar Fotos.';
+
+  @override
+  String get livePhotoRestrictedBody =>
+      'O acesso a Fotos está bloqueado neste iPhone, por exemplo pelo Tempo de Uso. Verifique em Ajustes ou peça à pessoa que gerencia este iPhone.';
+
+  @override
+  String get livePhotoNotNow => 'Agora não';
+
+  @override
+  String get livePhotoFailedTitle => 'Não foi possível criar a Foto Live';
+
+  @override
+  String get livePhotoFailedSource =>
+      'Não foi possível carregar este papel de parede. Verifique sua conexão e tente de novo.';
+
+  @override
+  String get livePhotoFailedTimeout => 'Demorou demais. Tente de novo ou escolha outro estilo.';
+
+  @override
+  String get livePhotoFailedSave => 'Fotos não conseguiu salvar a Foto Live. Tente de novo.';
+
+  @override
+  String get livePhotoFailedGeneric => 'Não foi possível criar a Foto Live. Tente de novo.';
+
+  @override
+  String get livePhotoTryAgain => 'Tentar de novo';
+
+  @override
+  String get livePhotoGuideTitle => 'Defina como sua Tela Bloqueada';
+
+  @override
+  String get livePhotoGuideBody =>
+      'Sua Foto Live está em Fotos. O iOS não permite que apps mudem seu papel de parede, então termine por lá:';
+
+  @override
+  String get livePhotoGuideStep1 => 'Abra Fotos. A foto nova tem um selo LIVE.';
+
+  @override
+  String get livePhotoGuideStep2 => 'Toque em Compartilhar e depois em Usar como Papel de Parede.';
+
+  @override
+  String get livePhotoGuideStep3 => 'Confirme se o botão Foto Live, embaixo, está ativado e toque em Adicionar.';
+
+  @override
+  String get livePhotoGuideNotesTitle => 'Bom saber';
+
+  @override
+  String get livePhotoGuideNoteWake =>
+      'O movimento aparece na Tela Bloqueada quando você acorda o iPhone. A Tela de Início mostra a foto parada.';
+
+  @override
+  String get livePhotoGuideNoteLowPower => 'O Modo de Economia de Energia desativa o movimento na Tela Bloqueada.';
+
+  @override
+  String get livePhotoGuideNoteNotAvailable =>
+      'Se o iOS disser Movimento indisponível, use a foto como papel de parede fixo ou tente outro estilo.';
+
+  @override
+  String get livePhotoGuideNoteVersion => 'O movimento na Tela Bloqueada precisa do iOS 17 ou posterior.';
 }
