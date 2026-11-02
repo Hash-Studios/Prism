@@ -193,7 +193,7 @@ sys.stdout.write(pathlib.Path(os.environ['PAYLOAD']).read_text())
         self.assertFalse(any(arg.startswith('--split-debug-info=') for arg in testflight_argv))
         self.assertFalse(any(arg.startswith('--target=') or arg.startswith('--flavor=') for arg in testflight_argv))
         self.assertEqual(Path(self.env['GITHUB_ENV']).read_text().splitlines(),
-                         ['SENTRY_ENV=', 'SENTRY_RELEASE=', 'SENTRY_DIST=', 'SENTRY_ENABLED='])
+                         ['SENTRY_DSN=', 'SENTRY_ENV=', 'SENTRY_RELEASE=', 'SENTRY_DIST=', 'SENTRY_ENABLED='])
 
         makefile = (fixture.ROOT / 'Makefile').read_text()
         make_ios_recipe = next(line.strip() for line in makefile.splitlines()
@@ -296,7 +296,9 @@ pathlib.Path(os.environ['CAPTURE_SENTRY']).write_text(json.dumps({key: os.enviro
         self.assertIn('steps.release-record.outputs.split_debug_info', patch_steps[-2]['env']['RELEASE_SPLIT_DEBUG_INFO'])
         self.assertIn('steps.release-record.outputs.target', patch_steps[-2]['env']['RELEASE_TARGET'])
         self.assertIn('steps.release-record.outputs.flavor', patch_steps[-2]['env']['RELEASE_FLAVOR'])
-        self.assertIn('for key in SENTRY_ENV SENTRY_RELEASE SENTRY_DIST SENTRY_ENABLED', run)
+        self.assertIn('for key in SENTRY_DSN SENTRY_ENV SENTRY_RELEASE SENTRY_DIST SENTRY_ENABLED', run)
+        self.assertNotIn('SENTRY_DSN_$suffix', run)
+        self.assertEqual(workflow('shorebird_patch.yml')['jobs']['patch']['permissions'], {'contents': 'read'})
         self.assertIn('echo "$key=$value" >> "$GITHUB_ENV"', run)
 
     def test_make_patch_replays_validated_release_config(self):

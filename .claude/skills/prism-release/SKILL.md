@@ -471,10 +471,10 @@ Patches ship silently. Never mention patches, over-the-air updates, code push or
 listings, What's New, Play release notes, the website or Telegram: store review can reject the build for it.
 Short form:
 ```sh
-make patch PLATFORM=android RELEASE_VERSION=3.14.0+353          # staging track by default; stable is refused
-make patch-list RELEASE_VERSION=3.14.0+353
-make patch-promote RELEASE_VERSION=3.14.0+353 PATCH_NUMBER=1    # stable: every user on that release
-make patch-rollback RELEASE_VERSION=3.14.0+353 PATCH_NUMBER=1
+make patch PLATFORM=android RELEASE_VERSION=3.14.0+353 DOPPLER_CONFIG=prd          # staging track by default; stable is refused
+make patch-list RELEASE_VERSION=3.14.0+353 DOPPLER_CONFIG=prd
+make patch-promote RELEASE_VERSION=3.14.0+353 PATCH_NUMBER=1 DOPPLER_CONFIG=prd    # stable: every user on that release
+make patch-rollback RELEASE_VERSION=3.14.0+353 PATCH_NUMBER=1 DOPPLER_CONFIG=prd
 ```
 CI: the "Shorebird Patch" workflow (platform, release version, track). The patch refuses a different build config or
 dart-defines than the release record, and any change since the release under native, plugin, asset or lock paths.

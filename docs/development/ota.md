@@ -147,7 +147,7 @@ make release-ios BUILD_NUMBER=<n> DOPPLER_CONFIG=prd
 
 The Make targets use the same `--obfuscate` and `--split-debug-info` flags, and the same Doppler dart-defines, as `build-aab` and `build-ipa`. They also pass `--flutter-version` from `.fvmrc` and the public key. Sentry symbols upload after the build. The TestFlight workflow keeps its existing behavior: it sets the build number and export options, but does not obfuscate or split debug info. The Android release workflow builds an AAB with obfuscation and split debug info at `build/symbols`.
 
-The release wrapper refuses a dirty worktree. For the TestFlight workflow, it allows only the known manual-signing settings in `ios/Runner.xcodeproj/project.pbxproj` and Xcode reordering of `PBXBuildFile` or `PBXFileReference` records. Other tracked changes and non-ignored untracked files block the release.
+The release wrapper refuses a dirty worktree, with one exception: it allows changes under `android/` and `ios/`, because CI signing and `pod install` change files there. The record stores `HEAD`, so commit every native change that the build needs. Other tracked changes and non-ignored untracked files block the release.
 
 Pass `--dry-run` or `-n` in `BUILD_ARGS` or `IOS_BUILD_ARGS` to skip the Shorebird upload. The wrapper creates no release tag. The Make targets also skip Sentry symbol upload and tag push, even if an old tag marker file exists.
 
@@ -161,14 +161,14 @@ The release wrapper writes a schema 2 release record. The patch tool rejects sch
 - Whether the build is obfuscated.
 - A SHA-256 fingerprint of the prepared Firebase options and the matching native Firebase configuration. The configuration contents are not stored in the record.
 - The names of the dart-defines, and a SHA-256 hash of their names and values. Define values are not stored, except for the recorded Sentry metadata below.
-- The Sentry environment, release, dist, and enabled values. The patch reuses these values.
+- The Sentry DSN, environment, release, dist, and enabled values. The patch reuses these values. A DSN is not secret, because it ships inside the app.
 
 ## Publish a patch
 
 Run the patch command:
 
 ```sh
-make patch PLATFORM=android RELEASE_VERSION=3.14.0+353
+make patch PLATFORM=android RELEASE_VERSION=3.14.0+353 DOPPLER_CONFIG=prd
 ```
 
 `TRACK` defaults to `staging`. The `stable` track is refused. To promote a patch, use the separate step in "Promote to stable".
@@ -198,21 +198,21 @@ Pass `PATCH_ARGS=--dry-run` to validate a Make patch without publishing it. The 
 1. Install a store build from TestFlight or Play internal testing.
 2. Sign in with an admin account.
 3. Open the debug panel. Turn on "Get staging patches" in the Tools tab.
-4. Open the app and close it.
-5. Wait until the debug panel logs show `ota_download_done`.
-6. Close and reopen the app.
-7. Open the App info tab. Check that the patch number is the new patch.
+4. Open the app and leave it open for about a minute. The app downloads the patch in the background.
+5. Close the app fully, then open it again.
+6. If the patch number did not change, wait a minute and close and reopen the app again. In Mixpanel, the `ota_download_done` event shows when the download finished.
+7. Open the App info tab in the debug panel. Check that the patch number is the new patch.
 
 To list the patches and their tracks, run:
 
 ```sh
-make patch-list RELEASE_VERSION=<v>
+make patch-list RELEASE_VERSION=<v> DOPPLER_CONFIG=prd
 ```
 
 ## Promote to stable
 
 ```sh
-make patch-promote RELEASE_VERSION=3.14.0+353 PATCH_NUMBER=1
+make patch-promote RELEASE_VERSION=3.14.0+353 PATCH_NUMBER=1 DOPPLER_CONFIG=prd
 ```
 
 This is the only command that sends a patch to all users. Run it only after the staging test passes.
@@ -220,7 +220,7 @@ This is the only command that sends a patch to all users. Run it only after the 
 ## Roll back
 
 ```sh
-make patch-rollback RELEASE_VERSION=3.14.0+353 PATCH_NUMBER=1
+make patch-rollback RELEASE_VERSION=3.14.0+353 PATCH_NUMBER=1 DOPPLER_CONFIG=prd
 ```
 
 Devices remove the patch at their next check. After the next launch, the app runs the previous patch or the release.
@@ -228,7 +228,7 @@ Devices remove the patch at their next check. After the next launch, the app run
 To roll forward, run:
 
 ```sh
-python3 tool/flutter_with_doppler.py -- shorebird patches rollforward --release-version 3.14.0+353 --patch-number 1
+DOPPLER_CONFIG=prd python3 tool/flutter_with_doppler.py -- shorebird patches rollforward --release-version 3.14.0+353 --patch-number 1
 ```
 
 To use the console instead, open console.shorebird.dev. Open the release, open the three-dots menu on the patch, and select Rollback.
@@ -256,11 +256,11 @@ Run the Android test first. Then run the iOS test on TestFlight.
 ### Android
 
 1. Choose the app id. Either put a test app id in `shorebird.yaml` on a scratch branch, or use the real app id with `TRACK=staging`. Never commit a test app id to master.
-2. In `pubspec.yaml`, set the version to a test build number. Use `<v>` for this release version.
+2. In `pubspec.yaml`, set the version to a test build number. Use `<v>` for this release version. Commit this change, and the `shorebird.yaml` change from step 1, on the scratch branch. The release refuses uncommitted changes.
 3. Build the release:
 
 ```sh
-make release-android BUILD_ARGS="--artifact apk"
+make release-android DOPPLER_CONFIG=prd BUILD_ARGS="--artifact apk"
 ```
 
 4. Install the APK:
@@ -275,16 +275,16 @@ adb install -r build/app/outputs/flutter-apk/app-release.apk
 8. Publish the patch:
 
 ```sh
-make patch PLATFORM=android RELEASE_VERSION=<v> TRACK=staging
+make patch PLATFORM=android RELEASE_VERSION=<v> TRACK=staging DOPPLER_CONFIG=prd
 ```
 
-9. Open the app. Wait until the debug panel logs show `ota_download_done`.
+9. Open the app and leave it open for about a minute.
 10. Close and reopen the app.
-11. Check the new label and the patch number in App info. Check the `ota_patch_running` event in the debug panel logs or in Mixpanel.
+11. Check the new label and the patch number in App info. Check the `ota_patch_running` event in Mixpanel.
 12. Roll back the patch:
 
 ```sh
-make patch-rollback RELEASE_VERSION=<v> PATCH_NUMBER=1
+make patch-rollback RELEASE_VERSION=<v> PATCH_NUMBER=1 DOPPLER_CONFIG=prd
 ```
 
 13. Open the app, close it, and reopen it.
@@ -308,7 +308,7 @@ shorebird patch android --release-version=<v> --track=staging \
 
 17. Open the app, close it, and reopen it. Read the log with `adb logcat | grep shorebird`. Look for the signature check failure.
 18. Check that the app keeps the old code.
-19. Roll back the test patch with `make patch-rollback`. Delete both `wrong-*.pem` files.
+19. Roll back the test patch with `make patch-rollback DOPPLER_CONFIG=prd`. Delete both `wrong-*.pem` files.
 20. Delete the test release record tag: `git push origin :refs/tags/shorebird/android/<v>` and `git tag -d shorebird/android/<v>`.
 
 ### iOS (TestFlight)

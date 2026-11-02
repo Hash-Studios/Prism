@@ -32,6 +32,9 @@ concurrency:
 jobs:
   patch:
     runs-on: ${{ github.event.inputs.platform == 'ios' && 'macos-latest' || 'ubuntu-latest' }}
+    # Reads the repo and its release tags. It pushes nothing.
+    permissions:
+      contents: read
     env:
       DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRODUCTION }}
       DOPPLER_PROJECT: prism
@@ -106,7 +109,7 @@ jobs:
           echo "target=$(printf '%s' "$record" | jq -r '.config.target // "lib/main.dart"')" >> "$GITHUB_OUTPUT"
           echo "flavor=$(printf '%s' "$record" | jq -r '.config.flavor // empty')" >> "$GITHUB_OUTPUT"
 
-          for key in SENTRY_ENV SENTRY_RELEASE SENTRY_DIST SENTRY_ENABLED; do
+          for key in SENTRY_DSN SENTRY_ENV SENTRY_RELEASE SENTRY_DIST SENTRY_ENABLED; do
             value="$(printf '%s' "$record" | jq -r --arg key "$key" '.sentry[$key] // empty')"
             if [ -n "$value" ]; then
               if [[ "$value" == *$'\n'* || "$value" == *$'\r'* ]]; then
@@ -124,7 +127,6 @@ jobs:
               *) echo "::error::Unsupported Sentry environment in release record."; exit 1 ;;
             esac
             suffix="$(printf '%s' "$sentry_env" | tr '[:lower:]' '[:upper:]')"
-            echo "SENTRY_DSN=$(doppler secrets get "SENTRY_DSN_$suffix" --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")" >> "$GITHUB_ENV"
             echo "SENTRY_PROJECT=$(doppler secrets get "SENTRY_PROJECT_$suffix" --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")" >> "$GITHUB_ENV"
           fi
 

@@ -24,7 +24,8 @@ PLACEHOLDER_APP_ID = 'REPLACE_WITH_SHOREBIRD_APP_ID'
 PUBLIC_KEY = 'SHOREBIRD_PATCH_PUBLIC_KEY'
 PRIVATE_KEY = 'SHOREBIRD_PATCH_PRIVATE_KEY'
 TOKEN = 'SHOREBIRD_TOKEN'
-SENTRY_RECORDED = ('SENTRY_ENV', 'SENTRY_RELEASE', 'SENTRY_DIST', 'SENTRY_ENABLED')
+# The release Sentry values a patch replays. A DSN is not secret: it ships inside the app.
+SENTRY_RECORDED = ('SENTRY_DSN', 'SENTRY_ENV', 'SENTRY_RELEASE', 'SENTRY_DIST', 'SENTRY_ENABLED')
 PLATFORMS = ('android', 'ios')
 
 # A patch replaces Dart code only. A change under these paths needs a store build.
@@ -171,17 +172,18 @@ def storage_writers(commit, paths):
     """Changed lib/ Dart files whose added or removed lines use a local storage API."""
     native, storage = unsafe_paths(paths)
     flagged = set(native) | set(storage)
-    tracked = set(git('ls-files', '-z').stdout.split('\0'))
+    # Only untracked files have no diff against the release. A deleted file has one, with its removed lines.
+    untracked = set(git('ls-files', '--others', '--exclude-standard', '-z').stdout.split('\0'))
     writers = []
     for path in paths:
         if not (path.startswith('lib/') and path.endswith('.dart')) or path in flagged:
             continue
-        if path in tracked:
+        if path in untracked:
+            lines = Path(path).read_text().splitlines()
+        else:
             diff = git('diff', '--no-renames', '--unified=0', commit, '--', path).stdout
             lines = [line[1:] for line in diff.splitlines()
                      if line[:1] in ('+', '-') and not line.startswith(('+++', '---'))]
-        else:
-            lines = Path(path).read_text().splitlines()
         if any(STORAGE_API.search(line) for line in lines):
             writers.append(path)
     return sorted(writers)

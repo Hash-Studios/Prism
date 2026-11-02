@@ -136,6 +136,20 @@ class ShorebirdOtaTest(fixture.ReleaseFixture, unittest.TestCase):
             os.chdir(cwd)
         self.assertEqual(writers, ['lib/features/x/a.dart', 'lib/features/x/c.dart'])
 
+    def test_storage_writers_read_deleted_files_from_the_diff(self):
+        self.commit_file('lib/features/x/kept.dart', b"Future<void> f() async {\n  await _settings.set('k', 1);\n}\n")
+        self.commit_file('lib/features/x/plain.dart', b"void f() {\n  print('hi');\n}\n")
+        commit = git(self.work, 'rev-parse', 'HEAD').stdout.strip()
+        git(self.work, 'rm', '-q', 'lib/features/x/kept.dart', 'lib/features/x/plain.dart')
+        git(self.work, 'commit', '-q', '-m', 'delete files')
+        cwd = Path.cwd()
+        os.chdir(self.work)
+        try:
+            writers = ota.storage_writers(commit, ota.changed_paths(commit))
+        finally:
+            os.chdir(cwd)
+        self.assertEqual(writers, ['lib/features/x/kept.dart'])
+
     def test_changed_paths_reports_both_sides_of_renames_and_staged_changes(self):
         source = self.work / 'android/native.txt'
         source.write_text('native input\n')
@@ -212,13 +226,15 @@ class ShorebirdOtaTest(fixture.ReleaseFixture, unittest.TestCase):
         self.assertEqual(marker, 'shorebird/android/3.14.0+353\n')
 
     def test_release_records_effective_sentry_defines_from_doppler(self):
-        self.values.update({'SENTRY_ENV': 'production', 'SENTRY_RELEASE': 'Prism@main+7'})
+        self.values.update({'SENTRY_DSN': 'https://key@sentry.invalid/1', 'SENTRY_ENV': 'production',
+                            'SENTRY_RELEASE': 'Prism@main+7'})
         self.write_payload()
         result = self.run_wrapper('release', 'android', '--flutter-version=3.47.5', '--obfuscate',
                                   '--split-debug-info=build/symbols')
         self.assertEqual(result.returncode, 0, result.stderr)
         record = json.loads(self.tag_message('shorebird/android/3.14.0+353'))
-        self.assertEqual(record['sentry'], {'SENTRY_ENV': 'production', 'SENTRY_RELEASE': 'Prism@main+7'})
+        self.assertEqual(record['sentry'], {'SENTRY_DSN': 'https://key@sentry.invalid/1', 'SENTRY_ENV': 'production',
+                                            'SENTRY_RELEASE': 'Prism@main+7'})
 
     def test_release_dry_run_does_not_create_record_or_marker(self):
         result = self.run_wrapper('release', 'android', '--flutter-version=3.47.5', '--obfuscate',
@@ -694,6 +710,18 @@ class ShorebirdOtaTest(fixture.ReleaseFixture, unittest.TestCase):
                                   '--split-debug-info=build/symbols')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('--dart-define=SENTRY_RELEASE=Prism@main+7', self.captured()['argv'])
+
+    def test_patch_replays_the_release_dsn_when_it_differs_from_doppler(self):
+        # CI releases pick a per-environment DSN. A local patch reads Doppler's SENTRY_DSN instead.
+        self.values['SENTRY_DSN'] = 'https://doppler@sentry.invalid/1'
+        self.write_payload()
+        self.env['SENTRY_DSN'] = 'https://production@sentry.invalid/2'
+        self.release()
+        self.env.pop('SENTRY_DSN')
+        result = self.run_wrapper('patch', 'android', '--release-version=3.14.0+353', '--track=staging',
+                                  '--split-debug-info=build/symbols')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('--dart-define=SENTRY_DSN=https://production@sentry.invalid/2', self.captured()['argv'])
 
     def test_patch_does_not_add_sentry_overrides_absent_from_release(self):
         self.release()
