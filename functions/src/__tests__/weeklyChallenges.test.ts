@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
-import {refreshPublishedChallengeAward, runChallengeSchedule} from "../challengeScheduler";
+import {refreshPublishedChallengeAward, runChallengeSchedule, scheduleWeeklyChallenges} from "../challengeScheduler";
 import * as wotd from "../wallOfTheDay";
 import {sendToUser} from "../notificationHelper";
 import {onWallSubmitted} from "../onWallSubmitted";
@@ -460,6 +460,123 @@ test("the Monday 00:00 tick opens the week when Cloud Scheduler adds a sub-secon
   await runChallengeSchedule(slot, slot + 3_000);
   assert.equal(store.get(`weeklyChallenges/${CH}`)?.theme, "Night");
   assert.equal(store.get(`weeklyChallenges/${CH}`)?.state, "open");
+});
+
+test("only first-tick jitter opens a challenge, with scheduler delivery bounded to that week", async (t) => {
+  const cases = [
+    ["Sunday just before Monday", OPEN - 1, OPEN - 1, false],
+    ["exact Monday", OPEN, OPEN, true],
+    ["parsed six-digit fraction", Date.parse(`${CH}T00:00:00.599332Z`), OPEN + 599, true],
+    ["last millisecond inside jitter window", OPEN + 899_999, OPEN + 899_999, true],
+    ["first millisecond outside jitter window", OPEN + 900_000, OPEN + 900_000, false],
+    ["fraction after jitter window", OPEN + 900_599, OPEN + 900_599, false],
+    ["stale first tick delivered before next week", OPEN + 599, OPEN + WEEK - 1, true],
+    ["stale first tick delivered at next week", OPEN + 599, OPEN + WEEK, false],
+    ["stale first tick delivered after next week", OPEN + 599, OPEN + WEEK + 599, false],
+  ] as const;
+  for (const [label, slot, now, opens] of cases) {
+    await t.test(label, async (t) => {
+      const store = setup(t, {"challengeThemes/one": {order: 1, theme: "Night"}});
+      store.delete(`weeklyChallenges/${CH}`);
+      await runChallengeSchedule(slot, now);
+      assert.equal(store.has(`weeklyChallenges/${CH}`), opens);
+    });
+  }
+});
+
+test("jittered schedule retries open once with canonical bounds and consume one theme", async (t) => {
+  const store = setup(t, {
+    "challengeThemes/one": {order: 1, theme: "Night"},
+    "challengeThemes/two": {order: 2, theme: "Dawn"},
+  });
+  store.delete(`weeklyChallenges/${CH}`);
+  const jitteredSlot = Date.parse(`${CH}T00:00:00.599332Z`);
+  await runChallengeSchedule(jitteredSlot, jitteredSlot);
+  await runChallengeSchedule(jitteredSlot, jitteredSlot);
+  const opened = store.get(`weeklyChallenges/${CH}`);
+  assert.equal(opened?.theme, "Night");
+  assert.equal(opened?.state, "open");
+  assert.ok((opened?.opensAt as admin.firestore.Timestamp).isEqual(at(OPEN)));
+  assert.ok((opened?.closesAt as admin.firestore.Timestamp).isEqual(at(OPEN + WEEK)));
+  assert.equal(store.get("challengeThemes/one")?.usedBy, CH);
+  assert.equal(store.get("challengeThemes/two")?.usedBy, undefined);
+  assert.equal(store.get(`weeklyChallengeSlots/${CH}`)?.state, "opened");
+});
+
+test("an empty theme queue skips the slot permanently, including after retry", async (t) => {
+  const store = setup(t);
+  store.delete(`weeklyChallenges/${CH}`);
+  const jitteredSlot = Date.parse(`${CH}T00:00:00.599332Z`);
+  await runChallengeSchedule(jitteredSlot, jitteredSlot);
+  store.set("challengeThemes/one", {order: 1, theme: "Night"});
+  await runChallengeSchedule(jitteredSlot, jitteredSlot);
+  assert.equal(store.has(`weeklyChallenges/${CH}`), false);
+  assert.equal(store.get(`weeklyChallengeSlots/${CH}`)?.state, "skipped");
+  assert.equal(store.get("challengeThemes/one")?.usedBy, undefined);
+});
+
+test("jittered lifecycle closes voting at exact UTC cutoff and opens the next week", async (t) => {
+  const store = setup(t, {"walls/w1": wall(), "challengeThemes/one": {order: 1, theme: "Night"}});
+  const key = await approved();
+  const close = OPEN + WEEK;
+  await voteChallenge("voter", CH, key, true, () => close - 1);
+  assert.equal(store.get(path(key))?.voteCount, 1);
+  await assert.rejects(voteChallenge("voter", CH, key, false, () => close), /challenge-closed/);
+  t.mock.method(challengeIo, "send", async () => true);
+  await runChallengeSchedule(close + 599, close + 599);
+  assert.equal(store.get(`weeklyChallenges/${CH}`)?.state, "winner_picked");
+  assert.equal(store.get(`weeklyChallenges/${CH}`)?.winnerEntryId, key);
+  assert.equal(store.get("weeklyChallenges/2026-11-09")?.state, "open");
+  assert.ok((store.get("weeklyChallenges/2026-11-09")?.opensAt as admin.firestore.Timestamp).isEqual(at(close)));
+  assert.ok((store.get("weeklyChallenges/2026-11-09")?.closesAt as admin.firestore.Timestamp).isEqual(at(close + WEEK)));
+  await assert.rejects(voteChallenge("voter", CH, key, false, () => close + 599), /challenge-closed/);
+  assert.equal(store.get(path(key))?.voteCount, 1);
+});
+
+test("scheduler HTTP wrapper uses fallback and explicit six-digit schedule timestamps", async (t) => {
+  const invoke = async (headerValue: string | undefined) => {
+    let status = 0;
+    const response = {status: (code: number) => {
+      status = code;
+      return response;
+    }, send: () => undefined};
+    await scheduleWeeklyChallenges(
+      {headers: {}, header: (name: string) => name === "X-CloudScheduler-ScheduleTime" ? headerValue : undefined} as
+        Parameters<typeof scheduleWeeklyChallenges>[0],
+      response as unknown as Parameters<typeof scheduleWeeklyChallenges>[1],
+    );
+    assert.equal(status, 200);
+  };
+
+  await t.test("missing header falls back inside and outside the opening window", async (t) => {
+    const store = setup(t, {"challengeThemes/one": {order: 1, theme: "Night"}});
+    store.delete(`weeklyChallenges/${CH}`);
+    t.mock.timers.enable({apis: ["Date"], now: OPEN + 899_999});
+    await invoke(undefined);
+    assert.equal(store.has(`weeklyChallenges/${CH}`), true);
+    store.delete(`weeklyChallenges/${CH}`);
+    store.delete(`weeklyChallengeSlots/${CH}`);
+    store.set("challengeThemes/one", {order: 1, theme: "Night"});
+    t.mock.timers.setTime(OPEN + 900_000);
+    await invoke(undefined);
+    assert.equal(store.has(`weeklyChallenges/${CH}`), false);
+    assert.equal(store.has(`weeklyChallengeSlots/${CH}`), false);
+  });
+
+  await t.test("explicit jitter timestamp opens on late delivery but not next week", async (t) => {
+    const store = setup(t, {"challengeThemes/one": {order: 1, theme: "Night"}});
+    store.delete(`weeklyChallenges/${CH}`);
+    t.mock.timers.enable({apis: ["Date"], now: OPEN + WEEK - 1});
+    await invoke(`${CH}T00:00:00.599332Z`);
+    assert.equal(store.has(`weeklyChallenges/${CH}`), true);
+    store.delete(`weeklyChallenges/${CH}`);
+    store.delete(`weeklyChallengeSlots/${CH}`);
+    store.set("challengeThemes/one", {order: 1, theme: "Night"});
+    t.mock.timers.setTime(OPEN + WEEK);
+    await invoke(`${CH}T00:00:00.599332Z`);
+    assert.equal(store.has(`weeklyChallenges/${CH}`), false);
+    assert.equal(store.has(`weeklyChallengeSlots/${CH}`), false);
+  });
 });
 
 test("deleting a voter changes live totals without changing sealed settlement order", async (t) => {
