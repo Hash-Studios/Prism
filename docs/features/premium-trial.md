@@ -121,18 +121,21 @@ Live state on 2026-11-02: the current paywall has no trial text. Its annual card
 | A | en | `{{ product.offer_period_with_unit }} free, then {{ product.price_per_period_abbreviated }}` |
 | A | de | `{{ product.offer_period_with_unit }} kostenlos, dann {{ product.price_per_period_abbreviated }}` |
 | A | es | `{{ product.offer_period_with_unit }} gratis, luego {{ product.price_per_period_abbreviated }}` |
+| A | fr | `Gratuit pendant {{ product.offer_period_with_unit }}, puis {{ product.price_per_period_abbreviated }}` |
 | A | hi | `{{ product.offer_period_with_unit }} मुफ़्त, फिर {{ product.price_per_period_abbreviated }}` |
 | A | id | `Gratis {{ product.offer_period_with_unit }}, lalu {{ product.price_per_period_abbreviated }}` |
 | A | pt-BR | `{{ product.offer_period_with_unit }} grátis, depois {{ product.price_per_period_abbreviated }}` |
 | B | en | `Try free for {{ product.offer_period_with_unit }}` |
 | B | de | `{{ product.offer_period_with_unit }} kostenlos testen` |
 | B | es | `Prueba gratis durante {{ product.offer_period_with_unit }}` |
+| B | fr | `Essayer gratuitement pendant {{ product.offer_period_with_unit }}` |
 | B | hi | `{{ product.offer_period_with_unit }} मुफ़्त आज़माएँ` |
 | B | id | `Coba gratis selama {{ product.offer_period_with_unit }}` |
 | B | pt-BR | `Teste grátis por {{ product.offer_period_with_unit }}` |
 | C | en | `{{ product.offer_period_with_unit }} free, then {{ product.price_per_period }}. Renews until you cancel. To avoid the charge, cancel at least 24 hours before the trial ends.` |
 | C | de | `{{ product.offer_period_with_unit }} kostenlos, dann {{ product.price_per_period }}. Verlängert sich, bis du kündigst. Kündige mindestens 24 Stunden vor Ende des Testzeitraums, um die Zahlung zu vermeiden.` |
 | C | es | `{{ product.offer_period_with_unit }} gratis, luego {{ product.price_per_period }}. Se renueva hasta que canceles. Para evitar el cargo, cancela al menos 24 horas antes de que termine la prueba.` |
+| C | fr | `Gratuit pendant {{ product.offer_period_with_unit }}, puis {{ product.price_per_period }}. Renouvellement automatique jusqu'à résiliation. Pour éviter le prélèvement, annulez au moins 24 heures avant la fin de l'essai.` |
 | C | hi | `{{ product.offer_period_with_unit }} मुफ़्त, फिर {{ product.price_per_period }}. रद्द करने तक यह रिन्यू होता है. शुल्क से बचने के लिए ट्रायल खत्म होने से कम से कम 24 घंटे पहले रद्द करें.` |
 | C | id | `Gratis {{ product.offer_period_with_unit }}, lalu {{ product.price_per_period }}. Diperpanjang sampai kamu membatalkan. Agar tidak ditagih, batalkan paling lambat 24 jam sebelum masa uji coba berakhir.` |
 | C | pt-BR | `{{ product.offer_period_with_unit }} grátis, depois {{ product.price_per_period }}. Renova até você cancelar. Para evitar a cobrança, cancele pelo menos 24 horas antes do fim do teste.` |
