@@ -81,9 +81,16 @@ class PaywallOrchestrator {
     required String source,
     AppLocalizations? messages,
     BuildContext? context,
-  }) => _presentationGate.run(
-    () => _presentSignedIn(placement: placement, source: source, messages: messages, context: context),
-  );
+  }) => _presentationGate.run(() async {
+    _activePresentations++;
+    DailyMomentPresentationGate.instance.purchaseActive = true;
+    try {
+      return await _presentSignedIn(placement: placement, source: source, messages: messages, context: context);
+    } finally {
+      _activePresentations--;
+      DailyMomentPresentationGate.instance.purchaseActive = _activePresentations > 0;
+    }
+  });
 
   Future<PaywallResultValue> _presentSignedIn({
     required String placement,
@@ -97,14 +104,7 @@ class PaywallOrchestrator {
       if (!signedIn || !context.mounted) return PaywallResultValue.guestSignInRequired;
     }
     final BuildContext? presentationContext = context?.mounted == true ? context : null;
-    _activePresentations++;
-    DailyMomentPresentationGate.instance.purchaseActive = true;
-    try {
-      return await _present(placement: placement, source: source, messages: messages, context: presentationContext);
-    } finally {
-      _activePresentations--;
-      DailyMomentPresentationGate.instance.purchaseActive = _activePresentations > 0;
-    }
+    return _present(placement: placement, source: source, messages: messages, context: presentationContext);
   }
 
   Future<PaywallResultValue> _present({
@@ -145,9 +145,14 @@ class PaywallOrchestrator {
     required String placement,
     required String source,
   }) async {
-    if (!await requireSignedInAction(context)) return null;
     if (!context.mounted) return null;
-    return present(placement: placement, source: source, messages: AppLocalizations.of(context), context: context);
+    final result = await present(
+      placement: placement,
+      source: source,
+      messages: AppLocalizations.of(context),
+      context: context,
+    );
+    return result == PaywallResultValue.guestSignInRequired ? null : result;
   }
 
   Future<void> recordRewardedAdWatchAndMaybeUpsell({required String source}) async {

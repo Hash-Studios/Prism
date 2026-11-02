@@ -315,15 +315,64 @@ void main() {
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 500));
           expect(find.text('Continue with Google'), findsOneWidget);
+          expect(orchestrator.presenting.value, isTrue);
+          expect(DailyMomentPresentationGate.instance.purchaseActive, isTrue);
           expect(storeCalls, isEmpty);
           await tester.tap(find.text('Not now'));
           await tester.pumpAndSettle();
           expect(await result, direct ? PaywallResultValue.guestSignInRequired : null);
+          expect(orchestrator.presenting.value, isFalse);
+          expect(DailyMomentPresentationGate.instance.purchaseActive, isFalse);
           expect(storeCalls, isEmpty);
           expect(fakeAnalytics.events.whereType<PaywallImpressionEvent>(), isEmpty);
         },
       );
     }
+
+    testWidgets('overlapping sign-in refusals and errors release both presentation gates', (tester) async {
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
+      late BuildContext context;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(
+            builder: (value) {
+              context = value;
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+      final firstSignIn = Completer<bool>();
+      final secondSignIn = Completer<bool>();
+      var attempts = 0;
+      signedInActionSignIn = (_) => ++attempts == 1 ? firstSignIn.future : secondSignIn.future;
+      final first = orchestrator.present(context: context, placement: PaywallPlacement.mainUpsell, source: 'test');
+      final second = orchestrator.presentOrRequireSignIn(
+        context,
+        placement: PaywallPlacement.mainUpsell,
+        source: 'test',
+      );
+      expect(orchestrator.presenting.value, isTrue);
+      expect(DailyMomentPresentationGate.instance.purchaseActive, isTrue);
+      firstSignIn.complete(false);
+      expect(await first, PaywallResultValue.guestSignInRequired);
+      expect(orchestrator.presenting.value, isTrue);
+      expect(DailyMomentPresentationGate.instance.purchaseActive, isTrue);
+      secondSignIn.complete(false);
+      expect(await second, isNull);
+      expect(orchestrator.presenting.value, isFalse);
+      expect(DailyMomentPresentationGate.instance.purchaseActive, isFalse);
+
+      signedInActionSignIn = (_) async => throw StateError('sign-in failed');
+      await expectLater(
+        orchestrator.presentOrRequireSignIn(context, placement: PaywallPlacement.mainUpsell, source: 'test'),
+        throwsStateError,
+      );
+      expect(orchestrator.presenting.value, isFalse);
+      expect(DailyMomentPresentationGate.instance.purchaseActive, isFalse);
+    });
 
     testWidgets('completed sign-in presents against the signed-in account', (tester) async {
       var presented = 0;

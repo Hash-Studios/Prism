@@ -34,7 +34,7 @@ for arg in sys.argv[1:]:
                 keys[flag] = key.read()
 with open(os.environ['CAPTURE'], 'w') as capture:
     json.dump({'argv': sys.argv[1:], 'token': os.environ.get('SHOREBIRD_TOKEN'), 'keys': keys,
-               'modes': modes}, capture)
+               'modes': modes, 'ios_admob_app_id': os.environ.get('PRISM_ADMOB_IOS_APP_ID')}, capture)
 if os.environ.get('SHOREBIRD_WAIT'):
     time.sleep(60)
 sys.exit(int(os.environ.get('SHOREBIRD_EXIT') or 0))
@@ -347,6 +347,36 @@ class ShorebirdOtaTest(fixture.ReleaseFixture, unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn('same --release-platform', result.stderr)
         self.assertFalse(Path(self.env['CAPTURE']).exists())
+
+    def test_ios_release_and_patch_inherit_validated_admob_app_id(self):
+        self.native('ios')
+        self.env['PRISM_ADMOB_IOS_APP_ID'] = 'stale-parent-value'
+        for action, options in (
+            ('release', ('--flutter-version=3.47.5',)),
+            ('patch', ('--release-version=3.14.0+353', '--track=staging')),
+        ):
+            with self.subTest(action=action):
+                result = self.run_tool('python3', str(fixture.RUNNER), '--release-platform', 'ios', '--',
+                                       'shorebird', action, 'ios', *options)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(self.captured()['ios_admob_app_id'], fixture.IOS_ADMOB_APP)
+                self.assertIn('--dart-define=ADMOB_IOS_REWARDED_AD_UNIT_ID=' + fixture.IOS_ADMOB_UNIT,
+                              self.captured()['argv'])
+                Path(self.env['CAPTURE']).unlink()
+
+    def test_ios_shorebird_rejects_invalid_admob_before_release_or_patch(self):
+        self.native('ios')
+        for action, key in (('release', 'ADMOB_IOS_APP_ID'), ('patch', 'ADMOB_IOS_REWARDED_AD_UNIT_ID')):
+            with self.subTest(action=action):
+                original = self.values[key]
+                self.values[key] = 'invalid'
+                self.write_payload()
+                result = self.run_tool('python3', str(fixture.RUNNER), '--release-platform', 'ios', '--',
+                                       'shorebird', action, 'ios')
+                self.assertEqual(result.returncode, 1)
+                self.assertIn('AdMob', result.stderr)
+                self.assertFalse(Path(self.env['CAPTURE']).exists())
+                self.values[key] = original
 
     def test_patch_publishes_with_public_and_private_keys_then_removes_them(self):
         self.release()
