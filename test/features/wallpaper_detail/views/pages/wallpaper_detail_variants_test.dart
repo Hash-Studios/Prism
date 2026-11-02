@@ -301,6 +301,29 @@ void main() {
     expect(download.link, isNot('/tmp/v0.jpg'));
   });
 
+  testWidgets('an incoming variant does not inherit the outgoing variant tint during its cross-fade', (tester) async {
+    final StreamController<WallpaperDetailState> states = StreamController<WallpaperDetailState>.broadcast();
+    addTearDown(states.close);
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        entity: _entity(_v0),
+        variants: _group,
+        paletteLoading: false,
+        accent: const Color(0xff0000ff),
+        colorChanged: true,
+        recommendations: const RecommendationState.exhausted(),
+      ),
+      states: states.stream,
+    );
+
+    states.add(_state(entity: _entity(_v1), variants: _group));
+    await tester.pump();
+
+    expect(find.ancestor(of: _keyed('prism:v1'), matching: find.byType(ColorFiltered)), findsNothing);
+    expect(find.descendant(of: _keyed('prism:v0'), matching: find.byType(ColorFiltered)), findsOneWidget);
+  });
+
   testWidgets('warms every variant once', (tester) async {
     final StreamController<WallpaperDetailState> states = StreamController<WallpaperDetailState>.broadcast();
     addTearDown(states.close);

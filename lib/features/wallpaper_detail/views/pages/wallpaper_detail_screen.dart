@@ -3058,16 +3058,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     // A colour variant cross-fades in over the one on screen, which stays opaque under it, so the card never dims.
     final Key shown = ValueKey<String>('${entity.source.name}:${entity.id}');
     return SizedBox.expand(
-      child: _HueTint(
-        tint: state.tint,
-        duration: context.motion(const Duration(milliseconds: 220)),
-        child: AnimatedSwitcher(
-          duration: context.motion(PrismDurations.base),
-          switchInCurve: PrismCurves.enter,
-          layoutBuilder: (current, previous) => Stack(fit: StackFit.expand, children: [...previous, ?current]),
-          transitionBuilder: (child, animation) =>
-              child.key == shown ? FadeTransition(opacity: animation, child: child) : child,
-          child: KeyedSubtree(key: shown, child: image),
+      child: AnimatedSwitcher(
+        duration: context.motion(PrismDurations.base),
+        switchInCurve: PrismCurves.enter,
+        layoutBuilder: (current, previous) => Stack(fit: StackFit.expand, children: [...previous, ?current]),
+        transitionBuilder: (child, animation) =>
+            child.key == shown ? FadeTransition(opacity: animation, child: child) : child,
+        child: KeyedSubtree(
+          key: shown,
+          child: _HueTint(tint: state.tint, duration: context.motion(const Duration(milliseconds: 220)), child: image),
         ),
       ),
     );

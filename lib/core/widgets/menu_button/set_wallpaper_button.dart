@@ -857,8 +857,8 @@ class SetWallpaperButtonState extends State<SetWallpaperButton> {
   bool isLoading = false;
   bool _flowActive = false;
 
-  Future<void> _maybePromptNotificationPermission() async {
-    if (!widget.promptNotificationPermissionOnSuccess || !mounted) return;
+  Future<void> _maybePromptNotificationPermission(bool enabled) async {
+    if (!enabled || !mounted) return;
     try {
       await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
         context,
@@ -873,19 +873,22 @@ class SetWallpaperButtonState extends State<SetWallpaperButton> {
   Future<void> openSetScreen({String? entryPoint}) => _start(forceScreen: true, entryPoint: entryPoint);
 
   Future<void> _start({bool forceScreen = false, bool playTapHaptic = true, String? entryPoint}) async {
-    final String? url = widget.url;
+    final SetWallpaperButton tap = widget;
+    final String? url = tap.url;
     if (isLoading || _flowActive || url == null) return;
     if (!await requireSignedInAction(context) || !mounted) return;
+    if (!_sameWallpaper(widget, tap)) return;
     final String owner = app_state.prismUser.id;
     final AppLocalizations l10n = context.l10n;
     if (playTapHaptic) PrismHaptics.tap();
     String source = url;
-    final Future<String> Function()? prepare = widget.prepareAuthorized == null ? widget.prepareSource : null;
+    final Future<String> Function()? prepare = tap.prepareAuthorized == null ? tap.prepareSource : null;
     if (prepare != null) {
       setState(() => isLoading = true);
       final String? prepared = await runPrepareSource(prepare, l10n: l10n);
       if (mounted) setState(() => isLoading = false);
       if (prepared == null || !mounted) return;
+      if (!_sameWallpaper(widget, tap)) return;
       source = prepared;
     }
     WallpaperSetResult? result;
@@ -895,19 +898,19 @@ class SetWallpaperButtonState extends State<SetWallpaperButton> {
       result = await SetWallpaperFlow.run(
         context,
         url: source,
-        thumbnailUrl: widget.thumbnailUrl,
-        wallpaperId: widget.wallpaperId,
-        wallpaperSource: widget.wallpaperSource,
-        prepareAuthorized: widget.prepareAuthorized,
-        previewTint: widget.previewTint,
-        duoReveal: widget.duoReveal,
-        allowDuo: widget.allowDuo,
+        thumbnailUrl: tap.thumbnailUrl,
+        wallpaperId: tap.wallpaperId,
+        wallpaperSource: tap.wallpaperSource,
+        prepareAuthorized: tap.prepareAuthorized,
+        previewTint: tap.previewTint,
+        duoReveal: tap.duoReveal,
+        allowDuo: tap.allowDuo,
         forceScreen: forceScreen,
-        target: widget.target,
-        entryPoint: entryPoint ?? widget.entryPoint,
-        requestId: widget.requestId,
-        notes: widget.notes,
-        onMatchAccent: widget.onMatchAccent,
+        target: tap.target,
+        entryPoint: entryPoint ?? tap.entryPoint,
+        requestId: tap.requestId,
+        notes: tap.notes,
+        onMatchAccent: tap.onMatchAccent,
         onBusy: (busy) {
           if (mounted) setState(() => isLoading = busy);
         },
@@ -925,12 +928,18 @@ class SetWallpaperButtonState extends State<SetWallpaperButton> {
     }
     if (result?.isSuccess ?? false) {
       if (!mounted) return;
-      widget.onSet?.call();
-      await _maybePromptNotificationPermission();
+      tap.onSet?.call();
+      await _maybePromptNotificationPermission(tap.promptNotificationPermissionOnSuccess);
       if (!mounted) return;
       unawaited(RatePromptService.instance.maybePrompt(RatePromptTrigger.wallpaperSet));
     }
   }
+
+  bool _sameWallpaper(SetWallpaperButton current, SetWallpaperButton tap) =>
+      current.url == tap.url &&
+      current.wallpaperId == tap.wallpaperId &&
+      current.wallpaperSource == tap.wallpaperSource &&
+      current.previewTint == tap.previewTint;
 
   @override
   Widget build(BuildContext context) {

@@ -66,10 +66,21 @@ export async function checkSubmittedVariantOf(snapshot: admin.firestore.Document
     const wall = current.data();
     if (!wall || !snapshot.createTime || !current.createTime?.isEqual(snapshot.createTime) ||
       JSON.stringify(wall.variantOf) !== JSON.stringify(data.variantOf)) return null;
+    if (wall.review === true) return null;
     const targetId = variantTarget(wall);
     const target = targetId ? (await tx.get(db.doc(`walls/${targetId}`))).data() : undefined;
-    const group = targetId && target ? (await tx.get(db.doc(`${VARIANT_GROUPS}/${groupIdFor(targetId, target)}`))).data() : undefined;
-    const reason = targetId === null ? "not_found" : variantDropReason(snapshot.id, wall, targetId, target, members(group));
+    const groupId = targetId && target ? groupIdFor(targetId, target) : null;
+    const group = groupId ? (await tx.get(db.doc(`${VARIANT_GROUPS}/${groupId}`))).data() : undefined;
+    const live: string[] = [];
+    let ownerMismatch = false;
+    for (const id of members(group)) {
+      const member = (await tx.get(db.doc(`walls/${id}`))).data();
+      if (member?.review !== true || member.variantGroupId !== groupId) continue;
+      live.push(id);
+      if (!sameCreator(wall, member)) ownerMismatch = true;
+    }
+    const reason = targetId === null ? "not_found" :
+      variantDropReason(snapshot.id, wall, targetId, target, live) ?? (ownerMismatch ? "not_owner" : null);
     if (reason === null) return null;
     tx.update(snapshot.ref, {variantOf: admin.firestore.FieldValue.delete(), variantLink: reason});
     return reason;
@@ -77,13 +88,12 @@ export async function checkSubmittedVariantOf(snapshot: admin.firestore.Document
 }
 
 const members = (group: Wall | undefined): string[] =>
-  Array.isArray(group?.walls) ? group.walls.filter((id: unknown): id is string => typeof id === "string") : [];
+  Array.isArray(group?.walls) ? [...new Set(group.walls.filter((id: unknown): id is string =>
+    typeof id === "string" && DOC_ID.test(id)))] : [];
 
 /**
- * Converges one wall's colourway membership in one transaction. An approved wall with a valid `variantOf` is in its
- * target's group. Any other wall is in no group. Every group it touches drops deleted or unapproved members and is
- * renumbered. A group with fewer than 2 walls is deleted. `knownGroups` are groups the wall was in before this write.
- * The group doc is read in the transaction, so two variants approved at once are serialized on it.
+ * Joins approved variants and repairs existing sets, including survivors of a deleted target. Every written wall
+ * and group is read in the transaction. `knownGroups` also repairs membership from a delayed removal event.
  */
 export async function syncVariantMembership(wallId: string, knownGroups: string[] = []): Promise<VariantLink | null> {
   const wallRef = db.doc(`walls/${wallId}`);
@@ -94,13 +104,13 @@ export async function syncVariantMembership(wallId: string, knownGroups: string[
     const joinId = targetId && target ? groupIdFor(targetId, target) : null;
     const groupIds = [...new Set([joinId, str(wall?.variantGroupId), ...knownGroups].filter((id): id is string =>
       !!id && DOC_ID.test(id)))];
-    const groups = new Map<string, {exists: boolean; walls: string[]}>();
+    const groups = new Map<string, {exists: boolean; walls: string[]; creatorUid: string}>();
     const docs = new Map<string, Wall | undefined>([[wallId, wall]]);
     if (targetId) docs.set(targetId, target);
     for (const groupId of groupIds) {
       const snap = await tx.get(db.doc(`${VARIANT_GROUPS}/${groupId}`));
       const ids = members(snap.data());
-      groups.set(groupId, {exists: snap.exists, walls: ids});
+      groups.set(groupId, {exists: snap.exists, walls: ids, creatorUid: str(snap.data()?.creatorUid)});
       for (const id of ids) {
         if (!docs.has(id)) docs.set(id, (await tx.get(db.doc(`walls/${id}`))).data());
       }
@@ -108,18 +118,39 @@ export async function syncVariantMembership(wallId: string, knownGroups: string[
 
     let link: VariantLink | null = null;
     const next = new Map<string, string[]>();
+    const existingId = str(wall?.variantGroupId);
+    const existing = wall?.review === true && groups.get(existingId)?.walls.includes(wallId);
     for (const [groupId, group] of groups) {
-      next.set(groupId, group.walls.filter((id) => (id !== wallId || targetId === null) && docs.get(id)?.review === true));
+      next.set(groupId, group.walls.filter((id) => id !== wallId && docs.get(id)?.review === true &&
+        docs.get(id)?.variantGroupId === groupId));
     }
-    if (wall && targetId) {
+    if (wall && existing) {
+      const peers = next.get(existingId) ?? [];
+      if (peers.some((id) => !sameCreator(wall, docs.get(id)))) link = "not_owner";
+      if (link === null && targetId && peers.includes(targetId)) {
+        link = variantDropReason(wallId, wall, targetId, target, peers);
+      }
+      for (const id of peers) {
+        if (link) break;
+        const member = docs.get(id);
+        if (member && variantTarget(member) === wallId) {
+          link = variantDropReason(id, member, wallId, wall, peers);
+        }
+      }
+      if (link === null) {
+        const order = [...peers];
+        order.splice(Math.min(groups.get(existingId)?.walls.indexOf(wallId) ?? 0, order.length), 0, wallId);
+        next.set(existingId, order);
+        if (wall.variantOf !== undefined || wall.variantLink === "linked") link = "linked";
+      }
+    } else if (wall && targetId) {
       const current = joinId ? next.get(joinId) ?? [] : [];
-      link = variantDropReason(wallId, wall, targetId, target, current) ?? "linked";
+      link = variantDropReason(wallId, wall, targetId, target, current) ??
+        (current.some((id) => !sameCreator(wall, docs.get(id))) ? "not_owner" : "linked");
       if (link === "linked" && joinId) {
         const order = [...current];
         if (!order.includes(targetId)) order.push(targetId);
-        const at = groups.get(joinId)?.walls.indexOf(wallId) ?? -1;
-        if (at >= 0) order.splice(Math.min(at, order.length), 0, wallId);
-        else order.push(wallId);
+        order.push(wallId);
         next.set(joinId, order);
       }
     }
@@ -132,11 +163,14 @@ export async function syncVariantMembership(wallId: string, knownGroups: string[
         continue;
       }
       ids.forEach((id, index) => placed.set(id, {groupId, index}));
-      if (JSON.stringify(ids) !== JSON.stringify(groups.get(groupId)?.walls ?? [])) {
-        tx.set(ref, {walls: ids, creatorUid: str(docs.get(ids[0])?.creatorUid),
+      const creatorUid = ids.map((id) => str(docs.get(id)?.creatorUid)).find(Boolean) ?? "";
+      if (JSON.stringify(ids) !== JSON.stringify(groups.get(groupId)?.walls ?? []) ||
+        creatorUid !== groups.get(groupId)?.creatorUid) {
+        tx.set(ref, {walls: ids, creatorUid,
           updatedAt: admin.firestore.FieldValue.serverTimestamp()});
       }
     }
+    if (link === "linked" && !placed.has(wallId)) link = null;
     const touched = new Set<string>([wallId, ...[...groups.values()].flatMap((group) => group.walls), ...placed.keys()]);
     for (const id of touched) {
       const doc = docs.get(id);
@@ -146,7 +180,8 @@ export async function syncVariantMembership(wallId: string, knownGroups: string[
       if (spot) {
         if (doc.variantGroupId !== spot.groupId) update.variantGroupId = spot.groupId;
         if (doc.variantIndex !== spot.index) update.variantIndex = spot.index;
-      } else {
+      } else if (id === wallId || groups.has(str(doc.variantGroupId))) {
+        if (doc.variantLink === "linked") update.variantLink = admin.firestore.FieldValue.delete();
         if (doc.variantGroupId !== undefined) update.variantGroupId = admin.firestore.FieldValue.delete();
         if (doc.variantIndex !== undefined) update.variantIndex = admin.firestore.FieldValue.delete();
       }
@@ -174,8 +209,8 @@ export const onWallVariantWritten = onDocumentWritten(
   async (event) => {
     const before = event.data?.before?.data();
     const after = event.data?.after?.data();
-    const involved = [before?.variantOf, after?.variantOf, before?.variantGroupId, after?.variantGroupId]
-      .some((value) => typeof value === "string");
+    const involved = [before, after].some((wall) => wall &&
+      ["variantOf", "variantGroupId", "variantIndex", "variantLink"].some((field) => wall[field] !== undefined));
     if (!involved) return;
     const changed = !before || !after || before.review !== after.review || before.variantOf !== after.variantOf ||
       before.email !== after.email || before.creatorUid !== after.creatorUid || before.resolution !== after.resolution;

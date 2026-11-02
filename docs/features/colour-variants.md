@@ -54,7 +54,7 @@ Feed cells show no colour indicator. We chose the detail screen only. `.impeccab
 
 The group id is the first wall's doc id.
 
-Firestore rules refuse client writes of `variantGroupId`, `variantIndex` and `variantLink`. `wallVariantGroups` has no rule, so clients cannot read or write it.
+Firestore rules refuse ordinary client writes of `variantGroupId`, `variantIndex` and `variantLink`. The existing admin create path can restore those fields; the server repairs them on creation. `wallVariantGroups` has no rule, so clients cannot read or write it.
 
 No new index is needed. The client query uses only equality filters on `variantGroupId` and `review`.
 
@@ -66,13 +66,13 @@ No new index is needed. The client query uses only equality filters on `variantG
 |---|---|
 | `not_found` | The target wall does not exist, or it is the wall itself. |
 | `not_approved` | The target wall is not approved. |
-| `not_owner` | The two walls do not share an email. When both walls have a `creatorUid`, the uid must match too. |
+| `not_owner` | Emails must match after trimming spaces and ignoring case, and must not be empty. When both walls have a `creatorUid`, the uid must match too. The creator check also covers every current member of the target set. |
 | `aspect_ratio` | A `resolution` is missing or invalid, or the width to height ratios differ by more than 2 percent. |
 | `group_full` | The set would have more than 5 colours. |
 
 A failed check removes `variantOf` and writes the code to `variantLink`. The upload stays. It remains a normal wall in review.
 
-A passed check writes `variantLink` as `linked`.
+A passed submission check keeps `variantOf`. Approval writes `variantLink` as `linked` when the wall joins the set. Submission counts only live, approved members, so a pending removal trigger cannot make a set appear full.
 
 ## Group repair
 
@@ -81,6 +81,9 @@ A passed check writes `variantLink` as `linked`.
 - **Approve** joins the wall to its target's group. A new group starts with the target. A wall that was in the group keeps its old place. Otherwise the wall goes after the target.
 - **Withdraw**, **delete** and **reject** remove the wall. A reject moves the wall to `rejectedWalls`. The other walls renumber.
 - A group with 1 wall is deleted. Its last wall loses `variantGroupId` and `variantIndex`.
+- Deleting the first wall keeps a surviving set under its original group id. Existing membership remains valid even when the original `variantOf` target has gone. A later creator UID assignment does not remove those survivors.
+- An email or UID change that no longer matches the set removes the changed wall. A shape change is checked against its target and direct variants while they remain in the set. Siblings are not compared against each other for shape.
+- The group owner UID updates when a member receives its UID. Restored stale membership fields are cleared, and an old group's repair does not overwrite a wall that belongs to another group.
 - Two approvals at the same time wait for each other on the group doc. One transaction handles each.
 
 ## Analytics
@@ -163,7 +166,7 @@ Budget limits. The worker budget counts image cost only, not Vision.
 
 - Studio walls carry the Studio account email from `identity.email` (`functions/src/studio/process.ts:398`). They have no user email.
 - `sameCreator` (`functions/src/wallVariants.ts:33`) compares emails. Two Studio walls already share one email, so the email test passes.
-- `wallRecord` sets no `creatorUid` on Studio walls, so the uid test is skipped.
+- `wallRecord` sets no initial `creatorUid` on Studio walls. `onWallAuthoredContentWritten` later assigns the Studio account UID, so ownership checks must also work before and after that assignment.
 - Confirm this before you write a Studio rule. A user wall still gets `not_owner`, because its email differs.
 - Pick one rule shape. Option A requires `origin: "studio"` on both walls, and the same `studioRunId`. A variant run must then reuse the original run id. Option B requires `origin: "studio"` on both walls only. Option B is the recommended choice. It needs no change to run ids.
 

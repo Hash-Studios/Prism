@@ -241,7 +241,9 @@ service cloud.firestore {
               && validVariantOf()
               && validResubmitOf()));
       // delete: request.resource is null — do not use request.resource.data here.
-      allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny(['challengeId'])
+      allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'challengeId', 'variantOf', 'variantGroupId', 'variantIndex', 'variantLink'
+        ])
           && (isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
               && wallServerKeysUntouched()

@@ -17,9 +17,12 @@ import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wall
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/palette_entity.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_page.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/variant_group.dart';
 import 'package:Prism/features/wallpaper_detail/domain/repositories/palette_repository.dart';
 import 'package:Prism/features/wallpaper_detail/domain/repositories/wall_variant_repository.dart';
+import 'package:Prism/features/wallpaper_detail/domain/repositories/wallpaper_recommendation_repository.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
@@ -52,6 +55,22 @@ class _FakeVariantRepository implements WallVariantRepository {
   }
 }
 
+class _FakeRecommendations implements WallpaperRecommendationRepository {
+  Future<RecommendationPage> Function(FeedItemEntity current)? loadPage;
+
+  @override
+  void release(String sessionKey) {}
+
+  @override
+  Future<RecommendationPage> load({
+    required FeedItemEntity current,
+    required String sessionKey,
+    RecommendationCursor? cursor,
+  }) =>
+      loadPage?.call(current) ??
+      Future<RecommendationPage>.value(RecommendationPage(items: const [], kind: RecommendationKind.discovery));
+}
+
 /// A member of the colour group `doc0`, one per index, all approved.
 PrismWallpaper _variant(int index) => PrismWallpaper(
   core: WallpaperCore(
@@ -73,6 +92,7 @@ void main() {
   late _MockRecordViews views;
   late _MockSetCount setCount;
   late _FakeVariantRepository variants;
+  late _FakeRecommendations recommendations;
   late WallpaperDetailBloc bloc;
   late Directory catalogDirectory;
 
@@ -92,6 +112,7 @@ void main() {
     when(() => palette.generatePalette(any())).thenAnswer((_) async => Result.error(const NetworkFailure('x')));
     when(() => views(any())).thenAnswer((_) async => Result.success('7'));
     variants = _FakeVariantRepository();
+    recommendations = _FakeRecommendations();
     final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
       store: DurableJsonStore('catalog', directory: catalogDirectory),
     );
@@ -103,7 +124,7 @@ void main() {
       palette,
       setCount,
       catalog,
-      null,
+      recommendations,
       variants,
     );
     addTearDown(bloc.close);
@@ -212,6 +233,26 @@ void main() {
       expect((bloc.state as WallpaperDetailLoaded).entity.id, 'v0');
     });
 
+    test('a pending recommendation page does not show another member of the selected variant set', () async {
+      final Completer<RecommendationPage> page = Completer<RecommendationPage>();
+      recommendations.loadPage = (_) => page.future;
+      await openV0();
+
+      bloc.add(const LoadRecommendations());
+      await waitUntil((s) => s.recommendations.loading);
+      bloc.add(const SelectVariant(index: 1));
+      await waitUntil((s) => s.entity.id == 'v1');
+      page.complete(
+        RecommendationPage(
+          items: [v1, _variant(3)].map((wall) => PrismFeedItem(id: wall.id, wallpaper: wall)).toList(),
+          kind: RecommendationKind.related,
+        ),
+      );
+
+      final WallpaperDetailLoaded result = await waitUntil((s) => s.recommendations.items.isNotEmpty);
+      expect(result.recommendations.items.map((item) => item.id), ['v3']);
+    });
+
     test('selecting another member swaps the wall and keeps the panel, the recommendations and the group', () async {
       await openV0();
       bloc.add(const OnPanelOpened());
@@ -231,7 +272,7 @@ void main() {
       expect(after.variants, same(before.variants));
       expect(after.panelCollapsed, isFalse);
       expect(after.panelClosed, isFalse);
-      expect(after.recommendations, same(before.recommendations));
+      expect(after.recommendations, before.recommendations);
     });
 
     test('an out-of-range index or the index already shown emits nothing', () async {
@@ -268,6 +309,65 @@ void main() {
 
       verify(() => views('v0')).called(1);
       verify(() => views('v1')).called(1);
+    });
+
+    test('a pending view failure for the previous variant does not clear the selected variant loading state', () async {
+      final Completer<Result<String>> firstView = Completer<Result<String>>();
+      final Completer<Result<String>> secondView = Completer<Result<String>>();
+      when(() => views('v0')).thenAnswer((_) => firstView.future);
+      when(() => views('v1')).thenAnswer((_) => secondView.future);
+      variants.group = VariantGroup(id: 'doc0', walls: [v0, v1, v2]);
+      when(() => prism.fetchCanonicalById('v0')).thenAnswer((_) async => Result.success(v0));
+      bloc.add(
+        LoadFromEntity(
+          entity: PrismFeedItem(id: 'v0', wallpaper: v0),
+        ),
+      );
+      await waitUntil((s) => s.variants != null && !s.paletteLoading && s.viewsLoading);
+
+      bloc.add(const SelectVariant(index: 1));
+      await waitUntil((s) => s.entity.id == 'v1' && s.viewsLoading);
+
+      firstView.complete(Result.error(const NetworkFailure('offline')));
+      await settle();
+
+      expect((bloc.state as WallpaperDetailLoaded).viewsLoading, isTrue);
+      secondView.complete(Result.success('20'));
+      await waitUntil((s) => s.entity.id == 'v1' && !s.viewsLoading);
+    });
+
+    test('switching variants clears the old palette while the new palette is loading', () async {
+      final Completer<Result<PaletteEntity>> secondPalette = Completer<Result<PaletteEntity>>();
+      when(() => palette.generatePalette(v0.thumbnailUrl)).thenAnswer(
+        (_) async => Result.success(
+          const PaletteEntity(
+            imageUrl: 'https://example.com/v0-thumb.jpg',
+            dominantColorValue: 0xff0000ff,
+            paletteColorValues: [0xff0000ff],
+          ),
+        ),
+      );
+      when(() => palette.generatePalette(v1.thumbnailUrl)).thenAnswer((_) => secondPalette.future);
+      await openV0();
+      expect((bloc.state as WallpaperDetailLoaded).colors, [const Color(0xff0000ff)]);
+
+      bloc.add(const SelectVariant(index: 1));
+      final WallpaperDetailLoaded loading = await waitUntil((s) => s.entity.id == 'v1' && s.paletteLoading);
+
+      expect(loading.colors, isNull);
+      expect(loading.accent, isNull);
+      secondPalette.complete(
+        Result.success(
+          const PaletteEntity(
+            imageUrl: 'https://example.com/v1-thumb.jpg',
+            dominantColorValue: 0xffff0000,
+            paletteColorValues: [0xffff0000],
+          ),
+        ),
+      );
+      final WallpaperDetailLoaded loaded = await waitUntil((s) => s.entity.id == 'v1' && !s.paletteLoading);
+      expect(loaded.colors, [const Color(0xffff0000)]);
+      expect(loaded.accent, const Color(0xffff0000));
     });
 
     test('a metadata refresh of the selected member updates it and its place in the group', () async {

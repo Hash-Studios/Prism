@@ -16,6 +16,7 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/data/repositories/wall_variant_repository_impl.dart';
 import 'package:Prism/features/wallpaper_detail/data/repositories/wallpaper_recommendation_repository_impl.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_page.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/variant_group.dart';
 import 'package:Prism/features/wallpaper_detail/domain/repositories/palette_repository.dart';
 import 'package:Prism/features/wallpaper_detail/domain/repositories/wall_variant_repository.dart';
@@ -154,7 +155,17 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
         if (emit.isDone || latest is! WallpaperDetailLoaded || !_sameVisit(latest, entity)) {
           return;
         }
-        final next = latest.recommendations.append(page, entity);
+        final Iterable<FeedItemEntity> variantItems =
+            latest.variants?.walls.map((wall) => PrismFeedItem(id: wall.id, wallpaper: wall)) ??
+            const <FeedItemEntity>[];
+        final RecommendationPage visiblePage = RecommendationPage(
+          items: page.items
+              .where((item) => !variantItems.any((variant) => variant.source == item.source && variant.id == item.id))
+              .toList(),
+          kind: page.kind,
+          nextCursor: page.nextCursor,
+        );
+        final next = latest.recommendations.append(visiblePage, entity);
         final addedItems = next.items.length > before.recommendations.items.length;
         if (addedItems || !next.hasMore || attempt == 3) {
           emit(latest.copyWith(recommendations: next));
@@ -261,7 +272,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     result.fold(
       onFailure: (failure) {
         final latestState = state;
-        if (latestState is! WallpaperDetailLoaded) return;
+        if (latestState is! WallpaperDetailLoaded || latestState.entity.id != wallId) return;
         emit(latestState.copyWith(viewsLoading: false));
       },
       onSuccess: (views) {
@@ -490,7 +501,8 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     if (emit.isDone || _closing || group == null || latest is! WallpaperDetailLoaded || latest.entity.id != entity.id) {
       return;
     }
-    emit(latest.copyWith(variants: group));
+    final Iterable<FeedItemEntity> members = group.walls.map((wall) => PrismFeedItem(id: wall.id, wallpaper: wall));
+    emit(latest.copyWith(variants: group, recommendations: latest.recommendations.excluding(members)));
   }
 
   /// Puts the colour variant at [SelectVariant.index] on screen as the wall itself: its image, palette, stats and
@@ -506,12 +518,12 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
       WallpaperDetailLoaded(
         entity: entity,
         views: _views[wall.id],
-        colors: current.colors,
-        accent: current.accent,
         panelClosed: current.panelClosed,
         panelCollapsed: current.panelCollapsed,
         panelScrollInProgress: current.panelScrollInProgress,
-        recommendations: current.recommendations,
+        recommendations: current.recommendations.excluding(
+          group.walls.map((member) => PrismFeedItem(id: member.id, wallpaper: member)),
+        ),
         variants: group,
       ),
     );

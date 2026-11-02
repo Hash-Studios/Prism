@@ -3,7 +3,7 @@ import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 import {onWallSubmitted} from "../onWallSubmitted";
-import {aspectOf, onWallVariantWritten, sameCreator} from "../wallVariants";
+import {aspectOf, checkSubmittedVariantOf, onWallVariantWritten, sameCreator} from "../wallVariants";
 import {type Doc, installFakeDb} from "./fakeDb";
 
 const RES = "1440x3040";
@@ -229,4 +229,207 @@ test("aspectOf reads WxH and rejects a bad resolution", () => {
 test("sameCreator ignores email case and fails when both creatorUid values differ", () => {
   assert.equal(sameCreator({email: "Maker@Example.com"}, {email: "maker@example.com"}), true);
   assert.equal(sameCreator({email: "maker@example.com", creatorUid: "u1"}, {email: "maker@example.com", creatorUid: "u2"}), false);
+});
+
+for (const [name, update, reason] of [
+  ["email", {email: "new@example.com"}, "not_owner"],
+  ["creator UID", {creatorUid: "new-owner"}, "not_owner"],
+  ["resolution", {resolution: "1000x1000"}, "aspect_ratio"],
+] satisfies Array<[string, Doc, string]>) {
+  test(`changing the root's ${name} removes it and preserves compatible survivors`, async (t) => {
+    const store = setup(t, {"walls/v2": variant({creatorUid: "maker"})});
+    await change(store, "walls/v1", variant({review: true, creatorUid: "maker"}));
+    await change(store, "walls/v2", variant({review: true, creatorUid: "maker"}));
+    await change(store, "walls/root", {...store.get("walls/root"), ...update});
+    assert.deepEqual(store.get("wallVariantGroups/root")?.walls, ["v1", "v2"]);
+    assert.equal(store.get("walls/root")?.variantGroupId, undefined);
+    assert.equal(store.get("walls/root")?.variantLink, reason);
+    await change(store, "walls/v1", {...store.get("walls/v1"), email: "Maker@Example.com"});
+    assert.deepEqual(store.get("wallVariantGroups/root")?.walls, ["v1", "v2"]);
+  });
+}
+
+test("survivors stay linked after root deletion and delayed creator UID assignment", async (t) => {
+  const store = setup(t, {"walls/v2": variant()});
+  await change(store, "walls/v1", variant({review: true}));
+  await change(store, "walls/v2", variant({review: true}));
+  await change(store, "walls/root", undefined);
+  await change(store, "walls/v1", {...store.get("walls/v1"), creatorUid: "maker"});
+  assert.deepEqual(store.get("wallVariantGroups/root")?.walls, ["v1", "v2"]);
+  assert.equal(store.get("walls/v1")?.variantLink, "linked");
+});
+
+test("a group records the creator UID when it is assigned after linking", async (t) => {
+  const store = setup(t, {"walls/root": root({creatorUid: undefined})});
+  await change(store, "walls/v1", variant({review: true}));
+  await change(store, "walls/root", {...store.get("walls/root"), creatorUid: "maker"});
+  assert.equal(store.get("wallVariantGroups/root")?.creatorUid, "maker");
+});
+
+test("a new variant cannot join different UIDs through a legacy target without a UID", async (t) => {
+  const store = setup(t, {"walls/root": root({creatorUid: undefined})});
+  await change(store, "walls/v1", variant({review: true, creatorUid: "maker"}));
+  await change(store, "walls/v2", variant({review: true, creatorUid: "other"}));
+  assert.equal(store.get("walls/v2")?.variantLink, "not_owner");
+  assert.deepEqual(store.get("wallVariantGroups/root")?.walls, ["root", "v1"]);
+});
+
+test("repairing a stale group does not steal or clear a wall in another group", async (t) => {
+  const store = setup(t, {
+    "walls/root": root({variantGroupId: "root", variantIndex: 0}),
+    "walls/v1": variant({review: true, variantOf: "other", variantGroupId: "other", variantIndex: 1}),
+    "walls/other": root({variantGroupId: "other", variantIndex: 0}),
+    "wallVariantGroups/root": {walls: ["root", "v1"]},
+    "wallVariantGroups/other": {walls: ["other", "v1"]},
+  });
+  await change(store, "walls/root", undefined);
+  assert.equal(store.get("walls/v1")?.variantGroupId, "other");
+  assert.equal(store.get("walls/v1")?.variantIndex, 1);
+  assert.deepEqual(store.get("wallVariantGroups/other")?.walls, ["other", "v1"]);
+});
+
+test("submission counts live approved members while a removal trigger is pending", async (t) => {
+  const store = setup(t, {
+    "walls/root": root({variantGroupId: "root", variantIndex: 0}),
+    "walls/a": variant({review: true, variantGroupId: "root", variantIndex: 1}),
+    "walls/b": variant({review: true, variantGroupId: "root", variantIndex: 2}),
+    "walls/c": variant({review: false, variantGroupId: "root", variantIndex: 3}),
+    "wallVariantGroups/root": {walls: ["root", "a", "b", "c", "deleted"]},
+  });
+  await submit(store, "v1");
+  assert.equal(store.get("walls/v1")?.variantOf, "root");
+  assert.equal(store.get("walls/v1")?.variantLink, undefined);
+});
+
+test("sameCreator rejects empty emails and accepts normalized Studio emails without UIDs", () => {
+  assert.equal(sameCreator({}, {}), false);
+  assert.equal(sameCreator({email: " "}, {email: ""}), false);
+  assert.equal(sameCreator({email: " STUDIO@Example.com "}, {email: "studio@example.com"}), true);
+});
+
+for (const stale of [{variantLink: "linked"}, {variantIndex: 3}, {variantGroupId: "missing", variantIndex: 4,
+  variantLink: "linked"}]) {
+  test(`restoring an unlinked wall clears stale fields ${JSON.stringify(stale)}`, async (t) => {
+    const store = setup(t);
+    await change(store, "walls/restored", root(stale));
+    assert.equal(store.get("walls/restored")?.variantGroupId, undefined);
+    assert.equal(store.get("walls/restored")?.variantIndex, undefined);
+    assert.equal(store.get("walls/restored")?.variantLink, undefined);
+  });
+}
+
+test("opposite-edge aspect variants remain linked when creator UIDs arrive later", async (t) => {
+  const store = setup(t, {"walls/root": root({resolution: "1000x2000", creatorUid: undefined})});
+  await change(store, "walls/v1", variant({review: true, resolution: "981x2000"}));
+  await change(store, "walls/v2", variant({review: true, resolution: "1019x2000"}));
+  await change(store, "walls/v1", {...store.get("walls/v1"), creatorUid: "maker"});
+  await change(store, "walls/root", {...store.get("walls/root"), creatorUid: "maker"});
+  assert.deepEqual(store.get("wallVariantGroups/root")?.walls, ["root", "v1", "v2"]);
+});
+
+test("a deleted root restored by another owner cannot absorb the surviving group", async (t) => {
+  const store = setup(t);
+  await change(store, "walls/v1", variant({review: true}));
+  await change(store, "walls/v2", variant({review: true}));
+  const archived = store.get("walls/root");
+  await change(store, "walls/root", undefined);
+  await change(store, "walls/root", {...archived, email: "other@example.com", creatorUid: "other"});
+  assert.deepEqual(store.get("wallVariantGroups/root")?.walls, ["v1", "v2"]);
+  assert.equal(store.get("walls/root")?.variantGroupId, undefined);
+  await change(store, "walls/new", variant({review: true, email: "other@example.com", creatorUid: "other"}));
+  assert.equal(store.get("walls/new")?.variantLink, "not_owner");
+  assert.deepEqual(store.get("wallVariantGroups/root")?.walls, ["v1", "v2"]);
+});
+
+test("withdrawal followed by reapproval joins once and delayed withdrawal replay preserves it", async (t) => {
+  const store = setup(t);
+  await change(store, "walls/v1", variant({review: true}));
+  const linked = store.get("walls/v1");
+  const withdrawn = {...linked, review: false};
+  await change(store, "walls/v1", withdrawn);
+  await change(store, "walls/v1", {...store.get("walls/v1"), review: true});
+  await fire("v1", linked, withdrawn);
+  assert.deepEqual(store.get("wallVariantGroups/root")?.walls, ["root", "v1"]);
+  assert.equal(store.get("walls/v1")?.variantLink, "linked");
+});
+
+for (const [id, action] of [["root", "delete"], ["root", "withdraw"], ["a", "delete"], ["a", "withdraw"]]) {
+  test(`a concurrent ${id === "root" ? "target" : "other member"} ${action} retries approval against fresh reads`, async (t) => {
+    const store = setup(t);
+    if (id === "a") {
+      await change(store, "walls/a", variant({review: true}));
+      await change(store, "walls/b", variant({review: true}));
+    }
+    const path = `walls/${id}`;
+    const runTransaction = db.runTransaction.bind(db);
+    let attempts = 0;
+    let conflicted = false;
+    t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+      while (true) {
+        try {
+          return await runTransaction(async (tx) => {
+            attempts++;
+            const reads = new Map<string, Doc | undefined>();
+            const get = tx.get.bind(tx);
+            t.mock.method(tx, "get", async (ref: admin.firestore.DocumentReference) => {
+              const snap = await get(ref);
+              reads.set(ref.path, snap.data());
+              return snap;
+            });
+            const update = tx.update.bind(tx);
+            const set = tx.set.bind(tx);
+            const remove = tx.delete.bind(tx);
+            t.mock.method(tx, "update", (ref: admin.firestore.DocumentReference, data: Doc) => {
+              assert.ok(reads.has(ref.path), `update without transaction read: ${ref.path}`);
+              return update(ref, data);
+            });
+            t.mock.method(tx, "set", (ref: admin.firestore.DocumentReference, data: Doc) => {
+              assert.ok(reads.has(ref.path), `set without transaction read: ${ref.path}`);
+              return set(ref, data);
+            });
+            t.mock.method(tx, "delete", (ref: admin.firestore.DocumentReference) => {
+              assert.ok(reads.has(ref.path), `delete without transaction read: ${ref.path}`);
+              return remove(ref);
+            });
+            const result = await callback(tx);
+            if (!conflicted) {
+              conflicted = true;
+              assert.ok(reads.has(path));
+              assert.ok(reads.has("wallVariantGroups/root"));
+              if (action === "delete") store.delete(path);
+              else store.set(path, {...store.get(path), review: false});
+              assert.notDeepEqual(reads.get(path), store.get(path));
+              throw new Error("test-read-conflict");
+            }
+            return result;
+          });
+        } catch (error) {
+          if (!(error instanceof Error) || error.message !== "test-read-conflict") throw error;
+        }
+      }
+    });
+    await change(store, "walls/v1", variant({review: true}));
+    assert.equal(attempts, 2);
+    if (id === "root") {
+      assert.equal(store.get("walls/v1")?.variantLink, action === "delete" ? "not_found" : "not_approved");
+      assert.equal(store.get("walls/v1")?.variantGroupId, undefined);
+      assert.equal(store.has("wallVariantGroups/root"), false);
+    } else {
+      assert.deepEqual(store.get("wallVariantGroups/root")?.walls, ["root", "b", "v1"]);
+      ["root", "b", "v1"].forEach((member, index) => assert.equal(store.get(`walls/${member}`)?.variantIndex, index));
+      if (action === "delete") assert.equal(store.has(path), false);
+      else assert.equal(store.get(path)?.variantGroupId, undefined);
+    }
+  });
+}
+
+test("a delayed submission check does not reject an already-linked surviving variant", async (t) => {
+  const store = setup(t);
+  const snapshot = await db.doc("walls/v1").get();
+  await change(store, "walls/v1", variant({review: true}));
+  await change(store, "walls/v2", variant({review: true}));
+  await change(store, "walls/root", undefined);
+  await checkSubmittedVariantOf(snapshot);
+  assert.equal(store.get("walls/v1")?.variantLink, "linked");
+  assert.deepEqual(store.get("wallVariantGroups/root")?.walls, ["v1", "v2"]);
 });
