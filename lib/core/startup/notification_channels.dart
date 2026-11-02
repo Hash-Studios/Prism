@@ -52,6 +52,12 @@ List<NotificationChannelSpec> notificationChannelSpecs(AppLocalizations l10n) =>
     importance: Importance.high,
   ),
   NotificationChannelSpec(
+    'subscription',
+    l10n.notifChannelSubscription,
+    l10n.notifChannelSubscriptionDescription,
+    importance: Importance.high,
+  ),
+  NotificationChannelSpec(
     'streak_reminder',
     l10n.notifChannelStreaks,
     l10n.notifChannelStreaksDescription,

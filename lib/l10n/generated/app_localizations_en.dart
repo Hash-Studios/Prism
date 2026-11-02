@@ -12754,4 +12754,95 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifPushWrappedReadyBody => 'See the walls you saved, your colours and your creators.';
+
+  @override
+  String get trialTimelineTitle => 'How your free trial works';
+
+  @override
+  String get trialTimelineClose => 'Close';
+
+  @override
+  String trialTimelinePlanSummary(int days, String price) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString days', one: '1 day');
+    return 'Prism Pro yearly. $_temp0 free, then $price a year.';
+  }
+
+  @override
+  String get trialTimelineToday => 'Today';
+
+  @override
+  String get trialTimelineTodayBody => 'You get full access to Prism Pro. You pay nothing today.';
+
+  @override
+  String trialTimelineDay(int day) {
+    final intl.NumberFormat dayNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String dayString = dayNumberFormat.format(day);
+
+    return 'Day $dayString';
+  }
+
+  @override
+  String get trialTimelineReminderBody => 'We remind you that your trial ends soon.';
+
+  @override
+  String get trialTimelineNoReminderBody => 'No reminder. You turned it off below.';
+
+  @override
+  String trialTimelineChargeBody(String price) {
+    return 'You pay $price, unless you cancel at least 24 hours before.';
+  }
+
+  @override
+  String get trialTimelineRemindToggle => 'Remind me 2 days before the trial ends';
+
+  @override
+  String trialTimelineRenewalTerms(String price, String store) {
+    return 'After the trial, Prism Pro yearly renews at $price a year until you cancel. $store charges your account. To avoid a charge, cancel at least 24 hours before the trial or a renewal ends.';
+  }
+
+  @override
+  String trialTimelineCancelLink(String store) {
+    return 'Cancel any time in $store settings';
+  }
+
+  @override
+  String get trialTimelineSeeAllPlans => 'See all plans';
+
+  @override
+  String trialTimelineStart(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    return 'Start $daysString-day free trial';
+  }
+
+  @override
+  String get trialTimelineStartFailed => 'Could not start the free trial. Try again.';
+
+  @override
+  String trialReminderTitle(String date) {
+    return 'Your free trial ends on $date';
+  }
+
+  @override
+  String trialReminderBody(String store) {
+    return 'After that, you pay for Prism Pro yearly. To avoid the charge, cancel in $store settings at least 24 hours before.';
+  }
+
+  @override
+  String get notifChannelSubscription => 'Subscription';
+
+  @override
+  String get notifChannelSubscriptionDescription => 'A reminder before your free trial ends';
+
+  @override
+  String premiumTrialEnds(String date) {
+    return 'Trial, ends $date';
+  }
+
+  @override
+  String get premiumTrialAutoRenewOff => 'Auto-renew is off. You will not be charged when the trial ends.';
 }

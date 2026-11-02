@@ -4,6 +4,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/purchases/annual_trial.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -41,6 +42,45 @@ const CustomerInfo _proCustomer = CustomerInfo(
       expirationDate: '2027-01-01T00:00:00Z',
     ),
   }, <String, EntitlementInfo>{}),
+  <String, String?>{},
+  <String>[],
+  <String>[],
+  <StoreTransaction>[],
+  '',
+  'u1',
+  <String, String?>{},
+  '',
+);
+
+const CustomerInfo _trialCustomer = CustomerInfo(
+  EntitlementInfos(
+    <String, EntitlementInfo>{
+      PurchaseConstants.entitlementV3ProAccess: EntitlementInfo(
+        PurchaseConstants.entitlementV3ProAccess,
+        true,
+        true,
+        '2026-11-01T00:00:00Z',
+        '2026-11-01T00:00:00Z',
+        'prism_pro_yearly',
+        false,
+        periodType: PeriodType.trial,
+        expirationDate: '2099-11-08T00:00:00Z',
+      ),
+    },
+    <String, EntitlementInfo>{
+      PurchaseConstants.entitlementV3ProAccess: EntitlementInfo(
+        PurchaseConstants.entitlementV3ProAccess,
+        true,
+        true,
+        '2026-11-01T00:00:00Z',
+        '2026-11-01T00:00:00Z',
+        'prism_pro_yearly',
+        false,
+        periodType: PeriodType.trial,
+        expirationDate: '2099-11-08T00:00:00Z',
+      ),
+    },
+  ),
   <String, String?>{},
   <String>[],
   <String>[],
@@ -96,12 +136,15 @@ void main() {
   late int failuresLeft;
   late int configureCalls;
   late List<String> loginCalls;
+  late int resetTrialStateCalls;
+  late List<String?> resetTrialKeepUsers;
 
   PurchasesService buildService({
     Future<void> Function(PurchasesConfiguration configuration)? configurePurchases,
     Future<void> Function(String userId)? logIn,
     Future<CustomerInfo> Function()? getCustomerInfo,
     String Function()? apiKey,
+    Future<void> Function({String? keepUserId})? resetTrialState,
   }) => PurchasesService.forTesting(
     addCustomerInfoListener: listeners.add,
     syncSubscription: () async {
@@ -127,6 +170,12 @@ void main() {
         },
     getCustomerInfo: getCustomerInfo,
     apiKey: apiKey,
+    resetTrialState:
+        resetTrialState ??
+        ({String? keepUserId}) async {
+          resetTrialStateCalls++;
+          resetTrialKeepUsers.add(keepUserId);
+        },
   );
 
   setUp(() {
@@ -142,6 +191,8 @@ void main() {
     failuresLeft = 0;
     configureCalls = 0;
     loginCalls = <String>[];
+    resetTrialStateCalls = 0;
+    resetTrialKeepUsers = <String?>[];
     app_state.prismUser = profileUser(premium: true);
   });
 
@@ -346,6 +397,93 @@ void main() {
     await expectLater(service.ensureConfigured('user-2'), throwsA(isA<PlatformException>()));
   });
 
+  test('an account switch clears the prior trial and reminder before waiting for login', () async {
+    final Completer<void> loginGate = Completer<void>();
+    final PurchasesService service = buildService(logIn: (_) => loginGate.future);
+    await service.ensureConfigured('u1');
+    service.activeTrial.value = ActiveTrial(
+      productId: 'prism_pro_yearly',
+      endsAt: DateTime.utc(2099, 11, 8),
+      willRenew: true,
+    );
+
+    final Future<void> pendingSwitch = service.ensureConfigured('u2');
+    await pumpEventQueue();
+
+    expect(service.activeTrial.value, isNull);
+    expect(resetTrialStateCalls, 2);
+    expect(resetTrialKeepUsers, <String?>['u1', 'u2']);
+
+    loginGate.complete();
+    await pendingSwitch;
+  });
+
+  test('logout clears trial state even when RevenueCat was never configured', () async {
+    final PurchasesService service = buildService();
+    service.activeTrial.value = ActiveTrial(
+      productId: 'prism_pro_yearly',
+      endsAt: DateTime.utc(2099, 11, 8),
+      willRenew: true,
+    );
+
+    await service.logOut();
+
+    expect(service.activeTrial.value, isNull);
+    expect(resetTrialStateCalls, 1);
+  });
+
+  test('anonymous RevenueCat configuration preserves the reminder until the account is known', () async {
+    ActiveTrial? trialAtConfigure;
+    late PurchasesService service;
+    service = PurchasesService.forTesting(
+      addCustomerInfoListener: listeners.add,
+      configurePurchases: (_) async => trialAtConfigure = service.activeTrial.value,
+      apiKey: () => 'test-key',
+      resetTrialState: ({String? keepUserId}) async {
+        resetTrialStateCalls++;
+        resetTrialKeepUsers.add(keepUserId);
+      },
+    );
+    service.activeTrial.value = ActiveTrial(
+      productId: 'prism_pro_yearly',
+      endsAt: DateTime.utc(2099, 11, 8),
+      willRenew: true,
+    );
+
+    await service.configureEarly();
+
+    expect(trialAtConfigure, isNotNull);
+    expect(resetTrialStateCalls, 0);
+  });
+
+  test('a confirmed guest setup clears the prior account trial reminder', () async {
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
+    final PurchasesService service = buildService();
+
+    await service.ensureConfigured('');
+
+    expect(resetTrialStateCalls, 1);
+    expect(resetTrialKeepUsers, <String?>[null]);
+  });
+
+  test('a cold-start login clears another user reminder but preserves the target user reminder', () async {
+    final PurchasesService service = buildService(apiKey: () => 'test-key');
+    await service.configureEarly();
+
+    await service.ensureConfigured('u2');
+
+    expect(resetTrialKeepUsers, <String?>['u2']);
+  });
+
+  test('applying a trial CustomerInfo exposes it as Pro with its store expiry', () async {
+    final PurchasesService service = buildService(getCustomerInfo: () async => _trialCustomer);
+    await service.ensureConfigured('u1');
+
+    expect(await service.checkAndPersistPremium(), isTrue);
+    expect(app_state.prismUser.subscriptionTier, 'pro');
+    expect(service.activeTrial.value?.endsAt, DateTime.utc(2099, 11, 8));
+  });
+
   test('ignores an anonymous customer-info callback while signing in', () async {
     final Completer<void> loginGate = Completer<void>();
     final PurchasesService service = buildService(
@@ -401,6 +539,22 @@ void main() {
     expect(await service.checkAndPersistPremium(forceSync: true), isFalse);
     expect(app_state.prismUser.premium, isTrue);
     expect(syncCalls, 0);
+  });
+
+  testWidgets('customer-info refresh returns after the paywall load timeout', (WidgetTester tester) async {
+    final Completer<CustomerInfo> customerInfo = Completer<CustomerInfo>();
+    app_state.prismUser = profileUser();
+    final PurchasesService service = buildService(getCustomerInfo: () => customerInfo.future);
+    final Future<bool> pending = service.checkAndPersistPremium(forceSync: true);
+    bool settled = false;
+    unawaited(pending.then((_) => settled = true));
+
+    await tester.pump(const Duration(seconds: 10));
+    await tester.pump();
+
+    expect(settled, isTrue);
+    expect(await pending, isFalse);
+    customerInfo.complete(_proCustomer);
   });
 
   test('a forced check does not report cached premium for a guest without server acknowledgment', () async {
