@@ -11968,5 +11968,132 @@
   "premiumTrialEnds": "Testphase, endet am {date}",
   "@premiumTrialEnds": {"description": "Premium screen status while the user is in the free trial. {date} is a localized date.", "placeholders": {"date": {"type": "String"}}},
   "premiumTrialAutoRenewOff": "Die automatische Verlängerung ist aus. Dir wird nach Ende der Testphase nichts berechnet.",
-  "@premiumTrialAutoRenewOff": {"description": "Premium screen note during a free trial that the user cancelled."}
+  "@premiumTrialAutoRenewOff": {"description": "Premium screen note during a free trial that the user cancelled."},
+  "editorsChoiceTitle": "Empfehlungen der Redaktion",
+  "@editorsChoiceTitle": {
+    "description": "Title of the Editors' Choice page and its Home entry point."
+  },
+  "editorsChoiceRowBody": "Hintergründe, die unsere Redaktion liebt.",
+  "@editorsChoiceRowBody": {
+    "description": "Subtitle of the Editors' Choice row on Home."
+  },
+  "editorsChoiceEmptyTitle": "Noch keine Empfehlungen",
+  "@editorsChoiceEmptyTitle": {
+    "description": "Empty state title when there are no Editors' Choice picks."
+  },
+  "editorsChoiceEmptyBody": "Schau bald wieder vorbei, um neue Empfehlungen zu sehen.",
+  "@editorsChoiceEmptyBody": {
+    "description": "Empty state body shown under the title when there are no picks."
+  },
+  "editorsChoiceLoadError": "Empfehlungen der Redaktion konnten nicht geladen werden",
+  "@editorsChoiceLoadError": {
+    "description": "Error title when the Editors' Choice list fails to load."
+  },
+  "editorsChoiceLabelSemantics": "Von der Redaktion empfohlen",
+  "@editorsChoiceLabelSemantics": {
+    "description": "Accessibility label on a wallpaper that is an Editors' Choice pick."
+  },
+  "editorsChoicePick": "Zu Empfehlungen der Redaktion hinzufügen",
+  "@editorsChoicePick": {
+    "description": "Button label that adds a wallpaper to Editors' Choice."
+  },
+  "editorsChoiceUnpick": "Aus Empfehlungen der Redaktion entfernen",
+  "@editorsChoiceUnpick": {
+    "description": "Button label that removes a wallpaper from Editors' Choice."
+  },
+  "editorsChoicePicked": "Zu Empfehlungen der Redaktion hinzugefügt",
+  "@editorsChoicePicked": {
+    "description": "Snackbar shown after a wallpaper is added to Editors' Choice."
+  },
+  "editorsChoiceUnpicked": "Aus Empfehlungen der Redaktion entfernt",
+  "@editorsChoiceUnpicked": {
+    "description": "Snackbar shown after a wallpaper is removed from Editors' Choice."
+  },
+  "editorsChoiceNotEligible": "Nur genehmigte kostenlose Hintergründe mit fertigem Original können empfohlen werden.",
+  "@editorsChoiceNotEligible": {
+    "description": "Explanation shown when a wallpaper cannot be picked for Editors' Choice."
+  },
+  "adminApproveAndPick": "Genehmigen und empfehlen",
+  "@adminApproveAndPick": {
+    "description": "Admin button that approves a wallpaper and picks it for Editors' Choice."
+  },
+  "adminApprovedPickLater": "Genehmigt. Füge ihn zu den Empfehlungen der Redaktion auf seiner Seite hinzu, sobald das Original fertig ist.",
+  "@adminApprovedPickLater": {
+    "description": "Admin message after approval when the original is not ready to pick yet."
+  },
+  "wallCreditBy": "Von {name}",
+  "@wallCreditBy": {
+    "description": "Credit line naming the creator. {name} is the creator's display name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wallCreditPhotoBy": "Foto von {name}",
+  "@wallCreditPhotoBy": {
+    "description": "Credit line for a photo. {name} is the photographer's name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wallCreditByHashStudios": "Von Hash Studios",
+  "@wallCreditByHashStudios": {
+    "description": "Credit line for a wallpaper made by Hash Studios."
+  },
+  "wallCreditPrismExclusive": "Exklusiv bei Prism",
+  "@wallCreditPrismExclusive": {
+    "description": "Credit line for a wallpaper that is exclusive to Prism."
+  },
+  "wallCreditOnPexels": "Von Pexels",
+  "@wallCreditOnPexels": {
+    "description": "Credit line for a wallpaper sourced from Pexels."
+  },
+  "wallCreditOnWallhaven": "Von Wallhaven",
+  "@wallCreditOnWallhaven": {
+    "description": "Credit line for a wallpaper sourced from Wallhaven."
+  },
+  "wallCreditOpenProfileHint": "Öffnet das Profil",
+  "@wallCreditOpenProfileHint": {
+    "description": "Accessibility hint for a credit that opens a creator profile."
+  },
+  "wallCreditOpenSourceHint": "Öffnet im Browser",
+  "@wallCreditOpenSourceHint": {
+    "description": "Accessibility hint for a credit that opens the source site."
+  },
+  "profileProBadge": "Pro",
+  "@profileProBadge": {
+    "description": "Short badge text shown on a Prism Pro member's profile."
+  },
+  "profileProBadgeSemantics": "Prism-Pro-Mitglied",
+  "@profileProBadgeSemantics": {
+    "description": "Accessibility label for the Pro badge on a profile."
+  },
+  "settingsShowProBadgeTitle": "Pro-Abzeichen in meinem Profil anzeigen",
+  "@settingsShowProBadgeTitle": {
+    "description": "Settings toggle title that shows or hides the Pro badge on the user's profile."
+  },
+  "settingsShowProBadgeBody": "Personen, die dein Profil besuchen, sehen ein Pro-Abzeichen.",
+  "@settingsShowProBadgeBody": {
+    "description": "Settings toggle description for the Pro badge."
+  },
+  "notifPushEditorsChoiceTitle": "Dein Hintergrund ist eine Empfehlung der Redaktion",
+  "@notifPushEditorsChoiceTitle": {
+    "description": "Push notification title when a wallpaper becomes an Editors' Choice pick."
+  },
+  "notifPushEditorsChoiceBody": "Unsere Redaktion hat {wallTitle} empfohlen. Alle finden ihn auf der Startseite.",
+  "@notifPushEditorsChoiceBody": {
+    "description": "Push notification body for an Editors' Choice pick. {wallTitle} is the wallpaper title.",
+    "placeholders": {
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushEditorsChoiceBodyUntitled": "Unsere Redaktion hat deinen Hintergrund empfohlen. Alle finden ihn auf der Startseite.",
+  "@notifPushEditorsChoiceBodyUntitled": {
+    "description": "Push notification body for an Editors' Choice pick when the wallpaper has no title."
+  }
 }

@@ -16,6 +16,7 @@ class PublicProfileEntity {
     this.nameGlowId,
     this.xp = 0,
     this.premium = false,
+    this.proBadge = false,
   });
 
   final String id;
@@ -38,4 +39,7 @@ class PublicProfileEntity {
   final String? nameGlowId;
   final int xp;
   final bool premium;
+
+  /// The owner is Prism Pro and shows the badge. Only the server writes it.
+  final bool proBadge;
 }

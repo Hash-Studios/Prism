@@ -408,3 +408,13 @@ Spec: `docs/features/remix.md`. Each step needs the human owner's yes. Do the st
 2. Indexes: `firebase deploy --only firestore:indexes --project prism-wallpapers`. New `walls` index: `remixOf` (ascending), `review` (ascending), `createdAt` (descending). Wait until it shows `READY`.
 3. Functions: `make functions-deploy`. New: `onWallRemixWritten`. Changed: `onWallSubmitted`, which removes an invalid `remixOf`.
 4. Client release that writes `remixOf`.
+
+## Editors' Choice and wall credits
+
+Spec: `docs/features/editors-choice.md` and `docs/features/wall-credits.md`. Each step needs the human owner's yes where marked. Do the steps in this order.
+
+1. Rules: `firebase deploy --only firestore:rules --project prism-wallpapers`. The rules refuse client writes of `walls.editorsChoiceAt`, `walls.editorsChoiceBy` and `walls.byStudio`.
+2. Indexes: `firebase deploy --only firestore:indexes --project prism-wallpapers`. New `walls` index: `review` (ascending), `editorsChoiceAt` (descending). Wait until it shows `READY`.
+3. Functions: `setEditorsChoice`, `onWallApproved` and `projectUserProfile`.
+4. Backfill of `walls.byStudio`: run the dry run first with `cd functions && npm run build && node lib/scripts/backfillWallStudio.js`. Run `--apply` only with the owner's OK. The script needs Application Default Credentials for project `prism-wallpapers`.
+5. Client release.

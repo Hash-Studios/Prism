@@ -17,6 +17,7 @@ import 'package:Prism/features/public_profile/domain/entities/user_relation_kind
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
+import 'package:Prism/features/public_profile/views/widgets/pro_profile_badge.dart';
 import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -231,6 +232,30 @@ void main() {
     expect(tester.getSemantics(find.bySemanticsLabel('2 Following')), isNotNull);
     expect(tester.getSemantics(find.bySemanticsLabel('41 Followers')), isNotNull);
     expect(repository.watchedIdentifiers, <String>['me']);
+  });
+
+  testWidgets('own profile shows the Pro badge only while the public profile carries it', (tester) async {
+    await pumpScreen(tester);
+    PublicProfileEntity graph({required bool proBadge}) => PublicProfileEntity(
+      id: 'me',
+      name: 'Me Myself',
+      email: '',
+      username: 'creator_01',
+      profilePhoto: '',
+      bio: '',
+      links: const <String, String>{},
+      coverPhoto: '',
+      proBadge: proBadge,
+    );
+    expect(find.byType(ProProfileBadge), findsNothing);
+
+    repository.profiles.add(graph(proBadge: true));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(ProProfileBadge), findsOneWidget);
+
+    repository.profiles.add(graph(proBadge: false));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(ProProfileBadge), findsNothing);
   });
 
   testWidgets('tappable profile counts expose button semantics', (tester) async {
@@ -670,6 +695,80 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.byKey(ProfileFrame.ringKey), findsOneWidget);
+    });
+
+    testWidgets('a profile with the Pro badge shows it above the badge row', (tester) async {
+      await pumpScreen(tester, identifier: 'u2');
+      repository.profiles.add(
+        const PublicProfileEntity(
+          id: 'u2',
+          name: 'Ana Rivera',
+          email: '',
+          username: 'ana_rivera',
+          profilePhoto: '',
+          bio: '',
+          links: <String, String>{},
+          coverPhoto: '',
+          proBadge: true,
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.byType(ProProfileBadge), findsOneWidget);
+    });
+
+    testWidgets('a profile without the Pro badge shows no badge', (tester) async {
+      await pumpScreen(tester, identifier: 'u2');
+      repository.profiles.add(
+        const PublicProfileEntity(
+          id: 'u2',
+          name: 'Ana Rivera',
+          email: '',
+          username: 'ana_rivera',
+          profilePhoto: '',
+          bio: '',
+          links: <String, String>{},
+          coverPhoto: '',
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.byType(ProProfileBadge), findsNothing);
+    });
+
+    testWidgets('a Pro badge profile renders at 2x text without an exception', (tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const ProfileScreen(profileIdentifier: 'u2'),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+            child: favouriteTestBuilder(context, child),
+          ),
+        ),
+      );
+      repository.profiles.add(
+        const PublicProfileEntity(
+          id: 'u2',
+          name: 'Ana Rivera',
+          email: '',
+          username: 'ana_rivera',
+          profilePhoto: '',
+          bio: '',
+          links: <String, String>{},
+          coverPhoto: '',
+          proBadge: true,
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.byType(ProProfileBadge), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('own profile updates when a frame is equipped', (tester) async {

@@ -16,6 +16,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/ads/ads.dart';
+import 'package:Prism/features/editors_choice/biz/editors_choice_cubit.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
@@ -43,6 +44,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mocktail/mocktail.dart';
 
+import '../../support/empty_editors_choice_repository.dart';
 import '../../support/empty_mood_repository.dart';
 import '../../support/empty_weekly_challenges_repository.dart';
 import '../../support/fake_firestore_client.dart';
@@ -182,7 +184,8 @@ void main() {
       ..registerSingleton<ConnectivityService>(_Connectivity())
       ..registerSingleton<PersonalizedFeedBloc>(feed)
       ..registerSingleton<TrendingBloc>(trending)
-      ..registerSingleton<MoodsCubit>(MoodsCubit(const EmptyMoodRepository()));
+      ..registerSingleton<MoodsCubit>(MoodsCubit(const EmptyMoodRepository()))
+      ..registerFactory<EditorsChoiceCubit>(() => EditorsChoiceCubit(const EmptyEditorsChoiceRepository()));
     messenger.setMockMethodCallHandler(_quickActions, (call) async {
       quickActionCalls.add(call);
       return null;

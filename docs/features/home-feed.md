@@ -122,6 +122,7 @@ The tabs sit under the top bar, in this order: For you, Following, Trending, Lat
 
 - Every tab uses the same grid: 2 columns on a phone in portrait by default (a wider screen gets more), 4 px gaps on both axes, a 4 px side margin and rounded corners (12 px). The side margin equals the gap, so the gutters are even. A tile is twice as tall as it is wide.
 - The Home grids pass `PrismFeedLayout.gridSpacing` (4 px) to `PrismWallGrid.delegate` and `PrismFeedLayout.gridPadding` as the padding. The tiles keep the default `PrismWallGrid.tileRadius`.
+- The Editors' Choice row sits after grid row 6, between the two mood rows. It hides while it loads, on an error, and with fewer than 4 picks. The details are in [editors-choice.md](editors-choice.md).
 - The Creators to follow row sits four wallpaper rows into the Home grid. The details are in [creator-directory.md](creator-directory.md).
 - The other screens (search, categories, collections, favourites, profiles) keep the 8 px gap, the 12 px side margin and the rounded corners.
 

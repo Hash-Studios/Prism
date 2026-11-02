@@ -12845,4 +12845,94 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get premiumTrialAutoRenewOff => 'Auto-renew is off. You will not be charged when the trial ends.';
+
+  @override
+  String get editorsChoiceTitle => 'Editors\' Choice';
+
+  @override
+  String get editorsChoiceRowBody => 'Wallpapers our editors love.';
+
+  @override
+  String get editorsChoiceEmptyTitle => 'No picks yet';
+
+  @override
+  String get editorsChoiceEmptyBody => 'Check back soon for new picks.';
+
+  @override
+  String get editorsChoiceLoadError => 'Couldn\'t load Editors\' Choice';
+
+  @override
+  String get editorsChoiceLabelSemantics => 'Picked for Editors\' Choice';
+
+  @override
+  String get editorsChoicePick => 'Add to Editors\' Choice';
+
+  @override
+  String get editorsChoiceUnpick => 'Remove from Editors\' Choice';
+
+  @override
+  String get editorsChoicePicked => 'Added to Editors\' Choice';
+
+  @override
+  String get editorsChoiceUnpicked => 'Removed from Editors\' Choice';
+
+  @override
+  String get editorsChoiceNotEligible => 'Only approved free wallpapers with a ready original can be picks.';
+
+  @override
+  String get adminApproveAndPick => 'Approve and pick';
+
+  @override
+  String get adminApprovedPickLater => 'Approved. Add it to Editors\' Choice from its page once its original is ready.';
+
+  @override
+  String wallCreditBy(String name) {
+    return 'By $name';
+  }
+
+  @override
+  String wallCreditPhotoBy(String name) {
+    return 'Photo by $name';
+  }
+
+  @override
+  String get wallCreditByHashStudios => 'By Hash Studios';
+
+  @override
+  String get wallCreditPrismExclusive => 'Prism exclusive';
+
+  @override
+  String get wallCreditOnPexels => 'From Pexels';
+
+  @override
+  String get wallCreditOnWallhaven => 'From Wallhaven';
+
+  @override
+  String get wallCreditOpenProfileHint => 'Opens the profile';
+
+  @override
+  String get wallCreditOpenSourceHint => 'Opens in your browser';
+
+  @override
+  String get profileProBadge => 'Pro';
+
+  @override
+  String get profileProBadgeSemantics => 'Prism Pro member';
+
+  @override
+  String get settingsShowProBadgeTitle => 'Show Pro badge on my profile';
+
+  @override
+  String get settingsShowProBadgeBody => 'People who visit your profile see a Pro badge.';
+
+  @override
+  String get notifPushEditorsChoiceTitle => 'Your wallpaper is an Editors\' Choice';
+
+  @override
+  String notifPushEditorsChoiceBody(String wallTitle) {
+    return 'Our editors picked $wallTitle. Everyone can find it on Home.';
+  }
+
+  @override
+  String get notifPushEditorsChoiceBodyUntitled => 'Our editors picked your wallpaper. Everyone can find it on Home.';
 }

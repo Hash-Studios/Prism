@@ -13010,4 +13010,97 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get premiumTrialAutoRenewOff =>
       'La renovación automática está desactivada. No se te cobrará cuando termine la prueba.';
+
+  @override
+  String get editorsChoiceTitle => 'Selección del editor';
+
+  @override
+  String get editorsChoiceRowBody => 'Fondos de pantalla que a nuestros editores les encantan.';
+
+  @override
+  String get editorsChoiceEmptyTitle => 'Aún no hay selecciones';
+
+  @override
+  String get editorsChoiceEmptyBody => 'Vuelve pronto para ver nuevas selecciones.';
+
+  @override
+  String get editorsChoiceLoadError => 'No se pudo cargar la Selección del editor';
+
+  @override
+  String get editorsChoiceLabelSemantics => 'Elegido para la Selección del editor';
+
+  @override
+  String get editorsChoicePick => 'Añadir a la Selección del editor';
+
+  @override
+  String get editorsChoiceUnpick => 'Quitar de la Selección del editor';
+
+  @override
+  String get editorsChoicePicked => 'Añadido a la Selección del editor';
+
+  @override
+  String get editorsChoiceUnpicked => 'Quitado de la Selección del editor';
+
+  @override
+  String get editorsChoiceNotEligible =>
+      'Solo los fondos de pantalla gratuitos aprobados con el original listo pueden ser selecciones.';
+
+  @override
+  String get adminApproveAndPick => 'Aprobar y elegir';
+
+  @override
+  String get adminApprovedPickLater =>
+      'Aprobado. Añádelo a la Selección del editor desde su página cuando su original esté listo.';
+
+  @override
+  String wallCreditBy(String name) {
+    return 'Por $name';
+  }
+
+  @override
+  String wallCreditPhotoBy(String name) {
+    return 'Foto de $name';
+  }
+
+  @override
+  String get wallCreditByHashStudios => 'Por Hash Studios';
+
+  @override
+  String get wallCreditPrismExclusive => 'Exclusivo de Prism';
+
+  @override
+  String get wallCreditOnPexels => 'De Pexels';
+
+  @override
+  String get wallCreditOnWallhaven => 'De Wallhaven';
+
+  @override
+  String get wallCreditOpenProfileHint => 'Abre el perfil';
+
+  @override
+  String get wallCreditOpenSourceHint => 'Se abre en tu navegador';
+
+  @override
+  String get profileProBadge => 'Pro';
+
+  @override
+  String get profileProBadgeSemantics => 'Miembro de Prism Pro';
+
+  @override
+  String get settingsShowProBadgeTitle => 'Mostrar la insignia Pro en mi perfil';
+
+  @override
+  String get settingsShowProBadgeBody => 'Las personas que visitan tu perfil ven una insignia Pro.';
+
+  @override
+  String get notifPushEditorsChoiceTitle => 'Tu fondo de pantalla está en la Selección del editor';
+
+  @override
+  String notifPushEditorsChoiceBody(String wallTitle) {
+    return 'Nuestros editores eligieron $wallTitle. Todos pueden encontrarlo en Inicio.';
+  }
+
+  @override
+  String get notifPushEditorsChoiceBodyUntitled =>
+      'Nuestros editores eligieron tu fondo de pantalla. Todos pueden encontrarlo en Inicio.';
 }

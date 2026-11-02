@@ -12096,5 +12096,132 @@
   "premiumTrialAutoRenewOff": "Perpanjangan otomatis mati. Anda tidak akan ditagih saat uji coba berakhir.",
   "@premiumTrialAutoRenewOff": {
     "description": "Premium screen note during a free trial that the user cancelled."
+  },
+  "editorsChoiceTitle": "Pilihan Editor",
+  "@editorsChoiceTitle": {
+    "description": "Title of the Editors' Choice page and its Home entry point."
+  },
+  "editorsChoiceRowBody": "Wallpaper yang disukai editor kami.",
+  "@editorsChoiceRowBody": {
+    "description": "Subtitle of the Editors' Choice row on Home."
+  },
+  "editorsChoiceEmptyTitle": "Belum ada pilihan",
+  "@editorsChoiceEmptyTitle": {
+    "description": "Empty state title when there are no Editors' Choice picks."
+  },
+  "editorsChoiceEmptyBody": "Cek lagi nanti untuk pilihan baru.",
+  "@editorsChoiceEmptyBody": {
+    "description": "Empty state body shown under the title when there are no picks."
+  },
+  "editorsChoiceLoadError": "Pilihan Editor tidak dapat dimuat",
+  "@editorsChoiceLoadError": {
+    "description": "Error title when the Editors' Choice list fails to load."
+  },
+  "editorsChoiceLabelSemantics": "Dipilih untuk Pilihan Editor",
+  "@editorsChoiceLabelSemantics": {
+    "description": "Accessibility label on a wallpaper that is an Editors' Choice pick."
+  },
+  "editorsChoicePick": "Tambahkan ke Pilihan Editor",
+  "@editorsChoicePick": {
+    "description": "Button label that adds a wallpaper to Editors' Choice."
+  },
+  "editorsChoiceUnpick": "Hapus dari Pilihan Editor",
+  "@editorsChoiceUnpick": {
+    "description": "Button label that removes a wallpaper from Editors' Choice."
+  },
+  "editorsChoicePicked": "Ditambahkan ke Pilihan Editor",
+  "@editorsChoicePicked": {
+    "description": "Snackbar shown after a wallpaper is added to Editors' Choice."
+  },
+  "editorsChoiceUnpicked": "Dihapus dari Pilihan Editor",
+  "@editorsChoiceUnpicked": {
+    "description": "Snackbar shown after a wallpaper is removed from Editors' Choice."
+  },
+  "editorsChoiceNotEligible": "Hanya wallpaper gratis yang disetujui dengan file asli siap yang dapat dipilih.",
+  "@editorsChoiceNotEligible": {
+    "description": "Explanation shown when a wallpaper cannot be picked for Editors' Choice."
+  },
+  "adminApproveAndPick": "Setujui dan pilih",
+  "@adminApproveAndPick": {
+    "description": "Admin button that approves a wallpaper and picks it for Editors' Choice."
+  },
+  "adminApprovedPickLater": "Disetujui. Tambahkan ke Pilihan Editor dari halamannya setelah file aslinya siap.",
+  "@adminApprovedPickLater": {
+    "description": "Admin message after approval when the original is not ready to pick yet."
+  },
+  "wallCreditBy": "Oleh {name}",
+  "@wallCreditBy": {
+    "description": "Credit line naming the creator. {name} is the creator's display name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wallCreditPhotoBy": "Foto oleh {name}",
+  "@wallCreditPhotoBy": {
+    "description": "Credit line for a photo. {name} is the photographer's name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wallCreditByHashStudios": "Oleh Hash Studios",
+  "@wallCreditByHashStudios": {
+    "description": "Credit line for a wallpaper made by Hash Studios."
+  },
+  "wallCreditPrismExclusive": "Eksklusif Prism",
+  "@wallCreditPrismExclusive": {
+    "description": "Credit line for a wallpaper that is exclusive to Prism."
+  },
+  "wallCreditOnPexels": "Dari Pexels",
+  "@wallCreditOnPexels": {
+    "description": "Credit line for a wallpaper sourced from Pexels."
+  },
+  "wallCreditOnWallhaven": "Dari Wallhaven",
+  "@wallCreditOnWallhaven": {
+    "description": "Credit line for a wallpaper sourced from Wallhaven."
+  },
+  "wallCreditOpenProfileHint": "Membuka profil",
+  "@wallCreditOpenProfileHint": {
+    "description": "Accessibility hint for a credit that opens a creator profile."
+  },
+  "wallCreditOpenSourceHint": "Membuka di browser Anda",
+  "@wallCreditOpenSourceHint": {
+    "description": "Accessibility hint for a credit that opens the source site."
+  },
+  "profileProBadge": "Pro",
+  "@profileProBadge": {
+    "description": "Short badge text shown on a Prism Pro member's profile."
+  },
+  "profileProBadgeSemantics": "Anggota Prism Pro",
+  "@profileProBadgeSemantics": {
+    "description": "Accessibility label for the Pro badge on a profile."
+  },
+  "settingsShowProBadgeTitle": "Tampilkan lencana Pro di profil saya",
+  "@settingsShowProBadgeTitle": {
+    "description": "Settings toggle title that shows or hides the Pro badge on the user's profile."
+  },
+  "settingsShowProBadgeBody": "Orang yang mengunjungi profil Anda melihat lencana Pro.",
+  "@settingsShowProBadgeBody": {
+    "description": "Settings toggle description for the Pro badge."
+  },
+  "notifPushEditorsChoiceTitle": "Wallpaper Anda adalah Pilihan Editor",
+  "@notifPushEditorsChoiceTitle": {
+    "description": "Push notification title when a wallpaper becomes an Editors' Choice pick."
+  },
+  "notifPushEditorsChoiceBody": "Editor kami memilih {wallTitle}. Semua orang bisa menemukannya di Beranda.",
+  "@notifPushEditorsChoiceBody": {
+    "description": "Push notification body for an Editors' Choice pick. {wallTitle} is the wallpaper title.",
+    "placeholders": {
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushEditorsChoiceBodyUntitled": "Editor kami memilih wallpaper Anda. Semua orang bisa menemukannya di Beranda.",
+  "@notifPushEditorsChoiceBodyUntitled": {
+    "description": "Push notification body for an Editors' Choice pick when the wallpaper has no title."
   }
 }

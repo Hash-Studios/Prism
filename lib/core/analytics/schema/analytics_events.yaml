@@ -3001,3 +3001,26 @@ events:
       - name: reason
         key: reason
         type: string
+  - id: editors_choice_row_seen
+    fields:
+      - name: pick_count
+        key: pick_count
+        type: int
+  - id: editors_choice_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: editors_choice_pick_changed
+    fields:
+      - name: picked
+        key: picked
+        type: bool
+      - name: surface
+        key: surface
+        type: string
+  - id: pro_badge_toggled
+    fields:
+      - name: shown
+        key: shown
+        type: bool

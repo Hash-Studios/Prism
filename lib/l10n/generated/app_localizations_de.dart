@@ -13034,4 +13034,97 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get premiumTrialAutoRenewOff =>
       'Die automatische Verlängerung ist aus. Dir wird nach Ende der Testphase nichts berechnet.';
+
+  @override
+  String get editorsChoiceTitle => 'Empfehlungen der Redaktion';
+
+  @override
+  String get editorsChoiceRowBody => 'Hintergründe, die unsere Redaktion liebt.';
+
+  @override
+  String get editorsChoiceEmptyTitle => 'Noch keine Empfehlungen';
+
+  @override
+  String get editorsChoiceEmptyBody => 'Schau bald wieder vorbei, um neue Empfehlungen zu sehen.';
+
+  @override
+  String get editorsChoiceLoadError => 'Empfehlungen der Redaktion konnten nicht geladen werden';
+
+  @override
+  String get editorsChoiceLabelSemantics => 'Von der Redaktion empfohlen';
+
+  @override
+  String get editorsChoicePick => 'Zu Empfehlungen der Redaktion hinzufügen';
+
+  @override
+  String get editorsChoiceUnpick => 'Aus Empfehlungen der Redaktion entfernen';
+
+  @override
+  String get editorsChoicePicked => 'Zu Empfehlungen der Redaktion hinzugefügt';
+
+  @override
+  String get editorsChoiceUnpicked => 'Aus Empfehlungen der Redaktion entfernt';
+
+  @override
+  String get editorsChoiceNotEligible =>
+      'Nur genehmigte kostenlose Hintergründe mit fertigem Original können empfohlen werden.';
+
+  @override
+  String get adminApproveAndPick => 'Genehmigen und empfehlen';
+
+  @override
+  String get adminApprovedPickLater =>
+      'Genehmigt. Füge ihn zu den Empfehlungen der Redaktion auf seiner Seite hinzu, sobald das Original fertig ist.';
+
+  @override
+  String wallCreditBy(String name) {
+    return 'Von $name';
+  }
+
+  @override
+  String wallCreditPhotoBy(String name) {
+    return 'Foto von $name';
+  }
+
+  @override
+  String get wallCreditByHashStudios => 'Von Hash Studios';
+
+  @override
+  String get wallCreditPrismExclusive => 'Exklusiv bei Prism';
+
+  @override
+  String get wallCreditOnPexels => 'Von Pexels';
+
+  @override
+  String get wallCreditOnWallhaven => 'Von Wallhaven';
+
+  @override
+  String get wallCreditOpenProfileHint => 'Öffnet das Profil';
+
+  @override
+  String get wallCreditOpenSourceHint => 'Öffnet im Browser';
+
+  @override
+  String get profileProBadge => 'Pro';
+
+  @override
+  String get profileProBadgeSemantics => 'Prism-Pro-Mitglied';
+
+  @override
+  String get settingsShowProBadgeTitle => 'Pro-Abzeichen in meinem Profil anzeigen';
+
+  @override
+  String get settingsShowProBadgeBody => 'Personen, die dein Profil besuchen, sehen ein Pro-Abzeichen.';
+
+  @override
+  String get notifPushEditorsChoiceTitle => 'Dein Hintergrund ist eine Empfehlung der Redaktion';
+
+  @override
+  String notifPushEditorsChoiceBody(String wallTitle) {
+    return 'Unsere Redaktion hat $wallTitle empfohlen. Alle finden ihn auf der Startseite.';
+  }
+
+  @override
+  String get notifPushEditorsChoiceBodyUntitled =>
+      'Unsere Redaktion hat deinen Hintergrund empfohlen. Alle finden ihn auf der Startseite.';
 }
