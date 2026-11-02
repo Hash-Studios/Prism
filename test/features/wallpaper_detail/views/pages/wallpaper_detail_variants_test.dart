@@ -1,11 +1,15 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -24,10 +28,13 @@ import 'package:Prism/features/wallpaper_detail/domain/entities/variant_group.da
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/fake_app_analytics.dart';
@@ -38,6 +45,16 @@ import '../../../../support/wallpaper_image_finders.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
+
+class _MockStackRouter extends Mock implements StackRouter {}
+
+class _ThrowingPicker extends ImagePickerPlatform {
+  @override
+  Future<XFile?> getImageFromSource({
+    required ImageSource source,
+    ImagePickerOptions options = const ImagePickerOptions(),
+  }) => Future<XFile?>.error(PlatformException(code: 'photo_access_denied'));
+}
 
 const Size _device = Size(390, 844);
 
@@ -414,5 +431,79 @@ void main() {
     expect(urls().where((u) => u!.contains('v0')), isEmpty);
     expect(tester.widget<Hero>(find.byType(Hero)).tag, 'tile-1');
     verifyNever(() => createdBlocs.first.add(any(that: isA<SelectVariant>())));
+  });
+
+  testWidgets('a picker failure shows an error and opens no upload', (tester) async {
+    final ImagePickerPlatform previousPicker = ImagePickerPlatform.instance;
+    ImagePickerPlatform.instance = _ThrowingPicker();
+    addTearDown(() => ImagePickerPlatform.instance = previousPicker);
+    final PrismUsersV2 previousUser = app_state.prismUser;
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'owner-uid'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = previousUser);
+    final List<MethodCall> toastCalls = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), (
+      call,
+    ) async {
+      if (call.method == 'showToast') toastCalls.add(call);
+      return true;
+    });
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('PonnamKarthik/fluttertoast'),
+        null,
+      ),
+    );
+    final PrismWallpaper owned = PrismWallpaper(
+      core: WallpaperCore(
+        id: 'v0',
+        source: WallpaperSource.prism,
+        fullUrl: 'https://example.com/v0-full.jpg',
+        thumbnailUrl: 'https://example.com/v0-thumb.jpg',
+        authorUid: 'owner-uid',
+      ),
+      review: true,
+      firestoreDocumentId: 'doc0',
+      colors: const ['blue'],
+      variantGroupId: 'doc0',
+      variantIndex: 0,
+    );
+    final VariantGroup group = VariantGroup(id: 'doc0', walls: [owned, _v1, _v2]);
+    registerFallbackValue(UploadWallRoute(image: File('unused.jpg')));
+    final _MockStackRouter router = _MockStackRouter();
+    tester.view.physicalSize = _device;
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final _MockWallpaperDetailBloc bloc = _MockWallpaperDetailBloc();
+    whenListen(
+      bloc,
+      const Stream<WallpaperDetailState>.empty(),
+      initialState: _state(entity: _entity(owned), variants: group),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: StackRouterScope(
+          controller: router,
+          stateHash: 0,
+          child: BlocProvider<WallpaperDetailBloc>.value(
+            value: bloc,
+            child: WallpaperDetailScreen(entity: _entity(owned)),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -400));
+    await tester.pump();
+    await tester.tap(find.text('Add a colour variant'));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(tester.takeException(), isNull);
+    verifyNever(() => router.push(any(that: isA<UploadWallRoute>())));
+    expect(toastCalls.map((call) => call.arguments['msg']), contains('Something went wrong. Try again.'));
   });
 }

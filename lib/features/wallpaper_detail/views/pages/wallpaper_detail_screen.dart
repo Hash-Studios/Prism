@@ -1120,7 +1120,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       analytics.track(WallpaperVariantUploadStartedEvent(wallId: wall.id, variantCount: state.variants?.length ?? 1)),
     );
     final router = context.router;
-    final XFile? picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final AppLocalizations l10n = context.l10n;
+    final XFile? picked;
+    try {
+      picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    } catch (error, stackTrace) {
+      logger.w('Variant image could not be picked', error: error, stackTrace: stackTrace);
+      if (mounted) toasts.error(l10n.coreSomethingWentWrong);
+      return;
+    }
     if (picked == null || !mounted) return;
     unawaited(
       router.push(

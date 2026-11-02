@@ -157,6 +157,29 @@ void main() {
 
       expect(find.text('Colour variant of Dusk Sea'), findsNothing);
       expect(find.byTooltip('Upload as a new wallpaper instead'), findsNothing);
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+      await tester.pumpWidget(const SizedBox());
+
+      // A later "Add a colour variant" for the same image must not inherit the removal saved in its draft.
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: UploadWallScreen(
+            key: UniqueKey(),
+            image: image,
+            variantSeed: _seed,
+            prepareImageForTesting: () async {},
+            draftStoreForTesting: drafts,
+            deleteFileForTesting: ({required path, required sha}) async {},
+          ),
+        ),
+      );
+      await _pumpImagePreparation(tester);
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+      await tester.pump();
+
+      expect(find.text('Colour variant of Dusk Sea'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     });
   });

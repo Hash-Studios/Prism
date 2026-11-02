@@ -284,8 +284,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         : seed == null
         ? restored
         : restored.copyWith(challengeId: seed.id, challengeTheme: seed.theme);
-    _variantRemoved = _variantRemoved || restored.variantRemoved;
     final variant = widget.variantSeed;
+    // A new "Add a colour variant" choice wins over a link removed in an older draft of the same image.
+    _variantRemoved = _variantRemoved || (variant == null && restored.variantRemoved);
     _metadata = _variantRemoved
         ? _metadata.copyWith(variantOf: '', variantThumb: '', variantTitle: '', variantRemoved: true)
         : variant == null
@@ -294,6 +295,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
             variantOf: variant.wallDocId,
             variantThumb: variant.thumbnailUrl,
             variantTitle: variant.title ?? '',
+            variantRemoved: false,
           );
   }
 
