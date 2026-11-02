@@ -11512,6 +11512,70 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallMetadataEditDetails => 'Editar detalles';
 
   @override
+  String get wallVariantAdd => 'Añadir una variante de color';
+
+  @override
+  String wallVariantUploadContext(String title) {
+    return 'Variante de color de $title';
+  }
+
+  @override
+  String get wallVariantUploadContextUntitled => 'Variante de color de tu fondo de pantalla';
+
+  @override
+  String get wallVariantUploadHint =>
+      'Usa el mismo tamaño y forma que el original. Se une al conjunto tras la revisión.';
+
+  @override
+  String get wallVariantUnlinkTooltip => 'Subir como un fondo de pantalla nuevo';
+
+  @override
+  String wallVariantCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count colores');
+    return '$_temp0';
+  }
+
+  @override
+  String wallVariantDotLabel(int index, int count, String colour) {
+    return 'Variante $index de $count, $colour';
+  }
+
+  @override
+  String wallVariantDotLabelPlain(int index, int count) {
+    return 'Variante $index de $count';
+  }
+
+  @override
+  String get wallVariantDotHint => 'Mostrar este color';
+
+  @override
+  String get wallVariantNextHint => 'Mostrar el siguiente color';
+
+  @override
+  String get wallVariantPending => 'Variante de color. Se une al conjunto tras la revisión.';
+
+  @override
+  String get wallVariantLinked => 'En un conjunto de variantes de color';
+
+  @override
+  String get wallVariantDroppedTitle => 'No se añadió como variante de color';
+
+  @override
+  String get wallVariantDroppedNotFound => 'Se eliminó el fondo de pantalla original.';
+
+  @override
+  String get wallVariantDroppedNotOwner => 'El original pertenece a otro creador.';
+
+  @override
+  String get wallVariantDroppedNotApproved => 'El original no está aprobado.';
+
+  @override
+  String get wallVariantDroppedFull => 'El conjunto ya tiene 5 colores.';
+
+  @override
+  String get wallVariantDroppedAspect => 'Tiene una forma distinta a la del original.';
+
+  @override
   String get wallMetadataApprovedHelp =>
       'Cambia el título, la descripción y las etiquetas. La imagen y la categoría no cambian.';
 

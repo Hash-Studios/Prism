@@ -402,6 +402,20 @@ enums:
     values:
       - tap
       - semantics
+  - name: variant_switch_source
+    dart_type: VariantSwitchSourceValue
+    values:
+      - dot
+      - tap
+  - name: variant_link_result
+    dart_type: VariantLinkResultValue
+    values:
+      - linked
+      - not_found
+      - not_owner
+      - not_approved
+      - group_full
+      - aspect_ratio
   - name: favourite_pin_surface
     dart_type: FavouritePinSurfaceValue
     values:
@@ -2678,6 +2692,38 @@ events:
         type: enum
         enum: ImmersiveToggleSourceValue
   - id: detail_immersive_hint_shown
+  - id: wallpaper_variant_switched
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: VariantSwitchSourceValue
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: variant_index
+        key: variant_index
+        type: int
+      - name: variant_count
+        key: variant_count
+        type: int
+  - id: wallpaper_variant_upload_started
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: variant_count
+        key: variant_count
+        type: int
+  - id: wallpaper_variant_link_resolved
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: result
+        key: result
+        type: enum
+        enum: VariantLinkResultValue
   - id: favourite_pin_changed
     fields:
       - name: pinned

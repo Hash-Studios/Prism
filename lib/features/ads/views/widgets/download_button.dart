@@ -195,6 +195,8 @@ class _DownloadButtonState extends State<DownloadButton> {
   void didUpdateWidget(DownloadButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.link != widget.link ||
+        oldWidget.contentId != widget.contentId ||
+        oldWidget.wallpaperSource != widget.wallpaperSource ||
         oldWidget.variant?.key != widget.variant?.key ||
         oldWidget.savedIdentity != widget.savedIdentity ||
         oldWidget.indexSource != widget.indexSource ||

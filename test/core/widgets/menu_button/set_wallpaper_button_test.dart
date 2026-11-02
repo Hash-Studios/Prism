@@ -1869,6 +1869,38 @@ void main() {
     bool toasted(String message) =>
         toasts.any((call) => call.method == 'showToast' && (call.arguments as Map)['msg'] == message);
 
+    testWidgets('changing variants while a prepared image loads cancels the old tap', (tester) async {
+      final Completer<String> prepared = Completer<String>();
+      var preparations = 0;
+      Widget button({required String id, required String url}) => MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: SetWallpaperButton(
+            key: const ValueKey<String>('set-variant'),
+            url: url,
+            wallpaperId: id,
+            wallpaperSource: WallpaperSource.prism,
+            prepareSource: () {
+              preparations++;
+              return prepared.future;
+            },
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(button(id: 'wall-a', url: '/tmp/wall-a.png'));
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
+      await tester.pump();
+      expect(preparations, 1);
+
+      await tester.pumpWidget(button(id: 'wall-b', url: '/tmp/wall-b.png'));
+      prepared.complete('/tmp/prepared-a.png');
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ClockOverlay), findsNothing);
+    });
+
     testWidgets('authorized rendering stays busy and reports edit errors without applying', (tester) async {
       await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
       final client = _Client();

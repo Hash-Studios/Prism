@@ -12,6 +12,7 @@ import {authorOf, authorUpdate} from "./wallAuthor";
 import {keepRemixOf, removeRemixOfIfUnchanged} from "./wallRemix";
 import {sanitizeResubmitOf} from "./wallResubmissions";
 import {sanitizeSubmissionText} from "./wallSubmissionSafety";
+import {checkSubmittedVariantOf} from "./wallVariants";
 
 const GITHUB_RAW_HOST = "raw.githubusercontent.com";
 const studioSecret = defineSecret("STUDIO_SECRET");
@@ -30,7 +31,8 @@ export function isGithubRawUrl(url: unknown): boolean {
  * Fills `by` and `userPhoto` of a new wall from the owner's profile, because the client writes both. Logs, but does
  * not reject, an image link outside the GitHub raw host. Copies the Worker record of a user AI wall to a server-only
  * receipt, so the approval trigger can prove its owner after the record expires. Removes a `remixOf` that does not name
- * an approved AI original (see keepRemixOf). Then notifies the admins in `config/adminNotifications` when a premium
+ * an approved AI original (see keepRemixOf), and a `variantOf` that fails a colourway check
+ * (see checkSubmittedVariantOf). Then notifies the admins in `config/adminNotifications` when a premium
  * user submits a wall (walls start with review=false).
  */
 export const onWallSubmitted = onDocumentCreated(
@@ -58,6 +60,15 @@ export const onWallSubmitted = onDocumentCreated(
       } catch (err) {
         // onWallRemixWritten checks the link again before it credits anything.
         logger.warn("onWallSubmitted: remixOf check failed.", {wallId, err});
+      }
+    }
+    if (data.variantOf !== undefined && event.data) {
+      try {
+        const dropped = await checkSubmittedVariantOf(event.data);
+        if (dropped) logger.info("onWallSubmitted: removed a variantOf that failed a check.", {wallId, reason: dropped});
+      } catch (err) {
+        // onWallVariantWritten checks the link again on approval.
+        logger.warn("onWallSubmitted: variantOf check failed.", {wallId, err});
       }
     }
     if (await isStudioWall(wallId, data)) {

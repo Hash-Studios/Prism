@@ -28,6 +28,8 @@ final class PrismWallpaper {
     this.aiSource,
     this.remixOf,
     this.remixCount = 0,
+    this.variantGroupId,
+    this.variantIndex,
     this.editorsChoiceAt,
     this.byStudio = false,
   });
@@ -77,6 +79,12 @@ final class PrismWallpaper {
 
   /// Approved remixes by other creators. Only the server writes it.
   final int remixCount;
+
+  /// The set of colour variants this wall is in. Null when it has none. Only the server writes it.
+  final String? variantGroupId;
+
+  /// This wall's place in its colour variant set, from 0. Only the server writes it.
+  final int? variantIndex;
 
   /// When an admin picked the wall for Editors' Choice. Null when it is not a pick. Only the server writes it.
   final DateTime? editorsChoiceAt;

@@ -32,6 +32,8 @@ Map<String, Object?> encodeFeedItem(FeedItemEntity item) => item.when(
       if (wall.aiSource != null) 'aiSource': wall.aiSource!.toJson(),
       if (wall.remixOf != null) 'remixOf': wall.remixOf,
       if (wall.remixCount > 0) 'remixCount': wall.remixCount,
+      if (wall.variantGroupId != null) 'variantGroupId': wall.variantGroupId,
+      if (wall.variantIndex != null) 'variantIndex': wall.variantIndex,
       if (wall.editorsChoiceAt != null) 'editorsChoiceAt': wall.editorsChoiceAt!.toUtc().toIso8601String(),
       if (wall.byStudio) 'byStudio': true,
     },
@@ -115,7 +117,12 @@ FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
   switch (type) {
     case 'prism':
       if (!validLists(wallpaper, const <String>['collections', 'tags']) ||
-          !validNumbers(wallpaper, const <String>['requiredStreakDays', 'streakShopCoinCost', 'remixCount']) ||
+          !validNumbers(wallpaper, const <String>[
+            'requiredStreakDays',
+            'streakShopCoinCost',
+            'remixCount',
+            'variantIndex',
+          ]) ||
           !validBools(wallpaper, const <String>['review', 'isStreakExclusive', 'isAiGenerated', 'byStudio']) ||
           !validMaps(wallpaper, const <String>['aiMetadata', 'spatial', 'desktop', 'aiSource'])) {
         return null;
@@ -159,6 +166,8 @@ FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
           aiSource: WallAiSource.fromJson(wallpaper['aiSource']),
           remixOf: wallpaper['remixOf'] is String ? wallpaper['remixOf'] as String : null,
           remixCount: integer(wallpaper['remixCount']) ?? 0,
+          variantGroupId: wallpaper['variantGroupId'] is String ? wallpaper['variantGroupId'] as String : null,
+          variantIndex: integer(wallpaper['variantIndex']),
           editorsChoiceAt: wallpaper['editorsChoiceAt'] is String
               ? DateTime.tryParse(wallpaper['editorsChoiceAt'] as String)
               : null,

@@ -10877,6 +10877,107 @@
   "wallResubmitUnsupported": "मूल चित्र फिर से चुनें। AI स्रोत की जानकारी दोबारा इस्तेमाल नहीं की जा सकती।",
   "wallResubmitUnavailable": "यह अस्वीकृत अपलोड लोड नहीं हो सका। दोबारा कोशिश करें।",
   "wallMetadataEditDetails": "जानकारी संपादित करें",
+  "wallVariantAdd": "रंग का एक वेरिएंट जोड़ें",
+  "@wallVariantAdd": {
+    "description": "Button on the creator's own approved wallpaper. Opens the upload flow to add the same wallpaper in another colour."
+  },
+  "wallVariantUploadContext": "{title} का रंग वेरिएंट",
+  "@wallVariantUploadContext": {
+    "description": "Chip on the upload screen that names the wallpaper this upload is a colour of.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "wallVariantUploadContextUntitled": "आपके वॉलपेपर का रंग वेरिएंट",
+  "@wallVariantUploadContextUntitled": {
+    "description": "Same chip when the original has no title."
+  },
+  "wallVariantUploadHint": "मूल जैसा ही आकार और रूप रखें। समीक्षा के बाद यह सेट में जुड़ जाएगा।",
+  "@wallVariantUploadHint": {
+    "description": "Help text under the chip on the upload screen."
+  },
+  "wallVariantUnlinkTooltip": "इसके बजाय नए वॉलपेपर के रूप में अपलोड करें",
+  "@wallVariantUnlinkTooltip": {
+    "description": "Tooltip on the chip's remove button."
+  },
+  "wallVariantCount": "{count, plural, other{{count} रंग}}",
+  "@wallVariantCount": {
+    "description": "Small caption before the row of colour dots on a wallpaper with colour variants.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallVariantDotLabel": "वेरिएंट {index} / {count}, {colour}",
+  "@wallVariantDotLabel": {
+    "description": "Screen reader label for one colour dot.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      },
+      "colour": {
+        "type": "String"
+      }
+    }
+  },
+  "wallVariantDotLabelPlain": "वेरिएंट {index} / {count}",
+  "@wallVariantDotLabelPlain": {
+    "description": "Screen reader label for a colour dot whose colour has no name.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallVariantDotHint": "यह रंग दिखाएँ",
+  "@wallVariantDotHint": {
+    "description": "Screen reader hint for tapping a colour dot."
+  },
+  "wallVariantNextHint": "अगला रंग दिखाएँ",
+  "@wallVariantNextHint": {
+    "description": "Screen reader tap hint on a wallpaper with colour variants."
+  },
+  "wallVariantPending": "रंग वेरिएंट। समीक्षा के बाद यह सेट में जुड़ जाएगा।",
+  "@wallVariantPending": {
+    "description": "Line on a pending upload that is a colour variant."
+  },
+  "wallVariantLinked": "रंग वेरिएंट के सेट में",
+  "@wallVariantLinked": {
+    "description": "Line on an upload that joined a set of colour variants."
+  },
+  "wallVariantDroppedTitle": "रंग वेरिएंट के रूप में नहीं जोड़ा गया",
+  "@wallVariantDroppedTitle": {
+    "description": "Title line on an upload whose colour variant link was refused. It stays as its own wallpaper."
+  },
+  "wallVariantDroppedNotFound": "मूल वॉलपेपर हटा दिया गया था।",
+  "@wallVariantDroppedNotFound": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedNotOwner": "मूल वॉलपेपर किसी दूसरे क्रिएटर का है।",
+  "@wallVariantDroppedNotOwner": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedNotApproved": "मूल वॉलपेपर स्वीकृत नहीं है।",
+  "@wallVariantDroppedNotApproved": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedFull": "सेट में पहले से 5 रंग हैं।",
+  "@wallVariantDroppedFull": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedAspect": "इसका आकार मूल से अलग है।",
+  "@wallVariantDroppedAspect": {
+    "description": "Reason line."
+  },
   "wallMetadataApprovedHelp": "शीर्षक, विवरण और टैग बदलें। चित्र और श्रेणी वही रहेंगे।",
   "wallMetadataPendingHelp": "वॉलपेपर की समीक्षा से पहले यह जानकारी अपडेट करें।",
   "wallMetadataSave": "जानकारी सेव करें",

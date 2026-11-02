@@ -11698,6 +11698,70 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallMetadataEditDetails => 'Editar detalhes';
 
   @override
+  String get wallVariantAdd => 'Adicionar uma variante de cor';
+
+  @override
+  String wallVariantUploadContext(String title) {
+    return 'Variante de cor de $title';
+  }
+
+  @override
+  String get wallVariantUploadContextUntitled => 'Variante de cor do seu papel de parede';
+
+  @override
+  String get wallVariantUploadHint =>
+      'Use o mesmo tamanho e formato do original. Ela entra no conjunto após a análise.';
+
+  @override
+  String get wallVariantUnlinkTooltip => 'Enviar como um novo papel de parede';
+
+  @override
+  String wallVariantCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count cores');
+    return '$_temp0';
+  }
+
+  @override
+  String wallVariantDotLabel(int index, int count, String colour) {
+    return 'Variante $index de $count, $colour';
+  }
+
+  @override
+  String wallVariantDotLabelPlain(int index, int count) {
+    return 'Variante $index de $count';
+  }
+
+  @override
+  String get wallVariantDotHint => 'Mostrar esta cor';
+
+  @override
+  String get wallVariantNextHint => 'Mostrar a próxima cor';
+
+  @override
+  String get wallVariantPending => 'Variante de cor. Ela entra no conjunto após a análise.';
+
+  @override
+  String get wallVariantLinked => 'Em um conjunto de variantes de cor';
+
+  @override
+  String get wallVariantDroppedTitle => 'Não adicionado como variante de cor';
+
+  @override
+  String get wallVariantDroppedNotFound => 'O papel de parede original foi removido.';
+
+  @override
+  String get wallVariantDroppedNotOwner => 'O original pertence a outro criador.';
+
+  @override
+  String get wallVariantDroppedNotApproved => 'O original não foi aprovado.';
+
+  @override
+  String get wallVariantDroppedFull => 'O conjunto já tem 5 cores.';
+
+  @override
+  String get wallVariantDroppedAspect => 'Ele tem um formato diferente do original.';
+
+  @override
   String get wallMetadataApprovedHelp =>
       'Altere o título, a descrição e as tags. A imagem e a categoria permanecem iguais.';
 
@@ -25140,6 +25204,70 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallMetadataEditDetails => 'Editar detalhes';
+
+  @override
+  String get wallVariantAdd => 'Adicionar uma variante de cor';
+
+  @override
+  String wallVariantUploadContext(String title) {
+    return 'Variante de cor de $title';
+  }
+
+  @override
+  String get wallVariantUploadContextUntitled => 'Variante de cor do seu papel de parede';
+
+  @override
+  String get wallVariantUploadHint =>
+      'Use o mesmo tamanho e formato do original. Ela entra no conjunto após a análise.';
+
+  @override
+  String get wallVariantUnlinkTooltip => 'Enviar como um novo papel de parede';
+
+  @override
+  String wallVariantCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count cores');
+    return '$_temp0';
+  }
+
+  @override
+  String wallVariantDotLabel(int index, int count, String colour) {
+    return 'Variante $index de $count, $colour';
+  }
+
+  @override
+  String wallVariantDotLabelPlain(int index, int count) {
+    return 'Variante $index de $count';
+  }
+
+  @override
+  String get wallVariantDotHint => 'Mostrar esta cor';
+
+  @override
+  String get wallVariantNextHint => 'Mostrar a próxima cor';
+
+  @override
+  String get wallVariantPending => 'Variante de cor. Ela entra no conjunto após a análise.';
+
+  @override
+  String get wallVariantLinked => 'Em um conjunto de variantes de cor';
+
+  @override
+  String get wallVariantDroppedTitle => 'Não adicionado como variante de cor';
+
+  @override
+  String get wallVariantDroppedNotFound => 'O papel de parede original foi removido.';
+
+  @override
+  String get wallVariantDroppedNotOwner => 'O original pertence a outro criador.';
+
+  @override
+  String get wallVariantDroppedNotApproved => 'O original não foi aprovado.';
+
+  @override
+  String get wallVariantDroppedFull => 'O conjunto já tem 5 cores.';
+
+  @override
+  String get wallVariantDroppedAspect => 'Ele tem um formato diferente do original.';
 
   @override
   String get wallMetadataApprovedHelp =>

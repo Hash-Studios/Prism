@@ -154,11 +154,11 @@ service cloud.firestore {
     }
 
     function wallServerKeysAbsent() {
-      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio']);
+      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantGroupId', 'variantIndex', 'variantLink']);
     }
 
     function wallServerKeysUntouched() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantOf', 'variantGroupId', 'variantIndex', 'variantLink']);
     }
 
     // Optional link to the wall this one remixes. The server removes a link it cannot verify.
@@ -166,6 +166,13 @@ service cloud.firestore {
       return !('remixOf' in request.resource.data)
           || (request.resource.data.remixOf is string
               && request.resource.data.remixOf.matches('^[A-Za-z0-9_-]{1,64}$'));
+    }
+
+    // Optional link to the owner's approved wall this one is a colourway of. The server checks it and owns the group.
+    function validVariantOf() {
+      return !('variantOf' in request.resource.data)
+          || (request.resource.data.variantOf is string
+              && request.resource.data.variantOf.matches('^[A-Za-z0-9_-]{1,64}$'));
     }
 
     function validResubmitOf() {
@@ -238,10 +245,12 @@ service cloud.firestore {
               && request.resource.data.review != true
               && wallServerKeysAbsent()
               && validRemixOf()
+              && validVariantOf()
               && validResubmitOf()));
       // delete: request.resource is null — do not use request.resource.data here.
       allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-            'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio'
+            'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantOf', 'variantGroupId', 'variantIndex',
+            'variantLink'
           ])
           && (isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)

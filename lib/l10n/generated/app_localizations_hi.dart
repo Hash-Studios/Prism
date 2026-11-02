@@ -11501,6 +11501,69 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallMetadataEditDetails => 'जानकारी संपादित करें';
 
   @override
+  String get wallVariantAdd => 'रंग का एक वेरिएंट जोड़ें';
+
+  @override
+  String wallVariantUploadContext(String title) {
+    return '$title का रंग वेरिएंट';
+  }
+
+  @override
+  String get wallVariantUploadContextUntitled => 'आपके वॉलपेपर का रंग वेरिएंट';
+
+  @override
+  String get wallVariantUploadHint => 'मूल जैसा ही आकार और रूप रखें। समीक्षा के बाद यह सेट में जुड़ जाएगा।';
+
+  @override
+  String get wallVariantUnlinkTooltip => 'इसके बजाय नए वॉलपेपर के रूप में अपलोड करें';
+
+  @override
+  String wallVariantCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count रंग');
+    return '$_temp0';
+  }
+
+  @override
+  String wallVariantDotLabel(int index, int count, String colour) {
+    return 'वेरिएंट $index / $count, $colour';
+  }
+
+  @override
+  String wallVariantDotLabelPlain(int index, int count) {
+    return 'वेरिएंट $index / $count';
+  }
+
+  @override
+  String get wallVariantDotHint => 'यह रंग दिखाएँ';
+
+  @override
+  String get wallVariantNextHint => 'अगला रंग दिखाएँ';
+
+  @override
+  String get wallVariantPending => 'रंग वेरिएंट। समीक्षा के बाद यह सेट में जुड़ जाएगा।';
+
+  @override
+  String get wallVariantLinked => 'रंग वेरिएंट के सेट में';
+
+  @override
+  String get wallVariantDroppedTitle => 'रंग वेरिएंट के रूप में नहीं जोड़ा गया';
+
+  @override
+  String get wallVariantDroppedNotFound => 'मूल वॉलपेपर हटा दिया गया था।';
+
+  @override
+  String get wallVariantDroppedNotOwner => 'मूल वॉलपेपर किसी दूसरे क्रिएटर का है।';
+
+  @override
+  String get wallVariantDroppedNotApproved => 'मूल वॉलपेपर स्वीकृत नहीं है।';
+
+  @override
+  String get wallVariantDroppedFull => 'सेट में पहले से 5 रंग हैं।';
+
+  @override
+  String get wallVariantDroppedAspect => 'इसका आकार मूल से अलग है।';
+
+  @override
   String get wallMetadataApprovedHelp => 'शीर्षक, विवरण और टैग बदलें। चित्र और श्रेणी वही रहेंगे।';
 
   @override
