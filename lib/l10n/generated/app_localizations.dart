@@ -20538,6 +20538,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'See the walls you saved, your colours and your creators.'**
   String get notifPushWrappedReadyBody;
+
+  /// Title of the Editors' Choice page and its Home entry point.
+  ///
+  /// In en, this message translates to:
+  /// **'Editors\' Choice'**
+  String get editorsChoiceTitle;
+
+  /// Subtitle of the Editors' Choice row on Home.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpapers our editors love.'**
+  String get editorsChoiceRowBody;
+
+  /// Empty state title when there are no Editors' Choice picks.
+  ///
+  /// In en, this message translates to:
+  /// **'No picks yet'**
+  String get editorsChoiceEmptyTitle;
+
+  /// Empty state body shown under the title when there are no picks.
+  ///
+  /// In en, this message translates to:
+  /// **'Check back soon for new picks.'**
+  String get editorsChoiceEmptyBody;
+
+  /// Error title when the Editors' Choice list fails to load.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load Editors\' Choice'**
+  String get editorsChoiceLoadError;
+
+  /// Accessibility label on a wallpaper that is an Editors' Choice pick.
+  ///
+  /// In en, this message translates to:
+  /// **'Picked for Editors\' Choice'**
+  String get editorsChoiceLabelSemantics;
+
+  /// Button label that adds a wallpaper to Editors' Choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Editors\' Choice'**
+  String get editorsChoicePick;
+
+  /// Button label that removes a wallpaper from Editors' Choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from Editors\' Choice'**
+  String get editorsChoiceUnpick;
+
+  /// Snackbar shown after a wallpaper is added to Editors' Choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to Editors\' Choice'**
+  String get editorsChoicePicked;
+
+  /// Snackbar shown after a wallpaper is removed from Editors' Choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from Editors\' Choice'**
+  String get editorsChoiceUnpicked;
+
+  /// Explanation shown when a wallpaper cannot be picked for Editors' Choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Only approved free wallpapers with a ready original can be picks.'**
+  String get editorsChoiceNotEligible;
+
+  /// Admin button that approves a wallpaper and picks it for Editors' Choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve and pick'**
+  String get adminApproveAndPick;
+
+  /// Admin message after approval when the original is not ready to pick yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved. Add it to Editors\' Choice from its page once its original is ready.'**
+  String get adminApprovedPickLater;
+
+  /// Credit line naming the creator. {name} is the creator's display name.
+  ///
+  /// In en, this message translates to:
+  /// **'By {name}'**
+  String wallCreditBy(String name);
+
+  /// Credit line for a photo. {name} is the photographer's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo by {name}'**
+  String wallCreditPhotoBy(String name);
+
+  /// Credit line for a wallpaper made by Hash Studios.
+  ///
+  /// In en, this message translates to:
+  /// **'By Hash Studios'**
+  String get wallCreditByHashStudios;
+
+  /// Credit line for a wallpaper that is exclusive to Prism.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism exclusive'**
+  String get wallCreditPrismExclusive;
+
+  /// Credit line for a wallpaper sourced from Pexels.
+  ///
+  /// In en, this message translates to:
+  /// **'From Pexels'**
+  String get wallCreditOnPexels;
+
+  /// Credit line for a wallpaper sourced from Wallhaven.
+  ///
+  /// In en, this message translates to:
+  /// **'From Wallhaven'**
+  String get wallCreditOnWallhaven;
+
+  /// Accessibility hint for a credit that opens a creator profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens the profile'**
+  String get wallCreditOpenProfileHint;
+
+  /// Accessibility hint for a credit that opens the source site.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens in your browser'**
+  String get wallCreditOpenSourceHint;
+
+  /// Short badge text shown on a Prism Pro member's profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro'**
+  String get profileProBadge;
+
+  /// Accessibility label for the Pro badge on a profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism Pro member'**
+  String get profileProBadgeSemantics;
+
+  /// Settings toggle title that shows or hides the Pro badge on the user's profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Pro badge on my profile'**
+  String get settingsShowProBadgeTitle;
+
+  /// Settings toggle description for the Pro badge.
+  ///
+  /// In en, this message translates to:
+  /// **'People who visit your profile see a Pro badge.'**
+  String get settingsShowProBadgeBody;
+
+  /// Push notification title when a wallpaper becomes an Editors' Choice pick.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallpaper is an Editors\' Choice'**
+  String get notifPushEditorsChoiceTitle;
+
+  /// Push notification body for an Editors' Choice pick. {wallTitle} is the wallpaper title.
+  ///
+  /// In en, this message translates to:
+  /// **'Our editors picked {wallTitle}. Everyone can find it on Home.'**
+  String notifPushEditorsChoiceBody(String wallTitle);
+
+  /// Push notification body for an Editors' Choice pick when the wallpaper has no title.
+  ///
+  /// In en, this message translates to:
+  /// **'Our editors picked your wallpaper. Everyone can find it on Home.'**
+  String get notifPushEditorsChoiceBodyUntitled;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

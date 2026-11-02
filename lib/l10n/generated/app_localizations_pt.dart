@@ -13102,6 +13102,99 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get notifPushWrappedReadyBody => 'Veja os papéis de parede que você salvou, suas cores e seus criadores.';
+
+  @override
+  String get editorsChoiceTitle => 'Escolha dos editores';
+
+  @override
+  String get editorsChoiceRowBody => 'Papéis de parede que os nossos editores adoram.';
+
+  @override
+  String get editorsChoiceEmptyTitle => 'Ainda não há escolhas';
+
+  @override
+  String get editorsChoiceEmptyBody => 'Volte em breve para ver novas escolhas.';
+
+  @override
+  String get editorsChoiceLoadError => 'Não foi possível carregar a Escolha dos editores';
+
+  @override
+  String get editorsChoiceLabelSemantics => 'Escolhido para a Escolha dos editores';
+
+  @override
+  String get editorsChoicePick => 'Adicionar à Escolha dos editores';
+
+  @override
+  String get editorsChoiceUnpick => 'Remover da Escolha dos editores';
+
+  @override
+  String get editorsChoicePicked => 'Adicionado à Escolha dos editores';
+
+  @override
+  String get editorsChoiceUnpicked => 'Removido da Escolha dos editores';
+
+  @override
+  String get editorsChoiceNotEligible =>
+      'Só podem ser escolhidos papéis de parede gratuitos aprovados com o original pronto.';
+
+  @override
+  String get adminApproveAndPick => 'Aprovar e escolher';
+
+  @override
+  String get adminApprovedPickLater =>
+      'Aprovado. Adicione-o à Escolha dos editores a partir da sua página quando o original estiver pronto.';
+
+  @override
+  String wallCreditBy(String name) {
+    return 'Por $name';
+  }
+
+  @override
+  String wallCreditPhotoBy(String name) {
+    return 'Foto de $name';
+  }
+
+  @override
+  String get wallCreditByHashStudios => 'Por Hash Studios';
+
+  @override
+  String get wallCreditPrismExclusive => 'Exclusivo Prism';
+
+  @override
+  String get wallCreditOnPexels => 'Do Pexels';
+
+  @override
+  String get wallCreditOnWallhaven => 'Do Wallhaven';
+
+  @override
+  String get wallCreditOpenProfileHint => 'Abre o perfil';
+
+  @override
+  String get wallCreditOpenSourceHint => 'Abre no seu navegador';
+
+  @override
+  String get profileProBadge => 'Pro';
+
+  @override
+  String get profileProBadgeSemantics => 'Membro Prism Pro';
+
+  @override
+  String get settingsShowProBadgeTitle => 'Mostrar o distintivo Pro no meu perfil';
+
+  @override
+  String get settingsShowProBadgeBody => 'As pessoas que visitam o seu perfil veem um distintivo Pro.';
+
+  @override
+  String get notifPushEditorsChoiceTitle => 'O seu papel de parede é uma Escolha dos editores';
+
+  @override
+  String notifPushEditorsChoiceBody(String wallTitle) {
+    return 'Os nossos editores escolheram $wallTitle. Todos o podem encontrar no Início.';
+  }
+
+  @override
+  String get notifPushEditorsChoiceBodyUntitled =>
+      'Os nossos editores escolheram o seu papel de parede. Todos o podem encontrar no Início.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -26200,4 +26293,97 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get notifPushWrappedReadyBody => 'Veja os papéis de parede que você salvou, suas cores e seus criadores.';
+
+  @override
+  String get editorsChoiceTitle => 'Escolha dos editores';
+
+  @override
+  String get editorsChoiceRowBody => 'Papéis de parede que os nossos editores amam.';
+
+  @override
+  String get editorsChoiceEmptyTitle => 'Ainda não há escolhas';
+
+  @override
+  String get editorsChoiceEmptyBody => 'Volte em breve para ver novas escolhas.';
+
+  @override
+  String get editorsChoiceLoadError => 'Não foi possível carregar a Escolha dos editores';
+
+  @override
+  String get editorsChoiceLabelSemantics => 'Escolhido para a Escolha dos editores';
+
+  @override
+  String get editorsChoicePick => 'Adicionar à Escolha dos editores';
+
+  @override
+  String get editorsChoiceUnpick => 'Remover da Escolha dos editores';
+
+  @override
+  String get editorsChoicePicked => 'Adicionado à Escolha dos editores';
+
+  @override
+  String get editorsChoiceUnpicked => 'Removido da Escolha dos editores';
+
+  @override
+  String get editorsChoiceNotEligible =>
+      'Só papéis de parede gratuitos aprovados com o original pronto podem ser escolhidos.';
+
+  @override
+  String get adminApproveAndPick => 'Aprovar e escolher';
+
+  @override
+  String get adminApprovedPickLater =>
+      'Aprovado. Adicione à Escolha dos editores pela página dele quando o original estiver pronto.';
+
+  @override
+  String wallCreditBy(String name) {
+    return 'Por $name';
+  }
+
+  @override
+  String wallCreditPhotoBy(String name) {
+    return 'Foto de $name';
+  }
+
+  @override
+  String get wallCreditByHashStudios => 'Por Hash Studios';
+
+  @override
+  String get wallCreditPrismExclusive => 'Exclusivo do Prism';
+
+  @override
+  String get wallCreditOnPexels => 'Do Pexels';
+
+  @override
+  String get wallCreditOnWallhaven => 'Do Wallhaven';
+
+  @override
+  String get wallCreditOpenProfileHint => 'Abre o perfil';
+
+  @override
+  String get wallCreditOpenSourceHint => 'Abre no seu navegador';
+
+  @override
+  String get profileProBadge => 'Pro';
+
+  @override
+  String get profileProBadgeSemantics => 'Membro Prism Pro';
+
+  @override
+  String get settingsShowProBadgeTitle => 'Mostrar o selo Pro no meu perfil';
+
+  @override
+  String get settingsShowProBadgeBody => 'As pessoas que visitam seu perfil veem um selo Pro.';
+
+  @override
+  String get notifPushEditorsChoiceTitle => 'Seu papel de parede é uma Escolha dos editores';
+
+  @override
+  String notifPushEditorsChoiceBody(String wallTitle) {
+    return 'Nossos editores escolheram $wallTitle. Todos podem encontrá-lo no Início.';
+  }
+
+  @override
+  String get notifPushEditorsChoiceBodyUntitled =>
+      'Nossos editores escolheram seu papel de parede. Todos podem encontrá-lo no Início.';
 }
