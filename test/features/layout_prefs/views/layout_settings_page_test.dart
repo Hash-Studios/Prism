@@ -201,4 +201,19 @@ void main() {
       containsSemantics(isSelected: true, isInMutuallyExclusiveGroup: true),
     );
   });
+
+  testWidgets('dragging a handle reorders the tabs', (tester) async {
+    await _pumpPage(tester);
+
+    final Finder handle = find.byTooltip('Reorder Collections');
+    final TestGesture gesture = await tester.startGesture(tester.getCenter(handle));
+    for (int i = 0; i < 20; i++) {
+      await gesture.moveBy(const Offset(0, -15));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(store.value.tabOrder.first, NavTab.collection);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }
