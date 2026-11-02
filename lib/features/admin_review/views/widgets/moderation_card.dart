@@ -16,6 +16,7 @@ class ModerationCard extends StatefulWidget {
     required this.fullUrl,
     required this.facts,
     required this.onApprove,
+    this.onApproveAndPick,
     required this.onReject,
     this.onToggleReserve,
     this.reserved = false,
@@ -29,6 +30,9 @@ class ModerationCard extends StatefulWidget {
   /// Label and value pairs shown beside the thumbnail.
   final List<(String, String)> facts;
   final Future<void> Function() onApprove;
+
+  /// Approves the wall and sets it as an Editors' Choice pick. Null hides the button.
+  final Future<void> Function()? onApproveAndPick;
   final Future<void> Function() onReject;
 
   /// Reserves the wall for the next weekly Drop, or undoes it. Null hides the button.
@@ -47,6 +51,7 @@ class _ModerationCardState extends State<ModerationCard> {
   bool _isApproving = false;
   bool _isApproved = false;
   String? _approvalError;
+  Future<void> Function()? _approvalAction;
   bool _isReserving = false;
 
   Future<void> _toggleReserve() async {
@@ -63,14 +68,19 @@ class _ModerationCardState extends State<ModerationCard> {
     }
   }
 
-  Future<void> _approve() async {
+  Future<void> _approve() => _runApproval(widget.onApprove);
+
+  Future<void> _approveAndPick() => _runApproval(widget.onApproveAndPick!);
+
+  Future<void> _runApproval(Future<void> Function() action) async {
     if (_isApproving || _isApproved) return;
+    _approvalAction = action;
     setState(() {
       _isApproving = true;
       _approvalError = null;
     });
     try {
-      await widget.onApprove();
+      await action();
       if (mounted) setState(() => _isApproved = true);
     } catch (error, stackTrace) {
       logger.e('Admin approval failed', tag: 'AdminReview', error: error, stackTrace: stackTrace);
@@ -138,7 +148,7 @@ class _ModerationCardState extends State<ModerationCard> {
                   label: context.l10n.adminRetry,
                   variant: PrismButtonVariant.ghost,
                   size: PrismButtonSize.compact,
-                  onPressed: _isApproving ? null : _approve,
+                  onPressed: _isApproving ? null : () => _approvalAction?.call(),
                 ),
               ],
             ),
@@ -167,6 +177,15 @@ class _ModerationCardState extends State<ModerationCard> {
                         size: PrismButtonSize.compact,
                         loading: _isReserving,
                         onPressed: locked ? null : _toggleReserve,
+                      ),
+                    if (widget.onApproveAndPick != null)
+                      PrismButton(
+                        label: context.l10n.adminApproveAndPick,
+                        size: PrismButtonSize.compact,
+                        variant: PrismButtonVariant.tonal,
+                        icon: Icons.auto_awesome_rounded,
+                        loading: _isApproving,
+                        onPressed: locked ? null : _approveAndPick,
                       ),
                     PrismButton(
                       label: _isApproved ? context.l10n.adminApproved : context.l10n.adminApprove,

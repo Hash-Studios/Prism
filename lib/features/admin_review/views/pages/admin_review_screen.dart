@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -13,6 +17,7 @@ import 'package:Prism/features/admin_review/views/widgets/notification_sender_ta
 import 'package:Prism/features/admin_review/views/widgets/reject_reason_sheet.dart';
 import 'package:Prism/features/admin_review/views/widgets/report_cards.dart';
 import 'package:Prism/features/admin_review/views/widgets/wall_resubmission_notice.dart';
+import 'package:Prism/features/editors_choice/domain/editors_choice_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -206,6 +211,21 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         await _repository.approveWall(wall);
         toasts.success(l10n.adminWallpaperApproved);
       },
+      onApproveAndPick: reserved
+          ? null
+          : () async {
+              final AppLocalizations l10n = context.l10n;
+              await _repository.approveWall(wall);
+              try {
+                await getIt<EditorsChoiceRepository>().setPick(wallDocId: wall.id, picked: true);
+                unawaited(analytics.track(const EditorsChoicePickChangedEvent(picked: true, surface: 'review')));
+                toasts.success(l10n.editorsChoicePicked);
+              } on EditorsChoiceNotEligible {
+                toasts.success(l10n.adminApprovedPickLater);
+              } catch (_) {
+                toasts.error(l10n.coreSomethingWentWrong);
+              }
+            },
       onReject: () => _confirmReject(
         context,
         onSubmit: (String reason) async {
