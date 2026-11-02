@@ -342,8 +342,7 @@ test("the wall index loads large collections in bounded pages", async () => {
     startAfter: (doc: {id: string}) => FakeQuery;
     get: () => Promise<{docs: typeof docs; size: number}>;
   };
-  let query: FakeQuery;
-  query = {
+  const query: FakeQuery = {
     select: () => query,
     orderBy: () => query,
     limit: (size: number) => {
@@ -370,7 +369,11 @@ test("the wall index loads large collections in bounded pages", async () => {
 });
 
 test("the Wrapped jobs reject invalid page, concurrency, and time options before reading Firestore", async () => {
-  const noFirestore = new Proxy({}, {get: () => {throw new Error("Unexpected Firestore access");}}) as admin.firestore.Firestore;
+  const noFirestore = new Proxy({}, {
+    get: () => {
+      throw new Error("Unexpected Firestore access");
+    },
+  }) as admin.firestore.Firestore;
   for (const options of [
     {concurrency: 0}, {concurrency: Number.NaN}, {concurrency: 51}, {pageSize: 0}, {pageSize: 1.5},
     {maxPages: 0}, {maxPages: Number.NaN}, {now: new Date(Number.NaN)},
