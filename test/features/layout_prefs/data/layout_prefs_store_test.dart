@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -9,6 +11,25 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../support/fake_firestore_client.dart';
 import '../../../support/in_memory_local_store.dart';
 import '../../../support/profile_user_fixture.dart';
+
+/// Holds every account read until [release] completes, so a test can change the layout mid-read.
+class _SlowReadFirestore extends FakeFirestoreClient {
+  _SlowReadFirestore({super.docs});
+
+  final Completer<void> release = Completer<void>();
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async {
+    await release.future;
+    return super.getById(collection, id, map, sourceTag: sourceTag, preferCacheFirst: preferCacheFirst);
+  }
+}
 
 void main() {
   late InMemoryLocalStore store;
@@ -183,5 +204,31 @@ void main() {
 
     expect(layout.value.feedTab, HomeFeedChip.trending);
     expect(firestore.writes, isEmpty);
+  });
+
+  test('a change made while the account copy loads is kept, not replaced by the older account copy', () async {
+    final _SlowReadFirestore slow = _SlowReadFirestore(
+      docs: <String, Map<String, Map<String, dynamic>>>{
+        FirebaseCollections.usersV2: <String, Map<String, dynamic>>{
+          'u1': <String, dynamic>{
+            'layoutPrefs': <String, Object>{
+              'tabs': <String>['home', 'search', 'rewards', 'collection'],
+              'hidden': <String>[],
+              'density': 'large',
+              'changedAt': DateTime.now().millisecondsSinceEpoch + 60000,
+            },
+          },
+        },
+      },
+    );
+    final LayoutPrefsStore layout = LayoutPrefsStore(SettingsLocalDataSource(store), slow);
+
+    final Future<void> sync = layout.syncWithAccount('u1');
+    await layout.update(layout.value.copyWith(density: WallGridDensity.compact));
+    slow.release.complete();
+    await sync;
+
+    expect(layout.value.density, WallGridDensity.compact);
+    expect(newStore().value.density, WallGridDensity.compact);
   });
 }

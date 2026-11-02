@@ -196,10 +196,7 @@ void main() {
     }
     await _tap(tester, find.text('Compact'));
     expect(store.value.density, WallGridDensity.compact);
-    expect(
-      tester.getSemantics(find.text('Compact')),
-      isSemantics(isSelected: true, isInMutuallyExclusiveGroup: true),
-    );
+    expect(tester.getSemantics(find.text('Compact')), isSemantics(isSelected: true, isInMutuallyExclusiveGroup: true));
   });
 
   testWidgets('dragging a handle reorders the tabs', (tester) async {

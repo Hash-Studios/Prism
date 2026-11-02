@@ -61,6 +61,7 @@ class LayoutPrefsStore extends ValueNotifier<LayoutPrefs> {
 
   /// Applies the account copy when it is newer than the last change on this device, else uploads the device copy.
   Future<void> syncWithAccount(String userId) async {
+    final LayoutPrefs before = value;
     final Object? raw = await _firestore.getById<Object?>(
       FirebaseCollections.usersV2,
       userId,
@@ -69,6 +70,8 @@ class LayoutPrefsStore extends ValueNotifier<LayoutPrefs> {
     );
     final int? accountChangedAt = raw is Map ? _asInt(raw['changedAt']) : null;
     final int? localChangedAt = _settings.get<int?>(_changedAtKey);
+    // A change made while the account copy loaded is newer than it, and its own push uploads it.
+    if (value.copyWith(feedTab: before.feedTab) != before) return;
     if (raw is Map && accountChangedAt != null && (localChangedAt == null || accountChangedAt >= localChangedAt)) {
       final LayoutPrefs account = LayoutPrefs.fromMap(raw, feedTab: value.feedTab);
       value = account;
