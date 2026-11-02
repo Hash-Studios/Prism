@@ -32,6 +32,12 @@ Release workflows use Doppler Service Tokens.
 
 Workflows load secrets from `prism/prd`.
 
+### Shorebird keys
+
+`SHOREBIRD_TOKEN`, `SHOREBIRD_PATCH_PRIVATE_KEY` and `SHOREBIRD_PATCH_PUBLIC_KEY` live in `prd`. The runner reads them
+from the same download for `shorebird` commands only. It writes the keys to private temporary files and passes the
+token in the environment. They are never dart-defines. See `docs/development/ota.md`.
+
 ### Release Firebase prerequisites
 
 Release builds use real native Firebase configuration, then derive the selected

@@ -1,3 +1,4 @@
+import 'package:Prism/core/updates/store_update_policy.dart';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/version_compare.dart';
@@ -29,7 +30,14 @@ class StartupBloc extends Bloc<StartupEvent, StartupState> {
         state.copyWith(
           status: LoadStatus.success,
           config: config,
-          isObsoleteVersion: isVersionOlder(event.currentVersion ?? '0.0.0', config.obsoleteAppVersion),
+          isObsoleteVersion:
+              isVersionOlder(event.currentVersion ?? '0.0.0', config.obsoleteAppVersion) ||
+              storeUpdateFor(
+                    currentBuild: event.currentBuild ?? '',
+                    minBuild: config.minStoreBuild,
+                    blocking: config.storeUpdateBlocking,
+                  ) ==
+                  StoreUpdate.required,
         ),
       ),
       onFailure: (_) => emit(state.copyWith(status: LoadStatus.failure)),

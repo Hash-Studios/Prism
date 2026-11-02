@@ -6003,6 +6003,12 @@ abstract class AppLocalizations {
   /// **'Clear search'**
   String get debugClearSearch;
 
+  /// Admin debug panel section title for Shorebird over-the-air patches.
+  ///
+  /// In en, this message translates to:
+  /// **'Code push'**
+  String get debugCodePush;
+
   /// No description provided for @debugCoins.
   ///
   /// In en, this message translates to:
@@ -6717,6 +6723,12 @@ abstract class AppLocalizations {
   /// **'Sequence'**
   String get debugSequence;
 
+  /// Admin debug panel row label: the Shorebird patch number the app runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Shorebird patch'**
+  String get debugShorebirdPatch;
+
   /// No description provided for @debugShowLogToasts.
   ///
   /// In en, this message translates to:
@@ -6758,6 +6770,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stack trace copied'**
   String get debugStackTraceCopied;
+
+  /// Admin debug panel switch: check the Shorebird staging track.
+  ///
+  /// In en, this message translates to:
+  /// **'Get staging patches'**
+  String get debugStagingPatches;
+
+  /// Subtitle for the staging patches switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the Shorebird staging track instead of stable. Restart to apply a patch.'**
+  String get debugStagingPatchesDescription;
 
   /// No description provided for @debugStillPoses.
   ///
@@ -11988,6 +12012,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not confirm your purchase. Try Restore purchases in Settings.'**
   String get premiumPurchaseUnconfirmed;
+
+  /// Sheet message when a newer store build is required. The buttons are Update Prism and Not now.
+  ///
+  /// In en, this message translates to:
+  /// **'A new version of Prism is available.'**
+  String get updatesStoreUpdateAvailable;
 
   /// Wallpaper interface text: wallpaperAccentColor.
   ///

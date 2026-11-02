@@ -72,6 +72,7 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'promo_reward_type': PromoRewardType.values.map((value) => value.wireValue).toList(),
   'redeem_failure_reason': RedeemFailureReason.values.map((value) => value.wireValue).toList(),
   'store_code_platform': StoreCodePlatform.values.map((value) => value.wireValue).toList(),
+  'ota_failure_reason': OtaFailureReasonValue.values.map((value) => value.wireValue).toList(),
 };
 
 class ContentReportSubmitEvent extends AnalyticsEvent {
@@ -4756,5 +4757,79 @@ class CommentReportedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return const <String, Object?>{};
+  }
+}
+
+class OtaCheckStartedEvent extends AnalyticsEvent {
+  const OtaCheckStartedEvent({required this.trigger, required this.patchNumber});
+
+  final String trigger;
+  final int patchNumber;
+
+  @override
+  String get eventName => 'ota_check_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'trigger': trigger, 'patch_number': patchNumber};
+  }
+}
+
+class OtaUpdateAvailableEvent extends AnalyticsEvent {
+  const OtaUpdateAvailableEvent({required this.patchNumber});
+
+  final int patchNumber;
+
+  @override
+  String get eventName => 'ota_update_available';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'patch_number': patchNumber};
+  }
+}
+
+class OtaDownloadDoneEvent extends AnalyticsEvent {
+  const OtaDownloadDoneEvent({required this.patchNumber, required this.pendingPatchNumber});
+
+  final int patchNumber;
+  final int pendingPatchNumber;
+
+  @override
+  String get eventName => 'ota_download_done';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'patch_number': patchNumber, 'pending_patch_number': pendingPatchNumber};
+  }
+}
+
+class OtaDownloadFailedEvent extends AnalyticsEvent {
+  const OtaDownloadFailedEvent({required this.reason, required this.patchNumber});
+
+  final OtaFailureReasonValue reason;
+  final int patchNumber;
+
+  @override
+  String get eventName => 'ota_download_failed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'reason': reason.wireValue, 'patch_number': patchNumber};
+  }
+}
+
+class OtaPatchRunningEvent extends AnalyticsEvent {
+  const OtaPatchRunningEvent({required this.patchNumber, required this.previousPatchNumber});
+
+  final int patchNumber;
+  final int previousPatchNumber;
+
+  @override
+  String get eventName => 'ota_patch_running';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'patch_number': patchNumber, 'previous_patch_number': previousPatchNumber};
   }
 }

@@ -1,0 +1,6 @@
+# Shorebird Cloud code push config. The app_id is not a secret. It is the app "Prism" in the
+# Hash Studios organization (see docs/development/ota.md).
+app_id: bf69cd6f-fa5f-4a45-88a4-bd1f5f558bb8
+
+# lib/core/updates/ owns when the app checks for and downloads patches.
+auto_update: false

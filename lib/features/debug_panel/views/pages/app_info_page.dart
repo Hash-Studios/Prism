@@ -5,6 +5,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/updates/code_push_updater.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/debug_panel/views/widgets/debug_widgets.dart';
@@ -74,11 +75,13 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
         };
       }
 
+      final int? patch = await getIt<CodePushUpdater>().currentPatchNumber();
       _packageInfo = {
         l10n.debugAppName: pkgInfo.appName,
         l10n.debugPackageName: pkgInfo.packageName,
         l10n.debugVersion: pkgInfo.version,
         l10n.debugBuildNumber: pkgInfo.buildNumber,
+        l10n.debugShorebirdPatch: patch?.toString() ?? l10n.debugNotAvailable,
         l10n.debugBuildSignature: pkgInfo.buildSignature.isEmpty ? l10n.debugNotAvailable : pkgInfo.buildSignature,
       };
 

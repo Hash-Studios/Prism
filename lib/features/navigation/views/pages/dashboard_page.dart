@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/updates/app_update_host.dart';
+import 'package:Prism/core/updates/ota_update_controller.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/features/badges/views/widgets/badge_celebrate_host.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
@@ -92,7 +95,11 @@ class _DashboardPageState extends State<DashboardPage> {
                 onEarnCoins: () => context.router.push(RewardsRoute(scrollToEarn: true)),
                 child: BadgeCelebrateHost(
                   onSeeRewards: () => tabsRouter.setActiveIndex(2),
-                  child: BottomBar(child: child),
+                  child: AppUpdateHost(
+                    controller: getIt<OtaUpdateController>(),
+                    storeUpdate: () => app_state.storeUpdate,
+                    child: BottomBar(child: child),
+                  ),
                 ),
               ),
             );

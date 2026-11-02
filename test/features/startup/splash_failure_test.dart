@@ -43,7 +43,14 @@ void main() {
     expect(find.text("Prism could not start"), findsOneWidget);
     await tester.tap(find.text('Try again'));
 
-    verify(() => bloc.add(StartupEvent.started(currentVersion: app_state.currentAppVersion))).called(1);
+    verify(
+      () => bloc.add(
+        StartupEvent.started(
+          currentVersion: app_state.currentAppVersion,
+          currentBuild: app_state.currentAppVersionCode,
+        ),
+      ),
+    ).called(1);
   });
 
   testWidgets('a loading bootstrap shows no try again button', (tester) async {
