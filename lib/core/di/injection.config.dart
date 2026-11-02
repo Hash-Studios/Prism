@@ -306,7 +306,6 @@ import '../persistence/data_sources/session_local_data_source.dart' as _i704;
 import '../persistence/data_sources/settings_local_data_source.dart' as _i1073;
 import '../persistence/local_store.dart' as _i496;
 import '../personalization/taste_signals.dart' as _i731;
-import '../platform/pigeon/prism_live_photo_api.g.dart' as _i352;
 import '../platform/system_color_schemes.dart' as _i565;
 import '../view_stats/view_stats_repository.dart' as _i602;
 import 'injection_module.dart' as _i212;
@@ -429,12 +428,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i349.FirestoreClient>(
     () => appModule.firestoreClient(gh<_i393.FirestoreTelemetrySink>()),
   );
-  gh.lazySingleton<_i574.LivePhotoRepository>(
-    () => _i157.LivePhotoRepositoryImpl(
-      texturePreparer: gh<_i1003.LiveTexturePreparer>(),
-      hostApi: gh<_i352.PrismLivePhotoHostApi>(),
-    ),
-  );
   gh.lazySingleton<_i651.QuestsRepository>(() => _i419.QuestsRepositoryImpl());
   gh.lazySingleton<_i253.DrawRepository>(
     () => _i342.DrawRepositoryImpl(gh<_i349.FirestoreClient>()),
@@ -467,6 +460,11 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i638.WallpaperPositionBloc>(
     () => _i638.WallpaperPositionBloc(gh<_i307.WallpaperPositionRepository>()),
+  );
+  gh.lazySingleton<_i574.LivePhotoRepository>(
+    () => _i157.LivePhotoRepositoryImpl(
+      texturePreparer: gh<_i1003.LiveTexturePreparer>(),
+    ),
   );
   gh.factory<_i219.BadgesBloc>(
     () => _i219.BadgesBloc(gh<_i360.BadgeRepository>()),

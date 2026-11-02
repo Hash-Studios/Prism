@@ -13,7 +13,7 @@ import 'package:injectable/injectable.dart';
 class LivePhotoRepositoryImpl implements LivePhotoRepository, PrismLivePhotoFlutterApi {
   LivePhotoRepositoryImpl({
     LiveTexturePreparer texturePreparer = const LiveTexturePreparer(),
-    PrismLivePhotoHostApi? hostApi,
+    @ignoreParam PrismLivePhotoHostApi? hostApi,
   }) : _texturePreparer = texturePreparer,
        _hostApi = hostApi ?? PrismLivePhotoHostApi();
 
