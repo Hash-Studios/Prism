@@ -33,10 +33,12 @@ void main() {
     String? depthMapUrl,
     Map<String, DateTime> unlockedStyles = const <String, DateTime>{},
     Future<String?> Function()? resolveSource,
+    bool Function(MotionStyle)? canExport,
   }) {
     final LivePhotoBloc bloc = LivePhotoBloc(
       repository,
       wallId: 'wall-1',
+      canExport: canExport,
       resolveSource: resolveSource ?? () async => _source,
       isPro: isPro,
       depthMapUrl: depthMapUrl,
@@ -161,7 +163,7 @@ void main() {
       expect(repository.exports, isEmpty);
     });
 
-    test('resolveSource runs once across two successful exports', () async {
+    test('each export rechecks source access after reset', () async {
       int resolveCalls = 0;
       final LivePhotoBloc bloc = build(
         resolveSource: () async {
@@ -184,7 +186,97 @@ void main() {
 
       expect(bloc.state.phase, LivePhotoPhase.saved);
       expect(repository.exports, hasLength(2));
-      expect(resolveCalls, 1);
+      expect(resolveCalls, 2);
+    });
+
+    test('current access is checked before resolving a source', () async {
+      int resolveCalls = 0;
+      final LivePhotoBloc bloc = build(
+        canExport: (_) => false,
+        resolveSource: () async {
+          resolveCalls++;
+          return _source;
+        },
+      );
+      requestExport(bloc);
+      await settle();
+
+      expect(resolveCalls, 0);
+      expect(repository.exports, isEmpty);
+      expect(bloc.state.phase, LivePhotoPhase.picking);
+    });
+
+    test('account or wall access lost during consent prevents export', () async {
+      bool allowed = true;
+      final Completer<String?> source = Completer<String?>();
+      final LivePhotoBloc bloc = build(resolveSource: () => source.future, canExport: (_) => allowed);
+      requestExport(bloc);
+      await settle();
+      allowed = false;
+      source.complete(_source);
+      await settle();
+
+      expect(repository.exports, isEmpty);
+      expect(bloc.state.phase, LivePhotoPhase.picking);
+    });
+
+    test('a paid style locked during consent never reaches the repository', () async {
+      final Completer<String?> source = Completer<String?>();
+      final LivePhotoBloc bloc = build(resolveSource: () => source.future);
+      requestExport(bloc);
+      await settle();
+      bloc.add(const LivePhotoEvent.accessChanged(isPro: false, unlockedStyles: <String, DateTime>{}));
+      await settle();
+      source.complete(_source);
+      await settle();
+
+      expect(repository.exports, isEmpty);
+      expect(bloc.state.phase, LivePhotoPhase.picking);
+    });
+
+    test('losing a paid style during export cancels the native work', () async {
+      final LivePhotoBloc bloc = build();
+      requestExport(bloc);
+      await settle();
+      bloc.add(const LivePhotoEvent.accessChanged(isPro: false, unlockedStyles: <String, DateTime>{}));
+      await settle();
+
+      expect(repository.cancelCount, 1);
+      expect(bloc.state.phase, LivePhotoPhase.picking);
+    });
+
+    test('closing during consent cannot start an export afterwards', () async {
+      final Completer<String?> source = Completer<String?>();
+      final LivePhotoBloc bloc = build(resolveSource: () => source.future);
+      requestExport(bloc);
+      await settle();
+      final Future<void> closing = bloc.close();
+      source.complete(_source);
+      await closing;
+
+      expect(repository.exports, isEmpty);
+    });
+
+    test('progress from an earlier export cannot update a retry', () async {
+      final LivePhotoBloc bloc = build();
+      requestExport(bloc);
+      await settle();
+      final void Function(double) oldProgress = repository.lastOnProgress!;
+      repository.complete(const LiveExportFailed(LiveExportFailure.encodeFailed));
+      await settle();
+      bloc.add(const LivePhotoEvent.reset());
+      await settle();
+      requestExport(bloc);
+      await settle();
+
+      oldProgress(0.9);
+      await settle();
+      expect(bloc.state.progress, 0);
+      repository.lastOnProgress!(0.4);
+      await settle();
+      expect(bloc.state.progress, 0.4);
+      repository.complete(const LiveExportCancelled());
+      await settle();
     });
 
     test('cancel stops the export and returns to the picker', () async {

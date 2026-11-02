@@ -40,6 +40,17 @@ enum PrismLivePhotoExporter {
     "prism-live-photo", isDirectory: true
   )
 
+  private static let discardStaleWork: Void = {
+    try? FileManager.default.removeItem(at: workRoot)
+  }()
+
+  static func makeWorkDirectory() throws -> URL {
+    _ = discardStaleWork
+    let directory = workRoot.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    return directory
+  }
+
   /// Runs the whole export. [progress] gets 0 to 1 while frames render, from a background thread.
   static func export(
     _ request: LivePhotoExportRequest,
@@ -51,12 +62,9 @@ enum PrismLivePhotoExporter {
     default: return LivePhotoExportResult(status: .permissionDenied)
     }
     if Task.isCancelled { return LivePhotoExportResult(status: .cancelled) }
-    // One export runs at a time, so anything here is left over from a crash or an older export.
-    try? FileManager.default.removeItem(at: workRoot)
-    let directory = workRoot.appendingPathComponent(UUID().uuidString, isDirectory: true)
-    defer { try? FileManager.default.removeItem(at: directory) }
     do {
-      try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+      let directory = try makeWorkDirectory()
+      defer { try? FileManager.default.removeItem(at: directory) }
       let files = try await withTimeout(milliseconds: request.timeoutMs) {
         try await Task.detached(priority: .userInitiated) {
           try await render(request, into: directory, progress: progress)
@@ -101,7 +109,7 @@ enum PrismLivePhotoExporter {
       tint: tintVector(request.tint)
     )
     let identifier = UUID().uuidString
-    let photoURL = directory.appendingPathComponent("live.heic")
+    var photoURL = directory.appendingPathComponent("live.heic")
     let videoURL = directory.appendingPathComponent("live.mov")
 
     let writer: AVAssetWriter
@@ -133,7 +141,7 @@ enum PrismLivePhotoExporter {
     do {
       let frameDuration = CMTime(value: 1, timescale: fps)
       let stillTime = CMTimeMultiply(frameDuration, multiplier: Int32(keyFrame))
-      try await waitUntilReady(stillInput)
+      try await waitUntilReady(stillInput, writer: writer)
       guard still.append(AVTimedMetadataGroup(
         items: [stillImageTimeItem()], timeRange: CMTimeRange(start: stillTime, duration: frameDuration)
       )) else { throw PrismLivePhotoFailure.encodeFailed }
@@ -149,10 +157,10 @@ enum PrismLivePhotoExporter {
         }
         try renderer.render(phase: Float(frame) / Float(frameCount), into: buffer)
         if frame == keyFrame {
-          try writeKeyPhoto(from: buffer, to: photoURL, identifier: identifier)
+          photoURL = try writeKeyPhoto(from: buffer, to: photoURL, identifier: identifier)
           wroteKeyPhoto = true
         }
-        try await waitUntilReady(videoInput)
+        try await waitUntilReady(videoInput, writer: writer)
         guard pixels.append(buffer, withPresentationTime: CMTimeMultiply(frameDuration, multiplier: Int32(frame))) else {
           throw PrismLivePhotoFailure.encodeFailed
         }
@@ -160,10 +168,10 @@ enum PrismLivePhotoExporter {
       }
       guard wroteKeyPhoto else { throw PrismLivePhotoFailure.renderFailed }
       videoInput.markAsFinished()
-      await writer.finishWriting()
+      try await finishWriting(writer)
       guard writer.status == .completed else { throw PrismLivePhotoFailure.encodeFailed }
     } catch {
-      writer.cancelWriting()
+      if writer.status == .writing { writer.cancelWriting() }
       throw error
     }
     try Task.checkCancellation()
@@ -244,29 +252,50 @@ enum PrismLivePhotoExporter {
     return item
   }
 
-  private static func waitUntilReady(_ input: AVAssetWriterInput) async throws {
-    while !input.isReadyForMoreMediaData {
+  static func waitUntilReady(_ input: AVAssetWriterInput, writer: AVAssetWriter) async throws {
+    while true {
       try Task.checkCancellation()
+      guard writer.status == .writing else { throw PrismLivePhotoFailure.encodeFailed }
+      if input.isReadyForMoreMediaData { return }
       try await Task.sleep(nanoseconds: 2_000_000)
     }
   }
 
+  static func finishWriting(
+    _ writer: AVAssetWriter,
+    start: (AVAssetWriter) -> Void = { $0.finishWriting(completionHandler: {}) }
+  ) async throws {
+    start(writer)
+    do {
+      while writer.status == .writing {
+        try Task.checkCancellation()
+        try await Task.sleep(nanoseconds: 2_000_000)
+      }
+      try Task.checkCancellation()
+    } catch {
+      if writer.status == .writing { writer.cancelWriting() }
+      throw error
+    }
+  }
+
   /// HEIC with the content identifier in MakerApple key 17. JPEG when this device has no HEIC encoder.
-  private static func writeKeyPhoto(from buffer: CVPixelBuffer, to url: URL, identifier: String) throws {
+  static func writeKeyPhoto(
+    from buffer: CVPixelBuffer, to url: URL, identifier: String,
+    types: [UTType] = [.heic, .jpeg]
+  ) throws -> URL {
     guard let image = cgImage(from: buffer) else { throw PrismLivePhotoFailure.renderFailed }
     let properties: [CFString: Any] = [
       kCGImagePropertyMakerAppleDictionary: ["17": identifier],
       kCGImageDestinationLossyCompressionQuality: 0.92,
       kCGImagePropertyOrientation: 1,
     ]
-    for type in [UTType.heic, UTType.jpeg] {
+    for type in types {
       let target = type == .heic ? url : url.deletingPathExtension().appendingPathExtension("jpg")
       guard let destination = CGImageDestinationCreateWithURL(target as CFURL, type.identifier as CFString, 1, nil)
       else { continue }
       CGImageDestinationAddImage(destination, image, properties as CFDictionary)
       if CGImageDestinationFinalize(destination) {
-        if target != url { try? FileManager.default.moveItem(at: target, to: url) }
-        return
+        return target
       }
     }
     throw PrismLivePhotoFailure.renderFailed

@@ -17,9 +17,6 @@ class LivePhotoRepositoryImpl implements LivePhotoRepository, PrismLivePhotoFlut
   }) : _texturePreparer = texturePreparer,
        _hostApi = hostApi ?? PrismLivePhotoHostApi();
 
-  /// Extra wait past the native time limit before Dart stops waiting for an answer.
-  static const Duration _answerGrace = Duration(seconds: 15);
-
   final LiveTexturePreparer _texturePreparer;
   final PrismLivePhotoHostApi _hostApi;
   String? _activeId;
@@ -50,37 +47,31 @@ class LivePhotoRepositoryImpl implements LivePhotoRepository, PrismLivePhotoFlut
             imageUrl,
             depthMapUrl!,
             aspect,
+            uniquePaths: true,
           );
           textures.addAll(<String>[prepared.photo, prepared.depth]);
         } else {
-          textures.add(await _texturePreparer.prepare(imageUrl, aspect));
+          textures.add(await _texturePreparer.prepare(imageUrl, aspect, uniquePaths: true));
         }
       } on LiveTextureException {
         return const LiveExportFailed(LiveExportFailure.sourceUnavailable);
       }
       if (_activeId != id) return const LiveExportCancelled();
-      final LivePhotoExportResult result = await _hostApi
-          .exportLivePhoto(
-            LivePhotoExportRequest(
-              exportId: id,
-              photoPath: textures.first,
-              depthPath: export.style.needsDepthMap ? textures.last : null,
-              style: _pigeonStyle(export.style),
-              widthPx: export.sizePx.width.round(),
-              heightPx: export.sizePx.height.round(),
-              durationMs: export.duration.inMilliseconds,
-              framesPerSecond: LiveExport.framesPerSecond,
-              tint: tint.toARGB32(),
-              timeoutMs: LiveExport.timeLimit.inMilliseconds,
-            ),
-          )
-          .timeout(
-            LiveExport.timeLimit + _answerGrace,
-            onTimeout: () async {
-              await _cancelNative(id);
-              return LivePhotoExportResult(status: LivePhotoExportStatus.timedOut);
-            },
-          );
+      final LivePhotoExportResult result = await _hostApi.exportLivePhoto(
+        LivePhotoExportRequest(
+          exportId: id,
+          photoPath: textures.first,
+          depthPath: export.style.needsDepthMap ? textures.last : null,
+          style: _pigeonStyle(export.style),
+          widthPx: export.sizePx.width.round(),
+          heightPx: export.sizePx.height.round(),
+          durationMs: export.duration.inMilliseconds,
+          framesPerSecond: LiveExport.framesPerSecond,
+          tint: tint.toARGB32(),
+          timeoutMs: LiveExport.timeLimit.inMilliseconds,
+        ),
+      );
+      if (_activeId != id) return const LiveExportCancelled();
       return outcomeOf(result);
     } catch (error, stackTrace) {
       logger.w('Live Photo export failed', error: error, stackTrace: stackTrace);
@@ -89,6 +80,7 @@ class LivePhotoRepositoryImpl implements LivePhotoRepository, PrismLivePhotoFlut
       if (_activeId == id) {
         _activeId = null;
         _onProgress = null;
+        PrismLivePhotoFlutterApi.setUp(null);
       }
       for (final String path in textures) {
         try {
@@ -103,6 +95,7 @@ class LivePhotoRepositoryImpl implements LivePhotoRepository, PrismLivePhotoFlut
     final String? id = _activeId;
     _activeId = null;
     _onProgress = null;
+    PrismLivePhotoFlutterApi.setUp(null);
     if (id != null) await _cancelNative(id);
   }
 

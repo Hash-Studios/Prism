@@ -26,35 +26,50 @@ typedef _PreparedTexture = ({String path, TextureGeometry geometry, int sourceWi
 class LiveTexturePreparer {
   const LiveTexturePreparer();
 
-  Future<String> prepare(String imageUrl, double screenAspectRatio) async => (await _prepare(
-    imageUrl,
-    'live_wallpaper_texture.jpg',
-    (width, height) => _screenCrop(width, height, screenAspectRatio),
-  )).path;
+  static int _nextOutputId = 0;
+
+  Future<String> prepare(String imageUrl, double screenAspectRatio, {bool uniquePaths = false}) async =>
+      (await _prepare(
+        imageUrl,
+        _fileName('live_wallpaper_texture.jpg', uniquePaths),
+        (width, height) => _screenCrop(width, height, screenAspectRatio),
+      )).path;
 
   /// The photo and its depth map, the map cropped with the photo's crop so near parts line up.
   Future<({String photo, String depth})> prepareWithDepth(
     String imageUrl,
     String depthMapUrl,
-    double screenAspectRatio,
-  ) async {
+    double screenAspectRatio, {
+    bool uniquePaths = false,
+  }) async {
     final _PreparedTexture photo = await _prepare(
       imageUrl,
-      'live_wallpaper_texture.jpg',
+      _fileName('live_wallpaper_texture.jpg', uniquePaths),
       (width, height) => _screenCrop(width, height, screenAspectRatio),
     );
-    final _PreparedTexture depth = await _prepare(
-      depthMapUrl,
-      'live_wallpaper_depth.jpg',
-      (width, height) => photo.geometry.scaledTo(
-        fromWidth: photo.sourceWidth,
-        fromHeight: photo.sourceHeight,
-        toWidth: width,
-        toHeight: height,
-      ),
-    );
-    return (photo: photo.path, depth: depth.path);
+    try {
+      final _PreparedTexture depth = await _prepare(
+        depthMapUrl,
+        _fileName('live_wallpaper_depth.jpg', uniquePaths),
+        (width, height) => photo.geometry.scaledTo(
+          fromWidth: photo.sourceWidth,
+          fromHeight: photo.sourceHeight,
+          toWidth: width,
+          toHeight: height,
+        ),
+      );
+      return (photo: photo.path, depth: depth.path);
+    } catch (_) {
+      try {
+        await File(photo.path).delete();
+      } catch (_) {}
+      rethrow;
+    }
   }
+
+  static String _fileName(String name, bool uniquePaths) => uniquePaths
+      ? '${p.basenameWithoutExtension(name)}_${DateTime.now().microsecondsSinceEpoch}_${_nextOutputId++}.jpg'
+      : name;
 
   static TextureGeometry _screenCrop(int width, int height, double screenAspectRatio) =>
       TextureGeometry.compute(sourceWidth: width, sourceHeight: height, screenAspectRatio: screenAspectRatio);
@@ -77,6 +92,7 @@ class LiveTexturePreparer {
     ui.PictureRecorder? recorder;
     ui.Picture? picture;
     ui.Image? cropped;
+    File? target;
     try {
       final Uint8List bytes = await source.readAsBytes();
       buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
@@ -127,12 +143,17 @@ class LiveTexturePreparer {
         throw const LiveTextureException(LiveApplyFailure.textureTooDetailed);
       }
       final Directory directory = await getTemporaryDirectory();
-      final File target = File(p.join(directory.path, fileName));
+      target = File(p.join(directory.path, fileName));
       await target.writeAsBytes(jpeg, flush: true);
       return (path: target.path, geometry: geometry, sourceWidth: sourceWidth, sourceHeight: sourceHeight);
     } on LiveTextureException {
       rethrow;
     } catch (_) {
+      if (target != null) {
+        try {
+          await target.delete();
+        } catch (_) {}
+      }
       throw const LiveTextureException(LiveApplyFailure.texturePreparationFailed);
     } finally {
       if (recorder?.isRecording ?? false) recorder!.endRecording().dispose();

@@ -1,4 +1,5 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/core/widgets/prism_sheet/device_corner_radius.dart';
 import 'package:Prism/features/live_photo/biz/bloc/live_photo_bloc.j.dart';
@@ -13,6 +14,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/profile_user_fixture.dart';
 import 'fake_live_photo_repository.dart';
 
 const String _saveLabel = 'Save Live Photo';
@@ -194,6 +196,26 @@ void main() {
 
     await tester.pumpWidget(_host(sheetOf(bloc()), textScaler: const TextScaler.linear(2.0)));
     await openSheet(tester);
+
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('dismissing an unlock after its export bloc closes does not add an event', (tester) async {
+    app_state.prismUser = profileUser();
+    final LivePhotoBloc livePhotoBloc = bloc(isPro: false);
+    await tester.pumpWidget(_host(sheetOf(livePhotoBloc)));
+    await openSheet(tester);
+    await tester.tap(find.text('Breathe'));
+    await tester.pump();
+    await tester.tap(find.text(_saveLabel));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Breathe is a paid style'), findsOneWidget);
+
+    await tester.runAsync(livePhotoBloc.close);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
 
     expect(tester.takeException(), isNull);
   });

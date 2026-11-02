@@ -37,8 +37,10 @@ A Live Photo is a copy of the wall in Photos. So it follows the Download rules:
 |---|---|
 | Any | The user must sign in. |
 | Pro wall (premium collection) | Needs Prism Pro or an active premium pass (`CoinsService.premiumContentUnlocked`). Otherwise the paywall opens. |
-| Protected original | On the first Save, the same server grant as Download: `resolveOriginalWithConsent` with `OriginalAccessAction.download`. The coin price and the consent sheet are the Download ones. |
+| Protected original | On Save, the same server grant as Download: `resolveOriginalWithConsent` with `OriginalAccessAction.download`. The coin price and the consent sheet are the Download ones. |
 | Paid style | Breathe, Shimmer and 3D need Pro or a coin unlock, the same as Make it live. The unlock sheet is shared (`offerLiveStyleUnlock`). |
+
+Each Save checks the current account, wall access and style access again, before and after original consent. The sheet does not keep an original grant for a later retry. Session and pass changes refresh the locks and cancel an active export when access ends.
 
 ## How it works
 
@@ -60,14 +62,14 @@ A Live Photo is a copy of the wall in Photos. So it follows the Download rules:
 3. A detached task renders each frame on the GPU into a pixel buffer from the writer's pool. The main thread does no render work.
 4. The clip is HEVC when the device can encode it, else H.264. The size is the screen size in pixels, with even sides, at most 4096.
 5. Each style moves with `sin(phase)` and `sin(2 phase)` only. So the first, middle and last frames are the same picture. The key photo is the middle frame, so the still wallpaper matches where the motion starts and ends. Shimmer sweeps two times and is off screen at the start, middle and end, so the key photo has no glow.
-6. The key photo is HEIC (JPEG when there is no HEIC encoder), with the content identifier in MakerApple key 17. The video has the QuickTime content identifier and the still-image-time track at the middle frame.
+6. The key photo is HEIC (JPEG when HEIC encoding fails), with the content identifier in MakerApple key 17. The file extension matches the encoded image format. The video has the QuickTime content identifier and the still-image-time track at the middle frame.
 7. One `PHAssetCreationRequest` saves `.photo` and `.pairedVideo`. When the app can read the library, it fetches the asset and checks `.photoLive`. A saved asset without `.photoLive` is a failure (`not-live`).
 
 ### Cancel, time limit and cleanup
 
 - Cancel stops the render at the next frame, cancels the writer, and deletes the work folder (`tmp/prism-live-photo/`). Closing the sheet also cancels.
 - The time limit (45 seconds) covers render and encode. Saving is outside it, so a save never stops half done.
-- Each export first deletes what an older export or a crash left in the work folder.
+- The first export in the process removes stale work folders. Each export then uses its own folder and deletes it after its render task stops, so a newer export cannot delete files an older render still needs.
 - Dart deletes its texture JPEGs after every export.
 
 ### Analytics
@@ -91,7 +93,7 @@ A Live Photo is a copy of the wall in Photos. So it follows the Download rules:
 
 ## Tests
 
-- Dart: `test/features/live_photo/` (bloc, repository mapping, sheet states, guide, large text, access) and `test/features/wallpaper_detail/views/widgets/clock_overlay_live_photo_test.dart` (iOS only entry).
+- Dart: `test/features/live_photo/` (bloc, repository mapping, sheet states, guide, large text, access changes before Save and during consent or export) and `test/features/wallpaper_detail/views/widgets/clock_overlay_live_photo_test.dart` (iOS only entry).
 - Native: `ios/RunnerTests/LivePhotoExportTests.swift`. It renders each style, checks the shared identifier in both files and the still-image-time track, saves to the simulator Photos library, reads the asset back and checks `.photoLive`. It also checks cancel and the time limit leave no files. Grant Photos first: `xcrun simctl privacy <udid> grant photos com.hash.prism`.
 
 ### What only a real iPhone can prove

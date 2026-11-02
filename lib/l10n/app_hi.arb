@@ -12519,35 +12519,146 @@
     "description": "Premium screen note during a free trial that the user cancelled."
   },
   "livePhotoAction": "लाइव फ़ोटो",
+  "@livePhotoAction": {
+    "description": "Button on the iOS Set screen. Opens the sheet that saves the wall as a Live Photo."
+  },
   "livePhotoActionTooltip": "लाइव फ़ोटो के रूप में सेव करें",
+  "@livePhotoActionTooltip": {
+    "description": "Tooltip and screen reader hint for the Live Photo button on the iOS Set screen."
+  },
   "livePhotoTitle": "लाइव फ़ोटो",
+  "@livePhotoTitle": {
+    "description": "Title of the sheet that saves the wall as a Live Photo with motion (iOS)."
+  },
   "livePhotoBody": "चुनें कि वॉलपेपर कैसे चले। Prism 3 सेकंड की एक लाइव फ़ोटो Photos में सेव करता है, जो आपकी लॉक स्क्रीन के लिए तैयार होगी।",
+  "@livePhotoBody": {
+    "description": "Text under the Live Photo sheet title. Photos is the iOS app name."
+  },
   "livePhotoStyleGroup": "मोशन स्टाइल",
+  "@livePhotoStyleGroup": {
+    "description": "Screen reader label for the group of motion style chips."
+  },
   "livePhotoPreview": "पूर्वावलोकन: {style}",
+  "@livePhotoPreview": {
+    "description": "Screen reader label for the moving preview of the wall. {style} is a style name such as Drift.",
+    "placeholders": {
+      "style": {
+        "type": "String"
+      }
+    }
+  },
   "livePhotoStyleLocked": "{style}, Pro स्टाइल",
+  "@livePhotoStyleLocked": {
+    "description": "Screen reader label for a style chip that needs Prism Pro or a coin unlock. {style} is the style name.",
+    "placeholders": {
+      "style": {
+        "type": "String"
+      }
+    }
+  },
   "livePhotoSave": "लाइव फ़ोटो सेव करें",
+  "@livePhotoSave": {
+    "description": "Primary button. Renders the clip and saves it to Photos as a Live Photo."
+  },
   "livePhotoRendering": "आपकी लाइव फ़ोटो बन रही है",
+  "@livePhotoRendering": {
+    "description": "Status while the frames render."
+  },
   "livePhotoProgress": "{percent} पूरा",
+  "@livePhotoProgress": {
+    "description": "Progress under the bar. {percent} is a formatted percentage such as 40%.",
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
   "livePhotoSaving": "Photos में सेव हो रहा है",
+  "@livePhotoSaving": {
+    "description": "Status after the frames render, while iOS saves the Live Photo."
+  },
   "livePhotoCancelling": "रोका जा रहा है",
+  "@livePhotoCancelling": {
+    "description": "Status after the user taps Cancel, until the render stops."
+  },
   "livePhotoRefusedTitle": "Prism Photos में नहीं जोड़ सकता",
+  "@livePhotoRefusedTitle": {
+    "description": "Title when the user refused Photos access."
+  },
   "livePhotoRefusedBody": "लाइव फ़ोटो सेव करने के लिए Prism को फ़ोटो जोड़ने की अनुमति दें। सेटिंग्स में Photos पर टैप करें, फिर केवल फ़ोटो जोड़ें पर टैप करें।",
+  "@livePhotoRefusedBody": {
+    "description": "Body when the user refused Photos access. Settings, Photos and Add Photos Only are iOS labels: use the iOS words of this language."
+  },
   "livePhotoRestrictedBody": "इस iPhone पर Photos का एक्सेस बंद है, जैसे स्क्रीन टाइम की वजह से। सेटिंग्स देखें, या इस iPhone को संभालने वाले व्यक्ति से पूछें।",
+  "@livePhotoRestrictedBody": {
+    "description": "Body when a device policy blocks Photos access."
+  },
   "livePhotoNotNow": "अभी नहीं",
+  "@livePhotoNotNow": {
+    "description": "Secondary button that closes the Photos access message."
+  },
   "livePhotoFailedTitle": "लाइव फ़ोटो नहीं बन सकी",
+  "@livePhotoFailedTitle": {
+    "description": "Title when the export failed."
+  },
   "livePhotoFailedSource": "यह वॉलपेपर लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
+  "@livePhotoFailedSource": {
+    "description": "Error when the wall image could not be downloaded or read."
+  },
   "livePhotoFailedTimeout": "इसमें बहुत समय लग गया। फिर से कोशिश करें, या कोई दूसरी स्टाइल चुनें।",
+  "@livePhotoFailedTimeout": {
+    "description": "Error when the render hit its time limit."
+  },
   "livePhotoFailedSave": "Photos ने लाइव फ़ोटो सेव नहीं की। फिर से कोशिश करें।",
+  "@livePhotoFailedSave": {
+    "description": "Error when iOS refused the save or saved it without motion."
+  },
   "livePhotoFailedGeneric": "लाइव फ़ोटो नहीं बन सकी। फिर से कोशिश करें।",
+  "@livePhotoFailedGeneric": {
+    "description": "Error for any other render or encode failure."
+  },
   "livePhotoTryAgain": "फिर से कोशिश करें",
+  "@livePhotoTryAgain": {
+    "description": "Button that goes back to the style picker after an error."
+  },
   "livePhotoGuideTitle": "इसे अपनी लॉक स्क्रीन बनाएं",
+  "@livePhotoGuideTitle": {
+    "description": "Title of the guide sheet after the Live Photo is saved."
+  },
   "livePhotoGuideBody": "आपकी लाइव फ़ोटो Photos में है। iOS ऐप्स को आपका वॉलपेपर बदलने नहीं देता, इसलिए आगे का काम वहीं करें:",
+  "@livePhotoGuideBody": {
+    "description": "Text under the guide title. Followed by numbered steps."
+  },
   "livePhotoGuideStep1": "Photos खोलें। नई फ़ोटो पर LIVE बैज है।",
+  "@livePhotoGuideStep1": {
+    "description": "Guide step 1. LIVE is the badge iOS shows on Live Photos: use the badge text iOS shows in this language."
+  },
   "livePhotoGuideStep2": "शेयर करें पर टैप करें, फिर वॉलपेपर के रूप में इस्तेमाल करें पर टैप करें।",
+  "@livePhotoGuideStep2": {
+    "description": "Guide step 2. Share and Use as Wallpaper are iOS menu labels: use the iOS words of this language."
+  },
   "livePhotoGuideStep3": "नीचे का लाइव फ़ोटो बटन चालू रखें, फिर जोड़ें पर टैप करें।",
+  "@livePhotoGuideStep3": {
+    "description": "Guide step 3. Live Photo and Add are iOS labels in the wallpaper editor."
+  },
   "livePhotoGuideNotesTitle": "जानना अच्छा है",
+  "@livePhotoGuideNotesTitle": {
+    "description": "Heading above the honest notes in the guide."
+  },
   "livePhotoGuideNoteWake": "iPhone जगाने पर लॉक स्क्रीन पर मोशन चलता है। होम स्क्रीन पर स्थिर फ़ोटो दिखती है।",
+  "@livePhotoGuideNoteWake": {
+    "description": "Guide note about where motion plays."
+  },
   "livePhotoGuideNoteLowPower": "लो पावर मोड लॉक स्क्रीन की मोशन बंद कर देता है।",
+  "@livePhotoGuideNoteLowPower": {
+    "description": "Guide note. Low Power Mode is the iOS setting name."
+  },
   "livePhotoGuideNoteNotAvailable": "अगर iOS मोशन उपलब्ध नहीं है कहे, तो इसे स्थिर वॉलपेपर की तरह इस्तेमाल करें या कोई दूसरी स्टाइल आज़माएं।",
-  "livePhotoGuideNoteVersion": "लॉक स्क्रीन पर मोशन के लिए iOS 17 या उसके बाद का वर्शन चाहिए।"
+  "@livePhotoGuideNoteNotAvailable": {
+    "description": "Guide note. Motion not available is the message iOS shows: use the iOS words of this language."
+  },
+  "livePhotoGuideNoteVersion": "लॉक स्क्रीन पर मोशन के लिए iOS 17 या उसके बाद का वर्शन चाहिए।",
+  "@livePhotoGuideNoteVersion": {
+    "description": "Guide note about the minimum iOS version."
+  }
 }

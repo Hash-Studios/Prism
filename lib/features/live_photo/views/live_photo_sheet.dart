@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
@@ -13,6 +14,7 @@ import 'package:Prism/features/live_photo/domain/repositories/live_photo_reposit
 import 'package:Prism/features/live_photo/views/widgets/live_photo_preview.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_unlock.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +24,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 /// Opens the Live Photo sheet for one wall, then the guide after a save. iOS only.
 ///
-/// [resolveSource] runs on the first Save and returns the wall the user may export, after sign-in and any consent.
+/// [resolveSource] runs on each Save and returns the wall the user may export, after sign-in and any consent.
 /// [preview] is the image the sheet animates. [depthMapUrl] turns on the 3D style.
 Future<void> showLivePhotoSheet(
   BuildContext context, {
@@ -32,7 +34,19 @@ Future<void> showLivePhotoSheet(
   String? depthMapUrl,
   Color? tint,
   LivePhotoRepository? repository,
+  bool Function()? canExport,
 }) async {
+  final String owner = app_state.prismUser.id;
+  bool allowed(MotionStyle style) =>
+      app_state.prismUser.loggedIn &&
+      app_state.prismUser.id == owner &&
+      (canExport?.call() ?? true) &&
+      !isLiveStyleLocked(
+        style.name,
+        isFree: style.isFree,
+        isPro: app_state.prismUser.premium,
+        unlockedStyles: liveStyleUnlocks(),
+      );
   final bool? saved = await showPrismSheet<bool>(
     context,
     builder: (_) => BlocProvider<LivePhotoBloc>(
@@ -43,11 +57,65 @@ Future<void> showLivePhotoSheet(
         depthMapUrl: depthMapUrl,
         isPro: app_state.prismUser.premium,
         unlockedStyles: liveStyleUnlocks(),
+        canExport: allowed,
       ),
-      child: LivePhotoSheet(preview: preview, tint: tint),
+      child: _LivePhotoAccessWatch(
+        canExport: allowed,
+        child: LivePhotoSheet(preview: preview, tint: tint),
+      ),
     ),
   );
   if (saved == true && context.mounted) await showLivePhotoGuide(context);
+}
+
+class _LivePhotoAccessWatch extends StatefulWidget {
+  const _LivePhotoAccessWatch({required this.canExport, required this.child});
+
+  final bool Function(MotionStyle) canExport;
+  final Widget child;
+
+  @override
+  State<_LivePhotoAccessWatch> createState() => _LivePhotoAccessWatchState();
+}
+
+class _LivePhotoAccessWatchState extends State<_LivePhotoAccessWatch> with WidgetsBindingObserver {
+  StreamSubscription<Object?>? _session;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    CoinsService.instance.passesNotifier.addListener(_refresh);
+    if (getIt.isRegistered<SessionRepository>()) {
+      _session = getIt<SessionRepository>().watchCurrentUser().listen((_) => _refresh());
+    }
+  }
+
+  void _refresh() {
+    if (!mounted) return;
+    final LivePhotoBloc bloc = context.read<LivePhotoBloc>();
+    if (bloc.isClosed) return;
+    bloc.add(LivePhotoEvent.accessChanged(isPro: app_state.prismUser.premium, unlockedStyles: liveStyleUnlocks()));
+    if (bloc.state.phase == LivePhotoPhase.exporting && !widget.canExport(bloc.state.style)) {
+      bloc.add(const LivePhotoEvent.cancelRequested());
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    CoinsService.instance.passesNotifier.removeListener(_refresh);
+    unawaited(_session?.cancel());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 Future<void> showLivePhotoGuide(BuildContext context) async {
@@ -152,6 +220,7 @@ class LivePhotoSheet extends StatelessWidget {
         label: liveMotionStyleLabel(context.l10n, state.style),
         source: 'live_photo_sheet',
       );
+      if (!context.mounted || bloc.isClosed) return;
       bloc.add(LivePhotoEvent.accessChanged(isPro: app_state.prismUser.premium, unlockedStyles: liveStyleUnlocks()));
       return;
     }

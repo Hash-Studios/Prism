@@ -18,6 +18,7 @@ class LivePhotoBloc extends Bloc<LivePhotoEvent, LivePhotoState> {
     required this.wallId,
     required this.resolveSource,
     required bool isPro,
+    this.canExport,
     this.depthMapUrl,
     Map<String, DateTime> unlockedStyles = const <String, DateTime>{},
   }) : super(
@@ -34,7 +35,12 @@ class LivePhotoBloc extends Bloc<LivePhotoEvent, LivePhotoState> {
         emit(state.copyWith(style: event.style));
       }
     });
-    on<_AccessChanged>((event, emit) => emit(state.copyWith(isPro: event.isPro, unlockedStyles: event.unlockedStyles)));
+    on<_AccessChanged>((event, emit) {
+      emit(state.copyWith(isPro: event.isPro, unlockedStyles: event.unlockedStyles));
+      if (state.phase == LivePhotoPhase.exporting && state.isLocked(state.style)) {
+        add(const LivePhotoEvent.cancelRequested());
+      }
+    });
     on<_ExportRequested>(_onExport);
     on<_Progressed>((event, emit) {
       if (state.phase == LivePhotoPhase.exporting) emit(state.copyWith(progress: event.fraction));
@@ -49,22 +55,29 @@ class LivePhotoBloc extends Bloc<LivePhotoEvent, LivePhotoState> {
   final String wallId;
   final String? depthMapUrl;
 
-  /// The wall the user may export, after sign-in and any consent. Null when the user stopped. Runs until it gives a
-  /// source.
   final Future<String?> Function() resolveSource;
-  Future<String?>? _source;
+  final bool Function(MotionStyle style)? canExport;
+  bool _closing = false;
+  int _exportGeneration = 0;
 
   Future<void> _onExport(_ExportRequested event, Emitter<LivePhotoState> emit) async {
-    if (state.phase != LivePhotoPhase.picking || state.isLocked(state.style)) return;
+    if (_closing ||
+        state.phase != LivePhotoPhase.picking ||
+        state.isLocked(state.style) ||
+        !(canExport?.call(state.style) ?? true)) {
+      return;
+    }
+    final int generation = ++_exportGeneration;
     final MotionStyle style = state.style;
     final LiveWallpaperStyleValue styleValue = _styleValue(style);
     emit(state.copyWith(phase: LivePhotoPhase.exporting, progress: 0, cancelling: false, outcome: null));
     analytics.track(LivePhotoExportStartedEvent(style: styleValue));
     final String? source;
     try {
-      source = await (_source ??= resolveSource());
+      source = await resolveSource();
+      if (_closing || emit.isDone) return;
     } catch (_) {
-      _source = null;
+      if (_closing || emit.isDone) return;
       analytics.track(LivePhotoExportFailedEvent(style: styleValue, reason: 'source_unavailable'));
       emit(
         state.copyWith(
@@ -76,12 +89,11 @@ class LivePhotoBloc extends Bloc<LivePhotoEvent, LivePhotoState> {
       return;
     }
     if (source == null) {
-      _source = null;
       analytics.track(LivePhotoExportCancelledEvent(style: styleValue));
       emit(state.copyWith(phase: LivePhotoPhase.picking, cancelling: false));
       return;
     }
-    if (state.cancelling) {
+    if (state.cancelling || state.isLocked(style) || !(canExport?.call(style) ?? true)) {
       analytics.track(LivePhotoExportCancelledEvent(style: styleValue));
       emit(state.copyWith(phase: LivePhotoPhase.picking, cancelling: false));
       return;
@@ -93,9 +105,12 @@ class LivePhotoBloc extends Bloc<LivePhotoEvent, LivePhotoState> {
       tint: event.tint,
       depthMapUrl: depthMapUrl,
       onProgress: (fraction) {
-        if (!isClosed) add(LivePhotoEvent.progressed(fraction));
+        if (!_closing && !isClosed && !emit.isDone && generation == _exportGeneration) {
+          add(LivePhotoEvent.progressed(fraction));
+        }
       },
     );
+    if (_closing || emit.isDone) return;
     switch (outcome) {
       case LiveExportSaved():
         analytics.track(LivePhotoExportDoneEvent(style: styleValue, durationMs: export.duration.inMilliseconds));
@@ -128,6 +143,8 @@ class LivePhotoBloc extends Bloc<LivePhotoEvent, LivePhotoState> {
 
   @override
   Future<void> close() async {
+    _closing = true;
+    _exportGeneration++;
     if (state.phase == LivePhotoPhase.exporting) await _repository.cancel();
     return super.close();
   }

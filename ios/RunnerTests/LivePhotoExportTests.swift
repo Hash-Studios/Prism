@@ -42,6 +42,20 @@ final class LivePhotoExportTests: XCTestCase {
     XCTAssertEqual(naturalSize, CGSize(width: 390, height: 844))
     let metadataTracks = try await video.loadTracks(withMediaType: .metadata)
     XCTAssertEqual(metadataTracks.count, 1)
+    let reader = try AVAssetReader(asset: video)
+    let metadataOutput = AVAssetReaderTrackOutput(track: try XCTUnwrap(metadataTracks.first), outputSettings: nil)
+    reader.add(metadataOutput)
+    let metadata = AVAssetReaderOutputMetadataAdaptor(assetReaderTrackOutput: metadataOutput)
+    XCTAssertTrue(reader.startReading())
+    let group = try XCTUnwrap(metadata.nextTimedMetadataGroup())
+    XCTAssertEqual(group.timeRange.start.seconds, 0.5, accuracy: 0.001)
+    XCTAssertLessThan(group.timeRange.start.seconds, duration.seconds)
+    let stillTime = try XCTUnwrap(group.items.first)
+    XCTAssertEqual(stillTime.identifier?.rawValue, "mdta/com.apple.quicktime.still-image-time")
+    XCTAssertEqual(stillTime.dataType, kCMMetadataBaseDataType_SInt8 as String)
+    let value = try await stillTime.load(.numberValue)
+    XCTAssertEqual(value?.int8Value, 0)
+    XCTAssertNil(metadata.nextTimedMetadataGroup())
 
     let status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
     try XCTSkipUnless(status == .authorized || status == .limited, "Photos access is not granted")
@@ -49,6 +63,96 @@ final class LivePhotoExportTests: XCTestCase {
     let asset = try XCTUnwrap(PHAsset.fetchAssets(withLocalIdentifiers: [assetId], options: nil).firstObject)
     XCTAssertTrue(asset.mediaSubtypes.contains(.photoLive))
     XCTAssertEqual(PrismLivePhotoLibrary.isLivePhoto(localIdentifier: assetId), true)
+  }
+
+  func testNewWorkDirectoryDoesNotDeleteAnActiveExport() throws {
+    let first = try PrismLivePhotoExporter.makeWorkDirectory()
+    defer { try? FileManager.default.removeItem(at: first) }
+    let inProgressVideo = first.appendingPathComponent("live.mov")
+    try Data([1, 2, 3]).write(to: inProgressVideo)
+    let second = try PrismLivePhotoExporter.makeWorkDirectory()
+    defer { try? FileManager.default.removeItem(at: second) }
+
+    XCTAssertNotEqual(first, second)
+    XCTAssertEqual(try Data(contentsOf: inProgressVideo), Data([1, 2, 3]))
+    XCTAssertTrue(FileManager.default.fileExists(atPath: second.path))
+  }
+
+  func testJpegFallbackKeepsItsExtensionAndMakerAppleIdentifier() throws {
+    var buffer: CVPixelBuffer?
+    XCTAssertEqual(CVPixelBufferCreate(
+      nil, 2, 2, kCVPixelFormatType_32BGRA,
+      [kCVPixelBufferCGImageCompatibilityKey: true, kCVPixelBufferCGBitmapContextCompatibilityKey: true] as CFDictionary,
+      &buffer
+    ), kCVReturnSuccess)
+    let requestedURL = directory.appendingPathComponent("live.heic")
+    try Data([0]).write(to: requestedURL)
+    let identifier = UUID().uuidString
+    let photo = try PrismLivePhotoExporter.writeKeyPhoto(
+      from: XCTUnwrap(buffer), to: requestedURL, identifier: identifier, types: [.jpeg]
+    )
+
+    XCTAssertEqual(photo.lastPathComponent, "live.jpg")
+    let source = try XCTUnwrap(CGImageSourceCreateWithURL(photo as CFURL, nil))
+    XCTAssertEqual(CGImageSourceGetType(source) as String?, UTType.jpeg.identifier)
+    let properties = try XCTUnwrap(CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any])
+    let makerApple = properties[kCGImagePropertyMakerAppleDictionary] as? [String: Any]
+    XCTAssertEqual(makerApple?["17"] as? String, identifier)
+  }
+
+  func testWriterThatStopsDoesNotWaitForTheExportTimeout() async throws {
+    let stopped = expectation(description: "writer stopped")
+    let output = directory.appendingPathComponent("cancelled.mov")
+    let readiness = Task { @MainActor in
+      let writer = try AVAssetWriter(outputURL: output, fileType: .mov)
+      let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
+        AVVideoCodecKey: AVVideoCodecType.h264,
+        AVVideoWidthKey: 16,
+        AVVideoHeightKey: 16,
+      ])
+      writer.add(input)
+      XCTAssertTrue(writer.startWriting())
+      writer.startSession(atSourceTime: .zero)
+      writer.cancelWriting()
+      stopped.fulfill()
+      do {
+        try await PrismLivePhotoExporter.waitUntilReady(input, writer: writer)
+        XCTFail("expected encode-failed")
+      } catch {
+        XCTAssertEqual(error as? PrismLivePhotoFailure, .encodeFailed)
+      }
+    }
+    await fulfillment(of: [stopped], timeout: 5)
+    try await Task.sleep(nanoseconds: 50_000_000)
+    readiness.cancel()
+    try await readiness.value
+  }
+
+  func testCancelDuringWriterFinishCancelsTheWriter() async throws {
+    let started = expectation(description: "writer finish started")
+    let output = directory.appendingPathComponent("finishing.mov")
+    let finishing = Task { @MainActor in
+      let writer = try AVAssetWriter(outputURL: output, fileType: .mov)
+      let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
+        AVVideoCodecKey: AVVideoCodecType.h264,
+        AVVideoWidthKey: 16,
+        AVVideoHeightKey: 16,
+      ])
+      writer.add(input)
+      XCTAssertTrue(writer.startWriting())
+      writer.startSession(atSourceTime: .zero)
+      input.markAsFinished()
+      do {
+        try await PrismLivePhotoExporter.finishWriting(writer, start: { _ in started.fulfill() })
+        XCTFail("expected cancellation")
+      } catch {
+        XCTAssertTrue(error is CancellationError)
+        XCTAssertEqual(writer.status, .cancelled)
+      }
+    }
+    await fulfillment(of: [started], timeout: 5)
+    finishing.cancel()
+    try await finishing.value
   }
 
   func testEveryStyleRenders() async throws {
@@ -68,8 +172,11 @@ final class LivePhotoExportTests: XCTestCase {
     let started = expectation(description: "first frame")
     started.assertForOverFulfill = false
     let breathe = request(style: .breathe, durationMs: 3000)
-    let export = Task {
-      await PrismLivePhotoExporter.export(breathe) { _ in started.fulfill() }
+    let export = Task { @MainActor in
+      await PrismLivePhotoExporter.export(breathe) { _ in
+        XCTAssertFalse(Thread.isMainThread)
+        started.fulfill()
+      }
     }
     await fulfillment(of: [started], timeout: 30)
     export.cancel()

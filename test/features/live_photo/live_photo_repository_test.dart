@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' show Color, Size;
 
 import 'package:Prism/core/platform/pigeon/prism_live_photo_api.g.dart';
@@ -19,7 +20,7 @@ class _FakeTexturePreparer extends LiveTexturePreparer {
   final List<String> imageUrls = <String>[];
 
   @override
-  Future<String> prepare(String imageUrl, double screenAspectRatio) async {
+  Future<String> prepare(String imageUrl, double screenAspectRatio, {bool uniquePaths = false}) async {
     imageUrls.add(imageUrl);
     return path;
   }
@@ -169,6 +170,113 @@ void main() {
 
       repository.onLivePhotoExportProgress(request.exportId, 0.95);
       expect(fractions, <double>[0.5]);
+    });
+
+    Future<ByteData?> progressMessage(String id) {
+      final Completer<ByteData?> reply = Completer<ByteData?>();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
+        'dev.flutter.pigeon.Prism.PrismLivePhotoFlutterApi.onLivePhotoExportProgress',
+        PrismLivePhotoFlutterApi.pigeonChannelCodec.encodeMessage(<Object?>[id, 0.5]),
+        reply.complete,
+      );
+      return reply.future;
+    }
+
+    test('native permission and Photos save are outside the render deadline', () async {
+      final LivePhotoRepositoryImpl repository = LivePhotoRepositoryImpl(
+        texturePreparer: _FakeTexturePreparer(textureFile().path),
+        hostApi: host,
+      );
+      final List<({Duration duration, Zone zone, void Function() callback, Timer timer})> timers = [];
+      final Future<LiveExportOutcome> export = runZoned(
+        () => repository.export(
+          const LiveExport(wallId: 'wall-1', style: MotionStyle.drift, sizePx: _phone),
+          imageUrl: 'https://example.com/source.jpg',
+          tint: _tint,
+          onProgress: (_) {},
+        ),
+        zoneSpecification: ZoneSpecification(
+          createTimer: (self, parent, zone, duration, callback) {
+            final Timer timer = parent.createTimer(zone, const Duration(days: 1), () {});
+            timers.add((duration: duration, zone: zone, callback: callback, timer: timer));
+            return timer;
+          },
+        ),
+      );
+      try {
+        await host.started.future;
+        for (final pending in timers) {
+          if (pending.duration <= const Duration(seconds: 61) && pending.timer.isActive) {
+            pending.timer.cancel();
+            pending.zone.run(pending.callback);
+          }
+        }
+        await Future<void>.delayed(Duration.zero);
+        expect(host.cancelledIds, isEmpty);
+        host.answer.complete(LivePhotoExportResult(status: LivePhotoExportStatus.saved, assetId: 'a'));
+        expect(await export, isA<LiveExportSaved>());
+      } finally {
+        for (final pending in timers) {
+          pending.timer.cancel();
+        }
+      }
+    });
+
+    test('unregisters the Flutter progress handler after completion', () async {
+      final LivePhotoRepositoryImpl repository = LivePhotoRepositoryImpl(
+        texturePreparer: _FakeTexturePreparer(textureFile().path),
+        hostApi: host,
+      );
+      final Future<LiveExportOutcome> export = repository.export(
+        const LiveExport(wallId: 'wall-1', style: MotionStyle.drift, sizePx: _phone),
+        imageUrl: 'https://example.com/source.jpg',
+        tint: _tint,
+        onProgress: (_) {},
+      );
+      final LivePhotoExportRequest request = await host.started.future;
+      expect(await progressMessage(request.exportId), isNotNull);
+      host.answer.complete(LivePhotoExportResult(status: LivePhotoExportStatus.cancelled));
+      await export;
+
+      expect(await progressMessage(request.exportId), isNull);
+    });
+
+    test('cancel unregisters the handler before the native response arrives', () async {
+      final LivePhotoRepositoryImpl repository = LivePhotoRepositoryImpl(
+        texturePreparer: _FakeTexturePreparer(textureFile().path),
+        hostApi: host,
+      );
+      final Future<LiveExportOutcome> export = repository.export(
+        const LiveExport(wallId: 'wall-1', style: MotionStyle.drift, sizePx: _phone),
+        imageUrl: 'https://example.com/source.jpg',
+        tint: _tint,
+        onProgress: (_) {},
+      );
+      final LivePhotoExportRequest request = await host.started.future;
+      await repository.cancel();
+
+      expect(await progressMessage(request.exportId), isNull);
+      expect(host.cancelledIds, <String>[request.exportId]);
+      host.answer.complete(LivePhotoExportResult(status: LivePhotoExportStatus.cancelled));
+      await export;
+    });
+
+    test('a late native result cannot turn a cancelled export into a saved one', () async {
+      final LivePhotoRepositoryImpl repository = LivePhotoRepositoryImpl(
+        texturePreparer: _FakeTexturePreparer(textureFile().path),
+        hostApi: host,
+      );
+      final Future<LiveExportOutcome> export = repository.export(
+        const LiveExport(wallId: 'wall-1', style: MotionStyle.drift, sizePx: _phone),
+        imageUrl: 'https://example.com/source.jpg',
+        tint: _tint,
+        onProgress: (_) {},
+      );
+      await host.started.future;
+      await repository.cancel();
+      host.answer.complete(LivePhotoExportResult(status: LivePhotoExportStatus.saved, assetId: 'old'));
+
+      expect(await export, isA<LiveExportCancelled>());
     });
 
     test('3D without a depth map fails as an invalid request and never calls the host', () async {

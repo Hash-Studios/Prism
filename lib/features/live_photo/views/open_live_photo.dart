@@ -1,6 +1,7 @@
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
@@ -43,7 +44,10 @@ Future<void> openLivePhoto(
   Color? tint,
 }) async {
   if (!await requireSignedInAction(context) || !context.mounted) return;
+  final String owner = app_state.prismUser.id;
   bool allowed() =>
+      app_state.prismUser.loggedIn &&
+      app_state.prismUser.id == owner &&
       livePhotoAllowed(premiumWall: premiumWall, premiumContentUnlocked: CoinsService.instance.premiumContentUnlocked);
   if (!allowed()) {
     await livePhotoPaywall(context);
@@ -56,13 +60,18 @@ Future<void> openLivePhoto(
     preview: preview,
     depthMapUrl: depthMapUrl,
     tint: tint,
-    resolveSource: () => livePhotoResolveOriginal(
-      context,
-      url: url,
-      wallpaperId: wallId,
-      wallpaperSource: wallpaperSource,
-      action: OriginalAccessAction.download,
-      label: label,
-    ),
+    canExport: allowed,
+    resolveSource: () async {
+      if (!allowed() || !context.mounted) return null;
+      final String? source = await livePhotoResolveOriginal(
+        context,
+        url: url,
+        wallpaperId: wallId,
+        wallpaperSource: wallpaperSource,
+        action: OriginalAccessAction.download,
+        label: label,
+      );
+      return allowed() && context.mounted ? source : null;
+    },
   );
 }
