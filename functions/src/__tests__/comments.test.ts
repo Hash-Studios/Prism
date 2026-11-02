@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
-import {type AddCommentResponse, addComment, commentIdFor, commentIo, commentText, deleteComment, parseCommentTarget,
+import {type AddCommentResponse, addComment, commentIdFor, commentPreview, commentIo, commentText, deleteComment, parseCommentTarget,
   removeCommentsForAccount, setCommentHidden, setCommentState} from "../comments";
 import {nativeNotificationLocalization, renderNotificationCopy} from "../notificationCatalog";
 import {db} from "../common";
@@ -405,14 +405,17 @@ test("the wallCommented push copy names the commenter and the wall", () => {
   assert.equal(rendered.title, "Ava commented on Neon rain");
   assert.equal(rendered.body, "love it");
   assert.equal(renderNotificationCopy({...copy, wallTitle: ""}).title, "Ava commented on your wall");
-  assert.deepEqual(nativeNotificationLocalization(rendered), {
-    titleKey: "notif_push_wall_commented_title",
-    titleArgs: ["Ava", "Neon rain"],
-    bodyKey: "notif_push_wall_commented_body",
-    bodyArgs: ["love it"],
-  });
-  assert.equal(nativeNotificationLocalization(renderNotificationCopy({...copy, wallTitle: ""}))?.titleKey,
-    "notif_push_wall_commented_title_untitled");
+  // Installed builds lack the native keys, so the push carries the English copy.
+  assert.equal(nativeNotificationLocalization(rendered), null);
+});
+
+test("the push preview stops at 80 characters or 400 bytes", () => {
+  assert.equal(commentPreview("line one\nline two"), "line one line two");
+  assert.equal(commentPreview("a".repeat(81)), `${"a".repeat(80)}…`);
+  const family = "👨‍👩‍👧‍👦";
+  const preview = commentPreview(family.repeat(80));
+  assert.ok(Buffer.byteLength(preview) <= 403, String(Buffer.byteLength(preview)));
+  assert.equal(preview, `${family.repeat(Math.floor(400 / Buffer.byteLength(family)))}…`);
 });
 
 test("replays never return hidden comments or bypass current access checks", async (t) => {

@@ -19,6 +19,8 @@ export const COMMENTS_PER_DAY = 50;
 export const COMMENT_PUSH_GAP_MS = 60 * 60 * 1000;
 const MIN_ACCOUNT_AGE_MS = 24 * 60 * 60 * 1000;
 const PREVIEW_GRAPHEMES = 80;
+/** The preview goes into a push twice (body and copy arguments); FCM allows 4 KB in all. */
+const PREVIEW_BYTES = 400;
 const FLAG_CACHE_MS = 60_000;
 const DOC_ID = /^[^/\s]{1,128}$/;
 
@@ -100,6 +102,17 @@ export function commentText(raw: unknown): {text: string} | {reason: CommentRefu
   if (graphemes(text).length > COMMENT_MAX_GRAPHEMES) return {reason: "comment_too_long"};
   if (hasBlockedWord(text)) return {reason: "comment_blocked_word"};
   return {text};
+}
+
+/** The comment on one line, cut at 80 characters or 400 UTF-8 bytes, whichever comes first. */
+export function commentPreview(text: string): string {
+  const parts = graphemes(text.replace(/\n/g, " "));
+  let out = "";
+  for (const [i, part] of parts.entries()) {
+    if (i === PREVIEW_GRAPHEMES || Buffer.byteLength(out + part) > PREVIEW_BYTES) return `${out}…`;
+    out += part;
+  }
+  return out;
 }
 
 function docIdFrom(raw: unknown, name: string): string {
@@ -266,14 +279,14 @@ export const addComment = onCall({region: CALLABLE_REGIONS, cors: true, maxInsta
       if (!creatorRef || !creator || creator.deleted === true || creatorBarrier?.data()?.closed === true || !creatorEmail) return;
       if (nowMs - int(pushSnap.data()?.lastAtMs, 0) < COMMENT_PUSH_GAP_MS) return;
       tx.set(pushRef, {lastAtMs: nowMs, creatorUid});
-      const preview = graphemes(parsed.text.replace(/\n/g, " "));
+      const preview = commentPreview(parsed.text);
       notice = {
         payload: {
           ...notificationCopyPayload({
             kind: "wallCommented",
             commenterName: data.authorName || "A Prism user",
             wallTitle: str(wall.title),
-            text: preview.length > PREVIEW_GRAPHEMES ? `${preview.slice(0, PREVIEW_GRAPHEMES).join("")}…` : parsed.text,
+            text: preview,
           }),
           data: {route: "wall", wall_id: wallId, notification_kind: "wall_comment"},
           modifier: creatorEmail,

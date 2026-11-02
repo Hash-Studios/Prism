@@ -364,13 +364,14 @@ class _CommentComposerState extends State<CommentComposer> {
     _text.clear();
     setState(() => _error = null);
     final CommentRefusal? refusal = await cubit.send(text);
-    if (!mounted) return;
+    // The post lands even when the sheet closed meanwhile, so the event and the count refresh come first.
     if (refusal == null) {
       unawaited(analytics.track(const CommentPostedEvent()));
       getIt<FavouriteCountsCubit>().request(widget.wall.statsId, force: true);
       return;
     }
     unawaited(analytics.track(CommentRefusedEvent(reason: refusal.wire.isEmpty ? 'failed' : refusal.wire)));
+    if (!mounted) return;
     if (_text.text.isEmpty) _text.text = text;
     setState(() => _error = commentRefusalMessage(refusal, l10n));
   }

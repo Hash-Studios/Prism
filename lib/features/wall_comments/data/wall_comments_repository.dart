@@ -76,7 +76,7 @@ class WallCommentsRepository {
     throw CommentRefusedException(CommentRefusal.fromWire(raw['reason']));
   }
 
-  /// Deletes a comment as its author, the wall's creator or an admin. Returns the role the server used.
+  /// Deletes a comment as its author, the wall's creator or an admin. Throws when the server refuses.
   Future<void> delete({required String wallId, required String commentId}) =>
       _call('deleteComment', <String, Object?>{'wallId': wallId, 'commentId': commentId});
 

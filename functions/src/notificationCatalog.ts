@@ -340,6 +340,9 @@ export function nativeNotificationLocalization(
   if (kind === "custom" || kind === "wallRemixed" || kind === "creatorStatsWeekly" || kind === "challengeWinner") return null;
   // Later tips of the day only rewrite the inbox item, so this copy never reaches a system banner.
   if (kind === "tipsReceived") return null;
+  // Installed builds that advertise localization version 2 lack these resources, so they get the English copy until a
+  // later localization version ships the notif_push_wall_commented_* keys.
+  if (kind === "wallCommented") return null;
 
   const prefix = `notif_push_${kind.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)}`;
   const stringArg = (key: string): string => String(message.args[key] ?? "");
@@ -389,12 +392,6 @@ export function nativeNotificationLocalization(
     titleArgs = [stringArg("senderName"), String(Number(message.args.amount ?? 0))];
     if (!stringArg("wallTitle")) titleSuffix = "_untitled";
     else titleArgs.push(stringArg("wallTitle"));
-    break;
-  case "wallCommented":
-    titleArgs = [stringArg("commenterName")];
-    if (!stringArg("wallTitle")) titleSuffix = "_untitled";
-    else titleArgs.push(stringArg("wallTitle"));
-    bodyArgs = [stringArg("text")];
     break;
   case "galleryDrop":
     // Topic pushes reach builds that predate this kind, so it uses only shipped resources: the Drop title, and the
