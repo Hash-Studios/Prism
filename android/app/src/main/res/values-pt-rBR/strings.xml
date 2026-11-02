@@ -69,6 +69,9 @@
     <string name="notif_push_tip_received_title">%1$s enviou %2$s moedas de gorjeta por %3$s</string>
     <string name="notif_push_tip_received_title_untitled">%1$s enviou %2$s moedas de gorjeta para você</string>
     <string name="notif_push_tip_received_body">Veja suas gorjetas nas suas estatísticas de criador.</string>
+    <string name="notif_push_wall_commented_title">%1$s comentou em %2$s</string>
+    <string name="notif_push_wall_commented_title_untitled">%1$s comentou no seu wallpaper</string>
+    <string name="notif_push_wall_commented_body">%1$s</string>
     <string name="notif_push_report_needs_review_title">Denúncia aguardando análise</string>
     <string name="notif_push_report_needs_review_body">Uma denúncia de conteúdo está aguardando análise há mais de 12 horas.</string>
     <string name="notif_push_new_content_report_title">Nova denúncia de conteúdo</string>

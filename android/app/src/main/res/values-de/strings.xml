@@ -69,6 +69,9 @@
     <string name="notif_push_tip_received_title">%1$s hat dir %2$s Coins für %3$s als Trinkgeld gegeben</string>
     <string name="notif_push_tip_received_title_untitled">%1$s hat dir %2$s Coins als Trinkgeld gegeben</string>
     <string name="notif_push_tip_received_body">Deine Trinkgelder findest du in deinen Creator-Statistiken.</string>
+    <string name="notif_push_wall_commented_title">%1$s hat %2$s kommentiert</string>
+    <string name="notif_push_wall_commented_title_untitled">%1$s hat dein Wallpaper kommentiert</string>
+    <string name="notif_push_wall_commented_body">%1$s</string>
     <string name="notif_push_report_needs_review_title">Meldung wartet auf Prüfung</string>
     <string name="notif_push_report_needs_review_body">Eine Inhaltsmeldung wartet seit über 12 Stunden auf Prüfung.</string>
     <string name="notif_push_new_content_report_title">Neue Inhaltsmeldung</string>

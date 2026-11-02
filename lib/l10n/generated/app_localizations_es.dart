@@ -12918,4 +12918,161 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get notifPushWrappedReadyBody => 'Mira los fondos de pantalla que guardaste, tus colores y tus creadores.';
+
+  @override
+  String get commentsAction => 'Comentarios';
+
+  @override
+  String commentsCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count comentarios',
+      one: '1 comentario',
+      zero: 'Sin comentarios',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentsTitle => 'Comentarios';
+
+  @override
+  String get commentsEmptyTitle => 'Aún no hay comentarios';
+
+  @override
+  String get commentsEmptyBody => 'Dile al creador qué te gusta de este fondo de pantalla.';
+
+  @override
+  String get commentsLoadFailed => 'No se pueden cargar los comentarios. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get commentsRetry => 'Inténtalo de nuevo';
+
+  @override
+  String get commentComposerHint => 'Añade un comentario';
+
+  @override
+  String get commentSend => 'Enviar';
+
+  @override
+  String commentCharactersLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Quedan $count caracteres',
+      one: 'Queda 1 carácter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String commentCharactersOver(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count caracteres de más',
+      one: '1 carácter de más',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentSignInToComment => 'Inicia sesión para comentar';
+
+  @override
+  String get commentCreatorLabel => 'Creador';
+
+  @override
+  String get commentAuthorFallback => 'Usuario de Prism';
+
+  @override
+  String get commentOptionsHint => 'mostrar opciones del comentario';
+
+  @override
+  String get commentReport => 'Denunciar comentario';
+
+  @override
+  String commentBlockUser(String name) {
+    return 'Bloquear a $name';
+  }
+
+  @override
+  String get commentDelete => 'Eliminar comentario';
+
+  @override
+  String get commentDeleteConfirmTitle => '¿Eliminar este comentario?';
+
+  @override
+  String get commentDeleteConfirmBody => 'Se elimina para todos. No puedes deshacerlo.';
+
+  @override
+  String get commentDeleted => 'Comentario eliminado';
+
+  @override
+  String get commentDeleteFailed => 'No se pudo eliminar el comentario. Inténtalo de nuevo.';
+
+  @override
+  String get commentPostFailed => 'No se pudo publicar tu comentario. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get commentErrorDisabled => 'Los comentarios están pausados por ahora. Inténtalo más tarde.';
+
+  @override
+  String get commentErrorGuest => 'Inicia sesión con una cuenta verificada para comentar.';
+
+  @override
+  String get commentErrorTooNew => 'Puedes comentar 24 horas después de unirte a Prism.';
+
+  @override
+  String get commentErrorWallUnavailable => 'Este fondo no está abierto a comentarios en este momento.';
+
+  @override
+  String get commentErrorEmpty => 'Escribe un comentario antes de enviarlo.';
+
+  @override
+  String get commentErrorTooLong => 'Usa 500 caracteres o menos.';
+
+  @override
+  String get commentErrorHiddenCharacters => 'Quita los caracteres ocultos o especiales y vuelve a enviar.';
+
+  @override
+  String get commentErrorBlockedWord => 'Reformula tu comentario para que sea amable y vuelve a enviarlo.';
+
+  @override
+  String get commentErrorBlocked => 'No puedes comentar en este fondo de pantalla.';
+
+  @override
+  String get commentErrorTooFast => 'Espera unos segundos antes de tu siguiente comentario.';
+
+  @override
+  String get commentErrorDailyLimit => 'Puedes publicar 50 comentarios al día. Inténtalo mañana.';
+
+  @override
+  String notifPushWallCommentedTitle(String name, String wallTitle) {
+    return '$name comentó en $wallTitle';
+  }
+
+  @override
+  String notifPushWallCommentedTitleUntitled(String name) {
+    return '$name comentó en tu fondo de pantalla';
+  }
+
+  @override
+  String get adminCommentReport => 'Denuncia de comentario';
+
+  @override
+  String get adminKeepComment => 'Mantener comentario';
+
+  @override
+  String get adminCommentKept => 'Denuncia descartada. El comentario está visible.';
+
+  @override
+  String get adminCommentRemoved => 'Comentario eliminado';
+
+  @override
+  String get adminCommentGone => 'Este comentario ya no existe.';
+
+  @override
+  String get adminContentTypeComment => 'Comentario';
 }

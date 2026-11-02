@@ -243,4 +243,26 @@ void main() {
       body: 'Asha remixed your wallpaper.',
     ));
   });
+
+  test('a comment push names the commenter and the wall, and shows the comment', () {
+    String title(String wallTitle) => localizedNotificationCopyData(
+      'wallCommented',
+      <String, Object?>{'commenterName': 'Ava', 'wallTitle': wallTitle, 'text': 'Love the colours'},
+      fallbackTitle: '',
+      fallbackBody: '',
+      l10n: l10n,
+    ).title;
+    expect(title('Neon rain'), 'Ava commented on Neon rain');
+    expect(title(' '), 'Ava commented on your wall');
+    expect(
+      localizedNotificationCopyData(
+        'wallCommented',
+        const <String, Object?>{'commenterName': 'Ava', 'wallTitle': '', 'text': 'Love the colours'},
+        fallbackTitle: '',
+        fallbackBody: '',
+        l10n: l10n,
+      ).body,
+      'Love the colours',
+    );
+  });
 }

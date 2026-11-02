@@ -12899,4 +12899,156 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notifPushWrappedReadyBody => 'अपने सहेजे वॉलपेपर, अपने रंग और अपने क्रिएटर देखें।';
+
+  @override
+  String get commentsAction => 'टिप्पणियाँ';
+
+  @override
+  String commentsCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count टिप्पणियाँ',
+      one: '1 टिप्पणी',
+      zero: 'कोई टिप्पणी नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentsTitle => 'टिप्पणियाँ';
+
+  @override
+  String get commentsEmptyTitle => 'अभी कोई टिप्पणी नहीं है';
+
+  @override
+  String get commentsEmptyBody => 'क्रिएटर को बताएँ कि आपको इस वॉलपेपर में क्या पसंद है।';
+
+  @override
+  String get commentsLoadFailed => 'टिप्पणियाँ लोड नहीं हो सकीं। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get commentsRetry => 'फिर से कोशिश करें';
+
+  @override
+  String get commentComposerHint => 'टिप्पणी जोड़ें';
+
+  @override
+  String get commentSend => 'भेजें';
+
+  @override
+  String commentCharactersLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count अक्षर बाकी', one: '1 अक्षर बाकी');
+    return '$_temp0';
+  }
+
+  @override
+  String commentCharactersOver(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count अक्षर ज़्यादा',
+      one: '1 अक्षर ज़्यादा',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentSignInToComment => 'टिप्पणी करने के लिए साइन इन करें';
+
+  @override
+  String get commentCreatorLabel => 'क्रिएटर';
+
+  @override
+  String get commentAuthorFallback => 'Prism उपयोगकर्ता';
+
+  @override
+  String get commentOptionsHint => 'टिप्पणी के विकल्प दिखाएँ';
+
+  @override
+  String get commentReport => 'टिप्पणी की रिपोर्ट करें';
+
+  @override
+  String commentBlockUser(String name) {
+    return '$name को ब्लॉक करें';
+  }
+
+  @override
+  String get commentDelete => 'टिप्पणी हटाएँ';
+
+  @override
+  String get commentDeleteConfirmTitle => 'क्या यह टिप्पणी हटानी है?';
+
+  @override
+  String get commentDeleteConfirmBody => 'यह सभी के लिए हट जाएगी। इसे वापस नहीं लिया जा सकता।';
+
+  @override
+  String get commentDeleted => 'टिप्पणी हटा दी गई';
+
+  @override
+  String get commentDeleteFailed => 'टिप्पणी हटाई नहीं जा सकी। फिर से कोशिश करें।';
+
+  @override
+  String get commentPostFailed => 'आपकी टिप्पणी पोस्ट नहीं हो सकी। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get commentErrorDisabled => 'टिप्पणियाँ अभी रोकी गई हैं। बाद में फिर से कोशिश करें।';
+
+  @override
+  String get commentErrorGuest => 'टिप्पणी करने के लिए सत्यापित खाते से साइन इन करें।';
+
+  @override
+  String get commentErrorTooNew => 'Prism से जुड़ने के 24 घंटे बाद आप टिप्पणी कर सकते हैं।';
+
+  @override
+  String get commentErrorWallUnavailable => 'यह वॉलपेपर अभी टिप्पणियों के लिए उपलब्ध नहीं है।';
+
+  @override
+  String get commentErrorEmpty => 'भेजने से पहले टिप्पणी लिखें।';
+
+  @override
+  String get commentErrorTooLong => '500 अक्षरों या उससे कम का उपयोग करें।';
+
+  @override
+  String get commentErrorHiddenCharacters => 'छिपे या विशेष अक्षर हटाएँ, फिर से भेजें।';
+
+  @override
+  String get commentErrorBlockedWord => 'अपनी टिप्पणी को शालीन शब्दों में लिखें, फिर से भेजें।';
+
+  @override
+  String get commentErrorBlocked => 'आप इस वॉलपेपर पर टिप्पणी नहीं कर सकते।';
+
+  @override
+  String get commentErrorTooFast => 'अगली टिप्पणी से पहले कुछ सेकंड रुकें।';
+
+  @override
+  String get commentErrorDailyLimit => 'आप रोज़ 50 टिप्पणियाँ कर सकते हैं। कल फिर कोशिश करें।';
+
+  @override
+  String notifPushWallCommentedTitle(String name, String wallTitle) {
+    return '$name ने $wallTitle पर टिप्पणी की';
+  }
+
+  @override
+  String notifPushWallCommentedTitleUntitled(String name) {
+    return '$name ने आपके वॉलपेपर पर टिप्पणी की';
+  }
+
+  @override
+  String get adminCommentReport => 'टिप्पणी की रिपोर्ट';
+
+  @override
+  String get adminKeepComment => 'टिप्पणी रखें';
+
+  @override
+  String get adminCommentKept => 'रिपोर्ट खारिज की गई। टिप्पणी दिख रही है।';
+
+  @override
+  String get adminCommentRemoved => 'टिप्पणी हटाई गई';
+
+  @override
+  String get adminCommentGone => 'यह टिप्पणी पहले ही हट चुकी है।';
+
+  @override
+  String get adminContentTypeComment => 'टिप्पणी';
 }
