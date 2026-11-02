@@ -2480,6 +2480,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreContentReportUser => 'user';
 
   @override
+  String get coreContentReportComment => 'comment';
+
+  @override
   String get coreContentReportWallpaper => 'wallpaper';
 
   @override
@@ -7426,7 +7429,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifSettingFollowers => 'Followers';
 
   @override
-  String get notifSettingFollowersDescription => 'Alerts when someone new follows you.';
+  String get notifSettingFollowersDescription => 'Alerts when someone new follows you or comments on your walls.';
 
   @override
   String get notifSettingPosts => 'Posts';

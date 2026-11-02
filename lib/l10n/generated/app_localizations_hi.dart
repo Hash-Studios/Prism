@@ -2480,6 +2480,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreContentReportUser => 'उपयोगकर्ता';
 
   @override
+  String get coreContentReportComment => 'टिप्पणी';
+
+  @override
   String get coreContentReportWallpaper => 'वॉलपेपर';
 
   @override
@@ -7552,7 +7555,8 @@ class AppLocalizationsHi extends AppLocalizations {
   String get notifSettingFollowers => 'फ़ॉलोअर';
 
   @override
-  String get notifSettingFollowersDescription => 'कोई नया व्यक्ति आपको फ़ॉलो करे, तो अलर्ट पाएँ।';
+  String get notifSettingFollowersDescription =>
+      'कोई नया व्यक्ति आपको फ़ॉलो करे या आपके वॉलपेपर पर टिप्पणी करे, तो अलर्ट पाएँ।';
 
   @override
   String get notifSettingPosts => 'पोस्ट';

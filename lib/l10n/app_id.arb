@@ -2653,6 +2653,7 @@
   "coreConfirmWallpaperPreview": "Konfirmasi wallpaper di pratinjau sistem.",
   "coreContentNotAvailable": "Item itu sudah tidak tersedia",
   "coreContentReportUser": "pengguna",
+  "coreContentReportComment": "komentar",
   "coreContentReportWallpaper": "wallpaper",
   "coreContentReportWhy": "Mengapa Anda melaporkan {contentType} ini?",
   "@coreContentReportWhy": {
@@ -6569,7 +6570,7 @@
   "notifSettingDrops": "Drop Mingguan",
   "notifSettingDropsDescription": "Peringatan saat Drop baru dimulai dan sebelum berakhir.",
   "notifSettingFollowers": "Pengikut",
-  "notifSettingFollowersDescription": "Peringatan saat seseorang mulai mengikuti Anda.",
+  "notifSettingFollowersDescription": "Peringatan saat seseorang mulai mengikuti Anda atau mengomentari wallpaper Anda.",
   "notifSettingPosts": "Postingan",
   "notifSettingPostsDescription": "Peringatan saat kreator yang Anda ikuti membagikan karya baru.",
   "notifSettingRecommendations": "Rekomendasi",

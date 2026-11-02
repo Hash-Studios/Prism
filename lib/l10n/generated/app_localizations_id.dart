@@ -2478,6 +2478,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreContentReportUser => 'pengguna';
 
   @override
+  String get coreContentReportComment => 'komentar';
+
+  @override
   String get coreContentReportWallpaper => 'wallpaper';
 
   @override
@@ -7454,7 +7457,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get notifSettingFollowers => 'Pengikut';
 
   @override
-  String get notifSettingFollowersDescription => 'Peringatan saat seseorang mulai mengikuti Anda.';
+  String get notifSettingFollowersDescription =>
+      'Peringatan saat seseorang mulai mengikuti Anda atau mengomentari wallpaper Anda.';
 
   @override
   String get notifSettingPosts => 'Postingan';

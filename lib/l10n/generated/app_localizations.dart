@@ -4377,6 +4377,12 @@ abstract class AppLocalizations {
   /// **'user'**
   String get coreContentReportUser;
 
+  /// Content type word in the report prompt for a wall comment, lower case as in the sentence
+  ///
+  /// In en, this message translates to:
+  /// **'comment'**
+  String get coreContentReportComment;
+
   /// No description provided for @coreContentReportWallpaper.
   ///
   /// In en, this message translates to:
@@ -11482,7 +11488,7 @@ abstract class AppLocalizations {
   /// No description provided for @notifSettingFollowersDescription.
   ///
   /// In en, this message translates to:
-  /// **'Alerts when someone new follows you.'**
+  /// **'Alerts when someone new follows you or comments on your walls.'**
   String get notifSettingFollowersDescription;
 
   /// No description provided for @notifSettingPosts.

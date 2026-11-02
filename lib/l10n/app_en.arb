@@ -2537,6 +2537,10 @@
   "coreConfirmWallpaperPreview": "Confirm the wallpaper in the system preview.",
   "coreContentNotAvailable": "That item is no longer available",
   "coreContentReportUser": "user",
+  "coreContentReportComment": "comment",
+  "@coreContentReportComment": {
+    "description": "Content type word in the report prompt for a wall comment, lower case as in the sentence"
+  },
   "coreContentReportWallpaper": "wallpaper",
   "coreContentReportWhy": "Why are you reporting this {contentType}?",
   "@coreContentReportWhy": {
@@ -6459,7 +6463,7 @@
   "notifSettingDrops": "Weekly Drops",
   "notifSettingDropsDescription": "Alerts when a new Drop is live and before it ends.",
   "notifSettingFollowers": "Followers",
-  "notifSettingFollowersDescription": "Alerts when someone new follows you.",
+  "notifSettingFollowersDescription": "Alerts when someone new follows you or comments on your walls.",
   "notifSettingPosts": "Posts",
   "notifSettingPostsDescription": "Alerts when creators you follow share new work.",
   "notifSettingRecommendations": "Recommendations",

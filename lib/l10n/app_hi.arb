@@ -2551,6 +2551,7 @@
   "coreConfirmWallpaperPreview": "सिस्टम प्रीव्यू में वॉलपेपर की पुष्टि करें।",
   "coreContentNotAvailable": "यह आइटम अब उपलब्ध नहीं है",
   "coreContentReportUser": "उपयोगकर्ता",
+  "coreContentReportComment": "टिप्पणी",
   "coreContentReportWallpaper": "वॉलपेपर",
   "coreContentReportWhy": "आप {contentType} की रिपोर्ट क्यों कर रहे हैं?",
   "@coreContentReportWhy": {
@@ -6447,7 +6448,7 @@
   "notifSettingDrops": "साप्ताहिक Drops",
   "notifSettingDropsDescription": "नया Drop उपलब्ध होने पर और उसके खत्म होने से पहले अलर्ट पाएँ।",
   "notifSettingFollowers": "फ़ॉलोअर",
-  "notifSettingFollowersDescription": "कोई नया व्यक्ति आपको फ़ॉलो करे, तो अलर्ट पाएँ।",
+  "notifSettingFollowersDescription": "कोई नया व्यक्ति आपको फ़ॉलो करे या आपके वॉलपेपर पर टिप्पणी करे, तो अलर्ट पाएँ।",
   "notifSettingPosts": "पोस्ट",
   "notifSettingPostsDescription": "आप जिन क्रिएटर को फ़ॉलो करते हैं, उनके नए काम साझा करने पर अलर्ट पाएँ।",
   "notifSettingRecommendations": "सुझाव",

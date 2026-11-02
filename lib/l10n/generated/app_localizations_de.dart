@@ -2505,6 +2505,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get coreContentReportUser => 'Nutzer';
 
   @override
+  String get coreContentReportComment => 'Kommentar';
+
+  @override
   String get coreContentReportWallpaper => 'Hintergrundbild';
 
   @override
@@ -7501,7 +7504,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get notifSettingFollowers => 'Follower';
 
   @override
-  String get notifSettingFollowersDescription => 'Hinweise, wenn dir jemand Neues folgt.';
+  String get notifSettingFollowersDescription =>
+      'Hinweise, wenn dir jemand Neues folgt oder deine Wallpaper kommentiert.';
 
   @override
   String get notifSettingPosts => 'Beiträge';

@@ -2496,6 +2496,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get coreContentReportUser => 'usuario';
 
   @override
+  String get coreContentReportComment => 'comentario';
+
+  @override
   String get coreContentReportWallpaper => 'fondo de pantalla';
 
   @override
@@ -7506,7 +7509,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get notifSettingFollowers => 'Seguidores';
 
   @override
-  String get notifSettingFollowersDescription => 'Avisos cuando alguien nuevo te siga.';
+  String get notifSettingFollowersDescription => 'Avisos cuando alguien nuevo te siga o comente tus fondos.';
 
   @override
   String get notifSettingPosts => 'Publicaciones';

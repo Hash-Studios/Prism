@@ -2503,6 +2503,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get coreContentReportUser => 'usuário';
 
   @override
+  String get coreContentReportComment => 'comentário';
+
+  @override
   String get coreContentReportWallpaper => 'papel de parede';
 
   @override
@@ -7681,7 +7684,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get notifSettingFollowers => 'Seguidores';
 
   @override
-  String get notifSettingFollowersDescription => 'Alertas quando alguém novo segue você.';
+  String get notifSettingFollowersDescription =>
+      'Alertas quando alguém novo segue você ou comenta seus papéis de parede.';
 
   @override
   String get notifSettingPosts => 'Postagens';
@@ -15758,6 +15762,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get coreContentReportUser => 'usuário';
 
   @override
+  String get coreContentReportComment => 'comentário';
+
+  @override
   String get coreContentReportWallpaper => 'papel de parede';
 
   @override
@@ -20936,7 +20943,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get notifSettingFollowers => 'Seguidores';
 
   @override
-  String get notifSettingFollowersDescription => 'Alertas quando alguém novo segue você.';
+  String get notifSettingFollowersDescription =>
+      'Alertas quando alguém novo segue você ou comenta seus papéis de parede.';
 
   @override
   String get notifSettingPosts => 'Postagens';

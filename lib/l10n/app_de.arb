@@ -2427,6 +2427,7 @@
   "coreConfirmWallpaperPreview": "Bestätige das Hintergrundbild in der Systemvorschau.",
   "coreContentNotAvailable": "Dieser Inhalt ist nicht mehr verfügbar",
   "coreContentReportUser": "Nutzer",
+  "coreContentReportComment": "Kommentar",
   "coreContentReportWallpaper": "Hintergrundbild",
   "coreContentReportWhy": "Warum meldest du {contentType}?",
   "@coreContentReportWhy": {
@@ -6343,7 +6344,7 @@
   "notifSettingDrops": "Wöchentliche Drops",
   "notifSettingDropsDescription": "Hinweise, wenn ein neuer Drop erscheint und bevor er endet.",
   "notifSettingFollowers": "Follower",
-  "notifSettingFollowersDescription": "Hinweise, wenn dir jemand Neues folgt.",
+  "notifSettingFollowersDescription": "Hinweise, wenn dir jemand Neues folgt oder deine Wallpaper kommentiert.",
   "notifSettingPosts": "Beiträge",
   "notifSettingPostsDescription": "Neue Beiträge von Künstlern, denen du folgst.",
   "notifSettingRecommendations": "Empfehlungen",
