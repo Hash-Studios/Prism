@@ -27,7 +27,7 @@ Feed cells show no colour indicator. We chose the detail screen only. `.impeccab
 
 - The dot colour is the first colour id in `walls.colors`, from the app palette.
 - A wall with no known colour shows its thumbnail in the dot.
-- Each dot target is 44 points. The visible dot is 32 points.
+- Each dot target is 44 points. The visible dot is 24 points. A 2 point ring marks the selected dot.
 - The label reads "Variant 2 of 3, Blue". Without a colour, it reads "Variant 2 of 3".
 
 ### Switching
@@ -165,7 +165,7 @@ Budget limits. The worker budget counts image cost only, not Vision.
 - `sameCreator` (`functions/src/wallVariants.ts:33`) compares emails. Two Studio walls already share one email, so the email test passes.
 - `wallRecord` sets no `creatorUid` on Studio walls, so the uid test is skipped.
 - Confirm this before you write a Studio rule. A user wall still gets `not_owner`, because its email differs.
-- Pick one rule shape. Option A requires `origin: "studio"` on both walls, and the same `studioRunId`. A variant run must then reuse the original run id. Option B requires `origin: "studio"` on both walls only. I would pick B. It needs no change to run ids.
+- Pick one rule shape. Option A requires `origin: "studio"` on both walls, and the same `studioRunId`. A variant run must then reuse the original run id. Option B requires `origin: "studio"` on both walls only. Option B is the recommended choice. It needs no change to run ids.
 
 ## Code
 
@@ -184,4 +184,5 @@ Budget limits. The worker budget counts image cost only, not Vision.
 2. Upload a variant of that wall. Make sure the upload chip shows the parent thumbnail.
 3. Approve the variant as an admin. Make sure both walls show a 2-dot row.
 4. Tap a dot. Make sure the wall changes colour with a cross-fade. With reduced motion on, make sure there is no fade.
-5. As user B, try to link a variant to user A's wall. Make sure **Your uploads** shows the not-owner reason.
+5. Upload a variant with a different shape. Make sure **Your uploads** shows the shape reason.
+6. The app offers **Add a colour variant** only on your own wall. The functions tests and the rules smoke test cover a link to another creator's wall.
