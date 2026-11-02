@@ -2505,9 +2505,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get coreContentReportUser => 'Nutzer';
 
   @override
-  String get coreContentReportComment => 'Kommentar';
-
-  @override
   String get coreContentReportWallpaper => 'Hintergrundbild';
 
   @override
@@ -12946,6 +12943,101 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get notifPushWrappedReadyBody =>
       'Sieh dir die Hintergrundbilder an, die du gespeichert hast, deine Farben und deine Creator.';
+
+  @override
+  String get trialTimelineTitle => 'So funktioniert deine kostenlose Testphase';
+
+  @override
+  String get trialTimelineClose => 'Schließen';
+
+  @override
+  String trialTimelinePlanSummary(int days, String price) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString Tage', one: '1 Tag');
+    return 'Prism Pro jährlich. $_temp0 kostenlos, danach $price pro Jahr.';
+  }
+
+  @override
+  String get trialTimelineToday => 'Heute';
+
+  @override
+  String get trialTimelineTodayBody => 'Du erhältst vollen Zugriff auf Prism Pro. Heute zahlst du nichts.';
+
+  @override
+  String trialTimelineDay(int day) {
+    final intl.NumberFormat dayNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String dayString = dayNumberFormat.format(day);
+
+    return 'Tag $dayString';
+  }
+
+  @override
+  String get trialTimelineReminderBody => 'Wir erinnern dich, dass deine Testphase bald endet.';
+
+  @override
+  String get trialTimelineNoReminderBody => 'Keine Erinnerung. Du hast sie unten ausgeschaltet.';
+
+  @override
+  String trialTimelineChargeBody(String price) {
+    return 'Du zahlst $price, sofern du nicht mindestens 24 Stunden vorher kündigst.';
+  }
+
+  @override
+  String get trialTimelineRemindToggle => 'Erinnere mich 2 Tage vor dem Ende der Testphase';
+
+  @override
+  String trialTimelineRenewalTerms(String price, String store) {
+    return 'Nach der Testphase verlängert sich Prism Pro jährlich für $price pro Jahr, bis du kündigst. $store belastet dein Konto. Um eine Abbuchung zu vermeiden, kündige mindestens 24 Stunden vor Ende der Testphase oder einer Verlängerung.';
+  }
+
+  @override
+  String trialTimelineCancelLink(String store) {
+    return 'Jederzeit in den Einstellungen von $store kündigen';
+  }
+
+  @override
+  String get trialTimelineSeeAllPlans => 'Alle Pläne ansehen';
+
+  @override
+  String trialTimelineStart(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    return 'Kostenlose $daysString-Tage-Testphase starten';
+  }
+
+  @override
+  String get trialTimelineStartFailed => 'Die Testphase konnte nicht gestartet werden. Versuch es erneut.';
+
+  @override
+  String trialReminderTitle(String date) {
+    return 'Deine kostenlose Testphase endet am $date';
+  }
+
+  @override
+  String trialReminderBody(String store) {
+    return 'Danach zahlst du für Prism Pro jährlich. Um die Abbuchung zu vermeiden, kündige mindestens 24 Stunden vorher in den Einstellungen von $store.';
+  }
+
+  @override
+  String get notifChannelSubscription => 'Abonnement';
+
+  @override
+  String get notifChannelSubscriptionDescription => 'Eine Erinnerung, bevor deine Testphase endet';
+
+  @override
+  String premiumTrialEnds(String date) {
+    return 'Testphase, endet am $date';
+  }
+
+  @override
+  String get premiumTrialAutoRenewOff =>
+      'Die automatische Verlängerung ist aus. Dir wird nach Ende der Testphase nichts berechnet.';
+
+  @override
+  String get coreContentReportComment => 'Kommentar';
 
   @override
   String get commentsAction => 'Kommentare';

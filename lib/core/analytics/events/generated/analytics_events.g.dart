@@ -4479,6 +4479,106 @@ class WrappedNotEligibleEvent extends AnalyticsEvent {
   }
 }
 
+class TrialTimelineShownEvent extends AnalyticsEvent {
+  const TrialTimelineShownEvent({
+    required this.source,
+    required this.placement,
+    required this.productId,
+    required this.trialDays,
+  });
+
+  final String source;
+  final String placement;
+  final String productId;
+  final int trialDays;
+
+  @override
+  String get eventName => 'trial_timeline_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'source': source,
+      'placement': placement,
+      'product_id': productId,
+      'trial_days': trialDays,
+    };
+  }
+}
+
+class TrialReminderToggledEvent extends AnalyticsEvent {
+  const TrialReminderToggledEvent({required this.enabled});
+
+  final bool enabled;
+
+  @override
+  String get eventName => 'trial_reminder_toggled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'enabled': enabled ? 1 : 0};
+  }
+}
+
+class TrialNotEligibleShownEvent extends AnalyticsEvent {
+  const TrialNotEligibleShownEvent({required this.source, required this.placement, required this.reason});
+
+  final String source;
+  final String placement;
+  final String reason;
+
+  @override
+  String get eventName => 'trial_not_eligible_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'placement': placement, 'reason': reason};
+  }
+}
+
+class TrialStartedEvent extends AnalyticsEvent {
+  const TrialStartedEvent({required this.productId});
+
+  final String productId;
+
+  @override
+  String get eventName => 'trial_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'product_id': productId};
+  }
+}
+
+class TrialConvertedEvent extends AnalyticsEvent {
+  const TrialConvertedEvent({required this.productId});
+
+  final String productId;
+
+  @override
+  String get eventName => 'trial_converted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'product_id': productId};
+  }
+}
+
+class TrialCancelledEvent extends AnalyticsEvent {
+  const TrialCancelledEvent({required this.productId, required this.reason});
+
+  final String productId;
+  final String reason;
+
+  @override
+  String get eventName => 'trial_cancelled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'product_id': productId, 'reason': reason};
+  }
+}
+
 class CommentsSheetOpenedEvent extends AnalyticsEvent {
   const CommentsSheetOpenedEvent();
 

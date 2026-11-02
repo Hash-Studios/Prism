@@ -15,6 +15,7 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/purchases/manage_subscription.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -59,7 +60,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 const Set<String> _applyTargetKeys = <String>{'ask', 'home', 'lock', 'both'};
 
@@ -77,9 +77,6 @@ const int _savedOfflineLimitBytes = 512 * 1024 * 1024;
 /// Signs the user out. Tests replace it.
 @visibleForTesting
 Future<bool> Function() settingsSignOut = () => globalGoogleAuth.signOutGoogle();
-
-const String _androidSubscriptionsUrl = 'https://play.google.com/store/account/subscriptions?package=com.hash.prism';
-const String _iosSubscriptionsUrl = 'https://apps.apple.com/account/subscriptions';
 
 /// The Wallhaven category flag for anime is the second digit, so 110 and 111 both include it.
 @visibleForTesting
@@ -808,17 +805,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _openManageSubscription() async {
-    final AppLocalizations l10n = context.l10n;
-    final String url = defaultTargetPlatform == TargetPlatform.iOS ? _iosSubscriptionsUrl : _androidSubscriptionsUrl;
-    bool launched = false;
-    try {
-      launched = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    } catch (e) {
-      logger.w('Opening the subscription page failed.', error: e);
-    }
-    if (!launched) toasts.error(l10n.accountCouldNotOpenStore);
-  }
+  Future<void> _openManageSubscription() => openManageSubscription(context.l10n);
 
   Icon _external(BuildContext context) =>
       Icon(Icons.open_in_new_rounded, size: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35));

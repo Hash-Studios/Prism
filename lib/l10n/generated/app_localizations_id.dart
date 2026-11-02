@@ -2478,9 +2478,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreContentReportUser => 'pengguna';
 
   @override
-  String get coreContentReportComment => 'komentar';
-
-  @override
   String get coreContentReportWallpaper => 'wallpaper';
 
   @override
@@ -12803,6 +12800,100 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get notifPushWrappedReadyBody => 'Lihat wallpaper yang Anda simpan, warna Anda, dan kreator Anda.';
+
+  @override
+  String get trialTimelineTitle => 'Cara kerja uji coba gratis Anda';
+
+  @override
+  String get trialTimelineClose => 'Tutup';
+
+  @override
+  String trialTimelinePlanSummary(int days, String price) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString hari', one: '1 hari');
+    return 'Prism Pro tahunan. $_temp0 gratis, lalu $price per tahun.';
+  }
+
+  @override
+  String get trialTimelineToday => 'Hari ini';
+
+  @override
+  String get trialTimelineTodayBody => 'Anda mendapat akses penuh ke Prism Pro. Anda tidak membayar apa pun hari ini.';
+
+  @override
+  String trialTimelineDay(int day) {
+    final intl.NumberFormat dayNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String dayString = dayNumberFormat.format(day);
+
+    return 'Hari $dayString';
+  }
+
+  @override
+  String get trialTimelineReminderBody => 'Kami mengingatkan Anda bahwa uji coba Anda akan segera berakhir.';
+
+  @override
+  String get trialTimelineNoReminderBody => 'Tanpa pengingat. Anda mematikannya di bawah.';
+
+  @override
+  String trialTimelineChargeBody(String price) {
+    return 'Anda membayar $price, kecuali Anda membatalkan setidaknya 24 jam sebelumnya.';
+  }
+
+  @override
+  String get trialTimelineRemindToggle => 'Ingatkan saya 2 hari sebelum uji coba berakhir';
+
+  @override
+  String trialTimelineRenewalTerms(String price, String store) {
+    return 'Setelah uji coba, Prism Pro tahunan diperpanjang seharga $price per tahun sampai Anda membatalkan. $store menagih akun Anda. Untuk menghindari tagihan, batalkan setidaknya 24 jam sebelum uji coba atau perpanjangan berakhir.';
+  }
+
+  @override
+  String trialTimelineCancelLink(String store) {
+    return 'Batalkan kapan saja di pengaturan $store';
+  }
+
+  @override
+  String get trialTimelineSeeAllPlans => 'Lihat semua paket';
+
+  @override
+  String trialTimelineStart(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    return 'Mulai uji coba gratis $daysString hari';
+  }
+
+  @override
+  String get trialTimelineStartFailed => 'Tidak dapat memulai uji coba gratis. Coba lagi.';
+
+  @override
+  String trialReminderTitle(String date) {
+    return 'Uji coba gratis Anda berakhir pada $date';
+  }
+
+  @override
+  String trialReminderBody(String store) {
+    return 'Setelah itu, Anda membayar Prism Pro tahunan. Untuk menghindari tagihan, batalkan di pengaturan $store setidaknya 24 jam sebelumnya.';
+  }
+
+  @override
+  String get notifChannelSubscription => 'Langganan';
+
+  @override
+  String get notifChannelSubscriptionDescription => 'Pengingat sebelum uji coba gratis Anda berakhir';
+
+  @override
+  String premiumTrialEnds(String date) {
+    return 'Uji coba, berakhir $date';
+  }
+
+  @override
+  String get premiumTrialAutoRenewOff => 'Perpanjangan otomatis mati. Anda tidak akan ditagih saat uji coba berakhir.';
+
+  @override
+  String get coreContentReportComment => 'komentar';
 
   @override
   String get commentsAction => 'Komentar';
