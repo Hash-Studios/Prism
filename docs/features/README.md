@@ -37,6 +37,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [coins-and-downloads.md](coins-and-downloads.md) | Price on the pill, already downloaded, ads, pending refunds and rewards |
 | [daily-moment.md](daily-moment.md) | Shared streak, chest, and free Pro spin sheet, reward contracts, old entry points, and release limits |
 | [coins-ledger.md](coins-ledger.md) | Ledger rows, labels, coin history screen, subscription reconcile |
+| [comments.md](comments.md) | Comments on walls: server checks, rate limits, reports and auto-hide, creator push, kill switch, deploy order |
 | [creator-tips.md](creator-tips.md) | Tip a creator 10, 25 or 50 coins from a wall or a profile, caps, ledger, daily push, Tipped by N |
 | [promo-codes.md](promo-codes.md) | Redeem a code for coins or Pro days, limits, rate limits, admin codes, store offer codes, `/redeem` link |
 | [streak-rescue.md](streak-rescue.md) | Restore a broken streak for coins |
