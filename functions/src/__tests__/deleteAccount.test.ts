@@ -715,3 +715,39 @@ test("tip cleanup selects exact sender and creator ownership, not uid prefixes",
   }
   assert.ok(!log.includes("delete:tipRateDaily/u1_other_2026-10-31"));
 });
+
+test("account deletion removes authored comments across walls and their rate without touching other authors", async (t) => {
+  fake(t, {email: ""});
+  const store = installFakeDb(t, {
+    "usersv2/u1": {name: "Caller"},
+    "walls/one": {id: "ONE", review: true},
+    "walls/two": {id: "TWO", review: true},
+    "walls/one/comments/a": {authorUid: "u1", state: "visible"},
+    "walls/one/comments/b": {authorUid: "u2", state: "visible"},
+    "walls/two/comments/c": {authorUid: "u1", state: "hidden"},
+    "walls/two/comments/d": {authorUid: "u1", state: "visible"},
+    "other/parent/comments/unrelated": {authorUid: "u1", state: "visible"},
+    "wallpaper_stats/ONE": {comments: 2, favs: 9},
+    "wallpaper_stats/TWO": {comments: 1},
+    "commentRate/u1": {count: 10},
+    "commentRate/u2": {count: 20},
+  });
+  t.mock.method(db, "bulkWriter", () => ({
+    set: (ref: admin.firestore.DocumentReference, data: admin.firestore.DocumentData) => ref.set(data),
+    update: (ref: admin.firestore.DocumentReference, data: admin.firestore.UpdateData<admin.firestore.DocumentData>) => ref.update(data),
+    delete: (ref: admin.firestore.DocumentReference) => ref.delete(),
+    close: async () => undefined,
+  }));
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await call();
+    assert.equal(store.has("walls/one/comments/a"), false);
+    assert.equal(store.has("walls/two/comments/c"), false);
+    assert.equal(store.has("walls/two/comments/d"), false);
+    assert.equal(store.get("walls/one/comments/b")?.authorUid, "u2");
+    assert.equal(store.has("other/parent/comments/unrelated"), true);
+    assert.deepEqual(store.get("wallpaper_stats/ONE"), {comments: 1, favs: 9});
+    assert.equal(store.get("wallpaper_stats/TWO")?.comments, 0);
+    assert.equal(store.has("commentRate/u1"), false);
+    assert.equal(store.get("commentRate/u2")?.count, 20);
+  }
+});

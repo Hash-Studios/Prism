@@ -46,6 +46,14 @@ extension RemixSourceTypeWire on RemixSourceType {
   String get wireValue => name;
 }
 
+enum CommentRoleValue {
+  author,
+  creator,
+  admin;
+
+  String get wireValue => _snakeCase(name);
+}
+
 enum BinaryResultValue {
   success,
   failure;

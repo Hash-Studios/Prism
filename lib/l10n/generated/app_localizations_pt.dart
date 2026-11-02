@@ -7694,7 +7694,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get notifSettingFollowers => 'Seguidores';
 
   @override
-  String get notifSettingFollowersDescription => 'Alertas quando alguém novo segue você.';
+  String get notifSettingFollowersDescription =>
+      'Alertas quando alguém novo segue você ou comenta seus papéis de parede.';
 
   @override
   String get notifSettingPosts => 'Postagens';
@@ -13303,6 +13304,166 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get notifPushEditorsChoiceBodyUntitled =>
       'Nossos editores escolheram seu papel de parede. Todos podem encontrá-lo no Início.';
+
+  @override
+  String get coreContentReportComment => 'comentário';
+
+  @override
+  String get commentsAction => 'Comentários';
+
+  @override
+  String commentsCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count comentários',
+      one: '1 comentário',
+      zero: 'Nenhum comentário',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentsTitle => 'Comentários';
+
+  @override
+  String get commentsEmptyTitle => 'Ainda não há comentários';
+
+  @override
+  String get commentsEmptyBody => 'Conte ao criador o que você gosta neste papel de parede.';
+
+  @override
+  String get commentsLoadFailed => 'Não foi possível carregar os comentários. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get commentsRetry => 'Tentar de novo';
+
+  @override
+  String get commentComposerHint => 'Adicione um comentário';
+
+  @override
+  String get commentSend => 'Enviar';
+
+  @override
+  String commentCharactersLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Restam $count caracteres',
+      one: 'Resta 1 caractere',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String commentCharactersOver(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count caracteres a mais',
+      one: '1 caractere a mais',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentSignInToComment => 'Entre para comentar';
+
+  @override
+  String get commentCreatorLabel => 'Criador';
+
+  @override
+  String get commentAuthorFallback => 'Usuário do Prism';
+
+  @override
+  String get commentOptionsHint => 'mostrar opções do comentário';
+
+  @override
+  String get commentReport => 'Denunciar comentário';
+
+  @override
+  String commentBlockUser(String name) {
+    return 'Bloquear $name';
+  }
+
+  @override
+  String get commentDelete => 'Excluir comentário';
+
+  @override
+  String get commentDeleteConfirmTitle => 'Excluir este comentário?';
+
+  @override
+  String get commentDeleteConfirmBody => 'Ele será removido para todos. Não é possível desfazer.';
+
+  @override
+  String get commentDeleted => 'Comentário excluído';
+
+  @override
+  String get commentDeleteFailed => 'Não foi possível excluir o comentário. Tente novamente.';
+
+  @override
+  String get commentPostFailed => 'Não foi possível publicar seu comentário. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get commentErrorDisabled => 'Os comentários estão pausados agora. Tente mais tarde.';
+
+  @override
+  String get commentErrorGuest => 'Entre com uma conta verificada para comentar.';
+
+  @override
+  String get commentErrorTooNew => 'Você pode comentar 24 horas depois de entrar no Prism.';
+
+  @override
+  String get commentErrorWallUnavailable => 'Este papel de parede não está aberto para comentários agora.';
+
+  @override
+  String get commentErrorEmpty => 'Escreva um comentário antes de enviar.';
+
+  @override
+  String get commentErrorTooLong => 'Use 500 caracteres ou menos.';
+
+  @override
+  String get commentErrorHiddenCharacters => 'Remova os caracteres ocultos ou especiais e envie de novo.';
+
+  @override
+  String get commentErrorBlockedWord => 'Reescreva seu comentário de forma gentil e envie de novo.';
+
+  @override
+  String get commentErrorBlocked => 'Você não pode comentar neste papel de parede.';
+
+  @override
+  String get commentErrorTooFast => 'Aguarde alguns segundos antes do próximo comentário.';
+
+  @override
+  String get commentErrorDailyLimit => 'Você pode enviar 50 comentários por dia. Tente novamente amanhã.';
+
+  @override
+  String notifPushWallCommentedTitle(String name, String wallTitle) {
+    return '$name comentou em $wallTitle';
+  }
+
+  @override
+  String notifPushWallCommentedTitleUntitled(String name) {
+    return '$name comentou no seu papel de parede';
+  }
+
+  @override
+  String get adminCommentReport => 'Denúncia de comentário';
+
+  @override
+  String get adminKeepComment => 'Manter comentário';
+
+  @override
+  String get adminCommentKept => 'Denúncia descartada. O comentário está visível.';
+
+  @override
+  String get adminCommentRemoved => 'Comentário removido';
+
+  @override
+  String get adminCommentGone => 'Este comentário já não existe.';
+
+  @override
+  String get adminContentTypeComment => 'Comentário';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -20993,7 +21154,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get notifSettingFollowers => 'Seguidores';
 
   @override
-  String get notifSettingFollowersDescription => 'Alertas quando alguém novo segue você.';
+  String get notifSettingFollowersDescription =>
+      'Alertas quando alguém novo segue você ou comenta seus papéis de parede.';
 
   @override
   String get notifSettingPosts => 'Postagens';
@@ -26602,4 +26764,164 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get notifPushEditorsChoiceBodyUntitled =>
       'Nossos editores escolheram seu papel de parede. Todos podem encontrá-lo no Início.';
+
+  @override
+  String get coreContentReportComment => 'comentário';
+
+  @override
+  String get commentsAction => 'Comentários';
+
+  @override
+  String commentsCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count comentários',
+      one: '1 comentário',
+      zero: 'Nenhum comentário',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentsTitle => 'Comentários';
+
+  @override
+  String get commentsEmptyTitle => 'Ainda não há comentários';
+
+  @override
+  String get commentsEmptyBody => 'Conte ao criador o que você gosta neste papel de parede.';
+
+  @override
+  String get commentsLoadFailed => 'Não foi possível carregar os comentários. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get commentsRetry => 'Tentar de novo';
+
+  @override
+  String get commentComposerHint => 'Adicione um comentário';
+
+  @override
+  String get commentSend => 'Enviar';
+
+  @override
+  String commentCharactersLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Restam $count caracteres',
+      one: 'Resta 1 caractere',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String commentCharactersOver(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count caracteres a mais',
+      one: '1 caractere a mais',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentSignInToComment => 'Entre para comentar';
+
+  @override
+  String get commentCreatorLabel => 'Criador';
+
+  @override
+  String get commentAuthorFallback => 'Usuário do Prism';
+
+  @override
+  String get commentOptionsHint => 'mostrar opções do comentário';
+
+  @override
+  String get commentReport => 'Denunciar comentário';
+
+  @override
+  String commentBlockUser(String name) {
+    return 'Bloquear $name';
+  }
+
+  @override
+  String get commentDelete => 'Excluir comentário';
+
+  @override
+  String get commentDeleteConfirmTitle => 'Excluir este comentário?';
+
+  @override
+  String get commentDeleteConfirmBody => 'Ele será removido para todos. Não é possível desfazer.';
+
+  @override
+  String get commentDeleted => 'Comentário excluído';
+
+  @override
+  String get commentDeleteFailed => 'Não foi possível excluir o comentário. Tente novamente.';
+
+  @override
+  String get commentPostFailed => 'Não foi possível publicar seu comentário. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get commentErrorDisabled => 'Os comentários estão pausados agora. Tente mais tarde.';
+
+  @override
+  String get commentErrorGuest => 'Entre com uma conta verificada para comentar.';
+
+  @override
+  String get commentErrorTooNew => 'Você pode comentar 24 horas depois de entrar no Prism.';
+
+  @override
+  String get commentErrorWallUnavailable => 'Este papel de parede não está aberto para comentários agora.';
+
+  @override
+  String get commentErrorEmpty => 'Escreva um comentário antes de enviar.';
+
+  @override
+  String get commentErrorTooLong => 'Use 500 caracteres ou menos.';
+
+  @override
+  String get commentErrorHiddenCharacters => 'Remova os caracteres ocultos ou especiais e envie de novo.';
+
+  @override
+  String get commentErrorBlockedWord => 'Reescreva seu comentário de forma gentil e envie de novo.';
+
+  @override
+  String get commentErrorBlocked => 'Você não pode comentar neste papel de parede.';
+
+  @override
+  String get commentErrorTooFast => 'Aguarde alguns segundos antes do próximo comentário.';
+
+  @override
+  String get commentErrorDailyLimit => 'Você pode enviar 50 comentários por dia. Tente novamente amanhã.';
+
+  @override
+  String notifPushWallCommentedTitle(String name, String wallTitle) {
+    return '$name comentou em $wallTitle';
+  }
+
+  @override
+  String notifPushWallCommentedTitleUntitled(String name) {
+    return '$name comentou no seu papel de parede';
+  }
+
+  @override
+  String get adminCommentReport => 'Denúncia de comentário';
+
+  @override
+  String get adminKeepComment => 'Manter comentário';
+
+  @override
+  String get adminCommentKept => 'Denúncia descartada. O comentário está visível.';
+
+  @override
+  String get adminCommentRemoved => 'Comentário removido';
+
+  @override
+  String get adminCommentGone => 'Este comentário já não existe.';
+
+  @override
+  String get adminContentTypeComment => 'Comentário';
 }

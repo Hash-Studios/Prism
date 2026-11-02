@@ -32,6 +32,12 @@ enums:
     values:
       - left
       - right
+  - name: comment_role
+    dart_type: CommentRoleValue
+    values:
+      - author
+      - creator
+      - admin
   - name: binary_result
     dart_type: BinaryResultValue
     values:
@@ -3033,6 +3039,23 @@ events:
       - name: shown
         key: shown
         type: bool
+  - id: comments_sheet_opened
+    fields: []
+  - id: comment_posted
+    fields: []
+  - id: comment_refused
+    fields:
+      - name: reason
+        key: reason
+        type: string
+  - id: comment_deleted
+    fields:
+      - name: role
+        key: role
+        type: enum
+        enum: CommentRoleValue
+  - id: comment_reported
+    fields: []
   - id: ota_check_started
     fields:
       - name: trigger

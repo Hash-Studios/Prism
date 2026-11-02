@@ -33,6 +33,7 @@ export type NotificationCopy =
   | { kind: "giftReceived"; senderName: string }
   | { kind: "tipReceived"; senderName: string; amount: number; wallTitle: string }
   | { kind: "tipsReceived"; tipCount: number; coins: number }
+  | { kind: "wallCommented"; commenterName: string; wallTitle: string; text: string }
   | { kind: "reportNeedsReview"; contentType: string; reason: string }
   | {
       kind: "newContentReport";
@@ -243,6 +244,15 @@ export function renderNotificationCopy(
       title: `You got ${copy.tipCount} tips today`,
       body: `${copy.coins} coins in all. See them in your creator stats.`,
     };
+  case "wallCommented":
+    return {
+      kind: copy.kind,
+      args: {commenterName: copy.commenterName, wallTitle: copy.wallTitle, text: copy.text},
+      title: copy.wallTitle ?
+        `${copy.commenterName} commented on ${copy.wallTitle}` :
+        `${copy.commenterName} commented on your wall`,
+      body: copy.text,
+    };
   case "giftReceived":
     return {
       kind: copy.kind,
@@ -341,6 +351,9 @@ export function nativeNotificationLocalization(
     kind === "challengeWinner") return null;
   // Later tips of the day only rewrite the inbox item, so this copy never reaches a system banner.
   if (kind === "tipsReceived") return null;
+  // Installed builds that advertise localization version 2 lack these resources, so they get the English copy until a
+  // later localization version ships the notif_push_wall_commented_* keys.
+  if (kind === "wallCommented") return null;
 
   const prefix = `notif_push_${kind.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)}`;
   const stringArg = (key: string): string => String(message.args[key] ?? "");

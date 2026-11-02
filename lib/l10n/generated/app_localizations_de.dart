@@ -7514,7 +7514,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get notifSettingFollowers => 'Follower';
 
   @override
-  String get notifSettingFollowersDescription => 'Hinweise, wenn dir jemand Neues folgt.';
+  String get notifSettingFollowersDescription =>
+      'Hinweise, wenn dir jemand Neues folgt oder deine Wallpaper kommentiert.';
 
   @override
   String get notifSettingPosts => 'Beiträge';
@@ -13143,4 +13144,166 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get notifPushEditorsChoiceBodyUntitled =>
       'Unsere Redaktion hat deinen Hintergrund empfohlen. Alle finden ihn auf der Startseite.';
+
+  @override
+  String get coreContentReportComment => 'Kommentar';
+
+  @override
+  String get commentsAction => 'Kommentare';
+
+  @override
+  String commentsCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Kommentare',
+      one: '1 Kommentar',
+      zero: 'Keine Kommentare',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentsTitle => 'Kommentare';
+
+  @override
+  String get commentsEmptyTitle => 'Noch keine Kommentare';
+
+  @override
+  String get commentsEmptyBody => 'Sag dem Creator, was dir an diesem Wallpaper gefällt.';
+
+  @override
+  String get commentsLoadFailed =>
+      'Kommentare konnten nicht geladen werden. Prüfe deine Verbindung und versuch es noch einmal.';
+
+  @override
+  String get commentsRetry => 'Erneut versuchen';
+
+  @override
+  String get commentComposerHint => 'Kommentar hinzufügen';
+
+  @override
+  String get commentSend => 'Senden';
+
+  @override
+  String commentCharactersLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Zeichen übrig',
+      one: '1 Zeichen übrig',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String commentCharactersOver(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Zeichen zu viel',
+      one: '1 Zeichen zu viel',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentSignInToComment => 'Anmelden, um zu kommentieren';
+
+  @override
+  String get commentCreatorLabel => 'Ersteller';
+
+  @override
+  String get commentAuthorFallback => 'Prism-Nutzer';
+
+  @override
+  String get commentOptionsHint => 'Kommentaroptionen anzeigen';
+
+  @override
+  String get commentReport => 'Kommentar melden';
+
+  @override
+  String commentBlockUser(String name) {
+    return '$name blockieren';
+  }
+
+  @override
+  String get commentDelete => 'Kommentar löschen';
+
+  @override
+  String get commentDeleteConfirmTitle => 'Diesen Kommentar löschen?';
+
+  @override
+  String get commentDeleteConfirmBody => 'Er wird für alle entfernt. Das kannst du nicht rückgängig machen.';
+
+  @override
+  String get commentDeleted => 'Kommentar gelöscht';
+
+  @override
+  String get commentDeleteFailed => 'Der Kommentar konnte nicht gelöscht werden. Versuch es noch einmal.';
+
+  @override
+  String get commentPostFailed =>
+      'Dein Kommentar konnte nicht gesendet werden. Prüfe deine Verbindung und versuch es noch einmal.';
+
+  @override
+  String get commentErrorDisabled => 'Kommentare sind gerade pausiert. Versuch es später noch einmal.';
+
+  @override
+  String get commentErrorGuest => 'Melde dich mit einem bestätigten Konto an, um zu kommentieren.';
+
+  @override
+  String get commentErrorTooNew => 'Du kannst 24 Stunden nach deinem Beitritt zu Prism kommentieren.';
+
+  @override
+  String get commentErrorWallUnavailable => 'Dieses Wallpaper ist gerade nicht für Kommentare offen.';
+
+  @override
+  String get commentErrorEmpty => 'Schreib einen Kommentar, bevor du ihn sendest.';
+
+  @override
+  String get commentErrorTooLong => 'Verwende höchstens 500 Zeichen.';
+
+  @override
+  String get commentErrorHiddenCharacters => 'Entferne die versteckten oder Sonderzeichen und sende dann noch einmal.';
+
+  @override
+  String get commentErrorBlockedWord => 'Formuliere deinen Kommentar freundlicher und sende ihn dann noch einmal.';
+
+  @override
+  String get commentErrorBlocked => 'Du kannst dieses Wallpaper nicht kommentieren.';
+
+  @override
+  String get commentErrorTooFast => 'Warte ein paar Sekunden, bevor du den nächsten Kommentar schreibst.';
+
+  @override
+  String get commentErrorDailyLimit => 'Du kannst 50 Kommentare am Tag schreiben. Versuch es morgen noch einmal.';
+
+  @override
+  String notifPushWallCommentedTitle(String name, String wallTitle) {
+    return '$name hat $wallTitle kommentiert';
+  }
+
+  @override
+  String notifPushWallCommentedTitleUntitled(String name) {
+    return '$name hat dein Wallpaper kommentiert';
+  }
+
+  @override
+  String get adminCommentReport => 'Kommentarmeldung';
+
+  @override
+  String get adminKeepComment => 'Kommentar behalten';
+
+  @override
+  String get adminCommentKept => 'Meldung verworfen. Der Kommentar ist sichtbar.';
+
+  @override
+  String get adminCommentRemoved => 'Kommentar entfernt';
+
+  @override
+  String get adminCommentGone => 'Dieser Kommentar ist schon weg.';
+
+  @override
+  String get adminContentTypeComment => 'Kommentar';
 }

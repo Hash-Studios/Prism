@@ -4,17 +4,23 @@ abstract interface class FavouriteCountsRepository {
 }
 
 final class PrismWallpaperStats {
-  const PrismWallpaperStats({required this.favourites, this.views});
+  const PrismWallpaperStats({required this.favourites, this.views, this.comments = 0});
 
   final int favourites;
   final int? views;
 
-  @override
-  bool operator ==(Object other) =>
-      other is PrismWallpaperStats && other.favourites == favourites && other.views == views;
+  /// Visible comments. The comment callables keep it in the same doc.
+  final int comments;
 
   @override
-  int get hashCode => Object.hash(favourites, views);
+  bool operator ==(Object other) =>
+      other is PrismWallpaperStats &&
+      other.favourites == favourites &&
+      other.views == views &&
+      other.comments == comments;
+
+  @override
+  int get hashCode => Object.hash(favourites, views, comments);
 }
 
 String? prismStatsId(String raw) {

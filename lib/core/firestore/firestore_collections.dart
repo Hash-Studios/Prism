@@ -25,6 +25,7 @@ class FirebaseCollections {
   static const String moods = 'moods';
 
   /// `folders/{folderId}/items`, one doc per saved wall.
+  static String wallComments(String wallId) => '$walls/$wallId/comments';
   static String folderItems(String folderId) => '$folders/$folderId/items';
 
   /// `publicFolders/{folderId}`, the server projection of a public folder.

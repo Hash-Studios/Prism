@@ -7467,7 +7467,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get notifSettingFollowers => 'Pengikut';
 
   @override
-  String get notifSettingFollowersDescription => 'Peringatan saat seseorang mulai mengikuti Anda.';
+  String get notifSettingFollowersDescription =>
+      'Peringatan saat seseorang mulai mengikuti Anda atau mengomentari wallpaper Anda.';
 
   @override
   String get notifSettingPosts => 'Postingan';
@@ -12999,4 +13000,164 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get notifPushEditorsChoiceBodyUntitled =>
       'Editor kami memilih wallpaper Anda. Semua orang bisa menemukannya di Beranda.';
+
+  @override
+  String get coreContentReportComment => 'komentar';
+
+  @override
+  String get commentsAction => 'Komentar';
+
+  @override
+  String commentsCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count komentar',
+      one: '1 komentar',
+      zero: 'Belum ada komentar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentsTitle => 'Komentar';
+
+  @override
+  String get commentsEmptyTitle => 'Belum ada komentar';
+
+  @override
+  String get commentsEmptyBody => 'Beri tahu kreator apa yang Anda suka dari wallpaper ini.';
+
+  @override
+  String get commentsLoadFailed => 'Komentar tidak dapat dimuat. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
+  String get commentsRetry => 'Coba lagi';
+
+  @override
+  String get commentComposerHint => 'Tambahkan komentar';
+
+  @override
+  String get commentSend => 'Kirim';
+
+  @override
+  String commentCharactersLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sisa $count karakter',
+      one: 'Sisa 1 karakter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String commentCharactersOver(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Kelebihan $count karakter',
+      one: 'Kelebihan 1 karakter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentSignInToComment => 'Masuk untuk berkomentar';
+
+  @override
+  String get commentCreatorLabel => 'Kreator';
+
+  @override
+  String get commentAuthorFallback => 'Pengguna Prism';
+
+  @override
+  String get commentOptionsHint => 'tampilkan opsi komentar';
+
+  @override
+  String get commentReport => 'Laporkan komentar';
+
+  @override
+  String commentBlockUser(String name) {
+    return 'Blokir $name';
+  }
+
+  @override
+  String get commentDelete => 'Hapus komentar';
+
+  @override
+  String get commentDeleteConfirmTitle => 'Hapus komentar ini?';
+
+  @override
+  String get commentDeleteConfirmBody => 'Komentar dihapus untuk semua orang. Anda tidak bisa membatalkannya.';
+
+  @override
+  String get commentDeleted => 'Komentar dihapus';
+
+  @override
+  String get commentDeleteFailed => 'Komentar tidak dapat dihapus. Coba lagi.';
+
+  @override
+  String get commentPostFailed => 'Komentar Anda tidak dapat dikirim. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
+  String get commentErrorDisabled => 'Komentar sedang dijeda. Coba lagi nanti.';
+
+  @override
+  String get commentErrorGuest => 'Masuk dengan akun terverifikasi untuk berkomentar.';
+
+  @override
+  String get commentErrorTooNew => 'Anda bisa berkomentar 24 jam setelah bergabung dengan Prism.';
+
+  @override
+  String get commentErrorWallUnavailable => 'Wallpaper ini tidak dibuka untuk komentar saat ini.';
+
+  @override
+  String get commentErrorEmpty => 'Tulis komentar sebelum mengirimnya.';
+
+  @override
+  String get commentErrorTooLong => 'Gunakan 500 karakter atau kurang.';
+
+  @override
+  String get commentErrorHiddenCharacters => 'Hapus karakter tersembunyi atau karakter khusus, lalu kirim lagi.';
+
+  @override
+  String get commentErrorBlockedWord => 'Ubah kalimat komentar Anda agar lebih ramah, lalu kirim lagi.';
+
+  @override
+  String get commentErrorBlocked => 'Anda tidak bisa berkomentar di wallpaper ini.';
+
+  @override
+  String get commentErrorTooFast => 'Tunggu beberapa detik sebelum komentar berikutnya.';
+
+  @override
+  String get commentErrorDailyLimit => 'Anda bisa mengirim 50 komentar per hari. Coba lagi besok.';
+
+  @override
+  String notifPushWallCommentedTitle(String name, String wallTitle) {
+    return '$name berkomentar di $wallTitle';
+  }
+
+  @override
+  String notifPushWallCommentedTitleUntitled(String name) {
+    return '$name berkomentar di wallpaper Anda';
+  }
+
+  @override
+  String get adminCommentReport => 'Laporan komentar';
+
+  @override
+  String get adminKeepComment => 'Pertahankan komentar';
+
+  @override
+  String get adminCommentKept => 'Laporan ditolak. Komentar tetap terlihat.';
+
+  @override
+  String get adminCommentRemoved => 'Komentar dihapus';
+
+  @override
+  String get adminCommentGone => 'Komentar ini sudah tidak ada.';
+
+  @override
+  String get adminContentTypeComment => 'Komentar';
 }

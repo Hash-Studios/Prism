@@ -15,5 +15,6 @@ String adminReviewReportReasonLabel(String wireValue, AppLocalizations l10n) =>
 String adminReviewContentTypeLabel(String wireValue, AppLocalizations l10n) => switch (wireValue.trim().toLowerCase()) {
   'user' => l10n.coreContentReportUser,
   'wall' || 'setup' => l10n.coreContentReportWallpaper,
+  'comment' => l10n.adminContentTypeComment,
   _ => l10n.notifReportUnknownContentType,
 };

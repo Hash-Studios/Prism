@@ -273,6 +273,18 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
             ),
           );
         }
+        final int colon = tid.lastIndexOf(':');
+        if (ct == 'comment' && colon > 0 && colon < tid.length - 1) {
+          return CommentReportCard(
+            report: r,
+            wallId: tid.substring(0, colon),
+            commentId: tid.substring(colon + 1),
+            reason: reason,
+            reporterUid: uid,
+            timeStr: timeStr,
+            repository: _repository,
+          );
+        }
         return GenericReportCard(
           report: r,
           contentType: ct,
