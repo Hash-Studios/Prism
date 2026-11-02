@@ -17,8 +17,8 @@ void main() {
   final LivePalette palette = LivePalette.fromAccent(const Color(0xFFE57697), dark: true);
   late FakeLiveWallpaperRepository repository;
 
-  LiveWallpaperBloc build({String? imageUrl = 'https://example.com/a.jpg'}) =>
-      LiveWallpaperBloc(repository, imageUrl: imageUrl);
+  LiveWallpaperBloc build({String? imageUrl = 'https://example.com/a.jpg', String? depthMapUrl}) =>
+      LiveWallpaperBloc(repository, imageUrl: imageUrl, depthMapUrl: depthMapUrl);
 
   Future<void> settle() => Future<void>.delayed(Duration.zero);
 
@@ -100,7 +100,8 @@ void main() {
     });
 
     test('Pro users can apply every motion style', () async {
-      final LiveWallpaperBloc bloc = build()..add(const LiveWallpaperEvent.started(isPro: true));
+      final LiveWallpaperBloc bloc = build(depthMapUrl: 'https://example.com/map.png')
+        ..add(const LiveWallpaperEvent.started(isPro: true));
       for (final MotionStyle style in MotionStyle.values) {
         bloc
           ..add(LiveWallpaperEvent.motionSelected(style))
@@ -197,6 +198,33 @@ void main() {
     });
   });
 
+  group('3D style', () {
+    test('applies the depth style with the depth map and tilt when the device supports tilt', () async {
+      repository.capabilities = const LiveCapabilities(supportsShaders: true, supportsVideo: true, supportsTilt: true);
+      final LiveWallpaperBloc bloc = build(depthMapUrl: 'https://example.com/map.png')
+        ..add(const LiveWallpaperEvent.started(isPro: true))
+        ..add(const LiveWallpaperEvent.motionSelected(MotionStyle.depth))
+        ..add(LiveWallpaperEvent.motionApplied(palette: palette, screenAspectRatio: 0.45));
+      await settle();
+      expect(repository.motionApplies, <MotionStyle>[MotionStyle.depth]);
+      expect(repository.depthMapUrls, <String?>['https://example.com/map.png']);
+      expect(repository.tiltValues, <bool>[true]);
+      final LiveWallpaperAppliedEvent applied = analytics.events.whereType<LiveWallpaperAppliedEvent>().single;
+      expect(applied.style.wireValue, '3d');
+      expect(applied.result, 'confirmInPreview');
+      await bloc.close();
+    });
+
+    test('without a depth map the depth style is not selected', () async {
+      final LiveWallpaperBloc bloc = build()
+        ..add(const LiveWallpaperEvent.started(isPro: true))
+        ..add(const LiveWallpaperEvent.motionSelected(MotionStyle.depth));
+      await settle();
+      expect(bloc.state.motionStyle, MotionStyle.drift);
+      await bloc.close();
+    });
+  });
+
   group('battery saver', () {
     test('is passed to the repository', () async {
       final LiveWallpaperBloc bloc = build(imageUrl: null)
@@ -244,7 +272,7 @@ void main() {
   group('analytics', () {
     List<(String, String)> applied() => analytics.events
         .whereType<LiveWallpaperAppliedEvent>()
-        .map((event) => (event.style, event.result))
+        .map((event) => (event.style.wireValue, event.result))
         .toList(growable: false);
 
     test('reports the style and the result of a motion, a gradient and a video apply', () async {

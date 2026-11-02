@@ -3,7 +3,8 @@ import {logger} from "firebase-functions/v2";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {db, REGION, str} from "./common";
 import {DEFAULT_COLLECTION} from "./wallCategory";
-import {premiumCollections} from "./wallOfTheDay";
+import {refreshMoods} from "./wallMoods";
+import {premiumCollections} from "./wallEligibility";
 
 /**
  * The collection that a wall category files a community wall into. A collection in the Remote Config premium list is
@@ -93,5 +94,7 @@ export const refreshCollections = onSchedule(
   async () => {
     const changed = await refreshCollectionCovers();
     logger.info("refreshCollections: covers refreshed.", {changed});
+    const moods = await refreshMoods();
+    logger.info("refreshCollections: moods written.", {moods});
   },
 );

@@ -3,13 +3,15 @@ import {createHash} from "node:crypto";
 import {onCall, HttpsError, type CallableRequest} from "firebase-functions/v2/https";
 import {coinTransactionDoc, db, int, CALLABLE_REGIONS} from "./common";
 import {loadEconomy, type EconomyConfig} from "./economy";
-import {parseCollectionList} from "./wallOfTheDay";
+import {parseCollectionList} from "./wallEligibility";
 import {ownedThumbnailUrl, signOriginalDelivery, stored, verifyStoredUploadRegistry} from "./ownedAssetDelivery";
-import {r2Secrets} from "./r2Storage";
+import {R2Storage, r2Secrets} from "./r2Storage";
+import {readyDesktopCompanion} from "./studio/desktop";
 
 type Action = "download" | "set" | "edit" | "live";
 type Delivery = {url: string; expiresAt: number; objectId: string};
-type Input = {assetId?: unknown; action?: unknown; assets?: unknown; requestId?: unknown; mode?: unknown; maxCoins?: unknown};
+type Input = {assetId?: unknown; action?: unknown; assets?: unknown; requestId?: unknown; mode?: unknown; maxCoins?: unknown;
+  variant?: unknown};
 
 function priceOriginal(isPremium: boolean, action: Action, data: admin.firestore.DocumentData,
   privateData: admin.firestore.DocumentData, economy: EconomyConfig) {
@@ -33,6 +35,22 @@ export const originalAccessDelivery = {
       return await signOriginalDelivery(assetId);
     } catch {
       throw new HttpsError("unavailable", "Original delivery is unavailable. Retry with the same requestId.");
+    }
+  },
+  /** The 2560x1600 desktop companion. Its objectId is the original's SHA-256, which the manifest pins. */
+  signDesktop: async (assetId: string): Promise<Delivery> => {
+    try {
+      const walls = await db.collection("walls").where("id", "==", assetId).limit(2).get();
+      if (walls.size !== 1) throw new Error("Desktop companion unavailable");
+      const {original} = await readyDesktopCompanion(assetId, walls.docs[0].data());
+      const metadata = await new R2Storage().head("private", original.object);
+      if (!metadata || metadata.sha256 !== original.sha256 || metadata.size !== original.bytes) {
+        throw new Error("Desktop companion storage mismatch");
+      }
+      const expiresAt = Date.now() + 120000;
+      return {url: new R2Storage().presignGet(original.object, new Date(expiresAt)), expiresAt, objectId: original.sha256};
+    } catch {
+      throw new HttpsError("unavailable", "Desktop delivery is unavailable. Retry with the same requestId.");
     }
   },
 };
@@ -62,7 +80,7 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
     if (!uid || request.auth?.token.firebase?.sign_in_provider === "anonymous") {
       throw new HttpsError("unauthenticated", "Sign in to access originals.");
     }
-    const {assetId, action, assets, requestId, mode = "acquire", maxCoins} = request.data ?? {};
+    const {assetId, action, assets, requestId, mode = "acquire", maxCoins, variant} = request.data ?? {};
     const batch = assets !== undefined;
     const items = (batch ? assets : [{assetId, action}]) as {assetId: string; action: Action}[];
     if (!Array.isArray(items) || items.length < 1 || items.length > 2 ||
@@ -74,12 +92,15 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
         new Set(items.map((item) => item.assetId)).size !== items.length ||
         typeof requestId !== "string" || !/^[A-Za-z0-9_-]{8,64}$/.test(requestId) ||
         (mode !== "quote" && mode !== "acquire") ||
-        (maxCoins !== undefined && (typeof maxCoins !== "number" || !Number.isSafeInteger(maxCoins) || maxCoins < 0))) {
+        (maxCoins !== undefined && (typeof maxCoins !== "number" || !Number.isSafeInteger(maxCoins) || maxCoins < 0)) ||
+        (variant !== undefined && (variant !== "desktop" || batch || (action !== "set" && action !== "download")))) {
       throw new HttpsError("invalid-argument", "Invalid original access request.");
     }
     const [premium, economy] = await Promise.all([classification(), loadEconomy()]);
     // Sign before any debit: signing failures leave the balance and grace allowance untouched.
-    const deliveries = mode === "acquire" ? await Promise.all(items.map((item) => originalAccessDelivery.sign(item.assetId))) : [];
+    const desktop = variant === "desktop";
+    const deliveries = mode === "acquire" ? await Promise.all(items.map((item) => desktop ?
+      originalAccessDelivery.signDesktop(item.assetId) : originalAccessDelivery.sign(item.assetId))) : [];
     if (deliveries.some((delivery) => !delivery.url.startsWith("https://") || !/^[a-f0-9]{64}$/.test(delivery.objectId) ||
         !Number.isFinite(delivery.expiresAt) || delivery.expiresAt <= Date.now() ||
         delivery.expiresAt > Date.now() + 5 * 60_000)) {
@@ -97,7 +118,7 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
       const privateData = privateSnap.data() ?? {};
       const currentBalance = Math.max(0, int(data.coins));
       let graceUsed = Math.max(0, int(privateData.graceDownloadsUsed));
-      const checked: {assetId: string; originalAction: Action; objectId: string;
+      const checked: {assetId: string; originalAction: Action; objectId: string; variant?: "desktop";
         isPremium: boolean; basis: string; cost: number}[] = [];
       for (let index = 0; index < items.length; index++) {
         const {assetId, action: originalAction} = items[index];
@@ -114,7 +135,7 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
         const objectId = original?.objectId;
         if (walls.size !== 1 || wall?.review !== true || wall.originalProtected !== true ||
             typeof objectId !== "string" || !/^[a-f0-9]{64}$/.test(objectId) || wall.originalObjectId !== objectId ||
-            owned?.status !== "ready" || (delivery && objectId !== delivery.objectId) ||
+            owned?.status !== "ready" || (delivery && !desktop && objectId !== delivery.objectId) ||
             !wallSnap.createTime || owned.canonicalPath !== wallSnap.ref.path ||
             owned.incarnation !== wallSnap.createTime.toMillis() ||
             owned.incarnationNanos !== wallSnap.createTime.nanoseconds || wall.wallpaper_url !== "" ||
@@ -132,6 +153,17 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
         } catch {
           throw new HttpsError("failed-precondition", "Protected original storage identity is unavailable or has changed.");
         }
+        let grantedObjectId = objectId;
+        if (desktop) {
+          try {
+            grantedObjectId = (await readyDesktopCompanion(assetId, wall, tx)).original.sha256;
+          } catch {
+            throw new HttpsError("failed-precondition", "Desktop companion is unavailable or has changed.");
+          }
+          if (delivery && grantedObjectId !== delivery.objectId) {
+            throw new HttpsError("failed-precondition", "Desktop companion has changed. Retry with a new requestId.");
+          }
+        }
         if (wall.is_streak_exclusive === true || wall.dropReserved === true || wall.dropWeek) {
           throw new HttpsError("permission-denied", "This original requires a separate entitlement.");
         }
@@ -143,15 +175,16 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
         const {basis, cost} = priceOriginal(isPremium, originalAction, data,
           {...privateData, graceDownloadsUsed: graceUsed}, economy);
         if (basis === "grace") graceUsed++;
-        checked.push({assetId, originalAction, objectId, isPremium, basis, cost});
+        checked.push({assetId, originalAction, objectId: grantedObjectId, ...(desktop ? {variant: "desktop" as const} : {}),
+          isPremium, basis, cost});
       }
       const cost = checked.reduce((total, item) => total + item.cost, 0);
       const basis = checked.every((item) => item.basis === checked[0].basis) ? checked[0].basis : "mixed";
       const first = checked[0];
       const delivery = deliveries[0];
       const grants = items.map((item, index) => ({...item, ...deliveries[index]}));
-      const identity = checked.map(({assetId, originalAction, objectId, isPremium}) =>
-        ({assetId, originalAction, objectId, isPremium}));
+      const identity = checked.map(({assetId, originalAction, objectId, variant, isPremium}) =>
+        ({assetId, originalAction, objectId, ...(variant ? {variant} : {}), isPremium}));
       const receipt = receiptSnap.data();
       if (receipt) {
         if (receipt.userId !== uid || receipt.batch !== batch ||
@@ -159,6 +192,7 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
             identity.some((item, index) => {
               const saved = receipt.identities[index];
               return !saved || saved.assetId !== item.assetId || saved.originalAction !== item.originalAction ||
+                saved.variant !== item.variant ||
                 saved.objectId !== item.objectId || saved.isPremium !== item.isPremium;
             }) || receipt.requestId !== requestId ||
             receipt.status !== "completed" || receipt.originalAccess !== true || receipt.revoked === true ||

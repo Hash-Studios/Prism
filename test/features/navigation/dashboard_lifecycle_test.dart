@@ -77,7 +77,9 @@ void main() {
         release: () => (version: '3.14.0', build: '353'),
       ),
     );
-    app_state.prismUser = constants.createGuestPrismUser();
+    app_state.prismUser = constants.createGuestPrismUser()
+      ..id = 'test-user'
+      ..loggedIn = true;
     final router = _Router();
     tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(() async {

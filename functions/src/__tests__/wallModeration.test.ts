@@ -5,6 +5,7 @@ import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {backfillWallSignatures, parseBackfillArgs} from "../scripts/backfillWallSignatures";
 import {db} from "../common";
+import {STUDIO_ACCOUNT} from "../studio/account";
 import {imageSignature} from "../studio/gates";
 import {isStudioWall} from "../studio/isStudioWall";
 import {fetchImageBuffer} from "../wallColors";
@@ -280,7 +281,8 @@ test("Vision is asked once, with a JPEG of at most 1600 px", async (t) => {
 
 test("a Studio wall is skipped", async (t) => {
   quiet(t);
-  const wall = {wallpaper_url: url("a"), origin: "studio", studioRunId: "r1", studioCandidateId: "c1"};
+  const wall = {email: STUDIO_ACCOUNT.email, wallpaper_url: url("a"), origin: "studio", studioRunId: "r1",
+    studioCandidateId: "c1"};
   const store = installFakeDb(t, {"walls/w1": wall, "studioRuns/r1/candidates/c1": {wallId: "w1"}});
   const {value, fetched} = deps({[url("a")]: await gradient("down")});
   await moderateWall("w1", wall, value);
@@ -291,7 +293,8 @@ test("a Studio wall is skipped", async (t) => {
 
 test("a wall that only claims to be Studio is checked", async (t) => {
   quiet(t);
-  const wall = {wallpaper_url: url("a"), origin: "studio", studioRunId: "r1", studioCandidateId: "c1"};
+  const wall = {email: "attacker@example.com", wallpaper_url: url("a"), origin: "studio", studioRunId: "r1",
+    studioCandidateId: "c1"};
   const store = installFakeDb(t, {"walls/w1": wall});
   await moderateWall("w1", wall, deps({[url("a")]: await gradient("down")}).value);
   assert.ok(store.get("walls/w1")?.moderation);
@@ -341,7 +344,8 @@ test("the signature backfill signs reviewed walls that have none and is a dry ru
   quiet(t);
   const image = await gradient("down");
   const images: Record<string, Buffer> = {[url("a")]: image, [url("c")]: image, [url("t")]: image};
-  const studio = {wallpaper_url: url("s"), origin: "studio", studioRunId: "r1", studioCandidateId: "c1"};
+  const studio = {email: STUDIO_ACCOUNT.email, wallpaper_url: url("s"), origin: "studio", studioRunId: "r1",
+    studioCandidateId: "c1"};
   const store = installFakeDb(t, {
     "walls/a": {review: true, wallpaper_url: url("a")},
     "walls/b": {review: true, wallpaper_url: url("b")},

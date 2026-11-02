@@ -4,6 +4,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -51,7 +52,7 @@ class _Views extends Mock implements RecordPrismWallpaperViewsUsecase {}
 
 class _Palette extends Mock implements PaletteRepository {}
 
-class _Count extends Mock implements GetWallpaperSetCountUseCase {}
+class _Count extends Mock implements GetWallpaperCountsUseCase {}
 
 class _Recommendations implements WallpaperRecommendationRepository {
   final cursors = <RecommendationCursor?>[];
@@ -224,7 +225,7 @@ void main() {
       when(() => views.call(any())).thenAnswer((_) async => Result.error(const UnknownFailure('offline')));
       when(() => count.call(any())).thenAnswer((_) async => Result.error(const UnknownFailure('offline')));
       when(() => palette.generatePalette(any())).thenAnswer((_) async => Result.error(const UnknownFailure('none')));
-      when(() => blocks.getBlockedCreatorUids(waitForInitialLoad: true)).thenAnswer((_) async => <String>{});
+      when(() => blocks.loadBlockedCreators()).thenAnswer((_) async => KnownBlockedCreators(<String>{}));
       detail = WallpaperDetailBloc(
         prism,
         _Wallhaven(),

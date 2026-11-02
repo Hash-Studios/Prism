@@ -55,7 +55,7 @@ class PrismHeader extends StatelessWidget {
                     header: true,
                     child: Text(
                       title,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: showBack
                           ? PrismTextStyles.screenTitle(context).copyWith(fontSize: 22)

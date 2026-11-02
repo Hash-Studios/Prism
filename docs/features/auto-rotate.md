@@ -127,6 +127,54 @@ The "Change now" button calls `AsyncWallpaper.rotateWallpaperNow()`. It is off w
 - If the list of sources did not change and rotation runs, the bloc does nothing.
 - The bloc skips the stop call when rotation is already off.
 
+## Folder source
+
+Folder is an Android only source. The user can rotate the walls of one of their own private folders.
+
+- In the Source row, tap the chip "Folder". The sheet "Pick a folder" opens. Each row shows the cover, the name and the wall count. Pick a folder. The chip then reads "Folder: <name>".
+- On the folder page, open the menu and tap "Rotate this folder". This item shows on Android only. Auto-rotate opens with the offer card "Rotate <name>?". Tap "Rotate this folder" on the card. Prism picks the folder and turns on auto-rotate. Tap "Not now" to close the card.
+- Pro or the 7-day coin pass is still required. This is the same rule as the other sources.
+- The folder page shows a "Rotating" tag when auto-rotate uses the folder.
+
+### Safety
+
+- The folder list goes through the same rules as every other source. `_safeWallSources` runs first. Then `_safeSources` runs in `start`.
+- Only local files, Wallhaven URLs and Pexels URLs go to the native rotation.
+- A Prism original goes to the rotation only if the user downloaded it.
+- Prism uses up to 100 of the newest walls.
+
+### Freshness
+
+- Prism loads the folder again when the screen opens. It also loads the folder on app start or resume. Checks on app start or resume run at most once in 15 minutes.
+- Prism loads the folder 2 seconds after the folder changes in the app. A change is an add, a remove, a rename or a delete.
+- Prism restarts the native rotation only when the list differs from `autoRotate.appliedSources`, the list that the platform runs. The same list never restarts it.
+
+### Stop
+
+- If the folder is deleted, or it has fewer than 2 usable walls, Prism turns auto-rotate off. It shows one toast:
+  - "Auto-rotate is off because the folder <name> was deleted."
+  - "Auto-rotate is off because the folder <name> has fewer than 2 wallpapers."
+- A deleted folder also resets the source to Favourites.
+- The interval, target, shuffle and charging-only settings stay.
+- If the folder fails to load, the running rotation keeps running.
+
+### Saved config
+
+- New keys: `autoRotate.folderId` and `autoRotate.folderName`.
+- Old configs load with no folder.
+- A saved source `folder` with no folder id loads as Favourites.
+
+### Analytics
+
+- `auto_rotate_folder_set` has the field `item_count_bucket`.
+- `auto_rotate_folder_tapped` has the field `item_count_bucket`.
+- `auto_rotate_stopped` has the field `reason`. The value is `folderDeleted` or `folderEmpty`.
+- The buckets are 0, 1, 2-5, 6-20, 21-50 and 51+.
+
+### Limits of the folder source
+
+- Own folders only. Followed public folders are not a source yet. They come with public folders (PR #734).
+
 ## Limits
 
 - Prism stores the source list that it last started the plugin with (`autoRotate.appliedSources`). It restarts rotation when the list differs.

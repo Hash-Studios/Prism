@@ -10,7 +10,10 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/data/notifications/notifications.dart';
+import 'package:Prism/features/ads/data/ad_experiment_config.dart';
+import 'package:Prism/features/ads/data/ad_experiment_service.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
@@ -59,6 +62,8 @@ Future<void> prepareRemoteConfig(
     'store_update_blocking': defaultStoreUpdateBlocking,
     OnboardingV2Config.remoteConfigStarterPackKey: defaultOnboardingStarterPack,
     personalizedInterestsRemoteConfigKey: defaultPersonalizedInterestsJson,
+    AdExperimentConfig.remoteConfigKey: '{}',
+    iosShortcutLinkRemoteConfigKey: '',
   });
   try {
     await remoteConfig.activate();
@@ -169,6 +174,8 @@ class StartupRepositoryImpl implements StartupRepository {
       final aiVariationsEnabled = remoteConfig?.getBool('ai_variations_enabled') ?? defaultAiVariationsEnabled;
       final useRcPaywalls = remoteConfig?.getBool('use_rc_paywalls') ?? defaultUseRcPaywalls;
       final onboardingV2Enabled = remoteConfig?.getBool('onboarding_v2_enabled') ?? defaultOnboardingV2Enabled;
+      AdExperimentService.instance.applyConfig(remoteConfig?.getString(AdExperimentConfig.remoteConfigKey) ?? '{}');
+      unawaited(AdExperimentService.instance.start());
       final String minBuildKey = defaultTargetPlatform == TargetPlatform.iOS ? 'min_build_ios' : 'min_build_android';
       final minStoreBuild = remoteConfig?.getInt(minBuildKey) ?? defaultMinStoreBuild;
       final storeUpdateBlocking = remoteConfig?.getBool('store_update_blocking') ?? defaultStoreUpdateBlocking;

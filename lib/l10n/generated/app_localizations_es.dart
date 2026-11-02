@@ -11,6 +11,41 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get economyAd => 'Anuncio';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Ver anuncio por $rewardString monedas';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Te faltan $countString monedas.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Puede que aún necesites $countString monedas después del anuncio';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'Si tu saldo después de la recompensa cubre el precio, este artículo se comprará automáticamente.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Tu recompensa está pendiente de verificación. Las monedas aparecerán cuando se confirme.';
+
+  @override
   String get foldersLibraryEmptyTitle => 'Aún no hay carpetas';
 
   @override
@@ -19,6 +54,43 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get foldersLoadAllError => 'No se pudieron cargar tus carpetas';
+
+  @override
+  String get galleryEmptyBody => 'Se eliminaron o ya no son públicos.';
+
+  @override
+  String get galleryEmptyTitle => 'Estos fondos ya no están';
+
+  @override
+  String get galleryScreenTitle => 'Fondos para ti';
+
+  @override
+  String get favouritePin => 'Fijar arriba';
+
+  @override
+  String get favouriteUnpin => 'Desfijar';
+
+  @override
+  String get favouritePinnedToast => 'Fijado arriba en Favoritos';
+
+  @override
+  String get favouriteUnpinnedToast => 'Desfijado';
+
+  @override
+  String get favouritePinnedBadge => 'Fijado';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Puedes fijar hasta $count favoritos. Desfija uno para fijar este fondo de pantalla.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed => 'No se pudo actualizar el fijado. Revisa tu conexión e inténtalo de nuevo.';
 
   @override
   String wallpaperFavouriteSearchCountHint(int count) {
@@ -53,6 +125,115 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
+  String get duoTitle => 'Revelación Duo';
+
+  @override
+  String get duoAiFormatLabel => 'Crear una revelación Duo';
+
+  @override
+  String get duoPresetNotice =>
+      'Prism muestra el lado derecho en la vista plegada. Alinea manualmente el original guardado y comprueba ambas vistas en la vista previa del fondo del sistema. Es un ajuste de Prism, no un recorte automático de iOS.';
+
+  @override
+  String get duoFoldedPromptLabel => 'Vista plegada';
+
+  @override
+  String get duoFoldedPromptExample => 'Un gato adormilado junto a una ventana';
+
+  @override
+  String get duoRevealedPromptLabel => 'La sorpresa al desplegar';
+
+  @override
+  String get duoRevealedPromptExample => 'Una pequeña nave espacial al otro lado de la ventana';
+
+  @override
+  String get duoPromptValidation => 'Describe ambas vistas con entre 1 y 160 caracteres cada una.';
+
+  @override
+  String get duoMoodBody => 'Un fondo. Más por descubrir al desplegar.';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'Teléfono';
+
+  @override
+  String get duoFold => 'Plegar';
+
+  @override
+  String get duoUnfold => 'Desplegar';
+
+  @override
+  String get duoFolded => 'Plegado';
+
+  @override
+  String get duoUnfolded => 'Desplegado';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'Prism muestra el lado derecho en la vista plegada. Android puede recortar la imagen de otra forma. Comprueba la vista previa del fondo del sistema antes de aplicarlo.';
+
+  @override
+  String get duoGetOnPrism => 'Consíguelo en Prism';
+
+  @override
+  String get duoGuideTitle => 'Configura tu revelación Duo';
+
+  @override
+  String get duoGuideOpen => 'Abre el original guardado en Fotos, toca Compartir y luego Usar como fondo de pantalla.';
+
+  @override
+  String get duoGuideAlign =>
+      'Alinea manualmente la imagen completa para que la vista plegada muestre el lado derecho.';
+
+  @override
+  String get duoGuideCheck =>
+      'Comprueba las vistas plegada y desplegada en la vista previa del sistema y luego añade el fondo.';
+
+  @override
+  String get duoWebTitle => 'Fondos de pantalla para iPhone Duo | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'Un fondo con una segunda escena oculta. Descubre fondos originales con revelación Duo en Prism.';
+
+  @override
+  String get duoWebHeading => 'Un fondo. Una historia que se amplía.';
+
+  @override
+  String get duoWebIntro =>
+      'Una escena tranquila al plegar. Una segunda historia al desplegar. Mira ambas vistas de cada fondo original.';
+
+  @override
+  String get duoWebEmpty => 'La primera colección Duo está en revisión.';
+
+  @override
+  String get duoWebEmptyBody => 'Explora Prism mientras revisamos cada fondo en ambas vistas.';
+
+  @override
+  String get duoWebFolded => 'Vista previa plegada';
+
+  @override
+  String get duoWebUnfolded => 'Original desplegado';
+
+  @override
+  String get duoWebPresetNotice =>
+      'Estas vistas previas usan el ajuste de Prism para el lado derecho, no un recorte automático de Apple. Guarda el original completo, alinéalo manualmente y comprueba las vistas plegada y desplegada en la vista previa del fondo del sistema.';
+
+  @override
+  String get duoWebOpenPrism => 'Abrir en Prism';
+
+  @override
+  String get duoWebExplore => 'Explorar Prism';
+
+  @override
+  String get duoWebAppStore => 'Descargar en el App Store';
+
+  @override
+  String get duoWebPlayStore => 'Consíguelo en Google Play';
 
   @override
   String get economyExportFailedLabel => 'No se pudo exportar';
@@ -1074,12 +1255,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get accountReportAProblem => 'Informar de un problema';
 
   @override
-  String accountReportPreviewNotice(String email) {
-    return 'Este informe incluye la versión de la aplicación, los datos del dispositivo y los registros recientes. No contiene tu correo electrónico ni tokens de inicio de sesión. Léelo y compártelo con $email.';
-  }
-
-  @override
-  String get accountReportProblemSubtitle => 'Compartir los registros de la aplicación con el equipo de Prism';
+  String get accountReportProblemSubtitle => 'Enviar un informe de error al equipo de Prism';
 
   @override
   String get accountReportUser => 'Denunciar usuario';
@@ -1188,9 +1364,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get accountSettings => 'Ajustes';
-
-  @override
-  String get accountShare => 'Compartir';
 
   @override
   String get accountShareInvite => 'Compartir invitación';
@@ -3914,6 +4087,62 @@ class AppLocalizationsEs extends AppLocalizations {
   String get aiLiveActivityOpen => 'Abrir en Prism';
 
   @override
+  String get aiResultApply => 'Aplicar';
+
+  @override
+  String get aiResultEditPrompt => 'Editar descripción';
+
+  @override
+  String get aiSessionStripLabel => 'Fondos de esta sesión';
+
+  @override
+  String aiSessionTake(int index, int count) {
+    final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String indexString = indexNumberFormat.format(index);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Versión $indexString de $countString';
+  }
+
+  @override
+  String get aiFollowUpWatercolour => 'En acuarela';
+
+  @override
+  String get aiFollowUpNight => 'Versión nocturna';
+
+  @override
+  String get aiFollowUpMinimal => 'Más minimalista';
+
+  @override
+  String get aiFollowUpWarmer => 'Más cálido';
+
+  @override
+  String get aiFollowUpDepth => 'Añadir profundidad';
+
+  @override
+  String aiFollowUpCostLabel(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'Cada nueva versión cuesta $costString monedas';
+  }
+
+  @override
+  String get aiFollowUpConfirmTitle => '¿Crear una nueva versión?';
+
+  @override
+  String aiFollowUpConfirmBody(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'Una nueva versión crea otro fondo a partir de este. Cada una cuesta $costString monedas.';
+  }
+
+  @override
+  String get aiFollowUpConfirmAction => 'Crear';
+
+  @override
   String get economyAiDailyLimit => 'Alcanzaste el límite diario de IA.';
 
   @override
@@ -4136,6 +4365,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String economyAiStyleSemantics(String style) {
     return 'Estilo: $style';
   }
+
+  @override
+  String get economyAiStyleSheetTitle => 'Elige un estilo';
+
+  @override
+  String get economyAiStyleSheetSubject =>
+      'Cada vista previa muestra la misma escena: un faro en un acantilado al atardecer.';
 
   @override
   String get economyAiStyleWatercolor => 'Acuarela';
@@ -7118,6 +7354,29 @@ class AppLocalizationsEs extends AppLocalizations {
   String get notifPushDropLiveTitle => 'Hay una novedad';
 
   @override
+  String notifPushFollowDigestTitleOne(String artistName) {
+    return '$artistName publicó un fondo nuevo';
+  }
+
+  @override
+  String notifPushFollowDigestTitleSolo(String artistName, int wallCount) {
+    return '$artistName publicó $wallCount fondos nuevos';
+  }
+
+  @override
+  String notifPushFollowDigestTitlePair(String artistName, String secondArtistName, int wallCount) {
+    return '$artistName y $secondArtistName publicaron $wallCount fondos nuevos';
+  }
+
+  @override
+  String notifPushFollowDigestTitleGroup(String artistName, int otherCount, int wallCount) {
+    return '$artistName y $otherCount más publicaron $wallCount fondos nuevos';
+  }
+
+  @override
+  String get notifPushFollowDigestBodyUntitled => 'Toca para verlas todas.';
+
+  @override
   String get notifPushGiftReceivedBody =>
       'Tienes acceso a las colecciones prémium y a los fondos de pantalla prémium hasta mañana.';
 
@@ -7572,16 +7831,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperResetOriginal => 'Restablecer original';
 
   @override
-  String get wallpaperAccentResetHint => 'Mantén pulsado para ver acciones, incluida Restablecer original';
-
-  @override
   String get wallpaperAll => 'Todos';
 
   @override
   String get wallpaperApplyTo => 'Aplicar a';
-
-  @override
-  String get wallpaperAutoRotateAndroidOnly => 'La rotación automática solo está disponible en Android.';
 
   @override
   String get wallpaperAutoRotateApplyTo => 'Aplicar a';
@@ -8615,7 +8868,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticHint =>
-      'Toca para cambiar el color. Mantén pulsado para favoritos, compartir y restablecer. Desplázate para ver los detalles.';
+      'Mantén pulsado para favoritos, compartir y restablecer. Desplázate para ver los detalles.';
 
   @override
   String get wallpaperPreviousInFeed => 'Fondo de pantalla anterior';
@@ -8625,6 +8878,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'Fondo de pantalla';
+
+  @override
+  String get wallpaperImmersiveHint => 'Toca para ocultar los controles';
 
   @override
   String get wallpaperInsufficientCoins => 'No tienes suficientes monedas. Gana monedas en Recompensas.';
@@ -8809,6 +9065,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperLiveStyleShimmerDescription => 'Un suave destello de luz.';
+
+  @override
+  String get wallpaperLiveStyleDepth => '3D';
+
+  @override
+  String get wallpaperLiveStyleDepthDescription =>
+      'La foto se mueve en profundidad al deslizar entre pantallas de inicio e inclinar el teléfono.';
 
   @override
   String get wallpaperLiveStyleStarfield => 'Campo de estrellas';
@@ -9225,33 +9488,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperShareLink => 'Compartir enlace';
 
   @override
-  String get wallpaperShortcutsAddActionsSteps =>
-      'Añade la acción \"Get Prism Wallpaper\". Después, añade la acción \"Set Wallpaper\".';
-
-  @override
-  String get wallpaperShortcutsBody =>
-      'Usa Atajos para poner un fondo según un horario o activador. Prepara la fuente de abajo antes de ejecutarlo.';
-
-  @override
   String get wallpaperShortcutsChoosePrismData => 'Elige qué datos envía Prism';
 
   @override
-  String get wallpaperShortcutsChooseTriggerSteps =>
-      'En el editor de atajos, abre Automatización si hace falta. Elige y configura un activador, como una hora del día, abrir una app o conectar un cargador.';
-
-  @override
-  String get wallpaperShortcutsDisableConfirmationSteps =>
-      'Revisa las opciones de ejecución que aparezcan y guarda el atajo o la automatización. Si aparece \"Preguntar antes de ejecutar\", desactívalo para que se ejecute automáticamente.';
-
-  @override
-  String get wallpaperShortcutsHeadline => 'Cambia tu fondo de pantalla automáticamente';
-
-  @override
   String get wallpaperShortcutsOpenAction => 'Abrir Atajos';
-
-  @override
-  String get wallpaperShortcutsOpenAutomationSteps =>
-      'Abre Atajos. Si hay una pestaña Automatización, tócala y luego Nueva automatización. Si no, toca Añadir (+) y después Editar si aparece.';
 
   @override
   String get wallpaperShortcutsOpenError => 'No se pudo abrir Atajos. Abre la app manualmente.';
@@ -9260,18 +9500,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperShortcutsSourceFavourite => 'Favorito aleatorio';
 
   @override
-  String get wallpaperShortcutsSourceFavouriteDescription =>
-      'Un favorito aleatorio disponible para Atajos. Marca fondos como favoritos en Prism primero. Algunos fondos protegidos pueden no estar disponibles. Evita repetir el último si hay otro favorito disponible.';
-
-  @override
   String get wallpaperShortcutsSourceWotd => 'Fondo del día';
 
   @override
   String get wallpaperShortcutsSourceWotdDescription =>
       'La selección de hoy de Prism. Descarga primero el original de hoy en Prism. Cuando cambie la selección diaria, descarga el nuevo original antes de ejecutar esta fuente.';
-
-  @override
-  String get wallpaperShortcutsSteps => 'Pasos';
 
   @override
   String get wallpaperShortcutsTitle => 'Cambiar automáticamente';
@@ -10518,4 +10751,2282 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get foldersSuggestionHomeScreen => 'Pantalla de inicio';
+
+  @override
+  String get moodDreamyTitle => 'Soñador';
+
+  @override
+  String get moodDreamyBody => 'Cielos suaves y luz pastel.';
+
+  @override
+  String get moodDarkQuietTitle => 'Oscuro y tranquilo';
+
+  @override
+  String get moodDarkQuietBody => 'Poca luz, fácil para la vista.';
+
+  @override
+  String get moodBrightBoldTitle => 'Brillante y audaz';
+
+  @override
+  String get moodBrightBoldBody => 'Mucho color para despertar tu pantalla.';
+
+  @override
+  String get moodMinimalTitle => 'Minimalista';
+
+  @override
+  String get moodMinimalBody => 'Formas simples y espacio para respirar.';
+
+  @override
+  String get moodSpatialReadyTitle => 'Listo para escena espacial';
+
+  @override
+  String get moodSpatialReadyBody => 'Hecho para destacar como escena espacial.';
+
+  @override
+  String get moodDepthReadyTitle => 'Listo para profundidad';
+
+  @override
+  String get moodDepthReadyBody => 'El sujeto queda delante de tu reloj.';
+
+  @override
+  String get moodChipRowLabel => 'Estados de ánimo';
+
+  @override
+  String get moodSeeAll => 'Ver todo';
+
+  @override
+  String moodSeeAllHint(String mood) {
+    return 'Abre todos los fondos de pantalla de $mood';
+  }
+
+  @override
+  String get moodLoadError => 'No se pudieron cargar estos fondos de pantalla';
+
+  @override
+  String get moodEmptyTitle => 'Aún no hay fondos de pantalla aquí';
+
+  @override
+  String get moodEmptyBody => 'Cada día se suman nuevos fondos de pantalla.';
+
+  @override
+  String wallpaperHistoryTileSemantic(String current, String target, String date) {
+    return '${current}Aplicar de nuevo. $target, $date';
+  }
+
+  @override
+  String get wallpaperHistoryTitle => 'Historial de fondos de pantalla';
+
+  @override
+  String get wallpaperLibraryHistoryBody => 'Los fondos que aplicaste, para que puedas volver a usarlos.';
+
+  @override
+  String get wallpaperLibraryHistoryTitle => 'Historial de fondos de pantalla';
+
+  @override
+  String get wallpaperLibraryOpenHistory => 'Abrir historial';
+
+  @override
+  String get wallpaperRecentlySet => 'Usados recientemente';
+
+  @override
+  String get wallpaperSetAgain => 'Volver a aplicar este fondo de pantalla';
+
+  @override
+  String get wallpaperSort => 'Ordenar';
+
+  @override
+  String get tasteQuizTitle => 'Elige el que más te guste';
+
+  @override
+  String get tasteQuizWildCard => 'Comodín';
+
+  @override
+  String tasteQuizProgress(int current, int total) {
+    final intl.NumberFormat currentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String currentString = currentNumberFormat.format(current);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return '$currentString de $totalString';
+  }
+
+  @override
+  String tasteQuizProgressLabel(int current, int total) {
+    final intl.NumberFormat currentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String currentString = currentNumberFormat.format(current);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Ronda $currentString de $totalString';
+  }
+
+  @override
+  String get tasteQuizSkip => 'Omitir';
+
+  @override
+  String tasteQuizPickLabel(int position, int total) {
+    final intl.NumberFormat positionNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String positionString = positionNumberFormat.format(position);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Elegir este fondo, $positionString de $totalString';
+  }
+
+  @override
+  String get tasteQuizTuningTitle => 'Ajustando tu feed';
+
+  @override
+  String tasteQuizSummaryFull(String tone, String density, String tag) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'Oscuro', 'other': 'Claro'});
+    String _temp1 = intl.Intl.selectLogic(density, {'minimal': 'minimalista', 'other': 'detallado'});
+    return '$_temp0, $_temp1, un poco de $tag';
+  }
+
+  @override
+  String tasteQuizSummaryToneDensity(String tone, String density) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'Oscuro', 'other': 'Claro'});
+    String _temp1 = intl.Intl.selectLogic(density, {'minimal': 'minimalista', 'other': 'detallado'});
+    return '$_temp0 y $_temp1';
+  }
+
+  @override
+  String tasteQuizSummaryToneTag(String tone, String tag) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'Oscuro', 'other': 'Claro'});
+    return '$_temp0, con un poco de $tag';
+  }
+
+  @override
+  String tasteQuizSummaryDensityTag(String density, String tag) {
+    String _temp0 = intl.Intl.selectLogic(density, {'minimal': 'Minimalista', 'other': 'Detallado'});
+    return '$_temp0, con un poco de $tag';
+  }
+
+  @override
+  String tasteQuizSummaryTone(String tone) {
+    String _temp0 = intl.Intl.selectLogic(tone, {
+      'dark': 'Sobre todo fondos oscuros',
+      'other': 'Sobre todo fondos claros',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String tasteQuizSummaryDensity(String density) {
+    String _temp0 = intl.Intl.selectLogic(density, {
+      'minimal': 'Sobre todo fondos minimalistas',
+      'other': 'Sobre todo fondos detallados',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String tasteQuizSummaryTag(String tag) {
+    return 'Más fondos de $tag';
+  }
+
+  @override
+  String get tasteQuizSummaryReady => 'Tu feed está listo';
+
+  @override
+  String get tasteQuizRetake => 'Repetir Esto o aquello';
+
+  @override
+  String get tasteQuizRetakeFailed => 'No se pudieron cargar los fondos. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get foldersPublic => 'Pública';
+
+  @override
+  String get foldersMakePublic => 'Hacer pública';
+
+  @override
+  String get foldersMakePrivate => 'Hacer privada';
+
+  @override
+  String get foldersMakePublicTitle => '¿Hacer pública esta carpeta?';
+
+  @override
+  String get foldersMakePublicMessage =>
+      'Cualquiera en Prism podrá ver su nombre y sus fondos de pantalla, seguirla y abrir su enlace. Los enlaces que compartas conservan su vista previa aunque luego la hagas privada.';
+
+  @override
+  String get foldersMakePrivateTitle => '¿Hacer privada esta carpeta?';
+
+  @override
+  String get foldersMakePrivateMessage =>
+      'Solo tú la verás. Su enlace dejará de funcionar y sus seguidores la perderán.';
+
+  @override
+  String get foldersMadePublic => 'Esta carpeta ahora es pública.';
+
+  @override
+  String get foldersMadePrivate => 'Esta carpeta ahora es privada.';
+
+  @override
+  String get foldersPublicNameRefused => 'Cambia el nombre de esta carpeta para hacerla pública.';
+
+  @override
+  String get foldersHiddenRefused => 'Esta carpeta se ocultó tras recibir denuncias, así que no puede ser pública.';
+
+  @override
+  String get foldersLimitRefused => 'Hoy has cambiado las carpetas demasiadas veces. Inténtalo de nuevo mañana.';
+
+  @override
+  String get foldersFollow => 'Seguir';
+
+  @override
+  String get foldersFollowing => 'Siguiendo';
+
+  @override
+  String foldersFollowerCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString seguidores',
+      one: '1 seguidor',
+      zero: 'Sin seguidores',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersByOwner(String name) {
+    return 'De $name';
+  }
+
+  @override
+  String get foldersShare => 'Compartir carpeta';
+
+  @override
+  String get foldersReport => 'Denunciar carpeta';
+
+  @override
+  String get foldersUnavailableTitle => 'Esta carpeta es privada o ya no existe';
+
+  @override
+  String get foldersUnavailableBody => 'Es posible que su propietario la haya hecho privada o la haya eliminado.';
+
+  @override
+  String get foldersFollowFailed => 'No se pudo actualizar el seguimiento. Inténtalo de nuevo.';
+
+  @override
+  String get foldersYouFollow => 'Carpetas que sigues';
+
+  @override
+  String get foldersPublicEmptyTitle => 'Aún no hay fondos de pantalla aquí';
+
+  @override
+  String get foldersPublicEmptyBody => 'Los fondos nuevos aparecerán aquí cuando su propietario los añada.';
+
+  @override
+  String get notifSettingFolders => 'Carpetas que sigues';
+
+  @override
+  String get notifSettingFoldersDescription => 'Fondos de pantalla nuevos en las carpetas que sigues, una vez al día';
+
+  @override
+  String notifPushFolderDigestTitleOne(String folderName) {
+    return 'Nuevo en $folderName';
+  }
+
+  @override
+  String notifPushFolderDigestTitleMore(String folderName, int count) {
+    return 'Nuevo en $folderName y $count más';
+  }
+
+  @override
+  String get historySetAndDownloaded => 'Puesto y descargado';
+
+  @override
+  String get historyDownloaded => 'Descargado';
+
+  @override
+  String get historyRecentlyViewed => 'Vistos recientemente';
+
+  @override
+  String get historySyncedNote => 'Guardado en tu cuenta, así estos vuelven a aparecer en un teléfono nuevo.';
+
+  @override
+  String get historySyncedNoteGuest => 'Inicia sesión para mantenerlos en un teléfono nuevo.';
+
+  @override
+  String get historyActionSet => 'Puesto';
+
+  @override
+  String get historyActionDownloaded => 'Descargado';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action a las $time';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'Esto borra la lista de aquí y de tu cuenta. Tus fondos de pantalla y descargas se mantienen igual.';
+
+  @override
+  String get historyClearViewedTitle => '¿Borrar vistos recientemente?';
+
+  @override
+  String get historyClearViewedBody => 'Esto quita de esta lista y de Inicio los fondos de pantalla que abriste.';
+
+  @override
+  String get historyClearViewedAction => 'Borrar vistos recientemente';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'Los fondos de pantalla que pongas o descargues aparecen aquí para que los encuentres de nuevo.';
+
+  @override
+  String get historyEmptyBodyIos =>
+      'Los fondos de pantalla que descargues aparecen aquí para que los encuentres de nuevo.';
+
+  @override
+  String get historyViewedEmptyTitle => 'Aún no has visto nada';
+
+  @override
+  String get historyViewedEmptyBody =>
+      'Los fondos de pantalla que abras aparecen aquí para que los encuentres de nuevo.';
+
+  @override
+  String get historyViewedOffTitle => 'El historial de visualización está desactivado';
+
+  @override
+  String get historyViewedOffBody =>
+      'Activa Guardar historial de visualización para ver aquí los fondos de pantalla que abras.';
+
+  @override
+  String get historyViewedOffAction => 'Activar';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'Abrir fondo de pantalla, visto a las $time';
+  }
+
+  @override
+  String get pickUpTitle => 'Retoma donde lo dejaste';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return 'Abrir fondo de pantalla $index de $count';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'Guardar historial de visualización';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'Muestra los fondos de pantalla que abres en Historial y en Inicio. Si lo desactivas, se borra la lista.';
+
+  @override
+  String get historyClearFailed => 'No se pudo borrar el historial. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Carpeta';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Carpeta: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Esta carpeta necesita al menos 2 fondos de pantalla que puedan rotar. Los fondos de Prism rotan después de que los descargues.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Abrir carpeta';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Elige una carpeta';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'Aún no tienes carpetas. Guarda un fondo de pantalla en una carpeta y luego elígela aquí.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return '¿Rotar $folder?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Tu fondo de pantalla cambiará a uno de esta carpeta, según el horario de abajo.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Rotar esta carpeta';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'La rotación automática está desactivada porque se eliminó la carpeta $folder.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'La rotación automática está desactivada porque la carpeta $folder tiene menos de 2 fondos de pantalla.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Rotar esta carpeta';
+
+  @override
+  String get foldersRotating => 'Rotando';
+
+  @override
+  String get foldersRotatingDescription => 'La rotación automática usa esta carpeta';
+
+  @override
+  String get wallpaperAccentResetHint => 'Mantén pulsado para ver acciones, incluida Restablecer original';
+
+  @override
+  String get wallRequestsTitle => 'Solicitudes de fondos';
+
+  @override
+  String get wallRequestsTabTop => 'Top';
+
+  @override
+  String get wallRequestsTabNew => 'Nuevas';
+
+  @override
+  String get wallRequestsTabFilled => 'Cumplidas';
+
+  @override
+  String get wallRequestsAsk => 'Pide un fondo';
+
+  @override
+  String get wallRequestsEmptyTopTitle => 'Aún no hay solicitudes';
+
+  @override
+  String get wallRequestsEmptyTopBody => 'Pide el fondo que no encuentras. Otros pueden apoyarlo.';
+
+  @override
+  String get wallRequestsEmptyFilledTitle => 'Aún no hay solicitudes cumplidas';
+
+  @override
+  String get wallRequestsEmptyFilledBody => 'Las solicitudes cumplidas aparecen aquí, con el fondo que las cumplió.';
+
+  @override
+  String get wallRequestsLoadFailed => 'No pudimos cargar las solicitudes';
+
+  @override
+  String get wallRequestsRetry => 'Intentar de nuevo';
+
+  @override
+  String wallRequestVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votos',
+      one: '1 voto',
+      zero: 'Sin votos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestUpvote => 'Apoyar';
+
+  @override
+  String get wallRequestRemoveUpvote => 'Quitar apoyo';
+
+  @override
+  String get wallRequestMine => 'Tu solicitud';
+
+  @override
+  String get wallRequestSomeone => 'Un usuario de Prism';
+
+  @override
+  String wallRequestFilledByCreator(String name) {
+    return 'Cumplida por $name';
+  }
+
+  @override
+  String get wallRequestFilledByStudio => 'Hecha por Prism Studio';
+
+  @override
+  String get wallRequestOpenWall => 'Abrir el fondo';
+
+  @override
+  String get wallRequestMoreActions => 'Más acciones';
+
+  @override
+  String get wallRequestReport => 'Reportar solicitud';
+
+  @override
+  String get wallRequestHide => 'Ocultar solicitud';
+
+  @override
+  String get wallRequestUnhide => 'Mostrar solicitud';
+
+  @override
+  String get wallRequestHiddenLabel => 'Oculta';
+
+  @override
+  String get wallRequestSheetTitle => 'Pide un fondo';
+
+  @override
+  String get wallRequestSheetHint => 'Descríbelo, por ejemplo: montañas oscuras y minimalistas';
+
+  @override
+  String get wallRequestSheetTags => 'Etiquetas, hasta 3';
+
+  @override
+  String get wallRequestSheetSubmit => 'Enviar solicitud';
+
+  @override
+  String get wallRequestSignIn => 'Inicia sesión para pedir fondos y apoyarlos.';
+
+  @override
+  String get wallRequestDuplicateTitle => 'Alguien ya pidió esto';
+
+  @override
+  String get wallRequestDuplicateBody => 'Apóyalo para que los creadores lo vean antes.';
+
+  @override
+  String get wallRequestUpvoteInstead => 'Apoya esta en su lugar';
+
+  @override
+  String get wallRequestCreateAnyway => 'Enviar la mía igual';
+
+  @override
+  String get wallRequestDuplicateMine => 'Ya pediste esto';
+
+  @override
+  String get wallRequestDuplicateVoted => 'Ya apoyaste esto';
+
+  @override
+  String get wallRequestEditText => 'Editar mi solicitud';
+
+  @override
+  String get wallRequestCreated => 'Solicitud enviada. Te avisaremos cuando se cumpla.';
+
+  @override
+  String get wallRequestUpvoted => 'Apoyada. Te avisaremos cuando se cumpla.';
+
+  @override
+  String get wallRequestErrorText => 'Usa de 3 a 80 caracteres y mantén un tono amable.';
+
+  @override
+  String get wallRequestErrorLimit => 'Puedes hacer 3 solicitudes al día. Inténtalo mañana.';
+
+  @override
+  String get wallRequestErrorOwn => 'No puedes apoyar tu propia solicitud.';
+
+  @override
+  String get wallRequestErrorClosed => 'Esta solicitud ya se cumplió.';
+
+  @override
+  String get wallRequestErrorGone => 'Esta solicitud ya no está disponible.';
+
+  @override
+  String get wallRequestErrorGeneric => 'Algo salió mal. Intenta de nuevo.';
+
+  @override
+  String get searchRequestPrompt => '¿No lo encuentras?';
+
+  @override
+  String get searchRequestAction => 'Pídelo';
+
+  @override
+  String get discoverRequestsTitle => 'Solicitudes de fondos';
+
+  @override
+  String get discoverRequestsSubtitle => 'Pide un fondo o apoya uno';
+
+  @override
+  String get uploadFillsRequest => 'Cumple una solicitud';
+
+  @override
+  String get uploadFillsRequestHint => 'Opcional. Elige la solicitud que responde este fondo.';
+
+  @override
+  String get uploadFillsRequestClear => 'Quitar solicitud';
+
+  @override
+  String get requestPickerTitle => '¿Qué solicitud cumple?';
+
+  @override
+  String get requestPickerSearch => 'Buscar solicitudes';
+
+  @override
+  String get requestPickerEmpty => 'No hay solicitudes abiertas que coincidan';
+
+  @override
+  String get notifPushWallRequestFilledTitle => 'Tu solicitud ya está aquí';
+
+  @override
+  String notifPushWallRequestFilledBody(String requestText) {
+    return '$requestText';
+  }
+
+  @override
+  String get wallRequestAgeNow => 'Justo ahora';
+
+  @override
+  String wallRequestAgeMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hace $count minutos',
+      one: 'Hace 1 minuto',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Hace $count horas', one: 'Hace 1 hora');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Hace $count días', one: 'Hace 1 día');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hace $count semanas',
+      one: 'Hace 1 semana',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestErrorAccountAge => 'Tu cuenta podrá hacer solicitudes y votar cuando tenga 10 días.';
+
+  @override
+  String get adminFillsRequest => 'Cumple la solicitud';
+
+  @override
+  String get wallRemixAction => 'Remezclar';
+
+  @override
+  String get wallRemixActionTooltip => 'Remezclar este fondo de pantalla con IA';
+
+  @override
+  String wallRemixingChip(String title, String creator) {
+    return 'Remezclando $title de $creator';
+  }
+
+  @override
+  String get wallRemixDropLinkTooltip => 'Quitar el vínculo de remezcla';
+
+  @override
+  String get wallRemixUntitled => 'Sin título';
+
+  @override
+  String get wallRemixUnknownCreator => 'un creador de Prism';
+
+  @override
+  String get wallRemixesTitle => 'Remezclas';
+
+  @override
+  String wallRemixesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count remezclas', one: '1 remezcla');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRemixOpenRemixLabel(String creator) {
+    return 'Abrir la remezcla de $creator';
+  }
+
+  @override
+  String wallRemixOfLabel(String title, String creator) {
+    return 'Remezcla de $title de $creator';
+  }
+
+  @override
+  String get wallRemixOfTooltip => 'Abrir el fondo de pantalla original';
+
+  @override
+  String get economyAiSubmitPromptNotice => 'Cualquiera puede ver tu prompt y remezclar este fondo de pantalla.';
+
+  @override
+  String get notifPushWallRemixedTitle => 'Remezclaron tu fondo de pantalla';
+
+  @override
+  String notifPushWallRemixedBody(String remixerName, String wallTitle) {
+    return '$remixerName remezcló $wallTitle.';
+  }
+
+  @override
+  String notifPushWallRemixedBodyUntitled(String remixerName) {
+    return '$remixerName remezcló tu fondo de pantalla.';
+  }
+
+  @override
+  String get wallMetadataDescription => 'Descripción';
+
+  @override
+  String get wallMetadataEdit => 'Editar detalles';
+
+  @override
+  String get wallResubmitAction => 'Corregir y volver a enviar';
+
+  @override
+  String get wallResubmitChooseImage => 'Elegir imagen';
+
+  @override
+  String get wallResubmitImageMissing =>
+      'La imagen original ya no está disponible. Elígela de nuevo para seguir editando.';
+
+  @override
+  String get wallResubmitImageKept => 'Imagen original lista';
+
+  @override
+  String get wallResubmitTitle => 'Corrige tu envío';
+
+  @override
+  String get wallUploadUseLastDetails => 'Usar últimos detalles';
+
+  @override
+  String get wallUploadLastDetailsUnavailable => 'No hay detalles anteriores en este dispositivo.';
+
+  @override
+  String get wallUploadWithdraw => 'Retirar envío';
+
+  @override
+  String get wallUploadWithdrawTitle => '¿Retirar este envío?';
+
+  @override
+  String get wallUploadWithdrawBody => 'Esto retira el envío de la revisión y elimina sus archivos cargados.';
+
+  @override
+  String get wallUploadWithdrawn => 'Envío retirado';
+
+  @override
+  String get wallUploadDeleteHistory => 'Eliminar del historial';
+
+  @override
+  String get wallMetadataInvalid => 'Revisa el texto y las etiquetas y vuelve a intentarlo.';
+
+  @override
+  String get wallUploadOwnerChanged => 'Tu cuenta ha cambiado. Abre este envío de nuevo.';
+
+  @override
+  String get wallResubmitLimit => 'Este fondo de pantalla ha alcanzado sus tres reenvíos vinculados.';
+
+  @override
+  String get wallResubmitUnsupported =>
+      'Elige de nuevo la imagen original. Los datos de la fuente de IA no se pueden reutilizar.';
+
+  @override
+  String get wallResubmitUnavailable => 'No se pudo cargar este envío rechazado. Vuelve a intentarlo.';
+
+  @override
+  String get wallMetadataEditDetails => 'Editar detalles';
+
+  @override
+  String get wallMetadataApprovedHelp =>
+      'Cambia el título, la descripción y las etiquetas. La imagen y la categoría no cambian.';
+
+  @override
+  String get wallMetadataPendingHelp => 'Actualiza estos detalles antes de que se revise tu fondo de pantalla.';
+
+  @override
+  String get wallMetadataSave => 'Guardar detalles';
+
+  @override
+  String get wallMetadataSaved => 'Detalles guardados';
+
+  @override
+  String get wallMetadataDiscardTitle => '¿Descartar cambios?';
+
+  @override
+  String get wallMetadataDiscardBody => 'Se perderán los detalles sin guardar.';
+
+  @override
+  String get wallMetadataDiscard => 'Descartar cambios';
+
+  @override
+  String get wallMetadataReload => 'Volver a cargar detalles';
+
+  @override
+  String get wallMetadataReloadTitle => '¿Volver a cargar los detalles actuales?';
+
+  @override
+  String get wallMetadataReloadBody => 'Esto reemplaza tus detalles sin guardar por la versión actual.';
+
+  @override
+  String get wallMetadataConflict =>
+      'Estos detalles cambiaron en otro lugar. Tus cambios siguen aquí. Vuelve a cargar los detalles actuales antes de guardar.';
+
+  @override
+  String get wallMetadataStatusChanged =>
+      'El estado de revisión de este fondo de pantalla ha cambiado. Tus cambios no se han guardado.';
+
+  @override
+  String get wallMetadataMissing => 'Este fondo de pantalla ya no está disponible. Tus cambios no se han guardado.';
+
+  @override
+  String get wallMetadataDenied => 'No tienes permiso para editar este fondo de pantalla.';
+
+  @override
+  String get wallMetadataSignedOut => 'Inicia sesión de nuevo para editar este fondo de pantalla.';
+
+  @override
+  String get wallMetadataDailyLimit => 'Has alcanzado el límite de ediciones de hoy. Vuelve a intentarlo mañana.';
+
+  @override
+  String get wallMetadataUnavailable =>
+      'No se pudieron guardar los detalles. Comprueba tu conexión y vuelve a intentarlo.';
+
+  @override
+  String get wallMetadataLoadFailed => 'No se pudieron cargar los detalles';
+
+  @override
+  String get wallMetadataHistory => 'Historial de ediciones';
+
+  @override
+  String get wallMetadataHistoryEmpty => 'Aún no hay cambios en los detalles';
+
+  @override
+  String get wallMetadataHistoryEmptyBody =>
+      'Los cambios en el título, la descripción y las etiquetas aprobados aparecen aquí.';
+
+  @override
+  String get wallMetadataHistoryFailed => 'No se pudo cargar el historial de ediciones';
+
+  @override
+  String get wallMetadataBefore => 'Antes';
+
+  @override
+  String get wallMetadataAfter => 'Después';
+
+  @override
+  String get wallMetadataRevert => 'Revertir edición';
+
+  @override
+  String get wallMetadataRevertTitle => '¿Revertir esta edición?';
+
+  @override
+  String get wallMetadataRevertBody =>
+      'Restaura solo el título, la descripción y las etiquetas anteriores que se muestran aquí. La imagen y el estado de revisión no cambiarán.';
+
+  @override
+  String get wallMetadataReverted => 'Edición revertida';
+
+  @override
+  String get wallMetadataLoadMore => 'Cargar más ediciones';
+
+  @override
+  String get wallMetadataAbsent => 'Sin definir';
+
+  @override
+  String wallMetadataResubmitted(int attempt) {
+    return 'Reenviado · intento $attempt de 3';
+  }
+
+  @override
+  String get wallMetadataPreviousReason => 'Motivo del rechazo anterior';
+
+  @override
+  String get wallMetadataContextUnavailable => 'Detalles del reenvío no disponibles';
+
+  @override
+  String get reportSheetMessage =>
+      'Cuéntanos qué salió mal. Prism nunca añade tu correo electrónico ni tokens de inicio de sesión. Revisa las capturas antes de enviarlas.';
+
+  @override
+  String get reportTopicCrashFreeze => 'Cierre inesperado/bloqueo';
+
+  @override
+  String get reportTopicWallpaperWontSet => 'El fondo de pantalla no se aplica';
+
+  @override
+  String get reportTopicLooksBroken => 'Se ve mal';
+
+  @override
+  String get reportTopicSlow => 'Lento';
+
+  @override
+  String get reportTopicOther => 'Otro';
+
+  @override
+  String get reportNoteHint => '¿Qué pasó? ¿Qué esperabas que pasara?';
+
+  @override
+  String get reportScreenshotTitle => 'Captura de pantalla';
+
+  @override
+  String get reportScreenshotEmpty => 'Muéstranos lo que ves.';
+
+  @override
+  String get reportScreenshotAttached => 'Toca para verla. Revísala antes de enviar.';
+
+  @override
+  String get reportAddScreenshot => 'Añadir captura';
+
+  @override
+  String get reportRemoveScreenshot => 'Quitar';
+
+  @override
+  String get reportViewScreenshot => 'Ver captura';
+
+  @override
+  String get reportIncludeDiagnostics => 'Incluir datos del dispositivo y registros recientes';
+
+  @override
+  String get reportShowDiagnostics => 'Mostrar qué se incluye';
+
+  @override
+  String get reportHideDiagnostics => 'Ocultar detalles';
+
+  @override
+  String get reportSend => 'Enviar informe';
+
+  @override
+  String get reportShareAsFile => 'Compartir como archivo';
+
+  @override
+  String reportSent(String reference) {
+    return 'Gracias, informe enviado. Referencia $reference';
+  }
+
+  @override
+  String get reportCouldNotSend => 'No se pudo enviar';
+
+  @override
+  String get reportCouldNotSendBody => 'Revisa tu conexión e inténtalo de nuevo, o comparte el informe como archivo.';
+
+  @override
+  String get reportShareInstead => 'Compartir en su lugar';
+
+  @override
+  String get reportShakeToReport => 'Agitar para informar';
+
+  @override
+  String get reportShakeToReportSubtitle => 'Agita el teléfono en cualquier pantalla para informar de un problema';
+
+  @override
+  String get accountShowAiWallpapers => 'Mostrar fondos generados con IA';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'Desactívalo para ver solo fondos hechos por personas';
+
+  @override
+  String get accountShowAiWallpapersFootnote =>
+      'Ocultar los fondos de IA nunca oculta tus propias subidas ni tus favoritos.';
+
+  @override
+  String get wallpaperFeedHideAi => 'Ocultar IA';
+
+  @override
+  String get wallpaperAiGenerated => 'Generado con IA';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return 'Hecho con $model';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'Hecho con IA';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'Reportar etiqueta incorrecta';
+
+  @override
+  String get feedNoHumanWalls => 'Aún no hay fondos hechos por personas aquí';
+
+  @override
+  String get feedShowAiWalls => 'Mostrar fondos de IA';
+
+  @override
+  String get dailyMomentTitle => 'Momento diario';
+
+  @override
+  String get dailyMomentStreakTitle => 'Racha diaria';
+
+  @override
+  String get dailyMomentChestTitle => 'Cofre diario';
+
+  @override
+  String get dailyMomentSpinTitle => 'Giro gratis';
+
+  @override
+  String get dailyMomentUnavailable => 'Esta recompensa ya no está disponible hoy.';
+
+  @override
+  String get dailyMomentError => 'No se pudo cargar la recompensa. Inténtalo de nuevo.';
+
+  @override
+  String dailyMomentStreakReceipt(int coins, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins monedas ganadas',
+      one: '$coins moneda ganada',
+    );
+    String _temp1 = intl.Intl.pluralLogic(days, locale: localeName, other: '$days días', one: '$days día');
+    return '$_temp0 · racha de $_temp1';
+  }
+
+  @override
+  String get challengeTitle => 'Reto semanal';
+
+  @override
+  String get challengeRules => 'Hasta 3 obras, revisadas antes de aparecer.';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'Vota por otros creadores hasta $date UTC.';
+  }
+
+  @override
+  String get challengeUpload => 'Subir una obra';
+
+  @override
+  String get challengeAi => 'Crear con IA';
+
+  @override
+  String get challengeTop => 'Destacadas';
+
+  @override
+  String get challengeNew => 'Nuevas';
+
+  @override
+  String get challengePast => 'Retos anteriores';
+
+  @override
+  String get challengeEmpty => 'Las obras aprobadas aparecerán aquí.';
+
+  @override
+  String get challengeWaiting => 'La votación terminó. Esperamos las revisiones antes de elegir al ganador.';
+
+  @override
+  String get challengeClosed => 'Este reto ha terminado.';
+
+  @override
+  String get challengeScheduled => 'Este reto aún no ha comenzado.';
+
+  @override
+  String get challengeNoWinner => 'Este reto no tiene ganador.';
+
+  @override
+  String challengeWinner(String name) {
+    return 'Ganador · $name';
+  }
+
+  @override
+  String get challengeVote => 'Votar';
+
+  @override
+  String get challengeUnvote => 'Quitar voto';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votos',
+      one: '1 voto',
+      zero: '0 votos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentCosmetic => 'Objeto añadido a tu colección';
+
+  @override
+  String dailyMomentReward(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins monedas ganadas',
+      one: '$coins moneda ganada',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentChestBody => 'Abre el cofre de hoy cuando quieras.';
+
+  @override
+  String get dailyMomentSpinBody => 'Tu giro gratis está listo.';
+
+  @override
+  String dailyMomentBalance(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins monedas', one: '$coins moneda');
+    return 'Saldo: $_temp0';
+  }
+
+  @override
+  String get dailyMomentDone => 'Listo';
+
+  @override
+  String get dailyMomentRetry => 'Reintentar';
+
+  @override
+  String get dailyMomentContinue => 'Continuar';
+
+  @override
+  String get dailyMomentOpenFree => 'Abrir cofre gratis';
+
+  @override
+  String dailyMomentOpenChest(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins monedas', one: '$coins moneda');
+    return 'Abrir por $_temp0';
+  }
+
+  @override
+  String get dailyMomentSpinAction => 'Girar gratis';
+
+  @override
+  String get dailyMomentClose => 'Cerrar momento diario';
+
+  @override
+  String get dailyMomentToday => 'Hoy';
+
+  @override
+  String get dailyMomentReady => 'Las recompensas diarias están listas';
+
+  @override
+  String get dailyMomentComplete => 'Hoy está completo';
+
+  @override
+  String get dailyMomentResume => 'Continuar momento diario';
+
+  @override
+  String get dailyMomentMore => 'Más';
+
+  @override
+  String get dailyMomentQuests => 'Misiones';
+
+  @override
+  String get dailyMomentChestLeft => 'Cofre diario disponible';
+
+  @override
+  String get dailyMomentSpinLeft => 'Giro gratis disponible';
+
+  @override
+  String get dailyMomentStreakLeft => 'Racha diaria disponible';
+
+  @override
+  String get challengeShare => 'Compartir reto';
+
+  @override
+  String get challengeRemove => 'Quitar reto';
+
+  @override
+  String challengeContext(String theme) {
+    return 'Reto · $theme';
+  }
+
+  @override
+  String get challengeError => 'No pudimos cargar el reto. Inténtalo de nuevo.';
+
+  @override
+  String get challengeVoteError => 'No se pudo guardar tu voto. Inténtalo de nuevo.';
+
+  @override
+  String get challengeSignIn => 'Inicia sesión para participar o votar.';
+
+  @override
+  String get challengeLimit => 'Ya has enviado 3 fondos a este reto.';
+
+  @override
+  String get challengeRetry => 'Reintentar';
+
+  @override
+  String get challengeOwnEntry => 'No puedes votar por tu propia obra.';
+
+  @override
+  String get challengeDailyLimit => 'Has alcanzado el límite diario de votos.';
+
+  @override
+  String get challengeMissing => 'Este reto u obra ya no está disponible.';
+
+  @override
+  String get challengeBadge => 'Ganador del reto';
+
+  @override
+  String get challengeBadgeDescription => 'Gana un reto semanal';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'Tu fondo ganó';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'Tu obra ganó el reto semanal: $theme.';
+  }
+
+  @override
+  String get statsTitle => 'Tus estadísticas';
+
+  @override
+  String get statsEntry => 'Estadísticas';
+
+  @override
+  String get statsViews => 'Vistas';
+
+  @override
+  String get statsSaves => 'Guardados';
+
+  @override
+  String get statsSets => 'Veces aplicado';
+
+  @override
+  String get statsDownloads => 'Descargas';
+
+  @override
+  String get statsShares => 'Veces compartido';
+
+  @override
+  String get statsFolderAdds => 'Adiciones a carpetas';
+
+  @override
+  String get statsRemixes => 'Remixes';
+
+  @override
+  String get statsLoading => 'Cargando tus estadísticas';
+
+  @override
+  String get statsError => 'No se pudieron cargar tus estadísticas. Inténtalo de nuevo.';
+
+  @override
+  String get statsRetry => 'Reintentar';
+
+  @override
+  String get statsEmptyTitle => 'Tu primer fondo empieza aquí';
+
+  @override
+  String get statsEmptyBody => 'Sube un fondo. Sus estadísticas aparecerán cuando se apruebe.';
+
+  @override
+  String get statsUpload => 'Subir un fondo';
+
+  @override
+  String get statsWeekNote => 'Esta semana hasta ahora frente a la anterior. Las semanas empiezan el lunes, UTC.';
+
+  @override
+  String get statsHistoryNote =>
+      'Ocho semanas, la más antigua primero. Un guion indica datos no disponibles. El seguimiento puede empezar a mitad de semana, por lo que los datos semanales pueden ser parciales. La semana actual está incompleta.';
+
+  @override
+  String get statsTopWalls => 'Mejores fondos de esta semana';
+
+  @override
+  String get statsUntitled => 'Fondo sin título';
+
+  @override
+  String get statsCountingNote =>
+      'El total de guardados cuenta los favoritos actuales; el dato semanal cuenta las adiciones. El total de remixes cuenta los créditos actuales; el dato semanal cuenta los primeros créditos aceptados. Las adiciones a carpetas se registran desde el inicio del seguimiento.';
+
+  @override
+  String get statsUnavailable => 'No disponible';
+
+  @override
+  String get statsWeeklyTitle => 'Tus fondos esta semana';
+
+  @override
+  String statsWeeklyBody(String week) {
+    return 'Consulta los resultados de tus fondos en $week.';
+  }
+
+  @override
+  String statsWallValue(String metric, String value) {
+    return '$metric: $value esta semana';
+  }
+
+  @override
+  String statsComparison(String current, String previous) {
+    return '$current esta semana · $previous la anterior';
+  }
+
+  @override
+  String statsTotal(String value) {
+    return 'Total: $value';
+  }
+
+  @override
+  String statsChange(String value) {
+    return '$value frente a la semana anterior';
+  }
+
+  @override
+  String statsUpdated(String date) {
+    return 'Actualizado $date UTC';
+  }
+
+  @override
+  String statsChartWeek(String date, String value) {
+    return 'Semana del $date: $value';
+  }
+
+  @override
+  String statsChartSummary(String metric, String summary) {
+    return '$metric, ocho semanas. $summary';
+  }
+
+  @override
+  String get shortcutsGuideHeadline => 'Un fondo nuevo cada día';
+
+  @override
+  String get shortcutsGuideBody =>
+      'Configura Atajos una vez. Cada día, la automatización pone un fondo de tu carpeta de rotación. Sus 200 fondos más recientes aparecen una vez antes de que se repita alguno.';
+
+  @override
+  String get shortcutsSourceRotation => 'Carpeta de rotación';
+
+  @override
+  String get shortcutsSourceRotationDescription => 'Reproduce en orden aleatorio la carpeta que elegiste arriba.';
+
+  @override
+  String get shortcutsSourceFolder => 'Carpeta';
+
+  @override
+  String get shortcutsSourceFolderDescription => 'Reproduce en orden aleatorio una carpeta que elijas en Atajos.';
+
+  @override
+  String get shortcutsSourceFavouriteDescription =>
+      'Reproduce tus favoritos en orden aleatorio. Cada uno aparece una vez antes de que se repita alguno. Es posible que algunos fondos protegidos no estén disponibles.';
+
+  @override
+  String get shortcutsRotationNone => 'No se eligió ninguna carpeta';
+
+  @override
+  String get shortcutsRotationNoneBody => 'Elige la carpeta que el atajo reproduce en orden aleatorio.';
+
+  @override
+  String get shortcutsRotationPick => 'Elegir una carpeta';
+
+  @override
+  String get shortcutsRotationChange => 'Cambiar';
+
+  @override
+  String get shortcutsRotationStop => 'Detener';
+
+  @override
+  String shortcutsStepLabel(int number, String title) {
+    return 'Paso $number, $title';
+  }
+
+  @override
+  String get shortcutsStepAddTitle => 'Añade el atajo de Prism';
+
+  @override
+  String get shortcutsStepAddBody =>
+      'Obtiene un fondo de tu carpeta de rotación y lo define como tu fondo de pantalla.';
+
+  @override
+  String get shortcutsStepAddAction => 'Añadir el atajo';
+
+  @override
+  String get shortcutsStepAddManualBody => 'Créalo en Atajos con 2 acciones.';
+
+  @override
+  String get shortcutsManualNew => 'En Atajos, toca + para crear un atajo nuevo.';
+
+  @override
+  String get shortcutsManualGet =>
+      'Añade “Obtener fondo de pantalla de Prism”. Define Origen como Carpeta de rotación.';
+
+  @override
+  String get shortcutsManualSet =>
+      'Añade “Establecer foto de fondo de pantalla”. Toca la flecha y desactiva Mostrar vista previa.';
+
+  @override
+  String shortcutsManualName(String name) {
+    return 'Nombra el atajo “$name”.';
+  }
+
+  @override
+  String get shortcutsStepAutomationTitle => 'Ejecútalo todos los días';
+
+  @override
+  String get shortcutsAutomationOpen => 'En Atajos, toca Automatización y luego +.';
+
+  @override
+  String get shortcutsAutomationTime => 'Toca Hora del día. Elige una hora y luego Diariamente.';
+
+  @override
+  String get shortcutsAutomationRun => 'Elige Ejecutar inmediatamente y luego toca Siguiente.';
+
+  @override
+  String shortcutsAutomationPick(String name) {
+    return 'Elige “$name” para ejecutarlo.';
+  }
+
+  @override
+  String shortcutsAutomationNoTab(String name) {
+    return '¿No ves la pestaña Automatización? Abre “$name”, toca Editar y luego Automatización.';
+  }
+
+  @override
+  String get shortcutsStepTestTitle => 'Pruébalo ahora';
+
+  @override
+  String shortcutsStepTestBody(String name) {
+    return 'Ejecuta “$name” una vez para que veas el nuevo fondo ahora.';
+  }
+
+  @override
+  String get shortcutsStepTestAction => 'Ejecutar el atajo';
+
+  @override
+  String get foldersRotateDaily => 'Rotar esta carpeta a diario';
+
+  @override
+  String get autoRotateIosTitle => 'Cambia los fondos con Atajos';
+
+  @override
+  String get autoRotateIosBody =>
+      'En el iPhone, una automatización de Atajos define un nuevo fondo de tu carpeta cada día.';
+
+  @override
+  String get autoRotateIosAction => 'Configurar Atajos';
+
+  @override
+  String get shortcutsAutomationIos16 =>
+      'En iOS 16 no existe “Ejecutar inmediatamente”. Desactiva “Preguntar antes de ejecutar”.';
+
+  @override
+  String get tipAction => 'Dar propina';
+
+  @override
+  String get tipMenuItem => 'Enviar una propina';
+
+  @override
+  String tipTitle(String name) {
+    return 'Propina para $name';
+  }
+
+  @override
+  String tipMessage(String name) {
+    return 'Elige una cantidad. $name recibe todas las monedas y ve tu nombre.';
+  }
+
+  @override
+  String get tipAmountsLabel => 'Cantidad de la propina';
+
+  @override
+  String tipBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance monedas', one: '1 moneda');
+    return 'Tu saldo: $_temp0';
+  }
+
+  @override
+  String tipShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount monedas', one: '1 moneda');
+    return 'Te faltan $_temp0.';
+  }
+
+  @override
+  String tipSendButton(int amount) {
+    return 'Dar propina de $amount monedas';
+  }
+
+  @override
+  String get tipEarnCoins => 'Ganar monedas';
+
+  @override
+  String get tipThanksTitle => 'Gracias por tu propina';
+
+  @override
+  String tipThanksMessage(String name, int amount) {
+    return '$name recibió tus $amount monedas.';
+  }
+
+  @override
+  String get tipDone => 'Listo';
+
+  @override
+  String get tipNotEnoughCoins => 'No tienes suficientes monedas para esta propina.';
+
+  @override
+  String get tipDailyLimit => 'Ya enviaste todas tus propinas de hoy. Vuelve a intentarlo mañana.';
+
+  @override
+  String tipPairLimit(String name) {
+    return 'Ya diste una propina a $name hoy. Vuelve a intentarlo mañana.';
+  }
+
+  @override
+  String tipCreatorLimit(String name) {
+    return '$name no puede recibir más propinas hoy. Vuelve a intentarlo mañana.';
+  }
+
+  @override
+  String get tipSenderTooNew => 'Puedes enviar propinas 7 días después de unirte a Prism.';
+
+  @override
+  String get tipSenderIneligible => 'Inicia sesión con una cuenta verificada para enviar propinas.';
+
+  @override
+  String tipUnavailable(String name) {
+    return 'No puedes dar propina a $name en este momento.';
+  }
+
+  @override
+  String get tipFailed => 'No se pudo enviar la propina. Inténtalo de nuevo.';
+
+  @override
+  String wallTippedBy(int count) {
+    return 'Propinas de $count personas';
+  }
+
+  @override
+  String get coreCoinTipSent => 'Propina enviada';
+
+  @override
+  String get coreCoinTipReceived => 'Propina recibida';
+
+  @override
+  String notifPushTipReceivedTitle(String senderName, String amount, String wallTitle) {
+    return '$senderName te dio $amount monedas de propina por $wallTitle';
+  }
+
+  @override
+  String notifPushTipReceivedTitleUntitled(String senderName, String amount) {
+    return '$senderName te dio $amount monedas de propina';
+  }
+
+  @override
+  String get notifPushTipReceivedBody => 'Mira tus propinas en tus estadísticas de creador.';
+
+  @override
+  String notifTipsReceivedTitle(int count) {
+    return 'Hoy recibiste $count propinas';
+  }
+
+  @override
+  String notifTipsReceivedBody(int coins) {
+    return '$coins monedas en total. Míralas en tus estadísticas de creador.';
+  }
+
+  @override
+  String get statsTips => 'Propinas';
+
+  @override
+  String statsTipsTotal(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count propinas', one: '1 propina');
+    return '$_temp0, $coins monedas en total';
+  }
+
+  @override
+  String statsTipsWeek(String date, int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count propinas', one: '1 propina');
+    return 'Semana del $date: $_temp0, $coins monedas';
+  }
+
+  @override
+  String statsTipsWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count propinas', one: '1 propina');
+    return '$_temp0, $coins monedas';
+  }
+
+  @override
+  String get statsTipsEmpty => 'Aún no hay propinas. Tus fans pueden darte propinas desde tus wallpapers y tu perfil.';
+
+  @override
+  String get creatorsToFollow => 'Creadores para seguir';
+
+  @override
+  String get creatorsSeeAll => 'Ver todo';
+
+  @override
+  String get creatorsTitle => 'Creadores';
+
+  @override
+  String get creatorsFilterAll => 'Todos';
+
+  @override
+  String get creatorsEmptyTitle => 'Aún no hay creadores aquí';
+
+  @override
+  String get creatorsEmptyBody => 'Prueba otra categoría.';
+
+  @override
+  String get creatorsLoadError => 'No se pudieron cargar los creadores';
+
+  @override
+  String creatorsOpenProfile(String name) {
+    return 'Abrir el perfil de $name';
+  }
+
+  @override
+  String creatorsWallBy(String name) {
+    return 'Fondo de pantalla de $name';
+  }
+
+  @override
+  String creatorsFollowedByOne(String first) {
+    return 'Le sigue $first';
+  }
+
+  @override
+  String creatorsFollowedByTwo(String first, String second) {
+    return 'Le siguen $first y $second';
+  }
+
+  @override
+  String creatorsFollowedByMany(String first, String second, int others) {
+    String _temp0 = intl.Intl.pluralLogic(
+      others,
+      locale: localeName,
+      other: '$others personas más que sigues',
+      one: '1 persona más que sigues',
+    );
+    return 'Le siguen $first, $second y $_temp0';
+  }
+
+  @override
+  String creatorsMoreLike(String name) {
+    return 'Más como $name';
+  }
+
+  @override
+  String get creatorsSimilarSubtitle => 'Creadores con un estilo parecido';
+
+  @override
+  String get creatorsShowMeTitle => 'Mostrarme en Creadores para seguir';
+
+  @override
+  String get creatorsShowMeBody => 'Otros pueden encontrar tu perfil y tus mejores fondos de pantalla';
+
+  @override
+  String get promoRedeemTitle => 'Canjear un código';
+
+  @override
+  String get promoRedeemMessage => 'Introduce un código de una publicación o un sorteo de Prism.';
+
+  @override
+  String get promoRedeemMessageIos => 'Introduce un código de monedas de una publicación o un sorteo de Prism.';
+
+  @override
+  String get promoCodeFieldLabel => 'Código';
+
+  @override
+  String get promoCodeFieldHint => 'Por ejemplo, 7KQ2 MPXR 4D';
+
+  @override
+  String get promoPasteCode => 'Pegar código';
+
+  @override
+  String get promoRedeemAction => 'Canjear';
+
+  @override
+  String get promoRedeeming => 'Canjeando código';
+
+  @override
+  String get promoDone => 'Listo';
+
+  @override
+  String get promoTryAnother => 'Probar otro código';
+
+  @override
+  String promoSuccessCoins(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString monedas', one: '1 moneda');
+    return 'Has conseguido $_temp0';
+  }
+
+  @override
+  String get promoSuccessCoinsMessage => 'Ya están en tu saldo.';
+
+  @override
+  String promoSuccessPro(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString días', one: '1 día');
+    return 'Has conseguido $_temp0 de Pro';
+  }
+
+  @override
+  String promoSuccessProMessage(String date) {
+    return 'Tu pase Pro ahora dura hasta $date.';
+  }
+
+  @override
+  String get promoErrorInvalid => 'Eso no es un código de Prism. Los códigos tienen 10 o más letras y números.';
+
+  @override
+  String get promoErrorNotFound => 'No encontramos ese código. Revísalo e inténtalo de nuevo.';
+
+  @override
+  String get promoErrorDisabled => 'Este código está desactivado.';
+
+  @override
+  String get promoErrorExpired => 'Este código ha caducado.';
+
+  @override
+  String get promoErrorLimitReached => 'Este código ya no tiene usos disponibles.';
+
+  @override
+  String get promoErrorAlreadyRedeemed => 'Ya usaste este código.';
+
+  @override
+  String get promoErrorAccountTooNew => 'Tu cuenta es demasiado nueva para este código.';
+
+  @override
+  String get promoErrorNewUsersOnly => 'Este código es solo para cuentas nuevas.';
+
+  @override
+  String get promoErrorPremiumNotOnIos =>
+      'Los códigos Pro no funcionan en iPhone ni en iPad. Usa un código de la App Store.';
+
+  @override
+  String get promoErrorAlreadyPremium => 'Ya tienes Pro, así que este código no es necesario.';
+
+  @override
+  String get promoErrorRateLimited => 'Demasiados intentos. Espera una hora y vuelve a intentarlo.';
+
+  @override
+  String get promoErrorBusy => 'Muchas personas están canjeando códigos ahora mismo. Inténtalo de nuevo en un momento.';
+
+  @override
+  String get promoErrorSignedOut => 'Inicia sesión para canjear un código.';
+
+  @override
+  String get promoErrorNetwork => 'No se puede conectar con Prism. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get promoErrorUnknown => 'Algo salió mal. Inténtalo de nuevo.';
+
+  @override
+  String get promoSettingsGroup => 'Códigos';
+
+  @override
+  String get promoSettingsRedeemTitle => 'Canjear un código de Prism';
+
+  @override
+  String get promoSettingsRedeemSubtitle => 'Monedas o días de Pro de nuestras publicaciones y sorteos';
+
+  @override
+  String get promoSettingsRedeemSubtitleIos => 'Monedas de nuestras publicaciones y sorteos';
+
+  @override
+  String get promoAppStoreCodeTitle => 'Canjear un código de App Store';
+
+  @override
+  String get promoAppStoreCodeSubtitle => 'Códigos de oferta Pro de Apple';
+
+  @override
+  String get promoPlayCodeTitle => 'Canjear un código de Play';
+
+  @override
+  String get promoPlayCodeSubtitle => 'Códigos de oferta Pro de Google Play';
+
+  @override
+  String get promoCodesFootnoteIos => 'Los códigos de Prism dan monedas. Los códigos de App Store dan Pro.';
+
+  @override
+  String get promoCodesFootnoteAndroid =>
+      'Los códigos de Prism dan monedas o días de Pro. Los códigos de Play dan Pro.';
+
+  @override
+  String get promoStoreCodeFailed => 'No se pudo abrir la página del código. Inténtalo de nuevo.';
+
+  @override
+  String get promoRewardsRowTitle => 'Canjear un código';
+
+  @override
+  String get promoRewardsRowSubtitle => '¿Tienes un código de una publicación o un sorteo?';
+
+  @override
+  String get promoAdminTitle => 'Códigos promocionales';
+
+  @override
+  String get promoAdminEntry => 'Códigos promocionales';
+
+  @override
+  String get promoAdminCreate => 'Crear código';
+
+  @override
+  String get promoAdminTypeCoins => 'Monedas';
+
+  @override
+  String get promoAdminTypePro => 'Días de Pro';
+
+  @override
+  String get promoAdminAmount => 'Cantidad';
+
+  @override
+  String get promoAdminAmountHelpCoins => 'De 1 a 1.000 monedas';
+
+  @override
+  String get promoAdminAmountHelpPro => 'De 1 a 90 días. Solo Android.';
+
+  @override
+  String get promoAdminMaxRedemptions => 'Canjes máximos';
+
+  @override
+  String get promoAdminExpiresInDays => 'Caduca en (días)';
+
+  @override
+  String get promoAdminMinAccountAge => 'Antigüedad mínima de la cuenta (días)';
+
+  @override
+  String get promoAdminNewUsersOnly => 'Solo cuentas nuevas';
+
+  @override
+  String get promoAdminNewUsersDays => 'Antigüedad máxima de la cuenta (días)';
+
+  @override
+  String get promoAdminCustomCode => 'Código personalizado (opcional)';
+
+  @override
+  String get promoAdminCustomCodeHelp =>
+      'De 10 a 32 letras y números, sin I, O, 0 ni 1. Déjalo vacío para generar uno.';
+
+  @override
+  String get promoAdminLabel => 'Nota';
+
+  @override
+  String promoAdminCreated(String code) {
+    return 'Se creó $code';
+  }
+
+  @override
+  String get promoAdminCopied => 'Código copiado';
+
+  @override
+  String get promoAdminCopy => 'Copiar código';
+
+  @override
+  String promoAdminRedemptions(int used, int max) {
+    return '$used de $max usados';
+  }
+
+  @override
+  String promoAdminExpires(String date) {
+    return 'Caduca el $date';
+  }
+
+  @override
+  String get promoAdminDisabled => 'Desactivado';
+
+  @override
+  String get promoAdminDisable => 'Desactivar';
+
+  @override
+  String get promoAdminEnable => 'Activar';
+
+  @override
+  String get promoAdminEmpty => 'Aún no hay códigos.';
+
+  @override
+  String get promoAdminLoadFailed => 'No se pudieron cargar los códigos. Desliza hacia abajo para reintentar.';
+
+  @override
+  String promoAdminCreateFailed(String reason) {
+    return 'No se pudo crear el código: $reason';
+  }
+
+  @override
+  String get desktopVersionChip => 'Versión para escritorio';
+
+  @override
+  String get desktopVersionChipSemantic => 'Abrir la versión para escritorio';
+
+  @override
+  String get desktopVersionSheetTitle => 'Versión para escritorio';
+
+  @override
+  String desktopVersionSheetBody(int width, int height) {
+    return 'La misma escena, en formato ancho para la pantalla de un ordenador. $width × $height.';
+  }
+
+  @override
+  String get desktopVersionPreviewSemantic => 'Versión para escritorio en la pantalla de un ordenador';
+
+  @override
+  String get desktopVersionSendToComputer => 'Enviar a mi ordenador';
+
+  @override
+  String desktopVersionShareText(String url) {
+    return 'Consigue este fondo de pantalla para tu ordenador: $url';
+  }
+
+  @override
+  String get desktopVersionShareSubject => 'Fondo de pantalla para escritorio de Prism';
+
+  @override
+  String get desktopVersionSetOnTablet => 'Configurar versión para escritorio';
+
+  @override
+  String get desktopVersionSaveOnTablet => 'Guardar versión para escritorio en Fotos';
+
+  @override
+  String get desktopVersionUnavailable =>
+      'No se pudo obtener la versión para escritorio. Comprueba tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get layoutTitle => 'Diseño';
+
+  @override
+  String get layoutRowSubtitle => 'Pestañas y cuadrícula de fondos de pantalla';
+
+  @override
+  String get layoutTabsHeader => 'Pestañas';
+
+  @override
+  String get layoutTabsFootnote =>
+      'Arrastra para reordenar. Al menos 3 pestañas se quedan en la barra. Las pestañas ocultas están en Más.';
+
+  @override
+  String get layoutTabAlwaysShown => 'Siempre en la barra';
+
+  @override
+  String get layoutTabUnderMore => 'En Más';
+
+  @override
+  String layoutShowTab(String tab) {
+    return 'Mostrar $tab';
+  }
+
+  @override
+  String layoutReorderTab(String tab) {
+    return 'Reordenar $tab';
+  }
+
+  @override
+  String get layoutMoveUp => 'Subir';
+
+  @override
+  String get layoutMoveDown => 'Bajar';
+
+  @override
+  String get layoutGridHeader => 'Cuadrícula de fondos de pantalla';
+
+  @override
+  String get layoutDensityCompact => 'Compacta';
+
+  @override
+  String get layoutDensityComfortable => 'Cómoda';
+
+  @override
+  String get layoutDensityLarge => 'Grande';
+
+  @override
+  String get layoutGridFootnote =>
+      'Se aplica a todas las cuadrículas de fondos de pantalla. Pellizca el feed de Inicio para cambiarla.';
+
+  @override
+  String get layoutReset => 'Restablecer diseño';
+
+  @override
+  String get navMore => 'Más';
+
+  @override
+  String get navMoreEditTabs => 'Editar pestañas';
+
+  @override
+  String wrappedTitle(String year) {
+    return 'Prism Wrapped $year';
+  }
+
+  @override
+  String get wrappedIntroHeadline => 'Tu año en fondos de pantalla';
+
+  @override
+  String get wrappedIntroBody => 'Unas tarjetas sobre los fondos de pantalla que te gustaron este año.';
+
+  @override
+  String get wrappedSavesLabel => 'Guardados';
+
+  @override
+  String wrappedSavesBody(int count, String year) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Guardaste $count fondos de pantalla en $year.',
+      one: 'Guardaste 1 fondo de pantalla en $year.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedColoursLabel => 'Tus colores';
+
+  @override
+  String wrappedColoursBody(String first, String second, String third) {
+    return '$first, $second y $third fueron los que más aparecieron en tus guardados.';
+  }
+
+  @override
+  String get wrappedCreatorLabel => 'Tu creador favorito';
+
+  @override
+  String wrappedCreatorBody(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Guardaste $count fondos de pantalla de $name.',
+      one: 'Guardaste 1 fondo de pantalla de $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedStreakLabel => 'Tu racha más larga';
+
+  @override
+  String wrappedStreakBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Entraste $count días seguidos.',
+      one: 'Entraste 1 día seguido.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count días', one: '1 día');
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedAiLabel => 'Hecho con IA';
+
+  @override
+  String wrappedAiBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Creaste $count fondos de pantalla con IA.',
+      one: 'Creaste 1 fondo de pantalla con IA.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedCategoryLabel => 'Tu categoría principal';
+
+  @override
+  String wrappedCategoryBody(int count, String category) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Guardaste $count fondos de pantalla de $category.',
+      one: 'Guardaste 1 fondo de pantalla de $category.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedFoldersLabel => 'Carpetas';
+
+  @override
+  String wrappedFoldersBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Creaste $count carpetas.',
+      one: 'Creaste 1 carpeta.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedOnScreenLabel => 'En tu pantalla';
+
+  @override
+  String wrappedOnScreenBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Pusiste o descargaste este fondo de pantalla $count veces.',
+      one: 'Pusiste o descargaste este fondo de pantalla 1 vez.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedChallengesLabel => 'Retos semanales';
+
+  @override
+  String wrappedChallengesBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Participaste en $count retos semanales.',
+      one: 'Participaste en 1 reto semanal.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedTipsLabel => 'Propinas';
+
+  @override
+  String wrappedTipsBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Enviaste $count propinas a creadores.',
+      one: 'Enviaste 1 propina a un creador.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedSince(String date) {
+    return 'Desde $date';
+  }
+
+  @override
+  String wrappedSummaryHeadline(String year) {
+    return 'Tu $year en Prism';
+  }
+
+  @override
+  String get wrappedShare => 'Compartir';
+
+  @override
+  String get wrappedShareCard => 'Compartir esta tarjeta';
+
+  @override
+  String get wrappedPause => 'Pausar';
+
+  @override
+  String get wrappedPlay => 'Reproducir';
+
+  @override
+  String get wrappedClose => 'Cerrar';
+
+  @override
+  String get wrappedNextCard => 'Siguiente tarjeta';
+
+  @override
+  String get wrappedPreviousCard => 'Tarjeta anterior';
+
+  @override
+  String wrappedCardPosition(int index, int count) {
+    return 'Tarjeta $index de $count';
+  }
+
+  @override
+  String wrappedHomeTitle(String year) {
+    return 'Tu $year en Prism';
+  }
+
+  @override
+  String get wrappedHomeSubtitle => 'Tu año en fondos de pantalla ya está listo.';
+
+  @override
+  String get wrappedNotEligible => 'Esta cuenta no tiene Wrapped este año.';
+
+  @override
+  String get wrappedLoadFailed => 'No se pudo cargar tu Wrapped. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String notifPushWrappedReadyTitle(String year) {
+    return 'Tu $year en Prism ya está aquí';
+  }
+
+  @override
+  String get notifPushWrappedReadyBody => 'Mira los fondos de pantalla que guardaste, tus colores y tus creadores.';
+
+  @override
+  String get trialTimelineTitle => 'Cómo funciona tu prueba gratuita';
+
+  @override
+  String get trialTimelineClose => 'Cerrar';
+
+  @override
+  String trialTimelinePlanSummary(int days, String price) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString días', one: '1 día');
+    return 'Prism Pro anual. $_temp0 gratis, luego $price al año.';
+  }
+
+  @override
+  String get trialTimelineToday => 'Hoy';
+
+  @override
+  String get trialTimelineTodayBody => 'Tienes acceso completo a Prism Pro. Hoy no pagas nada.';
+
+  @override
+  String trialTimelineDay(int day) {
+    final intl.NumberFormat dayNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String dayString = dayNumberFormat.format(day);
+
+    return 'Día $dayString';
+  }
+
+  @override
+  String get trialTimelineReminderBody => 'Te recordamos que tu prueba termina pronto.';
+
+  @override
+  String get trialTimelineNoReminderBody => 'Sin recordatorio. Lo desactivaste abajo.';
+
+  @override
+  String trialTimelineChargeBody(String price) {
+    return 'Pagas $price, a menos que canceles al menos 24 horas antes.';
+  }
+
+  @override
+  String get trialTimelineRemindToggle => 'Recuérdame 2 días antes de que termine la prueba';
+
+  @override
+  String trialTimelineRenewalTerms(String price, String store) {
+    return 'Después de la prueba, Prism Pro anual se renueva por $price al año hasta que canceles. $store cobra a tu cuenta. Para evitar un cobro, cancela al menos 24 horas antes de que termine la prueba o una renovación.';
+  }
+
+  @override
+  String trialTimelineCancelLink(String store) {
+    return 'Cancela en cualquier momento en la configuración de $store';
+  }
+
+  @override
+  String get trialTimelineSeeAllPlans => 'Ver todos los planes';
+
+  @override
+  String trialTimelineStart(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    return 'Empezar prueba gratuita de $daysString días';
+  }
+
+  @override
+  String get trialTimelineStartFailed => 'No se pudo iniciar la prueba gratuita. Inténtalo de nuevo.';
+
+  @override
+  String trialReminderTitle(String date) {
+    return 'Tu prueba gratuita termina el $date';
+  }
+
+  @override
+  String trialReminderBody(String store) {
+    return 'Después, pagas Prism Pro anual. Para evitar el cobro, cancela en la configuración de $store al menos 24 horas antes.';
+  }
+
+  @override
+  String get notifChannelSubscription => 'Suscripción';
+
+  @override
+  String get notifChannelSubscriptionDescription => 'Un recordatorio antes de que termine tu prueba gratuita';
+
+  @override
+  String premiumTrialEnds(String date) {
+    return 'Prueba, termina el $date';
+  }
+
+  @override
+  String get premiumTrialAutoRenewOff =>
+      'La renovación automática está desactivada. No se te cobrará cuando termine la prueba.';
 }

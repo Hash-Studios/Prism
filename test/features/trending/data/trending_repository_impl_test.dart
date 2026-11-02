@@ -6,6 +6,7 @@ import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/features/trending/data/repositories/trending_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -14,16 +15,18 @@ import '../../../support/fake_firestore_client.dart';
 import '../../../support/fake_user_block_repository.dart';
 import '../../../support/in_memory_local_store.dart';
 
-Map<String, dynamic> _wall(String id, {String creatorUid = 'creator-id', String? category}) => <String, dynamic>{
-  'id': id,
-  'wallpaper_url': 'https://example.com/$id.jpg',
-  'wallpaper_thumb': 'https://example.com/$id-thumb.jpg',
-  'wallpaper_provider': 'Prism',
-  'by': 'Ana',
-  'creatorUid': creatorUid,
-  'review': true,
-  'category': ?category,
-};
+Map<String, dynamic> _wall(String id, {String creatorUid = 'creator-id', String? category, bool ai = false}) =>
+    <String, dynamic>{
+      'id': id,
+      'wallpaper_url': 'https://example.com/$id.jpg',
+      'wallpaper_thumb': 'https://example.com/$id-thumb.jpg',
+      'wallpaper_provider': 'Prism',
+      'by': 'Ana',
+      'creatorUid': creatorUid,
+      'review': true,
+      'category': ?category,
+      'isAiGenerated': ai,
+    };
 
 List<String> _idsOf(FirestoreQuerySpec spec) =>
     (spec.filters.singleWhere((filter) => filter.op == FirestoreFilterOp.whereIn).value! as List).cast<String>();
@@ -178,6 +181,21 @@ void main() {
     expect(result.data!.map((wall) => wall.id), <String>['A', 'E']);
   });
 
+  test('with an unknown block list, drops walls that have a creator and keeps one without', () async {
+    walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'N': _wall('N', creatorUid: '')};
+    setList('trending', <Object?>['A', 'N']);
+    final TrendingRepositoryImpl unloaded = TrendingRepositoryImpl(
+      client,
+      cache,
+      FakeUserBlockRepository.pending()..timeOutInitialLoad(),
+      settings,
+    );
+
+    final result = (await unloaded.fetch()).result;
+
+    expect(result.data!.map((wall) => wall.id), <String>['N']);
+  });
+
   test('upper-cases and de-duplicates the ids, and ignores blank ones', () async {
     walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B')};
     setList('trending', <Object?>['a', 'A', ' ', null, 'b']);
@@ -308,6 +326,17 @@ void main() {
 
     await settings.set('WHcategories', 110);
     expect((await repository.readCached()).map((wall) => wall.id), <String>['A', 'B']);
+  });
+
+  test('hides AI walls online and from cache while the AI setting is off', () async {
+    walls = <String, Map<String, dynamic>>{'A': _wall('A', ai: true), 'B': _wall('B')};
+    setList('trending', <Object?>['A', 'B']);
+
+    expect((await repository.fetch()).result.data!.map((wall) => wall.id), <String>['A', 'B']);
+
+    await AiContentFilter.setShowsAi(settings, false);
+    expect((await repository.readCached()).map((wall) => wall.id), <String>['B']);
+    expect((await repository.fetch()).result.data!.map((wall) => wall.id), <String>['B']);
   });
 
   test('fails when the network fails and nothing is saved', () async {

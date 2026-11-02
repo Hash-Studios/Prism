@@ -3,6 +3,7 @@ import test from "node:test";
 import * as admin from "firebase-admin";
 import * as notificationHelper from "../notificationHelper";
 import {
+  dropOwnsGallery,
   duePushKinds,
   type DropDoc,
   isDropLive,
@@ -587,6 +588,18 @@ test("duePushKinds skips a kind that was sent", () => {
   assert.deepEqual(duePushKinds(sentBoth, sentBoth.endsAt - H), []);
 });
 
+test("drop gallery ownership follows the user's local day across the date line", async (t) => {
+  installFakeDb(t, {
+    [`drops/${KEY}`]: {startsAt: MONDAY},
+    "economyConfig/current": {flags: {dropsEnabled: true}},
+  });
+  resetEconomyCache();
+
+  assert.equal(await dropOwnsGallery("2026-10-18", -720), true);
+  assert.equal(await dropOwnsGallery("2026-10-19", 0), true);
+  assert.equal(await dropOwnsGallery("2026-10-18", 840), false);
+});
+
 test("a late run sends only the last call", () => {
   const d = drop();
   assert.deepEqual(duePushKinds(d, d.endsAt - 2 * H), ["lastCall"]);
@@ -648,7 +661,7 @@ test("sendDropPushes sends the live push once with the full payload", async (t) 
       body: "6 walls, this week only. Preview them before they are gone.",
     },
     data: {route: "drops", week_key: KEY},
-    imageUrl: "https://img/t1.jpg",
+    imageUrl: undefined,
     modifier: "all",
     channelId: "drops",
     fcmTarget: {topic: "drops"},
@@ -657,6 +670,29 @@ test("sendDropPushes sends the live push once with the full payload", async (t) 
     scoreKind: "drop",
   });
   assert.equal((store.get(`drops/${KEY}`)?.pushes as Doc).live, MONDAY);
+});
+
+test("sendDropPushes only uses a same-host preview for the single-image fallback", async (t) => {
+  process.env.R2_PREVIEW_BASE_URL = "https://img.example.com";
+  t.mock.timers.enable({apis: ["Date"], now: MONDAY});
+  const {send, run} = runPushes(t);
+  installFakeDb(t, {
+    [`drops/${KEY}`]: pushDrop({walls: [{
+      id: "W1",
+      title: "Wall 1",
+      thumb: "https://img.example.com/previews/w1.img",
+      resolution: "",
+      by: "",
+      seriesId: "",
+      creatorUid: "",
+    }]}),
+  });
+  resetEconomyCache();
+
+  await run();
+
+  assert.equal((send.mock.calls[0].arguments[0] as {imageUrl?: string}).imageUrl,
+    "https://img.example.com/previews/w1.img");
 });
 
 test("sendDropPushes sends the last call text near the end", async (t) => {

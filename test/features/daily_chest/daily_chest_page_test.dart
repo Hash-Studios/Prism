@@ -244,7 +244,7 @@ void main() {
       await pumpFor(tester, const Duration(milliseconds: 500));
 
       expect(find.text('Not enough coins'), findsOneWidget);
-      expect(find.text('The chest costs 8 coins. You have 4. Watch a video to earn more.'), findsOneWidget);
+      expect(find.textContaining('The chest costs 8 coins. You have 4. Watch a video to earn more.'), findsOneWidget);
       expect(maxCosts, isEmpty);
       await tester.tap(find.text('Not now'));
       await pumpFor(tester, const Duration(milliseconds: 500));

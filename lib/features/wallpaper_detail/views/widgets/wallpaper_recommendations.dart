@@ -53,7 +53,7 @@ class WallpaperRecommendations extends StatelessWidget {
                 gridDelegate: PrismWallGrid.delegate(context, footerHeight: favouriteFooterHeight),
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => const PulseFill(borderRadius: PrismWallGrid.tileRadius),
-                  childCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width) * 2,
+                  childCount: PrismWallGrid.columns(context) * 2,
                 ),
               ),
             ),
@@ -83,10 +83,7 @@ class WallpaperRecommendations extends StatelessWidget {
                       ],
                     ),
                   ),
-                  memCacheHeight: gridTileDecodeHeight(
-                    context,
-                    crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
-                  ),
+                  memCacheHeight: gridTileDecodeHeight(context, crossAxisCount: PrismWallGrid.columns(context)),
                 ),
               );
             }, childCount: state.items.length),

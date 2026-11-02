@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:Prism/core/constants/app_constants.dart';
@@ -14,9 +15,11 @@ import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -54,7 +57,9 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     this._tasteSignals,
     this._impressions, {
     @ignoreParam OfflineWallpaperCatalog? offlineCatalog,
-  }) : _offlineCatalog = offlineCatalog ?? OfflineWallpaperCatalog.instance;
+    @ignoreParam DateTime Function()? now,
+  }) : _offlineCatalog = offlineCatalog ?? OfflineWallpaperCatalog.instance,
+       _now = now ?? DateTime.now;
 
   final FirestoreClient _firestoreClient;
   final FeedCacheLocalDataSource _feedCacheLocal;
@@ -66,6 +71,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   final TasteSignalStore _tasteSignals;
   final FeedImpressionStore _impressions;
   final OfflineWallpaperCatalog _offlineCatalog;
+  final DateTime Function() _now;
   final PersonalizedRankingService _rankingService = const PersonalizedRankingService();
   final Random _random = Random();
 
@@ -139,12 +145,11 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         _impressions.revision != impressionRevision) {
       return;
     }
-    await _impressions.hide(PersonalizedRankingService.canonicalKey(item), now);
+    await _impressions.hide(item.canonicalKey, now);
   }
 
   @override
-  Future<void> undoLessLikeThis(FeedItemEntity item) =>
-      _impressions.unhide(PersonalizedRankingService.canonicalKey(item));
+  Future<void> undoLessLikeThis(FeedItemEntity item) => _impressions.unhide(item.canonicalKey);
 
   @override
   Future<void> recordShown(Iterable<String> keys) =>
@@ -170,17 +175,35 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   Future<PersonalizedFeedPage?> readCached() async {
     final String scope = _cacheScope;
     final int impressionRevision = _impressions.revision;
+    final PersonalizedFeedPage? primed = await _readPrimedPage();
+    if (scope != _cacheScope || impressionRevision != _impressions.revision) return null;
+    if (primed != null) return primed;
     final warm = _warm;
     _warm = null;
     final page = await _readCachedPage(scope, snapshot: warm?.scope == scope ? warm!.snapshot : null);
+    final PersonalizedFeedPage? latestPrime = await _readPrimedPage();
     if (scope != _cacheScope || impressionRevision != _impressions.revision) return null;
+    if (latestPrime != null) return latestPrime;
     return page;
+  }
+
+  /// A finished matching prime. One still loading is skipped, so the cached paint never waits on the network;
+  /// [fetch] still joins it.
+  Future<PersonalizedFeedPage?> _readPrimedPage() async {
+    final primed = _primed;
+    if (primed == null ||
+        !primed.completed ||
+        primed.key != _primeKey() ||
+        _now().difference(primed.at) >= _primedTtl) {
+      return null;
+    }
+    return (await _resolvePageOne(primed)).data;
   }
 
   Future<PersonalizedFeedPage?> _readCachedPage(String scope, {Future<FeedSnapshot?>? snapshot}) async {
     final _CachedFeed? cached = await _readCached(
       scope: scope,
-      blocked: () => _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true),
+      blocked: () => _userBlockRepository.loadBlockedCreators(),
       snapshot: snapshot,
     );
     if (cached == null || cached.items.isEmpty) {
@@ -188,27 +211,200 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       return PersonalizedFeedPage(
         items: starters.take(_cachedPageSize).toList(growable: false),
         hasMore: false,
-        usedKeys: starters.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
+        usedKeys: starters.map((item) => item.canonicalKey).toList(growable: false),
       );
     }
     final List<FeedItemEntity> items = cached.items.take(_cachedPageSize).toList(growable: false);
     return PersonalizedFeedPage(
       items: items,
       hasMore: true,
-      usedKeys: items.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
+      usedKeys: items.map((item) => item.canonicalKey).toList(growable: false),
       isStale: DateTime.now().toUtc().difference(cached.cachedAt) > const Duration(hours: _cacheTtlHours),
     );
   }
 
+  /// How long a [primeFirstPage] result stays usable.
+  static const Duration _primedTtl = Duration(minutes: 15);
+
+  _PrimedPage? _primed;
+  _PrimedPage? _inFlightPageOne;
+  int _feedGeneration = 0;
+
+  String _primeKey() {
+    final List<TasteSignal> signals = _tasteSignals.read();
+    final Map<String, int> recentShows = _impressions.recentShows(_now().toUtc());
+    final List<String> impressionKeys = recentShows.keys.toList()..sort();
+    return <Object?>[
+      _primeContextKey(),
+      _tasteSignals.revision,
+      jsonEncode(signals.map((signal) => signal.toJson()).toList(growable: false)),
+      _impressions.revision,
+      jsonEncode(<String>[for (final String key in impressionKeys) '$key:${recentShows[key]}']),
+    ].join('|');
+  }
+
+  String _primeContextKey() => <Object?>[
+    _cacheScope,
+    _contentFilters(),
+    _settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: ''),
+    _settingsLocal.get<String>(OnboardingV2Keys.selectedInterests, defaultValue: ''),
+    AnimeContentFilter.showsAnime(_settingsLocal),
+    AiContentFilter.showsAi(_settingsLocal),
+  ].join('|');
+
+  @override
+  Future<PersonalizedFeedPage?> primeFirstPage() {
+    final String key = _primeKey();
+    final _PrimedPage? existing = _matchingPageOne(key);
+    if (existing != null) {
+      _primed = existing;
+      return _primeResult(existing);
+    }
+    const FetchPersonalizedFeedRequest request = FetchPersonalizedFeedRequest(
+      page: 1,
+      refresh: true,
+      seenKeys: <String>[],
+      existingItems: <FeedItemEntity>[],
+    );
+    final _PrimedPage entry = _startPageOne(request, key: key, offer: true);
+    return _primeResult(entry);
+  }
+
+  Future<PersonalizedFeedPage?> _primeResult(_PrimedPage entry) async => (await _resolvePageOne(entry)).data;
+
+  Future<Result<PersonalizedFeedPage>> _resolvePageOne(_PrimedPage entry) async {
+    try {
+      final Result<PersonalizedFeedPage> result = await entry.page;
+      if (!result.isSuccess ||
+          entry.generation != _feedGeneration ||
+          entry.key != _primeKey() ||
+          _now().difference(entry.at) >= _primedTtl ||
+          _needsKnownBlocksRebuild(entry)) {
+        return Result.error(const UnknownFailure('Primed feed page is no longer current'));
+      }
+      return Result.success(_excludingBlocked(result.data!));
+    } catch (_) {
+      return Result.error(const UnknownFailure('Primed feed page failed'));
+    }
+  }
+
+  bool _needsKnownBlocksRebuild(_PrimedPage entry) =>
+      entry.builtWithUnknownBlocks && _userBlockRepository.blockedCreators is KnownBlockedCreators;
+
+  _PrimedPage? _matchingPageOne(String key) {
+    final _PrimedPage? primed = _primed;
+    if (primed != null &&
+        primed.key == key &&
+        primed.generation == _feedGeneration &&
+        _now().difference(primed.at) < _primedTtl &&
+        !_needsKnownBlocksRebuild(primed) &&
+        (!primed.completed || !primed.claimed)) {
+      return primed;
+    }
+    final _PrimedPage? inFlight = _inFlightPageOne;
+    return inFlight != null &&
+            inFlight.key == key &&
+            inFlight.generation == _feedGeneration &&
+            _now().difference(inFlight.at) < _primedTtl &&
+            !_needsKnownBlocksRebuild(inFlight)
+        ? inFlight
+        : null;
+  }
+
+  _PrimedPage _startPageOne(FetchPersonalizedFeedRequest request, {required String key, required bool offer}) {
+    final _PrimedPage? existing = _matchingPageOne(key);
+    if (existing != null) {
+      if (offer) _primed = existing;
+      return existing;
+    }
+    final int generation = ++_feedGeneration;
+    final Completer<Result<PersonalizedFeedPage>> completer = Completer<Result<PersonalizedFeedPage>>();
+    final _PrimedPage entry = _PrimedPage(key: key, at: _now(), page: completer.future, generation: generation);
+    entry.claimed = !offer;
+    _inFlightPageOne = entry;
+    if (offer) _primed = entry;
+    unawaited(() async {
+      try {
+        final Result<PersonalizedFeedPage> result = await _fetchFresh(
+          request,
+          expectedPrimeKey: key,
+          onPrimeKeyChanged: (updatedKey) => entry.key = updatedKey,
+          onUnknownBlocks: () => entry.builtWithUnknownBlocks = true,
+          operationGeneration: generation,
+        );
+        entry.completed = true;
+        if (identical(_inFlightPageOne, entry)) _inFlightPageOne = null;
+        completer.complete(result);
+        if (result.isFailure && identical(_primed, entry)) _primed = null;
+      } catch (error, stackTrace) {
+        entry.completed = true;
+        if (identical(_inFlightPageOne, entry)) _inFlightPageOne = null;
+        if (identical(_primed, entry)) _primed = null;
+        completer.completeError(error, stackTrace);
+      }
+    }());
+    return entry;
+  }
+
   @override
   Future<Result<PersonalizedFeedPage>> fetch(FetchPersonalizedFeedRequest request) async {
+    if (request.page == 1 && request.refresh) {
+      final String key = _primeKey();
+      final _PrimedPage? shared = _matchingPageOne(key);
+      if (shared != null) {
+        shared.claimed = true;
+        final Result<PersonalizedFeedPage> resolved = await _resolvePageOne(shared);
+        if (resolved.isSuccess) {
+          // Page 2 reloads the follows and interests, which the starter pack changes after the quiz.
+          _bootstrapScope = null;
+          return resolved;
+        }
+      }
+      final String retryKey = _primeKey();
+      final _PrimedPage? newerPage = _matchingPageOne(retryKey);
+      if (newerPage != null) {
+        newerPage.claimed = true;
+        final Result<PersonalizedFeedPage> resolved = await _resolvePageOne(newerPage);
+        if (resolved.isSuccess) {
+          _bootstrapScope = null;
+          return resolved;
+        }
+      }
+      final _PrimedPage started = _startPageOne(request, key: retryKey, offer: false);
+      final Result<PersonalizedFeedPage> result = await _resolvePageOne(started);
+      if (result.isSuccess ||
+          started.generation != _feedGeneration ||
+          started.key != _primeKey() ||
+          _now().difference(started.at) >= _primedTtl ||
+          !_needsKnownBlocksRebuild(started)) {
+        return result;
+      }
+
+      final String recoveryKey = _primeKey();
+      return _resolvePageOne(_startPageOne(request, key: recoveryKey, offer: false));
+    }
+    return _fetchFresh(request);
+  }
+
+  Future<Result<PersonalizedFeedPage>> _fetchFresh(
+    FetchPersonalizedFeedRequest request, {
+    String? expectedPrimeKey,
+    void Function(String updatedKey)? onPrimeKeyChanged,
+    void Function()? onUnknownBlocks,
+    int? operationGeneration,
+  }) async {
     final String userId = app_state.prismUser.id.trim();
     final int tasteRevision = _tasteSignals.revision;
     final int impressionRevision = _impressions.revision;
+    final int generation = operationGeneration ?? _feedGeneration;
     bool isCurrentSession() =>
         app_state.prismUser.id.trim() == userId &&
         _tasteSignals.revision == tasteRevision &&
         _impressions.revision == impressionRevision;
+    String? primeKey = expectedPrimeKey;
+    final String primeContext = _primeContextKey();
+    bool isCurrentPrime() => primeKey == null || (primeContext == _primeContextKey() && primeKey == _primeKey());
+    bool isCurrentGeneration() => generation == _feedGeneration;
     final bool isGuest = userId.isEmpty;
     final String cacheScope = isGuest ? 'guest' : userId.toLowerCase();
 
@@ -216,7 +412,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       int successfulSources = 0;
       final List<Object> sourceFailures = <Object>[];
       // Overlaps the pools. Awaited before ranking, so blocked creators never slip in.
-      final Future<Set<String>> blockedFuture = _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      final Future<BlockedCreators> blockedFuture = _userBlockRepository.loadBlockedCreators();
       blockedFuture.ignore();
       // Fresh and gems need nothing from the bootstrap, so they start now.
       final Future<List<RankingCandidate>> freshPool = _pool(
@@ -249,17 +445,27 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         final Future<void> seedFuture = isGuest
             ? Future<void>.value()
             : _seedTasteFromFavourites(userId, expectedRevision: tasteRevision);
-        _catalog = await PersonalizedInterestsCatalog.load(
+        final List<PersonalizedInterest> catalog = await PersonalizedInterestsCatalog.load(
           remoteConfig: FirebaseInit.remoteConfigIfInitialized,
           settingsLocal: _settingsLocal,
         );
         final Map<String, dynamic> userDoc = await userDocFuture;
         await seedFuture;
-        if (!isCurrentSession()) {
+        if (primeKey != null && primeContext == _primeContextKey()) {
+          primeKey = _primeKey();
+          onPrimeKeyChanged?.call(primeKey);
+        }
+        if (!isCurrentSession() || !isCurrentPrime() || !isCurrentGeneration()) {
           return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
         }
-        _interests = _resolveInterests(userDoc, _catalog);
-        _following = isGuest ? const <String>[] : await _loadFollowingUids(userId);
+        final List<String> interests = _resolveInterests(userDoc, catalog);
+        final List<String> following = isGuest ? const <String>[] : await _loadFollowingUids(userId);
+        if (!isCurrentSession() || !isCurrentPrime() || !isCurrentGeneration()) {
+          return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
+        }
+        _catalog = catalog;
+        _interests = interests;
+        _following = following;
         _followingLoadedFor = isGuest ? null : cacheScope;
         _bootstrapScope = cacheScope;
       }
@@ -308,21 +514,24 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         ),
       ]);
 
-      if (!isCurrentSession()) {
+      if (!isCurrentSession() || !isCurrentPrime() || !isCurrentGeneration()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
 
-      final Set<String> blocked = await blockedFuture;
-      if (!isCurrentSession()) {
+      final BlockedCreators blocked = await blockedFuture;
+      if (!isCurrentSession() || !isCurrentPrime() || !isCurrentGeneration()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
+      if (blocked is UnknownBlockedCreators) onUnknownBlocks?.call();
       final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
+      final bool showAi = AiContentFilter.showsAi(_settingsLocal);
       final List<RankingCandidate> candidates = pools
           .expand((pool) => pool)
           .where(
             (c) =>
                 !BlockedCreatorsFilter.hidesFeedItem(c.item, blocked) &&
-                !AnimeContentFilter.hidesFeedItem(c.item, showAnime: showAnime),
+                !AnimeContentFilter.hidesFeedItem(c.item, showAnime: showAnime) &&
+                !AiContentFilter.hidesFeedItem(c.item, showAi: showAi),
           )
           .toList(growable: false);
       for (final RankingCandidate candidate in candidates) {
@@ -336,10 +545,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         candidates: candidates,
         profile: profile,
         recentShows: _impressions.recentShows(now),
-        excludedKeys: <String>{
-          ...request.seenKeys,
-          ...request.existingItems.map(PersonalizedRankingService.canonicalKey),
-        },
+        excludedKeys: <String>{...request.seenKeys, ...request.existingItems.map((item) => item.canonicalKey)},
         mix: mix,
         random: _random,
         now: now,
@@ -354,12 +560,15 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           ? request.existingItems
           : request.existingItems.where((item) => !BundledWallpapers.isStarter(item)).toList(growable: false);
       final List<FeedItemEntity> merged = _mergeCachedAndNew(existingItems, ranking.items);
-      if (!isCurrentSession()) {
+      if (!isCurrentSession() || !isCurrentPrime() || !isCurrentGeneration()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
       // Pages 1 and 2 fill the cap, so later pages would only rewrite the same items.
-      if (request.refresh || request.page <= 2) {
+      if (blocked is KnownBlockedCreators && (request.refresh || request.page <= 2)) {
         await _writeCachedItems(scope: cacheScope, cachedItems: merged.take(_cacheCap).toList(growable: false));
+      }
+      if (!isCurrentSession() || !isCurrentPrime() || !isCurrentGeneration()) {
+        return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
       unawaited(_rememberInCatalog(ranking.items));
 
@@ -384,34 +593,48 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       } else {
         logger.e('[PersonalizedFeed] fetch failed', error: error, stackTrace: stackTrace);
       }
-      if (!isCurrentSession()) {
+      if (!isCurrentSession() || !isCurrentPrime() || !isCurrentGeneration()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
       final List<FeedItemEntity> cachedItems = await _readCachedItems(scope: cacheScope);
       final List<FeedItemEntity> fallbackItems = cachedItems.isEmpty ? await BundledWallpapers.load() : cachedItems;
-      if (!isCurrentSession()) {
+      if (!isCurrentSession() || !isCurrentPrime() || !isCurrentGeneration()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
       if (fallbackItems.isNotEmpty) {
         final Set<String> excluded = <String>{
           ...request.seenKeys,
-          ...request.existingItems.map(PersonalizedRankingService.canonicalKey),
+          ...request.existingItems.map((item) => item.canonicalKey),
         };
         final List<FeedItemEntity> unseenCachedItems = fallbackItems
-            .where((item) => !excluded.contains(PersonalizedRankingService.canonicalKey(item)))
+            .where((item) => !excluded.contains(item.canonicalKey))
             .toList(growable: false);
         if (unseenCachedItems.isNotEmpty || fallbackItems.every(BundledWallpapers.isStarter)) {
           return Result.success(
             PersonalizedFeedPage(
               items: unseenCachedItems,
               hasMore: !fallbackItems.every(BundledWallpapers.isStarter),
-              usedKeys: unseenCachedItems.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
+              usedKeys: unseenCachedItems.map((item) => item.canonicalKey).toList(growable: false),
             ),
           );
         }
       }
       return Result.error(ServerFailure('Failed to fetch personalized feed: $error'));
     }
+  }
+
+  PersonalizedFeedPage _excludingBlocked(PersonalizedFeedPage page) {
+    final BlockedCreators blocked = _userBlockRepository.blockedCreators;
+    final List<FeedItemEntity> items = page.items
+        .where((item) => !BlockedCreatorsFilter.hidesFeedItem(item, blocked))
+        .toList(growable: false);
+    if (items.length == page.items.length) return page;
+    return PersonalizedFeedPage(
+      items: items,
+      hasMore: page.hasMore,
+      usedKeys: items.map((item) => item.canonicalKey).toList(growable: false),
+      isStale: page.isStale,
+    );
   }
 
   Future<void> _rememberInCatalog(Iterable<FeedItemEntity> items) async {
@@ -610,17 +833,18 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     }
     final List<String> following = _followingForOwner(owner);
     final String scope = '$owner:${following.join(',')}';
-    if (page == 1 || _followingScope != scope) {
+    final bool resetChunks = page == 1 || _followingScope != scope;
+    if (resetChunks) {
       _followingGeneration++;
-      _followingScope = scope;
-      _followingChunks = following.slices(10).map((emails) => _CreatorChunk(emails)).toList();
     }
     final int generation = _followingGeneration;
     bool isCurrent() =>
         generation == _followingGeneration &&
         _cacheScope == owner &&
         const ListEquality<String>().equals(_followingForOwner(owner), following);
-    final chunks = _followingChunks.map((chunk) => chunk.copy()).toList();
+    final chunks = resetChunks
+        ? following.slices(10).map((emails) => _CreatorChunk(emails)).toList()
+        : _followingChunks.map((chunk) => chunk.copy()).toList();
     try {
       final rows = <_WallRow>[];
       while (rows.length < _followingPageSize) {
@@ -660,14 +884,24 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         });
         rows.add(available.first.buffer.removeAt(0));
       }
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      final BlockedCreators blocked = rows.isEmpty
+          ? KnownBlockedCreators(const <String>{})
+          : await _userBlockRepository.loadBlockedCreators();
       if (!isCurrent()) return Result.error(const UnknownFailure('Following request was invalidated'));
+      // Every Following row has a creator, so an unknown list would hide the page and still advance the cursors.
+      if (blocked is UnknownBlockedCreators) {
+        return Result.error(const ServerFailure('Failed to fetch following feed: blocked accounts did not load'));
+      }
+      _followingScope = scope;
       _followingChunks = chunks;
       return Result.success(
         PersonalizedFeedPage(
-          items: AnimeContentFilter.filterFeedItems(
-            BlockedCreatorsFilter.filterFeedItems(_dedupeByCanonicalKey(rows), blocked),
-            showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
+          items: AiContentFilter.filterFeedItems(
+            AnimeContentFilter.filterFeedItems(
+              BlockedCreatorsFilter.filterFeedItems(_dedupeByCanonicalKey(rows), blocked),
+              showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
+            ),
+            showAi: AiContentFilter.showsAi(_settingsLocal),
           ),
           hasMore: chunks.any((chunk) => chunk.buffer.isNotEmpty || chunk.hasMore),
         ),
@@ -677,6 +911,14 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       return Result.error(ServerFailure('Failed to fetch following feed: $error'));
     }
   }
+
+  @override
+  TasteProfile currentTasteProfile() => TasteProfile.build(
+    interests: _interests,
+    following: _following,
+    signals: _tasteSignals.read(),
+    now: DateTime.now().toUtc(),
+  );
 
   @override
   Future<Result<PersonalizedFeedPage>> fetchPopular() async {
@@ -726,12 +968,18 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       final Map<String, FeedItemEntity> byId = <String, FeedItemEntity>{
         for (final FeedItemEntity item in chunks.expand((chunk) => chunk)) item.id.toUpperCase(): item,
       };
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true);
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
+      final List<FeedItemEntity> items = <FeedItemEntity>[for (final String id in ids) ?byId[id]];
+      final List<FeedItemEntity> visible = BlockedCreatorsFilter.filterFeedItems(items, blocked);
+      // Popular is one page with no block-list listener, so walls hidden now would not come back without a refresh.
+      if (blocked is UnknownBlockedCreators && visible.length != items.length) {
+        return Result.error(const ServerFailure('Failed to fetch popular feed: blocked accounts did not load'));
+      }
       return Result.success(
         PersonalizedFeedPage(
-          items: AnimeContentFilter.filterFeedItems(
-            BlockedCreatorsFilter.filterFeedItems(<FeedItemEntity>[for (final String id in ids) ?byId[id]], blocked),
-            showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
+          items: AiContentFilter.filterFeedItems(
+            AnimeContentFilter.filterFeedItems(visible, showAnime: AnimeContentFilter.showsAnime(_settingsLocal)),
+            showAi: AiContentFilter.showsAi(_settingsLocal),
           ),
           hasMore: false,
         ),
@@ -909,31 +1157,26 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     for (final row in rows) {
       final wall = row.dto.toDomain(docId: row.docId);
       final item = PrismFeedItem(id: wall.id, wallpaper: wall);
-      dedupe[PersonalizedRankingService.canonicalKey(item)] = item;
+      dedupe[item.canonicalKey] = item;
     }
     return dedupe.values.toList(growable: false);
   }
 
   List<FeedItemEntity> _mergeCachedAndNew(List<FeedItemEntity> cachedItems, List<FeedItemEntity> newItems) {
-    final merged = <String, FeedItemEntity>{
-      for (final item in cachedItems) PersonalizedRankingService.canonicalKey(item): item,
-    };
+    final merged = <String, FeedItemEntity>{for (final item in cachedItems) item.canonicalKey: item};
     for (final item in newItems) {
-      merged[PersonalizedRankingService.canonicalKey(item)] = item;
+      merged[item.canonicalKey] = item;
     }
     return merged.values.toList(growable: false);
   }
 
   Future<List<FeedItemEntity>> _readCachedItems({required String scope}) async =>
-      (await _readCached(
-        scope: scope,
-        blocked: () => _userBlockRepository.getBlockedCreatorUids(waitForInitialLoad: true),
-      ))?.items ??
+      (await _readCached(scope: scope, blocked: () => _userBlockRepository.loadBlockedCreators()))?.items ??
       const <FeedItemEntity>[];
 
   Future<_CachedFeed?> _readCached({
     required String scope,
-    required Future<Set<String>> Function() blocked,
+    required Future<BlockedCreators> Function() blocked,
     Future<FeedSnapshot?>? snapshot,
   }) async {
     final saved = await (snapshot ?? _feedCacheLocal.read(source: 'personalized', scope: scope));
@@ -945,26 +1188,25 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     if (rawItems is! List) {
       return null;
     }
-    final Set<String> blockedUids = await blocked();
+    final BlockedCreators blockedUids = await blocked();
     // A cache written under other content filters may hold Wallhaven items the user now excludes. Caches from
     // older builds may also hold anime Prism walls.
     final bool sameFilters = (payload['filters'] ?? '100.100') == _contentFilters();
     final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
+    final bool showAi = AiContentFilter.showsAi(_settingsLocal);
     final List<FeedItemEntity> items = rawItems
         .whereType<Map>()
         .map((entry) => decodeFeedItem(toJsonMap(entry)))
         .whereType<FeedItemEntity>()
         .where((item) => sameFilters || item is! WallhavenFeedItem)
         .where((item) => !AnimeContentFilter.hidesFeedItem(item, showAnime: showAnime))
+        .where((item) => !AiContentFilter.hidesFeedItem(item, showAi: showAi))
         .toList(growable: false);
     final Map<String, int> recentShows = _impressions.recentShows(DateTime.now().toUtc());
     return (
       cachedAt: saved.cachedAtUtc,
       items: BlockedCreatorsFilter.filterFeedItems(items, blockedUids)
-          .where(
-            (item) =>
-                (recentShows[PersonalizedRankingService.canonicalKey(item)] ?? 0) < FeedImpressionStore.hiddenShows,
-          )
+          .where((item) => (recentShows[item.canonicalKey] ?? 0) < FeedImpressionStore.hiddenShows)
           .toList(growable: false),
     );
   }
@@ -996,6 +1238,18 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
 typedef _CachedFeed = ({DateTime cachedAt, List<FeedItemEntity> items});
 
 typedef _WallRow = ({String docId, PrismWallDocDto dto});
+
+class _PrimedPage {
+  _PrimedPage({required this.key, required this.at, required this.page, required this.generation});
+
+  String key;
+  final DateTime at;
+  final Future<Result<PersonalizedFeedPage>> page;
+  final int generation;
+  bool claimed = false;
+  bool completed = false;
+  bool builtWithUnknownBlocks = false;
+}
 
 class _CreatorChunk {
   _CreatorChunk(this.emails);

@@ -97,7 +97,7 @@ class _EditButtonState extends State<EditButton> {
         action: OriginalAccessAction.edit,
         label: l10n.coreEdit,
       );
-      if (url == null) {
+      if (url == null || !mounted || !app_state.prismUser.loggedIn || owner != app_state.prismUser.id) {
         if (mounted) setState(() => isLoading = false);
         return;
       }
@@ -116,7 +116,7 @@ class _EditButtonState extends State<EditButton> {
       setState(() {
         isLoading = false;
       });
-      if (prepared != null && app_state.prismUser.id == owner) {
+      if (prepared != null && app_state.prismUser.loggedIn && app_state.prismUser.id == owner) {
         await context.router.push(WallpaperFilterRoute(filePath: prepared));
       }
       return;
@@ -129,6 +129,7 @@ class _EditButtonState extends State<EditButton> {
         wallpaperSource: widget.wallpaperSource,
       ).timeout(const Duration(seconds: 30));
       final List<int> bytes = await source.readAsBytes();
+      if (!mounted || !app_state.prismUser.loggedIn || owner != app_state.prismUser.id) return;
       if (bytes.isEmpty) {
         toasts.error(l10n.coreCouldNotLoadWallpaperForEditing);
         if (mounted) {
@@ -148,7 +149,9 @@ class _EditButtonState extends State<EditButton> {
       setState(() {
         isLoading = false;
       });
-      if (app_state.prismUser.id == owner) await context.router.push(WallpaperFilterRoute(filePath: file.path));
+      if (app_state.prismUser.loggedIn && app_state.prismUser.id == owner) {
+        await context.router.push(WallpaperFilterRoute(filePath: file.path));
+      }
     } on TimeoutException {
       if (mounted) {
         toasts.error(l10n.coreWallpaperLoadTimedOut);

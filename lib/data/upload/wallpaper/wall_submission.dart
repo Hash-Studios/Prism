@@ -3,9 +3,8 @@ import 'dart:async';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/logger/logger.dart';
-
-enum WallSubmissionResult { submitted, quotaExceeded }
 
 Future<void> _freeSubmissionTail = Future<void>.value();
 
@@ -75,7 +74,7 @@ Future<WallSubmissionResult> submitWallRecord({
 }
 
 /// A retry must never overwrite a wall that already landed: it may have been reviewed since.
-/// Rules refuse reads of a missing wall, so permission-denied means the id is free.
+/// A missing wall reads back empty. permission-denied means the document exists and this caller cannot read it.
 Future<bool> _alreadySubmittedByOwner(FirestoreClient firestoreClient, String docId, Object? email) async {
   try {
     final Map<String, dynamic>? existing = await firestoreClient.getById<Map<String, dynamic>>(

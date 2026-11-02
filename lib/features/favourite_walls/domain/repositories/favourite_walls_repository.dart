@@ -12,4 +12,7 @@ abstract class FavouriteWallsRepository {
   });
 
   Future<Result<bool>> clearAll({required String userId, required List<String> wallIds});
+
+  /// Pins [wall] at [pinnedAt], or unpins it when [pinnedAt] is null.
+  Future<Result<void>> setPinned({required String userId, required FavouriteWallEntity wall, DateTime? pinnedAt});
 }

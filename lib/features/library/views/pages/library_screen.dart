@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/fav_grid.dart';
@@ -33,12 +32,6 @@ enum LibraryTab {
   };
 }
 
-/// The tabs in screen order. History needs a device that can set a wallpaper, so iOS does not get it.
-List<LibraryTab> libraryTabs({required bool canSetWallpaper}) => <LibraryTab>[
-  for (final LibraryTab tab in LibraryTab.values)
-    if (tab != LibraryTab.history || canSetWallpaper) tab,
-];
-
 /// Favourites, Folders, Downloads and History in one place.
 @RoutePage()
 class LibraryScreen extends StatefulWidget {
@@ -51,11 +44,9 @@ class LibraryScreen extends StatefulWidget {
 }
 
 class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProviderStateMixin {
-  late final List<LibraryTab> _tabs = libraryTabs(canSetWallpaper: !hideSetWallpaperUi);
+  final List<LibraryTab> _tabs = LibraryTab.values;
   late final TabController _controller;
-  late final WallpaperHistoryBloc? _history = _tabs.contains(LibraryTab.history)
-      ? (getIt<WallpaperHistoryBloc>()..add(const WallpaperHistoryEvent.started()))
-      : null;
+  late final WallpaperHistoryBloc _history = getIt<WallpaperHistoryBloc>()..add(const WallpaperHistoryEvent.started());
   Object? _tabRequest;
   int _lastIndex = 0;
 
@@ -76,7 +67,7 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
   void _onTabChanged() {
     if (_controller.indexIsChanging || _controller.index == _lastIndex) return;
     _lastIndex = _controller.index;
-    if (_currentTab == LibraryTab.history) _history?.add(const WallpaperHistoryEvent.started());
+    if (_currentTab == LibraryTab.history) _history.add(const WallpaperHistoryEvent.started());
     _trackView();
   }
 
@@ -100,7 +91,7 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
     _controller
       ..removeListener(_onTabChanged)
       ..dispose();
-    unawaited(_history?.close());
+    unawaited(_history.close());
     super.dispose();
   }
 
@@ -152,12 +143,11 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
         children: <Widget>[for (final LibraryTab tab in _tabs) _KeepAlive(child: _body(tab))],
       ),
     );
-    final WallpaperHistoryBloc? history = _history;
-    return history == null ? page : BlocProvider<WallpaperHistoryBloc>.value(value: history, child: page);
+    return BlocProvider<WallpaperHistoryBloc>.value(value: _history, child: page);
   }
 }
 
-/// The one app bar action of the tab on screen: New folder on Folders, Clear on a History with items.
+/// The one app bar action of the tab on screen: New folder on Folders. History has a Clear action in each list.
 class _TabAction extends StatelessWidget {
   const _TabAction({required this.tab});
 
@@ -174,15 +164,6 @@ class _TabAction extends StatelessWidget {
           onPressed: () => unawaited(createFolderFromLibrary(context)),
         );
       case LibraryTab.history:
-        final bool hasItems = context.select((WallpaperHistoryBloc bloc) => bloc.state.items.isNotEmpty);
-        if (!hasItems) break;
-        return PrismButton(
-          key: const ValueKey<String>('library-clear-history'),
-          label: context.l10n.wallpaperClear,
-          variant: PrismButtonVariant.ghost,
-          size: PrismButtonSize.compact,
-          onPressed: () => unawaited(confirmClearHistory(context)),
-        );
       case LibraryTab.favourites:
       case LibraryTab.downloads:
         break;

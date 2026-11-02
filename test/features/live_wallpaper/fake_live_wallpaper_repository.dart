@@ -16,6 +16,8 @@ class FakeLiveWallpaperRepository implements LiveWallpaperRepository {
   final List<bool> batterySaverValues = <bool>[];
   final List<String> videoApplies = <String>[];
   final List<String> motionUrls = <String>[];
+  final List<String?> depthMapUrls = <String?>[];
+  final List<bool> tiltValues = <bool>[];
 
   @override
   Future<LiveCapabilities> getCapabilities() async {
@@ -30,10 +32,14 @@ class FakeLiveWallpaperRepository implements LiveWallpaperRepository {
     required LivePalette palette,
     required double screenAspectRatio,
     required bool batterySaver,
+    String? depthMapUrl,
+    bool tilt = false,
   }) async {
     motionUrls.add(imageUrl);
     motionApplies.add(style);
     batterySaverValues.add(batterySaver);
+    depthMapUrls.add(depthMapUrl);
+    tiltValues.add(tilt);
     return outcome;
   }
 

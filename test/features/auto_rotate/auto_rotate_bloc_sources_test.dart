@@ -54,6 +54,9 @@ class _FakeRepository implements AutoRotateRepository {
   Future<bool> rotateNow() async => rotateNowResult;
 
   @override
+  Future<List<String>> resolveSources(List<String> imageUrls) async => imageUrls;
+
+  @override
   Future<List<String>?> loadAppliedSources() async => applied;
 
   @override
@@ -65,6 +68,9 @@ class _FakeRepository implements AutoRotateRepository {
     if (source == AutoRotateSource.category) return categories[category];
     return remote[source];
   }
+
+  @override
+  Future<({bool found, List<String> urls})?> loadFolderUrls(String folderId, {required String userId}) async => null;
 
   @override
   Future<Set<WallpaperTarget>> supportedTargets() async => targets;

@@ -23,6 +23,7 @@ class FeedWallTile extends StatelessWidget {
     this.onShowLessLikeThis,
     this.onVisible,
     this.feed,
+    this.gridItems,
   });
 
   final FeedItemEntity item;
@@ -31,6 +32,9 @@ class FeedWallTile extends StatelessWidget {
   final int memCacheHeight;
   final VoidCallback? onVisible;
   final List<FeedItemEntity>? feed;
+
+  /// See [WallpaperTile.gridItems].
+  final List<FeedItemEntity>? gridItems;
 
   /// Offers the personalized feed's real dismiss and undo flow.
   final VoidCallback? onShowLessLikeThis;
@@ -45,6 +49,7 @@ class FeedWallTile extends StatelessWidget {
       onShowLessLikeThis: onShowLessLikeThis,
       onVisible: onVisible,
       feed: feed,
+      gridItems: gridItems,
     );
     if (!isPremiumFeedItem(item)) return tile;
     return Stack(

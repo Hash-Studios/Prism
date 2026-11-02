@@ -1,3 +1,4 @@
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_favourites_store.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// On iOS, keeps the favourites list that the Shortcuts intent reads in step with the signed-in user's favourites.
+/// Leaving the app saves it again, so an original downloaded since then can be shuffled.
 class ShortcutsFavouritesListener extends StatefulWidget {
   const ShortcutsFavouritesListener({required this.child, super.key});
 
@@ -17,7 +19,7 @@ class ShortcutsFavouritesListener extends StatefulWidget {
   State<ShortcutsFavouritesListener> createState() => _ShortcutsFavouritesListenerState();
 }
 
-class _ShortcutsFavouritesListenerState extends State<ShortcutsFavouritesListener> {
+class _ShortcutsFavouritesListenerState extends State<ShortcutsFavouritesListener> with WidgetsBindingObserver {
   late bool _wasLoggedIn;
   late String _lastUserId;
 
@@ -30,15 +32,34 @@ class _ShortcutsFavouritesListenerState extends State<ShortcutsFavouritesListene
     final session = sessionState.session;
     _wasLoggedIn = session.loggedIn;
     _lastUserId = session.userId;
+    WidgetsBinding.instance.addObserver(this);
     if (_enabled && _isResolvedGuest(sessionState)) _run(ShortcutsFavouritesStore.clear);
     _sync();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.hidden) _sync();
   }
 
   void _sync() {
     if (!_enabled) return;
     final session = context.read<SessionBloc>().state.session;
     final favourites = context.read<FavouriteWallsBloc>().state;
-    if (!session.loggedIn || session.userId != favourites.userId || favourites.status != LoadStatus.success) return;
+    if (!session.loggedIn ||
+        session.userId.trim().isEmpty ||
+        app_state.prismUser.id.trim() != session.userId.trim() ||
+        !app_state.prismUser.loggedIn ||
+        session.userId != favourites.userId ||
+        favourites.status != LoadStatus.success) {
+      return;
+    }
     _run(() => ShortcutsFavouritesStore.save(favourites.items));
   }
 

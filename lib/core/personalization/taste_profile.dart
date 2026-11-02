@@ -53,6 +53,8 @@ class TasteProfile {
     TasteAction.download: 4,
     TasteAction.set: 6,
     TasteAction.lessLikeThis: -8,
+    // Losing one pair is a hint, not a dislike.
+    TasteAction.passedOver: -0.5,
   };
   static const double interestWeight = 4;
   static const double followWeight = 6;

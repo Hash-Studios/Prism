@@ -11,6 +11,8 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -21,11 +23,17 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
+import 'package:Prism/features/creator_directory/biz/creator_directory_cubit.dart';
+import 'package:Prism/features/creator_directory/domain/creator_directory_repository.dart';
+import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
-import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
+import 'package:Prism/features/moods/biz/mood_walls_cubit.dart';
+import 'package:Prism/features/moods/biz/moods_cubit.dart';
+import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
+import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/following_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
@@ -44,10 +52,17 @@ import 'package:Prism/features/personalized_feed/views/widgets/paged_chip_sliver
 import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
+import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/session/data/app_session_tracker.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/trending/domain/usecases/fetch_trending_usecase.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
+import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
+import 'package:Prism/features/wallpaper_history/views/widgets/pick_up_row.dart';
+import 'package:Prism/features/weekly_challenges/biz/weekly_challenges_cubit.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -61,16 +76,39 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../support/coins_test_backend.dart';
+import '../../../support/empty_weekly_challenges_repository.dart';
 import '../../../support/fake_app_analytics.dart';
+import '../../../support/fake_firestore_client.dart';
 import '../../../support/fake_user_block_repository.dart';
-import '../../../support/in_memory_local_store.dart';
 import '../../../support/favourite_test_scope.dart';
+import '../../../support/in_memory_local_store.dart';
+import '../../creator_directory/creator_directory_test_support.dart';
 
 class _MockFetchUseCase extends Mock implements FetchPersonalizedFeedUseCase {}
 
 class _MockFeedRepository extends Mock implements PersonalizedFeedRepository {}
 
 class _MockPrismRepository extends Mock implements PrismWallpaperRepository {}
+
+class _FakeMoodRepository implements MoodRepository {
+  final StreamController<void> visibility = StreamController<void>.broadcast(sync: true);
+
+  @override
+  Stream<void> watchVisibilityChanges() => visibility.stream;
+
+  List<MoodList> moods = const <MoodList>[];
+  final List<List<String>> fetchedWallIds = <List<String>>[];
+  Completer<List<MoodList>>? pendingMoods;
+
+  @override
+  Future<List<MoodList>> fetchMoods() => pendingMoods?.future ?? Future<List<MoodList>>.value(moods);
+
+  @override
+  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async {
+    fetchedWallIds.add(ids);
+    return const <PrismWallpaper>[];
+  }
+}
 
 class _MockFetchTrending extends Mock implements FetchTrendingUseCase {}
 
@@ -85,17 +123,31 @@ class _MockPagedFeedBloc extends MockBloc<PagedFeedEvent, PagedFeedState> implem
 class _MockNotificationsBloc extends MockBloc<InAppNotificationsEvent, InAppNotificationsState>
     implements InAppNotificationsBloc {}
 
-FeedItemEntity _item(String id, {List<String>? collections}) => FeedItemEntity.prism(
+FeedItemEntity _item(
+  String id, {
+  List<String>? collections,
+  bool isAiGenerated = false,
+  Map<String, Object?>? aiMetadata,
+}) => FeedItemEntity.prism(
   id: id,
   wallpaper: PrismWallpaper(
     core: WallpaperCore(id: id, source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: '', authorEmail: '$id@x.com'),
     collections: collections,
+    isAiGenerated: isAiGenerated,
+    aiMetadata: aiMetadata,
   ),
 );
 
-PrismWallpaper _wall(String id, {DateTime? boostedUntil}) => PrismWallpaper(
+PrismWallpaper _wall(
+  String id, {
+  DateTime? boostedUntil,
+  bool isAiGenerated = false,
+  Map<String, Object?>? aiMetadata,
+}) => PrismWallpaper(
   core: WallpaperCore(id: id, source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: '', authorEmail: '$id@x.com'),
   boostedUntil: boostedUntil,
+  isAiGenerated: isAiGenerated,
+  aiMetadata: aiMetadata,
 );
 
 PersonalizedFeedPage _page(
@@ -144,6 +196,8 @@ void main() {
   late _MockPrismRepository prismRepository;
   late _MockFetchTrending fetchTrending;
   late _MockCacheManager cache;
+  late _FakeMoodRepository moodRepository;
+  late FakeUserBlockRepository blockRepository;
 
   setUpAll(() {
     registerFallbackValue(
@@ -164,6 +218,8 @@ void main() {
     feedRepository = _MockFeedRepository();
     prismRepository = _MockPrismRepository();
     cache = _MockCacheManager();
+    moodRepository = _FakeMoodRepository();
+    blockRepository = FakeUserBlockRepository.pending();
     PrismImageCache.testOverride = cache;
     when(
       () => cache.getFileStream(
@@ -191,20 +247,20 @@ void main() {
     fetchTrending = _MockFetchTrending();
     when(() => fetchTrending(any())).thenAnswer((_) async => TrendingFetch.success(<PrismWallpaper>[]));
     app_state.prismUser = _user(loggedIn: true);
+    getIt.registerFactory<WeeklyChallengesCubit>(() => WeeklyChallengesCubit(const EmptyWeeklyChallengesRepository()));
     getIt
       ..registerFactory<PersonalizedFeedBloc>(
-        () => PersonalizedFeedBloc(
-          fetchUseCase,
-          feedRepository,
-          FakeUserBlockRepository.pending(),
-          _FakeDropsRepository(),
-        ),
+        () => PersonalizedFeedBloc(fetchUseCase, feedRepository, blockRepository, _FakeDropsRepository()),
       )
       ..registerFactory<LatestFeedBloc>(() => LatestFeedBloc(prismRepository))
       ..registerFactory<FollowingFeedBloc>(() => FollowingFeedBloc(feedRepository))
       ..registerFactory<PopularFeedBloc>(() => PopularFeedBloc(feedRepository))
       ..registerFactory<TrendingBloc>(() => TrendingBloc(fetchTrending, FakeUserBlockRepository.pending()))
-      ..registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
+      ..registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()))
+      ..registerSingleton<UserBlockRepository>(blockRepository)
+      ..registerLazySingleton<MoodsCubit>(() => MoodsCubit(moodRepository))
+      ..registerFactory<MoodWallsCubit>(() => MoodWallsCubit(moodRepository));
+    registerCreatorDirectoryFakes();
   });
 
   tearDown(() async {
@@ -220,6 +276,7 @@ void main() {
     bool tickersEnabled = true,
     WallOfTheDayEntity? wotdEntity,
     VoidCallback? onTuneTap,
+    DateTime? sessionStartedAt,
     Size viewSize = const Size(600, 3000),
     Size? mediaSize,
     double statusBar = 0,
@@ -261,7 +318,7 @@ void main() {
                 BlocProvider<FavouriteWallsBloc>.value(value: favourites),
                 BlocProvider<InAppNotificationsBloc>.value(value: notifications),
               ],
-              child: PersonalizedFeedScreen(onTuneTap: onTuneTap),
+              child: PersonalizedFeedScreen(onTuneTap: onTuneTap, sessionStartedAt: sessionStartedAt),
             ),
           ),
         ),
@@ -282,6 +339,88 @@ void main() {
   PersonalizedFeedBloc feedBloc(WidgetTester tester) =>
       tester.element(find.byType(CustomScrollView)).read<PersonalizedFeedBloc>();
 
+  CreatorDirectoryCubit homeCreatorsCubit(WidgetTester tester) => tester
+      .element(find.byType(BlocBuilder<CreatorDirectoryCubit, CreatorDirectoryState>, skipOffstage: false))
+      .read<CreatorDirectoryCubit>();
+
+  PublicProfileBloc homeProfileBloc(WidgetTester tester) => tester
+      .element(find.byType(BlocListener<PublicProfileBloc, PublicProfileState>, skipOffstage: false))
+      .read<PublicProfileBloc>();
+
+  Future<void> expectCreatorsRefreshPreservesSection(WidgetTester tester, {required bool hasMoodChunk}) async {
+    final FakeCreatorDirectoryRepository directory =
+        getIt<CreatorDirectoryRepository>() as FakeCreatorDirectoryRepository;
+    blockRepository.completeInitial(<String>{});
+    directory.pages[(null, null)] = creatorPage(<DirectoryCreator>[directoryCreator('a')]);
+    moodRepository.moods = hasMoodChunk
+        ? <MoodList>[MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i'))]
+        : const <MoodList>[];
+    when(
+      () => fetchUseCase(any()),
+    ).thenAnswer((_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))));
+    await pumpScreen(tester, viewSize: const Size(600, 9000));
+
+    final CreatorDirectoryCubit cubit = homeCreatorsCubit(tester);
+    final PublicProfileBloc profileBloc = homeProfileBloc(tester);
+    expect(directory.fetchCalls, hasLength(1));
+    expect(find.text('Creators to follow', skipOffstage: false), findsOneWidget);
+
+    await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await _settle(tester);
+    await tester.pump();
+
+    expect(directory.fetchCalls, hasLength(2));
+    expect(find.text('Creators to follow', skipOffstage: false), findsOneWidget);
+    expect(
+      <Object?>[identical(homeCreatorsCubit(tester), cubit), identical(homeProfileBloc(tester), profileBloc)],
+      <Object?>[true, true],
+    );
+  }
+
+  testWidgets('the pickup row excludes this session and recomputes after clear and disable', (tester) async {
+    final settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set(AppSessionTracker.sessionCountKey, 1);
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    final viewed = RecentlyViewedStore(settings);
+    getIt.registerSingleton<RecentlyViewedStore>(viewed);
+    getIt.registerSingleton<SyncedHistoryStore>(SyncedHistoryStore(settings, FakeFirestoreClient(), ownerId: () => ''));
+    final sessionStart = DateTime(2026, 10, 29, 10);
+    Future<void> seed() async {
+      for (var i = 0; i < 8; i++) {
+        await viewed.record(
+          HistoryWall.tryCreate(
+            id: 'pickup-$i',
+            source: WallpaperSource.prism,
+            thumbnailUrl: 'https://example.com/pickup-$i-thumb.jpg',
+            action: HistoryAction.view,
+            at: sessionStart.add(Duration(minutes: i < 4 ? -60 - i : i)),
+          )!,
+        );
+      }
+    }
+
+    await seed();
+    await pumpScreen(tester, sessionStartedAt: sessionStart);
+    expect(tester.widget<PickUpRow>(find.byType(PickUpRow)).walls.map((wall) => wall.id), [
+      'pickup-0',
+      'pickup-1',
+      'pickup-2',
+      'pickup-3',
+    ]);
+
+    await viewed.clear();
+    await tester.pump();
+    expect(find.byType(PickUpRow), findsNothing);
+
+    await seed();
+    await tester.pump();
+    expect(find.byType(PickUpRow), findsOneWidget);
+    await viewed.setEnabled(false);
+    await tester.pump();
+    expect(find.byType(PickUpRow), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('shows the five tabs in the header, with For you chosen', (tester) async {
     await pumpScreen(tester);
 
@@ -292,6 +431,280 @@ void main() {
     expect(feedBloc(tester).state.chip, HomeFeedChip.forYou);
     expect(tester.widget<TabBar>(find.byType(TabBar)).controller!.index, 0);
     expect(find.byType(WallpaperTile), findsWidgets);
+  });
+
+  testWidgets('the mood chips show on For you and not on Latest', (tester) async {
+    moodRepository.moods = <MoodList>[
+      MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i')),
+      MoodList(mood: WallMood.minimal, wallIds: List<String>.generate(12, (i) => 'm$i')),
+    ];
+    await pumpScreen(tester);
+
+    expect(find.text('Dreamy'), findsWidgets);
+
+    await tapTab(tester, 'Latest');
+    await _settle(tester);
+
+    expect(find.text('Dreamy'), findsNothing);
+  });
+
+  testWidgets('feed settings changes reload the visible mood row walls', (tester) async {
+    moodRepository.moods = <MoodList>[
+      MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i')),
+    ];
+    when(
+      () => fetchUseCase(any()),
+    ).thenAnswer((_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))));
+    await pumpScreen(tester);
+
+    expect(moodRepository.fetchedWallIds, hasLength(1));
+
+    personalizedFeedSettingsRevision.value++;
+    await _settle(tester);
+
+    expect(moodRepository.fetchedWallIds, hasLength(2));
+  });
+
+  testWidgets('For you filters stale AI flag and metadata from its carousel and grid', (tester) async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    await settings.set('showAiWallpapers', false);
+    when(() => fetchUseCase(any())).thenAnswer(
+      (_) async => Result.success(
+        PersonalizedFeedPage(
+          items: <FeedItemEntity>[
+            _item('for-you-flagged', isAiGenerated: true),
+            _item('for-you-metadata', aiMetadata: const <String, Object?>{'model': 'legacy'}),
+            for (int i = 0; i < 6; i++) _item('for-you-human-$i'),
+          ],
+          hasMore: false,
+        ),
+      ),
+    );
+
+    await pumpScreen(tester);
+
+    final FeedCarousel carousel = tester.widget<FeedCarousel>(find.byType(FeedCarousel));
+    expect(carousel.previewWalls.map((item) => item.id), <String>[
+      'for-you-human-0',
+      'for-you-human-1',
+      'for-you-human-2',
+      'for-you-human-3',
+    ]);
+    expect(find.byKey(const ValueKey<String>('for-you-human-4')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('for-you-flagged')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('for-you-metadata')), findsNothing);
+  });
+
+  testWidgets('hiding AI immediately removes mixed cached content from every loaded tab', (tester) async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    await setShowAiWallpapers(settings, true);
+    PersonalizedFeedPage mixedPage(String prefix) => PersonalizedFeedPage(
+      items: <FeedItemEntity>[
+        _item('$prefix-human'),
+        _item('$prefix-flagged', isAiGenerated: true),
+        _item('$prefix-metadata', aiMetadata: const <String, Object?>{'model': 'legacy'}),
+      ],
+      hasMore: false,
+    );
+
+    when(() => feedRepository.fetchFollowing(page: any(named: 'page'))).thenAnswer((_) async {
+      if (!settings.get<bool>('showAiWallpapers', defaultValue: true)) {
+        return Result.error(const NetworkFailure('offline'));
+      }
+      return Result.success(mixedPage('following'));
+    });
+    when(() => feedRepository.fetchPopular()).thenAnswer((_) async {
+      if (!settings.get<bool>('showAiWallpapers', defaultValue: true)) {
+        return Result.error(const NetworkFailure('offline'));
+      }
+      return Result.success(mixedPage('popular'));
+    });
+    when(() => prismRepository.fetchFeed(refresh: any(named: 'refresh'))).thenAnswer((_) async {
+      if (!settings.get<bool>('showAiWallpapers', defaultValue: true)) {
+        return Result.error(const NetworkFailure('offline'));
+      }
+      return Result.success(<PrismWallpaper>[
+        _wall('latest-human'),
+        _wall('latest-flagged', isAiGenerated: true),
+        _wall('latest-metadata', aiMetadata: const <String, Object?>{'model': 'legacy'}),
+      ]);
+    });
+    when(() => fetchTrending(any())).thenAnswer((_) async {
+      if (!settings.get<bool>('showAiWallpapers', defaultValue: true)) {
+        return TrendingFetch.error(const NetworkFailure('offline'));
+      }
+      return TrendingFetch.success(<PrismWallpaper>[
+        _wall('trending-human'),
+        _wall('trending-flagged', isAiGenerated: true),
+        _wall('trending-metadata', aiMetadata: const <String, Object?>{'model': 'legacy'}),
+      ]);
+    });
+
+    await pumpScreen(tester);
+    for (final String label in <String>['Latest', 'Following', 'Popular', 'Trending']) {
+      await tapTab(tester, label);
+      await _settle(tester);
+      final String prefix = label.toLowerCase();
+      expect(find.byKey(ValueKey<String>('$prefix-human')), findsOneWidget);
+      expect(find.byKey(ValueKey<String>('$prefix-flagged')), findsOneWidget);
+      expect(find.byKey(ValueKey<String>('$prefix-metadata')), findsOneWidget);
+    }
+
+    await setShowAiWallpapers(settings, false);
+    await _settle(tester);
+
+    for (final (String label, String prefix) in <(String, String)>[
+      ('Latest', 'latest'),
+      ('Following', 'following'),
+      ('Popular', 'popular'),
+      ('Trending', 'trending'),
+    ]) {
+      await tapTab(tester, label);
+      await _settle(tester);
+      expect(find.byKey(ValueKey<String>('$prefix-human')), findsOneWidget, reason: '$label keeps human content');
+      expect(find.byKey(ValueKey<String>('$prefix-flagged')), findsNothing, reason: '$label hides the AI flag');
+      expect(find.byKey(ValueKey<String>('$prefix-metadata')), findsNothing, reason: '$label hides AI metadata');
+    }
+  });
+
+  testWidgets('continues past an AI-only page by itself and retries a failed next page', (tester) async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    await settings.set('showAiWallpapers', false);
+    int pageTwoCalls = 0;
+    when(() => feedRepository.fetchFollowing(page: any(named: 'page'))).thenAnswer((invocation) async {
+      final int page = invocation.namedArguments[#page] as int;
+      if (page == 1) {
+        return Result.success(
+          PersonalizedFeedPage(
+            items: <FeedItemEntity>[
+              _item('following-hidden-flag', isAiGenerated: true),
+              _item('following-hidden-metadata', aiMetadata: const <String, Object?>{'model': 'legacy'}),
+            ],
+            hasMore: true,
+          ),
+        );
+      }
+      pageTwoCalls++;
+      if (pageTwoCalls == 1) return Result.error(const NetworkFailure('offline'));
+      return Result.success(PersonalizedFeedPage(items: <FeedItemEntity>[_item('following-human')], hasMore: false));
+    });
+
+    await pumpScreen(tester);
+    await tapTab(tester, 'Following');
+    await _settle(tester);
+
+    expect(find.byKey(const ValueKey<String>('following-hidden-flag')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('following-hidden-metadata')), findsNothing);
+    expect(pageTwoCalls, 1, reason: 'the AI-only first page asks for page 2 by itself');
+    expect(find.text("Couldn't load more. Try again"), findsOneWidget);
+
+    await tester.tap(find.text("Couldn't load more. Try again"));
+    await _settle(tester);
+
+    expect(find.byKey(const ValueKey<String>('following-human')), findsOneWidget);
+    expect(pageTwoCalls, 2);
+  });
+
+  testWidgets('Latest continues past an AI-only page by itself when AI is hidden', (tester) async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    await settings.set('showAiWallpapers', false);
+    int pageCalls = 0;
+    when(() => prismRepository.fetchFeed(refresh: any(named: 'refresh'))).thenAnswer((invocation) async {
+      pageCalls++;
+      final bool isFirstPage = invocation.namedArguments[#refresh] as bool;
+      if (isFirstPage) return Result.success(<PrismWallpaper>[_wall('latest-hidden-ai', isAiGenerated: true)]);
+      return Result.success(<PrismWallpaper>[_wall('latest-human')]);
+    });
+    when(() => prismRepository.hasMore).thenAnswer((_) => pageCalls == 1);
+
+    await pumpScreen(tester);
+    await tapTab(tester, 'Latest');
+    await _settle(tester);
+
+    expect(find.byKey(const ValueKey<String>('latest-hidden-ai')), findsNothing);
+    expect(pageCalls, 2);
+    expect(find.byKey(const ValueKey<String>('latest-human')), findsOneWidget);
+  });
+
+  testWidgets('hidden pages auto-page at most five pages and never after disposal', (tester) async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    await settings.set('showAiWallpapers', false);
+    int pageTwoCalls = 0;
+    when(() => feedRepository.fetchFollowing(page: any(named: 'page'))).thenAnswer((invocation) async {
+      final int page = invocation.namedArguments[#page] as int;
+      if (page == 1) {
+        return Result.success(
+          PersonalizedFeedPage(items: <FeedItemEntity>[_item('following-hidden', isAiGenerated: true)], hasMore: true),
+        );
+      }
+      pageTwoCalls++;
+      return Result.success(PersonalizedFeedPage(items: <FeedItemEntity>[], hasMore: true));
+    });
+
+    await pumpScreen(tester);
+    await tapTab(tester, 'Following');
+    await _settle(tester);
+    for (int i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(pageTwoCalls, 4, reason: 'page 1 plus four more pages is the cap');
+    expect(find.text('Try again'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await _settle(tester);
+
+    expect(pageTwoCalls, 4);
+  });
+
+  testWidgets('blocked creator changes reload the visible mood row walls', (tester) async {
+    moodRepository.moods = <MoodList>[
+      MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i')),
+    ];
+    when(
+      () => fetchUseCase(any()),
+    ).thenAnswer((_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))));
+    await pumpScreen(tester);
+    expect(moodRepository.fetchedWallIds, hasLength(1));
+
+    moodRepository.visibility.add(null);
+    await _settle(tester);
+
+    expect(moodRepository.fetchedWallIds, hasLength(2));
+  });
+
+  testWidgets('reentry waits for the current mood list before building rows from singleton state', (tester) async {
+    final List<MoodList> oldMoods = <MoodList>[
+      const MoodList(mood: WallMood.dreamy, wallIds: <String>['old-wall']),
+    ];
+    final List<MoodList> newMoods = <MoodList>[
+      const MoodList(mood: WallMood.minimal, wallIds: <String>['new-wall']),
+    ];
+    moodRepository.moods = oldMoods;
+    await getIt<MoodsCubit>().load();
+    moodRepository.moods = newMoods;
+    moodRepository.pendingMoods = Completer<List<MoodList>>();
+    when(
+      () => fetchUseCase(any()),
+    ).thenAnswer((_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))));
+
+    await pumpScreen(tester);
+
+    expect(find.text('Dreamy'), findsNothing);
+    expect(moodRepository.fetchedWallIds, isEmpty);
+
+    moodRepository.pendingMoods!.complete(newMoods);
+    await _settle(tester);
+
+    expect(find.text('Minimal'), findsWidgets);
+    expect(moodRepository.fetchedWallIds, <List<String>>[
+      <String>['new-wall'],
+    ]);
   });
 
   testWidgets('tapping Latest selects it and the underline follows', (tester) async {
@@ -459,8 +872,15 @@ void main() {
   testWidgets('pull to refresh on For you reloads the feed and the trending list that feeds the carousel', (
     tester,
   ) async {
+    moodRepository.moods = <MoodList>[
+      MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i')),
+    ];
+    when(
+      () => fetchUseCase(any()),
+    ).thenAnswer((_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))));
     await pumpScreen(tester);
     verify(() => fetchTrending(any())).called(1);
+    expect(moodRepository.fetchedWallIds, hasLength(1));
     clearInteractions(fetchUseCase);
 
     await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
@@ -468,6 +888,46 @@ void main() {
 
     verify(() => fetchUseCase(any())).called(1);
     verify(() => fetchTrending(any())).called(1);
+    expect(moodRepository.fetchedWallIds, hasLength(2));
+  });
+
+  testWidgets('pull to refresh on For you reloads a Creators row that first loaded empty', (tester) async {
+    final FakeCreatorDirectoryRepository directory =
+        getIt<CreatorDirectoryRepository>() as FakeCreatorDirectoryRepository;
+    blockRepository.completeInitial(<String>{});
+    moodRepository.moods = <MoodList>[
+      MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i')),
+    ];
+    when(
+      () => fetchUseCase(any()),
+    ).thenAnswer((_) async => Result.success(_page(List<String>.generate(24, (i) => 'wall-$i', growable: false))));
+    await pumpScreen(tester, viewSize: const Size(600, 9000));
+    await _settle(tester);
+    final CreatorDirectoryCubit cubit = homeCreatorsCubit(tester);
+    final PublicProfileBloc profileBloc = homeProfileBloc(tester);
+    // The row sits below the first screen, in the built area past the viewport.
+    expect(find.byType(CreatorsSection, skipOffstage: false), findsOneWidget);
+    expect(find.text('Creators to follow', skipOffstage: false), findsNothing);
+
+    // The directory gets its first creators after the row loaded empty.
+    directory.pages[(null, null)] = creatorPage(<DirectoryCreator>[directoryCreator('a')]);
+    await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await _settle(tester);
+
+    expect(find.text('Creators to follow', skipOffstage: false), findsOneWidget);
+    expect(cubit.state.status, CreatorDirectoryStatus.loaded);
+    expect(cubit.state.creators, hasLength(1));
+    expect(directory.fetchCalls, hasLength(2));
+    expect(homeCreatorsCubit(tester), same(cubit));
+    expect(homeProfileBloc(tester), same(profileBloc));
+  });
+
+  testWidgets('refresh preserves the Creators section after its second-chunk insertion point', (tester) async {
+    await expectCreatorsRefreshPreservesSection(tester, hasMoodChunk: true);
+  });
+
+  testWidgets('refresh preserves the Creators section after the only chunk', (tester) async {
+    await expectCreatorsRefreshPreservesSection(tester, hasMoodChunk: false);
   });
 
   testWidgets('refresh preserves impression dedupe while pending and failed, then resets on success', (tester) async {
@@ -515,6 +975,56 @@ void main() {
 
     verify(() => feedRepository.fetchPopular()).called(1);
     expect(find.byType(WallpaperTile), findsNWidgets(2));
+  });
+
+  testWidgets('a failed Popular load offers Try again and loads the walls', (tester) async {
+    int calls = 0;
+    when(() => feedRepository.fetchPopular()).thenAnswer(
+      (_) async => ++calls == 1
+          ? Result.error(const ServerFailure('Failed to fetch popular feed: blocked accounts did not load'))
+          : Result.success(_page(<String>['retried-popular'])),
+    );
+    await pumpScreen(tester);
+
+    await tapTab(tester, 'Popular');
+    await _settle(tester);
+
+    expect(find.text("Couldn't load popular wallpapers"), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(PrismButton, 'Try again'));
+    await _settle(tester);
+
+    expect(find.text("Couldn't load popular wallpapers"), findsNothing);
+    expect(find.byType(WallpaperTile), findsOneWidget);
+    verify(() => feedRepository.fetchPopular()).called(2);
+  });
+
+  testWidgets('an empty Popular page can refresh after a failure and load walls', (tester) async {
+    int calls = 0;
+    when(() => feedRepository.fetchPopular()).thenAnswer(
+      (_) async => switch (++calls) {
+        1 => Result.success(_page(<String>[])),
+        2 => Result.error(const ServerFailure('Failed to fetch popular feed: blocked accounts did not load')),
+        _ => Result.success(_page(<String>['refreshed-popular'])),
+      },
+    );
+    await pumpScreen(tester);
+
+    await tapTab(tester, 'Popular');
+    await _settle(tester);
+    expect(find.text('No popular wallpapers yet'), findsOneWidget);
+
+    await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator).first).onRefresh();
+    await _settle(tester);
+
+    expect(find.text("Couldn't load popular wallpapers"), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    await tester.tap(find.widgetWithText(PrismButton, 'Try again'));
+    await _settle(tester);
+
+    expect(find.byType(WallpaperTile), findsOneWidget);
+    verify(() => feedRepository.fetchPopular()).called(3);
   });
 
   testWidgets('a tab is loaded once, however often the user comes back to it', (tester) async {

@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
-import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -44,9 +43,6 @@ Future<bool> setCreatorPostsTopicForUid(
   if (topic == null) return false;
   return _changeTopic(messaging, topic, subscribe: subscribed, sourceTag: sourceTag, isCurrent: isCurrent);
 }
-
-bool get creatorPostsAlertsEnabled =>
-    getIt<SettingsLocalDataSource>().get<bool>(NotificationPrefKeys.posts, defaultValue: true);
 
 /// Subscribes to or leaves the posts topics for creator UIDs. [isCurrent] stops after ownership changes.
 Future<bool> _changeCreatorPostsTopics(
@@ -243,13 +239,13 @@ Future<void> syncPushTopics(
     }
   }
   final String tier = premium ? 'premium' : 'free';
-  final String syncKey = '$token|$userId|$tier|uid_v2';
+  final String syncKey = '$token|$userId|$tier|digest_v1';
   if (settings.get<String>(_pushTopicsSyncedKey, defaultValue: '') == syncKey && migratedCreatorTopics) return;
 
   Future<bool> subscribe(String? topic) =>
       topic == null ? Future<bool>.value(true) : subscribeToTopicSafely(messaging, topic, sourceTag: sourceTag);
   final List<bool> results = await Future.wait(<Future<bool>>[
-    migratedCreatorTopics ? Future<bool>.value(true) : Future<bool>.value(false),
+    if (migratedCreatorTopics) Future<bool>.value(true) else Future<bool>.value(false),
     if (settings.get<bool>(NotificationPrefKeys.recommendations, defaultValue: true)) subscribe('recommendations'),
     if (settings.get<bool>(NotificationPrefKeys.drops, defaultValue: true)) subscribe('drops'),
     if (settings.get<bool>(PersistenceKeys.notifWotd, defaultValue: true))
@@ -262,8 +258,10 @@ Future<void> syncPushTopics(
         _changeTopic(messaging, userTopic, subscribe: false, sourceTag: sourceTag),
       subscribe(followersTopicFromEmail(email)),
     ],
-    if (userId.isNotEmpty && settings.get<bool>(NotificationPrefKeys.posts, defaultValue: true))
-      syncCreatorPostsTopicsForUser(messaging, userId: userId, subscribed: true, sourceTag: sourceTag),
+    // This build gets the follow digest by token, so it leaves the per-upload posts topics that older builds joined
+    // while the Posts switch was on.
+    if (userId.isNotEmpty)
+      syncCreatorPostsTopicsForUser(messaging, userId: userId, subscribed: false, sourceTag: sourceTag),
   ]);
   if (results.every((bool ok) => ok)) await settings.set(_pushTopicsSyncedKey, syncKey);
 }

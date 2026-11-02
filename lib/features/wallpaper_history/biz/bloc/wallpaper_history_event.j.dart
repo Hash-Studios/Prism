@@ -4,6 +4,8 @@ part of 'wallpaper_history_bloc.j.dart';
 abstract class WallpaperHistoryEvent with _$WallpaperHistoryEvent {
   const factory WallpaperHistoryEvent.started() = _Started;
   const factory WallpaperHistoryEvent.cleared() = _Cleared;
+  const factory WallpaperHistoryEvent.viewedCleared() = _ViewedCleared;
+  const factory WallpaperHistoryEvent.viewingTurnedOn() = _ViewingTurnedOn;
   const factory WallpaperHistoryEvent.removed(String id) = _Removed;
   const factory WallpaperHistoryEvent.restored(AppliedWallpaper item) = _Restored;
 }

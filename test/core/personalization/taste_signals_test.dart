@@ -31,6 +31,30 @@ void main() {
     expect(read.first.at, at);
   });
 
+  test('ignores stored signals with an unknown action and keeps valid signals', () async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    final TasteSignalStore compatibleStore = TasteSignalStore(settings);
+    await settings.set(
+      'personalized_taste_signals_v1',
+      json.encode(<Map<String, Object>>[
+        <String, Object>{
+          'a': 'future_action',
+          't': '2026-01-02T03:04:05.000Z',
+          'k': <String>['nature'],
+        },
+        <String, Object>{
+          'a': 'favourite',
+          't': '2026-01-02T03:04:05.000Z',
+          'k': <String>['ocean'],
+        },
+      ]),
+    );
+
+    expect(compatibleStore.read().map((signal) => signal.terms), <List<String>>[
+      <String>['ocean'],
+    ]);
+  });
+
   test('keeps the newest 300 signals', () async {
     final DateTime start = DateTime.utc(2026);
     await store.recordAll(<TasteSignal>[

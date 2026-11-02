@@ -99,17 +99,25 @@ function counterRef(docId: string) {
   return db.doc(`metrics/notificationScoreboard/days/${docId}`);
 }
 
+/** Gallery pushes also count in `gallery_<outcome>`, by the same kind, so their rates compare with the plain push. */
+export const galleryField = (outcome: KindOutcome): string => `gallery_${outcome}`;
+
 /**
  * Counts one FCM attempt. Accepts are API accepts, not impressions.
  * A failure here never fails the push.
  */
-export async function recordPushOutcome(kind: string, outcome: "sends" | "accepts" | "fails", at = new Date()): Promise<void> {
+export async function recordPushOutcome(kind: string, outcome: "sends" | "accepts" | "fails", at = new Date(),
+  gallery = false): Promise<void> {
   if (!isNotificationKind(kind)) return;
   try {
     const ref = counterRef(randomShardDocId(utcDateString(at)));
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(ref);
-      tx.set(ref, {[outcome]: applyScore(snap.data(), outcome, kind)}, {merge: true});
+      const data = snap.data();
+      tx.set(ref, {
+        [outcome]: applyScore(data, outcome, kind),
+        ...(gallery ? {[galleryField(outcome)]: applyScore(data, galleryField(outcome) as KindOutcome, kind)} : {}),
+      }, {merge: true});
     });
   } catch (err) {
     logger.warn("notification scoreboard write failed", {kind, outcome, err});
@@ -117,7 +125,8 @@ export async function recordPushOutcome(kind: string, outcome: "sends" | "accept
 }
 
 export type SignalPlan =
-  | {ok: true; signalId: string; field: KindOutcome | "permissionGranted" | "permissionDeclined"; kind?: NotificationKind}
+  | {ok: true; signalId: string; field: KindOutcome | "permissionGranted" | "permissionDeclined"; kind?: NotificationKind;
+      gallery?: boolean}
   | {ok: false; code: "unauthenticated" | "invalid-argument"; message: string};
 
 /** Decides the dedupe doc and the counter. The callable does the write. */
@@ -138,6 +147,7 @@ export function planNotificationSignal(
       signalId: `${authUid}_${label}_${day}_${kindRaw}`,
       field: type === "tap" ? "taps" : "returnedNextDay",
       kind: kindRaw,
+      ...(type === "tap" && body.gallery === true ? {gallery: true} : {}),
     };
   }
   if (type === "permission") {
@@ -167,7 +177,12 @@ async function claimSignal(plan: Extract<SignalPlan, {ok: true}>, day: string): 
     const snap = await tx.get(ref);
     const data = snap.data();
     const patch = plan.kind ?
-      {[plan.field]: applyScore(data, plan.field as KindOutcome, plan.kind)} :
+      {
+        [plan.field]: applyScore(data, plan.field as KindOutcome, plan.kind),
+        ...(plan.gallery ?
+          {[galleryField("taps")]: applyScore(data, galleryField("taps") as KindOutcome, plan.kind)} :
+          {}),
+      } :
       {[plan.field]: (typeof data?.[plan.field] === "number" ? data[plan.field] as number : 0) + 1};
     tx.set(signal, {at: admin.firestore.FieldValue.serverTimestamp()});
     tx.set(ref, patch, {merge: true});

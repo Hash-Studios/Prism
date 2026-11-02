@@ -11,13 +11,19 @@ import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
+import 'package:Prism/features/daily_flow/domain/daily_moment_repository.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
+import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
 import 'package:Prism/features/library/views/pages/library_screen.dart' show LibraryTab;
+import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
+import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
+import 'package:Prism/features/wrapped/views/pages/wrapped_page.dart';
 import 'package:auto_route/auto_route.dart';
 
 /// Resolves a catalog-validated URL to a real page route. Object arguments are fetched from repositories or replaced
@@ -40,11 +46,12 @@ Future<PageRouteInfo?> routeForPageLink(
   final WallpaperSource? source = sourceWire.isEmpty ? null : WallpaperSourceX.fromWire(sourceWire);
 
   return switch (match.target) {
+    DeepLinkPageTarget.creatorStats => CreatorStatsRoute(source: intent.source),
     // Splash is internal startup UI. A direct root link resumes in the browsable app after the startup gate.
     DeepLinkPageTarget.splash => const DashboardRoute(),
     DeepLinkPageTarget.onboarding => OnboardingV2ShellRoute(),
     DeepLinkPageTarget.dashboard => const DashboardRoute(),
-    DeepLinkPageTarget.home => const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()]),
+    DeepLinkPageTarget.home => _homeRoute(HomeFeedChip.values.asNameMap()[query['feed']]),
     DeepLinkPageTarget.searchTab => const DashboardRoute(
       children: <PageRouteInfo>[
         SearchTabRoute(children: <PageRouteInfo>[SearchRoute()]),
@@ -74,15 +81,22 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.editProfile => const EditProfilePanelRoute(),
     DeepLinkPageTarget.sharePrism => const SharePrismRoute(),
     DeepLinkPageTarget.settings => const SettingsRoute(),
+    DeepLinkPageTarget.layoutSettings => const LayoutSettingsRoute(),
     DeepLinkPageTarget.blockedAccounts => const BlockedAccountsRoute(),
     DeepLinkPageTarget.about => AboutRoute(),
     DeepLinkPageTarget.favourites => const FavouriteWallpaperRoute(),
     DeepLinkPageTarget.downloads => const DownloadRoute(),
     DeepLinkPageTarget.library => LibraryRoute(initialTab: _libraryTab(query['tab'])),
     DeepLinkPageTarget.folder => FolderRoute(folderId: path['folderId']!),
+    DeepLinkPageTarget.mood => MoodRoute(moodId: path['moodId']!),
+    DeepLinkPageTarget.gallery => GalleryRoute(ids: query['ids']!, source: query['source'] ?? 'link'),
+    DeepLinkPageTarget.weeklyChallenge => WeeklyChallengeRoute(challengeId: match.pathParams['challengeId']!),
+    DeepLinkPageTarget.wallRequests => WallRequestsRoute(tab: query['tab'] ?? 'top'),
+    DeepLinkPageTarget.creators => CreatorsRoute(source: 'link'),
+    DeepLinkPageTarget.wrapped => PrismWrappedRoute(source: wrappedSourceFrom(intent.source)),
     DeepLinkPageTarget.uploadInput => _inputRoute(DeepLinkInputWorkflow.uploadWall),
     DeepLinkPageTarget.editWallInput => _inputRoute(DeepLinkInputWorkflow.editWall),
-    DeepLinkPageTarget.review => const ReviewRoute(),
+    DeepLinkPageTarget.review => ReviewRoute(),
     DeepLinkPageTarget.theme => const ThemeViewRoute(),
     DeepLinkPageTarget.notifications => const NotificationRoute(),
     DeepLinkPageTarget.collectionView => CollectionViewRoute(
@@ -94,10 +108,11 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.adminReview => AdminReviewRoute(),
     DeepLinkPageTarget.swipeReview => const SwipeReviewRoute(),
     DeepLinkPageTarget.adminTelemetry => const FirestoreTelemetryRoute(),
+    DeepLinkPageTarget.adminPromoCodes => PromoCodesAdminRoute(),
     DeepLinkPageTarget.debugPanel => DebugPanelRoute(tab: query['tab'] ?? 'logs'),
     DeepLinkPageTarget.quickTileSettings => const QuickTileSettingsRoute(),
-    DeepLinkPageTarget.autoRotate => const AutoRotateRoute(),
-    DeepLinkPageTarget.iosShortcuts => const IosShortcutsGuideRoute(),
+    DeepLinkPageTarget.autoRotate => AutoRotateRoute(),
+    DeepLinkPageTarget.iosShortcuts => IosShortcutsGuideRoute(source: 'deep_link'),
     DeepLinkPageTarget.wallpaperHistory => LibraryRoute(initialTab: LibraryTab.history),
     DeepLinkPageTarget.photoPreview => _previewRoute(
       wallId: query['wallpaperId']!,
@@ -130,13 +145,21 @@ Future<PageRouteInfo?> routeForPageLink(
       wallpaperLookup: wallpaperLookup,
     ),
     DeepLinkPageTarget.rewards => RewardsRoute(),
+    DeepLinkPageTarget.redeemCode => RewardsRoute(redeemCode: query['code'] ?? ''),
     DeepLinkPageTarget.coinHistory => const CoinHistoryRoute(),
     DeepLinkPageTarget.shop => const ShopRoute(),
     DeepLinkPageTarget.drops => const DropsRoute(),
     DeepLinkPageTarget.dropDetail => DropDetailRoute(weekKey: path['weekKey']!),
     DeepLinkPageTarget.dropPreview => DropPreviewRoute(weekKey: path['weekKey']!, wallId: path['wallId']!),
-    DeepLinkPageTarget.dailyChest => DailyChestRoute(),
-    DeepLinkPageTarget.spinWheel => SpinWheelRoute(),
+    DeepLinkPageTarget.dailyMoment => DailyMomentConfig.enabled ? DailyMomentRoute(deepLink: true) : RewardsRoute(),
+    DeepLinkPageTarget.dailyChest =>
+      DailyMomentConfig.enabled
+          ? DailyMomentRoute(requestedStep: DailyMomentStep.chest, deepLink: true)
+          : DailyChestRoute(),
+    DeepLinkPageTarget.spinWheel =>
+      DailyMomentConfig.enabled
+          ? DailyMomentRoute(requestedStep: DailyMomentStep.spin, deepLink: true)
+          : SpinWheelRoute(),
     DeepLinkPageTarget.premium => const PremiumRoute(),
     DeepLinkPageTarget.leaderboard => const LeaderboardRoute(),
     DeepLinkPageTarget.draw => const DrawRoute(),
@@ -235,6 +258,8 @@ Future<PageRouteInfo?> _previewRoute({
       wallpaperId: entity.id,
       wallpaperSource: entity.source,
       thumbnailUrl: display?.thumbnail ?? entity.thumbnailUrl,
+      duoReveal: isDuoWallpaper(entity),
+      allowDuo: isLandscapeWallpaper(entity.wallpaperCore),
     );
   }
   return ReviewPhotoPreviewRoute(url: previewUrl, thumbUrl: display?.thumbnail ?? entity.thumbnailUrl);
@@ -364,4 +389,11 @@ bool _isTrustedImageUrl(String imageUrl, WallpaperSource source) {
     _ => const <String>{},
   };
   return (uri.port == 443 || uri.hasPort == false) && allowedHosts.contains(uri.host.toLowerCase());
+}
+
+/// Home, on the feed tab the link names. Writing the tab to the store makes the link win over the remembered tab,
+/// whether the feed is on screen already or opens after this.
+PageRouteInfo _homeRoute(HomeFeedChip? feed) {
+  if (feed != null && getIt.isRegistered<LayoutPrefsStore>()) unawaited(getIt<LayoutPrefsStore>().setFeedTab(feed));
+  return const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()]);
 }

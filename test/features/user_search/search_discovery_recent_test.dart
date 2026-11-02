@@ -9,11 +9,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import '../creator_directory/creator_directory_test_support.dart';
 
 class _MockSearchDiscoveryBloc extends MockBloc<SearchDiscoveryEvent, SearchDiscoveryState>
     implements SearchDiscoveryBloc {}
 
 void main() {
+  setUp(() => registerCreatorDirectoryFakes());
+
   testWidgets('the Recent searches header keeps its own colour, not the labelLarge colour', (tester) async {
     const state = SearchDiscoveryState(status: LoadStatus.success, trendingWalls: []);
     final bloc = _MockSearchDiscoveryBloc();

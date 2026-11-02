@@ -1,25 +1,36 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/ads/data/ad_experiment_config.dart';
+import 'package:Prism/features/ads/views/widgets/experimental_inline_ad.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
-import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
+import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
+import 'package:Prism/features/layout_prefs/views/widgets/pinch_density.dart';
+import 'package:Prism/features/moods/biz/moods_cubit.dart';
+import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
+import 'package:Prism/features/moods/views/widgets/mood_chip_row.dart';
+import 'package:Prism/features/moods/views/widgets/mood_row.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/following_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/popular_feed_bloc.j.dart';
-import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_loading_more.dart';
@@ -31,6 +42,10 @@ import 'package:Prism/features/personalized_feed/views/widgets/trending_chip_sli
 import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
+import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
+import 'package:Prism/features/wallpaper_history/views/widgets/pick_up_row.dart';
+import 'package:Prism/features/weekly_challenges/views/widgets/weekly_challenge_card.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -38,10 +53,40 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+/// Grid rows after which a mood row sits in the For you grid. The first mood row follows the fourth row, the second the
+/// twelfth.
+const List<int> _moodRowGridRows = <int>[4, 12];
+
+/// Grid rows before the "Pick up where you left off" row.
+const int _pickUpGridRows = 2;
+
+@visibleForTesting
+int? forYouAdIndex(int itemCount, int columns) {
+  if (columns <= 0) return null;
+  final int index = 14 * columns;
+  return itemCount >= index + columns ? index : null;
+}
+
+/// Splits the For you grid into chunks. Each chunk is a range of tiles, and [rowAfter] is the mood row that follows it.
+@visibleForTesting
+List<(int start, int end, MoodList? rowAfter)> forYouChunks(int itemCount, int columns, List<MoodList> rowMoods) {
+  final List<(int start, int end, MoodList? rowAfter)> chunks = <(int start, int end, MoodList? rowAfter)>[];
+  int start = 0;
+  for (int i = 0; i < rowMoods.length && i < _moodRowGridRows.length; i++) {
+    final int split = _moodRowGridRows[i] * columns;
+    if (itemCount < split) break;
+    chunks.add((start, split, rowMoods[i]));
+    start = split;
+  }
+  if (start < itemCount || chunks.isEmpty) chunks.add((start, itemCount, null));
+  return chunks;
+}
+
 class PersonalizedFeedScreen extends StatefulWidget {
-  const PersonalizedFeedScreen({super.key, this.onTuneTap});
+  const PersonalizedFeedScreen({super.key, this.onTuneTap, this.sessionStartedAt});
 
   final VoidCallback? onTuneTap;
+  final DateTime? sessionStartedAt;
 
   /// Height of the status bar strip, the top bar and the tabs together, for things that sit under the header.
   static double headerHeight(BuildContext context) =>
@@ -56,15 +101,26 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   static const int _carouselPreviewCount = PrismFeedLayout.carouselPreviewCount;
 
   late final PersonalizedFeedBloc _bloc;
+  final LayoutPrefsStore? _layout = getIt.isRegistered<LayoutPrefsStore>() ? getIt<LayoutPrefsStore>() : null;
+  late final DateTime _sessionStart = widget.sessionStartedAt ?? DateTime.now();
+  RecentlyViewedStore? _viewedHistory;
+  SyncedHistoryStore? _syncedHistory;
   late final TrendingBloc _trending;
   late final TabController _tabs;
   final ScrollController _scrollController = ScrollController();
   LatestFeedBloc? _latest;
   FollowingFeedBloc? _following;
   PopularFeedBloc? _popular;
+  late final MoodsCubit _moods;
   final Set<String> _knownItemIds = <String>{};
   WallpaperImpressionSession _impressions = WallpaperImpressionSession();
   int _refreshVersion = 0;
+  int _moodRowsRevision = 0;
+  int _moodLoadVersion = 0;
+  bool _moodsReady = false;
+
+  bool get _showAi =>
+      !getIt.isRegistered<SettingsLocalDataSource>() || AiContentFilter.showsAi(getIt<SettingsLocalDataSource>());
 
   @override
   bool get wantKeepAlive => true;
@@ -74,21 +130,55 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     super.initState();
     _bloc = getIt<PersonalizedFeedBloc>();
     _trending = getIt<TrendingBloc>()..add(const TrendingEvent.started());
+    _moods = getIt<MoodsCubit>();
+    unawaited(_loadHomeMoods());
     _tabs = TabController(length: HomeFeedChip.values.length, vsync: this, initialIndex: _bloc.state.chip.index);
     personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
+    if (getIt.isRegistered<RecentlyViewedStore>()) {
+      _viewedHistory = getIt<RecentlyViewedStore>()..addListener(_onHistoryChanged);
+    }
+    if (getIt.isRegistered<SyncedHistoryStore>()) {
+      _syncedHistory = getIt<SyncedHistoryStore>()..addListener(_onHistoryChanged);
+    }
     _bloc.add(const PersonalizedFeedEvent.started());
+  }
+
+  void _onHistoryChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onFeedSettingsChanged() {
     if (mounted) {
-      setState(() => _impressions = WallpaperImpressionSession());
+      _reloadMoodRows(resetImpressions: true);
       _bloc.add(const PersonalizedFeedEvent.settingsChanged());
+      _trending.add(const TrendingEvent.refreshRequested());
+      _latest?.add(const PagedFeedEvent.refreshRequested());
+      _following?.add(const PagedFeedEvent.refreshRequested());
+      _popular?.add(const PagedFeedEvent.refreshRequested());
     }
+  }
+
+  void _reloadMoodRows({bool resetImpressions = false}) {
+    if (!mounted) return;
+    setState(() {
+      if (resetImpressions) _impressions = WallpaperImpressionSession();
+      _moodRowsRevision++;
+    });
+  }
+
+  Future<bool> _loadHomeMoods() async {
+    final int request = ++_moodLoadVersion;
+    await _moods.load();
+    if (!mounted || request != _moodLoadVersion) return false;
+    setState(() => _moodsReady = true);
+    return true;
   }
 
   @override
   void dispose() {
     personalizedFeedSettingsRevision.removeListener(_onFeedSettingsChanged);
+    _viewedHistory?.removeListener(_onHistoryChanged);
+    _syncedHistory?.removeListener(_onHistoryChanged);
     _scrollController.dispose();
     _tabs.dispose();
     unawaited(_bloc.close());
@@ -179,6 +269,12 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     _bloc.add(const PersonalizedFeedEvent.refreshRequested());
     // The trending list holds the boosted walls of the carousel.
     _trending.add(const TrendingEvent.started());
+    final Future<bool> moodsRefreshed = _loadHomeMoods();
+    unawaited(
+      moodsRefreshed.then((loaded) {
+        if (loaded) _reloadMoodRows();
+      }),
+    );
     final PersonalizedFeedState result = await settled.timeout(
       const Duration(seconds: 30),
       onTimeout: () => _bloc.state,
@@ -221,7 +317,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       context,
       added,
       memCacheHeight: tileMemCacheHeight,
-      skip: firstBatch ? visibleTileCount(context, wallpaperGridColumns(MediaQuery.sizeOf(context).width)) : 0,
+      skip: firstBatch ? visibleTileCount(context, PrismWallGrid.columns(context)) : 0,
     );
   }
 
@@ -244,7 +340,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   }
 
   Widget _buildFeed(BuildContext context) {
-    final int crossAxisCount = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
+    final int crossAxisCount = PrismWallGrid.columns(context);
     final int tileMemCacheHeight = gridTileDecodeHeight(context, crossAxisCount: crossAxisCount);
     final ColorScheme cs = Theme.of(context).colorScheme;
     return BlocProvider.value(
@@ -315,38 +411,42 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                       },
                       child: WallpaperImpressionScope(
                         session: _impressions,
-                        child: CustomScrollView(
+                        child: PinchDensity(
+                          store: _layout,
                           controller: _scrollController,
-                          scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
-                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                          slivers: [
-                            SliverAppBar(
-                              primary: false,
-                              floating: true,
-                              snap: true,
-                              automaticallyImplyLeading: false,
-                              centerTitle: false,
-                              toolbarHeight: PrismTopAppBar.height,
-                              titleSpacing: 0,
-                              backgroundColor: cs.surface,
-                              surfaceTintColor: Colors.transparent,
-                              elevation: 0,
-                              scrolledUnderElevation: 0,
-                              title: const PrismTopAppBar(),
-                              bottom: HomeFeedTabBar(
-                                controller: _tabs,
-                                selected: state.chip,
-                                onSelected: (chip) {
-                                  setState(() => _impressions = WallpaperImpressionSession());
-                                  _bloc.add(PersonalizedFeedEvent.chipSelected(chip));
-                                },
-                                onTuneTap: widget.onTuneTap,
-                                isRefreshing: state.isRefreshing,
+                          child: CustomScrollView(
+                            controller: _scrollController,
+                            scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
+                            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                            slivers: [
+                              SliverAppBar(
+                                primary: false,
+                                floating: true,
+                                snap: true,
+                                automaticallyImplyLeading: false,
+                                centerTitle: false,
+                                toolbarHeight: PrismTopAppBar.height,
+                                titleSpacing: 0,
+                                backgroundColor: cs.surface,
+                                surfaceTintColor: Colors.transparent,
+                                elevation: 0,
+                                scrolledUnderElevation: 0,
+                                title: const PrismTopAppBar(),
+                                bottom: HomeFeedTabBar(
+                                  controller: _tabs,
+                                  selected: state.chip,
+                                  onSelected: (chip) {
+                                    setState(() => _impressions = WallpaperImpressionSession());
+                                    _bloc.add(PersonalizedFeedEvent.chipSelected(chip));
+                                  },
+                                  onTuneTap: widget.onTuneTap,
+                                  isRefreshing: state.isRefreshing,
+                                ),
                               ),
-                            ),
-                            ..._contentSlivers(context, state, crossAxisCount, tileMemCacheHeight),
-                            const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
-                          ],
+                              ..._contentSlivers(context, state, crossAxisCount, tileMemCacheHeight),
+                              const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -369,17 +469,27 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     switch (state.chip) {
       case HomeFeedChip.forYou:
         return <Widget>[
-          BlocSelector<TrendingBloc, TrendingState, List<PrismWallpaper>>(
-            bloc: _trending,
-            selector: (trending) => trending.walls,
-            builder: (context, weekWalls) =>
-                _forYouSliver(context, state, weekWalls, crossAxisCount, tileMemCacheHeight),
+          BlocBuilder<MoodsCubit, List<MoodList>>(
+            bloc: _moods,
+            builder: (context, moods) => BlocSelector<TrendingBloc, TrendingState, List<PrismWallpaper>>(
+              bloc: _trending,
+              selector: (trending) => trending.walls,
+              builder: (context, weekWalls) => _forYouSliver(
+                context,
+                state,
+                weekWalls,
+                _moodsReady ? moods : const <MoodList>[],
+                crossAxisCount,
+                tileMemCacheHeight,
+              ),
+            ),
           ),
         ];
       case HomeFeedChip.latest:
         return <Widget>[
           PagedChipSliver(
             bloc: _chipBloc(HomeFeedChip.latest)!,
+            showAi: _showAi,
             failureTitle: context.l10n.wallpaperFeedLatestLoadError,
             emptyTitle: context.l10n.accountNoWallpapersYet,
             emptyBody: context.l10n.wallpaperFeedPullToRefresh,
@@ -394,6 +504,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         return <Widget>[
           PagedChipSliver(
             bloc: _chipBloc(HomeFeedChip.following)!,
+            showAi: _showAi,
             failureTitle: context.l10n.wallpaperFeedFollowingLoadError,
             emptyTitle: context.l10n.wallpaperFeedFollowingEmptyTitle,
             emptyActionLabel: context.l10n.accountFindCreators,
@@ -404,12 +515,18 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         ];
       case HomeFeedChip.trending:
         return <Widget>[
-          TrendingChipSliver(bloc: _trending, crossAxisCount: crossAxisCount, tileMemCacheHeight: tileMemCacheHeight),
+          TrendingChipSliver(
+            bloc: _trending,
+            crossAxisCount: crossAxisCount,
+            tileMemCacheHeight: tileMemCacheHeight,
+            showAi: _showAi,
+          ),
         ];
       case HomeFeedChip.popular:
         return <Widget>[
           PagedChipSliver(
             bloc: _chipBloc(HomeFeedChip.popular)!,
+            showAi: _showAi,
             failureTitle: context.l10n.wallpaperFeedPopularLoadError,
             emptyTitle: context.l10n.wallpaperFeedPopularEmptyTitle,
             emptyBody: context.l10n.wallpaperFeedPullToRefresh,
@@ -426,19 +543,24 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     BuildContext context,
     PersonalizedFeedState state,
     List<PrismWallpaper> weekWalls,
+    List<MoodList> moods,
     int crossAxisCount,
     int tileMemCacheHeight,
   ) {
+    final List<FeedItemEntity> filteredItems = AiContentFilter.filterFeedItems(state.items, showAi: _showAi);
+    final PersonalizedFeedState visibleState = state.copyWith(items: filteredItems);
     final DateTime now = DateTime.now();
-    final List<PrismWallpaper> boostedWalls = weekWalls.where((wall) => wall.isBoostedAt(now)).toList(growable: false);
+    final List<PrismWallpaper> boostedWalls = weekWalls
+        .where((wall) => wall.isBoostedAt(now) && (_showAi || !AiContentFilter.isAi(wall)))
+        .toList(growable: false);
     final Set<String> boostedIds = <String>{for (final PrismWallpaper wall in boostedWalls) wall.id};
-    final List<PrismFeedItem> previewWalls = state.items
+    final List<PrismFeedItem> previewWalls = visibleState.items
         .whereType<PrismFeedItem>()
         .where((item) => !boostedIds.contains(item.id))
         .take(_carouselPreviewCount)
         .toList(growable: false);
     final Set<String> shownInCarousel = <String>{...boostedIds, for (final PrismFeedItem item in previewWalls) item.id};
-    final List<FeedItemEntity> visibleItems = state.items
+    final List<FeedItemEntity> visibleItems = visibleState.items
         .where((item) => item is! PrismFeedItem || !shownInCarousel.contains(item.id))
         .toList(growable: false);
     final bool loadingFirstPage =
@@ -455,13 +577,14 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                     boostedWalls: boostedWalls,
                     liveDrop: state.liveDrop,
                     previewWalls: previewWalls,
-                    onWallShown: (wall) => _bloc.add(
-                      PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(wall)]),
-                    ),
+                    onWallShown: (wall) => _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[wall.canonicalKey])),
                   ),
           ),
         ),
-        ..._forYouGridSlivers(context, state, visibleItems, crossAxisCount, tileMemCacheHeight),
+        if (!loadingFirstPage)
+          SliverToBoxAdapter(child: WeeklyChallengeCard(key: ValueKey('challenge-$_moodRowsRevision'))),
+        if (!loadingFirstPage) SliverToBoxAdapter(child: MoodChipRow(moods: moods)),
+        ..._forYouGridSlivers(context, visibleState, visibleItems, moods, crossAxisCount, tileMemCacheHeight),
       ],
     );
   }
@@ -470,6 +593,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     BuildContext context,
     PersonalizedFeedState state,
     List<FeedItemEntity> visibleItems,
+    List<MoodList> moods,
     int crossAxisCount,
     int tileMemCacheHeight,
   ) {
@@ -491,8 +615,15 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         ];
       }
     }
-    return <Widget>[
-      SliverPadding(
+    final List<MoodList> rowMoods = rowMoodsFor(moods, DateTime.now());
+    final List<(int start, int end, MoodList? rowAfter)> chunks = forYouChunks(
+      visibleItems.length,
+      crossAxisCount,
+      rowMoods,
+    );
+    Widget grid(int start, int end) {
+      final gridItems = start == 0 && end == visibleItems.length ? null : visibleItems.sublist(start, end);
+      return SliverPadding(
         padding: PrismFeedLayout.gridPadding,
         sliver: SliverGrid(
           gridDelegate: PrismWallGrid.delegate(
@@ -502,23 +633,69 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
             spacing: PrismFeedLayout.gridSpacing,
           ),
           delegate: SliverChildBuilderDelegate((context, index) {
-            final FeedItemEntity item = visibleItems[index];
+            final FeedItemEntity item = visibleItems[start + index];
             return KeyedSubtree(
               key: ValueKey<String>(item.id),
               child: FeedWallTile(
                 item: item,
-                index: index,
+                index: start + index,
                 crossAxisCount: crossAxisCount,
                 memCacheHeight: tileMemCacheHeight,
                 onShowLessLikeThis: () => _lessLikeThis(item),
-                onVisible: () =>
-                    _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(item)])),
+                onVisible: () => _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[item.canonicalKey])),
                 feed: visibleItems,
+                gridItems: gridItems,
               ),
             );
-          }, childCount: visibleItems.length),
+          }, childCount: end - start),
         ),
-      ),
+      );
+    }
+
+    // The pick-up row sits after the second grid row, so the feed still starts on the first screen.
+    final List<HistoryWall> pickUp = pickUpWallsForSession(now: _sessionStart);
+    final int? pickUpAt = pickUp.isEmpty || visibleItems.isEmpty
+        ? null
+        : math.min(_pickUpGridRows * crossAxisCount, chunks.first.$2);
+    // Leave two wallpaper rows after the second mood row and content after the ad.
+    final int? adAt = forYouAdIndex(visibleItems.length, crossAxisCount);
+    List<Widget> gridWithAd(int start, int end) => <Widget>[
+      if (adAt != null && start < adAt && adAt < end) ...<Widget>[
+        grid(start, adAt),
+        const DeferredAdSliver(child: ExperimentalInlineAd(format: AdExperimentFormat.native, active: true)),
+        grid(adAt, end),
+      ] else
+        grid(start, end),
+    ];
+    // The creators row sits four wallpaper rows into the second chunk. With one chunk it goes after the whole chunk.
+    final int? creatorsAt = chunks.length > 1 ? math.min(chunks[1].$1 + 4 * crossAxisCount, chunks[1].$2) : null;
+    return <Widget>[
+      for (int i = 0; i < chunks.length; i++) ...<Widget>[
+        if (i == 0 && pickUpAt != null) ...<Widget>[
+          ...gridWithAd(chunks[i].$1, pickUpAt),
+          SliverToBoxAdapter(child: PickUpRow(walls: pickUp)),
+          if (pickUpAt < chunks[i].$2) ...gridWithAd(pickUpAt, chunks[i].$2),
+        ] else if (i == 1 && creatorsAt != null) ...<Widget>[
+          ...gridWithAd(chunks[i].$1, creatorsAt),
+          SliverToBoxAdapter(
+            child: CreatorsSection(source: 'home', refreshRevision: _moodRowsRevision),
+          ),
+          if (creatorsAt < chunks[i].$2) ...gridWithAd(creatorsAt, chunks[i].$2),
+        ] else
+          ...gridWithAd(chunks[i].$1, chunks[i].$2),
+        if (chunks[i].$3 case final MoodList rowAfter)
+          SliverToBoxAdapter(
+            child: MoodRow(
+              key: ValueKey<String>('mood-row-${rowAfter.mood.id}-$_moodRowsRevision'),
+              list: rowAfter,
+              slot: i,
+            ),
+          ),
+        if (i == 0 && chunks.length == 1)
+          SliverToBoxAdapter(
+            child: CreatorsSection(source: 'home', refreshRevision: _moodRowsRevision),
+          ),
+      ],
       SliverToBoxAdapter(child: _bottomState(context, state, crossAxisCount)),
     ];
   }

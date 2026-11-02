@@ -31,7 +31,7 @@ void main() {
     await pumpAt600(tester, const LoadingCards());
 
     final delegate = grid(tester).gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
-    expect(delegate.crossAxisCount, wallpaperGridColumns(600));
+    expect(delegate.crossAxisCount, 3);
     expect(delegate.childAspectRatio, PrismFeedLayout.gridTileAspectRatio);
     expect(delegate.mainAxisSpacing, PrismWallGrid.spacing);
     expect(delegate.crossAxisSpacing, PrismWallGrid.spacing);
@@ -44,7 +44,7 @@ void main() {
     await pumpAt600(tester, const LoadingCards(useFeedLayout: true));
 
     final delegate = grid(tester).gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
-    expect(delegate.crossAxisCount, wallpaperGridColumns(600));
+    expect(delegate.crossAxisCount, 3);
     expect(delegate.childAspectRatio, PrismFeedLayout.gridTileAspectRatio);
     expect(delegate.mainAxisSpacing, 4);
     expect(delegate.crossAxisSpacing, 4);

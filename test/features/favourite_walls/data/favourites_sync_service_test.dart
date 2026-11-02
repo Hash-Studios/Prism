@@ -11,15 +11,18 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/favourite_walls/data/favourite_wall_doc_mapper.dart';
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_merger.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
+import 'package:Prism/features/favourite_walls/data/repositories/favourite_walls_repository_impl.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/in_memory_local_store.dart';
 import '../support/canonical_fixture.dart';
+import '../support/fav_fixtures.dart';
 import '../support/guest_store_fixture.dart';
 import '../support/merge_firestore.dart';
 
@@ -46,6 +49,7 @@ PrismWallpaper _canonical({List<String> collections = const <String>['premium']}
 
 class _WatchFirestore extends MergeFirestore {
   Object? writeError;
+  Object? updateError;
   Future<void> Function()? beforeWrite;
 
   @override
@@ -59,6 +63,12 @@ class _WatchFirestore extends MergeFirestore {
     await beforeWrite?.call();
     if (writeError != null) throw writeError!;
     await super.setDoc(collection, docId, data, merge: merge, sourceTag: sourceTag);
+  }
+
+  @override
+  Future<void> updateDoc(String collection, String id, Map<String, dynamic> data, {required String sourceTag}) async {
+    if (updateError != null) throw updateError!;
+    await super.updateDoc(collection, id, data, sourceTag: sourceTag);
   }
 
   final List<FirestoreQuerySpec> watched = <FirestoreQuerySpec>[];
@@ -589,8 +599,65 @@ void main() {
 
     expect(firestore.writes.single.data!['createdAt'], DateTime.utc(2026, 1, 2, 3, 4, 5));
     expect(firestore.writes.single.data!['favouritedAt'], DateTime.utc(2026, 2, 3, 4, 5, 6));
+    expect(firestore.writes.single.data!.containsKey('pinnedAt'), isFalse);
     expect((await local.readFavouriteOperation('u', 'replayed'))!['status'], 'synced');
     expect(operation['status'], 'pending');
+  });
+
+  for (final DateTime? nextPin in <DateTime?>[DateTime.utc(2026, 5, 6), null]) {
+    final String action = nextPin == null ? 'unpin' : 'pin';
+    test('a pending favourite retry preserves a later $action', () async {
+      final DateTime oldPin = DateTime.utc(2026, 1, 2);
+      final FavouriteWallEntity savedWall = prismFav('replayed').withPinnedAt(nextPin == null ? oldPin : null);
+      await local.updateWallSnapshot('u', (_) => <FavouriteWallEntity>[savedWall]);
+      await local.createFavouriteOperation(
+        'u',
+        savedWall.id,
+        desired: true,
+        wall: Map<String, Object?>.from(favouriteWallToDoc(savedWall)),
+      );
+      final FavouriteWallsRepositoryImpl repository = FavouriteWallsRepositoryImpl(firestore, local, guests, canonical);
+      firestore.updateError = TimeoutException('offline');
+
+      await repository.setPinned(userId: 'u', wall: savedWall, pinnedAt: nextPin);
+      firestore.updateError = null;
+      await service.start('u');
+      await local.waitForStatus(savedWall.id, 'synced');
+
+      final Map<String, dynamic> replayed = firestore.writes.singleWhere((write) => write.op == 'set').data!;
+      if (nextPin == null) {
+        expect(replayed.containsKey('pinnedAt'), isFalse);
+      } else {
+        expect(replayed['pinnedAt'], nextPin);
+      }
+    });
+  }
+
+  test('a pending pin wins over a stale server snapshot', () async {
+    final DateTime oldPin = DateTime.utc(2026, 1, 2);
+    final DateTime newPin = DateTime.utc(2026, 5, 6);
+    final FavouriteWallEntity wall = prismFav('replayed').withPinnedAt(oldPin);
+    await local.updateWallSnapshot('u', (_) => <FavouriteWallEntity>[wall]);
+    await local.createFavouriteOperation(
+      'u',
+      wall.id,
+      desired: true,
+      wall: Map<String, Object?>.from(favouriteWallToDoc(wall)),
+    );
+    final FavouriteWallsRepositoryImpl repository = FavouriteWallsRepositoryImpl(firestore, local, guests, canonical);
+    firestore.updateError = TimeoutException('offline');
+    await repository.setPinned(userId: 'u', wall: wall, pinnedAt: newPin);
+    firestore.updateError = null;
+    firestore.writeError = TimeoutException('offline');
+
+    await service.start('u');
+    await local.waitForStatus(wall.id, 'pending');
+    firestore.emit(<String, Map<String, dynamic>>{
+      wall.id: <String, dynamic>{'id': wall.id, 'provider': 'prism', 'pinnedAt': oldPin},
+    });
+    await waitForUpdateCount(1);
+
+    expect(updates.single.items.single.pinnedAt, newPin);
   });
 
   test('a previously queued bundled starter is never replayed to Firestore', () async {

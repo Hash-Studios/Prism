@@ -33,9 +33,16 @@ Android and iOS. The home feed has no premium or coin gate. The Following tab as
 | `lib/features/personalized_feed/data/feed_impression_store.dart` | Shown counts and hidden walls. |
 | `lib/features/trending/biz/bloc/trending_bloc.j.dart` | Trending list. The Trending tab and the carousel share it. See [trending.md](trending.md). |
 | `lib/features/trending/views/widgets/boosted_tag.dart` | `BoostedTag`: the "Boosted" pill. Used on the Trending tiles and on the boosted carousel pages. |
+| `lib/features/moods/domain/entities/wall_mood.dart` | `WallMood`: the Home moods, their ids and the iOS version each one needs. |
+| `lib/features/moods/biz/moods_cubit.dart` | The moods for this device. `rowMoodsFor` picks the two moods for the grid rows. |
+| `lib/features/moods/biz/mood_walls_cubit.dart` | The walls of one mood, in the order of the user's taste. |
+| `lib/features/moods/data/mood_repository_impl.dart` | Reads `moods/current`, loads the walls by id and ranks them. |
+| `lib/features/moods/views/` | The chip row, the mood row in the grid and the mood page (`/mood/:moodId`). |
+| `functions/src/wallMoods.ts` | The mood rules (one table) and the job step that writes `moods/current`. |
 | `lib/features/navigation/views/widgets/bottom_nav_bar.dart` | Hosts the floating pill and the create button above the tab pages. |
-| `lib/features/navigation/views/widgets/prism_bottom_nav.dart` | The pill with the four tab buttons. |
+| `lib/features/navigation/views/widgets/prism_bottom_nav.dart` | The pill with the visible tab buttons and the More entry. See [layout.md](layout.md). |
 | `lib/features/navigation/views/widgets/prism_fab.dart` | The round create button with four layered rings. |
+| `lib/features/layout_prefs/views/widgets/pinch_density.dart` | Pinch on the Home feed to change the grid density. See [layout.md](layout.md). |
 
 ### Header
 
@@ -62,6 +69,7 @@ The tabs sit under the top bar, in this order: For you, Following, Trending, Lat
 - The bloc keeps the selected tab, so the choice stays when the user changes tab in the bottom bar. The Following, Latest and Popular lists load the first time the user opens them. The Trending week list loads once when the Home opens, because the carousel needs the boosted walls.
 - Following with nobody followed shows "Follow creators to see their new wallpapers here" and a **Find creators** button that opens user search.
 - A guest on Following sees the sign-in prompt. The app does not read Firestore for a guest on this tab.
+- The feed opens on the tab the user saw last. A guest never opens on Following. A push or a link with `feed=<tab>` names the tab. See [layout.md](layout.md).
 - Popular reads `popular/current` (`sourceTag` `popular.current`). It takes the first 40 ids and loads the walls 10 at a time (`popular.walls`). If the doc is missing or unreadable, it reads the 40 walls with most views from `wallpaper_stats` (`popular.stats`). The ids are upper case. Upload ids are upper case, so they match the `id` field of the wall.
 - Trending shows the week list in the grid, with no switch above it. Boosted walls come first in the grid and have a "Boosted" tag. The Home loads the list when it opens. The Home screen reports the `viewTrending` quest event each time the Trending tab becomes the selected tab, the first visit included. Opening the Home alone reports nothing. A tile sends the source context `home_trending_grid`. The tab sends no `surface_content_loaded` event. Details are in [trending.md](trending.md).
 - Analytics: a tap on a tab sends `surface_action_tapped` with action `home_chip_selected` and context `home_chip_<name>`. The names are `forYou`, `following`, `trending`, `latest` and `popular`, so Trending gives `home_chip_trending`. The lists send `surface_content_loaded` with surface `home_latest_grid`, `home_following_grid` or `home_popular_grid`.
@@ -83,15 +91,47 @@ The tabs sit under the top bar, in this order: For you, Following, Trending, Lat
 - A pull down on the For you tab also refreshes the Trending list, so the boosted pages stay current.
 - A tap on a boosted page sends `surface_action_tapped` with context `personalized_feed_carousel_boosted`. Each boosted page counts a wallpaper impression with the source `personalized_feed_carousel_boosted`.
 
+### Moods
+
+- A mood is a named set of walls, for example **Dreamy** or **Dark and quiet**. Each mood has a title and one line of text under it.
+- The For you tab shows a row of mood chips under the carousel. A tap on a chip opens the mood page.
+- On a returning session, the For you grid can show **Pick up where you left off** after 2 rows of tiles. It shows recently viewed wallpapers the user did not keep. See [wallpaper-history.md](wallpaper-history.md).
+- The For you grid also shows two mood rows: one after 4 rows of tiles and one after 12 rows. A mood row has the title, the line of text, a **See all** button and a strip of up to 10 walls. The two moods move on one place each day.
+- The mood page shows all the walls of the mood in the normal grid. A tap on a tile opens the detail screen, and the user can swipe through the walls of the mood.
+- The order of the walls in a mood row and on the mood page comes from the For you ranker. The walls that match the user's taste come first.
+- The moods and their rules are in one table, `MOODS` in `functions/src/wallMoods.ts`:
+
+| Mood | id | Rule |
+|---|---|---|
+| Dreamy | `dreamy` | The main colour is pink, purple, teal, white or blue. All colours are soft (those, or grey). A sky, cloud, sunset, flower or fluid label. |
+| Dark and quiet | `dark_quiet` | The main colour is black. At most two colours, all calm. A night, moon, star or space label. No city, neon, light, firework or sunset label. |
+| Bright and bold | `bright_bold` | The main colour is red, orange, yellow, pink or green. At least two of those colours. No black. |
+| Minimal | `minimal` | At most two colours. In the `minimal` collection or category. No pattern, illustration, cartoon or text label. |
+| Spatial ready | `spatial_ready` | `spatial.tier` is `great`. iOS 26 and later only. |
+| Depth ready | `depth_ready` | `depth.tier` is `auto` or `menu`. iOS only. |
+
+- The colours come from `walls.colors` (the 12 palette ids, the main colour first). The labels come from `walls.visionLabels`.
+- The daily job `refreshCollections` (04:00 UTC) writes `moods/current` after it refreshes the collection covers. For each mood it keeps the 60 newest walls that match. It skips a mood with fewer than 12 walls.
+- The job uses only walls that the free daily pick can use (`isWotdEligible`): reviewed walls with a protected original, not reserved for a Drop, not in a Drop, not streak exclusive and not in a premium collection.
+- Clients can read `moods/current`. Nobody can write it from the app.
+- The app hides **Spatial ready** on Android and on iOS before 26. It hides **Depth ready** on Android.
+- A Home open reads `moods/current` once. A mood row reads its first 30 walls (one query) when it comes near the screen. The mood page reads up to 60 walls (two queries). The first query of the mood page is the same as the row query. When the row loaded less than 30 seconds before, the app takes that query from its memory cache.
+- Analytics: `mood_chip_tapped` (`mood_id`, `position`), `mood_row_seen` (`mood_id`, `slot`) when the first wall of a row shows, and `mood_page_opened` (`mood_id`, `source`: `chip`, `row` or `link`).
+
 ### Grid
 
-- Every tab uses the same grid: 3 columns on a phone in portrait (a wider screen gets more), 4 px gaps on both axes, a 4 px side margin and rounded corners (12 px). The side margin equals the gap, so the gutters are even. A tile is twice as tall as it is wide.
+- Every tab uses the same grid: 2 columns on a phone in portrait by default (a wider screen gets more), 4 px gaps on both axes, a 4 px side margin and rounded corners (12 px). The side margin equals the gap, so the gutters are even. A tile is twice as tall as it is wide.
 - The Home grids pass `PrismFeedLayout.gridSpacing` (4 px) to `PrismWallGrid.delegate` and `PrismFeedLayout.gridPadding` as the padding. The tiles keep the default `PrismWallGrid.tileRadius`.
+- The Creators to follow row sits four wallpaper rows into the Home grid. The details are in [creator-directory.md](creator-directory.md).
 - The other screens (search, categories, collections, favourites, profiles) keep the 8 px gap, the 12 px side margin and the rounded corners.
+
+### Layout
+
+The grid density comes from the Layout settings. Pinch the Home feed to change it one step at a time. Large mode shows one tile in each row. The feed opens on the tab the user saw last, and a push or link can name a tab. See [layout.md](layout.md).
 
 ### Bottom bar
 
-- The bar is a floating pill with four buttons: Home, Search, Rewards and Collections. The round create button sits next to it. It has four layered rings. The middle and the top ring turn slowly. The ring spins only while the tab is on screen and the user does not ask for reduced motion.
+- The bar is a floating pill with the Home, Search, Rewards and Collections buttons. The user sets their order and visibility in Layout. Hidden tabs open from **More**. See [layout.md](layout.md). The round create button sits next to it. It has four layered rings. The middle and the top ring turn slowly. The ring spins only while the tab is on screen and the user does not ask for reduced motion.
 - The look is the one from before the 2026-09-30 redesign. It uses the theme colours.
 - The pill and the create button hide when the user scrolls down. A round scroll-to-top button ("Scroll to top") shows in their place. A tap on it scrolls the list to the top.
 - The create button has the screen reader label "Upload". It opens the Create sheet. A guest sees the sign-in pop up first.
@@ -117,6 +157,27 @@ The analytics context of the first load tells the cases apart: `personalized_fee
 
 When the user changes the anime or sketchy filter, `personalizedFeedSettingsRevision` goes up by 1. The feed drops its items, shows skeletons and loads page 1 again.
 
+### Taste signals
+
+The For you ranker learns from things the user does with a wall. The app keeps these signals on the device only (`TasteSignalStore`, at most 300). Each action has a weight (`TasteProfile.actionWeights`):
+
+| Action | Weight | Comes from |
+|---|---|---|
+| `open` | 1 | The wallpaper screen opens. |
+| `favourite` | 3 | A favourite, or a pick in "This or that". |
+| `download` | 4 | A download. |
+| `set` | 6 | A set wallpaper. |
+| `passedOver` | -0.5 | The wall that lost a round of "This or that". It is a hint, not a dislike. |
+| `lessLikeThis` | -8 | Show less like this. |
+
+A weight halves every 30 days. "Clear" in the Tune sheet removes all signals.
+
+### This or that
+
+The quiz runs in onboarding (see [onboarding.md](onboarding.md)) and again from the Tune sheet: tap the selected **For you** tab, then **Retake This or that**. The retake loads walls from the picks in the sheet. If they do not load, a toast says "Couldn't load walls. Check your connection and try again." The retake adds to the signals the user already has. It does not clear them. After "Tuning your feed" the sheet shows again with the new learned pills, and the feed loads page 1 again.
+
+The quiz does not set the "seeded" flag of `TasteSignalStore`. That flag means the app already read the user's favourites into the signals. The quiz signals and the favourites import add to each other.
+
 ### Show less like this
 
 - The row is in the quick actions sheet of the For you grid. The wallpaper leaves the grid at once. A bar shows "Got it. You'll see fewer like this." with **Undo**.
@@ -136,6 +197,9 @@ The app counts a wallpaper as shown when its tile is first built, not when its p
 
 ## Limits
 
+- A mood gets new walls once a day, when `refreshCollections` runs. Before the first run, the app shows no moods.
+- The mood rules use the palette colours and the Vision labels. A wall with wrong labels can show in the wrong mood.
+- A mood row hides when it fails to load or has fewer than 3 walls the user can see.
 - Popular is all time until the scheduler `computeTrending` has run once. After that, it follows `popular/current`. Without the doc the list can differ from the all time list of `wallpaper_stats`.
 - Popular shows walls whose `id` field is upper case. Other walls drop out of the list.
 - Following does not page by cursor. Page N loads the first N pages again from Firestore, up to 30 walls for each group of 10 followed creators.
@@ -166,6 +230,10 @@ The app counts a wallpaper as shown when its tile is first built, not when its p
 13. Long press a tile on For you. Tap **Show less like this**. Make sure the tile goes and **Undo** shows. Tap **Undo**. Make sure the tile comes back in the same place.
 14. In Settings, turn the anime filter on or off. Go to Home. Make sure the feed reloads.
 15. Make sure the create button in the bottom bar turns slowly. Tap it. Make sure the Create sheet opens.
+16. On **For you**, make sure the mood chips show under the carousel. Tap **Dreamy**. Make sure the mood page opens with its title, one line of text and a grid. Tap a tile and swipe. Make sure the walls of the mood show.
+17. Scroll the For you grid. Make sure a mood row shows after 4 rows and a second one after 12 rows. Tap **See all**. Make sure the mood page opens.
+18. On an iOS 26 device, make sure the **Spatial ready** and **Depth ready** chips show. On Android, make sure they do not show.
+19. Tap the selected **For you** tab, then **Retake This or that**. Pick 6 times. Make sure "Tuning your feed" shows, then the sheet comes back with new learned pills. Close the sheet. Make sure the feed leads with walls like your picks.
 
 Automated tests:
 
@@ -181,6 +249,10 @@ Automated tests:
 - `test/features/navigation/prism_top_app_bar_test.dart`
 - `test/features/navigation/prism_bottom_nav_test.dart`
 - `test/features/navigation/prism_fab_test.dart`
+- `test/features/navigation/tune_sheet_retake_test.dart`
+- `test/features/taste_quiz/taste_quiz_ranking_test.dart`
 - `test/features/prism_feed/biz/bloc/paged_feed_bloc_test.dart`
 - `test/core/widgets/home/loading_cards_test.dart`
 - `test/features/pexels_feed/data/repositories/pexels_wallpaper_repository_impl_test.dart`
+- `test/features/moods/` (mood rules on the client, cubits, repository, chip row, mood row, mood page)
+- `functions/src/__tests__/wallMoods.test.ts`

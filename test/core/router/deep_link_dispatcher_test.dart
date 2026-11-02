@@ -8,6 +8,7 @@ import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/deep_link_startup_gate.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -46,6 +47,7 @@ class _LinkTestRouter extends RootStackRouter {
       ],
     ),
     AutoRoute(path: '/downloads', page: _page(DownloadRoute.name)),
+    AutoRoute(path: '/gallery', page: _page(GalleryRoute.name)),
     AutoRoute(path: '/about', page: _page(AboutRoute.name)),
     AutoRoute(path: '/rewards', page: _page(RewardsRoute.name)),
     AutoRoute(path: '/wallpaper-detail', page: _page(WallpaperDetailRoute.name)),
@@ -94,6 +96,33 @@ void main() {
   }
 
   List<DeepLinkNavigationResultEvent> results() => events.whereType<DeepLinkNavigationResultEvent>().toList();
+
+  testWidgets('daily moment waits through link resolution and releases after leaving its target', (tester) async {
+    await mount(tester);
+    dispatcher.dispose();
+    final resolution = Completer<DeepLinkRouteResolution>();
+    dispatcher = create(navigation: _ResolvingNavigation((_) => resolution.future));
+    final opened = dispatcher.openUri(Uri.parse('/downloads'), source: DeepLinkSourceValue.appLinks);
+    await tester.pump();
+    expect(DailyMomentPresentationGate.instance.deepLinkActive, isTrue);
+    resolution.complete(const DeepLinkRouteResolution.route(DownloadRoute()));
+    await tester.pumpAndSettle();
+    expect(await opened, DeepLinkDispatchResult.navigated);
+    expect(DailyMomentPresentationGate.instance.deepLinkActive, isTrue);
+    expect(router.stackData.map((route) => route.name), contains(DownloadRoute.name));
+    expect(await router.maybePop(), isTrue);
+    await tester.pumpAndSettle();
+    expect(router.stackData.map((route) => route.name), isNot(contains(DownloadRoute.name)));
+    expect(DailyMomentPresentationGate.instance.deepLinkActive, isFalse);
+  });
+
+  testWidgets('a blocked link releases daily moment suppression', (tester) async {
+    await mount(tester);
+    final opened = dispatcher.openUri(Uri.parse('/shop'), source: DeepLinkSourceValue.appLinks);
+    await tester.pumpAndSettle();
+    expect(await opened, DeepLinkDispatchResult.blocked);
+    expect(DailyMomentPresentationGate.instance.deepLinkActive, isFalse);
+  });
 
   setUp(() {
     router = _LinkTestRouter();
@@ -170,6 +199,75 @@ void main() {
     expect(resolved.map((event) => event.result), everyElement(EventResultValue.success));
     expect(results().map((event) => event.targetType), everyElement(TargetTypeValue.share));
     expect(results().map((event) => event.result), everyElement(EventResultValue.navigated));
+  });
+
+  testWidgets('a protected Wall of the Day tile waits for startup and opens its document with no original URL', (
+    tester,
+  ) async {
+    await mount(tester);
+    final Completer<bool> ready = Completer<bool>();
+    dispatcher.dispose();
+    dispatcher = create(whenReady: () => ready.future);
+    const String thumbnail = 'https://example.com/thumb.jpg?width=320&height=240';
+    final Uri link = Uri(
+      scheme: 'prism',
+      host: 'share',
+      queryParameters: <String, String>{'id': 'protected-document', 'source': 'prism', 'url': '', 'thumb': thumbnail},
+    );
+
+    final Future<DeepLinkDispatchResult> result = dispatcher.openUri(
+      const DeepLinkParser().transform(Uri.parse(link.toString())),
+      source: DeepLinkSourceValue.appLinks,
+    );
+    await tester.pumpAndSettle();
+    expect(router.topRoute.name, HomeTabRoute.name);
+
+    ready.complete(true);
+    await tester.pumpAndSettle();
+
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, WallpaperDetailRoute.name);
+    final WallpaperDetailRouteArgs args = router.topRoute.argsAs<WallpaperDetailRouteArgs>();
+    expect(args.wallId, 'protected-document');
+    expect(args.source, WallpaperSource.prism);
+    expect(args.thumbnailUrl, thumbnail);
+    expect(args.analyticsSurface, AnalyticsSurfaceValue.shareWallpaperView);
+    expect(args.entity, isNull);
+    expect(args.localFile, isNull);
+    expect(events.whereType<DeepLinkReceivedEvent>().single.targetType, TargetTypeValue.share);
+    expect(results().single.result, EventResultValue.navigated);
+  });
+
+  testWidgets('a gallery push opens the gallery page before its fallback wall link', (tester) async {
+    await mount(tester);
+    final Future<DeepLinkDispatchResult> result = dispatcher.openPush(<String, dynamic>{
+      'route': 'wall_of_the_day',
+      'wall_id': 'lead-doc',
+      'url': 'https://prismwalls.com/share?id=lead&provider=Prism',
+      'wall_ids': 'W1,W2,W3',
+      'gallery': '1',
+    });
+
+    await tester.pumpAndSettle();
+
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, GalleryRoute.name);
+    final GalleryRouteArgs args = router.topRoute.argsAs<GalleryRouteArgs>();
+    expect(args.ids, 'W1,W2,W3');
+    expect(args.source, 'push');
+  });
+
+  testWidgets('a push with one wall id keeps its wall link', (tester) async {
+    await mount(tester);
+    final Future<DeepLinkDispatchResult> result = dispatcher.openPush(<String, dynamic>{
+      'url': 'https://prismwalls.com/share?id=lead&provider=Prism',
+      'wall_ids': 'W1',
+    });
+
+    await tester.pumpAndSettle();
+
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, WallpaperDetailRoute.name);
   });
 
   testWidgets('a second queued link completes while the first page is still on the stack', (tester) async {
@@ -272,6 +370,59 @@ void main() {
     expect(router.topRoute.name, HomeTabRoute.name);
     expect(results(), hasLength(1));
   });
+
+  testWidgets('an onboarding link after guest replacement opens a fresh shell', (tester) async {
+    await mount(tester);
+    unawaited(router.replaceAll(<PageRouteInfo>[OnboardingV2ShellRoute()]));
+    await tester.pumpAndSettle();
+    final firstSignIn = tester.element(find.text(OnboardingV2ShellRoute.name));
+    late Future<DeepLinkDispatchResult> result;
+
+    unawaited(
+      router.replaceAll(const <PageRouteInfo>[DashboardRoute()]).then((_) {
+        result = dispatcher.openUri(Uri.parse('prism://onboarding/v2'), source: DeepLinkSourceValue.appLinks);
+      }),
+    );
+    await tester.pumpAndSettle();
+
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, OnboardingV2ShellRoute.name);
+    expect(firstSignIn.mounted, isFalse, reason: 'a finished onboarding shell must not be reused');
+  });
+
+  testWidgets('an onboarding link adopts a shell opened while waiting for its frame', (tester) async {
+    await mount(tester);
+    final result = dispatcher.openUri(Uri.parse('prism://onboarding/v2'), source: DeepLinkSourceValue.appLinks);
+    await tester.idle();
+    unawaited(router.push(OnboardingV2ShellRoute()));
+    await tester.pumpAndSettle();
+
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.stackData.where((route) => route.name == OnboardingV2ShellRoute.name), hasLength(1));
+    expect(find.text(OnboardingV2ShellRoute.name), findsOneWidget);
+  });
+
+  for (final dispose in [false, true]) {
+    testWidgets('${dispose ? 'disposing' : 'cancelling'} an onboarding link before its frame prevents navigation', (
+      tester,
+    ) async {
+      await mount(tester);
+      final result = dispatcher.openUri(Uri.parse('prism://onboarding/v2'), source: DeepLinkSourceValue.appLinks);
+      await tester.idle();
+      expect(router.topRoute.name, HomeTabRoute.name);
+
+      if (dispose) {
+        dispatcher.dispose();
+      } else {
+        dispatcher.cancel();
+      }
+      expect(await result, DeepLinkDispatchResult.cancelled);
+      await tester.pumpAndSettle();
+
+      expect(router.topRoute.name, HomeTabRoute.name);
+      expect(router.stackData.where((route) => route.name == OnboardingV2ShellRoute.name), isEmpty);
+    });
+  }
 
   testWidgets('a referral is saved after bootstrap while another link is waiting for onboarding', (tester) async {
     await mount(tester);

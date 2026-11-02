@@ -6,12 +6,14 @@ Prism opens app pages from `https://prismwalls.com/...`, `https://www.prismwalls
 
 - App pages: `/settings`, `/dashboard/search`, `/dashboard/search/users`, `/dashboard/rewards`, `/library?tab=downloads`, and the other paths in `DeepLinkRouteCatalog.examples`. Confirm the selected nested tab, not just the presence of the dashboard.
 - Image workflows: `/wallpaper-filter`, `/upload-wall`, `/edit-wall`, `/download-wallpaper`, `/wallpaper-position`, and `/live-wallpaper` open a gallery chooser when no wallpaper ID is supplied. Local photo/clock previews use `/choose-wallpaper?workflow=photoPreview` or `workflow=clockPreview`. `Choose image` opens the picker; cancelling keeps the chooser open. Wallpaper IDs on supported action/preview routes resolve through provider repositories. External file paths and arbitrary image URL arguments are rejected.
+- Collections: `/folder/<id>` (signed-in guard), `/mood/<id>` (open), `/gallery?ids=a,b` (2 to 12 wall IDs; a push with `wall_ids` builds it), and `/library?tab=folders|downloads|history|favourites`. iOS hides History and falls back to Favourites.
+- Drops: `/drops`, `/drops/<weekKey>`, and `/drops/<weekKey>/preview/<wallId>`. A week key looks like `week-2026-10-19` (`deep_link_route_catalog.dart`). The router has no guard on these.
 - Profiles: `/user/<identifier>` and legacy `fprofile`, `follower-profile`, and `profile` aliases open the requested profile. Relationship links resolve the requested account's followers or following.
 - Legacy shares: `/share/<wallId>?source=&url=&thumb=...` or query-only shares require an ID and an image or thumbnail URL. `/wallpaper/<wallId>?source=prism` can resolve a wallpaper by ID. Missing or invalid targets open not-found; they are not silent no-ops.
 - Referrals: `/refer/<inviterId>` and `/referral/<inviterId>` save the inviter after bootstrap and open Rewards after startup. Signed-in users attempt an eligible referral claim; signed-out users see a saved-referral message. Use an approved QA fixture because this can affect coin rewards.
-- Short links: `/l/<code>` resolves through `https://prismwalls.com/api/links/<code>`. Network failures defer one retry until connectivity returns or an online app resume; unavailable codes open not-found.
-- Push and inbox taps: URL payloads and legacy metadata (`wall`, `wall_of_the_day`, `streak_reminder`, `follower`, `announcement`) feed the same dispatcher through `notification_route_mapper.dart`. Unavailable push targets fall back to the inbox. A wall-of-the-day push without a usable wall can open Home.
-- Protected pages: `/shop`, uploads, and other signed-in routes retain their target while sign-in is active. Admin pages also require an admin account after sign-in. Cancelling a guarded sign-in clears its continuation.
+- Short links: `/l/<code>` and `/l?code=<code>` resolve through `https://prismwalls.com/api/links/<code>`. Network failures defer one retry until connectivity returns or an online app resume; unavailable codes open not-found.
+- Push and inbox taps: URL payloads and legacy route values (`wall`, `wall_of_the_day`, `home`, `ai`, `rewards`, `drops`, `streak_reminder`, `follower`, `announcement`, and admin-only `content_report`) feed the same dispatcher through `notification_route_mapper.dart`. `streak_reminder` opens `/dashboard/rewards`. Unavailable push targets fall back to the inbox. Only `wall_of_the_day` without a usable wall falls back to Home. An in-app inbox row that cannot resolve opens not-found.
+- Protected pages: `/shop`, `/leaderboard`, `/draw`, `/coin-history`, `/folder/<id>`, uploads, and other signed-in routes keep their target while sign-in is active. `/drops*` has no guard. Admin pages also need an admin account after sign-in. Cancelling a guarded sign-in clears its continuation.
 
 ## How to get to it (user POV)
 
@@ -35,6 +37,8 @@ On Android:
 ```sh
 adb -s emulator-5580 shell am start -a android.intent.action.VIEW -d 'prism://settings' com.hash.prism
 ```
+
+The T3 device tool also opens links: `agent-device open com.hash.prism '<url>'`. On 2026-10-29 the iOS QA sim opened `https://prismwalls.com/...` links in the app. A not-found link shows `This page does not exist` and `Go home`. `prism://mood/dreamy` opens the Dreamy mood page.
 
 Repeat these checks on each platform, using `describe`, labeled taps, and `snapshot --tag <case>` from the helper:
 

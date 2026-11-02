@@ -8,9 +8,13 @@ class AdsEntity {
     required this.adLoaded,
     required this.adFailed,
     this.failureReason,
+    this.rewardPending = false,
   });
 
   final bool rewardEarned;
+
+  /// The SDK reported completion, but a signed-in reward still needs server verification.
+  final bool rewardPending;
   final bool loadingAd;
   final bool adLoaded;
   final bool adFailed;
@@ -26,9 +30,11 @@ class AdsEntity {
     bool? adLoaded,
     bool? adFailed,
     AdFailureReason? failureReason,
+    bool? rewardPending,
   }) {
     return AdsEntity(
       rewardEarned: rewardEarned ?? this.rewardEarned,
+      rewardPending: rewardPending ?? this.rewardPending,
       loadingAd: loadingAd ?? this.loadingAd,
       adLoaded: adLoaded ?? this.adLoaded,
       adFailed: adFailed ?? this.adFailed,

@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
+import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/auto_rotate/views/auto_rotate_entitlement.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
+import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -74,8 +79,42 @@ class _AutoRotateSessionListenerState extends State<AutoRotateSessionListener> w
         BlocListener<AutoRotateBloc, AutoRotateState>(
           listenWhen: (previous, current) => !previous.proLapsed && current.proLapsed,
           listener: (context, state) {
-            toasts.info(context.l10n.wallpaperAutoRotateOffEnded);
-            context.read<AutoRotateBloc>().add(const AutoRotateEvent.proLapseAcknowledged());
+            _announce(
+              context,
+              (AppLocalizations messages) => messages.wallpaperAutoRotateOffEnded,
+              const AutoRotateEvent.proLapseAcknowledged(),
+            );
+          },
+        ),
+        BlocListener<AutoRotateBloc, AutoRotateState>(
+          listenWhen: (previous, current) => previous.folderStop == null && current.folderStop != null,
+          listener: (context, state) {
+            final AutoRotateFolderStop stop = state.folderStop!;
+            _announce(
+              context,
+              (AppLocalizations messages) => switch (stop.reason) {
+                AutoRotateStopReason.folderDeleted => messages.wallpaperAutoRotateStoppedFolderDeleted(stop.folderName),
+                AutoRotateStopReason.folderEmpty => messages.wallpaperAutoRotateStoppedFolderEmpty(stop.folderName),
+              },
+              const AutoRotateEvent.folderStopAcknowledged(),
+            );
+          },
+        ),
+        BlocListener<FoldersBloc, FoldersState>(
+          listenWhen: (previous, current) {
+            final String? folderId = _rotatingFolderId(context);
+            return folderId != null &&
+                current.status == LoadStatus.success &&
+                current.userId.isNotEmpty &&
+                current.userId == previous.userId &&
+                previous.status == LoadStatus.success &&
+                !_sameFolder(previous.folder(folderId), current.folder(folderId));
+          },
+          listener: (context, state) {
+            final String folderId = _rotatingFolderId(context)!;
+            context.read<AutoRotateBloc>().add(
+              AutoRotateEvent.folderChanged(folderId: folderId, name: state.folder(folderId)?.name),
+            );
           },
         ),
         BlocListener<FavouriteWallsBloc, FavouriteWallsState>(
@@ -104,6 +143,30 @@ class _AutoRotateSessionListenerState extends State<AutoRotateSessionListener> w
       child: widget.child,
     );
   }
+
+  void _announce(BuildContext context, String Function(AppLocalizations messages) text, AutoRotateEvent acknowledge) {
+    unawaited(_showAnnouncement(context, text, acknowledge));
+  }
+
+  Future<void> _showAnnouncement(
+    BuildContext context,
+    String Function(AppLocalizations messages) text,
+    AutoRotateEvent acknowledge,
+  ) async {
+    final AppLocalizations messages = await localizationsFor(context);
+    if (!context.mounted) return;
+    toasts.info(text(messages));
+    context.read<AutoRotateBloc>().add(acknowledge);
+  }
+
+  String? _rotatingFolderId(BuildContext context) {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return null;
+    final AutoRotateConfig config = context.read<AutoRotateBloc>().state.config;
+    return config.source == AutoRotateSource.folder ? config.folderId : null;
+  }
+
+  static bool _sameFolder(FolderEntity? a, FolderEntity? b) =>
+      a?.name == b?.name && a?.itemCount == b?.itemCount && a?.updatedAt == b?.updatedAt;
 
   void _syncSession(BuildContext context, SessionState state) {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android || state.status != LoadStatus.success) {

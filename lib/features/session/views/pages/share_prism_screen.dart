@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -25,11 +26,12 @@ class SharePrismScreen extends StatefulWidget {
 
 class _SharePrismScreenState extends State<SharePrismScreen> {
   String link = "";
+  String? _linkOwner;
   bool _loading = false;
   bool _failed = false;
   bool _startedInitialLinkLoad = false;
 
-  bool get _signedIn => app_state.prismUser.id.isNotEmpty;
+  bool get _signedIn => app_state.prismUser.loggedIn && app_state.prismUser.id.isNotEmpty;
 
   @override
   void didChangeDependencies() {
@@ -41,6 +43,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
 
   Future<void> _loadLink() async {
     if (!_signedIn) return;
+    final String owner = app_state.prismUser.id;
     final AppLocalizations l10n = context.l10n;
     setState(() {
       _loading = true;
@@ -55,7 +58,12 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                 inviterPhoto: app_state.prismUser.profilePhoto,
                 l10n: l10n,
               ));
-      if (mounted) setState(() => link = value);
+      if (mounted && _signedIn && app_state.prismUser.id == owner) {
+        setState(() {
+          link = value;
+          _linkOwner = owner;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _failed = true);
     } finally {
@@ -66,24 +74,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   Future<void> _share() async {
     final AppLocalizations l10n = context.l10n;
     unawaited(analytics.track(const InviteShareTappedEvent(sourceContext: 'share_prism_screen')));
-    if (link.isEmpty) {
-      if (_signedIn) {
-        unawaited(_loadLink());
-        return;
-      }
-      unawaited(
-        analytics.track(
-          const InviteShareResultEvent(
-            channel: ShareChannelValue.link,
-            result: EventResultValue.blocked,
-            reason: AnalyticsReasonValue.notSignedIn,
-            sourceContext: 'share_prism_screen',
-          ),
-        ),
-      );
-      toasts.error(context.l10n.accountSignInForInviteLink);
-      return;
-    }
+    if (!await _authorizeLink()) return;
     try {
       await ShareService.shareText(text: link, context: context);
       unawaited(
@@ -111,9 +102,16 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   }
 
   Future<void> _copy() async {
+    if (!await _authorizeLink()) return;
     final AppLocalizations l10n = context.l10n;
     await Clipboard.setData(ClipboardData(text: link));
     toasts.success(l10n.accountLinkCopied);
+  }
+
+  Future<bool> _authorizeLink() async {
+    if (!await requireSignedInAction(context) || !mounted) return false;
+    if (_linkOwner != app_state.prismUser.id) await _loadLink();
+    return mounted && _signedIn && _linkOwner == app_state.prismUser.id && link.isNotEmpty;
   }
 
   @override

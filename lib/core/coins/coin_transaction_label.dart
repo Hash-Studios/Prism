@@ -54,6 +54,8 @@ String? _actionLabel(String action, AppLocalizations l10n) => switch (action) {
   'dropPack' => l10n.coreCoinDropPack,
   'boostWall' => l10n.coreCoinBoost,
   'giftPremiumPass' => l10n.coreCoinGiftPass,
+  'tipSent' => l10n.coreCoinTipSent,
+  'tipReceived' => l10n.coreCoinTipReceived,
   'drawTicket' => l10n.coreCoinDrawTicket,
   _ => null,
 };

@@ -5,6 +5,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -23,6 +24,10 @@ import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
+import 'package:Prism/features/wrapped/biz/bloc/wrapped_bloc.j.dart';
+import 'package:Prism/features/wrapped/domain/wrapped.dart';
+import 'package:Prism/features/wrapped/views/widgets/wrapped_home_card.dart';
+import 'package:Prism/features/wrapped/wrapped_config.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
@@ -52,7 +57,7 @@ int _carouselColumns(BuildContext context) {
 double feedCarouselCardHeight(BuildContext context) =>
     math.max(0, (_carouselWidth(context) / _carouselColumns(context) - 2 * PrismFeedLayout.gridSpacing) * 0.6);
 
-/// The home carousel: Wall of the Day, the live Drop, boosted walls, a card for each seasonal theme (in its season,
+/// The home carousel: Wall of the Day, the user's Wrapped (in its window), the live Drop, boosted walls, a card for each seasonal theme (in its season,
 /// while the theme is off), the promo banner and the first wallpapers as rounded pages, with page dots over the bottom of the
 /// image.
 class FeedCarousel extends StatefulWidget {
@@ -79,7 +84,7 @@ class FeedCarousel extends StatefulWidget {
   State<FeedCarousel> createState() => _FeedCarouselState();
 }
 
-class _FeedCarouselState extends State<FeedCarousel> {
+class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver {
   int _current = 0;
   List<String> _pageIds = const <String>[];
   final CarouselSliderController _controller = CarouselSliderController();
@@ -90,11 +95,60 @@ class _FeedCarouselState extends State<FeedCarousel> {
   Timer? _dropEndTimer;
   Timer? _seasonEndTimer;
 
+  /// Looked up only once the Wrapped window opens, so Home never touches Wrapped outside it.
+  WrappedBloc? _wrapped;
+  StreamSubscription<WrappedState>? _wrappedChanges;
+  StreamSubscription<String>? _wrappedUserChanges;
+  Timer? _wrappedWindowTimer;
+  String _wrappedUid = '';
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scheduleDropEnd();
     _scheduleSeasonEnd();
+    _wrappedUid = _currentWrappedUid;
+    _refreshWrapped();
+  }
+
+  String get _currentWrappedUid => app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '';
+
+  WrappedBloc _watchWrapped() {
+    final WrappedBloc bloc = _wrapped ??= getIt<WrappedBloc>();
+    _wrappedChanges ??= bloc.stream.listen((_) {
+      if (mounted) setState(() {});
+    });
+    _wrappedUserChanges ??= bloc.userChanges.listen((uid) {
+      if (uid == _wrappedUid) return;
+      _wrappedUid = uid;
+      _refreshWrapped();
+    });
+    return bloc;
+  }
+
+  void _refreshWrapped() {
+    if (WrappedConfig.isOpen(DateTime.now())) {
+      // Nothing tracks sign-ins before the bloc is watched, so read the account when the window opens.
+      if (_wrapped == null) _wrappedUid = _currentWrappedUid;
+      // Watch even for a guest, so a sign-in inside the window loads the new account's Wrapped.
+      final WrappedBloc bloc = _watchWrapped();
+      if (_wrappedUid.isNotEmpty) bloc.add(WrappedEvent.load(_wrappedUid));
+    }
+    if (mounted) setState(() {});
+    _scheduleWrappedWindowCheck();
+  }
+
+  void _scheduleWrappedWindowCheck() {
+    _wrappedWindowTimer?.cancel();
+    final DateTime now = DateTime.now();
+    final DateTime nextDay = DateTime(now.year, now.month, now.day + 1);
+    _wrappedWindowTimer = Timer(nextDay.difference(now), _refreshWrapped);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refreshWrapped();
   }
 
   @override
@@ -108,6 +162,10 @@ class _FeedCarouselState extends State<FeedCarousel> {
   void dispose() {
     _dropEndTimer?.cancel();
     _seasonEndTimer?.cancel();
+    _wrappedWindowTimer?.cancel();
+    unawaited(_wrappedChanges?.cancel());
+    unawaited(_wrappedUserChanges?.cancel());
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -213,11 +271,16 @@ class _FeedCarouselState extends State<FeedCarousel> {
     final double width = _carouselWidth(context);
     final int columns = _carouselColumns(context);
     final int memCacheHeight = (height * MediaQuery.devicePixelRatioOf(context)).round();
+    final WrappedBloc? wrappedBloc = _wrapped;
+    final WrappedYear? wrapped = wrappedBloc == null
+        ? null
+        : wrappedForHome(wrappedBloc.state, _currentWrappedUid, DateTime.now());
     final List<SeasonalTheme> seasons = seasonalThemes
         .where((season) => season.inSeason() && !season.isActive(context))
         .toList();
     final List<String> pageIds = <String>[
       if (hasWotd) 'wotd',
+      if (wrapped != null) 'wrapped',
       if (_showsDrop(widget.liveDrop)) 'drop',
       for (final PrismWallpaper wall in widget.boostedWalls) 'boosted:${wall.core.id}',
       for (final SeasonalTheme season in seasons) season.name,
@@ -235,6 +298,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
     _pageIds = pageIds;
     final List<Widget Function(int realIndex)> pages = <Widget Function(int)>[
       if (hasWotd) (_) => const WallOfTheDayCard(),
+      if (wrapped != null) (_) => WrappedHomeCard(year: wrapped, memCacheHeight: memCacheHeight),
       if (_showsDrop(widget.liveDrop))
         (_) => DropCarouselSlide(
           drop: widget.liveDrop!,

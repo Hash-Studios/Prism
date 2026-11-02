@@ -1,6 +1,18 @@
 version: 1
 
 enums:
+  - name: daily_moment_step
+    dart_type: DailyMomentStepValue
+    values:
+      - streak
+      - chest
+      - spin
+  - name: challenge_entry_source
+    dart_type: ChallengeEntrySource
+    import: package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart
+    values:
+      - upload
+      - ai
   - name: wallpaper_target
     dart_type: WallpaperTarget
     import: package:Prism/core/platform/wallpaper_service.dart
@@ -8,17 +20,54 @@ enums:
       - both
       - lock
       - home
+  - name: taste_quiz_source
+    dart_type: TasteQuizSource
+    import: package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart
+    values:
+      - onboarding
+      - retake
+  - name: quiz_side
+    dart_type: QuizSide
+    import: package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart
+    values:
+      - left
+      - right
   - name: binary_result
     dart_type: BinaryResultValue
     values:
       - success
       - failure
+  - name: ai_apply_from
+    dart_type: AiApplyFromValue
+    values:
+      - hero
+      - strip
+  - name: ai_style_pick_source
+    dart_type: AiStylePickSource
+    values:
+      - row
+      - sheet
+      - onboarding
   - name: rc_or_fallback
     dart_type: RcOrFallbackValue
     values:
       - rc_attempt
       - fallback_only
       - rc
+  - name: live_wallpaper_style
+    dart_type: LiveWallpaperStyleValue
+    values:
+      - drift
+      - breathe
+      - ripple
+      - shimmer
+      - 3d
+      - aurora
+      - mesh
+      - waves
+      - plasma
+      - starfield
+      - video
   - name: paywall_result
     dart_type: PaywallResultValue
     values:
@@ -32,6 +81,13 @@ enums:
       - guest_sign_in_required
       - rc_error
       - unknown
+  - name: wrapped_source
+    dart_type: WrappedSourceValue
+    values:
+      - home
+      - push
+      - inbox
+      - deep_link
   - name: subscription_entitlement_refresh_result
     dart_type: SubscriptionEntitlementRefreshResultValue
     values:
@@ -69,6 +125,7 @@ enums:
       - drop_pack
       - boost_wall
       - gift_premium_pass
+      - tip_creator
       - draw_ticket
       - shop_item
       - spin_wheel
@@ -85,6 +142,7 @@ enums:
     dart_type: SettingValue
     values:
       - anime_wallpapers
+      - ai_wallpapers
       - sketchy_wallpapers
       - recommendations_notifications
       - haptics
@@ -191,6 +249,7 @@ enums:
   - name: share_format
     dart_type: ShareFormatValue
     values:
+      - duo_reveal
       - story
       - post
       - clean
@@ -224,6 +283,18 @@ enums:
       - search
       - streak
       - collection
+  - name: wall_grid_density
+    dart_type: WallGridDensity
+    import: package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart
+    values:
+      - compact
+      - comfortable
+      - large
+  - name: layout_change_source
+    dart_type: LayoutChangeSourceValue
+    values:
+      - settings
+      - pinch
   - name: notification_preference
     dart_type: NotificationPreferenceValue
     values:
@@ -232,6 +303,7 @@ enums:
       - in_app
       - recommendations
       - streak_reminders
+      - folders
   - name: deep_link_source
     dart_type: DeepLinkSourceValue
     values:
@@ -319,6 +391,71 @@ enums:
       - rejection
       - win_back
       - drop
+  - name: immersive_toggle_source
+    dart_type: ImmersiveToggleSourceValue
+    values:
+      - tap
+      - semantics
+  - name: favourite_pin_surface
+    dart_type: FavouritePinSurfaceValue
+    values:
+      - library
+      - detail
+  - name: wall_request_source
+    dart_type: WallRequestSourceValue
+    values:
+      - search
+      - requests_page
+  - name: wall_request_filler
+    dart_type: WallRequestFillerValue
+    values:
+      - creator
+      - studio
+  - name: remix_source_type
+    dart_type: RemixSourceType
+    import: package:Prism/features/wall_remix/domain/wall_remix.dart
+    values:
+      - studio
+      - user
+
+  - name: redeem_sheet_source
+    dart_type: RedeemSheetSource
+    import: package:Prism/features/promo_codes/domain/entities/promo_code.dart
+    values:
+      - settings
+      - rewards
+      - link
+  - name: promo_reward_type
+    dart_type: PromoRewardType
+    import: package:Prism/features/promo_codes/domain/entities/promo_code.dart
+    values:
+      - coins
+      - premium_days
+  - name: redeem_failure_reason
+    dart_type: RedeemFailureReason
+    import: package:Prism/features/promo_codes/domain/entities/promo_code.dart
+    values:
+      - invalid_code
+      - not_found
+      - disabled
+      - expired
+      - limit_reached
+      - already_redeemed
+      - account_too_new
+      - new_users_only
+      - premium_not_on_ios
+      - already_premium
+      - rate_limited
+      - busy
+      - signed_out
+      - network
+      - unknown
+  - name: store_code_platform
+    dart_type: StoreCodePlatform
+    import: package:Prism/features/promo_codes/domain/entities/promo_code.dart
+    values:
+      - ios
+      - android
   - name: ota_failure_reason
     dart_type: OtaFailureReasonValue
     values:
@@ -795,6 +932,20 @@ events:
       - name: style
         key: style
         type: string
+  - id: ai_style_sheet_opened
+    fields:
+      - name: style
+        key: style
+        type: string
+  - id: ai_style_picked
+    fields:
+      - name: style
+        key: style
+        type: string
+      - name: source
+        key: source
+        type: enum
+        enum: AiStylePickSource
   - id: ai_history_opened
     fields:
       - name: count
@@ -951,6 +1102,28 @@ events:
       - name: generation_id
         key: generation_id
         type: string
+  - id: ai_result_applied
+    fields:
+      - name: platform
+        key: platform
+        type: string
+      - name: from
+        key: from
+        type: enum
+        enum: AiApplyFromValue
+  - id: ai_follow_up_used
+    fields:
+      - name: chip_id
+        key: chip_id
+        type: string
+  - id: ai_strip_swapped
+    fields:
+      - name: position
+        key: position
+        type: int
+      - name: count
+        key: count
+        type: int
   - id: coin_preview_unlock_attempt
     fields:
       - name: collection
@@ -1273,6 +1446,48 @@ events:
         type: string
         required: false
   - id: auto_rotate_disabled
+  - id: auto_rotate_folder_set
+    fields:
+      - name: item_count_bucket
+        key: item_count_bucket
+        type: string
+  - id: auto_rotate_folder_tapped
+    fields:
+      - name: item_count_bucket
+        key: item_count_bucket
+        type: string
+  - id: auto_rotate_stopped
+    fields:
+      - name: reason
+        key: reason
+        type: string
+  - id: ios_rotation_folder_set
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: item_count_bucket
+        key: item_count_bucket
+        type: string
+  - id: ios_shortcuts_guide_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: has_shortcut_link
+        key: has_shortcut_link
+        type: bool
+      - name: has_rotation_folder
+        key: has_rotation_folder
+        type: bool
+  - id: ios_shortcut_link_opened
+    fields:
+      - name: kind
+        key: kind
+        type: string
+      - name: opened
+        key: opened
+        type: bool
   - id: nav_tab_selected
     fields:
       - name: from_tab
@@ -1283,6 +1498,36 @@ events:
         key: to_tab
         type: enum
         enum: NavTabValue
+  - id: layout_tabs_reordered
+    fields:
+      - name: tab
+        key: tab
+        type: enum
+        enum: NavTabValue
+      - name: to_position
+        key: to_position
+        type: int
+  - id: layout_tab_visibility_changed
+    fields:
+      - name: tab
+        key: tab
+        type: enum
+        enum: NavTabValue
+      - name: visible
+        key: visible
+        type: bool
+  - id: layout_density_changed
+    fields:
+      - name: density
+        key: density
+        type: enum
+        enum: WallGridDensity
+      - name: source
+        key: source
+        type: enum
+        enum: LayoutChangeSourceValue
+  - id: layout_reset
+    fields: []
   - id: upload_action_selected
     fields:
       - name: action
@@ -1583,6 +1828,44 @@ events:
       - name: total_elapsed_ms
         key: total_elapsed_ms
         type: int
+  - id: taste_quiz_started
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: TasteQuizSource
+  - id: taste_quiz_round_picked
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: TasteQuizSource
+      - name: round_index
+        key: round_index
+        type: int
+      - name: side
+        key: side
+        type: enum
+        enum: QuizSide
+      - name: wild_card
+        key: wild_card
+        type: bool
+  - id: taste_quiz_skipped
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: TasteQuizSource
+      - name: round_index
+        key: round_index
+        type: int
+  - id: taste_quiz_completed
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: TasteQuizSource
+  - id: taste_quiz_retake_opened
   - id: badge_earned
     fields:
       - name: badge_id
@@ -1645,10 +1928,37 @@ events:
       - name: source
         key: source
         type: string
+      - name: trigger
+        key: trigger
+        type: string
   - id: report_problem_shared
     fields:
       - name: result
         key: result
+        type: string
+      - name: topic
+        key: topic
+        type: string
+        required: false
+      - name: has_screenshot
+        key: has_screenshot
+        type: bool
+      - name: trigger
+        key: trigger
+        type: string
+  - id: report_problem_sent
+    fields:
+      - name: result
+        key: result
+        type: string
+      - name: topic
+        key: topic
+        type: string
+      - name: has_screenshot
+        key: has_screenshot
+        type: bool
+      - name: trigger
+        key: trigger
         type: string
   - id: rate_prompt_shown
     fields:
@@ -1670,6 +1980,32 @@ events:
       - name: value
         key: value
         type: bool
+  - id: ad_journey
+    fields:
+      - name: placement
+        key: placement
+        type: string
+      - name: watch_id
+        key: watch_id
+        type: string
+      - name: format
+        key: format
+        type: string
+      - name: outcome
+        key: outcome
+        type: string
+      - name: paid_value_micros
+        key: paid_value_micros
+        type: double
+        required: false
+      - name: currency
+        key: currency
+        type: string
+        required: false
+      - name: precision
+        key: precision
+        type: string
+        required: false
   - id: ad_load_result
     fields:
       - name: result
@@ -1760,6 +2096,22 @@ events:
       - name: category
         key: category
         type: string
+  - id: wall_pending_edited
+    fields:
+      - name: asset_id
+        key: asset_id
+        type: string
+      - name: fields
+        key: fields
+        type: string_list
+  - id: wall_approved_metadata_edited
+    fields:
+      - name: asset_id
+        key: asset_id
+        type: string
+      - name: fields
+        key: fields
+        type: string_list
   - id: follow_result
     fields:
       - name: action
@@ -1821,6 +2173,109 @@ events:
       - name: item_count
         key: item_count
         type: int
+  - id: folder_visibility_changed
+    fields:
+      - name: is_public
+        key: is_public
+        type: bool
+      - name: source
+        key: source
+        type: string
+  - id: public_folder_viewed
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: item_count
+        key: item_count
+        type: int
+  - id: folder_follow_changed
+    fields:
+      - name: following
+        key: following
+        type: bool
+      - name: source
+        key: source
+        type: string
+  - id: folder_shared
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: folder_push_opened
+    fields:
+      - name: folder_count
+        key: folder_count
+        type: int
+  - id: mood_chip_tapped
+    fields:
+      - name: mood_id
+        key: mood_id
+        type: string
+      - name: position
+        key: position
+        type: int
+  - id: duo_preview_opened
+    fields:
+      - name: content_id
+        key: content_id
+        type: string
+      - name: source
+        key: source
+        type: string
+      - name: preset_id
+        key: preset_id
+        type: string
+  - id: duo_fold_toggled
+    fields:
+      - name: content_id
+        key: content_id
+        type: string
+      - name: unfolded
+        key: unfolded
+        type: bool
+  - id: duo_ai_generated
+    fields:
+      - name: generation_id
+        key: generation_id
+        type: string
+      - name: quality_tier
+        key: quality_tier
+        type: string
+  - id: duo_share_card_made
+    fields:
+      - name: content_id
+        key: content_id
+        type: string
+  - id: duo_row_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: mood_row_seen
+    fields:
+      - name: mood_id
+        key: mood_id
+        type: string
+      - name: slot
+        key: slot
+        type: int
+  - id: mood_page_opened
+    fields:
+      - name: mood_id
+        key: mood_id
+        type: string
+      - name: source
+        key: source
+        type: string
+  - id: gallery_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: wall_count
+        key: wall_count
+        type: int
   - id: library_tab_viewed
     fields:
       - name: tab
@@ -1838,6 +2293,34 @@ events:
     fields:
       - name: count
         key: count
+        type: int
+  - id: recently_viewed_cleared
+    fields:
+      - name: count
+        key: count
+        type: int
+  - id: viewing_history_toggled
+    fields:
+      - name: value
+        key: value
+        type: bool
+  - id: history_restored
+    fields:
+      - name: count_bucket
+        key: count_bucket
+        type: string
+  - id: pick_up_row_seen
+    fields:
+      - name: count
+        key: count
+        type: int
+  - id: pick_up_tile_opened
+    fields:
+      - name: provider
+        key: provider
+        type: string
+      - name: position
+        key: position
         type: int
   - id: favourites_exported
     fields:
@@ -1894,7 +2377,8 @@ events:
     fields:
       - name: style
         key: style
-        type: string
+        type: enum
+        enum: LiveWallpaperStyleValue
       - name: result
         key: result
         type: string
@@ -2021,6 +2505,23 @@ events:
       - name: recipient_uid
         key: recipient_uid
         type: string
+  - id: tip_sheet_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: tip_sent
+    fields:
+      - name: amount
+        key: amount
+        type: int
+  - id: tip_failed
+    fields:
+      - name: reason
+        key: reason
+        type: string
+  - id: tip_received_push_opened
+    fields: []
   - id: draw_ticket_bought
     fields:
       - name: week_key
@@ -2169,6 +2670,345 @@ events:
         type: string
       - name: tier
         key: tier
+        type: string
+  - id: detail_immersive_toggled
+    fields:
+      - name: immersive
+        key: immersive
+        type: bool
+      - name: source
+        key: source
+        type: enum
+        enum: ImmersiveToggleSourceValue
+  - id: detail_immersive_hint_shown
+  - id: favourite_pin_changed
+    fields:
+      - name: pinned
+        key: pinned
+        type: bool
+      - name: surface
+        key: surface
+        type: enum
+        enum: FavouritePinSurfaceValue
+  - id: favourite_pin_limit_hit
+    fields:
+      - name: surface
+        key: surface
+        type: enum
+        enum: FavouritePinSurfaceValue
+  - id: wall_request_sheet_opened
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: WallRequestSourceValue
+  - id: wall_request_created
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: WallRequestSourceValue
+      - name: tag_count
+        key: tag_count
+        type: int
+      - name: forced
+        key: forced
+        type: bool
+  - id: wall_request_duplicate_upvoted
+    fields:
+      - name: exact
+        key: exact
+        type: bool
+  - id: wall_request_vote_toggled
+    fields:
+      - name: voted
+        key: voted
+        type: bool
+      - name: tab
+        key: tab
+        type: string
+  - id: wall_request_filled
+    fields:
+      - name: filled_by
+        key: filled_by
+        type: enum
+        enum: WallRequestFillerValue
+  - id: wall_request_push_opened
+    fields:
+      - name: request_id
+        key: request_id
+        type: string
+  - id: remix_tapped
+    fields:
+      - name: source_wall_type
+        key: source_wall_type
+        type: enum
+        enum: RemixSourceType
+  - id: remix_generated
+    fields:
+      - name: source_wall_type
+        key: source_wall_type
+        type: enum
+        enum: RemixSourceType
+      - name: quality
+        key: quality
+        type: string
+  - id: remix_submitted
+    fields:
+      - name: generation_id
+        key: generation_id
+        type: string
+  - id: remix_link_dropped
+    fields:
+      - name: source_wall_type
+        key: source_wall_type
+        type: enum
+        enum: RemixSourceType
+  - id: remixes_grid_opened
+    fields:
+      - name: count
+        key: count
+        type: int
+  - id: wall_resubmitted
+    fields:
+      - name: asset_id
+        key: asset_id
+        type: string
+      - name: attempt
+        key: attempt
+        type: int
+  - id: upload_last_details_used
+  - id: upload_withdrawn
+    fields:
+      - name: asset_id
+        key: asset_id
+        type: string
+
+  - id: creator_stats_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: creator_stats_metric_switched
+    fields:
+      - name: metric
+        key: metric
+        type: string
+  - id: creator_wall_stats_opened
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+  - id: daily_moment_shown
+    fields: []
+  - id: daily_moment_step_done
+    fields:
+      - name: step
+        key: step
+        type: enum
+        enum: DailyMomentStepValue
+  - id: daily_moment_stopped_early
+    fields:
+      - name: step
+        key: step
+        type: enum
+        enum: DailyMomentStepValue
+  - id: daily_moment_deep_link_opened
+    fields:
+      - name: step
+        key: step
+        type: enum
+        enum: DailyMomentStepValue
+  - id: challenge_viewed
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+  - id: challenge_entered
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+      - name: source
+        key: source
+        type: enum
+        enum: ChallengeEntrySource
+  - id: challenge_voted
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+  - id: challenge_unvoted
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+  - id: challenge_shared
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+  - id: challenge_winner_viewed
+    fields:
+      - name: challenge_id
+        key: challenge_id
+        type: string
+  - id: creators_section_viewed
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: creator_card_followed
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: creator_id
+        key: creator_id
+        type: string
+  - id: creators_see_all_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: creators_category_filtered
+    fields:
+      - name: category
+        key: category
+        type: string
+  - id: followed_by_shown
+    fields:
+      - name: count
+        key: count
+        type: int
+  - id: similar_creators_shown
+    fields:
+      - name: creator_id
+        key: creator_id
+        type: string
+      - name: count
+        key: count
+        type: int
+  - id: similar_creator_followed
+    fields:
+      - name: creator_id
+        key: creator_id
+        type: string
+  - id: desktop_chip_shown
+    fields:
+      - name: content_id
+        key: content_id
+        type: string
+  - id: desktop_sheet_opened
+    fields:
+      - name: content_id
+        key: content_id
+        type: string
+  - id: desktop_send_to_computer
+    fields:
+      - name: content_id
+        key: content_id
+        type: string
+  - id: redeem_sheet_opened
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: RedeemSheetSource
+  - id: redeem_succeeded
+    fields:
+      - name: type
+        key: type
+        type: enum
+        enum: PromoRewardType
+  - id: redeem_failed
+    fields:
+      - name: reason
+        key: reason
+        type: enum
+        enum: RedeemFailureReason
+  - id: store_code_sheet_opened
+    fields:
+      - name: platform
+        key: platform
+        type: enum
+        enum: StoreCodePlatform
+  - id: wrapped_opened
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: WrappedSourceValue
+  - id: wrapped_card_viewed
+    fields:
+      - name: card_id
+        key: card_id
+        type: string
+  - id: wrapped_card_shared
+    fields:
+      - name: card_id
+        key: card_id
+        type: string
+      - name: target
+        key: target
+        type: enum
+        enum: ShareTargetValue
+        required: false
+  - id: wrapped_finished
+    fields: []
+  - id: wrapped_not_eligible
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: WrappedSourceValue
+  - id: trial_timeline_shown
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+      - name: product_id
+        key: product_id
+        type: string
+      - name: trial_days
+        key: trial_days
+        type: int
+  - id: trial_reminder_toggled
+    fields:
+      - name: enabled
+        key: enabled
+        type: bool
+  - id: trial_not_eligible_shown
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+      - name: reason
+        key: reason
+        type: string
+  - id: trial_started
+    fields:
+      - name: product_id
+        key: product_id
+        type: string
+  - id: trial_converted
+    fields:
+      - name: product_id
+        key: product_id
+        type: string
+  - id: trial_cancelled
+    fields:
+      - name: product_id
+        key: product_id
+        type: string
+      - name: reason
+        key: reason
         type: string
   - id: ota_check_started
     fields:

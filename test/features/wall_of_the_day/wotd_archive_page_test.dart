@@ -10,6 +10,8 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
+import 'package:Prism/features/layout_prefs/views/layout_prefs_scope.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_archive_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wotd_past_pick.dart';
 import 'package:Prism/features/wall_of_the_day/views/pages/wotd_archive_page.dart';
@@ -63,7 +65,12 @@ void main() {
 
   tearDown(AnalyticsRuntime.reset);
 
-  Future<void> pumpPage(WidgetTester tester, WotdArchiveState state, {Stream<WotdArchiveState>? stream}) {
+  Future<void> pumpPage(
+    WidgetTester tester,
+    WotdArchiveState state, {
+    Stream<WotdArchiveState>? stream,
+    WallGridDensity density = WallGridDensity.comfortable,
+  }) {
     when(() => bloc.state).thenReturn(state);
     whenListen(bloc, stream ?? const Stream<WotdArchiveState>.empty(), initialState: state);
     return tester.pumpWidget(
@@ -75,10 +82,33 @@ void main() {
         home: StackRouterScope(
           controller: router,
           stateHash: 0,
-          child: BlocProvider<WotdArchiveBloc>.value(value: bloc, child: const WotdArchivePage()),
+          child: LayoutPrefsScope(
+            prefs: ValueNotifier<LayoutPrefs>(LayoutPrefs(density: density)),
+            child: BlocProvider<WotdArchiveBloc>.value(value: bloc, child: const WotdArchivePage()),
+          ),
         ),
       ),
     );
+  }
+
+  for (final (width, density, columns) in <(double, WallGridDensity, int)>[
+    (390, WallGridDensity.compact, 3),
+    (390, WallGridDensity.large, 1),
+    (900, WallGridDensity.compact, 7),
+  ]) {
+    testWidgets('archive respects $density at width $width and decodes its real tile size', (tester) async {
+      tester.view.physicalSize = Size(width, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await pumpPage(
+        tester,
+        WotdArchiveState.initial().copyWith(status: LoadStatus.success, picks: [_pick('a', DateTime(2026, 1, 4))]),
+        density: density,
+      );
+      final SliverGrid grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
+      expect((grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount).crossAxisCount, columns);
+      expect(tester.widget<PrismWallTile>(find.byType(PrismWallTile)).memCacheHeight, (width / columns / 0.45).round());
+    });
   }
 
   testWidgets('shows a skeleton while the first load runs', (tester) async {

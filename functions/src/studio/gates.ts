@@ -1,5 +1,6 @@
 import type {ImageAnnotatorClient} from "@google-cloud/vision";
 import {str} from "../common";
+import {DUO_REVEAL_SPEC as duo} from "../duo_reveal_spec";
 import type {WallDepth} from "../wallDepth";
 
 export const STUDIO_MIN_SHORT_EDGE = 1400;
@@ -68,7 +69,12 @@ function decodeSignature(signature: string): Buffer | null {
   return bytes.length === SIGNATURE_BYTES && bytes.toString("base64") === signature ? bytes : null;
 }
 
-export function sizeCheck(width: number, height: number): {reasons: string[]; details: Record<string, unknown>} {
+export function sizeCheck(width: number, height: number, duoReveal = false): {reasons: string[]; details: Record<string, unknown>} {
+  if (duoReveal) {
+    const valid = width >= duo.canvasWidth && height >= duo.canvasHeight &&
+      Math.abs(width / height - duo.canvasWidth / duo.canvasHeight) < 0.015;
+    return {reasons: valid ? [] : ["duo_size"], details: {width, height, presetId: duo.presetId}};
+  }
   const reasons: string[] = [];
   const aspect = height / width;
   if (height <= width) reasons.push("not_portrait");
@@ -195,7 +201,7 @@ export const annotateWithVision: VisionAnnotate = async (jpeg) => {
  */
 export async function runGates(
   bytes: Buffer,
-  deps: {annotate: VisionAnnotate; knownSignatures: () => Promise<KnownSignature[]>; depth?: DepthCheck},
+  deps: {annotate: VisionAnnotate; knownSignatures: () => Promise<KnownSignature[]>; depth?: DepthCheck; duoReveal?: boolean},
 ): Promise<GateResult> {
   const sharp = (await import("sharp")).default;
   let width = 0;
@@ -213,7 +219,7 @@ export async function runGates(
     return {passed: false, reasons: ["undecodable"], details: {}, signature: ""};
   }
 
-  const size = sizeCheck(width, height);
+  const size = sizeCheck(width, height, deps.duoReveal);
   const duplicate = duplicateCheck(signature, await deps.knownSignatures());
   const visionJpeg = await sharp(bytes)
     .resize({width: STUDIO_VISION_LONG_EDGE, height: STUDIO_VISION_LONG_EDGE, fit: "inside", withoutEnlargement: true})

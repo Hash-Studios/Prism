@@ -1,30 +1,34 @@
 # Search
 
-Search is the second bottom-nav tab (route `/dashboard/search`, `SearchRoute`). `lib/features/navigation/views/pages/search_tab_page.dart` is a thin wrapper (12 lines); the real discovery content is `lib/features/user_search/views/widgets/search_discovery_widget.dart`, and user search itself is a nested route, `/dashboard/search/users` (`UserSearchRoute`, `lib/features/user_search/views/pages/user_search_page.dart`).
+Search is the second bottom-nav tab (route `/dashboard/search`, `SearchRoute`). `lib/features/navigation/views/pages/search_tab_page.dart` wraps `SearchScreen` (`lib/features/user_search/views/pages/search_screen.dart`). User search is a nested route `/dashboard/search/users` (`UserSearchRoute`, `user_search_page.dart`).
 
 ## Sub-features
 
-- `discovery` sections on the search landing screen: `Trending Right Now`, `Browse by Category`, `Search by Color` (`search_discovery_widget.dart`).
-- `color-search`: tapping a color swatch pushes `ColorRoute(hexColor: swatch.hex)` (route `/color`).
-- `user-search`: pushes `UserSearchRoute`, has a text field with hint `Search` (`user_search_page.dart:69`), and lets you push a `ProfileRoute` for a result.
+- `field`: hint `Search wallpapers`. `Clear search` clears it.
+- `filters`: a `Filters` button opens a sheet with `Apply` and `Reset` (`search_filter_sheet.dart`).
+- `discovery` (`search_discovery_widget.dart`, `search_discovery_sections.dart`): `Recent searches` with `Clear`, quick tag chips (`Nature`, `Architecture`, `Cars`, `Anime`, `Space`, `Ocean`, `Flowers`, `Neon`; `lib/features/user_search/data/search_tags.dart`), a `Find creators` row (subtitle `Search Prism users by name`), `Depth Effect, subject in front of the clock` (iOS only), `Spatial, walls with clear 3D depth`, `Browse by colour`, `Trending now`, `Browse by category` (cards labelled `Category, <name>`).
+- `colour`: there is no `ColorRoute`. A swatch (label is the colour name, such as `Teal`) filters in place. A selected chip shows the colour (tooltip `Clear colour`). Tap that chip to clear it. A tap on the tooltip node does nothing.
+- `user-search`: title `Find creators`, hint `Search creators`. A result tap pushes `ProfileRoute`.
 
 ## How to get to it (user POV)
 
 - Tap `Search` in the bottom nav.
-- On the discovery screen, tap a trending wallpaper to open `features/wallpaper-detail.md`, a category tile to browse by category, a color swatch for `Search by Color`, or the search-users entry to reach `/dashboard/search/users`.
+- Tap a trending wall for `features/wallpaper-detail.md`. Tap a category card to browse it. Tap a swatch to filter.
+- Tap `Find creators` for user search.
 
 ## Driving it with the helper
 
-Preconditions:
+Preconditions: app launched, signed in or out. Search does not need a session. User search does.
 
-- App launched, signed in or out (search itself does not require a session).
-
-- **Landing.** Tap `Search`. Snapshot `--tag search-discovery`. Assert section headers `Trending Right Now`, `Browse by Category`, `Search by Color`.
-- **Color search.** Tap a color swatch. Confirm `ColorRoute` opens with wallpapers filtered by that hex color.
-- **User search.** Reach `/dashboard/search/users`. Assert a text field with hint `Search`. Type a query with `type --platform <p> --text "<name>"`; confirm results render, then tap a result to open its `ProfileRoute` (see `features/profile.md`).
-- **Proof.** Snapshot the discovery screen, a color-filtered result, and a user-search result list.
+- **Landing.** Tap `Search`. Snapshot `--tag search-discovery`. Assert `Search wallpapers`, `Browse by colour`, `Trending now`, `Browse by category`.
+- **Query.** Tap the field. Run `type --platform <p> --text "<word>"`. Confirm results render.
+- **Colour.** Tap a swatch, such as `Teal`. Assert a selected `Teal` chip and a results grid. Tap the selected `Teal` chip to clear it.
+- **Filters.** Tap `Filters`. Assert `Portrait only`, `Min resolution`, `Sort`, `Colour`, `Reset` and `Apply`. Tap `Close`.
+- **User search.** Tap the `Find creators` text row (it is a text node, not a button). Signed out, assert the sign-in prompt and no field. Signed in, assert `Search creators`, type a name, then tap a result to open `ProfileRoute` (`features/profile.md`).
+- **Proof.** Snapshot the landing, a colour result and a creator result.
 
 ## Gotchas
 
-- The exact affordance for reaching user search from the discovery screen (a button, a tab, a search-bar toggle) was not pinned down for this map. Run `describe` on the discovery screen and look for a label near "search" or "people" before writing a tap recipe.
-- `search_tab_page.dart` itself has almost no content; do not spend time reading it further, the interesting code is in `search_discovery_widget.dart` and `user_search`.
+- `Depth Effect` shows on iOS only (`showDepthEffectUi`).
+- Trending and category data need a real backend. A `SKIP_FIREBASE_INIT=true` build may show empty sections.
+- Swatch labels come from `prismPaletteColorDisplayName`. Confirm names with `describe`.

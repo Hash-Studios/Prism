@@ -4,6 +4,7 @@ import {createHash} from "node:crypto";
 import {awardCoins} from "../coinsCallables";
 import {ownedThumbnailUrl, type StoredUpload} from "../ownedAssetDelivery";
 import {r2ObjectId} from "../r2Storage";
+import {STUDIO_ACCOUNT} from "../studio/account";
 import {installFakeDb, type Doc} from "./fakeDb";
 
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -102,12 +103,26 @@ for (const failure of ["owner", "missing", "deleted", "incarnation", "nanos", "o
       if (failure === "intent") store.delete(`githubUploadIntents/path_${hash("walls\0logical.jpg")}`);
       if (failure === "legacy-provenance") manifest.provenance = {kind: "legacy", uid: "creator"};
       if (failure === "studio") {
-        Object.assign(wall, {origin: "studio", studioRunId: "run", studioCandidateId: "candidate"});
+        Object.assign(wall, {email: STUDIO_ACCOUNT.email, origin: "studio", studioRunId: "run",
+          studioCandidateId: "candidate"});
         store.set("studioRuns/run/candidates/candidate", {wallId: "canonical"});
       }
       const before = structuredClone([...store.entries()]);
-      assert.equal((await awardCoins.run(request)).changed, false);
+      const awardRequest = failure === "studio" ? {...request,
+        auth: {uid: "creator", token: {email: STUDIO_ACCOUNT.email}}} as typeof request : request;
+      assert.equal((await awardCoins.run(awardRequest)).changed, false);
       assert.deepEqual([...store.entries()], before);
     });
   }
 }
+
+test("a user-owned upload with a spoofed Studio marker still earns first-upload coins", async (t) => {
+  const store = setup(t, "owned");
+  const wall = store.get("walls/canonical") as Doc;
+  Object.assign(wall, {origin: "studio", studioRunId: "run", studioCandidateId: "candidate"});
+  store.set("studioRuns/run/candidates/candidate", {wallId: "another-wall"});
+
+  const result = await awardCoins.run(request);
+  assert.equal(result.changed, true);
+  assert.equal(store.get("usersv2/creator")?.coins, 59);
+});

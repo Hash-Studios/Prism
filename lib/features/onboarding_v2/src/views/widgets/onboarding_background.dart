@@ -154,6 +154,7 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
   static double _sigmaFor(OnboardingV2Step step) => switch (step) {
     OnboardingV2Step.auth => 0,
     OnboardingV2Step.interests => 40,
+    OnboardingV2Step.tasteQuiz => 40,
     OnboardingV2Step.starterPack => 70,
     OnboardingV2Step.aiGenerate => 40,
     OnboardingV2Step.firstWallpaper => 0,

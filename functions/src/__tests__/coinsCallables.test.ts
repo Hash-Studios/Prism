@@ -20,6 +20,7 @@ import {
 } from "../coinsCallables";
 import {DEFAULT_ECONOMY, ECONOMY_CONFIG_DOC, parseEconomy, resetEconomyCache, weekKey} from "../economy";
 import {buildQuestState} from "../questCatalog";
+import {STUDIO_ACCOUNT} from "../studio/account";
 import {installFakeDb} from "./fakeDb";
 
 // No economy config doc unless a test seeds one: callables run on DEFAULT_ECONOMY.
@@ -65,6 +66,27 @@ test("refundableDelta: rejects an already-refunded debit", () => {
 test("refundableDelta: rejects a debit older than the refund window", () => {
   const old = debitFixture({createdAt: {toMillis: () => NOW - 600_001}});
   assert.throws(() => refundableDelta(old, "user-1", NOW), {code: "failed-precondition"});
+});
+
+test("refundableDelta: a premium filter debit rejects a different owner", () => {
+  const debit = debitFixture({action: "premiumFilter", delta: -5});
+  assert.throws(() => refundableDelta(debit, "someone-else", NOW), {code: "failed-precondition"});
+  assert.equal(refundableDelta(debit, "user-1", NOW), 5);
+});
+
+test("refundableDelta: a premium filter debit rejects refunded status", () => {
+  const debit = debitFixture({action: "premiumFilter", delta: -5});
+  assert.throws(() => refundableDelta({...debit, status: "refunded"}, "user-1", NOW), {code: "failed-precondition"});
+  assert.equal(refundableDelta(debit, "user-1", NOW), 5);
+});
+
+test("refundableDelta: a premium filter debit rejects an expired refund", () => {
+  const debit = debitFixture({action: "premiumFilter", delta: -5});
+  assert.throws(
+    () => refundableDelta({...debit, createdAt: {toMillis: () => NOW - 600_001}}, "user-1", NOW),
+    {code: "failed-precondition"},
+  );
+  assert.equal(refundableDelta(debit, "user-1", NOW), 5);
 });
 
 test("refundableDelta: allows a debit right at the edge of the refund window", () => {
@@ -163,11 +185,11 @@ for (const retry of ["duplicate", "cap", "balance"] as const) {
   });
 }
 
-test("refundableDelta: only the download and AI generation debits are refundable", () => {
-  for (const action of ["premiumFilter", "premiumPreview24h", "rewardedAd", undefined]) {
+test("refundableDelta: only download, AI generation and premium filter debits are refundable", () => {
+  for (const action of ["premiumPreview24h", "rewardedAd", undefined]) {
     assert.throws(() => refundableDelta(debitFixture({action}), "user-1", NOW), {code: "failed-precondition"});
   }
-  for (const action of ["wallpaperDownload", "premiumWallpaperDownload", "aiGeneration"]) {
+  for (const action of ["wallpaperDownload", "premiumWallpaperDownload", "aiGeneration", "premiumFilter"]) {
     assert.equal(refundableDelta(debitFixture({action}), "user-1", NOW), 15);
   }
 });
@@ -301,6 +323,18 @@ test("spendCoins with a requestId debits once and a repeat returns the original 
   assert.equal(harness.coins, 90);
 });
 
+test("spendCoins: a requestId cannot replay a different action", async (t) => {
+  const harness: SpendHarness = {coins: 100, ledger: new Map()};
+  mockSpendTransactions(t, harness);
+  await spendCoins.run(spendRequest({requestId: "request_123"}));
+  await assert.rejects(
+    () => spendCoins.run(spendRequest({action: "premiumWallpaperDownload", requestId: "request_123"})),
+    {code: "invalid-argument"},
+  );
+  assert.equal(harness.coins, 95);
+  assert.equal(harness.ledger.size, 1);
+});
+
 test("spendCoins without a requestId still works and each call debits", async (t) => {
   const harness: SpendHarness = {coins: 100, ledger: new Map()};
   mockSpendTransactions(t, harness);
@@ -316,6 +350,22 @@ test("spendCoins rejects a malformed requestId before reading Firestore", async 
   for (const requestId of ["short", "a".repeat(65), "bad/path_123", 12345678]) {
     await assert.rejects(() => spendCoins.run(spendRequest({requestId})), {code: "invalid-argument"});
   }
+});
+
+test("spendCoins: optional expectedUserId fences an auth-token mismatch before charging", async (t) => {
+  t.mock.method(db, "runTransaction", () => {
+    throw new Error("mismatched owner must not read or debit");
+  });
+  await assert.rejects(
+    () => spendCoins.run(spendRequest({requestId: "request_123", expectedUserId: "other-user"})),
+    {code: "unauthenticated"},
+  );
+
+  const harness: SpendHarness = {coins: 100, ledger: new Map()};
+  mockSpendTransactions(t, harness);
+  const result = await spendCoins.run(spendRequest({requestId: "request_456", expectedUserId: "user-1"}));
+  assert.equal(result.delta, -5);
+  assert.equal(harness.coins, 95);
 });
 
 test("spendCoins caps reason at 200 characters", async (t) => {
@@ -370,7 +420,8 @@ test("refundableDelta: a longer window lets an older debit through", () => {
 test("spendCoins: a replay of a refunded requestId is refused and never debits again", async (t) => {
   const harness: SpendHarness = {
     coins: 100,
-    ledger: new Map([["spend_user-1_request_123", {id: "spend_user-1_request_123", status: "refunded", delta: -5}]]),
+    ledger: new Map([["spend_user-1_request_123", {id: "spend_user-1_request_123", action: "premiumFilter",
+      status: "refunded", delta: -5}]]),
   };
   mockSpendTransactions(t, harness);
   const replay = await spendCoins.run(spendRequest({requestId: "request_123"}));
@@ -512,13 +563,13 @@ const firstUploadRequest = (email: string) => ({
 test("awardCoins firstWallpaperUpload: an approved wall with verified Studio provenance is not upload evidence", async (t) => {
   const store: Store = new Map([
     ["usersv2/user-1", userDoc()],
-    ["walls/STUDIO1234", {email: "studio@example.com", review: true, origin: "studio",
+    ["walls/STUDIO1234", {email: STUDIO_ACCOUNT.email, review: true, origin: "studio",
       studioRunId: "d20261012", studioCandidateId: "d20261012-0"}],
     ["studioRuns/d20261012/candidates/d20261012-0", {wallId: "STUDIO1234"}],
   ]);
   mockStore(t, store, {wallEvidence: true});
 
-  const result = await awardCoins.run(firstUploadRequest("studio@example.com"));
+  const result = await awardCoins.run(firstUploadRequest(STUDIO_ACCOUNT.email));
   assert.equal(result.success, false);
   assert.equal(result.reason, "first_upload_no_wall");
   assert.equal(store.get("usersv2/user-1")?.coins, 0);
@@ -527,12 +578,12 @@ test("awardCoins firstWallpaperUpload: an approved wall with verified Studio pro
 test("awardCoins firstWallpaperUpload: a Studio provenance read failure awards no coins", async (t) => {
   const store: Store = new Map([
     ["usersv2/user-1", userDoc()],
-    ["walls/STUDIO1234", {email: "studio@example.com", review: true, origin: "studio",
+    ["walls/STUDIO1234", {email: STUDIO_ACCOUNT.email, review: true, origin: "studio",
       studioRunId: "d20261012", studioCandidateId: "d20261012-0"}],
   ]);
   mockStore(t, store, {wallEvidence: true, candidateReadFails: true});
 
-  await assert.rejects(awardCoins.run(firstUploadRequest("studio@example.com")), /candidate read failed/);
+  await assert.rejects(awardCoins.run(firstUploadRequest(STUDIO_ACCOUNT.email)), /candidate read failed/);
   assert.equal(store.get("usersv2/user-1")?.coins, 0);
 });
 
@@ -1128,6 +1179,54 @@ test("refund: gives the coins back with no XP", async (t) => {
   const result = await awardCoins.run(awardRequest({action: "refund", transactionId: "tx1"}));
   assert.equal(result.delta, 10);
   assert.equal(store.get(USER)?.xp, 5);
+});
+
+test("refund: optional expectedUserId fences a stale client owner without breaking matching or legacy calls", async (t) => {
+  const store = installFakeDb(t, {
+    [USER]: {coins: 0, xp: 5},
+    "coinTransactions/tx1": {userId: "user-1", type: "debit", status: "completed", action: "premiumFilter",
+      delta: -5, createdAt: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000)},
+  });
+  await assert.rejects(
+    () => awardCoins.run(awardRequest({action: "refund", transactionId: "tx1", expectedUserId: "user-2"})),
+    {code: "unauthenticated"},
+  );
+  assert.equal(store.get(USER)?.coins, 0);
+  assert.equal(store.get("coinTransactions/tx1")?.status, "completed");
+  const result = await awardCoins.run(awardRequest({action: "refund", transactionId: "tx1", expectedUserId: "user-1"}));
+  assert.equal(result.delta, 5);
+  assert.equal(store.get(USER)?.coins, 5);
+});
+
+test("premiumFilter refund is once-only and a refunded spend request cannot debit again", async (t) => {
+  const store = installFakeDb(t, {[USER]: {coins: 100}});
+  const spend = await spendCoins.run(spendRequest({requestId: "refund_filter_1"}));
+  assert.equal(spend.delta, -5);
+  assert.equal(store.get(USER)?.coins, 95);
+
+  const refund = () => awardCoins.run(awardRequest({action: "refund", transactionId: spend.transactionId}));
+  assert.equal((await refund()).delta, 5);
+  assert.equal(store.get(USER)?.coins, 100);
+  await assert.rejects(refund, {code: "failed-precondition"});
+  assert.equal(store.get(USER)?.coins, 100);
+
+  const replay = await spendCoins.run(spendRequest({requestId: "refund_filter_1"}));
+  assert.equal(replay.success, false);
+  assert.equal(replay.reason, "spend_refunded");
+  assert.equal(store.get(USER)?.coins, 100);
+  assert.equal(store.get("coinRefundDaily/user-1_" + new Date().toISOString().slice(0, 10))?.count, 1);
+});
+
+test("premium-bypassed zero-delta receipts cannot be refunded", async (t) => {
+  const store = installFakeDb(t, {[USER]: {coins: 100, premium: true}});
+  const bypass = await spendCoins.run(spendRequest({requestId: "refund_bypass_1", allowPremiumBypass: true}));
+  assert.equal(bypass.delta, 0);
+  await assert.rejects(
+    () => awardCoins.run(awardRequest({action: "refund", transactionId: "spend_user-1_refund_bypass_1"})),
+    {code: "failed-precondition"},
+  );
+  assert.equal(store.get(USER)?.coins, 100);
+  assert.equal(store.get("coinRefundDaily/user-1_" + new Date().toISOString().slice(0, 10)), undefined);
 });
 
 test("spendCoins v2: the first 3 downloads ever are free, the 4th pays 10", async (t) => {

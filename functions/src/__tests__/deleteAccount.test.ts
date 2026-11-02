@@ -4,6 +4,7 @@ import * as admin from "firebase-admin";
 import {db} from "../common";
 import {deleteAccount} from "../deleteAccount";
 import {claimUsername} from "../claimUsername";
+import * as publicFolders from "../publicFolders";
 import {installFakeDb} from "./fakeDb";
 
 type Options = {
@@ -11,6 +12,7 @@ type Options = {
   failDelete?: boolean;
   failFirstDelete?: boolean;
   failUpdate?: boolean;
+  failFolderFollows?: boolean;
   slowQueries?: boolean;
   authError?: string;
   authEmail?: string;
@@ -28,19 +30,43 @@ function fake(t: TestContext, options: Options = {}) {
       log.push("anonymize");
     },
   };
-  const docsFor = (collection: string) => [{
-    id: "d1", data: () => collection === "boosts" ? {wallId: "w9"} : {},
-    ref: {path: `${collection}/d1`, collection: (name: string) => query(`${collection}/d1/${name}`)},
-  }];
-  const query = (collection: string) => {
+  const docsFor = (collection: string, filters: Array<[string, string, unknown]> = []) => {
+    const prefix = filters.find(([field, op]) => field === "__name__" && op === ">=")?.[2];
+    const upperBound = filters.find(([field, op]) => field === "__name__" && op === "<")?.[2];
+    if (collection === "tipRateDaily") {
+      const rows = [
+        {id: "u1_2026-10-31", senderUid: "u1", creatorUid: ""},
+        {id: "recv_u1_2026-10-31", senderUid: "", creatorUid: "u1"},
+        {id: "pair_u1_other_2026-10-31", senderUid: "u1", creatorUid: "other"},
+        {id: "pair_other_u1_2026-10-31", senderUid: "other", creatorUid: "u1"},
+        {id: "u1_other_2026-10-31", senderUid: "u1_other", creatorUid: ""},
+      ];
+      return rows.filter((row) => filters.every(([field, op, value]) => {
+        const actual = field === "__name__" ? row.id : row[field as "senderUid" | "creatorUid"];
+        return op === "==" ? actual === value : op === ">=" ? actual >= String(value) : actual < String(value);
+      })).map((row) => ({id: row.id, data: () => row, ref: {path: `${collection}/${row.id}`}}));
+    }
+    const ids = (collection === "wallRequestRateDaily" || collection === "wallRequestVoteRateDaily") &&
+      typeof prefix === "string" && prefix === "u1_" && upperBound === `${prefix}\uf8ff` ?
+      ["u1_2026-10-29", "u1_2026-10-28"] : ["d1"];
+    return ids.map((id) => ({
+      id, data: () => collection === "boosts" ? {wallId: "w9"} : {},
+      ref: {path: `${collection}/${id}`, delete: async () => {
+        log.push(`delete:${collection}/${id}`);
+      }, collection: (name: string) => query(`${collection}/${id}/${name}`)},
+    }));
+  };
+  const query = (collection: string, filters: Array<[string, string, unknown]> = []) => {
     const q = {
-      where: (field: string, op: string, value: unknown) => {
-        log.push(`query:${collection}.${field}${op}${value}`);
+      where: (field: string | admin.firestore.FieldPath, op: string, value: unknown) => {
+        const fieldPath = String(field);
+        log.push(`query:${collection}.${fieldPath}${op}${value}`);
+        filters.push([fieldPath, op, value]);
         return q;
       },
       get: async () => {
         if (options.slowQueries) await new Promise((resolve) => setTimeout(resolve, 20));
-        return {docs: docsFor(collection)};
+        return {docs: docsFor(collection, filters)};
       },
     };
     return q;
@@ -98,6 +124,13 @@ function fake(t: TestContext, options: Options = {}) {
       log.push("close");
     },
   }));
+  t.mock.method(publicFolders, "removeOwnerPublicFolders", async (uid: string) => {
+    log.push(`publicFolders:${uid}`);
+  });
+  t.mock.method(publicFolders, "removeAllFolderFollows", async (uid: string) => {
+    log.push(`folderFollows:${uid}`);
+    if (options.failFolderFollows) throw new Error("folder follow cleanup failed");
+  });
   t.mock.method(admin.auth(), "deleteUser", async () => {
     log.push("auth");
     if (options.authError) throw Object.assign(new Error("gone"), {code: options.authError});
@@ -118,13 +151,24 @@ test("deleting an account removes every per-user doc, anonymizes, then deletes t
   const log = fake(t);
   await call();
   for (const path of [
-    "recursive:usersv2/u1/blockedUsers", "recursive:usersv2/u1/private",
+    "recursive:usersv2/u1/blockedUsers", "recursive:usersv2/u1/private", "recursive:usersv2/u1/history", "recursive:wrapped/u1",
     "delete:referralStats/u1", "delete:subscriptionSync/u1", "delete:githubUploadStats/u1",
     "delete:badgeCheckRate/u1", "delete:coinAdRateDaily/d1", "delete:coinTransactions/d1",
     "delete:aiGenerations/d1", "delete:draftSetups/d1",
   ]) {
     assert.ok(log.includes(path), path);
   }
+  for (const path of [
+    "query:challengeVotes.uid==u1", "query:challengeVoteRateDaily.uid==u1", "delete:challengeVoteRateDaily/d1",
+    "query:wallRequests.requesterUid==u1", "recursive:wallRequests/d1", "query:votes.uid==u1",
+    "query:wallRequestRateDaily.__name__>=u1_", "query:wallRequestVoteRateDaily.__name__>=u1_",
+    "query:wallRequestRateDaily.__name__<u1_\uf8ff", "query:wallRequestVoteRateDaily.__name__<u1_\uf8ff",
+    "delete:wallRequestRateDaily/u1_2026-10-29", "delete:wallRequestRateDaily/u1_2026-10-28",
+    "delete:wallRequestVoteRateDaily/u1_2026-10-29", "delete:wallRequestVoteRateDaily/u1_2026-10-28",
+  ]) {
+    assert.ok(log.includes(path), path);
+  }
+  assert.ok(log.indexOf("recursive:usersv2/u1/history") < log.indexOf("anonymize"));
   assert.ok(log.indexOf("anonymize") > log.indexOf("delete:draftSetups/d1"));
   assert.equal(log.at(-1), "auth");
   assert.equal(log.at(-2), "anonymize");
@@ -140,6 +184,21 @@ test("draw tickets and boosts are deleted, the boosted wall is cleared and the e
   assert.ok(log.includes("update:walls/w9:boostedUntil"));
   assert.ok(log.includes("recursive:usersv2/u1/private"));
   assert.ok(log.indexOf("anonymize") > log.indexOf("update:walls/w9:boostedUntil"));
+});
+
+test("account deletion covers private metadata, lineage, operation and receipt ledgers by owner and actor", async (t) => {
+  const log = fake(t);
+  await call();
+  for (const collection of ["wallMetadataEdits", "wallMetadataOperations", "wallResubmissionRoots", "wallResubmissions",
+    "wallResubmissionOperations", "wallResubmissionConsumptions"]) {
+    assert.ok(log.includes(`query:${collection}.ownerUid==u1`), collection);
+    assert.ok(log.includes(`delete:${collection}/d1`), collection);
+  }
+  assert.ok(log.includes("query:wallMetadataEditRates.uid==u1"));
+  for (const collection of ["wallMetadataEdits", "wallMetadataOperations", "wallResubmissionOperations"]) {
+    assert.ok(log.includes(`query:${collection}.actorUid==u1`), collection);
+  }
+  assert.ok(log.indexOf("barrier:creatorDeletionState/u1") < log.indexOf("delete:wallResubmissionRoots/d1"));
 });
 
 test("a failed delete throws before the profile is anonymized or the auth user removed", async (t) => {
@@ -285,6 +344,27 @@ test("creator deletion barrier and anonymized wall receipts precede recursive pr
   assert.ok(log.includes("delete:creatorMemberRateDaily/d1"));
 });
 
+test("public folders and folder follows go after the deletion barrier and before private state", async (t) => {
+  const log = fake(t);
+  await call();
+  const barrier = log.indexOf("barrier:creatorDeletionState/u1");
+  const projections = log.indexOf("publicFolders:u1");
+  const follows = log.indexOf("folderFollows:u1");
+  assert.ok(barrier >= 0 && projections > barrier && follows > barrier);
+  assert.ok(follows < log.indexOf("recursive:usersv2/u1/followedFolders"));
+  assert.ok(log.indexOf("recursive:usersv2/u1/private") < log.indexOf("anonymize"));
+});
+
+test("failed folder-follow cleanup stops deletion before private state is removed", async (t) => {
+  const log = fake(t, {failFolderFollows: true});
+  await assert.rejects(call, /folder follow cleanup failed/);
+  assert.ok(log.includes("publicFolders:u1"));
+  assert.ok(log.includes("folderFollows:u1"));
+  assert.ok(!log.includes("recursive:usersv2/u1/followedFolders"));
+  assert.ok(!log.includes("anonymize"));
+  assert.ok(!log.includes("auth"));
+});
+
 test("a failed update throws before the profile is anonymized or the auth user removed", async (t) => {
   const log = fake(t, {failUpdate: true});
   await assert.rejects(async () => {
@@ -339,6 +419,32 @@ test("SV-S12 releases all deleted UID reservations, permits reuse and never remo
     Parameters<typeof claimUsername.run>[0]), {username: "OldName", usernameLower: "oldname"});
   await call();
   assert.equal(store.get("usernames/oldname")?.uid, "u2");
+});
+
+test("account deletion removes reward sessions and locks but retains minimal Google replay records", async (t) => {
+  fake(t, {email: ""});
+  const store = installFakeDb(t, {
+    "usersv2/u1": {coins: 20},
+    "rewardedAdSessions/session": {uid: "u1", status: "settled", transactionId: "ssv_session"},
+    "rewardedAdUsers/u1": {sessionId: "session", showBeforeMs: 100},
+    "rewardedAdGoogleTransactions/google": {sessionId: "session"},
+    "coinTransactions/ssv_session": {userId: "u1", delta: 20},
+  });
+  const empty = {where: () => empty, get: async () => ({docs: []})};
+  t.mock.method(db, "collectionGroup", () => empty);
+  t.mock.method(db, "bulkWriter", () => ({
+    set: (ref: admin.firestore.DocumentReference, data: admin.firestore.DocumentData) => ref.set(data),
+    update: (ref: admin.firestore.DocumentReference, data: admin.firestore.UpdateData<admin.firestore.DocumentData>) => ref.update(data),
+    delete: (ref: admin.firestore.DocumentReference) => ref.delete(),
+    close: async () => undefined,
+  }));
+  await call();
+  assert.equal(store.get("creatorDeletionState/u1")?.closed, true);
+  assert.equal(store.get("usersv2/u1")?.deleted, true);
+  assert.equal(store.has("coinTransactions/ssv_session"), false);
+  assert.equal(store.has("rewardedAdSessions/session"), false);
+  assert.equal(store.has("rewardedAdUsers/u1"), false);
+  assert.equal(store.get("rewardedAdGoogleTransactions/google")?.sessionId, "session");
 });
 
 test("SV-S12 rechecks reservation ownership after the cleanup query", async (t) => {
@@ -583,4 +689,29 @@ test("a folder the repair trigger updates after the owner query is still deleted
 
   assert.deepEqual(await deleteAccount.run(request), {ok: true});
   assert.equal(store.has("folders/one"), false);
+});
+
+
+test("wall action receipts and event children are removed after the deletion barrier", async (t) => {
+  const log = fake(t);
+  await call();
+  const cleanup = log.indexOf("recursive:usersv2/u1/wallActionReceipts");
+  assert.ok(cleanup > log.indexOf("barrier:creatorDeletionState/u1"));
+  assert.ok(cleanup < log.indexOf("anonymize"));
+});
+
+
+test("tip cleanup selects exact sender and creator ownership, not uid prefixes", async (t) => {
+  const log = fake(t);
+  await call();
+  assert.ok(log.includes("delete:creatorTips/u1"));
+  assert.ok(log.includes("query:tipRateDaily.senderUid==u1"));
+  assert.ok(log.includes("query:tipRateDaily.creatorUid==u1"));
+  assert.ok(!log.includes("query:tipRateDaily.__name__>=u1_"));
+  for (const id of ["u1_2026-10-31", "recv_u1_2026-10-31", "pair_u1_other_2026-10-31", "pair_other_u1_2026-10-31"]) {
+    const cleanup = log.indexOf(`delete:tipRateDaily/${id}`);
+    assert.ok(cleanup > log.indexOf("barrier:creatorDeletionState/u1"), id);
+    assert.ok(cleanup < log.indexOf("anonymize"), id);
+  }
+  assert.ok(!log.includes("delete:tipRateDaily/u1_other_2026-10-31"));
 });

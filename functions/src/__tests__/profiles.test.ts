@@ -1,12 +1,56 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {removeUidFollowGraph, setFollow, syncPublicProfile} from "../profiles";
+import * as admin from "firebase-admin";
+import {projectUserProfile, removeUidFollowGraph, setFollow, syncPublicProfile} from "../profiles";
+import {onContentReportCreated} from "../onContentReportCreated";
 import {db} from "../common";
+import * as publicFolders from "../publicFolders";
 import {installFakeDb} from "./fakeDb";
 
 const call = (targetUid: unknown, following: unknown = true) => ({
   auth: {uid: "alice"}, data: {targetUid, following},
 } as Parameters<typeof setFollow.run>[0]);
+
+test("profile projection retries deletion cleanup after transient failures", () => {
+  assert.equal(projectUserProfile.__endpoint.eventTrigger?.retry, true);
+});
+
+test("a delayed deletion event preserves folders when the current user is still live", async (t) => {
+  installFakeDb(t, {"usersv2/alice": {name: "Current"}});
+  const cleaned: string[] = [];
+  t.mock.method(publicFolders, "removeOwnerPublicFolders", async (uid: string) => {
+    cleaned.push(`owner:${uid}`);
+  });
+  t.mock.method(publicFolders, "removeAllFolderFollows", async (uid: string) => {
+    cleaned.push(`follows:${uid}`);
+  });
+
+  await projectUserProfile.run({
+    params: {uid: "alice"},
+    data: {before: {exists: true, data: () => ({name: "Old"})}, after: {exists: false, data: () => undefined}},
+  } as unknown as Parameters<typeof projectUserProfile.run>[0]);
+
+  assert.deepEqual(cleaned, []);
+});
+
+test("current user removal clears both owned folders and incoming followed-folder edges", async (t) => {
+  installFakeDb(t, {"creatorDeletionState/alice": {closed: true}});
+  t.mock.method(db, "recursiveDelete", async () => undefined);
+  const cleaned: string[] = [];
+  t.mock.method(publicFolders, "removeOwnerPublicFolders", async (uid: string) => {
+    cleaned.push(`owner:${uid}`);
+  });
+  t.mock.method(publicFolders, "removeAllFolderFollows", async (uid: string) => {
+    cleaned.push(`follows:${uid}`);
+  });
+
+  await projectUserProfile.run({
+    params: {uid: "alice"},
+    data: {before: {exists: true, data: () => ({name: "Old"})}, after: {exists: false, data: () => undefined}},
+  } as unknown as Parameters<typeof projectUserProfile.run>[0]);
+
+  assert.deepEqual(cleaned, ["owner:alice", "follows:alice"]);
+});
 
 test("setFollow follow and unfollow are idempotent on followerCount", async (t) => {
   const store = installFakeDb(t, {
@@ -146,4 +190,40 @@ test("setFollow removes both UID edges and does not underflow counts", async (t)
   assert.equal(store.has("profiles/alice/following/bob"), false);
   assert.equal(store.has("profiles/bob/followers/alice"), false);
   assert.equal(store.get("profiles/bob")?.followerCount, 0);
+});
+
+test("folder moderation retries transient trusted-reporter lookup failures", async (t) => {
+  const reports = {
+    r1: {contentType: "folder", targetFirestoreDocId: "folder1", reason: "blocked", reporterUid: "a"},
+    r2: {contentType: "folder", targetFirestoreDocId: "folder1", reason: "blocked", reporterUid: "b"},
+    r3: {contentType: "folder", targetFirestoreDocId: "folder1", reason: "blocked", reporterUid: "c"},
+  };
+  const store = installFakeDb(t, {
+    "folders/folder1": {name: "Shared folder"},
+    ...Object.fromEntries(Object.entries(reports).map(([id, data]) => [`contentReports/${id}`, data])),
+  });
+  const retryError = Object.assign(new Error("Auth temporarily unavailable"), {code: "auth/internal-error"});
+  let failFirstLookup = true;
+  t.mock.method(admin.auth(), "getUser", async () => {
+    if (failFirstLookup) {
+      failFirstLookup = false;
+      throw retryError;
+    }
+    return {metadata: {creationTime: new Date(Date.now() - 30 * 86_400_000).toUTCString()}} as never;
+  });
+  t.mock.method(publicFolders, "hideFolder", async (folderId: string, hidden: boolean) => {
+    const folder = store.get(`folders/${folderId}`);
+    if (folder) store.set(`folders/${folderId}`, {...folder, moderationHidden: hidden});
+  });
+  const fire = () => onContentReportCreated.run({
+    params: {reportId: "r3"},
+    data: {data: () => reports.r3},
+  } as unknown as Parameters<typeof onContentReportCreated.run>[0]);
+
+  assert.equal(onContentReportCreated.__endpoint.eventTrigger?.retry, true);
+  await assert.rejects(fire, (err) => err === retryError);
+  assert.equal(store.get("folders/folder1")?.moderationHidden, undefined);
+
+  await fire();
+  assert.equal(store.get("folders/folder1")?.moderationHidden, true);
 });

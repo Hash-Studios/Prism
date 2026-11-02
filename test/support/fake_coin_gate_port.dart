@@ -13,12 +13,15 @@ class FakeCoinGatePort implements CoinGatePort {
   int balance;
   @override
   bool isPremium;
+  @override
+  String userId = 'user-1';
 
   final List<String> log = <String>[];
   final List<String> errors = <String>[];
   final List<String> successes = <String>[];
   final List<String> infos = <String>[];
   final List<String> spendLabels = <String>[];
+  final List<String> refundUserIds = <String>[];
   final List<String?> pendingDownloadLinks = <String?>[];
 
   int awardAmount = CoinPolicy.rewardedAd;
@@ -44,6 +47,18 @@ class FakeCoinGatePort implements CoinGatePort {
 
   @override
   Future<bool> adsAllowed() async => consentGiven;
+
+  @override
+  Future<CoinMutationResult> watchVerifiedReward(String placement) async {
+    final watched = await watchRewardedAdResult();
+    if (!watched.earned)
+      return CoinMutationResult.noChange(
+        balance: balance,
+        success: false,
+        reason: adFailure == null ? 'ad_not_completed' : 'ad_${adFailure!.name}',
+      );
+    return award(CoinEarnAction.rewardedAd, sourceTag: placement);
+  }
 
   @override
   Future<RewardedAdResult> watchRewardedAdResult() async {
@@ -129,8 +144,10 @@ class FakeCoinGatePort implements CoinGatePort {
     required String sourceTag,
     required String transactionId,
     required String reason,
+    required String userId,
   }) async {
     log.add('refund:$sourceTag:$transactionId:$reason');
+    refundUserIds.add(userId);
     if (!refundApplies) return CoinMutationResult.noChange(balance: balance, success: false, reason: 'refused');
     final int previous = balance;
     balance += action.cost();

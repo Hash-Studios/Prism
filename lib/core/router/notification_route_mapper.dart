@@ -9,6 +9,7 @@ import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
@@ -16,7 +17,14 @@ class NotificationRouteMapper {
   const NotificationRouteMapper();
 
   /// Set from app startup. Push taps record a scoreboard signal through this hook.
-  static Future<void> Function(String kindWire)? onMeasuredTap;
+  static Future<void> Function(String kindWire, {bool gallery})? onMeasuredTap;
+
+  /// The gallery link of a push that carries at least two wall ids, or null.
+  static Uri? galleryLinkFor(Map<String, dynamic> data) {
+    final String ids = data['wall_ids']?.toString().trim() ?? '';
+    if (ids.split(',').where((id) => id.trim().isNotEmpty).length < 2) return null;
+    return Uri(path: '/gallery', queryParameters: <String, String>{'ids': ids, 'source': 'push'});
+  }
 
   /// Classifies metadata before asynchronous lookups, without claiming that resolution succeeded.
   static TargetTypeValue targetTypeForRoute(String route) {
@@ -29,6 +37,8 @@ class NotificationRouteMapper {
       'home' ||
       'ai' ||
       'streak_reminder' ||
+      'creator_stats' ||
+      'wrapped' ||
       'rewards' ||
       'drops' ||
       'announcement' ||
@@ -60,11 +70,14 @@ class NotificationRouteMapper {
 
   /// Records that the user opened a push. Call it once per tap.
   void trackPushOpened(Map<String, dynamic> data) {
+    if (data['notification_kind'] == 'wall_request_filled') {
+      unawaited(analytics.track(WallRequestPushOpenedEvent(requestId: data['request_id']?.toString() ?? '')));
+    }
     final PushKindValue? kind = pushKindFor(data);
     if (kind == null) return;
     unawaited(analytics.track(PushOpenedEvent(kind: kind)));
-    final Future<void> Function(String kindWire)? onTap = onMeasuredTap;
-    if (onTap != null) unawaited(onTap(kind.wireValue));
+    final Future<void> Function(String kindWire, {bool gallery})? onTap = onMeasuredTap;
+    if (onTap != null) unawaited(onTap(kind.wireValue, gallery: data['gallery']?.toString() == '1'));
   }
 
   /// Adapts legacy push metadata to the same typed destinations used by URLs.
@@ -73,6 +86,9 @@ class NotificationRouteMapper {
     required String sourceTag,
     bool fallbackToInbox = true,
   }) {
+    if (data['route'] == 'creator_stats') {
+      return actionFromRoute(route: 'creator_stats', sourceTag: sourceTag, fallbackToInbox: fallbackToInbox);
+    }
     final String rawUrl = data['url']?.toString().trim() ?? '';
     final Uri? uri = Uri.tryParse(rawUrl);
     if (uri != null && const DeepLinkNavigation().isPrismDeepLink(uri)) {
@@ -81,6 +97,17 @@ class NotificationRouteMapper {
       if (action is! UnknownIntent) return Future<DeepLinkActionEntity?>.value(action);
     }
     final String route = data['route']?.toString().trim() ?? '';
+    if (route == 'challenge') {
+      final String id = data['challenge_id']?.toString().trim() ?? '';
+      final action = const DeepLinkParser().parse(Uri(path: '/challenges/$id'));
+      if (action is PageLinkIntent) return Future<DeepLinkActionEntity?>.value(action);
+    }
+    // A `feed` field picks the Home feed tab. Older builds ignore it and open Home as before.
+    final String feed = data['feed']?.toString().trim() ?? '';
+    if (route == 'home' && HomeFeedChip.values.asNameMap().containsKey(feed)) {
+      final String path = '/dashboard/home?feed=$feed';
+      return Future<DeepLinkActionEntity?>.value(PageLinkIntent(path: path, rawUri: path));
+    }
     final String wallId = data['wall_id']?.toString().trim() ?? '';
     final String profileIdentifier = _firstPresent(data, const <String>[
       'profile_identifier',
@@ -169,6 +196,14 @@ class NotificationRouteMapper {
         return const PageLinkIntent(path: '/dashboard/home', rawUri: '/dashboard/home');
       case 'ai':
         return const PageLinkIntent(path: '/ai', rawUri: '/ai');
+      case 'creator_stats':
+        return const PageLinkIntent(path: '/creator-stats', rawUri: '/creator-stats', source: 'inbox');
+      case 'wrapped':
+        return PageLinkIntent(
+          path: '/wrapped',
+          rawUri: '/wrapped',
+          source: sourceTag.startsWith('push') ? 'push' : 'inbox',
+        );
       case 'streak_reminder':
       case 'rewards':
         return const PageLinkIntent(path: '/dashboard/rewards', rawUri: '/dashboard/rewards');

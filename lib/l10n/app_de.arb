@@ -1,4 +1,16 @@
 {
+  "economyAd": "Anzeige",
+  "@economyAd": {"description": "Label identifying a rewarded advertisement."},
+  "economyWatchAdForCoins": "Anzeige für {reward} Münzen ansehen",
+  "@economyWatchAdForCoins": {"description": "Currently quoted rewarded ad amount.", "placeholders": {"reward": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsMissing": "Dir fehlen noch {count} Münzen.",
+  "@economyCoinsMissing": {"description": "Coins missing for the selected purchase.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsRemainAfterAd": "Nach der Anzeige fehlen dir möglicherweise noch {count} Münzen",
+  "@economyCoinsRemainAfterAd": {"description": "Estimated remaining shortfall after the quoted ad reward.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyAdAutomaticPurchase": "Wenn dein Guthaben nach der Belohnung den Preis deckt, wird dieser Artikel automatisch gekauft.",
+  "@economyAdAutomaticPurchase": {"description": "Disclosure of automatic purchase after a credited ad."},
+  "economyAdVerificationPending": "Deine Anzeigenbelohnung wird geprüft. Nach der Bestätigung erscheinen die Münzen.",
+  "@economyAdVerificationPending": {"description": "Ad reward awaiting server verification."},
   "foldersLibraryEmptyTitle": "Noch keine Ordner",
   "@foldersLibraryEmptyTitle": {
     "description": "Title of the empty Folders tab in the Library."
@@ -10,6 +22,42 @@
   "foldersLoadAllError": "Deine Ordner konnten nicht geladen werden",
   "@foldersLoadAllError": {
     "description": "Title shown when the Library cannot load the user's folders."
+  },
+  "galleryEmptyBody": "Sie wurden entfernt oder sind nicht mehr öffentlich.",
+  "galleryEmptyTitle": "Diese Hintergrundbilder sind weg",
+  "galleryScreenTitle": "Hintergrundbilder für dich",
+  "favouritePin": "Oben anheften",
+  "@favouritePin": {
+    "description": "Hold-menu action on a favourite wallpaper. Keeps it at the top of Favourites."
+  },
+  "favouriteUnpin": "Lösen",
+  "@favouriteUnpin": {
+    "description": "Hold-menu action on a pinned favourite. Returns it to its normal place in Favourites."
+  },
+  "favouritePinnedToast": "Oben in Favoriten angeheftet",
+  "@favouritePinnedToast": {
+    "description": "Confirmation after the user pins a favourite."
+  },
+  "favouriteUnpinnedToast": "Anheftung aufgehoben",
+  "@favouriteUnpinnedToast": {
+    "description": "Confirmation after the user unpins a favourite."
+  },
+  "favouritePinnedBadge": "Angeheftet",
+  "@favouritePinnedBadge": {
+    "description": "Accessibility label of the small pin badge on a pinned favourite tile."
+  },
+  "favouritePinLimit": "{count, plural, other{Du kannst bis zu {count} Favoriten anheften. Löse eine Anheftung, um dieses Hintergrundbild anzuheften.}}",
+  "@favouritePinLimit": {
+    "description": "Shown when the user tries to pin more favourites than the limit.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "favouritePinFailed": "Anheften konnte nicht aktualisiert werden. Prüfe deine Verbindung und versuche es erneut.",
+  "@favouritePinFailed": {
+    "description": "Shown when pinning or unpinning a favourite fails."
   },
   "wallpaperFavouriteSearchCountHint": "{count, plural, =1{1 Favorit durchsuchen} other{{count} Favoriten durchsuchen}}",
   "@wallpaperFavouriteSearchCountHint": {
@@ -54,6 +102,40 @@
   },
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "de",
+  "duoTitle": "Duo-Überraschung",
+  "duoAiFormatLabel": "Eine Duo-Überraschung erstellen",
+  "duoPresetNotice": "Prism zeigt im zugeklappten Zustand eine Vorschau der rechten Bildseite. Richte das gespeicherte Original manuell aus und prüfe beide Ansichten in der Hintergrundbildvorschau des Systems. Dies ist eine Prism-Voreinstellung, kein automatischer Bildzuschnitt von iOS.",
+  "duoFoldedPromptLabel": "Zugeklappte Ansicht",
+  "duoFoldedPromptExample": "Eine schläfrige Katze neben einem Fenster",
+  "duoRevealedPromptLabel": "Aufgeklappte Überraschung",
+  "duoRevealedPromptExample": "Ein winziges Raumschiff vor dem Fenster",
+  "duoPromptValidation": "Beschreibe beide Ansichten mit jeweils 1 bis 160 Zeichen.",
+  "duoMoodBody": "Ein Hintergrundbild. Aufgeklappt mehr entdecken.",
+  "duoDeviceName": "iPhone Duo",
+  "duoPhoneDevice": "Handy",
+  "duoFold": "Zuklappen",
+  "duoUnfold": "Aufklappen",
+  "duoFolded": "Zugeklappt",
+  "duoUnfolded": "Aufgeklappt",
+  "duoAndroidCropNotice": "Prism zeigt im zugeklappten Zustand eine Vorschau der rechten Bildseite. Android schneidet das Bild möglicherweise anders zu. Prüfe die Hintergrundbildvorschau des Systems, bevor du es anwendest.",
+  "duoGetOnPrism": "Auf Prism entdecken",
+  "duoGuideTitle": "Deine Duo-Überraschung einrichten",
+  "duoGuideOpen": "Öffne das gespeicherte Original in Fotos, tippe auf Teilen und dann auf Als Hintergrundbild.",
+  "duoGuideAlign": "Richte das vollständige Bild manuell so aus, dass im zugeklappten Zustand die rechte Seite zu sehen ist.",
+  "duoGuideCheck": "Prüfe die zugeklappte und die aufgeklappte Ansicht in der Systemvorschau und füge dann das Hintergrundbild hinzu.",
+  "duoWebTitle": "iPhone Duo Hintergrundbilder | Prism",
+  "duoWebDescription": "Ein Hintergrundbild mit einer verborgenen zweiten Szene. Entdecke originelle Hintergrundbilder mit Duo-Überraschung in Prism.",
+  "duoWebHeading": "Ein Hintergrundbild. Eine Geschichte, die sich entfaltet.",
+  "duoWebIntro": "Eine ruhige Szene im zugeklappten Zustand. Eine zweite Geschichte beim Aufklappen. Sieh dir beide Ansichten jedes Original-Hintergrundbilds an.",
+  "duoWebEmpty": "Die erste Duo-Kollektion wird geprüft.",
+  "duoWebEmptyBody": "Entdecke Prism, während wir jedes Hintergrundbild in beiden Ansichten prüfen.",
+  "duoWebFolded": "Zugeklappte Vorschau",
+  "duoWebUnfolded": "Aufgeklapptes Original",
+  "duoWebPresetNotice": "Diese Vorschauen nutzen die Prism-Voreinstellung für die rechte Bildseite, keinen automatischen Bildzuschnitt von Apple. Speichere das vollständige Original, richte es manuell aus und prüfe die zugeklappte und die aufgeklappte Ansicht in der Hintergrundbildvorschau des Systems.",
+  "duoWebOpenPrism": "In Prism öffnen",
+  "duoWebExplore": "Prism entdecken",
+  "duoWebAppStore": "Im App Store laden",
+  "duoWebPlayStore": "Bei Google Play herunterladen",
   "economyExportFailedLabel": "Export fehlgeschlagen",
   "@economyExportFailedLabel": {
     "description": "Failed filter export action inserted before refund status."
@@ -1377,16 +1459,7 @@
   "@accountReportAProblem": {
     "description": "Title for the report problem sheet and settings row."
   },
-  "accountReportPreviewNotice": "Dieser Bericht enthält deine App-Version, dein Gerät und aktuelle Protokolle. Er enthält weder deine E-Mail-Adresse noch Anmeldetokens. Lies ihn durch und teile ihn anschließend mit {email}.",
-  "@accountReportPreviewNotice": {
-    "description": "Privacy explanation shown before sharing a diagnostic report.",
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
-  "accountReportProblemSubtitle": "Teile deine App-Protokolle mit dem Prism-Team",
+  "accountReportProblemSubtitle": "Sende einen Fehlerbericht an das Prism-Team",
   "@accountReportProblemSubtitle": {
     "description": "Subtitle for reporting a problem."
   },
@@ -1537,10 +1610,6 @@
   "accountSettings": "Einstellungen",
   "@accountSettings": {
     "description": "Settings action label."
-  },
-  "accountShare": "Teilen",
-  "@accountShare": {
-    "description": "Share action label."
   },
   "accountShareInvite": "Einladung teilen",
   "@accountShareInvite": {
@@ -3306,6 +3375,80 @@
   "@aiLiveActivityOpen": {
     "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
   },
+  "aiResultApply": "Übernehmen",
+  "@aiResultApply": {
+    "description": "Primary button on a finished AI wallpaper. On Android it opens the Set screen; on iOS it saves to Photos."
+  },
+  "aiResultEditPrompt": "Prompt bearbeiten",
+  "@aiResultEditPrompt": {
+    "description": "Button on the full-screen AI result that returns to the prompt editor."
+  },
+  "aiSessionStripLabel": "Wallpaper aus dieser Sitzung",
+  "@aiSessionStripLabel": {
+    "description": "Screen reader label for the strip of thumbnails made in this session."
+  },
+  "aiSessionTake": "Version {index} von {count}",
+  "@aiSessionTake": {
+    "description": "Screen reader label for one thumbnail in the session strip.",
+    "placeholders": {
+      "index": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpWatercolour": "Als Aquarell",
+  "@aiFollowUpWatercolour": {
+    "description": "Follow-up chip. Makes a new take of the wallpaper as a watercolour painting."
+  },
+  "aiFollowUpNight": "Nachtversion",
+  "@aiFollowUpNight": {
+    "description": "Follow-up chip. Makes a night-time take."
+  },
+  "aiFollowUpMinimal": "Minimalistischer",
+  "@aiFollowUpMinimal": {
+    "description": "Follow-up chip. Makes a simpler take."
+  },
+  "aiFollowUpWarmer": "Wärmer",
+  "@aiFollowUpWarmer": {
+    "description": "Follow-up chip. Makes a take with warmer colours."
+  },
+  "aiFollowUpDepth": "Mehr Tiefe",
+  "@aiFollowUpDepth": {
+    "description": "Follow-up chip. Makes a take with more depth and layers."
+  },
+  "aiFollowUpCostLabel": "Jede neue Version kostet {cost} Coins",
+  "@aiFollowUpCostLabel": {
+    "description": "Screen reader label for the coin price shown next to the follow-up chips.",
+    "placeholders": {
+      "cost": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpConfirmTitle": "Neue Version erstellen?",
+  "@aiFollowUpConfirmTitle": {
+    "description": "Title of the sheet shown the first time a follow-up chip is tapped."
+  },
+  "aiFollowUpConfirmBody": "Eine Folgeversion erstellt ein neues Wallpaper aus diesem. Jede kostet {cost} Coins.",
+  "@aiFollowUpConfirmBody": {
+    "description": null,
+    "placeholders": {
+      "cost": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpConfirmAction": "Erstellen",
+  "@aiFollowUpConfirmAction": {
+    "description": "Confirm button on the follow-up cost sheet."
+  },
   "economyAiDailyLimit": "Du hast das heutige KI-Limit erreicht.",
   "economyAiDescribeChanges": "Beschreibe, was anders sein soll, zum Beispiel Farben, Stimmung oder Details.",
   "economyAiDescribeScene": "Beschreibe eine Szene, die erstellt werden soll.",
@@ -3445,6 +3588,8 @@
       }
     }
   },
+  "economyAiStyleSheetTitle": "Wähle einen Stil",
+  "economyAiStyleSheetSubject": "Jede Vorschau zeigt dieselbe Szene: ein Leuchtturm auf einer Klippe in der Dämmerung.",
   "economyAiStyleWatercolor": "Aquarell",
   "economyAiStyleSpace": "Weltraum",
   "economyAiStyleSynthwave": "Synthwave",
@@ -6029,6 +6174,54 @@
     }
   },
   "notifPushDropLiveTitle": "Ein neuer Drop ist da",
+  "notifPushFollowDigestTitleOne": "{artistName} hat ein neues Hintergrundbild veröffentlicht",
+  "@notifPushFollowDigestTitleOne": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushFollowDigestTitleSolo": "{artistName} hat {wallCount} neue Hintergrundbilder veröffentlicht",
+  "@notifPushFollowDigestTitleSolo": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestTitlePair": "{artistName} und {secondArtistName} haben {wallCount} neue Hintergrundbilder veröffentlicht",
+  "@notifPushFollowDigestTitlePair": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "secondArtistName": {
+        "type": "String"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestTitleGroup": "{artistName} und {otherCount} weitere haben {wallCount} neue Hintergrundbilder veröffentlicht",
+  "@notifPushFollowDigestTitleGroup": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "otherCount": {
+        "type": "int"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestBodyUntitled": "Tippe, um sie alle zu sehen.",
   "notifPushGiftReceivedBody": "Premium-Sammlungen und Premium-Hintergrundbilder sind 24 Stunden lang freigeschaltet.",
   "notifPushGiftReceivedTitle": "{senderName} hat dir einen 24-Stunden-Pro-Pass geschenkt",
   "@notifPushGiftReceivedTitle": {
@@ -6338,10 +6531,6 @@
     "description": "Wallpaper interface text: wallpaperAccentColorsOriginal."
   },
   "wallpaperResetOriginal": "Zurück zum Original",
-  "wallpaperAccentResetHint": "Gedrückt halten für Aktionen, auch Zurück zum Original",
-  "@wallpaperAccentResetHint": {
-    "description": "Toast hint explaining how to reset the selected wallpaper accent."
-  },
   "wallpaperAll": "Alle",
   "@wallpaperAll": {
     "description": "Filter option to show all wallpaper sources."
@@ -6349,10 +6538,6 @@
   "wallpaperApplyTo": "Anwenden auf",
   "@wallpaperApplyTo": {
     "description": "Setting label for choosing where to apply a wallpaper."
-  },
-  "wallpaperAutoRotateAndroidOnly": "Automatischer Wechsel ist nur unter Android verfügbar.",
-  "@wallpaperAutoRotateAndroidOnly": {
-    "description": "Message shown when auto-rotate is opened on an unsupported platform."
   },
   "wallpaperAutoRotateApplyTo": "Anwenden auf",
   "@wallpaperAutoRotateApplyTo": {
@@ -7603,7 +7788,7 @@
   },
   "wallpaperHidePreviewControls": "Steuerelemente ausblenden",
   "@wallpaperHidePreviewControls": {
-    "description": "Accessibility label of the wallpaper preview background: a tap hides the buttons so the whole mock phone screen shows."
+    "description": "Accessibility label and action that hides the buttons: on the wallpaper preview, and on the wallpaper detail screen where it also hides the system bars."
   },
   "wallpaperHistoryBothScreens": "Beide Bildschirme",
   "@wallpaperHistoryBothScreens": {
@@ -7633,7 +7818,7 @@
   "@wallpaperHomeAppName": {
     "description": "Accessible name for the Prism logo."
   },
-  "wallpaperImageSemanticHint": "Tippen, um die Akzentfarbe zu wechseln. Gedrückt halten für Favoriten, Teilen und Zurücksetzen. Für Details scrollen.",
+  "wallpaperImageSemanticHint": "Gedrückt halten für Favoriten, Teilen und Zurücksetzen. Für Details scrollen.",
   "@wallpaperImageSemanticHint": {
     "description": "Accessibility hint describing wallpaper image gestures."
   },
@@ -7642,6 +7827,10 @@
   "wallpaperImageSemanticLabel": "Hintergrundbild",
   "@wallpaperImageSemanticLabel": {
     "description": "Accessibility label for the wallpaper image."
+  },
+  "wallpaperImmersiveHint": "Tippen, um Steuerelemente auszublenden",
+  "@wallpaperImmersiveHint": {
+    "description": "Small hint shown once on the wallpaper detail screen. A tap on the wallpaper hides every button and the system bars."
   },
   "wallpaperInsufficientCoins": "Nicht genug Coins. Verdiene Coins bei „Belohnungen“.",
   "@wallpaperInsufficientCoins": {
@@ -7899,6 +8088,14 @@
   "wallpaperLiveStyleShimmerDescription": "Ein sanfter Lichtschein, der über das Bild wandert.",
   "@wallpaperLiveStyleShimmerDescription": {
     "description": "Description of the Shimmer live wallpaper motion style."
+  },
+  "wallpaperLiveStyleDepth": "3D",
+  "@wallpaperLiveStyleDepth": {
+    "description": "Live wallpaper style that moves the photo in depth as you swipe home screens and tilt the phone."
+  },
+  "wallpaperLiveStyleDepthDescription": "Das Foto bewegt sich in die Tiefe, wenn du zwischen Startbildschirmen wischst und das Handy neigst.",
+  "@wallpaperLiveStyleDepthDescription": {
+    "description": "Description of the 3D live wallpaper style."
   },
   "wallpaperLiveStyleStarfield": "Sternenfeld",
   "@wallpaperLiveStyleStarfield": {
@@ -8405,27 +8602,49 @@
     }
   },
   "setScreenTargetHome": "Startbildschirm",
-  "@setScreenTargetHome": {"description":"Segment on the Set screen that targets the home screen."},
+  "@setScreenTargetHome": {
+    "description": "Segment on the Set screen that targets the home screen."
+  },
   "setScreenTargetLock": "Sperrbildschirm",
-  "@setScreenTargetLock": {"description":"Segment on the Set screen that targets the lock screen."},
+  "@setScreenTargetLock": {
+    "description": "Segment on the Set screen that targets the lock screen."
+  },
   "setScreenTargetBoth": "Beide",
-  "@setScreenTargetBoth": {"description":"Segment on the Set screen that targets the home and lock screens."},
+  "@setScreenTargetBoth": {
+    "description": "Segment on the Set screen that targets the home and lock screens."
+  },
   "setScreenTargetGroup": "Wo festlegen",
-  "@setScreenTargetGroup": {"description":"Screen reader label for the group of target segments on the Set screen."},
+  "@setScreenTargetGroup": {
+    "description": "Screen reader label for the group of target segments on the Set screen."
+  },
   "setScreenRemember": "Auswahl merken",
-  "@setScreenRemember": {"description":"Check on the Set screen. When on, Set uses this screen next time without showing the Set screen."},
+  "@setScreenRemember": {
+    "description": "Check on the Set screen. When on, Set uses this screen next time without showing the Set screen."
+  },
   "setScreenRememberHint": "Festlegen überspringt diesen Bildschirm beim nächsten Mal. Halte Festlegen gedrückt, um zurückzukehren.",
-  "@setScreenRememberHint": {"description":"Caption under \"Remember this choice\" when it is checked."},
+  "@setScreenRememberHint": {
+    "description": "Caption under \"Remember this choice\" when it is checked."
+  },
   "setScreenAdjust": "Anpassen",
-  "@setScreenAdjust": {"description":"Button on the Set screen that opens the screen to pan, zoom, fit and dim the wallpaper. Also the title of that screen."},
+  "@setScreenAdjust": {
+    "description": "Button on the Set screen that opens the screen to pan, zoom, fit and dim the wallpaper. Also the title of that screen."
+  },
   "setScreenMore": "Mehr",
-  "@setScreenMore": {"description":"Button on the Set screen that shows more ways to set the wallpaper."},
+  "@setScreenMore": {
+    "description": "Button on the Set screen that shows more ways to set the wallpaper."
+  },
   "setScreenPairLock": "Anderes Hintergrundbild für den Sperrbildschirm verwenden",
-  "@setScreenPairLock": {"description":"Menu item on the Set screen. The current wallpaper goes on the home screen and the user picks a different one for the lock screen."},
+  "@setScreenPairLock": {
+    "description": "Menu item on the Set screen. The current wallpaper goes on the home screen and the user picks a different one for the lock screen."
+  },
   "setScreenOpenSystemEditor": "Systemeditor öffnen",
-  "@setScreenOpenSystemEditor": {"description":"Button in the Adjust screen that opens the Android system editor to pick the exact area of the wallpaper."},
+  "@setScreenOpenSystemEditor": {
+    "description": "Button in the Adjust screen that opens the Android system editor to pick the exact area of the wallpaper."
+  },
   "setScreenClose": "Schließen",
-  "@setScreenClose": {"description":"Tooltip for the close button on the Set screen."},
+  "@setScreenClose": {
+    "description": "Tooltip for the close button on the Set screen."
+  },
   "wallpaperShare": "Teilen",
   "@wallpaperShare": {
     "description": "Action to share selected wallpapers."
@@ -8434,37 +8653,13 @@
   "@wallpaperShareLink": {
     "description": "Wallpaper menu action to share its link."
   },
-  "wallpaperShortcutsAddActionsSteps": "Füge die Aktion „Prism-Hintergrundbild abrufen“ hinzu. Füge dann die Aktion „Hintergrundbild festlegen“ hinzu.",
-  "@wallpaperShortcutsAddActionsSteps": {
-    "description": "Step to add the Prism wallpaper and system wallpaper actions in Shortcuts."
-  },
-  "wallpaperShortcutsBody": "Nutze Kurzbefehle, um ein Hintergrundbild nach Zeitplan oder Auslöser festzulegen. Bereite vorher die Quelle unten vor.",
-  "@wallpaperShortcutsBody": {
-    "description": "Explanation of how iOS Shortcuts can change wallpapers automatically."
-  },
   "wallpaperShortcutsChoosePrismData": "Wähle aus, was Prism sendet",
   "@wallpaperShortcutsChoosePrismData": {
     "description": "Section title for choosing wallpaper data in Shortcuts."
   },
-  "wallpaperShortcutsChooseTriggerSteps": "Öffne im Kurzbefehl-Editor bei Bedarf Automation. Wähle und konfiguriere einen Auslöser, etwa Tageszeit, Öffnen einer App oder Anschließen eines Ladegeräts.",
-  "@wallpaperShortcutsChooseTriggerSteps": {
-    "description": "Step to choose a trigger for an iOS Shortcuts wallpaper automation."
-  },
-  "wallpaperShortcutsDisableConfirmationSteps": "Prüfe die angezeigten Ausführungsoptionen und speichere den Kurzbefehl oder die Automation. Falls \"Vor Ausführen bestätigen\" erscheint, schalte es für automatische Ausführungen aus.",
-  "@wallpaperShortcutsDisableConfirmationSteps": {
-    "description": "Step to disable confirmation and save an iOS Shortcuts automation."
-  },
-  "wallpaperShortcutsHeadline": "Hintergrundbild automatisch ändern",
-  "@wallpaperShortcutsHeadline": {
-    "description": "Headline describing automatic wallpaper changes through Shortcuts."
-  },
   "wallpaperShortcutsOpenAction": "Kurzbefehle öffnen",
   "@wallpaperShortcutsOpenAction": {
     "description": "Action to open Apple's Shortcuts app."
-  },
-  "wallpaperShortcutsOpenAutomationSteps": "Öffne Kurzbefehle. Gibt es einen Tab \"Automation\", tippe darauf und dann auf \"Neue Automation\". Sonst tippe auf Hinzufügen (+) und auf Bearbeiten, falls es angezeigt wird.",
-  "@wallpaperShortcutsOpenAutomationSteps": {
-    "description": "First step in creating a wallpaper automation in iOS Shortcuts."
   },
   "wallpaperShortcutsOpenError": "Kurzbefehle konnten nicht geöffnet werden. Öffne die App selbst.",
   "@wallpaperShortcutsOpenError": {
@@ -8474,10 +8669,6 @@
   "@wallpaperShortcutsSourceFavourite": {
     "description": "Shortcuts source option for a random favourite wallpaper."
   },
-  "wallpaperShortcutsSourceFavouriteDescription": "Ein zufälliger, für Kurzbefehle verfügbarer Favorit. Markiere zuerst Hintergrundbilder in Prism mit einem Herz. Manche geschützten Bilder sind nicht verfügbar. Wenn ein anderer Favorit verfügbar ist, wird die letzte Auswahl übersprungen.",
-  "@wallpaperShortcutsSourceFavouriteDescription": {
-    "description": "Description of the random favourite Shortcuts source."
-  },
   "wallpaperShortcutsSourceWotd": "Hintergrundbild des Tages",
   "@wallpaperShortcutsSourceWotd": {
     "description": "Shortcuts source option for the daily wallpaper pick."
@@ -8485,10 +8676,6 @@
   "wallpaperShortcutsSourceWotdDescription": "Die heutige Prism-Auswahl. Lade zuerst das heutige Original in Prism herunter. Wenn die Tagesauswahl wechselt, lade vor der nächsten Nutzung dieser Quelle das neue Original herunter.",
   "@wallpaperShortcutsSourceWotdDescription": {
     "description": "Description of the Wall of the Day Shortcuts source."
-  },
-  "wallpaperShortcutsSteps": "Schritte",
-  "@wallpaperShortcutsSteps": {
-    "description": "Section title for iOS Shortcuts setup instructions."
   },
   "wallpaperShortcutsTitle": "Automatisch ändern",
   "@wallpaperShortcutsTitle": {
@@ -8500,7 +8687,7 @@
   },
   "wallpaperShowPreviewControls": "Steuerelemente einblenden",
   "@wallpaperShowPreviewControls": {
-    "description": "Accessibility label of the wallpaper preview background: a tap shows the buttons again."
+    "description": "Accessibility label and action that shows the buttons again, on the wallpaper preview and on the wallpaper detail screen."
   },
   "wallpaperSignIn": "Anmelden",
   "@wallpaperSignIn": {
@@ -9130,9 +9317,13 @@
     "description": "Accessibility label for the profile button."
   },
   "coreSignInCreatorSearchFeature": "Suche nach Kreativen",
-  "@coreSignInCreatorSearchFeature": {"description":"Feature name inserted into the sign-in title for creator search."},
+  "@coreSignInCreatorSearchFeature": {
+    "description": "Feature name inserted into the sign-in title for creator search."
+  },
   "debugLogExportSubject": "Prism-Debugprotokolle",
-  "@debugLogExportSubject": {"description":"Subject of the shared diagnostic log export."},
+  "@debugLogExportSubject": {
+    "description": "Subject of the shared diagnostic log export."
+  },
   "economyAiPromptSceneAnime1": "Eine Katze döst auf dem sonnigen Bahnsteig",
   "economyAiPromptSceneAnime2": "Hohe Sommerwolken über Reisfeldern",
   "economyAiPromptSceneAnime3": "Ein Ramen-Stand leuchtet in regnerischer Gasse",
@@ -9255,9 +9446,35 @@
   "economyAiPromptPaletteCrimsonCharcoal": "Rot und Anthrazit",
   "economyAiPromptSuffix": "Smartphone-Hintergrund hochkant, ohne Text",
   "economyAiPromptComposition": "{scene}, {lighting}, {palette}. {suffix}",
-  "@economyAiPromptComposition": {"description":"A complete AI wallpaper prompt. Translate the whole message naturally.","placeholders":{"scene":{"type":"String"},"lighting":{"type":"String"},"palette":{"type":"String"},"suffix":{"type":"String"}}},
+  "@economyAiPromptComposition": {
+    "description": "A complete AI wallpaper prompt. Translate the whole message naturally.",
+    "placeholders": {
+      "scene": {
+        "type": "String"
+      },
+      "lighting": {
+        "type": "String"
+      },
+      "palette": {
+        "type": "String"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
   "economyAiPromptSceneOnly": "{scene}, {suffix}",
-  "@economyAiPromptSceneOnly": {"description":"An AI wallpaper scene prompt with wallpaper instructions.","placeholders":{"scene":{"type":"String"},"suffix":{"type":"String"}}},
+  "@economyAiPromptSceneOnly": {
+    "description": "An AI wallpaper scene prompt with wallpaper instructions.",
+    "placeholders": {
+      "scene": {
+        "type": "String"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
   "economyAiMadeWithPrism": "Mit Prism AI erstellt",
   "onboardingAiPromptFallback": "ein wunderschönes Hintergrundbild",
   "onboardingAiPromptNature1": "Ein Gletschersee bei Sonnenaufgang, spiegelglatt, rosa Berggipfel",
@@ -9495,5 +9712,2285 @@
   "foldersSuggestionHomeScreen": "Startbildschirm",
   "@foldersSuggestionHomeScreen": {
     "description": "Suggested folder name for wallpapers to use on the home screen."
-  }
+  },
+  "moodDreamyTitle": "Verträumt",
+  "@moodDreamyTitle": {
+    "description": "Home mood name for soft, pastel wallpapers."
+  },
+  "moodDreamyBody": "Weiche Himmel und pastellfarbenes Licht.",
+  "@moodDreamyBody": {
+    "description": "One line under the Dreamy mood title."
+  },
+  "moodDarkQuietTitle": "Dunkel und ruhig",
+  "@moodDarkQuietTitle": {
+    "description": "Home mood name for dark, calm wallpapers."
+  },
+  "moodDarkQuietBody": "Wenig Licht, sanft für die Augen.",
+  "@moodDarkQuietBody": {
+    "description": "One line under the Dark and quiet mood title."
+  },
+  "moodBrightBoldTitle": "Hell und kräftig",
+  "@moodBrightBoldTitle": {
+    "description": "Home mood name for saturated, colourful wallpapers."
+  },
+  "moodBrightBoldBody": "Viel Farbe, damit dein Display erwacht.",
+  "@moodBrightBoldBody": {
+    "description": "One line under the Bright and bold mood title."
+  },
+  "moodMinimalTitle": "Minimal",
+  "@moodMinimalTitle": {
+    "description": "Home mood name for simple, uncluttered wallpapers."
+  },
+  "moodMinimalBody": "Einfache Formen und viel Freiraum.",
+  "@moodMinimalBody": {
+    "description": "One line under the Minimal mood title."
+  },
+  "moodSpatialReadyTitle": "Bereit für räumliche Szenen",
+  "@moodSpatialReadyTitle": {
+    "description": "Home mood name for wallpapers that work as iOS 26 Spatial Scenes. Keep \"Spatial\" as Apple's feature name."
+  },
+  "moodSpatialReadyBody": "Gemacht, damit sie als räumliche Szene wirkt.",
+  "@moodSpatialReadyBody": {
+    "description": "One line under the Spatial ready mood title. \"Spatial Scene\" is Apple's iOS 26 feature name."
+  },
+  "moodDepthReadyTitle": "Bereit für Tiefeneffekt",
+  "@moodDepthReadyTitle": {
+    "description": "Home mood name for wallpapers that work with the iOS Lock Screen Depth Effect."
+  },
+  "moodDepthReadyBody": "Das Motiv schiebt sich vor deine Uhr.",
+  "@moodDepthReadyBody": {
+    "description": "One line under the Depth ready mood title. Refers to the Lock Screen clock."
+  },
+  "moodChipRowLabel": "Stimmungen",
+  "@moodChipRowLabel": {
+    "description": "Accessibility label for the row of mood chips on Home."
+  },
+  "moodSeeAll": "Alle anzeigen",
+  "@moodSeeAll": {
+    "description": "Button on a Home mood row that opens the full mood page."
+  },
+  "moodSeeAllHint": "Öffnet alle Hintergründe der Stimmung {mood}",
+  "@moodSeeAllHint": {
+    "description": "Accessibility hint for the See all button. {mood} is a mood name such as Dreamy.",
+    "placeholders": {
+      "mood": {
+        "type": "String"
+      }
+    }
+  },
+  "moodLoadError": "Diese Hintergründe konnten nicht geladen werden",
+  "@moodLoadError": {
+    "description": "Error title on a mood page when the walls fail to load."
+  },
+  "moodEmptyTitle": "Hier gibt es noch keine Hintergründe",
+  "@moodEmptyTitle": {
+    "description": "Empty state title on a mood page."
+  },
+  "moodEmptyBody": "Jeden Tag kommen neue Hintergründe dazu.",
+  "@moodEmptyBody": {
+    "description": "Empty state body on a mood page."
+  },
+  "wallpaperHistoryTileSemantic": "{current}Erneut festlegen. {target}, {date}",
+  "@wallpaperHistoryTileSemantic": {
+    "description": "Accessibility description for a wallpaper history tile.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperHistoryTitle": "Verlauf der Hintergrundbilder",
+  "@wallpaperHistoryTitle": {
+    "description": "Title of the wallpaper history screen."
+  },
+  "wallpaperLibraryHistoryBody": "Hier findest du Hintergrundbilder, die du festgelegt hast, und kannst sie erneut verwenden.",
+  "@wallpaperLibraryHistoryBody": {
+    "description": "Description for the history introduction in the library."
+  },
+  "wallpaperLibraryHistoryTitle": "Verlauf der Hintergrundbilder",
+  "@wallpaperLibraryHistoryTitle": {
+    "description": "Title for the history introduction in the library."
+  },
+  "wallpaperLibraryOpenHistory": "Verlauf öffnen",
+  "@wallpaperLibraryOpenHistory": {
+    "description": "Action to open wallpaper history."
+  },
+  "wallpaperRecentlySet": "Kürzlich festgelegt",
+  "@wallpaperRecentlySet": {
+    "description": "Section heading for recently set wallpapers."
+  },
+  "wallpaperSetAgain": "Dieses Hintergrundbild erneut festlegen",
+  "@wallpaperSetAgain": {
+    "description": "Accessibility label to set a recently set wallpaper again."
+  },
+  "wallpaperSort": "Sortieren",
+  "@wallpaperSort": {
+    "description": "Accessibility label for the favourites sort menu."
+  },
+  "tasteQuizTitle": "Welches gefällt dir besser?",
+  "@tasteQuizTitle": {
+    "description": "Headline on each round of the This or that quiz, above two wallpapers side by side."
+  },
+  "tasteQuizWildCard": "Wildcard",
+  "@tasteQuizWildCard": {
+    "description": "Small label above the quiz headline on rounds that show wallpapers from categories the user did not pick."
+  },
+  "tasteQuizProgress": "{current} von {total}",
+  "@tasteQuizProgress": {
+    "description": "Quiz progress, for example 1 of 6.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "tasteQuizProgressLabel": "Runde {current} von {total}",
+  "@tasteQuizProgressLabel": {
+    "description": "Screen reader label for the quiz progress.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "tasteQuizSkip": "Überspringen",
+  "@tasteQuizSkip": {
+    "description": "Button that ends the This or that quiz early and continues."
+  },
+  "tasteQuizPickLabel": "Dieses Hintergrundbild wählen, {position} von {total}",
+  "@tasteQuizPickLabel": {
+    "description": "Screen reader label for one of the two wallpapers in a quiz round.",
+    "placeholders": {
+      "position": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "tasteQuizTuningTitle": "Dein Feed wird angepasst",
+  "@tasteQuizTuningTitle": {
+    "description": "Title of the short screen after the quiz that shows the wallpapers the feed will lead with."
+  },
+  "tasteQuizSummaryFull": "{tone, select, dark{Dunkel} other{Hell}}, {density, select, minimal{minimal} other{detailliert}}, etwas {tag}",
+  "@tasteQuizSummaryFull": {
+    "description": "One line that describes the user's picks. tone is dark or light, density is minimal or busy, and tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      },
+      "density": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryToneDensity": "{tone, select, dark{Dunkel} other{Hell}} und {density, select, minimal{minimal} other{detailliert}}",
+  "@tasteQuizSummaryToneDensity": {
+    "description": "One line that describes the user's picks. tone is dark or light, density is minimal or busy.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      },
+      "density": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryToneTag": "{tone, select, dark{Dunkel} other{Hell}}, mit etwas {tag}",
+  "@tasteQuizSummaryToneTag": {
+    "description": "One line that describes the user's picks. tone is dark or light, and tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryDensityTag": "{density, select, minimal{Minimal} other{Detailliert}}, mit etwas {tag}",
+  "@tasteQuizSummaryDensityTag": {
+    "description": "One line that describes the user's picks. density is minimal or busy, and tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "density": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryTone": "{tone, select, dark{Meist dunkle Hintergrundbilder} other{Meist helle Hintergrundbilder}}",
+  "@tasteQuizSummaryTone": {
+    "description": "One line that describes the user's picks. tone is dark or light.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryDensity": "{density, select, minimal{Meist minimale Hintergrundbilder} other{Meist detailreiche Hintergrundbilder}}",
+  "@tasteQuizSummaryDensity": {
+    "description": "One line that describes the user's picks. density is minimal or busy.",
+    "placeholders": {
+      "density": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryTag": "Mehr Hintergrundbilder mit {tag}",
+  "@tasteQuizSummaryTag": {
+    "description": "One line that describes the user's picks. tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryReady": "Dein Feed ist bereit",
+  "@tasteQuizSummaryReady": {
+    "description": "Shown after the quiz when the picks do not clearly agree on a style."
+  },
+  "tasteQuizRetake": "Das oder das erneut starten",
+  "@tasteQuizRetake": {
+    "description": "Button in the Tune your feed sheet that runs the This or that quiz again. This or that is the quiz name."
+  },
+  "tasteQuizRetakeFailed": "Hintergrundbilder konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
+  "@tasteQuizRetakeFailed": {
+    "description": "Toast when the walls for a quiz retake do not load."
+  },
+  "foldersPublic": "Öffentlich",
+  "@foldersPublic": {
+    "description": "Label on a folder that others can see."
+  },
+  "foldersMakePublic": "Öffentlich machen",
+  "@foldersMakePublic": {
+    "description": "Folder menu action that lets others see the folder."
+  },
+  "foldersMakePrivate": "Privat machen",
+  "@foldersMakePrivate": {
+    "description": "Folder menu action that hides the folder from others."
+  },
+  "foldersMakePublicTitle": "Diesen Ordner öffentlich machen?",
+  "@foldersMakePublicTitle": {
+    "description": "Title of the dialog before a folder becomes public."
+  },
+  "foldersMakePublicMessage": "Alle in Prism können seinen Namen und die Hintergrundbilder sehen, ihm folgen und seinen Link öffnen. Geteilte Links behalten ihre Vorschau, auch wenn du ihn später privat machst.",
+  "@foldersMakePublicMessage": {
+    "description": "One line that says what others see when a folder is public."
+  },
+  "foldersMakePrivateTitle": "Diesen Ordner privat machen?",
+  "@foldersMakePrivateTitle": {
+    "description": "Title of the dialog before a public folder becomes private."
+  },
+  "foldersMakePrivateMessage": "Nur du siehst ihn. Sein Link funktioniert nicht mehr und seine Follower verlieren ihn.",
+  "@foldersMakePrivateMessage": {
+    "description": "One line that says what happens when a public folder becomes private."
+  },
+  "foldersMadePublic": "Dieser Ordner ist jetzt öffentlich.",
+  "@foldersMadePublic": {
+    "description": "Toast after a folder becomes public."
+  },
+  "foldersMadePrivate": "Dieser Ordner ist jetzt privat.",
+  "@foldersMadePrivate": {
+    "description": "Toast after a folder becomes private."
+  },
+  "foldersPublicNameRefused": "Benenne diesen Ordner um, damit er öffentlich werden kann.",
+  "@foldersPublicNameRefused": {
+    "description": "Toast when the folder name cannot be shown to others."
+  },
+  "foldersHiddenRefused": "Dieser Ordner wurde nach Meldungen ausgeblendet, daher kann er nicht öffentlich sein.",
+  "@foldersHiddenRefused": {
+    "description": "Toast when a moderator hid the folder."
+  },
+  "foldersLimitRefused": "Du hast Ordner heute zu oft geändert. Versuche es morgen erneut.",
+  "@foldersLimitRefused": {
+    "description": "Toast when the daily limit for folder changes is reached."
+  },
+  "foldersFollow": "Folgen",
+  "@foldersFollow": {
+    "description": "Button that follows a public folder."
+  },
+  "foldersFollowing": "Gefolgt",
+  "@foldersFollowing": {
+    "description": "Button state when the user follows a public folder. Tap to unfollow."
+  },
+  "foldersFollowerCount": "{count, plural, =0{Keine Follower} =1{1 Follower} other{{count} Follower}}",
+  "@foldersFollowerCount": {
+    "description": "Number of people who follow a public folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersByOwner": "Von {name}",
+  "@foldersByOwner": {
+    "description": "Owner line on a public folder page.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersShare": "Ordner teilen",
+  "@foldersShare": {
+    "description": "Action and tooltip that shares a public folder link."
+  },
+  "foldersReport": "Ordner melden",
+  "@foldersReport": {
+    "description": "Menu action that reports a public folder."
+  },
+  "foldersUnavailableTitle": "Dieser Ordner ist privat oder existiert nicht mehr",
+  "@foldersUnavailableTitle": {
+    "description": "Title when a shared folder cannot be shown."
+  },
+  "foldersUnavailableBody": "Der Besitzer hat ihn vielleicht privat gemacht oder gelöscht.",
+  "@foldersUnavailableBody": {
+    "description": "Body when a shared folder cannot be shown."
+  },
+  "foldersFollowFailed": "Das Folgen konnte nicht aktualisiert werden. Versuche es erneut.",
+  "@foldersFollowFailed": {
+    "description": "Toast when following or unfollowing a folder fails."
+  },
+  "foldersYouFollow": "Ordner, denen du folgst",
+  "@foldersYouFollow": {
+    "description": "Heading of the public folders the user follows, in the Library."
+  },
+  "foldersPublicEmptyTitle": "Hier gibt es noch keine Hintergrundbilder",
+  "@foldersPublicEmptyTitle": {
+    "description": "Title when a public folder has no wallpapers others can see."
+  },
+  "foldersPublicEmptyBody": "Neue Hintergrundbilder erscheinen hier, sobald der Besitzer sie hinzufügt.",
+  "@foldersPublicEmptyBody": {
+    "description": "Body when a public folder has no wallpapers others can see."
+  },
+  "notifSettingFolders": "Ordner, denen du folgst",
+  "@notifSettingFolders": {
+    "description": "Notification setting for new wallpapers in followed folders."
+  },
+  "notifSettingFoldersDescription": "Neue Hintergrundbilder in Ordnern, denen du folgst, einmal am Tag",
+  "@notifSettingFoldersDescription": {
+    "description": "Description of the followed folders notification setting."
+  },
+  "notifPushFolderDigestTitleOne": "Neu in {folderName}",
+  "@notifPushFolderDigestTitleOne": {
+    "description": "Title of the daily push for new wallpapers in one followed folder.",
+    "placeholders": {
+      "folderName": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushFolderDigestTitleMore": "Neu in {folderName} und {count} weiteren",
+  "@notifPushFolderDigestTitleMore": {
+    "description": "Title of the daily push for new wallpapers in several followed folders.",
+    "placeholders": {
+      "folderName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "historySetAndDownloaded": "Gesetzt und heruntergeladen",
+  "@historySetAndDownloaded": {
+    "description": "History tab segment on Android: walls the user set as wallpaper or downloaded."
+  },
+  "historyDownloaded": "Heruntergeladen",
+  "@historyDownloaded": {
+    "description": "History tab segment on iOS, where the app cannot set wallpapers: walls the user downloaded."
+  },
+  "historyRecentlyViewed": "Zuletzt angesehen",
+  "@historyRecentlyViewed": {
+    "description": "History tab segment: walls the user opened recently on this device."
+  },
+  "historySyncedNote": "In deinem Konto gespeichert, damit sie auf einem neuen Handy wieder da sind.",
+  "@historySyncedNote": {
+    "description": "One line above the Set and downloaded list for a signed-in user."
+  },
+  "historySyncedNoteGuest": "Melde dich an, damit sie auf einem neuen Handy bleiben.",
+  "@historySyncedNoteGuest": {
+    "description": "One line above the Set and downloaded list for a signed-out user."
+  },
+  "historyActionSet": "Gesetzt",
+  "@historyActionSet": {
+    "description": "Label under a history tile: the user set this wall as wallpaper."
+  },
+  "historyActionDownloaded": "Heruntergeladen",
+  "@historyActionDownloaded": {
+    "description": "Label under a history tile: the user downloaded this wall."
+  },
+  "historySyncedTileLabel": "{action} um {time}",
+  "@historySyncedTileLabel": {
+    "description": "Screen reader label of a history tile from the account. action is Set or Downloaded, time is when.",
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "historyClearSyncedBody": "Die Liste wird hier und in deinem Konto entfernt. Deine Hintergrundbilder und Downloads bleiben erhalten.",
+  "@historyClearSyncedBody": {
+    "description": "Body of the confirm dialog before clearing the Set and downloaded list."
+  },
+  "historyClearViewedTitle": "Zuletzt angesehene löschen?",
+  "@historyClearViewedTitle": {
+    "description": "Title of the confirm dialog before clearing the recently viewed list."
+  },
+  "historyClearViewedBody": "Die Hintergrundbilder, die du geöffnet hast, werden aus dieser Liste und von der Startseite entfernt.",
+  "@historyClearViewedBody": {
+    "description": "Body of the confirm dialog before clearing the recently viewed list."
+  },
+  "historyClearViewedAction": "Zuletzt angesehene löschen",
+  "@historyClearViewedAction": {
+    "description": "Confirm button that clears the recently viewed list."
+  },
+  "historyEmptyBodyAndroid": "Hintergrundbilder, die du setzt oder herunterlädst, erscheinen hier, damit du sie wiederfindest.",
+  "@historyEmptyBodyAndroid": {
+    "description": "Empty state body of the Set and downloaded list on Android."
+  },
+  "historyEmptyBodyIos": "Hintergrundbilder, die du herunterlädst, erscheinen hier, damit du sie wiederfindest.",
+  "@historyEmptyBodyIos": {
+    "description": "Empty state body of the Downloaded list on iOS."
+  },
+  "historyViewedEmptyTitle": "Noch nichts angesehen",
+  "@historyViewedEmptyTitle": {
+    "description": "Empty state title of the recently viewed list."
+  },
+  "historyViewedEmptyBody": "Hintergrundbilder, die du öffnest, erscheinen hier, damit du sie wiederfindest.",
+  "@historyViewedEmptyBody": {
+    "description": "Empty state body of the recently viewed list."
+  },
+  "historyViewedOffTitle": "Ansichtsverlauf ist aus",
+  "@historyViewedOffTitle": {
+    "description": "Empty state title of the recently viewed list when the Save viewing history setting is off."
+  },
+  "historyViewedOffBody": "Schalte Ansichtsverlauf speichern ein, um die Hintergrundbilder zu sehen, die du hier öffnest.",
+  "@historyViewedOffBody": {
+    "description": "Empty state body of the recently viewed list when the setting is off."
+  },
+  "historyViewedOffAction": "Einschalten",
+  "@historyViewedOffAction": {
+    "description": "Button in the recently viewed empty state that turns on the Save viewing history setting."
+  },
+  "historyViewedTileLabel": "Hintergrundbild öffnen, angesehen um {time}",
+  "@historyViewedTileLabel": {
+    "description": "Screen reader label of a recently viewed tile. time is when it was viewed.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "pickUpTitle": "Dort weitermachen, wo du aufgehört hast",
+  "@pickUpTitle": {
+    "description": "Title of the Home row that shows walls the user opened recently but did not save, set or download."
+  },
+  "pickUpTileLabel": "Hintergrundbild {index} von {count} öffnen",
+  "@pickUpTileLabel": {
+    "description": "Screen reader label of a tile in the Pick up where you left off row.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsSaveViewingHistory": "Ansichtsverlauf speichern",
+  "@settingsSaveViewingHistory": {
+    "description": "Settings switch. On: the app remembers the walls the user opens on this device."
+  },
+  "settingsSaveViewingHistoryBody": "Zeigt die Hintergrundbilder, die du öffnest, im Verlauf und auf der Startseite. Wenn du das ausschaltest, wird die Liste gelöscht.",
+  "@settingsSaveViewingHistoryBody": {
+    "description": "Subtitle of the Save viewing history switch."
+  },
+  "historyClearFailed": "Der Verlauf konnte nicht gelöscht werden. Prüfe deine Verbindung und versuche es erneut.",
+  "@historyClearFailed": {
+    "description": "Toast when Clear on the Set and downloaded list cannot reach the account. Nothing was cleared."
+  },
+  "wallpaperAutoRotateSourceFolder": "Ordner",
+  "@wallpaperAutoRotateSourceFolder": {
+    "description": "Auto-rotate source chip that rotates the walls of one of the user's folders."
+  },
+  "wallpaperAutoRotateSourceFolderNamed": "Ordner: {folder}",
+  "@wallpaperAutoRotateSourceFolderNamed": {
+    "description": "Auto-rotate source chip when a folder is chosen. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateNounFolder": "{folder}",
+  "@wallpaperAutoRotateNounFolder": {
+    "description": "How the mix line names a folder source. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateTooFewFolder": "Dieser Ordner braucht mindestens 2 Hintergrundbilder, die wechseln können. Prism-Hintergrundbilder wechseln, nachdem du sie heruntergeladen hast.",
+  "@wallpaperAutoRotateTooFewFolder": {
+    "description": "Shown when the chosen folder has fewer than 2 wallpapers that auto-rotate can use."
+  },
+  "wallpaperAutoRotateOpenFolder": "Ordner öffnen",
+  "@wallpaperAutoRotateOpenFolder": {
+    "description": "Button that opens the chosen folder from the auto-rotate screen."
+  },
+  "wallpaperAutoRotatePickFolder": "Ordner auswählen",
+  "@wallpaperAutoRotatePickFolder": {
+    "description": "Title of the sheet that lists the user's folders for auto-rotate."
+  },
+  "wallpaperAutoRotateNoFolders": "Du hast noch keine Ordner. Speichere ein Hintergrundbild in einem Ordner und wähle ihn dann hier aus.",
+  "@wallpaperAutoRotateNoFolders": {
+    "description": "Empty state of the auto-rotate folder picker."
+  },
+  "wallpaperAutoRotateConfirmFolderTitle": "{folder} wechseln?",
+  "@wallpaperAutoRotateConfirmFolderTitle": {
+    "description": "Title of the card that asks the user to confirm a folder as the auto-rotate source. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateConfirmFolderBody": "Dein Hintergrundbild wechselt nach dem Zeitplan unten zu einem Bild aus diesem Ordner.",
+  "@wallpaperAutoRotateConfirmFolderBody": {
+    "description": "Body of the card that asks the user to confirm a folder as the auto-rotate source."
+  },
+  "wallpaperAutoRotateConfirmFolderAction": "Diesen Ordner wechseln",
+  "@wallpaperAutoRotateConfirmFolderAction": {
+    "description": "Button that makes the folder the auto-rotate source and turns auto-rotate on."
+  },
+  "wallpaperAutoRotateStoppedFolderDeleted": "Automatischer Wechsel ist aus, weil der Ordner {folder} gelöscht wurde.",
+  "@wallpaperAutoRotateStoppedFolderDeleted": {
+    "description": "Toast when auto-rotate stopped because its folder was deleted. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateStoppedFolderEmpty": "Automatischer Wechsel ist aus, weil der Ordner {folder} weniger als 2 Hintergrundbilder hat.",
+  "@wallpaperAutoRotateStoppedFolderEmpty": {
+    "description": "Toast when auto-rotate stopped because its folder has too few usable wallpapers. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersRotateThisFolder": "Diesen Ordner wechseln",
+  "@foldersRotateThisFolder": {
+    "description": "Folder page menu item that opens auto-rotate with this folder chosen. Android only."
+  },
+  "foldersRotating": "Wechselt",
+  "@foldersRotating": {
+    "description": "Small label on a folder page when auto-rotate uses this folder."
+  },
+  "foldersRotatingDescription": "Der automatische Wechsel nutzt diesen Ordner",
+  "@foldersRotatingDescription": {
+    "description": "Tooltip and screen reader label of the Rotating label on a folder page."
+  },
+  "wallpaperAccentResetHint": "Gedrückt halten für Aktionen, auch Zurück zum Original",
+  "@wallpaperAccentResetHint": {
+    "description": "Toast hint explaining how to reset the selected wallpaper accent."
+  },
+  "wallRequestsTitle": "Wallpaper-Wünsche",
+  "@wallRequestsTitle": {
+    "description": "Title of the wall requests page."
+  },
+  "wallRequestsTabTop": "Beliebt",
+  "@wallRequestsTabTop": {
+    "description": "Tab with the most upvoted open requests of the last 30 days."
+  },
+  "wallRequestsTabNew": "Neu",
+  "@wallRequestsTabNew": {
+    "description": "Tab with the newest open requests."
+  },
+  "wallRequestsTabFilled": "Erfüllt",
+  "@wallRequestsTabFilled": {
+    "description": "Tab with requests that a wall filled."
+  },
+  "wallRequestsAsk": "Wallpaper wünschen",
+  "@wallRequestsAsk": {
+    "description": "Button that opens the request sheet."
+  },
+  "wallRequestsEmptyTopTitle": "Noch keine Wünsche",
+  "@wallRequestsEmptyTopTitle": {
+    "description": "Empty Top or New tab title."
+  },
+  "wallRequestsEmptyTopBody": "Frag nach dem Wallpaper, das du nicht findest. Andere können dafür abstimmen.",
+  "@wallRequestsEmptyTopBody": {
+    "description": "Empty Top or New tab body."
+  },
+  "wallRequestsEmptyFilledTitle": "Noch nichts erfüllt",
+  "@wallRequestsEmptyFilledTitle": {
+    "description": "Empty Filled tab title."
+  },
+  "wallRequestsEmptyFilledBody": "Erfüllte Wünsche erscheinen hier, zusammen mit dem Wallpaper, das sie erfüllt hat.",
+  "@wallRequestsEmptyFilledBody": {
+    "description": "Empty Filled tab body."
+  },
+  "wallRequestsLoadFailed": "Wünsche konnten nicht geladen werden",
+  "@wallRequestsLoadFailed": {
+    "description": "Error state title on the requests page."
+  },
+  "wallRequestsRetry": "Erneut versuchen",
+  "@wallRequestsRetry": {
+    "description": "Retry button on the requests page."
+  },
+  "wallRequestVotes": "{count, plural, =0{Keine Stimmen} =1{1 Stimme} other{{count} Stimmen}}",
+  "@wallRequestVotes": {
+    "description": "Vote count on a request row.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestUpvote": "Unterstützen",
+  "@wallRequestUpvote": {
+    "description": "Tooltip and label of the upvote button."
+  },
+  "wallRequestRemoveUpvote": "Unterstützung entfernen",
+  "@wallRequestRemoveUpvote": {
+    "description": "Tooltip of the upvote button when the user already upvoted."
+  },
+  "wallRequestMine": "Dein Wunsch",
+  "@wallRequestMine": {
+    "description": "Label on the user's own request row."
+  },
+  "wallRequestSomeone": "Ein Prism-Nutzer",
+  "@wallRequestSomeone": {
+    "description": "Requester name when the profile has no name."
+  },
+  "wallRequestFilledByCreator": "Erfüllt von {name}",
+  "@wallRequestFilledByCreator": {
+    "description": "Label on a filled request; name is the creator.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRequestFilledByStudio": "Von Prism Studio gemacht",
+  "@wallRequestFilledByStudio": {
+    "description": "Label on a request that Prism Studio filled."
+  },
+  "wallRequestOpenWall": "Wallpaper öffnen",
+  "@wallRequestOpenWall": {
+    "description": "Semantics label of the filled wall thumbnail."
+  },
+  "wallRequestMoreActions": "Weitere Aktionen",
+  "@wallRequestMoreActions": {
+    "description": "Tooltip of the row menu button."
+  },
+  "wallRequestReport": "Wunsch melden",
+  "@wallRequestReport": {
+    "description": "Row menu action that reports a request."
+  },
+  "wallRequestHide": "Wunsch ausblenden",
+  "@wallRequestHide": {
+    "description": "Admin row menu action that hides a request."
+  },
+  "wallRequestUnhide": "Wunsch einblenden",
+  "@wallRequestUnhide": {
+    "description": "Admin row menu action that shows a hidden request again."
+  },
+  "wallRequestHiddenLabel": "Ausgeblendet",
+  "@wallRequestHiddenLabel": {
+    "description": "Admin label on a hidden request."
+  },
+  "wallRequestSheetTitle": "Wallpaper wünschen",
+  "@wallRequestSheetTitle": {
+    "description": "Title of the request sheet."
+  },
+  "wallRequestSheetHint": "Beschreib es, z. B. dunkle, schlichte Berge",
+  "@wallRequestSheetHint": {
+    "description": "Hint in the request text field."
+  },
+  "wallRequestSheetTags": "Tags, bis zu 3",
+  "@wallRequestSheetTags": {
+    "description": "Label above the tag chips in the request sheet."
+  },
+  "wallRequestSheetSubmit": "Wunsch senden",
+  "@wallRequestSheetSubmit": {
+    "description": "Submit button of the request sheet."
+  },
+  "wallRequestSignIn": "Melde dich an, um Wallpaper zu wünschen und zu unterstützen.",
+  "@wallRequestSignIn": {
+    "description": "Shown in the sheet or a toast to a signed-out user."
+  },
+  "wallRequestDuplicateTitle": "Das hat schon jemand gewünscht",
+  "@wallRequestDuplicateTitle": {
+    "description": "Title when a close open request exists."
+  },
+  "wallRequestDuplicateBody": "Unterstütze es, damit Creator es früher sehen.",
+  "@wallRequestDuplicateBody": {
+    "description": "Body when a close open request exists."
+  },
+  "wallRequestUpvoteInstead": "Stattdessen unterstützen",
+  "@wallRequestUpvoteInstead": {
+    "description": "Button that upvotes the close request instead of making a new one."
+  },
+  "wallRequestCreateAnyway": "Trotzdem meinen senden",
+  "@wallRequestCreateAnyway": {
+    "description": "Button that makes a new request although a close one exists."
+  },
+  "wallRequestDuplicateMine": "Das hast du schon gewünscht",
+  "@wallRequestDuplicateMine": {
+    "description": "Title when the close request is the user's own."
+  },
+  "wallRequestDuplicateVoted": "Das hast du schon unterstützt",
+  "@wallRequestDuplicateVoted": {
+    "description": "Title when the user already upvoted the close request."
+  },
+  "wallRequestEditText": "Meinen Wunsch bearbeiten",
+  "@wallRequestEditText": {
+    "description": "Button that goes back to the text field from the duplicate card."
+  },
+  "wallRequestCreated": "Wunsch gesendet. Wir sagen dir Bescheid, wenn er erfüllt ist.",
+  "@wallRequestCreated": {
+    "description": "Toast after a request is made."
+  },
+  "wallRequestUpvoted": "Unterstützt. Wir sagen dir Bescheid, wenn er erfüllt ist.",
+  "@wallRequestUpvoted": {
+    "description": "Toast after the user upvotes the close request."
+  },
+  "wallRequestErrorText": "Nutze 3 bis 80 Zeichen und bleib freundlich.",
+  "@wallRequestErrorText": {
+    "description": "Error when the server refuses the request text."
+  },
+  "wallRequestErrorLimit": "Du kannst pro Tag 3 Wünsche senden. Versuch es morgen erneut.",
+  "@wallRequestErrorLimit": {
+    "description": "Error at the daily request limit."
+  },
+  "wallRequestErrorOwn": "Du kannst deinen eigenen Wunsch nicht unterstützen.",
+  "@wallRequestErrorOwn": {
+    "description": "Error when the user upvotes their own request."
+  },
+  "wallRequestErrorClosed": "Dieser Wunsch ist schon erfüllt.",
+  "@wallRequestErrorClosed": {
+    "description": "Error when the user votes on a filled request."
+  },
+  "wallRequestErrorGone": "Dieser Wunsch ist nicht mehr verfügbar.",
+  "@wallRequestErrorGone": {
+    "description": "Error when the request is hidden or deleted."
+  },
+  "wallRequestErrorGeneric": "Etwas ist schiefgelaufen. Versuch es erneut.",
+  "@wallRequestErrorGeneric": {
+    "description": "Error for any other failure."
+  },
+  "searchRequestPrompt": "Nicht gefunden?",
+  "@searchRequestPrompt": {
+    "description": "Line above the request button in an empty search."
+  },
+  "searchRequestAction": "Wunsch senden",
+  "@searchRequestAction": {
+    "description": "Button in an empty search that opens the request sheet with the query."
+  },
+  "discoverRequestsTitle": "Wallpaper-Wünsche",
+  "@discoverRequestsTitle": {
+    "description": "Discover row that opens the requests page."
+  },
+  "discoverRequestsSubtitle": "Wallpaper wünschen oder einen Wunsch unterstützen",
+  "@discoverRequestsSubtitle": {
+    "description": "Subtitle of the Discover row for wall requests."
+  },
+  "uploadFillsRequest": "Erfüllt einen Wunsch",
+  "@uploadFillsRequest": {
+    "description": "Upload form row that links the wall to a request."
+  },
+  "uploadFillsRequestHint": "Optional. Wähle den Wunsch, den dieses Wallpaper erfüllt.",
+  "@uploadFillsRequestHint": {
+    "description": "Subtitle of the upload row when no request is picked."
+  },
+  "uploadFillsRequestClear": "Wunsch entfernen",
+  "@uploadFillsRequestClear": {
+    "description": "Tooltip of the button that removes the picked request."
+  },
+  "requestPickerTitle": "Welchen Wunsch erfüllt es?",
+  "@requestPickerTitle": {
+    "description": "Title of the request picker in the upload flow."
+  },
+  "requestPickerSearch": "Wünsche durchsuchen",
+  "@requestPickerSearch": {
+    "description": "Hint of the search field in the request picker."
+  },
+  "requestPickerEmpty": "Keine offenen Wünsche gefunden",
+  "@requestPickerEmpty": {
+    "description": "Empty state of the request picker."
+  },
+  "notifPushWallRequestFilledTitle": "Dein Wunsch ist da",
+  "@notifPushWallRequestFilledTitle": {
+    "description": "Push and inbox title when a wall request is filled."
+  },
+  "notifPushWallRequestFilledBody": "{requestText}",
+  "@notifPushWallRequestFilledBody": {
+    "description": "Push and inbox body when a wall request is filled: the request text.",
+    "placeholders": {
+      "requestText": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRequestAgeNow": "Gerade eben",
+  "@wallRequestAgeNow": {
+    "description": "Age of a request made less than a minute ago."
+  },
+  "wallRequestAgeMinutes": "{count, plural, =1{vor 1 Minute} other{vor {count} Minuten}}",
+  "@wallRequestAgeMinutes": {
+    "description": "Age of a request in minutes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestAgeHours": "{count, plural, =1{vor 1 Stunde} other{vor {count} Stunden}}",
+  "@wallRequestAgeHours": {
+    "description": "Age of a request in hours.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestAgeDays": "{count, plural, =1{vor 1 Tag} other{vor {count} Tagen}}",
+  "@wallRequestAgeDays": {
+    "description": "Age of a request in days.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestAgeWeeks": "{count, plural, =1{vor 1 Woche} other{vor {count} Wochen}}",
+  "@wallRequestAgeWeeks": {
+    "description": "Age of a request in weeks.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestErrorAccountAge": "Dein Konto kann Wünsche senden und abstimmen, sobald es 10 Tage alt ist.",
+  "@wallRequestErrorAccountAge": {
+    "description": "Error when an account younger than 10 days tries to request or vote."
+  },
+  "adminFillsRequest": "Erfüllt Wunsch",
+  "@adminFillsRequest": {
+    "description": "Admin review card label: the text of the request this wall says it fills."
+  },
+  "wallRemixAction": "Remixen",
+  "@wallRemixAction": {
+    "description": "Short label of the button that opens the AI tab with this wallpaper's prompt."
+  },
+  "wallRemixActionTooltip": "Dieses Hintergrundbild mit KI remixen",
+  "@wallRemixActionTooltip": {
+    "description": "Tooltip of the Remix button on an AI wallpaper."
+  },
+  "wallRemixingChip": "Remix von {title} von {creator}",
+  "@wallRemixingChip": {
+    "description": "Chip in the AI tab that names the wallpaper being remixed.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRemixDropLinkTooltip": "Remix-Verknüpfung entfernen",
+  "@wallRemixDropLinkTooltip": {
+    "description": "Tooltip of the x on the remix chip. It removes the link to the original wallpaper."
+  },
+  "wallRemixUntitled": "Ohne Titel",
+  "@wallRemixUntitled": {
+    "description": "Name used for a wallpaper that has no title, inside remix copy."
+  },
+  "wallRemixUnknownCreator": "einem Prism-Creator",
+  "@wallRemixUnknownCreator": {
+    "description": "Name used for a creator with no public name, inside remix copy."
+  },
+  "wallRemixesTitle": "Remixe",
+  "@wallRemixesTitle": {
+    "description": "Heading of the row of remixes on a wallpaper's details."
+  },
+  "wallRemixesCount": "{count, plural, =1{1 Remix} other{{count} Remixe}}",
+  "@wallRemixesCount": {
+    "description": "Number of remixes next to the Remixes heading.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRemixOpenRemixLabel": "Remix von {creator} öffnen",
+  "@wallRemixOpenRemixLabel": {
+    "description": "Screen reader label of one remix in the Remixes row.",
+    "placeholders": {
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRemixOfLabel": "Remix von {title} von {creator}",
+  "@wallRemixOfLabel": {
+    "description": "Credit row on a remix. It opens the original wallpaper.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRemixOfTooltip": "Original-Hintergrundbild öffnen",
+  "@wallRemixOfTooltip": {
+    "description": "Tooltip of the credit row on a remix."
+  },
+  "economyAiSubmitPromptNotice": "Alle können deinen Prompt sehen und dieses Hintergrundbild remixen.",
+  "@economyAiSubmitPromptNotice": {
+    "description": "Note on the AI submit sheet. Shared AI wallpapers show their prompt to anyone who remixes them."
+  },
+  "notifPushWallRemixedTitle": "Dein Hintergrundbild wurde geremixt",
+  "@notifPushWallRemixedTitle": {
+    "description": "Inbox title when another creator's remix of your wallpaper is approved."
+  },
+  "notifPushWallRemixedBody": "{remixerName} hat {wallTitle} geremixt.",
+  "@notifPushWallRemixedBody": {
+    "description": "Inbox body when another creator remixes your wallpaper.",
+    "placeholders": {
+      "remixerName": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushWallRemixedBodyUntitled": "{remixerName} hat dein Hintergrundbild geremixt.",
+  "@notifPushWallRemixedBodyUntitled": {
+    "description": "Inbox body when another creator remixes your untitled wallpaper.",
+    "placeholders": {
+      "remixerName": {
+        "type": "String"
+      }
+    }
+  },
+  "wallMetadataDescription": "Beschreibung",
+  "wallMetadataEdit": "Details bearbeiten",
+  "wallResubmitAction": "Korrigieren und erneut einreichen",
+  "wallResubmitChooseImage": "Bild auswählen",
+  "wallResubmitImageMissing": "Das Originalbild ist nicht mehr verfügbar. Wähle es erneut aus, um weiter zu bearbeiten.",
+  "wallResubmitImageKept": "Originalbild bereit",
+  "wallResubmitTitle": "Upload korrigieren",
+  "wallUploadUseLastDetails": "Letzte Angaben verwenden",
+  "wallUploadLastDetailsUnavailable": "Auf diesem Gerät gibt es keine vorherigen Angaben.",
+  "wallUploadWithdraw": "Upload zurückziehen",
+  "wallUploadWithdrawTitle": "Diesen Upload zurückziehen?",
+  "wallUploadWithdrawBody": "Der Upload wird aus der Prüfung entfernt und seine hochgeladenen Dateien werden gelöscht.",
+  "wallUploadWithdrawn": "Upload zurückgezogen",
+  "wallUploadDeleteHistory": "Aus dem Verlauf löschen",
+  "wallMetadataInvalid": "Prüfe den Text und die Tags und versuche es erneut.",
+  "wallUploadOwnerChanged": "Dein Konto hat sich geändert. Öffne diesen Upload erneut.",
+  "wallResubmitLimit": "Für dieses Hintergrundbild wurden bereits drei verknüpfte erneute Einreichungen erreicht.",
+  "wallResubmitUnsupported": "Wähle das Originalbild erneut aus. Angaben zur KI-Quelle können nicht wiederverwendet werden.",
+  "wallResubmitUnavailable": "Dieser abgelehnte Upload konnte nicht geladen werden. Versuche es erneut.",
+  "wallMetadataEditDetails": "Details bearbeiten",
+  "wallMetadataApprovedHelp": "Ändere Titel, Beschreibung und Tags. Bild und Kategorie bleiben gleich.",
+  "wallMetadataPendingHelp": "Aktualisiere diese Angaben, bevor dein Hintergrundbild geprüft wird.",
+  "wallMetadataSave": "Details speichern",
+  "wallMetadataSaved": "Details gespeichert",
+  "wallMetadataDiscardTitle": "Änderungen verwerfen?",
+  "wallMetadataDiscardBody": "Deine ungespeicherten Angaben gehen verloren.",
+  "wallMetadataDiscard": "Änderungen verwerfen",
+  "wallMetadataReload": "Details neu laden",
+  "wallMetadataReloadTitle": "Aktuelle Details neu laden?",
+  "wallMetadataReloadBody": "Deine ungespeicherten Angaben werden durch die aktuelle Version ersetzt.",
+  "wallMetadataConflict": "Diese Angaben wurden anderswo geändert. Deine Änderungen sind noch vorhanden. Lade die aktuellen Angaben vor dem Speichern neu.",
+  "wallMetadataStatusChanged": "Der Prüfstatus dieses Hintergrundbilds hat sich geändert. Deine Änderungen wurden nicht gespeichert.",
+  "wallMetadataMissing": "Dieses Hintergrundbild ist nicht mehr verfügbar. Deine Änderungen wurden nicht gespeichert.",
+  "wallMetadataDenied": "Du hast keine Berechtigung, dieses Hintergrundbild zu bearbeiten.",
+  "wallMetadataSignedOut": "Melde dich erneut an, um dieses Hintergrundbild zu bearbeiten.",
+  "wallMetadataDailyLimit": "Du hast das heutige Bearbeitungslimit erreicht. Versuche es morgen erneut.",
+  "wallMetadataUnavailable": "Details konnten nicht gespeichert werden. Prüfe deine Verbindung und versuche es erneut.",
+  "wallMetadataLoadFailed": "Details konnten nicht geladen werden",
+  "wallMetadataHistory": "Bearbeitungsverlauf",
+  "wallMetadataHistoryEmpty": "Noch keine Änderungen an den Details",
+  "wallMetadataHistoryEmptyBody": "Änderungen am freigegebenen Titel, der Beschreibung und den Tags erscheinen hier.",
+  "wallMetadataHistoryFailed": "Bearbeitungsverlauf konnte nicht geladen werden",
+  "wallMetadataBefore": "Vorher",
+  "wallMetadataAfter": "Nachher",
+  "wallMetadataRevert": "Änderung rückgängig machen",
+  "wallMetadataRevertTitle": "Diese Änderung rückgängig machen?",
+  "wallMetadataRevertBody": "Stelle nur den hier angezeigten vorherigen Titel, die Beschreibung und die Tags wieder her. Bild und Prüfstatus bleiben unverändert.",
+  "wallMetadataReverted": "Änderung rückgängig gemacht",
+  "wallMetadataLoadMore": "Weitere Änderungen laden",
+  "wallMetadataAbsent": "Nicht festgelegt",
+  "wallMetadataResubmitted": "Erneut eingereicht · Versuch {attempt} von 3",
+  "wallMetadataPreviousReason": "Vorheriger Ablehnungsgrund",
+  "wallMetadataContextUnavailable": "Details zur erneuten Einreichung nicht verfügbar",
+  "@wallMetadataResubmitted": {"placeholders": {"attempt": {"type": "int"}}},
+  "reportSheetMessage": "Sag uns, was schiefgelaufen ist. Prism fügt nie deine E-Mail-Adresse oder Anmeldetokens hinzu. Prüfe Screenshots, bevor du sie sendest.",
+  "@reportSheetMessage": {
+    "description": "Intro text in the report a problem sheet."
+  },
+  "reportTopicCrashFreeze": "Absturz/Einfrieren",
+  "@reportTopicCrashFreeze": {
+    "description": "Report topic chip: app crashed or froze."
+  },
+  "reportTopicWallpaperWontSet": "Hintergrundbild lässt sich nicht setzen",
+  "@reportTopicWallpaperWontSet": {
+    "description": "Report topic chip: wallpaper could not be set."
+  },
+  "reportTopicLooksBroken": "Sieht kaputt aus",
+  "@reportTopicLooksBroken": {
+    "description": "Report topic chip: something looks visually broken."
+  },
+  "reportTopicSlow": "Langsam",
+  "@reportTopicSlow": {
+    "description": "Report topic chip: app is slow."
+  },
+  "reportTopicOther": "Sonstiges",
+  "@reportTopicOther": {
+    "description": "Report topic chip: any other problem."
+  },
+  "reportNoteHint": "Was ist passiert? Was hast du erwartet?",
+  "@reportNoteHint": {
+    "description": "Hint text of the note field in the report sheet."
+  },
+  "reportScreenshotTitle": "Screenshot",
+  "@reportScreenshotTitle": {
+    "description": "Title of the screenshot row in the report sheet."
+  },
+  "reportScreenshotEmpty": "Zeig uns, was du siehst.",
+  "@reportScreenshotEmpty": {
+    "description": "Subtitle of the screenshot row when no screenshot is attached."
+  },
+  "reportScreenshotAttached": "Zum Ansehen tippen. Prüfe ihn vor dem Senden.",
+  "@reportScreenshotAttached": {
+    "description": "Subtitle of the screenshot row when a screenshot is attached."
+  },
+  "reportAddScreenshot": "Screenshot hinzufügen",
+  "@reportAddScreenshot": {
+    "description": "Button to add a screenshot to the report."
+  },
+  "reportRemoveScreenshot": "Entfernen",
+  "@reportRemoveScreenshot": {
+    "description": "Button to remove the attached screenshot."
+  },
+  "reportViewScreenshot": "Screenshot ansehen",
+  "@reportViewScreenshot": {
+    "description": "Tooltip or label to view the attached screenshot."
+  },
+  "reportIncludeDiagnostics": "Geräteinfos und aktuelle Protokolle einschließen",
+  "@reportIncludeDiagnostics": {
+    "description": "Switch label to include device info and recent logs in the report."
+  },
+  "reportShowDiagnostics": "Zeigen, was enthalten ist",
+  "@reportShowDiagnostics": {
+    "description": "Button to expand the list of included diagnostics."
+  },
+  "reportHideDiagnostics": "Details ausblenden",
+  "@reportHideDiagnostics": {
+    "description": "Button to collapse the list of included diagnostics."
+  },
+  "reportSend": "Bericht senden",
+  "@reportSend": {
+    "description": "Button that sends the report."
+  },
+  "reportShareAsFile": "Als Datei teilen",
+  "@reportShareAsFile": {
+    "description": "Button that shares the report as a file."
+  },
+  "reportSent": "Danke, Bericht gesendet. Referenz {reference}",
+  "@reportSent": {
+    "description": "Confirmation after the report is sent, with a short reference code.",
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCouldNotSend": "Senden fehlgeschlagen",
+  "@reportCouldNotSend": {
+    "description": "Title of the dialog shown when the report fails to send."
+  },
+  "reportCouldNotSendBody": "Prüfe deine Verbindung und versuche es erneut, oder teile den Bericht als Datei.",
+  "@reportCouldNotSendBody": {
+    "description": "Body of the dialog shown when the report fails to send."
+  },
+  "reportShareInstead": "Stattdessen teilen",
+  "@reportShareInstead": {
+    "description": "Dialog action to share the report as a file after a send failure."
+  },
+  "reportShakeToReport": "Schütteln zum Melden",
+  "@reportShakeToReport": {
+    "description": "Settings toggle label for shake to report."
+  },
+  "reportShakeToReportSubtitle": "Schüttle dein Handy auf jedem Bildschirm, um ein Problem zu melden",
+  "@reportShakeToReportSubtitle": {
+    "description": "Settings toggle subtitle for shake to report."
+  },
+  "accountShowAiWallpapers": "KI-generierte Hintergrundbilder anzeigen",
+  "accountShowAiWallpapersSubtitle": "Ausschalten, um nur von Menschen gemachte Walls zu sehen",
+  "accountShowAiWallpapersFootnote": "Wenn du KI-Hintergrundbilder ausblendest, bleiben deine eigenen Uploads und Favoriten sichtbar.",
+  "wallpaperFeedHideAi": "KI ausblenden",
+  "wallpaperAiGenerated": "KI-generiert",
+  "wallpaperAiMadeWith": "Erstellt mit {model}",
+  "wallpaperAiMadeWithUnknown": "Mit KI erstellt",
+  "wallpaperAiReportWrongLabel": "Falsches Label melden",
+  "feedNoHumanWalls": "Hier gibt es noch keine von Menschen gemachten Walls",
+  "feedShowAiWalls": "KI-Walls anzeigen",
+  "dailyMomentTitle": "Täglicher Moment",
+  "dailyMomentStreakTitle": "Tägliche Serie",
+  "dailyMomentChestTitle": "Tägliche Truhe",
+  "dailyMomentSpinTitle": "Gratisdreh",
+  "dailyMomentUnavailable": "Diese Belohnung ist heute nicht mehr verfügbar.",
+  "dailyMomentError": "Die Belohnung konnte nicht geladen werden. Versuche es erneut.",
+  "dailyMomentStreakReceipt": "{coins, plural, one{{coins} Münze erhalten} other{{coins} Münzen erhalten}} · {days, plural, one{{days} Tag in Folge} other{{days} Tage in Folge}}",
+  "dailyMomentCosmetic": "Kosmetischer Gegenstand zu deiner Sammlung hinzugefügt",
+  "dailyMomentReward": "{coins, plural, one{{coins} Münze erhalten} other{{coins} Münzen erhalten}}",
+  "dailyMomentChestBody": "Öffne die heutige Truhe, wenn du bereit bist.",
+  "dailyMomentSpinBody": "Dein Gratisdreh ist bereit.",
+  "dailyMomentBalance": "Guthaben: {coins, plural, one{{coins} Münze} other{{coins} Münzen}}",
+  "dailyMomentDone": "Fertig",
+  "dailyMomentRetry": "Erneut versuchen",
+  "dailyMomentContinue": "Weiter",
+  "dailyMomentOpenFree": "Gratis-Truhe öffnen",
+  "dailyMomentOpenChest": "Für {coins, plural, one{{coins} Münze} other{{coins} Münzen}} öffnen",
+  "dailyMomentSpinAction": "Gratis drehen",
+  "dailyMomentClose": "Täglichen Moment schließen",
+  "dailyMomentToday": "Heute",
+  "dailyMomentReady": "Tägliche Belohnungen sind bereit",
+  "dailyMomentComplete": "Heute ist alles erledigt",
+  "dailyMomentResume": "Täglichen Moment fortsetzen",
+  "dailyMomentMore": "Mehr",
+  "dailyMomentQuests": "Aufgaben",
+  "dailyMomentChestLeft": "Tägliche Truhe verfügbar",
+  "dailyMomentSpinLeft": "Gratisdreh verfügbar",
+  "dailyMomentStreakLeft": "Tägliche Serie verfügbar",
+  "challengeTitle": "Wochen-Challenge",
+  "challengeRules": "Bis zu 3 Beiträge, die vor der Anzeige geprüft werden.",
+  "challengeVotingRules": "Stimme bis {date} UTC für andere ab.",
+  "@challengeVotingRules": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeUpload": "Beitrag hochladen",
+  "challengeAi": "Mit KI erstellen",
+  "challengeTop": "Beliebt",
+  "challengeNew": "Neu",
+  "challengePast": "Frühere Challenges",
+  "challengeEmpty": "Geprüfte Beiträge erscheinen hier.",
+  "challengeWaiting": "Die Abstimmung ist beendet. Nach der Prüfung aller Beiträge wird der Gewinner gewählt.",
+  "challengeClosed": "Diese Challenge ist beendet.",
+  "challengeScheduled": "Diese Challenge hat noch nicht begonnen.",
+  "challengeNoWinner": "Für diese Challenge gibt es keinen Gewinner.",
+  "challengeWinner": "Gewinner · {name}",
+  "@challengeWinner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeVote": "Abstimmen",
+  "challengeUnvote": "Stimme entfernen",
+  "challengeVotes": "{count, plural, =0{0 Stimmen} =1{1 Stimme} other{{count} Stimmen}}",
+  "@challengeVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeShare": "Challenge teilen",
+  "challengeRemove": "Challenge entfernen",
+  "challengeContext": "Challenge · {theme}",
+  "@challengeContext": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeError": "Die Challenge konnte nicht geladen werden. Versuche es erneut.",
+  "challengeVoteError": "Deine Stimme konnte nicht gespeichert werden. Versuche es erneut.",
+  "challengeSignIn": "Melde dich zum Mitmachen oder Abstimmen an.",
+  "challengeLimit": "Du hast 3 Wallpaper für diese Challenge eingereicht.",
+  "challengeRetry": "Erneut versuchen",
+  "challengeOwnEntry": "Du kannst nicht für deinen eigenen Beitrag stimmen.",
+  "challengeDailyLimit": "Dein tägliches Abstimmungslimit ist erreicht.",
+  "challengeMissing": "Diese Challenge oder dieser Beitrag ist nicht mehr verfügbar.",
+  "challengeBadge": "Challenge-Gewinner",
+  "challengeBadgeDescription": "Gewinne eine Wochen-Challenge",
+  "challengeWinnerNotificationTitle": "Dein Wallpaper hat gewonnen",
+  "challengeWinnerNotificationBody": "Dein Beitrag hat die Wochen-Challenge gewonnen: {theme}.",
+  "@challengeWinnerNotificationBody": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "statsTitle": "Deine Statistik",
+  "statsEntry": "Statistik",
+  "statsViews": "Aufrufe",
+  "statsSaves": "Gespeichert",
+  "statsSets": "Festgelegt",
+  "statsDownloads": "Downloads",
+  "statsShares": "Geteilt",
+  "statsFolderAdds": "Ordnerzugänge",
+  "statsRemixes": "Remixe",
+  "statsLoading": "Statistik wird geladen",
+  "statsError": "Deine Statistik konnte nicht geladen werden. Versuche es erneut.",
+  "statsRetry": "Erneut versuchen",
+  "statsEmptyTitle": "Hier beginnt dein erstes Wallpaper",
+  "statsEmptyBody": "Lade ein Wallpaper hoch. Nach der Freigabe erscheint seine Statistik.",
+  "statsUpload": "Wallpaper hochladen",
+  "statsWeekNote": "Diese Woche bisher im Vergleich zur letzten Woche. Wochen beginnen montags, UTC.",
+  "statsHistoryNote": "Acht Wochen, die älteste zuerst. Ein Strich bedeutet, dass Daten fehlen. Die Erfassung kann mitten in einer Woche beginnen; erfasste Wochen können daher unvollständig sein. Die aktuelle Woche ist noch nicht abgeschlossen.",
+  "statsTopWalls": "Top-Wallpaper dieser Woche",
+  "statsUntitled": "Wallpaper ohne Titel",
+  "statsCountingNote": "Gespeichert insgesamt zählt aktuelle Favoriten; wöchentlich zählen neue Favoriten. Remixe insgesamt zählt aktuell verknüpfte Remixe; wöchentlich zählen erstmals akzeptierte Zuordnungen. Ordnerzugänge werden erst seit Beginn der Erfassung gezählt.",
+  "statsUnavailable": "Nicht verfügbar",
+  "statsWeeklyTitle": "Deine Wallpaper diese Woche",
+  "statsWeeklyBody": "Sieh dir die Ergebnisse deiner Wallpaper für {week} an.",
+  "statsWallValue": "{metric}: {value} diese Woche",
+  "statsComparison": "{current} diese Woche · {previous} letzte Woche",
+  "statsTotal": "Gesamt: {value}",
+  "statsChange": "{value} im Vergleich zur letzten Woche",
+  "statsUpdated": "Aktualisiert am {date} UTC",
+  "statsChartWeek": "Woche ab {date}: {value}",
+  "statsChartSummary": "{metric}, acht Wochen. {summary}",
+  "shortcutsGuideHeadline": "Jeden Tag ein neues Hintergrundbild",
+  "@shortcutsGuideHeadline": {
+    "description": "Headline of the iOS Shortcuts guide."
+  },
+  "shortcutsGuideBody": "Richte Kurzbefehle einmal ein. Danach setzt die Automation jeden Tag ein Hintergrundbild aus deinem Rotationsordner. Seine 200 neuesten Bilder erscheinen je einmal, bevor sich eines wiederholt.",
+  "@shortcutsGuideBody": {
+    "description": "Body under the iOS Shortcuts guide headline."
+  },
+  "shortcutsSourceRotation": "Rotationsordner",
+  "@shortcutsSourceRotation": {
+    "description": "Section title on the iOS Shortcuts guide, and the name of the Shortcuts source that shuffles the folder picked in Prism. Must match the iOS intent's source name."
+  },
+  "shortcutsSourceRotationDescription": "Mischt den Ordner, den du oben gewählt hast.",
+  "@shortcutsSourceRotationDescription": {
+    "description": "Description of the Rotation folder source in the iOS Shortcuts guide."
+  },
+  "shortcutsSourceFolder": "Ordner",
+  "@shortcutsSourceFolder": {
+    "description": "Name of the Shortcuts source that shuffles a folder picked inside Shortcuts. Must match the iOS intent's source name."
+  },
+  "shortcutsSourceFolderDescription": "Mischt einen Ordner, den du in Kurzbefehle auswählst.",
+  "@shortcutsSourceFolderDescription": {
+    "description": "Description of the Folder source in the iOS Shortcuts guide."
+  },
+  "shortcutsSourceFavouriteDescription": "Mischt deine Favoriten. Jeder erscheint einmal, bevor sich einer wiederholt. Einige geschützte Hintergrundbilder sind möglicherweise nicht verfügbar.",
+  "@shortcutsSourceFavouriteDescription": {
+    "description": "Description of the Random favourite source in the iOS Shortcuts guide."
+  },
+  "shortcutsRotationNone": "Kein Ordner ausgewählt",
+  "@shortcutsRotationNone": {
+    "description": "Rotation folder card title on the iOS Shortcuts guide when no folder is picked."
+  },
+  "shortcutsRotationNoneBody": "Wähle den Ordner, den der Kurzbefehl mischt.",
+  "@shortcutsRotationNoneBody": {
+    "description": "Rotation folder card body when no folder is picked."
+  },
+  "shortcutsRotationPick": "Ordner auswählen",
+  "@shortcutsRotationPick": {
+    "description": "Button on the rotation folder card that opens the folder picker when no folder is picked."
+  },
+  "shortcutsRotationChange": "Ändern",
+  "@shortcutsRotationChange": {
+    "description": "Button on the rotation folder card that picks another folder."
+  },
+  "shortcutsRotationStop": "Stopp",
+  "@shortcutsRotationStop": {
+    "description": "Button on the rotation folder card that stops using the folder for Shortcuts."
+  },
+  "shortcutsStepLabel": "Schritt {number}, {title}",
+  "@shortcutsStepLabel": {
+    "description": "Screen reader label of a numbered step heading in the iOS Shortcuts guide.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepAddTitle": "Füge den Prism-Kurzbefehl hinzu",
+  "@shortcutsStepAddTitle": {
+    "description": "Step 1 title in the iOS Shortcuts guide."
+  },
+  "shortcutsStepAddBody": "Er holt ein Bild aus deinem Rotationsordner und setzt es als Hintergrundbild.",
+  "@shortcutsStepAddBody": {
+    "description": "Step 1 body when a shared shortcut link is available."
+  },
+  "shortcutsStepAddAction": "Kurzbefehl hinzufügen",
+  "@shortcutsStepAddAction": {
+    "description": "Button that opens the shared iCloud shortcut link."
+  },
+  "shortcutsStepAddManualBody": "Erstelle ihn in Kurzbefehle mit 2 Aktionen.",
+  "@shortcutsStepAddManualBody": {
+    "description": "Step 1 body when there is no shared shortcut link."
+  },
+  "shortcutsManualNew": "Tippe in Kurzbefehle auf +, um einen neuen Kurzbefehl zu erstellen.",
+  "@shortcutsManualNew": {
+    "description": "Manual step to build the shortcut."
+  },
+  "shortcutsManualGet": "Füge „Prism-Hintergrundbild abrufen“ hinzu. Setze Quelle auf Rotationsordner.",
+  "@shortcutsManualGet": {
+    "description": "Manual step to build the shortcut. Keep the quoted action name and \"Rotation folder\" as iOS shows them."
+  },
+  "shortcutsManualSet": "Füge „Hintergrundbild festlegen“ hinzu. Tippe auf den Pfeil daneben und deaktiviere dann Vorschau zeigen.",
+  "@shortcutsManualSet": {
+    "description": "Manual step to build the shortcut. Use the action and option names that Apple's Shortcuts app shows in this language."
+  },
+  "shortcutsManualName": "Nenne den Kurzbefehl „{name}“.",
+  "@shortcutsManualName": {
+    "description": "Manual step to build the shortcut. The name stays in English so Prism can run it.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepAutomationTitle": "Jeden Tag ausführen",
+  "@shortcutsStepAutomationTitle": {
+    "description": "Step 2 title in the iOS Shortcuts guide."
+  },
+  "shortcutsAutomationOpen": "Tippe in Kurzbefehle auf Automation, dann auf +.",
+  "@shortcutsAutomationOpen": {
+    "description": "Step 2 line. Use Apple's Shortcuts labels in this language."
+  },
+  "shortcutsAutomationTime": "Tippe auf Tageszeit. Wähle eine Uhrzeit und dann Täglich.",
+  "@shortcutsAutomationTime": {
+    "description": "Step 2 line. Use Apple's Shortcuts labels in this language."
+  },
+  "shortcutsAutomationRun": "Wähle Sofort ausführen und tippe dann auf Weiter.",
+  "@shortcutsAutomationRun": {
+    "description": "Step 2 line. Use Apple's Shortcuts labels in this language."
+  },
+  "shortcutsAutomationPick": "Wähle „{name}“ zum Ausführen.",
+  "@shortcutsAutomationPick": {
+    "description": "Step 2 line. The shortcut name stays in English.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsAutomationNoTab": "Kein Tab Automation? Öffne „{name}“, tippe auf Bearbeiten und dann auf Automation.",
+  "@shortcutsAutomationNoTab": {
+    "description": "Note for newer iOS versions without an Automation tab.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepTestTitle": "Jetzt testen",
+  "@shortcutsStepTestTitle": {
+    "description": "Step 3 title in the iOS Shortcuts guide."
+  },
+  "shortcutsStepTestBody": "Führt „{name}“ einmal aus, damit du das neue Hintergrundbild sofort siehst.",
+  "@shortcutsStepTestBody": {
+    "description": "Step 3 body.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepTestAction": "Kurzbefehl ausführen",
+  "@shortcutsStepTestAction": {
+    "description": "Button that runs the shortcut in the Shortcuts app."
+  },
+  "foldersRotateDaily": "Diesen Ordner täglich wechseln",
+  "@foldersRotateDaily": {
+    "description": "Folder page menu item on iPhone. Makes this the Shortcuts rotation folder and opens the guide."
+  },
+  "autoRotateIosTitle": "Hintergrundbilder mit Kurzbefehlen wechseln",
+  "@autoRotateIosTitle": {
+    "description": "Title on the auto-rotate page on iPhone, where Shortcuts changes the wallpaper."
+  },
+  "autoRotateIosBody": "Auf dem iPhone setzt eine Kurzbefehle-Automation jeden Tag ein neues Hintergrundbild aus deinem Ordner.",
+  "@autoRotateIosBody": {
+    "description": "Body on the auto-rotate page on iPhone."
+  },
+  "autoRotateIosAction": "Kurzbefehle einrichten",
+  "@autoRotateIosAction": {
+    "description": "Button on the auto-rotate page on iPhone that opens the Shortcuts guide."
+  },
+  "shortcutsAutomationIos16": "Unter iOS 16 gibt es „Sofort ausführen“ nicht. Schalte stattdessen „Vor Ausführen bestätigen“ aus.",
+  "@shortcutsAutomationIos16": {
+    "description": "Note under the Step 2 automation lines for iOS 16, which has no Run Immediately option. Use the Shortcuts labels in this language."
+  },
+  "tipAction": "Trinkgeld geben",
+  "@tipAction": {
+    "description": "Wall detail: opens the sheet to tip the wall's creator coins"
+  },
+  "tipMenuItem": "Trinkgeld senden",
+  "@tipMenuItem": {
+    "description": "Creator profile overflow menu item that opens the tip sheet"
+  },
+  "tipTitle": "Trinkgeld für {name}",
+  "@tipTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipMessage": "Wähle einen Betrag. {name} bekommt alle Coins und sieht deinen Namen.",
+  "@tipMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipAmountsLabel": "Trinkgeldbetrag",
+  "@tipAmountsLabel": {
+    "description": "Accessibility label for the group of tip amount choices"
+  },
+  "tipBalance": "Dein Guthaben: {balance, plural, =1{1 Coin} other{{balance} Coins}}",
+  "@tipBalance": {
+    "placeholders": {
+      "balance": {
+        "type": "int"
+      }
+    }
+  },
+  "tipShortBy": "Dir fehlen {amount, plural, =1{1 Coin} other{{amount} Coins}}.",
+  "@tipShortBy": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipSendButton": "{amount} Coins als Trinkgeld geben",
+  "@tipSendButton": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipEarnCoins": "Coins verdienen",
+  "@tipEarnCoins": {
+    "description": "Tip sheet: opens Rewards when the balance is too low"
+  },
+  "tipThanksTitle": "Danke für dein Trinkgeld",
+  "@tipThanksTitle": {
+    "description": "Tip sheet success headline"
+  },
+  "tipThanksMessage": "{name} hat deine {amount} Coins erhalten.",
+  "@tipThanksMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipDone": "Fertig",
+  "@tipDone": {
+    "description": "Closes the tip sheet after a tip"
+  },
+  "tipNotEnoughCoins": "Du hast nicht genug Coins für dieses Trinkgeld.",
+  "@tipNotEnoughCoins": {
+    "description": "Toast when the balance is short"
+  },
+  "tipDailyLimit": "Du hast heute alle deine Trinkgelder gesendet. Versuch es morgen noch einmal.",
+  "@tipDailyLimit": {
+    "description": "Toast when the sender hit the daily tip cap"
+  },
+  "tipPairLimit": "Du hast {name} heute schon ein Trinkgeld gegeben. Versuch es morgen noch einmal.",
+  "@tipPairLimit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipCreatorLimit": "{name} kann heute keine weiteren Trinkgelder bekommen. Versuch es morgen noch einmal.",
+  "@tipCreatorLimit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipSenderTooNew": "Du kannst 7 Tage nach deinem Beitritt zu Prism Trinkgeld senden.",
+  "@tipSenderTooNew": {
+    "description": "Toast for accounts younger than 7 days"
+  },
+  "tipSenderIneligible": "Melde dich mit einem verifizierten Konto an, um Trinkgeld zu senden.",
+  "@tipSenderIneligible": {
+    "description": "Toast for guest or unverified accounts"
+  },
+  "tipUnavailable": "Du kannst {name} gerade kein Trinkgeld geben.",
+  "@tipUnavailable": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipFailed": "Trinkgeld konnte nicht gesendet werden. Versuch es noch einmal.",
+  "@tipFailed": {
+    "description": "Toast when the tip call fails"
+  },
+  "wallTippedBy": "Trinkgeld von {count} Personen",
+  "@wallTippedBy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "coreCoinTipSent": "Trinkgeld gesendet",
+  "@coreCoinTipSent": {
+    "description": "Coin history row for a tip the user sent"
+  },
+  "coreCoinTipReceived": "Trinkgeld erhalten",
+  "@coreCoinTipReceived": {
+    "description": "Coin history row for a tip the user received"
+  },
+  "notifPushTipReceivedTitle": "{senderName} hat dir {amount} Coins für {wallTitle} als Trinkgeld gegeben",
+  "@notifPushTipReceivedTitle": {
+    "placeholders": {
+      "senderName": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTipReceivedTitleUntitled": "{senderName} hat dir {amount} Coins als Trinkgeld gegeben",
+  "@notifPushTipReceivedTitleUntitled": {
+    "placeholders": {
+      "senderName": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTipReceivedBody": "Deine Trinkgelder findest du in deinen Creator-Statistiken.",
+  "@notifPushTipReceivedBody": {
+    "description": "Body of the first tip push of the day"
+  },
+  "notifTipsReceivedTitle": "Du hast heute {count} Trinkgelder bekommen",
+  "@notifTipsReceivedTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notifTipsReceivedBody": "Insgesamt {coins} Coins. Sieh sie dir in deinen Creator-Statistiken an.",
+  "@notifTipsReceivedBody": {
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTips": "Trinkgelder",
+  "@statsTips": {
+    "description": "Creator stats: tips section title"
+  },
+  "statsTipsTotal": "{count, plural, =1{1 Trinkgeld} other{{count} Trinkgelder}}, insgesamt {coins} Coins",
+  "@statsTipsTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsWeek": "Woche ab {date}: {count, plural, =1{1 Trinkgeld} other{{count} Trinkgelder}}, {coins} Coins",
+  "@statsTipsWeek": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsWall": "{count, plural, =1{1 Trinkgeld} other{{count} Trinkgelder}}, {coins} Coins",
+  "@statsTipsWall": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsEmpty": "Noch keine Trinkgelder. Fans können dir über deine Wallpapers und dein Profil Trinkgeld geben.",
+  "@statsTipsEmpty": {
+    "description": "Creator stats: tips section with no tips"
+  },
+  "creatorsToFollow": "Kreative zum Folgen",
+  "@creatorsToFollow": {
+    "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "creatorsSeeAll": "Alle ansehen",
+  "@creatorsSeeAll": {
+    "description": "Opens the full list of creators."
+  },
+  "creatorsTitle": "Kreative",
+  "@creatorsTitle": {
+    "description": "Title of the page that lists all creators."
+  },
+  "creatorsFilterAll": "Alle",
+  "@creatorsFilterAll": {
+    "description": "Filter chip that shows creators from every category."
+  },
+  "creatorsEmptyTitle": "Noch keine Kreative hier",
+  "@creatorsEmptyTitle": {
+    "description": "Empty state when no creator matches the selected category."
+  },
+  "creatorsEmptyBody": "Probiere eine andere Kategorie.",
+  "@creatorsEmptyBody": {
+    "description": "Empty state body under creatorsEmptyTitle."
+  },
+  "creatorsLoadError": "Kreative konnten nicht geladen werden",
+  "@creatorsLoadError": {
+    "description": "Error state when the creators list fails to load."
+  },
+  "creatorsOpenProfile": "Profil von {name} öffnen",
+  "@creatorsOpenProfile": {
+    "description": "Screen reader label for a creator's avatar and name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsWallBy": "Hintergrundbild von {name}",
+  "@creatorsWallBy": {
+    "description": "Screen reader label for a wallpaper thumbnail on a creator card.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsFollowedByOne": "Gefolgt von {first}",
+  "@creatorsFollowedByOne": {
+    "description": "Profile social proof when one person the viewer follows follows this creator.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsFollowedByTwo": "Gefolgt von {first} und {second}",
+  "@creatorsFollowedByTwo": {
+    "description": "Profile social proof when two people the viewer follows follow this creator.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsFollowedByMany": "Gefolgt von {first}, {second} und {others, plural, =1{1 weiteren, dem du folgst} other{{others} weiteren, denen du folgst}}",
+  "@creatorsFollowedByMany": {
+    "description": "Profile social proof when three or more people the viewer follows follow this creator. others is the count beyond the two names.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      },
+      "others": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorsMoreLike": "Mehr wie {name}",
+  "@creatorsMoreLike": {
+    "description": "Toast action and sheet title that suggest creators similar to the one just followed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsSimilarSubtitle": "Kreative mit ähnlichem Stil",
+  "@creatorsSimilarSubtitle": {
+    "description": "Subtitle of the similar creators sheet."
+  },
+  "creatorsShowMeTitle": "Mich in Kreative zum Folgen anzeigen",
+  "@creatorsShowMeTitle": {
+    "description": "Settings switch that lists the user in the creator directory."
+  },
+  "creatorsShowMeBody": "Andere können dein Profil und deine besten Hintergrundbilder finden",
+  "@creatorsShowMeBody": {
+    "description": "Subtitle of the creator directory settings switch."
+  },
+  "promoRedeemTitle": "Code einlösen",
+  "@promoRedeemTitle": {
+    "description": "Title of the sheet where the user enters a Prism promo code."
+  },
+  "promoRedeemMessage": "Gib einen Code aus einem Prism-Beitrag oder einem Gewinnspiel ein.",
+  "@promoRedeemMessage": {
+    "description": "Line under the redeem sheet title."
+  },
+  "promoRedeemMessageIos": "Gib einen Münzcode aus einem Prism-Beitrag oder einem Gewinnspiel ein.",
+  "@promoRedeemMessageIos": {
+    "description": "Line under the redeem sheet title on iPhone and iPad, where only coin codes work."
+  },
+  "promoCodeFieldLabel": "Code",
+  "@promoCodeFieldLabel": {
+    "description": "Label of the promo code text field."
+  },
+  "promoCodeFieldHint": "Zum Beispiel 7KQ2 MPXR 4D",
+  "@promoCodeFieldHint": {
+    "description": "Hint text in the empty promo code field."
+  },
+  "promoPasteCode": "Code einfügen",
+  "@promoPasteCode": {
+    "description": "Tooltip and screen reader label of the paste button in the code field."
+  },
+  "promoRedeemAction": "Einlösen",
+  "@promoRedeemAction": {
+    "description": "Main button that redeems the code."
+  },
+  "promoRedeeming": "Code wird eingelöst",
+  "@promoRedeeming": {
+    "description": "Screen reader label while the redeem request runs."
+  },
+  "promoDone": "Fertig",
+  "@promoDone": {
+    "description": "Button that closes the sheet after a code works."
+  },
+  "promoTryAnother": "Anderen Code versuchen",
+  "@promoTryAnother": {
+    "description": "Button after an error that clears the field."
+  },
+  "promoSuccessCoins": "Du hast {count, plural, one{1 Münze} other{{count} Münzen}} erhalten",
+  "@promoSuccessCoins": {
+    "description": "Headline after a coin code works.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessCoinsMessage": "Die Münzen sind jetzt in deinem Guthaben.",
+  "@promoSuccessCoinsMessage": {
+    "description": "Line under the coin success headline."
+  },
+  "promoSuccessPro": "Du hast {days, plural, one{1 Tag} other{{days} Tage}} Pro erhalten",
+  "@promoSuccessPro": {
+    "description": "Headline after a Pro code works.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessProMessage": "Dein Pro-Pass läuft jetzt bis {date}.",
+  "@promoSuccessProMessage": {
+    "description": "Line under the Pro success headline.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoErrorInvalid": "Das ist kein Prism-Code. Codes haben 10 oder mehr Buchstaben und Zahlen.",
+  "promoErrorNotFound": "Wir finden diesen Code nicht. Prüfe ihn und versuche es erneut.",
+  "promoErrorDisabled": "Dieser Code ist deaktiviert.",
+  "promoErrorExpired": "Dieser Code ist abgelaufen.",
+  "promoErrorLimitReached": "Für diesen Code sind keine Einlösungen mehr übrig.",
+  "promoErrorAlreadyRedeemed": "Du hast diesen Code bereits eingelöst.",
+  "promoErrorAccountTooNew": "Dein Konto ist zu neu für diesen Code.",
+  "promoErrorNewUsersOnly": "Dieser Code ist nur für neue Konten.",
+  "promoErrorPremiumNotOnIos": "Pro-Codes funktionieren nicht auf dem iPhone oder iPad. Verwende stattdessen einen App-Store-Code.",
+  "promoErrorAlreadyPremium": "Du hast bereits Pro, daher wird dieser Code nicht benötigt.",
+  "promoErrorRateLimited": "Zu viele Versuche. Warte eine Stunde und versuche es dann erneut.",
+  "promoErrorBusy": "Gerade lösen sehr viele Leute Codes ein. Versuche es gleich noch einmal.",
+  "promoErrorSignedOut": "Melde dich an, um einen Code einzulösen.",
+  "promoErrorNetwork": "Prism ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.",
+  "promoErrorUnknown": "Etwas ist schiefgelaufen. Versuche es erneut.",
+  "promoSettingsGroup": "Codes",
+  "@promoSettingsGroup": {
+    "description": "Settings section title for promo and store codes."
+  },
+  "promoSettingsRedeemTitle": "Prism-Code einlösen",
+  "@promoSettingsRedeemTitle": {
+    "description": "Settings row that opens the redeem sheet."
+  },
+  "promoSettingsRedeemSubtitle": "Münzen oder Pro-Tage aus unseren Beiträgen und Gewinnspielen",
+  "@promoSettingsRedeemSubtitle": {
+    "description": "Subtitle of that row on Android."
+  },
+  "promoSettingsRedeemSubtitleIos": "Münzen aus unseren Beiträgen und Gewinnspielen",
+  "@promoSettingsRedeemSubtitleIos": {
+    "description": "Subtitle of that row on iPhone and iPad."
+  },
+  "promoAppStoreCodeTitle": "App-Store-Code einlösen",
+  "@promoAppStoreCodeTitle": {
+    "description": "iOS settings row that opens Apple's code sheet."
+  },
+  "promoAppStoreCodeSubtitle": "Pro-Angebotscodes von Apple",
+  "@promoAppStoreCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoPlayCodeTitle": "Play-Code einlösen",
+  "@promoPlayCodeTitle": {
+    "description": "Android settings row that opens Google Play's redeem page."
+  },
+  "promoPlayCodeSubtitle": "Pro-Angebotscodes von Google Play",
+  "@promoPlayCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoCodesFootnoteIos": "Prism-Codes geben Münzen. App-Store-Codes geben Pro.",
+  "@promoCodesFootnoteIos": {
+    "description": "One line under the Codes group on iOS that says which code goes where."
+  },
+  "promoCodesFootnoteAndroid": "Prism-Codes geben Münzen oder Pro-Tage. Play-Codes geben Pro.",
+  "@promoCodesFootnoteAndroid": {
+    "description": "Same line on Android."
+  },
+  "promoStoreCodeFailed": "Die Codeseite konnte nicht geöffnet werden. Versuche es erneut.",
+  "@promoStoreCodeFailed": {
+    "description": "Toast when the store code sheet or page does not open."
+  },
+  "promoRewardsRowTitle": "Code einlösen",
+  "@promoRewardsRowTitle": {
+    "description": "Rewards earn row that opens the redeem sheet."
+  },
+  "promoRewardsRowSubtitle": "Code aus einem Beitrag oder Gewinnspiel erhalten?",
+  "@promoRewardsRowSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoAdminTitle": "Promo-Codes",
+  "@promoAdminTitle": {
+    "description": "Admin screen title."
+  },
+  "promoAdminEntry": "Promo-Codes",
+  "@promoAdminEntry": {
+    "description": "Admin entry that opens the promo code screen."
+  },
+  "promoAdminCreate": "Code erstellen",
+  "@promoAdminCreate": {
+    "description": "Button that creates a code."
+  },
+  "promoAdminTypeCoins": "Münzen",
+  "promoAdminTypePro": "Pro-Tage",
+  "promoAdminAmount": "Betrag",
+  "@promoAdminAmount": {
+    "description": "Field: coins (1 to 1000) or Pro days (1 to 90)."
+  },
+  "promoAdminAmountHelpCoins": "1 bis 1.000 Münzen",
+  "promoAdminAmountHelpPro": "1 bis 90 Tage. Nur Android.",
+  "promoAdminMaxRedemptions": "Max. Einlösungen",
+  "promoAdminExpiresInDays": "Läuft ab in (Tagen)",
+  "promoAdminMinAccountAge": "Mindestalter des Kontos (Tage)",
+  "promoAdminNewUsersOnly": "Nur neue Konten",
+  "promoAdminNewUsersDays": "Konto höchstens (Tage alt)",
+  "promoAdminCustomCode": "Eigener Code (optional)",
+  "@promoAdminCustomCode": {
+    "description": "Help: leave empty to generate one."
+  },
+  "promoAdminCustomCodeHelp": "10 bis 32 Buchstaben und Zahlen, ohne I, O, 0 oder 1. Leer lassen, um einen zu erstellen.",
+  "promoAdminLabel": "Notiz",
+  "@promoAdminLabel": {
+    "description": "Field for an admin note such as the post the code is for."
+  },
+  "promoAdminCreated": "{code} erstellt",
+  "@promoAdminCreated": {
+    "description": "Toast after create.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminCopied": "Code kopiert",
+  "@promoAdminCopied": {
+    "description": "Toast after copying a code."
+  },
+  "promoAdminCopy": "Code kopieren",
+  "@promoAdminCopy": {
+    "description": "Tooltip."
+  },
+  "promoAdminRedemptions": "{used} von {max} eingelöst",
+  "@promoAdminRedemptions": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "promoAdminExpires": "Läuft ab {date}",
+  "@promoAdminExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminDisabled": "Aus",
+  "@promoAdminDisabled": {
+    "description": "Badge on a turned-off code."
+  },
+  "promoAdminDisable": "Deaktivieren",
+  "@promoAdminDisable": {
+    "description": "Action."
+  },
+  "promoAdminEnable": "Aktivieren",
+  "@promoAdminEnable": {
+    "description": "Action."
+  },
+  "promoAdminEmpty": "Noch keine Codes.",
+  "promoAdminLoadFailed": "Codes konnten nicht geladen werden. Zum erneuten Versuch nach unten ziehen.",
+  "promoAdminCreateFailed": "Der Code konnte nicht erstellt werden: {reason}",
+  "@promoAdminCreateFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "wrappedTitle": "Prism Wrapped {year}",
+  "@wrappedTitle": {"description": "Title of the Wrapped yearly recap screen and share card.", "placeholders": {"year": {"type": "String"}}},
+  "wrappedIntroHeadline": "Dein Jahr in Hintergrundbildern",
+  "@wrappedIntroHeadline": {"description": "Headline of the first Wrapped card."},
+  "wrappedIntroBody": "Ein paar Karten zu den Hintergrundbildern, die dir dieses Jahr gefallen haben.",
+  "@wrappedIntroBody": {"description": "Body of the first Wrapped card."},
+  "wrappedSavesLabel": "Gespeichert",
+  "@wrappedSavesLabel": {"description": "Label of the Wrapped card that shows how many walls the user saved."},
+  "wrappedSavesBody": "{count, plural, =1{Du hast {year} 1 Hintergrundbild gespeichert.} other{Du hast {year} {count} Hintergrundbilder gespeichert.}}",
+  "@wrappedSavesBody": {"description": "Body of the saves card. count is the number of saved walls this year.", "placeholders": {"count": {"type": "int"}, "year": {"type": "String"}}},
+  "wrappedColoursLabel": "Deine Farben",
+  "@wrappedColoursLabel": {"description": "Label of the Wrapped card that shows the user top colours."},
+  "wrappedColoursBody": "{first}, {second} und {third} kamen in deinen Speicherungen am häufigsten vor.",
+  "@wrappedColoursBody": {"description": "Body of the colours card. first, second and third are the top three colour names.", "placeholders": {"first": {"type": "String"}, "second": {"type": "String"}, "third": {"type": "String"}}},
+  "wrappedCreatorLabel": "Dein beliebtester Creator",
+  "@wrappedCreatorLabel": {"description": "Label of the Wrapped card that shows the creator the user saved most."},
+  "wrappedCreatorBody": "{count, plural, =1{Du hast 1 Hintergrundbild von {name} gespeichert.} other{Du hast {count} Hintergrundbilder von {name} gespeichert.}}",
+  "@wrappedCreatorBody": {"description": "Body of the top creator card. count is the number of walls saved from that creator.", "placeholders": {"count": {"type": "int"}, "name": {"type": "String"}}},
+  "wrappedStreakLabel": "Deine längste Serie",
+  "@wrappedStreakLabel": {"description": "Label of the Wrapped card that shows the longest daily check-in run."},
+  "wrappedStreakBody": "{count, plural, =1{Du warst 1 Tag in Folge aktiv.} other{Du warst {count} Tage in Folge aktiv.}}",
+  "@wrappedStreakBody": {"description": "Body of the longest run card. count is the number of days in the run.", "placeholders": {"count": {"type": "int"}}},
+  "wrappedDays": "{count, plural, =1{1 Tag} other{{count} Tage}}",
+  "@wrappedDays": {"description": "Short day count used inside other Wrapped text, such as \"3 days\".", "placeholders": {"count": {"type": "int"}}},
+  "wrappedAiLabel": "Mit KI erstellt",
+  "@wrappedAiLabel": {"description": "Label of the Wrapped card that shows AI walls the user made."},
+  "wrappedAiBody": "{count, plural, =1{Du hast 1 KI-Hintergrundbild erstellt.} other{Du hast {count} KI-Hintergrundbilder erstellt.}}",
+  "@wrappedAiBody": {"description": "Body of the AI card. count is the number of AI walls the user made.", "placeholders": {"count": {"type": "int"}}},
+  "wrappedCategoryLabel": "Deine wichtigste Kategorie",
+  "@wrappedCategoryLabel": {"description": "Label of the Wrapped card that shows the category the user saved from most."},
+  "wrappedCategoryBody": "{count, plural, =1{Du hast 1 Hintergrundbild aus {category} gespeichert.} other{Du hast {count} Hintergrundbilder aus {category} gespeichert.}}",
+  "@wrappedCategoryBody": {"description": "Body of the top category card. count is the number of walls saved from that category.", "placeholders": {"count": {"type": "int"}, "category": {"type": "String"}}},
+  "wrappedFoldersLabel": "Ordner",
+  "@wrappedFoldersLabel": {"description": "Label of the Wrapped card that shows how many folders the user made."},
+  "wrappedFoldersBody": "{count, plural, =1{Du hast 1 Ordner erstellt.} other{Du hast {count} Ordner erstellt.}}",
+  "@wrappedFoldersBody": {"description": "Body of the folders card. count is the number of folders the user made.", "placeholders": {"count": {"type": "int"}}},
+  "wrappedOnScreenLabel": "Auf deinem Bildschirm",
+  "@wrappedOnScreenLabel": {"description": "Label of the Wrapped card that shows how often the user set or downloaded a wall."},
+  "wrappedOnScreenBody": "{count, plural, =1{Du hast dieses Hintergrundbild 1 Mal gesetzt oder heruntergeladen.} other{Du hast dieses Hintergrundbild {count} Mal gesetzt oder heruntergeladen.}}",
+  "@wrappedOnScreenBody": {"description": "Body of the on screen card. count is the number of times the wall was set or downloaded.", "placeholders": {"count": {"type": "int"}}},
+  "wrappedChallengesLabel": "Wöchentliche Herausforderungen",
+  "@wrappedChallengesLabel": {"description": "Label of the Wrapped card that shows weekly challenge entries."},
+  "wrappedChallengesBody": "{count, plural, =1{Du hast an 1 wöchentlichen Herausforderung teilgenommen.} other{Du hast an {count} wöchentlichen Herausforderungen teilgenommen.}}",
+  "@wrappedChallengesBody": {"description": "Body of the challenges card. count is the number of weekly challenges entered.", "placeholders": {"count": {"type": "int"}}},
+  "wrappedTipsLabel": "Trinkgelder",
+  "@wrappedTipsLabel": {"description": "Label of the Wrapped card that shows tips the user sent."},
+  "wrappedTipsBody": "{count, plural, =1{Du hast 1 Trinkgeld an einen Creator gesendet.} other{Du hast {count} Trinkgelder an Creator gesendet.}}",
+  "@wrappedTipsBody": {"description": "Body of the tips card. count is the number of tips sent.", "placeholders": {"count": {"type": "int"}}},
+  "wrappedSince": "Seit {date}",
+  "@wrappedSince": {"description": "Date line that shows when the Wrapped period starts.", "placeholders": {"date": {"type": "String"}}},
+  "wrappedSummaryHeadline": "Dein {year} in Prism",
+  "@wrappedSummaryHeadline": {"description": "Headline of the Wrapped summary card.", "placeholders": {"year": {"type": "String"}}},
+  "wrappedShare": "Teilen",
+  "@wrappedShare": {"description": "Button that shares the Wrapped card."},
+  "wrappedShareCard": "Diese Karte teilen",
+  "@wrappedShareCard": {"description": "Accessible label for the share icon on a Wrapped card."},
+  "wrappedPause": "Pausieren",
+  "@wrappedPause": {"description": "Button that pauses the Wrapped card auto-advance."},
+  "wrappedPlay": "Abspielen",
+  "@wrappedPlay": {"description": "Button that resumes the Wrapped card auto-advance."},
+  "wrappedClose": "Schließen",
+  "@wrappedClose": {"description": "Button that closes the Wrapped viewer."},
+  "wrappedNextCard": "Nächste Karte",
+  "@wrappedNextCard": {"description": "Accessible label for the button that moves to the next Wrapped card."},
+  "wrappedPreviousCard": "Vorherige Karte",
+  "@wrappedPreviousCard": {"description": "Accessible label for the button that moves to the previous Wrapped card."},
+  "wrappedCardPosition": "Karte {index} von {count}",
+  "@wrappedCardPosition": {"description": "Accessible label that tells the position of the current Wrapped card. index is the current card, count is the total.", "placeholders": {"index": {"type": "int"}, "count": {"type": "int"}}},
+  "wrappedHomeTitle": "Dein {year} in Prism",
+  "@wrappedHomeTitle": {"description": "Title of the Wrapped entry card on the home screen.", "placeholders": {"year": {"type": "String"}}},
+  "wrappedHomeSubtitle": "Dein Jahr in Hintergrundbildern ist bereit.",
+  "@wrappedHomeSubtitle": {"description": "Subtitle of the Wrapped entry card on the home screen."},
+  "wrappedNotEligible": "Für dieses Konto gibt es dieses Jahr kein Wrapped.",
+  "@wrappedNotEligible": {"description": "Message shown when the account has no Wrapped for the year."},
+  "wrappedLoadFailed": "Dein Wrapped konnte nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
+  "@wrappedLoadFailed": {"description": "Error message shown when Wrapped cannot load."},
+  "notifPushWrappedReadyTitle": "Dein {year} in Prism ist da",
+  "@notifPushWrappedReadyTitle": {"description": "Title of the push notification that tells the user Wrapped is ready.", "placeholders": {"year": {"type": "String"}}},
+  "notifPushWrappedReadyBody": "Sieh dir die Hintergrundbilder an, die du gespeichert hast, deine Farben und deine Creator.",
+  "@notifPushWrappedReadyBody": {"description": "Body of the push notification that tells the user Wrapped is ready."},
+  "desktopVersionChip": "Desktop-Version",
+  "@desktopVersionChip": {
+    "description": "Chip on the wallpaper detail screen. Opens the desktop version of the wallpaper."
+  },
+  "desktopVersionChipSemantic": "Desktop-Version öffnen",
+  "@desktopVersionChipSemantic": {
+    "description": "Screen reader label of the Desktop version chip."
+  },
+  "desktopVersionSheetTitle": "Desktop-Version",
+  "@desktopVersionSheetTitle": {
+    "description": "Title of the sheet that shows the wide desktop version of a wallpaper."
+  },
+  "desktopVersionSheetBody": "Dieselbe Szene, breit für einen Computerbildschirm. {width} × {height}.",
+  "@desktopVersionSheetBody": {
+    "description": "Body of the desktop version sheet. width and height are pixels, for example 2560 × 1600.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopVersionPreviewSemantic": "Desktop-Version auf einem Computerbildschirm",
+  "@desktopVersionPreviewSemantic": {
+    "description": "Screen reader label of the desktop preview image."
+  },
+  "desktopVersionSendToComputer": "An meinen Computer senden",
+  "@desktopVersionSendToComputer": {
+    "description": "Button. Shares a link to the wallpaper's web page, where the desktop version can be downloaded."
+  },
+  "desktopVersionShareText": "Hol dir dieses Hintergrundbild für deinen Computer: {url}",
+  "@desktopVersionShareText": {
+    "description": "Text shared with the link to the desktop download page. url is the page address.",
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "desktopVersionShareSubject": "Desktop-Hintergrundbild von Prism",
+  "@desktopVersionShareSubject": {
+    "description": "Email subject used when the desktop link is shared by email."
+  },
+  "desktopVersionSetOnTablet": "Desktop-Version festlegen",
+  "@desktopVersionSetOnTablet": {
+    "description": "Tablet button. Sets the wide desktop version as the tablet wallpaper."
+  },
+  "desktopVersionSaveOnTablet": "Desktop-Version in Fotos speichern",
+  "@desktopVersionSaveOnTablet": {
+    "description": "iPad button. Saves the wide desktop version to Photos."
+  },
+  "desktopVersionUnavailable": "Die Desktop-Version kann gerade nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
+  "@desktopVersionUnavailable": {
+    "description": "Error toast when the desktop version cannot be downloaded."
+  },
+  "layoutTitle": "Layout",
+  "@layoutTitle": {
+    "description": "Title of the Layout settings page and its row in Settings."
+  },
+  "layoutRowSubtitle": "Tabs und Hintergrundbild-Raster",
+  "@layoutRowSubtitle": {
+    "description": "Subtitle of the Layout row in Settings."
+  },
+  "layoutTabsHeader": "Tabs",
+  "@layoutTabsHeader": {
+    "description": "Section header above the bottom bar tab list on the Layout page."
+  },
+  "layoutTabsFootnote": "Zum Sortieren ziehen. Mindestens 3 Tabs bleiben in der Leiste. Ausgeblendete Tabs findest du unter Mehr.",
+  "@layoutTabsFootnote": {
+    "description": "Footnote under the tab list on the Layout page."
+  },
+  "layoutTabAlwaysShown": "Immer in der Leiste",
+  "@layoutTabAlwaysShown": {
+    "description": "Subtitle of the Home row on the Layout page. Home cannot be hidden."
+  },
+  "layoutTabUnderMore": "Unter Mehr",
+  "@layoutTabUnderMore": {
+    "description": "Subtitle of a hidden tab row on the Layout page."
+  },
+  "layoutShowTab": "{tab} anzeigen",
+  "@layoutShowTab": {
+    "description": "Accessibility label of the switch that shows a tab in the bottom bar.",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "Search"
+      }
+    }
+  },
+  "layoutReorderTab": "{tab} neu sortieren",
+  "@layoutReorderTab": {
+    "description": "Tooltip and accessibility label of the drag handle of a tab row.",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "Search"
+      }
+    }
+  },
+  "layoutMoveUp": "Nach oben verschieben",
+  "@layoutMoveUp": {
+    "description": "Accessibility action that moves a tab one place up in the bottom bar order."
+  },
+  "layoutMoveDown": "Nach unten verschieben",
+  "@layoutMoveDown": {
+    "description": "Accessibility action that moves a tab one place down in the bottom bar order."
+  },
+  "layoutGridHeader": "Hintergrundbild-Raster",
+  "@layoutGridHeader": {
+    "description": "Section header above the grid size choice on the Layout page."
+  },
+  "layoutDensityCompact": "Kompakt",
+  "@layoutDensityCompact": {
+    "description": "Grid size with small tiles (3 columns on a phone)."
+  },
+  "layoutDensityComfortable": "Komfortabel",
+  "@layoutDensityComfortable": {
+    "description": "Default grid size (2 columns on a phone)."
+  },
+  "layoutDensityLarge": "Groß",
+  "@layoutDensityLarge": {
+    "description": "Grid size with one full-width wallpaper per row on a phone."
+  },
+  "layoutGridFootnote": "Gilt für alle Hintergrundbild-Raster. Zum Ändern auf dem Feed der Startseite zoomen.",
+  "@layoutGridFootnote": {
+    "description": "Footnote under the grid size choice on the Layout page."
+  },
+  "layoutReset": "Layout zurücksetzen",
+  "@layoutReset": {
+    "description": "Button that puts the tabs and grid size back to the defaults."
+  },
+  "navMore": "Mehr",
+  "@navMore": {
+    "description": "Bottom bar entry that opens the hidden tabs."
+  },
+  "navMoreEditTabs": "Tabs bearbeiten",
+  "@navMoreEditTabs": {
+    "description": "Row in the More sheet that opens the Layout settings page."
+  },
+  "trialTimelineTitle": "So funktioniert deine kostenlose Testphase",
+  "@trialTimelineTitle": {"description": "Title of the screen that shows the annual free trial day by day, before the user starts it."},
+  "trialTimelineClose": "Schließen",
+  "@trialTimelineClose": {"description": "Tooltip and screen reader label of the close button on the free trial timeline."},
+  "trialTimelinePlanSummary": "Prism Pro jährlich. {days, plural, =1{1 Tag} other{{days} Tage}} kostenlos, danach {price} pro Jahr.",
+  "@trialTimelinePlanSummary": {"description": "Plan summary at the top of the free trial timeline. {price} is the store's localized yearly price.", "placeholders": {"days": {"type": "int", "format": "decimalPattern"}, "price": {"type": "String"}}},
+  "trialTimelineToday": "Heute",
+  "@trialTimelineToday": {"description": "Label of the first free trial timeline step. The date follows it."},
+  "trialTimelineTodayBody": "Du erhältst vollen Zugriff auf Prism Pro. Heute zahlst du nichts.",
+  "@trialTimelineTodayBody": {"description": "First free trial timeline step."},
+  "trialTimelineDay": "Tag {day}",
+  "@trialTimelineDay": {"description": "Label of a later free trial timeline step, counted from today. The date follows it.", "placeholders": {"day": {"type": "int", "format": "decimalPattern"}}},
+  "trialTimelineReminderBody": "Wir erinnern dich, dass deine Testphase bald endet.",
+  "@trialTimelineReminderBody": {"description": "Free trial timeline step when the reminder switch is on."},
+  "trialTimelineNoReminderBody": "Keine Erinnerung. Du hast sie unten ausgeschaltet.",
+  "@trialTimelineNoReminderBody": {"description": "Free trial timeline step when the reminder switch is off."},
+  "trialTimelineChargeBody": "Du zahlst {price}, sofern du nicht mindestens 24 Stunden vorher kündigst.",
+  "@trialTimelineChargeBody": {"description": "Last free trial timeline step, the day the trial ends. {price} is the store's localized yearly price.", "placeholders": {"price": {"type": "String"}}},
+  "trialTimelineRemindToggle": "Erinnere mich 2 Tage vor dem Ende der Testphase",
+  "@trialTimelineRemindToggle": {"description": "Switch on the free trial timeline. On by default."},
+  "trialTimelineRenewalTerms": "Nach der Testphase verlängert sich Prism Pro jährlich für {price} pro Jahr, bis du kündigst. {store} belastet dein Konto. Um eine Abbuchung zu vermeiden, kündige mindestens 24 Stunden vor Ende der Testphase oder einer Verlängerung.",
+  "@trialTimelineRenewalTerms": {"description": "Subscription terms on the free trial timeline. {store} is App Store or Google Play and is not translated.", "placeholders": {"price": {"type": "String"}, "store": {"type": "String"}}},
+  "trialTimelineCancelLink": "Jederzeit in den Einstellungen von {store} kündigen",
+  "@trialTimelineCancelLink": {"description": "Link that opens the store's subscription settings. {store} is App Store or Google Play and is not translated.", "placeholders": {"store": {"type": "String"}}},
+  "trialTimelineSeeAllPlans": "Alle Pläne ansehen",
+  "@trialTimelineSeeAllPlans": {"description": "Action that opens every Prism Pro plan instead of the free trial."},
+  "trialTimelineStart": "Kostenlose {days}-Tage-Testphase starten",
+  "@trialTimelineStart": {"description": "Main action on the free trial timeline. It starts the store purchase.", "placeholders": {"days": {"type": "int", "format": "decimalPattern"}}},
+  "trialTimelineStartFailed": "Die Testphase konnte nicht gestartet werden. Versuch es erneut.",
+  "@trialTimelineStartFailed": {"description": "Error toast when the store purchase for the free trial fails."},
+  "trialReminderTitle": "Deine kostenlose Testphase endet am {date}",
+  "@trialReminderTitle": {"description": "Title of the reminder notification 2 days before the free trial ends. {date} is a localized date.", "placeholders": {"date": {"type": "String"}}},
+  "trialReminderBody": "Danach zahlst du für Prism Pro jährlich. Um die Abbuchung zu vermeiden, kündige mindestens 24 Stunden vorher in den Einstellungen von {store}.",
+  "@trialReminderBody": {"description": "Body of the free trial reminder notification. {store} is App Store or Google Play and is not translated.", "placeholders": {"store": {"type": "String"}}},
+  "notifChannelSubscription": "Abonnement",
+  "@notifChannelSubscription": {"description": "Android notification channel name for subscription reminders."},
+  "notifChannelSubscriptionDescription": "Eine Erinnerung, bevor deine Testphase endet",
+  "@notifChannelSubscriptionDescription": {"description": "Android notification channel description for subscription reminders."},
+  "premiumTrialEnds": "Testphase, endet am {date}",
+  "@premiumTrialEnds": {"description": "Premium screen status while the user is in the free trial. {date} is a localized date.", "placeholders": {"date": {"type": "String"}}},
+  "premiumTrialAutoRenewOff": "Die automatische Verlängerung ist aus. Dir wird nach Ende der Testphase nichts berechnet.",
+  "@premiumTrialAutoRenewOff": {"description": "Premium screen note during a free trial that the user cancelled."}
 }

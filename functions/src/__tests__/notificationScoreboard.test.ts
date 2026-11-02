@@ -7,6 +7,7 @@ import {db, utcDateString} from "../common";
 import {installFakeDb} from "./fakeDb";
 import {
   applyScore,
+  galleryField,
   NOTIFICATION_KINDS,
   planNotificationSignal,
   recordNotificationSignal,
@@ -334,6 +335,80 @@ test("signal retries keep the dedupe and counter document paths stable", async (
       auth: {uid: "uid-1"},
     } as unknown as Parameters<typeof recordNotificationSignal.run>[0]), {ok: true, counted: false});
     assert.deepEqual(documents.get(counterPaths[0]), {taps: {win_back: 1}});
+  } finally {
+    t.mock.method(db, "doc", originalDoc);
+    t.mock.method(db, "runTransaction", originalTransaction);
+  }
+});
+
+test("a gallery tap plan carries the gallery flag only when asked", () => {
+  assert.deepEqual(planNotificationSignal("u1", {type: "tap", kind: "wotd", gallery: true}, "2026-10-28"), {
+    ok: true, signalId: "u1_tap_2026-10-28_wotd", field: "taps", kind: "wotd", gallery: true,
+  });
+  const plain = planNotificationSignal("u1", {type: "tap", kind: "wotd"}, "2026-10-28");
+  assert.equal("gallery" in plain, false);
+  assert.equal(galleryField("taps"), "gallery_taps");
+});
+
+test("gallery push outcomes count under gallery fields beside the plain kind", async (t) => {
+  const store = installFakeDb(t);
+  t.mock.method(Math, "random", () => 0);
+  const at = new Date("2026-10-28T00:00:00Z");
+  await recordPushOutcome("wotd", "sends", at, true);
+  await recordPushOutcome("wotd", "sends", at);
+  const sums: Record<string, number> = {};
+  for (const [path, data] of store) {
+    if (!path.startsWith("metrics/notificationScoreboard/days/2026-10-28_")) continue;
+    for (const [field, bucket] of Object.entries(data)) {
+      for (const [kind, count] of Object.entries(bucket as Record<string, number>)) {
+        sums[`${field}.${kind}`] = (sums[`${field}.${kind}`] ?? 0) + count;
+      }
+    }
+  }
+  assert.equal(sums["sends.wotd"], 2);
+  assert.equal(sums["gallery_sends.wotd"], 1);
+});
+
+test("the callable counts a gallery tap once per day under the gallery taps field", async (t) => {
+  const docs = new Map<string, Record<string, unknown>>();
+  const originalDoc = db.doc.bind(db);
+  const originalTransaction = db.runTransaction.bind(db);
+  t.mock.method(db, "doc", (path: string) => ({path, firestore: db}));
+  t.mock.method(db, "runTransaction", async (callback: (tx: {
+    get: (ref: {path: string}) => Promise<{exists: boolean; data: () => Record<string, unknown> | undefined}>;
+    set: (ref: {path: string}, data: Record<string, unknown>, options?: {merge?: boolean}) => void;
+  }) => Promise<unknown>) => {
+    const writes: Array<{path: string; data: Record<string, unknown>; merge: boolean}> = [];
+    const result = await callback({
+      get: async (ref) => {
+        const data = docs.get(ref.path);
+        return {exists: data !== undefined, data: () => data};
+      },
+      set: (ref, data, options) => writes.push({path: ref.path, data, merge: options?.merge ?? false}),
+    });
+    for (const write of writes) {
+      const prior = write.merge ? docs.get(write.path) ?? {} : {};
+      docs.set(write.path, {...prior, ...write.data});
+    }
+    return result;
+  });
+  const call = () => recordNotificationSignal.run({
+    data: {type: "tap", kind: "wotd", gallery: true},
+    auth: {uid: "uid-1"},
+  } as unknown as Parameters<typeof recordNotificationSignal.run>[0]);
+  try {
+    assert.deepEqual(await call(), {ok: true, counted: true});
+    assert.deepEqual(await call(), {ok: true, counted: false});
+    const day = utcDateString();
+    const sums: Record<string, number> = {};
+    for (const [path, data] of docs) {
+      if (!path.startsWith(`metrics/notificationScoreboard/days/${day}_`)) continue;
+      for (const field of ["taps", "gallery_taps"]) {
+        const bucket = data[field] as Record<string, number> | undefined;
+        sums[field] = (sums[field] ?? 0) + (bucket?.wotd ?? 0);
+      }
+    }
+    assert.deepEqual(sums, {taps: 1, gallery_taps: 1});
   } finally {
     t.mock.method(db, "doc", originalDoc);
     t.mock.method(db, "runTransaction", originalTransaction);

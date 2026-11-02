@@ -21,9 +21,20 @@ class FirebaseCollections {
   static const String drawTickets = 'drawTickets';
   static const String leaderboards = 'leaderboards';
   static const String folders = 'folders';
+  static const String wallRequests = 'wallRequests';
+  static const String moods = 'moods';
 
   /// `folders/{folderId}/items`, one doc per saved wall.
   static String folderItems(String folderId) => '$folders/$folderId/items';
+
+  /// `publicFolders/{folderId}`, the server projection of a public folder.
+  static const String publicFolders = 'publicFolders';
+
+  /// `publicFolders/{folderId}/items`, the walls others see.
+  static String publicFolderItems(String folderId) => '$publicFolders/$folderId/items';
+
+  /// `usersv2/{uid}/followedFolders`, the public folders a user follows.
+  static String followedFolders(String userId) => '$usersV2/$userId/followedFolders';
 
   /// `usersv2/{uid}/private`, the owner-only subcollection that holds the `economy` doc.
   static String userPrivate(String uid) => '$usersV2/$uid/private';

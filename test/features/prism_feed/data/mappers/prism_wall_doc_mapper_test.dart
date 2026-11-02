@@ -1,6 +1,8 @@
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_desktop.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
@@ -10,6 +12,8 @@ void main() {
   test('classifier category survives DTO JSON without using the description', () {
     final dto = PrismWallDocDto.fromJson(<String, dynamic>{'category': 'Nature', 'desc': 'A lake at dawn'});
     expect(PrismWallDocDto.fromJson(dto.toJson()).toDomain(docId: 'lake').core.category, 'Nature');
+    expect(PrismWallDocDto.fromJson(dto.toJson()).toDomain(docId: 'lake').description, 'A lake at dawn');
+    expect(const PrismWallDocDto().toDomain(docId: 'empty').description, isNull);
     expect(const PrismWallDocDto(desc: 'Unclassified prose').toDomain(docId: 'x').core.category, isNull);
   });
   test('Firestore Prism walls cannot spoof an external provider', () {
@@ -22,6 +26,22 @@ void main() {
       }).toDomain(docId: 'w1');
       expect(wall.source, WallpaperSource.prism);
       expect(wall.fullUrl, isEmpty);
+    }
+  });
+
+  test('a missing or wrongly typed AI flag defaults false without losing AI metadata', () {
+    for (final Object? flag in <Object?>[null, 'true', 1, <String>[]]) {
+      final PrismWallDocDto dto = PrismWallDocDto.fromJson(<String, dynamic>{
+        'wallpaper_url': 'https://x/y.jpg',
+        'aiMetadata': <String, Object?>{'prompt': 'a lake'},
+        'aiModel': 42,
+        if (flag != null) 'isAiGenerated': flag,
+      });
+
+      final wall = dto.toDomain(docId: 'w1');
+      expect(wall.isAiGenerated, isFalse);
+      expect(wall.aiModel, isNull);
+      expect(wall.aiMetadata, <String, Object?>{'prompt': 'a lake'});
     }
   });
 
@@ -123,6 +143,29 @@ void main() {
       const WallSpatial(tier: WallSpatialTier.great, mapUrl: 'https://img.prismwalls.com/spatial/v1/w.png'),
     );
     expect(const PrismWallDocDto().toDomain(docId: 'a').spatial, isNull);
+  });
+
+  test('desktop companion version survives Firestore DTO JSON cache round trip', () {
+    final PrismWallDocDto dto = PrismWallDocDto.fromJson(<String, dynamic>{
+      'desktopVariant': <String, Object?>{
+        'v': '0123456789abcdef',
+        'thumb': 'https://img.prismwalls.com/previews/desktop.jpg',
+        'width': 2560,
+        'height': 1600,
+      },
+    });
+    final PrismWallpaper wallpaper = PrismWallDocDto.fromJson(dto.toJson()).toDomain(docId: 'wall');
+
+    expect(
+      wallpaper.desktop,
+      const WallDesktopVariant(
+        version: '0123456789abcdef',
+        thumbnailUrl: 'https://img.prismwalls.com/previews/desktop.jpg',
+        width: 2560,
+        height: 1600,
+      ),
+    );
+    expect(const PrismWallDocDto().toDomain(docId: 'empty').desktop, isNull);
   });
 
   group('depth', () {

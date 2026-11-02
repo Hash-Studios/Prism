@@ -47,7 +47,7 @@ void main() {
     expect(port.errors, <String>['Unable to credit coins right now.']);
   });
 
-  test('upsell exception reports the rewards ad-failure toast after one successful credit', () async {
+  test('upsell exception cannot change a successful verified reward', () async {
     final _ThrowingUpsellPort port = _ThrowingUpsellPort();
 
     expect(
@@ -57,10 +57,10 @@ void main() {
         isMounted: mounted,
         adErrorMessage: 'Ad was not completed.',
       ),
-      isFalse,
+      isTrue,
     );
 
     expect(port.log.where((entry) => entry == 'award:coins.hub.rewarded_ad'), hasLength(1));
-    expect(port.errors, <String>['Ad was not completed.']);
+    expect(port.errors, isEmpty);
   });
 }

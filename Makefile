@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard rules-test no-dynamic-guard no-shape-parse-guard guard-test env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab release-android release-ios patch patch-list patch-promote patch-rollback ensure-shorebird size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks repo-assets-check
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard rules-test no-dynamic-guard no-shape-parse-guard guard-test env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab release-android release-ios patch patch-list patch-promote patch-rollback ensure-shorebird size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks repo-assets-check store-listings-check
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -45,7 +45,8 @@ FIREBASE_ACCOUNT ?=
 FIREBASE_ARGS = --project $(FIREBASE_PROJECT) $(if $(FIREBASE_ACCOUNT),--account $(FIREBASE_ACCOUNT),)
 FUNCTIONS_DOPPLER_CONFIG ?= prd
 FUNCTIONS_SECRETS ?= GH_TOKEN REVENUECAT_SECRET_KEY STUDIO_SECRET TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID FAL_API_KEY R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY
-FUNCTIONS_ENV_KEYS ?= GH_USERNAME GH_REPO_WALLS GH_REPO_SETUPS R2_ACCOUNT_ID R2_PRIVATE_BUCKET R2_PREVIEW_BUCKET R2_PREVIEW_BASE_URL
+FUNCTIONS_ENV_KEYS ?= GH_USERNAME GH_REPO_WALLS GH_REPO_SETUPS R2_ACCOUNT_ID R2_PRIVATE_BUCKET R2_PREVIEW_BUCKET R2_PREVIEW_BASE_URL \
+	REWARDED_AD_ENABLED REWARDED_AD_ANDROID_UNIT_ID REWARDED_AD_IOS_UNIT_ID REWARDED_AD_GOOGLE_REWARD_TYPE REWARDED_AD_GOOGLE_REWARD_AMOUNT
 
 # Ensure POSIX shell recipes work when running make from PowerShell/cmd on Windows.
 ifeq ($(OS),Windows_NT)
@@ -156,7 +157,8 @@ no-shape-parse-guard:
 
 guard-test:
 	@bash tool/search_guard_test.sh
-	@python3 -m unittest tool.release_tools_test tool.release_workflows_test tool.ios_ci_signing_test tool.shorebird_ota_test
+	@python3 -m unittest tool.release_tools_test tool.release_workflows_test tool.ios_ci_signing_test tool.app_size_workflow_test tool.check_store_listings_test tool.shorebird_ota_test
+	@node --test tool/ai_style_samples.test.mjs
 
 .PHONY: notification-contract-fixture-test
 notification-contract-fixture-test: ensure-fvm
@@ -333,9 +335,9 @@ gradle-reset:
 size-android: ensure-fvm
 	@mkdir -p build/size/local
 	@./tool/write_firebase_options_stub.sh
-	@$(FLUTTER) build apk --release --target-platform=$(APP_SIZE_TARGET_PLATFORM) --obfuscate --split-debug-info=build/size/local/symbols --dart-define=SKIP_FIREBASE_INIT=true --analyze-size > build/size/local/build.log 2>&1
+	@$(FLUTTER) build apk --release --target-platform=$(APP_SIZE_TARGET_PLATFORM) --obfuscate --split-debug-info=build/size/local/symbols --dart-define=SKIP_FIREBASE_INIT=true > build/size/local/build.log 2>&1
 	@cp build/app/outputs/flutter-apk/app-release.apk build/size/local/app-release.apk
-	@echo "APK + size analysis log written to build/size/local"
+	@echo "APK + build log written to build/size/local"
 
 sentry-size-upload:
 	@DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) AAB_PATH=$(SENTRY_SIZE_AAB) ./tool/sentry_size_upload.sh
@@ -400,7 +402,16 @@ update-flutter: ensure-fvm
 repo-assets-check:
 	@python3 tool/check_repo_assets.py
 
-ci: get format-check l10n-check guard-test env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard system-ui-guard find-unused-ci cloudflare-worker-check repo-assets-check test
+store-listings-check:
+	@python3 tool/check_store_listings.py
+
+.PHONY: duo-check
+duo-check:
+	@node tool/generate_duo_reveal.mjs --check
+	@node tool/generate_duo_web_copy.mjs --check
+	@node --test tool/generate_duo_reveal.test.mjs tool/generate_duo_web_copy.test.mjs
+
+ci: get format-check l10n-check guard-test env-guard secrets-guard version-guard analytics-check duo-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard system-ui-guard find-unused-ci cloudflare-worker-check repo-assets-check store-listings-check test
 
 .PHONY: native-android-check native-ios-check ios-strip-test
 native-android-check: get

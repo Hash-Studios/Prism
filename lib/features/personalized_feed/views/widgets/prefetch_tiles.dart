@@ -28,6 +28,11 @@ void _pump() {
   }
 }
 
+/// The image a grid tile decodes for [url] at [memCacheHeight]. Prefetch and tiles share it, so a warmed image is the
+/// one that shows.
+ImageProvider tileImageProvider(String url, {required int memCacheHeight}) =>
+    ResizeImage(CachedNetworkImageProvider(url, cacheManager: PrismImageCache.instance), height: memCacheHeight);
+
 /// How many tiles of a [columns]-wide grid fit on the first screen.
 int visibleTileCount(BuildContext context, int columns) {
   final Size size = MediaQuery.sizeOf(context);
@@ -58,11 +63,7 @@ void prefetchTileImages(BuildContext context, List<FeedItemEntity> items, {requi
         if (!context.mounted || LowDataMode.enabled.value) {
           return Future<void>.value();
         }
-        return precacheImage(
-          ResizeImage(CachedNetworkImageProvider(url, cacheManager: PrismImageCache.instance), height: memCacheHeight),
-          context,
-          onError: (_, _) {},
-        );
+        return precacheImage(tileImageProvider(url, memCacheHeight: memCacheHeight), context, onError: (_, _) {});
       });
     }
     _pump();

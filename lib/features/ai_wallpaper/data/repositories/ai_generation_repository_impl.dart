@@ -7,6 +7,7 @@ import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
@@ -61,7 +62,12 @@ class AiGenerationRepositoryImpl {
   final Map<String, int> _ownerGenerations = <String, int>{};
   final Map<String, Future<void>> _ownerWriteTails = <String, Future<void>>{};
 
-  FirebaseAuth get _auth => _authOverride ?? FirebaseAuth.instance;
+  User? get _currentUser {
+    final FirebaseAuth? override = _authOverride;
+    if (override != null) return override.currentUser;
+    if (!FirebaseInit.hasDefaultApp) return null;
+    return FirebaseAuth.instance.currentUser;
+  }
 
   int _generationFor(String userId) => _ownerGenerations[userId] ?? 0;
 
@@ -77,7 +83,7 @@ class AiGenerationRepositoryImpl {
   }
 
   User _requireUser() {
-    final user = _auth.currentUser;
+    final user = _currentUser;
     if (user == null) {
       throw AiGenerationApiException(
         message: 'Please sign in to generate wallpapers.',
@@ -96,7 +102,11 @@ class AiGenerationRepositoryImpl {
     required AiChargeMode chargeMode,
     required int coinsSpent,
     int? seed,
+    String? format,
+    String? foldedPrompt,
+    String? revealedPrompt,
     String? chargeTxId,
+    String? remixOf,
   }) async {
     final user = _requireUser();
     final int ownerGeneration = _generationFor(user.uid);
@@ -106,6 +116,9 @@ class AiGenerationRepositoryImpl {
       'stylePreset': stylePreset.apiValue,
       'qualityTier': qualityTier.apiValue,
       'targetSize': targetSize,
+      if (format != null) 'format': format,
+      if (foldedPrompt != null) 'foldedPrompt': foldedPrompt.trim(),
+      if (revealedPrompt != null) 'revealedPrompt': revealedPrompt.trim(),
       if (seed != null) 'seed': seed,
       if (chargeTxId != null && chargeTxId.isNotEmpty) 'chargeTxId': chargeTxId,
       // The worker owns the one free trial per account; a repeat replays the first image.
@@ -120,6 +133,7 @@ class AiGenerationRepositoryImpl {
       qualityTier: qualityTier,
       chargeMode: chargeMode,
       coinsSpent: coinsSpent,
+      remixOf: remixOf,
     );
     try {
       await _saveHistoryRecord(record, ownerGeneration);
@@ -131,16 +145,18 @@ class AiGenerationRepositoryImpl {
 
   Future<AiGenerationRecord> generateVariation({
     required String generationId,
+    AiGenerationRecord? originalRecord,
     required AiChargeMode chargeMode,
     required int coinsSpent,
     String variationPrompt = '',
     double strength = 0.45,
     String? chargeTxId,
+    String? remixOf,
   }) async {
     final user = _requireUser();
     final int ownerGeneration = _generationFor(user.uid);
 
-    final AiGenerationRecord? original = await _fetchById(generationId);
+    final AiGenerationRecord? original = originalRecord ?? await _fetchById(generationId);
     final payload = <String, dynamic>{
       'variationPrompt': variationPrompt,
       'strength': strength,
@@ -160,6 +176,7 @@ class AiGenerationRepositoryImpl {
       chargeMode: chargeMode,
       coinsSpent: coinsSpent,
       parentGenerationId: generationId,
+      remixOf: remixOf,
     );
     try {
       await _saveHistoryRecord(record, ownerGeneration);
@@ -394,7 +411,7 @@ class AiGenerationRepositoryImpl {
   }
 
   Future<Map<String, dynamic>> _post(String path, Map<String, dynamic> body, {bool retryOnTimeout = false}) async {
-    final token = await _auth.currentUser?.getIdToken();
+    final token = await _currentUser?.getIdToken();
     if (token == null || token.trim().isEmpty) {
       throw AiGenerationApiException(message: 'Please sign in to continue.', code: 'unauthorized', statusCode: 401);
     }
@@ -453,6 +470,7 @@ class AiGenerationRepositoryImpl {
     required AiChargeMode chargeMode,
     required int coinsSpent,
     String? parentGenerationId,
+    String? remixOf,
   }) {
     final imageUrls = data['imageUrls'] is Map<String, dynamic>
         ? data['imageUrls'] as Map<String, dynamic>
@@ -479,6 +497,9 @@ class AiGenerationRepositoryImpl {
       userId: userId,
       createdAt: DateTime.now().toUtc(),
       prompt: prompt,
+      format: data['format']?.toString(),
+      foldedPrompt: data['foldedPrompt']?.toString(),
+      revealedPrompt: data['revealedPrompt']?.toString(),
       stylePreset: stylePreset,
       qualityTier: responseQualityTier,
       provider: (data['provider'] ?? 'unknown').toString(),
@@ -492,6 +513,7 @@ class AiGenerationRepositoryImpl {
       coinsSpent: coinsSpent,
       status: 'success',
       parentGenerationId: parentGenerationId,
+      remixOf: remixOf,
     );
   }
 }

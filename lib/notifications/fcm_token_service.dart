@@ -106,6 +106,42 @@ class FcmTokenService {
     }
   }
 
+  /// Stores the Posts switch where the follow digest reads it.
+  Future<void> savePostAlerts({required String userId, required bool enabled, FirestoreClient? client}) async {
+    if (userId.trim().isEmpty) return;
+    try {
+      await _trackWrite(
+        () => (client ?? firestoreClient).setDoc(
+          '${FirebaseCollections.usersV2}/$userId/private',
+          'session',
+          <String, dynamic>{'postAlerts': enabled},
+          merge: true,
+          sourceTag: 'fcm_token.post_alerts',
+        ),
+      );
+    } catch (e, st) {
+      logger.w('FcmTokenService: failed to save post alerts.', error: e, stackTrace: st);
+    }
+  }
+
+  /// Stores the "Folders you follow" switch where the folder digest reads it.
+  Future<void> saveFolderAlerts({required String userId, required bool enabled, FirestoreClient? client}) async {
+    if (userId.trim().isEmpty) return;
+    try {
+      await _trackWrite(
+        () => (client ?? firestoreClient).setDoc(
+          '${FirebaseCollections.usersV2}/$userId/private',
+          'session',
+          <String, dynamic>{'folderAlerts': enabled},
+          merge: true,
+          sourceTag: 'fcm_token.folder_alerts',
+        ),
+      );
+    } catch (e, st) {
+      logger.w('FcmTokenService: failed to save folder alerts.', error: e, stackTrace: st);
+    }
+  }
+
   /// Stores the Recommendations switch where the win-back and campaign pushes read it.
   Future<void> saveMarketingPushes({required String userId, required bool enabled, FirestoreClient? client}) async {
     if (userId.trim().isEmpty) return;
@@ -285,7 +321,13 @@ class FcmTokenService {
     final SettingsLocalDataSource? settings = getIt.isRegistered<SettingsLocalDataSource>()
         ? getIt<SettingsLocalDataSource>()
         : null;
-    final String marker = '$userId|$token';
+    final bool postAlerts =
+        settings?.isOpen != true ||
+        settings!.get<bool>(NotificationPrefKeys.posts, defaultValue: true) &&
+            settings.get<bool>(NotificationPrefKeys.followers, defaultValue: true);
+    final bool folderAlerts =
+        settings?.isOpen != true || settings!.get<bool>(NotificationPrefKeys.folders, defaultValue: true);
+    final String marker = '$userId|$token|digest_v2|posts:$postAlerts|folders:$folderAlerts';
     final bool track = settings != null && settings.isOpen;
     if (track && settings.get<String>(_syncedTokenKey, defaultValue: '') == marker) return;
     await (client ?? firestoreClient).setDoc(
@@ -293,10 +335,17 @@ class FcmTokenService {
       'session',
       <String, dynamic>{
         'fcmToken': token,
-        'notificationLocalizationVersion': 1,
+        'notificationLocalizationVersion': 2,
         'notificationLocalizationToken': token,
         'fcmTokenBindingVersion': 1,
         'fcmTokenBindingToken': token,
+        // This build gets the daily follow digest in place of the per-upload topic pushes. The token marks the device,
+        // so an older build that rebinds the account keeps its topic pushes.
+        'postAlerts': postAlerts,
+        'postAlertsToken': token,
+        // The folder digest goes only to a device whose token carries the switch, like the follow digest.
+        'folderAlerts': folderAlerts,
+        'folderAlertsToken': token,
       },
       merge: true,
       sourceTag: 'fcm_token.sync',

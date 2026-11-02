@@ -4,9 +4,12 @@ import { webcrypto } from 'node:crypto';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { AiQuotaCoordinator, classifyCategory, gptImageSize, seedreamImageSize } from '../src/ai.ts';
+import {composeDuoPrompt, parseDuoPrompt, imageDimensions} from '../src/ai_duo_prompt.ts';
+import {hasBannedDuoPhrase} from '../src/duo_reveal_spec.ts';
 import { verifyFirebaseIdTokenFromRequest } from '../src/firebase_auth.ts';
 import worker from '../src/index.ts';
 import { formatCount, renderOgCardHtml } from '../src/og_card.ts';
+import { iosUniversalLinkUrl } from '../src/page_kit.ts';
 
 globalThis.crypto ??= webcrypto;
 
@@ -214,7 +217,7 @@ const SHARE_PATH = '/share?id=wall-1&source=prism&provider=Prism'
 
 async function getShare(userAgent, path = SHARE_PATH, env = workerEnv({
   PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
-  APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+  APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
 })) {
   return worker.fetch(
     new Request(`https://prismwalls.com${path}`, { headers: { 'user-agent': userAgent } }),
@@ -242,7 +245,8 @@ test('share landing page renders on Android with an intent link and no instant r
 
 test('share landing page offers the universal link and App Store on iOS, both stores on desktop', async () => {
   const ios = await (await getShare(IOS_UA)).text();
-  assert.match(ios, /href="https:\/\/prismwalls\.com\/share\?id=wall-1[^"]*"[^>]*>Open in Prism/);
+  // A link to the page's own host stays in Safari, so iOS gets the other associated host.
+  assert.match(ios, /href="https:\/\/www\.prismwalls\.com\/share\?id=wall-1[^"]*"[^>]*>Open in Prism/);
   assert.match(ios, /Download on the App Store/);
   assert.doesNotMatch(ios, /Get it on Google Play/);
 
@@ -250,6 +254,73 @@ test('share landing page offers the universal link and App Store on iOS, both st
   assert.match(desktop, /Get it on Google Play/);
   assert.match(desktop, /Download on the App Store/);
   assert.doesNotMatch(desktop, />Open in Prism</);
+});
+
+test('iOS universal links switch only the exact Prism hosts', () => {
+  const suffix = '/share?id=wall-1&utm_campaign=warm%2Fwood#preview';
+  for (const [pageHost, otherHost] of [
+    ['prismwalls.com', 'www.prismwalls.com'],
+    ['www.prismwalls.com', 'prismwalls.com'],
+  ]) {
+    assert.equal(iosUniversalLinkUrl(`https://${pageHost}${suffix}`, pageHost), `https://${otherHost}${suffix}`);
+    assert.equal(iosUniversalLinkUrl(`https://${otherHost}${suffix}`, pageHost), `https://${otherHost}${suffix}`);
+  }
+  for (const target of [
+    'https://example.com/share?id=wall-1',
+    'https://www.example.com/share?id=wall-1',
+    'https://prismwalls.com.example.com/share?id=wall-1',
+    'https://prismwalls.com:8443/share?id=wall-1',
+  ]) {
+    assert.equal(iosUniversalLinkUrl(target, new URL(target).host), target, target);
+  }
+});
+
+test('legacy iOS landings hand off to a different associated host without changing the canonical host', async () => {
+  const env = workerEnv({
+    PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+    APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
+    LINKS_KV: new MemoryKv([storedLink('AbCdEfGh', 'share', '/share?id=wall-1', {})]),
+  });
+  for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
+    for (const path of ['/share?id=wall-1', '/user/alice', '/setup/desk', '/refer/alice',
+      '/dashboard/search?utm_campaign=warm%2Fwood', '/l/AbCdEfGh']) {
+      const response = await worker.fetch(
+        new Request(`https://${host}${path}`, { headers: { 'user-agent': IOS_UA } }), env, { waitUntil() {} },
+      );
+      assert.equal(response.status, 200, `${host}${path}`);
+      const body = await response.text();
+      const openUrl = new URL(body.match(/href="([^"]+)"[^>]*>Open in Prism/)[1].replaceAll('&amp;', '&'));
+      assert.equal(openUrl.host, host === 'prismwalls.com' ? 'www.prismwalls.com' : 'prismwalls.com', `${host}${path}`);
+      assert.equal(openUrl.pathname, path.startsWith('/l/') ? '/share' : new URL(`https://${host}${path}`).pathname);
+      assert.match(body, /<link rel="canonical" href="https:\/\/prismwalls\.com\//);
+      assert.match(body, /app-id=6670200846, app-argument=https:\/\/prismwalls\.com\//);
+      assert.doesNotMatch(body, /Get it on Google Play/);
+    }
+  }
+});
+
+test('both universal-link hosts retain Worker routes, AASA paths and app entitlements', async () => {
+  const routes = [...readFileSync(new URL('../wrangler.toml', import.meta.url), 'utf8').matchAll(/^pattern = "([^"]+)"$/gm)]
+    .map((match) => match[1]);
+  const entitlements = readFileSync(new URL('../../../../ios/Runner/Runner.entitlements', import.meta.url), 'utf8');
+  const matchesGlob = (value, pattern) => new RegExp(`^${pattern.split('*')
+    .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`).test(value);
+  for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
+    assert.ok(entitlements.includes(`<string>applinks:${host}</string>`), host);
+    for (const associationPath of ['/.well-known/apple-app-site-association', '/apple-app-site-association']) {
+      assert.ok(routes.some((route) => matchesGlob(`${host}${associationPath}`, route)), `${host}${associationPath}`);
+      const response = await worker.fetch(new Request(`https://${host}${associationPath}`), workerEnv(), { waitUntil() {} });
+      assert.equal(response.status, 200);
+      const details = (await response.json()).applinks.details[0];
+      assert.equal(details.appID, 'X2955Z4CKQ.com.hash.prism');
+      for (const path of ['/wallpaper/wall-1', '/folder/folder-1', '/share', '/user/alice', '/setup/desk', '/refer/alice',
+        '/dashboard/search', '/l/AbCdEfGh']) {
+        assert.ok(details.paths.some((pattern) => matchesGlob(path, pattern)), `${host}${path} must be associated`);
+        assert.ok(routes.some((route) => matchesGlob(`${host}${path}`, route)), `${host}${path} must reach the Worker`);
+      }
+    }
+    assert.ok(routes.some((route) => matchesGlob(`${host}/creator/alice`, route)), `${host}/creator/alice`);
+  }
 });
 
 test('share landing page drops preview images from hosts that are not allowlisted', async () => {
@@ -293,7 +364,7 @@ test('share previews allow only configured opaque R2 objects or GitHub thumbnail
         GH_USERNAME: 'Hash-Studios',
         GH_REPO_WALLS: 'Prism',
         PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
-        APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+        APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
       }))).text();
     assert.equal(body.includes(image), allowed, image);
   }
@@ -305,7 +376,7 @@ test('allowlisted app pages have safe generic landings on both web hosts', async
       new Request(`https://${host}/dashboard/search?utm_campaign=a%2Fb`, { headers: { 'user-agent': ANDROID_UA } }),
       workerEnv({
         PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
-        APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+        APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
       }),
       { waitUntil() {} },
     );
@@ -387,7 +458,7 @@ test('every Dart deep-link catalog example resolves to a Worker landing', async 
         new Request(`https://${host}${uri.pathname}${uri.search}`, { headers: { 'user-agent': ANDROID_UA } }),
         workerEnv({
           PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
-          APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+          APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
         }),
         { waitUntil() {} },
       );
@@ -396,10 +467,66 @@ test('every Dart deep-link catalog example resolves to a Worker landing', async 
   }
 });
 
+test('challenge links cover both hosts, campaigns, associations and app fallbacks', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => { throw new Error('Challenge links must not fetch remote data'); });
+  const env = workerEnv({
+    PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+    APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
+  });
+  for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
+    for (const suffix of ['', '?utm_source=mail', '?utm_medium=social', '?utm_campaign=warm%2Fwood',
+      '?utm_source=mail&utm_medium=social&utm_campaign=warm%2Fwood']) {
+      const path = `/challenges/2026-10-26${suffix}`;
+      for (const ua of [ANDROID_UA, IOS_UA, 'Twitterbot']) {
+        const response = await worker.fetch(new Request(`https://${host}${path}`, {
+          headers: { 'user-agent': ua },
+        }), env, { waitUntil() {} });
+        assert.equal(response.status, 200, `${host}${path}`);
+        const html = await response.text();
+        assert.match(html, /Weekly challenge - Prism/);
+        assert.match(html, /Explore this weekly wallpaper challenge in Prism\./);
+        assert.ok(html.includes(path.replaceAll('&', '&amp;')), path);
+        if (ua === ANDROID_UA) assert.match(html, /#Intent;scheme=https/);
+      }
+    }
+    for (const path of ['/.well-known/apple-app-site-association', '/apple-app-site-association']) {
+      const response = await worker.fetch(new Request(`https://${host}${path}`), env, { waitUntil() {} });
+      assert.ok((await response.json()).applinks.details[0].paths.includes('/challenges/*'));
+    }
+  }
+  for (const path of ['/challenges/2026-10-26', '/challenges/2024-02-26', '/challenges/0000-01-03',
+    '/challenges/9999-12-27?utm_source=mail&utm_campaign=a%2Fb']) {
+    const response = await postLink(env, { type: 'page', payload: { path } });
+    assert.equal(response.status, 201, path);
+    const record = JSON.parse(await env.LINKS_KV.get((await response.json()).code));
+    assert.equal(record.canonical_url, `https://prismwalls.com${path}`);
+    assert.equal(record.preview.title, 'Weekly challenge - Prism');
+  }
+});
+
+test('challenge links reject unsupported roots, invalid dates, extra segments and query keys', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => { throw new Error('Challenge links must not fetch remote data'); });
+  const env = workerEnv({ PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism' });
+  for (const path of ['/challenges', '/challenges/', '/challenges/2026-10-27', '/challenges/2026-02-30',
+    '/challenges/2026-13-01', '/challenges/2026-00-01', '/challenges/2026-10-00',
+    '/challenges/2026-1-26', '/challenges/26-10-26', '/challenges/+010000-01-03',
+    '/challenges/2026-10-26T00:00:00Z', '/challenges/2026-10-26/entries',
+    '/challenges/2026-10-26%2Fentries', '/challenges/not-a-date',
+    '/challenges/2026-10-26?next=other', '/challenges/2026-10-26?utm_source=a&utm_source=b']) {
+    for (const host of ['prismwalls.com', 'www.prismwalls.com']) {
+      const response = await worker.fetch(new Request(`https://${host}${path}`), env, { waitUntil() {} });
+      assert.equal(response.status, 302, `${host}${path}`);
+    }
+    const response = await postLink(env, { type: 'page', payload: { path } });
+    assert.equal(response.status, 400, path);
+    assert.equal((await response.json()).error, 'invalid_canonical_url', path);
+  }
+});
+
 test('direct app landings preserve encoded query values and reject unsupported workflows', async () => {
   const env = workerEnv({
     PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
-    APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+    APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
   });
   const path = '/wallpaper/wall1/position?provider=wallhaven&utm_campaign=warm%2Fwood';
   const response = await worker.fetch(
@@ -416,6 +543,9 @@ test('direct app landings preserve encoded query values and reject unsupported w
     '/clock-preview?wallpaperId=wall1&provider=unsupported',
     '/wallpaper/wall1/position?provider=downloaded',
     '/dashboard/search?q=sunset',
+    '/gallery?ids=W1',
+    '/gallery?ids=W1,bad%2Fid',
+    '/gallery?ids=W1,W2&title=Picks',
   ]) {
     const invalid = await worker.fetch(new Request(`https://prismwalls.com${path}`), env, { waitUntil() {} });
     assert.equal(invalid.status, 302, path);
@@ -463,11 +593,47 @@ test('legacy user, setup and referral aliases remain safe on web landings', asyn
       path,
       workerEnv({
         PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
-        APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+        APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
       }),
     );
     assert.equal(response.status, 200, path);
     assert.match(await response.text(), /Open in Prism/, path);
+  }
+});
+
+test('redeem deep link returns the direct app landing that carries the code to the app', async () => {
+  const response = await getShare(
+    ANDROID_UA,
+    '/redeem?code=ABCDEFGH23',
+    workerEnv({
+      PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+      APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
+    }),
+  );
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('referrer-policy'), 'no-referrer');
+  const body = await response.text();
+  assert.match(body, /Open in Prism/);
+  assert.match(body, /prismwalls\.com\/redeem\?code=ABCDEFGH23/);
+});
+
+test('redeem short links do not print codes when stored record types drift', async () => {
+  const warnings = [];
+  const originalWarn = console.warn;
+  console.warn = (...args) => warnings.push(args);
+  try {
+    const env = workerEnv({
+      LINKS_KV: new MemoryKv([storedLink('AbCdEfGh', 'share', '/redeem?code=ABCDEFGH23', {})]),
+      PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+      APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
+    });
+    const response = await getShare(ANDROID_UA, '/l/AbCdEfGh', env);
+    assert.equal(response.status, 200);
+    assert.equal(warnings.length, 1);
+    assert.doesNotMatch(JSON.stringify(warnings), /ABCDEFGH23/);
+    assert.equal(response.headers.get('referrer-policy'), 'no-referrer');
+  } finally {
+    console.warn = originalWarn;
   }
 });
 
@@ -483,7 +649,7 @@ test('short link page for a stored share record renders the same landing', async
   const env = workerEnv({
     LINKS_KV: links,
     PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
-    APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+    APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
   });
   const body = await (await getShare(ANDROID_UA, '/l/AbCdEfGh', env)).text();
   assert.match(body, /Sunset - Prism/);
@@ -848,7 +1014,7 @@ test('a balanced variation inherits Seedream default sizing, model and cost', as
   const kv = aiKv(5);
   await kv.put('ai:gen:gen-balanced-parent', JSON.stringify({
     generationId: 'gen-balanced-parent', userId: 'alice', prompt: 'A quiet mountain lake',
-    stylePreset: 'minimal', qualityTier: 'balanced', width: 1880, height: 4080,
+    stylePreset: '3d render', qualityTier: 'balanced', width: 1880, height: 4080,
   }));
   const storage = new MemoryStorage();
   const env = aiEnv(kv, new AiQuotaCoordinator({ storage }));
@@ -879,6 +1045,11 @@ test('a balanced variation inherits Seedream default sizing, model and cost', as
   assert.equal(body.qualityTier, 'balanced');
   assert.equal(body.seed, null);
   assert.equal(stats.falRequest.url, 'https://fal.run/fal-ai/bytedance/seedream/v5/lite/text-to-image');
+  assert.equal(
+    stats.falRequest.body.prompt,
+    'A quiet mountain lake. Variation request (0.45): warmer light, stylized 3D render, smooth matte clay-like '
+      + 'materials, soft global illumination, rendered CGI look',
+  );
   assert.deepEqual(stats.falRequest.body.image_size, { width: 1880, height: 4080 });
   assert.equal('seed' in stats.falRequest.body, false);
   const record = JSON.parse(await kv.get(`ai:gen:${body.generationId}`));
@@ -887,6 +1058,32 @@ test('a balanced variation inherits Seedream default sizing, model and cost', as
   assert.equal(record.estimatedCostUsd, 0.04);
   assert.equal(await storage.get(`provider:fal:daily:${today()}`), 0.04);
   assert.equal(await storage.get(`provider:fal:monthly:${today().slice(0, 7)}`), 0.04);
+});
+
+test('a style without a description adds its name, and 3D render adds what it looks like', async () => {
+  const anime = await generateWith({ stylePreset: 'anime', targetSize: '944x2048' });
+  assert.equal(anime.stats.falRequest.body.prompt, 'A quiet mountain lake, anime style');
+  const render = await generateWith({ stylePreset: '  3D Render  ', targetSize: '944x2048' });
+  assert.equal(
+    render.stats.falRequest.body.prompt,
+    'A quiet mountain lake, stylized 3D render, smooth matte clay-like materials, soft global illumination, '
+      + 'rendered CGI look',
+  );
+  const unknown = await generateWith({ stylePreset: 'constructor', targetSize: '944x2048' });
+  assert.equal(unknown.stats.falRequest.body.prompt, 'A quiet mountain lake, constructor style');
+  for (const stylePreset of ['__proto__', 'toString']) {
+    const builtInLikeName = await generateWith({ stylePreset, targetSize: '944x2048' });
+    assert.equal(builtInLikeName.stats.falRequest.body.prompt, `A quiet mountain lake, ${stylePreset} style`);
+  }
+  const bounded = await generateWith({ prompt: 'p'.repeat(200), stylePreset: 's'.repeat(50) });
+  assert.equal(bounded.stats.falRequest.body.prompt.length, 208);
+  assert.equal(bounded.stats.falRequest.body.prompt, `${'p'.repeat(160)}, ${'s'.repeat(40)} style`);
+  const boundedRender = await generateWith({ prompt: 'p'.repeat(200), stylePreset: '3d render' });
+  assert.equal(boundedRender.stats.falRequest.body.prompt.length, 259);
+  assert.equal(
+    boundedRender.stats.falRequest.body.prompt,
+    `${'p'.repeat(160)}, stylized 3D render, smooth matte clay-like materials, soft global illumination, rendered CGI look`,
+  );
 });
 
 test('the fast tier sends Z-Image the requested size and seed', async () => {
@@ -1747,8 +1944,13 @@ test('with the charge flag on, each user gets one free trial that replays withou
   const alice = await makeToken({ sub: 'alice' });
   const restore = mockFal({ stats, firestore: () => { throw new Error('a free trial must not read the coin ledger'); } });
   try {
-    const first = await postGeneration(env, { freeTrial: true }, alice);
+    const first = await postGeneration(env, { freeTrial: true, stylePreset: '3d render' }, alice);
     assert.equal(first.status, 200);
+    assert.equal(
+      stats.falRequest.body.prompt,
+      'A quiet mountain lake, stylized 3D render, smooth matte clay-like materials, soft global illumination, '
+        + 'rendered CGI look',
+    );
     const firstBody = await first.json();
     const replay = await postGeneration(env, { freeTrial: true, prompt: 'A second wallpaper' }, alice);
     assert.equal(replay.status, 200);
@@ -2109,6 +2311,86 @@ test('prompt blocklist matches whole words only and keeps multi-word terms', asy
   }
 });
 
+test('unsafe style text is rejected for generation, free trials, and variations before provider work', async () => {
+  const kv = aiKv(5);
+  await kv.put('ai:gen:unsafe-style-parent', JSON.stringify({
+    generationId: 'unsafe-style-parent',
+    userId: 'alice',
+    prompt: 'A quiet mountain lake',
+    stylePreset: 'child porn',
+    qualityTier: 'fast',
+    width: 1080,
+    height: 1920,
+  }));
+  const env = aiEnv(kv, new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const stats = {};
+  const restore = mockFal({ stats });
+  try {
+    const regular = await postGeneration(env, { stylePreset: 'child porn' });
+    assert.equal(regular.status, 422);
+    assert.equal((await regular.json()).error, 'unsafe_prompt');
+
+    const trial = await postGeneration(
+      env,
+      { freeTrial: true, stylePreset: 'child porn' },
+      await makeToken({ sub: 'alice' }),
+    );
+    assert.equal(trial.status, 422);
+    assert.equal((await trial.json()).error, 'unsafe_prompt');
+
+    const token = await makeToken({ sub: 'alice' });
+    const variation = await worker.fetch(new Request(
+      'https://prismwalls.com/api/ai/generations/unsafe-style-parent/variations', {
+        method: 'POST',
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ variationPrompt: 'warmer light' }),
+      }), env, { waitUntil() {} });
+    assert.equal(variation.status, 422);
+    assert.equal((await variation.json()).error, 'unsafe_prompt');
+  } finally {
+    restore();
+  }
+  assert.equal(stats.fal ?? 0, 0);
+});
+
+test('the style description stays attached when generation falls back from Fal to Gemini', async () => {
+  const kv = aiKv(5);
+  await kv.put('ai:routing:active', JSON.stringify({
+    hardUserDailyCap: 5,
+    fallbackOrder: ['fal', 'gemini'],
+    providers: { gemini: { enabled: true, weight: 0 } },
+  }));
+  const env = aiEnv(kv, new AiQuotaCoordinator({ storage: new MemoryStorage() }), {
+    GEMINI_API_KEY: 'test-gemini-key',
+  });
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    calls.push(url);
+    if (url.startsWith('https://fal.run/')) return new Response('boom', { status: 500 });
+    if (url.startsWith('https://generativelanguage.googleapis.com/')) {
+      const request = JSON.parse(init.body);
+      assert.equal(
+        request.contents[0].parts[0].text,
+        'A quiet mountain lake, stylized 3D render, smooth matte clay-like materials, soft global illumination, '
+          + 'rendered CGI look',
+      );
+      return Response.json({ candidates: [{ content: { parts: [{
+        inlineData: { data: Buffer.alloc(4096).toString('base64'), mimeType: 'image/png' },
+      }] } }] });
+    }
+    throw new Error(`unexpected fetch ${url}`);
+  };
+  try {
+    const response = await postGeneration(env, { stylePreset: '  3D RENDER  ' });
+    assert.equal(response.status, 200);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  assert.deepEqual(calls.map((url) => url.startsWith('https://fal.run/') ? 'fal' : 'gemini'), ['fal', 'gemini']);
+});
+
 test('share page escapes titles once for text and attributes', async () => {
   const links = new MemoryKv([['AbCdEfGh', JSON.stringify({
     code: 'AbCdEfGh',
@@ -2121,7 +2403,7 @@ test('share page escapes titles once for text and attributes', async () => {
   const env = workerEnv({
     LINKS_KV: links,
     PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
-    APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+    APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
   });
   for (const userAgent of [ANDROID_UA, 'WhatsApp/2.23']) {
     const body = await (await getShare(userAgent, '/l/AbCdEfGh', env)).text();
@@ -2139,7 +2421,7 @@ test('human landing page adds the Smart App Banner meta with the canonical URL',
   const body = await (await getShare(IOS_UA)).text();
   assert.match(
     body,
-    /<meta name="apple-itunes-app" content="app-id=1405860595, app-argument=https:\/\/prismwalls\.com\/share\?id=wall-1[^"]*" \/>/,
+    /<meta name="apple-itunes-app" content="app-id=6670200846, app-argument=https:\/\/prismwalls\.com\/share\?id=wall-1[^"]*" \/>/,
   );
   assert.match(body, />Open in Prism</);
 });
@@ -2147,7 +2429,7 @@ test('human landing page adds the Smart App Banner meta with the canonical URL',
 test('a missing or malformed short link shows the unavailable page with a store link', async () => {
   const env = workerEnv({
     PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
-    APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+    APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
   });
   const missing = await getShare(IOS_UA, '/l/ZzZzZzZz', env);
   assert.equal(missing.status, 404);
@@ -2155,7 +2437,7 @@ test('a missing or malformed short link shows the unavailable page with a store 
   const missingBody = await missing.text();
   assert.match(missingBody, /PRISM/);
   assert.match(missingBody, /This link is no longer available/);
-  assert.match(missingBody, /href="https:\/\/apps\.apple\.com\/app\/id1405860595"[^>]*>Open Prism</);
+  assert.match(missingBody, /href="https:\/\/apps\.apple\.com\/app\/id6670200846"[^>]*>Open Prism</);
 
   const malformed = await getShare(ANDROID_UA, '/l/x', env);
   assert.equal(malformed.status, 400);
@@ -2227,7 +2509,7 @@ test('legacy short codes keep exact lookup, landing, query alias and OG behavior
     LINKS_KV: links,
     OG_FALLBACK_IMAGE: 'https://images.example.test/fallback.jpg',
     PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
-    APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+    APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
   });
 
   for (const [index, code] of codes.entries()) {
@@ -2406,7 +2688,7 @@ test('wallpaper shares discard original URLs from canonical and payload input', 
   assert.ok(!landing.includes('premium-original'));
   const env = workerEnv({
     PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
-    APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+    APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
     LINKS_KV: new MemoryKv([['AbCdEfGh', JSON.stringify({
     code: 'AbCdEfGh',
     type: 'share',
@@ -2594,6 +2876,121 @@ test('when the new card fails to render, an old link keeps its old image with a 
   }
 });
 
+const FOLDER_IMAGE = `https://img.prismwalls.com/push-gallery/v1/${'d'.repeat(64)}.jpg`;
+const FOLDER_ENV = { ...RENDER_ENV, R2_PREVIEW_BASE_URL: 'https://img.prismwalls.com' };
+
+test('folder page links use a public cover when the gallery strip is unavailable', async () => {
+  const env = workerEnv(FOLDER_ENV);
+  const image = `https://img.prismwalls.com/previews/${'a'.repeat(64)}.img`;
+  const response = await postLink(env, {
+    type: 'page', canonical_url: 'https://prismwalls.com/folder/AbC123',
+    preview: { title: 'Purple Landscapes', image_source_url: image },
+  });
+  assert.equal(response.status, 201);
+  const { code, og_image_url: ogImageUrl } = await response.json();
+  assert.equal(ogImageUrl, image);
+  const crawler = await (await getShare('WhatsApp/2.23', `/l/${code}`, env)).text();
+  assert.ok(crawler.includes(`<meta property="og:image" content="${image}" />`));
+  assert.doesNotMatch(crawler, /og:image:(?:width|height)/);
+  assert.ok(crawler.includes(`<meta name="twitter:image" content="${image}" />`));
+});
+
+test('folder page links keep their push-gallery share image as og:image and skip the browser card', async () => {
+  const env = workerEnv(FOLDER_ENV);
+  const response = await postLink(env, {
+    type: 'page',
+    canonical_url: 'https://prismwalls.com/folder/AbC123',
+    preview: { title: 'Sunset Set', description: '12 wallpapers by Maya', image_source_url: FOLDER_IMAGE },
+  });
+  assert.equal(response.status, 201);
+  const { code, og_image_url: ogImageUrl } = await response.json();
+  assert.equal(ogImageUrl, FOLDER_IMAGE);
+  assert.equal(JSON.parse(await env.LINKS_KV.get(code)).preview.image_source_url, FOLDER_IMAGE);
+
+  const crawler = await (await getShare('WhatsApp/2.23', `/l/${code}`, env)).text();
+  assert.match(crawler, /og:title" content="Sunset Set"/);
+  assert.ok(crawler.includes(`<meta property="og:image" content="${FOLDER_IMAGE}" />`));
+  assert.match(crawler, /og:image:width" content="1200"/);
+  assert.match(crawler, /og:image:height" content="545"/);
+});
+
+test('folder page links without an allowed preview image use the Prism icon, not a missing browser card', async () => {
+  const env = workerEnv(FOLDER_ENV);
+  const response = await postLink(env, {
+    type: 'page',
+    canonical_url: 'https://prismwalls.com/folder/AbC123',
+    preview: { title: 'Night', description: '12 wallpapers', image_source_url: 'https://example.com/private.jpg' },
+  });
+  assert.equal(response.status, 201);
+  const { code } = await response.json();
+  const crawler = await (await getShare('WhatsApp/2.23', `/l/${code}`, env)).text();
+  assert.ok(crawler.includes('og:image" content="https://raw.githubusercontent.com/Hash-Studios/Prism/master/assets/icon/ios.png"'));
+  assert.doesNotMatch(crawler, new RegExp(`/og/${code}\\.jpg`));
+});
+
+test('folder page links reject images outside the allowed strip and public cover paths', async () => {
+  const env = workerEnv(FOLDER_ENV);
+  const hash = 'd'.repeat(64);
+  for (const image of [
+    `https://evil.example.com/push-gallery/v1/${hash}.jpg`,
+    'https://img.prismwalls.com/push-gallery/v1/../x.jpg',
+    `${FOLDER_IMAGE}?token=secret`,
+    `${FOLDER_IMAGE}#fragment`,
+    `https://user:pass@img.prismwalls.com/push-gallery/v1/${hash}.jpg`,
+    `https://img.prismwalls.com:8443/push-gallery/v1/${hash}.jpg`,
+    `http://img.prismwalls.com/push-gallery/v1/${hash}.jpg`,
+    `https://img.prismwalls.com/previews/${hash}.img?token=secret`,
+    `https://evil.example.com/previews/${hash}.img`,
+    'https://img.prismwalls.com/previews/original.img',
+    `https://img.prismwalls.com/push-gallery/v1/${hash}.png`,
+    `https://img.prismwalls.com/push-gallery/v1/${'D'.repeat(64)}.jpg`,
+  ]) {
+    const response = await postLink(env, {
+      type: 'page',
+      canonical_url: 'https://prismwalls.com/folder/AbC123',
+      preview: { title: 'Sunset Set', image_source_url: image },
+    });
+    assert.equal(response.status, 201, image);
+    const record = JSON.parse(await env.LINKS_KV.get((await response.json()).code));
+    assert.equal(record.preview.image_source_url, '', image);
+  }
+});
+
+test('folder page links schedule no browser card while other page links still do', async () => {
+  const { calls, restore } = mockOgRender();
+  try {
+    const env = workerEnv(FOLDER_ENV);
+    const folderTasks = [];
+    const folder = await postLink(env, {
+      type: 'page',
+      canonical_url: 'https://prismwalls.com/folder/AbC123',
+      preview: { title: 'Sunset Set', image_source_url: FOLDER_IMAGE },
+    }, {}, { waitUntil: (task) => folderTasks.push(task) });
+    assert.equal(folder.status, 201);
+    assert.equal(folderTasks.length, 0);
+    assert.equal(calls.renders.length, 0);
+
+    const dropTasks = [];
+    const drops = await postLink(env, { type: 'page', payload: { path: '/drops/week-42' } },
+      {}, { waitUntil: (task) => dropTasks.push(task) });
+    assert.equal(drops.status, 201);
+    assert.equal(dropTasks.length, 1);
+    await Promise.all(dropTasks);
+    assert.equal(calls.renders.length, 1);
+  } finally {
+    restore();
+  }
+});
+
+test('a folder landing without a short code shows a generic title and hides the folder id', async () => {
+  const body = await (await getShare(ANDROID_UA, '/folder/AbC123')).text();
+  assert.match(body, /<title>A folder on Prism<\/title>/);
+  assert.match(body, /og:title" content="A folder on Prism"/);
+  assert.match(body, /Open this folder in Prism\./);
+  assert.doesNotMatch(body, /<title>[^<]*AbC123/);
+  assert.doesNotMatch(body, /og:title" content="[^"]*AbC123/);
+});
+
 test('profile and invite cards read names from old titles and never query wallpaper counts', async () => {
   const env = workerEnv({
     ...RENDER_ENV,
@@ -2667,6 +3064,14 @@ test('rate limit counter resets after its window', async () => {
   } finally {
     Date.now = realNow;
   }
+});
+
+test('rate limit refuses a corrupt counter instead of treating NaN as available quota', async () => {
+  const storage = new MemoryStorage();
+  await storage.put('ratelimit:rl:test', { count: Number.NaN, expiresAt: Date.now() + 60_000 });
+  const coordinator = new AiQuotaCoordinator({ storage });
+  const response = await coordinator.fetch(quotaRequest({ op: 'rate_limit_bump', key: 'rl:test', limit: 1, ttlSeconds: 60 }));
+  assert.equal((await response.json()).allowed, false);
 });
 
 const STUDIO_SECRET = 'studio-test-secret';
@@ -2904,7 +3309,7 @@ test('studio generation sends the prompt as given, stores the raw image and retu
 
   assert.deepEqual(body, {
     id: STUDIO_ID,
-    imageUrl: `https://prismwalls.com/api/ai/assets/ai/studio/raw/${STUDIO_ID}.jpg`,
+    imageUrl: `https://prismwalls.com/api/ai/assets/${STUDIO_RAW_KEY.replace('.png', '.jpg')}`,
     key: `ai/studio/raw/${STUDIO_ID}.jpg`,
     width: 1440,
     height: 2560,
@@ -2916,6 +3321,9 @@ test('studio generation sends the prompt as given, stores the raw image and retu
     costUsd: 0.04,
   });
   assert.equal(stats.falRequest.url, `https://fal.run/${STUDIO_MODEL}`);
+  const rawKey = `ai/studio/raw/${STUDIO_ID}.jpg`;
+  const candidateRaw = await worker.fetch(new Request(`https://prismwalls.com/api/ai/assets/${rawKey}`), env, { waitUntil() {} });
+  assert.equal(candidateRaw.status, 200, 'candidate raw asset behavior remains unchanged');
   assert.equal(stats.falRequest.authorization, 'Key test-key');
   assert.deepEqual(stats.falRequest.body, {
     prompt: 'A quiet mountain lake at dawn',
@@ -2934,6 +3342,31 @@ test('studio generation sends the prompt as given, stores the raw image and retu
 
   assert.equal(await storage.get(`provider:studio:daily:${today()}`), 0.04);
   assert.equal(await storage.get(`provider:fal:daily:${today()}`), undefined);
+});
+
+test('desktop studio originals require the studio secret for GET and HEAD', async () => {
+  const id = 'desk_a1b2c3';
+  const key = `ai/studio/raw/${id}.jpg`;
+  const env = studioEnv();
+  const restore = mockFal({ contentType: 'image/jpeg' });
+  try {
+    const response = await postStudioGeneration(env, { id });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.imageUrl, `https://prismwalls.com/api/ai/studio/assets/${key}`);
+    for (const method of ['GET', 'HEAD']) {
+      const publicRead = await worker.fetch(new Request(`https://prismwalls.com/api/ai/assets/${key}`, { method }), env, { waitUntil() {} });
+      assert.equal(publicRead.status, 404, `${method} must not expose a desktop original`);
+      assert.equal(publicRead.headers.get('cache-control'), 'no-store');
+    }
+    assert.equal((await studioFetch(env, 'GET', `/api/ai/studio/assets/${key}`, { secret: null })).status, 401);
+    const secureRead = await studioFetch(env, 'GET', `/api/ai/studio/assets/${key}`);
+    assert.equal(secureRead.status, 200);
+    assert.equal(secureRead.headers.get('cache-control'), 'no-store');
+    assert.equal((await studioFetch(env, 'HEAD', `/api/ai/studio/assets/${key}`)).status, 200);
+  } finally {
+    restore();
+  }
 });
 
 test('studio generation with v5 lite sends no seed and falls back to the requested size', async () => {
@@ -3234,6 +3667,139 @@ test('studio asset delete removes raw and uploaded keys and also succeeds for a 
   for (const key of ['ai/public/x.png', 'ai/original/x.png', 'ai/studio/raw/nested/x.png']) {
     assert.equal((await remove(key)).status, 400, key);
   }
+});
+
+const DUO_FIELDS = {format: 'duo-reveal', foldedPrompt: 'a tiny fox', revealedPrompt: 'a luminous forest village'};
+
+function sizedPng(width, height) {
+  const bytes = new Uint8Array(4096);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(0, 0x89504e47);
+  view.setUint32(4, 0x0d0a1a0a);
+  view.setUint32(16, width);
+  view.setUint32(20, height);
+  return bytes;
+}
+
+test('Duo fields trim and validate whole normalized phrases without clipping composition', () => {
+  assert.deepEqual(parseDuoPrompt({...DUO_FIELDS, foldedPrompt: '  fox  '}), {...DUO_FIELDS, foldedPrompt: 'fox'});
+  for (const patch of [{foldedPrompt: ''}, {revealedPrompt: 'x'.repeat(161)}, {foldedPrompt: 5},
+    {foldedPrompt: 'ＳＴＡＲ ＷＡＲＳ'}, {revealedPrompt: 'Mickey-Mouse'}, {revealedPrompt: 'Taylor\u200b Swift'}]) {
+    assert.equal(parseDuoPrompt({...DUO_FIELDS, ...patch}), null);
+  }
+  const prompt = composeDuoPrompt({...DUO_FIELDS, revealedPrompt: 'r'.repeat(160)});
+  assert.ok(prompt.length > 320);
+  assert.ok(prompt.includes('r'.repeat(160)));
+  assert.match(prompt, /2670x1878/);
+  assert.match(prompt, /top quarter/);
+  assert.equal(hasBannedDuoPhrase('a sonic wave'), false);
+  assert.deepEqual(imageDimensions(sizedPng(2688, 1888)), {width: 2688, height: 1888});
+});
+
+test('Duo rejects invalid and unavailable renderer requests before provider calls', async () => {
+  const kv = aiKv(20);
+  const env = aiEnv(kv, new AiQuotaCoordinator({storage: new MemoryStorage()}));
+  const stats = {};
+  const restore = mockFal({stats});
+  try {
+    assert.equal((await postGeneration(env, DUO_FIELDS)).status, 503);
+    for (const patch of [{format: 'wide'}, {foldedPrompt: ''}, {revealedPrompt: 'Pikachu'}]) {
+      assert.equal((await postGeneration(env, {...DUO_FIELDS, ...patch})).status, 400);
+    }
+    assert.equal(stats.fal ?? 0, 0);
+    assert.equal((await postStudioGeneration(studioEnv(), {prompt: 'ＭＩＣＫＥＹ MOUSE'})).status, 422);
+    assert.equal(stats.fal ?? 0, 0);
+  } finally { restore(); }
+});
+
+test('Duo exact normalization preserves structured metadata in response, record and variation', async () => {
+  const kv = aiKv(10);
+  const env = aiEnv(kv, new AiQuotaCoordinator({storage: new MemoryStorage()}), RENDER_ENV);
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  const renders = [];
+  globalThis.fetch = async (input, init) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.startsWith('https://fal.run/')) {
+      requests.push(JSON.parse(init.body));
+      return Response.json({images: [{url: 'https://fal.media/duo.png', width: 2688, height: 1888}]});
+    }
+    if (url === 'https://fal.media/duo.png') return new Response(sizedPng(2688, 1888), {headers: {'content-type': 'image/png'}});
+    if (url.includes('/browser-rendering/screenshot')) {
+      renders.push(JSON.parse(init.body));
+      return new Response(sizedPng(2670, 1878), {headers: {'content-type': 'image/png'}});
+    }
+    throw new Error(`Unexpected mock URL ${url}`);
+  };
+  try {
+    const response = await postGeneration(env, {...DUO_FIELDS, qualityTier: 'quality', targetSize: '2000x1408'});
+    assert.equal(response.status, 200, await response.clone().text());
+    const result = await response.json();
+    assert.deepEqual([result.width, result.height], [2670, 1878]);
+    for (const [key, value] of Object.entries(DUO_FIELDS)) assert.equal(result[key], value);
+    assert.deepEqual(requests[0].image_size, {width: 2688, height: 1888});
+    assert.ok(requests[0].prompt.includes(DUO_FIELDS.revealedPrompt));
+    assert.ok(requests[0].prompt.length > 160);
+    const record = JSON.parse(await kv.get(`ai:gen:${result.generationId}`));
+    for (const [key, value] of Object.entries(DUO_FIELDS)) assert.equal(record[key], value);
+    assert.match(renders[0].html, /display: none/);
+    assert.equal(renders[0].viewport.width, 2670);
+    const variation = await worker.fetch(new Request(`https://prismwalls.com/api/ai/generations/${result.generationId}/variations`, {
+      method: 'POST', headers: {authorization: `Bearer ${await makeToken({sub: 'alice'})}`, 'content-type': 'application/json'},
+      body: JSON.stringify({variationPrompt: 'more moonlight'}),
+    }), env, {waitUntil() {}});
+    assert.equal(variation.status, 200, await variation.clone().text());
+    const changed = await variation.json();
+    for (const [key, value] of Object.entries(DUO_FIELDS)) assert.equal(changed[key], value);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test('Duo paid staging and trial keep metadata, while small output fails without publishing', async () => {
+  const originalFetch = globalThis.fetch;
+  let small = false;
+  let providers = 0;
+  globalThis.fetch = async (input, init) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.startsWith('https://firestore.googleapis.com/')) return chargeDoc();
+    if (url.startsWith('https://fal.run/')) {
+      providers++;
+      return Response.json({images: [{url: 'https://fal.media/duo-paid.png', width: 2670, height: 1878}]});
+    }
+    if (url === 'https://fal.media/duo-paid.png') return new Response(sizedPng(small ? 2000 : 2670, small ? 1408 : 1878),
+      {headers: {'content-type': 'image/png'}});
+    if (url.includes('/browser-rendering/screenshot')) return new Response(sizedPng(2670, 1878));
+    throw new Error(`Unexpected mock URL ${url}`);
+  };
+  try {
+    const paidKv = aiKv(10);
+    const paid = aiEnv(paidKv, new AiQuotaCoordinator({storage: new MemoryStorage()}), {...RENDER_ENV, AI_REQUIRE_CHARGE: 'true'});
+    assert.equal((await postGeneration(paid, DUO_FIELDS)).status, 402);
+    const response = await postGeneration(paid, {...DUO_FIELDS, chargeTxId: TX_ID});
+    assert.equal(response.status, 200, await response.clone().text());
+    const result = await response.json();
+    const pending = JSON.parse(await paidKv.get(`ai:charge-pending:${result.generationId}`));
+    const saved = JSON.parse(await paidKv.get(`ai:gen:${result.generationId}`));
+    for (const [key, value] of Object.entries(DUO_FIELDS)) {
+      assert.equal(pending.record[key], value);
+      assert.equal(saved[key], value);
+      assert.equal(result[key], value);
+    }
+    const count = providers;
+    assert.deepEqual(await (await postGeneration(paid, {...DUO_FIELDS, chargeTxId: TX_ID})).json(), result);
+    assert.equal(providers, count);
+    const trialKv = aiKv(10);
+    const trial = aiEnv(trialKv, new AiQuotaCoordinator({storage: new MemoryStorage()}), RENDER_ENV);
+    assert.equal((await postGeneration(trial, {...DUO_FIELDS, freeTrial: true, qualityTier: 'balanced'})).status, 400);
+    const granted = await postGeneration(trial, {...DUO_FIELDS, freeTrial: true});
+    assert.equal(granted.status, 200);
+    assert.equal((await granted.json()).format, 'duo-reveal');
+    small = true;
+    const failedKv = aiKv(10);
+    const failed = aiEnv(failedKv, new AiQuotaCoordinator({storage: new MemoryStorage()}), {...RENDER_ENV, AI_REQUIRE_CHARGE: 'true'});
+    const failure = await postGeneration(failed, {...DUO_FIELDS, chargeTxId: TX_ID});
+    assert.equal(failure.status, 502);
+    assert.equal((await getChargeEvidence(failed, TX_ID)).body.status, 'failed');
+  } finally { globalThis.fetch = originalFetch; }
 });
 
 async function makeToken(overrides = {}) {

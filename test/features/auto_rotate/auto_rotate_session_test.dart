@@ -13,10 +13,12 @@ import 'package:Prism/features/auto_rotate/domain/repositories/auto_rotate_repos
 import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_session_listener.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/main.dart' as app;
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -32,6 +34,8 @@ class _MockSessionBloc extends MockBloc<SessionEvent, SessionState> implements S
 
 class _MockFavouriteWallsBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState>
     implements FavouriteWallsBloc {}
+
+class _MockFoldersBloc extends MockBloc<FoldersEvent, FoldersState> implements FoldersBloc {}
 
 class _FakeAutoRotateRepository implements AutoRotateRepository {
   _FakeAutoRotateRepository({this.config = const AutoRotateConfig()});
@@ -67,6 +71,9 @@ class _FakeAutoRotateRepository implements AutoRotateRepository {
   Future<bool> rotateNow() async => true;
 
   @override
+  Future<List<String>> resolveSources(List<String> imageUrls) async => imageUrls;
+
+  @override
   Future<List<String>?> loadAppliedSources() async => null;
 
   @override
@@ -74,6 +81,9 @@ class _FakeAutoRotateRepository implements AutoRotateRepository {
 
   @override
   Future<List<String>?> loadRemoteUrls(AutoRotateSource source, {String? category}) async => const <String>[];
+
+  @override
+  Future<({bool found, List<String> urls})?> loadFolderUrls(String folderId, {required String userId}) async => null;
 
   @override
   Future<Set<WallpaperTarget>> supportedTargets() async => WallpaperTarget.values.toSet();
@@ -493,6 +503,54 @@ void main() {
     await tester.runAsync(bloc.close);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
+  testWidgets('a pro lapse above MaterialApp still shows the localized reason', (tester) async {
+    await _expectAutoRotateToast(tester, aboveMaterialApp: true);
+  });
+
+  testWidgets('a pro lapse under MaterialApp shows the localized reason', (tester) async {
+    await _expectAutoRotateToast(tester);
+  });
+
+  testWidgets('a pro lapse in the app builder uses the app locale over the device locale', (tester) async {
+    await _expectAutoRotateToast(
+      tester,
+      locale: const Locale('es'),
+      deviceLocales: const <Locale>[Locale('de')],
+      expectedLocale: const Locale('es'),
+    );
+  });
+
+  testWidgets('a pro lapse above MaterialApp uses the first supported preferred device locale', (tester) async {
+    await _expectAutoRotateToast(
+      tester,
+      aboveMaterialApp: true,
+      locale: const Locale('de'),
+      deviceLocales: const <Locale>[Locale('fr'), Locale('es', 'MX')],
+      expectedLocale: const Locale('es'),
+    );
+  });
+
+  testWidgets('a pro lapse above MaterialApp falls back to English for unsupported device locales', (tester) async {
+    await _expectAutoRotateToast(
+      tester,
+      aboveMaterialApp: true,
+      locale: const Locale('es'),
+      deviceLocales: const <Locale>[Locale('fr'), Locale('ja')],
+    );
+  });
+
+  for (final AutoRotateStopReason reason in AutoRotateStopReason.values) {
+    testWidgets('a ${reason.name} stop in the app builder shows the folder name and acknowledges once', (tester) async {
+      await _expectAutoRotateToast(
+        tester,
+        locale: const Locale('es'),
+        deviceLocales: const <Locale>[Locale('de')],
+        expectedLocale: const Locale('es'),
+        folderStop: (reason: reason, folderName: 'Calm'),
+      );
+    });
+  }
+
   testWidgets('resume retries a failed signed-out stop without RevenueCat refresh', (tester) async {
     final _FakeAutoRotateRepository repository = _FakeAutoRotateRepository(
       config: const AutoRotateConfig(enabled: true),
@@ -552,16 +610,111 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }
 
-Widget _listenerTree(AutoRotateBloc autoRotateBloc, SessionBloc sessionBloc, FavouriteWallsBloc favouriteWallsBloc) =>
+Future<void> _expectAutoRotateToast(
+  WidgetTester tester, {
+  bool aboveMaterialApp = false,
+  Locale? locale,
+  List<Locale>? deviceLocales,
+  Locale expectedLocale = const Locale('en'),
+  AutoRotateFolderStop? folderStop,
+}) async {
+  if (deviceLocales != null) {
+    tester.platformDispatcher.localesTestValue = deviceLocales;
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+  }
+  final _MockAutoRotateBloc autoRotateBloc = _MockAutoRotateBloc();
+  final _MockSessionBloc sessionBloc = _MockSessionBloc();
+  final _MockFavouriteWallsBloc favouriteWallsBloc = _MockFavouriteWallsBloc();
+  final _MockFoldersBloc foldersBloc = _MockFoldersBloc();
+  final StreamController<AutoRotateState> states = StreamController<AutoRotateState>();
+  when(() => autoRotateBloc.state).thenReturn(AutoRotateState.initial());
+  when(() => sessionBloc.state).thenReturn(SessionState.initial());
+  when(() => favouriteWallsBloc.state).thenReturn(FavouriteWallsState.initial());
+  when(() => foldersBloc.state).thenReturn(FoldersState.initial());
+  whenListen(autoRotateBloc, states.stream, initialState: AutoRotateState.initial());
+  whenListen(sessionBloc, const Stream<SessionState>.empty(), initialState: SessionState.initial());
+  whenListen(
+    favouriteWallsBloc,
+    const Stream<FavouriteWallsState>.empty(),
+    initialState: FavouriteWallsState.initial(),
+  );
+  whenListen(foldersBloc, const Stream<FoldersState>.empty(), initialState: FoldersState.initial());
+  addTearDown(() async {
+    toasts.overlayResolver = null;
+    await states.close();
+  });
+
+  final Widget app = MaterialApp(
+    locale: locale,
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    builder: aboveMaterialApp
+        ? null
+        : (context, child) => AutoRotateSessionListener(child: child ?? const SizedBox.shrink()),
+    home: const SizedBox.shrink(),
+  );
+  await tester.pumpWidget(
     MultiBlocProvider(
       providers: [
         BlocProvider<AutoRotateBloc>.value(value: autoRotateBloc),
         BlocProvider<SessionBloc>.value(value: sessionBloc),
         BlocProvider<FavouriteWallsBloc>.value(value: favouriteWallsBloc),
+        BlocProvider<FoldersBloc>.value(value: foldersBloc),
       ],
-      child: const MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: AutoRotateSessionListener(child: SizedBox()),
-      ),
-    );
+      child: aboveMaterialApp ? AutoRotateSessionListener(child: app) : app,
+    ),
+  );
+  toasts.overlayResolver = () => tester.state<OverlayState>(find.byType(Overlay).first);
+
+  final AutoRotateState announced = AutoRotateState.initial().copyWith(
+    proLapsed: folderStop == null,
+    folderStop: folderStop,
+  );
+  when(() => autoRotateBloc.state).thenReturn(announced);
+  states.add(announced);
+  await tester.pump();
+  await tester.pump();
+
+  final AppLocalizations messages = lookupAppLocalizations(expectedLocale);
+  final String text = folderStop == null
+      ? messages.wallpaperAutoRotateOffEnded
+      : switch (folderStop.reason) {
+          AutoRotateStopReason.folderDeleted => messages.wallpaperAutoRotateStoppedFolderDeleted(folderStop.folderName),
+          AutoRotateStopReason.folderEmpty => messages.wallpaperAutoRotateStoppedFolderEmpty(folderStop.folderName),
+        };
+  expect(find.text(text), findsOneWidget);
+
+  states.add(announced.copyWith(favouriteCount: 1));
+  await tester.pump();
+  expect(find.text(text), findsOneWidget);
+  if (folderStop == null) {
+    verify(() => autoRotateBloc.add(const AutoRotateEvent.proLapseAcknowledged())).called(1);
+    verifyNever(() => autoRotateBloc.add(const AutoRotateEvent.folderStopAcknowledged()));
+  } else {
+    verify(() => autoRotateBloc.add(const AutoRotateEvent.folderStopAcknowledged())).called(1);
+    verifyNever(() => autoRotateBloc.add(const AutoRotateEvent.proLapseAcknowledged()));
+  }
+
+  // Let the toast release its overlay entry before the next test replaces the app.
+  await tester.pump(const Duration(seconds: 20));
+  await tester.pump(const Duration(seconds: 1));
+  await tester.pumpWidget(const SizedBox.shrink());
+}
+
+Widget _listenerTree(AutoRotateBloc autoRotateBloc, SessionBloc sessionBloc, FavouriteWallsBloc favouriteWallsBloc) {
+  final _MockFoldersBloc foldersBloc = _MockFoldersBloc();
+  whenListen(foldersBloc, const Stream<FoldersState>.empty(), initialState: FoldersState.initial());
+  return MultiBlocProvider(
+    providers: [
+      BlocProvider<AutoRotateBloc>.value(value: autoRotateBloc),
+      BlocProvider<SessionBloc>.value(value: sessionBloc),
+      BlocProvider<FavouriteWallsBloc>.value(value: favouriteWallsBloc),
+      BlocProvider<FoldersBloc>.value(value: foldersBloc),
+    ],
+    child: const MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: AutoRotateSessionListener(child: SizedBox()),
+    ),
+  );
+}

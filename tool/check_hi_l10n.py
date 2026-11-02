@@ -11,6 +11,9 @@ from pathlib import Path
 # Reviewed messages that are intentionally identical in English and Hindi.
 # Keep values exact so a generic English UI message cannot be added by mistake.
 UNCHANGED_ENGLISH = {
+    'notifPushWallRequestFilledBody': '{requestText}',
+    'wallpaperLiveStyleDepth': '3D',
+    'wrappedTitle': 'Prism Wrapped {year}',
     'accountLinkTypeBehance': 'Behance',
     'accountLinkTypeBioLink': 'bio.link',
     'accountLinkTypeBuyMeACoffee': 'Buy Me a Coffee',
@@ -58,6 +61,7 @@ UNCHANGED_ENGLISH = {
     'coreShareTargetInstagram': 'Instagram',
     'coreThemeAmoled': 'AMOLED',
     'coreWallpaperSavedWithTip': '{saved} {tip}',
+    'duoDeviceName': 'iPhone Duo',
     'economyAiPromptSceneOnly': '{scene}, {suffix}',
     'economyCreatorMilestoneProgress': '{label}: {current} / {target}',
     'economyCreatorWeekRange': '{start} – {end} UTC',
@@ -84,6 +88,7 @@ UNCHANGED_ENGLISH = {
     'onboardingPro': 'Pro',
     'premiumPageTitle': 'Prism Premium',
     'wallpaperAutoRotateNounCategory': '{category}',
+    'wallpaperAutoRotateNounFolder': '{folder}',
     'wallpaperHomeAppName': 'Prism',
     'wallpaperPremium': 'Premium',
     'wallpaperProviderWallhaven': 'Wallhaven',

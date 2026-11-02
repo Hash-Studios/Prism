@@ -5,10 +5,15 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/color/prism_palette.dart';
+import 'package:Prism/core/constants/admin_users.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/system_accent_channel.dart';
@@ -17,12 +22,15 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/wallpaper_detail_route.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/utils/localized_relative_time.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
@@ -31,6 +39,7 @@ import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/shake_once.dart';
+import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
@@ -44,15 +53,26 @@ import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
+import 'package:Prism/features/admin_review/views/pages/wall_metadata_history_page.dart';
+import 'package:Prism/features/ads/data/ad_experiment_service.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/ads/views/widgets/experimental_interstitial_return.dart';
+import 'package:Prism/features/ai_wallpaper/domain/ai_rollout.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
+import 'package:Prism/features/creator_tips/views/widgets/tip_sheet.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
+import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_pin_toggle.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/wallpaper_stats_row.dart';
+import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/theme_mode/domain/custom_accent.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/features/wall_remix/wall_remix.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
@@ -64,19 +84,27 @@ import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dar
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/ai_generated_tag.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/depth_effect_row.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/desktop_version_sheet.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_scene_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_recommendations.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
+import 'package:Prism/features/wallpaper_history/domain/recently_viewed_rules.dart';
+import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
+import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
+import 'package:Prism/features/wallpaper_upload/views/pages/wall_metadata_editor.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
@@ -100,6 +128,7 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
     this.heroTag,
     this.localFile,
+    this.aspectRatio,
     this.requestId,
     this.feed,
   }) : assert(entity != null || (wallId != null && source != null), 'Either entity or wallId+source must be provided');
@@ -117,6 +146,11 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
   /// Set when opened from Downloads: shown instead of the network image, and the fallback if loading fails.
   final File? localFile;
 
+  /// Width over height of the picture the opener already shows, such as a decoded Downloads tile. The card opens at
+  /// this shape and keeps it, so it does not jump when the wallpaper loads. As on Pinterest, where a pin's size comes
+  /// with the feed.
+  final double? aspectRatio;
+
   /// The grid this wall was opened from. A sideways swipe on the card shows the next or previous wall in place.
   final WallpaperFeed? feed;
 
@@ -126,11 +160,20 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
     final WallpaperFeed? feed = this.feed;
     final FeedItemEntity? entity = this.entity;
     final int start = feed == null || entity == null ? -1 : feed.indexOf(entity);
-    if (feed != null && start >= 0) return _FeedBrowser(screen: this, feed: feed, start: start);
-    return BlocProvider<WallpaperDetailBloc>(
-      key: ValueKey<(WallpaperSource, String)>((entity?.source ?? source!, entity?.id ?? wallId!)),
-      create: (_) => getIt<WallpaperDetailBloc>(),
-      child: this,
+    if (feed != null && start >= 0) {
+      return ExperimentalInterstitialReturn(
+        grid: feed.grid,
+        child: _DetailImmersion(
+          child: _FeedBrowser(screen: this, feed: feed, start: start),
+        ),
+      );
+    }
+    return _DetailImmersion(
+      child: BlocProvider<WallpaperDetailBloc>(
+        key: ValueKey<(WallpaperSource, String)>((entity?.source ?? source!, entity?.id ?? wallId!)),
+        create: (_) => getIt<WallpaperDetailBloc>(),
+        child: this,
+      ),
     );
   }
 
@@ -167,21 +210,188 @@ class _FeedStep extends InheritedWidget {
       active != oldWidget.active || hasPrevious != oldWidget.hasPrevious || hasNext != oldWidget.hasNext;
 }
 
-/// The card area that drags the feed. A surface that leaves the tree mid-drag gets no drag end, as the loading
-/// overlay does when its wall finishes loading, so it settles the feed itself after the frame.
+/// Immersive mode for one detail route: the wall fills the screen, and every control and the system bars hide. The walls
+/// of a feed share it, so a swipe stays immersive. Back, leaving the route, sending the app to the background and an
+/// error all turn it off, and the system bars come back with it.
+class _DetailImmersion extends StatefulWidget {
+  const _DetailImmersion({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_DetailImmersion> createState() => _DetailImmersionState();
+}
+
+class _DetailImmersionState extends State<_DetailImmersion>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  static int _nextOwnerId = 0;
+  static int? _immersiveOwnerId;
+
+  late final AnimationController _controller = AnimationController(vsync: this, duration: PrismDurations.base);
+  late final Animation<double> _progress = CurvedAnimation(parent: _controller, curve: PrismCurves.enter);
+  late final Animation<double> _controls = ReverseAnimation(_progress);
+  bool _on = false;
+  bool _restoreNeeded = false;
+  int _stateGeneration = 0;
+  int? _ownerId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // A route pushed on top, such as a sheet, gets the system bars back.
+    if (!(ModalRoute.isCurrentOf(context) ?? true)) _set(false, rebuild: false);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.hidden || state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      _set(false);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    if (_immersiveOwnerId == _ownerId) _immersiveOwnerId = null;
+    unawaited(_showBars(true));
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void toggle(ImmersiveToggleSourceValue source) {
+    _set(!_on);
+    unawaited(analytics.track(DetailImmersiveToggledEvent(immersive: _on, source: source)));
+  }
+
+  void exit() => _set(false);
+
+  void _set(bool on, {bool rebuild = true}) {
+    if (on == _on) return;
+    _on = on;
+    _stateGeneration++;
+    if (on) {
+      _ownerId = ++_nextOwnerId;
+      _immersiveOwnerId = _ownerId;
+      _restoreNeeded = true;
+    } else {
+      if (_immersiveOwnerId == _ownerId) _immersiveOwnerId = null;
+      _ownerId = null;
+    }
+    if (rebuild) setState(() {});
+    _controller.duration = context.motion(PrismDurations.base);
+    on ? _controller.forward() : _controller.reverse();
+    unawaited(_showBars(!on));
+  }
+
+  Future<void> _showBars(bool show) async {
+    if (!show && _immersiveOwnerId != _ownerId) return;
+    if (show && _immersiveOwnerId != null && _immersiveOwnerId != _ownerId) return;
+    if (show && !_restoreNeeded) return;
+    final int generation = _stateGeneration;
+    final int attempts = show ? 2 : 1;
+    for (int attempt = 0; attempt < attempts; attempt++) {
+      if (generation != _stateGeneration) return;
+      if (!show && _immersiveOwnerId != _ownerId) return;
+      if (show && _immersiveOwnerId != null && _immersiveOwnerId != _ownerId) return;
+      try {
+        await SystemChrome.setEnabledSystemUIMode(show ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky);
+        if (show && generation == _stateGeneration) _restoreNeeded = false;
+        return;
+      } catch (error, stackTrace) {
+        logger.w(
+          'Unable to change the system UI mode${attempt + 1 == attempts ? '.' : ', retrying.'}',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope<Object?>(
+      canPop: !_on,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) exit();
+      },
+      child: _Immersion(state: this, on: _on, child: widget.child),
+    );
+  }
+}
+
+class _Immersion extends InheritedWidget {
+  const _Immersion({required this.state, required this.on, required super.child});
+
+  final _DetailImmersionState state;
+  final bool on;
+
+  /// 0 shows the card and the controls, 1 is immersive.
+  Animation<double> get progress => state._progress;
+
+  /// The opacity of the controls: 1 shown, 0 hidden.
+  Animation<double> get controls => state._controls;
+
+  void toggle(ImmersiveToggleSourceValue source) => state.toggle(source);
+  void exit() => state.exit();
+
+  static _Immersion? maybeOf(BuildContext context) => context.dependOnInheritedWidgetOfExactType<_Immersion>();
+
+  /// For callbacks: reads without rebuilding on a change.
+  static _Immersion? read(BuildContext context) => context.getInheritedWidgetOfExactType<_Immersion>();
+
+  @override
+  bool updateShouldNotify(_Immersion oldWidget) => on != oldWidget.on;
+}
+
+/// The card area: a tap, a sideways drag of the feed and, when [zoomable], a pinch that zooms the wall and lets go
+/// when the fingers lift. A touch that pinched or dragged is never a tap.
+///
+/// A surface that leaves the tree mid-drag gets no drag end, as the loading overlay does when its wall finishes loading,
+/// so it settles the feed itself after the frame.
 class _FeedDragSurface extends StatefulWidget {
-  const _FeedDragSurface({required this.feed, this.onTap, required this.child});
+  const _FeedDragSurface({required this.feed, this.onTap, this.zoomable = false, required this.child});
 
   final _FeedStep? feed;
   final VoidCallback? onTap;
+  final bool zoomable;
   final Widget child;
 
   @override
   State<_FeedDragSurface> createState() => _FeedDragSurfaceState();
 }
 
-class _FeedDragSurfaceState extends State<_FeedDragSurface> {
+class _FeedDragSurfaceState extends State<_FeedDragSurface> with SingleTickerProviderStateMixin {
+  static const double _maxZoom = 4;
+
   bool _dragging = false;
+  final Map<int, Offset> _touches = <int, Offset>{};
+
+  /// This touch pinched or dragged, so lifting it is not a tap.
+  bool _spent = false;
+
+  /// The two fingers of a pinch, where they met, and the zoom when they landed.
+  ({int a, int b, Offset focal, double span, double scale, Offset shift})? _pinch;
+  double _scale = 1;
+  Offset _shift = Offset.zero;
+  late final AnimationController _release = AnimationController(vsync: this)..addListener(_onRelease);
+  ({double scale, Offset shift}) _releaseFrom = (scale: 1, shift: Offset.zero);
+
+  @override
+  void didUpdateWidget(_FeedDragSurface oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.zoomable && oldWidget.zoomable) {
+      _pinch = null;
+      _release.stop();
+      _scale = 1;
+      _shift = Offset.zero;
+    }
+  }
 
   @override
   void dispose() {
@@ -191,29 +401,133 @@ class _FeedDragSurfaceState extends State<_FeedDragSurface> {
         if (browser.mounted) browser._dragEnd(0);
       });
     }
+    _release.dispose();
     super.dispose();
+  }
+
+  void _onDown(PointerDownEvent event) {
+    if (_touches.isEmpty) _spent = false;
+    _touches[event.pointer] = event.localPosition;
+    if (_touches.length < 2) return;
+    _spent = true;
+    // A second finger turns a swipe into a pinch, so the feed settles where it is.
+    _endDrag();
+    if (widget.zoomable && _pinch == null) _startPinch();
+  }
+
+  void _onMove(PointerMoveEvent event) {
+    if (!_touches.containsKey(event.pointer)) return;
+    _touches[event.pointer] = event.localPosition;
+    final pinch = _pinch;
+    final Offset? a = _touches[pinch?.a];
+    final Offset? b = _touches[pinch?.b];
+    if (pinch == null || a == null || b == null) return;
+    final double scale = (pinch.scale * (a - b).distance / pinch.span).clamp(1.0, _maxZoom);
+    // The point of the wall under the fingers when they landed stays under them.
+    final Offset content = (pinch.focal - pinch.shift) / pinch.scale;
+    setState(() {
+      _scale = scale;
+      _shift = (a + b) / 2 - content * scale;
+    });
+  }
+
+  void _onUp(PointerEvent event) {
+    _touches.remove(event.pointer);
+    final pinch = _pinch;
+    if (pinch != null && (event.pointer == pinch.a || event.pointer == pinch.b)) {
+      _pinch = null;
+      _letGo();
+    }
+  }
+
+  void _startPinch() {
+    final List<int> ids = _touches.keys.take(2).toList(growable: false);
+    final Offset a = _touches[ids[0]]!;
+    final Offset b = _touches[ids[1]]!;
+    final double span = (a - b).distance;
+    if (span < 1) return;
+    _release.stop();
+    _pinch = (a: ids[0], b: ids[1], focal: (a + b) / 2, span: span, scale: _scale, shift: _shift);
+  }
+
+  void _letGo() {
+    if (_scale == 1 && _shift == Offset.zero) return;
+    _releaseFrom = (scale: _scale, shift: _shift);
+    final Duration duration = context.motion(PrismDurations.base);
+    if (duration == Duration.zero) {
+      setState(() {
+        _scale = 1;
+        _shift = Offset.zero;
+      });
+      return;
+    }
+    _release
+      ..duration = duration
+      ..forward(from: 0);
+  }
+
+  void _onRelease() {
+    final double t = PrismCurves.enter.transform(_release.value);
+    setState(() {
+      _scale = lerpDouble(_releaseFrom.scale, 1, t)!;
+      _shift = Offset.lerp(_releaseFrom.shift, Offset.zero, t)!;
+    });
+  }
+
+  void _endDrag() {
+    if (!_dragging) return;
+    _dragging = false;
+    widget.feed?.dragEnd(0);
   }
 
   @override
   Widget build(BuildContext context) {
     final _FeedStep? feed = widget.feed;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: widget.onTap,
-      onHorizontalDragStart: feed == null
-          ? null
-          : (_) {
-              _dragging = true;
-              feed.dragStart();
-            },
-      onHorizontalDragUpdate: feed == null ? null : (details) => feed.dragUpdate(details.primaryDelta ?? 0),
-      onHorizontalDragEnd: feed == null
-          ? null
-          : (details) {
-              _dragging = false;
-              feed.dragEnd(details.primaryVelocity ?? 0);
-            },
-      child: widget.child,
+    final bool zoomed = _scale != 1 || _shift != Offset.zero;
+    return Listener(
+      onPointerDown: _onDown,
+      onPointerMove: _onMove,
+      onPointerUp: _onUp,
+      onPointerCancel: _onUp,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        // The card's own Semantics carries the tap and the feed steps.
+        excludeFromSemantics: true,
+        onTap: widget.onTap == null
+            ? null
+            : () {
+                if (!_spent) widget.onTap!();
+              },
+        onHorizontalDragStart: feed == null
+            ? null
+            : (_) {
+                _spent = true;
+                if (_touches.length > 1) return;
+                _dragging = true;
+                feed.dragStart();
+              },
+        onHorizontalDragUpdate: feed == null
+            ? null
+            : (details) {
+                if (_dragging) feed.dragUpdate(details.primaryDelta ?? 0);
+              },
+        onHorizontalDragEnd: feed == null
+            ? null
+            : (details) {
+                if (!_dragging) return;
+                _dragging = false;
+                feed.dragEnd(details.primaryVelocity ?? 0);
+              },
+        onHorizontalDragCancel: feed == null ? null : _endDrag,
+        // The same widgets with or without a zoom, so the picture never rebuilds from scratch.
+        child: ClipRect(
+          clipBehavior: zoomed ? Clip.hardEdge : Clip.none,
+          child: Transform(
+            transform: Matrix4.translationValues(_shift.dx, _shift.dy, 0)..scaleByDouble(_scale, _scale, 1, 1),
+            child: widget.child,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -334,6 +648,7 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
                   analyticsSurface: screen.analyticsSurface,
                   requestId: screen.requestId,
                   heroTag: tile.heroTag,
+                  aspectRatio: index == widget.start ? screen.aspectRatio : null,
                 ),
               ),
             ),
@@ -344,10 +659,19 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
   }
 }
 
-class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
-  /// The set or save button of the phone preview. The action bar rebuilds it, so it always has the current tint.
+class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with SingleTickerProviderStateMixin {
+  int _setAwardCoins = 0;
+  String? _setAwardWall;
+  String? _setAwardOwner;
+  final Set<String> _shownSetReceipts = <String>{};
+
   /// The Set button in the action bar. On Android the phone preview opens its Set screen.
   final GlobalKey<SetWallpaperButtonState> _setButtonKey = GlobalKey<SetWallpaperButtonState>();
+  final GlobalKey _cardHeroKey = GlobalKey();
+
+  /// Creators the viewer has blocked. The Remix surfaces stay hidden while this is unknown.
+  BlockedCreators _blockedCreators = const UnknownBlockedCreators();
+  StreamSubscription<BlockedCreators>? _blockedCreatorSubscription;
 
   /// iOS only: builds Save to Photos for the phone preview.
   Widget Function(String label)? _saveAction;
@@ -377,9 +701,29 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   /// "Set N times" shows from this count, so a small number never reads as a poor wallpaper.
   static const int _minSetCountShown = 5;
+  static const int _minTippersShown = 3;
+
+  /// Set once the first detail screen showed the "Tap to hide controls" hint.
+  static const String _immersiveHintKey = 'wallpaper_detail.immersive_hint_shown';
+  static const Duration _immersiveHintTime = Duration(seconds: 3);
 
   final ShakeController _shake = ShakeController();
+  bool _immersive = false;
+  bool _hintChecked = false;
+  bool _hintVisible = false;
+  Timer? _hintTimer;
   final ScrollController _scroll = ScrollController();
+
+  /// Width over height of the full picture once it paints. The card's shape when the wallpaper has no size.
+  double? _pictureAspect;
+
+  /// A card shape learned after the card showed (on load, or from the picture) eases in over this, so it never snaps.
+  late final AnimationController _shapeMorph = AnimationController(vsync: this, value: 1);
+  Size? _morphFrom;
+  Size? _cardTarget;
+  Size? _deferredCardTarget;
+  bool _morphPaused = false;
+  Animation<double>? _routeAnimation;
   final Object _recommendationHeroScope = Object();
 
   /// Scroll offsets between which the card is under the status bar icons. Past the end the rows and the feed are under
@@ -388,6 +732,29 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   double _imageStatusEnd = double.infinity;
   bool _imageBehindStatusBar = false;
   bool _feedBehindStatusBar = false;
+
+  void _onRouteAnimationStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed) {
+      _pauseShapeMorph();
+      return;
+    }
+    if (!mounted) return;
+    final Size? deferredTarget = _deferredCardTarget;
+    if (deferredTarget != null) {
+      _deferredCardTarget = null;
+      setState(() => _setCardTarget(deferredTarget));
+    } else if (_morphPaused && _cardTarget != null) {
+      final Size target = _cardTarget!;
+      final Size shown = _cardShown;
+      setState(() => _startShapeMorph(shown, target));
+    }
+  }
+
+  void _pauseShapeMorph() {
+    if (!_shapeMorph.isAnimating) return;
+    _shapeMorph.stop(canceled: false);
+    _morphPaused = true;
+  }
 
   bool _imageUnderStatusBar(double offset) => offset > _imageStatusStart && offset < _imageStatusEnd;
 
@@ -417,9 +784,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     }
   }
 
-  bool _accentToastShown = false;
   bool _openRecorded = false;
+  late final ViewRecorder _views = ViewRecorder(_recordView);
+  FeedItemEntity? _viewEntity;
   bool _loaded = false;
+  String? _favouriteLoadRequestedUserId;
   String? _offlinePreviewKey;
   Future<File?>? _offlinePreviewFuture;
 
@@ -430,6 +799,51 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       pexels: (_, w) => TasteSignal.forWallpaper(action, w.core),
     );
     unawaited(getIt<TasteSignalStore>().record(signal));
+  }
+
+  bool get _onScreen => _FeedStep.maybeOf(context)?.active ?? true;
+
+  Future<void> _recordView() async {
+    final FeedItemEntity? entity = _viewEntity;
+    final HistoryWall? wall = entity == null ? null : _historyWall(entity, HistoryAction.view);
+    if (wall == null || !getIt.isRegistered<RecentlyViewedStore>()) return;
+    try {
+      await getIt<RecentlyViewedStore>().record(wall);
+    } catch (error, stackTrace) {
+      logger.w('Viewing history could not be saved', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  void _observeLoaded(WallpaperDetailLoaded state) {
+    if (_openRecorded) return;
+    _openRecorded = true;
+    _recordTaste(TasteAction.open, state.entity);
+    _viewEntity = state.entity;
+    if (_onScreen) _views.shown();
+  }
+
+  /// Zoom, set, save and download count as a view at once.
+  void _actedOn(FeedItemEntity entity) {
+    _viewEntity = entity;
+    _views.acted();
+  }
+
+  HistoryWall? _historyWall(FeedItemEntity entity, HistoryAction action) => HistoryWall.tryCreate(
+    id: entity.id,
+    source: entity.source,
+    thumbnailUrl: WallpaperDisplaySource.of(entity).thumbnail,
+    action: action,
+    at: DateTime.now(),
+  );
+
+  Future<void> _recordDownload(FeedItemEntity entity) async {
+    final HistoryWall? wall = _historyWall(entity, HistoryAction.download);
+    if (wall == null || !getIt.isRegistered<SyncedHistoryStore>()) return;
+    try {
+      await getIt<SyncedHistoryStore>().record(wall);
+    } catch (error, stackTrace) {
+      logger.w('Download history did not sync', error: error, stackTrace: stackTrace);
+    }
   }
 
   String _getSourceContext(WallpaperDetailState? blocState) {
@@ -462,22 +876,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   void _handlePanelClosed(BuildContext context, WallpaperDetailLoaded state) {
     context.read<WallpaperDetailBloc>().add(const OnPanelClosed());
     _trackAction(state, AnalyticsActionValue.panelClosed);
-  }
-
-  void _handleAccentTap(BuildContext context, WallpaperDetailLoaded state) {
-    final colors = state.colors;
-    final accent = state.accent;
-
-    if (colors == null || colors.isEmpty || !colors.contains(accent)) return;
-
-    PrismHaptics.selection();
-    context.read<WallpaperDetailBloc>().add(const CycleAccentColor());
-    _trackAction(state, AnalyticsActionValue.paletteCycleTapped);
-
-    if (!_accentToastShown) {
-      toasts.success(context.l10n.wallpaperAccentResetHint, haptic: false);
-      _accentToastShown = true;
-    }
   }
 
   void _handleAccentLongPress(BuildContext context, WallpaperDetailLoaded state) {
@@ -513,22 +911,96 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   void initState() {
     super.initState();
     _scroll.addListener(_onDiscoveryScroll);
+    _watchBlockedCreators();
+  }
+
+  /// Keeps the view in step with the live block set.
+  void _watchBlockedCreators() {
+    try {
+      final WallRemixRepository repository = getIt<WallRemixRepository>();
+      _blockedCreators = repository.blockedCreators;
+      _blockedCreatorSubscription = repository.watchBlockedCreators().listen((BlockedCreators blocked) {
+        if (!mounted || blocked == _blockedCreators) return;
+        setState(() => _blockedCreators = blocked);
+      }, onError: (Object _) {});
+    } catch (_) {
+      // Keep the Remix action hidden.
+    }
+  }
+
+  /// The Remix seed of [state]'s wall, or null when the viewer must not see the Remix action on it.
+  AiRemixSeed? _remixSeedOf(WallpaperDetailLoaded state) {
+    final FeedItemEntity entity = state.entity;
+    final WallViewer? viewer = _remixViewer();
+    if (viewer == null || entity is! PrismFeedItem) return null;
+    return AiRemixSeed.of(
+      entity.wallpaper,
+      viewer: viewer,
+      aiEnabled: aiRolloutEligible(
+        aiEnabled: app_state.aiEnabled,
+        rolloutPercent: app_state.aiRolloutPercent,
+        loggedIn: app_state.prismUser.loggedIn && app_state.prismUser.id.trim().isNotEmpty,
+        userId: app_state.prismUser.id,
+      ),
+    );
+  }
+
+  WallViewer? _remixViewer() {
+    final BlockedCreators blockedCreators = _blockedCreators;
+    if (blockedCreators is! KnownBlockedCreators) return null;
+    return WallViewer(
+      isPremium: app_state.prismUser.premium,
+      premiumCollections: app_state.premiumCollections,
+      blockedCreators: blockedCreators,
+    );
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final Animation<double>? animation = ModalRoute.of(context)?.animation;
+    if (!identical(animation, _routeAnimation)) {
+      _routeAnimation?.removeStatusListener(_onRouteAnimationStatus);
+      _routeAnimation = animation;
+      _routeAnimation?.addStatusListener(_onRouteAnimationStatus);
+    }
+    final bool immersive = _Immersion.maybeOf(context)?.on ?? false;
+    if (immersive && !_immersive) {
+      _hideHint();
+      // The card grows from the top of the page, so the page scrolls back to it.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scroll.hasClients || _scroll.offset <= 0) return;
+        unawaited(_scroll.animateOrJump(0, duration: context.motion(PrismDurations.base), curve: PrismCurves.enter));
+      });
+    }
+    _immersive = immersive;
+    if ((_FeedStep.maybeOf(context)?.active ?? true) && _favouriteLoadRequestedUserId != app_state.prismUser.id) {
+      _favouriteLoadRequestedUserId = app_state.prismUser.id;
+      _loadFavouritesForPinMenu();
+    }
     // A neighbour shown during a drag shows its tile picture and loads only when the feed settles on it.
     if (!_loaded && (_FeedStep.maybeOf(context)?.active ?? true)) {
       _loaded = true;
       _loadWallpaper(context);
     }
+    final WallpaperDetailState state = context.read<WallpaperDetailBloc>().state;
+    if (state is WallpaperDetailLoaded) _viewEntity ??= state.entity;
+    if (!_onScreen) {
+      _views.hidden();
+    } else if (_viewEntity != null) {
+      _views.shown();
+    }
   }
 
   @override
   void dispose() {
+    _routeAnimation?.removeStatusListener(_onRouteAnimationStatus);
+    _shapeMorph.dispose();
+    _hintTimer?.cancel();
+    unawaited(_blockedCreatorSubscription?.cancel());
     _shake.dispose();
     _scroll.dispose();
+    _views.dispose();
     super.dispose();
   }
 
@@ -549,6 +1021,58 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     }
   }
 
+  void _loadFavouritesForPinMenu() {
+    final FavouriteWallsBloc? bloc = context.read<FavouriteWallsBloc?>();
+    if (bloc == null || (bloc.state.status == LoadStatus.success && bloc.state.userId == app_state.prismUser.id)) {
+      return;
+    }
+    unawaited(_loadFavourites());
+  }
+
+  Future<void> _loadFavourites() async {
+    try {
+      await context.favouriteWallsAdapter(listen: false).getDataBase();
+    } catch (error, stackTrace) {
+      logger.w('Unable to load favourites for the detail pin menu.', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  void _toggleImmersive() {
+    _hideHint();
+    _Immersion.read(context)?.toggle(ImmersiveToggleSourceValue.tap);
+  }
+
+  /// Shows "Tap to hide controls" on the first wall the user ever opens, for a few seconds.
+  void _maybeShowImmersiveHint() {
+    if (_hintChecked || !mounted) return;
+    _hintChecked = true;
+    if (_Immersion.read(context) == null || !getIt.isRegistered<SettingsLocalDataSource>()) return;
+    final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+    if (settings.get<bool>(_immersiveHintKey, defaultValue: false)) return;
+    unawaited(settings.set(_immersiveHintKey, true));
+    unawaited(analytics.track(const DetailImmersiveHintShownEvent()));
+    setState(() => _hintVisible = true);
+    _hintTimer = Timer(_immersiveHintTime, _hideHint);
+  }
+
+  void _hideHint() {
+    _hintTimer?.cancel();
+    if (mounted && _hintVisible) setState(() => _hintVisible = false);
+  }
+
+  /// A control that fades out, and leaves the semantics tree, while the wall is immersive.
+  Widget _hiddenWhenImmersive(Widget child) {
+    final _Immersion? immersion = _Immersion.maybeOf(context);
+    if (immersion == null) return child;
+    return IgnorePointer(
+      ignoring: immersion.on,
+      child: ExcludeSemantics(
+        excluding: immersion.on,
+        child: FadeTransition(opacity: immersion.controls, child: child),
+      ),
+    );
+  }
+
   /// The top of the card: just under the status bar.
   double _statusInset(BuildContext context) => app_state.notchSize ?? MediaQuery.paddingOf(context).top;
 
@@ -556,6 +1080,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   Widget build(BuildContext context) {
     return BlocListener<WallpaperDetailBloc, WallpaperDetailState>(
       listener: (context, state) {
+        if (state is WallpaperDetailError && (_FeedStep.maybeOf(context)?.active ?? true)) {
+          _Immersion.read(context)?.exit();
+        }
         if (state is WallpaperDetailError &&
             widget.localFile?.existsSync() == true &&
             ModalRoute.of(context)?.isCurrent == true) {
@@ -565,10 +1092,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         if (state is WallpaperDetailLoaded && !state.recommendations.started) {
           _loadMoreRecommendations();
         }
-        if (state is WallpaperDetailLoaded && !_openRecorded) {
-          _openRecorded = true;
-          _recordTaste(TasteAction.open, state.entity);
-        }
+        if (state is WallpaperDetailLoaded) _observeLoaded(state);
       },
       child: BlocBuilder<WallpaperDetailBloc, WallpaperDetailState>(
         builder: (context, state) {
@@ -595,41 +1119,45 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       (state is WallpaperDetailLoading ? state.thumbnailUrl : widget.thumbnailUrl) ?? widget.entity?.thumbnailUrl ?? '',
     );
     final Size card = _cardSize(context, widget.entity?.wallpaperCore);
+    _setCardTarget(card);
     final Widget image;
     if (localFile != null) {
       image = ProgressiveWallpaperImage(
         display: WallpaperDisplaySource(thumbnail: '', full: localFile.path),
         decodeBox: card,
+        onPictureSize: _onPictureSize,
         errorBuilder: (_, _) =>
             GlintState(kind: GlintStateKind.error, title: context.l10n.wallpaperDownloadedWallpaperUnavailable),
       );
     } else if (thumbnail.isNotEmpty) {
-      image = ProgressiveWallpaperImage(display: _routeDisplay(thumbnail), decodeBox: card);
+      image = ProgressiveWallpaperImage(
+        display: _routeDisplay(thumbnail),
+        decodeBox: card,
+        onPictureSize: _onPictureSize,
+      );
     } else {
       image = GlintState(kind: GlintStateKind.loading, title: context.l10n.wallpaperLoadingWallpaper);
     }
-    return Scaffold(
-      body: Stack(
-        children: [
-          SafeArea(
-            top: false,
-            bottom: false,
-            // Scrolls rather than overflowing a short or split-screen window.
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(_cardInset, _statusInset(context), _cardInset, 0),
-                    child: SizedBox.fromSize(size: card, child: _withHero(image)),
-                  ),
-                  _panelColumn(_buildPendingDetails()),
-                ],
-              ),
+    final Widget content = SafeArea(
+      top: false,
+      bottom: false,
+      // Scrolls rather than overflowing a short or split-screen window.
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(_cardInset, _statusInset(context), _cardInset, 0),
+              child: _shapedCard(_withHero(image)),
             ),
-          ),
-          ..._pinnedChrome(state, card),
-        ],
+            _panelColumn(_buildPendingDetails()),
+          ],
+        ),
       ),
+    );
+    return AnimatedBuilder(
+      animation: _shapeMorph,
+      child: content,
+      builder: (context, child) => Scaffold(body: Stack(children: [child!, ..._pinnedChrome(state, _cardShown)])),
     );
   }
 
@@ -644,23 +1172,27 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       PositionedDirectional(
         start: padding.left + _cardInset + centring + _chromePad,
         top: top,
-        child: _chromeButton(
-          icon: JamIcons.chevron_left,
-          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-          onPressed: () {
-            _trackAction(state, AnalyticsActionValue.backTapped);
-            Navigator.pop(context);
-          },
+        child: _hiddenWhenImmersive(
+          _chromeButton(
+            icon: JamIcons.chevron_left,
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+            onPressed: () {
+              _trackAction(state, AnalyticsActionValue.backTapped);
+              Navigator.pop(context);
+            },
+          ),
         ),
       ),
       if (onClock != null)
         PositionedDirectional(
           end: padding.right + _cardInset + centring + _chromePad,
           top: top,
-          child: _chromeButton(
-            icon: Icons.smartphone_rounded,
-            tooltip: context.l10n.wallpaperPreviewOnScreen,
-            onPressed: onClock,
+          child: _hiddenWhenImmersive(
+            _chromeButton(
+              icon: Icons.smartphone_rounded,
+              tooltip: context.l10n.wallpaperPreviewOnScreen,
+              onPressed: onClock,
+            ),
           ),
         ),
     ];
@@ -687,12 +1219,19 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   /// The card. From a tile it is the Hero that flies in, and the route grows the page out of the tile with it.
   Widget _withHero(Widget image) {
-    if (widget.heroTag == null) {
-      return ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(_cardRadius)), child: image);
-    }
-    return HeroMode(
-      enabled: !context.reduceMotion,
-      child: WallpaperDetailHero(tag: widget.heroTag!, radius: _cardRadius, image: image),
+    final Animation<double> immersion = _Immersion.maybeOf(context)?.progress ?? kAlwaysDismissedAnimation;
+    return AnimatedBuilder(
+      animation: immersion,
+      child: image,
+      builder: (context, image) {
+        // Immersive, the card loses its corners as it fills the screen.
+        final double radius = lerpDouble(_cardRadius, 0, immersion.value)!;
+        if (widget.heroTag == null) return ClipRRect(borderRadius: BorderRadius.circular(radius), child: image);
+        return HeroMode(
+          enabled: !context.reduceMotion,
+          child: WallpaperDetailHero(key: _cardHeroKey, tag: widget.heroTag!, radius: radius, image: image!),
+        );
+      },
     );
   }
 
@@ -745,23 +1284,39 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   }
 
   Widget _buildLoadedState(BuildContext context, WallpaperDetailLoaded state, {bool canonicalLoading = false}) {
+    if (!canonicalLoading && !_hintChecked) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowImmersiveHint());
+    }
     final _FeedStep? feed = _FeedStep.maybeOf(context);
+    final _Immersion? immersion = _Immersion.maybeOf(context);
+    final bool immersive = immersion?.on ?? false;
+    final Animation<double> progress = immersion?.progress ?? kAlwaysDismissedAnimation;
+    final EdgeInsets safePadding = MediaQuery.paddingOf(context);
+    final Size screen = MediaQuery.sizeOf(context);
     final theme = Theme.of(context);
     final Size card = _cardSize(context, state.entity.wallpaperCore);
+    _setCardTarget(card);
     final double statusInset = _statusInset(context);
-    // The status bar icons sit about half way down the inset. The card is under them from when its top edge passes
-    // them until its bottom edge does.
-    _imageStatusStart = statusInset / 2;
-    _imageStatusEnd = card.height + statusInset / 2;
-    _imageBehindStatusBar = _scroll.hasClients && _imageUnderStatusBar(_scroll.offset);
-    _feedBehindStatusBar = _scroll.hasClients && _scroll.offset >= _imageStatusEnd;
-    final chromeBackground = _imageBehindStatusBar
-        ? (state.paletteLoading ? theme.primaryColor : state.accent ?? theme.scaffoldBackgroundColor)
-        : theme.scaffoldBackgroundColor;
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: edgeToEdgeOverlayStyle(
-        statusBarIconBrightness: onColor(chromeBackground) == Colors.black ? Brightness.dark : Brightness.light,
-      ),
+    return AnimatedBuilder(
+      animation: _shapeMorph,
+      builder: (context, child) {
+        final Size shownCard = _cardShown;
+        // The status-bar icons sit about half way down the inset. The card is under them from when its top edge
+        // passes them until its bottom edge does. These thresholds follow the visible card through its morph.
+        _imageStatusStart = statusInset / 2;
+        _imageStatusEnd = shownCard.height + statusInset / 2;
+        _imageBehindStatusBar = _scroll.hasClients && _imageUnderStatusBar(_scroll.offset);
+        _feedBehindStatusBar = _scroll.hasClients && _scroll.offset >= _imageStatusEnd;
+        final chromeBackground = _imageBehindStatusBar
+            ? (state.paletteLoading ? theme.primaryColor : state.accent ?? theme.scaffoldBackgroundColor)
+            : theme.scaffoldBackgroundColor;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: edgeToEdgeOverlayStyle(
+            statusBarIconBrightness: onColor(chromeBackground) == Colors.black ? Brightness.dark : Brightness.light,
+          ),
+          child: child!,
+        );
+      },
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         body: Stack(
@@ -782,139 +1337,189 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                   child: CustomScrollView(
                     key: PageStorageKey<Object>(_recommendationHeroScope),
                     controller: _scroll,
+                    // Immersive, the wall is the whole page.
+                    physics: immersive ? const NeverScrollableScrollPhysics() : null,
                     slivers: [
-                      SliverSafeArea(
-                        top: false,
-                        bottom: false,
-                        sliver: SliverPadding(
-                          padding: EdgeInsets.fromLTRB(_cardInset, statusInset, _cardInset, 0),
+                      // Immersive, the card grows to the whole screen.
+                      AnimatedBuilder(
+                        animation: progress,
+                        child: _buildImageBody(
+                          context,
+                          state.paletteLoading,
+                          state,
+                          canonicalLoading: canonicalLoading,
+                        ),
+                        builder: (context, body) => SliverPadding(
+                          padding: EdgeInsets.lerp(
+                            EdgeInsets.fromLTRB(
+                              safePadding.left + _cardInset,
+                              statusInset,
+                              safePadding.right + _cardInset,
+                              0,
+                            ),
+                            EdgeInsets.zero,
+                            progress.value,
+                          )!,
                           sliver: SliverToBoxAdapter(
                             child: Align(
                               alignment: Alignment.topCenter,
-                              child: SizedBox.fromSize(
-                                size: card,
-                                child: _buildImageBody(
-                                  context,
-                                  state.paletteLoading,
-                                  state,
-                                  canonicalLoading: canonicalLoading,
-                                ),
+                              child: AnimatedBuilder(
+                                animation: _shapeMorph,
+                                child: body,
+                                builder: (context, body) =>
+                                    SizedBox.fromSize(size: Size.lerp(_cardShown, screen, progress.value), child: body),
                               ),
                             ),
                           ),
                         ),
                       ),
-                      if (canonicalLoading)
-                        SliverToBoxAdapter(
-                          child: SafeArea(top: false, bottom: false, child: _panelColumn(_buildPendingDetails())),
-                        )
-                      else ...[
-                        SliverToBoxAdapter(
-                          child: SafeArea(
-                            top: false,
-                            bottom: false,
-                            child: _panelColumn(_buildActionBar(context, state)),
-                          ),
-                        ),
-                        SliverToBoxAdapter(
-                          child: SafeArea(
-                            top: false,
-                            bottom: false,
-                            child: _panelColumn(_buildColorBar(context, state)),
-                          ),
-                        ),
-                        SliverToBoxAdapter(
-                          child: SafeArea(
-                            top: false,
-                            bottom: false,
-                            child: _panelColumn(_buildSummary(context, state)),
-                          ),
-                        ),
-                        if (!state.panelCollapsed)
-                          SliverToBoxAdapter(
-                            child: SafeArea(
-                              top: false,
-                              bottom: false,
-                              child: _panelColumn(
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildMetadataRow(context, state.entity, state),
-                                    ..._buildPanelExtras(context, state),
-                                  ],
+                      SliverIgnorePointer(
+                        ignoring: immersive,
+                        sliver: SliverFadeTransition(
+                          opacity: immersion?.controls ?? kAlwaysCompleteAnimation,
+                          sliver: SliverMainAxisGroup(
+                            slivers: [
+                              if (canonicalLoading)
+                                SliverToBoxAdapter(
+                                  child: SafeArea(
+                                    top: false,
+                                    bottom: false,
+                                    child: _panelColumn(_buildPendingDetails()),
+                                  ),
+                                )
+                              else ...[
+                                SliverToBoxAdapter(
+                                  child: SafeArea(
+                                    top: false,
+                                    bottom: false,
+                                    child: _panelColumn(_buildActionBar(context, state)),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ),
-                        WallpaperRecommendations(
-                          state: state.recommendations,
-                          heroScope: _recommendationHeroScope,
-                          onLoadMore: _loadMoreRecommendations,
-                          onOpen: (item, hero, feed) => context.router.push(
-                            WallpaperDetailRoute(
-                              entity: item,
-                              thumbnailUrl: item.thumbnailUrl,
-                              heroTag: hero,
-                              feed: feed,
-                            ),
+                                SliverToBoxAdapter(
+                                  child: SafeArea(
+                                    top: false,
+                                    bottom: false,
+                                    child: _panelColumn(_buildColorBar(context, state)),
+                                  ),
+                                ),
+                                SliverToBoxAdapter(
+                                  child: SafeArea(
+                                    top: false,
+                                    bottom: false,
+                                    child: _panelColumn(_buildSummary(context, state)),
+                                  ),
+                                ),
+                                if (!state.panelCollapsed)
+                                  SliverToBoxAdapter(
+                                    child: SafeArea(
+                                      top: false,
+                                      bottom: false,
+                                      child: _panelColumn(
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            _buildMetadataRow(context, state.entity, state),
+                                            ..._buildPanelExtras(context, state),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                WallpaperRecommendations(
+                                  state: state.recommendations,
+                                  heroScope: _recommendationHeroScope,
+                                  onLoadMore: _loadMoreRecommendations,
+                                  onOpen: (item, hero, feed) => context.router.push(
+                                    WallpaperDetailRoute(
+                                      entity: item,
+                                      thumbnailUrl: item.thumbnailUrl,
+                                      heroTag: hero,
+                                      feed: feed,
+                                    ),
+                                  ),
+                                ),
+                                SliverToBoxAdapter(child: SizedBox(height: MediaQuery.paddingOf(context).bottom)),
+                              ],
+                            ],
                           ),
                         ),
-                        SliverToBoxAdapter(child: SizedBox(height: MediaQuery.paddingOf(context).bottom)),
-                      ],
+                      ),
                     ],
                   ),
                 ),
               ),
             ),
-            if (canonicalLoading && feed != null) _feedSwipeOverlay(feed, card, statusInset),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: statusInset + PrismSpace.sm,
-              child: IgnorePointer(
-                child: AnimatedOpacity(
-                  key: const ValueKey<String>('detail-status-fade'),
-                  opacity: _feedBehindStatusBar ? 1 : 0,
-                  duration: context.motion(PrismDurations.fast),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        stops: const [0.6, 1],
-                        colors: [theme.scaffoldBackgroundColor, theme.scaffoldBackgroundColor.withValues(alpha: 0)],
+            if (canonicalLoading && feed != null)
+              AnimatedBuilder(
+                animation: _shapeMorph,
+                builder: (context, _) => _feedSwipeOverlay(feed, _cardShown, statusInset),
+              ),
+            AnimatedBuilder(
+              animation: _shapeMorph,
+              builder: (context, _) {
+                final bool feedBehind = _scroll.hasClients && _scroll.offset >= _cardShown.height + statusInset / 2;
+                return Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: statusInset + PrismSpace.sm,
+                  child: IgnorePointer(
+                    child: AnimatedOpacity(
+                      key: const ValueKey<String>('detail-status-fade'),
+                      opacity: feedBehind ? 1 : 0,
+                      duration: context.motion(PrismDurations.fast),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: const [0.6, 1],
+                            colors: [theme.scaffoldBackgroundColor, theme.scaffoldBackgroundColor.withValues(alpha: 0)],
+                          ),
+                        ),
                       ),
                     ),
                   ),
+                );
+              },
+            ),
+            AnimatedBuilder(
+              animation: _shapeMorph,
+              builder: (context, _) => Stack(
+                children: _pinnedChrome(
+                  state,
+                  _cardShown,
+                  onClock: canonicalLoading
+                      ? null
+                      : () async {
+                          // iOS opens a passive preview; its Save button has its own sign-in guard.
+                          if (!hideSetWallpaperUi && (!await requireSignedInAction(context) || !context.mounted)) {
+                            return;
+                          }
+                          final entity = state.entity;
+                          _actedOn(entity);
+                          _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
+                          if (!hideSetWallpaperUi) {
+                            unawaited(_setButtonKey.currentState?.openSetScreen(entryPoint: 'wallpaper_preview'));
+                            return;
+                          }
+                          final display = WallpaperDisplaySource.of(entity);
+                          pushClockPreview(
+                            context,
+                            link: widget.localFile?.path ?? display.bestLink,
+                            file: widget.localFile != null,
+                            wallpaperId: entity.id,
+                            wallpaperSource: entity.source,
+                            thumbnailUrl: display.thumbnail,
+                            tint: state.tint,
+                            saveAction: _saveAction,
+                            spatialMapUrl: spatialOf(entity)?.mapUrl,
+                            duoReveal: isDuoWallpaper(entity),
+                            allowDuo: isLandscapeWallpaper(entity.wallpaperCore),
+                          );
+                        },
                 ),
               ),
-            ),
-            ..._pinnedChrome(
-              state,
-              card,
-              onClock: canonicalLoading
-                  ? null
-                  : () {
-                      final entity = state.entity;
-                      _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
-                      if (!hideSetWallpaperUi) {
-                        unawaited(_setButtonKey.currentState?.openSetScreen(entryPoint: 'wallpaper_preview'));
-                        return;
-                      }
-                      final display = WallpaperDisplaySource.of(entity);
-                      pushClockPreview(
-                        context,
-                        link: widget.localFile?.path ?? display.bestLink,
-                        file: widget.localFile != null,
-                        wallpaperId: entity.id,
-                        wallpaperSource: entity.source,
-                        thumbnailUrl: display.thumbnail,
-                        tint: state.tint,
-                        saveAction: _saveAction,
-                        spatialMapUrl: spatialOf(entity)?.mapUrl,
-                      );
-                    },
             ),
           ],
         ),
@@ -925,20 +1530,50 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   Widget _feedSwipeOverlay(_FeedStep feed, Size card, double statusInset) {
     final EdgeInsets padding = MediaQuery.paddingOf(context);
     final double start = padding.left + _cardInset + max(0, (_availableCardWidth(context) - card.width) / 2);
-    return Positioned(
-      left: start,
-      top: statusInset,
-      width: card.width,
-      height: card.height,
-      child: Semantics(
-        label: context.l10n.wallpaperImageSemanticLabel,
-        hint: context.l10n.wallpaperImageSemanticHint,
-        customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
-          if (feed.hasPrevious) CustomSemanticsAction(label: context.l10n.wallpaperPreviousInFeed): () => feed.step(-1),
-          if (feed.hasNext) CustomSemanticsAction(label: context.l10n.wallpaperNextInFeed): () => feed.step(1),
-        },
-        child: _FeedDragSurface(feed: feed, child: const SizedBox.expand()),
+    final Rect cardRect = Rect.fromLTWH(start, statusInset, card.width, card.height);
+    final Rect screen = Offset.zero & MediaQuery.sizeOf(context);
+    final Animation<double> progress = _Immersion.maybeOf(context)?.progress ?? kAlwaysDismissedAnimation;
+    // Over the card, or the whole screen while immersive. Positioned in its own Stack so it can follow the card.
+    return Positioned.fill(
+      child: AnimatedBuilder(
+        animation: progress,
+        child: _cardSemantics(
+          feed,
+          child: _FeedDragSurface(feed: feed, onTap: _toggleImmersive, child: const SizedBox.expand()),
+        ),
+        builder: (context, child) => Stack(
+          children: [Positioned.fromRect(rect: Rect.lerp(cardRect, screen, progress.value)!, child: child!)],
+        ),
       ),
+    );
+  }
+
+  /// What a screen reader hears on the card, with actions to hide or show the controls and to step through the feed.
+  Widget _cardSemantics(_FeedStep? feed, {required Widget child}) {
+    final _Immersion? immersion = _Immersion.maybeOf(context);
+    final String? immersiveAction = immersion == null
+        ? null
+        : immersion.on
+        ? context.l10n.wallpaperShowPreviewControls
+        : context.l10n.wallpaperHidePreviewControls;
+    void toggle() {
+      _hideHint();
+      immersion?.toggle(ImmersiveToggleSourceValue.semantics);
+    }
+
+    return Semantics(
+      label: context.l10n.wallpaperImageSemanticLabel,
+      hint: context.l10n.wallpaperImageSemanticHint,
+      onTap: immersion == null ? null : toggle,
+      onTapHint: immersiveAction,
+      customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
+        if (immersiveAction != null) CustomSemanticsAction(label: immersiveAction): toggle,
+        if (feed != null && feed.hasPrevious)
+          CustomSemanticsAction(label: context.l10n.wallpaperPreviousInFeed): () => feed.step(-1),
+        if (feed != null && feed.hasNext)
+          CustomSemanticsAction(label: context.l10n.wallpaperNextInFeed): () => feed.step(1),
+      },
+      child: child,
     );
   }
 
@@ -950,24 +1585,103 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   /// Card size: the wallpaper's own shape across the width, up to [_maxCardShare] of the screen height. A taller
   /// wallpaper fills the card and crops at the top and bottom. The clock preview shows it whole.
+  ///
+  /// As on Pinterest, the shape comes before the pixels: the opener's [WallpaperDetailScreen.aspectRatio], then the
+  /// size on the wallpaper it passed, then the size on the loaded wallpaper, then the painted picture, then 9:16.
   Size _cardSize(BuildContext context, WallpaperCore? core) {
     final viewport = MediaQuery.sizeOf(context);
-    final stableCore = widget.entity?.wallpaperCore ?? core;
-    final width = stableCore?.width;
-    final height = stableCore?.height;
-    final parts = stableCore?.resolution?.toLowerCase().split('x');
-    final parsed = width != null && height != null && width > 0 && height > 0
-        ? width / height
-        : parts?.length == 2
-        ? (double.tryParse(parts![0]) ?? 0) / (double.tryParse(parts[1]) ?? 1)
-        : 9 / 16;
-    final ratio = parsed.isFinite && parsed > 0 ? parsed : 9 / 16;
+    final ratio =
+        _validAspect(widget.aspectRatio) ??
+        _coreAspect(widget.entity?.wallpaperCore) ??
+        _coreAspect(core) ??
+        _pictureAspect ??
+        9 / 16;
     final maxHeight = viewport.height * _maxCardShare;
     final cardWidth = min(
       min(_availableCardWidth(context), PrismLayout.panelWidth),
       maxHeight * max(ratio, _widestCardAspect),
     );
     return Size(cardWidth, min(cardWidth / ratio, maxHeight));
+  }
+
+  static double? _validAspect(double? ratio) => ratio != null && ratio.isFinite && ratio > 0 ? ratio : null;
+
+  /// Width over height from the wallpaper's size or resolution, or null when it has neither.
+  static double? _coreAspect(WallpaperCore? core) {
+    final width = core?.width;
+    final height = core?.height;
+    if (width != null && height != null && width > 0 && height > 0) return width / height;
+    final parts = core?.resolution?.toLowerCase().split('x');
+    if (parts == null || parts.length != 2) return null;
+    final double? w = double.tryParse(parts[0].trim());
+    final double? h = double.tryParse(parts[1].trim());
+    return w == null || h == null || h == 0 ? null : _validAspect(w / h);
+  }
+
+  void _onPictureSize(Size size) {
+    if (!mounted || size.isEmpty) return;
+    final double aspect = size.width / size.height;
+    final double? known = _pictureAspect;
+    if (known != null && (known - aspect).abs() < 0.01) return;
+    setState(() => _pictureAspect = aspect);
+  }
+
+  Size get _cardShown {
+    final Size? from = _morphFrom;
+    final Size target = _cardTarget!;
+    final Size size = from == null ? target : Size.lerp(from, target, PrismCurves.move.transform(_shapeMorph.value))!;
+    final double maxWidth = min(_availableCardWidth(context), PrismLayout.panelWidth);
+    return Size(min(size.width, maxWidth), size.height);
+  }
+
+  void _setCardTarget(Size target) {
+    final Size? previous = _cardTarget;
+    if (previous == target) {
+      // A target deferred earlier in this route animation is stale once the shown target is back.
+      _deferredCardTarget = null;
+      if (context.reduceMotion && _morphFrom != null) {
+        _shapeMorph.stop(canceled: false);
+        _morphFrom = null;
+        _shapeMorph.value = 1;
+      }
+      return;
+    }
+
+    final AnimationStatus routeStatus = _routeAnimation?.status ?? AnimationStatus.completed;
+    if (previous != null &&
+        !context.reduceMotion &&
+        (routeStatus == AnimationStatus.forward || routeStatus == AnimationStatus.reverse)) {
+      _deferredCardTarget = target;
+      _pauseShapeMorph();
+      return;
+    }
+
+    final Size? shown = previous == null ? null : _cardShown;
+    _startShapeMorph(shown, target);
+  }
+
+  void _startShapeMorph(Size? from, Size target) {
+    _cardTarget = target;
+    _deferredCardTarget = null;
+    _morphPaused = false;
+    if (from == null || context.reduceMotion) {
+      _morphFrom = null;
+      _shapeMorph.value = 1;
+    } else {
+      _morphFrom = from;
+      _shapeMorph
+        ..duration = PrismDurations.slow
+        ..forward(from: 0);
+    }
+  }
+
+  /// The card box at its shown size. The page under it follows as the card eases to its new shape.
+  Widget _shapedCard(Widget child) {
+    return AnimatedBuilder(
+      animation: _shapeMorph,
+      builder: (context, child) => SizedBox.fromSize(size: _cardShown, child: child),
+      child: child,
+    );
   }
 
   /// Placeholders in the shape of the actions and summary while Prism confirms the wallpaper, so nothing jumps when
@@ -1150,7 +1864,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           color: color,
           isSelected: state.colorChanged && color == state.accent,
           onTap: () => _handleColorSelected(context, color),
-          onLongPress: () {
+          onLongPress: () async {
+            if (!await requireSignedInAction(context) || !context.mounted) return;
             PrismHaptics.impact();
             final String copiedMessage = context.l10n.wallpaperDetailColorCodeCopied;
             Clipboard.setData(
@@ -1293,6 +2008,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final resolution = wallpaper.core.resolution;
     final sizeBytes = wallpaper.core.sizeBytes;
     final createdAt = wallpaper.core.createdAt;
+    final String? reportDocId = BundledWallpapers.isStarter(state.entity) ? null : wallpaper.firestoreDocumentId;
     return _metadataShell(
       left: [
         Padding(
@@ -1320,6 +2036,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                     ],
                   ),
                 ],
+                if (state.tipperCount >= _minTippersShown)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(start: 6),
+                    child: Text(
+                      context.l10n.wallTippedBy(state.tipperCount),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: secondary.withValues(alpha: _secondaryAlpha)),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -1335,6 +2061,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             },
           ),
         ),
+        if (AiContentFilter.isAi(wallpaper))
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AiGeneratedTag(wallpaper: wallpaper, reportDocId: reportDocId, reportSubtitle: state.entity.id),
+          ),
         if (collections != null && collections.isNotEmpty) ...[
           _buildInfoRow(context, JamIcons.folder, collections.take(2).join(', ')),
           const SizedBox(height: 4),
@@ -1590,6 +2321,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   Widget _buildActionBar(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
+    final (String, int)? historySession = getIt.isRegistered<SyncedHistoryStore>()
+        ? getIt<SyncedHistoryStore>().recordingSession
+        : null;
+    final (String, bool) historyOwner = (app_state.prismUser.id, app_state.prismUser.loggedIn);
     final url = entity.fullUrl;
     final String previewTitle = wallpaperPreviewTitle(context.l10n, entity);
     final File? localFile = widget.localFile;
@@ -1639,34 +2374,58 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
               )
             : null,
         depthTier: depthTierOf(entity),
+        duoReveal: isDuoWallpaper(entity),
         spatialTier: spatialOf(entity)?.tier,
         sourceContext: _getSourceContext(state),
         requestId: widget.requestId,
         onDownloaded: () {
+          if (!mounted || historyOwner != (app_state.prismUser.id, app_state.prismUser.loggedIn)) return;
+          AdExperimentService.instance.recordSuccessfulWallpaperAction();
+          final (String, int)? currentSession = getIt.isRegistered<SyncedHistoryStore>()
+              ? getIt<SyncedHistoryStore>().recordingSession
+              : null;
+          if (currentSession != historySession) return;
           _recordTaste(TasteAction.download, entity);
+          _actedOn(entity);
+          unawaited(_recordDownload(entity));
         },
       );
       return label == null ? button : PressScale(child: button);
     }
 
-    Widget setButton({required String label}) => PressScale(
-      child: SetWallpaperButton(
-        key: _setButtonKey,
-        label: label,
-        url: source,
-        wallpaperId: entity.id,
-        wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
-        prepareSource: prepareSource,
-        prepareAuthorized: prepareAuthorized,
-        thumbnailUrl: entity.thumbnailUrl,
-        promptNotificationPermissionOnSuccess: true,
-        entryPoint: 'wallpaper_detail',
-        requestId: widget.requestId,
-        previewTint: tint,
-        notes: wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context)),
-        onMatchAccent: _matchAccentAction(context, state),
-        onSet: () => _onWallpaperSet(entity),
-      ),
+    Widget setButton({required String label}) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        PressScale(
+          child: SetWallpaperButton(
+            key: _setButtonKey,
+            label: label,
+            url: source,
+            wallpaperId: entity.id,
+            wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
+            prepareSource: prepareSource,
+            prepareAuthorized: prepareAuthorized,
+            thumbnailUrl: WallpaperDisplaySource.of(entity).thumbnail,
+            promptNotificationPermissionOnSuccess: true,
+            entryPoint: 'wallpaper_detail',
+            requestId: widget.requestId,
+            previewTint: tint,
+            duoReveal: isDuoWallpaper(entity),
+            allowDuo: isLandscapeWallpaper(entity.wallpaperCore),
+            notes: wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context)),
+            onMatchAccent: _matchAccentAction(context, state),
+            onSet: () => _onWallpaperSet(entity),
+          ),
+        ),
+        if (DailyMomentConfig.enabled &&
+            _setAwardOwner == app_state.prismUser.id &&
+            _setAwardWall == entity.id &&
+            _setAwardCoins > 0)
+          Text(
+            context.l10n.economyCoinsEarned(_setAwardCoins),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.primary),
+          ),
+      ],
     );
     _saveAction = hideSetWallpaperUi ? (label) => downloadButton(label: label) : null;
     final primary = hideSetWallpaperUi
@@ -1708,7 +2467,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 child: FavouriteWallpaperButton(
                   wall: FavouriteWallEntity.fromFeedItem(entity),
                   trash: false,
-                  onFavourited: () => _recordTaste(TasteAction.favourite, entity),
+                  onFavourited: () {
+                    _recordTaste(TasteAction.favourite, entity);
+                    _actedOn(entity);
+                  },
                 ),
               ),
               // The published total sits beside the heart.
@@ -1731,6 +2493,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             thumbUrl: entity.thumbnailUrl,
             creator: entity.wallpaperCore.authorName,
             palette: _sharePalette(entity),
+            duoReveal: isDuoWallpaper(entity),
             createLink: (id, source, url, thumbUrl) => createDynamicLink(
               id,
               source,
@@ -1742,6 +2505,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             ),
           ),
         ),
+        if (_remixSeedOf(state) case final AiRemixSeed seed)
+          WallpaperBarAction(
+            label: context.l10n.wallRemixActionTooltip,
+            child: RemixActionButton(seed: seed),
+          ),
         WallpaperBarAction(
           label: context.l10n.wallpaperEdit,
           child: EditButton(
@@ -1774,7 +2542,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       return;
     }
     if (context.mounted && imageUrl != null) {
-      await context.router.push(LiveWallpaperRoute(imageUrl: imageUrl, accentSeed: state.colors?.firstOrNull));
+      await context.router.push(
+        LiveWallpaperRoute(
+          imageUrl: imageUrl,
+          accentSeed: state.colors?.firstOrNull,
+          depthMapUrl: spatialOf(entity)?.mapUrl,
+        ),
+      );
     }
   }
 
@@ -1783,10 +2557,28 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     return Size(px.shortestSide, px.longestSide);
   }
 
-  void _onWallpaperSet(FeedItemEntity entity) {
+  Future<void> _onWallpaperSet(FeedItemEntity entity) async {
+    AdExperimentService.instance.recordSuccessfulWallpaperAction();
     _recordTaste(TasteAction.set, entity);
+    _actedOn(entity);
+    if (mounted && _setAwardCoins != 0) setState(() => _setAwardCoins = 0);
     if (shouldRecordWallpaperSetStats(entity)) {
-      unawaited(getIt<RecordWallpaperActionUseCase>()(entity.id, WallpaperAction.set));
+      final owner = app_state.prismUser.id;
+      final result = await getIt<RecordWallpaperActionUseCase>()(entity.id, WallpaperAction.set);
+      final receipt = result.data;
+      if (mounted &&
+          owner == app_state.prismUser.id &&
+          receipt != null &&
+          receipt.coins > 0 &&
+          receipt.receiptId != null &&
+          _shownSetReceipts.add(receipt.receiptId!)) {
+        setState(() {
+          _setAwardCoins = receipt.coins;
+          _setAwardWall = entity.id;
+          _setAwardOwner = owner;
+        });
+        unawaited(CoinsService.instance.refreshBalance().catchError((Object _) => app_state.prismUser.coins));
+      }
     }
   }
 
@@ -1819,8 +2611,49 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     }
   }
 
+  bool _canEditMetadata(PrismWallpaper wall) {
+    if (!app_state.prismUser.loggedIn || wall.review != true || wall.firestoreDocumentId?.isNotEmpty != true) {
+      return false;
+    }
+    final String uid = wall.core.authorUid?.trim() ?? '';
+    if (uid.isNotEmpty) return uid == app_state.prismUser.id;
+    final String email = wall.core.authorEmail?.trim() ?? '';
+    return email.isNotEmpty && email == app_state.prismUser.email;
+  }
+
+  Future<void> _editMetadata(BuildContext context, PrismWallpaper wall) async {
+    final WallpaperDetailBloc bloc = context.read<WallpaperDetailBloc>();
+    final String docId = wall.firestoreDocumentId!;
+    final WallMetadataSnapshot? saved = await Navigator.of(context).push<WallMetadataSnapshot>(
+      MaterialPageRoute<WallMetadataSnapshot>(
+        builder: (_) => WallMetadataEditor(
+          wall: FirestoreDocument(docId, <String, dynamic>{
+            'review': true,
+            'title': wall.title ?? '',
+            'desc': wall.description ?? '',
+            'tags': wall.tags ?? const <String>[],
+            'email': wall.core.authorEmail ?? '',
+            'creatorUid': wall.core.authorUid ?? '',
+          }),
+          approved: true,
+        ),
+      ),
+    );
+    if (saved != null && !bloc.isClosed) bloc.add(RefreshWallMetadata(wallDocId: docId, saved: saved));
+  }
+
+  Future<void> _metadataHistory(BuildContext context, PrismWallpaper wall) async {
+    final WallpaperDetailBloc bloc = context.read<WallpaperDetailBloc>();
+    final String docId = wall.firestoreDocumentId!;
+    final bool? changed = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute<bool>(builder: (_) => WallMetadataHistoryPage(wallDocId: docId)));
+    if (changed == true && !bloc.isClosed) bloc.add(RefreshWallMetadata(wallDocId: docId));
+  }
+
   List<Widget> _buildPanelExtras(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
+    final WallViewer? remixViewer = _remixViewer();
     final theme = Theme.of(context);
     final tags = wallpaperTags(entity);
     final notes = wallpaperResolutionNotes(context.l10n, entity.wallpaperCore, _screenPixels(context));
@@ -1833,10 +2666,48 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             PrismFeedItem(:final wallpaper) => wallpaper.firestoreDocumentId,
             _ => null,
           };
+    final PrismWallpaper? tipWall = switch (entity) {
+      PrismFeedItem(:final wallpaper)
+          when wallpaper.review == true &&
+              reportWallDocId != null &&
+              reportWallDocId.isNotEmpty &&
+              canTipCreator(wallpaper.core.authorUid, _blockedCreators) =>
+        wallpaper,
+      _ => null,
+    };
     const gap = SizedBox(height: 12);
     Widget padded(Widget child) =>
         Padding(padding: const EdgeInsets.fromLTRB(_sheetHPad, 0, _sheetHPad, 12), child: child);
     return [
+      if (entity case PrismFeedItem(:final wallpaper) when wallpaper.description?.trim().isNotEmpty == true)
+        padded(Text(wallpaper.description!, style: PrismTextStyles.body(context))),
+      if (entity case PrismFeedItem(:final wallpaper) when _canEditMetadata(wallpaper))
+        padded(
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: PrismButton(
+              label: context.l10n.wallMetadataEditDetails,
+              icon: Icons.edit_note_rounded,
+              variant: PrismButtonVariant.tonal,
+              onPressed: () => _editMetadata(context, wallpaper),
+            ),
+          ),
+        ),
+      if (entity case PrismFeedItem(:final wallpaper)
+          when wallpaper.review == true &&
+              wallpaper.firestoreDocumentId != null &&
+              isAdminEmail(app_state.prismUser.email))
+        padded(
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: PrismButton(
+              label: context.l10n.wallMetadataHistory,
+              icon: Icons.history_rounded,
+              variant: PrismButtonVariant.ghost,
+              onPressed: () => _metadataHistory(context, wallpaper),
+            ),
+          ),
+        ),
       for (final note in notes)
         padded(
           Row(
@@ -1850,9 +2721,36 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           ),
         ),
       if (tags.isNotEmpty) padded(WallpaperTagChips(tags: tags, onTagTap: (tag) => openTagSearch(context, tag))),
+      // The remix rows size themselves: they take no padding when they show nothing.
+      if (entity case PrismFeedItem(:final wallpaper)
+          when remixViewer != null &&
+              wallpaper.aiSource != null &&
+              wallpaper.remixOf != null &&
+              wallpaper.remixOf!.trim().isNotEmpty &&
+              wallpaper.remixOf!.trim() != wallpaper.firestoreDocumentId?.trim())
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _sheetHPad),
+          child: RemixCreditRow(remixOfDocId: wallpaper.remixOf!, viewer: remixViewer),
+        ),
+      if (entity case PrismFeedItem(:final wallpaper)
+          when remixViewer != null &&
+              wallpaper.aiSource != null &&
+              wallpaper.remixCount > 0 &&
+              wallpaper.firestoreDocumentId != null)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _sheetHPad),
+          child: RemixesSection(original: wallpaper, viewer: remixViewer),
+        ),
       if (depthTier != null && showsDepthEffect(depthTier)) padded(DepthEffectRow(tier: depthTier)),
       if (spatial != null && showsSpatialScene(spatial.tier))
         padded(SpatialSceneRow(tier: spatial.tier, wallId: entity.id)),
+      if (entity case PrismFeedItem(:final wallpaper) when wallpaper.desktop != null)
+        padded(
+          DesktopVersionChip(
+            wall: wallpaper,
+            canSendToComputer: !isPremiumFeedItem(entity, app_state.premiumCollections) && !wallpaper.isStreakExclusive,
+          ),
+        ),
       if (!hideSetWallpaperUi && (entity.fullUrl.trim().isNotEmpty || entity.source == WallpaperSource.prism))
         padded(
           Align(
@@ -1868,6 +2766,22 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             alignment: Alignment.centerLeft,
             child: Wrap(
               children: [
+                if (tipWall != null)
+                  TextButton.icon(
+                    onPressed: () => showTipSheet(
+                      context,
+                      creatorUid: tipWall.core.authorUid!.trim(),
+                      creatorName: creatorLabel(
+                        name: tipWall.core.authorName ?? '',
+                        username: '',
+                        fallback: context.l10n.accountCreatorFallback,
+                      ),
+                      source: 'wall',
+                      wallId: reportWallDocId,
+                    ),
+                    icon: const PrismCoinIcon(),
+                    label: Text(context.l10n.tipAction, style: TextStyle(color: theme.colorScheme.secondary)),
+                  ),
                 TextButton.icon(
                   onPressed: () => showContentReportSheet(
                     context,
@@ -1908,7 +2822,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final Widget card = Stack(
       fit: StackFit.expand,
       children: [
-        // A tap gives the card a short press: it shrinks a little and settles.
+        // A hold that resets the original gives the card a short press: it shrinks a little and settles. A tap hides
+        // the controls instead, and the card growing to the screen is its feedback.
         ShakeOnce(
           controller: _shake,
           distance: 0.03,
@@ -1917,23 +2832,18 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             item: entity,
             onResetOriginal: () => _handleAccentLongPress(context, state),
             preview: ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(_cardRadius)), child: image),
-            child: Semantics(
-              label: context.l10n.wallpaperImageSemanticLabel,
-              hint: context.l10n.wallpaperImageSemanticHint,
-              customSemanticsActions: feed == null
-                  ? null
-                  : <CustomSemanticsAction, VoidCallback>{
-                      if (feed.hasPrevious)
-                        CustomSemanticsAction(label: context.l10n.wallpaperPreviousInFeed): () => feed.step(-1),
-                      if (feed.hasNext)
-                        CustomSemanticsAction(label: context.l10n.wallpaperNextInFeed): () => feed.step(1),
-                    },
+            readIsPinned: () => _favouritePinState(entity),
+            onTogglePin: () {
+              final bool? pinned = _favouritePinState(entity);
+              if (pinned == null) return;
+              unawaited(toggleFavouritePin(context, entity.id, pin: !pinned, surface: FavouritePinSurfaceValue.detail));
+            },
+            child: _cardSemantics(
+              feed,
               child: _FeedDragSurface(
                 feed: feed,
-                onTap: () {
-                  if (!paletteLoading) _handleAccentTap(context, state);
-                  _shake.shake();
-                },
+                zoomable: _Immersion.maybeOf(context)?.on ?? false,
+                onTap: _toggleImmersive,
                 child: _withHero(image),
               ),
             ),
@@ -1945,14 +2855,57 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           PositionedDirectional(
             start: _chromePad,
             bottom: _chromePad,
-            child: MakeItLiveChip(onPressed: () => _openMakeItLive(context, state)),
+            child: _hiddenWhenImmersive(MakeItLiveChip(onPressed: () => _openMakeItLive(context, state))),
           ),
+        PositionedDirectional(
+          start: _chromePad,
+          end: _chromePad,
+          bottom: _chromePad + _chromeSize + PrismSpace.xs,
+          child: IgnorePointer(
+            child: Center(
+              child: AnimatedOpacity(
+                opacity: _hintVisible ? 1 : 0,
+                duration: context.motion(PrismDurations.base),
+                curve: PrismCurves.enter,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.55),
+                    borderRadius: const BorderRadius.all(Radius.circular(PrismRadius.lg)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: PrismSpace.xs),
+                    child: Text(
+                      context.l10n.wallpaperImmersiveHint,
+                      style: PrismTextStyles.body(context).copyWith(color: PrismColors.onPrimary),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ],
     );
     return ExcludeSemantics(excluding: canonicalLoading && feed != null, child: card);
   }
 
+  /// Whether the favourite [entity] is pinned, or null when it is not a favourite, so the hold menu shows no Pin.
+  bool? _favouritePinState(FeedItemEntity entity) {
+    if (!getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, entity.id)) return null;
+    final FavouriteWallsBloc? bloc = context.read<FavouriteWallsBloc?>();
+    if (bloc == null) return null;
+    final bool? pinned = currentFavouritePinState(context, entity.id);
+    if (pinned == null &&
+        (bloc.state.status == LoadStatus.initial ||
+            bloc.state.status == LoadStatus.failure ||
+            bloc.state.userId != app_state.prismUser.id)) {
+      _loadFavouritesForPinMenu();
+    }
+    return pinned;
+  }
+
   /// The card's picture: thumbnail first, then the best image the user may see. The spinner lives outside this subtree.
+  /// It decodes for the whole screen, so immersive mode shows the same picture with no new decode.
   Widget _buildWallpaperImage(BuildContext context, WallpaperDetailLoaded state, bool paletteLoading) {
     final FeedItemEntity entity = state.entity;
     final File? localFile = widget.localFile;
@@ -1963,13 +2916,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
               full: localFile.path,
               pixelSize: wallpaperPixelSize(entity.wallpaperCore),
             ),
-            decodeBox: _cardSize(context, entity.wallpaperCore),
+            onPictureSize: _onPictureSize,
             errorBuilder: (_, _) =>
                 GlintState(kind: GlintStateKind.error, title: context.l10n.wallpaperDownloadedWallpaperUnavailable),
           )
         : ProgressiveWallpaperImage(
             display: WallpaperDisplaySource.of(entity),
-            decodeBox: _cardSize(context, entity.wallpaperCore),
+            onPictureSize: _onPictureSize,
             errorBuilder: (_, _) =>
                 Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state))),
           );

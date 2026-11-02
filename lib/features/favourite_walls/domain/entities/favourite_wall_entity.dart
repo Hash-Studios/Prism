@@ -10,6 +10,7 @@ sealed class FavouriteWallEntity {
     required this.source,
     this.favouritedAt,
     this.syncStatus = FavouriteSyncStatus.synced,
+    this.pinnedAt,
   });
 
   factory FavouriteWallEntity.fromFeedItem(FeedItemEntity item) => item.when(
@@ -25,6 +26,11 @@ sealed class FavouriteWallEntity {
   final DateTime? favouritedAt;
   final FavouriteSyncStatus syncStatus;
 
+  /// When the user pinned the wall to the top of Favourites. Null when it is not pinned.
+  final DateTime? pinnedAt;
+
+  bool get pinned => pinnedAt != null;
+
   String get thumbnailUrl;
   String get fullUrl;
   DateTime? get createdAt;
@@ -36,68 +42,62 @@ sealed class FavouriteWallEntity {
 
   FeedItemEntity toFeedItem();
 
-  FavouriteWallEntity withFavouritedAt(DateTime at) => switch (this) {
-    PrismFavouriteWall(:final wallpaper) => PrismFavouriteWall(
-      id: id,
-      wallpaper: wallpaper,
-      favouritedAt: at,
-      syncStatus: syncStatus,
-    ),
-    WallhavenFavouriteWall(:final wallpaper) => WallhavenFavouriteWall(
-      id: id,
-      wallpaper: wallpaper,
-      favouritedAt: at,
-      syncStatus: syncStatus,
-    ),
-    PexelsFavouriteWall(:final wallpaper) => PexelsFavouriteWall(
-      id: id,
-      wallpaper: wallpaper,
-      favouritedAt: at,
-      syncStatus: syncStatus,
-    ),
-    LegacyFavouriteWall(:final legacyPayload) => LegacyFavouriteWall(
-      id: id,
-      source: source,
-      legacyPayload: legacyPayload,
-      favouritedAt: at,
-      syncStatus: syncStatus,
-    ),
-  };
+  FavouriteWallEntity withFavouritedAt(DateTime at) =>
+      _with(favouritedAt: at, syncStatus: syncStatus, pinnedAt: pinnedAt);
 
-  FavouriteWallEntity withSyncStatus(FavouriteSyncStatus status) => switch (this) {
+  FavouriteWallEntity withSyncStatus(FavouriteSyncStatus status) =>
+      _with(favouritedAt: favouritedAt, syncStatus: status, pinnedAt: pinnedAt);
+
+  /// [at] null unpins the wall.
+  FavouriteWallEntity withPinnedAt(DateTime? at) =>
+      _with(favouritedAt: favouritedAt, syncStatus: syncStatus, pinnedAt: at);
+
+  FavouriteWallEntity _with({
+    required DateTime? favouritedAt,
+    required FavouriteSyncStatus syncStatus,
+    required DateTime? pinnedAt,
+  }) => switch (this) {
     PrismFavouriteWall(:final wallpaper) => PrismFavouriteWall(
       id: id,
       wallpaper: wallpaper,
       favouritedAt: favouritedAt,
-      syncStatus: status,
+      syncStatus: syncStatus,
+      pinnedAt: pinnedAt,
     ),
     WallhavenFavouriteWall(:final wallpaper) => WallhavenFavouriteWall(
       id: id,
       wallpaper: wallpaper,
       favouritedAt: favouritedAt,
-      syncStatus: status,
+      syncStatus: syncStatus,
+      pinnedAt: pinnedAt,
     ),
     PexelsFavouriteWall(:final wallpaper) => PexelsFavouriteWall(
       id: id,
       wallpaper: wallpaper,
       favouritedAt: favouritedAt,
-      syncStatus: status,
+      syncStatus: syncStatus,
+      pinnedAt: pinnedAt,
     ),
     LegacyFavouriteWall(:final legacyPayload) => LegacyFavouriteWall(
       id: id,
       source: source,
       legacyPayload: legacyPayload,
       favouritedAt: favouritedAt,
-      syncStatus: status,
+      syncStatus: syncStatus,
+      pinnedAt: pinnedAt,
     ),
   };
 }
+
+/// The most favourites a user can pin to the top of Favourites.
+const int maxPinnedFavourites = 12;
 
 enum FavouriteSyncStatus { pending, synced, rejected }
 
 enum FavouriteSort { recentlyAdded, oldest, source }
 
-/// Applies the Favourites screen's sort, source filter and author or category search to [items].
+/// Applies the Favourites screen's sort, source filter and author or category search to [items]. Pinned walls that
+/// pass the filter and search show first.
 List<FavouriteWallEntity> applyFavouritesView(
   List<FavouriteWallEntity> items, {
   FavouriteSort sort = FavouriteSort.recentlyAdded,
@@ -113,17 +113,23 @@ List<FavouriteWallEntity> applyFavouritesView(
             (wall.category ?? '').toLowerCase().contains(needle);
       })
       .toList(growable: false);
-  switch (sort) {
-    case FavouriteSort.recentlyAdded:
-      return visible..sort(compareByCreatedAtDesc);
-    case FavouriteSort.oldest:
-      return visible..sort(compareByCreatedAtAsc);
-    case FavouriteSort.source:
-      return visible..sort((a, b) {
-        final int bySource = a.source.index.compareTo(b.source.index);
-        return bySource != 0 ? bySource : compareByCreatedAtDesc(a, b);
-      });
-  }
+  final int Function(FavouriteWallEntity, FavouriteWallEntity) bySort = switch (sort) {
+    FavouriteSort.recentlyAdded => compareByCreatedAtDesc,
+    FavouriteSort.oldest => compareByCreatedAtAsc,
+    FavouriteSort.source => (a, b) {
+      final int bySource = a.source.index.compareTo(b.source.index);
+      return bySource != 0 ? bySource : compareByCreatedAtDesc(a, b);
+    },
+  };
+  // Pinned walls come first, the first pinned first. The chosen sort orders the rest.
+  return visible..sort((a, b) {
+    final DateTime? aPin = a.pinnedAt;
+    final DateTime? bPin = b.pinnedAt;
+    if (aPin != null && bPin != null) return aPin.compareTo(bPin);
+    if (aPin != null) return -1;
+    if (bPin != null) return 1;
+    return bySort(a, b);
+  });
 }
 
 /// Newest first by the date the wall was saved, else its upload date; entries without a date go last.
@@ -147,8 +153,13 @@ int compareByCreatedAtAsc(FavouriteWallEntity a, FavouriteWallEntity b) {
 }
 
 final class PrismFavouriteWall extends FavouriteWallEntity {
-  const PrismFavouriteWall({required super.id, required this.wallpaper, super.favouritedAt, super.syncStatus})
-    : super(source: WallpaperSource.prism);
+  const PrismFavouriteWall({
+    required super.id,
+    required this.wallpaper,
+    super.favouritedAt,
+    super.syncStatus,
+    super.pinnedAt,
+  }) : super(source: WallpaperSource.prism);
 
   final PrismWallpaper wallpaper;
 
@@ -169,15 +180,16 @@ final class PrismFavouriteWall extends FavouriteWallEntity {
 
   @override
   FeedItemEntity toFeedItem() => PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper);
-
-  @override
-  PrismFavouriteWall withFavouritedAt(DateTime at) =>
-      PrismFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at, syncStatus: syncStatus);
 }
 
 final class WallhavenFavouriteWall extends FavouriteWallEntity {
-  const WallhavenFavouriteWall({required super.id, required this.wallpaper, super.favouritedAt, super.syncStatus})
-    : super(source: WallpaperSource.wallhaven);
+  const WallhavenFavouriteWall({
+    required super.id,
+    required this.wallpaper,
+    super.favouritedAt,
+    super.syncStatus,
+    super.pinnedAt,
+  }) : super(source: WallpaperSource.wallhaven);
 
   final WallhavenWallpaper wallpaper;
 
@@ -198,15 +210,16 @@ final class WallhavenFavouriteWall extends FavouriteWallEntity {
 
   @override
   FeedItemEntity toFeedItem() => WallhavenFeedItem(id: wallpaper.id, wallpaper: wallpaper);
-
-  @override
-  WallhavenFavouriteWall withFavouritedAt(DateTime at) =>
-      WallhavenFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at, syncStatus: syncStatus);
 }
 
 final class PexelsFavouriteWall extends FavouriteWallEntity {
-  const PexelsFavouriteWall({required super.id, required this.wallpaper, super.favouritedAt, super.syncStatus})
-    : super(source: WallpaperSource.pexels);
+  const PexelsFavouriteWall({
+    required super.id,
+    required this.wallpaper,
+    super.favouritedAt,
+    super.syncStatus,
+    super.pinnedAt,
+  }) : super(source: WallpaperSource.pexels);
 
   final PexelsWallpaper wallpaper;
 
@@ -227,10 +240,6 @@ final class PexelsFavouriteWall extends FavouriteWallEntity {
 
   @override
   FeedItemEntity toFeedItem() => PexelsFeedItem(id: wallpaper.id, wallpaper: wallpaper);
-
-  @override
-  PexelsFavouriteWall withFavouritedAt(DateTime at) =>
-      PexelsFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at, syncStatus: syncStatus);
 }
 
 /// Used when the existing Firestore doc cannot be resolved to a typed variant
@@ -242,6 +251,7 @@ final class LegacyFavouriteWall extends FavouriteWallEntity {
     required this.legacyPayload,
     super.favouritedAt,
     super.syncStatus,
+    super.pinnedAt,
   });
 
   final JsonMap legacyPayload;
@@ -264,8 +274,4 @@ final class LegacyFavouriteWall extends FavouriteWallEntity {
 
   @override
   FeedItemEntity toFeedItem() => throw ArgumentError('Cannot open a LegacyFavouriteWall as a feed item');
-
-  @override
-  LegacyFavouriteWall withFavouritedAt(DateTime at) =>
-      LegacyFavouriteWall(id: id, source: source, legacyPayload: legacyPayload, favouritedAt: at);
 }

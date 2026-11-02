@@ -59,6 +59,14 @@ class LocalNotification {
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) => unawaited(onPushTap?.call(message.data)));
   }
 
+  Future<void> routeInitialMessage({FirebaseMessaging? messaging}) async {
+    final RemoteMessage? message = await (messaging ?? FirebaseMessaging.instance).getInitialMessage();
+    if (message == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(onPushTap?.call(message.data));
+    });
+  }
+
   Future<void> fetchNotificationData() async {
     // RestartWidget re-runs this after logout, and the launch details stay the same. Handle them once.
     if (_launchHandled) return;

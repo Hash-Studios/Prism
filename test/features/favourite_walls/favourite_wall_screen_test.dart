@@ -24,6 +24,8 @@ class _MockToggleFavouriteWallUseCase extends Mock implements ToggleFavouriteWal
 
 class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWallsUseCase {}
 
+class _MockSetFavouritePinUseCase extends Mock implements SetFavouritePinUseCase {}
+
 void main() {
   setUpAll(() {
     registerFallbackValue(const FetchFavouriteWallsParams(userId: 'user_1'));
@@ -39,7 +41,12 @@ void main() {
   });
 
   FavouriteWallsBloc createBloc(WidgetTester tester, _MockFetchFavouriteWallsUseCase fetch) {
-    final bloc = FavouriteWallsBloc(fetch, _MockToggleFavouriteWallUseCase(), _MockClearFavouriteWallsUseCase());
+    final bloc = FavouriteWallsBloc(
+      fetch,
+      _MockToggleFavouriteWallUseCase(),
+      _MockClearFavouriteWallsUseCase(),
+      _MockSetFavouritePinUseCase(),
+    );
     addTearDown(bloc.close);
     return bloc;
   }

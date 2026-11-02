@@ -30,6 +30,7 @@ class WallpaperTile extends StatelessWidget {
     this.impressionSession,
     this.onVisible,
     this.feed,
+    this.gridItems,
   });
 
   final FeedItemEntity item;
@@ -39,6 +40,10 @@ class WallpaperTile extends StatelessWidget {
 
   /// The loaded walls of this tile's feed, for swiping between them in the detail page.
   final List<FeedItemEntity>? feed;
+
+  /// The walls of this tile's grid, in grid order, when [feed] spans several grids. Back from the detail page scrolls
+  /// to a wall only when it is in this grid. Null means the grid holds all of [feed].
+  final List<FeedItemEntity>? gridItems;
 
   /// Optional decode-height override in physical pixels.
   final int? memCacheHeight;
@@ -156,7 +161,7 @@ int _currentFeedIndex(BuildContext grid, FeedItemEntity target) {
     if (feed != null) return;
     final Widget child = element.widget;
     if (child is WallpaperTile && child.feed != null) {
-      feed = child.feed;
+      feed = child.gridItems ?? child.feed;
       return;
     }
     element.visitChildren(visit);

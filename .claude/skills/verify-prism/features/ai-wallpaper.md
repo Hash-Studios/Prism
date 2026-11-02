@@ -1,37 +1,44 @@
 # AI wallpaper
 
-The AI tab (route `/ai`, `AiTabRoute`, `lib/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart`, app bar title `AI wallpaper`) generates a wallpaper from a text prompt, spending coins per generation tier.
+AI wallpaper makes a wallpaper from a text prompt and spends coins per image. The page is `lib/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart`, titled `AI wallpaper`. It is not a tab. It is a page pushed over the shell (`AiTabRoute`, path `/ai`, `lib/core/router/app_router.dart`).
 
 ## Sub-features
 
-- `prompt`: text field with placeholder-style hint `e.g. misty peaks at dawn, soft light, no text on image`; tooltip `Shuffle a new example description` refreshes the example; tooltip `Use this scene in your description (editable)` inserts a suggested scene.
-- `tier-select`: coin-cost tiers, accessibility label `<tier label>, <coinCost> coins`.
-- `generate`: spends coins for a generation; result actions are `Set`, `Save`, `Refine`.
-- `refine`: opens a refinement field, hint `Darker sky, warmer palette, softer edges…`, button `Generate refinement`.
-- `submit-for-review`: button `Submit for review`, semantic label `Submit wallpaper for community review`, with a confirm dialog (`Cancel` to back out).
-- `history`: past generations, semantic label `Selected generation` for the current one and `Past generation` for others.
-- `coin-balance`: tapping the balance chip here also opens `/coin-transactions` (see `features/coins-streak.md`).
+- `prompt`: field with the hint `Describe a scene to generate.` Buttons `Shuffle` and `Scene idea` fill an example.
+- `style`: picker, each item labelled `Style: <name>`.
+- `quality`: tiers labelled `<Fast|Balanced|Quality>, <N> coins`. Pro users pay half.
+- `watermark-note`: non-Pro users see `Free images carry a Prism watermark. Pro removes it.`
+- `generate-bar`: bottom button `Generate` with the cost on a second line (for example `Generate\n10`), or `Earn coins` when the balance is too low.
+- `result-actions` (`ai_result_actions.dart`): `Save`, `Try another`, icon buttons `Set as wallpaper` (hidden on iOS), `Share`, and `Submit for community review`.
+- `try-another`: sheet `Try another version` with a field hinted `Darker sky, warmer palette, softer edges…`, `Close`, and button `Generate another` (`ai_sheets.dart`).
+- `submit-sheet`: sheet `Share with the community?` with `Submit for community review` and `Cancel`.
+- `history`: section `Recent`, items `Generation from <MMM d>`.
+- `coin-chip`: the app bar chip pushes `RewardsRoute` (see `features/rewards.md`).
+- `blocked-states`: `AI wallpaper is off for now`, `AI wallpaper is opening gradually`, or the `Sign in to use AI wallpaper` prompt.
+- `live-activity`: on iOS, a Live Activity shows during generation.
 
 ## How to get to it (user POV)
 
-- Tap the AI tab (reached from wherever the app surfaces it; it is a top-level `AutoRoute`, not nested under `/dashboard`, so it may be its own nav entry or reached via the FAB, confirm with `describe`).
+- Tap the `Upload` FAB, then the `AI wallpaper` row in the `Create` sheet (`lib/features/navigation/views/widgets/upload_bottom_panel.dart`).
+- Or open Rewards and tap the `AI wallpaper` tile under `Use your coins`.
+- Or open `prism://ai`.
 
 ## Driving it with the helper
 
-Preconditions:
+Preconditions: a signed-in human. A real generation also needs coins.
 
-- Signed-in human with enough coin balance to cover at least the cheapest tier, if the recipe needs to complete a real generation.
-
-- **Landing.** Snapshot `--tag ai-wallpaper`. Assert the app bar title `AI wallpaper` and the prompt field's hint text.
-- **Prompt helpers.** Tap `Shuffle a new example description`; confirm the hint/example text changes. Tap `Use this scene in your description (editable)`; confirm it populates the prompt field without submitting.
-- **Tier select.** Assert at least one tier renders with a `<label>, <coinCost> coins` accessibility label.
-- **Generate.** This spends real coins from the signed-in account. Only complete it when the recipe is specifically about generation, and prefer the cheapest tier. After a result appears, assert `Set`, `Save`, `Refine` all render.
-- **Refine.** Tap `Refine`; assert the refinement field with hint `Darker sky, warmer palette, softer edges…` and the `Generate refinement` button. Refining spends more coins; same caution as `generate`.
-- **Submit for review.** Tap `Submit for review`; assert the confirm dialog, then `Cancel` out unless the recipe is specifically about the community-review submission pipeline (a real, moderated, visible-to-others content submission).
-- **Proof.** Snapshot the prompt screen, the tier picker, and (if generated) the result screen with `Set`/`Save`/`Refine`.
+- **Landing.** Open the page. Snapshot `--tag ai-wallpaper`. Assert the title `AI wallpaper` and the prompt field. The hint `Describe a scene to generate.` shows only when the field is empty; with text the field reads `Text field`.
+- **Prompt helpers.** Tap `Shuffle` and `Scene idea`. Confirm the prompt changes. Do not submit.
+- **Pickers.** Assert one `Style: <name>` item. Assert tiers `Fast, N coins`, `Balanced, N coins`, `Quality, N coins`.
+- **Coin chip.** Tap the chip. Assert Rewards opens. Go back.
+- **Blocked state.** If the page shows `AI wallpaper is off for now` or the rollout text, report it. Do not call it a pass.
+- **Generate (needs approval).** Tap `Generate` only after the human approves the coin spend. Prefer the cheapest tier. Then assert `Save`, `Try another`, `Share`.
+- **Submit sheet (needs a result).** Tap `Submit for community review`. Assert `Share with the community?`. Tap `Cancel`.
 
 ## Gotchas
 
-- Generation and refinement cost real coins against the signed-in account. Do not spend a human's coin balance without checking first; prefer a disposable QA account with coins already granted.
-- `Submit for review` puts a wallpaper into the same moderation/admin-review pipeline as manual uploads (`/admin-review`, admin-guarded). Treat a completed submission like posting real content.
-- This onboarding flow has its own, separate "generate a first AI wallpaper" step (`features/onboarding-signin.md`, step `ai-generate`). Do not conflate the two; they are different screens with different entry points, even though both call the same underlying generation capability.
+- Never tap `Generate`, `Generate another`, or the submit button in a verification run unless the human approves. They spend coins or post content to moderators.
+- `Set as wallpaper` is hidden on iOS (`hideSetWallpaperUi`). Its absence there is correct.
+- Submissions go into the admin review queue (`/admin-review`, admin guard). Treat a submit like posting real content.
+- The sheet button and the icon button share the label `Submit for community review`. Use `describe` to tell them apart.
+- Onboarding has its own first AI step (`features/onboarding-signin.md`). It is a different screen.

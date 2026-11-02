@@ -1,6 +1,6 @@
 part of 'onboarding_v2_bloc.j.dart';
 
-enum OnboardingV2Step { auth, interests, starterPack, aiGenerate, firstWallpaper }
+enum OnboardingV2Step { auth, interests, tasteQuiz, starterPack, aiGenerate, firstWallpaper }
 
 enum OnboardingV2NavRequest { openPaywall, completeOnboarding, openDashboardAsGuest, exitApp }
 
@@ -92,6 +92,9 @@ abstract class OnboardingV2State with _$OnboardingV2State {
     /// iOS guest path: the user browses without an account and only picks interests.
     required bool isGuest,
     OnboardingV2NavRequest? navRequest,
+
+    /// The "This or that" rounds, ready before the step shows. Null skips the step.
+    TasteQuizPlan? tasteQuizPlan,
 
     /// The last save failed because the session no longer works (account deleted or access denied).
     @Default(false) bool sessionInvalid,

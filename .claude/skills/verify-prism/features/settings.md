@@ -1,39 +1,45 @@
 # Settings
 
-Route `/settings` (`SettingsRoute`, `lib/features/session/views/pages/settings_screen.dart`). Works both signed in and signed out (a signed-out user sees a `Sign in` row instead of account rows).
+Route `/settings` (`SettingsRoute`, `lib/features/session/views/pages/settings_screen.dart`). It works signed in and signed out. Labels are sentence case. Seasonal decorations (Spooky web, spider, Diwali diya) can overlap the top right corner.
 
 ## Sub-features
 
-- `appearance`: `Themes` row (opens `/theme`, `ThemeViewRoute`, subtitle `Accent colours, light & dark themes`).
-- `content-toggles`: `Show Anime Wallpapers`, `Show Sketchy Wallpapers` (both `SwitchListTile`).
-- `download-quality`: row `Download Quality`, opens a picker with `Original` (`Full resolution, larger file size`) and `Compressed` (`Smaller file size, slightly reduced quality`).
-- `alerts`: `Wall of the Day` (`Daily wallpaper recommendation alert`) and `Promotional Alerts` (`New features, events & announcements`), both switches.
-- `quick-tile-settings`: row `Quick Tile Settings`, opens `/quick-tile-settings` (`Configure Android Quick Settings tiles`, Android-only feature).
-- `storage`: `Clear Cache` (`Clear locally cached images`), `Clear all Downloads` (`Remove all downloaded wallpapers`).
-- `account-signed-out`: `Sign in` row (`Sign in to sync data across devices`) when there is no session.
-- `account-signed-in`: identity row (`prismUser.name` / `prismUser.email`), `Review Status` (`Track your submitted wallpaper reviews`), `Blocked accounts` (`Manage users you have blocked`), `Share your Profile` (`Share a link to your Prism profile`), `Clear favourite walls` (`Remove all favourite wallpapers`), `Restore Purchases` (`Restore a previously purchased subscription`), `Delete Account` (red text, `Permanently delete your account and data`), `Logout` (accent-colored, subtitle is the account email).
+- `account-card` (`settings_account_card.dart`): `Sign in to Prism` when signed out, `Open your profile` when signed in.
+- `Account` (signed in only): `Review status`, `Blocked accounts`, `Share your profile`.
+- `Appearance`: `Themes` (`Light, dark and accent colour`), `Shop`, `Haptic feedback`.
+- `Personalise`: iOS has `Widgets` and `Change automatically`. Android has `Quick tiles`, `Auto-rotate wallpapers`, `Live wallpapers`, `Wallpaper history`, `Default action for Set`.
+- `Content`: `Show anime wallpapers`. `Show sketchy wallpapers` is not on iOS.
+- `Notifications`: `Notification preferences` opens the sheet (see `features/notifications.md`).
+- `Storage`: `Data saver`, `Clear cache`, `Clear all downloads`, `Saved offline`, `Clear favourite wallpapers` (signed in).
+- `Purchases`: `Buy premium` or `Manage subscription`, `Restore purchases`.
+- `Privacy and data`: `Privacy policy`, `Terms of use`, `Clear learned taste`, `Export favourites`, `Ad privacy choices`.
+- `Admin` (admin only): `Debug panel` and moderation rows.
+- `Help`: `Report a problem`, `About Prism`.
+- `session` (signed in): `Log out` and `Delete account`.
+- There is no `Download Quality` row.
 
 ## How to get to it (user POV)
 
-- Reached from the profile tab or a settings icon; exact entry affordance was not traced for this map, confirm with `describe` on the profile screen.
+- Signed out: the Profile page shows a `Settings` icon in its top bar (`profile_screen.dart`).
+- Signed in: open your profile, tap `Menu`, then `Settings` (`drawer_widget.dart`).
+- Deep link `/settings` (`lib/core/router/deep_link_route_catalog.dart`).
 
 ## Driving it with the helper
 
 Preconditions:
 
-- Works signed in or out; drive the signed-out row set first (safe), then ask the human to sign in for the account rows.
+- Works signed in or out. Drive the signed-out rows first. Ask the human to sign in for the rest.
 
-- **Landing.** Snapshot `--tag settings`. Assert `Themes`, `Download Quality`, `Clear Cache`, `Clear all Downloads`.
-- **Toggles.** Flip `Show Anime Wallpapers`, `Show Sketchy Wallpapers`, `Wall of the Day`, `Promotional Alerts` and confirm each switch's state persists across a re-open of the screen. Leave them as you found them unless the recipe is specifically about a toggle's effect.
-- **Download quality.** Tap `Download Quality`; assert `Original` and `Compressed` options with their subtitle copy; pick one and confirm the row's subtitle updates.
-- **Storage actions.** `Clear Cache` and `Clear all Downloads` are destructive to local device state only (not the account); safe to exercise, but note that `Clear all Downloads` removes files a real user saved, so avoid it against a device with downloads the human wants kept.
-- **Signed-out.** Assert `Sign in` row routes to onboarding (`features/onboarding-signin.md`).
-- **Signed-in account rows.** Assert `Review Status`, `Blocked accounts`, `Share your Profile`, `Restore Purchases` render. Do **not** tap `Delete Account` or `Logout` in an automated recipe; both are terminal, real-account actions (deletion is permanent; logout drops the session you may still need). Only exercise them when the recipe is specifically about that flow, against a disposable QA account, with the human's confirmation.
-- **Clear favourite walls.** Removes all real favourites for the signed-in account; treat like any other destructive account action.
-- **Proof.** Snapshot the top of the settings list and the download-quality picker; note any row you deliberately did not tap and why.
+- **Landing.** Snapshot `--tag settings`. Assert `Sign in to Prism` (or `Open your profile`), `Themes`, `Notification preferences`, `Clear cache`.
+- **Scroll.** The list is long. Scroll to assert `Privacy and data`, `Help`, and the last group.
+- **Toggles.** Flip `Haptic feedback` and `Show anime wallpapers`, re-open the screen, and confirm the state stays. Restore them after.
+- **Navigation rows.** `Themes` opens `/theme`. `Notification preferences` opens a sheet. Go back after each.
+- **Signed out.** The card button starts sign-in (`features/onboarding-signin.md`).
+- **Proof.** Snapshot the top of the list and the group you tested. Name each row you did not tap.
 
 ## Gotchas
 
-- `Delete Account`, `Logout`, and `Clear favourite walls` are real, hard-to-undo account actions. Default to asserting they render correctly rather than completing them.
-- `Quick Tile Settings` is Android-only (Android Quick Settings tiles); expect it to be absent or a no-op on iOS.
-- The entry point into `/settings` from the rest of the app was not traced for this map; find it with `describe` before writing a "tap into settings" step for a longer recipe.
+- Never drive `Log out`, `Delete account`, or the confirm of `Clear cache?`. Assert that the rows exist.
+- `Clear all downloads` (confirm `Delete all downloads?`) removes real saved files. `Clear favourite wallpapers` removes real favourites. Cancel the confirm.
+- The delete flow is a danger sheet with `Cancel`. Cancel only if you must open it.
+- Row presence depends on platform, sign-in state, and admin flag. Check `describe` before you assert.

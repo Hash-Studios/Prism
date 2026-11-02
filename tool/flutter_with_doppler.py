@@ -9,6 +9,7 @@ import subprocess
 import sys
 
 from prepare_release_firebase import prepare
+from check_ios_admob import validate
 import shorebird_ota
 
 
@@ -19,6 +20,7 @@ APP_KEYS = (
     'RC_API_KEY', 'RC_ANDROID_API_KEY', 'RC_IOS_API_KEY', 'PEXELS_API_KEY', 'META_APP_ID',
     'SENTRY_DSN', 'SENTRY_ENV', 'SENTRY_RELEASE', 'SENTRY_DIST', 'SENTRY_ENABLED',
     'MIXPANEL_TOKEN', 'MIXPANEL_ENABLED',
+    'ADMOB_IOS_REWARDED_AD_UNIT_ID',
 )
 SENTRY_OVERRIDES = ('SENTRY_DSN', 'SENTRY_ENV', 'SENTRY_RELEASE', 'SENTRY_DIST', 'SENTRY_ENABLED')
 
@@ -54,9 +56,9 @@ def defines(payload, sentry_overrides=None):
                 raise ValueError()
             if value:
                 args.append(f'--dart-define={key}={value}')
-        return args
     except (ValueError, TypeError):
         raise ValueError('App configuration failed: invalid Doppler JSON or app value.') from None
+    return args
 
 
 def main():
@@ -77,6 +79,11 @@ def main():
             raise ValueError('Release configuration failed: unchecked define files and Firebase skip flags are forbidden.')
         prepare(args.release_platform)
     payload = download()
+    if args.release_platform == 'ios':
+        app_id = payload.get('ADMOB_IOS_APP_ID', '')
+        validate(app_id, payload.get('ADMOB_IOS_REWARDED_AD_UNIT_ID', ''))
+        # Children, the shorebird run included, inherit it. ios/Flutter/Release.xcconfig reads it.
+        os.environ['PRISM_ADMOB_IOS_APP_ID'] = app_id
     if Path(command[0]).name == 'shorebird':
         return shorebird_ota.run(command, args.release_platform, payload, defines, args.allow_storage_changes)
     return subprocess.run(command + defines(payload)).returncode

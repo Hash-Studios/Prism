@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_button.dart';
@@ -11,15 +12,22 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
-import '../../support/profile_user_fixture.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
   final List<String> toasts = <String>[];
   late FakeAppAnalytics analytics;
+  late Future<bool> Function(BuildContext) originalSignIn;
+  late int signInPrompts;
 
   setUp(() {
+    originalSignIn = signedInActionSignIn;
+    signInPrompts = 0;
+    signedInActionSignIn = (_) async {
+      signInPrompts++;
+      return false;
+    };
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
     toasts.clear();
@@ -29,11 +37,12 @@ void main() {
       if (call.method == 'showToast') toasts.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
       return true;
     });
-    // No id: the page cannot create a link, which keeps the test off the network.
-    app_state.prismUser = profileUser(id: '');
+    app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
   tearDown(() {
+    signedInActionSignIn = originalSignIn;
+    app_state.prismUser = app_constants.createGuestPrismUser();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
     SharePrismScreen.createLinkForTesting = null;
     AnalyticsRuntime.reset();
@@ -60,7 +69,7 @@ void main() {
     expect(find.text('Share invite'), findsOneWidget);
   });
 
-  testWidgets('without an account the link card says to sign in and sharing is blocked with a toast', (tester) async {
+  testWidgets('without an account the link card says to sign in and sharing prompts for sign-in', (tester) async {
     await pumpPage(tester);
 
     expect(find.text('Sign in to get your invite link.'), findsOneWidget);
@@ -69,7 +78,7 @@ void main() {
     await tester.tap(find.text('Share invite'));
     await tester.pump();
 
-    expect(toasts, contains('Sign in to get your invite link.'));
+    expect(signInPrompts, 1);
     expect(analytics.events.map((e) => e.eventName), contains('invite_share_tapped'));
     await tester.pump(const Duration(seconds: 2));
   });
@@ -133,7 +142,27 @@ void main() {
     await tester.pump();
 
     expect(called, isFalse);
-    expect(toasts, contains('Sign in to get your invite link.'));
+    expect(signInPrompts, 1);
     await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('copying a retained invite after sign-out prompts without touching the clipboard', (tester) async {
+    signIn();
+    SharePrismScreen.createLinkForTesting = (_) async => 'https://prismwalls.com/s/abc';
+    var copies = 0;
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') copies++;
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await pumpPage(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byTooltip('Copy link'), findsOneWidget);
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await tester.tap(find.byTooltip('Copy link'));
+    await tester.pump();
+    expect(signInPrompts, 1);
+    expect(copies, 0);
   });
 }

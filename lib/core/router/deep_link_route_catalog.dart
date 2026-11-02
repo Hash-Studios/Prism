@@ -1,9 +1,12 @@
+import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
+
 /// The path-only contract for every app route that can be opened from a URL.
 ///
 /// The catalog intentionally owns matching and validation, while route factories live in
 /// `deep_link_catalog_resolver.dart`. A successful match always names a concrete route family; there is no wildcard
 /// that turns arbitrary paths into navigation.
 enum DeepLinkPageTarget {
+  creatorStats,
   splash,
   onboarding,
   dashboard,
@@ -21,12 +24,19 @@ enum DeepLinkPageTarget {
   editProfile,
   sharePrism,
   settings,
+  layoutSettings,
   blockedAccounts,
   about,
   favourites,
   downloads,
   library,
   folder,
+  mood,
+  gallery,
+  wallRequests,
+  creators,
+  wrapped,
+  weeklyChallenge,
   uploadInput,
   editWallInput,
   review,
@@ -39,6 +49,7 @@ enum DeepLinkPageTarget {
   adminReview,
   swipeReview,
   adminTelemetry,
+  adminPromoCodes,
   debugPanel,
   quickTileSettings,
   autoRotate,
@@ -50,9 +61,11 @@ enum DeepLinkPageTarget {
   wallpaperPositionInput,
   liveWallpaperInput,
   rewards,
+  redeemCode,
   coinHistory,
   shop,
   drops,
+  dailyMoment,
   dailyChest,
   spinWheel,
   premium,
@@ -91,6 +104,7 @@ final class DeepLinkRouteCatalog {
   DeepLinkRouteMatch? resolve(Uri uri) => match(uri);
 
   static const List<DeepLinkRouteExample> examples = <DeepLinkRouteExample>[
+    DeepLinkRouteExample('/creator-stats', DeepLinkPageTarget.creatorStats),
     DeepLinkRouteExample('/', DeepLinkPageTarget.splash),
     DeepLinkRouteExample('/onboarding/v2', DeepLinkPageTarget.onboarding),
     DeepLinkRouteExample('/dashboard', DeepLinkPageTarget.dashboard),
@@ -121,12 +135,19 @@ final class DeepLinkRouteCatalog {
     DeepLinkRouteExample('/edit-profile', DeepLinkPageTarget.editProfile),
     DeepLinkRouteExample('/share-prism', DeepLinkPageTarget.sharePrism),
     DeepLinkRouteExample('/settings', DeepLinkPageTarget.settings),
+    DeepLinkRouteExample('/layout', DeepLinkPageTarget.layoutSettings),
     DeepLinkRouteExample('/blocked-accounts', DeepLinkPageTarget.blockedAccounts),
     DeepLinkRouteExample('/about', DeepLinkPageTarget.about),
     DeepLinkRouteExample('/fav-walls', DeepLinkPageTarget.favourites),
     DeepLinkRouteExample('/downloads', DeepLinkPageTarget.downloads),
     DeepLinkRouteExample('/library?tab=downloads', DeepLinkPageTarget.library),
     DeepLinkRouteExample('/folder/abc123', DeepLinkPageTarget.folder),
+    DeepLinkRouteExample('/mood/dreamy', DeepLinkPageTarget.mood),
+    DeepLinkRouteExample('/gallery?ids=a1,b2', DeepLinkPageTarget.gallery),
+    DeepLinkRouteExample('/requests?tab=filled', DeepLinkPageTarget.wallRequests),
+    DeepLinkRouteExample('/creators', DeepLinkPageTarget.creators),
+    DeepLinkRouteExample('/wrapped', DeepLinkPageTarget.wrapped),
+    DeepLinkRouteExample('/challenges/2026-10-26', DeepLinkPageTarget.weeklyChallenge),
     DeepLinkRouteExample('/upload-wall', DeepLinkPageTarget.uploadInput),
     DeepLinkRouteExample('/edit-wall', DeepLinkPageTarget.editWallInput),
     DeepLinkRouteExample('/review', DeepLinkPageTarget.review),
@@ -143,6 +164,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkRouteExample('/admin-review', DeepLinkPageTarget.adminReview),
     DeepLinkRouteExample('/admin-review/swipe', DeepLinkPageTarget.swipeReview),
     DeepLinkRouteExample('/admin-firestore-telemetry', DeepLinkPageTarget.adminTelemetry),
+    DeepLinkRouteExample('/admin-promo-codes', DeepLinkPageTarget.adminPromoCodes),
     DeepLinkRouteExample('/debug-panel', DeepLinkPageTarget.debugPanel),
     DeepLinkRouteExample('/quick-tile-settings', DeepLinkPageTarget.quickTileSettings),
     DeepLinkRouteExample('/auto-rotate', DeepLinkPageTarget.autoRotate),
@@ -179,11 +201,13 @@ final class DeepLinkRouteCatalog {
     ),
     DeepLinkRouteExample('/wallpaper/wall1/live', DeepLinkPageTarget.liveWallpaperInput),
     DeepLinkRouteExample('/rewards', DeepLinkPageTarget.rewards),
+    DeepLinkRouteExample('/redeem?code=ABCDEFGH23', DeepLinkPageTarget.redeemCode),
     DeepLinkRouteExample('/coin-history', DeepLinkPageTarget.coinHistory),
     DeepLinkRouteExample('/shop', DeepLinkPageTarget.shop),
     DeepLinkRouteExample('/drops', DeepLinkPageTarget.drops),
     DeepLinkRouteExample('/drops/week-2026-10-19', DeepLinkPageTarget.dropDetail),
     DeepLinkRouteExample('/drops/week-2026-10-19/preview/wall1', DeepLinkPageTarget.dropPreview),
+    DeepLinkRouteExample('/daily-moment', DeepLinkPageTarget.dailyMoment),
     DeepLinkRouteExample('/daily-chest', DeepLinkPageTarget.dailyChest),
     DeepLinkRouteExample('/spin-wheel', DeepLinkPageTarget.spinWheel),
     DeepLinkRouteExample('/premium', DeepLinkPageTarget.premium),
@@ -198,6 +222,8 @@ final class DeepLinkRouteCatalog {
     DeepLinkPageTarget.wallpaperDetail: <String>{'wallId', 'id', 'source', 'provider'},
     DeepLinkPageTarget.library: <String>{'tab'},
     DeepLinkPageTarget.collectionView: <String>{'collectionName', 'name'},
+    DeepLinkPageTarget.gallery: <String>{'ids', 'source'},
+    DeepLinkPageTarget.wallRequests: <String>{'tab'},
     DeepLinkPageTarget.followers: <String>{'user', 'identifier'},
     DeepLinkPageTarget.following: <String>{'user', 'identifier'},
     DeepLinkPageTarget.wallpaperPositionInput: <String>{'wallpaperId', 'source', 'provider', 'entryPoint'},
@@ -208,6 +234,8 @@ final class DeepLinkRouteCatalog {
     DeepLinkPageTarget.clockPreview: <String>{'wallpaperId', 'source', 'provider'},
     DeepLinkPageTarget.adminImage: <String>{'wallpaperId', 'source', 'provider'},
     DeepLinkPageTarget.debugPanel: <String>{'tab'},
+    DeepLinkPageTarget.redeemCode: <String>{'code'},
+    DeepLinkPageTarget.home: <String>{'feed'},
   };
 
   /// Returns null unless the URL matches a catalog route exactly and carries only supported scalar parameters.
@@ -247,6 +275,17 @@ final class DeepLinkRouteCatalog {
     } else if (segments.length == 2 && segments[0].toLowerCase() == 'user') {
       target = DeepLinkPageTarget.profile;
       pathParams['identifier'] = segments[1];
+    } else if (segments.length == 2 && segments[0].toLowerCase() == 'challenges') {
+      final String id = segments[1];
+      final DateTime? date = DateTime.tryParse(id);
+      if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(id) ||
+          date == null ||
+          date.weekday != DateTime.monday ||
+          date.toIso8601String().substring(0, 10) != id) {
+        return null;
+      }
+      target = DeepLinkPageTarget.weeklyChallenge;
+      pathParams['challengeId'] = id;
     } else if (segments.length == 2 && segments[0].toLowerCase() == 'drops') {
       target = DeepLinkPageTarget.dropDetail;
       pathParams['weekKey'] = segments[1];
@@ -257,6 +296,9 @@ final class DeepLinkRouteCatalog {
     } else if (segments.length == 2 && segments[0].toLowerCase() == 'folder') {
       target = DeepLinkPageTarget.folder;
       pathParams['folderId'] = segments[1];
+    } else if (segments.length == 2 && segments[0].toLowerCase() == 'mood') {
+      target = DeepLinkPageTarget.mood;
+      pathParams['moodId'] = segments[1];
     } else if (segments.length == 2 && segments[0].toLowerCase() == 'collection') {
       target = DeepLinkPageTarget.collectionView;
       pathParams['collectionName'] = segments[1];
@@ -303,6 +345,9 @@ final class DeepLinkRouteCatalog {
     if (target == DeepLinkPageTarget.wallpaperDetail && (wallId == null || wallId.trim().isEmpty)) {
       return null;
     }
+    if (target == DeepLinkPageTarget.gallery && !_validGalleryIds(query['ids'] ?? '')) {
+      return null;
+    }
     if (target == DeepLinkPageTarget.collectionView &&
         (pathParams['collectionName'] ?? query['collectionName'] ?? query['name'] ?? '').trim().isEmpty) {
       return null;
@@ -310,6 +355,11 @@ final class DeepLinkRouteCatalog {
     if (target == DeepLinkPageTarget.library &&
         query['tab'] != null &&
         !const <String>{'favourites', 'folders', 'downloads', 'history'}.contains(query['tab']!.toLowerCase())) {
+      return null;
+    }
+    if (target == DeepLinkPageTarget.home &&
+        query['feed'] != null &&
+        !HomeFeedChip.values.asNameMap().containsKey(query['feed'])) {
       return null;
     }
     if (target == DeepLinkPageTarget.debugPanel &&
@@ -413,10 +463,12 @@ final class DeepLinkRouteCatalog {
         const <String>{
           'user',
           'drops',
+          'challenges',
           'collection',
           'category',
           'wallpaper',
           'folder',
+          'mood',
         }.contains(segments[0].toLowerCase())) {
       return true;
     }
@@ -428,7 +480,18 @@ final class DeepLinkRouteCatalog {
         (segments.length == 4 && segments[0].toLowerCase() == 'drops' && segments[2].toLowerCase() == 'preview');
   }
 
+  /// A gallery shows 2 to 12 walls. Ids use the same characters as the server wall ids.
+  static bool _validGalleryIds(String raw) {
+    final List<String> ids = raw.split(',').map((id) => id.trim()).where((id) => id.isNotEmpty).toList();
+    return ids.length >= 2 && ids.length <= 12 && ids.every(RegExp(r'^[A-Za-z0-9_-]{1,200}$').hasMatch);
+  }
+
   static const Map<String, DeepLinkPageTarget> _staticTargets = <String, DeepLinkPageTarget>{
+    '/creator-stats': DeepLinkPageTarget.creatorStats,
+    '/gallery': DeepLinkPageTarget.gallery,
+    '/requests': DeepLinkPageTarget.wallRequests,
+    '/creators': DeepLinkPageTarget.creators,
+    '/wrapped': DeepLinkPageTarget.wrapped,
     '/onboarding/v2': DeepLinkPageTarget.onboarding,
     '/dashboard': DeepLinkPageTarget.dashboard,
     '/dashboard/home': DeepLinkPageTarget.home,
@@ -446,6 +509,7 @@ final class DeepLinkRouteCatalog {
     '/edit-profile': DeepLinkPageTarget.editProfile,
     '/share-prism': DeepLinkPageTarget.sharePrism,
     '/settings': DeepLinkPageTarget.settings,
+    '/layout': DeepLinkPageTarget.layoutSettings,
     '/blocked-accounts': DeepLinkPageTarget.blockedAccounts,
     '/about': DeepLinkPageTarget.about,
     '/fav-walls': DeepLinkPageTarget.favourites,
@@ -464,6 +528,7 @@ final class DeepLinkRouteCatalog {
     '/admin-review': DeepLinkPageTarget.adminReview,
     '/admin-review/swipe': DeepLinkPageTarget.swipeReview,
     '/admin-firestore-telemetry': DeepLinkPageTarget.adminTelemetry,
+    '/admin-promo-codes': DeepLinkPageTarget.adminPromoCodes,
     '/debug-panel': DeepLinkPageTarget.debugPanel,
     '/quick-tile-settings': DeepLinkPageTarget.quickTileSettings,
     '/auto-rotate': DeepLinkPageTarget.autoRotate,
@@ -475,9 +540,11 @@ final class DeepLinkRouteCatalog {
     '/wallpaper-position': DeepLinkPageTarget.wallpaperPositionInput,
     '/live-wallpaper': DeepLinkPageTarget.liveWallpaperInput,
     '/rewards': DeepLinkPageTarget.rewards,
+    '/redeem': DeepLinkPageTarget.redeemCode,
     '/coin-history': DeepLinkPageTarget.coinHistory,
     '/shop': DeepLinkPageTarget.shop,
     '/drops': DeepLinkPageTarget.drops,
+    '/daily-moment': DeepLinkPageTarget.dailyMoment,
     '/daily-chest': DeepLinkPageTarget.dailyChest,
     '/spin-wheel': DeepLinkPageTarget.spinWheel,
     '/premium': DeepLinkPageTarget.premium,

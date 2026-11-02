@@ -29,10 +29,12 @@ import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_
 import 'package:Prism/features/onboarding_v2/src/services/first_wallpaper_service.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
+import 'package:Prism/features/taste_quiz/domain/repositories/taste_quiz_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -58,6 +60,8 @@ class _MockSettingsLocalDataSource extends Mock implements SettingsLocalDataSour
 class _MockFirebaseRemoteConfig extends Mock implements FirebaseRemoteConfig {}
 
 class _MockAiGenerationRepository extends Mock implements AiGenerationRepositoryImpl {}
+
+class _MockTasteQuizRepository extends Mock implements TasteQuizRepository {}
 
 PrismUsersV2 _user({required String id, required bool loggedIn, bool premium = false}) {
   final now = DateTime.now().toUtc().toIso8601String();
@@ -125,6 +129,7 @@ void main() {
   late _MockSettingsLocalDataSource settingsLocalDataSource;
   late _MockFirebaseRemoteConfig remoteConfig;
   late _MockAiGenerationRepository aiRepository;
+  late _MockTasteQuizRepository tasteQuizRepository;
   late FakeAppAnalytics analytics;
   late Completer<OnboardingWallpaperVm?> pendingWallpaperLoad;
   late Completer<AppLocalizationsEn> pendingLocalizations;
@@ -153,6 +158,8 @@ void main() {
     settingsLocalDataSource = _MockSettingsLocalDataSource();
     remoteConfig = _MockFirebaseRemoteConfig();
     aiRepository = _MockAiGenerationRepository();
+    tasteQuizRepository = _MockTasteQuizRepository();
+    when(() => tasteQuizRepository.loadPlan(any())).thenAnswer((_) async => null);
     pendingLocalizations = Completer<AppLocalizationsEn>();
     localizationsLoadStarted = Completer<void>();
 
@@ -189,6 +196,7 @@ void main() {
     categoryFeedRepository,
     onboardingRepository,
     settingsLocalDataSource,
+    tasteQuizRepository,
     remoteConfig: includeRemoteConfig ? remoteConfig : null,
     aiRepository: aiRepository,
     acquireGeneratedImage: (_) async => '/tmp/generated-wallpaper.jpg',
@@ -1335,6 +1343,275 @@ void main() {
     );
   });
 
+  group('aiStyleSelected', () {
+    setUp(() {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+      when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenAnswer((_) async => _aiRecord());
+    });
+
+    Future<void> reachAiGenerate(OnboardingV2Bloc bloc) async {
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+      bloc.add(const OnboardingV2Event.interestsSkipped());
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+      bloc.add(const OnboardingV2Event.starterPackSkipped());
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.aiGenerate);
+    }
+
+    List<Map<String, Object?>> pickedStyles() =>
+        analytics.events.where((e) => e.eventName == 'ai_style_picked').map((e) => e.toWireParameters()).toList();
+
+    test('a new style replaces the prompt and tracks the pick', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc);
+
+      // Move off anime first so the synthwave pick is always a change, whatever style the step started with.
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.anime));
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.synthwave));
+      final state = await bloc.stream.firstWhere((s) => s.aiData.stylePreset == AiStylePreset.synthwave);
+
+      expect(state.aiData.status, AiGenerateStatus.idle);
+      expect(
+        OnboardingV2Config.aiOnboardingPrompts(AppLocalizationsEn(), AiStylePreset.synthwave),
+        contains(state.aiData.prompt),
+      );
+      expect(pickedStyles().last, <String, Object?>{'style': 'synthwave', 'source': 'onboarding'});
+    });
+
+    test('picking the current style tracks the pick but emits nothing', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc);
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.synthwave));
+      await Future<void>.delayed(Duration.zero);
+      expect(bloc.state.aiData.stylePreset, AiStylePreset.synthwave);
+
+      final emitted = <OnboardingV2State>[];
+      final sub = bloc.stream.listen(emitted.add);
+      addTearDown(sub.cancel);
+      final before = bloc.state.aiData;
+      final trackedBefore = pickedStyles().length;
+
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.synthwave));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(emitted, isEmpty);
+      expect(bloc.state.aiData, before);
+      expect(pickedStyles().length, trackedBefore + 1);
+      expect(pickedStyles().last, <String, Object?>{'style': 'synthwave', 'source': 'onboarding'});
+    });
+
+    test('while generating, a style pick changes nothing and is not tracked', () async {
+      final pending = Completer<AiGenerationRecord>();
+      when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenAnswer((_) => pending.future);
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc);
+
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((s) => s.aiData.status == AiGenerateStatus.loading);
+      final before = bloc.state.aiData;
+      final trackedBefore = pickedStyles().length;
+      final emitted = <OnboardingV2State>[];
+      final sub = bloc.stream.listen(emitted.add);
+      addTearDown(sub.cancel);
+
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.synthwave));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(emitted, isEmpty);
+      expect(bloc.state.aiData, before);
+      expect(bloc.state.aiData.status, AiGenerateStatus.loading);
+      expect(pickedStyles().length, trackedBefore);
+    });
+
+    test('a style lookup that finishes after a failed generation cannot change the trial style', () async {
+      final pendingLocalizations = Completer<AppLocalizationsEn>();
+      final localizationLoadStarted = Completer<void>();
+      var holdLocalizations = false;
+      final bloc = buildBloc(
+        loadLocalizations: () {
+          if (!holdLocalizations) return Future.value(AppLocalizationsEn());
+          if (!localizationLoadStarted.isCompleted) localizationLoadStarted.complete();
+          return pendingLocalizations.future;
+        },
+      );
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc);
+      if (bloc.state.aiData.stylePreset != AiStylePreset.abstract) {
+        bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.abstract));
+        await bloc.stream.firstWhere((state) => state.aiData.stylePreset == AiStylePreset.abstract);
+      }
+      holdLocalizations = true;
+
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.synthwave));
+      await localizationLoadStarted.future;
+      when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenThrow(Exception('offline'));
+
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.failure);
+      final AiStylePreset attemptedStyle = bloc.state.aiData.stylePreset;
+      pendingLocalizations.complete(AppLocalizationsEn());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.aiData.stylePreset, attemptedStyle);
+      expect(bloc.state.aiData.status, AiGenerateStatus.failure);
+    });
+
+    test('the latest style selection wins when localization lookups finish out of order', () async {
+      final pendingLocalizations = <Completer<AppLocalizationsEn>>[];
+      final localizationLoadsStarted = Completer<void>();
+      var holdLocalizations = false;
+      final bloc = buildBloc(
+        loadLocalizations: () {
+          if (!holdLocalizations) return Future.value(AppLocalizationsEn());
+          final completer = Completer<AppLocalizationsEn>();
+          pendingLocalizations.add(completer);
+          if (pendingLocalizations.length == 2) localizationLoadsStarted.complete();
+          return completer.future;
+        },
+      );
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc);
+      if (bloc.state.aiData.stylePreset != AiStylePreset.abstract) {
+        bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.abstract));
+        await bloc.stream.firstWhere((state) => state.aiData.stylePreset == AiStylePreset.abstract);
+      }
+      holdLocalizations = true;
+
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.anime));
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.synthwave));
+      await localizationLoadsStarted.future;
+      expect(pendingLocalizations, hasLength(2));
+
+      pendingLocalizations[1].complete(AppLocalizationsEn());
+      await bloc.stream.firstWhere((state) => state.aiData.stylePreset == AiStylePreset.synthwave);
+      pendingLocalizations[0].complete(AppLocalizationsEn());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.aiData.stylePreset, AiStylePreset.synthwave);
+      expect(
+        OnboardingV2Config.aiOnboardingPrompts(AppLocalizationsEn(), AiStylePreset.synthwave),
+        contains(bloc.state.aiData.prompt),
+      );
+    });
+
+    test('duplicate generation requests start only one free trial', () async {
+      final pending = Completer<AiGenerationRecord>();
+      when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenAnswer((_) => pending.future);
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc);
+
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.loading);
+      await Future<void>.delayed(Duration.zero);
+      verify(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: AiChargeMode.freeTrial,
+          coinsSpent: 0,
+        ),
+      ).called(1);
+      pending.complete(_aiRecord());
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.success);
+    });
+
+    test('after success, a style pick changes nothing', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc);
+
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((s) => s.aiData.status == AiGenerateStatus.success);
+      final before = bloc.state.aiData;
+      final trackedBefore = pickedStyles().length;
+      final emitted = <OnboardingV2State>[];
+      final sub = bloc.stream.listen(emitted.add);
+      addTearDown(sub.cancel);
+
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.synthwave));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(emitted, isEmpty);
+      expect(bloc.state.aiData, before);
+      expect(bloc.state.aiData.status, AiGenerateStatus.success);
+      expect(pickedStyles().length, trackedBefore);
+    });
+
+    test('after failure, a new style is accepted and the status goes back to idle', () async {
+      when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenThrow(Exception('offline'));
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc);
+
+      // Pick anime first, so the failed run and the synthwave pick below use different styles.
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.anime));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((s) => s.aiData.status == AiGenerateStatus.failure);
+
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.synthwave));
+      final state = await bloc.stream.firstWhere((s) => s.aiData.stylePreset == AiStylePreset.synthwave);
+
+      expect(state.aiData.status, AiGenerateStatus.idle);
+      expect(
+        OnboardingV2Config.aiOnboardingPrompts(AppLocalizationsEn(), AiStylePreset.synthwave),
+        contains(state.aiData.prompt),
+      );
+    });
+  });
+
   test('stepping back walks the steps in reverse and then exits instead of showing auth', () async {
     app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
     final bloc = buildBloc();
@@ -1792,6 +2069,23 @@ void main() {
   });
 
   group('guest path', () {
+    setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.iOS);
+    tearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'Android rejects a direct guest event without writing completion or navigating',
+      setUp: () => debugDefaultTargetPlatformOverride = TargetPlatform.android,
+      build: buildBloc,
+      act: (bloc) => bloc.add(const OnboardingV2Event.guestBrowseStarted()),
+      expect: () => <OnboardingV2State>[],
+      verify: (bloc) {
+        expect(bloc.state.isGuest, isFalse);
+        expect(bloc.state.step, OnboardingV2Step.auth);
+        expect(bloc.state.navRequest, isNull);
+        verifyNever(() => settingsLocalDataSource.set(any(), any()));
+      },
+    );
+
     Future<void> startAsGuest(OnboardingV2Bloc bloc) async {
       bloc.add(const OnboardingV2Event.started());
       await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);

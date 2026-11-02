@@ -1,3 +1,5 @@
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
@@ -5,6 +7,7 @@ import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/fake_firestore_client.dart';
 import '../support/in_memory_local_store.dart';
 
 String _nativeTopic(String topic) => '${topic}_loc_v1';
@@ -49,10 +52,14 @@ void main() {
   late _FakeMessaging messaging;
 
   setUp(() async {
+    await getIt.reset();
+    getIt.registerSingleton<FirestoreClient>(FakeFirestoreClient());
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     messaging = _FakeMessaging();
     await settings.set(NotificationPrefKeys.posts, false);
   });
+
+  tearDown(() => getIt.reset());
 
   Future<void> sync({String userId = 'uid1', bool premium = false}) => syncPushTopics(
     messaging,
@@ -150,6 +157,19 @@ void main() {
     await sync(userId: '');
 
     expect(messaging.subscribed, <String>['free_loc_v1']);
+  });
+
+  test('removes UID creator topics even when Posts is switched off', () async {
+    final FakeFirestoreClient client = FakeFirestoreClient(
+      onQuery: (_) => <FakeDocRow>[(id: 'creator-uid', data: <String, dynamic>{})],
+    );
+    await getIt.reset();
+    getIt.registerSingleton<FirestoreClient>(client);
+    addTearDown(getIt.reset);
+
+    await sync();
+
+    expect(messaging.unsubscribed, containsAll(<String>['posts_creator-uid', 'posts_creator-uid_loc_v1']));
   });
 
   test('retries on the next launch when there is no token or a subscribe fails', () async {

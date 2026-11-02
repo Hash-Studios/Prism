@@ -35,6 +35,28 @@ class FirestoreStringConverter implements JsonConverter<String, Object?> {
   Object? toJson(String object) => object;
 }
 
+/// True only for a real `true`. A string or number from a malformed doc reads as false.
+class FirestoreTrueConverter implements JsonConverter<bool, Object?> {
+  const FirestoreTrueConverter();
+
+  @override
+  bool fromJson(Object? json) => json == true;
+
+  @override
+  Object? toJson(bool object) => object;
+}
+
+/// Like [FirestoreStringConverter], but a value that is not a string reads as empty instead of its `toString()`.
+class FirestoreStrictStringConverter implements JsonConverter<String, Object?> {
+  const FirestoreStrictStringConverter();
+
+  @override
+  String fromJson(Object? json) => json is String ? json : '';
+
+  @override
+  Object? toJson(String object) => object;
+}
+
 class FirestoreStringListConverter implements JsonConverter<List<String>, Object?> {
   const FirestoreStringListConverter();
 

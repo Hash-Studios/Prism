@@ -8,6 +8,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/prefetch_tiles.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -235,5 +236,15 @@ void main() {
     final BuildContext context = await pumpContext(tester);
 
     expect(visibleTileCount(context, 2), 4);
+  });
+
+  test('tileImageProvider decodes at the given height through the image cache', () {
+    final ImageProvider provider = tileImageProvider('https://example.com/a.jpg', memCacheHeight: 300);
+
+    expect(provider, isA<ResizeImage>());
+    final ResizeImage resized = provider as ResizeImage;
+    expect(resized.height, 300);
+    expect(resized.width, isNull);
+    expect(resized.imageProvider, isA<CachedNetworkImageProvider>());
   });
 }

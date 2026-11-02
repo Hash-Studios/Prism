@@ -11,6 +11,7 @@ const config = JSON.parse(readFileSync(join(fixtureRoot, "firestore.indexes.json
   indexes: Index[];
   fieldOverrides: Override[];
 };
+const rulesText = readFileSync(join(fixtureRoot, "firestore.rules"), "utf8");
 
 test("walls have the tag search index: tags contains, review, newest first", () => {
   const index = config.indexes.find((i) => i.collectionGroup === "walls" &&
@@ -104,9 +105,87 @@ test("folder items: account deletion finds them by owner across folders, repair 
   assert.ok(hasIndex("items", [["ownerId", "ASCENDING"], ["addedAt", "DESCENDING"]]));
 });
 
+test("walls have the remix index: remixOf, review, newest first", () => {
+  assert.ok(hasIndex("walls", [["remixOf", "ASCENDING"], ["review", "ASCENDING"], ["createdAt", "DESCENDING"],
+    ["__name__", "DESCENDING"]]));
+});
+
 test("walls have the protected spatial index the app queries: protected asset fields, review, spatial.tier, newest first", () => {
   const protectedFields = ["originalProtected", "wallpaper_url", "wallpaper_path", "wallpaper_sha", "thumb_path", "thumb_sha"]
     .map((field): [string, string] => [field, "ASCENDING"]);
   assert.ok(hasIndex("walls", [...protectedFields, ["review", "ASCENDING"], ["spatial.tier", "ASCENDING"],
     ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]));
+});
+
+test("wall requests have the status and hidden indexes for top, new, filled and the token search", () => {
+  for (const [field, order] of [["voteCount", "DESCENDING"], ["createdAt", "DESCENDING"], ["filledAt", "DESCENDING"]]) {
+    assert.ok(hasIndex("wallRequests", [["status", "ASCENDING"], ["hidden", "ASCENDING"], [field, order]]), field);
+  }
+  assert.ok(config.indexes.some((i) => i.collectionGroup === "wallRequests" &&
+    JSON.stringify(i.fields.map((f) => [f.fieldPath, f.order ?? f.arrayConfig])) ===
+      JSON.stringify([["status", "ASCENDING"], ["hidden", "ASCENDING"], ["tokens", "CONTAINS"]])));
+});
+
+test("wall request votes have a collection group index on uid for account deletion", () => {
+  const override = config.fieldOverrides.find((o) => o.collectionGroup === "votes" && o.fieldPath === "uid") as
+    (Override & {indexes: Array<{order?: string; queryScope: string}>}) | undefined;
+  assert.ok(override);
+  assert.ok(override.indexes.some((i) => i.order === "ASCENDING" && i.queryScope === "COLLECTION_GROUP"));
+});
+
+test("daily creator stats queue has its oldest-ready composite index", () => {
+  assert.ok(hasIndex("creatorStatsDailyQueue", [
+    ["state", "ASCENDING"], ["firstEnqueuedAt", "ASCENDING"], ["__name__", "ASCENDING"],
+  ]));
+});
+
+test("all eight private creator stats collections have explicit client read and write denials", () => {
+  for (const collection of [
+    "creatorStatsHistory",
+    "creatorStatsCache",
+    "creatorStatsDailyCheckpoints",
+    "creatorStatsFolderMarkers",
+    "creatorStatsRemixMarkers",
+    "creatorStatsWeeklyMarkers",
+    "creatorStatsDailyQueue",
+    "creatorStatsProcessorState",
+  ]) {
+    const match = new RegExp(`match /${collection}/\\{document=\\*\\*\\} \\{ allow read, write: if false; \\}`);
+    assert.match(rulesText, match, collection);
+  }
+});
+
+test("daily creator stats payload fields do not get single-field indexes or TTL", () => {
+  const unindexedFields = [
+    ["creatorStatsDailyQueue", "schemaVersion"],
+    ["creatorStatsDailyQueue", "sourcePath"],
+    ["creatorStatsDailyQueue", "incarnation"],
+    ["creatorStatsDailyQueue", "sourceCreatedAt"],
+    ["creatorStatsDailyQueue", "wallId"],
+    ["creatorStatsDailyQueue", "day"],
+    ["creatorStatsDailyQueue", "counters"],
+    ["creatorStatsDailyQueue", "failure"],
+    ["creatorStatsDailyQueue", "updatedAt"],
+    ["creatorStatsDailyCheckpoints", "schemaVersion"],
+    ["creatorStatsDailyCheckpoints", "sourcePath"],
+    ["creatorStatsDailyCheckpoints", "incarnation"],
+    ["creatorStatsDailyCheckpoints", "sourceCreatedAt"],
+    ["creatorStatsDailyCheckpoints", "wallId"],
+    ["creatorStatsDailyCheckpoints", "day"],
+    ["creatorStatsDailyCheckpoints", "counters"],
+    ["creatorStatsProcessorState", "schemaVersion"],
+    ["creatorStatsProcessorState", "owner"],
+    ["creatorStatsProcessorState", "leaseUntil"],
+    ["creatorStatsProcessorState", "notBefore"],
+  ];
+  for (const [collectionGroup, fieldPath] of unindexedFields) {
+    const override = config.fieldOverrides.find((o) => o.collectionGroup === collectionGroup && o.fieldPath === fieldPath) as
+      (Override & {indexes?: Array<unknown>}) | undefined;
+    assert.ok(override, `${collectionGroup}.${fieldPath} override`);
+    assert.deepEqual(override.indexes, [], `${collectionGroup}.${fieldPath} indexes`);
+    assert.notEqual(override.ttl, true, `${collectionGroup}.${fieldPath} TTL`);
+  }
+  for (const collectionGroup of ["creatorStatsDailyQueue", "creatorStatsDailyCheckpoints", "creatorStatsProcessorState"]) {
+    assert.ok(!config.fieldOverrides.some((o) => o.collectionGroup === collectionGroup && o.ttl === true), collectionGroup);
+  }
 });

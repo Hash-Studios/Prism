@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
@@ -17,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 // ignore: depend_on_referenced_packages
 import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 
+import '../../support/profile_user_fixture.dart';
 import '../../support/wait_for_real_io.dart';
 
 class _FavouriteBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState> implements FavouriteWallsBloc {}
@@ -119,6 +121,7 @@ Future<void> _finish(
   await session.close();
   await tester.runAsync(() => Future<void>(() {}));
   await tester.pump();
+  app_state.prismUser = profileUser(id: '', loggedIn: false);
 }
 
 String _json(String id) => '[{"id":"$id","url":"https://example.com/$id.jpg"}]';
@@ -137,8 +140,11 @@ void main() {
   Future<(StreamController<FavouriteWallsState>, StreamController<SessionState>)> pump(
     WidgetTester tester,
     FavouriteWallsState favouritesState,
-    SessionState sessionState,
-  ) async {
+    SessionState sessionState, {
+    String? appOwnerId,
+  }) async {
+    final String resolvedOwner = appOwnerId ?? (sessionState.session.loggedIn ? sessionState.session.userId : '');
+    app_state.prismUser = profileUser(id: resolvedOwner, loggedIn: resolvedOwner.isNotEmpty);
     final favourites = _FavouriteBloc();
     final session = _SessionBloc();
     final favouriteStates = StreamController<FavouriteWallsState>();
@@ -172,6 +178,7 @@ void main() {
     await _settle(tester, () => true, reason: 'loading state to be ignored');
     expect(await _stored(), _json('two'));
 
+    app_state.prismUser = profileUser(id: 'b');
     sessionStates.add(_session('b'));
     await _settle(tester, () => store.writes.length == 3, reason: 'account switch clear');
     expect(store.writes, <Object>[_json('one'), _json('two'), '[]']);
@@ -184,6 +191,7 @@ void main() {
     await _settle(tester, () => store.writes.length == 4, reason: 'new-owner favourites');
     expect(store.writes, <Object>[_json('one'), _json('two'), '[]', _json('three')]);
 
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
     sessionStates.add(_resolvedGuest());
     await _settle(tester, () => store.writes.length == 5, reason: 'sign-out clear');
     expect(store.writes, <Object>[_json('one'), _json('two'), '[]', _json('three'), '[]']);
@@ -215,6 +223,7 @@ void main() {
     await _settle(tester, () => true, reason: 'unresolved session state to be ignored');
     expect(store.writes, isEmpty);
 
+    app_state.prismUser = profileUser(id: 'a');
     sessionStates.add(_session('a'));
     favouriteStates.add(_favourites('a', 'one'));
     await _settle(tester, () => store.writes.length == 1, reason: 'signed-in favourites save');
@@ -231,6 +240,7 @@ void main() {
     final (favouriteStates, sessionStates) = await pump(tester, FavouriteWallsState.initial(), SessionState.initial());
     expect(await _stored(), _json('previous'));
 
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
     sessionStates.add(_resolvedGuest());
     await _settle(tester, () => store.writes.length == 1, reason: 'guest resolution clear');
     expect(store.writes, <Object>['[]']);
@@ -243,6 +253,7 @@ void main() {
     await _installStore(tester, store);
     final (favouriteStates, sessionStates) = await pump(tester, _favourites('a', 'one'), _session('a'));
 
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
     sessionStates.add(_resolvedGuest());
     await tester.runAsync(() => Future<void>(() {}));
     await tester.pump();
@@ -256,12 +267,34 @@ void main() {
     await _finish(tester, favouriteStates, sessionStates);
   }
 
+  Future<void> staleAppOwnerScenario(WidgetTester tester) async {
+    final _RecordingStore store = _RecordingStore(<String, Object>{});
+    await _installStore(tester, store);
+    app_state.prismUser = profileUser(id: 'user-b');
+    final (favouriteStates, sessionStates) = await pump(
+      tester,
+      _favourites('user-a', 'wall'),
+      _session('user-a'),
+      appOwnerId: 'user-b',
+    );
+    await _settle(tester, () => true, reason: 'mismatched app owner is ignored');
+    expect(store.writes, isEmpty);
+
+    app_state.prismUser = profileUser(id: 'user-a');
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    await _settle(tester, () => store.writes.length == 1, reason: 'matching app owner syncs');
+    expect(store.writes, <Object>[_json('wall')]);
+
+    await _finish(tester, favouriteStates, sessionStates);
+  }
+
   testWidgets('on iOS favourites scenarios preserve writes across session lifecycles', (tester) async {
     await accountSwitchAndSignOutScenario(tester);
     await resolvedGuestStartupScenario(tester);
     await unresolvedThenSignedInScenario(tester);
     await unresolvedThenGuestScenario(tester);
     await slowSaveAfterSignOutScenario(tester);
+    await staleAppOwnerScenario(tester);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('on Android it writes nothing', (tester) async {
@@ -269,6 +302,7 @@ void main() {
     final (favouriteStates, sessionStates) = await pump(tester, _favourites('a', 'one'), _session('a'));
     favouriteStates.add(_favourites('a', 'two'));
     await _settle(tester, () => true, reason: 'Android favourites event');
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
     sessionStates.add(_resolvedGuest());
     await _settle(tester, () => true, reason: 'Android sign-out event');
     expect(await _stored(), isNull);

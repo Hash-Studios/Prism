@@ -2,6 +2,8 @@ import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {db, CALLABLE_REGIONS, REGION} from "./common";
+import {removeAllFolderFollows, removeOwnerPublicFolders} from "./publicFolders";
+import {CREATOR_DIRECTORY} from "./creatorDirectory";
 
 const USERS = "usersv2";
 const PROFILES = "profiles";
@@ -72,7 +74,7 @@ function stableJson(value: unknown): string {
 }
 
 /** Re-read the private source inside the transaction so delayed events cannot restore stale profile data. */
-export async function syncPublicProfile(uid: string): Promise<void> {
+export async function syncPublicProfile(uid: string): Promise<boolean> {
   const sourceRef = db.collection(USERS).doc(uid);
   const profileRef = db.collection(PROFILES).doc(uid);
   const deletionBarrierRef = db.collection("creatorDeletionState").doc(uid);
@@ -82,8 +84,10 @@ export async function syncPublicProfile(uid: string): Promise<void> {
     ]);
     if (!sourceSnap.exists || sourceSnap.data()?.deleted === true || deletionBarrier.data()?.closed === true) {
       tx.delete(profileRef);
+      tx.delete(db.collection(CREATOR_DIRECTORY).doc(uid));
       return true;
     }
+    if (sourceSnap.data()?.creatorDirectoryOptOut === true) tx.delete(db.collection(CREATOR_DIRECTORY).doc(uid));
     const count = profileSnap.data()?.followerCount;
     const followingCount = profileSnap.data()?.followingCount;
     const next = projectedProfile(
@@ -93,12 +97,22 @@ export async function syncPublicProfile(uid: string): Promise<void> {
     if (!profileSnap.exists || stableJson(profileSnap.data()) !== stableJson(next)) tx.set(profileRef, next);
     return false;
   });
-  if (removeGraph) await removeUidFollowGraph(uid);
+  if (removeGraph) {
+    await removeUidFollowGraph(uid);
+    await db.collection(CREATOR_DIRECTORY).doc(uid).delete();
+  }
+  return removeGraph;
 }
 
 export const projectUserProfile = onDocumentWritten(
-  {document: "usersv2/{uid}", region: REGION},
-  async (event) => syncPublicProfile(event.params.uid),
+  {document: "usersv2/{uid}", region: REGION, retry: true},
+  async (event) => {
+    const shouldCleanFolders = await syncPublicProfile(event.params.uid);
+    if (shouldCleanFolders) {
+      await removeOwnerPublicFolders(event.params.uid);
+      await removeAllFolderFollows(event.params.uid);
+    }
+  },
 );
 
 type EdgeResult = "created" | "removed" | "unchanged";

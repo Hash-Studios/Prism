@@ -120,7 +120,7 @@ reach that step.
 | Shorebird secrets (Doppler `prd`, names only) | `SHOREBIRD_TOKEN`, `SHOREBIRD_PATCH_PRIVATE_KEY`, `SHOREBIRD_PATCH_PUBLIC_KEY` |
 | Shorebird release record | annotated tag `shorebird/<platform>/<version>+<build>` |
 | Functions secrets (human sets, never echoed) | `FUNCTIONS_SECRETS` in `Makefile`: `GH_TOKEN`, `REVENUECAT_SECRET_KEY`, `STUDIO_SECRET`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `FAL_API_KEY`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` |
-| Functions plain env vars | `FUNCTIONS_ENV_KEYS` in `Makefile`: `GH_USERNAME`, `GH_REPO_WALLS`, `GH_REPO_SETUPS`, `R2_ACCOUNT_ID`, `R2_PRIVATE_BUCKET`, `R2_PREVIEW_BUCKET`, `R2_PREVIEW_BASE_URL` |
+| Functions plain env vars | `FUNCTIONS_ENV_KEYS` in `Makefile`: `GH_USERNAME`, `GH_REPO_WALLS`, `GH_REPO_SETUPS`, `R2_ACCOUNT_ID`, `R2_PRIVATE_BUCKET`, `R2_PREVIEW_BUCKET`, `R2_PREVIEW_BASE_URL`, and the five `REWARDED_AD_*` settings (`docs/development/rewarded-ads.md`) |
 
 ## Flags
 

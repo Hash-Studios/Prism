@@ -190,10 +190,12 @@ void main() {
         tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((image) => image.imageUrl),
         contains('https://example.com/same-id-thumb.jpg'),
       );
-      final Iterable<Semantics> feedCards = tester
+      final Iterable<String> actions = tester
           .widgetList<Semantics>(find.byType(Semantics))
-          .where((node) => node.properties.customSemanticsActions != null);
-      expect(feedCards, isEmpty);
+          .expand((node) => node.properties.customSemanticsActions?.keys ?? const <CustomSemanticsAction>[])
+          .map((action) => action.label ?? '');
+      expect(actions, isNot(contains('Previous wallpaper')));
+      expect(actions, isNot(contains('Next wallpaper')));
       await tester.pumpWidget(const SizedBox());
     }
     semantics.dispose();

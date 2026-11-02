@@ -1,6 +1,8 @@
 import { AiQuotaCoordinator, type AiEnvBindings, bumpRateLimit, handleAiApiRequest } from './ai';
 import { maybeHandleAssociationRequest } from './association_files';
+import { handleCatalogRequest } from './catalog';
 import { formatCount, type OgCard, type OgChip, type OgStat, renderOgCardHtml } from './og_card';
+import { buildAndroidIntentUrl, detectPlatform, escapeAttribute, escapeHtml, iosUniversalLinkUrl, screenshotCard } from './page_kit';
 
 export interface Env extends AiEnvBindings {
   LINKS_KV: KVNamespace;
@@ -13,6 +15,9 @@ export interface Env extends AiEnvBindings {
   OG_FALLBACK_IMAGE?: string;
   BROWSER_RENDERING_ACCOUNT_ID?: string;
   BROWSER_RENDERING_API_TOKEN?: string;
+  CATALOG_FIRESTORE_ORIGIN?: string;
+  CATALOG_PREVIEW_ORIGIN?: string;
+  MIXPANEL_TOKEN?: string;
 }
 
 type LinkType = 'share' | 'user' | 'setup' | 'refer' | 'page';
@@ -93,19 +98,20 @@ const APP_PAGE_PATHS = [
   '/onboarding/v2', '/dashboard', '/dashboard/home', '/dashboard/search', '/dashboard/search/users',
   '/dashboard/rewards', '/dashboard/streak', '/dashboard/collection', '/ai', '/wallpaper-detail',
   '/wotd-archive', '/download-wallpaper', '/wallpaper-filter', '/choose-wallpaper', '/edit-profile', '/share-prism', '/settings',
+  '/layout',
   '/premium', '/paywall',
   '/blocked-accounts', '/about', '/fav-walls', '/downloads', '/library', '/upload-wall', '/edit-wall', '/review',
-  '/coin-transactions', '/theme', '/notifications', '/collection-view', '/followers', '/following',
-  '/admin-review', '/admin-review/swipe', '/admin-review/image', '/admin-firestore-telemetry', '/debug-panel',
-  '/daily-chest', '/spin-wheel', '/photo-preview', '/clock-preview', '/quick-tile-settings',
+  '/coin-transactions', '/theme', '/notifications', '/collection-view', '/gallery', '/requests', '/creators', '/wrapped', '/followers', '/following',
+  '/admin-review', '/admin-review/swipe', '/admin-review/image', '/admin-firestore-telemetry', '/admin-promo-codes', '/debug-panel',
+  '/daily-moment', '/daily-chest', '/spin-wheel', '/photo-preview', '/clock-preview', '/quick-tile-settings',
   '/auto-rotate', '/ios-shortcuts', '/wallpaper-history', '/wallpaper-position', '/live-wallpaper', '/rewards',
-  '/coin-history', '/shop', '/drops', '/leaderboard', '/draw', '/streak', '/not-found',
+  '/coin-history', '/shop', '/drops', '/leaderboard', '/draw', '/streak', '/creator-stats', '/not-found', '/redeem',
 ];
 const APP_LINK_PATHS = [
   '/share', '/user', '/fprofile', '/follower-profile', '/profile', '/setup', '/share-setup', '/refer', '/referral',
-  '/collection', '/category', '/wallpaper', '/l', '/folder', ...APP_PAGE_PATHS,
+  '/collection', '/category', '/wallpaper', '/l', '/folder', '/mood', '/challenges', ...APP_PAGE_PATHS,
 ];
-const PAGE_PARAMETER_ROOTS = new Set(['drops', 'folder']);
+const PAGE_PARAMETER_ROOTS = new Set(['drops', 'folder', 'mood']);
 const PAGE_IDENTIFIER_ROOTS = new Set(['user', 'fprofile', 'follower-profile', 'profile']);
 const PAGE_QUERY_KEYS = new Map<string, Set<string>>([
   ['/wallpaper-detail', new Set(['wallId', 'id', 'source', 'provider'])],
@@ -113,6 +119,7 @@ const PAGE_QUERY_KEYS = new Map<string, Set<string>>([
   ['/download-wallpaper', new Set(['wallpaperId', 'source', 'provider'])],
   ['/live-wallpaper', new Set(['wallpaperId', 'source', 'provider'])],
   ['/library', new Set(['tab'])],
+  ['/dashboard/home', new Set(['feed'])],
   ['/choose-wallpaper', new Set(['workflow'])],
   ['/debug-panel', new Set(['tab'])],
   ['/admin-review/image', new Set(['wallpaperId', 'source', 'provider'])],
@@ -122,14 +129,16 @@ const PAGE_QUERY_KEYS = new Map<string, Set<string>>([
   ['/share-setup', new Set(['name', 'setupName', 'setup_name'])],
   ['/referral', new Set(['inviterId', 'userID', 'userId', 'userid', 'id'])],
   ['/collection-view', new Set(['collectionName', 'name'])],
+  ['/gallery', new Set(['ids', 'source'])],
+  ['/requests', new Set(['tab'])],
   ['/followers', new Set(['user', 'identifier'])],
   ['/following', new Set(['user', 'identifier'])],
   ['/wallpaper', new Set(['wallpaperId', 'source', 'provider', 'entryPoint'])],
   ['/photo-preview', new Set(['wallpaperId', 'source', 'provider'])],
   ['/clock-preview', new Set(['wallpaperId', 'source', 'provider'])],
+  ['/redeem', new Set(['code'])],
 ]);
 const PAGE_UTM_KEYS = new Set(['utm_source', 'utm_medium', 'utm_campaign']);
-const ANDROID_PACKAGE = 'com.hash.prism';
 const PREVIEW_IMAGE_HOSTS = new Set([
   'raw.githubusercontent.com',
   'images.pexels.com',
@@ -150,7 +159,7 @@ const OG_ASSET_BASE = 'https://raw.githubusercontent.com/Hash-Studios/Prism/mast
 const INVITE_GALLERY = [1, 2, 3].map((n) => `${OG_ASSET_BASE}/invite-${n}.jpg`);
 const GALLERY_MAX_ITEMS = 4;
 const WALLPAPER_STATS_TIMEOUT_MS = 4000;
-const IOS_APP_ID = '1405860595';
+const IOS_APP_ID = '6670200846';
 const CREATE_LINK_MAX_BODY_BYTES = 8 * 1024;
 const CAMPAIGN_MAX_KEYS = 10;
 const CAMPAIGN_MAX_TEXT_LENGTH = 100;
@@ -183,6 +192,12 @@ export default {
     const aiResponse = await handleAiApiRequest(request, url, env);
     if (aiResponse != null) {
       return aiResponse;
+    }
+
+    const catalogResponse = await handleCatalogRequest(request, url, env, ctx, () => renderDirectLanding(url, request, env),
+      (ip) => limitDownloads(ip, env));
+    if (catalogResponse != null) {
+      return catalogResponse;
     }
 
     if (request.method === 'POST' && url.pathname === '/api/links') {
@@ -279,23 +294,25 @@ async function createLink(request: Request, env: Env, ctx: ExecutionContext): Pr
 
   await persistLinkRecord(code, record, env);
 
-  // Keep short-link creation fast; generate branded OG image asynchronously.
-  ctx.waitUntil((async () => {
-    try {
-      const ogPersisted = await generateAndPersistOgImage(code, record, env);
-      if (ogPersisted == null) {
-        return;
+  // Keep short-link creation fast; generate branded OG image asynchronously. Folder pages use their share image.
+  if (!(body.type === 'page' && isFolderPage(parsedCanonical.canonical))) {
+    ctx.waitUntil((async () => {
+      try {
+        const ogPersisted = await generateAndPersistOgImage(code, record, env);
+        if (ogPersisted == null) {
+          return;
+        }
+        const updatedRecord: LinkRecord = {
+          ...record,
+          og_image_path: `/og/${code}.jpg`,
+          og_storage: ogPersisted,
+        };
+        await persistLinkRecord(code, updatedRecord, env);
+      } catch (error) {
+        console.warn('Async OG generation failed', error);
       }
-      const updatedRecord: LinkRecord = {
-        ...record,
-        og_image_path: `/og/${code}.jpg`,
-        og_storage: ogPersisted,
-      };
-      await persistLinkRecord(code, updatedRecord, env);
-    } catch (error) {
-      console.warn('Async OG generation failed', error);
-    }
-  })());
+    })());
+  }
 
   return json(
     {
@@ -485,6 +502,12 @@ function renderDirectLanding(url: URL, request: Request, env: Env): Response {
   return html(renderHumanLandingHtml(record.canonical_url, record, request, env));
 }
 
+/** Web downloads: their own counters, apart from the link API's. */
+async function limitDownloads(ip: string, env: Env): Promise<boolean> {
+  if (!(await bumpRateLimit(env, `rl:dl:10m:${ip}`, 30, 600))) return false;
+  return bumpRateLimit(env, `rl:dl:1d:${ip}`, 300, 86400);
+}
+
 async function enforceCreateRateLimits(ip: string, env: Env): Promise<boolean> {
   const tenMinuteOk = await bumpRateCounter(env, `rl:10m:${ip}`, 20, 600);
   if (!tenMinuteOk) {
@@ -542,7 +565,7 @@ async function readLinkRecord(code: string, env: Env): Promise<LinkRecord | null
       code,
       recordType: obj.type,
       canonicalType: inferredType,
-      canonical: canonical.toString(),
+      canonicalPath: canonical.pathname,
     });
   }
 
@@ -770,6 +793,12 @@ function isAllowedAppPage(segments: string[], url: URL): boolean {
   if (segments.length === 0) return false;
   const path = `/${segments.join('/')}`;
   if (APP_PAGE_PATHS.includes(path)) return true;
+  if (segments[0] === 'challenges' && segments.length === 2) {
+    const id = segments[1];
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) return false;
+    const date = new Date(`${id}T00:00:00Z`);
+    return !Number.isNaN(date.getTime()) && date.getUTCDay() === 1 && date.toISOString().slice(0, 10) === id;
+  }
   if (PAGE_IDENTIFIER_ROOTS.has(segments[0]) && segments.length === 2 && isSafePathSegment(segments[1])) return true;
   if (PAGE_IDENTIFIER_ROOTS.has(segments[0]) && segments.length === 1 && url.searchParams.size > 0) return true;
   if (PAGE_PARAMETER_ROOTS.has(segments[0]) && segments.length === 2 && isSafePathSegment(segments[1])) return true;
@@ -819,6 +848,10 @@ function hasAllowedPageQuery(segments: string[], url: URL): boolean {
       && !['logs', 'tools', 'storage', 'app-info', 'mascot'].includes(url.searchParams.get('tab') ?? '')) return false;
   if (queryRoute === '/wallpaper-detail' && !queryValue('wallId', 'id')) return false;
   if (queryRoute === '/collection-view' && !queryValue('collectionName', 'name')) return false;
+  if (queryRoute === '/gallery') {
+    const ids = queryValue('ids').split(',').map((id) => id.trim()).filter(Boolean);
+    if (ids.length < 2 || ids.length > 12 || !ids.every((id) => /^[A-Za-z0-9_-]{1,200}$/.test(id))) return false;
+  }
   if ((queryRoute === '/followers' || queryRoute === '/following')
       && segments.length === 1 && !queryValue('user', 'identifier')) return false;
   if ([
@@ -916,13 +949,16 @@ function normalizePreview(
   env: Env,
 ): PreviewSnapshot {
   const defaults = buildDefaultPreview(type, canonical, env);
+  const folderImage = type === 'page' && isFolderPage(canonical);
   const merged: PreviewSnapshot = {
     title: clipText(sanitizeText(input?.title ?? defaults.title), 90),
     description: clipText(sanitizeText(input?.description ?? defaults.description), 200),
-    image_source_url: sanitizeImageUrl(
-      type === 'share' ? defaults.image_source_url : input?.image_source_url ?? defaults.image_source_url,
-      env,
-    ),
+    image_source_url: folderImage
+      ? sanitizeFolderShareImageUrl(input?.image_source_url, env)
+      : sanitizeImageUrl(
+        type === 'share' ? defaults.image_source_url : input?.image_source_url ?? defaults.image_source_url,
+        env,
+      ),
     username: clipText(sanitizeText(input?.username ?? defaults.username), 60),
     provider: clipText(sanitizeText(input?.provider ?? defaults.provider), 60),
     wall_id: clipText(sanitizeText(input?.wall_id ?? defaults.wall_id), 60),
@@ -994,10 +1030,24 @@ function buildDefaultPreview(type: LinkType, canonical: URL, env: Env): PreviewD
   }
 
   if (type === 'page') {
+    if (isFolderPage(canonical)) {
+      return {
+        title: 'A folder on Prism',
+        description: 'Open this folder in Prism.',
+        image_source_url: '',
+        username: '',
+        provider: '',
+        wall_id: '',
+        setup_name: '',
+        app_store_url: env.APP_STORE_URL,
+        play_store_url: env.PLAY_STORE_URL,
+      };
+    }
+    const isChallenge = canonical.pathname.startsWith('/challenges/');
     const pageName = canonical.pathname.split('/').filter(Boolean).at(-1)?.replaceAll('-', ' ') ?? 'Prism';
     return {
-      title: `${pageName.replace(/\b\w/g, (letter) => letter.toUpperCase())} - Prism`,
-      description: 'Open this page in Prism.',
+      title: isChallenge ? 'Weekly challenge - Prism' : `${pageName.replace(/\b\w/g, (letter) => letter.toUpperCase())} - Prism`,
+      description: isChallenge ? 'Explore this weekly wallpaper challenge in Prism.' : 'Open this page in Prism.',
       image_source_url: '',
       username: '',
       provider: '',
@@ -1069,6 +1119,33 @@ function isR2PreviewUrl(value: URL, env: Env): boolean {
   const prefix = `${base.pathname.replace(/\/$/, '')}/previews/`;
   return value.origin === base.origin && value.pathname.startsWith(prefix)
     && /^[a-f0-9]{64}\.img$/.test(value.pathname.slice(prefix.length));
+}
+
+function isFolderShareImageUrl(value: URL, env: Env): boolean {
+  const base = configuredR2PreviewBase(env);
+  if (base == null || value.protocol !== 'https:' || value.username || value.password || value.port || value.search || value.hash) return false;
+  const prefix = `${base.pathname.replace(/\/$/, '')}/push-gallery/v1/`;
+  return value.origin === base.origin && value.pathname.startsWith(prefix)
+    && /^[a-f0-9]{64}\.jpg$/.test(value.pathname.slice(prefix.length));
+}
+
+function isFolderPage(canonical: URL): boolean {
+  return /^\/folder\/[A-Za-z0-9_-]{1,128}$/.test(canonical.pathname);
+}
+
+function hasFolderShareImage(record: LinkRecord): boolean {
+  return record.type === 'page' && isFolderPage(new URL(record.canonical_url))
+    && isNonEmptyString(record.preview.image_source_url);
+}
+
+function sanitizeFolderShareImageUrl(value: string | undefined, env: Env): string {
+  if (!isNonEmptyString(value)) return '';
+  try {
+    const parsed = new URL(value);
+    return isFolderShareImageUrl(parsed, env) || isR2PreviewUrl(parsed, env) ? parsed.toString() : '';
+  } catch {
+    return '';
+  }
 }
 
 function sanitizeShareImageUrl(value: string, env: Env, provider: string): string {
@@ -1215,40 +1292,8 @@ async function renderOgImageWithBrowserRendering(record: LinkRecord, env: Env): 
   if (!isNonEmptyString(env.BROWSER_RENDERING_ACCOUNT_ID) || !isNonEmptyString(env.BROWSER_RENDERING_API_TOKEN)) {
     return null;
   }
-
-  const endpoint = `https://api.cloudflare.com/client/v4/accounts/${env.BROWSER_RENDERING_ACCOUNT_ID}/browser-rendering/screenshot`;
   const stats = await fetchWallpaperStats(record, env);
-  const htmlTemplate = renderOgCardHtml(ogCardFromRecord(record, stats));
-
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.BROWSER_RENDERING_API_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      html: htmlTemplate,
-      viewport: {
-        width: 1200,
-        height: 630,
-      },
-      // Fonts and images load from the network; wait for them before the screenshot.
-      gotoOptions: {
-        waitUntil: 'networkidle0',
-      },
-      screenshotOptions: {
-        type: 'jpeg',
-        quality: 85,
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    console.warn('Browser rendering screenshot failed', response.status, await response.text());
-    return null;
-  }
-
-  return new Uint8Array(await response.arrayBuffer());
+  return screenshotCard(renderOgCardHtml(ogCardFromRecord(record, stats)), env);
 }
 
 /** Public counters for a Prism wallpaper. Other sources and failures give null, so the card shows no counts. */
@@ -1378,6 +1423,9 @@ function renderCrawlerPreviewHtml(code: string, record: LinkRecord, env: Env): s
   const title = record.preview.title || 'Prism';
   const description = record.preview.description || 'Discover Prism.';
   const ogImage = escapeAttribute(getOgImageUrl(record, env));
+  const hasCoverImage = hasFolderShareImage(record) && isR2PreviewUrl(new URL(record.preview.image_source_url), env);
+  const imageDimensions = hasCoverImage ? '' : `<meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="${hasFolderShareImage(record) ? 545 : 630}" />`;
 
   return `<!doctype html>
 <html>
@@ -1390,8 +1438,7 @@ function renderCrawlerPreviewHtml(code: string, record: LinkRecord, env: Env): s
   <meta property="og:type" content="website" />
   <meta property="og:url" content="${escapeAttribute(shortUrl)}" />
   <meta property="og:image" content="${ogImage}" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
+  ${imageDimensions}
   <meta property="og:site_name" content="Prism" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeAttribute(title)}" />
@@ -1434,7 +1481,8 @@ function renderHumanLandingHtml(shortUrl: string, record: LinkRecord, request: R
   const playUrl = escapeAttribute(env.PLAY_STORE_URL);
   const appStoreUrl = escapeAttribute(env.APP_STORE_URL);
   const openUrl = escapeAttribute(
-    platform === 'android' ? buildAndroidIntentUrl(canonicalUrl, env.PLAY_STORE_URL) : canonicalUrl,
+    platform === 'android' ? buildAndroidIntentUrl(canonicalUrl, env.PLAY_STORE_URL)
+      : platform === 'ios' ? iosUniversalLinkUrl(canonicalUrl, new URL(request.url).host) : canonicalUrl,
   );
 
   const buttons: string[] = [];
@@ -1517,31 +1565,18 @@ ${LANDING_STYLE}
 </html>`;
 }
 
-type Platform = 'android' | 'ios' | 'other';
-
-function detectPlatform(request: Request): Platform {
-  const userAgent = request.headers.get('user-agent')?.toLowerCase() ?? '';
-  if (userAgent.includes('iphone') || userAgent.includes('ipad') || userAgent.includes('ipod')) {
-    return 'ios';
-  }
-  if (userAgent.includes('android')) {
-    return 'android';
-  }
-  return 'other';
-}
-
-function buildAndroidIntentUrl(canonicalUrl: string, fallbackUrl: string): string {
-  const target = new URL(canonicalUrl);
-  const path = `${target.host}${target.pathname}${target.search}`.replaceAll(';', '%3B');
-  return `intent://${path}#Intent;scheme=https;package=${ANDROID_PACKAGE};S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end`;
-}
-
 function isCrawlerRequest(request: Request): boolean {
   const userAgent = request.headers.get('user-agent')?.toLowerCase() ?? '';
   return BOT_UA_FRAGMENTS.some((fragment) => userAgent.includes(fragment));
 }
 
 function getOgImageUrl(record: LinkRecord, env: Env): string {
+  if (hasFolderShareImage(record)) {
+    return record.preview.image_source_url;
+  }
+  if (record.type === 'page' && isFolderPage(new URL(record.canonical_url))) {
+    return PRISM_APP_ICON_URL;
+  }
   if (isNonEmptyString(record.code)) {
     return `https://${DOMAIN}/og/${record.code}.jpg?v=${OG_CARD_VERSION}`;
   }
@@ -1618,19 +1653,6 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
-
-function escapeAttribute(value: string): string {
-  return escapeHtml(value).replaceAll('`', '&#96;');
-}
-
 function toBase64(data: Uint8Array): string {
   let binary = '';
   for (let i = 0; i < data.length; i += 1) {
@@ -1664,6 +1686,7 @@ function html(markup: string, status = 200): Response {
     headers: {
       'content-type': 'text/html; charset=utf-8',
       'cache-control': 'private, no-store, max-age=0',
+      'referrer-policy': 'no-referrer',
     },
   });
 }

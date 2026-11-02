@@ -25,6 +25,7 @@
         tools:node="remove" />
     <uses-permission android:name="com.android.vending.BILLING" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
 
     <queries>
@@ -82,6 +83,20 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/wotd_widget_info" />
         </receiver>
+        <!-- flutter_local_notifications: shows the scheduled trial reminder, and restores it after a reboot or an update. -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
@@ -111,6 +126,7 @@
                 <data android:path="/share-setup" />
                 <data android:path="/refer" />
                 <data android:path="/referral" />
+                <data android:path="/redeem" />
                 <data android:path="/l" />
                 <data android:path="/onboarding/v2" />
                 <data android:path="/dashboard" />
@@ -131,6 +147,7 @@
                 <data android:path="/edit-profile" />
                 <data android:path="/share-prism" />
                 <data android:path="/settings" />
+                <data android:path="/layout" />
                 <data android:path="/blocked-accounts" />
                 <data android:path="/about" />
                 <data android:path="/fav-walls" />
@@ -143,11 +160,16 @@
                 <data android:path="/theme" />
                 <data android:path="/notifications" />
                 <data android:path="/collection-view" />
+                <data android:path="/gallery" />
+                <data android:path="/requests" />
+                <data android:path="/creators" />
+                <data android:path="/wrapped" />
                 <data android:path="/followers" />
                 <data android:path="/following" />
                 <data android:path="/admin-review" />
                 <data android:path="/admin-review/swipe" />
                 <data android:path="/admin-firestore-telemetry" />
+                <data android:path="/admin-promo-codes" />
                 <data android:path="/debug-panel" />
                 <data android:path="/quick-tile-settings" />
                 <data android:path="/auto-rotate" />
@@ -161,12 +183,14 @@
                 <data android:path="/drops" />
                 <data android:path="/leaderboard" />
                 <data android:path="/draw" />
+                <data android:path="/daily-moment" />
                 <data android:path="/daily-chest" />
                 <data android:path="/spin-wheel" />
                 <data android:path="/photo-preview" />
                 <data android:path="/clock-preview" />
                 <data android:path="/admin-review/image" />
                 <data android:path="/streak" />
+                <data android:path="/creator-stats" />
                 <data android:path="/not-found" />
                 <data android:pathPrefix="/share/" />
                 <data android:pathPrefix="/user/" />
@@ -180,6 +204,8 @@
                 <data android:pathPrefix="/l/" />
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
+                <data android:pathPrefix="/mood/" />
+                <data android:pathPrefix="/challenges/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -230,6 +256,7 @@
                 <data android:path="/share-setup" />
                 <data android:path="/refer" />
                 <data android:path="/referral" />
+                <data android:path="/redeem" />
                 <data android:path="/l" />
                 <data android:path="/onboarding/v2" />
                 <data android:path="/dashboard" />
@@ -250,6 +277,7 @@
                 <data android:path="/edit-profile" />
                 <data android:path="/share-prism" />
                 <data android:path="/settings" />
+                <data android:path="/layout" />
                 <data android:path="/blocked-accounts" />
                 <data android:path="/about" />
                 <data android:path="/fav-walls" />
@@ -262,11 +290,16 @@
                 <data android:path="/theme" />
                 <data android:path="/notifications" />
                 <data android:path="/collection-view" />
+                <data android:path="/gallery" />
+                <data android:path="/requests" />
+                <data android:path="/creators" />
+                <data android:path="/wrapped" />
                 <data android:path="/followers" />
                 <data android:path="/following" />
                 <data android:path="/admin-review" />
                 <data android:path="/admin-review/swipe" />
                 <data android:path="/admin-firestore-telemetry" />
+                <data android:path="/admin-promo-codes" />
                 <data android:path="/debug-panel" />
                 <data android:path="/quick-tile-settings" />
                 <data android:path="/auto-rotate" />
@@ -280,12 +313,14 @@
                 <data android:path="/drops" />
                 <data android:path="/leaderboard" />
                 <data android:path="/draw" />
+                <data android:path="/daily-moment" />
                 <data android:path="/daily-chest" />
                 <data android:path="/spin-wheel" />
                 <data android:path="/photo-preview" />
                 <data android:path="/clock-preview" />
                 <data android:path="/admin-review/image" />
                 <data android:path="/streak" />
+                <data android:path="/creator-stats" />
                 <data android:path="/not-found" />
                 <data android:pathPrefix="/share/" />
                 <data android:pathPrefix="/user/" />
@@ -299,6 +334,8 @@
                 <data android:pathPrefix="/l/" />
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
+                <data android:pathPrefix="/mood/" />
+                <data android:pathPrefix="/challenges/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -338,6 +375,7 @@
                 <data android:path="/share-setup" />
                 <data android:path="/refer" />
                 <data android:path="/referral" />
+                <data android:path="/redeem" />
                 <data android:path="/l" />
                 <data android:path="/onboarding/v2" />
                 <data android:path="/dashboard" />
@@ -358,6 +396,7 @@
                 <data android:path="/edit-profile" />
                 <data android:path="/share-prism" />
                 <data android:path="/settings" />
+                <data android:path="/layout" />
                 <data android:path="/blocked-accounts" />
                 <data android:path="/about" />
                 <data android:path="/fav-walls" />
@@ -370,11 +409,16 @@
                 <data android:path="/theme" />
                 <data android:path="/notifications" />
                 <data android:path="/collection-view" />
+                <data android:path="/gallery" />
+                <data android:path="/requests" />
+                <data android:path="/creators" />
+                <data android:path="/wrapped" />
                 <data android:path="/followers" />
                 <data android:path="/following" />
                 <data android:path="/admin-review" />
                 <data android:path="/admin-review/swipe" />
                 <data android:path="/admin-firestore-telemetry" />
+                <data android:path="/admin-promo-codes" />
                 <data android:path="/debug-panel" />
                 <data android:path="/quick-tile-settings" />
                 <data android:path="/auto-rotate" />
@@ -388,12 +432,14 @@
                 <data android:path="/drops" />
                 <data android:path="/leaderboard" />
                 <data android:path="/draw" />
+                <data android:path="/daily-moment" />
                 <data android:path="/daily-chest" />
                 <data android:path="/spin-wheel" />
                 <data android:path="/photo-preview" />
                 <data android:path="/clock-preview" />
                 <data android:path="/admin-review/image" />
                 <data android:path="/streak" />
+                <data android:path="/creator-stats" />
                 <data android:path="/not-found" />
                 <data android:pathPrefix="/share/" />
                 <data android:pathPrefix="/user/" />
@@ -407,6 +453,8 @@
                 <data android:pathPrefix="/l/" />
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
+                <data android:pathPrefix="/mood/" />
+                <data android:pathPrefix="/challenges/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -446,6 +494,7 @@
                 <data android:path="/share-setup" />
                 <data android:path="/refer" />
                 <data android:path="/referral" />
+                <data android:path="/redeem" />
                 <data android:path="/l" />
                 <data android:path="/onboarding/v2" />
                 <data android:path="/dashboard" />
@@ -466,6 +515,7 @@
                 <data android:path="/edit-profile" />
                 <data android:path="/share-prism" />
                 <data android:path="/settings" />
+                <data android:path="/layout" />
                 <data android:path="/blocked-accounts" />
                 <data android:path="/about" />
                 <data android:path="/fav-walls" />
@@ -478,11 +528,16 @@
                 <data android:path="/theme" />
                 <data android:path="/notifications" />
                 <data android:path="/collection-view" />
+                <data android:path="/gallery" />
+                <data android:path="/requests" />
+                <data android:path="/creators" />
+                <data android:path="/wrapped" />
                 <data android:path="/followers" />
                 <data android:path="/following" />
                 <data android:path="/admin-review" />
                 <data android:path="/admin-review/swipe" />
                 <data android:path="/admin-firestore-telemetry" />
+                <data android:path="/admin-promo-codes" />
                 <data android:path="/debug-panel" />
                 <data android:path="/quick-tile-settings" />
                 <data android:path="/auto-rotate" />
@@ -496,12 +551,14 @@
                 <data android:path="/drops" />
                 <data android:path="/leaderboard" />
                 <data android:path="/draw" />
+                <data android:path="/daily-moment" />
                 <data android:path="/daily-chest" />
                 <data android:path="/spin-wheel" />
                 <data android:path="/photo-preview" />
                 <data android:path="/clock-preview" />
                 <data android:path="/admin-review/image" />
                 <data android:path="/streak" />
+                <data android:path="/creator-stats" />
                 <data android:path="/not-found" />
                 <data android:pathPrefix="/share/" />
                 <data android:pathPrefix="/user/" />
@@ -515,6 +572,8 @@
                 <data android:pathPrefix="/l/" />
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
+                <data android:pathPrefix="/mood/" />
+                <data android:pathPrefix="/challenges/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />
@@ -554,6 +613,7 @@
                 <data android:path="/share-setup" />
                 <data android:path="/refer" />
                 <data android:path="/referral" />
+                <data android:path="/redeem" />
                 <data android:path="/l" />
                 <data android:path="/onboarding/v2" />
                 <data android:path="/dashboard" />
@@ -574,6 +634,7 @@
                 <data android:path="/edit-profile" />
                 <data android:path="/share-prism" />
                 <data android:path="/settings" />
+                <data android:path="/layout" />
                 <data android:path="/blocked-accounts" />
                 <data android:path="/about" />
                 <data android:path="/fav-walls" />
@@ -586,11 +647,16 @@
                 <data android:path="/theme" />
                 <data android:path="/notifications" />
                 <data android:path="/collection-view" />
+                <data android:path="/gallery" />
+                <data android:path="/requests" />
+                <data android:path="/creators" />
+                <data android:path="/wrapped" />
                 <data android:path="/followers" />
                 <data android:path="/following" />
                 <data android:path="/admin-review" />
                 <data android:path="/admin-review/swipe" />
                 <data android:path="/admin-firestore-telemetry" />
+                <data android:path="/admin-promo-codes" />
                 <data android:path="/debug-panel" />
                 <data android:path="/quick-tile-settings" />
                 <data android:path="/auto-rotate" />
@@ -604,12 +670,14 @@
                 <data android:path="/drops" />
                 <data android:path="/leaderboard" />
                 <data android:path="/draw" />
+                <data android:path="/daily-moment" />
                 <data android:path="/daily-chest" />
                 <data android:path="/spin-wheel" />
                 <data android:path="/photo-preview" />
                 <data android:path="/clock-preview" />
                 <data android:path="/admin-review/image" />
                 <data android:path="/streak" />
+                <data android:path="/creator-stats" />
                 <data android:path="/not-found" />
                 <data android:pathPrefix="/share/" />
                 <data android:pathPrefix="/user/" />
@@ -623,6 +691,8 @@
                 <data android:pathPrefix="/l/" />
                 <data android:pathPrefix="/drops/" />
                 <data android:pathPrefix="/folder/" />
+                <data android:pathPrefix="/mood/" />
+                <data android:pathPrefix="/challenges/" />
                 <data android:pathPrefix="/collection/" />
                 <data android:pathPrefix="/category/" />
                 <data android:pathPrefix="/wallpaper/" />

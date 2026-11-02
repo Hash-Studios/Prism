@@ -4,6 +4,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 internal class OfflineTileAssetsTest {
+    @Test fun malformedConfigurationDoesNotKeepTileReadyCheckFromFailing() {
+        org.junit.Assert.assertEquals(false, tileConfigured { throw ClassCastException("preference type changed") })
+        org.junit.Assert.assertEquals(true, tileConfigured { true })
+        org.junit.Assert.assertNull(readPreferenceString { throw ClassCastException("preference type changed") })
+        org.junit.Assert.assertEquals("valid", readPreferenceString { "valid" })
+    }
+
     @Test fun categoryWallpaperUsesLiveFetchWhenNoRetainedCandidatesExist() {
         var fetched = false
 

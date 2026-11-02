@@ -55,6 +55,8 @@ class _Messaging {
         subscriptions.add(topic);
       case 'Messaging#unsubscribeFromTopic':
         calls.add((false, topic));
+        if (!(subscribeStarted?.isCompleted ?? true)) subscribeStarted!.complete();
+        await subscribeGate?.future;
         subscriptions.remove(topic);
       default:
         throw StateError('Unexpected messaging call: ${call.method}');
@@ -337,6 +339,56 @@ void main() {
   );
 
   blocTest<PublicProfileBloc, PublicProfileState>(
+    'a failed next page exposes an error instead of silently retrying an empty filtered profile',
+    build: () {
+      when(() => walls(any())).thenAnswer((_) async => Result.error<_Walls>(const UnknownFailure('offline')));
+      return buildBloc();
+    },
+    seed: () => loading.copyWith(status: LoadStatus.success, walls: [_wall('ai')], hasMoreWalls: true),
+    act: (bloc) => bloc.add(const PublicProfileEvent.fetchMoreWallsRequested()),
+    expect: () => <Matcher>[
+      isA<PublicProfileState>().having((s) => s.isFetchingMoreWalls, 'isFetchingMoreWalls', isTrue),
+      isA<PublicProfileState>()
+          .having((s) => s.status, 'status', LoadStatus.failure)
+          .having((s) => s.isFetchingMoreWalls, 'isFetchingMoreWalls', isFalse)
+          .having((s) => s.walls.map((w) => w.id), 'walls', <String>['ai'])
+          .having((s) => s.hasMoreWalls, 'hasMoreWalls', isTrue),
+    ],
+  );
+
+  blocTest<PublicProfileBloc, PublicProfileState>(
+    'a successful next-page retry clears the prior page failure',
+    build: () {
+      var calls = 0;
+      when(() => walls(any())).thenAnswer((_) async {
+        calls++;
+        return calls == 1
+            ? Result.error<_Walls>(const UnknownFailure('offline'))
+            : Result.success<_Walls>((items: <PublicProfileWallEntity>[_wall('next')], hasMore: false));
+      });
+      return buildBloc();
+    },
+    seed: () =>
+        loading.copyWith(status: LoadStatus.success, profileId: 'user', walls: [_wall('ai')], hasMoreWalls: true),
+    act: (bloc) async {
+      bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      bloc.add(const PublicProfileEvent.fetchMoreWallsRequested());
+    },
+    expect: () => <Matcher>[
+      isA<PublicProfileState>().having((s) => s.isFetchingMoreWalls, 'fetching first page', isTrue),
+      isA<PublicProfileState>()
+          .having((s) => s.status, 'failed page status', LoadStatus.failure)
+          .having((s) => s.isFetchingMoreWalls, 'first page complete', isFalse),
+      isA<PublicProfileState>().having((s) => s.isFetchingMoreWalls, 'fetching retry', isTrue),
+      isA<PublicProfileState>()
+          .having((s) => s.status, 'retry status', LoadStatus.success)
+          .having((s) => s.isFetchingMoreWalls, 'retry complete', isFalse)
+          .having((s) => s.walls.map((wall) => wall.id), 'walls', <String>['ai', 'next']),
+    ],
+  );
+
+  blocTest<PublicProfileBloc, PublicProfileState>(
     'fetchMoreWalls does nothing once the last page is in',
     build: buildBloc,
     seed: () => loading.copyWith(hasMoreWalls: false),
@@ -503,7 +555,8 @@ void main() {
         expect(bloc.state.followers.summaries.single.isFollowedByCurrentUser, expectedFollow);
         expect(bloc.state.followOutcome?.follow, isFalse);
         expect(bloc.state.followOutcome?.success, !failLast);
-        expect(messaging.subscriptions.contains('posts_a-id_loc_v1'), expectedFollow);
+        // New posts arrive in the follow digest, so a follow never joins the creator's posts topic.
+        expect(messaging.subscriptions.contains('posts_a-id_loc_v1'), isFalse);
       });
     }
   }
@@ -645,19 +698,18 @@ void main() {
       if (!gate.isCompleted) gate.complete();
       await bloc.close();
     });
-    bloc.add(followEvent);
-    await pumpEventQueue();
-    expect(messaging.calls.any((call) => call.$1), isTrue);
     bloc.add(unfollowEvent);
     await pumpEventQueue();
-    verifyNever(() => unfollow(any()));
+    expect(messaging.calls.any((call) => !call.$1), isTrue);
+    bloc.add(followEvent);
+    await pumpEventQueue();
+    verifyNever(() => follow(any()));
     gate.complete();
     await pumpEventQueue();
-    verify(() => unfollow(any())).called(1);
-    expect(messaging.subscriptions, isEmpty);
-    expect(app_state.prismUser.following, isEmpty);
-    expect(bloc.state.followOverrides['a-id'], isFalse);
-    expect(bloc.state.followOutcome?.follow, isFalse);
+    verify(() => follow(any())).called(1);
+    expect(messaging.calls.any((call) => call.$1), isFalse);
+    expect(bloc.state.followOverrides['a-id'], isTrue);
+    expect(bloc.state.followOutcome?.follow, isTrue);
   });
 
   for (final bool closeInstead in <bool>[false, true]) {
@@ -667,18 +719,18 @@ void main() {
         final gate = Completer<void>();
         messaging.subscribeGate = gate;
         messaging.subscribeStarted = Completer<void>();
-        when(() => follow(any())).thenAnswer((_) async => Result.success<void>(null));
+        when(() => unfollow(any())).thenAnswer((_) async => Result.success<void>(null));
         final bloc = buildBloc();
         addTearDown(() async {
           if (!gate.isCompleted) gate.complete();
           await bloc.close();
         });
-        bloc.add(followEvent);
+        bloc.add(unfollowEvent);
         await messaging.subscribeStarted!.future;
         // Drain the platform-channel delivery while held.
         await pumpEventQueue();
         final dispatched = List<(bool, String)>.of(messaging.calls);
-        expect(dispatched, <(bool, String)>[(true, 'posts_a-id_loc_v1')]);
+        expect(dispatched.first, (false, 'posts_a-id'));
         Future<void>? closing;
         if (closeInstead) {
           closing = bloc.close();
@@ -760,7 +812,7 @@ void main() {
       isA<PublicProfileState>().having(
         (s) => s.followOutcome,
         'outcome',
-        const FollowOutcome(id: 1, follow: true, success: true, targetName: 'Ann'),
+        const FollowOutcome(id: 1, follow: true, success: true, targetName: 'Ann', targetUserId: 'a-id'),
       ),
     ],
     verify: (_) {

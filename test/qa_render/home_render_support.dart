@@ -214,7 +214,7 @@ Future<void> loadAppFonts() async {
 Directory? _sdkFontDir() {
   final List<String> roots = <String>[
     ?Platform.environment['FLUTTER_ROOT'],
-    '${Platform.environment['HOME']}/fvm/versions/3.47.5',
+    '${Platform.environment['HOME']}/fvm/versions/3.47.8',
   ];
   Directory walk = File(Platform.resolvedExecutable).parent;
   while (walk.parent.path != walk.path) {

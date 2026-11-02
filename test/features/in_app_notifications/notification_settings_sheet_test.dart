@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -9,6 +11,7 @@ import 'package:Prism/features/in_app_notifications/views/widgets/notification_s
 import 'package:Prism/l10n/l10n.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show SemanticsData;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -264,6 +267,27 @@ void main() {
       final write = firestore.writes.singleWhere((w) => w.data?.containsKey('marketingPushes') ?? false);
       expect((write.collection, write.id), ('usersv2/uid1/private', 'session'));
       expect(write.data, <String, dynamic>{'marketingPushes': false});
+    });
+
+    testWidgets('every switch is announced by its own title, the first one too', (tester) async {
+      await pumpSheet(tester, _FakePermissions(granted: true));
+
+      const List<String> titles = <String>[
+        'Wall of the Day',
+        'Weekly Drops',
+        'Followers',
+        'Posts',
+        'Folders you follow',
+        'Recommendations',
+        'Streak reminders',
+      ];
+      final List<Element> switches = find.byType(Switch).evaluate().toList();
+      expect(switches, hasLength(titles.length));
+      for (int i = 0; i < titles.length; i++) {
+        final SemanticsData data = tester.getSemantics(find.byWidget(switches[i].widget)).getSemanticsData();
+        expect(data.label, startsWith('${titles[i]}\n'), reason: 'switch $i');
+        expect(data.flagsCollection.isToggled, isNot(Tristate.none), reason: 'switch $i');
+      }
     });
   });
 

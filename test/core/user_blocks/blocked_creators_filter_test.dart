@@ -1,3 +1,4 @@
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -37,14 +38,14 @@ FeedItemEntity _wallhavenItem(String id) {
 void main() {
   group('BlockedCreatorsFilter', () {
     test('hidesCreatorUid trims but keeps UID case-sensitive', () {
-      expect(BlockedCreatorsFilter.hidesCreatorUid(' uid-1 ', <String>{'uid-1'}), isTrue);
-      expect(BlockedCreatorsFilter.hidesCreatorUid('UID-1', <String>{'uid-1'}), isFalse);
-      expect(BlockedCreatorsFilter.hidesCreatorUid(null, <String>{'uid-1'}), isFalse);
-      expect(BlockedCreatorsFilter.hidesCreatorUid(null, <String>{}), isFalse);
+      expect(BlockedCreatorsFilter.hidesCreatorUid(' uid-1 ', KnownBlockedCreators(<String>{'uid-1'})), isTrue);
+      expect(BlockedCreatorsFilter.hidesCreatorUid('UID-1', KnownBlockedCreators(<String>{'uid-1'})), isFalse);
+      expect(BlockedCreatorsFilter.hidesCreatorUid(null, KnownBlockedCreators(<String>{'uid-1'})), isFalse);
+      expect(BlockedCreatorsFilter.hidesCreatorUid(null, KnownBlockedCreators(<String>{})), isFalse);
     });
 
     test('hidesFeedItem only hides Prism items with a blocked creator UID', () {
-      final Set<String> blocked = <String>{'uid-1'};
+      final BlockedCreators blocked = KnownBlockedCreators(<String>{'uid-1'});
       expect(BlockedCreatorsFilter.hidesFeedItem(_prismItem('1', authorUid: 'uid-1'), blocked), isTrue);
       expect(BlockedCreatorsFilter.hidesFeedItem(_prismItem('2', authorUid: 'other'), blocked), isFalse);
       expect(BlockedCreatorsFilter.hidesFeedItem(_prismItem('3'), blocked), isFalse);
@@ -52,7 +53,7 @@ void main() {
     });
 
     test('filterFeedItems drops only items from blocked creators', () {
-      final Set<String> blocked = <String>{'uid-1'};
+      final BlockedCreators blocked = KnownBlockedCreators(<String>{'uid-1'});
       final items = <FeedItemEntity>[
         _prismItem('1', authorUid: 'uid-1'),
         _prismItem('2', authorUid: 'other'),
@@ -62,7 +63,43 @@ void main() {
       final filtered = BlockedCreatorsFilter.filterFeedItems(items, blocked);
 
       expect(filtered.map((e) => e.id), <String>['2', '3']);
-      expect(BlockedCreatorsFilter.filterFeedItems(items, <String>{}), items);
+      expect(BlockedCreatorsFilter.filterFeedItems(items, KnownBlockedCreators(<String>{})), items);
+    });
+  });
+
+  group('unknown block list', () {
+    test('hidesCreatorUid hides any non-empty trimmed creator UID', () {
+      expect(BlockedCreatorsFilter.hidesCreatorUid('uid-1', const UnknownBlockedCreators()), isTrue);
+      expect(BlockedCreatorsFilter.hidesCreatorUid(null, const UnknownBlockedCreators()), isFalse);
+      expect(BlockedCreatorsFilter.hidesCreatorUid('', const UnknownBlockedCreators()), isFalse);
+      expect(BlockedCreatorsFilter.hidesCreatorUid('  ', const UnknownBlockedCreators()), isFalse);
+    });
+
+    test('hidesFeedItem hides only Prism items that have an author UID', () {
+      expect(
+        BlockedCreatorsFilter.hidesFeedItem(_prismItem('1', authorUid: 'uid-1'), const UnknownBlockedCreators()),
+        isTrue,
+      );
+      expect(BlockedCreatorsFilter.hidesFeedItem(_prismItem('2'), const UnknownBlockedCreators()), isFalse);
+      expect(BlockedCreatorsFilter.hidesFeedItem(_wallhavenItem('3'), const UnknownBlockedCreators()), isFalse);
+    });
+
+    test('filterFeedItems keeps the Prism item without an author UID and the Wallhaven item', () {
+      final items = <FeedItemEntity>[_prismItem('1', authorUid: 'uid-1'), _prismItem('2'), _wallhavenItem('3')];
+
+      final filtered = BlockedCreatorsFilter.filterFeedItems(items, const UnknownBlockedCreators());
+
+      expect(filtered.map((e) => e.id), <String>['2', '3']);
+    });
+
+    test('UnknownBlockedCreators is equal only to another unknown list', () {
+      expect(const UnknownBlockedCreators() == const UnknownBlockedCreators(), isTrue);
+      expect(const UnknownBlockedCreators() == KnownBlockedCreators(const <String>{}), isFalse);
+    });
+
+    test('KnownBlockedCreators compares its UID set by value', () {
+      expect(KnownBlockedCreators(<String>{'a', 'b'}) == KnownBlockedCreators(<String>{'b', 'a'}), isTrue);
+      expect(KnownBlockedCreators(<String>{'a', 'b'}) != KnownBlockedCreators(<String>{'a'}), isTrue);
     });
   });
 }

@@ -1,3 +1,5 @@
+import 'package:Prism/env/env.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 
 class FirebaseInit {
@@ -14,7 +16,7 @@ class FirebaseInit {
         _initialized = initialized;
         return initialized;
       },
-      onError: (Object _, StackTrace __) {
+      onError: (Object _, StackTrace _) {
         _initialized = false;
         return false;
       },
@@ -32,8 +34,14 @@ class FirebaseInit {
   static Future<bool> waitUntilReady({Duration timeout = const Duration(seconds: 3)}) =>
       readyFuture.timeout(timeout, onTimeout: () => false);
 
+  /// The default app exists. False while startup is still initializing Firebase, and after init failed or was skipped.
+  static bool get hasDefaultApp => Firebase.apps.isNotEmpty;
+
+  /// True at once when the default app exists, otherwise waits for startup like [waitUntilReady].
+  static Future<bool> defaultAppReady() async => hasDefaultApp || await waitUntilReady();
+
   static FirebaseRemoteConfig? get remoteConfigIfInitialized {
-    if (!_initialized) return null;
+    if (!_initialized || Env.localQa) return null;
     try {
       return FirebaseRemoteConfig.instance;
     } catch (_) {

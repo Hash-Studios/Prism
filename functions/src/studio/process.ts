@@ -3,12 +3,14 @@ import {defineSecret} from "firebase-functions/params";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {db, int, REGION, str, utcDateString} from "../common";
+import {WALL_REQUESTS} from "../wallRequests";
 import {falKey, type WallDepth, wallDepthFor} from "../wallDepth";
 import {loadStudioConfig, type StudioIdentity} from "./config";
 import {annotateWithVision, duplicateCheck, type KnownSignature, runGates, type VisionAnnotate} from "./gates";
 import {randomWallId, type Rng} from "./ids";
 import {STUDIO_SERIES} from "./series";
 import {STUDIO_ASSET_BASE} from "./assetSource";
+import {DUO_REVEAL_SPEC as duo, hasBannedDuoPhrase} from "../duo_reveal_spec";
 export {isStudioWall} from "./isStudioWall";
 
 export const studioSecret = defineSecret("STUDIO_SECRET");
@@ -42,17 +44,17 @@ export interface StudioProcessDeps {
 }
 
 /** The candidate can try again: network error, timeout, worker 409, 429 other than budget_exhausted, 5xx. */
-class TransientError extends Error {}
+export class TransientError extends Error {}
 
 /** The candidate cannot succeed; it is marked failed with `code`. */
-class PermanentError extends Error {
+export class PermanentError extends Error {
   constructor(readonly code: string, message: string) {
     super(message);
   }
 }
 
 /** The provider refused to return the image (worker 502 unsafe_output); the candidate is rejected with `code`. */
-class RejectedError extends PermanentError {}
+export class RejectedError extends PermanentError {}
 
 interface WorkerImage {
   imageUrl: string;
@@ -86,7 +88,7 @@ export function workerBaseUrl(): string {
 }
 
 async function workerFetch(
-  deps: StudioProcessDeps, what: string, path: string, init: RequestInit, timeoutMs: number,
+  deps: Pick<StudioProcessDeps, "worker">, what: string, path: string, init: RequestInit, timeoutMs: number,
 ): Promise<Response> {
   try {
     return await fetch(`${deps.worker.base}${path}`, {
@@ -118,11 +120,16 @@ async function workerError(response: Response, what: string): Promise<Error> {
   return new PermanentError(code || `http_${response.status}`, text);
 }
 
-async function generate(deps: StudioProcessDeps, candidateId: string, c: admin.firestore.DocumentData) {
+export async function generate(deps: Pick<StudioProcessDeps, "worker">, candidateId: string,
+  c: admin.firestore.DocumentData) {
+  if (c.duoPresetId && (c.duoPresetId !== duo.presetId || hasBannedDuoPhrase(str(c.prompt)))) {
+    throw new PermanentError("duo_prompt", "Duo prompt failed the originality guard.");
+  }
   const response = await workerFetch(deps, "generate", "/api/ai/studio/generations", {
     method: "POST",
     headers: {"content-type": "application/json"},
     body: JSON.stringify({id: candidateId, prompt: c.prompt, model: c.model, width: c.width, height: c.height,
+      ...(c.duoPresetId ? {duoPresetId: c.duoPresetId} : {}),
       ...(typeof c.seed === "number" ? {seed: c.seed} : {})}),
   }, GENERATE_TIMEOUT_MS);
   if (!response.ok) throw await workerError(response, "generate");
@@ -143,7 +150,7 @@ async function generate(deps: StudioProcessDeps, candidateId: string, c: admin.f
   } satisfies WorkerImage;
 }
 
-async function download(url: string): Promise<Buffer> {
+export async function download(url: string): Promise<Buffer> {
   let response: Response;
   try {
     response = await fetch(url, {signal: AbortSignal.timeout(TRANSFER_TIMEOUT_MS)});
@@ -152,6 +159,18 @@ async function download(url: string): Promise<Buffer> {
   }
   if (!response.ok) throw new TransientError(`download: ${response.status}`);
   return Buffer.from(await response.arrayBuffer());
+}
+
+/** Downloads a private Studio source through the authenticated Worker route. */
+export async function downloadStudioAsset(deps: Pick<StudioProcessDeps, "worker">, key: string): Promise<Buffer> {
+  if (!RAW_ASSET_KEY.test(key)) throw new PermanentError("studio_asset", "The Worker returned an unexpected asset key.");
+  const response = await workerFetch(deps, "download", `/api/ai/studio/assets/${key}`, {method: "GET"}, TRANSFER_TIMEOUT_MS);
+  if (!response.ok) throw new TransientError(`download: worker ${response.status}`);
+  try {
+    return Buffer.from(await response.arrayBuffer());
+  } catch (err) {
+    throw new TransientError(`download: ${message(err)}`);
+  }
 }
 
 /** Uploads a JPEG to the worker and returns its public URL. */
@@ -166,7 +185,7 @@ async function putAsset(deps: StudioProcessDeps, key: string, bytes: Buffer): Pr
   return url.startsWith("https://") ? url : `${PUBLIC_ASSET_BASE}/${key}`;
 }
 
-async function deleteAsset(deps: StudioProcessDeps, key: string): Promise<void> {
+export async function deleteAsset(deps: Pick<StudioProcessDeps, "worker">, key: string): Promise<void> {
   if (!RAW_ASSET_KEY.test(key)) {
     logger.warn("studio: not deleting an asset with an unexpected key.", {key});
     return;
@@ -208,13 +227,39 @@ async function updateOwnedCandidate(
   });
 }
 
-/** The final wallpaper (same size, mozjpeg, no metadata) and the thumbnail the app would make. */
-export async function renderWallpaper(bytes: Buffer): Promise<{wall: Buffer; thumb: Buffer; width: number; height: number}> {
+function isOpenVisibleRequest(data: admin.firestore.DocumentData | undefined): boolean {
+  return data?.status === "open" && data.hidden !== true;
+}
+
+async function rejectUnavailableRequest(
+  ref: admin.firestore.DocumentReference,
+  attempts: number,
+  candidate: admin.firestore.DocumentData,
+): Promise<boolean> {
+  const workerKey = str((candidate.worker as admin.firestore.DocumentData | undefined)?.key);
+  const outputKeys = Array.isArray(candidate.outputAssetKeys) ?
+    candidate.outputAssetKeys.filter((key): key is string => typeof key === "string") : [];
+  const saved = await updateOwnedCandidate(ref, attempts, {
+    status: "rejected",
+    reasons: ["request_unavailable"],
+    lastError: "request_unavailable",
+    cleanupKeys: [...outputKeys, workerKey].filter(Boolean),
+    outputAssetKeys: admin.firestore.FieldValue.delete(),
+  });
+  return saved;
+}
+
+export async function renderWallpaper(bytes: Buffer, duoReveal = false): Promise<{wall: Buffer; thumb: Buffer; width: number; height: number}> {
   const sharp = (await import("sharp")).default;
-  const {data: wall, info} = await sharp(bytes).jpeg({quality: STUDIO_WALL_JPEG_QUALITY, mozjpeg: true})
+  const meta = await sharp(bytes).metadata();
+  if (duoReveal && ((meta.width ?? 0) < duo.canvasWidth || (meta.height ?? 0) < duo.canvasHeight)) {
+    throw new PermanentError("duo_size", "Duo output cannot be enlarged to claim native size.");
+  }
+  const original = duoReveal ? await sharp(bytes).resize(duo.canvasWidth, duo.canvasHeight, {fit: "cover"}).toBuffer() : bytes;
+  const {data: wall, info} = await sharp(original).jpeg({quality: STUDIO_WALL_JPEG_QUALITY, mozjpeg: true})
     .toBuffer({resolveWithObject: true});
   const size = thumbSize(info.width, info.height);
-  const thumb = await sharp(bytes).resize(size.width, size.height, {fit: "fill"})
+  const thumb = await sharp(original).resize(size.width, size.height, {fit: "fill"})
     .jpeg({quality: STUDIO_THUMB_QUALITY}).toBuffer();
   return {wall, thumb, width: info.width, height: info.height};
 }
@@ -270,7 +315,7 @@ async function publishWall(params: {
   rng: Rng;
   day: string;
   dropReserves: number;
-}): Promise<string | null | "duplicate"> {
+}): Promise<string | null | "duplicate" | "request_unavailable"> {
   const {ref, attempts, wall, signature, rng} = params;
   const reservesRef = db.collection("studioDropReserves").doc(params.day);
   for (let i = 0; i < PUBLISH_TRIES; i++) {
@@ -280,6 +325,21 @@ async function publishWall(params: {
       const current = (await tx.get(ref)).data();
       if (current?.status !== "generating" || current.attempts !== attempts) return "lost";
       if ((await tx.get(wallRef)).exists) return "taken";
+      const requestId = str(wall.requestId);
+      if (requestId && !isOpenVisibleRequest((await tx.get(db.collection(WALL_REQUESTS).doc(requestId))).data())) {
+        const workerKey = str((params.candidateUpdate.worker as admin.firestore.DocumentData | undefined)?.key);
+        tx.update(ref, {
+          ...params.candidateUpdate,
+          status: "rejected",
+          reasons: ["request_unavailable"],
+          lastError: "request_unavailable",
+          gates: {passed: false, reasons: ["request_unavailable"], details: {}},
+          cleanupKeys: [...params.outputAssetKeys, workerKey].filter(Boolean),
+          outputAssetKeys: admin.firestore.FieldValue.delete(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        return "request_unavailable";
+      }
       const signatureIndexRef = db.doc("studioState/signatureIndex");
       const signatureIndex = (await tx.get(signatureIndexRef)).data();
       const signatures = await tx.get(db.collection("studioSignatures").select("signature", "wallId"));
@@ -312,6 +372,7 @@ async function publishWall(params: {
       return "published";
     });
     if (outcome === "published") return wallId;
+    if (outcome === "request_unavailable") return "request_unavailable";
     if (outcome === "duplicate") return "duplicate";
     if (outcome === "lost") return null;
   }
@@ -343,7 +404,8 @@ function wallRecord(params: {
     size: humanSize(rendered.wall.length),
     title: str(candidate.title),
     category: str(candidate.category),
-    desc: `${series?.name ?? "Prism Studio"} by Prism Studio`,
+    desc: !series && candidate.requestId ? "Made for a wall request by Prism Studio" :
+      `${series?.name ?? "Prism Studio"} by Prism Studio`,
     review: false,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     collections: ["community"],
@@ -354,8 +416,10 @@ function wallRecord(params: {
     aiPrompt: str(candidate.prompt),
     origin: "studio",
     seriesId: str(candidate.seriesId),
+    ...(candidate.duoPresetId === duo.presetId ? {duoPresetId: duo.presetId} : {}),
     studioCandidateId: params.candidateId,
     studioRunId: params.runId,
+    ...(str(candidate.requestId) ? {requestId: str(candidate.requestId)} : {}),
     ...(params.depth ? {depth: params.depth} : {}),
   };
 }
@@ -383,11 +447,17 @@ export async function processCandidate(runId: string, candidateId: string, deps:
     if (!config.generationEnabled || config.identity === null) {
       throw new PermanentError("disabled", "Studio generation is off in studioConfig/current.");
     }
+    const requestId = str(candidate.requestId);
+    if (requestId && !isOpenVisibleRequest((await db.collection(WALL_REQUESTS).doc(requestId).get()).data())) {
+      if (await rejectUnavailableRequest(ref, attempts, candidate)) await cleanupPendingAssets(ref, deps);
+      return;
+    }
     image = await generate(deps, candidateId, candidate);
     if (!await updateOwnedCandidate(ref, attempts, {worker: image})) return;
     const bytes = await download(image.imageUrl);
     const wantsDepth = STUDIO_SERIES.find((s) => s.id === candidate.seriesId)?.depth === true;
-    const gates = await runGates(bytes, {annotate: deps.annotate, knownSignatures: loadKnownSignatures,
+    const isDuo = candidate.duoPresetId === duo.presetId;
+    const gates = await runGates(bytes, {annotate: deps.annotate, knownSignatures: loadKnownSignatures, duoReveal: isDuo,
       ...(wantsDepth ? {depth: (jpeg: Buffer) => deps.depth(candidateId, jpeg)} : {})});
     if (!gates.passed) {
       const saved = await updateOwnedCandidate(ref, attempts, {
@@ -404,7 +474,7 @@ export async function processCandidate(runId: string, candidateId: string, deps:
       logger.info("studio: candidate rejected.", {runId, candidateId, reasons: gates.reasons});
       return;
     }
-    const rendered = await renderWallpaper(bytes);
+    const rendered = await renderWallpaper(bytes, isDuo);
     const wallKey = `ai/studio/${candidateId}.jpg`;
     const thumbKey = `ai/studio/thumb_${candidateId}.jpg`;
     outputAssetKeys.splice(0, outputAssetKeys.length, ...new Set([...outputAssetKeys, wallKey, thumbKey]));
@@ -422,13 +492,17 @@ export async function processCandidate(runId: string, candidateId: string, deps:
       outputAssetKeys,
       rng: deps.rng,
       day: utcDateString(new Date(deps.nowMs())),
-      dropReserves: config.dailyDropReserves,
+      dropReserves: isDuo ? 0 : config.dailyDropReserves,
     });
     if (wallId === null) {
       logger.warn("studio: another attempt took this candidate over; not publishing.", {runId, candidateId});
       return;
     }
     if (wallId === "duplicate") {
+      await cleanupPendingAssets(ref, deps);
+      return;
+    }
+    if (wallId === "request_unavailable") {
       await cleanupPendingAssets(ref, deps);
       return;
     }

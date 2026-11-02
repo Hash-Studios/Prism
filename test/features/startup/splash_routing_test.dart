@@ -31,7 +31,7 @@ void main() {
     );
   });
 
-  test('an onboarded guest can return to the dashboard on every platform', () {
+  test('an onboarded guest must sign in on Android but can return to the dashboard on iOS', () {
     expect(
       shouldShowOnboarding(isLoggedIn: false, isOnboarded: true, v2Enabled: true, guestBrowsingAllowed: false),
       isTrue,

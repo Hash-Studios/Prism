@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -30,7 +31,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     this._pexelsRepository,
     this._recordPrismWallpaperViewsUsecase,
     this._paletteRepository,
-    this._getWallpaperSetCountUseCase, [
+    this._getWallpaperCountsUseCase, [
     @ignoreParam OfflineWallpaperCatalog? offlineCatalog,
     @ignoreParam WallpaperRecommendationRepository? recommendations,
   ]) : _offlineCatalog = offlineCatalog ?? OfflineWallpaperCatalog.instance,
@@ -41,13 +42,13 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     on<FetchViews>(_onFetchViews);
     on<FetchSetCount>(_onFetchSetCount);
     on<SelectAccentColor>(_onSelectAccentColor);
-    on<CycleAccentColor>(_onCycleAccentColor);
     on<ResetAccentColor>(_onResetAccentColor);
     on<OnPanelOpened>(_onPanelOpened);
     on<OnPanelClosed>(_onPanelClosed);
     on<OnPanelScrollStart>(_onPanelScrollStart);
     on<OnPanelScrollEnd>(_onPanelScrollEnd);
     on<LoadRecommendations>(_onLoadRecommendations);
+    on<RefreshWallMetadata>(_onRefreshWallMetadata);
   }
 
   final PrismWallpaperRepository _prismRepository;
@@ -55,12 +56,66 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   final PexelsWallpaperRepository _pexelsRepository;
   final RecordPrismWallpaperViewsUsecase _recordPrismWallpaperViewsUsecase;
   final PaletteRepository _paletteRepository;
-  final GetWallpaperSetCountUseCase _getWallpaperSetCountUseCase;
+  final GetWallpaperCountsUseCase _getWallpaperCountsUseCase;
   final OfflineWallpaperCatalog _offlineCatalog;
   final WallpaperRecommendationRepository _recommendations;
   static int _nextVisit = 0;
   final String _recommendationSession = '${_nextVisit++}';
   bool _closing = false;
+  int _metadataRefreshGeneration = 0;
+
+  Future<void> _onRefreshWallMetadata(RefreshWallMetadata event, Emitter<WallpaperDetailState> emit) async {
+    final WallpaperDetailState initial = state;
+    if (initial is! WallpaperDetailLoaded || initial.entity is! PrismFeedItem) return;
+    final PrismWallpaper wall = (initial.entity as PrismFeedItem).wallpaper;
+    if (wall.firestoreDocumentId != event.wallDocId) return;
+    final generation = ++_metadataRefreshGeneration;
+    final saved = event.saved;
+    if (saved != null) {
+      final PrismWallpaper updated = PrismWallpaper(
+        core: wall.core,
+        title: saved.metadata.text.title,
+        description: saved.metadata.text.description,
+        tags: saved.metadata.text.tags,
+        collections: wall.collections,
+        review: wall.review,
+        colors: wall.colors,
+        aiMetadata: wall.aiMetadata,
+        isStreakExclusive: wall.isStreakExclusive,
+        requiredStreakDays: wall.requiredStreakDays,
+        streakShopCoinCost: wall.streakShopCoinCost,
+        firestoreDocumentId: wall.firestoreDocumentId,
+        boostedUntil: wall.boostedUntil,
+        depthTier: wall.depthTier,
+        spatial: wall.spatial,
+        desktop: wall.desktop,
+        aiSource: wall.aiSource,
+        remixOf: wall.remixOf,
+        remixCount: wall.remixCount,
+      );
+      emit(
+        initial.copyWith(
+          entity: PrismFeedItem(id: updated.id, wallpaper: updated),
+        ),
+      );
+    }
+    final result = await _prismRepository.fetchCanonicalByDocumentId(event.wallDocId);
+    if (emit.isDone || _closing || generation != _metadataRefreshGeneration) return;
+    final WallpaperDetailState latest = state;
+    if (latest is! WallpaperDetailLoaded ||
+        latest.entity is! PrismFeedItem ||
+        (latest.entity as PrismFeedItem).wallpaper.firestoreDocumentId != event.wallDocId) {
+      return;
+    }
+    final PrismWallpaper? current = result.data;
+    if (result.isSuccess && current != null) {
+      emit(
+        latest.copyWith(
+          entity: PrismFeedItem(id: current.id, wallpaper: current),
+        ),
+      );
+    }
+  }
 
   Future<void> _onLoadRecommendations(LoadRecommendations event, Emitter<WallpaperDetailState> emit) async {
     if (_closing) return;
@@ -209,11 +264,13 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
       return;
     }
 
-    final result = await _getWallpaperSetCountUseCase(currentState.entity.id);
+    final result = await _getWallpaperCountsUseCase(currentState.entity.id);
     final latestState = state;
     if (emit.isDone || latestState is! WallpaperDetailLoaded || latestState.entity.id != currentState.entity.id) return;
-    final count = result.data;
-    if (result.isSuccess && count != null) emit(latestState.copyWith(setCount: count));
+    final WallpaperCounts? counts = result.data;
+    if (result.isSuccess && counts != null) {
+      emit(latestState.copyWith(setCount: counts.sets, tipperCount: counts.tippers));
+    }
   }
 
   void _onSelectAccentColor(SelectAccentColor event, Emitter<WallpaperDetailState> emit) {
@@ -221,21 +278,6 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     if (currentState is! WallpaperDetailLoaded) return;
 
     emit(currentState.copyWith(accent: event.color, colorChanged: true));
-  }
-
-  void _onCycleAccentColor(CycleAccentColor event, Emitter<WallpaperDetailState> emit) {
-    final currentState = state;
-    if (currentState is! WallpaperDetailLoaded) return;
-
-    final colors = currentState.colors;
-    final accent = currentState.accent;
-
-    if (colors == null || colors.isEmpty) return;
-    if (accent == null || !colors.contains(accent)) return;
-
-    final nextColor = colors[(colors.indexOf(accent) + 1) % colors.length];
-
-    emit(currentState.copyWith(accent: nextColor, colorChanged: true));
   }
 
   void _onResetAccentColor(ResetAccentColor event, Emitter<WallpaperDetailState> emit) {

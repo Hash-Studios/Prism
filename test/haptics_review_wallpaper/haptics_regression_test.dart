@@ -200,7 +200,7 @@ void main() {
     expect(haptics, <String>['tap', 'impact']);
   }, variant: android);
 
-  testWidgets('accent tap haptics only when cycling a valid palette', (tester) async {
+  testWidgets('a tap on the wallpaper no longer cycles the accent, so it plays no haptic', (tester) async {
     final List<String> haptics = _recordHaptics(tester);
     _registerDetailHarness(tester);
     const FeedItemEntity entity = FeedItemEntity.wallhaven(
@@ -249,7 +249,7 @@ void main() {
 
     await pumpDetail(colors: <Color>[Colors.red, Colors.blue], accent: Colors.red);
     await tapWallpaper();
-    expect(haptics, <String>['selection']);
+    expect(haptics, isEmpty);
   }, variant: android);
 
   testWidgets('author launch failure emits an error haptic', (tester) async {
@@ -441,7 +441,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   }, variant: android);
 
-  testWidgets('review delete failure emits an error haptic', (tester) async {
+  testWidgets('review withdrawal failure emits an error haptic', (tester) async {
     final List<String> haptics = _recordHaptics(tester);
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
@@ -458,10 +458,10 @@ void main() {
       ),
     );
     await tester.pump(const Duration(seconds: 1));
-    await tester.tap(find.byTooltip('Delete wallpaper'));
+    await tester.tap(find.byTooltip('Withdraw upload'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    await tester.tap(find.text('Delete wallpaper'));
+    await tester.tap(find.text('Withdraw upload'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
 
@@ -479,7 +479,10 @@ void main() {
       return PrismMediaHostApi.pigeonChannelCodec.encodeMessage(<Object?>[OperationResult(success: false)]);
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMessageHandler(saveChannel, null));
-    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user'
+      ..loggedIn = true
+      ..premium = true;
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
     final File image = (await tester.runAsync(_createPng))!;

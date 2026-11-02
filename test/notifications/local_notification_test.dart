@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/notifications/local_notification.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_messaging_platform_interface/firebase_messaging_platform_interface.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -272,7 +273,7 @@ void main() {
     });
 
     testWidgets('a cold launch from a push notification routes its data once', (tester) async {
-      const String payload = '{"route":"wall_of_the_day","wall_id":"w1"}';
+      const String payload = '{"route":"wall_of_the_day","wall_id":"w1","wall_ids":"w1,w2,w3"}';
       messenger.setMockMethodCallHandler(_channel, (call) async {
         if (call.method == 'getNotificationAppLaunchDetails') {
           return <String, Object?>{'notificationLaunchedApp': true, 'notificationResponse': _response(payload)};
@@ -292,12 +293,34 @@ void main() {
 
       await notification.fetchNotificationData();
       expect(received, <Map<String, dynamic>>[
-        <String, dynamic>{'route': 'wall_of_the_day', 'wall_id': 'w1'},
+        <String, dynamic>{'route': 'wall_of_the_day', 'wall_id': 'w1', 'wall_ids': 'w1,w2,w3'},
       ]);
 
       // RestartWidget after logout runs this again with the same launch details.
       await notification.fetchNotificationData();
       expect(received, hasLength(1));
+    });
+
+    testWidgets('an FCM cold launch keeps gallery wall ids for push routing', (tester) async {
+      final notification = LocalNotification();
+      final received = <Map<String, dynamic>>[];
+      notification.onPushTap = (data) async => received.add(data);
+      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+
+      await notification.routeInitialMessage(
+        messaging: _InitialMessageMessaging(
+          const RemoteMessage(
+            data: <String, dynamic>{'route': 'wall_of_the_day', 'wall_id': 'w1', 'wall_ids': 'w1,w2,w3'},
+          ),
+        ),
+      );
+      expect(received, isEmpty);
+
+      await tester.pump();
+
+      expect(received, <Map<String, dynamic>>[
+        <String, dynamic>{'route': 'wall_of_the_day', 'wall_id': 'w1', 'wall_ids': 'w1,w2,w3'},
+      ]);
     });
 
     testWidgets('launch details are ignored when a notification did not launch the app', (tester) async {
@@ -453,4 +476,13 @@ void main() {
       expect(calls, contains('show'));
     }, variant: iOS);
   });
+}
+
+class _InitialMessageMessaging extends Fake implements FirebaseMessaging {
+  _InitialMessageMessaging(this.message);
+
+  final RemoteMessage? message;
+
+  @override
+  Future<RemoteMessage?> getInitialMessage() async => message;
 }

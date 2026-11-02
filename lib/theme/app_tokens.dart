@@ -214,10 +214,6 @@ abstract final class PrismIcons {
   static const IconData dropdownCaret = Icons.expand_more_rounded;
 }
 
-/// Wallpaper grid columns for a screen [width]: about one per 180 pt, so a phone gets 3 in portrait
-/// and 5 in landscape, and a tablet gets more instead of huge, blurry tiles.
-int wallpaperGridColumns(double width) => (width / 180).round().clamp(3, 8);
-
 /// Columns for a grid of large wallpaper tiles: 2 on any phone (narrower than 600), then one per 200 pt up to 6.
 int largeTileGridColumns(double width) => (width / 200).floor().clamp(2, 6);
 

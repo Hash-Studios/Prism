@@ -11,6 +11,40 @@ class AppLocalizationsHi extends AppLocalizations {
   AppLocalizationsHi([String locale = 'hi']) : super(locale);
 
   @override
+  String get economyAd => 'विज्ञापन';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return '$rewardString सिक्कों के लिए विज्ञापन देखें';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'आपको $countString और सिक्के चाहिए।';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'विज्ञापन के बाद भी आपको $countString सिक्के चाहिए हो सकते हैं';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'अगर इनाम मिलने के बाद आपका बैलेंस कीमत पूरी करता है, तो यह आइटम अपने आप खरीदा जाएगा।';
+
+  @override
+  String get economyAdVerificationPending => 'आपके विज्ञापन इनाम की पुष्टि बाकी है। पुष्टि होने पर सिक्के दिखेंगे।';
+
+  @override
   String get foldersLibraryEmptyTitle => 'अभी कोई फ़ोल्डर नहीं';
 
   @override
@@ -18,6 +52,43 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get foldersLoadAllError => 'आपके फ़ोल्डर लोड नहीं हो सके';
+
+  @override
+  String get galleryEmptyBody => 'इन्हें हटा दिया गया है या ये अब सार्वजनिक नहीं हैं।';
+
+  @override
+  String get galleryEmptyTitle => 'ये वॉलपेपर अब नहीं हैं';
+
+  @override
+  String get galleryScreenTitle => 'आपके लिए वॉलपेपर';
+
+  @override
+  String get favouritePin => 'सबसे ऊपर पिन करें';
+
+  @override
+  String get favouriteUnpin => 'पिन हटाएँ';
+
+  @override
+  String get favouritePinnedToast => 'पसंदीदा में सबसे ऊपर पिन किया गया';
+
+  @override
+  String get favouriteUnpinnedToast => 'पिन हटाया गया';
+
+  @override
+  String get favouritePinnedBadge => 'पिन किया गया';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आप अधिकतम $count पसंदीदा पिन कर सकते हैं। यह वॉलपेपर पिन करने के लिए कोई एक अनपिन करें।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed => 'पिन अपडेट नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
 
   @override
   String wallpaperFavouriteSearchCountHint(int count) {
@@ -52,6 +123,113 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
+  String get duoTitle => 'Duo का खुलता नज़ारा';
+
+  @override
+  String get duoAiFormatLabel => 'Duo का खुलता नज़ारा बनाएँ';
+
+  @override
+  String get duoPresetNotice =>
+      'Prism मुड़े हुए फ़ोन के लिए दाईं ओर का हिस्सा दिखाता है। सहेजे गए मूल चित्र को खुद सही जगह पर जमाएँ और सिस्टम के वॉलपेपर प्रीव्यू में दोनों दृश्य जाँचें। यह Prism की तय सेटिंग है, iOS की अपने-आप होने वाली क्रॉपिंग नहीं।';
+
+  @override
+  String get duoFoldedPromptLabel => 'मुड़े हुए फ़ोन का दृश्य';
+
+  @override
+  String get duoFoldedPromptExample => 'खिड़की के पास एक उनींदी बिल्ली';
+
+  @override
+  String get duoRevealedPromptLabel => 'खोलने पर दिखने वाला नज़ारा';
+
+  @override
+  String get duoRevealedPromptExample => 'खिड़की के बाहर एक नन्हा अंतरिक्ष यान';
+
+  @override
+  String get duoPromptValidation => 'दोनों दृश्यों का वर्णन करें, हर एक के लिए 1 से 160 अक्षर लिखें।';
+
+  @override
+  String get duoMoodBody => 'एक वॉलपेपर। खोलने पर दिखे और भी बहुत कुछ।';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'फ़ोन';
+
+  @override
+  String get duoFold => 'मोड़ें';
+
+  @override
+  String get duoUnfold => 'खोलें';
+
+  @override
+  String get duoFolded => 'मुड़ा हुआ';
+
+  @override
+  String get duoUnfolded => 'खुला हुआ';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'Prism मुड़े हुए फ़ोन के लिए दाईं ओर का हिस्सा दिखाता है। Android इसे अलग तरह से क्रॉप कर सकता है। लगाने से पहले सिस्टम का वॉलपेपर प्रीव्यू जाँचें।';
+
+  @override
+  String get duoGetOnPrism => 'Prism पर पाएँ';
+
+  @override
+  String get duoGuideTitle => 'Duo का खुलता नज़ारा सेट करें';
+
+  @override
+  String get duoGuideOpen =>
+      'सहेजे गए मूल चित्र को Photos में खोलें, शेयर करें पर टैप करें, फिर वॉलपेपर के रूप में इस्तेमाल करें चुनें।';
+
+  @override
+  String get duoGuideAlign => 'पूरे चित्र को खुद सही जगह पर जमाएँ ताकि मुड़े हुए फ़ोन पर दाईं ओर का हिस्सा दिखे।';
+
+  @override
+  String get duoGuideCheck => 'सिस्टम प्रीव्यू में मुड़े और खुले हुए, दोनों दृश्य जाँचें, फिर वॉलपेपर जोड़ें।';
+
+  @override
+  String get duoWebTitle => 'iPhone Duo के लिए वॉलपेपर | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'एक वॉलपेपर, जिसमें छिपा है दूसरा नज़ारा। Prism में Duo के लिए बने मौलिक वॉलपेपर देखें।';
+
+  @override
+  String get duoWebHeading => 'एक वॉलपेपर। खुलती जाए कहानी।';
+
+  @override
+  String get duoWebIntro => 'मोड़ने पर एक शांत नज़ारा। खोलने पर एक और कहानी। हर मौलिक वॉलपेपर के दोनों दृश्य देखें।';
+
+  @override
+  String get duoWebEmpty => 'पहले Duo संग्रह की समीक्षा चल रही है।';
+
+  @override
+  String get duoWebEmptyBody => 'जब तक हम हर वॉलपेपर के दोनों दृश्य जाँच रहे हैं, Prism पर और वॉलपेपर देखें।';
+
+  @override
+  String get duoWebFolded => 'मुड़े हुए फ़ोन का प्रीव्यू';
+
+  @override
+  String get duoWebUnfolded => 'खुले हुए फ़ोन का मूल चित्र';
+
+  @override
+  String get duoWebPresetNotice =>
+      'ये प्रीव्यू Prism की दाईं ओर वाली तय सेटिंग इस्तेमाल करते हैं, Apple की अपने-आप होने वाली क्रॉपिंग नहीं। पूरा मूल चित्र सहेजें, उसे खुद सही जगह पर जमाएँ और सिस्टम के वॉलपेपर प्रीव्यू में मुड़े और खुले हुए, दोनों दृश्य जाँचें।';
+
+  @override
+  String get duoWebOpenPrism => 'Prism में खोलें';
+
+  @override
+  String get duoWebExplore => 'Prism देखें';
+
+  @override
+  String get duoWebAppStore => 'App Store से डाउनलोड करें';
+
+  @override
+  String get duoWebPlayStore => 'Google Play पर पाएँ';
 
   @override
   String get economyExportFailedLabel => 'एक्सपोर्ट नहीं हो सका';
@@ -1060,12 +1238,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountReportAProblem => 'समस्या की रिपोर्ट करें';
 
   @override
-  String accountReportPreviewNotice(String email) {
-    return 'इस रिपोर्ट में आपके ऐप का वर्ज़न, डिवाइस और हाल के लॉग शामिल हैं। इसमें ईमेल पता या साइन-इन टोकन नहीं हैं। इसे पढ़ें, फिर $email के साथ शेयर करें।';
-  }
-
-  @override
-  String get accountReportProblemSubtitle => 'Prism टीम के साथ अपने ऐप लॉग शेयर करें';
+  String get accountReportProblemSubtitle => 'Prism टीम को बग रिपोर्ट भेजें';
 
   @override
   String get accountReportUser => 'यूज़र की रिपोर्ट करें';
@@ -1174,9 +1347,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get accountSettings => 'सेटिंग्स';
-
-  @override
-  String get accountShare => 'शेयर करें';
 
   @override
   String get accountShareInvite => 'निमंत्रण शेयर करें';
@@ -3902,6 +4072,62 @@ class AppLocalizationsHi extends AppLocalizations {
   String get aiLiveActivityOpen => 'Prism में खोलें';
 
   @override
+  String get aiResultApply => 'लागू करें';
+
+  @override
+  String get aiResultEditPrompt => 'प्रॉम्प्ट संपादित करें';
+
+  @override
+  String get aiSessionStripLabel => 'इस सत्र के वॉलपेपर';
+
+  @override
+  String aiSessionTake(int index, int count) {
+    final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String indexString = indexNumberFormat.format(index);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'संस्करण $indexString, कुल $countString';
+  }
+
+  @override
+  String get aiFollowUpWatercolour => 'वॉटरकलर में';
+
+  @override
+  String get aiFollowUpNight => 'रात वाला संस्करण';
+
+  @override
+  String get aiFollowUpMinimal => 'और सरल';
+
+  @override
+  String get aiFollowUpWarmer => 'गर्म रंग';
+
+  @override
+  String get aiFollowUpDepth => 'गहराई जोड़ें';
+
+  @override
+  String aiFollowUpCostLabel(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'हर नए संस्करण की कीमत $costString कॉइन है';
+  }
+
+  @override
+  String get aiFollowUpConfirmTitle => 'नया संस्करण बनाएँ?';
+
+  @override
+  String aiFollowUpConfirmBody(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'इससे एक नया वॉलपेपर बनेगा। हर एक की कीमत $costString कॉइन है।';
+  }
+
+  @override
+  String get aiFollowUpConfirmAction => 'बनाएँ';
+
+  @override
   String get economyAiDailyLimit => 'आज की AI सीमा पूरी हो गई।';
 
   @override
@@ -4124,6 +4350,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String economyAiStyleSemantics(String style) {
     return 'स्टाइल: $style';
   }
+
+  @override
+  String get economyAiStyleSheetTitle => 'स्टाइल चुनें';
+
+  @override
+  String get economyAiStyleSheetSubject => 'हर प्रीव्यू में एक ही दृश्य है: शाम के समय एक चट्टान पर एक लाइटहाउस।';
 
   @override
   String get economyAiStyleWatercolor => 'वॉटरकलर';
@@ -7171,6 +7403,29 @@ class AppLocalizationsHi extends AppLocalizations {
   String get notifPushDropLiveTitle => 'नया Drop उपलब्ध है';
 
   @override
+  String notifPushFollowDigestTitleOne(String artistName) {
+    return '$artistName ने एक नया वॉलपेपर पोस्ट किया';
+  }
+
+  @override
+  String notifPushFollowDigestTitleSolo(String artistName, int wallCount) {
+    return '$artistName ने $wallCount नए वॉलपेपर पोस्ट किए';
+  }
+
+  @override
+  String notifPushFollowDigestTitlePair(String artistName, String secondArtistName, int wallCount) {
+    return '$artistName और $secondArtistName ने $wallCount नए वॉलपेपर पोस्ट किए';
+  }
+
+  @override
+  String notifPushFollowDigestTitleGroup(String artistName, int otherCount, int wallCount) {
+    return '$artistName और $otherCount अन्य ने $wallCount नए वॉलपेपर पोस्ट किए';
+  }
+
+  @override
+  String get notifPushFollowDigestBodyUntitled => 'सभी देखने के लिए टैप करें।';
+
+  @override
   String get notifPushGiftReceivedBody => 'Premium कलेक्शन और वॉलपेपर कल तक आपके लिए उपलब्ध हैं।';
 
   @override
@@ -7616,16 +7871,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperResetOriginal => 'मूल पर रीसेट करें';
 
   @override
-  String get wallpaperAccentResetHint => 'मूल पर रीसेट सहित कार्रवाइयों के लिए दबाकर रखें';
-
-  @override
   String get wallpaperAll => 'सभी';
 
   @override
   String get wallpaperApplyTo => 'यहाँ लागू करें';
-
-  @override
-  String get wallpaperAutoRotateAndroidOnly => 'ऑटो-रोटेशन केवल Android पर उपलब्ध है।';
 
   @override
   String get wallpaperAutoRotateApplyTo => 'यहाँ लागू करें';
@@ -8640,8 +8889,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperHomeAppName => 'Prism';
 
   @override
-  String get wallpaperImageSemanticHint =>
-      'रंग बदलने के लिए टैप करें। पसंदीदा, शेयर और रीसेट के लिए दबाकर रखें। विवरण के लिए स्क्रॉल करें।';
+  String get wallpaperImageSemanticHint => 'पसंदीदा, शेयर और रीसेट के लिए दबाकर रखें। विवरण के लिए स्क्रॉल करें।';
 
   @override
   String get wallpaperPreviousInFeed => 'पिछला वॉलपेपर';
@@ -8651,6 +8899,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'वॉलपेपर';
+
+  @override
+  String get wallpaperImmersiveHint => 'नियंत्रण छिपाने के लिए टैप करें';
 
   @override
   String get wallpaperInsufficientCoins => 'कॉइन कम हैं। इनाम में कॉइन कमाएँ।';
@@ -8831,6 +9082,12 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperLiveStyleShimmerDescription => 'रोशनी की एक मुलायम चमक।';
+
+  @override
+  String get wallpaperLiveStyleDepth => '3D';
+
+  @override
+  String get wallpaperLiveStyleDepthDescription => 'होम स्क्रीन बदलने और फ़ोन झुकाने पर फ़ोटो गहराई में चलती है।';
 
   @override
   String get wallpaperLiveStyleStarfield => 'तारों भरा आसमान';
@@ -9244,33 +9501,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperShareLink => 'लिंक शेयर करें';
 
   @override
-  String get wallpaperShortcutsAddActionsSteps =>
-      '\"Prism वॉलपेपर पाएँ\" ऐक्शन जोड़ें। फिर \"वॉलपेपर सेट करें\" ऐक्शन जोड़ें।';
-
-  @override
-  String get wallpaperShortcutsBody =>
-      'Shortcuts से किसी समय या ट्रिगर पर वॉलपेपर लगाएँ। चलाने से पहले नीचे दिया स्रोत तैयार करें।';
-
-  @override
   String get wallpaperShortcutsChoosePrismData => 'चुनें कि Prism क्या भेजे';
 
   @override
-  String get wallpaperShortcutsChooseTriggerSteps =>
-      'शॉर्टकट संपादक में ज़रूरत हो तो ऑटोमेशन खोलें। ट्रिगर चुनकर सेट करें, जैसे दिन का समय, ऐप खोलना या चार्जर लगाना।';
-
-  @override
-  String get wallpaperShortcutsDisableConfirmationSteps =>
-      'दिखाए गए चलाने के विकल्प जाँचें और शॉर्टकट या ऑटोमेशन सहेजें। अगर \"चलाने से पहले पूछें\" दिखे, अपने-आप चलाने के लिए उसे बंद करें।';
-
-  @override
-  String get wallpaperShortcutsHeadline => 'अपना वॉलपेपर अपने-आप बदलें';
-
-  @override
   String get wallpaperShortcutsOpenAction => 'Shortcuts खोलें';
-
-  @override
-  String get wallpaperShortcutsOpenAutomationSteps =>
-      'Shortcuts खोलें। अगर ऑटोमेशन टैब है, उस पर और फिर नया ऑटोमेशन पर टैप करें। वरना जोड़ें (+) पर और संपादित करें दिखे तो उस पर टैप करें।';
 
   @override
   String get wallpaperShortcutsOpenError => 'Shortcuts नहीं खुल सका। ऐप खुद खोलें।';
@@ -9279,18 +9513,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperShortcutsSourceFavourite => 'रैंडम पसंदीदा';
 
   @override
-  String get wallpaperShortcutsSourceFavouriteDescription =>
-      'Shortcuts के लिए उपलब्ध कोई रैंडम पसंदीदा। पहले Prism में वॉलपेपर पसंद करें। कुछ संरक्षित वॉलपेपर उपलब्ध नहीं हो सकते। कोई दूसरा पसंदीदा उपलब्ध होने पर पिछला चयन दोहराया नहीं जाता।';
-
-  @override
   String get wallpaperShortcutsSourceWotd => 'आज का वॉलपेपर';
 
   @override
   String get wallpaperShortcutsSourceWotdDescription =>
       'आज का Prism चयन। पहले Prism में आज का मूल वॉलपेपर डाउनलोड करें। दिन का चयन बदलने पर इस स्रोत को चलाने से पहले नया मूल वॉलपेपर डाउनलोड करें।';
-
-  @override
-  String get wallpaperShortcutsSteps => 'कदम';
 
   @override
   String get wallpaperShortcutsTitle => 'अपने-आप बदलें';
@@ -10527,4 +10754,2259 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get foldersSuggestionHomeScreen => 'होम स्क्रीन';
+
+  @override
+  String get moodDreamyTitle => 'स्वप्निल';
+
+  @override
+  String get moodDreamyBody => 'नरम आसमान और पेस्टल रोशनी।';
+
+  @override
+  String get moodDarkQuietTitle => 'गहरा और शांत';
+
+  @override
+  String get moodDarkQuietBody => 'कम रोशनी, आँखों के लिए आरामदेह।';
+
+  @override
+  String get moodBrightBoldTitle => 'चटक और बोल्ड';
+
+  @override
+  String get moodBrightBoldBody => 'स्क्रीन को जगाने वाला भरपूर रंग।';
+
+  @override
+  String get moodMinimalTitle => 'मिनिमल';
+
+  @override
+  String get moodMinimalBody => 'सरल आकार और खुली जगह।';
+
+  @override
+  String get moodSpatialReadyTitle => 'स्पेशियल सीन के लिए तैयार';
+
+  @override
+  String get moodSpatialReadyBody => 'स्पेशियल सीन के रूप में खास दिखने के लिए बना।';
+
+  @override
+  String get moodDepthReadyTitle => 'डेप्थ इफ़ेक्ट के लिए तैयार';
+
+  @override
+  String get moodDepthReadyBody => 'विषय आपकी लॉक स्क्रीन की घड़ी के आगे आ जाता है।';
+
+  @override
+  String get moodChipRowLabel => 'मूड';
+
+  @override
+  String get moodSeeAll => 'सब देखें';
+
+  @override
+  String moodSeeAllHint(String mood) {
+    return '$mood के सभी वॉलपेपर खोलता है';
+  }
+
+  @override
+  String get moodLoadError => 'ये वॉलपेपर लोड नहीं हो सके';
+
+  @override
+  String get moodEmptyTitle => 'यहाँ अभी कोई वॉलपेपर नहीं है';
+
+  @override
+  String get moodEmptyBody => 'हर दिन नए वॉलपेपर जुड़ते हैं।';
+
+  @override
+  String wallpaperHistoryTileSemantic(String current, String target, String date) {
+    return '$currentफिर से लगाएँ। $target, $date';
+  }
+
+  @override
+  String get wallpaperHistoryTitle => 'वॉलपेपर इतिहास';
+
+  @override
+  String get wallpaperLibraryHistoryBody => 'आपके लगाए हुए वॉलपेपर, ताकि आप उन्हें फिर से लगा सकें।';
+
+  @override
+  String get wallpaperLibraryHistoryTitle => 'वॉलपेपर इतिहास';
+
+  @override
+  String get wallpaperLibraryOpenHistory => 'इतिहास खोलें';
+
+  @override
+  String get wallpaperRecentlySet => 'हाल ही में सेट किए गए';
+
+  @override
+  String get wallpaperSetAgain => 'यह वॉलपेपर फिर से सेट करें';
+
+  @override
+  String get wallpaperSort => 'क्रमबद्ध करें';
+
+  @override
+  String get tasteQuizTitle => 'जो आपको ज़्यादा पसंद हो, उसे चुनें';
+
+  @override
+  String get tasteQuizWildCard => 'वाइल्ड कार्ड';
+
+  @override
+  String tasteQuizProgress(int current, int total) {
+    final intl.NumberFormat currentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String currentString = currentNumberFormat.format(current);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return '$totalString में से $currentString';
+  }
+
+  @override
+  String tasteQuizProgressLabel(int current, int total) {
+    final intl.NumberFormat currentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String currentString = currentNumberFormat.format(current);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'कुल $totalString में से राउंड $currentString';
+  }
+
+  @override
+  String get tasteQuizSkip => 'छोड़ें';
+
+  @override
+  String tasteQuizPickLabel(int position, int total) {
+    final intl.NumberFormat positionNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String positionString = positionNumberFormat.format(position);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'यह वॉलपेपर चुनें, कुल $totalString में से $positionString';
+  }
+
+  @override
+  String get tasteQuizTuningTitle => 'आपकी फ़ीड सेट हो रही है';
+
+  @override
+  String tasteQuizSummaryFull(String tone, String density, String tag) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'गहरा', 'other': 'हल्का'});
+    String _temp1 = intl.Intl.selectLogic(density, {'minimal': 'मिनिमल', 'other': 'विस्तृत'});
+    return '$_temp0, $_temp1, थोड़ा $tag';
+  }
+
+  @override
+  String tasteQuizSummaryToneDensity(String tone, String density) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'गहरा', 'other': 'हल्का'});
+    String _temp1 = intl.Intl.selectLogic(density, {'minimal': 'मिनिमल', 'other': 'विस्तृत'});
+    return '$_temp0 और $_temp1';
+  }
+
+  @override
+  String tasteQuizSummaryToneTag(String tone, String tag) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'गहरा', 'other': 'हल्का'});
+    return '$_temp0, साथ में थोड़ा $tag';
+  }
+
+  @override
+  String tasteQuizSummaryDensityTag(String density, String tag) {
+    String _temp0 = intl.Intl.selectLogic(density, {'minimal': 'मिनिमल', 'other': 'विस्तृत'});
+    return '$_temp0, साथ में थोड़ा $tag';
+  }
+
+  @override
+  String tasteQuizSummaryTone(String tone) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'ज़्यादातर गहरे वॉलपेपर', 'other': 'ज़्यादातर हल्के वॉलपेपर'});
+    return '$_temp0';
+  }
+
+  @override
+  String tasteQuizSummaryDensity(String density) {
+    String _temp0 = intl.Intl.selectLogic(density, {
+      'minimal': 'ज़्यादातर मिनिमल वॉलपेपर',
+      'other': 'ज़्यादातर विस्तृत वॉलपेपर',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String tasteQuizSummaryTag(String tag) {
+    return 'ज़्यादा $tag वॉलपेपर';
+  }
+
+  @override
+  String get tasteQuizSummaryReady => 'आपकी फ़ीड तैयार है';
+
+  @override
+  String get tasteQuizRetake => 'यह या वह फिर से खेलें';
+
+  @override
+  String get tasteQuizRetakeFailed => 'वॉलपेपर लोड नहीं हो सके। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get foldersPublic => 'सार्वजनिक';
+
+  @override
+  String get foldersMakePublic => 'सार्वजनिक करें';
+
+  @override
+  String get foldersMakePrivate => 'निजी करें';
+
+  @override
+  String get foldersMakePublicTitle => 'क्या इस फ़ोल्डर को सार्वजनिक करें?';
+
+  @override
+  String get foldersMakePublicMessage =>
+      'Prism पर कोई भी इसका नाम और वॉलपेपर देख सकेगा, इसे फ़ॉलो कर सकेगा और इसका लिंक खोल सकेगा। आपके शेयर किए गए लिंक का प्रीव्यू बना रहेगा, भले ही आप बाद में इसे प्राइवेट कर दें।';
+
+  @override
+  String get foldersMakePrivateTitle => 'क्या इस फ़ोल्डर को निजी करें?';
+
+  @override
+  String get foldersMakePrivateMessage =>
+      'इसे सिर्फ़ आप देखेंगे। इसका लिंक काम करना बंद कर देगा और इसके फ़ॉलोअर इसे खो देंगे।';
+
+  @override
+  String get foldersMadePublic => 'यह फ़ोल्डर अब सार्वजनिक है।';
+
+  @override
+  String get foldersMadePrivate => 'यह फ़ोल्डर अब निजी है।';
+
+  @override
+  String get foldersPublicNameRefused => 'इस फ़ोल्डर को सार्वजनिक करने के लिए इसका नाम बदलें।';
+
+  @override
+  String get foldersHiddenRefused =>
+      'रिपोर्ट मिलने के बाद यह फ़ोल्डर छिपा दिया गया था, इसलिए इसे सार्वजनिक नहीं किया जा सकता।';
+
+  @override
+  String get foldersLimitRefused => 'आपने आज फ़ोल्डर बहुत बार बदले हैं। कल फिर से कोशिश करें।';
+
+  @override
+  String get foldersFollow => 'फ़ॉलो करें';
+
+  @override
+  String get foldersFollowing => 'फ़ॉलो कर रहे हैं';
+
+  @override
+  String foldersFollowerCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString फ़ॉलोअर',
+      one: '1 फ़ॉलोअर',
+      zero: 'कोई फ़ॉलोअर नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersByOwner(String name) {
+    return '$name द्वारा';
+  }
+
+  @override
+  String get foldersShare => 'फ़ोल्डर साझा करें';
+
+  @override
+  String get foldersReport => 'फ़ोल्डर की शिकायत करें';
+
+  @override
+  String get foldersUnavailableTitle => 'यह फ़ोल्डर निजी है या अब मौजूद नहीं है';
+
+  @override
+  String get foldersUnavailableBody => 'मालिक ने इसे निजी किया होगा या हटा दिया होगा।';
+
+  @override
+  String get foldersFollowFailed => 'फ़ॉलो अपडेट नहीं हो सका। फिर से कोशिश करें।';
+
+  @override
+  String get foldersYouFollow => 'आपके फ़ॉलो किए गए फ़ोल्डर';
+
+  @override
+  String get foldersPublicEmptyTitle => 'यहाँ अभी कोई वॉलपेपर नहीं है';
+
+  @override
+  String get foldersPublicEmptyBody => 'मालिक वॉलपेपर जोड़ेगा तो नए वॉलपेपर यहाँ दिखेंगे।';
+
+  @override
+  String get notifSettingFolders => 'आपके फ़ॉलो किए गए फ़ोल्डर';
+
+  @override
+  String get notifSettingFoldersDescription => 'आपके फ़ॉलो किए गए फ़ोल्डरों में नए वॉलपेपर, दिन में एक बार';
+
+  @override
+  String notifPushFolderDigestTitleOne(String folderName) {
+    return '$folderName में नया';
+  }
+
+  @override
+  String notifPushFolderDigestTitleMore(String folderName, int count) {
+    return '$folderName में नया और $count और';
+  }
+
+  @override
+  String get historySetAndDownloaded => 'सेट और डाउनलोड किए गए';
+
+  @override
+  String get historyDownloaded => 'डाउनलोड किया गया';
+
+  @override
+  String get historyRecentlyViewed => 'हाल में देखे गए';
+
+  @override
+  String get historySyncedNote => 'आपके खाते में सेव है, ताकि नए फ़ोन पर भी ये वापस दिखें।';
+
+  @override
+  String get historySyncedNoteGuest => 'इन्हें नए फ़ोन पर रखने के लिए साइन इन करें।';
+
+  @override
+  String get historyActionSet => 'सेट किया गया';
+
+  @override
+  String get historyActionDownloaded => 'डाउनलोड किया गया';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action, $time पर';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'यह यहाँ और आपके खाते से सूची हटा देता है। आपके वॉलपेपर और डाउनलोड जैसे हैं वैसे ही रहेंगे।';
+
+  @override
+  String get historyClearViewedTitle => 'हाल में देखे गए हटाएँ?';
+
+  @override
+  String get historyClearViewedBody => 'यह आपके खोले गए वॉलपेपर इस सूची और होम से हटा देता है।';
+
+  @override
+  String get historyClearViewedAction => 'हाल में देखे गए हटाएँ';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'जो वॉलपेपर आप सेट या डाउनलोड करते हैं, वे यहाँ दिखते हैं, ताकि आप उन्हें दोबारा ढूँढ सकें।';
+
+  @override
+  String get historyEmptyBodyIos =>
+      'जो वॉलपेपर आप डाउनलोड करते हैं, वे यहाँ दिखते हैं, ताकि आप उन्हें दोबारा ढूँढ सकें।';
+
+  @override
+  String get historyViewedEmptyTitle => 'अभी तक कुछ नहीं देखा गया';
+
+  @override
+  String get historyViewedEmptyBody => 'जो वॉलपेपर आप खोलते हैं, वे यहाँ दिखते हैं, ताकि आप उन्हें दोबारा ढूँढ सकें।';
+
+  @override
+  String get historyViewedOffTitle => 'देखने का इतिहास बंद है';
+
+  @override
+  String get historyViewedOffBody =>
+      'जो वॉलपेपर आप यहाँ खोलते हैं, उन्हें देखने के लिए देखने का इतिहास सहेजें चालू करें।';
+
+  @override
+  String get historyViewedOffAction => 'चालू करें';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'वॉलपेपर खोलें, $time पर देखा गया';
+  }
+
+  @override
+  String get pickUpTitle => 'जहाँ छोड़ा था, वहीं से जारी रखें';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return '$count में से $index वॉलपेपर खोलें';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'देखने का इतिहास सहेजें';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'आपके खोले गए वॉलपेपर इतिहास और होम पर दिखते हैं। इसे बंद करने पर सूची हट जाती है।';
+
+  @override
+  String get historyClearFailed => 'इतिहास साफ़ नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'फ़ोल्डर';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'फ़ोल्डर: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'इस फ़ोल्डर में कम से कम 2 ऐसे वॉलपेपर होने चाहिए जो रोटेट हो सकें। Prism वॉलपेपर डाउनलोड करने के बाद रोटेट होते हैं।';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'फ़ोल्डर खोलें';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'फ़ोल्डर चुनें';
+
+  @override
+  String get wallpaperAutoRotateNoFolders =>
+      'अभी आपके पास कोई फ़ोल्डर नहीं है। किसी वॉलपेपर को फ़ोल्डर में सेव करें, फिर उसे यहाँ चुनें।';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return '$folder रोटेट करें?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'आपका वॉलपेपर नीचे दिए शेड्यूल के अनुसार इस फ़ोल्डर के किसी वॉलपेपर में बदल जाएगा।';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'इस फ़ोल्डर को रोटेट करें';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'ऑटो-रोटेशन बंद है क्योंकि फ़ोल्डर $folder हटा दिया गया था।';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'ऑटो-रोटेशन बंद है क्योंकि फ़ोल्डर $folder में 2 से कम वॉलपेपर हैं।';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'इस फ़ोल्डर को रोटेट करें';
+
+  @override
+  String get foldersRotating => 'रोटेट हो रहा है';
+
+  @override
+  String get foldersRotatingDescription => 'ऑटो-रोटेशन इस फ़ोल्डर का उपयोग करता है';
+
+  @override
+  String get wallpaperAccentResetHint => 'मूल पर रीसेट सहित कार्रवाइयों के लिए दबाकर रखें';
+
+  @override
+  String get wallRequestsTitle => 'वॉलपेपर अनुरोध';
+
+  @override
+  String get wallRequestsTabTop => 'टॉप';
+
+  @override
+  String get wallRequestsTabNew => 'नए';
+
+  @override
+  String get wallRequestsTabFilled => 'पूरे हुए';
+
+  @override
+  String get wallRequestsAsk => 'वॉलपेपर माँगें';
+
+  @override
+  String get wallRequestsEmptyTopTitle => 'अभी कोई अनुरोध नहीं';
+
+  @override
+  String get wallRequestsEmptyTopBody => 'जो वॉलपेपर नहीं मिल रहा, उसके लिए पूछें। दूसरे उसे सपोर्ट कर सकते हैं।';
+
+  @override
+  String get wallRequestsEmptyFilledTitle => 'अभी कुछ पूरा नहीं हुआ';
+
+  @override
+  String get wallRequestsEmptyFilledBody => 'पूरे हुए अनुरोध, उन्हें पूरा करने वाले वॉलपेपर के साथ यहाँ दिखेंगे।';
+
+  @override
+  String get wallRequestsLoadFailed => 'अनुरोध लोड नहीं हो सके';
+
+  @override
+  String get wallRequestsRetry => 'फिर कोशिश करें';
+
+  @override
+  String wallRequestVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वोट',
+      one: '1 वोट',
+      zero: 'कोई वोट नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestUpvote => 'सपोर्ट करें';
+
+  @override
+  String get wallRequestRemoveUpvote => 'सपोर्ट हटाएँ';
+
+  @override
+  String get wallRequestMine => 'आपका अनुरोध';
+
+  @override
+  String get wallRequestSomeone => 'एक Prism उपयोगकर्ता';
+
+  @override
+  String wallRequestFilledByCreator(String name) {
+    return '$name ने पूरा किया';
+  }
+
+  @override
+  String get wallRequestFilledByStudio => 'Prism Studio का बनाया हुआ';
+
+  @override
+  String get wallRequestOpenWall => 'वॉलपेपर खोलें';
+
+  @override
+  String get wallRequestMoreActions => 'और विकल्प';
+
+  @override
+  String get wallRequestReport => 'अनुरोध की रिपोर्ट करें';
+
+  @override
+  String get wallRequestHide => 'अनुरोध छिपाएँ';
+
+  @override
+  String get wallRequestUnhide => 'अनुरोध दिखाएँ';
+
+  @override
+  String get wallRequestHiddenLabel => 'छिपा हुआ';
+
+  @override
+  String get wallRequestSheetTitle => 'वॉलपेपर माँगें';
+
+  @override
+  String get wallRequestSheetHint => 'बताएँ, जैसे गहरे और सादे पहाड़';
+
+  @override
+  String get wallRequestSheetTags => 'टैग, अधिकतम 3';
+
+  @override
+  String get wallRequestSheetSubmit => 'अनुरोध भेजें';
+
+  @override
+  String get wallRequestSignIn => 'वॉलपेपर माँगने और सपोर्ट करने के लिए साइन इन करें।';
+
+  @override
+  String get wallRequestDuplicateTitle => 'यह पहले ही माँगा जा चुका है';
+
+  @override
+  String get wallRequestDuplicateBody => 'इसे सपोर्ट करें, ताकि क्रिएटर इसे जल्दी देखें।';
+
+  @override
+  String get wallRequestUpvoteInstead => 'इसके बजाय सपोर्ट करें';
+
+  @override
+  String get wallRequestCreateAnyway => 'फिर भी मेरा अनुरोध भेजें';
+
+  @override
+  String get wallRequestDuplicateMine => 'आपने यह पहले ही माँगा है';
+
+  @override
+  String get wallRequestDuplicateVoted => 'आपने यह पहले ही सपोर्ट किया है';
+
+  @override
+  String get wallRequestEditText => 'मेरा अनुरोध बदलें';
+
+  @override
+  String get wallRequestCreated => 'अनुरोध भेज दिया गया। पूरा होने पर हम आपको बताएँगे।';
+
+  @override
+  String get wallRequestUpvoted => 'सपोर्ट किया गया। पूरा होने पर हम आपको बताएँगे।';
+
+  @override
+  String get wallRequestErrorText => '3 से 80 अक्षर लिखें, और भाषा दोस्ताना रखें।';
+
+  @override
+  String get wallRequestErrorLimit => 'आप एक दिन में 3 अनुरोध कर सकते हैं। कल फिर कोशिश करें।';
+
+  @override
+  String get wallRequestErrorOwn => 'आप अपने अनुरोध को सपोर्ट नहीं कर सकते।';
+
+  @override
+  String get wallRequestErrorClosed => 'यह अनुरोध पहले ही पूरा हो चुका है।';
+
+  @override
+  String get wallRequestErrorGone => 'यह अनुरोध अब उपलब्ध नहीं है।';
+
+  @override
+  String get wallRequestErrorGeneric => 'कुछ गड़बड़ हो गई। फिर कोशिश करें।';
+
+  @override
+  String get searchRequestPrompt => 'नहीं मिला?';
+
+  @override
+  String get searchRequestAction => 'अनुरोध करें';
+
+  @override
+  String get discoverRequestsTitle => 'वॉलपेपर अनुरोध';
+
+  @override
+  String get discoverRequestsSubtitle => 'वॉलपेपर माँगें, या किसी को सपोर्ट करें';
+
+  @override
+  String get uploadFillsRequest => 'एक अनुरोध पूरा करता है';
+
+  @override
+  String get uploadFillsRequestHint => 'वैकल्पिक। वह अनुरोध चुनें जिसका यह वॉलपेपर जवाब है।';
+
+  @override
+  String get uploadFillsRequestClear => 'अनुरोध हटाएँ';
+
+  @override
+  String get requestPickerTitle => 'यह किस अनुरोध को पूरा करता है?';
+
+  @override
+  String get requestPickerSearch => 'अनुरोध खोजें';
+
+  @override
+  String get requestPickerEmpty => 'कोई खुला अनुरोध नहीं मिला';
+
+  @override
+  String get notifPushWallRequestFilledTitle => 'आपका अनुरोध आ गया है';
+
+  @override
+  String notifPushWallRequestFilledBody(String requestText) {
+    return '$requestText';
+  }
+
+  @override
+  String get wallRequestAgeNow => 'अभी-अभी';
+
+  @override
+  String wallRequestAgeMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count मिनट पहले', one: '1 मिनट पहले');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count घंटे पहले', one: '1 घंटा पहले');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count दिन पहले', one: '1 दिन पहले');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count सप्ताह पहले', one: '1 सप्ताह पहले');
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestErrorAccountAge => 'आपका खाता 10 दिन पुराना होने पर अनुरोध और वोट कर सकेगा।';
+
+  @override
+  String get adminFillsRequest => 'अनुरोध पूरा करता है';
+
+  @override
+  String get wallRemixAction => 'रीमिक्स';
+
+  @override
+  String get wallRemixActionTooltip => 'इस वॉलपेपर को AI से रीमिक्स करें';
+
+  @override
+  String wallRemixingChip(String title, String creator) {
+    return '$creator के $title को रीमिक्स कर रहे हैं';
+  }
+
+  @override
+  String get wallRemixDropLinkTooltip => 'रीमिक्स लिंक हटाएं';
+
+  @override
+  String get wallRemixUntitled => 'बिना शीर्षक';
+
+  @override
+  String get wallRemixUnknownCreator => 'एक Prism क्रिएटर';
+
+  @override
+  String get wallRemixesTitle => 'रीमिक्स';
+
+  @override
+  String wallRemixesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count रीमिक्स', one: '1 रीमिक्स');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRemixOpenRemixLabel(String creator) {
+    return '$creator का रीमिक्स खोलें';
+  }
+
+  @override
+  String wallRemixOfLabel(String title, String creator) {
+    return '$creator के $title का रीमिक्स';
+  }
+
+  @override
+  String get wallRemixOfTooltip => 'मूल वॉलपेपर खोलें';
+
+  @override
+  String get economyAiSubmitPromptNotice => 'कोई भी आपका प्रॉम्प्ट देख सकता है और इस वॉलपेपर को रीमिक्स कर सकता है।';
+
+  @override
+  String get notifPushWallRemixedTitle => 'आपके वॉलपेपर को रीमिक्स किया गया';
+
+  @override
+  String notifPushWallRemixedBody(String remixerName, String wallTitle) {
+    return '$remixerName ने $wallTitle को रीमिक्स किया।';
+  }
+
+  @override
+  String notifPushWallRemixedBodyUntitled(String remixerName) {
+    return '$remixerName ने आपके वॉलपेपर को रीमिक्स किया।';
+  }
+
+  @override
+  String get wallMetadataDescription => 'विवरण';
+
+  @override
+  String get wallMetadataEdit => 'जानकारी संपादित करें';
+
+  @override
+  String get wallResubmitAction => 'सुधारें और फिर से भेजें';
+
+  @override
+  String get wallResubmitChooseImage => 'चित्र चुनें';
+
+  @override
+  String get wallResubmitImageMissing => 'मूल चित्र अब उपलब्ध नहीं है। संपादन जारी रखने के लिए उसे फिर से चुनें।';
+
+  @override
+  String get wallResubmitImageKept => 'मूल चित्र तैयार है';
+
+  @override
+  String get wallResubmitTitle => 'अपना अपलोड सुधारें';
+
+  @override
+  String get wallUploadUseLastDetails => 'पिछली जानकारी का उपयोग करें';
+
+  @override
+  String get wallUploadLastDetailsUnavailable => 'इस डिवाइस पर पिछली जानकारी नहीं है।';
+
+  @override
+  String get wallUploadWithdraw => 'अपलोड वापस लें';
+
+  @override
+  String get wallUploadWithdrawTitle => 'क्या यह अपलोड वापस लें?';
+
+  @override
+  String get wallUploadWithdrawBody => 'इससे अपलोड समीक्षा से हट जाएगा और उसकी अपलोड की गई फ़ाइलें मिट जाएंगी।';
+
+  @override
+  String get wallUploadWithdrawn => 'अपलोड वापस लिया गया';
+
+  @override
+  String get wallUploadDeleteHistory => 'इतिहास से हटाएं';
+
+  @override
+  String get wallMetadataInvalid => 'टेक्स्ट और टैग जांचें, फिर दोबारा कोशिश करें।';
+
+  @override
+  String get wallUploadOwnerChanged => 'आपका खाता बदल गया है। यह अपलोड फिर से खोलें।';
+
+  @override
+  String get wallResubmitLimit => 'इस वॉलपेपर के लिए तीन जुड़े हुए पुनः सबमिशन पूरे हो गए हैं।';
+
+  @override
+  String get wallResubmitUnsupported => 'मूल चित्र फिर से चुनें। AI स्रोत की जानकारी दोबारा इस्तेमाल नहीं की जा सकती।';
+
+  @override
+  String get wallResubmitUnavailable => 'यह अस्वीकृत अपलोड लोड नहीं हो सका। दोबारा कोशिश करें।';
+
+  @override
+  String get wallMetadataEditDetails => 'जानकारी संपादित करें';
+
+  @override
+  String get wallMetadataApprovedHelp => 'शीर्षक, विवरण और टैग बदलें। चित्र और श्रेणी वही रहेंगे।';
+
+  @override
+  String get wallMetadataPendingHelp => 'वॉलपेपर की समीक्षा से पहले यह जानकारी अपडेट करें।';
+
+  @override
+  String get wallMetadataSave => 'जानकारी सेव करें';
+
+  @override
+  String get wallMetadataSaved => 'जानकारी सेव हुई';
+
+  @override
+  String get wallMetadataDiscardTitle => 'बदलाव छोड़ें?';
+
+  @override
+  String get wallMetadataDiscardBody => 'आपकी बिना सेव की गई जानकारी खो जाएगी।';
+
+  @override
+  String get wallMetadataDiscard => 'बदलाव छोड़ें';
+
+  @override
+  String get wallMetadataReload => 'जानकारी फिर लोड करें';
+
+  @override
+  String get wallMetadataReloadTitle => 'मौजूदा जानकारी फिर लोड करें?';
+
+  @override
+  String get wallMetadataReloadBody => 'इससे आपकी बिना सेव की गई जानकारी मौजूदा जानकारी से बदल जाएगी।';
+
+  @override
+  String get wallMetadataConflict =>
+      'यह जानकारी कहीं और बदल गई है। आपके बदलाव अभी भी यहां हैं। सेव करने से पहले मौजूदा जानकारी फिर लोड करें।';
+
+  @override
+  String get wallMetadataStatusChanged => 'इस वॉलपेपर की समीक्षा स्थिति बदल गई है। आपके बदलाव सेव नहीं हुए हैं।';
+
+  @override
+  String get wallMetadataMissing => 'यह वॉलपेपर अब उपलब्ध नहीं है। आपके बदलाव सेव नहीं हुए हैं।';
+
+  @override
+  String get wallMetadataDenied => 'आपको इस वॉलपेपर को संपादित करने की अनुमति नहीं है।';
+
+  @override
+  String get wallMetadataSignedOut => 'इस वॉलपेपर को संपादित करने के लिए फिर से साइन इन करें।';
+
+  @override
+  String get wallMetadataDailyLimit => 'आप आज की संपादन सीमा तक पहुंच गए हैं। कल दोबारा कोशिश करें।';
+
+  @override
+  String get wallMetadataUnavailable => 'जानकारी सेव नहीं हो सकी। अपना कनेक्शन जांचें और दोबारा कोशिश करें।';
+
+  @override
+  String get wallMetadataLoadFailed => 'जानकारी लोड नहीं हो सकी';
+
+  @override
+  String get wallMetadataHistory => 'संपादन इतिहास';
+
+  @override
+  String get wallMetadataHistoryEmpty => 'अभी जानकारी में कोई बदलाव नहीं है';
+
+  @override
+  String get wallMetadataHistoryEmptyBody => 'स्वीकृत शीर्षक, विवरण और टैग में बदलाव यहां दिखते हैं।';
+
+  @override
+  String get wallMetadataHistoryFailed => 'संपादन इतिहास लोड नहीं हो सका';
+
+  @override
+  String get wallMetadataBefore => 'पहले';
+
+  @override
+  String get wallMetadataAfter => 'बाद में';
+
+  @override
+  String get wallMetadataRevert => 'संपादन वापस करें';
+
+  @override
+  String get wallMetadataRevertTitle => 'यह संपादन वापस करें?';
+
+  @override
+  String get wallMetadataRevertBody =>
+      'केवल यहां दिखाए गए पिछले शीर्षक, विवरण और टैग वापस लाएं। चित्र और समीक्षा स्थिति नहीं बदलेंगे।';
+
+  @override
+  String get wallMetadataReverted => 'संपादन वापस किया गया';
+
+  @override
+  String get wallMetadataLoadMore => 'और संपादन लोड करें';
+
+  @override
+  String get wallMetadataAbsent => 'सेट नहीं है';
+
+  @override
+  String wallMetadataResubmitted(int attempt) {
+    return 'फिर से भेजा गया · प्रयास $attempt / 3';
+  }
+
+  @override
+  String get wallMetadataPreviousReason => 'पिछली अस्वीकृति का कारण';
+
+  @override
+  String get wallMetadataContextUnavailable => 'फिर से भेजने की जानकारी उपलब्ध नहीं है';
+
+  @override
+  String get reportSheetMessage =>
+      'हमें बताएं कि क्या गड़बड़ हुई। Prism कभी आपका ईमेल पता या साइन-इन टोकन नहीं जोड़ता। भेजने से पहले स्क्रीनशॉट जांच लें।';
+
+  @override
+  String get reportTopicCrashFreeze => 'क्रैश/फ़्रीज़';
+
+  @override
+  String get reportTopicWallpaperWontSet => 'वॉलपेपर सेट नहीं हो रहा';
+
+  @override
+  String get reportTopicLooksBroken => 'गड़बड़ दिखता है';
+
+  @override
+  String get reportTopicSlow => 'धीमा';
+
+  @override
+  String get reportTopicOther => 'अन्य';
+
+  @override
+  String get reportNoteHint => 'क्या हुआ? आपको क्या उम्मीद थी?';
+
+  @override
+  String get reportScreenshotTitle => 'स्क्रीनशॉट';
+
+  @override
+  String get reportScreenshotEmpty => 'हमें दिखाएं कि आपको क्या दिख रहा है।';
+
+  @override
+  String get reportScreenshotAttached => 'देखने के लिए टैप करें। भेजने से पहले जांच लें।';
+
+  @override
+  String get reportAddScreenshot => 'स्क्रीनशॉट जोड़ें';
+
+  @override
+  String get reportRemoveScreenshot => 'हटाएं';
+
+  @override
+  String get reportViewScreenshot => 'स्क्रीनशॉट देखें';
+
+  @override
+  String get reportIncludeDiagnostics => 'डिवाइस जानकारी और हाल के लॉग शामिल करें';
+
+  @override
+  String get reportShowDiagnostics => 'क्या शामिल है, दिखाएं';
+
+  @override
+  String get reportHideDiagnostics => 'विवरण छिपाएं';
+
+  @override
+  String get reportSend => 'रिपोर्ट भेजें';
+
+  @override
+  String get reportShareAsFile => 'फ़ाइल के रूप में शेयर करें';
+
+  @override
+  String reportSent(String reference) {
+    return 'धन्यवाद, रिपोर्ट भेज दी गई। रेफ़रेंस $reference';
+  }
+
+  @override
+  String get reportCouldNotSend => 'भेजा नहीं जा सका';
+
+  @override
+  String get reportCouldNotSendBody =>
+      'अपना कनेक्शन जांचें और फिर कोशिश करें, या रिपोर्ट को फ़ाइल के रूप में शेयर करें।';
+
+  @override
+  String get reportShareInstead => 'इसके बजाय शेयर करें';
+
+  @override
+  String get reportShakeToReport => 'रिपोर्ट के लिए शेक करें';
+
+  @override
+  String get reportShakeToReportSubtitle => 'किसी भी स्क्रीन पर समस्या की रिपोर्ट करने के लिए फ़ोन को हिलाएं';
+
+  @override
+  String get accountShowAiWallpapers => 'AI से बने वॉलपेपर दिखाएँ';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'केवल इंसानों के बनाए वॉलपेपर देखने के लिए बंद करें';
+
+  @override
+  String get accountShowAiWallpapersFootnote => 'AI वॉलपेपर छिपाने पर भी आपके अपलोड और पसंदीदा कभी नहीं छिपते।';
+
+  @override
+  String get wallpaperFeedHideAi => 'AI छिपाएँ';
+
+  @override
+  String get wallpaperAiGenerated => 'AI से बना';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return '$model से बना';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'AI से बना';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'गलत लेबल की रिपोर्ट करें';
+
+  @override
+  String get feedNoHumanWalls => 'यहाँ अभी इंसानों के बनाए वॉलपेपर नहीं हैं';
+
+  @override
+  String get feedShowAiWalls => 'AI वॉलपेपर दिखाएँ';
+
+  @override
+  String get dailyMomentTitle => 'रोज़ का पल';
+
+  @override
+  String get dailyMomentStreakTitle => 'रोज़ की स्ट्रीक';
+
+  @override
+  String get dailyMomentChestTitle => 'रोज़ का संदूक';
+
+  @override
+  String get dailyMomentSpinTitle => 'मुफ़्त स्पिन';
+
+  @override
+  String get dailyMomentUnavailable => 'यह इनाम आज अब उपलब्ध नहीं है।';
+
+  @override
+  String get dailyMomentError => 'इनाम लोड नहीं हो सका। फिर कोशिश करें।';
+
+  @override
+  String dailyMomentStreakReceipt(int coins, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins सिक्के मिले',
+      one: '$coins सिक्का मिला',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days दिनों की स्ट्रीक',
+      one: '$days दिन की स्ट्रीक',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String get challengeTitle => 'साप्ताहिक चुनौती';
+
+  @override
+  String get challengeRules => 'अधिकतम 3 प्रविष्टियाँ, दिखाने से पहले समीक्षा होगी।';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'अन्य रचनाकारों के लिए $date UTC तक वोट दें।';
+  }
+
+  @override
+  String get challengeUpload => 'प्रविष्टि अपलोड करें';
+
+  @override
+  String get challengeAi => 'AI से बनाएँ';
+
+  @override
+  String get challengeTop => 'शीर्ष';
+
+  @override
+  String get challengeNew => 'नई';
+
+  @override
+  String get challengePast => 'पिछली चुनौतियाँ';
+
+  @override
+  String get challengeEmpty => 'स्वीकृत प्रविष्टियाँ यहाँ दिखेंगी।';
+
+  @override
+  String get challengeWaiting => 'वोटिंग बंद है। विजेता चुनने से पहले प्रविष्टियों की समीक्षा पूरी होगी।';
+
+  @override
+  String get challengeClosed => 'यह चुनौती समाप्त हो गई है।';
+
+  @override
+  String get challengeScheduled => 'यह चुनौती अभी शुरू नहीं हुई है।';
+
+  @override
+  String get challengeNoWinner => 'इस चुनौती का कोई विजेता नहीं है।';
+
+  @override
+  String challengeWinner(String name) {
+    return 'विजेता · $name';
+  }
+
+  @override
+  String get challengeVote => 'वोट दें';
+
+  @override
+  String get challengeUnvote => 'वोट हटाएँ';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count वोट', one: '1 वोट', zero: '0 वोट');
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentCosmetic => 'सजावटी आइटम आपके संग्रह में जोड़ा गया';
+
+  @override
+  String dailyMomentReward(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins सिक्के मिले',
+      one: '$coins सिक्का मिला',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentChestBody => 'जब चाहें आज का संदूक खोलें।';
+
+  @override
+  String get dailyMomentSpinBody => 'आपका मुफ़्त स्पिन तैयार है।';
+
+  @override
+  String dailyMomentBalance(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins सिक्के', one: '$coins सिक्का');
+    return 'शेष: $_temp0';
+  }
+
+  @override
+  String get dailyMomentDone => 'हो गया';
+
+  @override
+  String get dailyMomentRetry => 'फिर कोशिश करें';
+
+  @override
+  String get dailyMomentContinue => 'जारी रखें';
+
+  @override
+  String get dailyMomentOpenFree => 'मुफ़्त संदूक खोलें';
+
+  @override
+  String dailyMomentOpenChest(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins सिक्कों में खोलें',
+      one: '$coins सिक्के में खोलें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentSpinAction => 'मुफ़्त स्पिन लें';
+
+  @override
+  String get dailyMomentClose => 'रोज़ का पल बंद करें';
+
+  @override
+  String get dailyMomentToday => 'आज';
+
+  @override
+  String get dailyMomentReady => 'रोज़ के इनाम तैयार हैं';
+
+  @override
+  String get dailyMomentComplete => 'आज के इनाम पूरे हुए';
+
+  @override
+  String get dailyMomentResume => 'रोज़ का पल जारी रखें';
+
+  @override
+  String get dailyMomentMore => 'और';
+
+  @override
+  String get dailyMomentQuests => 'मिशन';
+
+  @override
+  String get dailyMomentChestLeft => 'रोज़ का संदूक उपलब्ध है';
+
+  @override
+  String get dailyMomentSpinLeft => 'मुफ़्त स्पिन उपलब्ध है';
+
+  @override
+  String get dailyMomentStreakLeft => 'रोज़ की स्ट्रीक उपलब्ध है';
+
+  @override
+  String get challengeShare => 'चुनौती साझा करें';
+
+  @override
+  String get challengeRemove => 'चुनौती हटाएँ';
+
+  @override
+  String challengeContext(String theme) {
+    return 'चुनौती · $theme';
+  }
+
+  @override
+  String get challengeError => 'चुनौती लोड नहीं हुई। फिर कोशिश करें।';
+
+  @override
+  String get challengeVoteError => 'वोट सहेजा नहीं गया। फिर कोशिश करें।';
+
+  @override
+  String get challengeSignIn => 'भाग लेने या वोट देने के लिए साइन इन करें।';
+
+  @override
+  String get challengeLimit => 'आपने इस चुनौती में 3 वॉलपेपर जमा किए हैं।';
+
+  @override
+  String get challengeRetry => 'फिर कोशिश करें';
+
+  @override
+  String get challengeOwnEntry => 'आप अपनी प्रविष्टि को वोट नहीं दे सकते।';
+
+  @override
+  String get challengeDailyLimit => 'आज की वोटिंग सीमा पूरी हो गई है।';
+
+  @override
+  String get challengeMissing => 'यह चुनौती या प्रविष्टि अब उपलब्ध नहीं है।';
+
+  @override
+  String get challengeBadge => 'चुनौती विजेता';
+
+  @override
+  String get challengeBadgeDescription => 'साप्ताहिक चुनौती जीतें';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'आपका वॉलपेपर जीत गया';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'आपकी प्रविष्टि ने साप्ताहिक चुनौती जीती: $theme।';
+  }
+
+  @override
+  String get statsTitle => 'आपके आँकड़े';
+
+  @override
+  String get statsEntry => 'आँकड़े';
+
+  @override
+  String get statsViews => 'व्यू';
+
+  @override
+  String get statsSaves => 'सेव';
+
+  @override
+  String get statsSets => 'सेट';
+
+  @override
+  String get statsDownloads => 'डाउनलोड';
+
+  @override
+  String get statsShares => 'शेयर';
+
+  @override
+  String get statsFolderAdds => 'फ़ोल्डर में जोड़े गए';
+
+  @override
+  String get statsRemixes => 'रीमिक्स';
+
+  @override
+  String get statsLoading => 'आपके आँकड़े लोड हो रहे हैं';
+
+  @override
+  String get statsError => 'आपके आँकड़े लोड नहीं हुए। फिर कोशिश करें।';
+
+  @override
+  String get statsRetry => 'फिर कोशिश करें';
+
+  @override
+  String get statsEmptyTitle => 'आपका पहला वॉलपेपर यहीं से शुरू होता है';
+
+  @override
+  String get statsEmptyBody => 'वॉलपेपर अपलोड करें। मंज़ूरी के बाद उसके आँकड़े दिखेंगे।';
+
+  @override
+  String get statsUpload => 'वॉलपेपर अपलोड करें';
+
+  @override
+  String get statsWeekNote => 'इस हफ़्ते अब तक की तुलना पिछले हफ़्ते से। हफ़्ता सोमवार को UTC में शुरू होता है।';
+
+  @override
+  String get statsHistoryNote =>
+      'आठ हफ़्ते, सबसे पुराना पहले। डैश का अर्थ है डेटा उपलब्ध नहीं है। ट्रैकिंग हफ़्ते के बीच में शुरू हो सकती है, इसलिए दर्ज हफ़्तों के आँकड़े अधूरे हो सकते हैं। मौजूदा हफ़्ता अधूरा है।';
+
+  @override
+  String get statsTopWalls => 'इस हफ़्ते के शीर्ष वॉलपेपर';
+
+  @override
+  String get statsUntitled => 'बिना शीर्षक का वॉलपेपर';
+
+  @override
+  String get statsCountingNote =>
+      'कुल सेव मौजूदा पसंदीदा की संख्या है; साप्ताहिक सेव नए जोड़े गए पसंदीदा हैं। कुल रीमिक्स मौजूदा क्रेडिट वाले रीमिक्स हैं; साप्ताहिक रीमिक्स पहली बार स्वीकार किए गए क्रेडिट हैं। फ़ोल्डर में जोड़ने की गिनती ट्रैकिंग शुरू होने के बाद से है।';
+
+  @override
+  String get statsUnavailable => 'उपलब्ध नहीं';
+
+  @override
+  String get statsWeeklyTitle => 'इस हफ़्ते आपके वॉलपेपर';
+
+  @override
+  String statsWeeklyBody(String week) {
+    return '$week में अपने वॉलपेपर के आँकड़े देखें।';
+  }
+
+  @override
+  String statsWallValue(String metric, String value) {
+    return '$metric: इस हफ़्ते $value';
+  }
+
+  @override
+  String statsComparison(String current, String previous) {
+    return 'इस हफ़्ते $current · पिछले हफ़्ते $previous';
+  }
+
+  @override
+  String statsTotal(String value) {
+    return 'कुल: $value';
+  }
+
+  @override
+  String statsChange(String value) {
+    return 'पिछले हफ़्ते की तुलना में $value';
+  }
+
+  @override
+  String statsUpdated(String date) {
+    return '$date UTC को अपडेट हुआ';
+  }
+
+  @override
+  String statsChartWeek(String date, String value) {
+    return '$date से शुरू हफ़्ता: $value';
+  }
+
+  @override
+  String statsChartSummary(String metric, String summary) {
+    return '$metric, आठ हफ़्ते। $summary';
+  }
+
+  @override
+  String get shortcutsGuideHeadline => 'हर दिन एक नया वॉलपेपर';
+
+  @override
+  String get shortcutsGuideBody =>
+      'Shortcuts को एक बार सेट करें। हर दिन ऑटोमेशन आपके रोटेशन फ़ोल्डर से एक वॉलपेपर लगाता है। इसके 200 सबसे नए वॉलपेपर दोबारा आने से पहले एक-एक बार दिखते हैं।';
+
+  @override
+  String get shortcutsSourceRotation => 'रोटेशन फ़ोल्डर';
+
+  @override
+  String get shortcutsSourceRotationDescription => 'ऊपर चुना गया फ़ोल्डर शफ़ल करता है।';
+
+  @override
+  String get shortcutsSourceFolder => 'फ़ोल्डर';
+
+  @override
+  String get shortcutsSourceFolderDescription => 'Shortcuts में चुना गया एक फ़ोल्डर शफ़ल करता है।';
+
+  @override
+  String get shortcutsSourceFavouriteDescription =>
+      'आपके पसंदीदा शफ़ल करता है। हर एक वॉलपेपर एक बार दिखता है, उसके बाद ही कोई दोहराया जाता है। कुछ सुरक्षित वॉलपेपर उपलब्ध न हों।';
+
+  @override
+  String get shortcutsRotationNone => 'कोई फ़ोल्डर नहीं चुना गया';
+
+  @override
+  String get shortcutsRotationNoneBody => 'वह फ़ोल्डर चुनें जिसे शॉर्टकट शफ़ल करता है।';
+
+  @override
+  String get shortcutsRotationPick => 'फ़ोल्डर चुनें';
+
+  @override
+  String get shortcutsRotationChange => 'बदलें';
+
+  @override
+  String get shortcutsRotationStop => 'रोकें';
+
+  @override
+  String shortcutsStepLabel(int number, String title) {
+    return 'चरण $number, $title';
+  }
+
+  @override
+  String get shortcutsStepAddTitle => 'Prism शॉर्टकट जोड़ें';
+
+  @override
+  String get shortcutsStepAddBody => 'यह आपके रोटेशन फ़ोल्डर से एक वॉल लेता है और उसे आपका वॉलपेपर सेट करता है।';
+
+  @override
+  String get shortcutsStepAddAction => 'शॉर्टकट जोड़ें';
+
+  @override
+  String get shortcutsStepAddManualBody => 'इसे Shortcuts में 2 क्रियाओं के साथ बनाएँ।';
+
+  @override
+  String get shortcutsManualNew => 'Shortcuts में + दबाकर नया शॉर्टकट बनाएँ।';
+
+  @override
+  String get shortcutsManualGet => '\"Prism वॉलपेपर पाएँ\" जोड़ें। स्रोत को रोटेशन फ़ोल्डर पर सेट करें।';
+
+  @override
+  String get shortcutsManualSet => '\"Set Wallpaper Photo\" जोड़ें। उसके तीर को दबाएँ, फिर \"Show Preview\" बंद करें।';
+
+  @override
+  String shortcutsManualName(String name) {
+    return 'शॉर्टकट का नाम \"$name\" रखें।';
+  }
+
+  @override
+  String get shortcutsStepAutomationTitle => 'हर दिन चलाएँ';
+
+  @override
+  String get shortcutsAutomationOpen => 'Shortcuts में ऑटोमेशन पर टैप करें, फिर + पर टैप करें।';
+
+  @override
+  String get shortcutsAutomationTime => 'दिन का समय पर टैप करें। एक समय चुनें, फिर प्रतिदिन चुनें।';
+
+  @override
+  String get shortcutsAutomationRun => 'तुरंत चलाएँ चुनें, फिर अगला पर टैप करें।';
+
+  @override
+  String shortcutsAutomationPick(String name) {
+    return 'चलाने के लिए \"$name\" चुनें।';
+  }
+
+  @override
+  String shortcutsAutomationNoTab(String name) {
+    return 'ऑटोमेशन टैब नहीं है? \"$name\" खोलें, संपादित करें पर टैप करें, फिर ऑटोमेशन पर टैप करें।';
+  }
+
+  @override
+  String get shortcutsStepTestTitle => 'अभी जाँचें';
+
+  @override
+  String shortcutsStepTestBody(String name) {
+    return '\"$name\" एक बार चलता है, ताकि आप नया वॉलपेपर अभी देख सकें।';
+  }
+
+  @override
+  String get shortcutsStepTestAction => 'शॉर्टकट चलाएँ';
+
+  @override
+  String get foldersRotateDaily => 'इस फ़ोल्डर को हर दिन रोटेट करें';
+
+  @override
+  String get autoRotateIosTitle => 'Shortcuts से वॉलपेपर बदलें';
+
+  @override
+  String get autoRotateIosBody => 'iPhone पर, एक Shortcuts ऑटोमेशन हर दिन आपके फ़ोल्डर से नया वॉलपेपर सेट करता है।';
+
+  @override
+  String get autoRotateIosAction => 'Shortcuts सेट करें';
+
+  @override
+  String get shortcutsAutomationIos16 =>
+      'iOS 16 में \"तुरंत चलाएँ\" नहीं है। इसके बजाय \"चलाने से पहले पूछें\" बंद करें।';
+
+  @override
+  String get tipAction => 'क्रिएटर को टिप दें';
+
+  @override
+  String get tipMenuItem => 'टिप भेजें';
+
+  @override
+  String tipTitle(String name) {
+    return '$name को टिप दें';
+  }
+
+  @override
+  String tipMessage(String name) {
+    return 'एक रकम चुनें। $name को सारे कॉइन्स मिलेंगे और उन्हें आपका नाम दिखेगा।';
+  }
+
+  @override
+  String get tipAmountsLabel => 'टिप की रकम';
+
+  @override
+  String tipBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance कॉइन्स', one: '1 कॉइन');
+    return 'आपका बैलेंस: $_temp0';
+  }
+
+  @override
+  String tipShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount और कॉइन्स', one: '1 और कॉइन');
+    return 'आपको $_temp0 चाहिए।';
+  }
+
+  @override
+  String tipSendButton(int amount) {
+    return '$amount कॉइन्स की टिप दें';
+  }
+
+  @override
+  String get tipEarnCoins => 'कॉइन्स कमाएँ';
+
+  @override
+  String get tipThanksTitle => 'टिप के लिए धन्यवाद';
+
+  @override
+  String tipThanksMessage(String name, int amount) {
+    return '$name को आपके $amount कॉइन्स मिल गए।';
+  }
+
+  @override
+  String get tipDone => 'हो गया';
+
+  @override
+  String get tipNotEnoughCoins => 'इस टिप के लिए आपके पास पर्याप्त कॉइन्स नहीं हैं।';
+
+  @override
+  String get tipDailyLimit => 'आज की सारी टिप्स आप भेज चुके हैं। कल फिर कोशिश करें।';
+
+  @override
+  String tipPairLimit(String name) {
+    return 'आप आज $name को पहले ही टिप दे चुके हैं। कल फिर कोशिश करें।';
+  }
+
+  @override
+  String tipCreatorLimit(String name) {
+    return '$name आज और टिप्स नहीं पा सकते। कल फिर कोशिश करें।';
+  }
+
+  @override
+  String get tipSenderTooNew => 'Prism से जुड़ने के 7 दिन बाद आप टिप्स भेज सकते हैं।';
+
+  @override
+  String get tipSenderIneligible => 'टिप भेजने के लिए सत्यापित खाते से साइन इन करें।';
+
+  @override
+  String tipUnavailable(String name) {
+    return 'अभी आप $name को टिप नहीं दे सकते।';
+  }
+
+  @override
+  String get tipFailed => 'टिप नहीं भेजी जा सकी। फिर से कोशिश करें।';
+
+  @override
+  String wallTippedBy(int count) {
+    return '$count लोगों ने टिप दी';
+  }
+
+  @override
+  String get coreCoinTipSent => 'टिप भेजी गई';
+
+  @override
+  String get coreCoinTipReceived => 'टिप मिली';
+
+  @override
+  String notifPushTipReceivedTitle(String senderName, String amount, String wallTitle) {
+    return '$senderName ने $wallTitle के लिए आपको $amount कॉइन्स की टिप दी';
+  }
+
+  @override
+  String notifPushTipReceivedTitleUntitled(String senderName, String amount) {
+    return '$senderName ने आपको $amount कॉइन्स की टिप दी';
+  }
+
+  @override
+  String get notifPushTipReceivedBody => 'अपने क्रिएटर स्टैट्स में अपनी टिप्स देखें।';
+
+  @override
+  String notifTipsReceivedTitle(int count) {
+    return 'आज आपको $count टिप्स मिलीं';
+  }
+
+  @override
+  String notifTipsReceivedBody(int coins) {
+    return 'कुल $coins कॉइन्स। इन्हें अपने क्रिएटर स्टैट्स में देखें।';
+  }
+
+  @override
+  String get statsTips => 'टिप्स';
+
+  @override
+  String statsTipsTotal(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count टिप्स', one: '1 टिप');
+    return '$_temp0, कुल $coins कॉइन्स';
+  }
+
+  @override
+  String statsTipsWeek(String date, int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count टिप्स', one: '1 टिप');
+    return '$date से शुरू हफ़्ता: $_temp0, $coins कॉइन्स';
+  }
+
+  @override
+  String statsTipsWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count टिप्स', one: '1 टिप');
+    return '$_temp0, $coins कॉइन्स';
+  }
+
+  @override
+  String get statsTipsEmpty => 'अभी कोई टिप नहीं है। प्रशंसक आपके वॉलपेपर और प्रोफ़ाइल से आपको टिप दे सकते हैं।';
+
+  @override
+  String get creatorsToFollow => 'फ़ॉलो करने लायक क्रिएटर';
+
+  @override
+  String get creatorsSeeAll => 'सभी देखें';
+
+  @override
+  String get creatorsTitle => 'क्रिएटर';
+
+  @override
+  String get creatorsFilterAll => 'सभी';
+
+  @override
+  String get creatorsEmptyTitle => 'यहाँ अभी कोई क्रिएटर नहीं';
+
+  @override
+  String get creatorsEmptyBody => 'कोई दूसरी श्रेणी आज़माएँ।';
+
+  @override
+  String get creatorsLoadError => 'क्रिएटर लोड नहीं हो सके';
+
+  @override
+  String creatorsOpenProfile(String name) {
+    return '$name की प्रोफ़ाइल खोलें';
+  }
+
+  @override
+  String creatorsWallBy(String name) {
+    return '$name का वॉलपेपर';
+  }
+
+  @override
+  String creatorsFollowedByOne(String first) {
+    return '$first फ़ॉलो करते हैं';
+  }
+
+  @override
+  String creatorsFollowedByTwo(String first, String second) {
+    return '$first और $second फ़ॉलो करते हैं';
+  }
+
+  @override
+  String creatorsFollowedByMany(String first, String second, int others) {
+    String _temp0 = intl.Intl.pluralLogic(
+      others,
+      locale: localeName,
+      other: 'आपके फ़ॉलो किए $others और लोग',
+      one: 'आपके फ़ॉलो किए एक और व्यक्ति',
+    );
+    return '$first, $second और $_temp0 फ़ॉलो करते हैं';
+  }
+
+  @override
+  String creatorsMoreLike(String name) {
+    return '$name जैसे और';
+  }
+
+  @override
+  String get creatorsSimilarSubtitle => 'मिलते-जुलते स्टाइल वाले क्रिएटर';
+
+  @override
+  String get creatorsShowMeTitle => 'मुझे फ़ॉलो करने लायक क्रिएटर में दिखाएँ';
+
+  @override
+  String get creatorsShowMeBody => 'दूसरे आपकी प्रोफ़ाइल और टॉप वॉलपेपर ढूँढ सकते हैं';
+
+  @override
+  String get promoRedeemTitle => 'कोड रिडीम करें';
+
+  @override
+  String get promoRedeemMessage => 'Prism की किसी पोस्ट या गिवअवे से मिला कोड डालें।';
+
+  @override
+  String get promoRedeemMessageIos => 'Prism की किसी पोस्ट या गिवअवे से मिला सिक्कों वाला कोड डालें।';
+
+  @override
+  String get promoCodeFieldLabel => 'कोड';
+
+  @override
+  String get promoCodeFieldHint => 'जैसे, 7KQ2 MPXR 4D';
+
+  @override
+  String get promoPasteCode => 'कोड पेस्ट करें';
+
+  @override
+  String get promoRedeemAction => 'रिडीम करें';
+
+  @override
+  String get promoRedeeming => 'कोड रिडीम हो रहा है';
+
+  @override
+  String get promoDone => 'हो गया';
+
+  @override
+  String get promoTryAnother => 'दूसरा कोड आज़माएँ';
+
+  @override
+  String promoSuccessCoins(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString सिक्के', one: '1 सिक्का');
+    return 'आपको $_temp0 मिले';
+  }
+
+  @override
+  String get promoSuccessCoinsMessage => 'अब ये आपके बैलेंस में हैं।';
+
+  @override
+  String promoSuccessPro(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString दिन', one: '1 दिन');
+    return 'आपको Pro के $_temp0 मिले';
+  }
+
+  @override
+  String promoSuccessProMessage(String date) {
+    return 'आपका Pro पास अब $date तक चलेगा।';
+  }
+
+  @override
+  String get promoErrorInvalid => 'यह Prism का कोड नहीं है। कोड में 10 या उससे ज़्यादा अक्षर और अंक होते हैं।';
+
+  @override
+  String get promoErrorNotFound => 'यह कोड नहीं मिला। इसे जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get promoErrorDisabled => 'यह कोड बंद कर दिया गया है।';
+
+  @override
+  String get promoErrorExpired => 'इस कोड की मियाद खत्म हो चुकी है।';
+
+  @override
+  String get promoErrorLimitReached => 'इस कोड के अब और उपयोग बाकी नहीं हैं।';
+
+  @override
+  String get promoErrorAlreadyRedeemed => 'आप यह कोड पहले ही इस्तेमाल कर चुके हैं।';
+
+  @override
+  String get promoErrorAccountTooNew => 'आपका खाता इस कोड के लिए बहुत नया है।';
+
+  @override
+  String get promoErrorNewUsersOnly => 'यह कोड केवल नए खातों के लिए है।';
+
+  @override
+  String get promoErrorPremiumNotOnIos =>
+      'Pro कोड iPhone या iPad पर काम नहीं करते। इसके बजाय App Store कोड इस्तेमाल करें।';
+
+  @override
+  String get promoErrorAlreadyPremium => 'आपके पास पहले से Pro है, इसलिए यह कोड ज़रूरी नहीं है।';
+
+  @override
+  String get promoErrorRateLimited => 'बहुत ज़्यादा कोशिशें हो गईं। एक घंटा रुकें, फिर कोशिश करें।';
+
+  @override
+  String get promoErrorBusy => 'इस समय बहुत लोग कोड रिडीम कर रहे हैं। थोड़ी देर बाद फिर कोशिश करें।';
+
+  @override
+  String get promoErrorSignedOut => 'कोड रिडीम करने के लिए साइन इन करें।';
+
+  @override
+  String get promoErrorNetwork => 'Prism तक नहीं पहुँच पा रहे। अपना कनेक्शन जाँचें और फिर कोशिश करें।';
+
+  @override
+  String get promoErrorUnknown => 'कुछ गड़बड़ हो गई। फिर से कोशिश करें।';
+
+  @override
+  String get promoSettingsGroup => 'कोड';
+
+  @override
+  String get promoSettingsRedeemTitle => 'Prism कोड रिडीम करें';
+
+  @override
+  String get promoSettingsRedeemSubtitle => 'हमारी पोस्ट और गिवअवे से सिक्के या Pro के दिन';
+
+  @override
+  String get promoSettingsRedeemSubtitleIos => 'हमारी पोस्ट और गिवअवे से सिक्के';
+
+  @override
+  String get promoAppStoreCodeTitle => 'App Store कोड रिडीम करें';
+
+  @override
+  String get promoAppStoreCodeSubtitle => 'Apple से Pro ऑफ़र कोड';
+
+  @override
+  String get promoPlayCodeTitle => 'Play कोड रिडीम करें';
+
+  @override
+  String get promoPlayCodeSubtitle => 'Google Play से Pro ऑफ़र कोड';
+
+  @override
+  String get promoCodesFootnoteIos => 'Prism कोड सिक्के देते हैं। App Store कोड Pro देते हैं।';
+
+  @override
+  String get promoCodesFootnoteAndroid => 'Prism कोड सिक्के या Pro के दिन देते हैं। Play कोड Pro देते हैं।';
+
+  @override
+  String get promoStoreCodeFailed => 'कोड वाला पेज नहीं खुल सका। फिर से कोशिश करें।';
+
+  @override
+  String get promoRewardsRowTitle => 'कोड रिडीम करें';
+
+  @override
+  String get promoRewardsRowSubtitle => 'किसी पोस्ट या गिवअवे से कोड मिला है?';
+
+  @override
+  String get promoAdminTitle => 'प्रोमो कोड';
+
+  @override
+  String get promoAdminEntry => 'प्रोमो कोड';
+
+  @override
+  String get promoAdminCreate => 'कोड बनाएँ';
+
+  @override
+  String get promoAdminTypeCoins => 'सिक्के';
+
+  @override
+  String get promoAdminTypePro => 'Pro के दिन';
+
+  @override
+  String get promoAdminAmount => 'राशि';
+
+  @override
+  String get promoAdminAmountHelpCoins => '1 से 1,000 सिक्के';
+
+  @override
+  String get promoAdminAmountHelpPro => '1 से 90 दिन। केवल Android।';
+
+  @override
+  String get promoAdminMaxRedemptions => 'अधिकतम रिडेम्पशन';
+
+  @override
+  String get promoAdminExpiresInDays => 'इतने दिनों में खत्म (दिन)';
+
+  @override
+  String get promoAdminMinAccountAge => 'न्यूनतम खाता आयु (दिन)';
+
+  @override
+  String get promoAdminNewUsersOnly => 'केवल नए खाते';
+
+  @override
+  String get promoAdminNewUsersDays => 'खाता अधिकतम (दिन पुराना)';
+
+  @override
+  String get promoAdminCustomCode => 'कस्टम कोड (वैकल्पिक)';
+
+  @override
+  String get promoAdminCustomCodeHelp =>
+      '10 से 32 अक्षर और अंक, I, O, 0 या 1 के बिना। खाली छोड़ें तो कोड अपने आप बनेगा।';
+
+  @override
+  String get promoAdminLabel => 'नोट';
+
+  @override
+  String promoAdminCreated(String code) {
+    return '$code बनाया गया';
+  }
+
+  @override
+  String get promoAdminCopied => 'कोड कॉपी हो गया';
+
+  @override
+  String get promoAdminCopy => 'कोड कॉपी करें';
+
+  @override
+  String promoAdminRedemptions(int used, int max) {
+    return '$max में से $used इस्तेमाल हुए';
+  }
+
+  @override
+  String promoAdminExpires(String date) {
+    return '$date को खत्म होगा';
+  }
+
+  @override
+  String get promoAdminDisabled => 'बंद';
+
+  @override
+  String get promoAdminDisable => 'बंद करें';
+
+  @override
+  String get promoAdminEnable => 'चालू करें';
+
+  @override
+  String get promoAdminEmpty => 'अभी तक कोई कोड नहीं।';
+
+  @override
+  String get promoAdminLoadFailed => 'कोड लोड नहीं हो सके। फिर से कोशिश करने के लिए नीचे खींचें।';
+
+  @override
+  String promoAdminCreateFailed(String reason) {
+    return 'कोड नहीं बन सका: $reason';
+  }
+
+  @override
+  String get desktopVersionChip => 'डेस्कटॉप वर्शन';
+
+  @override
+  String get desktopVersionChipSemantic => 'डेस्कटॉप वर्शन खोलें';
+
+  @override
+  String get desktopVersionSheetTitle => 'डेस्कटॉप वर्शन';
+
+  @override
+  String desktopVersionSheetBody(int width, int height) {
+    return 'वही दृश्य, कंप्यूटर स्क्रीन के लिए चौड़ा किया गया। $width × $height.';
+  }
+
+  @override
+  String get desktopVersionPreviewSemantic => 'कंप्यूटर स्क्रीन पर डेस्कटॉप वर्शन';
+
+  @override
+  String get desktopVersionSendToComputer => 'मेरे कंप्यूटर पर भेजें';
+
+  @override
+  String desktopVersionShareText(String url) {
+    return 'अपने कंप्यूटर के लिए यह वॉलपेपर पाएँ: $url';
+  }
+
+  @override
+  String get desktopVersionShareSubject => 'Prism का डेस्कटॉप वॉलपेपर';
+
+  @override
+  String get desktopVersionSetOnTablet => 'डेस्कटॉप वर्शन लगाएँ';
+
+  @override
+  String get desktopVersionSaveOnTablet => 'डेस्कटॉप वर्शन फ़ोटो में सेव करें';
+
+  @override
+  String get desktopVersionUnavailable => 'डेस्कटॉप वर्शन नहीं मिल सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।';
+
+  @override
+  String get layoutTitle => 'लेआउट';
+
+  @override
+  String get layoutRowSubtitle => 'टैब और वॉलपेपर ग्रिड';
+
+  @override
+  String get layoutTabsHeader => 'टैब';
+
+  @override
+  String get layoutTabsFootnote =>
+      'क्रम बदलने के लिए खींचें। बार में कम से कम 3 टैब रहते हैं। छिपे टैब \"और\" के नीचे हैं।';
+
+  @override
+  String get layoutTabAlwaysShown => 'हमेशा बार में';
+
+  @override
+  String get layoutTabUnderMore => '\"और\" के नीचे';
+
+  @override
+  String layoutShowTab(String tab) {
+    return '$tab दिखाएँ';
+  }
+
+  @override
+  String layoutReorderTab(String tab) {
+    return '$tab का क्रम बदलें';
+  }
+
+  @override
+  String get layoutMoveUp => 'ऊपर ले जाएँ';
+
+  @override
+  String get layoutMoveDown => 'नीचे ले जाएँ';
+
+  @override
+  String get layoutGridHeader => 'वॉलपेपर ग्रिड';
+
+  @override
+  String get layoutDensityCompact => 'कॉम्पैक्ट';
+
+  @override
+  String get layoutDensityComfortable => 'आरामदायक';
+
+  @override
+  String get layoutDensityLarge => 'बड़ा';
+
+  @override
+  String get layoutGridFootnote => 'हर वॉलपेपर ग्रिड पर लागू होता है। बदलने के लिए होम फ़ीड पर पिंच करें।';
+
+  @override
+  String get layoutReset => 'लेआउट रीसेट करें';
+
+  @override
+  String get navMore => 'और';
+
+  @override
+  String get navMoreEditTabs => 'टैब संपादित करें';
+
+  @override
+  String wrappedTitle(String year) {
+    return 'Prism Wrapped $year';
+  }
+
+  @override
+  String get wrappedIntroHeadline => 'इस साल के आपके वॉलपेपर';
+
+  @override
+  String get wrappedIntroBody => 'इस साल आपको पसंद आए वॉलपेपर के बारे में कुछ कार्ड।';
+
+  @override
+  String get wrappedSavesLabel => 'सहेजे गए';
+
+  @override
+  String wrappedSavesBody(int count, String year) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपने $year में $count वॉलपेपर सहेजे।',
+      one: 'आपने $year में 1 वॉलपेपर सहेजा।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedColoursLabel => 'आपके रंग';
+
+  @override
+  String wrappedColoursBody(String first, String second, String third) {
+    return 'आपके सहेजे गए वॉलपेपर में $first, $second और $third सबसे ज़्यादा दिखे।';
+  }
+
+  @override
+  String get wrappedCreatorLabel => 'आपके पसंदीदा क्रिएटर';
+
+  @override
+  String wrappedCreatorBody(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपने $name के $count वॉलपेपर सहेजे।',
+      one: 'आपने $name का 1 वॉलपेपर सहेजा।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedStreakLabel => 'आपकी सबसे लंबी लगातार शृंखला';
+
+  @override
+  String wrappedStreakBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आप $count दिन लगातार आए।',
+      one: 'आप 1 दिन लगातार आए।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count दिन', one: '1 दिन');
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedAiLabel => 'AI से बना';
+
+  @override
+  String wrappedAiBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपने $count AI वॉलपेपर बनाए।',
+      one: 'आपने 1 AI वॉलपेपर बनाया।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedCategoryLabel => 'आपकी सबसे पसंदीदा श्रेणी';
+
+  @override
+  String wrappedCategoryBody(int count, String category) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपने $category से $count वॉलपेपर सहेजे।',
+      one: 'आपने $category से 1 वॉलपेपर सहेजा।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedFoldersLabel => 'फ़ोल्डर';
+
+  @override
+  String wrappedFoldersBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपने $count फ़ोल्डर बनाए।',
+      one: 'आपने 1 फ़ोल्डर बनाया।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedOnScreenLabel => 'आपकी स्क्रीन पर';
+
+  @override
+  String wrappedOnScreenBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपने यह वॉलपेपर $count बार सेट या डाउनलोड किया।',
+      one: 'आपने यह वॉलपेपर 1 बार सेट या डाउनलोड किया।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedChallengesLabel => 'साप्ताहिक चुनौतियाँ';
+
+  @override
+  String wrappedChallengesBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आप $count साप्ताहिक चुनौतियों में शामिल हुए।',
+      one: 'आप 1 साप्ताहिक चुनौती में शामिल हुए।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedTipsLabel => 'टिप्स';
+
+  @override
+  String wrappedTipsBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपने क्रिएटर्स को $count टिप्स भेजीं।',
+      one: 'आपने एक क्रिएटर को 1 टिप भेजी।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedSince(String date) {
+    return '$date से';
+  }
+
+  @override
+  String wrappedSummaryHeadline(String year) {
+    return 'Prism पर आपका $year';
+  }
+
+  @override
+  String get wrappedShare => 'शेयर करें';
+
+  @override
+  String get wrappedShareCard => 'यह कार्ड शेयर करें';
+
+  @override
+  String get wrappedPause => 'रोकें';
+
+  @override
+  String get wrappedPlay => 'चलाएँ';
+
+  @override
+  String get wrappedClose => 'बंद करें';
+
+  @override
+  String get wrappedNextCard => 'अगला कार्ड';
+
+  @override
+  String get wrappedPreviousCard => 'पिछला कार्ड';
+
+  @override
+  String wrappedCardPosition(int index, int count) {
+    return '$count में से कार्ड $index';
+  }
+
+  @override
+  String wrappedHomeTitle(String year) {
+    return 'Prism पर आपका $year';
+  }
+
+  @override
+  String get wrappedHomeSubtitle => 'इस साल के आपके वॉलपेपर तैयार हैं।';
+
+  @override
+  String get wrappedNotEligible => 'इस साल इस खाते के लिए कोई Wrapped नहीं है।';
+
+  @override
+  String get wrappedLoadFailed => 'आपका Wrapped लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String notifPushWrappedReadyTitle(String year) {
+    return 'Prism पर आपका $year आ गया है';
+  }
+
+  @override
+  String get notifPushWrappedReadyBody => 'अपने सहेजे वॉलपेपर, अपने रंग और अपने क्रिएटर देखें।';
+
+  @override
+  String get trialTimelineTitle => 'आपका मुफ़्त ट्रायल कैसे काम करता है';
+
+  @override
+  String get trialTimelineClose => 'बंद करें';
+
+  @override
+  String trialTimelinePlanSummary(int days, String price) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString दिन', one: '1 दिन');
+    return 'Prism Pro सालाना। $_temp0 मुफ़्त, उसके बाद $price प्रति वर्ष।';
+  }
+
+  @override
+  String get trialTimelineToday => 'आज';
+
+  @override
+  String get trialTimelineTodayBody => 'आपको Prism Pro की पूरी सुविधा मिलती है। आज आपसे कुछ नहीं लिया जाता।';
+
+  @override
+  String trialTimelineDay(int day) {
+    final intl.NumberFormat dayNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String dayString = dayNumberFormat.format(day);
+
+    return 'दिन $dayString';
+  }
+
+  @override
+  String get trialTimelineReminderBody => 'हम आपको याद दिलाते हैं कि आपका ट्रायल जल्द खत्म होगा।';
+
+  @override
+  String get trialTimelineNoReminderBody => 'कोई याद दिलाना नहीं। आपने इसे नीचे बंद किया है।';
+
+  @override
+  String trialTimelineChargeBody(String price) {
+    return 'कम से कम 24 घंटे पहले रद्द न करने पर $price लिए जाएँगे।';
+  }
+
+  @override
+  String get trialTimelineRemindToggle => 'ट्रायल खत्म होने से 2 दिन पहले मुझे याद दिलाएँ';
+
+  @override
+  String trialTimelineRenewalTerms(String price, String store) {
+    return 'ट्रायल के बाद, Prism Pro सालाना $price प्रति वर्ष पर नवीनीकृत होगा, जब तक आप रद्द न करें। $store आपके खाते से शुल्क लेता है। शुल्क से बचने के लिए, ट्रायल या नवीनीकरण खत्म होने से कम से कम 24 घंटे पहले रद्द करें।';
+  }
+
+  @override
+  String trialTimelineCancelLink(String store) {
+    return '$store की सेटिंग में कभी भी रद्द करें';
+  }
+
+  @override
+  String get trialTimelineSeeAllPlans => 'सभी प्लान देखें';
+
+  @override
+  String trialTimelineStart(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    return '$daysString दिन का मुफ़्त ट्रायल शुरू करें';
+  }
+
+  @override
+  String get trialTimelineStartFailed => 'मुफ़्त ट्रायल शुरू नहीं हो सका। फिर से कोशिश करें।';
+
+  @override
+  String trialReminderTitle(String date) {
+    return 'आपका मुफ़्त ट्रायल $date को खत्म होगा';
+  }
+
+  @override
+  String trialReminderBody(String store) {
+    return 'उसके बाद, आपसे Prism Pro सालाना का शुल्क लिया जाएगा। शुल्क से बचने के लिए, कम से कम 24 घंटे पहले $store की सेटिंग में रद्द करें।';
+  }
+
+  @override
+  String get notifChannelSubscription => 'सब्सक्रिप्शन';
+
+  @override
+  String get notifChannelSubscriptionDescription => 'आपका मुफ़्त ट्रायल खत्म होने से पहले एक याद दिलाना';
+
+  @override
+  String premiumTrialEnds(String date) {
+    return 'ट्रायल, $date को खत्म होगा';
+  }
+
+  @override
+  String get premiumTrialAutoRenewOff => 'ऑटो-रिन्यू बंद है। ट्रायल खत्म होने पर आपसे कोई शुल्क नहीं लिया जाएगा।';
 }

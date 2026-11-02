@@ -20,8 +20,10 @@ import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
 import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/features/theme_mode/data/seasonal_announcement.dart';
 import 'package:Prism/features/theme_mode/seasonal_themes.dart';
@@ -29,6 +31,7 @@ import 'package:Prism/features/theme_mode/views/widgets/diwali_decor.dart';
 import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_usecase.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
@@ -40,6 +43,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:quick_actions/quick_actions.dart';
+
+final DateTime _appSessionStartedAt = DateTime.now();
 
 const int _homeTabIndex = 0;
 const int _collectionTabIndex = 3;
@@ -113,6 +118,7 @@ class HomeTabTickerMode extends StatelessWidget {
 }
 
 class _HomeTabPageState extends State<HomeTabPage> {
+  final DateTime _sessionStartedAt = _appSessionStartedAt;
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _isOnline = true;
   bool _hasHandledQuickActionInvocation = false;
@@ -218,6 +224,8 @@ class _HomeTabPageState extends State<HomeTabPage> {
     }
     final int? tabIndex = quickActionTabIndex(shortcutType);
     if (tabIndex == null) return;
+    // The shortcut is labelled For you, so it opens that tab, not the remembered one.
+    if (tabIndex == _homeTabIndex) unawaited(getIt<LayoutPrefsStore>().setFeedTab(HomeFeedChip.forYou));
     context.router.root.popUntilRouteWithName(DashboardRoute.name);
     context.tabsRouter.setActiveIndex(tabIndex);
   }
@@ -318,7 +326,10 @@ class _HomeTabPageState extends State<HomeTabPage> {
       context.read<FavouriteWallsBloc>().add(FavouriteWallsEvent.synced(userId: update.userId, items: update.items));
     });
     final user = app_state.prismUser;
-    if (user.loggedIn) unawaited(sync.start(user.id));
+    if (user.loggedIn) {
+      unawaited(sync.start(user.id));
+      unawaited(restoreAccountHistory(user.id));
+    }
   }
 
   @override
@@ -340,7 +351,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         body: Stack(
           children: <Widget>[
-            PersonalizedFeedScreen(onTuneTap: _openFeedSettings),
+            PersonalizedFeedScreen(onTuneTap: _openFeedSettings, sessionStartedAt: _sessionStartedAt),
             Padding(
               padding: EdgeInsets.only(top: PersonalizedFeedScreen.headerHeight(context)),
               child: ConnectivityWidget(offline: !_isOnline),

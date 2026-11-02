@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
@@ -191,8 +192,15 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('guest favourite keeps the adapter path without a sign-in gate', (tester) async {
+  testWidgets('guest cancelling sign-in does not favourite', (tester) async {
     app_state.prismUser = app_constants.createGuestPrismUser();
+    final original = signedInActionSignIn;
+    var prompts = 0;
+    signedInActionSignIn = (_) async {
+      prompts++;
+      return false;
+    };
+    addTearDown(() => signedInActionSignIn = original);
     current = current.copyWith(userId: '');
     await pumpTile(tester);
     final gesture = await hold(tester);
@@ -200,8 +208,8 @@ void main() {
     await gesture.up();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
-    expect(events.single.mapOrNull(toggleRequested: (e) => e.desired), isTrue);
-    expect(find.text('Sign in'), findsNothing);
+    expect(prompts, 1);
+    expect(events, isEmpty);
     await tester.pump(const Duration(seconds: 5));
   });
 

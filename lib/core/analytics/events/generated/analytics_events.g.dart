@@ -7,12 +7,25 @@ import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
+import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
+import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
+import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
+import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
+import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
 
 Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
+  'daily_moment_step': DailyMomentStepValue.values.map((value) => value.wireValue).toList(),
+  'challenge_entry_source': ChallengeEntrySource.values.map((value) => value.wireValue).toList(),
   'wallpaper_target': WallpaperTarget.values.map((value) => value.wireValue).toList(),
+  'taste_quiz_source': TasteQuizSource.values.map((value) => value.wireValue).toList(),
+  'quiz_side': QuizSide.values.map((value) => value.wireValue).toList(),
   'binary_result': BinaryResultValue.values.map((value) => value.wireValue).toList(),
+  'ai_apply_from': AiApplyFromValue.values.map((value) => value.wireValue).toList(),
+  'ai_style_pick_source': AiStylePickSource.values.map((value) => value.wireValue).toList(),
   'rc_or_fallback': RcOrFallbackValue.values.map((value) => value.wireValue).toList(),
+  'live_wallpaper_style': LiveWallpaperStyleValue.values.map((value) => value.wireValue).toList(),
   'paywall_result': PaywallResultValue.values.map((value) => value.wireValue).toList(),
+  'wrapped_source': WrappedSourceValue.values.map((value) => value.wireValue).toList(),
   'subscription_entitlement_refresh_result': SubscriptionEntitlementRefreshResultValue.values
       .map((value) => value.wireValue)
       .toList(),
@@ -35,6 +48,8 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'notification_type': NotificationTypeValue.values.map((value) => value.wireValue).toList(),
   'auth_method': AuthMethodValue.values.map((value) => value.wireValue).toList(),
   'nav_tab': NavTabValue.values.map((value) => value.wireValue).toList(),
+  'wall_grid_density': WallGridDensity.values.map((value) => value.wireValue).toList(),
+  'layout_change_source': LayoutChangeSourceValue.values.map((value) => value.wireValue).toList(),
   'notification_preference': NotificationPreferenceValue.values.map((value) => value.wireValue).toList(),
   'deep_link_source': DeepLinkSourceValue.values.map((value) => value.wireValue).toList(),
   'widget_kind': WidgetKindValue.values.map((value) => value.wireValue).toList(),
@@ -45,6 +60,15 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'scroll_depth_percent': ScrollDepthPercentValue.values.map((value) => value.wireValue).toList(),
   'link_destination': LinkDestinationValue.values.map((value) => value.wireValue).toList(),
   'push_kind': PushKindValue.values.map((value) => value.wireValue).toList(),
+  'immersive_toggle_source': ImmersiveToggleSourceValue.values.map((value) => value.wireValue).toList(),
+  'favourite_pin_surface': FavouritePinSurfaceValue.values.map((value) => value.wireValue).toList(),
+  'wall_request_source': WallRequestSourceValue.values.map((value) => value.wireValue).toList(),
+  'wall_request_filler': WallRequestFillerValue.values.map((value) => value.wireValue).toList(),
+  'remix_source_type': RemixSourceType.values.map((value) => value.wireValue).toList(),
+  'redeem_sheet_source': RedeemSheetSource.values.map((value) => value.wireValue).toList(),
+  'promo_reward_type': PromoRewardType.values.map((value) => value.wireValue).toList(),
+  'redeem_failure_reason': RedeemFailureReason.values.map((value) => value.wireValue).toList(),
+  'store_code_platform': StoreCodePlatform.values.map((value) => value.wireValue).toList(),
   'ota_failure_reason': OtaFailureReasonValue.values.map((value) => value.wireValue).toList(),
 };
 
@@ -694,6 +718,35 @@ class AiPromptShuffledEvent extends AnalyticsEvent {
   }
 }
 
+class AiStyleSheetOpenedEvent extends AnalyticsEvent {
+  const AiStyleSheetOpenedEvent({required this.style});
+
+  final String style;
+
+  @override
+  String get eventName => 'ai_style_sheet_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'style': style};
+  }
+}
+
+class AiStylePickedEvent extends AnalyticsEvent {
+  const AiStylePickedEvent({required this.style, required this.source});
+
+  final String style;
+  final AiStylePickSource source;
+
+  @override
+  String get eventName => 'ai_style_picked';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'style': style, 'source': source.wireValue};
+  }
+}
+
 class AiHistoryOpenedEvent extends AnalyticsEvent {
   const AiHistoryOpenedEvent({required this.count});
 
@@ -898,6 +951,50 @@ class AiSubmitSuccessEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'generation_id': generationId};
+  }
+}
+
+class AiResultAppliedEvent extends AnalyticsEvent {
+  const AiResultAppliedEvent({required this.platform, required this.from});
+
+  final String platform;
+  final AiApplyFromValue from;
+
+  @override
+  String get eventName => 'ai_result_applied';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'platform': platform, 'from': from.wireValue};
+  }
+}
+
+class AiFollowUpUsedEvent extends AnalyticsEvent {
+  const AiFollowUpUsedEvent({required this.chipId});
+
+  final String chipId;
+
+  @override
+  String get eventName => 'ai_follow_up_used';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'chip_id': chipId};
+  }
+}
+
+class AiStripSwappedEvent extends AnalyticsEvent {
+  const AiStripSwappedEvent({required this.position, required this.count});
+
+  final int position;
+  final int count;
+
+  @override
+  String get eventName => 'ai_strip_swapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'position': position, 'count': count};
   }
 }
 
@@ -1452,6 +1549,102 @@ class AutoRotateDisabledEvent extends AnalyticsEvent {
   }
 }
 
+class AutoRotateFolderSetEvent extends AnalyticsEvent {
+  const AutoRotateFolderSetEvent({required this.itemCountBucket});
+
+  final String itemCountBucket;
+
+  @override
+  String get eventName => 'auto_rotate_folder_set';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'item_count_bucket': itemCountBucket};
+  }
+}
+
+class AutoRotateFolderTappedEvent extends AnalyticsEvent {
+  const AutoRotateFolderTappedEvent({required this.itemCountBucket});
+
+  final String itemCountBucket;
+
+  @override
+  String get eventName => 'auto_rotate_folder_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'item_count_bucket': itemCountBucket};
+  }
+}
+
+class AutoRotateStoppedEvent extends AnalyticsEvent {
+  const AutoRotateStoppedEvent({required this.reason});
+
+  final String reason;
+
+  @override
+  String get eventName => 'auto_rotate_stopped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'reason': reason};
+  }
+}
+
+class IosRotationFolderSetEvent extends AnalyticsEvent {
+  const IosRotationFolderSetEvent({required this.source, required this.itemCountBucket});
+
+  final String source;
+  final String itemCountBucket;
+
+  @override
+  String get eventName => 'ios_rotation_folder_set';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'item_count_bucket': itemCountBucket};
+  }
+}
+
+class IosShortcutsGuideOpenedEvent extends AnalyticsEvent {
+  const IosShortcutsGuideOpenedEvent({
+    required this.source,
+    required this.hasShortcutLink,
+    required this.hasRotationFolder,
+  });
+
+  final String source;
+  final bool hasShortcutLink;
+  final bool hasRotationFolder;
+
+  @override
+  String get eventName => 'ios_shortcuts_guide_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'source': source,
+      'has_shortcut_link': hasShortcutLink ? 1 : 0,
+      'has_rotation_folder': hasRotationFolder ? 1 : 0,
+    };
+  }
+}
+
+class IosShortcutLinkOpenedEvent extends AnalyticsEvent {
+  const IosShortcutLinkOpenedEvent({required this.kind, required this.opened});
+
+  final String kind;
+  final bool opened;
+
+  @override
+  String get eventName => 'ios_shortcut_link_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'kind': kind, 'opened': opened ? 1 : 0};
+  }
+}
+
 class NavTabSelectedEvent extends AnalyticsEvent {
   const NavTabSelectedEvent({required this.fromTab, required this.toTab});
 
@@ -1464,6 +1657,63 @@ class NavTabSelectedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'from_tab': fromTab.wireValue, 'to_tab': toTab.wireValue};
+  }
+}
+
+class LayoutTabsReorderedEvent extends AnalyticsEvent {
+  const LayoutTabsReorderedEvent({required this.tab, required this.toPosition});
+
+  final NavTabValue tab;
+  final int toPosition;
+
+  @override
+  String get eventName => 'layout_tabs_reordered';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'tab': tab.wireValue, 'to_position': toPosition};
+  }
+}
+
+class LayoutTabVisibilityChangedEvent extends AnalyticsEvent {
+  const LayoutTabVisibilityChangedEvent({required this.tab, required this.visible});
+
+  final NavTabValue tab;
+  final bool visible;
+
+  @override
+  String get eventName => 'layout_tab_visibility_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'tab': tab.wireValue, 'visible': visible ? 1 : 0};
+  }
+}
+
+class LayoutDensityChangedEvent extends AnalyticsEvent {
+  const LayoutDensityChangedEvent({required this.density, required this.source});
+
+  final WallGridDensity density;
+  final LayoutChangeSourceValue source;
+
+  @override
+  String get eventName => 'layout_density_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'density': density.wireValue, 'source': source.wireValue};
+  }
+}
+
+class LayoutResetEvent extends AnalyticsEvent {
+  const LayoutResetEvent();
+
+  @override
+  String get eventName => 'layout_reset';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
   }
 }
 
@@ -1886,6 +2136,88 @@ class OnboardingV2CompletedEvent extends AnalyticsEvent {
   }
 }
 
+class TasteQuizStartedEvent extends AnalyticsEvent {
+  const TasteQuizStartedEvent({required this.source});
+
+  final TasteQuizSource source;
+
+  @override
+  String get eventName => 'taste_quiz_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
+  }
+}
+
+class TasteQuizRoundPickedEvent extends AnalyticsEvent {
+  const TasteQuizRoundPickedEvent({
+    required this.source,
+    required this.roundIndex,
+    required this.side,
+    required this.wildCard,
+  });
+
+  final TasteQuizSource source;
+  final int roundIndex;
+  final QuizSide side;
+  final bool wildCard;
+
+  @override
+  String get eventName => 'taste_quiz_round_picked';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'source': source.wireValue,
+      'round_index': roundIndex,
+      'side': side.wireValue,
+      'wild_card': wildCard ? 1 : 0,
+    };
+  }
+}
+
+class TasteQuizSkippedEvent extends AnalyticsEvent {
+  const TasteQuizSkippedEvent({required this.source, required this.roundIndex});
+
+  final TasteQuizSource source;
+  final int roundIndex;
+
+  @override
+  String get eventName => 'taste_quiz_skipped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue, 'round_index': roundIndex};
+  }
+}
+
+class TasteQuizCompletedEvent extends AnalyticsEvent {
+  const TasteQuizCompletedEvent({required this.source});
+
+  final TasteQuizSource source;
+
+  @override
+  String get eventName => 'taste_quiz_completed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
+  }
+}
+
+class TasteQuizRetakeOpenedEvent extends AnalyticsEvent {
+  const TasteQuizRetakeOpenedEvent();
+
+  @override
+  String get eventName => 'taste_quiz_retake_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
 class BadgeEarnedEvent extends AnalyticsEvent {
   const BadgeEarnedEvent({required this.badgeId, required this.coins});
 
@@ -2051,30 +2383,71 @@ class PushOpenedEvent extends AnalyticsEvent {
 }
 
 class ReportProblemOpenedEvent extends AnalyticsEvent {
-  const ReportProblemOpenedEvent({required this.source});
+  const ReportProblemOpenedEvent({required this.source, required this.trigger});
 
   final String source;
+  final String trigger;
 
   @override
   String get eventName => 'report_problem_opened';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'source': source};
+    return <String, Object?>{'source': source, 'trigger': trigger};
   }
 }
 
 class ReportProblemSharedEvent extends AnalyticsEvent {
-  const ReportProblemSharedEvent({required this.result});
+  const ReportProblemSharedEvent({
+    required this.result,
+    this.topic,
+    required this.hasScreenshot,
+    required this.trigger,
+  });
 
   final String result;
+  final String? topic;
+  final bool hasScreenshot;
+  final String trigger;
 
   @override
   String get eventName => 'report_problem_shared';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'result': result};
+    return <String, Object?>{
+      'result': result,
+      if (topic != null) 'topic': topic!,
+      'has_screenshot': hasScreenshot ? 1 : 0,
+      'trigger': trigger,
+    };
+  }
+}
+
+class ReportProblemSentEvent extends AnalyticsEvent {
+  const ReportProblemSentEvent({
+    required this.result,
+    required this.topic,
+    required this.hasScreenshot,
+    required this.trigger,
+  });
+
+  final String result;
+  final String topic;
+  final bool hasScreenshot;
+  final String trigger;
+
+  @override
+  String get eventName => 'report_problem_sent';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'result': result,
+      'topic': topic,
+      'has_screenshot': hasScreenshot ? 1 : 0,
+      'trigger': trigger,
+    };
   }
 }
 
@@ -2131,6 +2504,42 @@ class DataSaverToggledEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'value': value ? 1 : 0};
+  }
+}
+
+class AdJourneyEvent extends AnalyticsEvent {
+  const AdJourneyEvent({
+    required this.placement,
+    required this.watchId,
+    required this.format,
+    required this.outcome,
+    this.paidValueMicros,
+    this.currency,
+    this.precision,
+  });
+
+  final String placement;
+  final String watchId;
+  final String format;
+  final String outcome;
+  final double? paidValueMicros;
+  final String? currency;
+  final String? precision;
+
+  @override
+  String get eventName => 'ad_journey';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'placement': placement,
+      'watch_id': watchId,
+      'format': format,
+      'outcome': outcome,
+      if (paidValueMicros != null) 'paid_value_micros': paidValueMicros!,
+      if (currency != null) 'currency': currency!,
+      if (precision != null) 'precision': precision!,
+    };
   }
 }
 
@@ -2263,6 +2672,36 @@ class UploadMetadataSubmittedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'has_title': hasTitle ? 1 : 0, 'tag_count': tagCount, 'category': category};
+  }
+}
+
+class WallPendingEditedEvent extends AnalyticsEvent {
+  const WallPendingEditedEvent({required this.assetId, required this.fields});
+
+  final String assetId;
+  final List<String> fields;
+
+  @override
+  String get eventName => 'wall_pending_edited';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'asset_id': assetId, 'fields': fields};
+  }
+}
+
+class WallApprovedMetadataEditedEvent extends AnalyticsEvent {
+  const WallApprovedMetadataEditedEvent({required this.assetId, required this.fields});
+
+  final String assetId;
+  final List<String> fields;
+
+  @override
+  String get eventName => 'wall_approved_metadata_edited';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'asset_id': assetId, 'fields': fields};
   }
 }
 
@@ -2412,6 +2851,213 @@ class FolderOpenedEvent extends AnalyticsEvent {
   }
 }
 
+class FolderVisibilityChangedEvent extends AnalyticsEvent {
+  const FolderVisibilityChangedEvent({required this.isPublic, required this.source});
+
+  final bool isPublic;
+  final String source;
+
+  @override
+  String get eventName => 'folder_visibility_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'is_public': isPublic ? 1 : 0, 'source': source};
+  }
+}
+
+class PublicFolderViewedEvent extends AnalyticsEvent {
+  const PublicFolderViewedEvent({required this.source, required this.itemCount});
+
+  final String source;
+  final int itemCount;
+
+  @override
+  String get eventName => 'public_folder_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'item_count': itemCount};
+  }
+}
+
+class FolderFollowChangedEvent extends AnalyticsEvent {
+  const FolderFollowChangedEvent({required this.following, required this.source});
+
+  final bool following;
+  final String source;
+
+  @override
+  String get eventName => 'folder_follow_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'following': following ? 1 : 0, 'source': source};
+  }
+}
+
+class FolderSharedEvent extends AnalyticsEvent {
+  const FolderSharedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'folder_shared';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class FolderPushOpenedEvent extends AnalyticsEvent {
+  const FolderPushOpenedEvent({required this.folderCount});
+
+  final int folderCount;
+
+  @override
+  String get eventName => 'folder_push_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'folder_count': folderCount};
+  }
+}
+
+class MoodChipTappedEvent extends AnalyticsEvent {
+  const MoodChipTappedEvent({required this.moodId, required this.position});
+
+  final String moodId;
+  final int position;
+
+  @override
+  String get eventName => 'mood_chip_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'mood_id': moodId, 'position': position};
+  }
+}
+
+class DuoPreviewOpenedEvent extends AnalyticsEvent {
+  const DuoPreviewOpenedEvent({required this.contentId, required this.source, required this.presetId});
+
+  final String contentId;
+  final String source;
+  final String presetId;
+
+  @override
+  String get eventName => 'duo_preview_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'content_id': contentId, 'source': source, 'preset_id': presetId};
+  }
+}
+
+class DuoFoldToggledEvent extends AnalyticsEvent {
+  const DuoFoldToggledEvent({required this.contentId, required this.unfolded});
+
+  final String contentId;
+  final bool unfolded;
+
+  @override
+  String get eventName => 'duo_fold_toggled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'content_id': contentId, 'unfolded': unfolded ? 1 : 0};
+  }
+}
+
+class DuoAiGeneratedEvent extends AnalyticsEvent {
+  const DuoAiGeneratedEvent({required this.generationId, required this.qualityTier});
+
+  final String generationId;
+  final String qualityTier;
+
+  @override
+  String get eventName => 'duo_ai_generated';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'generation_id': generationId, 'quality_tier': qualityTier};
+  }
+}
+
+class DuoShareCardMadeEvent extends AnalyticsEvent {
+  const DuoShareCardMadeEvent({required this.contentId});
+
+  final String contentId;
+
+  @override
+  String get eventName => 'duo_share_card_made';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'content_id': contentId};
+  }
+}
+
+class DuoRowOpenedEvent extends AnalyticsEvent {
+  const DuoRowOpenedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'duo_row_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class MoodRowSeenEvent extends AnalyticsEvent {
+  const MoodRowSeenEvent({required this.moodId, required this.slot});
+
+  final String moodId;
+  final int slot;
+
+  @override
+  String get eventName => 'mood_row_seen';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'mood_id': moodId, 'slot': slot};
+  }
+}
+
+class MoodPageOpenedEvent extends AnalyticsEvent {
+  const MoodPageOpenedEvent({required this.moodId, required this.source});
+
+  final String moodId;
+  final String source;
+
+  @override
+  String get eventName => 'mood_page_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'mood_id': moodId, 'source': source};
+  }
+}
+
+class GalleryOpenedEvent extends AnalyticsEvent {
+  const GalleryOpenedEvent({required this.source, required this.wallCount});
+
+  final String source;
+  final int wallCount;
+
+  @override
+  String get eventName => 'gallery_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'wall_count': wallCount};
+  }
+}
+
 class LibraryTabViewedEvent extends AnalyticsEvent {
   const LibraryTabViewedEvent({required this.tab});
 
@@ -2452,6 +3098,77 @@ class LibraryHistoryClearedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'count': count};
+  }
+}
+
+class RecentlyViewedClearedEvent extends AnalyticsEvent {
+  const RecentlyViewedClearedEvent({required this.count});
+
+  final int count;
+
+  @override
+  String get eventName => 'recently_viewed_cleared';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count': count};
+  }
+}
+
+class ViewingHistoryToggledEvent extends AnalyticsEvent {
+  const ViewingHistoryToggledEvent({required this.value});
+
+  final bool value;
+
+  @override
+  String get eventName => 'viewing_history_toggled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'value': value ? 1 : 0};
+  }
+}
+
+class HistoryRestoredEvent extends AnalyticsEvent {
+  const HistoryRestoredEvent({required this.countBucket});
+
+  final String countBucket;
+
+  @override
+  String get eventName => 'history_restored';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count_bucket': countBucket};
+  }
+}
+
+class PickUpRowSeenEvent extends AnalyticsEvent {
+  const PickUpRowSeenEvent({required this.count});
+
+  final int count;
+
+  @override
+  String get eventName => 'pick_up_row_seen';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count': count};
+  }
+}
+
+class PickUpTileOpenedEvent extends AnalyticsEvent {
+  const PickUpTileOpenedEvent({required this.provider, required this.position});
+
+  final String provider;
+  final int position;
+
+  @override
+  String get eventName => 'pick_up_tile_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'provider': provider, 'position': position};
   }
 }
 
@@ -2559,7 +3276,7 @@ class AccentMatchedFromWallEvent extends AnalyticsEvent {
 class LiveWallpaperAppliedEvent extends AnalyticsEvent {
   const LiveWallpaperAppliedEvent({required this.style, required this.result});
 
-  final String style;
+  final LiveWallpaperStyleValue style;
   final String result;
 
   @override
@@ -2567,7 +3284,7 @@ class LiveWallpaperAppliedEvent extends AnalyticsEvent {
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'style': style, 'result': result};
+    return <String, Object?>{'style': style.wireValue, 'result': result};
   }
 }
 
@@ -2781,6 +3498,60 @@ class GiftSentEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'recipient_uid': recipientUid};
+  }
+}
+
+class TipSheetOpenedEvent extends AnalyticsEvent {
+  const TipSheetOpenedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'tip_sheet_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class TipSentEvent extends AnalyticsEvent {
+  const TipSentEvent({required this.amount});
+
+  final int amount;
+
+  @override
+  String get eventName => 'tip_sent';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'amount': amount};
+  }
+}
+
+class TipFailedEvent extends AnalyticsEvent {
+  const TipFailedEvent({required this.reason});
+
+  final String reason;
+
+  @override
+  String get eventName => 'tip_failed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'reason': reason};
+  }
+}
+
+class TipReceivedPushOpenedEvent extends AnalyticsEvent {
+  const TipReceivedPushOpenedEvent();
+
+  @override
+  String get eventName => 'tip_received_push_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
   }
 }
 
@@ -3002,6 +3773,809 @@ class SpatialGuideOpenedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'wall_id': wallId, 'tier': tier};
+  }
+}
+
+class DetailImmersiveToggledEvent extends AnalyticsEvent {
+  const DetailImmersiveToggledEvent({required this.immersive, required this.source});
+
+  final bool immersive;
+  final ImmersiveToggleSourceValue source;
+
+  @override
+  String get eventName => 'detail_immersive_toggled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'immersive': immersive ? 1 : 0, 'source': source.wireValue};
+  }
+}
+
+class DetailImmersiveHintShownEvent extends AnalyticsEvent {
+  const DetailImmersiveHintShownEvent();
+
+  @override
+  String get eventName => 'detail_immersive_hint_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class FavouritePinChangedEvent extends AnalyticsEvent {
+  const FavouritePinChangedEvent({required this.pinned, required this.surface});
+
+  final bool pinned;
+  final FavouritePinSurfaceValue surface;
+
+  @override
+  String get eventName => 'favourite_pin_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'pinned': pinned ? 1 : 0, 'surface': surface.wireValue};
+  }
+}
+
+class FavouritePinLimitHitEvent extends AnalyticsEvent {
+  const FavouritePinLimitHitEvent({required this.surface});
+
+  final FavouritePinSurfaceValue surface;
+
+  @override
+  String get eventName => 'favourite_pin_limit_hit';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'surface': surface.wireValue};
+  }
+}
+
+class WallRequestSheetOpenedEvent extends AnalyticsEvent {
+  const WallRequestSheetOpenedEvent({required this.source});
+
+  final WallRequestSourceValue source;
+
+  @override
+  String get eventName => 'wall_request_sheet_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
+  }
+}
+
+class WallRequestCreatedEvent extends AnalyticsEvent {
+  const WallRequestCreatedEvent({required this.source, required this.tagCount, required this.forced});
+
+  final WallRequestSourceValue source;
+  final int tagCount;
+  final bool forced;
+
+  @override
+  String get eventName => 'wall_request_created';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue, 'tag_count': tagCount, 'forced': forced ? 1 : 0};
+  }
+}
+
+class WallRequestDuplicateUpvotedEvent extends AnalyticsEvent {
+  const WallRequestDuplicateUpvotedEvent({required this.exact});
+
+  final bool exact;
+
+  @override
+  String get eventName => 'wall_request_duplicate_upvoted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'exact': exact ? 1 : 0};
+  }
+}
+
+class WallRequestVoteToggledEvent extends AnalyticsEvent {
+  const WallRequestVoteToggledEvent({required this.voted, required this.tab});
+
+  final bool voted;
+  final String tab;
+
+  @override
+  String get eventName => 'wall_request_vote_toggled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'voted': voted ? 1 : 0, 'tab': tab};
+  }
+}
+
+class WallRequestFilledEvent extends AnalyticsEvent {
+  const WallRequestFilledEvent({required this.filledBy});
+
+  final WallRequestFillerValue filledBy;
+
+  @override
+  String get eventName => 'wall_request_filled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'filled_by': filledBy.wireValue};
+  }
+}
+
+class WallRequestPushOpenedEvent extends AnalyticsEvent {
+  const WallRequestPushOpenedEvent({required this.requestId});
+
+  final String requestId;
+
+  @override
+  String get eventName => 'wall_request_push_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'request_id': requestId};
+  }
+}
+
+class RemixTappedEvent extends AnalyticsEvent {
+  const RemixTappedEvent({required this.sourceWallType});
+
+  final RemixSourceType sourceWallType;
+
+  @override
+  String get eventName => 'remix_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_wall_type': sourceWallType.wireValue};
+  }
+}
+
+class RemixGeneratedEvent extends AnalyticsEvent {
+  const RemixGeneratedEvent({required this.sourceWallType, required this.quality});
+
+  final RemixSourceType sourceWallType;
+  final String quality;
+
+  @override
+  String get eventName => 'remix_generated';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_wall_type': sourceWallType.wireValue, 'quality': quality};
+  }
+}
+
+class RemixSubmittedEvent extends AnalyticsEvent {
+  const RemixSubmittedEvent({required this.generationId});
+
+  final String generationId;
+
+  @override
+  String get eventName => 'remix_submitted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'generation_id': generationId};
+  }
+}
+
+class RemixLinkDroppedEvent extends AnalyticsEvent {
+  const RemixLinkDroppedEvent({required this.sourceWallType});
+
+  final RemixSourceType sourceWallType;
+
+  @override
+  String get eventName => 'remix_link_dropped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_wall_type': sourceWallType.wireValue};
+  }
+}
+
+class RemixesGridOpenedEvent extends AnalyticsEvent {
+  const RemixesGridOpenedEvent({required this.count});
+
+  final int count;
+
+  @override
+  String get eventName => 'remixes_grid_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count': count};
+  }
+}
+
+class WallResubmittedEvent extends AnalyticsEvent {
+  const WallResubmittedEvent({required this.assetId, required this.attempt});
+
+  final String assetId;
+  final int attempt;
+
+  @override
+  String get eventName => 'wall_resubmitted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'asset_id': assetId, 'attempt': attempt};
+  }
+}
+
+class UploadLastDetailsUsedEvent extends AnalyticsEvent {
+  const UploadLastDetailsUsedEvent();
+
+  @override
+  String get eventName => 'upload_last_details_used';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class UploadWithdrawnEvent extends AnalyticsEvent {
+  const UploadWithdrawnEvent({required this.assetId});
+
+  final String assetId;
+
+  @override
+  String get eventName => 'upload_withdrawn';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'asset_id': assetId};
+  }
+}
+
+class CreatorStatsOpenedEvent extends AnalyticsEvent {
+  const CreatorStatsOpenedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'creator_stats_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class CreatorStatsMetricSwitchedEvent extends AnalyticsEvent {
+  const CreatorStatsMetricSwitchedEvent({required this.metric});
+
+  final String metric;
+
+  @override
+  String get eventName => 'creator_stats_metric_switched';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'metric': metric};
+  }
+}
+
+class CreatorWallStatsOpenedEvent extends AnalyticsEvent {
+  const CreatorWallStatsOpenedEvent({required this.wallId});
+
+  final String wallId;
+
+  @override
+  String get eventName => 'creator_wall_stats_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId};
+  }
+}
+
+class DailyMomentShownEvent extends AnalyticsEvent {
+  const DailyMomentShownEvent();
+
+  @override
+  String get eventName => 'daily_moment_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class DailyMomentStepDoneEvent extends AnalyticsEvent {
+  const DailyMomentStepDoneEvent({required this.step});
+
+  final DailyMomentStepValue step;
+
+  @override
+  String get eventName => 'daily_moment_step_done';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'step': step.wireValue};
+  }
+}
+
+class DailyMomentStoppedEarlyEvent extends AnalyticsEvent {
+  const DailyMomentStoppedEarlyEvent({required this.step});
+
+  final DailyMomentStepValue step;
+
+  @override
+  String get eventName => 'daily_moment_stopped_early';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'step': step.wireValue};
+  }
+}
+
+class DailyMomentDeepLinkOpenedEvent extends AnalyticsEvent {
+  const DailyMomentDeepLinkOpenedEvent({required this.step});
+
+  final DailyMomentStepValue step;
+
+  @override
+  String get eventName => 'daily_moment_deep_link_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'step': step.wireValue};
+  }
+}
+
+class ChallengeViewedEvent extends AnalyticsEvent {
+  const ChallengeViewedEvent({required this.challengeId});
+
+  final String challengeId;
+
+  @override
+  String get eventName => 'challenge_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'challenge_id': challengeId};
+  }
+}
+
+class ChallengeEnteredEvent extends AnalyticsEvent {
+  const ChallengeEnteredEvent({required this.challengeId, required this.source});
+
+  final String challengeId;
+  final ChallengeEntrySource source;
+
+  @override
+  String get eventName => 'challenge_entered';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'challenge_id': challengeId, 'source': source.wireValue};
+  }
+}
+
+class ChallengeVotedEvent extends AnalyticsEvent {
+  const ChallengeVotedEvent({required this.challengeId});
+
+  final String challengeId;
+
+  @override
+  String get eventName => 'challenge_voted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'challenge_id': challengeId};
+  }
+}
+
+class ChallengeUnvotedEvent extends AnalyticsEvent {
+  const ChallengeUnvotedEvent({required this.challengeId});
+
+  final String challengeId;
+
+  @override
+  String get eventName => 'challenge_unvoted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'challenge_id': challengeId};
+  }
+}
+
+class ChallengeSharedEvent extends AnalyticsEvent {
+  const ChallengeSharedEvent({required this.challengeId});
+
+  final String challengeId;
+
+  @override
+  String get eventName => 'challenge_shared';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'challenge_id': challengeId};
+  }
+}
+
+class ChallengeWinnerViewedEvent extends AnalyticsEvent {
+  const ChallengeWinnerViewedEvent({required this.challengeId});
+
+  final String challengeId;
+
+  @override
+  String get eventName => 'challenge_winner_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'challenge_id': challengeId};
+  }
+}
+
+class CreatorsSectionViewedEvent extends AnalyticsEvent {
+  const CreatorsSectionViewedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'creators_section_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class CreatorCardFollowedEvent extends AnalyticsEvent {
+  const CreatorCardFollowedEvent({required this.source, required this.creatorId});
+
+  final String source;
+  final String creatorId;
+
+  @override
+  String get eventName => 'creator_card_followed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'creator_id': creatorId};
+  }
+}
+
+class CreatorsSeeAllOpenedEvent extends AnalyticsEvent {
+  const CreatorsSeeAllOpenedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'creators_see_all_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class CreatorsCategoryFilteredEvent extends AnalyticsEvent {
+  const CreatorsCategoryFilteredEvent({required this.category});
+
+  final String category;
+
+  @override
+  String get eventName => 'creators_category_filtered';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'category': category};
+  }
+}
+
+class FollowedByShownEvent extends AnalyticsEvent {
+  const FollowedByShownEvent({required this.count});
+
+  final int count;
+
+  @override
+  String get eventName => 'followed_by_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count': count};
+  }
+}
+
+class SimilarCreatorsShownEvent extends AnalyticsEvent {
+  const SimilarCreatorsShownEvent({required this.creatorId, required this.count});
+
+  final String creatorId;
+  final int count;
+
+  @override
+  String get eventName => 'similar_creators_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'creator_id': creatorId, 'count': count};
+  }
+}
+
+class SimilarCreatorFollowedEvent extends AnalyticsEvent {
+  const SimilarCreatorFollowedEvent({required this.creatorId});
+
+  final String creatorId;
+
+  @override
+  String get eventName => 'similar_creator_followed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'creator_id': creatorId};
+  }
+}
+
+class DesktopChipShownEvent extends AnalyticsEvent {
+  const DesktopChipShownEvent({required this.contentId});
+
+  final String contentId;
+
+  @override
+  String get eventName => 'desktop_chip_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'content_id': contentId};
+  }
+}
+
+class DesktopSheetOpenedEvent extends AnalyticsEvent {
+  const DesktopSheetOpenedEvent({required this.contentId});
+
+  final String contentId;
+
+  @override
+  String get eventName => 'desktop_sheet_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'content_id': contentId};
+  }
+}
+
+class DesktopSendToComputerEvent extends AnalyticsEvent {
+  const DesktopSendToComputerEvent({required this.contentId});
+
+  final String contentId;
+
+  @override
+  String get eventName => 'desktop_send_to_computer';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'content_id': contentId};
+  }
+}
+
+class RedeemSheetOpenedEvent extends AnalyticsEvent {
+  const RedeemSheetOpenedEvent({required this.source});
+
+  final RedeemSheetSource source;
+
+  @override
+  String get eventName => 'redeem_sheet_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
+  }
+}
+
+class RedeemSucceededEvent extends AnalyticsEvent {
+  const RedeemSucceededEvent({required this.type});
+
+  final PromoRewardType type;
+
+  @override
+  String get eventName => 'redeem_succeeded';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'type': type.wireValue};
+  }
+}
+
+class RedeemFailedEvent extends AnalyticsEvent {
+  const RedeemFailedEvent({required this.reason});
+
+  final RedeemFailureReason reason;
+
+  @override
+  String get eventName => 'redeem_failed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'reason': reason.wireValue};
+  }
+}
+
+class StoreCodeSheetOpenedEvent extends AnalyticsEvent {
+  const StoreCodeSheetOpenedEvent({required this.platform});
+
+  final StoreCodePlatform platform;
+
+  @override
+  String get eventName => 'store_code_sheet_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'platform': platform.wireValue};
+  }
+}
+
+class WrappedOpenedEvent extends AnalyticsEvent {
+  const WrappedOpenedEvent({required this.source});
+
+  final WrappedSourceValue source;
+
+  @override
+  String get eventName => 'wrapped_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
+  }
+}
+
+class WrappedCardViewedEvent extends AnalyticsEvent {
+  const WrappedCardViewedEvent({required this.cardId});
+
+  final String cardId;
+
+  @override
+  String get eventName => 'wrapped_card_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'card_id': cardId};
+  }
+}
+
+class WrappedCardSharedEvent extends AnalyticsEvent {
+  const WrappedCardSharedEvent({required this.cardId, this.target});
+
+  final String cardId;
+  final ShareTargetValue? target;
+
+  @override
+  String get eventName => 'wrapped_card_shared';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'card_id': cardId, if (target != null) 'target': target!.wireValue};
+  }
+}
+
+class WrappedFinishedEvent extends AnalyticsEvent {
+  const WrappedFinishedEvent();
+
+  @override
+  String get eventName => 'wrapped_finished';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class WrappedNotEligibleEvent extends AnalyticsEvent {
+  const WrappedNotEligibleEvent({required this.source});
+
+  final WrappedSourceValue source;
+
+  @override
+  String get eventName => 'wrapped_not_eligible';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
+  }
+}
+
+class TrialTimelineShownEvent extends AnalyticsEvent {
+  const TrialTimelineShownEvent({
+    required this.source,
+    required this.placement,
+    required this.productId,
+    required this.trialDays,
+  });
+
+  final String source;
+  final String placement;
+  final String productId;
+  final int trialDays;
+
+  @override
+  String get eventName => 'trial_timeline_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'source': source,
+      'placement': placement,
+      'product_id': productId,
+      'trial_days': trialDays,
+    };
+  }
+}
+
+class TrialReminderToggledEvent extends AnalyticsEvent {
+  const TrialReminderToggledEvent({required this.enabled});
+
+  final bool enabled;
+
+  @override
+  String get eventName => 'trial_reminder_toggled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'enabled': enabled ? 1 : 0};
+  }
+}
+
+class TrialNotEligibleShownEvent extends AnalyticsEvent {
+  const TrialNotEligibleShownEvent({required this.source, required this.placement, required this.reason});
+
+  final String source;
+  final String placement;
+  final String reason;
+
+  @override
+  String get eventName => 'trial_not_eligible_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'placement': placement, 'reason': reason};
+  }
+}
+
+class TrialStartedEvent extends AnalyticsEvent {
+  const TrialStartedEvent({required this.productId});
+
+  final String productId;
+
+  @override
+  String get eventName => 'trial_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'product_id': productId};
+  }
+}
+
+class TrialConvertedEvent extends AnalyticsEvent {
+  const TrialConvertedEvent({required this.productId});
+
+  final String productId;
+
+  @override
+  String get eventName => 'trial_converted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'product_id': productId};
+  }
+}
+
+class TrialCancelledEvent extends AnalyticsEvent {
+  const TrialCancelledEvent({required this.productId, required this.reason});
+
+  final String productId;
+  final String reason;
+
+  @override
+  String get eventName => 'trial_cancelled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'product_id': productId, 'reason': reason};
   }
 }
 

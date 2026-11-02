@@ -18,6 +18,7 @@ for each screen lives in features/*.md.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import os
 import re
 import subprocess
@@ -26,7 +27,9 @@ import tempfile
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Iterator
 
 SKILL_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = SKILL_DIR.parent.parent.parent
@@ -64,10 +67,16 @@ def _run(cmd: list[str], timeout: int = 120, check: bool = False) -> subprocess.
 
 
 def _read_kv(path: Path) -> dict[str, str]:
-    if not path.exists():
+    try:
+        raw = path.read_text()
+    except FileNotFoundError:
         return {}
+    return _parse_kv(raw)
+
+
+def _parse_kv(raw: str) -> dict[str, str]:
     out: dict[str, str] = {}
-    for line in path.read_text().splitlines():
+    for line in raw.splitlines():
         if "=" in line:
             k, v = line.split("=", 1)
             out[k.strip()] = v.strip()
@@ -80,47 +89,100 @@ def _write_kv(path: Path, data: dict[str, str]) -> None:
 
 def lock_owner(platform: str) -> dict[str, str] | None:
     path = LOCK[platform]
-    if not path.exists():
+    try:
+        raw = path.read_text()
+    except FileNotFoundError:
         return None
-    age = time.time() - path.stat().st_mtime
-    if age > STALE_LOCK_S:
-        print(f"verify-prism: dropping stale {platform} lock ({int(age)}s old)", file=sys.stderr)
-        path.unlink(missing_ok=True)
-        STATE[platform].unlink(missing_ok=True)
+    return _parse_kv(raw) or {"pid": "unknown", "raw": raw.strip()[:80]}
+
+
+def lock_is_stale(platform: str) -> bool:
+    try:
+        return time.time() - LOCK[platform].stat().st_mtime > STALE_LOCK_S
+    except FileNotFoundError:
+        return False
+
+
+def _doctor_lock_problem(platform: str, owner: dict[str, str] | None) -> str | None:
+    if lock_is_ours(platform):
         return None
-    return _read_kv(path) or {"pid": "unknown"}
+    if lock_is_stale(platform):
+        print(f"  note:           lock is over {STALE_LOCK_S // 3600} h old; launch will reclaim it")
+        return None
+    return f"{platform} lock held by another run ({owner}); do not drive or clean up"
+
+
+def lock_is_ours(platform: str) -> bool:
+    """True when the lock is free or belongs to the run in our state file."""
+    owner = lock_owner(platform)
+    if owner is None:
+        return True
+    run_id = owner.get("run_id")
+    state = _read_kv(STATE[platform])
+    return (
+        bool(run_id)
+        and run_id == state.get("run_id")
+        and owner.get("artifacts") == str(ARTIFACTS / run_id)
+    )
+
+
+@contextmanager
+def _lock_guard(platform: str) -> Iterator[None]:
+    guard_path = LOCK[platform].with_suffix(LOCK[platform].suffix + ".guard")
+    with guard_path.open("a") as guard:
+        fcntl.flock(guard.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(guard.fileno(), fcntl.LOCK_UN)
 
 
 def acquire_lock(platform: str, device_id: str, run_id: str) -> None:
-    if os.environ.get("PRISM_VERIFY_TAKEOVER") == "1":
-        LOCK[platform].unlink(missing_ok=True)
-        STATE[platform].unlink(missing_ok=True)
-    owner = lock_owner(platform)
-    if owner:
-        _die(
-            f"refusing to double-drive {platform}: lock held device={owner.get('device_id')} "
-            f"run_id={owner.get('run_id')}. Run cleanup first, or set "
-            f"PRISM_VERIFY_TAKEOVER=1 after you confirm the other run is done.",
-            3,
-        )
-    run_dir = ARTIFACTS / run_id
-    run_dir.mkdir(parents=True, exist_ok=True)
-    data = {
-        "pid": str(os.getpid()),
-        "device_id": device_id,
-        "run_id": run_id,
-        "artifacts": str(run_dir),
-        "started": datetime.now(timezone.utc).isoformat(),
-    }
-    _write_kv(LOCK[platform], data)
-    _write_kv(STATE[platform], data)
+    with _lock_guard(platform):
+        lock_path = LOCK[platform]
+        if os.environ.get("PRISM_VERIFY_TAKEOVER") == "1":
+            lock_path.unlink(missing_ok=True)
+        else:
+            owner = lock_owner(platform)
+            if owner:
+                age = time.time() - lock_path.stat().st_mtime
+                if age > STALE_LOCK_S:
+                    print(f"verify-prism: dropping stale {platform} lock ({int(age)}s old)", file=sys.stderr)
+                    lock_path.unlink(missing_ok=True)
+                else:
+                    _die(
+                        f"refusing to double-drive {platform}: lock held device={owner.get('device_id')} "
+                        f"run_id={owner.get('run_id')}. Run cleanup first, or set "
+                        f"PRISM_VERIFY_TAKEOVER=1 after you confirm the other run is done.",
+                        3,
+                    )
+        run_dir = ARTIFACTS / run_id
+        run_dir.mkdir(parents=True, exist_ok=True)
+        data = {
+            "pid": str(os.getpid()),
+            "device_id": device_id,
+            "run_id": run_id,
+            "artifacts": str(run_dir),
+            "started": datetime.now(timezone.utc).isoformat(),
+        }
+        try:
+            fd = os.open(lock_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+        except FileExistsError:
+            _die(f"refusing to double-drive {platform}: another run took the lock just now.", 3)
+        with os.fdopen(fd, "w") as f:
+            f.write("".join(f"{k}={v}\n" for k, v in data.items()))
+        _write_kv(STATE[platform], data)
 
 
 def require_state(platform: str) -> dict[str, str]:
-    data = _read_kv(STATE[platform])
-    if not data.get("run_id"):
-        _die(f"no {platform} verification state. Run launch --platform {platform} first.")
-    return data
+    with _lock_guard(platform):
+        data = _read_kv(STATE[platform])
+        if not data.get("run_id"):
+            _die(f"no {platform} verification state. Run launch --platform {platform} first.")
+        owner = lock_owner(platform)
+        if owner is None or not lock_is_ours(platform):
+            _die(f"{platform} verification state is not backed by this checkout's lock; do not drive.", 3)
+        return data
 
 
 # ---------- iOS (axe) ----------
@@ -193,6 +255,9 @@ def cmd_doctor_ios() -> list[str]:
 
     owner = lock_owner("ios")
     print(f"  lock:           {owner or 'none'}")
+    lock_problem = _doctor_lock_problem("ios", owner)
+    if lock_problem:
+        problems.append(lock_problem)
     installed = ios_app_installed(udid) if udid else False
     print(f"  installed:      {installed}")
     print(f"  local build:    {IOS_APP_PATH.is_dir()} ({IOS_APP_PATH})")
@@ -319,15 +384,18 @@ def cmd_snapshot_ios(tag: str) -> int:
 
 
 def cmd_cleanup_ios() -> int:
-    data = _read_kv(STATE["ios"])
-    udid = data.get("device_id") or ios_resolve_udid()[0]
-    if udid:
-        _run(["xcrun", "simctl", "terminate", udid, BUNDLE_ID])
-    artifacts = data.get("artifacts", "")
-    LOCK["ios"].unlink(missing_ok=True)
-    STATE["ios"].unlink(missing_ok=True)
-    print("verify-prism: terminated app, dropped ios lock")
-    _print_artifacts(artifacts)
+    with _lock_guard("ios"):
+        if not lock_is_ours("ios"):
+            _die(f"ios lock held by another run ({lock_owner('ios')}); not touching their app or lock.", 3)
+        data = _read_kv(STATE["ios"])
+        udid = data.get("device_id") or ios_resolve_udid()[0]
+        if udid:
+            _run(["xcrun", "simctl", "terminate", udid, BUNDLE_ID])
+        artifacts = data.get("artifacts", "")
+        LOCK["ios"].unlink(missing_ok=True)
+        STATE["ios"].unlink(missing_ok=True)
+        print("verify-prism: terminated app, dropped ios lock")
+        _print_artifacts(artifacts)
     return 0
 
 
@@ -374,6 +442,9 @@ def cmd_doctor_android() -> list[str]:
 
     owner = lock_owner("android")
     print(f"  lock:           {owner or 'none'}")
+    lock_problem = _doctor_lock_problem("android", owner)
+    if lock_problem:
+        problems.append(lock_problem)
 
     installed = False
     if devices.get(serial) == "device":
@@ -446,7 +517,21 @@ def android_dump(serial: str) -> ET.Element:
         try:
             r = _run(["adb", "-s", serial, "shell", "uiautomator", "dump", device_path], timeout=30)
             if r.returncode != 0:
-                _die(f"uiautomator dump failed: {(r.stderr or r.stdout).strip()}")
+                hint = (
+                    " Exit 137 can mean another UiAutomation client (agent-device, Appium) holds the "
+                    "connection; close that session first."
+                    if r.returncode == 137
+                    else ""
+                )
+                _die(
+                    f"uiautomator dump failed (exit {r.returncode}): {(r.stderr or r.stdout).strip()}.{hint}"
+                )
+            if "ERROR" in r.stdout:
+                # uiautomator exits 0 even when it captures nothing.
+                _die(
+                    f"uiautomator dump failed: {r.stdout.strip()}. Animated screens (the Home carousel) "
+                    "can return a null root; open a still screen, or use snapshot's PNG and --x/--y."
+                )
             r = _run(["adb", "-s", serial, "pull", device_path, str(local)], timeout=30)
             if r.returncode != 0:
                 _die(f"uiautomator pull failed: {(r.stderr or r.stdout).strip()}")
@@ -561,14 +646,17 @@ def cmd_snapshot_android(tag: str) -> int:
 
 
 def cmd_cleanup_android() -> int:
-    data = _read_kv(STATE["android"])
-    serial = data.get("device_id") or android_serial()
-    _run(["adb", "-s", serial, "shell", "am", "force-stop", BUNDLE_ID])
-    artifacts = data.get("artifacts", "")
-    LOCK["android"].unlink(missing_ok=True)
-    STATE["android"].unlink(missing_ok=True)
-    print("verify-prism: force-stopped app, dropped android lock")
-    _print_artifacts(artifacts)
+    with _lock_guard("android"):
+        if not lock_is_ours("android"):
+            _die(f"android lock held by another run ({lock_owner('android')}); not touching their app or lock.", 3)
+        data = _read_kv(STATE["android"])
+        serial = data.get("device_id") or android_serial()
+        _run(["adb", "-s", serial, "shell", "am", "force-stop", BUNDLE_ID])
+        artifacts = data.get("artifacts", "")
+        LOCK["android"].unlink(missing_ok=True)
+        STATE["android"].unlink(missing_ok=True)
+        print("verify-prism: force-stopped app, dropped android lock")
+        _print_artifacts(artifacts)
     return 0
 
 

@@ -33,6 +33,11 @@ internal fun widgetSampleSize(width: Int, height: Int, maxPixels: Long = 1_000_0
     return sample
 }
 
+internal fun widgetCandidateWalls(fetch: () -> WotdWall?, storedUrl: () -> String?): List<WotdWall> {
+    val stored = readPreferenceString(storedUrl)?.trim()?.takeIf(String::isNotEmpty)?.let { WotdWall("", it) }
+    return listOfNotNull(fetch(), stored).distinctBy { it.url }
+}
+
 internal class WotdWidgetProvider : AppWidgetProvider() {
     private class Shown(val wall: WotdWall, val bitmap: Bitmap)
 
@@ -87,7 +92,7 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         val manager = WallpaperManager.getInstance(context)
         if (!manager.isWallpaperSupported || !manager.isSetWallpaperAllowed) throw WallpaperUnavailableException()
         val url = shownUrl?.takeIf { it.isNotBlank() }
-            ?: widgetPrefs(context).getString(PREF_ORIGINAL_URL, null)?.takeIf { it.isNotBlank() }
+            ?: readPreferenceString { widgetPrefs(context).getString(PREF_ORIGINAL_URL, null) }?.takeIf { it.isNotBlank() }
             ?: attempt("fetch for wallpaper") { fetchWall(context, minOf(deadline, monotonicMillis() + SET_FETCH_BUDGET_MS)) }?.originalUrl?.takeIf { it.isNotBlank() }
             ?: storedWall(context)?.url
             ?: throw IllegalStateException("No wallpaper to set")
@@ -123,14 +128,24 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
 
     private fun loadShown(context: Context, deadline: Long): Shown? {
         val prefs = widgetPrefs(context)
-        val candidates = listOfNotNull(attempt("fetch wall") { fetchWall(context, deadline) }, storedWall(context)).distinctBy { it.url }
+        val candidates = widgetCandidateWalls(
+            fetch = { attempt("fetch wall") { fetchWall(context, deadline) } },
+            storedUrl = {
+                context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+                    .getString("flutter.quick_tile.wotd.url", null)
+            },
+        )
         for (wall in candidates) {
             val bitmap = cachedBitmap(context, prefs, wall) ?: attempt("download image") { downloadBitmap(context, wall.url, deadline) }
                 ?.also { attempt("save cache") { saveCache(context, prefs, wall, it) } }
             if (bitmap != null) return Shown(wall, bitmap)
         }
-        val lastUrl = prefs.getString(PREF_URL, null) ?: return null
-        val last = WotdWall(prefs.getString(PREF_ID, null).orEmpty(), lastUrl, prefs.getString(PREF_ORIGINAL_URL, null) ?: lastUrl)
+        val lastUrl = readPreferenceString { prefs.getString(PREF_URL, null) } ?: return null
+        val last = WotdWall(
+            readPreferenceString { prefs.getString(PREF_ID, null) }.orEmpty(),
+            lastUrl,
+            readPreferenceString { prefs.getString(PREF_ORIGINAL_URL, null) } ?: lastUrl,
+        )
         val bitmap = BitmapFactory.decodeFile(cacheFile(context).path) ?: return null
         return Shown(last, bitmap)
     }
@@ -168,8 +183,10 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
     }
 
     private fun storedWall(context: Context): WotdWall? {
-        val url = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            .getString("flutter.quick_tile.wotd.url", null)?.trim()
+        val url = readPreferenceString {
+            context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+                .getString("flutter.quick_tile.wotd.url", null)
+        }?.trim()
         return if (url.isNullOrEmpty()) null else WotdWall("", url)
     }
 
@@ -244,7 +261,9 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
     private fun cacheFile(context: Context): File = File(context.cacheDir, "wotd_widget_last.jpg")
 
     private fun cachedBitmap(context: Context, prefs: SharedPreferences, wall: WotdWall): Bitmap? =
-        if (prefs.getString(PREF_KEY, null) == wall.key) BitmapFactory.decodeFile(cacheFile(context).path) else null
+        if (readPreferenceString { prefs.getString(PREF_KEY, null) } == wall.key) {
+            BitmapFactory.decodeFile(cacheFile(context).path)
+        } else null
 
     private fun saveCache(context: Context, prefs: SharedPreferences, wall: WotdWall, bitmap: Bitmap) {
         val target = cacheFile(context)

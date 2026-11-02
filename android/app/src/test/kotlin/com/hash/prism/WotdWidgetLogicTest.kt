@@ -7,6 +7,17 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 
 internal class WotdWidgetLogicTest {
+    @Test internal fun malformedStoredUrlDoesNotDiscardFetchedWallCandidate() {
+        val fetchedWall = WotdWall("today", "https://cdn.example/today.jpg")
+
+        val candidates = widgetCandidateWalls(
+            fetch = { fetchedWall },
+            storedUrl = { throw ClassCastException("preference type changed") },
+        )
+
+        assertEquals(listOf(fetchedWall), candidates)
+    }
+
     @Test internal fun protectedWallUsesItsPublicPreview() {
         val wall = wotdWallFromUrls("today", "", "https://cdn.example/preview.jpg")
         assertNotNull(wall)

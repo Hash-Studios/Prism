@@ -30,6 +30,60 @@ void main() {
     verify(() => fixture.cacheManager.getSingleFile('https://example.com/a.jpg')).called(1);
   });
 
+  test('reports an undecodable photo as a preparation failure', () async {
+    final OfflineAssetFixture fixture = await OfflineAssetFixture.create(cacheMissByDefault: true);
+    fixture.install(immediateResolver: true);
+    addTearDown(fixture.dispose);
+    final File source = await fixture.createImage('broken.png');
+    await source.writeAsBytes(Uint8List.fromList(<int>[1, 2, 3]));
+    fixture.mapSource('https://example.com/broken.png', source);
+
+    await expectLater(
+      const LiveTexturePreparer().prepare('https://example.com/broken.png', 0.5),
+      throwsA(
+        isA<LiveTextureException>().having(
+          (error) => error.failure,
+          'failure',
+          LiveApplyFailure.texturePreparationFailed,
+        ),
+      ),
+    );
+  });
+
+  test('reports an undecodable depth map as a preparation failure', () async {
+    final OfflineAssetFixture fixture = await OfflineAssetFixture.create(cacheMissByDefault: true);
+    fixture.install(immediateResolver: true);
+    addTearDown(fixture.dispose);
+    final File photo = await fixture.createImage('photo.png');
+    await photo.writeAsBytes(await _splitPng(width: 8, height: 4, whiteWidth: 4));
+    fixture.mapSource('https://example.com/photo.png', photo);
+    final File depth = await fixture.createImage('broken-depth.png');
+    await depth.writeAsBytes(Uint8List.fromList(<int>[1, 2, 3]));
+    fixture.mapSource('https://example.com/broken-depth.png', depth);
+    final FlutterImageCompressPlatform originalCompress = FlutterImageCompressPlatform.instance;
+    final compress = _MockImageCompress();
+    FlutterImageCompressPlatform.instance = compress;
+    addTearDown(() => FlutterImageCompressPlatform.instance = originalCompress);
+    when(() => compress.compressWithList(any(), minWidth: 2, minHeight: 4, quality: 90)).thenAnswer((_) async {
+      return Uint8List.fromList(<int>[255, 216, 255, 217]);
+    });
+
+    await expectLater(
+      const LiveTexturePreparer().prepareWithDepth(
+        'https://example.com/photo.png',
+        'https://example.com/broken-depth.png',
+        0.5,
+      ),
+      throwsA(
+        isA<LiveTextureException>().having(
+          (error) => error.failure,
+          'failure',
+          LiveApplyFailure.texturePreparationFailed,
+        ),
+      ),
+    );
+  });
+
   testWidgets('decodes and crops a small image before writing compressed bytes', (tester) async {
     await tester.runAsync(() async {
       final OfflineAssetFixture fixture = await OfflineAssetFixture.create(cacheMissByDefault: true);
@@ -65,4 +119,131 @@ void main() {
       expect(await File(path).readAsBytes(), compressed);
     });
   });
+
+  testWidgets('crops the decoded image with its actual rounded Y scale', (tester) async {
+    await tester.runAsync(() async {
+      const int sourceWidth = 1201;
+      const int sourceHeight = 5000;
+      const double aspect = 0.5;
+      final OfflineAssetFixture fixture = await OfflineAssetFixture.create(cacheMissByDefault: true);
+      fixture.install(immediateResolver: true);
+      addTearDown(fixture.dispose);
+      final File source = await fixture.createImage('odd-dimensions.png');
+      await source.writeAsBytes(await _horizontalEdgePng(width: sourceWidth, height: sourceHeight, edgeY: 1299.5));
+      fixture.mapSource('https://example.com/odd-dimensions.png', source);
+
+      final Uint8List compressed = Uint8List.fromList(<int>[255, 216, 255, 217]);
+      final compress = _MockImageCompress();
+      final FlutterImageCompressPlatform originalCompress = FlutterImageCompressPlatform.instance;
+      FlutterImageCompressPlatform.instance = compress;
+      addTearDown(() => FlutterImageCompressPlatform.instance = originalCompress);
+      Uint8List? preparedPng;
+      when(() => compress.compressWithList(any(), minWidth: 1200, minHeight: 2400, quality: 90)).thenAnswer((
+        call,
+      ) async {
+        preparedPng = Uint8List.fromList(call.positionalArguments.first as Uint8List);
+        return compressed;
+      });
+
+      await const LiveTexturePreparer().prepare('https://example.com/odd-dimensions.png', aspect);
+
+      final ui.Image actual = await _decode(preparedPng!);
+      final ByteData actualPixel = (await actual.toByteData())!;
+      expect(actualPixel.getUint8(600 * 4), 127);
+      actual.dispose();
+    });
+  });
+
+  testWidgets('the photo and its depth map keep the same crop', (tester) async {
+    await tester.runAsync(() async {
+      final OfflineAssetFixture fixture = await OfflineAssetFixture.create(cacheMissByDefault: true);
+      fixture.install(immediateResolver: true);
+      addTearDown(fixture.dispose);
+      final originalCompress = FlutterImageCompressPlatform.instance;
+      addTearDown(() => FlutterImageCompressPlatform.instance = originalCompress);
+      final File photo = await fixture.createImage('photo.png');
+      await photo.writeAsBytes(await _splitPng(width: 300, height: 200, whiteWidth: 120));
+      fixture.mapSource('https://example.com/photo.png', photo);
+      final File depth = await fixture.createImage('depth.png');
+      await depth.writeAsBytes(await _splitPng(width: 150, height: 100, whiteWidth: 60));
+      fixture.mapSource('https://example.com/depth.png', depth);
+      final compressed = Uint8List.fromList(<int>[255, 216, 255, 217]);
+      final List<Uint8List> compressInputs = <Uint8List>[];
+      final compress = _MockImageCompress();
+      FlutterImageCompressPlatform.instance = compress;
+      when(() => compress.compressWithList(any(), minWidth: 100, minHeight: 200, quality: 90)).thenAnswer((call) async {
+        compressInputs.add(call.positionalArguments.first as Uint8List);
+        return compressed;
+      });
+      when(() => compress.compressWithList(any(), minWidth: 50, minHeight: 100, quality: 90)).thenAnswer((call) async {
+        compressInputs.add(call.positionalArguments.first as Uint8List);
+        return compressed;
+      });
+
+      final ({String photo, String depth}) paths = await const LiveTexturePreparer().prepareWithDepth(
+        'https://example.com/photo.png',
+        'https://example.com/depth.png',
+        0.5,
+      );
+
+      expect(paths.photo, isNot(paths.depth));
+      expect(compressInputs, hasLength(2));
+      final ui.Image photoImage = await _decode(compressInputs[0]);
+      final ui.Image depthImage = await _decode(compressInputs[1]);
+      expect((photoImage.width, photoImage.height), (100, 200));
+      expect((depthImage.width, depthImage.height), (50, 100));
+      expect(await _redAt(photoImage, 0.1), 255);
+      expect(await _redAt(photoImage, 0.3), 0);
+      expect(await _redAt(depthImage, 0.1), 255);
+      expect(await _redAt(depthImage, 0.3), 0);
+    });
+  });
+}
+
+Future<Uint8List> _horizontalEdgePng({required int width, required int height, required double edgeY}) async {
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  final ui.Canvas canvas = ui.Canvas(recorder);
+  canvas.drawPaint(ui.Paint()..color = const ui.Color(0xFFFFFFFF));
+  canvas.drawRect(
+    ui.Rect.fromLTWH(0, edgeY, width.toDouble(), height - edgeY),
+    ui.Paint()..color = const ui.Color(0xFF000000),
+  );
+  final ui.Picture picture = recorder.endRecording();
+  final ui.Image image = await picture.toImage(width, height);
+  final ByteData data = (await image.toByteData(format: ui.ImageByteFormat.png))!;
+  image.dispose();
+  picture.dispose();
+  return data.buffer.asUint8List();
+}
+
+Future<Uint8List> _splitPng({required int width, required int height, required int whiteWidth}) async {
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  final ui.Canvas canvas = ui.Canvas(recorder);
+  canvas.drawRect(
+    ui.Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
+    ui.Paint()..color = const ui.Color(0xFF000000),
+  );
+  canvas.drawRect(
+    ui.Rect.fromLTWH(0, 0, whiteWidth.toDouble(), height.toDouble()),
+    ui.Paint()..color = const ui.Color(0xFFFFFFFF),
+  );
+  final ui.Picture picture = recorder.endRecording();
+  final ui.Image image = await picture.toImage(width, height);
+  final ByteData data = (await image.toByteData(format: ui.ImageByteFormat.png))!;
+  image.dispose();
+  picture.dispose();
+  return data.buffer.asUint8List();
+}
+
+Future<ui.Image> _decode(Uint8List png) async {
+  final ui.Codec codec = await ui.instantiateImageCodec(png);
+  final ui.Image image = (await codec.getNextFrame()).image;
+  codec.dispose();
+  return image;
+}
+
+Future<int> _redAt(ui.Image image, double normalizedX) async {
+  final ByteData rgba = (await image.toByteData())!;
+  final int x = (normalizedX * image.width).floor();
+  return rgba.getUint8(((image.height ~/ 2) * image.width + x) * 4);
 }

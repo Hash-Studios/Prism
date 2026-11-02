@@ -15,6 +15,7 @@ FavouriteWallEntity mapFavouriteWallDoc(FavouriteWallDocDto dto, String docId) {
       return PrismFavouriteWall(
         id: id,
         favouritedAt: dto.favouritedAt,
+        pinnedAt: dto.pinnedAt,
         wallpaper: PrismWallpaper(
           core: WallpaperCore(
             id: id,
@@ -37,6 +38,7 @@ FavouriteWallEntity mapFavouriteWallDoc(FavouriteWallDocDto dto, String docId) {
       return WallhavenFavouriteWall(
         id: id,
         favouritedAt: dto.favouritedAt,
+        pinnedAt: dto.pinnedAt,
         wallpaper: WallhavenWallpaper(
           core: WallpaperCore(
             id: id,
@@ -58,6 +60,7 @@ FavouriteWallEntity mapFavouriteWallDoc(FavouriteWallDocDto dto, String docId) {
       return PexelsFavouriteWall(
         id: id,
         favouritedAt: dto.favouritedAt,
+        pinnedAt: dto.pinnedAt,
         wallpaper: PexelsWallpaper(
           core: WallpaperCore(
             id: id,
@@ -79,6 +82,7 @@ FavouriteWallEntity mapFavouriteWallDoc(FavouriteWallDocDto dto, String docId) {
       return LegacyFavouriteWall(
         id: id,
         favouritedAt: dto.favouritedAt,
+        pinnedAt: dto.pinnedAt,
         source: source,
         legacyPayload: <String, Object?>{
           'id': id,
@@ -98,7 +102,8 @@ FavouriteWallEntity mapFavouriteWallDoc(FavouriteWallDocDto dto, String docId) {
   }
 }
 
-/// The Firestore doc for a favourite. Every source stores `favouritedAt` so lists sort by when the user saved.
+/// The Firestore doc for a favourite. Every source stores `favouritedAt` so lists sort by when the user saved. A pinned
+/// wall also stores `pinnedAt`.
 Map<String, dynamic> favouriteWallToDoc(FavouriteWallEntity wall) {
   final DateTime favouritedAt = wall.favouritedAt ?? DateTime.now().toUtc();
   final Map<String, dynamic> doc;
@@ -120,6 +125,7 @@ Map<String, dynamic> favouriteWallToDoc(FavouriteWallEntity wall) {
         if (wall.wallpaper.spatial != null) 'spatial': wall.wallpaper.spatial!.toJson(),
         'createdAt': wall.createdAt ?? DateTime.now().toUtc(),
         'favouritedAt': favouritedAt,
+        if (wall.pinnedAt != null) 'pinnedAt': wall.pinnedAt,
       };
     case WallhavenFavouriteWall():
       doc = <String, dynamic>{
@@ -136,6 +142,7 @@ Map<String, dynamic> favouriteWallToDoc(FavouriteWallEntity wall) {
         if (wall.wallpaper.tags != null) 'collections': wall.wallpaper.tags,
         'createdAt': DateTime.now().toUtc(),
         'favouritedAt': favouritedAt,
+        if (wall.pinnedAt != null) 'pinnedAt': wall.pinnedAt,
       };
     case PexelsFavouriteWall():
       doc = <String, dynamic>{
@@ -151,6 +158,7 @@ Map<String, dynamic> favouriteWallToDoc(FavouriteWallEntity wall) {
         if (wall.wallpaper.photographer != null) 'photographer': wall.wallpaper.photographer,
         'createdAt': DateTime.now().toUtc(),
         'favouritedAt': favouritedAt,
+        if (wall.pinnedAt != null) 'pinnedAt': wall.pinnedAt,
       };
     case LegacyFavouriteWall():
       final Map<String, dynamic> base = Map<String, dynamic>.fromEntries(
@@ -160,6 +168,7 @@ Map<String, dynamic> favouriteWallToDoc(FavouriteWallEntity wall) {
       base['provider'] = wall.source.legacyProviderString;
       base['createdAt'] ??= DateTime.now().toUtc();
       base['favouritedAt'] = favouritedAt;
+      if (wall.pinnedAt != null) base['pinnedAt'] = wall.pinnedAt;
       doc = base;
   }
   return doc;

@@ -11,6 +11,41 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
+  String get economyAd => 'Iklan';
+
+  @override
+  String economyWatchAdForCoins(int reward) {
+    final intl.NumberFormat rewardNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String rewardString = rewardNumberFormat.format(reward);
+
+    return 'Tonton iklan untuk $rewardString koin';
+  }
+
+  @override
+  String economyCoinsMissing(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Kamu membutuhkan $countString koin lagi.';
+  }
+
+  @override
+  String economyCoinsRemainAfterAd(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Kamu mungkin masih membutuhkan $countString koin setelah iklan';
+  }
+
+  @override
+  String get economyAdAutomaticPurchase =>
+      'Jika saldo setelah hadiah mencukupi harga, item ini akan dibeli secara otomatis.';
+
+  @override
+  String get economyAdVerificationPending =>
+      'Hadiah iklanmu sedang diverifikasi. Koin akan muncul setelah dikonfirmasi.';
+
+  @override
   String get foldersLibraryEmptyTitle => 'Belum ada folder';
 
   @override
@@ -18,6 +53,43 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get foldersLoadAllError => 'Folder Anda tidak dapat dimuat';
+
+  @override
+  String get galleryEmptyBody => 'Wallpaper ini telah dihapus atau tidak lagi publik.';
+
+  @override
+  String get galleryEmptyTitle => 'Wallpaper ini sudah tidak ada';
+
+  @override
+  String get galleryScreenTitle => 'Wallpaper untuk Anda';
+
+  @override
+  String get favouritePin => 'Sematkan ke atas';
+
+  @override
+  String get favouriteUnpin => 'Lepas sematan';
+
+  @override
+  String get favouritePinnedToast => 'Disematkan di atas Favorit';
+
+  @override
+  String get favouriteUnpinnedToast => 'Sematan dilepas';
+
+  @override
+  String get favouritePinnedBadge => 'Disematkan';
+
+  @override
+  String favouritePinLimit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda dapat menyematkan hingga $count favorit. Lepas satu sematan untuk menyematkan wallpaper ini.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get favouritePinFailed => 'Tidak dapat memperbarui sematan. Periksa koneksi Anda lalu coba lagi.';
 
   @override
   String wallpaperFavouriteSearchCountHint(int count) {
@@ -47,6 +119,113 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperProviderWallhaven => 'Wallhaven';
+
+  @override
+  String get duoTitle => 'Kejutan Duo';
+
+  @override
+  String get duoAiFormatLabel => 'Buat kejutan Duo';
+
+  @override
+  String get duoPresetNotice =>
+      'Prism menampilkan sisi kanan saat ponsel dilipat. Atur posisi gambar asli yang disimpan secara manual dan periksa kedua tampilan di pratinjau wallpaper sistem. Ini adalah preset Prism, bukan pemotongan otomatis iOS.';
+
+  @override
+  String get duoFoldedPromptLabel => 'Tampilan terlipat';
+
+  @override
+  String get duoFoldedPromptExample => 'Kucing mengantuk di samping jendela';
+
+  @override
+  String get duoRevealedPromptLabel => 'Kejutan saat dibuka';
+
+  @override
+  String get duoRevealedPromptExample => 'Pesawat luar angkasa kecil di luar jendela';
+
+  @override
+  String get duoPromptValidation => 'Jelaskan kedua tampilan, masing-masing dengan 1 hingga 160 karakter.';
+
+  @override
+  String get duoMoodBody => 'Satu wallpaper. Lebih banyak kejutan saat dibuka.';
+
+  @override
+  String get duoDeviceName => 'iPhone Duo';
+
+  @override
+  String get duoPhoneDevice => 'Ponsel';
+
+  @override
+  String get duoFold => 'Lipat';
+
+  @override
+  String get duoUnfold => 'Buka lipatan';
+
+  @override
+  String get duoFolded => 'Terlipat';
+
+  @override
+  String get duoUnfolded => 'Terbuka';
+
+  @override
+  String get duoAndroidCropNotice =>
+      'Prism menampilkan sisi kanan saat ponsel dilipat. Android mungkin memotongnya secara berbeda. Periksa pratinjau wallpaper sistem sebelum menerapkannya.';
+
+  @override
+  String get duoGetOnPrism => 'Dapatkan di Prism';
+
+  @override
+  String get duoGuideTitle => 'Atur kejutan Duo Anda';
+
+  @override
+  String get duoGuideOpen => 'Buka gambar asli yang disimpan di Foto, ketuk Bagikan, lalu Gunakan sebagai Wallpaper.';
+
+  @override
+  String get duoGuideAlign => 'Atur posisi gambar utuh secara manual agar tampilan terlipat menampilkan sisi kanan.';
+
+  @override
+  String get duoGuideCheck => 'Periksa tampilan terlipat dan terbuka di pratinjau sistem, lalu tambahkan wallpaper.';
+
+  @override
+  String get duoWebTitle => 'Wallpaper iPhone Duo | Prism';
+
+  @override
+  String get duoWebDescription =>
+      'Satu wallpaper dengan adegan kedua yang tersembunyi. Jelajahi wallpaper kejutan Duo orisinal di Prism.';
+
+  @override
+  String get duoWebHeading => 'Satu wallpaper. Cerita yang lebih luas.';
+
+  @override
+  String get duoWebIntro =>
+      'Adegan tenang saat dilipat. Cerita lain saat dibuka. Lihat kedua tampilan setiap wallpaper orisinal.';
+
+  @override
+  String get duoWebEmpty => 'Koleksi Duo pertama sedang ditinjau.';
+
+  @override
+  String get duoWebEmptyBody => 'Jelajahi Prism selagi kami memeriksa setiap wallpaper dalam kedua tampilan.';
+
+  @override
+  String get duoWebFolded => 'Pratinjau terlipat';
+
+  @override
+  String get duoWebUnfolded => 'Gambar asli saat terbuka';
+
+  @override
+  String get duoWebPresetNotice =>
+      'Pratinjau ini menggunakan preset sisi kanan Prism, bukan pemotongan otomatis Apple. Simpan gambar asli secara utuh, atur posisinya secara manual, dan periksa tampilan terlipat serta terbuka di pratinjau wallpaper sistem.';
+
+  @override
+  String get duoWebOpenPrism => 'Buka di Prism';
+
+  @override
+  String get duoWebExplore => 'Jelajahi Prism';
+
+  @override
+  String get duoWebAppStore => 'Unduh di App Store';
+
+  @override
+  String get duoWebPlayStore => 'Dapatkan di Google Play';
 
   @override
   String get economyExportFailedLabel => 'Ekspor gagal';
@@ -1058,12 +1237,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountReportAProblem => 'Laporkan masalah';
 
   @override
-  String accountReportPreviewNotice(String email) {
-    return 'Laporan ini berisi versi aplikasi, perangkat, dan log terbaru Anda. Tidak ada alamat email atau token masuk. Baca laporan, lalu bagikan kepada $email.';
-  }
-
-  @override
-  String get accountReportProblemSubtitle => 'Bagikan log aplikasi Anda dengan tim Prism';
+  String get accountReportProblemSubtitle => 'Kirim laporan bug ke tim Prism';
 
   @override
   String get accountReportUser => 'Laporkan pengguna';
@@ -1172,9 +1346,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get accountSettings => 'Setelan';
-
-  @override
-  String get accountShare => 'Bagikan';
 
   @override
   String get accountShareInvite => 'Bagikan undangan';
@@ -3888,6 +4059,62 @@ class AppLocalizationsId extends AppLocalizations {
   String get aiLiveActivityOpen => 'Buka di Prism';
 
   @override
+  String get aiResultApply => 'Terapkan';
+
+  @override
+  String get aiResultEditPrompt => 'Edit perintah';
+
+  @override
+  String get aiSessionStripLabel => 'Wallpaper dari sesi ini';
+
+  @override
+  String aiSessionTake(int index, int count) {
+    final intl.NumberFormat indexNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String indexString = indexNumberFormat.format(index);
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Versi $indexString dari $countString';
+  }
+
+  @override
+  String get aiFollowUpWatercolour => 'Sebagai cat air';
+
+  @override
+  String get aiFollowUpNight => 'Versi malam';
+
+  @override
+  String get aiFollowUpMinimal => 'Lebih minimalis';
+
+  @override
+  String get aiFollowUpWarmer => 'Lebih hangat';
+
+  @override
+  String get aiFollowUpDepth => 'Tambah kedalaman';
+
+  @override
+  String aiFollowUpCostLabel(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'Setiap versi baru biayanya $costString koin';
+  }
+
+  @override
+  String get aiFollowUpConfirmTitle => 'Buat versi baru?';
+
+  @override
+  String aiFollowUpConfirmBody(int cost) {
+    final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String costString = costNumberFormat.format(cost);
+
+    return 'Versi lanjutan membuat wallpaper baru dari yang ini. Setiap versi biayanya $costString koin.';
+  }
+
+  @override
+  String get aiFollowUpConfirmAction => 'Buat';
+
+  @override
   String get economyAiDailyLimit => 'Anda mencapai batas AI hari ini.';
 
   @override
@@ -4109,6 +4336,13 @@ class AppLocalizationsId extends AppLocalizations {
   String economyAiStyleSemantics(String style) {
     return 'Gaya: $style';
   }
+
+  @override
+  String get economyAiStyleSheetTitle => 'Pilih gaya';
+
+  @override
+  String get economyAiStyleSheetSubject =>
+      'Setiap pratinjau menampilkan adegan yang sama: mercusuar di tebing saat senja.';
 
   @override
   String get economyAiStyleWatercolor => 'Cat air';
@@ -7069,6 +7303,29 @@ class AppLocalizationsId extends AppLocalizations {
   String get notifPushDropLiveTitle => 'Drop baru telah dimulai';
 
   @override
+  String notifPushFollowDigestTitleOne(String artistName) {
+    return '$artistName memposting wallpaper baru';
+  }
+
+  @override
+  String notifPushFollowDigestTitleSolo(String artistName, int wallCount) {
+    return '$artistName memposting $wallCount wallpaper baru';
+  }
+
+  @override
+  String notifPushFollowDigestTitlePair(String artistName, String secondArtistName, int wallCount) {
+    return '$artistName dan $secondArtistName memposting $wallCount wallpaper baru';
+  }
+
+  @override
+  String notifPushFollowDigestTitleGroup(String artistName, int otherCount, int wallCount) {
+    return '$artistName dan $otherCount lainnya memposting $wallCount wallpaper baru';
+  }
+
+  @override
+  String get notifPushFollowDigestBodyUntitled => 'Ketuk untuk melihat semuanya.';
+
+  @override
   String get notifPushGiftReceivedBody => 'Koleksi Premium dan wallpaper Premium tersedia selama 24 jam.';
 
   @override
@@ -7510,16 +7767,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperResetOriginal => 'Kembali ke asli';
 
   @override
-  String get wallpaperAccentResetHint => 'Tahan untuk tindakan, termasuk Kembali ke asli';
-
-  @override
   String get wallpaperAll => 'Semua';
 
   @override
   String get wallpaperApplyTo => 'Terapkan ke';
-
-  @override
-  String get wallpaperAutoRotateAndroidOnly => 'Putar otomatis hanya tersedia di Android.';
 
   @override
   String get wallpaperAutoRotateApplyTo => 'Terapkan ke';
@@ -8533,8 +8784,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperHomeAppName => 'Prism';
 
   @override
-  String get wallpaperImageSemanticHint =>
-      'Ketuk untuk mengganti warna aksen. Tahan untuk favorit, berbagi, dan reset. Gulir untuk detail.';
+  String get wallpaperImageSemanticHint => 'Tahan untuk favorit, berbagi, dan reset. Gulir untuk detail.';
 
   @override
   String get wallpaperPreviousInFeed => 'Wallpaper sebelumnya';
@@ -8544,6 +8794,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperImageSemanticLabel => 'Wallpaper';
+
+  @override
+  String get wallpaperImmersiveHint => 'Ketuk untuk menyembunyikan kontrol';
 
   @override
   String get wallpaperInsufficientCoins => 'Koin tidak cukup. Dapatkan koin di Hadiah.';
@@ -8725,6 +8978,13 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperLiveStyleShimmerDescription => 'Sapuan cahaya yang lembut.';
+
+  @override
+  String get wallpaperLiveStyleDepth => '3D';
+
+  @override
+  String get wallpaperLiveStyleDepthDescription =>
+      'Foto bergerak dalam kedalaman saat kamu menggeser layar utama dan memiringkan ponsel.';
 
   @override
   String get wallpaperLiveStyleStarfield => 'Hamparan bintang';
@@ -9141,33 +9401,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperShareLink => 'Bagikan tautan';
 
   @override
-  String get wallpaperShortcutsAddActionsSteps =>
-      'Tambahkan tindakan \"Dapatkan Wallpaper Prism\". Lalu tambahkan tindakan \"Pasang Wallpaper\".';
-
-  @override
-  String get wallpaperShortcutsBody =>
-      'Gunakan Pintasan untuk memasang wallpaper sesuai jadwal atau pemicu. Siapkan sumber di bawah sebelum menjalankannya.';
-
-  @override
   String get wallpaperShortcutsChoosePrismData => 'Pilih data yang dikirim Prism';
 
   @override
-  String get wallpaperShortcutsChooseTriggerSteps =>
-      'Di editor pintasan, buka Automasi jika perlu. Pilih dan atur pemicu, seperti Waktu, membuka app, atau menghubungkan pengisi daya.';
-
-  @override
-  String get wallpaperShortcutsDisableConfirmationSteps =>
-      'Tinjau opsi menjalankan yang ditampilkan dan simpan pintasan atau automasi. Jika \"Tanya Sebelum Menjalankan\" muncul, nonaktifkan agar berjalan otomatis.';
-
-  @override
-  String get wallpaperShortcutsHeadline => 'Ubah wallpaper secara otomatis';
-
-  @override
   String get wallpaperShortcutsOpenAction => 'Buka Pintasan';
-
-  @override
-  String get wallpaperShortcutsOpenAutomationSteps =>
-      'Buka Pintasan. Jika ada tab Automasi, ketuk tab itu, lalu Automasi Baru. Jika tidak, ketuk Tambah (+), lalu Edit jika ditampilkan.';
 
   @override
   String get wallpaperShortcutsOpenError => 'Pintasan tidak dapat dibuka. Buka app secara manual.';
@@ -9176,18 +9413,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperShortcutsSourceFavourite => 'Favorit acak';
 
   @override
-  String get wallpaperShortcutsSourceFavouriteDescription =>
-      'Favorit acak yang tersedia untuk Pintasan. Sukai wallpaper di Prism terlebih dahulu. Beberapa wallpaper terlindungi mungkin tidak tersedia. Pilihan terakhir dihindari jika ada favorit lain yang tersedia.';
-
-  @override
   String get wallpaperShortcutsSourceWotd => 'Wallpaper Hari Ini';
 
   @override
   String get wallpaperShortcutsSourceWotdDescription =>
       'Pilihan Prism hari ini. Unduh gambar asli hari ini di Prism terlebih dahulu. Saat pilihan harian berubah, unduh gambar asli yang baru sebelum menjalankan sumber ini.';
-
-  @override
-  String get wallpaperShortcutsSteps => 'Langkah-langkah';
 
   @override
   String get wallpaperShortcutsTitle => 'Ubah secara otomatis';
@@ -10437,4 +10667,2246 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get foldersSuggestionHomeScreen => 'Layar utama';
+
+  @override
+  String get moodDreamyTitle => 'Impian';
+
+  @override
+  String get moodDreamyBody => 'Langit lembut dan cahaya pastel.';
+
+  @override
+  String get moodDarkQuietTitle => 'Gelap dan tenang';
+
+  @override
+  String get moodDarkQuietBody => 'Cahaya redup, nyaman di mata.';
+
+  @override
+  String get moodBrightBoldTitle => 'Cerah dan mencolok';
+
+  @override
+  String get moodBrightBoldBody => 'Warna cerah untuk menyegarkan layarmu.';
+
+  @override
+  String get moodMinimalTitle => 'Minimal';
+
+  @override
+  String get moodMinimalBody => 'Bentuk sederhana dan ruang yang lega.';
+
+  @override
+  String get moodSpatialReadyTitle => 'Siap jadi Adegan Spasial';
+
+  @override
+  String get moodSpatialReadyBody => 'Dibuat agar tampil menonjol sebagai Adegan Spasial.';
+
+  @override
+  String get moodDepthReadyTitle => 'Siap efek kedalaman';
+
+  @override
+  String get moodDepthReadyBody => 'Subjek berada di depan jam layar kunci.';
+
+  @override
+  String get moodChipRowLabel => 'Suasana';
+
+  @override
+  String get moodSeeAll => 'Lihat semua';
+
+  @override
+  String moodSeeAllHint(String mood) {
+    return 'Membuka semua wallpaper $mood';
+  }
+
+  @override
+  String get moodLoadError => 'Wallpaper ini tidak bisa dimuat';
+
+  @override
+  String get moodEmptyTitle => 'Belum ada wallpaper di sini';
+
+  @override
+  String get moodEmptyBody => 'Wallpaper baru ditambahkan setiap hari.';
+
+  @override
+  String wallpaperHistoryTileSemantic(String current, String target, String date) {
+    return '${current}Pasang lagi. $target, $date';
+  }
+
+  @override
+  String get wallpaperHistoryTitle => 'Riwayat wallpaper';
+
+  @override
+  String get wallpaperLibraryHistoryBody => 'Wallpaper yang pernah Anda pasang, agar dapat dipasang lagi.';
+
+  @override
+  String get wallpaperLibraryHistoryTitle => 'Riwayat wallpaper';
+
+  @override
+  String get wallpaperLibraryOpenHistory => 'Buka riwayat';
+
+  @override
+  String get wallpaperRecentlySet => 'Baru dipasang';
+
+  @override
+  String get wallpaperSetAgain => 'Pasang wallpaper ini lagi';
+
+  @override
+  String get wallpaperSort => 'Urutkan';
+
+  @override
+  String get tasteQuizTitle => 'Pilih yang lebih kamu suka';
+
+  @override
+  String get tasteQuizWildCard => 'Kejutan';
+
+  @override
+  String tasteQuizProgress(int current, int total) {
+    final intl.NumberFormat currentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String currentString = currentNumberFormat.format(current);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return '$currentString dari $totalString';
+  }
+
+  @override
+  String tasteQuizProgressLabel(int current, int total) {
+    final intl.NumberFormat currentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String currentString = currentNumberFormat.format(current);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Putaran $currentString dari $totalString';
+  }
+
+  @override
+  String get tasteQuizSkip => 'Lewati';
+
+  @override
+  String tasteQuizPickLabel(int position, int total) {
+    final intl.NumberFormat positionNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String positionString = positionNumberFormat.format(position);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Pilih wallpaper ini, $positionString dari $totalString';
+  }
+
+  @override
+  String get tasteQuizTuningTitle => 'Menyesuaikan feed kamu';
+
+  @override
+  String tasteQuizSummaryFull(String tone, String density, String tag) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'Gelap', 'other': 'Terang'});
+    String _temp1 = intl.Intl.selectLogic(density, {'minimal': 'minimalis', 'other': 'detail'});
+    return '$_temp0, $_temp1, sedikit $tag';
+  }
+
+  @override
+  String tasteQuizSummaryToneDensity(String tone, String density) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'Gelap', 'other': 'Terang'});
+    String _temp1 = intl.Intl.selectLogic(density, {'minimal': 'minimalis', 'other': 'detail'});
+    return '$_temp0 dan $_temp1';
+  }
+
+  @override
+  String tasteQuizSummaryToneTag(String tone, String tag) {
+    String _temp0 = intl.Intl.selectLogic(tone, {'dark': 'Gelap', 'other': 'Terang'});
+    return '$_temp0, dengan sedikit $tag';
+  }
+
+  @override
+  String tasteQuizSummaryDensityTag(String density, String tag) {
+    String _temp0 = intl.Intl.selectLogic(density, {'minimal': 'Minimalis', 'other': 'Detail'});
+    return '$_temp0, dengan sedikit $tag';
+  }
+
+  @override
+  String tasteQuizSummaryTone(String tone) {
+    String _temp0 = intl.Intl.selectLogic(tone, {
+      'dark': 'Kebanyakan wallpaper gelap',
+      'other': 'Kebanyakan wallpaper terang',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String tasteQuizSummaryDensity(String density) {
+    String _temp0 = intl.Intl.selectLogic(density, {
+      'minimal': 'Kebanyakan wallpaper minimalis',
+      'other': 'Kebanyakan wallpaper detail',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String tasteQuizSummaryTag(String tag) {
+    return 'Lebih banyak wallpaper $tag';
+  }
+
+  @override
+  String get tasteQuizSummaryReady => 'Feed kamu sudah siap';
+
+  @override
+  String get tasteQuizRetake => 'Ulangi Ini atau itu';
+
+  @override
+  String get tasteQuizRetakeFailed => 'Wallpaper tidak bisa dimuat. Periksa koneksi kamu dan coba lagi.';
+
+  @override
+  String get foldersPublic => 'Publik';
+
+  @override
+  String get foldersMakePublic => 'Jadikan publik';
+
+  @override
+  String get foldersMakePrivate => 'Jadikan privat';
+
+  @override
+  String get foldersMakePublicTitle => 'Jadikan folder ini publik?';
+
+  @override
+  String get foldersMakePublicMessage =>
+      'Semua orang di Prism bisa melihat nama dan wallpaper-nya, mengikutinya, dan membuka tautannya. Tautan yang Anda bagikan tetap menampilkan pratinjaunya meski nanti Anda menjadikannya pribadi.';
+
+  @override
+  String get foldersMakePrivateTitle => 'Jadikan folder ini privat?';
+
+  @override
+  String get foldersMakePrivateMessage =>
+      'Hanya Anda yang bisa melihatnya. Tautannya berhenti berfungsi dan pengikutnya kehilangan folder ini.';
+
+  @override
+  String get foldersMadePublic => 'Folder ini sekarang publik.';
+
+  @override
+  String get foldersMadePrivate => 'Folder ini sekarang privat.';
+
+  @override
+  String get foldersPublicNameRefused => 'Ganti nama folder ini agar bisa dijadikan publik.';
+
+  @override
+  String get foldersHiddenRefused => 'Folder ini disembunyikan setelah ada laporan, jadi tidak bisa dijadikan publik.';
+
+  @override
+  String get foldersLimitRefused => 'Anda sudah terlalu sering mengubah folder hari ini. Coba lagi besok.';
+
+  @override
+  String get foldersFollow => 'Ikuti';
+
+  @override
+  String get foldersFollowing => 'Diikuti';
+
+  @override
+  String foldersFollowerCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString pengikut',
+      one: '1 pengikut',
+      zero: 'Belum ada pengikut',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersByOwner(String name) {
+    return 'Oleh $name';
+  }
+
+  @override
+  String get foldersShare => 'Bagikan folder';
+
+  @override
+  String get foldersReport => 'Laporkan folder';
+
+  @override
+  String get foldersUnavailableTitle => 'Folder ini privat atau sudah tidak ada';
+
+  @override
+  String get foldersUnavailableBody => 'Pemilik mungkin telah menjadikannya privat atau menghapusnya.';
+
+  @override
+  String get foldersFollowFailed => 'Tidak dapat memperbarui status mengikuti. Coba lagi.';
+
+  @override
+  String get foldersYouFollow => 'Folder yang Anda ikuti';
+
+  @override
+  String get foldersPublicEmptyTitle => 'Belum ada wallpaper di sini';
+
+  @override
+  String get foldersPublicEmptyBody => 'Wallpaper baru akan muncul di sini saat pemilik menambahkannya.';
+
+  @override
+  String get notifSettingFolders => 'Folder yang Anda ikuti';
+
+  @override
+  String get notifSettingFoldersDescription => 'Wallpaper baru di folder yang Anda ikuti, sehari sekali';
+
+  @override
+  String notifPushFolderDigestTitleOne(String folderName) {
+    return 'Baru di $folderName';
+  }
+
+  @override
+  String notifPushFolderDigestTitleMore(String folderName, int count) {
+    return 'Baru di $folderName dan $count lainnya';
+  }
+
+  @override
+  String get historySetAndDownloaded => 'Dipasang dan diunduh';
+
+  @override
+  String get historyDownloaded => 'Diunduh';
+
+  @override
+  String get historyRecentlyViewed => 'Baru dilihat';
+
+  @override
+  String get historySyncedNote => 'Disimpan di akun Anda, jadi ini kembali saat Anda pakai ponsel baru.';
+
+  @override
+  String get historySyncedNoteGuest => 'Masuk untuk menyimpan ini di ponsel baru.';
+
+  @override
+  String get historyActionSet => 'Dipasang';
+
+  @override
+  String get historyActionDownloaded => 'Diunduh';
+
+  @override
+  String historySyncedTileLabel(String action, String time) {
+    return '$action pukul $time';
+  }
+
+  @override
+  String get historyClearSyncedBody =>
+      'Ini menghapus daftar di sini dan di akun Anda. Wallpaper dan unduhan Anda tetap seperti semula.';
+
+  @override
+  String get historyClearViewedTitle => 'Hapus baru dilihat?';
+
+  @override
+  String get historyClearViewedBody => 'Ini menghapus wallpaper yang Anda buka dari daftar ini dan dari Beranda.';
+
+  @override
+  String get historyClearViewedAction => 'Hapus baru dilihat';
+
+  @override
+  String get historyEmptyBodyAndroid =>
+      'Wallpaper yang Anda pasang atau unduh muncul di sini, agar mudah Anda temukan lagi.';
+
+  @override
+  String get historyEmptyBodyIos => 'Wallpaper yang Anda unduh muncul di sini, agar mudah Anda temukan lagi.';
+
+  @override
+  String get historyViewedEmptyTitle => 'Belum ada yang dilihat';
+
+  @override
+  String get historyViewedEmptyBody => 'Wallpaper yang Anda buka muncul di sini, agar mudah Anda temukan lagi.';
+
+  @override
+  String get historyViewedOffTitle => 'Riwayat lihat nonaktif';
+
+  @override
+  String get historyViewedOffBody => 'Aktifkan Simpan riwayat lihat untuk melihat wallpaper yang Anda buka di sini.';
+
+  @override
+  String get historyViewedOffAction => 'Aktifkan';
+
+  @override
+  String historyViewedTileLabel(String time) {
+    return 'Buka wallpaper, dilihat pukul $time';
+  }
+
+  @override
+  String get pickUpTitle => 'Lanjutkan dari terakhir';
+
+  @override
+  String pickUpTileLabel(int index, int count) {
+    return 'Buka wallpaper $index dari $count';
+  }
+
+  @override
+  String get settingsSaveViewingHistory => 'Simpan riwayat lihat';
+
+  @override
+  String get settingsSaveViewingHistoryBody =>
+      'Menampilkan wallpaper yang Anda buka di Riwayat dan di Beranda. Jika dinonaktifkan, daftar akan dihapus.';
+
+  @override
+  String get historyClearFailed => 'Riwayat tidak bisa dihapus. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
+  String get wallpaperAutoRotateSourceFolder => 'Folder';
+
+  @override
+  String wallpaperAutoRotateSourceFolderNamed(String folder) {
+    return 'Folder: $folder';
+  }
+
+  @override
+  String wallpaperAutoRotateNounFolder(String folder) {
+    return '$folder';
+  }
+
+  @override
+  String get wallpaperAutoRotateTooFewFolder =>
+      'Folder ini memerlukan minimal 2 wallpaper yang bisa diputar. Wallpaper Prism diputar setelah Anda mengunduhnya.';
+
+  @override
+  String get wallpaperAutoRotateOpenFolder => 'Buka folder';
+
+  @override
+  String get wallpaperAutoRotatePickFolder => 'Pilih folder';
+
+  @override
+  String get wallpaperAutoRotateNoFolders => 'Anda belum punya folder. Simpan wallpaper ke folder, lalu pilih di sini.';
+
+  @override
+  String wallpaperAutoRotateConfirmFolderTitle(String folder) {
+    return 'Putar $folder?';
+  }
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderBody =>
+      'Wallpaper Anda berubah menjadi salah satu dari folder ini, sesuai jadwal di bawah.';
+
+  @override
+  String get wallpaperAutoRotateConfirmFolderAction => 'Putar folder ini';
+
+  @override
+  String wallpaperAutoRotateStoppedFolderDeleted(String folder) {
+    return 'Putar otomatis nonaktif karena folder $folder telah dihapus.';
+  }
+
+  @override
+  String wallpaperAutoRotateStoppedFolderEmpty(String folder) {
+    return 'Putar otomatis nonaktif karena folder $folder memiliki kurang dari 2 wallpaper.';
+  }
+
+  @override
+  String get foldersRotateThisFolder => 'Putar folder ini';
+
+  @override
+  String get foldersRotating => 'Diputar';
+
+  @override
+  String get foldersRotatingDescription => 'Putar otomatis menggunakan folder ini';
+
+  @override
+  String get wallpaperAccentResetHint => 'Tahan untuk tindakan, termasuk Kembali ke asli';
+
+  @override
+  String get wallRequestsTitle => 'Permintaan wallpaper';
+
+  @override
+  String get wallRequestsTabTop => 'Teratas';
+
+  @override
+  String get wallRequestsTabNew => 'Terbaru';
+
+  @override
+  String get wallRequestsTabFilled => 'Terpenuhi';
+
+  @override
+  String get wallRequestsAsk => 'Minta wallpaper';
+
+  @override
+  String get wallRequestsEmptyTopTitle => 'Belum ada permintaan';
+
+  @override
+  String get wallRequestsEmptyTopBody => 'Minta wallpaper yang belum Anda temukan. Orang lain bisa mendukungnya.';
+
+  @override
+  String get wallRequestsEmptyFilledTitle => 'Belum ada yang terpenuhi';
+
+  @override
+  String get wallRequestsEmptyFilledBody =>
+      'Permintaan yang terpenuhi akan muncul di sini, beserta wallpaper yang menjawabnya.';
+
+  @override
+  String get wallRequestsLoadFailed => 'Permintaan tidak dapat dimuat';
+
+  @override
+  String get wallRequestsRetry => 'Coba lagi';
+
+  @override
+  String wallRequestVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count suara',
+      one: '1 suara',
+      zero: 'Belum ada suara',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestUpvote => 'Dukung';
+
+  @override
+  String get wallRequestRemoveUpvote => 'Hapus dukungan';
+
+  @override
+  String get wallRequestMine => 'Permintaan Anda';
+
+  @override
+  String get wallRequestSomeone => 'Seorang pengguna Prism';
+
+  @override
+  String wallRequestFilledByCreator(String name) {
+    return 'Dipenuhi oleh $name';
+  }
+
+  @override
+  String get wallRequestFilledByStudio => 'Dibuat oleh Prism Studio';
+
+  @override
+  String get wallRequestOpenWall => 'Buka wallpaper';
+
+  @override
+  String get wallRequestMoreActions => 'Aksi lainnya';
+
+  @override
+  String get wallRequestReport => 'Laporkan permintaan';
+
+  @override
+  String get wallRequestHide => 'Sembunyikan permintaan';
+
+  @override
+  String get wallRequestUnhide => 'Tampilkan permintaan';
+
+  @override
+  String get wallRequestHiddenLabel => 'Disembunyikan';
+
+  @override
+  String get wallRequestSheetTitle => 'Minta wallpaper';
+
+  @override
+  String get wallRequestSheetHint => 'Jelaskan, misalnya gunung gelap yang minimalis';
+
+  @override
+  String get wallRequestSheetTags => 'Tag, maksimal 3';
+
+  @override
+  String get wallRequestSheetSubmit => 'Kirim permintaan';
+
+  @override
+  String get wallRequestSignIn => 'Masuk untuk meminta wallpaper dan mendukungnya.';
+
+  @override
+  String get wallRequestDuplicateTitle => 'Seseorang sudah memintanya';
+
+  @override
+  String get wallRequestDuplicateBody => 'Dukung agar kreator bisa melihatnya lebih cepat.';
+
+  @override
+  String get wallRequestUpvoteInstead => 'Dukung yang ini saja';
+
+  @override
+  String get wallRequestCreateAnyway => 'Tetap kirim permintaan saya';
+
+  @override
+  String get wallRequestDuplicateMine => 'Anda sudah pernah memintanya';
+
+  @override
+  String get wallRequestDuplicateVoted => 'Anda sudah mendukungnya';
+
+  @override
+  String get wallRequestEditText => 'Ubah permintaan saya';
+
+  @override
+  String get wallRequestCreated => 'Permintaan terkirim. Kami akan memberi tahu saat terpenuhi.';
+
+  @override
+  String get wallRequestUpvoted => 'Didukung. Kami akan memberi tahu saat terpenuhi.';
+
+  @override
+  String get wallRequestErrorText => 'Gunakan 3 sampai 80 karakter, dan tetap ramah.';
+
+  @override
+  String get wallRequestErrorLimit => 'Anda bisa membuat 3 permintaan sehari. Coba lagi besok.';
+
+  @override
+  String get wallRequestErrorOwn => 'Anda tidak bisa mendukung permintaan sendiri.';
+
+  @override
+  String get wallRequestErrorClosed => 'Permintaan ini sudah terpenuhi.';
+
+  @override
+  String get wallRequestErrorGone => 'Permintaan ini tidak tersedia lagi.';
+
+  @override
+  String get wallRequestErrorGeneric => 'Terjadi kesalahan. Coba lagi.';
+
+  @override
+  String get searchRequestPrompt => 'Tidak menemukannya?';
+
+  @override
+  String get searchRequestAction => 'Minta';
+
+  @override
+  String get discoverRequestsTitle => 'Permintaan wallpaper';
+
+  @override
+  String get discoverRequestsSubtitle => 'Minta wallpaper, atau dukung salah satu';
+
+  @override
+  String get uploadFillsRequest => 'Memenuhi permintaan';
+
+  @override
+  String get uploadFillsRequestHint => 'Opsional. Pilih permintaan yang dijawab wallpaper ini.';
+
+  @override
+  String get uploadFillsRequestClear => 'Hapus permintaan';
+
+  @override
+  String get requestPickerTitle => 'Permintaan mana yang dipenuhi?';
+
+  @override
+  String get requestPickerSearch => 'Cari permintaan';
+
+  @override
+  String get requestPickerEmpty => 'Tidak ada permintaan terbuka yang cocok';
+
+  @override
+  String get notifPushWallRequestFilledTitle => 'Wallpaper permintaan Anda sudah tersedia';
+
+  @override
+  String notifPushWallRequestFilledBody(String requestText) {
+    return '$requestText';
+  }
+
+  @override
+  String get wallRequestAgeNow => 'Baru saja';
+
+  @override
+  String wallRequestAgeMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count menit lalu', one: '1 menit lalu');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count jam lalu', one: '1 jam lalu');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count hari lalu', one: '1 hari lalu');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRequestAgeWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count minggu lalu', one: '1 minggu lalu');
+    return '$_temp0';
+  }
+
+  @override
+  String get wallRequestErrorAccountAge =>
+      'Akun Anda bisa membuat permintaan dan memberi suara setelah berumur 10 hari.';
+
+  @override
+  String get adminFillsRequest => 'Memenuhi permintaan';
+
+  @override
+  String get wallRemixAction => 'Remix';
+
+  @override
+  String get wallRemixActionTooltip => 'Remix wallpaper ini dengan AI';
+
+  @override
+  String wallRemixingChip(String title, String creator) {
+    return 'Me-remix $title oleh $creator';
+  }
+
+  @override
+  String get wallRemixDropLinkTooltip => 'Hapus tautan remix';
+
+  @override
+  String get wallRemixUntitled => 'Tanpa judul';
+
+  @override
+  String get wallRemixUnknownCreator => 'kreator Prism';
+
+  @override
+  String get wallRemixesTitle => 'Remix';
+
+  @override
+  String wallRemixesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count remix');
+    return '$_temp0';
+  }
+
+  @override
+  String wallRemixOpenRemixLabel(String creator) {
+    return 'Buka remix oleh $creator';
+  }
+
+  @override
+  String wallRemixOfLabel(String title, String creator) {
+    return 'Remix dari $title oleh $creator';
+  }
+
+  @override
+  String get wallRemixOfTooltip => 'Buka wallpaper asli';
+
+  @override
+  String get economyAiSubmitPromptNotice => 'Siapa pun dapat melihat prompt Anda dan me-remix wallpaper ini.';
+
+  @override
+  String get notifPushWallRemixedTitle => 'Wallpaper Anda di-remix';
+
+  @override
+  String notifPushWallRemixedBody(String remixerName, String wallTitle) {
+    return '$remixerName me-remix $wallTitle.';
+  }
+
+  @override
+  String notifPushWallRemixedBodyUntitled(String remixerName) {
+    return '$remixerName me-remix wallpaper Anda.';
+  }
+
+  @override
+  String get wallMetadataDescription => 'Deskripsi';
+
+  @override
+  String get wallMetadataEdit => 'Edit detail';
+
+  @override
+  String get wallResubmitAction => 'Perbaiki dan kirim ulang';
+
+  @override
+  String get wallResubmitChooseImage => 'Pilih gambar';
+
+  @override
+  String get wallResubmitImageMissing => 'Gambar asli tidak lagi tersedia. Pilih lagi untuk melanjutkan pengeditan.';
+
+  @override
+  String get wallResubmitImageKept => 'Gambar asli siap';
+
+  @override
+  String get wallResubmitTitle => 'Perbaiki unggahan';
+
+  @override
+  String get wallUploadUseLastDetails => 'Gunakan detail terakhir';
+
+  @override
+  String get wallUploadLastDetailsUnavailable => 'Tidak ada detail sebelumnya di perangkat ini.';
+
+  @override
+  String get wallUploadWithdraw => 'Tarik unggahan';
+
+  @override
+  String get wallUploadWithdrawTitle => 'Tarik unggahan ini?';
+
+  @override
+  String get wallUploadWithdrawBody =>
+      'Tindakan ini menghapus unggahan dari peninjauan dan menghapus file yang diunggah.';
+
+  @override
+  String get wallUploadWithdrawn => 'Unggahan ditarik';
+
+  @override
+  String get wallUploadDeleteHistory => 'Hapus dari riwayat';
+
+  @override
+  String get wallMetadataInvalid => 'Periksa teks dan tag, lalu coba lagi.';
+
+  @override
+  String get wallUploadOwnerChanged => 'Akun Anda berubah. Buka unggahan ini lagi.';
+
+  @override
+  String get wallResubmitLimit => 'Wallpaper ini telah mencapai tiga pengiriman ulang yang ditautkan.';
+
+  @override
+  String get wallResubmitUnsupported => 'Pilih lagi gambar aslinya. Detail sumber AI tidak dapat digunakan kembali.';
+
+  @override
+  String get wallResubmitUnavailable => 'Tidak dapat memuat unggahan yang ditolak ini. Coba lagi.';
+
+  @override
+  String get wallMetadataEditDetails => 'Edit detail';
+
+  @override
+  String get wallMetadataApprovedHelp => 'Ubah judul, deskripsi, dan tag. Gambar dan kategori tetap sama.';
+
+  @override
+  String get wallMetadataPendingHelp => 'Perbarui detail ini sebelum wallpaper Anda ditinjau.';
+
+  @override
+  String get wallMetadataSave => 'Simpan detail';
+
+  @override
+  String get wallMetadataSaved => 'Detail disimpan';
+
+  @override
+  String get wallMetadataDiscardTitle => 'Buang perubahan?';
+
+  @override
+  String get wallMetadataDiscardBody => 'Detail yang belum disimpan akan hilang.';
+
+  @override
+  String get wallMetadataDiscard => 'Buang perubahan';
+
+  @override
+  String get wallMetadataReload => 'Muat ulang detail';
+
+  @override
+  String get wallMetadataReloadTitle => 'Muat ulang detail saat ini?';
+
+  @override
+  String get wallMetadataReloadBody => 'Tindakan ini mengganti detail yang belum disimpan dengan versi saat ini.';
+
+  @override
+  String get wallMetadataConflict =>
+      'Detail ini berubah di tempat lain. Suntingan Anda masih ada. Muat ulang detail saat ini sebelum menyimpan.';
+
+  @override
+  String get wallMetadataStatusChanged =>
+      'Status peninjauan wallpaper ini telah berubah. Suntingan Anda belum disimpan.';
+
+  @override
+  String get wallMetadataMissing => 'Wallpaper ini tidak lagi tersedia. Suntingan Anda belum disimpan.';
+
+  @override
+  String get wallMetadataDenied => 'Anda tidak memiliki izin untuk mengedit wallpaper ini.';
+
+  @override
+  String get wallMetadataSignedOut => 'Masuk lagi untuk mengedit wallpaper ini.';
+
+  @override
+  String get wallMetadataDailyLimit => 'Anda telah mencapai batas edit hari ini. Coba lagi besok.';
+
+  @override
+  String get wallMetadataUnavailable => 'Tidak dapat menyimpan detail. Periksa koneksi Anda dan coba lagi.';
+
+  @override
+  String get wallMetadataLoadFailed => 'Tidak dapat memuat detail';
+
+  @override
+  String get wallMetadataHistory => 'Riwayat edit';
+
+  @override
+  String get wallMetadataHistoryEmpty => 'Belum ada perubahan detail';
+
+  @override
+  String get wallMetadataHistoryEmptyBody => 'Perubahan pada judul, deskripsi, dan tag yang disetujui muncul di sini.';
+
+  @override
+  String get wallMetadataHistoryFailed => 'Tidak dapat memuat riwayat edit';
+
+  @override
+  String get wallMetadataBefore => 'Sebelum';
+
+  @override
+  String get wallMetadataAfter => 'Sesudah';
+
+  @override
+  String get wallMetadataRevert => 'Urungkan edit';
+
+  @override
+  String get wallMetadataRevertTitle => 'Urungkan edit ini?';
+
+  @override
+  String get wallMetadataRevertBody =>
+      'Pulihkan hanya judul, deskripsi, dan tag sebelumnya yang ditampilkan di sini. Gambar dan status peninjauan tidak akan berubah.';
+
+  @override
+  String get wallMetadataReverted => 'Edit diurungkan';
+
+  @override
+  String get wallMetadataLoadMore => 'Muat lebih banyak edit';
+
+  @override
+  String get wallMetadataAbsent => 'Belum diatur';
+
+  @override
+  String wallMetadataResubmitted(int attempt) {
+    return 'Dikirim ulang · percobaan $attempt dari 3';
+  }
+
+  @override
+  String get wallMetadataPreviousReason => 'Alasan penolakan sebelumnya';
+
+  @override
+  String get wallMetadataContextUnavailable => 'Detail pengiriman ulang tidak tersedia';
+
+  @override
+  String get reportSheetMessage =>
+      'Ceritakan apa yang salah. Prism tidak pernah menambahkan alamat email atau token masuk Anda. Periksa tangkapan layar sebelum mengirim.';
+
+  @override
+  String get reportTopicCrashFreeze => 'Crash/macet';
+
+  @override
+  String get reportTopicWallpaperWontSet => 'Wallpaper tidak bisa diatur';
+
+  @override
+  String get reportTopicLooksBroken => 'Tampilan rusak';
+
+  @override
+  String get reportTopicSlow => 'Lambat';
+
+  @override
+  String get reportTopicOther => 'Lainnya';
+
+  @override
+  String get reportNoteHint => 'Apa yang terjadi? Apa yang Anda harapkan?';
+
+  @override
+  String get reportScreenshotTitle => 'Tangkapan layar';
+
+  @override
+  String get reportScreenshotEmpty => 'Tunjukkan apa yang Anda lihat.';
+
+  @override
+  String get reportScreenshotAttached => 'Ketuk untuk melihat. Periksa sebelum mengirim.';
+
+  @override
+  String get reportAddScreenshot => 'Tambah tangkapan layar';
+
+  @override
+  String get reportRemoveScreenshot => 'Hapus';
+
+  @override
+  String get reportViewScreenshot => 'Lihat tangkapan layar';
+
+  @override
+  String get reportIncludeDiagnostics => 'Sertakan info perangkat dan log terbaru';
+
+  @override
+  String get reportShowDiagnostics => 'Tampilkan yang disertakan';
+
+  @override
+  String get reportHideDiagnostics => 'Sembunyikan detail';
+
+  @override
+  String get reportSend => 'Kirim laporan';
+
+  @override
+  String get reportShareAsFile => 'Bagikan sebagai file';
+
+  @override
+  String reportSent(String reference) {
+    return 'Terima kasih, laporan terkirim. Referensi $reference';
+  }
+
+  @override
+  String get reportCouldNotSend => 'Tidak dapat mengirim';
+
+  @override
+  String get reportCouldNotSendBody => 'Periksa koneksi Anda lalu coba lagi, atau bagikan laporan sebagai file.';
+
+  @override
+  String get reportShareInstead => 'Bagikan saja';
+
+  @override
+  String get reportShakeToReport => 'Goyang untuk melapor';
+
+  @override
+  String get reportShakeToReportSubtitle => 'Goyangkan ponsel di layar mana pun untuk melaporkan masalah';
+
+  @override
+  String get accountShowAiWallpapers => 'Tampilkan wallpaper buatan AI';
+
+  @override
+  String get accountShowAiWallpapersSubtitle => 'Matikan untuk melihat wallpaper buatan manusia saja';
+
+  @override
+  String get accountShowAiWallpapersFootnote =>
+      'Menyembunyikan wallpaper AI tidak pernah menyembunyikan unggahan dan favorit Anda.';
+
+  @override
+  String get wallpaperFeedHideAi => 'Sembunyikan AI';
+
+  @override
+  String get wallpaperAiGenerated => 'Buatan AI';
+
+  @override
+  String wallpaperAiMadeWith(String model) {
+    return 'Dibuat dengan $model';
+  }
+
+  @override
+  String get wallpaperAiMadeWithUnknown => 'Dibuat dengan AI';
+
+  @override
+  String get wallpaperAiReportWrongLabel => 'Laporkan label salah';
+
+  @override
+  String get feedNoHumanWalls => 'Belum ada wallpaper buatan manusia di sini';
+
+  @override
+  String get feedShowAiWalls => 'Tampilkan wallpaper AI';
+
+  @override
+  String get dailyMomentTitle => 'Momen harian';
+
+  @override
+  String get dailyMomentStreakTitle => 'Runtun harian';
+
+  @override
+  String get dailyMomentChestTitle => 'Peti harian';
+
+  @override
+  String get dailyMomentSpinTitle => 'Putaran gratis';
+
+  @override
+  String get dailyMomentUnavailable => 'Hadiah ini tidak lagi tersedia hari ini.';
+
+  @override
+  String get dailyMomentError => 'Hadiah tidak dapat dimuat. Coba lagi.';
+
+  @override
+  String dailyMomentStreakReceipt(int coins, int days) {
+    return '$coins koin diperoleh · runtun $days hari';
+  }
+
+  @override
+  String get challengeTitle => 'Tantangan mingguan';
+
+  @override
+  String get challengeRules => 'Maksimal 3 karya, ditinjau sebelum ditampilkan.';
+
+  @override
+  String challengeVotingRules(String date) {
+    return 'Pilih karya kreator lain hingga $date UTC.';
+  }
+
+  @override
+  String get challengeUpload => 'Unggah karya';
+
+  @override
+  String get challengeAi => 'Buat dengan AI';
+
+  @override
+  String get challengeTop => 'Teratas';
+
+  @override
+  String get challengeNew => 'Terbaru';
+
+  @override
+  String get challengePast => 'Tantangan sebelumnya';
+
+  @override
+  String get challengeEmpty => 'Karya yang disetujui akan muncul di sini.';
+
+  @override
+  String get challengeWaiting => 'Pemungutan suara ditutup. Kami menunggu tinjauan karya sebelum memilih pemenang.';
+
+  @override
+  String get challengeClosed => 'Tantangan ini telah berakhir.';
+
+  @override
+  String get challengeScheduled => 'Tantangan ini belum dibuka.';
+
+  @override
+  String get challengeNoWinner => 'Tidak ada pemenang untuk tantangan ini.';
+
+  @override
+  String challengeWinner(String name) {
+    return 'Pemenang · $name';
+  }
+
+  @override
+  String get challengeVote => 'Pilih';
+
+  @override
+  String get challengeUnvote => 'Hapus suara';
+
+  @override
+  String challengeVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count suara',
+      one: '1 suara',
+      zero: '0 suara',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dailyMomentCosmetic => 'Item kosmetik ditambahkan ke koleksi';
+
+  @override
+  String dailyMomentReward(int coins) {
+    return '$coins koin diperoleh';
+  }
+
+  @override
+  String get dailyMomentChestBody => 'Buka peti hari ini saat kamu siap.';
+
+  @override
+  String get dailyMomentSpinBody => 'Putaran gratismu siap.';
+
+  @override
+  String dailyMomentBalance(int coins) {
+    return 'Saldo: $coins koin';
+  }
+
+  @override
+  String get dailyMomentDone => 'Selesai';
+
+  @override
+  String get dailyMomentRetry => 'Coba lagi';
+
+  @override
+  String get dailyMomentContinue => 'Lanjutkan';
+
+  @override
+  String get dailyMomentOpenFree => 'Buka peti gratis';
+
+  @override
+  String dailyMomentOpenChest(int coins) {
+    return 'Buka dengan $coins koin';
+  }
+
+  @override
+  String get dailyMomentSpinAction => 'Putar gratis';
+
+  @override
+  String get dailyMomentClose => 'Tutup momen harian';
+
+  @override
+  String get dailyMomentToday => 'Hari ini';
+
+  @override
+  String get dailyMomentReady => 'Hadiah harian sudah siap';
+
+  @override
+  String get dailyMomentComplete => 'Hari ini sudah selesai';
+
+  @override
+  String get dailyMomentResume => 'Lanjutkan momen harian';
+
+  @override
+  String get dailyMomentMore => 'Lainnya';
+
+  @override
+  String get dailyMomentQuests => 'Misi';
+
+  @override
+  String get dailyMomentChestLeft => 'Peti harian tersedia';
+
+  @override
+  String get dailyMomentSpinLeft => 'Putaran gratis tersedia';
+
+  @override
+  String get dailyMomentStreakLeft => 'Runtun harian tersedia';
+
+  @override
+  String get challengeShare => 'Bagikan tantangan';
+
+  @override
+  String get challengeRemove => 'Hapus tantangan';
+
+  @override
+  String challengeContext(String theme) {
+    return 'Tantangan · $theme';
+  }
+
+  @override
+  String get challengeError => 'Tantangan tidak dapat dimuat. Coba lagi.';
+
+  @override
+  String get challengeVoteError => 'Suara tidak dapat disimpan. Coba lagi.';
+
+  @override
+  String get challengeSignIn => 'Masuk untuk ikut atau memilih.';
+
+  @override
+  String get challengeLimit => 'Anda telah mengirim 3 wallpaper untuk tantangan ini.';
+
+  @override
+  String get challengeRetry => 'Coba lagi';
+
+  @override
+  String get challengeOwnEntry => 'Anda tidak dapat memilih karya sendiri.';
+
+  @override
+  String get challengeDailyLimit => 'Batas suara harian telah tercapai.';
+
+  @override
+  String get challengeMissing => 'Tantangan atau karya ini tidak lagi tersedia.';
+
+  @override
+  String get challengeBadge => 'Pemenang Tantangan';
+
+  @override
+  String get challengeBadgeDescription => 'Menangkan tantangan mingguan';
+
+  @override
+  String get challengeWinnerNotificationTitle => 'Wallpaper Anda menang';
+
+  @override
+  String challengeWinnerNotificationBody(String theme) {
+    return 'Karya Anda memenangkan tantangan mingguan: $theme.';
+  }
+
+  @override
+  String get statsTitle => 'Statistik Anda';
+
+  @override
+  String get statsEntry => 'Statistik';
+
+  @override
+  String get statsViews => 'Dilihat';
+
+  @override
+  String get statsSaves => 'Disimpan';
+
+  @override
+  String get statsSets => 'Diterapkan';
+
+  @override
+  String get statsDownloads => 'Unduhan';
+
+  @override
+  String get statsShares => 'Dibagikan';
+
+  @override
+  String get statsFolderAdds => 'Ditambahkan ke folder';
+
+  @override
+  String get statsRemixes => 'Remix';
+
+  @override
+  String get statsLoading => 'Memuat statistik Anda';
+
+  @override
+  String get statsError => 'Statistik Anda tidak dapat dimuat. Coba lagi.';
+
+  @override
+  String get statsRetry => 'Coba lagi';
+
+  @override
+  String get statsEmptyTitle => 'Wallpaper pertama Anda dimulai di sini';
+
+  @override
+  String get statsEmptyBody => 'Unggah wallpaper. Statistiknya muncul setelah disetujui.';
+
+  @override
+  String get statsUpload => 'Unggah wallpaper';
+
+  @override
+  String get statsWeekNote => 'Minggu ini sejauh ini dibanding minggu lalu. Minggu dimulai Senin, UTC.';
+
+  @override
+  String get statsHistoryNote =>
+      'Delapan minggu, yang terlama lebih dulu. Tanda pisah berarti data tidak tersedia. Pelacakan dapat dimulai di tengah minggu, jadi data mingguan bisa tidak lengkap. Minggu ini belum selesai.';
+
+  @override
+  String get statsTopWalls => 'Wallpaper teratas minggu ini';
+
+  @override
+  String get statsUntitled => 'Wallpaper tanpa judul';
+
+  @override
+  String get statsCountingNote =>
+      'Total simpan menghitung favorit saat ini; simpan mingguan menghitung penambahan. Total remix menghitung remix dengan kredit saat ini; remix mingguan menghitung kredit pertama yang diterima. Wallpaper yang ditambahkan ke folder dicatat sejak pelacakan dimulai.';
+
+  @override
+  String get statsUnavailable => 'Tidak tersedia';
+
+  @override
+  String get statsWeeklyTitle => 'Wallpaper Anda minggu ini';
+
+  @override
+  String statsWeeklyBody(String week) {
+    return 'Lihat hasil wallpaper Anda pada $week.';
+  }
+
+  @override
+  String statsWallValue(String metric, String value) {
+    return '$metric: $value minggu ini';
+  }
+
+  @override
+  String statsComparison(String current, String previous) {
+    return '$current minggu ini · $previous minggu lalu';
+  }
+
+  @override
+  String statsTotal(String value) {
+    return 'Total: $value';
+  }
+
+  @override
+  String statsChange(String value) {
+    return '$value dibanding minggu lalu';
+  }
+
+  @override
+  String statsUpdated(String date) {
+    return 'Diperbarui $date UTC';
+  }
+
+  @override
+  String statsChartWeek(String date, String value) {
+    return 'Minggu mulai $date: $value';
+  }
+
+  @override
+  String statsChartSummary(String metric, String summary) {
+    return '$metric, delapan minggu. $summary';
+  }
+
+  @override
+  String get shortcutsGuideHeadline => 'Wallpaper baru setiap hari';
+
+  @override
+  String get shortcutsGuideBody =>
+      'Atur Pintasan sekali saja. Setiap hari, otomatisasi memasang wallpaper dari folder rotasi Anda. 200 wallpaper terbarunya masing-masing tampil sekali sebelum ada yang terulang.';
+
+  @override
+  String get shortcutsSourceRotation => 'Folder rotasi';
+
+  @override
+  String get shortcutsSourceRotationDescription => 'Mengacak folder yang Anda pilih di atas.';
+
+  @override
+  String get shortcutsSourceFolder => 'Folder';
+
+  @override
+  String get shortcutsSourceFolderDescription => 'Mengacak folder yang Anda pilih di Pintasan.';
+
+  @override
+  String get shortcutsSourceFavouriteDescription =>
+      'Mengacak favorit Anda. Setiap favorit tampil sekali sebelum ada yang diulang. Beberapa wallpaper yang dilindungi mungkin tidak tersedia.';
+
+  @override
+  String get shortcutsRotationNone => 'Belum ada folder yang dipilih';
+
+  @override
+  String get shortcutsRotationNoneBody => 'Pilih folder yang diacak oleh pintasan.';
+
+  @override
+  String get shortcutsRotationPick => 'Pilih folder';
+
+  @override
+  String get shortcutsRotationChange => 'Ubah';
+
+  @override
+  String get shortcutsRotationStop => 'Berhenti';
+
+  @override
+  String shortcutsStepLabel(int number, String title) {
+    return 'Langkah $number, $title';
+  }
+
+  @override
+  String get shortcutsStepAddTitle => 'Tambahkan pintasan Prism';
+
+  @override
+  String get shortcutsStepAddBody =>
+      'Pintasan ini mengambil wallpaper dari folder rotasi Anda dan menjadikannya wallpaper Anda.';
+
+  @override
+  String get shortcutsStepAddAction => 'Tambahkan pintasan';
+
+  @override
+  String get shortcutsStepAddManualBody => 'Buat di Pintasan dengan 2 tindakan.';
+
+  @override
+  String get shortcutsManualNew => 'Di Pintasan, ketuk + untuk membuat pintasan baru.';
+
+  @override
+  String get shortcutsManualGet => 'Tambahkan \"Dapatkan Wallpaper Prism\". Atur Sumber ke Folder rotasi.';
+
+  @override
+  String get shortcutsManualSet =>
+      'Tambahkan \"Atur Foto Wallpaper\". Ketuk panah di sebelahnya, lalu nonaktifkan Tampilkan Pratinjau.';
+
+  @override
+  String shortcutsManualName(String name) {
+    return 'Beri nama pintasan \"$name\".';
+  }
+
+  @override
+  String get shortcutsStepAutomationTitle => 'Jalankan setiap hari';
+
+  @override
+  String get shortcutsAutomationOpen => 'Di Pintasan, ketuk Otomatisasi, lalu ketuk +.';
+
+  @override
+  String get shortcutsAutomationTime => 'Ketuk Waktu. Pilih jam, lalu pilih Harian.';
+
+  @override
+  String get shortcutsAutomationRun => 'Pilih Jalankan Segera, lalu ketuk Berikutnya.';
+
+  @override
+  String shortcutsAutomationPick(String name) {
+    return 'Pilih \"$name\" untuk dijalankan.';
+  }
+
+  @override
+  String shortcutsAutomationNoTab(String name) {
+    return 'Tidak ada tab Otomatisasi? Buka \"$name\", ketuk Edit, lalu ketuk Otomatisasi.';
+  }
+
+  @override
+  String get shortcutsStepTestTitle => 'Coba sekarang';
+
+  @override
+  String shortcutsStepTestBody(String name) {
+    return 'Menjalankan \"$name\" sekali, supaya Anda bisa melihat wallpaper baru sekarang.';
+  }
+
+  @override
+  String get shortcutsStepTestAction => 'Jalankan pintasan';
+
+  @override
+  String get foldersRotateDaily => 'Putar folder ini setiap hari';
+
+  @override
+  String get autoRotateIosTitle => 'Ubah wallpaper dengan Pintasan';
+
+  @override
+  String get autoRotateIosBody =>
+      'Di iPhone, otomatisasi Pintasan memasang wallpaper baru dari folder Anda setiap hari.';
+
+  @override
+  String get autoRotateIosAction => 'Atur Pintasan';
+
+  @override
+  String get shortcutsAutomationIos16 =>
+      'Di iOS 16 tidak ada \"Jalankan Segera\". Matikan \"Tanya Sebelum Menjalankan\" sebagai gantinya.';
+
+  @override
+  String get tipAction => 'Beri tip kreator';
+
+  @override
+  String get tipMenuItem => 'Kirim tip';
+
+  @override
+  String tipTitle(String name) {
+    return 'Beri tip $name';
+  }
+
+  @override
+  String tipMessage(String name) {
+    return 'Pilih jumlah. $name menerima semua koin dan melihat nama Anda.';
+  }
+
+  @override
+  String get tipAmountsLabel => 'Jumlah tip';
+
+  @override
+  String tipBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance koin', one: '1 koin');
+    return 'Saldo Anda: $_temp0';
+  }
+
+  @override
+  String tipShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount koin lagi', one: '1 koin lagi');
+    return 'Anda perlu $_temp0.';
+  }
+
+  @override
+  String tipSendButton(int amount) {
+    return 'Beri tip $amount koin';
+  }
+
+  @override
+  String get tipEarnCoins => 'Dapatkan koin';
+
+  @override
+  String get tipThanksTitle => 'Terima kasih atas tip Anda';
+
+  @override
+  String tipThanksMessage(String name, int amount) {
+    return '$name menerima $amount koin Anda.';
+  }
+
+  @override
+  String get tipDone => 'Selesai';
+
+  @override
+  String get tipNotEnoughCoins => 'Koin Anda tidak cukup untuk tip ini.';
+
+  @override
+  String get tipDailyLimit => 'Anda sudah mengirim semua tip hari ini. Coba lagi besok.';
+
+  @override
+  String tipPairLimit(String name) {
+    return 'Anda sudah memberi tip kepada $name hari ini. Coba lagi besok.';
+  }
+
+  @override
+  String tipCreatorLimit(String name) {
+    return '$name tidak bisa menerima tip lagi hari ini. Coba lagi besok.';
+  }
+
+  @override
+  String get tipSenderTooNew => 'Anda bisa mengirim tip 7 hari setelah bergabung dengan Prism.';
+
+  @override
+  String get tipSenderIneligible => 'Masuk dengan akun terverifikasi untuk mengirim tip.';
+
+  @override
+  String tipUnavailable(String name) {
+    return 'Anda tidak bisa memberi tip kepada $name saat ini.';
+  }
+
+  @override
+  String get tipFailed => 'Tip tidak bisa dikirim. Coba lagi.';
+
+  @override
+  String wallTippedBy(int count) {
+    return 'Diberi tip oleh $count orang';
+  }
+
+  @override
+  String get coreCoinTipSent => 'Tip terkirim';
+
+  @override
+  String get coreCoinTipReceived => 'Tip diterima';
+
+  @override
+  String notifPushTipReceivedTitle(String senderName, String amount, String wallTitle) {
+    return '$senderName memberi Anda tip $amount koin untuk $wallTitle';
+  }
+
+  @override
+  String notifPushTipReceivedTitleUntitled(String senderName, String amount) {
+    return '$senderName memberi Anda tip $amount koin';
+  }
+
+  @override
+  String get notifPushTipReceivedBody => 'Lihat tip Anda di statistik kreator.';
+
+  @override
+  String notifTipsReceivedTitle(int count) {
+    return 'Anda mendapat $count tip hari ini';
+  }
+
+  @override
+  String notifTipsReceivedBody(int coins) {
+    return 'Total $coins koin. Lihat di statistik kreator Anda.';
+  }
+
+  @override
+  String get statsTips => 'Tip';
+
+  @override
+  String statsTipsTotal(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count tip', one: '1 tip');
+    return '$_temp0, total $coins koin';
+  }
+
+  @override
+  String statsTipsWeek(String date, int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count tip', one: '1 tip');
+    return 'Minggu $date: $_temp0, $coins koin';
+  }
+
+  @override
+  String statsTipsWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count tip', one: '1 tip');
+    return '$_temp0, $coins koin';
+  }
+
+  @override
+  String get statsTipsEmpty => 'Belum ada tip. Penggemar bisa memberi tip dari wallpaper dan profil Anda.';
+
+  @override
+  String get creatorsToFollow => 'Kreator untuk diikuti';
+
+  @override
+  String get creatorsSeeAll => 'Lihat semua';
+
+  @override
+  String get creatorsTitle => 'Kreator';
+
+  @override
+  String get creatorsFilterAll => 'Semua';
+
+  @override
+  String get creatorsEmptyTitle => 'Belum ada kreator di sini';
+
+  @override
+  String get creatorsEmptyBody => 'Coba kategori lain.';
+
+  @override
+  String get creatorsLoadError => 'Kreator tidak dapat dimuat';
+
+  @override
+  String creatorsOpenProfile(String name) {
+    return 'Buka profil $name';
+  }
+
+  @override
+  String creatorsWallBy(String name) {
+    return 'Wallpaper oleh $name';
+  }
+
+  @override
+  String creatorsFollowedByOne(String first) {
+    return 'Diikuti oleh $first';
+  }
+
+  @override
+  String creatorsFollowedByTwo(String first, String second) {
+    return 'Diikuti oleh $first dan $second';
+  }
+
+  @override
+  String creatorsFollowedByMany(String first, String second, int others) {
+    String _temp0 = intl.Intl.pluralLogic(
+      others,
+      locale: localeName,
+      other: '$others lainnya yang Anda ikuti',
+      one: '1 lainnya yang Anda ikuti',
+    );
+    return 'Diikuti oleh $first, $second dan $_temp0';
+  }
+
+  @override
+  String creatorsMoreLike(String name) {
+    return 'Lainnya seperti $name';
+  }
+
+  @override
+  String get creatorsSimilarSubtitle => 'Kreator dengan gaya serupa';
+
+  @override
+  String get creatorsShowMeTitle => 'Tampilkan saya di Kreator untuk diikuti';
+
+  @override
+  String get creatorsShowMeBody => 'Orang lain dapat menemukan profil dan wallpaper teratas Anda';
+
+  @override
+  String get promoRedeemTitle => 'Tukarkan kode';
+
+  @override
+  String get promoRedeemMessage => 'Masukkan kode dari postingan atau giveaway Prism.';
+
+  @override
+  String get promoRedeemMessageIos => 'Masukkan kode koin dari postingan atau giveaway Prism.';
+
+  @override
+  String get promoCodeFieldLabel => 'Kode';
+
+  @override
+  String get promoCodeFieldHint => 'Contoh, 7KQ2 MPXR 4D';
+
+  @override
+  String get promoPasteCode => 'Tempel kode';
+
+  @override
+  String get promoRedeemAction => 'Tukarkan';
+
+  @override
+  String get promoRedeeming => 'Menukarkan kode';
+
+  @override
+  String get promoDone => 'Selesai';
+
+  @override
+  String get promoTryAnother => 'Coba kode lain';
+
+  @override
+  String promoSuccessCoins(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString koin', one: '1 koin');
+    return 'Kamu mendapat $_temp0';
+  }
+
+  @override
+  String get promoSuccessCoinsMessage => 'Koin sudah masuk ke saldomu.';
+
+  @override
+  String promoSuccessPro(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString hari', one: '1 hari');
+    return 'Kamu mendapat $_temp0 Pro';
+  }
+
+  @override
+  String promoSuccessProMessage(String date) {
+    return 'Paket Pro-mu sekarang berlaku sampai $date.';
+  }
+
+  @override
+  String get promoErrorInvalid => 'Itu bukan kode Prism. Kode memiliki 10 huruf atau angka atau lebih.';
+
+  @override
+  String get promoErrorNotFound => 'Kami tidak menemukan kode itu. Periksa lagi dan coba lagi.';
+
+  @override
+  String get promoErrorDisabled => 'Kode ini dinonaktifkan.';
+
+  @override
+  String get promoErrorExpired => 'Kode ini sudah kedaluwarsa.';
+
+  @override
+  String get promoErrorLimitReached => 'Kode ini sudah tidak bisa digunakan lagi.';
+
+  @override
+  String get promoErrorAlreadyRedeemed => 'Kamu sudah menggunakan kode ini.';
+
+  @override
+  String get promoErrorAccountTooNew => 'Akunmu terlalu baru untuk kode ini.';
+
+  @override
+  String get promoErrorNewUsersOnly => 'Kode ini hanya untuk akun baru.';
+
+  @override
+  String get promoErrorPremiumNotOnIos =>
+      'Kode Pro tidak berfungsi di iPhone atau iPad. Gunakan kode App Store sebagai gantinya.';
+
+  @override
+  String get promoErrorAlreadyPremium => 'Kamu sudah punya Pro, jadi kode ini tidak diperlukan.';
+
+  @override
+  String get promoErrorRateLimited => 'Terlalu banyak percobaan. Tunggu satu jam, lalu coba lagi.';
+
+  @override
+  String get promoErrorBusy => 'Banyak orang sedang menukarkan kode. Coba lagi sebentar lagi.';
+
+  @override
+  String get promoErrorSignedOut => 'Masuk untuk menukarkan kode.';
+
+  @override
+  String get promoErrorNetwork => 'Tidak bisa terhubung ke Prism. Periksa koneksimu dan coba lagi.';
+
+  @override
+  String get promoErrorUnknown => 'Terjadi kesalahan. Coba lagi.';
+
+  @override
+  String get promoSettingsGroup => 'Kode';
+
+  @override
+  String get promoSettingsRedeemTitle => 'Tukarkan kode Prism';
+
+  @override
+  String get promoSettingsRedeemSubtitle => 'Koin atau hari Pro dari postingan dan giveaway kami';
+
+  @override
+  String get promoSettingsRedeemSubtitleIos => 'Koin dari postingan dan giveaway kami';
+
+  @override
+  String get promoAppStoreCodeTitle => 'Tukarkan kode App Store';
+
+  @override
+  String get promoAppStoreCodeSubtitle => 'Kode penawaran Pro dari Apple';
+
+  @override
+  String get promoPlayCodeTitle => 'Tukarkan kode Play';
+
+  @override
+  String get promoPlayCodeSubtitle => 'Kode penawaran Pro dari Google Play';
+
+  @override
+  String get promoCodesFootnoteIos => 'Kode Prism memberi koin. Kode App Store memberi Pro.';
+
+  @override
+  String get promoCodesFootnoteAndroid => 'Kode Prism memberi koin atau hari Pro. Kode Play memberi Pro.';
+
+  @override
+  String get promoStoreCodeFailed => 'Halaman kode tidak bisa dibuka. Coba lagi.';
+
+  @override
+  String get promoRewardsRowTitle => 'Tukarkan kode';
+
+  @override
+  String get promoRewardsRowSubtitle => 'Punya kode dari postingan atau giveaway?';
+
+  @override
+  String get promoAdminTitle => 'Kode promo';
+
+  @override
+  String get promoAdminEntry => 'Kode promo';
+
+  @override
+  String get promoAdminCreate => 'Buat kode';
+
+  @override
+  String get promoAdminTypeCoins => 'Koin';
+
+  @override
+  String get promoAdminTypePro => 'Hari Pro';
+
+  @override
+  String get promoAdminAmount => 'Jumlah';
+
+  @override
+  String get promoAdminAmountHelpCoins => '1 sampai 1.000 koin';
+
+  @override
+  String get promoAdminAmountHelpPro => '1 sampai 90 hari. Khusus Android.';
+
+  @override
+  String get promoAdminMaxRedemptions => 'Maks. penukaran';
+
+  @override
+  String get promoAdminExpiresInDays => 'Kedaluwarsa dalam (hari)';
+
+  @override
+  String get promoAdminMinAccountAge => 'Usia akun minimum (hari)';
+
+  @override
+  String get promoAdminNewUsersOnly => 'Hanya akun baru';
+
+  @override
+  String get promoAdminNewUsersDays => 'Akun paling lama (hari)';
+
+  @override
+  String get promoAdminCustomCode => 'Kode kustom (opsional)';
+
+  @override
+  String get promoAdminCustomCodeHelp =>
+      '10 sampai 32 huruf dan angka, tanpa I, O, 0, atau 1. Kosongkan untuk membuat kode otomatis.';
+
+  @override
+  String get promoAdminLabel => 'Catatan';
+
+  @override
+  String promoAdminCreated(String code) {
+    return '$code dibuat';
+  }
+
+  @override
+  String get promoAdminCopied => 'Kode disalin';
+
+  @override
+  String get promoAdminCopy => 'Salin kode';
+
+  @override
+  String promoAdminRedemptions(int used, int max) {
+    return '$used dari $max digunakan';
+  }
+
+  @override
+  String promoAdminExpires(String date) {
+    return 'Kedaluwarsa $date';
+  }
+
+  @override
+  String get promoAdminDisabled => 'Nonaktif';
+
+  @override
+  String get promoAdminDisable => 'Nonaktifkan';
+
+  @override
+  String get promoAdminEnable => 'Aktifkan';
+
+  @override
+  String get promoAdminEmpty => 'Belum ada kode.';
+
+  @override
+  String get promoAdminLoadFailed => 'Kode tidak bisa dimuat. Tarik ke bawah untuk mencoba lagi.';
+
+  @override
+  String promoAdminCreateFailed(String reason) {
+    return 'Kode tidak bisa dibuat: $reason';
+  }
+
+  @override
+  String get desktopVersionChip => 'Versi desktop';
+
+  @override
+  String get desktopVersionChipSemantic => 'Buka versi desktop';
+
+  @override
+  String get desktopVersionSheetTitle => 'Versi desktop';
+
+  @override
+  String desktopVersionSheetBody(int width, int height) {
+    return 'Gambar yang sama, dibuat lebar untuk layar komputer. $width × $height.';
+  }
+
+  @override
+  String get desktopVersionPreviewSemantic => 'Versi desktop di layar komputer';
+
+  @override
+  String get desktopVersionSendToComputer => 'Kirim ke komputer saya';
+
+  @override
+  String desktopVersionShareText(String url) {
+    return 'Dapatkan wallpaper ini untuk komputer Anda: $url';
+  }
+
+  @override
+  String get desktopVersionShareSubject => 'Wallpaper desktop dari Prism';
+
+  @override
+  String get desktopVersionSetOnTablet => 'Pasang versi desktop';
+
+  @override
+  String get desktopVersionSaveOnTablet => 'Simpan versi desktop ke Foto';
+
+  @override
+  String get desktopVersionUnavailable => 'Versi desktop tidak dapat diambil. Periksa koneksi Anda, lalu coba lagi.';
+
+  @override
+  String get layoutTitle => 'Tata letak';
+
+  @override
+  String get layoutRowSubtitle => 'Tab dan kisi wallpaper';
+
+  @override
+  String get layoutTabsHeader => 'Tab';
+
+  @override
+  String get layoutTabsFootnote =>
+      'Seret untuk mengubah urutan. Minimal 3 tab tetap ada di bilah. Tab yang disembunyikan ada di Lainnya.';
+
+  @override
+  String get layoutTabAlwaysShown => 'Selalu di bilah';
+
+  @override
+  String get layoutTabUnderMore => 'Di Lainnya';
+
+  @override
+  String layoutShowTab(String tab) {
+    return 'Tampilkan $tab';
+  }
+
+  @override
+  String layoutReorderTab(String tab) {
+    return 'Ubah urutan $tab';
+  }
+
+  @override
+  String get layoutMoveUp => 'Pindahkan ke atas';
+
+  @override
+  String get layoutMoveDown => 'Pindahkan ke bawah';
+
+  @override
+  String get layoutGridHeader => 'Kisi wallpaper';
+
+  @override
+  String get layoutDensityCompact => 'Ringkas';
+
+  @override
+  String get layoutDensityComfortable => 'Nyaman';
+
+  @override
+  String get layoutDensityLarge => 'Besar';
+
+  @override
+  String get layoutGridFootnote => 'Berlaku untuk semua kisi wallpaper. Cubit feed Beranda untuk mengubahnya.';
+
+  @override
+  String get layoutReset => 'Atur ulang tata letak';
+
+  @override
+  String get navMore => 'Lainnya';
+
+  @override
+  String get navMoreEditTabs => 'Ubah tab';
+
+  @override
+  String wrappedTitle(String year) {
+    return 'Prism Wrapped $year';
+  }
+
+  @override
+  String get wrappedIntroHeadline => 'Tahun Anda dalam wallpaper';
+
+  @override
+  String get wrappedIntroBody => 'Beberapa kartu tentang wallpaper yang Anda sukai tahun ini.';
+
+  @override
+  String get wrappedSavesLabel => 'Disimpan';
+
+  @override
+  String wrappedSavesBody(int count, String year) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda menyimpan $count wallpaper di $year.',
+      one: 'Anda menyimpan $count wallpaper di $year.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedColoursLabel => 'Warna Anda';
+
+  @override
+  String wrappedColoursBody(String first, String second, String third) {
+    return '$first, $second, dan $third paling sering muncul di wallpaper yang Anda simpan.';
+  }
+
+  @override
+  String get wrappedCreatorLabel => 'Kreator teratas Anda';
+
+  @override
+  String wrappedCreatorBody(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda menyimpan $count wallpaper dari $name.',
+      one: 'Anda menyimpan $count wallpaper dari $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedStreakLabel => 'Rentetan terpanjang Anda';
+
+  @override
+  String wrappedStreakBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda masuk $count hari berturut-turut.',
+      one: 'Anda masuk $count hari berturut-turut.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count hari', one: '$count hari');
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedAiLabel => 'Dibuat dengan AI';
+
+  @override
+  String wrappedAiBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda membuat $count wallpaper AI.',
+      one: 'Anda membuat $count wallpaper AI.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedCategoryLabel => 'Kategori teratas Anda';
+
+  @override
+  String wrappedCategoryBody(int count, String category) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda menyimpan $count wallpaper dari $category.',
+      one: 'Anda menyimpan $count wallpaper dari $category.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedFoldersLabel => 'Folder';
+
+  @override
+  String wrappedFoldersBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda membuat $count folder.',
+      one: 'Anda membuat $count folder.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedOnScreenLabel => 'Di layar Anda';
+
+  @override
+  String wrappedOnScreenBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda memasang atau mengunduh wallpaper ini $count kali.',
+      one: 'Anda memasang atau mengunduh wallpaper ini $count kali.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedChallengesLabel => 'Tantangan mingguan';
+
+  @override
+  String wrappedChallengesBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda mengikuti $count tantangan mingguan.',
+      one: 'Anda mengikuti $count tantangan mingguan.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedTipsLabel => 'Tip';
+
+  @override
+  String wrappedTipsBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda mengirim $count tip ke kreator.',
+      one: 'Anda mengirim $count tip ke kreator.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedSince(String date) {
+    return 'Sejak $date';
+  }
+
+  @override
+  String wrappedSummaryHeadline(String year) {
+    return '$year Anda di Prism';
+  }
+
+  @override
+  String get wrappedShare => 'Bagikan';
+
+  @override
+  String get wrappedShareCard => 'Bagikan kartu ini';
+
+  @override
+  String get wrappedPause => 'Jeda';
+
+  @override
+  String get wrappedPlay => 'Putar';
+
+  @override
+  String get wrappedClose => 'Tutup';
+
+  @override
+  String get wrappedNextCard => 'Kartu berikutnya';
+
+  @override
+  String get wrappedPreviousCard => 'Kartu sebelumnya';
+
+  @override
+  String wrappedCardPosition(int index, int count) {
+    return 'Kartu $index dari $count';
+  }
+
+  @override
+  String wrappedHomeTitle(String year) {
+    return '$year Anda di Prism';
+  }
+
+  @override
+  String get wrappedHomeSubtitle => 'Tahun Anda dalam wallpaper sudah siap.';
+
+  @override
+  String get wrappedNotEligible => 'Tidak ada Wrapped untuk akun ini tahun ini.';
+
+  @override
+  String get wrappedLoadFailed => 'Wrapped Anda tidak dapat dimuat. Periksa koneksi dan coba lagi.';
+
+  @override
+  String notifPushWrappedReadyTitle(String year) {
+    return '$year Anda di Prism sudah tiba';
+  }
+
+  @override
+  String get notifPushWrappedReadyBody => 'Lihat wallpaper yang Anda simpan, warna Anda, dan kreator Anda.';
+
+  @override
+  String get trialTimelineTitle => 'Cara kerja uji coba gratis Anda';
+
+  @override
+  String get trialTimelineClose => 'Tutup';
+
+  @override
+  String trialTimelinePlanSummary(int days, String price) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString hari', one: '1 hari');
+    return 'Prism Pro tahunan. $_temp0 gratis, lalu $price per tahun.';
+  }
+
+  @override
+  String get trialTimelineToday => 'Hari ini';
+
+  @override
+  String get trialTimelineTodayBody => 'Anda mendapat akses penuh ke Prism Pro. Anda tidak membayar apa pun hari ini.';
+
+  @override
+  String trialTimelineDay(int day) {
+    final intl.NumberFormat dayNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String dayString = dayNumberFormat.format(day);
+
+    return 'Hari $dayString';
+  }
+
+  @override
+  String get trialTimelineReminderBody => 'Kami mengingatkan Anda bahwa uji coba Anda akan segera berakhir.';
+
+  @override
+  String get trialTimelineNoReminderBody => 'Tanpa pengingat. Anda mematikannya di bawah.';
+
+  @override
+  String trialTimelineChargeBody(String price) {
+    return 'Anda membayar $price, kecuali Anda membatalkan setidaknya 24 jam sebelumnya.';
+  }
+
+  @override
+  String get trialTimelineRemindToggle => 'Ingatkan saya 2 hari sebelum uji coba berakhir';
+
+  @override
+  String trialTimelineRenewalTerms(String price, String store) {
+    return 'Setelah uji coba, Prism Pro tahunan diperpanjang seharga $price per tahun sampai Anda membatalkan. $store menagih akun Anda. Untuk menghindari tagihan, batalkan setidaknya 24 jam sebelum uji coba atau perpanjangan berakhir.';
+  }
+
+  @override
+  String trialTimelineCancelLink(String store) {
+    return 'Batalkan kapan saja di pengaturan $store';
+  }
+
+  @override
+  String get trialTimelineSeeAllPlans => 'Lihat semua paket';
+
+  @override
+  String trialTimelineStart(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    return 'Mulai uji coba gratis $daysString hari';
+  }
+
+  @override
+  String get trialTimelineStartFailed => 'Tidak dapat memulai uji coba gratis. Coba lagi.';
+
+  @override
+  String trialReminderTitle(String date) {
+    return 'Uji coba gratis Anda berakhir pada $date';
+  }
+
+  @override
+  String trialReminderBody(String store) {
+    return 'Setelah itu, Anda membayar Prism Pro tahunan. Untuk menghindari tagihan, batalkan di pengaturan $store setidaknya 24 jam sebelumnya.';
+  }
+
+  @override
+  String get notifChannelSubscription => 'Langganan';
+
+  @override
+  String get notifChannelSubscriptionDescription => 'Pengingat sebelum uji coba gratis Anda berakhir';
+
+  @override
+  String premiumTrialEnds(String date) {
+    return 'Uji coba, berakhir $date';
+  }
+
+  @override
+  String get premiumTrialAutoRenewOff => 'Perpanjangan otomatis mati. Anda tidak akan ditagih saat uji coba berakhir.';
 }

@@ -6,6 +6,8 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -15,6 +17,8 @@ import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
+import 'package:Prism/features/layout_prefs/views/layout_prefs_scope.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
 import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
@@ -27,8 +31,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
-import '../../support/in_memory_local_store.dart';
 import '../../support/favourite_test_scope.dart';
+import '../../support/in_memory_local_store.dart';
 
 class _MockWallpaperSearchService extends Mock implements WallpaperSearchService {}
 
@@ -51,6 +55,16 @@ FeedItemEntity _wallpaper(int index) {
     ),
   );
 }
+
+FeedItemEntity _prismWallpaper(String id, {bool isAiGenerated = false, Map<String, Object?>? aiMetadata}) =>
+    FeedItemEntity.prism(
+      id: id,
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(id: id, source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+        isAiGenerated: isAiGenerated,
+        aiMetadata: aiMetadata,
+      ),
+    );
 
 void main() {
   setUpFavouriteCounts();
@@ -77,16 +91,18 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(
-          body: SearchGrid(
-            query: 'landscape',
-            provider: SearchProviderValue.pexels,
-            initialResults: List<FeedItemEntity>.generate(24, _wallpaper),
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              provider: SearchProviderValue.pexels,
+              initialResults: List<FeedItemEntity>.generate(24, _wallpaper),
+            ),
           ),
         ),
       ),
@@ -134,15 +150,17 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: SearchGrid(
-            query: 'landscape',
-            provider: SearchProviderValue.pexels,
-            initialResults: List<FeedItemEntity>.generate(40, withThumb),
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              provider: SearchProviderValue.pexels,
+              initialResults: List<FeedItemEntity>.generate(40, withThumb),
+            ),
           ),
         ),
       ),
@@ -158,18 +176,80 @@ void main() {
 
   testWidgets('does not show See more for an empty first page', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+      _compactGrid(
+        const MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(
-          body: SearchGrid(query: 'nothing', provider: SearchProviderValue.pexels, initialResults: <FeedItemEntity>[]),
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'nothing',
+              provider: SearchProviderValue.pexels,
+              initialResults: <FeedItemEntity>[],
+            ),
+          ),
         ),
       ),
     );
 
     expect(find.byType(SeeMoreButton), findsNothing);
+  });
+
+  testWidgets('hides flagged and metadata AI search results immediately when the setting changes', (tester) async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    await setShowAiWallpapers(settings, true);
+    int pageFetches = 0;
+    when(
+      () => search.fetchPage(
+        any(),
+        any(),
+        refresh: any(named: 'refresh'),
+        filters: any(named: 'filters'),
+      ),
+    ).thenAnswer((_) async {
+      pageFetches++;
+      return <FeedItemEntity>[];
+    });
+
+    await tester.pumpWidget(
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              provider: SearchProviderValue.pexels,
+              initialResults: <FeedItemEntity>[
+                _prismWallpaper('human'),
+                _prismWallpaper('flagged-ai', isAiGenerated: true),
+                _prismWallpaper('metadata-ai', aiMetadata: const <String, Object?>{'model': 'legacy'}),
+              ],
+              prismResults: <FeedItemEntity>[
+                _prismWallpaper('prism-ai', aiMetadata: const <String, Object?>{'v': 1}),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const ValueKey<String>('human')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('flagged-ai')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('metadata-ai')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('prism-prism-ai')), findsOneWidget);
+
+    await setShowAiWallpapers(settings, false);
+    await tester.pump();
+
+    expect(pageFetches, 0);
+    expect(find.byKey(const ValueKey<String>('human')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('flagged-ai')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('metadata-ai')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('prism-prism-ai')), findsNothing);
   });
 
   testWidgets('a refresh discards the older in-flight pagination response', (tester) async {
@@ -184,17 +264,19 @@ void main() {
       () => search.fetchPage(SearchProviderValue.pexels, 'landscape', refresh: true, filters: any(named: 'filters')),
     ).thenAnswer((_) async => <FeedItemEntity>[_wallpaper(100)]);
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(
-          body: SearchGrid(
-            query: 'landscape',
-            searchId: 'search',
-            provider: SearchProviderValue.pexels,
-            initialResults: List<FeedItemEntity>.generate(24, _wallpaper),
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              searchId: 'search',
+              provider: SearchProviderValue.pexels,
+              initialResults: List<FeedItemEntity>.generate(24, _wallpaper),
+            ),
           ),
         ),
       ),
@@ -218,17 +300,19 @@ void main() {
       () => search.fetchPage(SearchProviderValue.pexels, 'landscape', refresh: true, filters: any(named: 'filters')),
     ).thenThrow(StateError('offline'));
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(
-          body: SearchGrid(
-            query: 'landscape',
-            searchId: 'same-search',
-            provider: SearchProviderValue.pexels,
-            initialResults: <FeedItemEntity>[_wallpaper(1)],
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              searchId: 'same-search',
+              provider: SearchProviderValue.pexels,
+              initialResults: <FeedItemEntity>[_wallpaper(1)],
+            ),
           ),
         ),
       ),
@@ -245,17 +329,19 @@ void main() {
 
   testWidgets('labels local search results and does not offer remote pagination', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(
-          body: SearchGrid(
-            query: 'forest',
-            provider: SearchProviderValue.wallhaven,
-            initialResults: <FeedItemEntity>[_wallpaper(0)],
-            isLocal: true,
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'forest',
+              provider: SearchProviderValue.wallhaven,
+              initialResults: <FeedItemEntity>[_wallpaper(0)],
+              isLocal: true,
+            ),
           ),
         ),
       ),
@@ -284,16 +370,18 @@ void main() {
     });
 
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(
-          body: SearchGrid(
-            query: 'landscape',
-            provider: SearchProviderValue.pexels,
-            initialResults: List<FeedItemEntity>.generate(24, _wallpaper),
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              provider: SearchProviderValue.pexels,
+              initialResults: List<FeedItemEntity>.generate(24, _wallpaper),
+            ),
           ),
         ),
       ),
@@ -314,17 +402,19 @@ void main() {
 
   testWidgets('shows the From Prism row above the provider results', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(
-          body: SearchGrid(
-            query: 'landscape',
-            provider: SearchProviderValue.pexels,
-            initialResults: <FeedItemEntity>[_wallpaper(1)],
-            prismResults: <FeedItemEntity>[_wallpaper(2)],
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              provider: SearchProviderValue.pexels,
+              initialResults: <FeedItemEntity>[_wallpaper(1)],
+              prismResults: <FeedItemEntity>[_wallpaper(2)],
+            ),
           ),
         ),
       ),
@@ -344,17 +434,19 @@ void main() {
       () => search.fetchPage(SearchProviderValue.pexels, 'landscape', refresh: true, filters: any(named: 'filters')),
     ).thenAnswer((_) async => <FeedItemEntity>[_wallpaper(200), _wallpaper(201)]);
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(
-          body: SearchGrid(
-            query: 'landscape',
-            provider: SearchProviderValue.pexels,
-            initialResults: List<FeedItemEntity>.generate(24, _wallpaper),
-            prismResults: <FeedItemEntity>[_wallpaper(50)],
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              provider: SearchProviderValue.pexels,
+              initialResults: List<FeedItemEntity>.generate(24, _wallpaper),
+              prismResults: <FeedItemEntity>[_wallpaper(50)],
+            ),
           ),
         ),
       ),
@@ -377,17 +469,19 @@ void main() {
 
   testWidgets('a Prism-only page never asks the external providers for more or a refresh', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(
-          body: SearchGrid(
-            query: 'landscape',
-            provider: SearchProviderValue.prism,
-            initialResults: const <FeedItemEntity>[],
-            prismResults: <FeedItemEntity>[_wallpaper(2)],
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              provider: SearchProviderValue.prism,
+              initialResults: const <FeedItemEntity>[],
+              prismResults: <FeedItemEntity>[_wallpaper(2)],
+            ),
           ),
         ),
       ),
@@ -423,21 +517,23 @@ void main() {
     final List<FeedItemEntity> prism = <FeedItemEntity>[_wallpaper(10), _wallpaper(11)];
 
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-        home: StackRouterScope(
-          controller: router,
-          stateHash: 0,
-          child: Scaffold(
-            body: SearchGrid(
-              query: 'landscape',
-              provider: SearchProviderValue.pexels,
-              initialResults: <FeedItemEntity>[_wallpaper(1)],
-              prismResults: prism,
-              searchId: 'search-request',
+          home: StackRouterScope(
+            controller: router,
+            stateHash: 0,
+            child: Scaffold(
+              body: SearchGrid(
+                query: 'landscape',
+                provider: SearchProviderValue.pexels,
+                initialResults: <FeedItemEntity>[_wallpaper(1)],
+                prismResults: prism,
+                searchId: 'search-request',
+              ),
             ),
           ),
         ),
@@ -471,19 +567,21 @@ void main() {
     final List<FeedItemEntity> prism = List<FeedItemEntity>.generate(12, (index) => _wallpaper(100 + index));
 
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: StackRouterScope(
-          controller: router,
-          stateHash: 0,
-          child: Scaffold(
-            body: SearchGrid(
-              query: 'landscape',
-              provider: SearchProviderValue.pexels,
-              initialResults: <FeedItemEntity>[_wallpaper(1)],
-              prismResults: prism,
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: StackRouterScope(
+            controller: router,
+            stateHash: 0,
+            child: Scaffold(
+              body: SearchGrid(
+                query: 'landscape',
+                provider: SearchProviderValue.pexels,
+                initialResults: <FeedItemEntity>[_wallpaper(1)],
+                prismResults: prism,
+              ),
             ),
           ),
         ),
@@ -518,19 +616,21 @@ void main() {
     final List<FeedItemEntity> results = <FeedItemEntity>[_wallpaper(1), _wallpaper(2)];
 
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: StackRouterScope(
-          controller: router,
-          stateHash: 0,
-          child: Scaffold(
-            body: SearchGrid(
-              query: 'landscape',
-              provider: SearchProviderValue.pexels,
-              initialResults: results,
-              prismResults: <FeedItemEntity>[_wallpaper(50)],
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: StackRouterScope(
+            controller: router,
+            stateHash: 0,
+            child: Scaffold(
+              body: SearchGrid(
+                query: 'landscape',
+                provider: SearchProviderValue.pexels,
+                initialResults: results,
+                prismResults: <FeedItemEntity>[_wallpaper(50)],
+              ),
             ),
           ),
         ),
@@ -561,17 +661,19 @@ void main() {
     ).thenAnswer((_) async => <FeedItemEntity>[_wallpaper(99)]);
 
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(
-          body: SearchGrid(
-            query: 'landscape',
-            provider: SearchProviderValue.pexels,
-            initialResults: List<FeedItemEntity>.generate(24, _wallpaper),
-            prismResults: List<FeedItemEntity>.generate(12, (index) => _wallpaper(100 + index)),
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              provider: SearchProviderValue.pexels,
+              initialResults: List<FeedItemEntity>.generate(24, _wallpaper),
+              prismResults: List<FeedItemEntity>.generate(12, (index) => _wallpaper(100 + index)),
+            ),
           ),
         ),
       ),
@@ -608,16 +710,18 @@ void main() {
     ).thenAnswer((_) async => <FeedItemEntity>[_wallpaper(99)]);
 
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(
-          body: SearchGrid(
-            query: 'landscape',
-            provider: SearchProviderValue.pexels,
-            initialResults: List<FeedItemEntity>.generate(30, _wallpaper),
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              provider: SearchProviderValue.pexels,
+              initialResults: List<FeedItemEntity>.generate(30, _wallpaper),
+            ),
           ),
         ),
       ),
@@ -638,17 +742,19 @@ void main() {
 
   testWidgets('a loaded grid runs no skeleton ticker behind it', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(
-          body: SearchGrid(
-            query: 'landscape',
-            provider: SearchProviderValue.pexels,
-            initialResults: List<FeedItemEntity>.generate(4, _wallpaper),
-            prismResults: <FeedItemEntity>[_wallpaper(50)],
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              provider: SearchProviderValue.pexels,
+              initialResults: List<FeedItemEntity>.generate(4, _wallpaper),
+              prismResults: <FeedItemEntity>[_wallpaper(50)],
+            ),
           ),
         ),
       ),
@@ -673,17 +779,19 @@ void main() {
     );
 
     await tester.pumpWidget(
-      const MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+      _compactGrid(
+        const MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(
-          body: SearchGrid(
-            query: 'landscape',
-            provider: SearchProviderValue.pexels,
-            initialResults: <FeedItemEntity>[withFull],
-            prismResults: <FeedItemEntity>[withFull],
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              provider: SearchProviderValue.pexels,
+              initialResults: <FeedItemEntity>[withFull],
+              prismResults: <FeedItemEntity>[withFull],
+            ),
           ),
         ),
       ),
@@ -703,16 +811,18 @@ void main() {
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
 
     await tester.pumpWidget(
-      MaterialApp(
-        builder: favouriteTestBuilder,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
 
-        home: Scaffold(
-          body: SearchGrid(
-            query: 'landscape',
-            provider: SearchProviderValue.pexels,
-            initialResults: <FeedItemEntity>[_wallpaper(1)],
+          home: Scaffold(
+            body: SearchGrid(
+              query: 'landscape',
+              provider: SearchProviderValue.pexels,
+              initialResults: <FeedItemEntity>[_wallpaper(1)],
+            ),
           ),
         ),
       ),
@@ -730,3 +840,9 @@ void main() {
     expect(find.bySemanticsLabel('Share link'), findsNothing);
   });
 }
+
+/// These cases were written for three columns, so they pin the Compact density.
+Widget _compactGrid(Widget app) => LayoutPrefsScope(
+  prefs: ValueNotifier<LayoutPrefs>(const LayoutPrefs(density: WallGridDensity.compact)),
+  child: app,
+);

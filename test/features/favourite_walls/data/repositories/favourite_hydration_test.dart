@@ -85,7 +85,8 @@ void main() {
 
   test('every fetch hydrates canonical metadata while preserving favourite time and identity', () async {
     final savedAt = DateTime.utc(2025, 3, 4);
-    firestore.walls = <FavouriteWallEntity>[prismFav('remote', favouritedAt: savedAt)];
+    final DateTime pinnedAt = DateTime.utc(2025, 4, 5);
+    firestore.walls = <FavouriteWallEntity>[prismFav('remote', favouritedAt: savedAt).withPinnedAt(pinnedAt)];
     var collection = 'premium';
     canonical.lookup = (id) async => Result.success(_current(id, collection));
     final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore(), canonical);
@@ -93,6 +94,7 @@ void main() {
     final first = (await repository.fetchFavourites(userId: 'user')).data!.single as PrismFavouriteWall;
     expect(first.id, 'remote');
     expect(first.favouritedAt, savedAt);
+    expect(first.pinnedAt, pinnedAt);
     expect(first.syncStatus, FavouriteSyncStatus.synced);
     expect(first.wallpaper.collections, <String>['premium']);
     expect(first.wallpaper.firestoreDocumentId, 'canonical-doc');

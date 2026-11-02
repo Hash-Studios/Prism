@@ -56,6 +56,16 @@ void main() {
     expect(recorded.events.whereType<GuestFavouritesMergedEvent>().single.count, 1);
   });
 
+  test('guest pin dates are restored to Firestore timestamps during merge', () async {
+    final DateTime pinnedAt = DateTime.utc(2026, 2, 3, 4, 5, 6);
+    await store.put('pinned', <String, dynamic>{'id': 'pinned', 'provider': 'pexels', 'pinnedAt': pinnedAt});
+    final firestore = MergeFirestore();
+
+    await GuestFavouritesMerger(firestore, store, local).mergeInto('uid');
+
+    expect(firestore.batches.single.sets.single.data['pinnedAt'], pinnedAt);
+  });
+
   test('a full guest list of 200 goes in one batch', () async {
     final Map<String, Map<String, Object?>> items = <String, Map<String, Object?>>{
       for (int i = 0; i < GuestFavouritesStore.maxItems; i++) 'w$i': <String, Object?>{'id': 'w$i'},

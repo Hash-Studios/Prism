@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
+import 'package:Prism/features/wallpaper_upload/biz/upload_session.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -31,6 +33,43 @@ void main() {
     if (await root.exists()) await root.delete(recursive: true);
   });
 
+  for (final removed in [false, true]) {
+    test('challenge removal survives restart and legacy drafts default to not removed: $removed', () async {
+      final records = DurableJsonStore('upload_test', directory: recordsDirectory);
+      final drafts = UploadDraftStore(store: records, directory: filesDirectory);
+      final image = File('${root.path}/selected.png')..writeAsBytesSync([1, 2, 3]);
+      await drafts.save(
+        owner: 'account',
+        draftId: 'image',
+        selectedFile: image,
+        metadata: const SubmissionMetadata(title: 'Kept title'),
+      );
+      final record = (await records.read('draft/account/image'))!;
+      final metadata = Map<String, Object?>.from(record['metadata']! as Map);
+      if (removed) {
+        metadata['challengeRemoved'] = true;
+      } else {
+        metadata.remove('challengeRemoved');
+      }
+      await records.write('draft/account/image', {...record, 'metadata': metadata});
+      final restarted = UploadDraftStore(
+        store: DurableJsonStore('upload_test', directory: recordsDirectory),
+        directory: filesDirectory,
+      );
+      final restored = (await restarted.read(owner: 'account', draftId: 'image'))!;
+      expect(restored.metadata.challengeRemoved, removed);
+      await restarted.save(
+        owner: 'account',
+        draftId: 'image',
+        selectedFile: restored.file,
+        metadata: restored.metadata.copyWith(title: 'Edited'),
+      );
+      final resaved = (await restarted.read(owner: 'account', draftId: 'image'))!;
+      expect(resaved.metadata.challengeRemoved, removed);
+      expect(resaved.metadata.title, 'Edited');
+    });
+  }
+
   test('the same selected image bytes have the same draft id across file paths', () async {
     final first = File('${root.path}/camera.png')..writeAsBytesSync(<int>[1, 2, 3, 4]);
     final second = await first.copy('${root.path}/gallery.png');
@@ -56,7 +95,36 @@ void main() {
       owner: 'account-a',
       draftId: draftId,
       selectedFile: original,
-      metadata: const SubmissionMetadata(title: 'Aurora', category: 'Nature', tags: <String>['night']),
+      metadata: const SubmissionMetadata(
+        title: 'Aurora',
+        description: 'Lights above the forest',
+        category: 'Nature',
+        tags: <String>['night'],
+        requestId: 'r1',
+        requestText: 'Northern lights',
+        challengeId: '2026-10-26',
+        challengeTheme: 'Quiet oceans',
+      ),
+      session: const UploadSession(
+        operationId: 'retry-original',
+        logicalId: 'NEWLOGICAL',
+        rejectedDocId: 'wall_old.png',
+        previousReason: 'Remove the border',
+        fileName: 'uid_123_image.png',
+        submissionAttempted: true,
+        original: GitHubContent(
+          downloadUrl: '',
+          path: 'uid_123_image.png',
+          sha: 'original',
+          sourceKind: UploadSourceKind.owned,
+        ),
+        thumbnail: GitHubContent(
+          downloadUrl: 'https://example.test/thumb',
+          path: 'thumb_uid_123_image.png',
+          sha: 'thumb',
+          sourceKind: UploadSourceKind.owned,
+        ),
+      ),
     );
     await original.delete();
 
@@ -70,8 +138,20 @@ void main() {
     expect(restored!.file.path, saved.file.path);
     expect(await restored.file.readAsBytes(), <int>[1, 2, 3, 4]);
     expect(restored.metadata.title, 'Aurora');
+    expect(restored.metadata.description, 'Lights above the forest');
+    expect(restored.session!.operationId, 'retry-original');
+    expect(restored.session!.rejectedDocId, 'wall_old.png');
+    expect(restored.session!.previousReason, 'Remove the border');
+    expect(restored.session!.submissionAttempted, isTrue);
+    expect(restored.session!.original!.downloadUrl, '');
+    expect(restored.session!.original!.sourceKind, UploadSourceKind.owned);
+    expect(restored.session!.thumbnail!.sha, 'thumb');
     expect(restored.metadata.category, 'Nature');
     expect(restored.metadata.tags, <String>['night']);
+    expect(restored.metadata.requestId, 'r1');
+    expect(restored.metadata.requestText, 'Northern lights');
+    expect(restored.metadata.challengeId, '2026-10-26');
+    expect(restored.metadata.challengeTheme, 'Quiet oceans');
     expect(await afterRestart.read(owner: 'account-b', draftId: draftId), isNull);
   });
 

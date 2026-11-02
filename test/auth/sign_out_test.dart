@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/post_sign_in.dart';
@@ -16,6 +17,7 @@ import 'package:Prism/core/platform/ios_widget_channel.dart';
 import 'package:Prism/core/platform/pigeon/prism_widget_api.g.dart';
 import 'package:Prism/core/platform/streak_widget_sync.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -271,7 +273,9 @@ void main() {
       ..registerSingleton<FirestoreClient>(firestore)
       ..registerSingleton<TasteSignalStore>(TasteSignalStore(settings))
       ..registerSingleton<FeedImpressionStore>(FeedImpressionStore(settings))
-      ..registerSingleton<WallpaperHistoryStore>(WallpaperHistoryStore(settings));
+      ..registerSingleton<WallpaperHistoryStore>(WallpaperHistoryStore(settings))
+      ..registerSingleton<RecentlyViewedStore>(RecentlyViewedStore(settings))
+      ..registerSingleton<SyncedHistoryStore>(SyncedHistoryStore(settings, firestore, ownerId: () => 'u1'));
     auth = GoogleAuth(auth: _FakeAuth(), googleSignIn: _FakeGoogleSignIn(), messaging: _FakeMessaging());
   });
 
@@ -368,6 +372,40 @@ void main() {
     await auth.signOutGoogle();
 
     expect((await SharedPreferences.getInstance()).getString(PersistenceKeys.shortcutsFavourites), '[]');
+  });
+
+  test('clears the Shortcuts folders snapshot on iOS sign-out', () async {
+    final List<String> cleared = <String>[];
+    app_state.prismUser = profileUser();
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    auth = GoogleAuth(
+      auth: _FakeAuth(),
+      googleSignIn: _FakeGoogleSignIn(),
+      messaging: _FakeMessaging(),
+      clearShortcutsFolders: () async => cleared.add('folders'),
+    );
+
+    await auth.signOutGoogle();
+
+    expect(cleared, <String>['folders']);
+  });
+
+  test('does not clear the Shortcuts folders snapshot on Android sign-out', () async {
+    final List<String> cleared = <String>[];
+    app_state.prismUser = profileUser();
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    auth = GoogleAuth(
+      auth: _FakeAuth(),
+      googleSignIn: _FakeGoogleSignIn(),
+      messaging: _FakeMessaging(),
+      clearShortcutsFolders: () async => cleared.add('folders'),
+    );
+
+    await auth.signOutGoogle();
+
+    expect(cleared, isEmpty);
   });
 
   test('clears the iOS streak widget snapshot so the next user does not inherit it', () async {
@@ -579,6 +617,30 @@ void main() {
     await auth.signOutGoogle();
 
     expect(history.items(), isEmpty);
+  });
+
+  test('clears recently viewed and the local synced history, not the account copy', () async {
+    app_state.prismUser = profileUser();
+    final RecentlyViewedStore viewed = getIt<RecentlyViewedStore>();
+    final SyncedHistoryStore synced = getIt<SyncedHistoryStore>();
+    final HistoryWall wall = HistoryWall.tryCreate(
+      id: 'a',
+      source: WallpaperSource.wallhaven,
+      thumbnailUrl: 'https://th.wallhaven.cc/small/ab/a.jpg',
+      action: HistoryAction.set,
+      at: DateTime.utc(2026, 10, 20, 12),
+    )!;
+    await viewed.record(wall);
+    await settings.set(PersistenceKeys.syncedHistoryItems, jsonEncode(<Map<String, Object?>>[wall.toJson()]));
+    expect(viewed.items(), hasLength(1));
+    expect(synced.items(), hasLength(1));
+    firestore.writes.clear();
+
+    await auth.signOutGoogle();
+
+    expect(viewed.items(), isEmpty);
+    expect(synced.items(), isEmpty);
+    expect(firestore.writes.where((write) => write.op == 'delete'), isEmpty);
   });
 
   test('clears feed impressions even when the taste store is not registered', () async {

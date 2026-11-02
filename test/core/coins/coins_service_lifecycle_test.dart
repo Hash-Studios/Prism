@@ -55,6 +55,11 @@ void main() {
   final backend = CoinsTestBackend();
   final service = CoinsService.instance;
 
+  Map<String, Object> currentClaimPayload() => <String, Object>{
+    ...CoinsTestBackend.claimPayload,
+    'todayLocalKey': DateTime.now().toIso8601String().substring(0, 10),
+  };
+
   setUp(() async {
     await backend.install();
     backend.onCall = (_, _) async => CoinsTestBackend.claimPayload;
@@ -108,13 +113,14 @@ void main() {
   });
 
   test('claim response survives a profile replacement for the same account', () async {
+    backend.onCall = (_, _) async => currentClaimPayload();
     final response = Completer<dynamic>();
     backend.onCall = (_, _) => response.future;
     final claim = service.claimDailyLoginAndStreakIfEligible();
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = backend.userId
       ..loggedIn = true;
-    response.complete(CoinsTestBackend.claimPayload);
+    response.complete(currentClaimPayload());
     await claim;
     expect(service.pendingClaimForCurrentUser, isNotNull);
   });
@@ -176,7 +182,17 @@ void main() {
     expect(result.changed, isTrue);
   });
 
+  test('a streak response accepted yesterday is not presented as today’s receipt', () async {
+    backend.onCall = (_, _) async => <String, Object>{
+      ...CoinsTestBackend.claimPayload,
+      'todayLocalKey': DateTime.now().subtract(const Duration(days: 1)).toIso8601String().substring(0, 10),
+    };
+    await service.claimDailyLoginAndStreakIfEligible();
+    expect(service.pendingClaimForCurrentUser, isNull);
+  });
+
   test('pending claim getter clears claims for an empty guest id', () async {
+    backend.onCall = (_, _) async => currentClaimPayload();
     await service.claimDailyLoginAndStreakIfEligible();
     expect(service.pendingClaimForCurrentUser, isNotNull);
     app_state.prismUser = app_constants.createGuestPrismUser()
@@ -237,6 +253,7 @@ void main() {
   });
 
   test('pending claim survives sign-out and sign-in to the same account', () async {
+    backend.onCall = (_, _) async => currentClaimPayload();
     await service.claimDailyLoginAndStreakIfEligible();
     expect(service.lastClaimNotifier.value, isNotNull);
     app_state.prismUser = app_constants.createGuestPrismUser();

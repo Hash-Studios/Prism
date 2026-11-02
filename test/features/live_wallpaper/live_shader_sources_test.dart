@@ -13,7 +13,7 @@ void main() {
   final LivePalette lightPalette = LivePalette.fromAccent(const Color(0xFF2962FF), dark: false);
 
   group('shader lint negative controls', () {
-    final String shader = LiveShaderSources.gradient(GradientStyle.mesh, darkPalette);
+    final String shader = LiveShaderSources.gradient(GradientStyle.aurora, darkPalette);
 
     test('rejects generated shader comments exceeding 64 KiB in UTF-8', () {
       final String mutated = '$shader\n// ${'é' * (32 * 1024)}';
@@ -27,9 +27,19 @@ void main() {
       expect(validateShaderContract(mutated, textureCount: 0), contains('while or do loop'));
     });
 
+    test('rejects a sampler outside the renderer texture slots', () {
+      final String mutated = 'uniform sampler2D u_unknown;\n$shader';
+      expect(validateShaderContract(mutated, textureCount: 0), contains('unsupported sampler u_unknown'));
+    });
+
     test('rejects an unknown uniform added to a generated shader', () {
       final String mutated = 'uniform float u_unknown;\n$shader';
       expect(validateShaderContract(mutated, textureCount: 0), contains('unknown uniform u_unknown'));
+    });
+
+    test('rejects a float loop added to a generated shader', () {
+      final String mutated = shader.replaceFirst('for (int i', 'for (float i');
+      expect(validateShaderContract(mutated, textureCount: 0), anyElement(startsWith('dynamic for loop:')));
     });
 
     test('rejects dFdx added to a generated shader', () {
@@ -59,12 +69,12 @@ void main() {
       test('${style.name} meets the contract with one texture', () {
         final String shader = LiveShaderSources.motion(style, darkPalette);
         expect(shader, isNot(contains('{{')));
-        expect(validateShaderContract(shader, textureCount: 1), isEmpty);
+        expect(validateShaderContract(shader, textureCount: style.needsDepthMap ? 2 : 1), isEmpty);
         expect(shader, contains('uniform sampler2D u_texture0;'));
+        if (style.needsDepthMap) expect(shader, contains('uniform sampler2D u_texture1;'));
       });
 
       test('${style.name} samples the photo without a v flip', () {
-        // async_wallpaper 3.5 uploads textures bottom row first, so v_uv already samples them upright.
         final String shader = LiveShaderSources.motion(style, darkPalette);
         expect(RegExp(r'texture2D\(u_texture0, [^)]*\)').allMatches(shader).map((match) => match.group(0)), <String>[
           'texture2D(u_texture0, uv)',
@@ -76,6 +86,99 @@ void main() {
         expect(validateShaderContract(shader, textureCount: 0), isNotEmpty);
       });
     }
+  });
+
+  group('3D shader', () {
+    test('renderer contract without tilt omits u_tilt', () {
+      expect(LiveShaderSources.motionTemplate(MotionStyle.depth), isNot(contains('u_tilt')));
+    });
+
+    test('declares and reads u_tilt when tilt is requested', () {
+      final String template = LiveShaderSources.motionTemplate(MotionStyle.depth, tilt: true);
+      expect(template, contains('uniform vec2 u_tilt;'));
+      expect(template, contains('motion += u_tilt;'));
+    });
+
+    test('meets the contract with the photo and the depth map and no tilt', () {
+      final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette);
+      expect(validateShaderContract(shader, textureCount: 2), isEmpty);
+    });
+
+    test('meets the async_wallpaper 3.6 contract with tilt', () {
+      final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette, tilt: true);
+      expect(validateShaderContract(shader, textureCount: 2, tilt: true), isEmpty);
+    });
+
+    test('rejects invalid u_tilt declarations in a generated tilt shader', () {
+      final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette, tilt: true);
+      for (final (String label, String declaration) in <(String, String)>[
+        ('float', 'uniform float u_tilt;'),
+        ('vec3', 'uniform vec3 u_tilt;'),
+        ('vec2[1]', 'uniform vec2 u_tilt[1];'),
+        ('vec2[2]', 'uniform vec2 u_tilt[2];'),
+      ]) {
+        final String mutated = shader.replaceFirst('uniform vec2 u_tilt;', declaration);
+        expect(mutated, isNot(shader), reason: 'mutation for $label');
+        expect(
+          validateShaderContract(mutated, textureCount: 2, tilt: true),
+          contains('u_tilt must be vec2'),
+          reason: label,
+        );
+      }
+    });
+
+    test('rejects texture sampler arrays in a generated tilt shader', () {
+      final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette, tilt: true);
+      for (final String texture in <String>['u_texture0', 'u_texture1']) {
+        final String mutated = shader.replaceFirst('uniform sampler2D $texture;', 'uniform sampler2D $texture[2];');
+        expect(mutated, isNot(shader), reason: 'mutation for $texture');
+        expect(
+          validateShaderContract(mutated, textureCount: 2, tilt: true),
+          contains('sampler arrays must have length 1'),
+          reason: texture,
+        );
+      }
+    });
+
+    test('rejects tilt outside the Prism renderer contract', () {
+      final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette, tilt: true);
+      expect(validateShaderContract(shader, textureCount: 2), contains('unknown uniform u_tilt'));
+    });
+
+    test('fails the contract with only one texture because it reads the depth map', () {
+      final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette);
+      expect(validateShaderContract(shader, textureCount: 1), contains('u_texture1 has no texture'));
+    });
+
+    test('tilt does not change a style that does not use it', () {
+      expect(
+        LiveShaderSources.motion(MotionStyle.drift, darkPalette, tilt: true),
+        LiveShaderSources.motion(MotionStyle.drift, darkPalette),
+      );
+    });
+
+    test('keeps valid depth endpoints and bounded motion within the zoom margin', () {
+      final String shader = LiveShaderSources.motion(MotionStyle.depth, darkPalette);
+      expect(shader, contains('float depth = texture2D(u_texture1, uv).r;'));
+      expect(shader, contains('motion = clamp(motion, -1.0, 1.0);'));
+
+      final double strength = double.parse(RegExp('const float strength = ([0-9.]+);').firstMatch(shader)!.group(1)!);
+      final double zoom = double.parse(
+        RegExp(r'uv = \(v_uv - 0.5\) / ([0-9.]+) \+ 0.5;').firstMatch(shader)!.group(1)!,
+      );
+      final double zoomMargin = (1 - 1 / zoom) / 2;
+      for (final double depth in <double>[0, 1]) {
+        for (final double motion in <double>[-1, 1]) {
+          final double shift = ((depth - 0.5) * strength * motion).abs();
+          expect(shift, lessThan(zoomMargin));
+        }
+      }
+    });
+
+    test('both depth sources carry the ponytail note', () {
+      expect(LiveShaderSources.motionTemplate(MotionStyle.depth), contains('ponytail:'));
+      expect(LiveShaderSources.motion(MotionStyle.depth, darkPalette), contains('ponytail:'));
+    });
   });
 
   group('colour templating', () {

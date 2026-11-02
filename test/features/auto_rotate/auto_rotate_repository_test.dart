@@ -15,6 +15,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/auto_rotate/data/repositories/auto_rotate_repository_impl.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
+import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wotd_past_pick.dart';
@@ -67,6 +68,8 @@ class _MockWalls extends Mock implements PrismWallpaperRepository {}
 
 class _MockWotd extends Mock implements WallOfTheDayRepository {}
 
+class _MockFolders extends Mock implements FoldersRepository {}
+
 class _MockCacheManager extends Mock implements BaseCacheManager {}
 
 PrismWallpaper _wall(String url) => PrismWallpaper(
@@ -91,6 +94,7 @@ void main() {
   late _MockWalls walls;
   late _MockWotd wotd;
   late WallpaperHistoryStore history;
+  late _MockFolders folders;
 
   setUp(() {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -98,7 +102,8 @@ void main() {
     walls = _MockWalls();
     wotd = _MockWotd();
     history = WallpaperHistoryStore(settings);
-    repository = AutoRotateRepositoryImpl(settings, walls, wotd, history);
+    folders = _MockFolders();
+    repository = AutoRotateRepositoryImpl(settings, walls, wotd, history, folders);
     messenger.setMockMessageHandler(
       stopChannel,
       (ByteData? _) async => const StandardMessageCodec().encodeMessage(<Object?>[true]),
@@ -169,7 +174,7 @@ void main() {
     final _PassRecordGateStore gatedStore = _PassRecordGateStore();
     gatedStore.delayPassRecordWrite = true;
     settings = SettingsLocalDataSource(gatedStore);
-    repository = AutoRotateRepositoryImpl(settings, walls, wotd, history);
+    repository = AutoRotateRepositoryImpl(settings, walls, wotd, history, folders);
     final Future<void> save = repository.saveConfig(
       AutoRotateConfig(passUntil: DateTime.utc(2026, 10, 24)),
       ownerId: 'owner-1',
@@ -186,7 +191,7 @@ void main() {
   test('clearing owner one cannot delete owner two’s concurrent pass save', () async {
     final _PassRecordGateStore gatedStore = _PassRecordGateStore();
     settings = SettingsLocalDataSource(gatedStore);
-    repository = AutoRotateRepositoryImpl(settings, walls, wotd, history);
+    repository = AutoRotateRepositoryImpl(settings, walls, wotd, history, folders);
     await settings.set(
       'autoRotate.passRecord',
       jsonEncode(<String, Object?>{'ownerId': 'owner-1', 'untilMs': DateTime.utc(2026, 10, 24).millisecondsSinceEpoch}),
@@ -325,6 +330,17 @@ void main() {
         return <Object?>[true];
       });
       expect(
+        await repository.resolveSources([
+          owned,
+          'https://raw.githubusercontent.com/private/original.jpg',
+          'https://images.example.com/private.jpg',
+          'https://images.pexels.com.evil.test/1.jpg',
+          'http://images.pexels.com/1.jpg',
+          'https://images.pexels.com/1.jpg',
+        ]),
+        [file.path, 'https://images.pexels.com/1.jpg'],
+      );
+      expect(
         await repository.start(const AutoRotateConfig(), [
           owned,
           'https://raw.githubusercontent.com/private/original.jpg',
@@ -457,6 +473,24 @@ void main() {
       );
     });
 
+    test('malformed and remote file URIs are rejected without throwing', () async {
+      api.WallpaperRotationConfigData? request;
+      messenger.setMockDecodedMessageHandler<Object?>(rotationChannel, (message) async {
+        request = (message! as List<Object?>).single! as api.WallpaperRotationConfigData;
+        return <Object?>[true];
+      });
+
+      expect(
+        await repository.start(const AutoRotateConfig(source: AutoRotateSource.history), <String>[
+          'file:relative/wallpaper.jpg',
+          'file://remotehost/share/wallpaper.jpg',
+          'file:///storage/wallpaper.jpg?preview=true',
+        ]),
+        isFalse,
+      );
+      expect(request, isNull);
+    });
+
     test('temporary and retained cache entries cannot authorize background originals', () async {
       const String temporaryUrl = 'https://images.example/temporary.jpg';
       const String retainedUrl = 'https://images.example/retained.jpg';
@@ -534,9 +568,11 @@ void main() {
             intervalMinutes: minutes,
             source: source,
             categoryName: 'Cyberpunk',
+            folderId: source == AutoRotateSource.folder ? 'f1' : null,
           );
-          await repository.saveConfig(config);
-          expect(await repository.loadConfig(), config);
+          final String? ownerId = source == AutoRotateSource.folder ? 'owner-1' : null;
+          await repository.saveConfig(config, ownerId: ownerId);
+          expect(await repository.loadConfig(ownerId: ownerId), config);
         }
       }
     });
@@ -551,9 +587,86 @@ void main() {
       expect((await repository.loadConfig()).intervalMinutes, 1440);
     });
 
+    test('a folder config is only loaded for the account that saved it', () async {
+      const AutoRotateConfig config = AutoRotateConfig(
+        enabled: true,
+        source: AutoRotateSource.folder,
+        folderId: 'folder-a',
+        folderName: 'Private folder',
+      );
+      await repository.saveConfig(config, ownerId: 'account-a');
+
+      expect(await repository.loadConfig(ownerId: 'account-a'), config);
+      final AutoRotateConfig otherAccount = await repository.loadConfig(ownerId: 'account-b');
+      expect(otherAccount.source, AutoRotateSource.favourites);
+      expect(otherAccount.enabled, isFalse);
+      expect(otherAccount.folderId, isNull);
+      expect(otherAccount.folderName, '');
+    });
+
+    test('an account change preserves non-folder rotation settings', () async {
+      const AutoRotateConfig config = AutoRotateConfig(
+        enabled: true,
+        intervalMinutes: 360,
+        source: AutoRotateSource.history,
+        folderId: 'stale-folder',
+        folderName: 'Old folder',
+      );
+      await repository.saveConfig(config, ownerId: 'account-a');
+
+      final AutoRotateConfig loaded = await repository.loadConfig(ownerId: 'account-b');
+
+      expect(loaded.enabled, isTrue);
+      expect(loaded.intervalMinutes, 360);
+      expect(loaded.source, AutoRotateSource.history);
+      expect(loaded.folderId, isNull);
+      expect(loaded.folderName, '');
+    });
+
+    test('an unowned legacy folder config falls back without exposing its identity', () async {
+      await settings.set(PersistenceKeys.autoRotateEnabled, true);
+      await settings.set('autoRotate.source', 'folder');
+      await settings.set('autoRotate.folderId', 'legacy-folder');
+      await settings.set('autoRotate.folderName', 'Legacy private folder');
+
+      final AutoRotateConfig loaded = await repository.loadConfig(ownerId: 'account-a');
+
+      expect(loaded.source, AutoRotateSource.favourites);
+      expect(loaded.enabled, isFalse);
+      expect(loaded.folderId, isNull);
+      expect(loaded.folderName, '');
+    });
+
+    test('malformed saved folder fields fall back to an ordinary config', () async {
+      await settings.set(PersistenceKeys.autoRotateEnabled, true);
+      await settings.set('autoRotate.source', 'folder');
+      await settings.set('autoRotate.folderId', 123);
+      await settings.set('autoRotate.folderName', <String>['not', 'a', 'name']);
+      await settings.set('autoRotate.folderOwnerId', true);
+
+      final AutoRotateConfig loaded = await repository.loadConfig(ownerId: 'account-a');
+
+      expect(loaded.source, AutoRotateSource.favourites);
+      expect(loaded.enabled, isFalse);
+      expect(loaded.folderId, isNull);
+      expect(loaded.folderName, '');
+    });
+
     test('the category picker offers the classifier names', () {
       expect(autoRotateCategories, hasLength(18));
       expect(autoRotateCategories, containsAll(<String>['Nature', 'AI Art', '3D Render', 'Galaxy']));
+    });
+
+    test('folder reads with a blank id or owner are unavailable, not deleted', () async {
+      expect(await repository.loadFolderUrls('', userId: 'account-a'), isNull);
+      expect(await repository.loadFolderUrls('folder-a', userId: '  '), isNull);
+      verifyNever(
+        () => folders.fetchItems(
+          any(),
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+        ),
+      );
     });
   });
 }

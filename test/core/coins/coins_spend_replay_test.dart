@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -61,6 +63,7 @@ void main() {
 
     final CoinMutationResult retried = await service.spend(CoinSpendAction.autoRotatePass7d);
     expect(spends.map((Map<String, dynamic> p) => p['requestId']).toSet(), hasLength(1));
+    expect(spends.first['expectedUserId'], backend.userId);
     expect(retried.changed, isTrue);
     expect(service.autoRotateUnlocked, isTrue);
 
@@ -118,6 +121,126 @@ void main() {
     expect(spends[2]['requestId'], spends[0]['requestId']);
     expect(spends[3]['requestId'], isNot(spends[0]['requestId']));
     expect(result.changed, isTrue);
+  });
+
+  test('pending refund retry pins the original payer in the callable request', () async {
+    final List<Map<String, dynamic>> refundCalls = <Map<String, dynamic>>[];
+    backend.onCall = (String name, Map<String, dynamic> params) async {
+      if (name != 'awardCoins') return <String, Object>{};
+      refundCalls.add(params);
+      if (refundCalls.length == 1) {
+        throw FirebaseFunctionsException(code: 'unavailable', message: 'lost');
+      }
+      return <String, Object?>{
+        'success': true,
+        'changed': true,
+        'previousBalance': 95,
+        'currentBalance': 100,
+        'delta': 5,
+        'reason': 'refunded',
+      };
+    };
+
+    await service.refundSpend(
+      CoinSpendAction.premiumFilter,
+      sourceTag: 'test.refund',
+      transactionId: 'spend_${backend.userId}_request',
+      userId: backend.userId,
+    );
+    await service.retryPendingRefunds();
+
+    expect(refundCalls, hasLength(2));
+    expect(refundCalls.last['expectedUserId'], backend.userId);
+    expect(refundCalls.last['transactionId'], 'spend_${backend.userId}_request');
+  });
+
+  test('a replay waits for an already-started refund before deciding to charge again', () async {
+    final Completer<void> refundStarted = Completer<void>();
+    final Completer<void> finishRefund = Completer<void>();
+    final List<String> order = <String>[];
+    backend.onCall = (String name, Map<String, dynamic> params) async {
+      if (name == 'spendCoins') {
+        spends.add(params);
+        if (spends.length <= 2) throw FirebaseFunctionsException(code: 'unavailable', message: 'lost');
+        order.add('spend');
+        if (params['requestId'] != spends.first['requestId']) {
+          return <String, Object?>{
+            'success': true,
+            'changed': true,
+            'previousBalance': 100,
+            'currentBalance': 95,
+            'delta': -5,
+            'reason': 'ok',
+          };
+        }
+        return <String, Object?>{
+          'success': false,
+          'changed': false,
+          'previousBalance': 100,
+          'currentBalance': 100,
+          'delta': 0,
+          'reason': 'spend_refunded',
+        };
+      }
+      if (name == 'awardCoins') {
+        order.add('refund-start');
+        refundStarted.complete();
+        await finishRefund.future;
+        order.add('refund-done');
+        return <String, Object?>{
+          'success': true,
+          'changed': true,
+          'previousBalance': 95,
+          'currentBalance': 100,
+          'delta': 5,
+          'reason': 'refunded',
+        };
+      }
+      return <String, Object>{};
+    };
+
+    await service.spend(CoinSpendAction.premiumFilter);
+    final Future<void> retry = service.retryPendingRefunds();
+    await refundStarted.future;
+    final Future<CoinMutationResult> replay = service.spend(CoinSpendAction.premiumFilter);
+    await Future<void>.delayed(Duration.zero);
+    expect(order, <String>['refund-start']);
+    finishRefund.complete();
+    await retry;
+    final CoinMutationResult result = await replay;
+
+    expect(result.changed, isTrue);
+    expect(result.currentBalance, 95);
+    expect(order, <String>['refund-start', 'refund-done', 'spend', 'spend']);
+  });
+
+  test('an in-flight successful replay cancels a refund from an older queue snapshot', () async {
+    final Completer<void> replayStarted = Completer<void>();
+    final Completer<void> finishReplay = Completer<void>();
+    final List<String> calls = <String>[];
+    backend.onCall = (String name, Map<String, dynamic> params) async {
+      calls.add(name);
+      if (name == 'spendCoins') {
+        spends.add(params);
+        if (spends.length <= 2) throw FirebaseFunctionsException(code: 'unavailable', message: 'lost');
+        replayStarted.complete();
+        await finishReplay.future;
+        return _paid();
+      }
+      return <String, Object>{};
+    };
+
+    await service.spend(CoinSpendAction.premiumFilter);
+    final Future<CoinMutationResult> replay = service.spend(CoinSpendAction.premiumFilter);
+    await replayStarted.future;
+    final Future<void> retry = service.retryPendingRefunds();
+    finishReplay.complete();
+    final CoinMutationResult result = await replay;
+    await retry;
+
+    expect(result.changed, isTrue);
+    expect(calls.where((String name) => name == 'awardCoins'), isEmpty);
+    expect(pendingRefunds(), isEmpty);
   });
 
   test('a zero price is sent to the server, only a negative one is refused locally', () async {

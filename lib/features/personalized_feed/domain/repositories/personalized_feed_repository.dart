@@ -1,3 +1,4 @@
+import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
@@ -25,8 +26,12 @@ List<String> trimSeenKeys(List<String> seen) =>
 abstract class PersonalizedFeedRepository {
   Future<Result<PersonalizedFeedPage>> fetch(FetchPersonalizedFeedRequest request);
 
-  /// The first page from the disk cache, or null when there is none. It waits for the initial blocked-creator list,
-  /// so blocked creators never show, but it makes no network call for the feed.
+  /// Loads page one now and keeps it. The next page-one refresh [fetch] with the same user, taste, filters and mix
+  /// takes it, or joins it while it loads. Null when the load fails; it never throws.
+  Future<PersonalizedFeedPage?> primeFirstPage();
+
+  /// A matching live prime, or the first page from the disk cache. It waits for the initial blocked-creator list,
+  /// so blocked creators never show. A disk read makes no network call for the feed.
   Future<PersonalizedFeedPage?> readCached();
 
   /// Starts the [readCached] disk read now. The next [readCached] call for the same user takes its result.
@@ -46,4 +51,7 @@ abstract class PersonalizedFeedRepository {
 
   /// The most viewed wallpapers. One page, no paging.
   Future<Result<PersonalizedFeedPage>> fetchPopular();
+
+  /// The user's taste from their picks, follows and signals, for ranking walls outside the feed.
+  TasteProfile currentTasteProfile();
 }

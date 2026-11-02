@@ -6,6 +6,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/system_color_schemes.dart';
 import 'package:Prism/core/platform/wallpaper_error_messages.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
@@ -113,6 +114,11 @@ class WallpaperSetResult {
 
 // ignore: avoid_classes_with_only_static_members
 class WallpaperService {
+  static int _historyWriteGeneration = 0;
+
+  /// Invalidates history writes still waiting on a native set when auth changes.
+  static void invalidatePendingHistoryWrites() => _historyWriteGeneration++;
+
   static const String appliedMessage = 'applied';
   static const String pendingMessage = 'pending';
   static const String unsupportedMessage = 'unsupported';
@@ -143,7 +149,15 @@ class WallpaperService {
     String? wallpaperId,
     WallpaperSource? wallpaperSource,
   }) async {
+    if (!app_state.prismUser.loggedIn) return const WallpaperSetResult(WallpaperSetStatus.cancelled, '');
     final normalizedSource = _normalizeSource(source);
+    final int historyWriteGeneration = _historyWriteGeneration;
+    final bool historyOwnerLoggedIn = app_state.prismUser.loggedIn;
+    final String historyOwnerId = app_state.prismUser.id.trim();
+    final SyncedHistoryStore? historyStore = getIt.isRegistered<SyncedHistoryStore>()
+        ? getIt<SyncedHistoryStore>()
+        : null;
+    final (String, int)? historyStoreSession = historyStore?.recordingSession;
     final String filePath;
     try {
       filePath = (await resolveToLocalFile(
@@ -182,6 +196,12 @@ class WallpaperService {
 
     try {
       final String requestedHistorySource = historySource ?? normalizedSource;
+      final String? requestedHistoryThumbnail = _safeHistoryThumbnail(
+        historyThumbnail ?? thumbnailUrl,
+        source: wallpaperSource,
+        normalizedSource: normalizedSource,
+        historySource: requestedHistorySource,
+      );
       final bool remoteOriginal =
           wallpaperSource == WallpaperSource.prism &&
           (wallpaperId?.isNotEmpty ?? false) &&
@@ -211,12 +231,20 @@ class WallpaperService {
         }
       }
       final bool canRecord = recordHistory && await _canRecord(recordedSource);
+      if (!app_state.prismUser.loggedIn || historyOwnerId != app_state.prismUser.id.trim()) {
+        return const WallpaperSetResult(WallpaperSetStatus.cancelled, '');
+      }
       final List<AppliedWallpaper?> previous = canRecord ? _previousFor(target) : const <AppliedWallpaper?>[];
       final aw.WallpaperSource platformSource = useSystemCropper
           ? aw.WallpaperSource.contentUri((await _cropChannel.invokeMethod<String>('contentUri', filePath))!)
           : aw.WallpaperSource.filePath(filePath);
+      if (!app_state.prismUser.loggedIn || historyOwnerId != app_state.prismUser.id.trim()) {
+        return const WallpaperSetResult(WallpaperSetStatus.cancelled, '');
+      }
       aw.WallpaperOperationResult result = await _apply(platformSource, target, scaleMode, firstStrategy);
-      if (!useSystemCropper &&
+      if (app_state.prismUser.loggedIn &&
+          historyOwnerId == app_state.prismUser.id.trim() &&
+          !useSystemCropper &&
           result.status == aw.WallpaperOperationStatus.failed &&
           canRetryWallpaperError(result.errorCode)) {
         result = await _apply(platformSource, target, scaleMode, aw.WallpaperApplyStrategy.automatic);
@@ -226,11 +254,32 @@ class WallpaperService {
       if (recordTarget != null && getIt.isRegistered<SystemColorSchemesSource>()) {
         unawaited(getIt<SystemColorSchemesSource>().refreshAfterWallpaperSet());
       }
-      if (!canRecord || recordTarget == null) return mapped;
+      if (recordHistory &&
+          recordTarget != null &&
+          _historyOwnerIsCurrent(
+            historyWriteGeneration,
+            historyOwnerLoggedIn,
+            historyOwnerId,
+            historyStore,
+            historyStoreSession,
+          )) {
+        unawaited(_recordSynced(wallpaperId, wallpaperSource, requestedHistoryThumbnail));
+      }
+      if (!canRecord ||
+          recordTarget == null ||
+          !_historyOwnerIsCurrent(
+            historyWriteGeneration,
+            historyOwnerLoggedIn,
+            historyOwnerId,
+            historyStore,
+            historyStoreSession,
+          )) {
+        return mapped;
+      }
       final String? id = await _record(
         recordedSource,
         recordTarget,
-        historyThumbnail ?? thumbnailUrl,
+        requestedHistoryThumbnail,
         wallpaperId: wallpaperId,
         wallpaperSource: wallpaperSource,
         originalIdentity: originalIdentity,
@@ -388,7 +437,7 @@ class WallpaperService {
           source: wallpaperSource?.wireValue ?? _historySource(source),
           wallpaperId: wallpaperId,
           originalIdentity: originalIdentity,
-          thumbnailUrl: thumbnailUrl ?? source,
+          thumbnailUrl: thumbnailUrl ?? (wallpaperSource == WallpaperSource.prism ? '' : source),
           fullUrl: source,
           target: target.name,
           appliedAt: now,
@@ -397,6 +446,53 @@ class WallpaperService {
     } catch (error, stackTrace) {
       logger.w('WallpaperService: could not record history', error: error, stackTrace: stackTrace);
       return null;
+    }
+  }
+
+  static String? _safeHistoryThumbnail(
+    String? thumbnail, {
+    required WallpaperSource? source,
+    required String normalizedSource,
+    required String historySource,
+  }) {
+    final String? candidate = thumbnail?.trim();
+    if (candidate == null || candidate.isEmpty) return null;
+    if (source == WallpaperSource.prism && (candidate == normalizedSource || candidate == historySource)) return null;
+    return candidate;
+  }
+
+  static bool _historyOwnerIsCurrent(
+    int generation,
+    bool loggedIn,
+    String ownerId,
+    SyncedHistoryStore? store,
+    (String, int)? storeSession,
+  ) {
+    if (generation != _historyWriteGeneration ||
+        app_state.prismUser.loggedIn != loggedIn ||
+        app_state.prismUser.id.trim() != ownerId) {
+      return false;
+    }
+    if (store == null) return true;
+    return getIt.isRegistered<SyncedHistoryStore>() &&
+        identical(getIt<SyncedHistoryStore>(), store) &&
+        store.recordingSession == storeSession;
+  }
+
+  /// Adds a set catalogue wall to the account history. Local files and walls without a public thumbnail stay out.
+  static Future<void> _recordSynced(String? wallpaperId, WallpaperSource? source, String? thumbnailUrl) async {
+    final HistoryWall? wall = HistoryWall.tryCreate(
+      id: wallpaperId,
+      source: source,
+      thumbnailUrl: thumbnailUrl,
+      action: HistoryAction.set,
+      at: DateTime.now(),
+    );
+    if (wall == null || !getIt.isRegistered<SyncedHistoryStore>()) return;
+    try {
+      await getIt<SyncedHistoryStore>().record(wall);
+    } catch (error, stackTrace) {
+      logger.w('WallpaperService: could not sync history', error: error, stackTrace: stackTrace);
     }
   }
 

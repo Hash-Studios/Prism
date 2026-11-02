@@ -1,13 +1,15 @@
 import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
+import 'package:Prism/core/wallpaper/duo_reveal_geometry.dart';
 import 'package:flutter/widgets.dart';
 
-/// The three images the share sheet can send. Each is a fixed pixel size so it looks the same everywhere it lands.
+/// Fixed export sizes for the images the share sheet can send.
 enum ShareCardFormat {
   story(Size(1080, 1920), ShareFormatValue.story),
   post(Size(1080, 1350), ShareFormatValue.post),
-  clean(Size(1080, 1920), ShareFormatValue.clean);
+  clean(Size(1080, 1920), ShareFormatValue.clean),
+  duoReveal(Size(1080, 1920), ShareFormatValue.duoReveal);
 
   const ShareCardFormat(this.size, this.analytics);
 
@@ -25,6 +27,11 @@ class ShareCardContent {
     this.creator,
     this.creatorLine,
     this.palette = const <Color>[],
+    this.duoReveal = false,
+    this.contentId = '',
+    this.foldedLabel,
+    this.unfoldedLabel,
+    this.cta,
   });
 
   /// A display derivative or a local file. Never the original.
@@ -41,6 +48,11 @@ class ShareCardContent {
 
   /// Up to four stored wall colours, most dominant first.
   final List<Color> palette;
+  final bool duoReveal;
+  final String contentId;
+  final String? foldedLabel;
+  final String? unfoldedLabel;
+  final String? cta;
 }
 
 /// Fixed colours and sizes for the share card. The card is an image that leaves the app, so it does not follow the
@@ -77,6 +89,9 @@ class ShareCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (format == ShareCardFormat.duoReveal) {
+      return _DuoCard(wallpaper: wallpaper, logo: logo, content: content);
+    }
     final bool clean = format == ShareCardFormat.clean;
     return SizedBox.fromSize(
       size: format.size,
@@ -114,6 +129,109 @@ class ShareCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _DuoCard extends StatelessWidget {
+  const _DuoCard({required this.wallpaper, required this.logo, required this.content});
+
+  final ui.Image wallpaper;
+  final ui.Image logo;
+  final ShareCardContent content;
+
+  @override
+  Widget build(BuildContext context) => SizedBox.fromSize(
+    size: ShareCardFormat.duoReveal.size,
+    child: ColoredBox(
+      color: const Color(0xFF141416),
+      child: DefaultTextStyle(
+        style: const TextStyle(fontFamily: 'Proxima Nova', color: ShareCardStyle.text, fontSize: 36),
+        child: Padding(
+          padding: const EdgeInsets.all(48),
+          child: Column(
+            children: <Widget>[
+              Expanded(
+                flex: 6,
+                child: _DuoPanel(image: wallpaper, unfolded: false, label: content.foldedLabel),
+              ),
+              const SizedBox(height: 32),
+              Expanded(
+                flex: 5,
+                child: _DuoPanel(image: wallpaper, unfolded: true, label: content.unfoldedLabel),
+              ),
+              const SizedBox(height: 40),
+              Row(
+                children: <Widget>[
+                  RawImage(image: logo, width: 72, height: 72),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: Text(
+                      content.cta ?? content.brandName,
+                      style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                content.link.replaceFirst(RegExp('^https?://'), ''),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 28),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _DuoPanel extends StatelessWidget {
+  const _DuoPanel({required this.image, required this.unfolded, required this.label});
+
+  final ui.Image image;
+  final bool unfolded;
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    final Rect source = DuoRevealGeometry.sourceRect(
+      Size(image.width.toDouble(), image.height.toDouble()),
+      unfolded: unfolded,
+    );
+    return Column(
+      children: <Widget>[
+        if (label != null) ...<Widget>[Text(label!), const SizedBox(height: 20)],
+        Expanded(
+          child: Center(
+            child: AspectRatio(
+              aspectRatio: source.width / source.height,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: CustomPaint(
+                  key: ValueKey<String>(unfolded ? 'duo-share-unfolded' : 'duo-share-folded'),
+                  painter: _DuoImagePainter(image, source),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DuoImagePainter extends CustomPainter {
+  const _DuoImagePainter(this.image, this.source);
+  final ui.Image image;
+  final Rect source;
+
+  @override
+  void paint(Canvas canvas, Size size) =>
+      canvas.drawImageRect(image, source, Offset.zero & size, Paint()..filterQuality = FilterQuality.high);
+
+  @override
+  bool shouldRepaint(_DuoImagePainter oldDelegate) => oldDelegate.image != image || oldDelegate.source != source;
 }
 
 String? _trimmed(String? value) {

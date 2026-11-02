@@ -38,13 +38,15 @@ service cloud.firestore {
           && email is string && email == authEmail();
     }
 
+    // pinnedAt is optional; when present it is the time the owner pinned the favourite.
     // favouriteWallToDoc stores string ids for every provider, including Pexels numeric ids.
     // Optional media/metadata fields vary by provider and by shipped client version.
     function validFavourite(docId) {
       let data = request.resource.data;
       return data.id is string && data.id == docId
           && data.provider is string
-          && data.provider.lower() in ['prism', 'wall_of_the_day', 'walloftheday', 'wallhaven', 'pexels'];
+          && data.provider.lower() in ['prism', 'wall_of_the_day', 'walloftheday', 'wallhaven', 'pexels']
+          && (!('pinnedAt' in data) || data.pinnedAt is timestamp);
     }
 
     // New profiles start empty: coins, premium and coinState are server-owned.
@@ -59,6 +61,7 @@ service cloud.firestore {
           && request.resource.data.get('username', '') == ''
           && !('usernameLower' in request.resource.data)
           && ownerAppOpenValuesOk(request.resource.data)
+          && request.resource.data.get('creatorDirectoryOptOut', false) is bool
           && request.resource.data.get('coins', 0) == 0
           && request.resource.data.get('premium', false) == false
           && request.resource.data.get('subscriptionTier', 'free') == 'free'
@@ -124,12 +127,63 @@ service cloud.firestore {
         || validThemePrefs(request.resource.data.themePrefs);
     }
 
+    function validLayoutPrefs(p) {
+      return p is map
+        && p.keys().hasOnly(['tabs', 'hidden', 'density', 'changedAt'])
+        && p.keys().hasAll(['tabs', 'hidden', 'density', 'changedAt'])
+        && p.tabs is list && p.tabs.size() <= 8 && p.tabs.hasOnly(['home', 'search', 'rewards', 'collection'])
+        && p.hidden is list && p.hidden.size() <= 8 && p.hidden.hasOnly(['search', 'rewards', 'collection'])
+        && p.density in ['compact', 'comfortable', 'large']
+        && p.changedAt is int && p.changedAt >= 0;
+    }
+
+    function ownerLayoutPrefsOk() {
+      return !('layoutPrefs' in request.resource.data.diff(resource.data).affectedKeys())
+        || validLayoutPrefs(request.resource.data.layoutPrefs);
+    }
+
+    function ownerDirectoryOptOutOk() {
+      return !('creatorDirectoryOptOut' in request.resource.data.diff(resource.data).affectedKeys())
+        || request.resource.data.creatorDirectoryOptOut is bool;
+    }
+
     function wallServerKeysAbsent() {
-      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms']);
+      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount']);
     }
 
     function wallServerKeysUntouched() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId']);
+    }
+
+    // Optional link to the wall this one remixes. The server removes a link it cannot verify.
+    function validRemixOf() {
+      return !('remixOf' in request.resource.data)
+          || (request.resource.data.remixOf is string
+              && request.resource.data.remixOf.matches('^[A-Za-z0-9_-]{1,64}$'));
+    }
+
+    function validResubmitOf() {
+      return !('resubmitOf' in request.resource.data)
+          || (request.resource.data.resubmitOf is string
+              && request.resource.data.resubmitOf.size() <= 1024
+              && request.resource.data.resubmitOf.matches('^[^/\\\\\\p{C}]+$')
+              && !request.resource.data.resubmitOf.matches('^__.*')
+              && request.resource.data.resubmitOf != '.'
+              && request.resource.data.resubmitOf != '..');
+    }
+
+    function validChallengeId() {
+      return !('challengeId' in request.resource.data)
+          || (request.resource.data.challengeId is string
+              && request.resource.data.challengeId.matches('^[A-Za-z0-9_-]{1,128}$'));
+    }
+
+    match /weeklyChallenges/{challengeId} {
+      allow read: if true;
+      allow write: if false;
+      match /{privatePath=**} {
+        allow read, write: if false;
+      }
     }
 
     // Wall of the Day — public read, admin-only write (set via Cloud Function)
@@ -161,20 +215,31 @@ service cloud.firestore {
       // Reviewed walls stay readable while 3.7.0 clients are installed: they read unconverted walls and the original URL.
       // Tighten this to review == true && originalProtected == true && wallpaper_url == '' (and the four provenance
       // fields == '') once 3.7.0 share is low. 3.8.0 clients already filter to protected walls on their side.
-      allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
+      // A missing wall has no resource. Reading resource.data there is a null-value error, so a get or a
+      // document-id query is permission-denied instead of empty. resource == null matches only that missing
+      // document. An existing unreviewed wall still fails wallReadable(), and a list with no review or owner
+      // constraint stays denied.
+      function wallReadable() {
+        return resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
+      }
+      allow get: if resource == null || wallReadable();
+      allow list: if resource == null || wallReadable();
       // Admins re-create a rejected wall when they undo the rejection.
-      allow create: if isConfiguredAdmin()
+      allow create: if validChallengeId() && (isConfiguredAdmin()
           || (isSignedIn()
               && isEmailOwner(request.resource.data.email)
               && request.resource.data.review != true
-              && wallServerKeysAbsent());
+              && wallServerKeysAbsent()
+              && validRemixOf()
+              && validResubmitOf()));
       // delete: request.resource is null — do not use request.resource.data here.
-      allow update: if isConfiguredAdmin()
+      allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny(['challengeId'])
+          && (isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
               && wallServerKeysUntouched()
               && request.resource.data.email == resource.data.email
               && resource.data.review != true
-              && request.resource.data.review != true);
+              && request.resource.data.review != true));
       allow delete: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email) && resource.data.review != true);
     }
@@ -238,8 +303,9 @@ service cloud.firestore {
             'name', 'profilePhoto', 'coverPhoto', 'bio', 'links', 'lastLoginAt', 'loggedIn',
             'interestCategories', 'onboardingV2', 'uploadsWeekStart',
             'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'coinState',
-            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs'
-          ]) && ownerCoinStateOk() && ownerAppOpenOk() && ownerThemePrefsOk())
+            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs', 'creatorDirectoryOptOut', 'layoutPrefs'
+          ]) && ownerCoinStateOk() && ownerAppOpenOk() && ownerThemePrefsOk() && ownerDirectoryOptOutOk()
+            && ownerLayoutPrefsOk())
           || isConfiguredAdmin();
       allow delete: if isConfiguredAdmin();
 
@@ -251,6 +317,12 @@ service cloud.firestore {
 
       match /private/session {
         allow read, write: if isOwner(userId) || isConfiguredAdmin();
+      }
+
+      // Public folders this user follows. Written only by the setFolderFollow callable.
+      match /followedFolders/{folderId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
       }
 
       // Block list: owner can read; writes only via Cloud Functions (Admin SDK).
@@ -267,6 +339,37 @@ service cloud.firestore {
 
       match /setups/{docId} {
         allow read, create, update, delete: if isOwner(userId) || isConfiguredAdmin();
+      }
+
+      // Walls the user set or downloaded, so they come back on a new phone. The thumbnail is the only link:
+      // no original URL, and no signed link. The client keeps at most 500 and deletes the oldest; deleteAccount
+      // removes the rest.
+      function validHistoryEntry(key) {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['id', 'provider', 'thumb', 'action', 'at'])
+            && data.keys().hasAll(['id', 'provider', 'thumb', 'action', 'at'])
+            && data.id is string && data.id.size() > 0 && data.id.size() <= 128
+            && data.provider in ['prism', 'wallhaven', 'pexels']
+            && key == data.provider + '_' + data.id
+            && data.thumb is string && data.thumb.size() <= 1024
+            && data.thumb.matches('https://[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*/[^#]*')
+            && !data.thumb.matches('(?i).*[?&](signature|googleaccessid|sig|x-amz-[a-z0-9-]+|x-goog-[a-z0-9-]+)(=[^&#]*)?(&|#|$).*')
+            && !data.thumb.matches('(?i).*[?&][^=&]*%[^=&]*=.*')
+            && data.action in ['set', 'download']
+            && data.at is timestamp;
+      }
+
+      function historyParentOpen(userId) {
+        let parent = /databases/$(database)/documents/usersv2/$(userId);
+        let deletionBarrier = /databases/$(database)/documents/creatorDeletionState/$(userId);
+        return exists(parent)
+            && get(parent).data.get('deleted', false) != true
+            && (!exists(deletionBarrier) || get(deletionBarrier).data.get('closed', false) != true);
+      }
+
+      match /history/{key} {
+        allow read, delete: if isOwner(userId) && historyParentOpen(userId);
+        allow create, update: if isOwner(userId) && historyParentOpen(userId) && validHistoryEntry(key);
       }
     }
 
@@ -347,6 +450,37 @@ service cloud.firestore {
       }
     }
 
+    // Public folders: the server projection of a folder its owner made public (functions/src/publicFolders.ts).
+    // Only the Admin SDK writes it. A block in either direction hides it, and items need a live header.
+    match /publicFolders/{folderId} {
+      function notBlocked(ownerId) {
+        return !exists(/databases/$(database)/documents/usersv2/$(ownerId)/blockedUsers/$(request.auth.uid))
+            && !exists(/databases/$(database)/documents/usersv2/$(request.auth.uid)/blockedUsers/$(ownerId));
+      }
+
+      allow read: if isSignedIn() && notBlocked(resource.data.ownerId);
+      allow write: if false;
+
+      match /items/{itemKey} {
+        allow read: if isSignedIn()
+            && exists(/databases/$(database)/documents/publicFolders/$(folderId))
+            && notBlocked(get(/databases/$(database)/documents/publicFolders/$(folderId)).data.ownerId);
+        allow write: if false;
+      }
+
+      // Each user reads their own follows in usersv2/{uid}/followedFolders.
+      match /followers/{followerUid} {
+        allow read, write: if false;
+      }
+    }
+
+    // Creator directory: the server projection of public profiles and walls (functions/src/creatorDirectory.ts).
+    // Only the Admin SDK writes it. The app hides blocked creators on its side.
+    match /creatorDirectory/{uid} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
     // Public profile documents contain only the server-projected profile allowlist.
     // Writes use the Admin SDK, which bypasses these client rules.
     match /profiles/{uid} {
@@ -390,6 +524,17 @@ service cloud.firestore {
       allow read, write: if isConfiguredAdmin();
     }
 
+    // Promo codes and their redemptions are server-only: redeemCode and the admin callables own every read and write.
+    match /promoCodes/{codeId} {
+      allow read, write: if false;
+      match /redemptions/{uid} {
+        allow read, write: if false;
+      }
+    }
+    match /promoRedeemRate/{docId} {
+      allow read, write: if false;
+    }
+
     // AI generation history is private per user.
     match /aiGenerations/{docId} {
       allow read: if isConfiguredAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
@@ -398,6 +543,12 @@ service cloud.firestore {
           && resource.data.userId == request.auth.uid
           && request.resource.data.userId == request.auth.uid);
       allow delete: if isConfiguredAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    // Prism Wrapped: built by the server job, read only by its owner.
+    match /wrapped/{uid}/years/{year} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if false;
     }
 
     // Coin transaction ledger is private per user.
@@ -412,6 +563,26 @@ service cloud.firestore {
     }
 
     // UGC reports (created via submitContentReport callable). Admin read/update for moderation UI.
+    // Wall requests are written only by Cloud Functions; the app lists them through listWallRequests.
+    match /wallRequests/{requestId} {
+      // Docs hold uids; others see only the display name and avatar that listWallRequests returns.
+      allow read: if (isSignedIn() && resource.data.requesterUid == request.auth.uid) || isConfiguredAdmin();
+      allow write: if false;
+
+      match /votes/{voterUid} {
+        allow read: if isOwner(voterUid);
+        allow write: if false;
+      }
+    }
+
+    match /wallRequestRateDaily/{docId} {
+      allow read, write: if false;
+    }
+
+    match /wallRequestVoteRateDaily/{docId} {
+      allow read, write: if false;
+    }
+
     match /contentReports/{docId} {
       allow read: if isConfiguredAdmin();
       allow create, delete: if false;
@@ -436,6 +607,15 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Public folder rate limits (Cloud Functions only).
+    match /folderVisibilityRateDaily/{docId} {
+      allow read, write: if false;
+    }
+
+    match /folderFollowRateDaily/{docId} {
+      allow read, write: if false;
+    }
+
     // Public view counters (writes via Cloud Functions Admin SDK only).
     match /wallpaper_stats/{docId} {
       allow read: if true;
@@ -453,9 +633,30 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /moods/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /popular/{docId} {
       allow read: if true;
       allow write: if false;
+    }
+
+    // The public web catalogue (webCatalog.ts). The links Worker reads it with no sign-in, so it holds only public
+    // fields. Its build state lists every page key and stays server-only.
+    match /webWalls/{shareId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /webPages/{pageKey} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /webCatalogState/{docId} {
+      allow read, write: if false;
     }
 
     // Username registry (claimUsername callable). Signed-in users can read it.
@@ -512,6 +713,15 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if false;
     }
+
+    match /creatorStatsHistory/{document=**} { allow read, write: if false; }
+    match /creatorStatsCache/{document=**} { allow read, write: if false; }
+    match /creatorStatsDailyCheckpoints/{document=**} { allow read, write: if false; }
+    match /creatorStatsFolderMarkers/{document=**} { allow read, write: if false; }
+    match /creatorStatsRemixMarkers/{document=**} { allow read, write: if false; }
+    match /creatorStatsWeeklyMarkers/{document=**} { allow read, write: if false; }
+    match /creatorStatsDailyQueue/{document=**} { allow read, write: if false; }
+    match /creatorStatsProcessorState/{document=**} { allow read, write: if false; }
 
     // Deny everything else by default.
     match /{document=**} {

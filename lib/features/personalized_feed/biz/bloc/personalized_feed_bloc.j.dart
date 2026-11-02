@@ -4,12 +4,14 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
-import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
+import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
@@ -24,14 +26,23 @@ part 'personalized_feed_event.j.dart';
 part 'personalized_feed_state.j.dart';
 part 'personalized_feed_bloc.j.freezed.dart';
 
+/// The tab the Home feed opens on: the remembered one, except Following for a guest, who would only see a sign-in
+/// prompt there.
+HomeFeedChip _restoredChip(HomeFeedChip? remembered) =>
+    remembered == null || (remembered == HomeFeedChip.following && !app_state.prismUser.loggedIn)
+    ? HomeFeedChip.forYou
+    : remembered;
+
 @injectable
 class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedState> {
   PersonalizedFeedBloc(
     this._fetchPersonalizedFeedUseCase,
     this._repository,
     this._userBlockRepository,
-    this._dropsRepository,
-  ) : super(PersonalizedFeedState.initial()) {
+    this._dropsRepository, [
+    this._layout,
+  ]) : _seenFeedTab = _layout?.value.feedTab,
+       super(PersonalizedFeedState.initial().copyWith(chip: _restoredChip(_layout?.value.feedTab))) {
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
     on<_FetchMoreRequested>(_onFetchMoreRequested);
@@ -44,34 +55,59 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     on<_LiveDropRequested>(_onLiveDropRequested);
     // Blocking a creator removes their items from the on-screen feed instantly,
     // without waiting for the next fetch. skip(1) ignores the initial snapshot.
-    _blockedCreatorsSub = _userBlockRepository
-        .watchBlockedCreatorUids()
-        .skip(1)
-        .listen((blocked) => add(PersonalizedFeedEvent.blockedCreatorsChanged(blocked: blocked)));
+    _blockListUnknown = _userBlockRepository.blockedCreators is UnknownBlockedCreators;
+    _blockedCreatorsSub = _userBlockRepository.watchBlockedCreators().skip(1).listen((blocked) {
+      if (blocked is UnknownBlockedCreators) _blockListUnknown = true;
+      add(const PersonalizedFeedEvent.blockedCreatorsChanged());
+    });
     _dropsWereEnabled = EconomyConfig.notifier.value.flags.dropsEnabled;
     EconomyConfig.notifier.addListener(_onEconomyConfigChanged);
+    _layout?.addListener(_onLayoutChanged);
   }
 
   final FetchPersonalizedFeedUseCase _fetchPersonalizedFeedUseCase;
   final PersonalizedFeedRepository _repository;
   final UserBlockRepository _userBlockRepository;
   final DropsRepository _dropsRepository;
+
+  /// Remembers the chosen tab across restarts. A push or link that sets the tab there switches the feed to it.
+  final LayoutPrefsStore? _layout;
+  HomeFeedChip? _seenFeedTab;
   late bool _dropsWereEnabled;
   int _liveDropRequest = 0;
-  StreamSubscription<Set<String>>? _blockedCreatorsSub;
+  StreamSubscription<BlockedCreators>? _blockedCreatorsSub;
+  bool _blockListUnknown = true;
+  bool _blockRecoveryDuringLoad = false;
   int _loadVersion = 0;
   Future<void> _lessLikeThisInFlight = Future<void>.value();
   final Set<String> _pendingSeen = <String>{};
   final Set<String> _recordedSeen = <String>{};
   Timer? _seenTimer;
 
-  void _onBlockedCreatorsChanged(_BlockedCreatorsChanged event, Emitter<PersonalizedFeedState> emit) {
-    if (event.blocked.isEmpty) {
+  Future<void> _onBlockedCreatorsChanged(_BlockedCreatorsChanged event, Emitter<PersonalizedFeedState> emit) async {
+    final BlockedCreators current = _userBlockRepository.blockedCreators;
+    if (current is UnknownBlockedCreators) {
+      _blockListUnknown = true;
+      final filtered = BlockedCreatorsFilter.filterFeedItems(state.items, const UnknownBlockedCreators());
+      if (filtered.length != state.items.length) emit(state.copyWith(items: filtered));
       return;
     }
-    final filtered = BlockedCreatorsFilter.filterFeedItems(state.items, event.blocked);
-    if (filtered.length != state.items.length) {
-      emit(state.copyWith(items: filtered));
+    final bool recovered = _blockListUnknown;
+    _blockListUnknown = false;
+    final KnownBlockedCreators known = current as KnownBlockedCreators;
+    if (known.uids.isNotEmpty) {
+      final filtered = BlockedCreatorsFilter.filterFeedItems(state.items, known);
+      if (filtered.length != state.items.length) {
+        emit(state.copyWith(items: filtered));
+      }
+    }
+    if (recovered && state.status != LoadStatus.initial) {
+      if (state.status == LoadStatus.loading || state.isFetchingMore) {
+        _blockRecoveryDuringLoad = true;
+        return;
+      }
+      _blockRecoveryDuringLoad = false;
+      await _load(emit, sourceContext: 'personalized_feed_block_list_ready', keepItems: true);
     }
   }
 
@@ -101,6 +137,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
 
   @override
   Future<void> close() {
+    _layout?.removeListener(_onLayoutChanged);
     EconomyConfig.notifier.removeListener(_onEconomyConfigChanged);
     unawaited(_blockedCreatorsSub?.cancel());
     _seenTimer?.cancel();
@@ -126,7 +163,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
       state.copyWith(
         status: LoadStatus.success,
         actionStatus: ActionStatus.idle,
-        items: cached.items,
+        items: BlockedCreatorsFilter.filterFeedItems(cached.items, _userBlockRepository.blockedCreators),
         seenKeys: trimSeenKeys(cached.usedKeys),
         page: 1,
         hasMore: true,
@@ -151,11 +188,20 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
   Future<void> _onSettingsChanged(_SettingsChanged event, Emitter<PersonalizedFeedState> emit) =>
       _load(emit, sourceContext: 'personalized_feed_settings', keepItems: false);
 
+  /// Follows a new tab in the store. Other layout changes leave the feed alone.
+  void _onLayoutChanged() {
+    final HomeFeedChip requested = _layout!.value.feedTab;
+    if (requested == _seenFeedTab) return;
+    _seenFeedTab = requested;
+    if (!isClosed && requested != state.chip) add(PersonalizedFeedEvent.chipSelected(requested));
+  }
+
   void _onChipSelected(_ChipSelected event, Emitter<PersonalizedFeedState> emit) {
     if (state.chip == event.chip) {
       return;
     }
     emit(state.copyWith(chip: event.chip));
+    unawaited(_layout?.setFeedTab(event.chip));
     unawaited(
       analytics.track(
         SurfaceActionTappedEvent(
@@ -190,14 +236,8 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
   }
 
   Future<void> _onLessLikeThisRequested(_LessLikeThisRequested event, Emitter<PersonalizedFeedState> emit) async {
-    final String key = PersonalizedRankingService.canonicalKey(event.item);
-    emit(
-      state.copyWith(
-        items: state.items
-            .where((item) => PersonalizedRankingService.canonicalKey(item) != key)
-            .toList(growable: false),
-      ),
-    );
+    final String key = event.item.canonicalKey;
+    emit(state.copyWith(items: state.items.where((item) => item.canonicalKey != key).toList(growable: false)));
     await _afterPendingHide(() => _repository.lessLikeThis(event.item), 'less-like-this');
   }
 
@@ -209,8 +249,9 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
   }
 
   Future<void> _onLessLikeThisUndone(_LessLikeThisUndone event, Emitter<PersonalizedFeedState> emit) async {
-    final String key = PersonalizedRankingService.canonicalKey(event.item);
-    if (!state.items.any((item) => PersonalizedRankingService.canonicalKey(item) == key)) {
+    final String key = event.item.canonicalKey;
+    if (!BlockedCreatorsFilter.hidesFeedItem(event.item, _userBlockRepository.blockedCreators) &&
+        !state.items.any((item) => item.canonicalKey == key)) {
       final List<FeedItemEntity> restored = <FeedItemEntity>[...state.items]
         ..insert(event.index.clamp(0, state.items.length), event.item);
       emit(state.copyWith(items: restored));
@@ -244,7 +285,11 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     result.fold(
       onSuccess: (page) {
         final merged = <String, FeedItemEntity>{
-          for (final item in [...state.items, ...page.items]) PersonalizedRankingService.canonicalKey(item): item,
+          for (final item in [
+            ...state.items,
+            ...BlockedCreatorsFilter.filterFeedItems(page.items, _userBlockRepository.blockedCreators),
+          ])
+            item.canonicalKey: item,
         }.values.toList(growable: false);
 
         emit(
@@ -283,6 +328,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
         );
       },
     );
+    await _reloadAfterBlockRecoveryDuringLoad(emit);
   }
 
   /// Loads page one. With [keepItems] the current items stay on screen until the new ones arrive, and stay if the
@@ -337,7 +383,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
             status: LoadStatus.success,
             actionStatus: ActionStatus.success,
             page: 1,
-            items: page.items,
+            items: BlockedCreatorsFilter.filterFeedItems(page.items, _userBlockRepository.blockedCreators),
             seenKeys: trimSeenKeys(page.usedKeys),
             hasMore: page.hasMore,
             isFetchingMore: false,
@@ -378,5 +424,12 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
         );
       },
     );
+    await _reloadAfterBlockRecoveryDuringLoad(emit);
+  }
+
+  Future<void> _reloadAfterBlockRecoveryDuringLoad(Emitter<PersonalizedFeedState> emit) async {
+    if (!_blockRecoveryDuringLoad || _blockListUnknown) return;
+    _blockRecoveryDuringLoad = false;
+    await _load(emit, sourceContext: 'personalized_feed_block_list_ready', keepItems: true);
   }
 }

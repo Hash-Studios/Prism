@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/content_reports/content_report_repository.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -34,11 +35,13 @@ Future<void> showContentReportSheet(
   required String targetFirestoreDocId,
   String? subtitle,
   VoidCallback? onBlockCreator,
+  String? initialReason,
+  String? initialDetails,
 }) async {
   if (!context.mounted) {
     return;
   }
-  if (FirebaseAuth.instance.currentUser == null) {
+  if (!FirebaseInit.hasDefaultApp || FirebaseAuth.instance.currentUser == null) {
     toasts.error(context.l10n.coreSignInToReportContent);
     googleSignInPopUp(context, () {
       if (!context.mounted) return;
@@ -49,6 +52,8 @@ Future<void> showContentReportSheet(
           targetFirestoreDocId: targetFirestoreDocId,
           subtitle: subtitle,
           onBlockCreator: onBlockCreator,
+          initialReason: initialReason,
+          initialDetails: initialDetails,
         ),
       );
     });
@@ -65,6 +70,8 @@ Future<void> showContentReportSheet(
         targetFirestoreDocId: targetFirestoreDocId,
         subtitle: subtitle,
         onBlockCreator: onBlockCreator,
+        initialReason: initialReason,
+        initialDetails: initialDetails,
       );
     },
   );
@@ -78,12 +85,18 @@ class ContentReportSheetBody extends StatefulWidget {
     required this.targetFirestoreDocId,
     this.subtitle,
     this.onBlockCreator,
+    this.initialReason,
+    this.initialDetails,
   });
 
   final String contentType;
   final String targetFirestoreDocId;
   final String? subtitle;
   final VoidCallback? onBlockCreator;
+
+  /// Preselected reason. Ignored unless it is in [kContentReportReasons].
+  final String? initialReason;
+  final String? initialDetails;
 
   @override
   State<ContentReportSheetBody> createState() => ContentReportSheetBodyState();
@@ -100,8 +113,8 @@ String _contentTypeLabel(String contentType, AppLocalizations l10n) {
 
 @visibleForTesting
 class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
-  String? _selectedWire;
-  final TextEditingController _details = TextEditingController();
+  late String? _selectedWire = kContentReportReasons.contains(widget.initialReason) ? widget.initialReason : null;
+  late final TextEditingController _details = TextEditingController(text: widget.initialDetails);
   bool _submitting = false;
 
   @override

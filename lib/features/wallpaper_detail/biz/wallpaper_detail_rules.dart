@@ -9,6 +9,16 @@ import 'package:Prism/l10n/l10n.dart';
 
 const int _maxTags = 10;
 
+bool isDuoWallpaper(FeedItemEntity item) => item.maybeWhen(
+  prism: (_, wall) => (wall.tags ?? const <String>[]).any(
+    (tag) => const <String>{'duo', 'duo-reveal'}.contains(tag.trim().toLowerCase()),
+  ),
+  wallhaven: (_, wall) => (wall.tags ?? const <String>[]).any(
+    (tag) => const <String>{'duo', 'duo-reveal'}.contains(tag.trim().toLowerCase()),
+  ),
+  orElse: () => false,
+);
+
 /// Only Prism walls can sit in a premium collection. Wallhaven and Pexels walls are never premium.
 bool isPremiumFeedItem(FeedItemEntity item, List<String> premiumCollections) {
   return item.maybeWhen(

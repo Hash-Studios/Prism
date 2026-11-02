@@ -51,6 +51,8 @@ class _MockToggleFavouriteWallUseCase extends Mock implements ToggleFavouriteWal
 
 class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWallsUseCase {}
 
+class _MockSetFavouritePinUseCase extends Mock implements SetFavouritePinUseCase {}
+
 class _MockCacheManager extends Mock implements BaseCacheManager {}
 
 /// [count] favourites, all older than the fixtures the tests name, so they sort after them.
@@ -65,7 +67,12 @@ void main() {
 
   /// Built inside the test body so the bloc runs on the fake-async clock the tester pumps.
   FavouriteWallsBloc createBloc() {
-    bloc = FavouriteWallsBloc(fetchUseCase, _MockToggleFavouriteWallUseCase(), _MockClearFavouriteWallsUseCase());
+    bloc = FavouriteWallsBloc(
+      fetchUseCase,
+      _MockToggleFavouriteWallUseCase(),
+      _MockClearFavouriteWallsUseCase(),
+      _MockSetFavouritePinUseCase(),
+    );
     addTearDown(bloc.close);
     return bloc;
   }
@@ -196,7 +203,7 @@ void main() {
       when(() => fetchUseCase(any())).thenAnswer((_) async => Result.success(List<FavouriteWallEntity>.of(items)));
       when(() => clearUseCase(any())).thenAnswer((_) async => Result.success(true));
       when(() => toggleUseCase(any())).thenAnswer((_) async => Result.success(true));
-      bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+      bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
       addTearDown(bloc.close);
       return bloc;
     }
@@ -545,7 +552,7 @@ void main() {
       when(() => fetchUseCase(any())).thenAnswer((_) async => Result.success(List<FavouriteWallEntity>.of(items)));
       when(() => clearUseCase(any())).thenAnswer((_) async => Result.success(true));
       when(() => toggleUseCase(any())).thenAnswer((_) async => Result.success(true));
-      bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+      bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
       addTearDown(bloc.close);
       return bloc;
     }
@@ -956,7 +963,7 @@ void main() {
       when(
         () => fetchUseCase(any()),
       ).thenAnswer((_) async => Result.success(<FavouriteWallEntity>[prismFav('a', author: 'Ada')]));
-      bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+      bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
       addTearDown(bloc.close);
 
       await pumpGrid(tester);

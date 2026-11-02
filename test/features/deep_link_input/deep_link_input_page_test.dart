@@ -2,7 +2,9 @@
 
 import 'dart:async';
 
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
 import 'package:Prism/features/deep_link_input/views/pages/deep_link_input_page.dart';
@@ -70,13 +72,19 @@ void main() {
   late List<RouteData> opened;
 
   setUp(() {
+    app_state.prismUser = createGuestPrismUser()
+      ..id = 'user'
+      ..loggedIn = true;
     previousPicker = ImagePickerPlatform.instance;
     picker = _Picker();
     ImagePickerPlatform.instance = picker;
     opened = <RouteData>[];
   });
 
-  tearDown(() => ImagePickerPlatform.instance = previousPicker);
+  tearDown(() {
+    ImagePickerPlatform.instance = previousPicker;
+    app_state.prismUser = createGuestPrismUser();
+  });
 
   Future<void> showChooser(WidgetTester tester, DeepLinkInputWorkflow workflow) async {
     final router = _InputRouter(workflow, opened);

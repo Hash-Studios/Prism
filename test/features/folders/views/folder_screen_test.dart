@@ -8,20 +8,29 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
+import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
+import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/pages/folder_screen.dart';
+import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockStackRouter extends Mock implements StackRouter {}
+
+class _MockAutoRotateBloc extends MockBloc<AutoRotateEvent, AutoRotateState> implements AutoRotateBloc {}
 
 class _OnlineConnectivity implements ConnectivityService {
   @override
@@ -99,6 +108,16 @@ class _FakeFoldersRepository implements FoldersRepository {
 
 final DateTime _at = DateTime.utc(2026, 10);
 
+_MockAutoRotateBloc _rotationBloc([AutoRotateState? state]) {
+  final _MockAutoRotateBloc bloc = _MockAutoRotateBloc();
+  when(() => bloc.state).thenReturn(state ?? AutoRotateState.initial());
+  return bloc;
+}
+
+AutoRotateState _rotatingState({required bool enabled, required String folderId}) => AutoRotateState.initial().copyWith(
+  config: AutoRotateConfig(enabled: enabled, source: AutoRotateSource.folder, folderId: folderId, folderName: 'Work'),
+);
+
 FolderEntity _folder(String id, String name, {int itemCount = 0}) => FolderEntity(
   id: id,
   ownerId: 'u1',
@@ -109,8 +128,36 @@ FolderEntity _folder(String id, String name, {int itemCount = 0}) => FolderEntit
   covers: const <String>[],
 );
 
+class _NoPublicFolders implements PublicFoldersRepository {
+  @override
+  Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
+
+  @override
+  Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(<String>[]);
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async =>
+      Result.success(<PublicFolderEntity>[]);
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchFollowedFolders(String userId) async =>
+      Result.success(<PublicFolderEntity>[]);
+
+  @override
+  Future<Result<bool>> isFollowing(String folderId, String userId) async => Result.success(false);
+
+  @override
+  Future<Result<void>> setFollowing(String folderId, {required bool following}) async => Result.success<void>(null);
+
+  @override
+  Future<Result<bool>> setPublic(String folderId, {required bool isPublic}) async => Result.success(isPublic);
+}
+
 void main() {
+  final Future<int?> Function() originalIosMajorVersion = iosMajorVersion;
+
   tearDown(() {
+    iosMajorVersion = originalIosMajorVersion;
     app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
@@ -126,7 +173,7 @@ void main() {
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     addTearDown(() => getIt.unregister<ConnectivityService>());
     final repo = _FakeFoldersRepository()..failLoad = true;
-    final bloc = FoldersBloc(repo);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     await tester.pumpWidget(
       MaterialApp(
@@ -135,7 +182,10 @@ void main() {
         theme: kLightTheme,
         home: BlocProvider<FoldersBloc>.value(
           value: bloc,
-          child: const FolderScreen(folderId: 'work'),
+          child: BlocProvider<AutoRotateBloc>.value(
+            value: _rotationBloc(),
+            child: const FolderScreen(folderId: 'work'),
+          ),
         ),
       ),
     );
@@ -155,17 +205,27 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     addTearDown(() => getIt.unregister<ConnectivityService>());
-    final repo = _FakeFoldersRepository();
-    final bloc = FoldersBloc(repo);
+    // Both accounts have a folder with this id, so the page loads it as the owner each time.
+    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work')]);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
+    final _MockStackRouter router = _MockStackRouter();
+    when(() => router.stack).thenReturn(const <AutoRoutePage<dynamic>>[]);
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: kLightTheme,
-        home: BlocProvider<FoldersBloc>.value(
-          value: bloc,
-          child: const FolderScreen(folderId: 'work'),
+        home: StackRouterScope(
+          controller: router,
+          stateHash: 0,
+          child: BlocProvider<FoldersBloc>.value(
+            value: bloc,
+            child: BlocProvider<AutoRotateBloc>.value(
+              value: _rotationBloc(),
+              child: const FolderScreen(folderId: 'work'),
+            ),
+          ),
         ),
       ),
     );
@@ -188,7 +248,7 @@ void main() {
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     addTearDown(() => getIt.unregister<ConnectivityService>());
     final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work'), _folder('trips', 'Trips')]);
-    final bloc = FoldersBloc(repo);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     final _MockStackRouter router = _MockStackRouter();
     when(() => router.stack).thenReturn(const <AutoRoutePage<dynamic>>[]);
@@ -201,7 +261,10 @@ void main() {
         stateHash: 0,
         child: BlocProvider<FoldersBloc>.value(
           value: bloc,
-          child: FolderScreen(folderId: folderId),
+          child: BlocProvider<AutoRotateBloc>.value(
+            value: _rotationBloc(),
+            child: FolderScreen(folderId: folderId),
+          ),
         ),
       ),
     );
@@ -234,7 +297,7 @@ void main() {
       'work': <FavouriteWallEntity>[wall],
       'trips': <FavouriteWallEntity>[wall],
     };
-    final bloc = FoldersBloc(repo);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     final _MockStackRouter router = _MockStackRouter();
     when(() => router.stack).thenReturn(const <AutoRoutePage<dynamic>>[]);
@@ -247,7 +310,10 @@ void main() {
         stateHash: 0,
         child: BlocProvider<FoldersBloc>.value(
           value: bloc,
-          child: FolderScreen(folderId: folderId),
+          child: BlocProvider<AutoRotateBloc>.value(
+            value: _rotationBloc(),
+            child: FolderScreen(folderId: folderId),
+          ),
         ),
       ),
     );
@@ -263,4 +329,119 @@ void main() {
     await settle(tester);
     expect(repo.calls.where((call) => call.startsWith('removeItem:')), isEmpty);
   });
+
+  // The rotation tests run the folder page on one platform and pump it with a given rotation state.
+  Future<void> pumpFolderPage(
+    WidgetTester tester, {
+    required String folderId,
+    required AutoRotateState rotation,
+  }) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
+    getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
+    addTearDown(() => getIt.unregister<ConnectivityService>());
+    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work')]);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
+    addTearDown(bloc.close);
+    final _MockStackRouter router = _MockStackRouter();
+    when(() => router.stack).thenReturn(const <AutoRoutePage<dynamic>>[]);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: StackRouterScope(
+          controller: router,
+          stateHash: 0,
+          child: BlocProvider<FoldersBloc>.value(
+            value: bloc,
+            child: BlocProvider<AutoRotateBloc>.value(
+              value: _rotationBloc(rotation),
+              child: FolderScreen(folderId: folderId),
+            ),
+          ),
+        ),
+      ),
+    );
+    await settle(tester);
+  }
+
+  testWidgets('the Android overflow menu offers Rotate this folder', (tester) async {
+    await pumpFolderPage(tester, folderId: 'work', rotation: AutoRotateState.initial());
+
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await settle(tester);
+
+    expect(find.text('Rotate this folder'), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('the iOS overflow menu does not offer Rotate this folder', (tester) async {
+    await pumpFolderPage(tester, folderId: 'work', rotation: AutoRotateState.initial());
+
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await settle(tester);
+
+    expect(find.text('Rename'), findsOneWidget);
+    expect(find.text('Rotate this folder'), findsNothing);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('the folder page shows Rotating while rotation uses this folder', (tester) async {
+    await pumpFolderPage(
+      tester,
+      folderId: 'work',
+      rotation: _rotatingState(enabled: true, folderId: 'work'),
+    );
+
+    expect(find.text('Rotating'), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('the folder page hides Rotating when rotation is off', (tester) async {
+    await pumpFolderPage(
+      tester,
+      folderId: 'work',
+      rotation: _rotatingState(enabled: false, folderId: 'work'),
+    );
+
+    expect(find.text('Rotating'), findsNothing);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('the folder path shows Rotate this folder daily on iOS 17 with the user own folder', (tester) async {
+    iosMajorVersion = () async => 17;
+    await pumpFolderPage(tester, folderId: 'work', rotation: AutoRotateState.initial());
+
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await settle(tester);
+
+    expect(find.text('Rotate this folder daily'), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('the Android overflow menu does not offer Rotate this folder daily', (tester) async {
+    iosMajorVersion = () async => 17;
+    await pumpFolderPage(tester, folderId: 'work', rotation: AutoRotateState.initial());
+
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await settle(tester);
+
+    expect(find.text('Rotate this folder daily'), findsNothing);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('the iOS 15 overflow menu does not offer Rotate this folder daily', (tester) async {
+    iosMajorVersion = () async => 15;
+    await pumpFolderPage(tester, folderId: 'work', rotation: AutoRotateState.initial());
+
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await settle(tester);
+
+    expect(find.text('Rename'), findsOneWidget);
+    expect(find.text('Rotate this folder daily'), findsNothing);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('the folder page hides Rotating when rotation uses another folder', (tester) async {
+    await pumpFolderPage(
+      tester,
+      folderId: 'work',
+      rotation: _rotatingState(enabled: true, folderId: 'trips'),
+    );
+
+    expect(find.text('Rotating'), findsNothing);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }

@@ -1,5 +1,55 @@
 ## Changelog
 
+### v3.18.1
+- Open a desktop version of a wallpaper, and send it to your computer
+- Your iPhone Shortcut now rotates walls you have downloaded, including protected ones
+- Pull to refresh now shows new Creators to follow
+- Security and stability fixes
+
+### v3.18.0
+- Find creators to follow in the new creator directory
+- Send coins to thank a creator for a wallpaper you love
+- See how your uploads perform with Your stats, plus a weekly summary in your inbox
+- Fix and resubmit a wallpaper that needs changes, or edit its details later
+- Redeem a Prism code for coins or Pro from Settings or Rewards
+- On iPhone, rotate wallpapers from a folder with a Shortcut
+- Security and stability fixes
+
+### v3.17.0
+- Weekly Challenges: enter each week's theme and vote for your favourite entries
+- Make Duo reveal AI wallpapers, with one scene folded and another when you open it
+- Security and stability fixes
+
+### v3.16.0
+- Remix AI wallpapers and explore creations inspired by the original
+- Choose whether AI wallpapers appear in your feeds and search
+- See AI labels and the model used on wallpaper details
+- Explore AI results full screen, apply them and refine them with follow-up ideas
+- Shake your phone to report a problem, with an optional screenshot
+- Your wallpaper target is remembered the next time you tap Set
+- Clearer wallpaper confirmations and better shared folder previews
+- Security and stability fixes
+
+### v3.15.0
+- Make a folder public, follow other people's folders and share them
+- Ask for a wallpaper, vote for other requests, and get a push when yours is filled
+- Your set and download history now follows you to a new phone
+- Tap a wallpaper to see it full screen, and pin up to 12 favourites
+- On Android, auto-rotate your wallpaper from a folder
+- See one scene in every AI style before you pick
+- A quick "This or that" quiz tunes your feed when you join
+- Security and stability fixes
+
+### v3.14.0
+- Save wallpapers into your own private folders
+- A new Library with Favourites, Folders, Downloads and History in one place
+- Browse by mood right from Home
+- Set a wallpaper straight from the phone preview
+- A new 3D live wallpaper style
+- Spatial wallpapers with a 3D tilt preview, made for iOS 26 Spatial Scenes
+- Full-quality wallpapers on large screens
+- Security and stability fixes
+
 ### v3.13.0
 - Share a wallpaper as a story, post or clean card, or send it straight to Instagram Stories
 - Preview a wallpaper on a real phone Home and Lock Screen, and set it from there

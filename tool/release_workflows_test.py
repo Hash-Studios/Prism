@@ -91,6 +91,8 @@ class ReleaseWorkflowsTest(fixture.ReleaseFixture, unittest.TestCase):
                     '--dart-define=PEXELS_API_KEY=' + value, '--dart-define=SENTRY_RELEASE=' + value]
                 if platform == 'android':
                     expected.append('--dart-define=SENTRY_ENABLED=true')
+                if 'ADMOB_IOS_REWARDED_AD_UNIT_ID' in self.values:
+                    expected.append('--dart-define=ADMOB_IOS_REWARDED_AD_UNIT_ID=' + fixture.IOS_ADMOB_UNIT)
                 self.assertEqual(argv, expected)
                 self.assertEqual(result.stdout + result.stderr, '')
                 self.assertFalse((self.work / 'OWNED').exists())
@@ -425,13 +427,38 @@ sys.exit(23)
                                      f'refs/tags/{tag}'], capture_output=True)
             self.assertNotEqual(remote.returncode, 0, f'{tag} was pushed after Sentry upload failed')
 
+    def test_size_android_keeps_shipping_flags_without_analyze_size(self):
+        stub = self.work / 'write_firebase_options_stub.sh'
+        stub.write_text('#!/usr/bin/env bash\nexit 0\n')
+        stub.chmod(0o755)
+        makefile = self.work / 'Makefile'
+        makefile.write_text((fixture.ROOT / 'Makefile').read_text().replace(
+            './tool/write_firebase_options_stub.sh', str(stub)))
+        apk = self.work / 'build/app/outputs/flutter-apk/app-release.apk'
+        apk.parent.mkdir(parents=True)
+        apk.write_bytes(b'fixture apk')
+        result = subprocess.run(
+            ['make', '-f', str(makefile), 'CI=true', 'size-android'],
+            cwd=self.work, env=self.env, capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        argv = json.loads(Path(self.env['CAPTURE']).read_text())
+        self.assertEqual(argv[:3], ['build', 'apk', '--release'])
+        self.assertIn('--target-platform=android-arm64', argv)
+        self.assertIn('--obfuscate', argv)
+        self.assertIn('--split-debug-info=build/size/local/symbols', argv)
+        self.assertIn('--dart-define=SKIP_FIREBASE_INIT=true', argv)
+        self.assertNotIn('--analyze-size', argv)
+        self.assertEqual((self.work / 'build/size/local/app-release.apk').read_bytes(), b'fixture apk')
+        self.assertTrue((self.work / 'build/size/local/build.log').is_file())
+
     def test_testflight_installs_and_cleans_every_profile(self):
         if shutil.which('jq') is None:
             self.skipTest('jq is not installed')
         steps = workflow('testflight.yml')['jobs']['build-and-upload']['steps']
         install = next(step for step in steps if step.get('name') == 'Install provisioning profiles')
         cleanup = next(step for step in steps if step.get('name') == 'Cleanup keychain & keys')
-        self.assertLessEqual({'IOS_PROVISIONING_PROFILE_BASE64', 'IOS_LIVE_ACTIVITIES_PROVISIONING_PROFILE_BASE64'},
+        self.assertLessEqual({'IOS_PROVISIONING_PROFILE_BASE64', 'IOS_LIVE_ACTIVITIES_PROVISIONING_PROFILE_BASE64',
+                              'IOS_NOTIFICATION_SERVICE_PROVISIONING_PROFILE_BASE64'},
                              set(install['env']))
         for name, value in install['env'].items():
             self.assertTrue(name.endswith('PROVISIONING_PROFILE_BASE64'), name)

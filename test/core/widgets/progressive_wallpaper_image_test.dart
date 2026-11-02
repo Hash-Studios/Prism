@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
@@ -30,6 +31,17 @@ final List<int> _png = base64Decode(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
 );
 
+Future<List<int>> _pngOf(int width, int height) async {
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  Canvas(recorder).drawColor(Colors.white, BlendMode.src);
+  final ui.Picture picture = recorder.endRecording();
+  final ui.Image image = await picture.toImage(width, height);
+  final ByteData? data = await image.toByteData(format: ui.ImageByteFormat.png);
+  image.dispose();
+  picture.dispose();
+  return data!.buffer.asUint8List();
+}
+
 class _MockCacheManager extends Mock implements BaseCacheManager {}
 
 /// Serves wallpaper URLs from files in [directory]. Counts requests per URL, fails the URLs in [failing] and holds
@@ -54,6 +66,7 @@ class _WallCache {
   final Set<String> failing = <String>{};
   final Map<String, Completer<void>> gates = <String, Completer<void>>{};
   final Map<String, String> paths = <String, String>{};
+  final Map<String, List<int>> responses = <String, List<int>>{};
 
   Stream<FileResponse> _stream(String url) async* {
     requests[url] = (requests[url] ?? 0) + 1;
@@ -61,7 +74,7 @@ class _WallCache {
     if (gate != null) await gate.future;
     if (failing.contains(url)) throw Exception('fake network failure for $url');
     final String path = paths.putIfAbsent(url, () => '${directory.path}/${paths.length}.png');
-    File(path).writeAsBytesSync(_png);
+    File(path).writeAsBytesSync(responses[url] ?? _png);
     yield FileInfo(
       const local.LocalFileSystem().file(path),
       FileSource.Online,
@@ -208,6 +221,101 @@ void main() {
     expect(_imageFrom(_thumb), findsNothing);
   });
 
+  testWidgets('reports the full picture size once it paints, never the thumbnail size', (tester) async {
+    final List<Size> sizes = <Size>[];
+    wallCache.responses[_full] = (await tester.runAsync(() => _pngOf(3, 2)))!;
+    wallCache.gates[_full] = Completer<void>();
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display(), onPictureSize: sizes.add)));
+    await _pumpUntil(tester, () => _painted(tester).contains(_thumb));
+    await tester.pump();
+    // Some sources crop the thumbnail, so its shape is not the wallpaper's.
+    expect(sizes, isEmpty);
+
+    wallCache.gates[_full]!.complete();
+    await _pumpUntil(tester, () => sizes.isNotEmpty);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+
+    expect(sizes, <Size>[const Size(3, 2)]);
+    final ResizeImage resized = tester.widget<Image>(_imageFrom(_full)).image as ResizeImage;
+    expect(resized.policy, ResizeImagePolicy.fit);
+  });
+
+  testWidgets('reports the size again for a new wall with the same pixel dimensions', (tester) async {
+    final List<Size> sizes = <Size>[];
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display(), onPictureSize: sizes.add)));
+    await _pumpUntil(tester, () => sizes.isNotEmpty);
+    await tester.pumpWidget(
+      _app(
+        ProgressiveWallpaperImage(
+          display: _display(id: 'w2'),
+          onPictureSize: sizes.add,
+        ),
+      ),
+    );
+    await _pumpUntil(tester, () => sizes.length > 1);
+
+    expect(sizes, <Size>[const Size(1, 1), const Size(1, 1)]);
+  });
+
+  testWidgets('inline size callback that rebuilds does not report repeatedly', (tester) async {
+    int reports = 0;
+    await tester.pumpWidget(
+      _app(
+        StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) =>
+              ProgressiveWallpaperImage(display: _display(), onPictureSize: (_) => setState(() => reports++)),
+        ),
+      ),
+    );
+    await _pumpUntil(tester, () => reports == 1);
+    for (int i = 0; i < 3; i++) {
+      await tester.pump();
+    }
+
+    expect(reports, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('keeps the same aspect-fit decode provider when the fixed decode box is unchanged', (tester) async {
+    final List<Size> sizes = <Size>[];
+    const WallpaperDisplaySource wideWall = WallpaperDisplaySource(
+      thumbnail: _thumb,
+      full: _full,
+      id: 'w1',
+      source: WallpaperSource.wallhaven,
+      pixelSize: Size(4000, 2000),
+    );
+    late StateSetter rebuild;
+    await tester.pumpWidget(
+      _app(
+        StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            rebuild = setState;
+            return ProgressiveWallpaperImage(
+              display: wideWall,
+              decodeBox: const Size(1000, 1000),
+              onPictureSize: sizes.add,
+            );
+          },
+        ),
+      ),
+    );
+    await _pumpUntil(tester, () => _painted(tester).contains(_full));
+    final ImageProvider before = tester.widget<Image>(_imageFrom(_full)).image;
+    expect(before, isA<ResizeImage>());
+    final ResizeImage resized = before as ResizeImage;
+    expect((resized.width, resized.height, resized.policy), (2000, 1000, ResizeImagePolicy.fit));
+
+    rebuild(() {});
+    await tester.pump();
+    final ImageProvider after = tester.widget<Image>(_imageFrom(_full)).image;
+
+    expect(after, before);
+    expect(wallCache.requests[_full], 1);
+    expect(sizes, <Size>[const Size(1, 1)]);
+  });
+
   testWidgets('uses the shared thumbnail while checking for an on-device full copy', (tester) async {
     final Completer<File?> deviceLookup = Completer<File?>();
     ProgressiveWallpaperImage.offlineCopyOverride = (_) => deviceLookup.future;
@@ -297,6 +405,36 @@ void main() {
     expect(tester.widget<RawImage>(find.byKey(const ValueKey<String>('last-full'))).image, isNotNull);
     expect(_imageFrom(_thumb), findsNothing);
     expect(wallCache.requests[_full], 1);
+  });
+
+  testWidgets('does not report the held full frame again while its replacement loads', (tester) async {
+    final List<Size> sizes = <Size>[];
+    wallCache.responses[_full2] = (await tester.runAsync(() => _pngOf(5, 3)))!;
+    wallCache.gates[_full2] = Completer<void>();
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display(), onPictureSize: sizes.add)));
+    await _pumpUntil(tester, () => sizes.isNotEmpty);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+
+    await tester.pumpWidget(
+      _app(
+        ProgressiveWallpaperImage(
+          display: _display(full: _full2),
+          onPictureSize: sizes.add,
+        ),
+      ),
+    );
+    await _pumpUntil(tester, () => wallCache.requests.containsKey(_full2));
+    await tester.pump();
+
+    expect(sizes, <Size>[const Size(1, 1)]);
+    expect(find.byKey(const ValueKey<String>('last-full')), findsOneWidget);
+
+    wallCache.gates[_full2]!.complete();
+    await _pumpUntil(tester, () => sizes.length > 1);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(sizes, <Size>[const Size(1, 1), const Size(5, 3)]);
   });
 
   testWidgets('keeps the full frame when a preview is unavailable but drops it when the wall is withheld', (
@@ -450,6 +588,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('reports the size again when retry loads the full picture', (tester) async {
+    final List<Size> sizes = <Size>[];
+    VoidCallback? retry;
+    await tester.pumpWidget(
+      _app(
+        ProgressiveWallpaperImage(
+          display: _display(),
+          onPictureSize: sizes.add,
+          errorBuilder: (_, VoidCallback callback) {
+            retry = callback;
+            return const Text('retry');
+          },
+        ),
+      ),
+    );
+    await _pumpUntil(tester, () => sizes.isNotEmpty);
+    retry!();
+    await tester.pump();
+    await _pumpUntil(tester, () => sizes.length > 1);
+
+    expect(sizes, <Size>[const Size(1, 1), const Size(1, 1)]);
+  });
+
   testWidgets('holds at most one widget-retained image clone across replacements, retry, wall change, and dispose', (
     tester,
   ) async {
@@ -517,6 +678,21 @@ void main() {
 
     retry!();
 
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('does not report a full picture that resolves after dispose', (tester) async {
+    final List<Size> sizes = <Size>[];
+    wallCache.gates[_full] = Completer<void>();
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display(), onPictureSize: sizes.add)));
+    await _pumpUntil(tester, () => _painted(tester).contains(_thumb));
+
+    await tester.pumpWidget(_app(const SizedBox.shrink()));
+    wallCache.gates[_full]!.complete();
+    await tester.pump();
+    await tester.pump();
+
+    expect(sizes, isEmpty);
     expect(tester.takeException(), isNull);
   });
 

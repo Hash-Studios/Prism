@@ -20,12 +20,14 @@ import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.d
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
+import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
+import 'package:Prism/features/weekly_challenges/biz/weekly_challenges_cubit.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -38,8 +40,11 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart'
     show AndroidFlutterLocalNotificationsPlugin;
 import 'package:flutter_test/flutter_test.dart';
+
 import 'package:mocktail/mocktail.dart';
 
+import '../../support/empty_mood_repository.dart';
+import '../../support/empty_weekly_challenges_repository.dart';
 import '../../support/fake_firestore_client.dart';
 import '../../support/in_memory_local_store.dart';
 import '../../support/profile_user_fixture.dart';
@@ -168,6 +173,7 @@ void main() {
     final trending = _TrendingBloc();
     when(() => trending.state).thenReturn(TrendingState.initial());
     when(trending.close).thenAnswer((_) async {});
+    getIt.registerFactory<WeeklyChallengesCubit>(() => WeeklyChallengesCubit(const EmptyWeeklyChallengesRepository()));
     getIt
       ..registerSingleton<FirestoreClient>(client)
       ..registerSingleton<FavouritesSyncService>(sync)
@@ -175,7 +181,8 @@ void main() {
       ..registerSingleton<NotificationsLocalDataSource>(localInbox)
       ..registerSingleton<ConnectivityService>(_Connectivity())
       ..registerSingleton<PersonalizedFeedBloc>(feed)
-      ..registerSingleton<TrendingBloc>(trending);
+      ..registerSingleton<TrendingBloc>(trending)
+      ..registerSingleton<MoodsCubit>(MoodsCubit(const EmptyMoodRepository()));
     messenger.setMockMethodCallHandler(_quickActions, (call) async {
       quickActionCalls.add(call);
       return null;
@@ -238,10 +245,14 @@ void main() {
     await mount(tester);
     expect(client.writes.single.data, <String, dynamic>{
       'fcmToken': 'initial-token',
-      'notificationLocalizationVersion': 1,
+      'notificationLocalizationVersion': 2,
       'notificationLocalizationToken': 'initial-token',
       'fcmTokenBindingVersion': 1,
       'fcmTokenBindingToken': 'initial-token',
+      'postAlerts': true,
+      'postAlertsToken': 'initial-token',
+      'folderAlerts': true,
+      'folderAlertsToken': 'initial-token',
     });
     expect(subscribed, contains('user_loc_v1'));
     expect(subscribed, isNot(contains('u_u1_loc_v1')));
@@ -253,10 +264,14 @@ void main() {
 
     expect(client.writes.last.data, <String, dynamic>{
       'fcmToken': 'refreshed-token',
-      'notificationLocalizationVersion': 1,
+      'notificationLocalizationVersion': 2,
       'notificationLocalizationToken': 'refreshed-token',
       'fcmTokenBindingVersion': 1,
       'fcmTokenBindingToken': 'refreshed-token',
+      'postAlerts': true,
+      'postAlertsToken': 'refreshed-token',
+      'folderAlerts': true,
+      'folderAlertsToken': 'refreshed-token',
     });
     expect(subscribed, contains('user_loc_v1'));
     expect(subscribed, isNot(contains('u_u1_loc_v1')));

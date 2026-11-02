@@ -13,13 +13,15 @@ part 'live_wallpaper_state.j.dart';
 part 'live_wallpaper_bloc.j.freezed.dart';
 
 class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
-  LiveWallpaperBloc(this._repository, {this.imageUrl}) : super(LiveWallpaperState.initial()) {
+  LiveWallpaperBloc(this._repository, {this.imageUrl, this.depthMapUrl}) : super(LiveWallpaperState.initial()) {
     on<LiveWallpaperEvent>(
       (event, emit) => event.map<Future<void>>(
         started: (event) => _onStarted(event, emit),
         proChanged: (event) async => emit(state.copyWith(isPro: event.isPro)),
         unlockedStylesChanged: (event) async => emit(state.copyWith(unlockedStyles: event.unlockedStyles)),
-        motionSelected: (event) async => emit(state.copyWith(motionStyle: event.style)),
+        motionSelected: (event) async {
+          if (!event.style.needsDepthMap || depthMapUrl != null) emit(state.copyWith(motionStyle: event.style));
+        },
         gradientSelected: (event) async => emit(state.copyWith(gradientStyle: event.style)),
         batterySaverChanged: (event) async => emit(state.copyWith(batterySaver: event.enabled)),
         motionApplied: (event) => _onMotionApplied(event, emit),
@@ -34,6 +36,9 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
 
   final LiveWallpaperRepository _repository;
   final String? imageUrl;
+
+  /// The wall's depth map. Without it the 3D style is not offered.
+  final String? depthMapUrl;
 
   Future<void> _onStarted(_Started event, Emitter<LiveWallpaperState> emit) async {
     emit(state.copyWith(isPro: event.isPro, unlockedStyles: event.unlockedStyles, status: LiveWallpaperStatus.loading));
@@ -65,14 +70,32 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
       palette: event.palette,
       screenAspectRatio: event.screenAspectRatio,
       batterySaver: state.batterySaver,
+      depthMapUrl: depthMapUrl,
+      tilt: state.capabilities.supportsTilt,
     );
-    _trackApplied(state.motionStyle.name, outcome);
+    _trackApplied(_motionAnalytics(state.motionStyle), outcome);
     emit(state.copyWith(applying: false, outcome: outcome));
   }
 
-  void _trackApplied(String style, LiveApplyOutcome outcome) {
+  void _trackApplied(LiveWallpaperStyleValue style, LiveApplyOutcome outcome) {
     analytics.track(LiveWallpaperAppliedEvent(style: style, result: outcome.status.name));
   }
+
+  static LiveWallpaperStyleValue _motionAnalytics(MotionStyle style) => switch (style) {
+    MotionStyle.drift => LiveWallpaperStyleValue.drift,
+    MotionStyle.breathe => LiveWallpaperStyleValue.breathe,
+    MotionStyle.ripple => LiveWallpaperStyleValue.ripple,
+    MotionStyle.shimmer => LiveWallpaperStyleValue.shimmer,
+    MotionStyle.depth => LiveWallpaperStyleValue.threeD,
+  };
+
+  static LiveWallpaperStyleValue _gradientAnalytics(GradientStyle style) => switch (style) {
+    GradientStyle.aurora => LiveWallpaperStyleValue.aurora,
+    GradientStyle.mesh => LiveWallpaperStyleValue.mesh,
+    GradientStyle.waves => LiveWallpaperStyleValue.waves,
+    GradientStyle.plasma => LiveWallpaperStyleValue.plasma,
+    GradientStyle.starfield => LiveWallpaperStyleValue.starfield,
+  };
 
   Future<void> _onGradientApplied(_GradientApplied event, Emitter<LiveWallpaperState> emit) async {
     if (state.applying) return;
@@ -86,7 +109,7 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
       palette: event.palette,
       batterySaver: state.batterySaver,
     );
-    _trackApplied(state.gradientStyle.name, outcome);
+    _trackApplied(_gradientAnalytics(state.gradientStyle), outcome);
     emit(state.copyWith(applying: false, outcome: outcome));
   }
 
@@ -104,7 +127,7 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
     if (state.applying || path == null) return;
     emit(state.copyWith(applying: true));
     final LiveApplyOutcome outcome = await _repository.applyVideo(path);
-    _trackApplied('video', outcome);
+    _trackApplied(LiveWallpaperStyleValue.video, outcome);
     emit(state.copyWith(applying: false, outcome: outcome));
   }
 }

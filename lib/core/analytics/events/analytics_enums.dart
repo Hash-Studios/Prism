@@ -1,8 +1,14 @@
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
+import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
+import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 
 extension WallpaperTargetWire on WallpaperTarget {
+  String get wireValue => _snakeCase(name);
+}
+
+extension WallGridDensityWire on WallGridDensity {
   String get wireValue => _snakeCase(name);
 }
 
@@ -24,6 +30,7 @@ extension CoinSpendActionWire on CoinSpendAction {
     CoinSpendAction.dropPack => 'drop_pack',
     CoinSpendAction.boostWall => 'boost_wall',
     CoinSpendAction.giftPremiumPass => 'gift_premium_pass',
+    CoinSpendAction.tipCreator => 'tip_creator',
     CoinSpendAction.drawTicket => 'draw_ticket',
     CoinSpendAction.shopItem => 'shop_item',
     CoinSpendAction.spinWheel => 'spin_wheel',
@@ -35,9 +42,42 @@ extension AiChargeModeWire on AiChargeMode {
   String get wireValue => value;
 }
 
+extension RemixSourceTypeWire on RemixSourceType {
+  String get wireValue => name;
+}
+
 enum BinaryResultValue {
   success,
   failure;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum AiApplyFromValue {
+  hero,
+  strip;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum AiStylePickSource {
+  row,
+  sheet,
+  onboarding;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum ImmersiveToggleSourceValue {
+  tap,
+  semantics;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum FavouritePinSurfaceValue {
+  library,
+  detail;
 
   String get wireValue => _snakeCase(name);
 }
@@ -48,6 +88,24 @@ enum RcOrFallbackValue {
   rc;
 
   String get wireValue => _snakeCase(name);
+}
+
+enum LiveWallpaperStyleValue {
+  drift,
+  breathe,
+  ripple,
+  shimmer,
+
+  /// Wire value '3d'.
+  threeD,
+  aurora,
+  mesh,
+  waves,
+  plasma,
+  starfield,
+  video;
+
+  String get wireValue => this == threeD ? '3d' : _snakeCase(name);
 }
 
 enum PaywallResultValue {
@@ -76,6 +134,7 @@ enum SubscriptionEntitlementRefreshResultValue {
 
 enum SettingValue {
   animeWallpapers,
+  aiWallpapers,
   sketchyWallpapers,
   recommendationsNotifications,
   haptics;
@@ -202,6 +261,7 @@ enum ShareChannelValue {
 }
 
 enum ShareFormatValue {
+  duoReveal,
   story,
   post,
   clean,
@@ -249,12 +309,20 @@ enum NavTabValue {
   String get wireValue => _snakeCase(name);
 }
 
+enum LayoutChangeSourceValue {
+  settings,
+  pinch;
+
+  String get wireValue => _snakeCase(name);
+}
+
 enum NotificationPreferenceValue {
   followers,
   posts,
   inApp,
   recommendations,
-  streakReminders;
+  streakReminders,
+  folders;
 
   String get wireValue => _snakeCase(name);
 }
@@ -360,6 +428,37 @@ enum PushKindValue {
   rejection,
   winBack,
   drop;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum WallRequestSourceValue {
+  search,
+  requestsPage;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum WallRequestFillerValue {
+  creator,
+  studio;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum DailyMomentStepValue {
+  streak,
+  chest,
+  spin;
+
+  String get wireValue => name;
+}
+
+enum WrappedSourceValue {
+  home,
+  push,
+  inbox,
+  deepLink;
 
   String get wireValue => _snakeCase(name);
 }

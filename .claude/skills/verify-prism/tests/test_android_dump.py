@@ -28,6 +28,13 @@ class AndroidDumpTest(unittest.TestCase):
         self.artifacts_patch = patch.object(VERIFY, "ARTIFACTS", self.artifacts)
         self.artifacts_patch.start()
         self.addCleanup(self.artifacts_patch.stop)
+        self.subprocess_guard = patch.object(
+            VERIFY.subprocess,
+            "run",
+            side_effect=AssertionError("android_dump must use _run"),
+        )
+        self.subprocess_guard.start()
+        self.addCleanup(self.subprocess_guard.stop)
         self.commands = []
 
     def subprocess(self, cmd, **kwargs):
@@ -41,7 +48,7 @@ class AndroidDumpTest(unittest.TestCase):
             self.commands.append(cmd)
             return subprocess.CompletedProcess(cmd, 1 if "pull" in cmd else 0, "", "pull failed")
 
-        with patch.object(VERIFY.subprocess, "run", side_effect=failed_pull):
+        with patch.object(VERIFY, "_run", side_effect=failed_pull):
             with self.assertRaises(SystemExit):
                 VERIFY.android_dump("emulator-5580")
 
@@ -50,13 +57,13 @@ class AndroidDumpTest(unittest.TestCase):
             self.commands.append(cmd)
             return subprocess.CompletedProcess(cmd, 1 if "uiautomator" in cmd else 0, "", "dump failed")
 
-        with patch.object(VERIFY.subprocess, "run", side_effect=failed_dump):
+        with patch.object(VERIFY, "_run", side_effect=failed_dump):
             with self.assertRaises(SystemExit):
                 VERIFY.android_dump("emulator-5580")
         self.assertFalse(any("pull" in cmd for cmd in self.commands))
 
     def test_zero_exit_without_new_file_does_not_reuse_old_tree(self):
-        with patch.object(VERIFY.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "", "")):
+        with patch.object(VERIFY, "_run", return_value=subprocess.CompletedProcess([], 0, "", "")):
             with self.assertRaises(SystemExit):
                 VERIFY.android_dump("emulator-5580")
 
@@ -71,12 +78,12 @@ class AndroidDumpTest(unittest.TestCase):
                 Path(cmd[-1]).write_text(remote[cmd[-2]])
             return subprocess.CompletedProcess(cmd, 0, "", "")
 
-        with patch.object(VERIFY.subprocess, "run", side_effect=missing_remote):
+        with patch.object(VERIFY, "_run", side_effect=missing_remote):
             with self.assertRaises(SystemExit):
                 VERIFY.android_dump("emulator-5580")
 
     def test_success_returns_fresh_tree_without_shared_paths(self):
-        with patch.object(VERIFY.subprocess, "run", side_effect=self.subprocess):
+        with patch.object(VERIFY, "_run", side_effect=self.subprocess):
             first = VERIFY.android_dump("emulator-5580")
             second = VERIFY.android_dump("emulator-5580")
         self.assertEqual(first.find("node").get("text"), "Trending")
@@ -95,7 +102,7 @@ class AndroidDumpTest(unittest.TestCase):
                 Path(cmd[-1]).write_text("not XML")
             return result
 
-        with patch.object(VERIFY.subprocess, "run", side_effect=invalid_tree):
+        with patch.object(VERIFY, "_run", side_effect=invalid_tree):
             with self.assertRaises(SystemExit):
                 VERIFY.android_dump("emulator-5580")
 
@@ -118,7 +125,7 @@ class AndroidDumpTest(unittest.TestCase):
                 remote.pop(cmd[-1], None)
             return subprocess.CompletedProcess(cmd, 0, "", "")
 
-        with patch.object(VERIFY.subprocess, "run", side_effect=overlap):
+        with patch.object(VERIFY, "_run", side_effect=overlap):
             outer = VERIFY.android_dump("emulator-5580")
         self.assertEqual(outer.find("node").get("text"), "Trending")
         self.assertEqual(nested[0].find("node").get("text"), "Rewards")
@@ -130,7 +137,7 @@ class AndroidDumpTest(unittest.TestCase):
                 raise subprocess.TimeoutExpired(cmd, 30)
             return self.subprocess(cmd, **kwargs)
 
-        with patch.object(VERIFY.subprocess, "run", side_effect=timed_out):
+        with patch.object(VERIFY, "_run", side_effect=timed_out):
             with self.assertRaises(SystemExit):
                 VERIFY.android_dump("emulator-5580")
         self.assertTrue(any("rm" in cmd for cmd in self.commands))

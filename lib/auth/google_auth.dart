@@ -12,13 +12,17 @@ import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/streak_widget_sync.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_favourites_store.dart';
+import 'package:Prism/features/ios_shortcuts/data/shortcuts_folders_store.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -40,8 +44,21 @@ class WrongAccountException implements Exception {
 
 String genericSignInErrorMessage(AppLocalizations l10n) => l10n.coreGenericSignInError;
 
+/// Sign-in ran before [Firebase.initializeApp] finished, or after it failed or was skipped.
+class FirebaseUnavailableException implements Exception {
+  const FirebaseUnavailableException();
+
+  @override
+  String toString() => 'FirebaseUnavailableException';
+}
+
 /// The toast text for a Google sign-in error that is not a cancellation.
 String googleSignInErrorMessage(Object error, AppLocalizations l10n, {TargetPlatform? platform}) {
+  if (error is FirebaseUnavailableException) {
+    return (platform ?? defaultTargetPlatform) == TargetPlatform.android
+        ? l10n.coreGooglePlayServicesSignInError
+        : genericSignInErrorMessage(l10n);
+  }
   final String message = error.toString();
   final bool isPlayServicesError =
       (platform ?? defaultTargetPlatform) == TargetPlatform.android &&
@@ -61,16 +78,39 @@ class GoogleAuth {
     GoogleSignIn? googleSignIn,
     FirebaseMessaging? messaging,
     Future<void> Function()? clearShortcutsFavourites,
-  }) : _auth = auth ?? FirebaseAuth.instance,
+    Future<void> Function()? clearShortcutsFolders,
+    Future<bool> Function()? firebaseReady,
+  }) : _authOverride = auth,
        googleSignIn = googleSignIn ?? GoogleSignIn.instance,
        _messaging = messaging,
-       _clearShortcutsFavourites = clearShortcutsFavourites ?? ShortcutsFavouritesStore.clear;
+       _clearShortcutsFavourites = clearShortcutsFavourites ?? ShortcutsFavouritesStore.clear,
+       _clearShortcutsFolders = clearShortcutsFolders ?? ShortcutsFoldersStore.clear,
+       _firebaseReady = firebaseReady ?? FirebaseInit.defaultAppReady;
 
-  final FirebaseAuth _auth;
+  final FirebaseAuth? _authOverride;
+  FirebaseAuth? _resolvedAuth;
+  final Future<bool> Function() _firebaseReady;
   final GoogleSignIn googleSignIn;
   final FirebaseMessaging? _messaging;
   final Future<void> Function() _clearShortcutsFavourites;
+  final Future<void> Function() _clearShortcutsFolders;
   bool _googleSignInInitialized = false;
+
+  /// Waits for startup to finish creating the default app. Returns null when Firebase will not start.
+  Future<FirebaseAuth?> _authOrWait() async {
+    final FirebaseAuth? existing = _authOverride ?? _resolvedAuth;
+    if (existing != null) return existing;
+    if (!await _firebaseReady()) return null;
+    final FirebaseAuth resolved = FirebaseAuth.instance;
+    _resolvedAuth = resolved;
+    return resolved;
+  }
+
+  FirebaseAuth get _auth {
+    final FirebaseAuth? resolved = _authOverride ?? _resolvedAuth;
+    if (resolved == null) throw const FirebaseUnavailableException();
+    return resolved;
+  }
 
   Future<void> _ensureGoogleSignInInitialized() async {
     if (_googleSignInInitialized) {
@@ -82,7 +122,13 @@ class GoogleAuth {
 
   Future<SignInOutcome> signInWithGoogle() async {
     logger.i('signInWithGoogle start', tag: 'GoogleAuth');
-    final SignInSession session = SignInSession(authenticatedUid: () => _auth.currentUser?.uid);
+    final SignInSession session = SignInSession();
+    if (await _authOrWait() == null) {
+      const FirebaseUnavailableException error = FirebaseUnavailableException();
+      logger.e('signInWithGoogle failed', tag: 'GoogleAuth', error: error);
+      throw error;
+    }
+    session.bindAuthenticatedUid(() => _auth.currentUser?.uid);
     bool firebaseSignedIn = false;
     try {
       await _ensureGoogleSignInInitialized();
@@ -212,10 +258,16 @@ class GoogleAuth {
   /// failed after Firebase accepted the credential). Server writes and topic
   /// unsubscribes run first, while the Firebase session can still authorize them.
   Future<bool> signOutGoogle({SignInSession? session}) async {
-    final SignInSession operation = session ?? SignInSession(authenticatedUid: () => _auth.currentUser?.uid);
+    final SignInSession operation = session ?? SignInSession();
+    FirebaseAuth? auth = await _authOrWait();
     if (!operation.isCurrent) return false;
+    if (session == null && auth != null) {
+      final FirebaseAuth initialAuth = auth;
+      operation.bindAuthenticatedUid(() => initialAuth.currentUser?.uid);
+    }
+    WallpaperService.invalidatePendingHistoryWrites();
     final PrismUsersV2 existingUser = app_state.prismUser;
-    final User? authenticatedUser = _auth.currentUser;
+    final User? authenticatedUser = auth?.currentUser;
     clearInAppNotificationSyncGateAll();
     await _bounded(FcmTokenService.instance.cancelAndWait, 'stop FCM token writes');
     if (!operation.isCurrent) return false;
@@ -290,7 +342,13 @@ class GoogleAuth {
     // here too. Used for Apple-signed-in users as well, not just Google.
     bool firebaseSignOutSucceeded = true;
     try {
-      await _auth.signOut();
+      if (auth == null && FirebaseInit.hasDefaultApp) {
+        final FirebaseAuth lateAuth = _resolvedAuth = FirebaseAuth.instance;
+        if (!operation.isCurrent) return false;
+        if (session == null) operation.bindAuthenticatedUid(() => lateAuth.currentUser?.uid);
+        auth = lateAuth;
+      }
+      if (auth != null) await auth.signOut();
     } catch (e, st) {
       firebaseSignOutSucceeded = false;
       logger.w('FirebaseAuth signOut failed; continuing local sign-out cleanup.', error: e, stackTrace: st);
@@ -340,7 +398,20 @@ class GoogleAuth {
     }
     if (!operation.isCurrent) return false;
     logger.d('User Sign Out');
+    if (auth == null && session == null) unawaited(_signOutWhenFirebaseReady(operation));
     return firebaseSignOutSucceeded;
+  }
+
+  Future<void> _signOutWhenFirebaseReady(SignInSession operation) async {
+    try {
+      if (!await FirebaseInit.readyFuture || !operation.isCurrent || !FirebaseInit.hasDefaultApp) return;
+      final FirebaseAuth auth = _resolvedAuth ?? FirebaseAuth.instance;
+      _resolvedAuth = auth;
+      operation.bindAuthenticatedUid(() => auth.currentUser?.uid);
+      await auth.signOut();
+    } catch (error, stackTrace) {
+      logger.w('Deferred Firebase sign-out failed.', tag: 'GoogleAuth', error: error, stackTrace: stackTrace);
+    }
   }
 
   /// Firestore writes made offline only complete when the server acks them, so
@@ -417,7 +488,7 @@ class GoogleAuth {
     }
   }
 
-  /// Taste signals, feed impressions and applied-wallpaper history belong to the user, not the device.
+  /// Taste signals, feed impressions, applied and viewed history belong to the user, not the device.
   Future<void> _clearPersonalization(SignInSession operation) async {
     if (!operation.isCurrent) return;
     if (getIt.isRegistered<TasteSignalStore>()) {
@@ -444,11 +515,34 @@ class GoogleAuth {
       }
     }
     if (!operation.isCurrent) return;
+    // The account keeps its synced history. Only this device's copies go.
+    if (getIt.isRegistered<RecentlyViewedStore>()) {
+      try {
+        await getIt<RecentlyViewedStore>().clear();
+      } catch (e, st) {
+        logger.w('Recently viewed clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+      }
+    }
+    if (!operation.isCurrent) return;
+    if (getIt.isRegistered<SyncedHistoryStore>()) {
+      try {
+        await getIt<SyncedHistoryStore>().clearLocal();
+      } catch (e, st) {
+        logger.w('Synced history clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+      }
+    }
+    if (!operation.isCurrent) return;
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       try {
         await _clearShortcutsFavourites();
       } catch (e, st) {
         logger.w('Shortcuts favourites clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+      }
+      if (!operation.isCurrent) return;
+      try {
+        await _clearShortcutsFolders();
+      } catch (e, st) {
+        logger.w('Shortcuts folders clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
       }
       if (!operation.isCurrent) return;
       await StreakWidgetSync.clear();
@@ -459,8 +553,13 @@ class GoogleAuth {
   /// Required before sensitive operations like account deletion.
   /// Throws [WrongAccountException] if the user selects a different Google account.
   Future<void> reauthenticateCurrentUser() async {
+    final SignInSession session = SignInSession();
+    if (await _authOrWait() == null) throw const FirebaseUnavailableException();
+    session.bindAuthenticatedUid(() => _auth.currentUser?.uid);
     await _ensureGoogleSignInInitialized();
+    session.requireCurrent();
     final GoogleSignInAccount googleSignInAccount = await googleSignIn.authenticate();
+    session.requireCurrent();
     final String? currentEmail = _auth.currentUser?.email;
     if (currentEmail != null && googleSignInAccount.email != currentEmail) {
       throw WrongAccountException(selectedEmail: googleSignInAccount.email, expectedEmail: currentEmail);
@@ -472,6 +571,7 @@ class GoogleAuth {
     }
     final AuthCredential credential = GoogleAuthProvider.credential(idToken: idToken);
     await _auth.currentUser!.reauthenticateWithCredential(credential);
+    session.requireCurrent();
   }
 
   Future<bool> isSignedIn() async {
@@ -479,6 +579,7 @@ class GoogleAuth {
       if (Env.skipFirebaseInit) {
         return false;
       }
+      if (await _authOrWait() == null) return false;
       final User? currentUser = _auth.currentUser;
       final bool signedInWithFirebase =
           currentUser != null && !currentUser.isAnonymous && currentUser.uid.trim().isNotEmpty;

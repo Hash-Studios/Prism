@@ -1,10 +1,11 @@
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/platform/app_icon_channel.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/biz/coin_gate.dart';
-import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
 import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_preview.dart';
@@ -39,13 +40,19 @@ class ShopItemSheet extends StatefulWidget {
 
 class _ShopItemSheetState extends State<ShopItemSheet> {
   ShopItem get item => widget.item;
+  bool _watching = false;
 
-  Future<void> _watchAndBuy() async {
+  Future<void> _watchAndBuy({required bool buyAfter}) async {
+    if (_watching) return;
+    setState(() => _watching = true);
     final ShopBloc bloc = context.read<ShopBloc>();
+    final String owner = app_state.prismUser.id;
     final bool credited = await CoinGate.forContext(
       context,
     ).watchAdForCoins(sourceTag: 'shop.item_sheet.ad', upsellSource: 'shop_item_sheet', isMounted: () => mounted);
-    if (credited && mounted && bloc.state.balance >= shopPriceFor(item)) {
+    if (!mounted) return;
+    setState(() => _watching = false);
+    if (credited && owner == app_state.prismUser.id && buyAfter && bloc.state.balance >= shopPriceFor(item)) {
       bloc.add(ShopEvent.purchaseRequested(item.id));
     }
   }
@@ -103,7 +110,13 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
       ShopAvailability.soldOut => l10n.economyShopSoldOut,
       ShopAvailability.proOnly => l10n.economyShopProOnly,
       ShopAvailability.rankLocked => l10n.economyShopReachRankToBuy(shopRankName(item.requiredRank ?? '', l10n)),
-      ShopAvailability.available when missing > 0 => l10n.economyShopCoinsShort(missing),
+      ShopAvailability.available when missing > 0 => [
+        l10n.economyShopCoinsShort(missing),
+        if (CoinsService.instance.adsRemainingToday != 0 && CoinsService.instance.adsRewardNow >= missing)
+          l10n.economyAdAutomaticPurchase
+        else if (CoinsService.instance.adsRemainingToday != 0)
+          l10n.economyCoinsRemainAfterAd(missing - CoinsService.instance.adsRewardNow),
+      ].join(' '),
       ShopAvailability.available when item.founders => l10n.economyShopSaleUntil(
         shopUntilLabel(l10n) ?? l10n.economySoon,
       ),
@@ -177,7 +190,15 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
         ),
       ],
       ShopAvailability.available => <Widget>[
-        PrismButton(label: watchAdOptionLabel(context.l10n), expand: true, onPressed: _watchAndBuy),
+        if (CoinsService.instance.adsRemainingToday != 0)
+          PrismButton(
+            label: context.l10n.economyWatchAdForCoins(CoinsService.instance.adsRewardNow),
+            expand: true,
+            loading: _watching,
+            onPressed: _watching
+                ? null
+                : () => _watchAndBuy(buyAfter: CoinsService.instance.adsRewardNow >= price - state.balance),
+          ),
         PrismButton(
           label: context.l10n.economyEarnCoins,
           expand: true,

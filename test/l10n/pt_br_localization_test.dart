@@ -27,7 +27,12 @@ void main() {
     brazilian.remove('@@locale');
 
     expect(base, brazilian);
-    expect(brazilian.values.every((value) => value is String && value.trim().isNotEmpty), isTrue);
+    expect(
+      brazilian.entries
+          .where((entry) => !entry.key.startsWith('@'))
+          .every((entry) => entry.value is String && (entry.value as String).trim().isNotEmpty),
+      isTrue,
+    );
   });
 
   test('pt-BR resolves as a supported locale and context-free loader honors its region', () async {
@@ -133,7 +138,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('production onboarding welcome renders pt-BR copy and keeps its action reachable at 320px', (
+  testWidgets('iOS onboarding welcome renders pt-BR copy and keeps its guest action reachable at 320px', (
     WidgetTester tester,
   ) async {
     tester.view.physicalSize = const Size(320, 640);
@@ -190,5 +195,5 @@ void main() {
     await tester.tap(browse);
     expect(browseCount, 1);
     expect(tester.takeException(), isNull);
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 }

@@ -94,6 +94,8 @@ class PublicProfileSnapshotCodec {
         collections: dto.collections,
         createdAt: dto.createdAt,
         review: dto.review,
+        isAiGenerated: dto.isAiGenerated || dto.aiMetadata.isNotEmpty,
+        aiModel: dto.aiModel.isEmpty ? null : dto.aiModel,
         depthTier: WallDepthTier.parse(dto.depth['tier']),
         spatial: WallSpatial.parse(dto.spatial),
       );

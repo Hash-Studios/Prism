@@ -129,7 +129,9 @@ void main() {
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
     AnalyticsRuntime.instance = FakeAppAnalytics();
-    app_state.prismUser = app_constants.createGuestPrismUser();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..loggedIn = true
+      ..id = 'upload-user';
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('PonnamKarthik/fluttertoast'),
       (_) async => true,
@@ -170,6 +172,53 @@ void main() {
     await tester.tap(find.text('Upload wallpaper'));
     await tester.pumpAndSettle();
     return opened;
+  }
+
+  for (final uploads in [0, UploadQuota.freeUploadsPerWeek]) {
+    testWidgets('guest upload cancellation with $uploads previous uploads starts neither picker nor paywall', (
+      tester,
+    ) async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await settings.set('uploadsWeekStart', _thisWeekStart());
+      await settings.set('uploadsThisWeek', uploads);
+      final picker = _Picker(<String>['/tmp/unused.png']);
+      final opened = await openPanel(tester, picker);
+      final storeCalls = <String>[];
+      final toasts = <String>[];
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      const purchases = MethodChannel('purchases_flutter');
+      const paywalls = MethodChannel('purchases_ui_flutter');
+      const toast = MethodChannel('PonnamKarthik/fluttertoast');
+      for (final channel in [purchases, paywalls]) {
+        messenger.setMockMethodCallHandler(channel, (call) async {
+          storeCalls.add(call.method);
+          return null;
+        });
+        addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+      }
+      messenger.setMockMethodCallHandler(toast, (call) async {
+        if (call.method == 'showToast') toasts.add((call.arguments as Map)['msg'] as String);
+        return true;
+      });
+
+      await tester.tap(find.text('Upload wallpaper'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Continue with Google'), findsOneWidget);
+      expect(picker.multiLimit, isNull);
+      expect(storeCalls, isEmpty);
+      expect(toasts, isEmpty);
+      await tester.tap(find.text('Not now'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(opened, isEmpty);
+      expect(picker.multiLimit, isNull);
+      expect(storeCalls, isEmpty);
+      expect(toasts, isEmpty);
+      expect(settings.get<int>('uploadsThisWeek', defaultValue: -1), uploads);
+      expect(find.text('Upload wallpaper'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   }
 
   testWidgets('a free user can pick as many images as the week has slots left', (tester) async {
@@ -242,7 +291,7 @@ void main() {
           );
           final File original = File('${root.path}/picker-source.png')..writeAsBytesSync(utf8.encode('image-bytes'));
           final UploadDraft draft = await drafts.save(
-            owner: UploadDraftStore.guestOwner,
+            owner: 'upload-user',
             draftId: 'saved-draft',
             selectedFile: original,
             metadata: const SubmissionMetadata(title: 'My saved wallpaper'),

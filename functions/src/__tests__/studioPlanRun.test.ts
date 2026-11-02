@@ -27,6 +27,22 @@ const call = (callInput: CallableTestRequest) => runStudioBatch.run({
 });
 const admin1 = {uid: "a1", token: {admin: true}};
 
+test("Duo is explicit manual-only, uses aligned wide candidates and shares the 30/day cap", async (t) => {
+  const store = setup(t, {seriesWeights: {"duo-reveal": 10000}});
+  const automatic = await createStudioRun({runId: "autoDuo", source: "schedule", seriesId: "duo-reveal", nowMs: NOW});
+  assert.equal(automatic.status, "empty_plan");
+  const run = await createStudioRun({runId: "manualDuo", source: "manual", seriesId: "duo-reveal", count: 24,
+    nowMs: NOW, rng: seededRng(2)});
+  assert.equal(run.count, 24);
+  for (const [, item] of candidates(store, "manualDuo")) {
+    assert.deepEqual([item.width, item.height], [2688, 1888]);
+    assert.equal(item.duoPresetId, "prism-right-v1");
+  }
+  const rest = await createStudioRun({runId: "restDuo", source: "manual", count: 20, nowMs: NOW});
+  assert.equal(rest.count, 6);
+  assert.equal(store.get("studioDaily/2026-10-12")?.count, 30);
+});
+
 test("a run writes the run doc, queued candidates, the day's counter and the subject use", async (t) => {
   const store = setup(t);
   const result = await createStudioRun({runId: "d20261012", source: "schedule", nowMs: NOW, rng: seededRng(1)});

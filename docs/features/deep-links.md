@@ -11,6 +11,7 @@ Paths below work with either HTTPS host or the `prism:` scheme. "Sign-in" means 
 | Page family | Path or example | Input and access |
 |---|---|---|
 | Dashboard and home | `/dashboard`, `/dashboard/home` | Guest browsing is allowed. The app's `/` route also resumes at the dashboard after startup. |
+| Home feed tab | `/dashboard/home?feed=latest` | `feed` accepts `forYou`, `following`, `trending`, `latest` or `popular`. Another value is rejected. The link saves the tab first, so it wins over the remembered tab. See [layout.md](layout.md). |
 | Search and user search | `/dashboard/search`, `/dashboard/search/users` | Opens the selected search page. |
 | Dashboard Rewards and Collection tabs | `/dashboard/rewards`, `/dashboard/collection` | Opens the selected dashboard tab. |
 | Onboarding | `/onboarding/v2` | Opens the onboarding flow. Individual steps are internal states. |
@@ -25,6 +26,7 @@ Paths below work with either HTTPS host or the `prism:` scheme. "Sign-in" means 
 | Lock and home screen preview | `/clock-preview?wallpaperId=wall1&source=prism` | Requires a wallpaper ID. For a local image, use `/choose-wallpaper?workflow=clockPreview`. |
 | Image picker | `/choose-wallpaper?workflow=uploadWall` | Requires one of the workflow values below. Opens a page with a **Choose image** button. |
 | Collection and category feeds | `/collection-view?collectionName=featured`, `/collection/featured`, `/category/Nature` | Requires a collection or category name. `name` aliases `collectionName`. |
+| Gallery | `/gallery?ids=wall1,wall2&source=push`, `/gallery?ids=wall1,wall2,wall3&source=link` | Requires 2 to 12 wall IDs in `ids`, separated by commas. IDs use letters, digits, `_` and `-`. Other query keys are refused. Opens `GalleryScreen`. |
 | Public profile | `/user/alice` | Requires a profile identifier. |
 | Followers and following | `/user/alice/followers`, `/user/alice/following` | Loads the named profile's current relation list. Query forms are `/followers?user=alice` and `/following?user=alice`. `identifier` aliases `user`. |
 | Edit profile | `/edit-profile` | Sign-in. |
@@ -37,6 +39,7 @@ Paths below work with either HTTPS host or the `prism:` scheme. "Sign-in" means 
 | Upload and edit wallpaper | `/upload-wall`, `/edit-wall` | Opens the image picker page, then requires sign-in for the upload or edit page. |
 | Submission review | `/review` | Sign-in. Shows the user's pending and rejected submissions. |
 | Rewards and coin history | `/rewards`, `/coin-history` | Opens the selected page. |
+| Redeem a promo code | `/redeem?code=ABCDEFGH23`, `/redeem` | Sign-in. Opens Rewards with the redeem sheet open and the code filled in. The user must tap Redeem; the link never redeems by itself. `code` is the only query key. See [promo-codes.md](promo-codes.md). |
 | Daily chest and spin wheel | `/daily-chest`, `/spin-wheel` | Sign-in. Opening a page does not open a chest, spin, or spend coins. |
 | Shop | `/shop` | Sign-in. Purchases require the normal confirmation. |
 | Premium plans | `/premium`, `/paywall` | Opens the Premium page. **View plans** uses the existing native paywall. iOS permits guest purchases. Android requires sign-in. No purchase starts automatically. |

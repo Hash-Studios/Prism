@@ -6,40 +6,49 @@ import 'package:Prism/auth/google_auth.dart' show WrongAccountException;
 import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/account/reauth_cancelled.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/purchases/manage_subscription.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
+import 'package:Prism/features/creator_directory/views/widgets/creator_directory_opt_out_row.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/ios_widgets/views/widget_guide_sheet.dart';
 import 'package:Prism/features/library/views/pages/library_screen.dart' show LibraryTab;
-import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart'
-    show personalizedFeedSettingsRevision;
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
+import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
+import 'package:Prism/features/promo_codes/views/redeem_code_sheet.dart';
+import 'package:Prism/features/promo_codes/views/store_code_redemption.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
+import 'package:Prism/features/session/data/report_problem_service.dart' show ReportTrigger;
+import 'package:Prism/features/session/data/shake_to_report.dart';
 import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
 import 'package:Prism/features/session/views/widgets/settings_account_card.dart';
 import 'package:Prism/features/theme_mode/views/widgets/diwali_decor.dart';
 import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -51,7 +60,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 const Set<String> _applyTargetKeys = <String>{'ask', 'home', 'lock', 'both'};
 
@@ -69,9 +77,6 @@ const int _savedOfflineLimitBytes = 512 * 1024 * 1024;
 /// Signs the user out. Tests replace it.
 @visibleForTesting
 Future<bool> Function() settingsSignOut = () => globalGoogleAuth.signOutGoogle();
-
-const String _androidSubscriptionsUrl = 'https://play.google.com/store/account/subscriptions?package=com.hash.prism';
-const String _iosSubscriptionsUrl = 'https://apps.apple.com/account/subscriptions';
 
 /// The Wallhaven category flag for anime is the second digit, so 110 and 111 both include it.
 @visibleForTesting
@@ -135,9 +140,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   late bool _showAnime;
   late bool _showSketchy;
+  late bool _showAi;
   late String _defaultApplyTarget;
   bool _haptics = PrismHaptics.enabled;
   bool _lowData = LowDataMode.enabled.value;
+  bool _shakeToReport = ShakeToReport.enabled.value;
+  bool _saveViewingHistory = getIt<RecentlyViewedStore>().enabled;
+  bool _savingViewingHistory = false;
   bool _restoring = false;
   bool _adPrivacyChoices = false;
   bool _iosShortcuts = false;
@@ -149,8 +158,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _viewedStore.addListener(_onViewedStoreChanged);
+    personalizedFeedSettingsRevision.addListener(_onAiSettingsChanged);
     _showAnime = animeEnabledFromCategories(_settingsLocal.get<int>('WHcategories', defaultValue: 100));
     _showSketchy = _settingsLocal.get<int>('WHpurity', defaultValue: 100) == 110;
+    _showAi = AiContentFilter.showsAi(_settingsLocal);
     final String storedTarget = _settingsLocal.get<String>(PersistenceKeys.defaultApplyTarget, defaultValue: 'ask');
     _defaultApplyTarget = _applyTargetKeys.contains(storedTarget) ? storedTarget : 'ask';
     _loadStorageStats();
@@ -230,7 +242,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     unawaited(analytics.track(SettingsRowTappedEvent(row: row)));
   }
 
-  Widget _group(String title, List<Widget> rows) {
+  Widget _group(String title, List<Widget> rows, {String? footnote}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -240,6 +252,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, PrismSpace.xl, 0, PrismSpace.xs),
         ),
         PrismGroup(children: rows),
+        if (footnote != null)
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, PrismSpace.xs, PrismSpace.xs, 0),
+            child: Text(footnote, style: PrismTextStyles.caption(context)),
+          ),
       ],
     );
   }
@@ -260,7 +277,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.fact_check_rounded,
       title: context.l10n.accountReviewStatus,
       subtitle: context.l10n.accountTrackSubmittedWallpapers,
-      onTap: () => context.router.push(const ReviewRoute()),
+      onTap: () => context.router.push(ReviewRoute()),
     ),
     PrismRow(
       icon: Icons.person_off_rounded,
@@ -268,6 +285,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitle: context.l10n.accountManageBlockedPeople,
       onTap: () => context.router.push(const BlockedAccountsRoute()),
     ),
+    const CreatorDirectoryOptOutRow(),
     PrismRow(
       icon: Icons.ios_share_rounded,
       title: context.l10n.accountShareYourProfile,
@@ -300,6 +318,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: context.l10n.accountThemes,
       subtitle: context.l10n.accountLightDarkAccentColour,
       onTap: () => context.router.push(const ThemeViewRoute()),
+    ),
+    PrismRow(
+      icon: Icons.dashboard_customize_rounded,
+      title: context.l10n.layoutTitle,
+      subtitle: context.l10n.layoutRowSubtitle,
+      onTap: () {
+        _trackRow('layout');
+        context.router.push(const LayoutSettingsRoute());
+      },
     ),
     PrismRow(
       icon: Icons.storefront_rounded,
@@ -343,7 +370,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         icon: Icons.autorenew_rounded,
         title: context.l10n.accountChangeAutomatically,
         subtitle: context.l10n.accountUseShortcutsAutomation,
-        onTap: () => context.router.push(const IosShortcutsGuideRoute()),
+        onTap: () => context.router.push(IosShortcutsGuideRoute()),
       ),
     if (_isAndroid) ..._androidPersonaliseRows(),
   ];
@@ -353,7 +380,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.autorenew_rounded,
       title: context.l10n.accountAutoRotateWallpapers,
       subtitle: context.l10n.accountChangeWallpaperOnTimer,
-      onTap: () => context.router.push(const AutoRotateRoute()),
+      onTap: () => context.router.push(AutoRotateRoute()),
     ),
     PrismRow(
       icon: Icons.motion_photos_on_outlined,
@@ -421,6 +448,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _trackSettingsToggle(SettingValue.animeWallpapers, value);
       },
     ),
+    PrismSwitchRow(
+      icon: Icons.auto_awesome_rounded,
+      title: context.l10n.accountShowAiWallpapers,
+      subtitle: context.l10n.accountShowAiWallpapersSubtitle,
+      value: _showAi,
+      onChanged: (value) async {
+        if (_showAi == value) return;
+        setState(() => _showAi = value);
+        final bool changed;
+        try {
+          changed = await setShowAiWallpapers(_settingsLocal, value);
+        } catch (_) {
+          if (!mounted) return;
+          setState(() => _showAi = AiContentFilter.showsAi(_settingsLocal));
+          toasts.error(context.l10n.wallpaperFeedSaveError);
+          return;
+        }
+        if (!changed) return;
+        _trackSettingsToggle(SettingValue.aiWallpapers, value);
+        if (!mounted) return;
+        context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.refreshRequested());
+      },
+    ),
     // App Store review: no sketchy content toggle on iOS, purity is forced SFW-only.
     if (!Platform.isIOS)
       PrismSwitchRow(
@@ -466,6 +516,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         unawaited(analytics.track(DataSaverToggledEvent(value: value)));
       },
     ),
+    PrismSwitchRow(
+      icon: Icons.manage_history_rounded,
+      title: context.l10n.settingsSaveViewingHistory,
+      subtitle: context.l10n.settingsSaveViewingHistoryBody,
+      value: _saveViewingHistory,
+      onChanged: _savingViewingHistory ? null : _setViewingHistory,
+    ),
     PrismRow(
       icon: Icons.cleaning_services_rounded,
       title: context.l10n.accountClearCacheTitle,
@@ -508,6 +565,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
         },
       ),
   ];
+
+  late final RecentlyViewedStore _viewedStore = getIt<RecentlyViewedStore>();
+
+  @override
+  void dispose() {
+    _viewedStore.removeListener(_onViewedStoreChanged);
+    personalizedFeedSettingsRevision.removeListener(_onAiSettingsChanged);
+    super.dispose();
+  }
+
+  void _onAiSettingsChanged() {
+    if (!mounted) return;
+    final bool showAi = AiContentFilter.showsAi(_settingsLocal);
+    if (_showAi == showAi) return;
+    setState(() => _showAi = showAi);
+  }
+
+  /// Follows changes made elsewhere, such as Turn on in History.
+  void _onViewedStoreChanged() {
+    if (!mounted || _savingViewingHistory || _saveViewingHistory == _viewedStore.enabled) return;
+    setState(() => _saveViewingHistory = _viewedStore.enabled);
+  }
+
+  Future<void> _setViewingHistory(bool value) async {
+    final RecentlyViewedStore store = getIt<RecentlyViewedStore>();
+    setState(() => _savingViewingHistory = true);
+    try {
+      await store.setEnabled(value);
+      unawaited(analytics.track(ViewingHistoryToggledEvent(value: value)));
+    } catch (error, stackTrace) {
+      logger.w('Saving viewing history preference failed.', error: error, stackTrace: stackTrace);
+      if (mounted) toasts.error(context.l10n.coreSomethingWentWrong);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _saveViewingHistory = store.enabled;
+          _savingViewingHistory = false;
+        });
+      }
+    }
+  }
 
   Future<void> _clearCache() async {
     final AppLocalizations l10n = context.l10n;
@@ -623,6 +721,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  List<Widget> _codeRows() {
+    final bool ios = defaultTargetPlatform == TargetPlatform.iOS;
+    return <Widget>[
+      PrismRow(
+        icon: Icons.redeem_rounded,
+        title: context.l10n.promoSettingsRedeemTitle,
+        subtitle: ios ? context.l10n.promoSettingsRedeemSubtitleIos : context.l10n.promoSettingsRedeemSubtitle,
+        onTap: () => showRedeemCodeSheet(context, source: RedeemSheetSource.settings),
+      ),
+      PrismRow(
+        icon: ios ? Icons.apple_rounded : Icons.shop_rounded,
+        title: ios ? context.l10n.promoAppStoreCodeTitle : context.l10n.promoPlayCodeTitle,
+        subtitle: ios ? context.l10n.promoAppStoreCodeSubtitle : context.l10n.promoPlayCodeSubtitle,
+        onTap: () => openStoreCodeRedemption(context),
+      ),
+    ];
+  }
+
   List<Widget> _purchaseRows() => <Widget>[
     if (!app_state.prismUser.premium)
       PrismRow(
@@ -660,6 +776,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ];
 
   Future<void> _restorePurchases() async {
+    if (!await requireSignedInAction(context) || !mounted) return;
     final String requestedUserId = app_state.prismUser.id.trim();
     final bool requestedLoggedIn = app_state.prismUser.loggedIn;
     bool isCurrentAccount() =>
@@ -688,17 +805,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _openManageSubscription() async {
-    final AppLocalizations l10n = context.l10n;
-    final String url = defaultTargetPlatform == TargetPlatform.iOS ? _iosSubscriptionsUrl : _androidSubscriptionsUrl;
-    bool launched = false;
-    try {
-      launched = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    } catch (e) {
-      logger.w('Opening the subscription page failed.', error: e);
-    }
-    if (!launched) toasts.error(l10n.accountCouldNotOpenStore);
-  }
+  Future<void> _openManageSubscription() => openManageSubscription(context.l10n);
 
   Icon _external(BuildContext context) =>
       Icon(Icons.open_in_new_rounded, size: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35));
@@ -812,7 +919,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitle: context.l10n.accountReportProblemSubtitle,
       onTap: () {
         _trackRow('report_a_problem');
-        unawaited(showReportProblemSheet(context, source: 'settings'));
+        unawaited(showReportProblemSheet(context, source: 'settings', trigger: ReportTrigger.settings));
+      },
+    ),
+    PrismSwitchRow(
+      icon: Icons.vibration_rounded,
+      title: context.l10n.reportShakeToReport,
+      subtitle: context.l10n.reportShakeToReportSubtitle,
+      value: _shakeToReport,
+      onChanged: (value) {
+        setState(() => _shakeToReport = value);
+        unawaited(ShakeToReport.set(value));
       },
     ),
     PrismRow(
@@ -979,10 +1096,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _group(context.l10n.accountAppearance, _appearanceRows()),
               if (_isAndroid || _iosShortcuts || _iosWidgets)
                 _group(context.l10n.accountPersonalise, _personaliseRows()),
-              _group(context.l10n.accountContent, _contentRows()),
+              _group(
+                context.l10n.accountContent,
+                _contentRows(),
+                footnote: context.l10n.accountShowAiWallpapersFootnote,
+              ),
               _group(context.l10n.accountNotifications, _notificationRows()),
               _group(context.l10n.accountStorage, _storageRows()),
               _group(context.l10n.accountPurchases, _purchaseRows()),
+              _group(
+                context.l10n.promoSettingsGroup,
+                _codeRows(),
+                footnote: defaultTargetPlatform == TargetPlatform.iOS
+                    ? context.l10n.promoCodesFootnoteIos
+                    : context.l10n.promoCodesFootnoteAndroid,
+              ),
               _group(context.l10n.accountPrivacyAndData, _privacyRows()),
               if (app_state.isAdminUser()) _group(context.l10n.accountAdmin, _adminRows()),
               _group(context.l10n.accountHelp, _helpRows()),

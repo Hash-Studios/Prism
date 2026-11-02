@@ -89,7 +89,7 @@ class _FirestoreBatchBridge implements FirestoreBatch {
   }
 }
 
-class FirestoreTrackedClient implements FirestoreClient {
+class FirestoreTrackedClient implements FirestoreClient, FirestoreQueryCacheInvalidator {
   FirestoreTrackedClient(FirebaseFirestore firestore, this._telemetry)
     : _firestoreFactory = (() => firestore),
       _waitUntilReady = null,
@@ -142,6 +142,16 @@ class FirestoreTrackedClient implements FirestoreClient {
   final FirestoreTelemetrySink _telemetry;
   final Map<String, Future<_QueryCacheEntry>> _inflightQueries = <String, Future<_QueryCacheEntry>>{};
   final Map<String, _QueryCacheEntry> _queryCache = <String, _QueryCacheEntry>{};
+  int _queryCacheGeneration = 0;
+
+  @override
+  void clearQueryCache() {
+    _queryCacheGeneration++;
+    _queryCache.clear();
+    _cursorDocCache.clear();
+    _inflightQueries.clear();
+  }
+
   final Map<String, DocumentSnapshot<Map<String, dynamic>>> _cursorDocCache =
       <String, DocumentSnapshot<Map<String, dynamic>>>{};
 
@@ -321,13 +331,12 @@ class FirestoreTrackedClient implements FirestoreClient {
       );
       return result;
     } catch (error) {
-      final FirestoreError mapped = mapFirestoreError(error);
-      if (mapped.code == 'permission-denied') {
-        logger.w(
-          '[Firestore] permission-denied on ${operation.name}, collection: $collection, sourceTag: $sourceTag',
-          error: mapped,
-        );
-      }
+      final FirestoreError mapped = _reportedError(
+        error,
+        operation: operation,
+        collection: collection,
+        sourceTag: sourceTag,
+      );
       unawaited(
         _telemetry.emit(
           FirestoreTelemetryEvent(
@@ -350,6 +359,7 @@ class FirestoreTrackedClient implements FirestoreClient {
   }
 
   Future<_QueryCacheEntry> _executeNetworkQuery(FirestoreQuerySpec spec) {
+    final int cacheGeneration = _queryCacheGeneration;
     return _tracked<_QueryCacheEntry>(
       sourceTag: spec.sourceTag,
       operation: FirestoreOperation.queryGet,
@@ -365,13 +375,13 @@ class FirestoreTrackedClient implements FirestoreClient {
             ? await query.get(const GetOptions(source: Source.server))
             : await query.get();
         for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in result.docs) {
-          _cacheCursorDoc(doc, spec.collection);
+          if (cacheGeneration == _queryCacheGeneration) _cacheCursorDoc(doc, spec.collection);
         }
         final _QueryCacheEntry cached = _QueryCacheEntry(
           result.docs.map((doc) => _RawQueryDoc(doc.id, Map<String, dynamic>.from(doc.data()))).toList(growable: false),
           DateTime.now(),
         );
-        if (_canUseCache(spec)) {
+        if (_canUseCache(spec) && cacheGeneration == _queryCacheGeneration) {
           _saveQueryCache(_queryKey(spec), cached);
         }
         return cached;
@@ -687,7 +697,12 @@ class FirestoreTrackedClient implements FirestoreClient {
               StreamTransformer<({List<T> items, bool isFromCache}), ({List<T> items, bool isFromCache})>.fromHandlers(
                 handleError:
                     (Object error, StackTrace stackTrace, EventSink<({List<T> items, bool isFromCache})> sink) {
-                      final FirestoreError mapped = mapFirestoreError(error);
+                      final FirestoreError mapped = _reportedError(
+                        error,
+                        operation: FirestoreOperation.streamSubscribe,
+                        collection: spec.collection,
+                        sourceTag: spec.sourceTag,
+                      );
                       unawaited(
                         _telemetry.emit(
                           FirestoreTelemetryEvent(
@@ -728,7 +743,12 @@ class FirestoreTrackedClient implements FirestoreClient {
         controller.onResume = subscription.resume;
       } catch (error, stackTrace) {
         if (cancelled) return;
-        final FirestoreError mapped = mapFirestoreError(error);
+        final FirestoreError mapped = _reportedError(
+          error,
+          operation: FirestoreOperation.streamSubscribe,
+          collection: spec.collection,
+          sourceTag: spec.sourceTag,
+        );
         unawaited(
           _telemetry.emit(
             FirestoreTelemetryEvent(
@@ -750,4 +770,31 @@ class FirestoreTrackedClient implements FirestoreClient {
       }
     });
   }
+}
+
+FirestoreError _reportedError(
+  Object error, {
+  required FirestoreOperation operation,
+  required String collection,
+  required String sourceTag,
+}) {
+  final FirestoreError mapped = mapFirestoreError(
+    error,
+  ).withCall(operation: operation.name, collection: _redactFirestoreCollectionPath(collection), sourceTag: sourceTag);
+  if (mapped.code == 'permission-denied') {
+    logger.w(
+      '[Firestore] permission-denied on ${mapped.operation}, collection: ${mapped.collection}, sourceTag: ${mapped.sourceTag}',
+      error: mapped,
+    );
+  }
+  return mapped;
+}
+
+/// Keeps collection names and drops document ids, which can be user ids.
+String _redactFirestoreCollectionPath(String collection) {
+  final List<String> parts = collection.split('/');
+  return <String>[
+    for (var index = 0; index < parts.length; index++)
+      if (parts[index].isEmpty || index.isEven) parts[index] else '{id}',
+  ].join('/');
 }

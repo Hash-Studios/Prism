@@ -26,6 +26,17 @@ String _reportReasonLabel(String wireValue, AppLocalizations l10n) => switch (wi
   _ => l10n.coreReportReasonOther,
 };
 
+String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
+  final String artist = _stringArg(args, 'artistName');
+  final int creators = _intArg(args, 'creatorCount');
+  final int walls = _intArg(args, 'wallCount');
+  if (creators <= 1) {
+    return walls <= 1 ? l10n.notifPushFollowDigestTitleOne(artist) : l10n.notifPushFollowDigestTitleSolo(artist, walls);
+  }
+  if (creators == 2) return l10n.notifPushFollowDigestTitlePair(artist, _stringArg(args, 'secondArtistName'), walls);
+  return l10n.notifPushFollowDigestTitleGroup(artist, creators - 1, walls);
+}
+
 ({String title, String body}) localizedNotificationCopy(InAppNotificationEntity notification, AppLocalizations l10n) =>
     localizedNotificationCopyData(
       notification.copyKind,
@@ -60,6 +71,13 @@ String _reportReasonLabel(String wireValue, AppLocalizations l10n) => switch (wi
     title: l10n.notifPushNewFollowerTitle,
     body: l10n.notifPushNewFollowerBody(_stringArg(args, 'followerName')),
   ),
+  'wallRemixed' => (
+    title: l10n.notifPushWallRemixedTitle,
+    body: _stringArg(args, 'wallTitle').trim().isEmpty
+        ? l10n.notifPushWallRemixedBodyUntitled(_stringArg(args, 'remixerName'))
+        : l10n.notifPushWallRemixedBody(_stringArg(args, 'remixerName'), _stringArg(args, 'wallTitle')),
+  ),
+  'creatorStatsWeekly' => (title: l10n.statsWeeklyTitle, body: l10n.statsWeeklyBody(_stringArg(args, 'week'))),
   'streakReminder' => (title: l10n.notifPushStreakReminderTitle, body: l10n.notifPushStreakReminderBody),
   'wotdForCreator' => (title: l10n.notifPushWotdCreatorTitle, body: l10n.notifPushWotdCreatorBody),
   'wotdForAudience' => (
@@ -73,11 +91,53 @@ String _reportReasonLabel(String wireValue, AppLocalizations l10n) => switch (wi
   'winBack30' => (title: l10n.notifPushWinBack30Title, body: l10n.notifPushWinBack30Body),
   'winBack60' => (title: l10n.notifPushWinBack60Title, body: l10n.notifPushWinBack60Body),
   'dropLive' => (title: l10n.notifPushDropLiveTitle, body: l10n.notifPushDropLiveBody(_intArg(args, 'wallCount'))),
+  'galleryDrop' => (
+    title: l10n.notifPushDropLiveTitle,
+    body: _stringArg(args, 'tags').trim().isEmpty
+        ? l10n.notifPushDropLiveBody(_intArg(args, 'wallCount'))
+        : _stringArg(args, 'tags'),
+  ),
+  'followDigest' => (
+    title: _followDigestTitle(args, l10n),
+    body: _stringArg(args, 'tags').trim().isEmpty ? l10n.notifPushFollowDigestBodyUntitled : _stringArg(args, 'tags'),
+  ),
+  'folderDigest' => (
+    title: _intArg(args, 'folderCount') > 1
+        ? l10n.notifPushFolderDigestTitleMore(_stringArg(args, 'folderName'), _intArg(args, 'folderCount') - 1)
+        : l10n.notifPushFolderDigestTitleOne(_stringArg(args, 'folderName')),
+    body: _stringArg(args, 'tags').trim().isEmpty ? l10n.notifPushFollowDigestBodyUntitled : _stringArg(args, 'tags'),
+  ),
   'dropLastCall' => (
     title: l10n.notifPushDropLastCallTitle,
     body: l10n.notifPushDropLastCallBody(_stringArg(args, 'dropTitle'), _intArg(args, 'hoursLeft')),
   ),
   'drawWinner' => (title: l10n.notifPushDrawWinnerTitle, body: l10n.notifPushDrawWinnerBody),
+  'wrappedReady' => (
+    title: l10n.notifPushWrappedReadyTitle('${_intArg(args, 'year')}'),
+    body: l10n.notifPushWrappedReadyBody,
+  ),
+  'challengeWinner' => (
+    title: l10n.challengeWinnerNotificationTitle,
+    body: l10n.challengeWinnerNotificationBody(_stringArg(args, 'theme')),
+  ),
+  'wallRequestFilled' => (
+    title: l10n.notifPushWallRequestFilledTitle,
+    body: l10n.notifPushWallRequestFilledBody(_stringArg(args, 'requestText')),
+  ),
+  'tipReceived' => (
+    title: _stringArg(args, 'wallTitle').trim().isEmpty
+        ? l10n.notifPushTipReceivedTitleUntitled(_stringArg(args, 'senderName'), '${_intArg(args, 'amount')}')
+        : l10n.notifPushTipReceivedTitle(
+            _stringArg(args, 'senderName'),
+            '${_intArg(args, 'amount')}',
+            _stringArg(args, 'wallTitle'),
+          ),
+    body: l10n.notifPushTipReceivedBody,
+  ),
+  'tipsReceived' => (
+    title: l10n.notifTipsReceivedTitle(_intArg(args, 'tipCount')),
+    body: l10n.notifTipsReceivedBody(_intArg(args, 'coins')),
+  ),
   'giftReceived' => (
     title: l10n.notifPushGiftReceivedTitle(_stringArg(args, 'senderName')),
     body: l10n.notifPushGiftReceivedBody,

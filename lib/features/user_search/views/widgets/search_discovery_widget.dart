@@ -2,6 +2,7 @@ import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
 import 'package:Prism/features/user_search/views/widgets/search_discovery_sections.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -58,6 +59,7 @@ class SearchDiscoveryWidget extends StatelessWidget {
             child: PrismGroup(
               children: <Widget>[
                 const _FindCreatorsRow(),
+                const _WallRequestsRow(),
                 if (onDepthPressed != null) _DepthEffectRow(onPressed: onDepthPressed!),
                 if (onSpatialPressed != null) _SpatialSceneRow(onPressed: onSpatialPressed!),
               ],
@@ -66,6 +68,7 @@ class SearchDiscoveryWidget extends StatelessWidget {
           if (onColorPressed != null) ColourSection(onPressed: onColorPressed!),
           const TrendingSection(),
           const CategorySection(),
+          const CreatorsSection(source: 'search'),
           const SizedBox(height: PrismSpace.bottomBarClearance),
         ],
       ),
@@ -153,6 +156,23 @@ class _FindCreatorsRow extends StatelessWidget {
       onTap: () {
         PrismHaptics.tap();
         context.router.push(const UserSearchRoute());
+      },
+    );
+  }
+}
+
+class _WallRequestsRow extends StatelessWidget {
+  const _WallRequestsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return PrismRow(
+      icon: Icons.lightbulb_outline_rounded,
+      title: context.l10n.discoverRequestsTitle,
+      subtitle: context.l10n.discoverRequestsSubtitle,
+      onTap: () {
+        PrismHaptics.tap();
+        context.router.push(WallRequestsRoute());
       },
     );
   }

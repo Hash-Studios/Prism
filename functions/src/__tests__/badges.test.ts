@@ -279,7 +279,7 @@ test("checkBadges: creator keeps its coins, grants no XP or new cosmetics, prese
 
 test("badge XP table is explicit and independent of coins", () => {
   assert.deepEqual(Object.fromEntries(BADGES.map((badge) => [badge.id, badge.xp])), {
-    week_warrior: 25, streak_master: 100, creator: 0, ai_artist: 30, prism_veteran: 75,
+    challenge_winner: 0, week_warrior: 25, streak_master: 100, creator: 0, ai_artist: 30, prism_veteran: 75,
     collector: 0, art_curator: 0, social_butterfly: 0, profile_complete: 0,
   });
 });

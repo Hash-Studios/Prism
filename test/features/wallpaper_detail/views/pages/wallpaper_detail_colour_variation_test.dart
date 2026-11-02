@@ -1,11 +1,13 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -51,7 +53,7 @@ class _MockRecordViews extends Mock implements RecordPrismWallpaperViewsUsecase 
 
 class _MockPaletteRepository extends Mock implements PaletteRepository {}
 
-class _MockSetCount extends Mock implements GetWallpaperSetCountUseCase {}
+class _MockSetCount extends Mock implements GetWallpaperCountsUseCase {}
 
 const double _screenWidth = 390;
 const double _screenHeight = 844;
@@ -191,7 +193,7 @@ void main() {
       final palette = _MockPaletteRepository();
       final views = _MockRecordViews();
       final setCount = _MockSetCount();
-      when(() => setCount(any())).thenAnswer((_) async => Result.success<int?>(null));
+      when(() => setCount(any())).thenAnswer((_) async => Result.success<WallpaperCounts?>(null));
       when(() => views(any())).thenAnswer((_) async => Result.success('7'));
       when(() => palette.generatePalette(any())).thenAnswer((_) async => paletteResult);
       analytics = FakeAppAnalytics();
@@ -268,23 +270,25 @@ void main() {
     List<AnalyticsActionValue> trackedActions() =>
         analytics.events.whereType<SurfaceActionTappedEvent>().map((event) => event.action).toList();
 
-    testWidgets('a tap cycles tint and the shared hold-menu reset restores the original', (tester) async {
+    testWidgets('a selected tint is reset to the original from the shared hold menu', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'colour-variation-user'
+        ..loggedIn = true;
+      addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
       final WallpaperDetailBloc bloc = await pumpWithRealBloc(tester, twoColours);
       expect(tintOnWallpaper(tester), isNull);
 
-      await tester.tapAt(const Offset(195, 300));
+      bloc.add(const SelectAccentColor(color: Color(0xFFFF0000)));
       await tester.pump();
       await waitForRealIo(
         tester,
         () => bloc.state is WallpaperDetailLoaded && (bloc.state as WallpaperDetailLoaded).colorChanged,
         reason: 'the wallpaper accent selection to update',
       );
-      expect((bloc.state as WallpaperDetailLoaded).accent, const Color(0xFFFF0000));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(tintOnWallpaper(tester), const ColorFilter.mode(Color(0xFFFF0000), BlendMode.hue));
-      expect(trackedActions(), contains(AnalyticsActionValue.paletteCycleTapped));
 
       final finger = await tester.startGesture(const Offset(195, 300));
       await tester.pump(const Duration(milliseconds: 600));
@@ -356,6 +360,10 @@ void main() {
     });
 
     testWidgets('a long press on a swatch copies its hex colour', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'colour-variation-user'
+        ..loggedIn = true;
+      addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
       await pumpDetail(tester, loaded(colors: const <Color>[Colors.teal], accent: Colors.teal));
       await showPalette(tester);
 
@@ -366,7 +374,7 @@ void main() {
       await tester.pump(const Duration(seconds: 10));
     });
 
-    testWidgets('tapping a swatch plays a selection haptic, like a tap on the wallpaper', (tester) async {
+    testWidgets('tapping a swatch plays a selection haptic', (tester) async {
       final List<Object?> played = <Object?>[];
       final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
       messenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), (call) async {
@@ -383,8 +391,8 @@ void main() {
       expect(played, <String>['selection', 'selection']);
     });
 
-    testWidgets('with no palette a tap leaves the original wallpaper', (tester) async {
-      await pumpWithRealBloc(tester, Result.error(const NetworkFailure('x')), requirePalette: false);
+    testWidgets('a tap on the wallpaper never tints it', (tester) async {
+      await pumpWithRealBloc(tester, twoColours);
 
       await tester.tapAt(const Offset(195, 300));
       await tester.pump(const Duration(milliseconds: 400));

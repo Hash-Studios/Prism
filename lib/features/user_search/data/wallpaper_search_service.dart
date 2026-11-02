@@ -5,7 +5,9 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
@@ -47,7 +49,7 @@ class WallpaperSearchService {
     this._settingsLocal,
     this._prismSearch, [
     @ignoreParam OfflineWallpaperCatalog? offlineCatalog,
-    @ignoreParam FutureOr<Set<String>> Function()? blockedUids,
+    @ignoreParam FutureOr<BlockedCreators> Function()? blockedUids,
   ]) : _offlineCatalog = offlineCatalog ?? OfflineWallpaperCatalog.instance,
        _blockedUids = blockedUids ?? _currentBlockedUids;
 
@@ -56,7 +58,7 @@ class WallpaperSearchService {
   final SettingsLocalDataSource _settingsLocal;
   final PrismWallSearch _prismSearch;
   final OfflineWallpaperCatalog _offlineCatalog;
-  final FutureOr<Set<String>> Function() _blockedUids;
+  final FutureOr<BlockedCreators> Function() _blockedUids;
   final Map<String, _CachedSearch> _pageCache = <String, _CachedSearch>{};
   static const int _pageCacheSize = 16;
   static const Duration _pageCacheTtl = Duration(minutes: 10);
@@ -77,7 +79,7 @@ class WallpaperSearchService {
   }
 
   Future<WallpaperSearchPage> _search(String query, {SearchFilters filters = const SearchFilters()}) async {
-    final Set<String> blocked = await _blockedUids();
+    final BlockedCreators blocked = await _blockedUids();
     if (filters.depthOnly || filters.spatialOnly) return _withoutHidden(await _prismOnlySearch(query, filters));
     final String cacheKey = _cacheKey(query, filters, blocked);
     final _CachedSearch? hit = _pageCache.remove(cacheKey);
@@ -94,7 +96,7 @@ class WallpaperSearchService {
     return _withoutHidden(page);
   }
 
-  String _cacheKey(String query, SearchFilters filters, Set<String> blocked) => jsonEncode(<Object?>[
+  String _cacheKey(String query, SearchFilters filters, BlockedCreators blocked) => jsonEncode(<Object?>[
     query.trim(),
     filters.portraitOnly,
     filters.minResolution,
@@ -103,16 +105,22 @@ class WallpaperSearchService {
     _settingsLocal.get<int>('WHcategories', defaultValue: 100),
     _settingsLocal.get<int>('WHpurity', defaultValue: 100),
     app_state.prismUser.id,
-    blocked.toList()..sort(),
+    switch (blocked) {
+      KnownBlockedCreators(:final uids) => uids.toList()..sort(),
+      UnknownBlockedCreators() => null,
+    },
   ]);
 
-  /// Drops walls from blocked creators, and anime Prism walls when the user hides anime.
+  /// Drops walls from blocked creators, and anime or AI Prism walls when the user hides them.
   Future<WallpaperSearchPage> _withoutHidden(WallpaperSearchPage page) async {
-    final Set<String> blocked = await _blockedUids();
+    final BlockedCreators blocked = await _blockedUids();
     final bool showAnime = AnimeContentFilter.showsAnime(_settingsLocal);
-    if (blocked.isEmpty && showAnime) return page;
-    List<FeedItemEntity> visible(List<FeedItemEntity> items) =>
-        AnimeContentFilter.filterFeedItems(BlockedCreatorsFilter.filterFeedItems(items, blocked), showAnime: showAnime);
+    final bool showAi = AiContentFilter.showsAi(_settingsLocal);
+    if (blocked == KnownBlockedCreators(const <String>{}) && showAnime && showAi) return page;
+    List<FeedItemEntity> visible(List<FeedItemEntity> items) => AiContentFilter.filterFeedItems(
+      AnimeContentFilter.filterFeedItems(BlockedCreatorsFilter.filterFeedItems(items, blocked), showAnime: showAnime),
+      showAi: showAi,
+    );
     return (
       provider: page.provider,
       results: visible(page.results),
@@ -121,9 +129,9 @@ class WallpaperSearchService {
     );
   }
 
-  static FutureOr<Set<String>> _currentBlockedUids() => GetIt.instance.isRegistered<UserBlockRepository>()
-      ? GetIt.instance<UserBlockRepository>().getBlockedCreatorUids(waitForInitialLoad: true)
-      : const <String>{};
+  static FutureOr<BlockedCreators> _currentBlockedUids() => GetIt.instance.isRegistered<UserBlockRepository>()
+      ? GetIt.instance<UserBlockRepository>().loadBlockedCreators()
+      : KnownBlockedCreators(const <String>{});
 
   Future<WallpaperSearchPage> _searchNetwork(String query, SearchFilters filters) async {
     final Future<List<FeedItemEntity>> wallhavenFetch = fetchPage(

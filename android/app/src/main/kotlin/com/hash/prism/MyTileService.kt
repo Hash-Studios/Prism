@@ -11,10 +11,10 @@ import kotlin.random.Random
 
 internal class MyTileService : WallpaperTileService() {
     internal override fun isConfigured(prefs: SharedPreferences): Boolean =
-        !prefs.getString("flutter.quick_tile.category.name", null).isNullOrBlank()
+        !readPreferenceString { prefs.getString("flutter.quick_tile.category.name", null) }.isNullOrBlank()
 
     internal override fun wallpaper(prefs: SharedPreferences): Wallpaper {
-        val category = prefs.getString("flutter.quick_tile.category.name", null)?.trim()
+        val category = readPreferenceString { prefs.getString("flutter.quick_tile.category.name", null) }?.trim()
         check(!category.isNullOrEmpty()) { "Open Prism and configure the Quick Tile first" }
         val target = TileWallpaperTarget.parse(prefs.getString("flutter.quick_tile.category.target", null))
         val roots = listOf(
@@ -23,8 +23,8 @@ internal class MyTileService : WallpaperTileService() {
             File(Environment.getExternalStorageDirectory(), "Prism/Downloads"),
         )
         val urls = retainedCategoryUrls(
-            prefs.getString(OfflineTileAssets.CATEGORY_URLS_PREFERENCE, null),
-            prefs.getString(OfflineTileAssets.PATHS_PREFERENCE, null),
+            readPreferenceString { prefs.getString(OfflineTileAssets.CATEGORY_URLS_PREFERENCE, null) },
+            readPreferenceString { prefs.getString(OfflineTileAssets.PATHS_PREFERENCE, null) },
             roots,
         )
         val url = categoryWallpaper(urls) { fetchLiveWallpaper(prefs, category) }
@@ -33,13 +33,13 @@ internal class MyTileService : WallpaperTileService() {
 
     private fun fetchLiveWallpaper(prefs: SharedPreferences, category: String): String {
         val query = URLEncoder.encode(category, "UTF-8")
-        val source = prefs.getString("flutter.quick_tile.category.source", PEXELS_SOURCE)?.trim()
+        val source = readPreferenceString { prefs.getString("flutter.quick_tile.category.source", PEXELS_SOURCE) }?.trim()
         val link: String
         val headers: Map<String, String>
         var firstPageLink: String? = null
         when (source) {
             PEXELS_SOURCE -> {
-                val key = prefs.getString("flutter.quick_tile.pexels.api_key", null)?.trim().orEmpty()
+                val key = readPreferenceString { prefs.getString("flutter.quick_tile.pexels.api_key", null) }?.trim().orEmpty()
                 check(key.isNotEmpty()) { "Open Prism to configure the wallpaper provider" }
                 val page = Random.nextInt(1, 6)
                 val base = "https://api.pexels.com/v1/search?query=$query&per_page=30&orientation=portrait&page="
@@ -49,7 +49,8 @@ internal class MyTileService : WallpaperTileService() {
             }
             WALLHAVEN_SOURCE -> {
                 val categories = if (
-                    (prefs.getString("flutter.quick_tile.wallhaven.categories", null)?.trim()?.toIntOrNull() ?: 100) >=
+                    (readPreferenceString { prefs.getString("flutter.quick_tile.wallhaven.categories", null) }
+                        ?.trim()?.toIntOrNull() ?: 100) >=
                         110
                 ) "110" else "100"
                 link =

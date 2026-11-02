@@ -33,6 +33,7 @@ Future<List<FavouriteWallEntity>> hydratePrismFavourites(
             wallpaper: canonical,
             favouritedAt: wall.favouritedAt,
             syncStatus: wall.syncStatus,
+            pinnedAt: wall.pinnedAt,
           );
         }
       } catch (_) {

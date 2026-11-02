@@ -6,8 +6,8 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 /// Fragment shaders for the OpenGL live wallpaper renderer in `async_wallpaper`.
 ///
 /// Rules these sources follow (see `ShaderProgramValidator.kt`): GLSL ES 1.00, only the renderer
-/// uniforms `u_time`, `u_resolution`, `u_touch`, `u_offset` and `u_texture0`, no `while` loops,
-/// only `for` loops with integer literal bounds, and under 64 KiB.
+/// uniforms `u_time`, `u_resolution`, `u_touch`, `u_offset`, `u_texture0` and `u_texture1`, plus `u_tilt` only when
+/// the plugin reports tilt support, no `while` loops, only `for` loops with integer literal bounds, and under 64 KiB.
 ///
 /// Colours are templated as `vec3` constants. Every time-based phase uses a multiple of 0.1 rad/s
 /// on `loopTime()`, so the animation repeats cleanly when the clock wraps. Without fragment `highp`
@@ -245,6 +245,29 @@ void main() {
 }
 ''';
 
+  /// `u_texture1` is the depth map, bright is near, cropped exactly like the photo.
+  static String _depth({required bool tilt}) =>
+      '''
+${tilt ? 'uniform vec2 u_tilt;\n' : ''}uniform sampler2D u_texture1;
+
+// ponytail: first values to tune on a device. The largest shift is strength / 2, which must stay under the
+// 0.019 margin the 4% zoom leaves, or an edge shows.
+const float strength = 0.03;
+const float drift = 0.15;
+
+void main() {
+  vec2 uv = (v_uv - 0.5) / 1.04 + 0.5;
+  float t = loopTime();
+  vec2 motion = vec2((u_offset.x - 0.5) * 2.0, 0.0);
+  motion += (u_touch - 0.5) * vec2(0.3, -0.3);
+  motion += vec2(sin(t * 0.1), cos(t * 0.2)) * drift;
+${tilt ? '  motion += u_tilt;\n' : ''}  motion = clamp(motion, -1.0, 1.0);
+  float depth = texture2D(u_texture1, uv).r;
+  vec2 st = uv + (depth - 0.5) * strength * motion;
+  gl_FragColor = vec4(samplePhoto(st).rgb, 1.0);
+}
+''';
+
   static String gradientTemplate(GradientStyle style) {
     final String body = switch (style) {
       GradientStyle.aurora => _aurora,
@@ -256,19 +279,23 @@ void main() {
     return '$_header\n$_colors\n$body';
   }
 
-  static String motionTemplate(MotionStyle style) {
+  /// [tilt] adds `u_tilt` to the [MotionStyle.depth] shader. Pass it only when the plugin reports tilt support:
+  /// other styles ignore it.
+  static String motionTemplate(MotionStyle style, {bool tilt = false}) {
     final String body = switch (style) {
       MotionStyle.drift => _drift,
       MotionStyle.breathe => _breathe,
       MotionStyle.ripple => _ripple,
       MotionStyle.shimmer => _shimmer,
+      MotionStyle.depth => _depth(tilt: tilt),
     };
     return '$_header\n$_colors\n$_textureHeader\n$body';
   }
 
   static String gradient(GradientStyle style, LivePalette palette) => applyPalette(gradientTemplate(style), palette);
 
-  static String motion(MotionStyle style, LivePalette palette) => applyPalette(motionTemplate(style), palette);
+  static String motion(MotionStyle style, LivePalette palette, {bool tilt = false}) =>
+      applyPalette(motionTemplate(style, tilt: tilt), palette);
 
   static String applyPalette(String template, LivePalette palette) {
     final List<Color> colors = palette.colors;

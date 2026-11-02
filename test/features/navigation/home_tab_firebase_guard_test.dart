@@ -12,18 +12,24 @@ import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
+import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
+import 'package:Prism/features/weekly_challenges/biz/weekly_challenges_cubit.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 import 'package:mocktail/mocktail.dart';
 
+import '../../support/empty_mood_repository.dart';
+import '../../support/empty_weekly_challenges_repository.dart';
 import '../../support/fake_firestore_client.dart';
 import '../../support/in_memory_local_store.dart';
 import '../../support/profile_user_fixture.dart';
@@ -79,13 +85,15 @@ void main() {
     final trending = _TrendingBloc();
     when(() => trending.state).thenReturn(TrendingState.initial());
     when(trending.close).thenAnswer((_) async {});
+    getIt.registerFactory<WeeklyChallengesCubit>(() => WeeklyChallengesCubit(const EmptyWeeklyChallengesRepository()));
     getIt
       ..registerSingleton<FirestoreClient>(FakeFirestoreClient())
       ..registerSingleton<SettingsLocalDataSource>(settings)
       ..registerSingleton<ConnectivityService>(_Connectivity())
       ..registerSingleton<FavouritesSyncService>(_Sync())
       ..registerSingleton<PersonalizedFeedBloc>(feed)
-      ..registerSingleton<TrendingBloc>(trending);
+      ..registerSingleton<TrendingBloc>(trending)
+      ..registerSingleton<MoodsCubit>(MoodsCubit(const EmptyMoodRepository()));
     messenger.setMockMethodCallHandler(const MethodChannel('plugins.flutter.io/quick_actions'), (_) async => null);
     messenger.setMockMethodCallHandler(messaging, (call) async {
       messagingCalls.add(call.method);
@@ -109,27 +117,35 @@ void main() {
     final favourites = _FavouritesBloc();
     when(() => favourites.state).thenReturn(FavouriteWallsState.initial());
 
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+    final Widget home = MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
 
-        home: MultiBlocProvider(
-          providers: [
-            BlocProvider<AdsBloc>.value(value: ads),
-            BlocProvider<InAppNotificationsBloc>.value(value: notifications),
-            BlocProvider<FavouriteWallsBloc>.value(value: favourites),
-            BlocProvider<WotdBloc>.value(value: wotd),
-          ],
-          child: const HomeTabPage(),
-        ),
+      home: MultiBlocProvider(
+        providers: [
+          BlocProvider<AdsBloc>.value(value: ads),
+          BlocProvider<InAppNotificationsBloc>.value(value: notifications),
+          BlocProvider<FavouriteWallsBloc>.value(value: favourites),
+          BlocProvider<WotdBloc>.value(value: wotd),
+        ],
+        child: const HomeTabPage(),
       ),
     );
+    await tester.pumpWidget(home);
     await tester.pump();
     await tester.pump();
 
     expect(messagingCalls, isEmpty);
     expect(tester.takeException(), isNull);
+    final DateTime? sessionStart = tester
+        .widget<PersonalizedFeedScreen>(find.byType(PersonalizedFeedScreen))
+        .sessionStartedAt;
+    expect(sessionStart, isNotNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpWidget(home);
+    await tester.pump();
+    expect(tester.widget<PersonalizedFeedScreen>(find.byType(PersonalizedFeedScreen)).sessionStartedAt, sessionStart);
     await tester.pumpWidget(const SizedBox());
   }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS}));
 }

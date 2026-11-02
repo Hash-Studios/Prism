@@ -7,9 +7,11 @@ import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/purchases/annual_trial.dart';
 import 'package:Prism/core/purchases/purchase_analytics.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
+import 'package:Prism/core/purchases/trial_reminder.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/env/env.dart';
 import 'package:Prism/logger/logger.dart';
@@ -35,7 +37,9 @@ class PurchasesService {
       _configurePurchases = Purchases.configure,
       _logIn = Purchases.logIn,
       _getCustomerInfo = Purchases.getCustomerInfo,
-      _apiKey = _resolveApiKey;
+      _apiKey = _resolveApiKey,
+      _onCustomerInfo = TrialReminder.instance.apply,
+      _resetTrialState = TrialReminder.instance.clear;
 
   @visibleForTesting
   PurchasesService.forTesting({
@@ -48,6 +52,8 @@ class PurchasesService {
     Future<void> Function(String userId)? logIn,
     Future<CustomerInfo> Function()? getCustomerInfo,
     String Function()? apiKey,
+    Future<void> Function(CustomerInfo info, {required String userId})? onCustomerInfo,
+    Future<void> Function({String? keepUserId})? resetTrialState,
   }) : _addCustomerInfoListener = addCustomerInfoListener,
        _syncSubscriptionOverride = syncSubscription,
        _syncRetryBackoff = syncRetryBackoff,
@@ -56,7 +62,12 @@ class PurchasesService {
        _configurePurchases = configurePurchases ?? Purchases.configure,
        _logIn = logIn ?? Purchases.logIn,
        _getCustomerInfo = getCustomerInfo ?? Purchases.getCustomerInfo,
-       _apiKey = apiKey ?? _resolveApiKey;
+       _apiKey = apiKey ?? _resolveApiKey,
+       _onCustomerInfo = onCustomerInfo ?? _ignoreCustomerInfo,
+       _resetTrialState = resetTrialState ?? _ignoreTrialStateReset;
+
+  static Future<void> _ignoreCustomerInfo(CustomerInfo info, {required String userId}) async {}
+  static Future<void> _ignoreTrialStateReset({String? keepUserId}) async {}
 
   static final PurchasesService instance = PurchasesService._();
 
@@ -69,10 +80,18 @@ class PurchasesService {
   final Duration _confirmRetryDelay;
   final Duration _paidConfirmRetryDelay;
   static const int _confirmAttempts = 3;
+  static const Duration _customerInfoTimeout = Duration(seconds: 10);
   final Future<void> Function(PurchasesConfiguration configuration) _configurePurchases;
   final Future<dynamic> Function(String userId) _logIn;
   final Future<CustomerInfo> Function() _getCustomerInfo;
   final String Function() _apiKey;
+
+  /// The free trial in the last CustomerInfo applied for the current user, or null.
+  final ValueNotifier<ActiveTrial?> activeTrial = ValueNotifier<ActiveTrial?>(null);
+
+  /// Keeps the trial reminder and trial analytics in step with each CustomerInfo the app applies.
+  final Future<void> Function(CustomerInfo info, {required String userId}) _onCustomerInfo;
+  final Future<void> Function({String? keepUserId}) _resetTrialState;
   Future<void> _setupQueue = Future<void>.value();
   bool _configured = false;
   bool _customerInfoListenerRegistered = false;
@@ -105,6 +124,7 @@ class PurchasesService {
   }
 
   Future<void> _configure(String userId) async {
+    if (kDebugMode && Env.localQa) throw StateError('Purchases are unavailable in local QA.');
     if (kDebugMode) {
       await Purchases.setLogLevel(LogLevel.debug);
     }
@@ -129,6 +149,7 @@ class PurchasesService {
   /// is open. Safe to call more than once.
   @visibleForTesting
   void registerCustomerInfoListener() {
+    if (kDebugMode && Env.localQa) return;
     if (_customerInfoListenerRegistered) return;
     _customerInfoListenerRegistered = true;
     _addCustomerInfoListener((CustomerInfo info) {
@@ -159,6 +180,7 @@ class PurchasesService {
   /// Configures RevenueCat after the first frame so startup is not blocked.
   /// No-op if already configured or if API key is empty.
   Future<void> configureEarly() async {
+    if (kDebugMode && Env.localQa) return;
     if (_apiKey().isEmpty) return;
     try {
       await PerformanceProbe.measure(
@@ -175,13 +197,16 @@ class PurchasesService {
 
   /// Ensures RevenueCat is configured and logged in as the given user.
   Future<void> ensureConfigured(String userId) async {
+    if (kDebugMode && Env.localQa) throw StateError('Purchases are unavailable in local QA.');
     final targetUserId = userId.trim();
     await _serializeSetup<void>(() async {
       if (!_configured) {
+        await _clearTrialState(keepUserId: targetUserId.isEmpty ? null : targetUserId);
         await _configure(targetUserId);
       } else if (targetUserId.isNotEmpty && targetUserId != _configuredUserId) {
         _identityTransitionInProgress = true;
         _identityRevision++;
+        await _clearTrialState(keepUserId: targetUserId);
         try {
           await _logIn(targetUserId);
           _configuredUserId = targetUserId;
@@ -191,6 +216,8 @@ class PurchasesService {
         } finally {
           _identityTransitionInProgress = false;
         }
+      } else if (targetUserId.isEmpty) {
+        await _clearTrialState();
       }
     });
   }
@@ -367,7 +394,7 @@ class PurchasesService {
       }
       final int requestedIdentityRevision = _identityRevision;
       final bool requestedLoggedIn = app_state.prismUser.loggedIn;
-      final info = await _getCustomerInfo();
+      final CustomerInfo info = await _getCustomerInfo().timeout(_customerInfoTimeout);
       if (requestedIdentityRevision != _identityRevision ||
           requestedUserId != _configuredUserId ||
           requestedUserId != app_state.prismUser.id.trim() ||
@@ -420,6 +447,14 @@ class PurchasesService {
     app_state.prismUser.premium = isPremium;
     app_state.prismUser.subscriptionTier = tier.name;
     app_state.persistPrismUser();
+    activeTrial.value = activeTrialFrom(info);
+    if (loggedIn && userId.isNotEmpty) {
+      unawaited(
+        _onCustomerInfo(info, userId: userId).catchError((Object error, StackTrace stackTrace) {
+          logger.w('Unable to update the trial reminder.', error: error, stackTrace: stackTrace);
+        }),
+      );
+    }
     final _SubscriptionPersistResult syncResult = await _persistSubscriptionStateToFirestore(
       isPremium: isPremium,
       tier: tier,
@@ -460,6 +495,15 @@ class PurchasesService {
         : PurchaseEntitlementStatus.pending;
   }
 
+  Future<void> _clearTrialState({String? keepUserId}) async {
+    activeTrial.value = null;
+    try {
+      await _resetTrialState(keepUserId: keepUserId);
+    } catch (error, stackTrace) {
+      logger.w('Unable to clear the trial reminder.', error: error, stackTrace: stackTrace);
+    }
+  }
+
   /// Restores store purchases while distinguishing local guest access from server confirmation.
   Future<PurchaseEntitlementStatus> restore() async {
     final String requestedUserId = app_state.prismUser.id.trim();
@@ -491,7 +535,25 @@ class PurchasesService {
     }
   }
 
+  /// The annual free trial this user can start, from the store's own eligibility answer.
+  Future<TrialOfferLookup> trialOffer(Offering offering) async {
+    if (!Platform.isIOS) return trialOfferFor(offering, isIos: false);
+    final Package? annual = offering.annual;
+    if (annual == null || freeTrialDays(annual.storeProduct, isIos: true) == null) {
+      return trialOfferFor(offering, isIos: true);
+    }
+    IntroEligibilityStatus? status;
+    try {
+      final String productId = annual.storeProduct.identifier;
+      status = (await Purchases.checkTrialOrIntroductoryPriceEligibility(<String>[productId]))[productId]?.status;
+    } on PlatformException catch (e) {
+      logger.d('checkTrialOrIntroductoryPriceEligibility failed: $e');
+    }
+    return trialOfferFor(offering, isIos: true, iosEligibility: status);
+  }
+
   Future<Offerings?> getOfferings() async {
+    if (kDebugMode && Env.localQa) return null;
     try {
       return await Purchases.getOfferings();
     } on PlatformException catch (e) {
@@ -501,6 +563,7 @@ class PurchasesService {
   }
 
   Future<Offering?> getCurrentOfferingForPlacement(String placementIdentifier) async {
+    if (kDebugMode && Env.localQa) return null;
     final String placement = placementIdentifier.trim();
     if (placement.isEmpty) {
       return null;
@@ -517,9 +580,13 @@ class PurchasesService {
   /// since there is no session to end and calling logOut before configure
   /// triggers a native fatalError on iOS.
   Future<void> logOut() => _serializeSetup<void>(() async {
-    if (!_configured) return;
+    if (!_configured) {
+      await _clearTrialState();
+      return;
+    }
     _identityTransitionInProgress = true;
     _identityRevision++;
+    await _clearTrialState();
     try {
       try {
         await Purchases.logOut();

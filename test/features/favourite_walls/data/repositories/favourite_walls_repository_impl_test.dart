@@ -3,14 +3,17 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/features/favourite_walls/data/favourite_wall_doc_mapper.dart';
 import 'package:Prism/features/favourite_walls/data/repositories/favourite_walls_repository_impl.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -779,21 +782,32 @@ void main() {
   });
 
   group('guest favourites', () {
-    test('a guest save goes to the guest store and the guest heart set, not to Firestore', () async {
+    test('guest mutations are rejected without changing saved guest data', () async {
       final firestore = _MetadataFirestore();
       final local = _local();
       final store = tempGuestStore();
       final repository = FavouriteWallsRepositoryImpl(firestore, local, store, EmptyCanonicalWallpaperRepository());
+      final wall = pexelsFav('g1');
+      await store.put(wall.id, favouriteWallToDoc(wall));
+      await local.setWallFavourite('', wall.id, true);
+      final before = await store.readAll();
 
-      final result = await repository.toggleFavourite(userId: '', wall: pexelsFav('g1'), currentlyFavourited: false);
+      final remove = await repository.toggleFavourite(userId: '', wall: wall, currentlyFavourited: true);
+      final add = await repository.toggleFavourite(userId: '', wall: prismFav('g2'), currentlyFavourited: false);
+      final pin = await repository.setPinned(userId: '', wall: wall, pinnedAt: DateTime.utc(2026));
+      final clear = await repository.clearAll(userId: '', wallIds: <String>['g1']);
 
-      expect(result.data, isTrue);
+      expect(remove.isSuccess, isFalse);
+      expect(add.isSuccess, isFalse);
+      expect(pin.isSuccess, isFalse);
+      expect(clear.isSuccess, isFalse);
       expect(firestore.writes, isEmpty);
       expect(local.isWallFavourite('', 'g1'), isTrue);
-      expect((await store.readAll()).keys, <String>['g1']);
+      expect(local.isWallFavourite('', 'g2'), isFalse);
+      expect(await store.readAll(), before);
     });
 
-    test('a guest list reads back from the store and a guest removal deletes from it', () async {
+    test('existing guest favourites remain readable', () async {
       final local = _local();
       final store = tempGuestStore();
       final repository = FavouriteWallsRepositoryImpl(
@@ -802,20 +816,12 @@ void main() {
         store,
         EmptyCanonicalWallpaperRepository(),
       );
-      await repository.toggleFavourite(userId: '', wall: pexelsFav('g1'), currentlyFavourited: false);
-      await repository.toggleFavourite(userId: '', wall: prismFav('g2'), currentlyFavourited: false);
+      await store.put('g1', favouriteWallToDoc(pexelsFav('g1')));
+      await store.put('g2', favouriteWallToDoc(prismFav('g2')));
 
       final fetched = await repository.fetchFavourites(userId: '');
       expect(fetched.data!.map((wall) => wall.id), unorderedEquals(<String>['g1', 'g2']));
-      expect(fetched.data!.every((wall) => wall.favouritedAt != null), isTrue);
-
-      await repository.toggleFavourite(userId: '', wall: pexelsFav('g1'), currentlyFavourited: true);
-      final clearResult = await repository.clearAll(userId: '', wallIds: <String>['g2']);
-
-      expect(clearResult.isSuccess, isTrue);
-      expect(await store.readAll(), isEmpty);
-      expect(local.isWallFavourite('', 'g1'), isFalse);
-      expect(local.isWallFavourite('', 'g2'), isFalse);
+      expect((await store.readAll()).keys, unorderedEquals(<String>['g1', 'g2']));
     });
   });
 
@@ -933,4 +939,256 @@ void main() {
 
     expect(firestore.writes.single.data!['favouritedAt'], stamp);
   });
+
+  test('restoring a removed pinned favourite does not restore its old pin', () async {
+    final FavouriteWallEntity wall = prismFav('p1').withPinnedAt(DateTime.utc(2026, 3, 4));
+    final _MetadataFirestore firestore = _MetadataFirestore();
+    final FavouriteWallsRepositoryImpl repository = FavouriteWallsRepositoryImpl(
+      firestore,
+      _local(),
+      unusedGuestStore(),
+      EmptyCanonicalWallpaperRepository(),
+    );
+
+    await repository.toggleFavourite(userId: 'u', wall: wall, currentlyFavourited: false);
+
+    expect(firestore.writes.single.data!.containsKey('pinnedAt'), isFalse);
+  });
+
+  group('setPinned', () {
+    test('signed-in pin writes pinnedAt to the account doc and the local snapshot', () async {
+      final stamp = DateTime.utc(2026, 10, 29, 9);
+      final local = _local();
+      await local.updateWallSnapshot('u1', (_) => <FavouriteWallEntity>[prismFav('p1')]);
+      final firestore = _PinWriteFirestore();
+      final repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        local,
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
+
+      final Result<void> result = await repository.setPinned(userId: 'u1', wall: prismFav('p1'), pinnedAt: stamp);
+
+      expect(result.isSuccess, isTrue, reason: result.failure?.message);
+      expect(firestore.writes.single.op, 'update');
+      expect(firestore.writes.single.collection, 'usersv2/u1/images');
+      expect(firestore.writes.single.id, 'p1');
+      expect(firestore.writes.single.data, <String, dynamic>{'pinnedAt': stamp});
+      expect(firestore.sourceTags, <String>['favourite_walls.pin']);
+      final List<FavouriteWallEntity> snapshot = await local.readWallSnapshot('u1');
+      expect(snapshot.single.id, 'p1');
+      expect(snapshot.single.pinnedAt, stamp);
+    });
+
+    test('signed-in unpin writes the delete sentinel and clears the local snapshot', () async {
+      final local = _local();
+      await local.updateWallSnapshot(
+        'u1',
+        (_) => <FavouriteWallEntity>[prismFav('p1').withPinnedAt(DateTime.utc(2026))],
+      );
+      final firestore = _PinWriteFirestore();
+      final repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        local,
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
+
+      final Result<void> result = await repository.setPinned(userId: 'u1', wall: prismFav('p1'));
+
+      expect(result.isSuccess, isTrue, reason: result.failure?.message);
+      expect(firestore.writes.single.op, 'update');
+      expect(firestore.writes.single.collection, 'usersv2/u1/images');
+      expect(firestore.writes.single.id, 'p1');
+      expect(firestore.writes.single.data!.keys, <String>['pinnedAt']);
+      expect(firestore.writes.single.data!['pinnedAt'], isA<FieldValue>());
+      expect(firestore.sourceTags, <String>['favourite_walls.pin']);
+      final List<FavouriteWallEntity> snapshot = await local.readWallSnapshot('u1');
+      expect(snapshot.single.pinnedAt, isNull);
+    });
+
+    test('a permission error returns an error and rolls the local snapshot back to the old pin', () async {
+      final oldPin = DateTime.utc(2026, 4);
+      final local = _local();
+      await local.updateWallSnapshot('u1', (_) => <FavouriteWallEntity>[prismFav('p1').withPinnedAt(oldPin)]);
+      final firestore = _PinWriteFirestore()
+        ..updateError = FirebaseException(plugin: 'cloud_firestore', code: 'permission-denied');
+      final repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        local,
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
+
+      final Result<void> result = await repository.setPinned(userId: 'u1', wall: prismFav('p1').withPinnedAt(oldPin));
+
+      expect(result.isFailure, isTrue);
+      expect(result.failure, isA<ServerFailure>());
+      final List<FavouriteWallEntity> snapshot = await local.readWallSnapshot('u1');
+      expect(snapshot.single.pinnedAt, oldPin);
+      expect(snapshot.single.syncStatus, FavouriteSyncStatus.synced);
+      expect(await local.readFavouriteOperation('u1', 'p1'), isNull);
+    });
+
+    test('a timed out pin keeps the optimistic pin without a favourite-add journal entry', () async {
+      final DateTime pin = DateTime.utc(2026, 5, 6);
+      final FavoritesLocalDataSource local = _local();
+      await local.updateWallSnapshot('u1', (_) => <FavouriteWallEntity>[prismFav('p1')]);
+      final _PinWriteFirestore firestore = _PinWriteFirestore()..updateError = TimeoutException('offline');
+      final FavouriteWallsRepositoryImpl repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        local,
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
+
+      final Result<void> result = await repository.setPinned(userId: 'u1', wall: prismFav('p1'), pinnedAt: pin);
+
+      expect(result.isSuccess, isTrue);
+      expect((await local.readWallSnapshot('u1')).single.pinnedAt, pin);
+      expect(await local.readFavouriteOperation('u1', 'p1'), isNull);
+    });
+
+    test('pinning a rejected addition keeps its rejected status and updated wall data', () async {
+      final DateTime pin = DateTime.utc(2026, 5, 6);
+      final FavoritesLocalDataSource local = _local();
+      final FavouriteWallEntity wall = prismFav('p1');
+      await local.updateWallSnapshot(
+        'u1',
+        (_) => <FavouriteWallEntity>[wall.withSyncStatus(FavouriteSyncStatus.rejected)],
+      );
+      final Map<String, Object?> operation = await local.createFavouriteOperation(
+        'u1',
+        wall.id,
+        desired: true,
+        wall: Map<String, Object?>.from(favouriteWallToDoc(wall)),
+      );
+      await local.updateFavouriteOperationStatus(
+        'u1',
+        wall.id,
+        operation['operationId']! as String,
+        status: 'rejected',
+      );
+      final _PinWriteFirestore firestore = _PinWriteFirestore();
+      final FavouriteWallsRepositoryImpl repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        local,
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
+
+      final Result<void> result = await repository.setPinned(userId: 'u1', wall: wall, pinnedAt: pin);
+
+      final Map<String, Object?> updatedOperation = (await local.readFavouriteOperation('u1', 'p1'))!;
+      expect(result.isSuccess, isTrue);
+      expect(updatedOperation['status'], 'rejected');
+      expect(Map<String, Object?>.from(updatedOperation['wall']! as Map)['pinnedAt'], pin.toIso8601String());
+      expect(firestore.writes, isEmpty);
+      expect((await local.readWallSnapshot('u1')).single.pinnedAt, pin);
+    });
+
+    test('pinning a favourite with a pending removal does not replace the removal', () async {
+      final FavoritesLocalDataSource local = _local();
+      final FavouriteWallEntity wall = prismFav('p1');
+      await local.updateWallSnapshot('u1', (_) => <FavouriteWallEntity>[wall]);
+      final Map<String, Object?> operation = await local.createFavouriteOperation(
+        'u1',
+        wall.id,
+        desired: false,
+        wall: Map<String, Object?>.from(favouriteWallToDoc(wall)),
+      );
+      final FavouriteWallsRepositoryImpl repository = FavouriteWallsRepositoryImpl(
+        _PinWriteFirestore(),
+        local,
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
+
+      final Result<void> result = await repository.setPinned(
+        userId: 'u1',
+        wall: wall,
+        pinnedAt: DateTime.utc(2026, 5, 6),
+      );
+
+      expect(result.isFailure, isTrue);
+      expect(await local.readFavouriteOperation('u1', wall.id), operation);
+      expect((await local.readWallSnapshot('u1')).single.pinnedAt, isNull);
+    });
+
+    test('a missing server favourite rolls back and is never queued as an add', () async {
+      final DateTime pin = DateTime.utc(2026, 5, 6);
+      final FavoritesLocalDataSource local = _local();
+      await local.updateWallSnapshot('u1', (_) => <FavouriteWallEntity>[prismFav('p1')]);
+      final _PinWriteFirestore firestore = _PinWriteFirestore()
+        ..updateError = FirebaseException(plugin: 'cloud_firestore', code: 'not-found');
+      final FavouriteWallsRepositoryImpl repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        local,
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
+
+      final Result<void> result = await repository.setPinned(userId: 'u1', wall: prismFav('p1'), pinnedAt: pin);
+
+      expect(result.isFailure, isTrue);
+      expect((await local.readWallSnapshot('u1')).single.pinnedAt, isNull);
+      expect(await local.readFavouriteOperation('u1', 'p1'), isNull);
+      expect(firestore.writes, isEmpty);
+    });
+
+    test('a guest pin leaves the stored document unchanged', () async {
+      final stamp = DateTime.utc(2026, 10, 29, 9);
+      final firestore = _PinWriteFirestore();
+      final store = tempGuestStore();
+      await store.put('g1', <String, dynamic>{
+        'id': 'g1',
+        'provider': 'Pexels',
+        'url': 'https://example.com/stored.jpg',
+        'thumb': 'https://example.com/stored-thumb.jpg',
+      });
+      final repository = FavouriteWallsRepositoryImpl(firestore, _local(), store, EmptyCanonicalWallpaperRepository());
+      final before = await store.readAll();
+
+      final Result<void> pinned = await repository.setPinned(userId: '', wall: pexelsFav('g1'), pinnedAt: stamp);
+
+      expect(pinned.isSuccess, isFalse);
+      expect(firestore.writes, isEmpty);
+      expect(firestore.sourceTags, isEmpty);
+      expect(await store.readAll(), before);
+    });
+
+    test('a guest pin of a wall missing from the guest store fails and writes nothing', () async {
+      final store = tempGuestStore();
+      final repository = FavouriteWallsRepositoryImpl(
+        _PinWriteFirestore(),
+        _local(),
+        store,
+        EmptyCanonicalWallpaperRepository(),
+      );
+
+      final Result<void> result = await repository.setPinned(
+        userId: '',
+        wall: pexelsFav('gone'),
+        pinnedAt: DateTime.utc(2026),
+      );
+
+      expect(result.isSuccess, isFalse);
+      expect(await store.readAll(), isEmpty);
+    });
+  });
+}
+
+/// Records the sourceTag of each update and can fail updates, for the pin writes.
+class _PinWriteFirestore extends _MetadataFirestore {
+  final List<String> sourceTags = <String>[];
+  Object? updateError;
+
+  @override
+  Future<void> updateDoc(String collection, String id, Map<String, dynamic> data, {required String sourceTag}) {
+    sourceTags.add(sourceTag);
+    final Object? error = updateError;
+    if (error != null) return Future<void>.error(error);
+    return super.updateDoc(collection, id, data, sourceTag: sourceTag);
+  }
 }

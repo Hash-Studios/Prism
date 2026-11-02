@@ -160,7 +160,7 @@ function sameIncarnation(current: Snapshot, source: Snapshot): boolean {
   return current.exists && !!current.createTime && !!source.createTime && current.createTime.isEqual(source.createTime);
 }
 
-function approvedWall(data: Data): boolean {
+export function approvedWall(data: Data): boolean {
   // Studio cannot prove both modern GitHub assets. Reject its marker too, even if a client copied it.
   return data.review === true && data.origin !== "studio" &&
     text(data.wallpaper_provider).toLowerCase() === "prism";

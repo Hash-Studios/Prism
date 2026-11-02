@@ -16,9 +16,14 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [search.md](search.md) | Prism results, filters, recent searches, tag search |
 | [wallpaper-detail.md](wallpaper-detail.md) | Action bar, More like this, tag chips, preview |
 | [library.md](library.md) | Library hub: favourites (sync, guest, export), downloads, history |
+| [folders.md](folders.md) | Public folders: projection, follow, "New in" push, share links, reports |
+| [web-catalogue.md](web-catalogue.md) | Public web pages on prismwalls.com: walls, folders, hubs, creators, sitemaps, caching (web and backend) |
+| [creator-directory.md](creator-directory.md) | Creators to follow row, See all, card, Followed by, More like, daily directory job |
+| [desktop-companions.md](desktop-companions.md) | Desktop versions of Studio walls: 16:10 and 16:9 files, cost, backfill, Desktop version chip, deploy order |
 | [notifications.md](notifications.md) | Inbox, preferences, Wall of the Day at 09:00 local time |
 | [reliability.md](reliability.md) | Timeouts, offline banner, cache, error reports, ad consent, startup |
 | [backend-deploy.md](backend-deploy.md) | Deploy order for indexes, functions, worker, web and the app |
+| [layout.md](layout.md) | Settings > Layout: tab order and hidden tabs (More), grid density and pinch, remembered feed tab, account sync |
 | [home-feed.md](home-feed.md) | Instant home from cache, floating header and tabs (For you, Following, Trending, Latest, Popular), tight 4 px grid with rounded tiles, boosted walls after the Wall of the Day in the carousel, bottom bar, Show less undo |
 | [categories.md](categories.md) | Prism-first categories, AMOLED tile, tile quick actions |
 | [wall-of-the-day.md](wall-of-the-day.md) | Card, push, past picks archive |
@@ -26,17 +31,24 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [home-widget.md](home-widget.md) | Wall of the Day home screen widget (Android): loads by itself, opens the wall, one-tap Set |
 | [onboarding.md](onboarding.md) | Steps, first wallpaper, guest path on iOS, reduced motion |
 | [upload.md](upload.md) | Upload metadata, multi-upload, size warnings, rejected wall delete |
+| [wall-requests.md](wall-requests.md) | Ask for a wall, upvote requests, fills by creators and Prism Studio, filled push |
 | [profile.md](profile.md) | Profile links, username rules, share link, block and report |
 | [settings.md](settings.md) | Privacy and data, report a problem, data saver, rate prompt |
 | [coins-and-downloads.md](coins-and-downloads.md) | Price on the pill, already downloaded, ads, pending refunds and rewards |
+| [daily-moment.md](daily-moment.md) | Shared streak, chest, and free Pro spin sheet, reward contracts, old entry points, and release limits |
+| [premium-trial.md](premium-trial.md) | 7-day free trial on annual: eligibility, timeline, reminder, trial state, store and RevenueCat setup |
 | [coins-ledger.md](coins-ledger.md) | Ledger rows, labels, coin history screen, subscription reconcile |
+| [creator-tips.md](creator-tips.md) | Tip a creator 10, 25 or 50 coins from a wall or a profile, caps, ledger, daily push, Tipped by N |
+| [promo-codes.md](promo-codes.md) | Redeem a code for coins or Pro days, limits, rate limits, admin codes, store offer codes, `/redeem` link |
 | [streak-rescue.md](streak-rescue.md) | Restore a broken streak for coins |
 | [ai-wallpaper.md](ai-wallpaper.md) | AI tab errors, charge id, Try another |
 | [ai-charge.md](ai-charge.md) | AI charge check on the worker, refund evidence |
+| [remix.md](remix.md) | Remix an AI wallpaper: prompt and style, `remixOf`, remix count, Remixes row, inbox notice |
 | [studio.md](studio.md) | Prism Studio: daily AI wallpapers, checks, review queue, setup (backend) |
 | [popular-and-trending.md](popular-and-trending.md) | Engagement counters and the trending and popular lists (backend) |
 | [trending.md](trending.md) | Trending tab on home (the last 7 days; the all-time list is the Popular tab); boosted walls also show in the home carousel, after the Wall of the Day |
 | [moderation.md](moderation.md) | Report auto-hold, sweeper, username dedupe, WOTD creator notice (backend) |
+| [wrapped.md](wrapped.md) | Prism Wrapped 2026: private year recap built by a server job, story cards, share, Home card, launch order |
 
 ## Page rules
 

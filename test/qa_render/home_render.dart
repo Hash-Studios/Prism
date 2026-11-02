@@ -26,6 +26,10 @@ import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/moods/biz/mood_walls_cubit.dart';
+import 'package:Prism/features/moods/biz/moods_cubit.dart';
+import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
+import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/following_feed_bloc.j.dart';
@@ -42,6 +46,7 @@ import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/trending/domain/usecases/fetch_trending_usecase.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
+import 'package:Prism/features/weekly_challenges/biz/weekly_challenges_cubit.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
@@ -51,6 +56,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../support/empty_weekly_challenges_repository.dart';
 import '../support/fake_app_analytics.dart';
 import '../support/fake_user_block_repository.dart';
 import '../support/in_memory_local_store.dart';
@@ -212,6 +218,7 @@ class _Home {
     AnalyticsRuntime.instance = FakeAppAnalytics();
     app_state.prismUser = _signedInUser();
     _stubData();
+    getIt.registerFactory<WeeklyChallengesCubit>(() => WeeklyChallengesCubit(const EmptyWeeklyChallengesRepository()));
     getIt
       ..registerFactory<PersonalizedFeedBloc>(
         () => PersonalizedFeedBloc(
@@ -225,7 +232,9 @@ class _Home {
       ..registerFactory<FollowingFeedBloc>(() => FollowingFeedBloc(feedRepository))
       ..registerFactory<PopularFeedBloc>(() => PopularFeedBloc(feedRepository))
       ..registerFactory<TrendingBloc>(() => TrendingBloc(fetchTrending, FakeUserBlockRepository.pending()))
-      ..registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
+      ..registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()))
+      ..registerLazySingleton<MoodsCubit>(() => MoodsCubit(_FakeMoodRepository()))
+      ..registerFactory<MoodWallsCubit>(() => MoodWallsCubit(_FakeMoodRepository()));
 
     final _MockWotdBloc wotd = _MockWotdBloc();
     whenListen(
@@ -301,7 +310,7 @@ class _Home {
           initialInterests: const <String>{'Nature', 'Abstract', 'Space', 'Cities'},
           initialFeedMix: FeedMix.balanced,
           tasteSignals: store,
-          onSave: (List<String> interests, FeedMix mix) async => true,
+          onSave: (List<String> interests, FeedMix mix, bool hideAi) async => true,
         ),
       ),
     );
@@ -323,6 +332,18 @@ class _Home {
     app_state.prismUser = app_constants.createGuestPrismUser();
     await getIt.reset();
   }
+}
+
+class _FakeMoodRepository implements MoodRepository {
+  @override
+  Stream<void> watchVisibilityChanges() => const Stream<void>.empty();
+
+  @override
+  Future<List<MoodList>> fetchMoods() async => const <MoodList>[];
+
+  @override
+  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async =>
+      const <PrismWallpaper>[];
 }
 
 class _FakeDropsRepository implements DropsRepository {

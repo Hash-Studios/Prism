@@ -195,6 +195,22 @@ pattern = "prismwalls.com/collection-view*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/gallery*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/requests*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/creators*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/wrapped*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "prismwalls.com/followers*"
 zone_name = "prismwalls.com"
 
@@ -212,6 +228,14 @@ zone_name = "prismwalls.com"
 
 [[routes]]
 pattern = "prismwalls.com/admin-firestore-telemetry*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/admin-promo-codes*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/redeem*"
 zone_name = "prismwalls.com"
 
 [[routes]]
@@ -263,6 +287,14 @@ pattern = "prismwalls.com/folder/*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/mood/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/challenges/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "prismwalls.com/leaderboard*"
 zone_name = "prismwalls.com"
 
@@ -270,6 +302,9 @@ zone_name = "prismwalls.com"
 pattern = "prismwalls.com/draw*"
 zone_name = "prismwalls.com"
 
+[[routes]]
+pattern = "prismwalls.com/daily-moment*"
+zone_name = "prismwalls.com"
 [[routes]]
 pattern = "prismwalls.com/daily-chest*"
 zone_name = "prismwalls.com"
@@ -292,7 +327,31 @@ pattern = "prismwalls.com/streak*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/creator-stats*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "prismwalls.com/not-found*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/creator/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/sitemap.xml"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/sitemaps/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/desktop-wallpapers*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/matching-sets*"
 zone_name = "prismwalls.com"
 
 [[routes]]
@@ -488,6 +547,22 @@ pattern = "www.prismwalls.com/collection-view*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "www.prismwalls.com/gallery*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/requests*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/creators*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/wrapped*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "www.prismwalls.com/followers*"
 zone_name = "prismwalls.com"
 
@@ -505,6 +580,14 @@ zone_name = "prismwalls.com"
 
 [[routes]]
 pattern = "www.prismwalls.com/admin-firestore-telemetry*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/admin-promo-codes*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/redeem*"
 zone_name = "prismwalls.com"
 
 [[routes]]
@@ -556,6 +639,14 @@ pattern = "www.prismwalls.com/folder/*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "www.prismwalls.com/mood/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/challenges/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "www.prismwalls.com/leaderboard*"
 zone_name = "prismwalls.com"
 
@@ -563,6 +654,9 @@ zone_name = "prismwalls.com"
 pattern = "www.prismwalls.com/draw*"
 zone_name = "prismwalls.com"
 
+[[routes]]
+pattern = "www.prismwalls.com/daily-moment*"
+zone_name = "prismwalls.com"
 [[routes]]
 pattern = "www.prismwalls.com/daily-chest*"
 zone_name = "prismwalls.com"
@@ -585,7 +679,31 @@ pattern = "www.prismwalls.com/streak*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "www.prismwalls.com/creator-stats*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "www.prismwalls.com/not-found*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/creator/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/sitemap.xml"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/sitemaps/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/desktop-wallpapers*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/matching-sets*"
 zone_name = "prismwalls.com"
 
 [vars]
@@ -593,7 +711,7 @@ R2_PREVIEW_BASE_URL = "https://img.prismwalls.com"
 GH_USERNAME = "codenameakshay2"
 GH_REPO_WALLS = "prism-walls"
 PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.hash.prism"
-APP_STORE_URL = "https://apps.apple.com/app/id1405860595"
+APP_STORE_URL = "https://apps.apple.com/app/id6670200846"
 OG_FALLBACK_IMAGE = "https://raw.githubusercontent.com/Hash-Studios/Prism/master/web/public/assets/og/home.jpg"
 BROWSER_RENDERING_ACCOUNT_ID = "bc455bbb5c1264123e8565e360dd6da9"
 FIREBASE_PROJECT_ID = "prism-wallpapers"

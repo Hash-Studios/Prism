@@ -125,44 +125,6 @@ struct PrismShortcutsTests {
     #expect(parsed.last?.id == "w199")
   }
 
-  @Test func pickReturnsNilWithoutFavourites() {
-    #expect(PrismShortcutFavourites.pick(from: [], excluding: nil) == nil)
-    #expect(PrismShortcutFavourites.pick(from: [], excluding: "a") == nil)
-  }
-
-  @Test func pickReturnsTheOnlyFavouriteEvenWhenItWasLast() {
-    let only = [favourite("a")]
-    #expect(PrismShortcutFavourites.pick(from: only, excluding: "a") == favourite("a"))
-    #expect(PrismShortcutFavourites.pick(from: only, excluding: nil) == favourite("a"))
-  }
-
-  @Test func pickAvoidsTheLastPickedFavourite() {
-    let all = [favourite("a"), favourite("b"), favourite("c")]
-    for index in 0..<2 {
-      let picked = PrismShortcutFavourites.pick(from: all, excluding: "a", randomIndex: { _ in index })
-      #expect(picked?.id != "a")
-    }
-    #expect(PrismShortcutFavourites.pick(from: all, excluding: "a", randomIndex: { _ in 0 }) == favourite("b"))
-    #expect(PrismShortcutFavourites.pick(from: all, excluding: "a", randomIndex: { _ in 1 }) == favourite("c"))
-  }
-
-  @Test func pickDrawsFromAllWhenThereIsNoLastPick() {
-    let all = [favourite("a"), favourite("b")]
-    #expect(PrismShortcutFavourites.pick(from: all, excluding: nil, randomIndex: { _ in 0 }) == favourite("a"))
-    #expect(PrismShortcutFavourites.pick(from: all, excluding: nil, randomIndex: { _ in 1 }) == favourite("b"))
-  }
-
-  @Test func pickFallsBackWhenEveryEntryIsTheLastPick() {
-    let duplicates = [favourite("a"), favourite("a")]
-    #expect(PrismShortcutFavourites.pick(from: duplicates, excluding: "a") == favourite("a"))
-  }
-
-  @Test func pickClampsOutOfRangeIndexes() {
-    let all = [favourite("a"), favourite("b")]
-    #expect(PrismShortcutFavourites.pick(from: all, excluding: nil, randomIndex: { _ in 99 }) == favourite("b"))
-    #expect(PrismShortcutFavourites.pick(from: all, excluding: nil, randomIndex: { _ in -3 }) == favourite("a"))
-  }
-
   @Test func documentURLHasFirestoreRESTShape() throws {
     let url = try #require(
       PrismFirestoreREST.documentURL(
@@ -232,6 +194,23 @@ struct PrismShortcutsTests {
     let invalid = root.appendingPathComponent("assets/invalid.png")
     try Data([1, 2, 3]).write(to: invalid)
     #expect(PrismShortcutLocalFileResolver.resolve(path: "assets/invalid.png", roots: [root], maximumBytes: 1024) == nil)
+  }
+
+  @Test func localFileResolverRejectsSymlinkEscape() throws {
+    let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: base) }
+    let root = base.appendingPathComponent("root", isDirectory: true)
+    let outside = base.appendingPathComponent("outside", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+    let image = outside.appendingPathComponent("wall.png")
+    try Data([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).write(to: image)
+    try FileManager.default.createSymbolicLink(
+      at: root.appendingPathComponent("escape", isDirectory: true),
+      withDestinationURL: outside
+    )
+
+    #expect(PrismShortcutLocalFileResolver.resolve(path: "escape/wall.png", roots: [root], maximumBytes: 1024) == nil)
   }
 
   @Test func localFileResolverRejectsFilesAboveTheImageReadLimit() throws {

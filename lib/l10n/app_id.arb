@@ -1,4 +1,16 @@
 {
+  "economyAd": "Iklan",
+  "@economyAd": {"description": "Label identifying a rewarded advertisement."},
+  "economyWatchAdForCoins": "Tonton iklan untuk {reward} koin",
+  "@economyWatchAdForCoins": {"description": "Currently quoted rewarded ad amount.", "placeholders": {"reward": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsMissing": "Kamu membutuhkan {count} koin lagi.",
+  "@economyCoinsMissing": {"description": "Coins missing for the selected purchase.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyCoinsRemainAfterAd": "Kamu mungkin masih membutuhkan {count} koin setelah iklan",
+  "@economyCoinsRemainAfterAd": {"description": "Estimated remaining shortfall after the quoted ad reward.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyAdAutomaticPurchase": "Jika saldo setelah hadiah mencukupi harga, item ini akan dibeli secara otomatis.",
+  "@economyAdAutomaticPurchase": {"description": "Disclosure of automatic purchase after a credited ad."},
+  "economyAdVerificationPending": "Hadiah iklanmu sedang diverifikasi. Koin akan muncul setelah dikonfirmasi.",
+  "@economyAdVerificationPending": {"description": "Ad reward awaiting server verification."},
   "foldersLibraryEmptyTitle": "Belum ada folder",
   "@foldersLibraryEmptyTitle": {
     "description": "Title of the empty Folders tab in the Library."
@@ -10,6 +22,42 @@
   "foldersLoadAllError": "Folder Anda tidak dapat dimuat",
   "@foldersLoadAllError": {
     "description": "Title shown when the Library cannot load the user's folders."
+  },
+  "galleryEmptyBody": "Wallpaper ini telah dihapus atau tidak lagi publik.",
+  "galleryEmptyTitle": "Wallpaper ini sudah tidak ada",
+  "galleryScreenTitle": "Wallpaper untuk Anda",
+  "favouritePin": "Sematkan ke atas",
+  "@favouritePin": {
+    "description": "Hold-menu action on a favourite wallpaper. Keeps it at the top of Favourites."
+  },
+  "favouriteUnpin": "Lepas sematan",
+  "@favouriteUnpin": {
+    "description": "Hold-menu action on a pinned favourite. Returns it to its normal place in Favourites."
+  },
+  "favouritePinnedToast": "Disematkan di atas Favorit",
+  "@favouritePinnedToast": {
+    "description": "Confirmation after the user pins a favourite."
+  },
+  "favouriteUnpinnedToast": "Sematan dilepas",
+  "@favouriteUnpinnedToast": {
+    "description": "Confirmation after the user unpins a favourite."
+  },
+  "favouritePinnedBadge": "Disematkan",
+  "@favouritePinnedBadge": {
+    "description": "Accessibility label of the small pin badge on a pinned favourite tile."
+  },
+  "favouritePinLimit": "{count, plural, other{Anda dapat menyematkan hingga {count} favorit. Lepas satu sematan untuk menyematkan wallpaper ini.}}",
+  "@favouritePinLimit": {
+    "description": "Shown when the user tries to pin more favourites than the limit.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "favouritePinFailed": "Tidak dapat memperbarui sematan. Periksa koneksi Anda lalu coba lagi.",
+  "@favouritePinFailed": {
+    "description": "Shown when pinning or unpinning a favourite fails."
   },
   "wallpaperFavouriteSearchCountHint": "{count, plural, other{Cari di {count} favorit}}",
   "@wallpaperFavouriteSearchCountHint": {
@@ -54,6 +102,40 @@
   },
   "wallpaperProviderWallhaven": "Wallhaven",
   "@@locale": "id",
+  "duoTitle": "Kejutan Duo",
+  "duoAiFormatLabel": "Buat kejutan Duo",
+  "duoPresetNotice": "Prism menampilkan sisi kanan saat ponsel dilipat. Atur posisi gambar asli yang disimpan secara manual dan periksa kedua tampilan di pratinjau wallpaper sistem. Ini adalah preset Prism, bukan pemotongan otomatis iOS.",
+  "duoFoldedPromptLabel": "Tampilan terlipat",
+  "duoFoldedPromptExample": "Kucing mengantuk di samping jendela",
+  "duoRevealedPromptLabel": "Kejutan saat dibuka",
+  "duoRevealedPromptExample": "Pesawat luar angkasa kecil di luar jendela",
+  "duoPromptValidation": "Jelaskan kedua tampilan, masing-masing dengan 1 hingga 160 karakter.",
+  "duoMoodBody": "Satu wallpaper. Lebih banyak kejutan saat dibuka.",
+  "duoDeviceName": "iPhone Duo",
+  "duoPhoneDevice": "Ponsel",
+  "duoFold": "Lipat",
+  "duoUnfold": "Buka lipatan",
+  "duoFolded": "Terlipat",
+  "duoUnfolded": "Terbuka",
+  "duoAndroidCropNotice": "Prism menampilkan sisi kanan saat ponsel dilipat. Android mungkin memotongnya secara berbeda. Periksa pratinjau wallpaper sistem sebelum menerapkannya.",
+  "duoGetOnPrism": "Dapatkan di Prism",
+  "duoGuideTitle": "Atur kejutan Duo Anda",
+  "duoGuideOpen": "Buka gambar asli yang disimpan di Foto, ketuk Bagikan, lalu Gunakan sebagai Wallpaper.",
+  "duoGuideAlign": "Atur posisi gambar utuh secara manual agar tampilan terlipat menampilkan sisi kanan.",
+  "duoGuideCheck": "Periksa tampilan terlipat dan terbuka di pratinjau sistem, lalu tambahkan wallpaper.",
+  "duoWebTitle": "Wallpaper iPhone Duo | Prism",
+  "duoWebDescription": "Satu wallpaper dengan adegan kedua yang tersembunyi. Jelajahi wallpaper kejutan Duo orisinal di Prism.",
+  "duoWebHeading": "Satu wallpaper. Cerita yang lebih luas.",
+  "duoWebIntro": "Adegan tenang saat dilipat. Cerita lain saat dibuka. Lihat kedua tampilan setiap wallpaper orisinal.",
+  "duoWebEmpty": "Koleksi Duo pertama sedang ditinjau.",
+  "duoWebEmptyBody": "Jelajahi Prism selagi kami memeriksa setiap wallpaper dalam kedua tampilan.",
+  "duoWebFolded": "Pratinjau terlipat",
+  "duoWebUnfolded": "Gambar asli saat terbuka",
+  "duoWebPresetNotice": "Pratinjau ini menggunakan preset sisi kanan Prism, bukan pemotongan otomatis Apple. Simpan gambar asli secara utuh, atur posisinya secara manual, dan periksa tampilan terlipat serta terbuka di pratinjau wallpaper sistem.",
+  "duoWebOpenPrism": "Buka di Prism",
+  "duoWebExplore": "Jelajahi Prism",
+  "duoWebAppStore": "Unduh di App Store",
+  "duoWebPlayStore": "Dapatkan di Google Play",
   "economyExportFailedLabel": "Ekspor gagal",
   "@economyExportFailedLabel": {
     "description": "Failed filter export action inserted before refund status."
@@ -1603,16 +1685,7 @@
   "@accountReportAProblem": {
     "description": "Title for the report problem sheet and settings row."
   },
-  "accountReportPreviewNotice": "Laporan ini berisi versi aplikasi, perangkat, dan log terbaru Anda. Tidak ada alamat email atau token masuk. Baca laporan, lalu bagikan kepada {email}.",
-  "@accountReportPreviewNotice": {
-    "description": "Privacy explanation shown before sharing a diagnostic report.",
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
-  "accountReportProblemSubtitle": "Bagikan log aplikasi Anda dengan tim Prism",
+  "accountReportProblemSubtitle": "Kirim laporan bug ke tim Prism",
   "@accountReportProblemSubtitle": {
     "description": "Subtitle for reporting a problem."
   },
@@ -1763,10 +1836,6 @@
   "accountSettings": "Setelan",
   "@accountSettings": {
     "description": "Settings action label."
-  },
-  "accountShare": "Bagikan",
-  "@accountShare": {
-    "description": "Share action label."
   },
   "accountShareInvite": "Bagikan undangan",
   "@accountShareInvite": {
@@ -3532,6 +3601,80 @@
   "@aiLiveActivityOpen": {
     "description": "AI wallpaper Live Activity text shown on the lock screen and Dynamic Island."
   },
+  "aiResultApply": "Terapkan",
+  "@aiResultApply": {
+    "description": "Primary button on a finished AI wallpaper. On Android it opens the Set screen; on iOS it saves to Photos."
+  },
+  "aiResultEditPrompt": "Edit perintah",
+  "@aiResultEditPrompt": {
+    "description": "Button on the full-screen AI result that returns to the prompt editor."
+  },
+  "aiSessionStripLabel": "Wallpaper dari sesi ini",
+  "@aiSessionStripLabel": {
+    "description": "Screen reader label for the strip of thumbnails made in this session."
+  },
+  "aiSessionTake": "Versi {index} dari {count}",
+  "@aiSessionTake": {
+    "description": "Screen reader label for one thumbnail in the session strip.",
+    "placeholders": {
+      "index": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpWatercolour": "Sebagai cat air",
+  "@aiFollowUpWatercolour": {
+    "description": "Follow-up chip. Makes a new take of the wallpaper as a watercolour painting."
+  },
+  "aiFollowUpNight": "Versi malam",
+  "@aiFollowUpNight": {
+    "description": "Follow-up chip. Makes a night-time take."
+  },
+  "aiFollowUpMinimal": "Lebih minimalis",
+  "@aiFollowUpMinimal": {
+    "description": "Follow-up chip. Makes a simpler take."
+  },
+  "aiFollowUpWarmer": "Lebih hangat",
+  "@aiFollowUpWarmer": {
+    "description": "Follow-up chip. Makes a take with warmer colours."
+  },
+  "aiFollowUpDepth": "Tambah kedalaman",
+  "@aiFollowUpDepth": {
+    "description": "Follow-up chip. Makes a take with more depth and layers."
+  },
+  "aiFollowUpCostLabel": "Setiap versi baru biayanya {cost} koin",
+  "@aiFollowUpCostLabel": {
+    "description": "Screen reader label for the coin price shown next to the follow-up chips.",
+    "placeholders": {
+      "cost": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpConfirmTitle": "Buat versi baru?",
+  "@aiFollowUpConfirmTitle": {
+    "description": "Title of the sheet shown the first time a follow-up chip is tapped."
+  },
+  "aiFollowUpConfirmBody": "Versi lanjutan membuat wallpaper baru dari yang ini. Setiap versi biayanya {cost} koin.",
+  "@aiFollowUpConfirmBody": {
+    "description": null,
+    "placeholders": {
+      "cost": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "aiFollowUpConfirmAction": "Buat",
+  "@aiFollowUpConfirmAction": {
+    "description": "Confirm button on the follow-up cost sheet."
+  },
   "economyAiDailyLimit": "Anda mencapai batas AI hari ini.",
   "economyAiDescribeChanges": "Sebutkan perubahan yang Anda inginkan, seperti warna, suasana, atau detail.",
   "economyAiDescribeScene": "Jelaskan adegan yang ingin dibuat.",
@@ -3671,6 +3814,8 @@
       }
     }
   },
+  "economyAiStyleSheetTitle": "Pilih gaya",
+  "economyAiStyleSheetSubject": "Setiap pratinjau menampilkan adegan yang sama: mercusuar di tebing saat senja.",
   "economyAiStyleWatercolor": "Cat air",
   "economyAiStyleSpace": "Luar Angkasa",
   "economyAiStyleSynthwave": "Synthwave",
@@ -6255,6 +6400,54 @@
     }
   },
   "notifPushDropLiveTitle": "Drop baru telah dimulai",
+  "notifPushFollowDigestTitleOne": "{artistName} memposting wallpaper baru",
+  "@notifPushFollowDigestTitleOne": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushFollowDigestTitleSolo": "{artistName} memposting {wallCount} wallpaper baru",
+  "@notifPushFollowDigestTitleSolo": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestTitlePair": "{artistName} dan {secondArtistName} memposting {wallCount} wallpaper baru",
+  "@notifPushFollowDigestTitlePair": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "secondArtistName": {
+        "type": "String"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestTitleGroup": "{artistName} dan {otherCount} lainnya memposting {wallCount} wallpaper baru",
+  "@notifPushFollowDigestTitleGroup": {
+    "placeholders": {
+      "artistName": {
+        "type": "String"
+      },
+      "otherCount": {
+        "type": "int"
+      },
+      "wallCount": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushFollowDigestBodyUntitled": "Ketuk untuk melihat semuanya.",
   "notifPushGiftReceivedBody": "Koleksi Premium dan wallpaper Premium tersedia selama 24 jam.",
   "notifPushGiftReceivedTitle": "{senderName} mengirimi Anda akses Pro selama 24 jam",
   "@notifPushGiftReceivedTitle": {
@@ -6561,10 +6754,6 @@
     "description": "Wallpaper interface text: wallpaperAccentColorsOriginal."
   },
   "wallpaperResetOriginal": "Kembali ke asli",
-  "wallpaperAccentResetHint": "Tahan untuk tindakan, termasuk Kembali ke asli",
-  "@wallpaperAccentResetHint": {
-    "description": "Toast hint explaining how to reset the selected wallpaper accent."
-  },
   "wallpaperAll": "Semua",
   "@wallpaperAll": {
     "description": "Filter option to show all wallpaper sources."
@@ -6572,10 +6761,6 @@
   "wallpaperApplyTo": "Terapkan ke",
   "@wallpaperApplyTo": {
     "description": "Setting label for choosing where to apply a wallpaper."
-  },
-  "wallpaperAutoRotateAndroidOnly": "Putar otomatis hanya tersedia di Android.",
-  "@wallpaperAutoRotateAndroidOnly": {
-    "description": "Message shown when auto-rotate is opened on an unsupported platform."
   },
   "wallpaperAutoRotateApplyTo": "Terapkan ke",
   "@wallpaperAutoRotateApplyTo": {
@@ -7826,7 +8011,7 @@
   },
   "wallpaperHidePreviewControls": "Sembunyikan kontrol",
   "@wallpaperHidePreviewControls": {
-    "description": "Accessibility label of the wallpaper preview background: a tap hides the buttons so the whole mock phone screen shows."
+    "description": "Accessibility label and action that hides the buttons: on the wallpaper preview, and on the wallpaper detail screen where it also hides the system bars."
   },
   "wallpaperHistoryBothScreens": "Kedua layar",
   "@wallpaperHistoryBothScreens": {
@@ -7856,7 +8041,7 @@
   "@wallpaperHomeAppName": {
     "description": "Accessible name for the Prism logo."
   },
-  "wallpaperImageSemanticHint": "Ketuk untuk mengganti warna aksen. Tahan untuk favorit, berbagi, dan reset. Gulir untuk detail.",
+  "wallpaperImageSemanticHint": "Tahan untuk favorit, berbagi, dan reset. Gulir untuk detail.",
   "@wallpaperImageSemanticHint": {
     "description": "Accessibility hint describing wallpaper image gestures."
   },
@@ -7865,6 +8050,10 @@
   "wallpaperImageSemanticLabel": "Wallpaper",
   "@wallpaperImageSemanticLabel": {
     "description": "Accessibility label for the wallpaper image."
+  },
+  "wallpaperImmersiveHint": "Ketuk untuk menyembunyikan kontrol",
+  "@wallpaperImmersiveHint": {
+    "description": "Small hint shown once on the wallpaper detail screen. A tap on the wallpaper hides every button and the system bars."
   },
   "wallpaperInsufficientCoins": "Koin tidak cukup. Dapatkan koin di Hadiah.",
   "@wallpaperInsufficientCoins": {
@@ -8122,6 +8311,14 @@
   "wallpaperLiveStyleShimmerDescription": "Sapuan cahaya yang lembut.",
   "@wallpaperLiveStyleShimmerDescription": {
     "description": "Description of the Shimmer live wallpaper motion style."
+  },
+  "wallpaperLiveStyleDepth": "3D",
+  "@wallpaperLiveStyleDepth": {
+    "description": "Live wallpaper style that moves the photo in depth as you swipe home screens and tilt the phone."
+  },
+  "wallpaperLiveStyleDepthDescription": "Foto bergerak dalam kedalaman saat kamu menggeser layar utama dan memiringkan ponsel.",
+  "@wallpaperLiveStyleDepthDescription": {
+    "description": "Description of the 3D live wallpaper style."
   },
   "wallpaperLiveStyleStarfield": "Hamparan bintang",
   "@wallpaperLiveStyleStarfield": {
@@ -8679,37 +8876,13 @@
   "@wallpaperShareLink": {
     "description": "Wallpaper menu action to share its link."
   },
-  "wallpaperShortcutsAddActionsSteps": "Tambahkan tindakan \"Dapatkan Wallpaper Prism\". Lalu tambahkan tindakan \"Pasang Wallpaper\".",
-  "@wallpaperShortcutsAddActionsSteps": {
-    "description": "Step to add the Prism wallpaper and system wallpaper actions in Shortcuts."
-  },
-  "wallpaperShortcutsBody": "Gunakan Pintasan untuk memasang wallpaper sesuai jadwal atau pemicu. Siapkan sumber di bawah sebelum menjalankannya.",
-  "@wallpaperShortcutsBody": {
-    "description": "Explanation of how iOS Shortcuts can change wallpapers automatically."
-  },
   "wallpaperShortcutsChoosePrismData": "Pilih data yang dikirim Prism",
   "@wallpaperShortcutsChoosePrismData": {
     "description": "Section title for choosing wallpaper data in Shortcuts."
   },
-  "wallpaperShortcutsChooseTriggerSteps": "Di editor pintasan, buka Automasi jika perlu. Pilih dan atur pemicu, seperti Waktu, membuka app, atau menghubungkan pengisi daya.",
-  "@wallpaperShortcutsChooseTriggerSteps": {
-    "description": "Step to choose a trigger for an iOS Shortcuts wallpaper automation."
-  },
-  "wallpaperShortcutsDisableConfirmationSteps": "Tinjau opsi menjalankan yang ditampilkan dan simpan pintasan atau automasi. Jika \"Tanya Sebelum Menjalankan\" muncul, nonaktifkan agar berjalan otomatis.",
-  "@wallpaperShortcutsDisableConfirmationSteps": {
-    "description": "Step to disable confirmation and save an iOS Shortcuts automation."
-  },
-  "wallpaperShortcutsHeadline": "Ubah wallpaper secara otomatis",
-  "@wallpaperShortcutsHeadline": {
-    "description": "Headline describing automatic wallpaper changes through Shortcuts."
-  },
   "wallpaperShortcutsOpenAction": "Buka Pintasan",
   "@wallpaperShortcutsOpenAction": {
     "description": "Action to open Apple's Shortcuts app."
-  },
-  "wallpaperShortcutsOpenAutomationSteps": "Buka Pintasan. Jika ada tab Automasi, ketuk tab itu, lalu Automasi Baru. Jika tidak, ketuk Tambah (+), lalu Edit jika ditampilkan.",
-  "@wallpaperShortcutsOpenAutomationSteps": {
-    "description": "First step in creating a wallpaper automation in iOS Shortcuts."
   },
   "wallpaperShortcutsOpenError": "Pintasan tidak dapat dibuka. Buka app secara manual.",
   "@wallpaperShortcutsOpenError": {
@@ -8719,10 +8892,6 @@
   "@wallpaperShortcutsSourceFavourite": {
     "description": "Shortcuts source option for a random favourite wallpaper."
   },
-  "wallpaperShortcutsSourceFavouriteDescription": "Favorit acak yang tersedia untuk Pintasan. Sukai wallpaper di Prism terlebih dahulu. Beberapa wallpaper terlindungi mungkin tidak tersedia. Pilihan terakhir dihindari jika ada favorit lain yang tersedia.",
-  "@wallpaperShortcutsSourceFavouriteDescription": {
-    "description": "Description of the random favourite Shortcuts source."
-  },
   "wallpaperShortcutsSourceWotd": "Wallpaper Hari Ini",
   "@wallpaperShortcutsSourceWotd": {
     "description": "Shortcuts source option for the daily wallpaper pick."
@@ -8730,10 +8899,6 @@
   "wallpaperShortcutsSourceWotdDescription": "Pilihan Prism hari ini. Unduh gambar asli hari ini di Prism terlebih dahulu. Saat pilihan harian berubah, unduh gambar asli yang baru sebelum menjalankan sumber ini.",
   "@wallpaperShortcutsSourceWotdDescription": {
     "description": "Description of the Wall of the Day Shortcuts source."
-  },
-  "wallpaperShortcutsSteps": "Langkah-langkah",
-  "@wallpaperShortcutsSteps": {
-    "description": "Section title for iOS Shortcuts setup instructions."
   },
   "wallpaperShortcutsTitle": "Ubah secara otomatis",
   "@wallpaperShortcutsTitle": {
@@ -8745,7 +8910,7 @@
   },
   "wallpaperShowPreviewControls": "Tampilkan kontrol",
   "@wallpaperShowPreviewControls": {
-    "description": "Accessibility label of the wallpaper preview background: a tap shows the buttons again."
+    "description": "Accessibility label and action that shows the buttons again, on the wallpaper preview and on the wallpaper detail screen."
   },
   "wallpaperSignIn": "Masuk",
   "@wallpaperSignIn": {
@@ -9544,5 +9709,2416 @@
   "foldersSuggestionHomeScreen": "Layar utama",
   "@foldersSuggestionHomeScreen": {
     "description": "Suggested folder name for wallpapers to use on the home screen."
+  },
+  "moodDreamyTitle": "Impian",
+  "@moodDreamyTitle": {
+    "description": "Home mood name for soft, pastel wallpapers."
+  },
+  "moodDreamyBody": "Langit lembut dan cahaya pastel.",
+  "@moodDreamyBody": {
+    "description": "One line under the Dreamy mood title."
+  },
+  "moodDarkQuietTitle": "Gelap dan tenang",
+  "@moodDarkQuietTitle": {
+    "description": "Home mood name for dark, calm wallpapers."
+  },
+  "moodDarkQuietBody": "Cahaya redup, nyaman di mata.",
+  "@moodDarkQuietBody": {
+    "description": "One line under the Dark and quiet mood title."
+  },
+  "moodBrightBoldTitle": "Cerah dan mencolok",
+  "@moodBrightBoldTitle": {
+    "description": "Home mood name for saturated, colourful wallpapers."
+  },
+  "moodBrightBoldBody": "Warna cerah untuk menyegarkan layarmu.",
+  "@moodBrightBoldBody": {
+    "description": "One line under the Bright and bold mood title."
+  },
+  "moodMinimalTitle": "Minimal",
+  "@moodMinimalTitle": {
+    "description": "Home mood name for simple, uncluttered wallpapers."
+  },
+  "moodMinimalBody": "Bentuk sederhana dan ruang yang lega.",
+  "@moodMinimalBody": {
+    "description": "One line under the Minimal mood title."
+  },
+  "moodSpatialReadyTitle": "Siap jadi Adegan Spasial",
+  "@moodSpatialReadyTitle": {
+    "description": "Home mood name for wallpapers that work as iOS 26 Spatial Scenes. Keep \"Spatial\" as Apple's feature name."
+  },
+  "moodSpatialReadyBody": "Dibuat agar tampil menonjol sebagai Adegan Spasial.",
+  "@moodSpatialReadyBody": {
+    "description": "One line under the Spatial ready mood title. \"Spatial Scene\" is Apple's iOS 26 feature name."
+  },
+  "moodDepthReadyTitle": "Siap efek kedalaman",
+  "@moodDepthReadyTitle": {
+    "description": "Home mood name for wallpapers that work with the iOS Lock Screen Depth Effect."
+  },
+  "moodDepthReadyBody": "Subjek berada di depan jam layar kunci.",
+  "@moodDepthReadyBody": {
+    "description": "One line under the Depth ready mood title. Refers to the Lock Screen clock."
+  },
+  "moodChipRowLabel": "Suasana",
+  "@moodChipRowLabel": {
+    "description": "Accessibility label for the row of mood chips on Home."
+  },
+  "moodSeeAll": "Lihat semua",
+  "@moodSeeAll": {
+    "description": "Button on a Home mood row that opens the full mood page."
+  },
+  "moodSeeAllHint": "Membuka semua wallpaper {mood}",
+  "@moodSeeAllHint": {
+    "description": "Accessibility hint for the See all button. {mood} is a mood name such as Dreamy.",
+    "placeholders": {
+      "mood": {
+        "type": "String"
+      }
+    }
+  },
+  "moodLoadError": "Wallpaper ini tidak bisa dimuat",
+  "@moodLoadError": {
+    "description": "Error title on a mood page when the walls fail to load."
+  },
+  "moodEmptyTitle": "Belum ada wallpaper di sini",
+  "@moodEmptyTitle": {
+    "description": "Empty state title on a mood page."
+  },
+  "moodEmptyBody": "Wallpaper baru ditambahkan setiap hari.",
+  "@moodEmptyBody": {
+    "description": "Empty state body on a mood page."
+  },
+  "wallpaperHistoryTileSemantic": "{current}Pasang lagi. {target}, {date}",
+  "@wallpaperHistoryTileSemantic": {
+    "description": "Accessibility description for a wallpaper history tile.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperHistoryTitle": "Riwayat wallpaper",
+  "@wallpaperHistoryTitle": {
+    "description": "Title of the wallpaper history screen."
+  },
+  "wallpaperLibraryHistoryBody": "Wallpaper yang pernah Anda pasang, agar dapat dipasang lagi.",
+  "@wallpaperLibraryHistoryBody": {
+    "description": "Description for the history introduction in the library."
+  },
+  "wallpaperLibraryHistoryTitle": "Riwayat wallpaper",
+  "@wallpaperLibraryHistoryTitle": {
+    "description": "Title for the history introduction in the library."
+  },
+  "wallpaperLibraryOpenHistory": "Buka riwayat",
+  "@wallpaperLibraryOpenHistory": {
+    "description": "Action to open wallpaper history."
+  },
+  "wallpaperRecentlySet": "Baru dipasang",
+  "@wallpaperRecentlySet": {
+    "description": "Section heading for recently set wallpapers."
+  },
+  "wallpaperSetAgain": "Pasang wallpaper ini lagi",
+  "@wallpaperSetAgain": {
+    "description": "Accessibility label to set a recently set wallpaper again."
+  },
+  "wallpaperSort": "Urutkan",
+  "@wallpaperSort": {
+    "description": "Accessibility label for the favourites sort menu."
+  },
+  "tasteQuizTitle": "Pilih yang lebih kamu suka",
+  "@tasteQuizTitle": {
+    "description": "Headline on each round of the This or that quiz, above two wallpapers side by side."
+  },
+  "tasteQuizWildCard": "Kejutan",
+  "@tasteQuizWildCard": {
+    "description": "Small label above the quiz headline on rounds that show wallpapers from categories the user did not pick."
+  },
+  "tasteQuizProgress": "{current} dari {total}",
+  "@tasteQuizProgress": {
+    "description": "Quiz progress, for example 1 of 6.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "tasteQuizProgressLabel": "Putaran {current} dari {total}",
+  "@tasteQuizProgressLabel": {
+    "description": "Screen reader label for the quiz progress.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "tasteQuizSkip": "Lewati",
+  "@tasteQuizSkip": {
+    "description": "Button that ends the This or that quiz early and continues."
+  },
+  "tasteQuizPickLabel": "Pilih wallpaper ini, {position} dari {total}",
+  "@tasteQuizPickLabel": {
+    "description": "Screen reader label for one of the two wallpapers in a quiz round.",
+    "placeholders": {
+      "position": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "tasteQuizTuningTitle": "Menyesuaikan feed kamu",
+  "@tasteQuizTuningTitle": {
+    "description": "Title of the short screen after the quiz that shows the wallpapers the feed will lead with."
+  },
+  "tasteQuizSummaryFull": "{tone, select, dark{Gelap} other{Terang}}, {density, select, minimal{minimalis} other{detail}}, sedikit {tag}",
+  "@tasteQuizSummaryFull": {
+    "description": "One line that describes the user's picks. tone is dark or light, density is minimal or busy, and tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      },
+      "density": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryToneDensity": "{tone, select, dark{Gelap} other{Terang}} dan {density, select, minimal{minimalis} other{detail}}",
+  "@tasteQuizSummaryToneDensity": {
+    "description": "One line that describes the user's picks. tone is dark or light, density is minimal or busy.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      },
+      "density": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryToneTag": "{tone, select, dark{Gelap} other{Terang}}, dengan sedikit {tag}",
+  "@tasteQuizSummaryToneTag": {
+    "description": "One line that describes the user's picks. tone is dark or light, and tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryDensityTag": "{density, select, minimal{Minimalis} other{Detail}}, dengan sedikit {tag}",
+  "@tasteQuizSummaryDensityTag": {
+    "description": "One line that describes the user's picks. density is minimal or busy, and tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "density": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryTone": "{tone, select, dark{Kebanyakan wallpaper gelap} other{Kebanyakan wallpaper terang}}",
+  "@tasteQuizSummaryTone": {
+    "description": "One line that describes the user's picks. tone is dark or light.",
+    "placeholders": {
+      "tone": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryDensity": "{density, select, minimal{Kebanyakan wallpaper minimalis} other{Kebanyakan wallpaper detail}}",
+  "@tasteQuizSummaryDensity": {
+    "description": "One line that describes the user's picks. density is minimal or busy.",
+    "placeholders": {
+      "density": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryTag": "Lebih banyak wallpaper {tag}",
+  "@tasteQuizSummaryTag": {
+    "description": "One line that describes the user's picks. tag is a wallpaper tag such as neon, shown as stored.",
+    "placeholders": {
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "tasteQuizSummaryReady": "Feed kamu sudah siap",
+  "@tasteQuizSummaryReady": {
+    "description": "Shown after the quiz when the picks do not clearly agree on a style."
+  },
+  "tasteQuizRetake": "Ulangi Ini atau itu",
+  "@tasteQuizRetake": {
+    "description": "Button in the Tune your feed sheet that runs the This or that quiz again. This or that is the quiz name."
+  },
+  "tasteQuizRetakeFailed": "Wallpaper tidak bisa dimuat. Periksa koneksi kamu dan coba lagi.",
+  "@tasteQuizRetakeFailed": {
+    "description": "Toast when the walls for a quiz retake do not load."
+  },
+  "foldersPublic": "Publik",
+  "@foldersPublic": {
+    "description": "Label on a folder that others can see."
+  },
+  "foldersMakePublic": "Jadikan publik",
+  "@foldersMakePublic": {
+    "description": "Folder menu action that lets others see the folder."
+  },
+  "foldersMakePrivate": "Jadikan privat",
+  "@foldersMakePrivate": {
+    "description": "Folder menu action that hides the folder from others."
+  },
+  "foldersMakePublicTitle": "Jadikan folder ini publik?",
+  "@foldersMakePublicTitle": {
+    "description": "Title of the dialog before a folder becomes public."
+  },
+  "foldersMakePublicMessage": "Semua orang di Prism bisa melihat nama dan wallpaper-nya, mengikutinya, dan membuka tautannya. Tautan yang Anda bagikan tetap menampilkan pratinjaunya meski nanti Anda menjadikannya pribadi.",
+  "@foldersMakePublicMessage": {
+    "description": "One line that says what others see when a folder is public."
+  },
+  "foldersMakePrivateTitle": "Jadikan folder ini privat?",
+  "@foldersMakePrivateTitle": {
+    "description": "Title of the dialog before a public folder becomes private."
+  },
+  "foldersMakePrivateMessage": "Hanya Anda yang bisa melihatnya. Tautannya berhenti berfungsi dan pengikutnya kehilangan folder ini.",
+  "@foldersMakePrivateMessage": {
+    "description": "One line that says what happens when a public folder becomes private."
+  },
+  "foldersMadePublic": "Folder ini sekarang publik.",
+  "@foldersMadePublic": {
+    "description": "Toast after a folder becomes public."
+  },
+  "foldersMadePrivate": "Folder ini sekarang privat.",
+  "@foldersMadePrivate": {
+    "description": "Toast after a folder becomes private."
+  },
+  "foldersPublicNameRefused": "Ganti nama folder ini agar bisa dijadikan publik.",
+  "@foldersPublicNameRefused": {
+    "description": "Toast when the folder name cannot be shown to others."
+  },
+  "foldersHiddenRefused": "Folder ini disembunyikan setelah ada laporan, jadi tidak bisa dijadikan publik.",
+  "@foldersHiddenRefused": {
+    "description": "Toast when a moderator hid the folder."
+  },
+  "foldersLimitRefused": "Anda sudah terlalu sering mengubah folder hari ini. Coba lagi besok.",
+  "@foldersLimitRefused": {
+    "description": "Toast when the daily limit for folder changes is reached."
+  },
+  "foldersFollow": "Ikuti",
+  "@foldersFollow": {
+    "description": "Button that follows a public folder."
+  },
+  "foldersFollowing": "Diikuti",
+  "@foldersFollowing": {
+    "description": "Button state when the user follows a public folder. Tap to unfollow."
+  },
+  "foldersFollowerCount": "{count, plural, =0{Belum ada pengikut} =1{1 pengikut} other{{count} pengikut}}",
+  "@foldersFollowerCount": {
+    "description": "Number of people who follow a public folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersByOwner": "Oleh {name}",
+  "@foldersByOwner": {
+    "description": "Owner line on a public folder page.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersShare": "Bagikan folder",
+  "@foldersShare": {
+    "description": "Action and tooltip that shares a public folder link."
+  },
+  "foldersReport": "Laporkan folder",
+  "@foldersReport": {
+    "description": "Menu action that reports a public folder."
+  },
+  "foldersUnavailableTitle": "Folder ini privat atau sudah tidak ada",
+  "@foldersUnavailableTitle": {
+    "description": "Title when a shared folder cannot be shown."
+  },
+  "foldersUnavailableBody": "Pemilik mungkin telah menjadikannya privat atau menghapusnya.",
+  "@foldersUnavailableBody": {
+    "description": "Body when a shared folder cannot be shown."
+  },
+  "foldersFollowFailed": "Tidak dapat memperbarui status mengikuti. Coba lagi.",
+  "@foldersFollowFailed": {
+    "description": "Toast when following or unfollowing a folder fails."
+  },
+  "foldersYouFollow": "Folder yang Anda ikuti",
+  "@foldersYouFollow": {
+    "description": "Heading of the public folders the user follows, in the Library."
+  },
+  "foldersPublicEmptyTitle": "Belum ada wallpaper di sini",
+  "@foldersPublicEmptyTitle": {
+    "description": "Title when a public folder has no wallpapers others can see."
+  },
+  "foldersPublicEmptyBody": "Wallpaper baru akan muncul di sini saat pemilik menambahkannya.",
+  "@foldersPublicEmptyBody": {
+    "description": "Body when a public folder has no wallpapers others can see."
+  },
+  "notifSettingFolders": "Folder yang Anda ikuti",
+  "@notifSettingFolders": {
+    "description": "Notification setting for new wallpapers in followed folders."
+  },
+  "notifSettingFoldersDescription": "Wallpaper baru di folder yang Anda ikuti, sehari sekali",
+  "@notifSettingFoldersDescription": {
+    "description": "Description of the followed folders notification setting."
+  },
+  "notifPushFolderDigestTitleOne": "Baru di {folderName}",
+  "@notifPushFolderDigestTitleOne": {
+    "description": "Title of the daily push for new wallpapers in one followed folder.",
+    "placeholders": {
+      "folderName": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushFolderDigestTitleMore": "Baru di {folderName} dan {count} lainnya",
+  "@notifPushFolderDigestTitleMore": {
+    "description": "Title of the daily push for new wallpapers in several followed folders.",
+    "placeholders": {
+      "folderName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "historySetAndDownloaded": "Dipasang dan diunduh",
+  "@historySetAndDownloaded": {
+    "description": "History tab segment on Android: walls the user set as wallpaper or downloaded."
+  },
+  "historyDownloaded": "Diunduh",
+  "@historyDownloaded": {
+    "description": "History tab segment on iOS, where the app cannot set wallpapers: walls the user downloaded."
+  },
+  "historyRecentlyViewed": "Baru dilihat",
+  "@historyRecentlyViewed": {
+    "description": "History tab segment: walls the user opened recently on this device."
+  },
+  "historySyncedNote": "Disimpan di akun Anda, jadi ini kembali saat Anda pakai ponsel baru.",
+  "@historySyncedNote": {
+    "description": "One line above the Set and downloaded list for a signed-in user."
+  },
+  "historySyncedNoteGuest": "Masuk untuk menyimpan ini di ponsel baru.",
+  "@historySyncedNoteGuest": {
+    "description": "One line above the Set and downloaded list for a signed-out user."
+  },
+  "historyActionSet": "Dipasang",
+  "@historyActionSet": {
+    "description": "Label under a history tile: the user set this wall as wallpaper."
+  },
+  "historyActionDownloaded": "Diunduh",
+  "@historyActionDownloaded": {
+    "description": "Label under a history tile: the user downloaded this wall."
+  },
+  "historySyncedTileLabel": "{action} pukul {time}",
+  "@historySyncedTileLabel": {
+    "description": "Screen reader label of a history tile from the account. action is Set or Downloaded, time is when.",
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "historyClearSyncedBody": "Ini menghapus daftar di sini dan di akun Anda. Wallpaper dan unduhan Anda tetap seperti semula.",
+  "@historyClearSyncedBody": {
+    "description": "Body of the confirm dialog before clearing the Set and downloaded list."
+  },
+  "historyClearViewedTitle": "Hapus baru dilihat?",
+  "@historyClearViewedTitle": {
+    "description": "Title of the confirm dialog before clearing the recently viewed list."
+  },
+  "historyClearViewedBody": "Ini menghapus wallpaper yang Anda buka dari daftar ini dan dari Beranda.",
+  "@historyClearViewedBody": {
+    "description": "Body of the confirm dialog before clearing the recently viewed list."
+  },
+  "historyClearViewedAction": "Hapus baru dilihat",
+  "@historyClearViewedAction": {
+    "description": "Confirm button that clears the recently viewed list."
+  },
+  "historyEmptyBodyAndroid": "Wallpaper yang Anda pasang atau unduh muncul di sini, agar mudah Anda temukan lagi.",
+  "@historyEmptyBodyAndroid": {
+    "description": "Empty state body of the Set and downloaded list on Android."
+  },
+  "historyEmptyBodyIos": "Wallpaper yang Anda unduh muncul di sini, agar mudah Anda temukan lagi.",
+  "@historyEmptyBodyIos": {
+    "description": "Empty state body of the Downloaded list on iOS."
+  },
+  "historyViewedEmptyTitle": "Belum ada yang dilihat",
+  "@historyViewedEmptyTitle": {
+    "description": "Empty state title of the recently viewed list."
+  },
+  "historyViewedEmptyBody": "Wallpaper yang Anda buka muncul di sini, agar mudah Anda temukan lagi.",
+  "@historyViewedEmptyBody": {
+    "description": "Empty state body of the recently viewed list."
+  },
+  "historyViewedOffTitle": "Riwayat lihat nonaktif",
+  "@historyViewedOffTitle": {
+    "description": "Empty state title of the recently viewed list when the Save viewing history setting is off."
+  },
+  "historyViewedOffBody": "Aktifkan Simpan riwayat lihat untuk melihat wallpaper yang Anda buka di sini.",
+  "@historyViewedOffBody": {
+    "description": "Empty state body of the recently viewed list when the setting is off."
+  },
+  "historyViewedOffAction": "Aktifkan",
+  "@historyViewedOffAction": {
+    "description": "Button in the recently viewed empty state that turns on the Save viewing history setting."
+  },
+  "historyViewedTileLabel": "Buka wallpaper, dilihat pukul {time}",
+  "@historyViewedTileLabel": {
+    "description": "Screen reader label of a recently viewed tile. time is when it was viewed.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "pickUpTitle": "Lanjutkan dari terakhir",
+  "@pickUpTitle": {
+    "description": "Title of the Home row that shows walls the user opened recently but did not save, set or download."
+  },
+  "pickUpTileLabel": "Buka wallpaper {index} dari {count}",
+  "@pickUpTileLabel": {
+    "description": "Screen reader label of a tile in the Pick up where you left off row.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsSaveViewingHistory": "Simpan riwayat lihat",
+  "@settingsSaveViewingHistory": {
+    "description": "Settings switch. On: the app remembers the walls the user opens on this device."
+  },
+  "settingsSaveViewingHistoryBody": "Menampilkan wallpaper yang Anda buka di Riwayat dan di Beranda. Jika dinonaktifkan, daftar akan dihapus.",
+  "@settingsSaveViewingHistoryBody": {
+    "description": "Subtitle of the Save viewing history switch."
+  },
+  "historyClearFailed": "Riwayat tidak bisa dihapus. Periksa koneksi Anda lalu coba lagi.",
+  "@historyClearFailed": {
+    "description": "Toast when Clear on the Set and downloaded list cannot reach the account. Nothing was cleared."
+  },
+  "wallpaperAutoRotateSourceFolder": "Folder",
+  "@wallpaperAutoRotateSourceFolder": {
+    "description": "Auto-rotate source chip that rotates the walls of one of the user's folders."
+  },
+  "wallpaperAutoRotateSourceFolderNamed": "Folder: {folder}",
+  "@wallpaperAutoRotateSourceFolderNamed": {
+    "description": "Auto-rotate source chip when a folder is chosen. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateNounFolder": "{folder}",
+  "@wallpaperAutoRotateNounFolder": {
+    "description": "How the mix line names a folder source. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateTooFewFolder": "Folder ini memerlukan minimal 2 wallpaper yang bisa diputar. Wallpaper Prism diputar setelah Anda mengunduhnya.",
+  "@wallpaperAutoRotateTooFewFolder": {
+    "description": "Shown when the chosen folder has fewer than 2 wallpapers that auto-rotate can use."
+  },
+  "wallpaperAutoRotateOpenFolder": "Buka folder",
+  "@wallpaperAutoRotateOpenFolder": {
+    "description": "Button that opens the chosen folder from the auto-rotate screen."
+  },
+  "wallpaperAutoRotatePickFolder": "Pilih folder",
+  "@wallpaperAutoRotatePickFolder": {
+    "description": "Title of the sheet that lists the user's folders for auto-rotate."
+  },
+  "wallpaperAutoRotateNoFolders": "Anda belum punya folder. Simpan wallpaper ke folder, lalu pilih di sini.",
+  "@wallpaperAutoRotateNoFolders": {
+    "description": "Empty state of the auto-rotate folder picker."
+  },
+  "wallpaperAutoRotateConfirmFolderTitle": "Putar {folder}?",
+  "@wallpaperAutoRotateConfirmFolderTitle": {
+    "description": "Title of the card that asks the user to confirm a folder as the auto-rotate source. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateConfirmFolderBody": "Wallpaper Anda berubah menjadi salah satu dari folder ini, sesuai jadwal di bawah.",
+  "@wallpaperAutoRotateConfirmFolderBody": {
+    "description": "Body of the card that asks the user to confirm a folder as the auto-rotate source."
+  },
+  "wallpaperAutoRotateConfirmFolderAction": "Putar folder ini",
+  "@wallpaperAutoRotateConfirmFolderAction": {
+    "description": "Button that makes the folder the auto-rotate source and turns auto-rotate on."
+  },
+  "wallpaperAutoRotateStoppedFolderDeleted": "Putar otomatis nonaktif karena folder {folder} telah dihapus.",
+  "@wallpaperAutoRotateStoppedFolderDeleted": {
+    "description": "Toast when auto-rotate stopped because its folder was deleted. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperAutoRotateStoppedFolderEmpty": "Putar otomatis nonaktif karena folder {folder} memiliki kurang dari 2 wallpaper.",
+  "@wallpaperAutoRotateStoppedFolderEmpty": {
+    "description": "Toast when auto-rotate stopped because its folder has too few usable wallpapers. folder is the folder name the user typed.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersRotateThisFolder": "Putar folder ini",
+  "@foldersRotateThisFolder": {
+    "description": "Folder page menu item that opens auto-rotate with this folder chosen. Android only."
+  },
+  "foldersRotating": "Diputar",
+  "@foldersRotating": {
+    "description": "Small label on a folder page when auto-rotate uses this folder."
+  },
+  "foldersRotatingDescription": "Putar otomatis menggunakan folder ini",
+  "@foldersRotatingDescription": {
+    "description": "Tooltip and screen reader label of the Rotating label on a folder page."
+  },
+  "wallpaperAccentResetHint": "Tahan untuk tindakan, termasuk Kembali ke asli",
+  "@wallpaperAccentResetHint": {
+    "description": "Toast hint explaining how to reset the selected wallpaper accent."
+  },
+  "wallRequestsTitle": "Permintaan wallpaper",
+  "@wallRequestsTitle": {
+    "description": "Title of the wall requests page."
+  },
+  "wallRequestsTabTop": "Teratas",
+  "@wallRequestsTabTop": {
+    "description": "Tab with the most upvoted open requests of the last 30 days."
+  },
+  "wallRequestsTabNew": "Terbaru",
+  "@wallRequestsTabNew": {
+    "description": "Tab with the newest open requests."
+  },
+  "wallRequestsTabFilled": "Terpenuhi",
+  "@wallRequestsTabFilled": {
+    "description": "Tab with requests that a wall filled."
+  },
+  "wallRequestsAsk": "Minta wallpaper",
+  "@wallRequestsAsk": {
+    "description": "Button that opens the request sheet."
+  },
+  "wallRequestsEmptyTopTitle": "Belum ada permintaan",
+  "@wallRequestsEmptyTopTitle": {
+    "description": "Empty Top or New tab title."
+  },
+  "wallRequestsEmptyTopBody": "Minta wallpaper yang belum Anda temukan. Orang lain bisa mendukungnya.",
+  "@wallRequestsEmptyTopBody": {
+    "description": "Empty Top or New tab body."
+  },
+  "wallRequestsEmptyFilledTitle": "Belum ada yang terpenuhi",
+  "@wallRequestsEmptyFilledTitle": {
+    "description": "Empty Filled tab title."
+  },
+  "wallRequestsEmptyFilledBody": "Permintaan yang terpenuhi akan muncul di sini, beserta wallpaper yang menjawabnya.",
+  "@wallRequestsEmptyFilledBody": {
+    "description": "Empty Filled tab body."
+  },
+  "wallRequestsLoadFailed": "Permintaan tidak dapat dimuat",
+  "@wallRequestsLoadFailed": {
+    "description": "Error state title on the requests page."
+  },
+  "wallRequestsRetry": "Coba lagi",
+  "@wallRequestsRetry": {
+    "description": "Retry button on the requests page."
+  },
+  "wallRequestVotes": "{count, plural, =0{Belum ada suara} =1{1 suara} other{{count} suara}}",
+  "@wallRequestVotes": {
+    "description": "Vote count on a request row.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestUpvote": "Dukung",
+  "@wallRequestUpvote": {
+    "description": "Tooltip and label of the upvote button."
+  },
+  "wallRequestRemoveUpvote": "Hapus dukungan",
+  "@wallRequestRemoveUpvote": {
+    "description": "Tooltip of the upvote button when the user already upvoted."
+  },
+  "wallRequestMine": "Permintaan Anda",
+  "@wallRequestMine": {
+    "description": "Label on the user's own request row."
+  },
+  "wallRequestSomeone": "Seorang pengguna Prism",
+  "@wallRequestSomeone": {
+    "description": "Requester name when the profile has no name."
+  },
+  "wallRequestFilledByCreator": "Dipenuhi oleh {name}",
+  "@wallRequestFilledByCreator": {
+    "description": "Label on a filled request; name is the creator.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRequestFilledByStudio": "Dibuat oleh Prism Studio",
+  "@wallRequestFilledByStudio": {
+    "description": "Label on a request that Prism Studio filled."
+  },
+  "wallRequestOpenWall": "Buka wallpaper",
+  "@wallRequestOpenWall": {
+    "description": "Semantics label of the filled wall thumbnail."
+  },
+  "wallRequestMoreActions": "Aksi lainnya",
+  "@wallRequestMoreActions": {
+    "description": "Tooltip of the row menu button."
+  },
+  "wallRequestReport": "Laporkan permintaan",
+  "@wallRequestReport": {
+    "description": "Row menu action that reports a request."
+  },
+  "wallRequestHide": "Sembunyikan permintaan",
+  "@wallRequestHide": {
+    "description": "Admin row menu action that hides a request."
+  },
+  "wallRequestUnhide": "Tampilkan permintaan",
+  "@wallRequestUnhide": {
+    "description": "Admin row menu action that shows a hidden request again."
+  },
+  "wallRequestHiddenLabel": "Disembunyikan",
+  "@wallRequestHiddenLabel": {
+    "description": "Admin label on a hidden request."
+  },
+  "wallRequestSheetTitle": "Minta wallpaper",
+  "@wallRequestSheetTitle": {
+    "description": "Title of the request sheet."
+  },
+  "wallRequestSheetHint": "Jelaskan, misalnya gunung gelap yang minimalis",
+  "@wallRequestSheetHint": {
+    "description": "Hint in the request text field."
+  },
+  "wallRequestSheetTags": "Tag, maksimal 3",
+  "@wallRequestSheetTags": {
+    "description": "Label above the tag chips in the request sheet."
+  },
+  "wallRequestSheetSubmit": "Kirim permintaan",
+  "@wallRequestSheetSubmit": {
+    "description": "Submit button of the request sheet."
+  },
+  "wallRequestSignIn": "Masuk untuk meminta wallpaper dan mendukungnya.",
+  "@wallRequestSignIn": {
+    "description": "Shown in the sheet or a toast to a signed-out user."
+  },
+  "wallRequestDuplicateTitle": "Seseorang sudah memintanya",
+  "@wallRequestDuplicateTitle": {
+    "description": "Title when a close open request exists."
+  },
+  "wallRequestDuplicateBody": "Dukung agar kreator bisa melihatnya lebih cepat.",
+  "@wallRequestDuplicateBody": {
+    "description": "Body when a close open request exists."
+  },
+  "wallRequestUpvoteInstead": "Dukung yang ini saja",
+  "@wallRequestUpvoteInstead": {
+    "description": "Button that upvotes the close request instead of making a new one."
+  },
+  "wallRequestCreateAnyway": "Tetap kirim permintaan saya",
+  "@wallRequestCreateAnyway": {
+    "description": "Button that makes a new request although a close one exists."
+  },
+  "wallRequestDuplicateMine": "Anda sudah pernah memintanya",
+  "@wallRequestDuplicateMine": {
+    "description": "Title when the close request is the user's own."
+  },
+  "wallRequestDuplicateVoted": "Anda sudah mendukungnya",
+  "@wallRequestDuplicateVoted": {
+    "description": "Title when the user already upvoted the close request."
+  },
+  "wallRequestEditText": "Ubah permintaan saya",
+  "@wallRequestEditText": {
+    "description": "Button that goes back to the text field from the duplicate card."
+  },
+  "wallRequestCreated": "Permintaan terkirim. Kami akan memberi tahu saat terpenuhi.",
+  "@wallRequestCreated": {
+    "description": "Toast after a request is made."
+  },
+  "wallRequestUpvoted": "Didukung. Kami akan memberi tahu saat terpenuhi.",
+  "@wallRequestUpvoted": {
+    "description": "Toast after the user upvotes the close request."
+  },
+  "wallRequestErrorText": "Gunakan 3 sampai 80 karakter, dan tetap ramah.",
+  "@wallRequestErrorText": {
+    "description": "Error when the server refuses the request text."
+  },
+  "wallRequestErrorLimit": "Anda bisa membuat 3 permintaan sehari. Coba lagi besok.",
+  "@wallRequestErrorLimit": {
+    "description": "Error at the daily request limit."
+  },
+  "wallRequestErrorOwn": "Anda tidak bisa mendukung permintaan sendiri.",
+  "@wallRequestErrorOwn": {
+    "description": "Error when the user upvotes their own request."
+  },
+  "wallRequestErrorClosed": "Permintaan ini sudah terpenuhi.",
+  "@wallRequestErrorClosed": {
+    "description": "Error when the user votes on a filled request."
+  },
+  "wallRequestErrorGone": "Permintaan ini tidak tersedia lagi.",
+  "@wallRequestErrorGone": {
+    "description": "Error when the request is hidden or deleted."
+  },
+  "wallRequestErrorGeneric": "Terjadi kesalahan. Coba lagi.",
+  "@wallRequestErrorGeneric": {
+    "description": "Error for any other failure."
+  },
+  "searchRequestPrompt": "Tidak menemukannya?",
+  "@searchRequestPrompt": {
+    "description": "Line above the request button in an empty search."
+  },
+  "searchRequestAction": "Minta",
+  "@searchRequestAction": {
+    "description": "Button in an empty search that opens the request sheet with the query."
+  },
+  "discoverRequestsTitle": "Permintaan wallpaper",
+  "@discoverRequestsTitle": {
+    "description": "Discover row that opens the requests page."
+  },
+  "discoverRequestsSubtitle": "Minta wallpaper, atau dukung salah satu",
+  "@discoverRequestsSubtitle": {
+    "description": "Subtitle of the Discover row for wall requests."
+  },
+  "uploadFillsRequest": "Memenuhi permintaan",
+  "@uploadFillsRequest": {
+    "description": "Upload form row that links the wall to a request."
+  },
+  "uploadFillsRequestHint": "Opsional. Pilih permintaan yang dijawab wallpaper ini.",
+  "@uploadFillsRequestHint": {
+    "description": "Subtitle of the upload row when no request is picked."
+  },
+  "uploadFillsRequestClear": "Hapus permintaan",
+  "@uploadFillsRequestClear": {
+    "description": "Tooltip of the button that removes the picked request."
+  },
+  "requestPickerTitle": "Permintaan mana yang dipenuhi?",
+  "@requestPickerTitle": {
+    "description": "Title of the request picker in the upload flow."
+  },
+  "requestPickerSearch": "Cari permintaan",
+  "@requestPickerSearch": {
+    "description": "Hint of the search field in the request picker."
+  },
+  "requestPickerEmpty": "Tidak ada permintaan terbuka yang cocok",
+  "@requestPickerEmpty": {
+    "description": "Empty state of the request picker."
+  },
+  "notifPushWallRequestFilledTitle": "Wallpaper permintaan Anda sudah tersedia",
+  "@notifPushWallRequestFilledTitle": {
+    "description": "Push and inbox title when a wall request is filled."
+  },
+  "notifPushWallRequestFilledBody": "{requestText}",
+  "@notifPushWallRequestFilledBody": {
+    "description": "Push and inbox body when a wall request is filled: the request text.",
+    "placeholders": {
+      "requestText": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRequestAgeNow": "Baru saja",
+  "@wallRequestAgeNow": {
+    "description": "Age of a request made less than a minute ago."
+  },
+  "wallRequestAgeMinutes": "{count, plural, =1{1 menit lalu} other{{count} menit lalu}}",
+  "@wallRequestAgeMinutes": {
+    "description": "Age of a request in minutes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestAgeHours": "{count, plural, =1{1 jam lalu} other{{count} jam lalu}}",
+  "@wallRequestAgeHours": {
+    "description": "Age of a request in hours.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestAgeDays": "{count, plural, =1{1 hari lalu} other{{count} hari lalu}}",
+  "@wallRequestAgeDays": {
+    "description": "Age of a request in days.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestAgeWeeks": "{count, plural, =1{1 minggu lalu} other{{count} minggu lalu}}",
+  "@wallRequestAgeWeeks": {
+    "description": "Age of a request in weeks.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRequestErrorAccountAge": "Akun Anda bisa membuat permintaan dan memberi suara setelah berumur 10 hari.",
+  "@wallRequestErrorAccountAge": {
+    "description": "Error when an account younger than 10 days tries to request or vote."
+  },
+  "adminFillsRequest": "Memenuhi permintaan",
+  "@adminFillsRequest": {
+    "description": "Admin review card label: the text of the request this wall says it fills."
+  },
+  "wallRemixAction": "Remix",
+  "@wallRemixAction": {
+    "description": "Short label of the button that opens the AI tab with this wallpaper's prompt."
+  },
+  "wallRemixActionTooltip": "Remix wallpaper ini dengan AI",
+  "@wallRemixActionTooltip": {
+    "description": "Tooltip of the Remix button on an AI wallpaper."
+  },
+  "wallRemixingChip": "Me-remix {title} oleh {creator}",
+  "@wallRemixingChip": {
+    "description": "Chip in the AI tab that names the wallpaper being remixed.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRemixDropLinkTooltip": "Hapus tautan remix",
+  "@wallRemixDropLinkTooltip": {
+    "description": "Tooltip of the x on the remix chip. It removes the link to the original wallpaper."
+  },
+  "wallRemixUntitled": "Tanpa judul",
+  "@wallRemixUntitled": {
+    "description": "Name used for a wallpaper that has no title, inside remix copy."
+  },
+  "wallRemixUnknownCreator": "kreator Prism",
+  "@wallRemixUnknownCreator": {
+    "description": "Name used for a creator with no public name, inside remix copy."
+  },
+  "wallRemixesTitle": "Remix",
+  "@wallRemixesTitle": {
+    "description": "Heading of the row of remixes on a wallpaper's details."
+  },
+  "wallRemixesCount": "{count, plural, other{{count} remix}}",
+  "@wallRemixesCount": {
+    "description": "Number of remixes next to the Remixes heading.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallRemixOpenRemixLabel": "Buka remix oleh {creator}",
+  "@wallRemixOpenRemixLabel": {
+    "description": "Screen reader label of one remix in the Remixes row.",
+    "placeholders": {
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRemixOfLabel": "Remix dari {title} oleh {creator}",
+  "@wallRemixOfLabel": {
+    "description": "Credit row on a remix. It opens the original wallpaper.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "creator": {
+        "type": "String"
+      }
+    }
+  },
+  "wallRemixOfTooltip": "Buka wallpaper asli",
+  "@wallRemixOfTooltip": {
+    "description": "Tooltip of the credit row on a remix."
+  },
+  "economyAiSubmitPromptNotice": "Siapa pun dapat melihat prompt Anda dan me-remix wallpaper ini.",
+  "@economyAiSubmitPromptNotice": {
+    "description": "Note on the AI submit sheet. Shared AI wallpapers show their prompt to anyone who remixes them."
+  },
+  "notifPushWallRemixedTitle": "Wallpaper Anda di-remix",
+  "@notifPushWallRemixedTitle": {
+    "description": "Inbox title when another creator's remix of your wallpaper is approved."
+  },
+  "notifPushWallRemixedBody": "{remixerName} me-remix {wallTitle}.",
+  "@notifPushWallRemixedBody": {
+    "description": "Inbox body when another creator remixes your wallpaper.",
+    "placeholders": {
+      "remixerName": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushWallRemixedBodyUntitled": "{remixerName} me-remix wallpaper Anda.",
+  "@notifPushWallRemixedBodyUntitled": {
+    "description": "Inbox body when another creator remixes your untitled wallpaper.",
+    "placeholders": {
+      "remixerName": {
+        "type": "String"
+      }
+    }
+  },
+  "wallMetadataDescription": "Deskripsi",
+  "wallMetadataEdit": "Edit detail",
+  "wallResubmitAction": "Perbaiki dan kirim ulang",
+  "wallResubmitChooseImage": "Pilih gambar",
+  "wallResubmitImageMissing": "Gambar asli tidak lagi tersedia. Pilih lagi untuk melanjutkan pengeditan.",
+  "wallResubmitImageKept": "Gambar asli siap",
+  "wallResubmitTitle": "Perbaiki unggahan",
+  "wallUploadUseLastDetails": "Gunakan detail terakhir",
+  "wallUploadLastDetailsUnavailable": "Tidak ada detail sebelumnya di perangkat ini.",
+  "wallUploadWithdraw": "Tarik unggahan",
+  "wallUploadWithdrawTitle": "Tarik unggahan ini?",
+  "wallUploadWithdrawBody": "Tindakan ini menghapus unggahan dari peninjauan dan menghapus file yang diunggah.",
+  "wallUploadWithdrawn": "Unggahan ditarik",
+  "wallUploadDeleteHistory": "Hapus dari riwayat",
+  "wallMetadataInvalid": "Periksa teks dan tag, lalu coba lagi.",
+  "wallUploadOwnerChanged": "Akun Anda berubah. Buka unggahan ini lagi.",
+  "wallResubmitLimit": "Wallpaper ini telah mencapai tiga pengiriman ulang yang ditautkan.",
+  "wallResubmitUnsupported": "Pilih lagi gambar aslinya. Detail sumber AI tidak dapat digunakan kembali.",
+  "wallResubmitUnavailable": "Tidak dapat memuat unggahan yang ditolak ini. Coba lagi.",
+  "wallMetadataEditDetails": "Edit detail",
+  "wallMetadataApprovedHelp": "Ubah judul, deskripsi, dan tag. Gambar dan kategori tetap sama.",
+  "wallMetadataPendingHelp": "Perbarui detail ini sebelum wallpaper Anda ditinjau.",
+  "wallMetadataSave": "Simpan detail",
+  "wallMetadataSaved": "Detail disimpan",
+  "wallMetadataDiscardTitle": "Buang perubahan?",
+  "wallMetadataDiscardBody": "Detail yang belum disimpan akan hilang.",
+  "wallMetadataDiscard": "Buang perubahan",
+  "wallMetadataReload": "Muat ulang detail",
+  "wallMetadataReloadTitle": "Muat ulang detail saat ini?",
+  "wallMetadataReloadBody": "Tindakan ini mengganti detail yang belum disimpan dengan versi saat ini.",
+  "wallMetadataConflict": "Detail ini berubah di tempat lain. Suntingan Anda masih ada. Muat ulang detail saat ini sebelum menyimpan.",
+  "wallMetadataStatusChanged": "Status peninjauan wallpaper ini telah berubah. Suntingan Anda belum disimpan.",
+  "wallMetadataMissing": "Wallpaper ini tidak lagi tersedia. Suntingan Anda belum disimpan.",
+  "wallMetadataDenied": "Anda tidak memiliki izin untuk mengedit wallpaper ini.",
+  "wallMetadataSignedOut": "Masuk lagi untuk mengedit wallpaper ini.",
+  "wallMetadataDailyLimit": "Anda telah mencapai batas edit hari ini. Coba lagi besok.",
+  "wallMetadataUnavailable": "Tidak dapat menyimpan detail. Periksa koneksi Anda dan coba lagi.",
+  "wallMetadataLoadFailed": "Tidak dapat memuat detail",
+  "wallMetadataHistory": "Riwayat edit",
+  "wallMetadataHistoryEmpty": "Belum ada perubahan detail",
+  "wallMetadataHistoryEmptyBody": "Perubahan pada judul, deskripsi, dan tag yang disetujui muncul di sini.",
+  "wallMetadataHistoryFailed": "Tidak dapat memuat riwayat edit",
+  "wallMetadataBefore": "Sebelum",
+  "wallMetadataAfter": "Sesudah",
+  "wallMetadataRevert": "Urungkan edit",
+  "wallMetadataRevertTitle": "Urungkan edit ini?",
+  "wallMetadataRevertBody": "Pulihkan hanya judul, deskripsi, dan tag sebelumnya yang ditampilkan di sini. Gambar dan status peninjauan tidak akan berubah.",
+  "wallMetadataReverted": "Edit diurungkan",
+  "wallMetadataLoadMore": "Muat lebih banyak edit",
+  "wallMetadataAbsent": "Belum diatur",
+  "wallMetadataResubmitted": "Dikirim ulang · percobaan {attempt} dari 3",
+  "wallMetadataPreviousReason": "Alasan penolakan sebelumnya",
+  "wallMetadataContextUnavailable": "Detail pengiriman ulang tidak tersedia",
+  "@wallMetadataResubmitted": {"placeholders": {"attempt": {"type": "int"}}},
+  "reportSheetMessage": "Ceritakan apa yang salah. Prism tidak pernah menambahkan alamat email atau token masuk Anda. Periksa tangkapan layar sebelum mengirim.",
+  "@reportSheetMessage": {
+    "description": "Intro text in the report a problem sheet."
+  },
+  "reportTopicCrashFreeze": "Crash/macet",
+  "@reportTopicCrashFreeze": {
+    "description": "Report topic chip: app crashed or froze."
+  },
+  "reportTopicWallpaperWontSet": "Wallpaper tidak bisa diatur",
+  "@reportTopicWallpaperWontSet": {
+    "description": "Report topic chip: wallpaper could not be set."
+  },
+  "reportTopicLooksBroken": "Tampilan rusak",
+  "@reportTopicLooksBroken": {
+    "description": "Report topic chip: something looks visually broken."
+  },
+  "reportTopicSlow": "Lambat",
+  "@reportTopicSlow": {
+    "description": "Report topic chip: app is slow."
+  },
+  "reportTopicOther": "Lainnya",
+  "@reportTopicOther": {
+    "description": "Report topic chip: any other problem."
+  },
+  "reportNoteHint": "Apa yang terjadi? Apa yang Anda harapkan?",
+  "@reportNoteHint": {
+    "description": "Hint text of the note field in the report sheet."
+  },
+  "reportScreenshotTitle": "Tangkapan layar",
+  "@reportScreenshotTitle": {
+    "description": "Title of the screenshot row in the report sheet."
+  },
+  "reportScreenshotEmpty": "Tunjukkan apa yang Anda lihat.",
+  "@reportScreenshotEmpty": {
+    "description": "Subtitle of the screenshot row when no screenshot is attached."
+  },
+  "reportScreenshotAttached": "Ketuk untuk melihat. Periksa sebelum mengirim.",
+  "@reportScreenshotAttached": {
+    "description": "Subtitle of the screenshot row when a screenshot is attached."
+  },
+  "reportAddScreenshot": "Tambah tangkapan layar",
+  "@reportAddScreenshot": {
+    "description": "Button to add a screenshot to the report."
+  },
+  "reportRemoveScreenshot": "Hapus",
+  "@reportRemoveScreenshot": {
+    "description": "Button to remove the attached screenshot."
+  },
+  "reportViewScreenshot": "Lihat tangkapan layar",
+  "@reportViewScreenshot": {
+    "description": "Tooltip or label to view the attached screenshot."
+  },
+  "reportIncludeDiagnostics": "Sertakan info perangkat dan log terbaru",
+  "@reportIncludeDiagnostics": {
+    "description": "Switch label to include device info and recent logs in the report."
+  },
+  "reportShowDiagnostics": "Tampilkan yang disertakan",
+  "@reportShowDiagnostics": {
+    "description": "Button to expand the list of included diagnostics."
+  },
+  "reportHideDiagnostics": "Sembunyikan detail",
+  "@reportHideDiagnostics": {
+    "description": "Button to collapse the list of included diagnostics."
+  },
+  "reportSend": "Kirim laporan",
+  "@reportSend": {
+    "description": "Button that sends the report."
+  },
+  "reportShareAsFile": "Bagikan sebagai file",
+  "@reportShareAsFile": {
+    "description": "Button that shares the report as a file."
+  },
+  "reportSent": "Terima kasih, laporan terkirim. Referensi {reference}",
+  "@reportSent": {
+    "description": "Confirmation after the report is sent, with a short reference code.",
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCouldNotSend": "Tidak dapat mengirim",
+  "@reportCouldNotSend": {
+    "description": "Title of the dialog shown when the report fails to send."
+  },
+  "reportCouldNotSendBody": "Periksa koneksi Anda lalu coba lagi, atau bagikan laporan sebagai file.",
+  "@reportCouldNotSendBody": {
+    "description": "Body of the dialog shown when the report fails to send."
+  },
+  "reportShareInstead": "Bagikan saja",
+  "@reportShareInstead": {
+    "description": "Dialog action to share the report as a file after a send failure."
+  },
+  "reportShakeToReport": "Goyang untuk melapor",
+  "@reportShakeToReport": {
+    "description": "Settings toggle label for shake to report."
+  },
+  "reportShakeToReportSubtitle": "Goyangkan ponsel di layar mana pun untuk melaporkan masalah",
+  "@reportShakeToReportSubtitle": {
+    "description": "Settings toggle subtitle for shake to report."
+  },
+  "accountShowAiWallpapers": "Tampilkan wallpaper buatan AI",
+  "accountShowAiWallpapersSubtitle": "Matikan untuk melihat wallpaper buatan manusia saja",
+  "accountShowAiWallpapersFootnote": "Menyembunyikan wallpaper AI tidak pernah menyembunyikan unggahan dan favorit Anda.",
+  "wallpaperFeedHideAi": "Sembunyikan AI",
+  "wallpaperAiGenerated": "Buatan AI",
+  "wallpaperAiMadeWith": "Dibuat dengan {model}",
+  "wallpaperAiMadeWithUnknown": "Dibuat dengan AI",
+  "wallpaperAiReportWrongLabel": "Laporkan label salah",
+  "feedNoHumanWalls": "Belum ada wallpaper buatan manusia di sini",
+  "feedShowAiWalls": "Tampilkan wallpaper AI",
+  "dailyMomentTitle": "Momen harian",
+  "dailyMomentStreakTitle": "Runtun harian",
+  "dailyMomentChestTitle": "Peti harian",
+  "dailyMomentSpinTitle": "Putaran gratis",
+  "dailyMomentUnavailable": "Hadiah ini tidak lagi tersedia hari ini.",
+  "dailyMomentError": "Hadiah tidak dapat dimuat. Coba lagi.",
+  "dailyMomentStreakReceipt": "{coins} koin diperoleh · runtun {days} hari",
+  "@dailyMomentStreakReceipt": {
+    "description": "Daily moment: StreakReceipt.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeTitle": "Tantangan mingguan",
+  "challengeRules": "Maksimal 3 karya, ditinjau sebelum ditampilkan.",
+  "challengeVotingRules": "Pilih karya kreator lain hingga {date} UTC.",
+  "@challengeVotingRules": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeUpload": "Unggah karya",
+  "challengeAi": "Buat dengan AI",
+  "challengeTop": "Teratas",
+  "challengeNew": "Terbaru",
+  "challengePast": "Tantangan sebelumnya",
+  "challengeEmpty": "Karya yang disetujui akan muncul di sini.",
+  "challengeWaiting": "Pemungutan suara ditutup. Kami menunggu tinjauan karya sebelum memilih pemenang.",
+  "challengeClosed": "Tantangan ini telah berakhir.",
+  "challengeScheduled": "Tantangan ini belum dibuka.",
+  "challengeNoWinner": "Tidak ada pemenang untuk tantangan ini.",
+  "challengeWinner": "Pemenang · {name}",
+  "@challengeWinner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeVote": "Pilih",
+  "challengeUnvote": "Hapus suara",
+  "challengeVotes": "{count, plural, =0{0 suara} =1{1 suara} other{{count} suara}}",
+  "@challengeVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentCosmetic": "Item kosmetik ditambahkan ke koleksi",
+  "dailyMomentReward": "{coins} koin diperoleh",
+  "@dailyMomentReward": {
+    "description": "Daily moment: Reward.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentChestBody": "Buka peti hari ini saat kamu siap.",
+  "dailyMomentSpinBody": "Putaran gratismu siap.",
+  "dailyMomentBalance": "Saldo: {coins} koin",
+  "@dailyMomentBalance": {
+    "description": "Daily moment: Balance.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentDone": "Selesai",
+  "dailyMomentRetry": "Coba lagi",
+  "dailyMomentContinue": "Lanjutkan",
+  "dailyMomentOpenFree": "Buka peti gratis",
+  "dailyMomentOpenChest": "Buka dengan {coins} koin",
+  "@dailyMomentOpenChest": {
+    "description": "Daily moment: OpenChest.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyMomentSpinAction": "Putar gratis",
+  "dailyMomentClose": "Tutup momen harian",
+  "dailyMomentToday": "Hari ini",
+  "dailyMomentReady": "Hadiah harian sudah siap",
+  "dailyMomentComplete": "Hari ini sudah selesai",
+  "dailyMomentResume": "Lanjutkan momen harian",
+  "dailyMomentMore": "Lainnya",
+  "dailyMomentQuests": "Misi",
+  "dailyMomentChestLeft": "Peti harian tersedia",
+  "dailyMomentSpinLeft": "Putaran gratis tersedia",
+  "dailyMomentStreakLeft": "Runtun harian tersedia",
+  "challengeShare": "Bagikan tantangan",
+  "challengeRemove": "Hapus tantangan",
+  "challengeContext": "Tantangan · {theme}",
+  "@challengeContext": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeError": "Tantangan tidak dapat dimuat. Coba lagi.",
+  "challengeVoteError": "Suara tidak dapat disimpan. Coba lagi.",
+  "challengeSignIn": "Masuk untuk ikut atau memilih.",
+  "challengeLimit": "Anda telah mengirim 3 wallpaper untuk tantangan ini.",
+  "challengeRetry": "Coba lagi",
+  "challengeOwnEntry": "Anda tidak dapat memilih karya sendiri.",
+  "challengeDailyLimit": "Batas suara harian telah tercapai.",
+  "challengeMissing": "Tantangan atau karya ini tidak lagi tersedia.",
+  "challengeBadge": "Pemenang Tantangan",
+  "challengeBadgeDescription": "Menangkan tantangan mingguan",
+  "challengeWinnerNotificationTitle": "Wallpaper Anda menang",
+  "challengeWinnerNotificationBody": "Karya Anda memenangkan tantangan mingguan: {theme}.",
+  "@challengeWinnerNotificationBody": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "statsTitle": "Statistik Anda",
+  "statsEntry": "Statistik",
+  "statsViews": "Dilihat",
+  "statsSaves": "Disimpan",
+  "statsSets": "Diterapkan",
+  "statsDownloads": "Unduhan",
+  "statsShares": "Dibagikan",
+  "statsFolderAdds": "Ditambahkan ke folder",
+  "statsRemixes": "Remix",
+  "statsLoading": "Memuat statistik Anda",
+  "statsError": "Statistik Anda tidak dapat dimuat. Coba lagi.",
+  "statsRetry": "Coba lagi",
+  "statsEmptyTitle": "Wallpaper pertama Anda dimulai di sini",
+  "statsEmptyBody": "Unggah wallpaper. Statistiknya muncul setelah disetujui.",
+  "statsUpload": "Unggah wallpaper",
+  "statsWeekNote": "Minggu ini sejauh ini dibanding minggu lalu. Minggu dimulai Senin, UTC.",
+  "statsHistoryNote": "Delapan minggu, yang terlama lebih dulu. Tanda pisah berarti data tidak tersedia. Pelacakan dapat dimulai di tengah minggu, jadi data mingguan bisa tidak lengkap. Minggu ini belum selesai.",
+  "statsTopWalls": "Wallpaper teratas minggu ini",
+  "statsUntitled": "Wallpaper tanpa judul",
+  "statsCountingNote": "Total simpan menghitung favorit saat ini; simpan mingguan menghitung penambahan. Total remix menghitung remix dengan kredit saat ini; remix mingguan menghitung kredit pertama yang diterima. Wallpaper yang ditambahkan ke folder dicatat sejak pelacakan dimulai.",
+  "statsUnavailable": "Tidak tersedia",
+  "statsWeeklyTitle": "Wallpaper Anda minggu ini",
+  "statsWeeklyBody": "Lihat hasil wallpaper Anda pada {week}.",
+  "statsWallValue": "{metric}: {value} minggu ini",
+  "statsComparison": "{current} minggu ini · {previous} minggu lalu",
+  "statsTotal": "Total: {value}",
+  "statsChange": "{value} dibanding minggu lalu",
+  "statsUpdated": "Diperbarui {date} UTC",
+  "statsChartWeek": "Minggu mulai {date}: {value}",
+  "statsChartSummary": "{metric}, delapan minggu. {summary}",
+  "shortcutsGuideHeadline": "Wallpaper baru setiap hari",
+  "@shortcutsGuideHeadline": {
+    "description": "Headline of the iOS Shortcuts guide."
+  },
+  "shortcutsGuideBody": "Atur Pintasan sekali saja. Setiap hari, otomatisasi memasang wallpaper dari folder rotasi Anda. 200 wallpaper terbarunya masing-masing tampil sekali sebelum ada yang terulang.",
+  "@shortcutsGuideBody": {
+    "description": "Body under the iOS Shortcuts guide headline."
+  },
+  "shortcutsSourceRotation": "Folder rotasi",
+  "@shortcutsSourceRotation": {
+    "description": "Section title on the iOS Shortcuts guide, and the name of the Shortcuts source that shuffles the folder picked in Prism. Must match the iOS intent's source name."
+  },
+  "shortcutsSourceRotationDescription": "Mengacak folder yang Anda pilih di atas.",
+  "@shortcutsSourceRotationDescription": {
+    "description": "Description of the Rotation folder source in the iOS Shortcuts guide."
+  },
+  "shortcutsSourceFolder": "Folder",
+  "@shortcutsSourceFolder": {
+    "description": "Name of the Shortcuts source that shuffles a folder picked inside Shortcuts. Must match the iOS intent's source name."
+  },
+  "shortcutsSourceFolderDescription": "Mengacak folder yang Anda pilih di Pintasan.",
+  "@shortcutsSourceFolderDescription": {
+    "description": "Description of the Folder source in the iOS Shortcuts guide."
+  },
+  "shortcutsSourceFavouriteDescription": "Mengacak favorit Anda. Setiap favorit tampil sekali sebelum ada yang diulang. Beberapa wallpaper yang dilindungi mungkin tidak tersedia.",
+  "@shortcutsSourceFavouriteDescription": {
+    "description": "Description of the Random favourite source in the iOS Shortcuts guide."
+  },
+  "shortcutsRotationNone": "Belum ada folder yang dipilih",
+  "@shortcutsRotationNone": {
+    "description": "Rotation folder card title on the iOS Shortcuts guide when no folder is picked."
+  },
+  "shortcutsRotationNoneBody": "Pilih folder yang diacak oleh pintasan.",
+  "@shortcutsRotationNoneBody": {
+    "description": "Rotation folder card body when no folder is picked."
+  },
+  "shortcutsRotationPick": "Pilih folder",
+  "@shortcutsRotationPick": {
+    "description": "Button on the rotation folder card that opens the folder picker when no folder is picked."
+  },
+  "shortcutsRotationChange": "Ubah",
+  "@shortcutsRotationChange": {
+    "description": "Button on the rotation folder card that picks another folder."
+  },
+  "shortcutsRotationStop": "Berhenti",
+  "@shortcutsRotationStop": {
+    "description": "Button on the rotation folder card that stops using the folder for Shortcuts."
+  },
+  "shortcutsStepLabel": "Langkah {number}, {title}",
+  "@shortcutsStepLabel": {
+    "description": "Screen reader label of a numbered step heading in the iOS Shortcuts guide.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepAddTitle": "Tambahkan pintasan Prism",
+  "@shortcutsStepAddTitle": {
+    "description": "Step 1 title in the iOS Shortcuts guide."
+  },
+  "shortcutsStepAddBody": "Pintasan ini mengambil wallpaper dari folder rotasi Anda dan menjadikannya wallpaper Anda.",
+  "@shortcutsStepAddBody": {
+    "description": "Step 1 body when a shared shortcut link is available."
+  },
+  "shortcutsStepAddAction": "Tambahkan pintasan",
+  "@shortcutsStepAddAction": {
+    "description": "Button that opens the shared iCloud shortcut link."
+  },
+  "shortcutsStepAddManualBody": "Buat di Pintasan dengan 2 tindakan.",
+  "@shortcutsStepAddManualBody": {
+    "description": "Step 1 body when there is no shared shortcut link."
+  },
+  "shortcutsManualNew": "Di Pintasan, ketuk + untuk membuat pintasan baru.",
+  "@shortcutsManualNew": {
+    "description": "Manual step to build the shortcut."
+  },
+  "shortcutsManualGet": "Tambahkan \"Dapatkan Wallpaper Prism\". Atur Sumber ke Folder rotasi.",
+  "@shortcutsManualGet": {
+    "description": "Manual step to build the shortcut. Keep the quoted action name and \"Rotation folder\" as iOS shows them."
+  },
+  "shortcutsManualSet": "Tambahkan \"Atur Foto Wallpaper\". Ketuk panah di sebelahnya, lalu nonaktifkan Tampilkan Pratinjau.",
+  "@shortcutsManualSet": {
+    "description": "Manual step to build the shortcut. Use the action and option names that Apple's Shortcuts app shows in this language."
+  },
+  "shortcutsManualName": "Beri nama pintasan \"{name}\".",
+  "@shortcutsManualName": {
+    "description": "Manual step to build the shortcut. The name stays in English so Prism can run it.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepAutomationTitle": "Jalankan setiap hari",
+  "@shortcutsStepAutomationTitle": {
+    "description": "Step 2 title in the iOS Shortcuts guide."
+  },
+  "shortcutsAutomationOpen": "Di Pintasan, ketuk Otomatisasi, lalu ketuk +.",
+  "@shortcutsAutomationOpen": {
+    "description": "Step 2 line. Use Apple's Shortcuts labels in this language."
+  },
+  "shortcutsAutomationTime": "Ketuk Waktu. Pilih jam, lalu pilih Harian.",
+  "@shortcutsAutomationTime": {
+    "description": "Step 2 line. Use Apple's Shortcuts labels in this language."
+  },
+  "shortcutsAutomationRun": "Pilih Jalankan Segera, lalu ketuk Berikutnya.",
+  "@shortcutsAutomationRun": {
+    "description": "Step 2 line. Use Apple's Shortcuts labels in this language."
+  },
+  "shortcutsAutomationPick": "Pilih \"{name}\" untuk dijalankan.",
+  "@shortcutsAutomationPick": {
+    "description": "Step 2 line. The shortcut name stays in English.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsAutomationNoTab": "Tidak ada tab Otomatisasi? Buka \"{name}\", ketuk Edit, lalu ketuk Otomatisasi.",
+  "@shortcutsAutomationNoTab": {
+    "description": "Note for newer iOS versions without an Automation tab.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepTestTitle": "Coba sekarang",
+  "@shortcutsStepTestTitle": {
+    "description": "Step 3 title in the iOS Shortcuts guide."
+  },
+  "shortcutsStepTestBody": "Menjalankan \"{name}\" sekali, supaya Anda bisa melihat wallpaper baru sekarang.",
+  "@shortcutsStepTestBody": {
+    "description": "Step 3 body.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shortcutsStepTestAction": "Jalankan pintasan",
+  "@shortcutsStepTestAction": {
+    "description": "Button that runs the shortcut in the Shortcuts app."
+  },
+  "foldersRotateDaily": "Putar folder ini setiap hari",
+  "@foldersRotateDaily": {
+    "description": "Folder page menu item on iPhone. Makes this the Shortcuts rotation folder and opens the guide."
+  },
+  "autoRotateIosTitle": "Ubah wallpaper dengan Pintasan",
+  "@autoRotateIosTitle": {
+    "description": "Title on the auto-rotate page on iPhone, where Shortcuts changes the wallpaper."
+  },
+  "autoRotateIosBody": "Di iPhone, otomatisasi Pintasan memasang wallpaper baru dari folder Anda setiap hari.",
+  "@autoRotateIosBody": {
+    "description": "Body on the auto-rotate page on iPhone."
+  },
+  "autoRotateIosAction": "Atur Pintasan",
+  "@autoRotateIosAction": {
+    "description": "Button on the auto-rotate page on iPhone that opens the Shortcuts guide."
+  },
+  "shortcutsAutomationIos16": "Di iOS 16 tidak ada \"Jalankan Segera\". Matikan \"Tanya Sebelum Menjalankan\" sebagai gantinya.",
+  "@shortcutsAutomationIos16": {
+    "description": "Note under the Step 2 automation lines for iOS 16, which has no Run Immediately option. Use the Shortcuts labels in this language."
+  },
+  "tipAction": "Beri tip kreator",
+  "@tipAction": {
+    "description": "Wall detail: opens the sheet to tip the wall's creator coins"
+  },
+  "tipMenuItem": "Kirim tip",
+  "@tipMenuItem": {
+    "description": "Creator profile overflow menu item that opens the tip sheet"
+  },
+  "tipTitle": "Beri tip {name}",
+  "@tipTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipMessage": "Pilih jumlah. {name} menerima semua koin dan melihat nama Anda.",
+  "@tipMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipAmountsLabel": "Jumlah tip",
+  "@tipAmountsLabel": {
+    "description": "Accessibility label for the group of tip amount choices"
+  },
+  "tipBalance": "Saldo Anda: {balance, plural, =1{1 koin} other{{balance} koin}}",
+  "@tipBalance": {
+    "placeholders": {
+      "balance": {
+        "type": "int"
+      }
+    }
+  },
+  "tipShortBy": "Anda perlu {amount, plural, =1{1 koin lagi} other{{amount} koin lagi}}.",
+  "@tipShortBy": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipSendButton": "Beri tip {amount} koin",
+  "@tipSendButton": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipEarnCoins": "Dapatkan koin",
+  "@tipEarnCoins": {
+    "description": "Tip sheet: opens Rewards when the balance is too low"
+  },
+  "tipThanksTitle": "Terima kasih atas tip Anda",
+  "@tipThanksTitle": {
+    "description": "Tip sheet success headline"
+  },
+  "tipThanksMessage": "{name} menerima {amount} koin Anda.",
+  "@tipThanksMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "tipDone": "Selesai",
+  "@tipDone": {
+    "description": "Closes the tip sheet after a tip"
+  },
+  "tipNotEnoughCoins": "Koin Anda tidak cukup untuk tip ini.",
+  "@tipNotEnoughCoins": {
+    "description": "Toast when the balance is short"
+  },
+  "tipDailyLimit": "Anda sudah mengirim semua tip hari ini. Coba lagi besok.",
+  "@tipDailyLimit": {
+    "description": "Toast when the sender hit the daily tip cap"
+  },
+  "tipPairLimit": "Anda sudah memberi tip kepada {name} hari ini. Coba lagi besok.",
+  "@tipPairLimit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipCreatorLimit": "{name} tidak bisa menerima tip lagi hari ini. Coba lagi besok.",
+  "@tipCreatorLimit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipSenderTooNew": "Anda bisa mengirim tip 7 hari setelah bergabung dengan Prism.",
+  "@tipSenderTooNew": {
+    "description": "Toast for accounts younger than 7 days"
+  },
+  "tipSenderIneligible": "Masuk dengan akun terverifikasi untuk mengirim tip.",
+  "@tipSenderIneligible": {
+    "description": "Toast for guest or unverified accounts"
+  },
+  "tipUnavailable": "Anda tidak bisa memberi tip kepada {name} saat ini.",
+  "@tipUnavailable": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tipFailed": "Tip tidak bisa dikirim. Coba lagi.",
+  "@tipFailed": {
+    "description": "Toast when the tip call fails"
+  },
+  "wallTippedBy": "Diberi tip oleh {count} orang",
+  "@wallTippedBy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "coreCoinTipSent": "Tip terkirim",
+  "@coreCoinTipSent": {
+    "description": "Coin history row for a tip the user sent"
+  },
+  "coreCoinTipReceived": "Tip diterima",
+  "@coreCoinTipReceived": {
+    "description": "Coin history row for a tip the user received"
+  },
+  "notifPushTipReceivedTitle": "{senderName} memberi Anda tip {amount} koin untuk {wallTitle}",
+  "@notifPushTipReceivedTitle": {
+    "placeholders": {
+      "senderName": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTipReceivedTitleUntitled": "{senderName} memberi Anda tip {amount} koin",
+  "@notifPushTipReceivedTitleUntitled": {
+    "placeholders": {
+      "senderName": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTipReceivedBody": "Lihat tip Anda di statistik kreator.",
+  "@notifPushTipReceivedBody": {
+    "description": "Body of the first tip push of the day"
+  },
+  "notifTipsReceivedTitle": "Anda mendapat {count} tip hari ini",
+  "@notifTipsReceivedTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notifTipsReceivedBody": "Total {coins} koin. Lihat di statistik kreator Anda.",
+  "@notifTipsReceivedBody": {
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTips": "Tip",
+  "@statsTips": {
+    "description": "Creator stats: tips section title"
+  },
+  "statsTipsTotal": "{count, plural, =1{1 tip} other{{count} tip}}, total {coins} koin",
+  "@statsTipsTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsWeek": "Minggu {date}: {count, plural, =1{1 tip} other{{count} tip}}, {coins} koin",
+  "@statsTipsWeek": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsWall": "{count, plural, =1{1 tip} other{{count} tip}}, {coins} koin",
+  "@statsTipsWall": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "statsTipsEmpty": "Belum ada tip. Penggemar bisa memberi tip dari wallpaper dan profil Anda.",
+  "@statsTipsEmpty": {
+    "description": "Creator stats: tips section with no tips"
+  },
+  "creatorsToFollow": "Kreator untuk diikuti",
+  "@creatorsToFollow": {
+    "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "creatorsSeeAll": "Lihat semua",
+  "@creatorsSeeAll": {
+    "description": "Opens the full list of creators."
+  },
+  "creatorsTitle": "Kreator",
+  "@creatorsTitle": {
+    "description": "Title of the page that lists all creators."
+  },
+  "creatorsFilterAll": "Semua",
+  "@creatorsFilterAll": {
+    "description": "Filter chip that shows creators from every category."
+  },
+  "creatorsEmptyTitle": "Belum ada kreator di sini",
+  "@creatorsEmptyTitle": {
+    "description": "Empty state when no creator matches the selected category."
+  },
+  "creatorsEmptyBody": "Coba kategori lain.",
+  "@creatorsEmptyBody": {
+    "description": "Empty state body under creatorsEmptyTitle."
+  },
+  "creatorsLoadError": "Kreator tidak dapat dimuat",
+  "@creatorsLoadError": {
+    "description": "Error state when the creators list fails to load."
+  },
+  "creatorsOpenProfile": "Buka profil {name}",
+  "@creatorsOpenProfile": {
+    "description": "Screen reader label for a creator's avatar and name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsWallBy": "Wallpaper oleh {name}",
+  "@creatorsWallBy": {
+    "description": "Screen reader label for a wallpaper thumbnail on a creator card.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsFollowedByOne": "Diikuti oleh {first}",
+  "@creatorsFollowedByOne": {
+    "description": "Profile social proof when one person the viewer follows follows this creator.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsFollowedByTwo": "Diikuti oleh {first} dan {second}",
+  "@creatorsFollowedByTwo": {
+    "description": "Profile social proof when two people the viewer follows follow this creator.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsFollowedByMany": "Diikuti oleh {first}, {second} dan {others, plural, =1{1 lainnya yang Anda ikuti} other{{others} lainnya yang Anda ikuti}}",
+  "@creatorsFollowedByMany": {
+    "description": "Profile social proof when three or more people the viewer follows follow this creator. others is the count beyond the two names.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      },
+      "others": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorsMoreLike": "Lainnya seperti {name}",
+  "@creatorsMoreLike": {
+    "description": "Toast action and sheet title that suggest creators similar to the one just followed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorsSimilarSubtitle": "Kreator dengan gaya serupa",
+  "@creatorsSimilarSubtitle": {
+    "description": "Subtitle of the similar creators sheet."
+  },
+  "creatorsShowMeTitle": "Tampilkan saya di Kreator untuk diikuti",
+  "@creatorsShowMeTitle": {
+    "description": "Settings switch that lists the user in the creator directory."
+  },
+  "creatorsShowMeBody": "Orang lain dapat menemukan profil dan wallpaper teratas Anda",
+  "@creatorsShowMeBody": {
+    "description": "Subtitle of the creator directory settings switch."
+  },
+  "promoRedeemTitle": "Tukarkan kode",
+  "@promoRedeemTitle": {
+    "description": "Title of the sheet where the user enters a Prism promo code."
+  },
+  "promoRedeemMessage": "Masukkan kode dari postingan atau giveaway Prism.",
+  "@promoRedeemMessage": {
+    "description": "Line under the redeem sheet title."
+  },
+  "promoRedeemMessageIos": "Masukkan kode koin dari postingan atau giveaway Prism.",
+  "@promoRedeemMessageIos": {
+    "description": "Line under the redeem sheet title on iPhone and iPad, where only coin codes work."
+  },
+  "promoCodeFieldLabel": "Kode",
+  "@promoCodeFieldLabel": {
+    "description": "Label of the promo code text field."
+  },
+  "promoCodeFieldHint": "Contoh, 7KQ2 MPXR 4D",
+  "@promoCodeFieldHint": {
+    "description": "Hint text in the empty promo code field."
+  },
+  "promoPasteCode": "Tempel kode",
+  "@promoPasteCode": {
+    "description": "Tooltip and screen reader label of the paste button in the code field."
+  },
+  "promoRedeemAction": "Tukarkan",
+  "@promoRedeemAction": {
+    "description": "Main button that redeems the code."
+  },
+  "promoRedeeming": "Menukarkan kode",
+  "@promoRedeeming": {
+    "description": "Screen reader label while the redeem request runs."
+  },
+  "promoDone": "Selesai",
+  "@promoDone": {
+    "description": "Button that closes the sheet after a code works."
+  },
+  "promoTryAnother": "Coba kode lain",
+  "@promoTryAnother": {
+    "description": "Button after an error that clears the field."
+  },
+  "promoSuccessCoins": "Kamu mendapat {count, plural, one{1 koin} other{{count} koin}}",
+  "@promoSuccessCoins": {
+    "description": "Headline after a coin code works.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessCoinsMessage": "Koin sudah masuk ke saldomu.",
+  "@promoSuccessCoinsMessage": {
+    "description": "Line under the coin success headline."
+  },
+  "promoSuccessPro": "Kamu mendapat {days, plural, one{1 hari} other{{days} hari}} Pro",
+  "@promoSuccessPro": {
+    "description": "Headline after a Pro code works.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "promoSuccessProMessage": "Paket Pro-mu sekarang berlaku sampai {date}.",
+  "@promoSuccessProMessage": {
+    "description": "Line under the Pro success headline.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoErrorInvalid": "Itu bukan kode Prism. Kode memiliki 10 huruf atau angka atau lebih.",
+  "promoErrorNotFound": "Kami tidak menemukan kode itu. Periksa lagi dan coba lagi.",
+  "promoErrorDisabled": "Kode ini dinonaktifkan.",
+  "promoErrorExpired": "Kode ini sudah kedaluwarsa.",
+  "promoErrorLimitReached": "Kode ini sudah tidak bisa digunakan lagi.",
+  "promoErrorAlreadyRedeemed": "Kamu sudah menggunakan kode ini.",
+  "promoErrorAccountTooNew": "Akunmu terlalu baru untuk kode ini.",
+  "promoErrorNewUsersOnly": "Kode ini hanya untuk akun baru.",
+  "promoErrorPremiumNotOnIos": "Kode Pro tidak berfungsi di iPhone atau iPad. Gunakan kode App Store sebagai gantinya.",
+  "promoErrorAlreadyPremium": "Kamu sudah punya Pro, jadi kode ini tidak diperlukan.",
+  "promoErrorRateLimited": "Terlalu banyak percobaan. Tunggu satu jam, lalu coba lagi.",
+  "promoErrorBusy": "Banyak orang sedang menukarkan kode. Coba lagi sebentar lagi.",
+  "promoErrorSignedOut": "Masuk untuk menukarkan kode.",
+  "promoErrorNetwork": "Tidak bisa terhubung ke Prism. Periksa koneksimu dan coba lagi.",
+  "promoErrorUnknown": "Terjadi kesalahan. Coba lagi.",
+  "promoSettingsGroup": "Kode",
+  "@promoSettingsGroup": {
+    "description": "Settings section title for promo and store codes."
+  },
+  "promoSettingsRedeemTitle": "Tukarkan kode Prism",
+  "@promoSettingsRedeemTitle": {
+    "description": "Settings row that opens the redeem sheet."
+  },
+  "promoSettingsRedeemSubtitle": "Koin atau hari Pro dari postingan dan giveaway kami",
+  "@promoSettingsRedeemSubtitle": {
+    "description": "Subtitle of that row on Android."
+  },
+  "promoSettingsRedeemSubtitleIos": "Koin dari postingan dan giveaway kami",
+  "@promoSettingsRedeemSubtitleIos": {
+    "description": "Subtitle of that row on iPhone and iPad."
+  },
+  "promoAppStoreCodeTitle": "Tukarkan kode App Store",
+  "@promoAppStoreCodeTitle": {
+    "description": "iOS settings row that opens Apple's code sheet."
+  },
+  "promoAppStoreCodeSubtitle": "Kode penawaran Pro dari Apple",
+  "@promoAppStoreCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoPlayCodeTitle": "Tukarkan kode Play",
+  "@promoPlayCodeTitle": {
+    "description": "Android settings row that opens Google Play's redeem page."
+  },
+  "promoPlayCodeSubtitle": "Kode penawaran Pro dari Google Play",
+  "@promoPlayCodeSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoCodesFootnoteIos": "Kode Prism memberi koin. Kode App Store memberi Pro.",
+  "@promoCodesFootnoteIos": {
+    "description": "One line under the Codes group on iOS that says which code goes where."
+  },
+  "promoCodesFootnoteAndroid": "Kode Prism memberi koin atau hari Pro. Kode Play memberi Pro.",
+  "@promoCodesFootnoteAndroid": {
+    "description": "Same line on Android."
+  },
+  "promoStoreCodeFailed": "Halaman kode tidak bisa dibuka. Coba lagi.",
+  "@promoStoreCodeFailed": {
+    "description": "Toast when the store code sheet or page does not open."
+  },
+  "promoRewardsRowTitle": "Tukarkan kode",
+  "@promoRewardsRowTitle": {
+    "description": "Rewards earn row that opens the redeem sheet."
+  },
+  "promoRewardsRowSubtitle": "Punya kode dari postingan atau giveaway?",
+  "@promoRewardsRowSubtitle": {
+    "description": "Subtitle of that row."
+  },
+  "promoAdminTitle": "Kode promo",
+  "@promoAdminTitle": {
+    "description": "Admin screen title."
+  },
+  "promoAdminEntry": "Kode promo",
+  "@promoAdminEntry": {
+    "description": "Admin entry that opens the promo code screen."
+  },
+  "promoAdminCreate": "Buat kode",
+  "@promoAdminCreate": {
+    "description": "Button that creates a code."
+  },
+  "promoAdminTypeCoins": "Koin",
+  "promoAdminTypePro": "Hari Pro",
+  "promoAdminAmount": "Jumlah",
+  "@promoAdminAmount": {
+    "description": "Field: coins (1 to 1000) or Pro days (1 to 90)."
+  },
+  "promoAdminAmountHelpCoins": "1 sampai 1.000 koin",
+  "promoAdminAmountHelpPro": "1 sampai 90 hari. Khusus Android.",
+  "promoAdminMaxRedemptions": "Maks. penukaran",
+  "promoAdminExpiresInDays": "Kedaluwarsa dalam (hari)",
+  "promoAdminMinAccountAge": "Usia akun minimum (hari)",
+  "promoAdminNewUsersOnly": "Hanya akun baru",
+  "promoAdminNewUsersDays": "Akun paling lama (hari)",
+  "promoAdminCustomCode": "Kode kustom (opsional)",
+  "@promoAdminCustomCode": {
+    "description": "Help: leave empty to generate one."
+  },
+  "promoAdminCustomCodeHelp": "10 sampai 32 huruf dan angka, tanpa I, O, 0, atau 1. Kosongkan untuk membuat kode otomatis.",
+  "promoAdminLabel": "Catatan",
+  "@promoAdminLabel": {
+    "description": "Field for an admin note such as the post the code is for."
+  },
+  "promoAdminCreated": "{code} dibuat",
+  "@promoAdminCreated": {
+    "description": "Toast after create.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminCopied": "Kode disalin",
+  "@promoAdminCopied": {
+    "description": "Toast after copying a code."
+  },
+  "promoAdminCopy": "Salin kode",
+  "@promoAdminCopy": {
+    "description": "Tooltip."
+  },
+  "promoAdminRedemptions": "{used} dari {max} digunakan",
+  "@promoAdminRedemptions": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "promoAdminExpires": "Kedaluwarsa {date}",
+  "@promoAdminExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "promoAdminDisabled": "Nonaktif",
+  "@promoAdminDisabled": {
+    "description": "Badge on a turned-off code."
+  },
+  "promoAdminDisable": "Nonaktifkan",
+  "@promoAdminDisable": {
+    "description": "Action."
+  },
+  "promoAdminEnable": "Aktifkan",
+  "@promoAdminEnable": {
+    "description": "Action."
+  },
+  "promoAdminEmpty": "Belum ada kode.",
+  "promoAdminLoadFailed": "Kode tidak bisa dimuat. Tarik ke bawah untuk mencoba lagi.",
+  "promoAdminCreateFailed": "Kode tidak bisa dibuat: {reason}",
+  "@promoAdminCreateFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "wrappedTitle": "Prism Wrapped {year}",
+  "@wrappedTitle": {"description": "Title of the Wrapped yearly recap screen and share card.", "placeholders": {"year": {"type": "String"}}},
+  "wrappedIntroHeadline": "Tahun Anda dalam wallpaper",
+  "@wrappedIntroHeadline": {"description": "Headline of the first Wrapped card."},
+  "wrappedIntroBody": "Beberapa kartu tentang wallpaper yang Anda sukai tahun ini.",
+  "@wrappedIntroBody": {"description": "Body of the first Wrapped card."},
+  "wrappedSavesLabel": "Disimpan",
+  "@wrappedSavesLabel": {"description": "Label of the Wrapped card that shows how many walls the user saved."},
+  "wrappedSavesBody": "{count, plural, =1{Anda menyimpan {count} wallpaper di {year}.} other{Anda menyimpan {count} wallpaper di {year}.}}",
+  "@wrappedSavesBody": {"description": "Body of the saves card. count is the number of saved walls this year.", "placeholders": {"count": {"type": "int"}, "year": {"type": "String"}}},
+  "wrappedColoursLabel": "Warna Anda",
+  "@wrappedColoursLabel": {"description": "Label of the Wrapped card that shows the user top colours."},
+  "wrappedColoursBody": "{first}, {second}, dan {third} paling sering muncul di wallpaper yang Anda simpan.",
+  "@wrappedColoursBody": {"description": "Body of the colours card. first, second and third are the top three colour names.", "placeholders": {"first": {"type": "String"}, "second": {"type": "String"}, "third": {"type": "String"}}},
+  "wrappedCreatorLabel": "Kreator teratas Anda",
+  "@wrappedCreatorLabel": {"description": "Label of the Wrapped card that shows the creator the user saved most."},
+  "wrappedCreatorBody": "{count, plural, =1{Anda menyimpan {count} wallpaper dari {name}.} other{Anda menyimpan {count} wallpaper dari {name}.}}",
+  "@wrappedCreatorBody": {"description": "Body of the top creator card. count is the number of walls saved from that creator.", "placeholders": {"count": {"type": "int"}, "name": {"type": "String"}}},
+  "wrappedStreakLabel": "Rentetan terpanjang Anda",
+  "@wrappedStreakLabel": {"description": "Label of the Wrapped card that shows the longest daily check-in run."},
+  "wrappedStreakBody": "{count, plural, =1{Anda masuk {count} hari berturut-turut.} other{Anda masuk {count} hari berturut-turut.}}",
+  "@wrappedStreakBody": {"description": "Body of the longest run card. count is the number of days in the run.", "placeholders": {"count": {"type": "int"}}},
+  "wrappedDays": "{count, plural, =1{{count} hari} other{{count} hari}}",
+  "@wrappedDays": {"description": "Short day count used inside other Wrapped text, such as \"3 days\".", "placeholders": {"count": {"type": "int"}}},
+  "wrappedAiLabel": "Dibuat dengan AI",
+  "@wrappedAiLabel": {"description": "Label of the Wrapped card that shows AI walls the user made."},
+  "wrappedAiBody": "{count, plural, =1{Anda membuat {count} wallpaper AI.} other{Anda membuat {count} wallpaper AI.}}",
+  "@wrappedAiBody": {"description": "Body of the AI card. count is the number of AI walls the user made.", "placeholders": {"count": {"type": "int"}}},
+  "wrappedCategoryLabel": "Kategori teratas Anda",
+  "@wrappedCategoryLabel": {"description": "Label of the Wrapped card that shows the category the user saved from most."},
+  "wrappedCategoryBody": "{count, plural, =1{Anda menyimpan {count} wallpaper dari {category}.} other{Anda menyimpan {count} wallpaper dari {category}.}}",
+  "@wrappedCategoryBody": {"description": "Body of the top category card. count is the number of walls saved from that category.", "placeholders": {"count": {"type": "int"}, "category": {"type": "String"}}},
+  "wrappedFoldersLabel": "Folder",
+  "@wrappedFoldersLabel": {"description": "Label of the Wrapped card that shows how many folders the user made."},
+  "wrappedFoldersBody": "{count, plural, =1{Anda membuat {count} folder.} other{Anda membuat {count} folder.}}",
+  "@wrappedFoldersBody": {"description": "Body of the folders card. count is the number of folders the user made.", "placeholders": {"count": {"type": "int"}}},
+  "wrappedOnScreenLabel": "Di layar Anda",
+  "@wrappedOnScreenLabel": {"description": "Label of the Wrapped card that shows how often the user set or downloaded a wall."},
+  "wrappedOnScreenBody": "{count, plural, =1{Anda memasang atau mengunduh wallpaper ini {count} kali.} other{Anda memasang atau mengunduh wallpaper ini {count} kali.}}",
+  "@wrappedOnScreenBody": {"description": "Body of the on screen card. count is the number of times the wall was set or downloaded.", "placeholders": {"count": {"type": "int"}}},
+  "wrappedChallengesLabel": "Tantangan mingguan",
+  "@wrappedChallengesLabel": {"description": "Label of the Wrapped card that shows weekly challenge entries."},
+  "wrappedChallengesBody": "{count, plural, =1{Anda mengikuti {count} tantangan mingguan.} other{Anda mengikuti {count} tantangan mingguan.}}",
+  "@wrappedChallengesBody": {"description": "Body of the challenges card. count is the number of weekly challenges entered.", "placeholders": {"count": {"type": "int"}}},
+  "wrappedTipsLabel": "Tip",
+  "@wrappedTipsLabel": {"description": "Label of the Wrapped card that shows tips the user sent."},
+  "wrappedTipsBody": "{count, plural, =1{Anda mengirim {count} tip ke kreator.} other{Anda mengirim {count} tip ke kreator.}}",
+  "@wrappedTipsBody": {"description": "Body of the tips card. count is the number of tips sent.", "placeholders": {"count": {"type": "int"}}},
+  "wrappedSince": "Sejak {date}",
+  "@wrappedSince": {"description": "Date line that shows when the Wrapped period starts.", "placeholders": {"date": {"type": "String"}}},
+  "wrappedSummaryHeadline": "{year} Anda di Prism",
+  "@wrappedSummaryHeadline": {"description": "Headline of the Wrapped summary card.", "placeholders": {"year": {"type": "String"}}},
+  "wrappedShare": "Bagikan",
+  "@wrappedShare": {"description": "Button that shares the Wrapped card."},
+  "wrappedShareCard": "Bagikan kartu ini",
+  "@wrappedShareCard": {"description": "Accessible label for the share icon on a Wrapped card."},
+  "wrappedPause": "Jeda",
+  "@wrappedPause": {"description": "Button that pauses the Wrapped card auto-advance."},
+  "wrappedPlay": "Putar",
+  "@wrappedPlay": {"description": "Button that resumes the Wrapped card auto-advance."},
+  "wrappedClose": "Tutup",
+  "@wrappedClose": {"description": "Button that closes the Wrapped viewer."},
+  "wrappedNextCard": "Kartu berikutnya",
+  "@wrappedNextCard": {"description": "Accessible label for the button that moves to the next Wrapped card."},
+  "wrappedPreviousCard": "Kartu sebelumnya",
+  "@wrappedPreviousCard": {"description": "Accessible label for the button that moves to the previous Wrapped card."},
+  "wrappedCardPosition": "Kartu {index} dari {count}",
+  "@wrappedCardPosition": {"description": "Accessible label that tells the position of the current Wrapped card. index is the current card, count is the total.", "placeholders": {"index": {"type": "int"}, "count": {"type": "int"}}},
+  "wrappedHomeTitle": "{year} Anda di Prism",
+  "@wrappedHomeTitle": {"description": "Title of the Wrapped entry card on the home screen.", "placeholders": {"year": {"type": "String"}}},
+  "wrappedHomeSubtitle": "Tahun Anda dalam wallpaper sudah siap.",
+  "@wrappedHomeSubtitle": {"description": "Subtitle of the Wrapped entry card on the home screen."},
+  "wrappedNotEligible": "Tidak ada Wrapped untuk akun ini tahun ini.",
+  "@wrappedNotEligible": {"description": "Message shown when the account has no Wrapped for the year."},
+  "wrappedLoadFailed": "Wrapped Anda tidak dapat dimuat. Periksa koneksi dan coba lagi.",
+  "@wrappedLoadFailed": {"description": "Error message shown when Wrapped cannot load."},
+  "notifPushWrappedReadyTitle": "{year} Anda di Prism sudah tiba",
+  "@notifPushWrappedReadyTitle": {"description": "Title of the push notification that tells the user Wrapped is ready.", "placeholders": {"year": {"type": "String"}}},
+  "notifPushWrappedReadyBody": "Lihat wallpaper yang Anda simpan, warna Anda, dan kreator Anda.",
+  "@notifPushWrappedReadyBody": {"description": "Body of the push notification that tells the user Wrapped is ready."},
+  "desktopVersionChip": "Versi desktop",
+  "@desktopVersionChip": {
+    "description": "Chip on the wallpaper detail screen. Opens the desktop version of the wallpaper."
+  },
+  "desktopVersionChipSemantic": "Buka versi desktop",
+  "@desktopVersionChipSemantic": {
+    "description": "Screen reader label of the Desktop version chip."
+  },
+  "desktopVersionSheetTitle": "Versi desktop",
+  "@desktopVersionSheetTitle": {
+    "description": "Title of the sheet that shows the wide desktop version of a wallpaper."
+  },
+  "desktopVersionSheetBody": "Gambar yang sama, dibuat lebar untuk layar komputer. {width} × {height}.",
+  "@desktopVersionSheetBody": {
+    "description": "Body of the desktop version sheet. width and height are pixels, for example 2560 × 1600.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopVersionPreviewSemantic": "Versi desktop di layar komputer",
+  "@desktopVersionPreviewSemantic": {
+    "description": "Screen reader label of the desktop preview image."
+  },
+  "desktopVersionSendToComputer": "Kirim ke komputer saya",
+  "@desktopVersionSendToComputer": {
+    "description": "Button. Shares a link to the wallpaper's web page, where the desktop version can be downloaded."
+  },
+  "desktopVersionShareText": "Dapatkan wallpaper ini untuk komputer Anda: {url}",
+  "@desktopVersionShareText": {
+    "description": "Text shared with the link to the desktop download page. url is the page address.",
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "desktopVersionShareSubject": "Wallpaper desktop dari Prism",
+  "@desktopVersionShareSubject": {
+    "description": "Email subject used when the desktop link is shared by email."
+  },
+  "desktopVersionSetOnTablet": "Pasang versi desktop",
+  "@desktopVersionSetOnTablet": {
+    "description": "Tablet button. Sets the wide desktop version as the tablet wallpaper."
+  },
+  "desktopVersionSaveOnTablet": "Simpan versi desktop ke Foto",
+  "@desktopVersionSaveOnTablet": {
+    "description": "iPad button. Saves the wide desktop version to Photos."
+  },
+  "desktopVersionUnavailable": "Versi desktop tidak dapat diambil. Periksa koneksi Anda, lalu coba lagi.",
+  "@desktopVersionUnavailable": {
+    "description": "Error toast when the desktop version cannot be downloaded."
+  },
+  "layoutTitle": "Tata letak",
+  "@layoutTitle": {
+    "description": "Title of the Layout settings page and its row in Settings."
+  },
+  "layoutRowSubtitle": "Tab dan kisi wallpaper",
+  "@layoutRowSubtitle": {
+    "description": "Subtitle of the Layout row in Settings."
+  },
+  "layoutTabsHeader": "Tab",
+  "@layoutTabsHeader": {
+    "description": "Section header above the bottom bar tab list on the Layout page."
+  },
+  "layoutTabsFootnote": "Seret untuk mengubah urutan. Minimal 3 tab tetap ada di bilah. Tab yang disembunyikan ada di Lainnya.",
+  "@layoutTabsFootnote": {
+    "description": "Footnote under the tab list on the Layout page."
+  },
+  "layoutTabAlwaysShown": "Selalu di bilah",
+  "@layoutTabAlwaysShown": {
+    "description": "Subtitle of the Home row on the Layout page. Home cannot be hidden."
+  },
+  "layoutTabUnderMore": "Di Lainnya",
+  "@layoutTabUnderMore": {
+    "description": "Subtitle of a hidden tab row on the Layout page."
+  },
+  "layoutShowTab": "Tampilkan {tab}",
+  "@layoutShowTab": {
+    "description": "Accessibility label of the switch that shows a tab in the bottom bar.",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "Search"
+      }
+    }
+  },
+  "layoutReorderTab": "Ubah urutan {tab}",
+  "@layoutReorderTab": {
+    "description": "Tooltip and accessibility label of the drag handle of a tab row.",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "Search"
+      }
+    }
+  },
+  "layoutMoveUp": "Pindahkan ke atas",
+  "@layoutMoveUp": {
+    "description": "Accessibility action that moves a tab one place up in the bottom bar order."
+  },
+  "layoutMoveDown": "Pindahkan ke bawah",
+  "@layoutMoveDown": {
+    "description": "Accessibility action that moves a tab one place down in the bottom bar order."
+  },
+  "layoutGridHeader": "Kisi wallpaper",
+  "@layoutGridHeader": {
+    "description": "Section header above the grid size choice on the Layout page."
+  },
+  "layoutDensityCompact": "Ringkas",
+  "@layoutDensityCompact": {
+    "description": "Grid size with small tiles (3 columns on a phone)."
+  },
+  "layoutDensityComfortable": "Nyaman",
+  "@layoutDensityComfortable": {
+    "description": "Default grid size (2 columns on a phone)."
+  },
+  "layoutDensityLarge": "Besar",
+  "@layoutDensityLarge": {
+    "description": "Grid size with one full-width wallpaper per row on a phone."
+  },
+  "layoutGridFootnote": "Berlaku untuk semua kisi wallpaper. Cubit feed Beranda untuk mengubahnya.",
+  "@layoutGridFootnote": {
+    "description": "Footnote under the grid size choice on the Layout page."
+  },
+  "layoutReset": "Atur ulang tata letak",
+  "@layoutReset": {
+    "description": "Button that puts the tabs and grid size back to the defaults."
+  },
+  "navMore": "Lainnya",
+  "@navMore": {
+    "description": "Bottom bar entry that opens the hidden tabs."
+  },
+  "navMoreEditTabs": "Ubah tab",
+  "@navMoreEditTabs": {
+    "description": "Row in the More sheet that opens the Layout settings page."
+  },
+  "trialTimelineTitle": "Cara kerja uji coba gratis Anda",
+  "@trialTimelineTitle": {
+    "description": "Title of the screen that shows the annual free trial day by day, before the user starts it."
+  },
+  "trialTimelineClose": "Tutup",
+  "@trialTimelineClose": {
+    "description": "Tooltip and screen reader label of the close button on the free trial timeline."
+  },
+  "trialTimelinePlanSummary": "Prism Pro tahunan. {days, plural, =1{1 hari} other{{days} hari}} gratis, lalu {price} per tahun.",
+  "@trialTimelinePlanSummary": {
+    "description": "Plan summary at the top of the free trial timeline. {price} is the store's localized yearly price.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "trialTimelineToday": "Hari ini",
+  "@trialTimelineToday": {
+    "description": "Label of the first free trial timeline step. The date follows it."
+  },
+  "trialTimelineTodayBody": "Anda mendapat akses penuh ke Prism Pro. Anda tidak membayar apa pun hari ini.",
+  "@trialTimelineTodayBody": {
+    "description": "First free trial timeline step."
+  },
+  "trialTimelineDay": "Hari {day}",
+  "@trialTimelineDay": {
+    "description": "Label of a later free trial timeline step, counted from today. The date follows it.",
+    "placeholders": {
+      "day": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "trialTimelineReminderBody": "Kami mengingatkan Anda bahwa uji coba Anda akan segera berakhir.",
+  "@trialTimelineReminderBody": {
+    "description": "Free trial timeline step when the reminder switch is on."
+  },
+  "trialTimelineNoReminderBody": "Tanpa pengingat. Anda mematikannya di bawah.",
+  "@trialTimelineNoReminderBody": {
+    "description": "Free trial timeline step when the reminder switch is off."
+  },
+  "trialTimelineChargeBody": "Anda membayar {price}, kecuali Anda membatalkan setidaknya 24 jam sebelumnya.",
+  "@trialTimelineChargeBody": {
+    "description": "Last free trial timeline step, the day the trial ends. {price} is the store's localized yearly price.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "trialTimelineRemindToggle": "Ingatkan saya 2 hari sebelum uji coba berakhir",
+  "@trialTimelineRemindToggle": {
+    "description": "Switch on the free trial timeline. On by default."
+  },
+  "trialTimelineRenewalTerms": "Setelah uji coba, Prism Pro tahunan diperpanjang seharga {price} per tahun sampai Anda membatalkan. {store} menagih akun Anda. Untuk menghindari tagihan, batalkan setidaknya 24 jam sebelum uji coba atau perpanjangan berakhir.",
+  "@trialTimelineRenewalTerms": {
+    "description": "Subscription terms on the free trial timeline. {store} is App Store or Google Play and is not translated.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "trialTimelineCancelLink": "Batalkan kapan saja di pengaturan {store}",
+  "@trialTimelineCancelLink": {
+    "description": "Link that opens the store's subscription settings. {store} is App Store or Google Play and is not translated.",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "trialTimelineSeeAllPlans": "Lihat semua paket",
+  "@trialTimelineSeeAllPlans": {
+    "description": "Action that opens every Prism Pro plan instead of the free trial."
+  },
+  "trialTimelineStart": "Mulai uji coba gratis {days} hari",
+  "@trialTimelineStart": {
+    "description": "Main action on the free trial timeline. It starts the store purchase.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "trialTimelineStartFailed": "Tidak dapat memulai uji coba gratis. Coba lagi.",
+  "@trialTimelineStartFailed": {
+    "description": "Error toast when the store purchase for the free trial fails."
+  },
+  "trialReminderTitle": "Uji coba gratis Anda berakhir pada {date}",
+  "@trialReminderTitle": {
+    "description": "Title of the reminder notification 2 days before the free trial ends. {date} is a localized date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "trialReminderBody": "Setelah itu, Anda membayar Prism Pro tahunan. Untuk menghindari tagihan, batalkan di pengaturan {store} setidaknya 24 jam sebelumnya.",
+  "@trialReminderBody": {
+    "description": "Body of the free trial reminder notification. {store} is App Store or Google Play and is not translated.",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "notifChannelSubscription": "Langganan",
+  "@notifChannelSubscription": {
+    "description": "Android notification channel name for subscription reminders."
+  },
+  "notifChannelSubscriptionDescription": "Pengingat sebelum uji coba gratis Anda berakhir",
+  "@notifChannelSubscriptionDescription": {
+    "description": "Android notification channel description for subscription reminders."
+  },
+  "premiumTrialEnds": "Uji coba, berakhir {date}",
+  "@premiumTrialEnds": {
+    "description": "Premium screen status while the user is in the free trial. {date} is a localized date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "premiumTrialAutoRenewOff": "Perpanjangan otomatis mati. Anda tidak akan ditagih saat uji coba berakhir.",
+  "@premiumTrialAutoRenewOff": {
+    "description": "Premium screen note during a free trial that the user cancelled."
   }
 }

@@ -18,6 +18,11 @@ abstract class FoldersEvent with _$FoldersEvent {
     required String name,
     @Default(0) int operationId,
   }) = _RenameRequested;
+  const factory FoldersEvent.visibilityRequested({
+    required String folderId,
+    required bool isPublic,
+    @Default(0) int operationId,
+  }) = _VisibilityRequested;
   const factory FoldersEvent.deleteRequested({required String folderId, @Default(0) int operationId}) =
       _DeleteRequested;
 
