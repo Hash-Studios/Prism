@@ -117,7 +117,7 @@ async function notifyCreator(wallId: string): Promise<void> {
     if (!claimed) return;
     let delivered = false;
     try {
-      delivered = await editorsChoiceIo.sendToUser(
+      const sent = await editorsChoiceIo.sendToUser(
         {
           ...notificationCopyPayload({kind: "editorsChoicePicked", wallTitle: str(wall.title)}),
           data: {route: "wall", wall_id: wallId, notification_kind: "editors_choice"},
@@ -132,7 +132,7 @@ async function notifyCreator(wallId: string): Promise<void> {
         session?.postAlerts !== false,
       );
       // sendNotification logs and swallows a failed inbox write, so check the inbox item itself.
-      delivered = delivered && (await db.collection("notifications").doc(`editors_choice_${wallId}`).get()).exists;
+      delivered = sent && (await db.collection("notifications").doc(`editors_choice_${wallId}`).get()).exists;
     } finally {
       // A failed send frees the claim so a replay or a later pick can deliver. The fixed inbox doc id and collapse key
       // make that retry replace, not repeat, anything that did arrive.

@@ -260,3 +260,32 @@ test("a push that sent without its inbox item frees the notice for a retry", asy
   await call(input);
   assert.equal(sends, 2);
 });
+
+test("a failed inbox check after a sent push frees the notice for a retry", async (t) => {
+  const {store} = setup(t);
+  const collection = db.collection.bind(db);
+  let reads = 0;
+  t.mock.method(db, "collection", (name: string) => {
+    if (name !== "notifications") return collection(name);
+    const ref = collection(name);
+    return {
+      doc: (id: string) => {
+        const doc = ref.doc(id);
+        return {
+          set: (data: Doc) => doc.set(data),
+          get: async () => {
+            reads++;
+            if (reads === 1) throw new Error("read failed");
+            return doc.get();
+          },
+        };
+      },
+    };
+  });
+  const input = {wallId: "w1", picked: true, requestId: "request_0001"};
+  await call(input);
+  assert.equal(store.has("notifications/editors_choice_w1"), true);
+  assert.equal(store.has("editorsChoiceNotices/w1"), false);
+  await call(input);
+  assert.equal(store.has("editorsChoiceNotices/w1"), true);
+});
