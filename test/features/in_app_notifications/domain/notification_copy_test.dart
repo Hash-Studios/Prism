@@ -243,4 +243,30 @@ void main() {
       body: 'Asha remixed your wallpaper.',
     ));
   });
+
+  test('an Editors Choice pick names the wall in the inbox copy', () {
+    final InAppNotificationEntity item = notification(
+      'editors_choice',
+      title: 'Legacy title',
+      body: 'Legacy body',
+    ).copyWith(copyKind: 'editorsChoicePicked', copyArgs: const <String, Object?>{'wallTitle': 'Dusk'});
+
+    expect(localizedNotificationCopy(item, l10n), (
+      title: "Your wallpaper is an Editors' Choice",
+      body: 'Our editors picked Dusk. Everyone can find it on Home.',
+    ));
+  });
+
+  test('an Editors Choice pick with no wall title uses the untitled copy', () {
+    final InAppNotificationEntity item = notification(
+      'editors_choice',
+      title: 'Legacy title',
+      body: 'Legacy body',
+    ).copyWith(copyKind: 'editorsChoicePicked', copyArgs: const <String, Object?>{'wallTitle': '  '});
+
+    expect(localizedNotificationCopy(item, l10n), (
+      title: "Your wallpaper is an Editors' Choice",
+      body: 'Our editors picked your wallpaper. Everyone can find it on Home.',
+    ));
+  });
 }

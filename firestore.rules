@@ -62,6 +62,7 @@ service cloud.firestore {
           && !('usernameLower' in request.resource.data)
           && ownerAppOpenValuesOk(request.resource.data)
           && request.resource.data.get('creatorDirectoryOptOut', false) is bool
+          && request.resource.data.get('showProBadge', true) is bool
           && request.resource.data.get('coins', 0) == 0
           && request.resource.data.get('premium', false) == false
           && request.resource.data.get('subscriptionTier', 'free') == 'free'
@@ -147,12 +148,17 @@ service cloud.firestore {
         || request.resource.data.creatorDirectoryOptOut is bool;
     }
 
+    function ownerProBadgeOk() {
+      return !('showProBadge' in request.resource.data.diff(resource.data).affectedKeys())
+        || request.resource.data.showProBadge is bool;
+    }
+
     function wallServerKeysAbsent() {
-      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'variantGroupId', 'variantIndex', 'variantLink']);
+      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantGroupId', 'variantIndex', 'variantLink']);
     }
 
     function wallServerKeysUntouched() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId', 'variantOf', 'variantGroupId', 'variantIndex', 'variantLink']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantOf', 'variantGroupId', 'variantIndex', 'variantLink']);
     }
 
     // Optional link to the wall this one remixes. The server removes a link it cannot verify.
@@ -232,7 +238,8 @@ service cloud.firestore {
       allow get: if resource == null || wallReadable();
       allow list: if resource == null || wallReadable();
       // Admins re-create a rejected wall when they undo the rejection.
-      allow create: if validChallengeId() && (isConfiguredAdmin()
+      allow create: if !request.resource.data.keys().hasAny(['editorsChoiceAt', 'editorsChoiceBy', 'byStudio'])
+          && validChallengeId() && (isConfiguredAdmin()
           || (isSignedIn()
               && isEmailOwner(request.resource.data.email)
               && request.resource.data.review != true
@@ -242,8 +249,9 @@ service cloud.firestore {
               && validResubmitOf()));
       // delete: request.resource is null — do not use request.resource.data here.
       allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'challengeId', 'variantOf', 'variantGroupId', 'variantIndex', 'variantLink'
-        ])
+            'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantOf', 'variantGroupId', 'variantIndex',
+            'variantLink'
+          ])
           && (isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
               && wallServerKeysUntouched()
@@ -313,8 +321,9 @@ service cloud.firestore {
             'name', 'profilePhoto', 'coverPhoto', 'bio', 'links', 'lastLoginAt', 'loggedIn',
             'interestCategories', 'onboardingV2', 'uploadsWeekStart',
             'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'coinState',
-            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs', 'creatorDirectoryOptOut', 'layoutPrefs'
+            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs', 'creatorDirectoryOptOut', 'layoutPrefs', 'showProBadge'
           ]) && ownerCoinStateOk() && ownerAppOpenOk() && ownerThemePrefsOk() && ownerDirectoryOptOutOk()
+            && ownerProBadgeOk()
             && ownerLayoutPrefsOk())
           || isConfiguredAdmin();
       allow delete: if isConfiguredAdmin();

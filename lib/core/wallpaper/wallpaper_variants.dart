@@ -30,6 +30,8 @@ final class PrismWallpaper {
     this.remixCount = 0,
     this.variantGroupId,
     this.variantIndex,
+    this.editorsChoiceAt,
+    this.byStudio = false,
   });
 
   final WallpaperCore core;
@@ -83,6 +85,12 @@ final class PrismWallpaper {
 
   /// This wall's place in its colour variant set, from 0. Only the server writes it.
   final int? variantIndex;
+
+  /// When an admin picked the wall for Editors' Choice. Null when it is not a pick. Only the server writes it.
+  final DateTime? editorsChoiceAt;
+
+  /// The server proved on approval that Prism Studio posted the wall. Only the server writes it.
+  final bool byStudio;
 
   bool isBoostedAt(DateTime now) => boostedUntil?.isAfter(now) ?? false;
 

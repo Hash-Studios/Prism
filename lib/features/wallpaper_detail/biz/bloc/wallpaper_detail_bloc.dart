@@ -107,6 +107,8 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
         remixCount: wall.remixCount,
         variantGroupId: wall.variantGroupId,
         variantIndex: wall.variantIndex,
+        editorsChoiceAt: wall.editorsChoiceAt,
+        byStudio: wall.byStudio,
       );
       emit(
         initial.copyWith(

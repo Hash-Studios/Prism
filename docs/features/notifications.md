@@ -230,6 +230,10 @@ Topic sends count once per message, not once per device. The data does not show 
 
 `onWallRemixWritten` writes one inbox item to the original creator when a counted remix is first approved. The title is "Your wallpaper was remixed", with the remix thumbnail. The doc id is `remix_<remixId>` and the kind is `wallRemixed`. The item has no push. It is skipped when `postAlerts` is false in `private/session`. The details are in [remix.md](remix.md).
 
+### Editors' Choice notice
+
+`setEditorsChoice` sends the creator one inbox item and one push when a wall is first picked. The inbox doc id is `editors_choice_<wallId>` and the kind is `editorsChoicePicked`. The route is `wall`. The push has the `notification_kind` `editors_choice`. Pick, clear and pick again send nothing new. The claim doc is `editorsChoiceNotices/{wallId}`. It is released if the send fails, so a replay or a later pick can deliver. Studio walls get no push. A false `postAlerts` in `private/session` skips the push and keeps the inbox item. The copy is localized in `lib/features/in_app_notifications/domain/notification_copy.dart`. The details are in [editors-choice.md](editors-choice.md).
+
 ### Notification copy and adding a language
 
 Known server notifications store a stable `message.kind` and argument map in the inbox document and push data. The inbox and foreground banner resolve those values through `lib/features/in_app_notifications/domain/notification_copy.dart` and `AppLocalizations`. Android and iOS also receive native FCM localization keys, so the OS selects background banner copy from the device locale. Historical notifications and admin-authored campaigns retain their stored text because their copy is not a known template. The notification cache preserves the kind and arguments.

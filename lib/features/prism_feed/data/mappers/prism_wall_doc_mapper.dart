@@ -68,6 +68,8 @@ extension PrismWallDocMapper on PrismWallDocDto {
       remixCount: (remixCount ?? 0) < 0 ? 0 : remixCount ?? 0,
       variantGroupId: variantGroupId.trim().isEmpty ? null : variantGroupId.trim(),
       variantIndex: (variantIndex ?? -1) < 0 ? null : variantIndex,
+      editorsChoiceAt: editorsChoiceAt,
+      byStudio: byStudio,
     );
   }
 }

@@ -12954,4 +12954,97 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get premiumTrialAutoRenewOff => 'Perpanjangan otomatis mati. Anda tidak akan ditagih saat uji coba berakhir.';
+
+  @override
+  String get editorsChoiceTitle => 'Pilihan Editor';
+
+  @override
+  String get editorsChoiceRowBody => 'Wallpaper yang disukai editor kami.';
+
+  @override
+  String get editorsChoiceEmptyTitle => 'Belum ada pilihan';
+
+  @override
+  String get editorsChoiceEmptyBody => 'Cek lagi nanti untuk pilihan baru.';
+
+  @override
+  String get editorsChoiceLoadError => 'Pilihan Editor tidak dapat dimuat';
+
+  @override
+  String get editorsChoiceLabelSemantics => 'Dipilih untuk Pilihan Editor';
+
+  @override
+  String get editorsChoicePick => 'Tambahkan ke Pilihan Editor';
+
+  @override
+  String get editorsChoiceUnpick => 'Hapus dari Pilihan Editor';
+
+  @override
+  String get editorsChoicePicked => 'Ditambahkan ke Pilihan Editor';
+
+  @override
+  String get editorsChoiceUnpicked => 'Dihapus dari Pilihan Editor';
+
+  @override
+  String get editorsChoiceNotEligible =>
+      'Hanya wallpaper gratis yang disetujui dengan file asli siap yang dapat dipilih.';
+
+  @override
+  String get adminApproveAndPick => 'Setujui dan pilih';
+
+  @override
+  String get adminApprovedPickLater =>
+      'Disetujui. Tambahkan ke Pilihan Editor dari halamannya setelah file aslinya siap.';
+
+  @override
+  String wallCreditBy(String name) {
+    return 'Oleh $name';
+  }
+
+  @override
+  String wallCreditPhotoBy(String name) {
+    return 'Foto oleh $name';
+  }
+
+  @override
+  String get wallCreditByHashStudios => 'Oleh Hash Studios';
+
+  @override
+  String get wallCreditPrismExclusive => 'Eksklusif Prism';
+
+  @override
+  String get wallCreditOnPexels => 'Dari Pexels';
+
+  @override
+  String get wallCreditOnWallhaven => 'Dari Wallhaven';
+
+  @override
+  String get wallCreditOpenProfileHint => 'Membuka profil';
+
+  @override
+  String get wallCreditOpenSourceHint => 'Membuka di browser Anda';
+
+  @override
+  String get profileProBadge => 'Pro';
+
+  @override
+  String get profileProBadgeSemantics => 'Anggota Prism Pro';
+
+  @override
+  String get settingsShowProBadgeTitle => 'Tampilkan lencana Pro di profil saya';
+
+  @override
+  String get settingsShowProBadgeBody => 'Orang yang mengunjungi profil Anda melihat lencana Pro.';
+
+  @override
+  String get notifPushEditorsChoiceTitle => 'Wallpaper Anda adalah Pilihan Editor';
+
+  @override
+  String notifPushEditorsChoiceBody(String wallTitle) {
+    return 'Editor kami memilih $wallTitle. Semua orang bisa menemukannya di Beranda.';
+  }
+
+  @override
+  String get notifPushEditorsChoiceBodyUntitled =>
+      'Editor kami memilih wallpaper Anda. Semua orang bisa menemukannya di Beranda.';
 }

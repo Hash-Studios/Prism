@@ -1186,6 +1186,59 @@ class EditWallRouteArgs {
 }
 
 /// generated route for
+/// [EditorsChoiceScreen]
+class EditorsChoiceRoute extends PageRouteInfo<EditorsChoiceRouteArgs> {
+  EditorsChoiceRoute({
+    Key? key,
+    String source = 'link',
+    List<PageRouteInfo>? children,
+  }) : super(
+         EditorsChoiceRoute.name,
+         args: EditorsChoiceRouteArgs(key: key, source: source),
+         rawQueryParams: {'source': source},
+         initialChildren: children,
+       );
+
+  static const String name = 'EditorsChoiceRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final queryParams = data.queryParams;
+      final args = data.argsAs<EditorsChoiceRouteArgs>(
+        orElse: () => EditorsChoiceRouteArgs(
+          source: queryParams.getString('source', 'link'),
+        ),
+      );
+      return EditorsChoiceScreen(key: args.key, source: args.source);
+    },
+  );
+}
+
+class EditorsChoiceRouteArgs {
+  const EditorsChoiceRouteArgs({this.key, this.source = 'link'});
+
+  final Key? key;
+
+  final String source;
+
+  @override
+  String toString() {
+    return 'EditorsChoiceRouteArgs{key: $key, source: $source}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! EditorsChoiceRouteArgs) return false;
+    return key == other.key && source == other.source;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ source.hashCode;
+}
+
+/// generated route for
 /// [FavouriteWallpaperScreen]
 class FavouriteWallpaperRoute extends PageRouteInfo<void> {
   const FavouriteWallpaperRoute({List<PageRouteInfo>? children})

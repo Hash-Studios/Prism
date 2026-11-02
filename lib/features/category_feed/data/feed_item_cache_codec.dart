@@ -34,6 +34,8 @@ Map<String, Object?> encodeFeedItem(FeedItemEntity item) => item.when(
       if (wall.remixCount > 0) 'remixCount': wall.remixCount,
       if (wall.variantGroupId != null) 'variantGroupId': wall.variantGroupId,
       if (wall.variantIndex != null) 'variantIndex': wall.variantIndex,
+      if (wall.editorsChoiceAt != null) 'editorsChoiceAt': wall.editorsChoiceAt!.toUtc().toIso8601String(),
+      if (wall.byStudio) 'byStudio': true,
     },
   },
   wallhaven: (id, wall) => <String, Object?>{
@@ -121,7 +123,7 @@ FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
             'remixCount',
             'variantIndex',
           ]) ||
-          !validBools(wallpaper, const <String>['review', 'isStreakExclusive', 'isAiGenerated']) ||
+          !validBools(wallpaper, const <String>['review', 'isStreakExclusive', 'isAiGenerated', 'byStudio']) ||
           !validMaps(wallpaper, const <String>['aiMetadata', 'spatial', 'desktop', 'aiSource'])) {
         return null;
       }
@@ -166,6 +168,10 @@ FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
           remixCount: integer(wallpaper['remixCount']) ?? 0,
           variantGroupId: wallpaper['variantGroupId'] is String ? wallpaper['variantGroupId'] as String : null,
           variantIndex: integer(wallpaper['variantIndex']),
+          editorsChoiceAt: wallpaper['editorsChoiceAt'] is String
+              ? DateTime.tryParse(wallpaper['editorsChoiceAt'] as String)
+              : null,
+          byStudio: wallpaper['byStudio'] == true,
         ),
       );
     case 'wallhaven':

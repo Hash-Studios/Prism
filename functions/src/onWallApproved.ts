@@ -58,6 +58,7 @@ export const onWallApproved = onDocumentUpdated(
     // Approval sets collections to community, so the category collection is added after it.
     if (!wasApproved) await fileWallInCollection(expected.ref);
     const studio = await isStudioWall(wallId, current.data() ?? {});
+    if (studio && current.data()?.byStudio !== true) await expected.ref.update({byStudio: true});
     const requestId = await fillRequestFromWall(wallId, current.data() ?? {}, studio);
     // The push waits for the protected original, so the wall it opens is one every client lists.
     if (requestId && (!owned || current.data()?.originalProtected === true)) await notifyRequestFilled(requestId);

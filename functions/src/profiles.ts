@@ -65,6 +65,7 @@ export function projectedProfile(
     }
     if (Object.keys(picked).length > 0) profile.cosmetics = picked;
   }
+  if (source.premium === true && source.showProBadge !== false) profile.proBadge = true;
   return profile;
 }
 

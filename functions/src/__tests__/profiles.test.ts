@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import * as admin from "firebase-admin";
-import {projectUserProfile, removeUidFollowGraph, setFollow, syncPublicProfile} from "../profiles";
+import {
+  projectedProfile, projectUserProfile, removeUidFollowGraph, setFollow, syncPublicProfile,
+} from "../profiles";
 import {onContentReportCreated} from "../onContentReportCreated";
 import {db} from "../common";
 import * as publicFolders from "../publicFolders";
@@ -106,7 +108,7 @@ test("profile projection keeps exactly the allowlisted fields", async (t) => {
   assert.deepEqual(store.get("profiles/alice"), {
     name: "Current", username: "current", profilePhoto: "photo", bio: "bio", coverPhoto: "cover",
     links: {github: "https://github.com/example"}, badges: ["early", "pro"], xp: 120,
-    cosmetics: {frame: "gold", nameGlow: "ember"}, followerCount: 7, followingCount: 3,
+    cosmetics: {frame: "gold", nameGlow: "ember"}, followerCount: 7, followingCount: 3, proBadge: true,
   });
 });
 
@@ -226,4 +228,25 @@ test("folder moderation retries transient trusted-reporter lookup failures", asy
 
   await fire();
   assert.equal(store.get("folders/folder1")?.moderationHidden, true);
+});
+
+test("a premium user's public profile carries proBadge until premium lapses or the owner opts out", () => {
+  assert.deepEqual(projectedProfile({premium: true}, 0), {followerCount: 0, followingCount: 0, proBadge: true});
+  assert.deepEqual(projectedProfile({premium: false}, 0), {followerCount: 0, followingCount: 0});
+  assert.deepEqual(projectedProfile({premium: true, showProBadge: false}, 0),
+    {followerCount: 0, followingCount: 0});
+  assert.deepEqual(projectedProfile({premium: "true"}, 0), {followerCount: 0, followingCount: 0});
+  assert.deepEqual(projectedProfile({premium: true, showProBadge: true}, 0),
+    {followerCount: 0, followingCount: 0, proBadge: true});
+});
+
+test("sync adds proBadge for a premium user and removes it when premium lapses", async (t) => {
+  const store = installFakeDb(t, {"usersv2/alice": {name: "Alice", premium: true}});
+
+  await syncPublicProfile("alice");
+  assert.equal(store.get("profiles/alice")?.proBadge, true);
+
+  store.set("usersv2/alice", {name: "Alice", premium: false});
+  await syncPublicProfile("alice");
+  assert.equal("proBadge" in (store.get("profiles/alice") ?? {}), false);
 });
