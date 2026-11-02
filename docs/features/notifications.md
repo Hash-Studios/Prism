@@ -232,7 +232,7 @@ Topic sends count once per message, not once per device. The data does not show 
 
 ### Editors' Choice notice
 
-`setEditorsChoice` sends the creator one inbox item and one push when a wall is first picked. The inbox doc id is `editors_choice_<wallId>` and the kind is `editorsChoicePicked`. The route is `wall`. The push has the `notification_kind` `editors_choice`. Pick, clear and pick again send nothing new. Studio walls get no push. A false `postAlerts` in `private/session` skips the push and keeps the inbox item. The copy is localized in `lib/features/in_app_notifications/domain/notification_copy.dart`. The details are in [editors-choice.md](editors-choice.md).
+`setEditorsChoice` sends the creator one inbox item and one push when a wall is first picked. The inbox doc id is `editors_choice_<wallId>` and the kind is `editorsChoicePicked`. The route is `wall`. The push has the `notification_kind` `editors_choice`. Pick, clear and pick again send nothing new. The claim doc is `editorsChoiceNotices/{wallId}`. It is released if the send fails, so a replay or a later pick can deliver. Studio walls get no push. A false `postAlerts` in `private/session` skips the push and keeps the inbox item. The copy is localized in `lib/features/in_app_notifications/domain/notification_copy.dart`. The details are in [editors-choice.md](editors-choice.md).
 
 ### Notification copy and adding a language
 
