@@ -53,6 +53,10 @@ _PrismWallDocDto _$PrismWallDocDtoFromJson(Map<String, dynamic> json) => _PrismW
   origin: json['origin'] == null ? '' : const FirestoreStringConverter().fromJson(json['origin']),
   remixOf: json['remixOf'] == null ? '' : const FirestoreStringConverter().fromJson(json['remixOf']),
   remixCount: (json['remixCount'] as num?)?.toInt(),
+  variantGroupId: json['variantGroupId'] == null
+      ? ''
+      : const FirestoreStringConverter().fromJson(json['variantGroupId']),
+  variantIndex: (json['variantIndex'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$PrismWallDocDtoToJson(_PrismWallDocDto instance) => <String, dynamic>{
@@ -90,4 +94,6 @@ Map<String, dynamic> _$PrismWallDocDtoToJson(_PrismWallDocDto instance) => <Stri
   'origin': const FirestoreStringConverter().toJson(instance.origin),
   'remixOf': const FirestoreStringConverter().toJson(instance.remixOf),
   'remixCount': instance.remixCount,
+  'variantGroupId': const FirestoreStringConverter().toJson(instance.variantGroupId),
+  'variantIndex': instance.variantIndex,
 };

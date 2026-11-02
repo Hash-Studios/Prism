@@ -1,5 +1,6 @@
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/variant_group.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
@@ -40,6 +41,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     this.panelCollapsed = true,
     this.panelScrollInProgress = false,
     this.recommendations = const RecommendationState.initial(),
+    this.variants,
   });
 
   final FeedItemEntity entity;
@@ -60,6 +62,15 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
   final bool panelScrollInProgress;
   final RecommendationState recommendations;
 
+  /// The colour variants of the wall, or null when it has none. [entity] is the one on screen.
+  final VariantGroup? variants;
+
+  /// Position of [entity] in [variants], or -1.
+  int get variantIndex => switch (entity) {
+    PrismFeedItem(:final wallpaper) => variants?.indexOfDoc(wallpaper.firestoreDocumentId) ?? -1,
+    _ => -1,
+  };
+
   /// The colour variation applied to the wallpaper, or null while the original shows.
   Color? get tint => colorChanged ? accent : null;
 
@@ -77,6 +88,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     bool? panelCollapsed,
     bool? panelScrollInProgress,
     RecommendationState? recommendations,
+    VariantGroup? variants,
   }) {
     return WallpaperDetailLoaded(
       entity: entity ?? this.entity,
@@ -92,6 +104,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
       panelCollapsed: panelCollapsed ?? this.panelCollapsed,
       panelScrollInProgress: panelScrollInProgress ?? this.panelScrollInProgress,
       recommendations: recommendations ?? this.recommendations,
+      variants: variants ?? this.variants,
     );
   }
 
@@ -110,6 +123,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     panelCollapsed,
     panelScrollInProgress,
     recommendations,
+    variants,
   ];
 }
 

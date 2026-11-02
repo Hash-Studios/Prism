@@ -36,6 +36,9 @@ class _WallTileState extends State<WallTile> {
   bool get rejected => widget.rejected;
   bool _deleting = false;
 
+  /// Wall ids whose variant link was already tracked in this app run.
+  static final Set<String> _trackedVariantLinks = <String>{};
+
   Future<void> _confirmDelete() async {
     if (_deleting) return;
     final l10n = context.l10n;
@@ -62,11 +65,43 @@ class _WallTileState extends State<WallTile> {
     }
   }
 
+  Widget? _variantStatus(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
+    final TextStyle style = PrismTextStyles.caption(context);
+    final Object? rawLink = wallpaper.data()['variantLink'];
+    final VariantLinkResultValue? result = VariantLinkResultValue.fromWire(rawLink is String ? rawLink : null);
+    if (result == null) {
+      final Object? variantOf = wallpaper.data()['variantOf'];
+      if (variantOf is! String || variantOf.isEmpty) return null;
+      return Text(l10n.wallVariantPending, style: style);
+    }
+    if (_trackedVariantLinks.add(wallpaper.id)) {
+      analytics.track(WallpaperVariantLinkResolvedEvent(wallId: wallpaper.id, result: result));
+    }
+    final String? reason = switch (result) {
+      VariantLinkResultValue.linked => null,
+      VariantLinkResultValue.notFound => l10n.wallVariantDroppedNotFound,
+      VariantLinkResultValue.notOwner => l10n.wallVariantDroppedNotOwner,
+      VariantLinkResultValue.notApproved => l10n.wallVariantDroppedNotApproved,
+      VariantLinkResultValue.groupFull => l10n.wallVariantDroppedFull,
+      VariantLinkResultValue.aspectRatio => l10n.wallVariantDroppedAspect,
+    };
+    if (reason == null) return Text(l10n.wallVariantLinked, style: style);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(l10n.wallVariantDroppedTitle, style: style),
+        Text(reason, style: style),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final DateTime? createdAt = wallpaper.createdAt;
     final String facts = _formatFacts(wallpaper.resolution, wallpaper.size);
+    final Widget? variantStatus = _variantStatus(context);
     return PrismCard(
       padding: const EdgeInsets.all(PrismSpace.sm),
       child: Column(
@@ -98,6 +133,7 @@ class _WallTileState extends State<WallTile> {
                       const SizedBox(height: PrismSpace.xxs),
                       Text(facts, style: PrismTextStyles.caption(context)),
                     ],
+                    if (variantStatus != null) ...<Widget>[const SizedBox(height: PrismSpace.xxs), variantStatus],
                     const SizedBox(height: PrismSpace.xs),
                     Align(
                       alignment: AlignmentDirectional.centerEnd,

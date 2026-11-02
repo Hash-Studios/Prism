@@ -2469,6 +2469,7 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
     ResubmissionSeed? resubmission,
     UploadDraft? resumedDraft,
     ChallengeSeed? challengeSeed,
+    VariantSeed? variantSeed,
     Size? imageSizeForTesting,
     Future<void> Function()? prepareImageForTesting,
     Future<GitHubContent> Function({required bool isThumbnail})?
@@ -2495,6 +2496,7 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
            resubmission: resubmission,
            resumedDraft: resumedDraft,
            challengeSeed: challengeSeed,
+           variantSeed: variantSeed,
            imageSizeForTesting: imageSizeForTesting,
            prepareImageForTesting: prepareImageForTesting,
            uploadFileForTesting: uploadFileForTesting,
@@ -2523,6 +2525,7 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
         resubmission: args.resubmission,
         resumedDraft: args.resumedDraft,
         challengeSeed: args.challengeSeed,
+        variantSeed: args.variantSeed,
         imageSizeForTesting: args.imageSizeForTesting,
         prepareImageForTesting: args.prepareImageForTesting,
         uploadFileForTesting: args.uploadFileForTesting,
@@ -2547,6 +2550,7 @@ class UploadWallRouteArgs {
     this.resubmission,
     this.resumedDraft,
     this.challengeSeed,
+    this.variantSeed,
     this.imageSizeForTesting,
     this.prepareImageForTesting,
     this.uploadFileForTesting,
@@ -2570,6 +2574,8 @@ class UploadWallRouteArgs {
   final UploadDraft? resumedDraft;
 
   final ChallengeSeed? challengeSeed;
+
+  final VariantSeed? variantSeed;
 
   final Size? imageSizeForTesting;
 
@@ -2599,7 +2605,7 @@ class UploadWallRouteArgs {
 
   @override
   String toString() {
-    return 'UploadWallRouteArgs{key: $key, image: $image, batch: $batch, resubmission: $resubmission, resumedDraft: $resumedDraft, challengeSeed: $challengeSeed, imageSizeForTesting: $imageSizeForTesting, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting, createRecordWithMetadataForTesting: $createRecordWithMetadataForTesting, presentPaywallForTesting: $presentPaywallForTesting, nowForTesting: $nowForTesting, draftStoreForTesting: $draftStoreForTesting, defaultsStoreForTesting: $defaultsStoreForTesting}';
+    return 'UploadWallRouteArgs{key: $key, image: $image, batch: $batch, resubmission: $resubmission, resumedDraft: $resumedDraft, challengeSeed: $challengeSeed, variantSeed: $variantSeed, imageSizeForTesting: $imageSizeForTesting, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting, createRecordWithMetadataForTesting: $createRecordWithMetadataForTesting, presentPaywallForTesting: $presentPaywallForTesting, nowForTesting: $nowForTesting, draftStoreForTesting: $draftStoreForTesting, defaultsStoreForTesting: $defaultsStoreForTesting}';
   }
 
   @override
@@ -2612,6 +2618,7 @@ class UploadWallRouteArgs {
         resubmission == other.resubmission &&
         resumedDraft == other.resumedDraft &&
         challengeSeed == other.challengeSeed &&
+        variantSeed == other.variantSeed &&
         imageSizeForTesting == other.imageSizeForTesting &&
         draftStoreForTesting == other.draftStoreForTesting &&
         defaultsStoreForTesting == other.defaultsStoreForTesting;
@@ -2625,6 +2632,7 @@ class UploadWallRouteArgs {
       resubmission.hashCode ^
       resumedDraft.hashCode ^
       challengeSeed.hashCode ^
+      variantSeed.hashCode ^
       imageSizeForTesting.hashCode ^
       draftStoreForTesting.hashCode ^
       defaultsStoreForTesting.hashCode;

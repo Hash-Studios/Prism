@@ -14,11 +14,15 @@ import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_re
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/data/repositories/wall_variant_repository_impl.dart';
 import 'package:Prism/features/wallpaper_detail/data/repositories/wallpaper_recommendation_repository_impl.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/variant_group.dart';
 import 'package:Prism/features/wallpaper_detail/domain/repositories/palette_repository.dart';
+import 'package:Prism/features/wallpaper_detail/domain/repositories/wall_variant_repository.dart';
 import 'package:Prism/features/wallpaper_detail/domain/repositories/wallpaper_recommendation_repository.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
@@ -34,8 +38,10 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     this._getWallpaperCountsUseCase, [
     @ignoreParam OfflineWallpaperCatalog? offlineCatalog,
     @ignoreParam WallpaperRecommendationRepository? recommendations,
+    @ignoreParam WallVariantRepository? variants,
   ]) : _offlineCatalog = offlineCatalog ?? OfflineWallpaperCatalog.instance,
        _recommendations = recommendations ?? WallpaperRecommendationRepositoryImpl.fromGetIt(),
+       _variants = variants ?? WallVariantRepositoryImpl(),
        super(const WallpaperDetailInitial()) {
     on<LoadFromEntity>(_onLoadFromEntity);
     on<LoadFromId>(_onLoadFromId);
@@ -49,6 +55,8 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     on<OnPanelScrollEnd>(_onPanelScrollEnd);
     on<LoadRecommendations>(_onLoadRecommendations);
     on<RefreshWallMetadata>(_onRefreshWallMetadata);
+    on<LoadVariants>(_onLoadVariants);
+    on<SelectVariant>(_onSelectVariant);
   }
 
   final PrismWallpaperRepository _prismRepository;
@@ -59,6 +67,10 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   final GetWallpaperCountsUseCase _getWallpaperCountsUseCase;
   final OfflineWallpaperCatalog _offlineCatalog;
   final WallpaperRecommendationRepository _recommendations;
+  final WallVariantRepository _variants;
+
+  /// View counts already recorded in this visit, so a colour variant seen twice counts one view.
+  final Map<String, String> _views = <String, String>{};
   static int _nextVisit = 0;
   final String _recommendationSession = '${_nextVisit++}';
   bool _closing = false;
@@ -92,10 +104,13 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
         aiSource: wall.aiSource,
         remixOf: wall.remixOf,
         remixCount: wall.remixCount,
+        variantGroupId: wall.variantGroupId,
+        variantIndex: wall.variantIndex,
       );
       emit(
         initial.copyWith(
           entity: PrismFeedItem(id: updated.id, wallpaper: updated),
+          variants: initial.variants?.replace(updated),
         ),
       );
     }
@@ -112,6 +127,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
       emit(
         latest.copyWith(
           entity: PrismFeedItem(id: current.id, wallpaper: current),
+          variants: latest.variants?.replace(current),
         ),
       );
     }
@@ -135,10 +151,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
           cursor: before.recommendations.cursor,
         );
         final latest = state;
-        if (emit.isDone ||
-            latest is! WallpaperDetailLoaded ||
-            latest.entity.source != entity.source ||
-            latest.entity.id != entity.id) {
+        if (emit.isDone || latest is! WallpaperDetailLoaded || !_sameVisit(latest, entity)) {
           return;
         }
         final next = latest.recommendations.append(page, entity);
@@ -151,10 +164,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
       }
     } catch (_) {
       final latest = state;
-      if (emit.isDone ||
-          latest is! WallpaperDetailLoaded ||
-          latest.entity.source != entity.source ||
-          latest.entity.id != entity.id) {
+      if (emit.isDone || latest is! WallpaperDetailLoaded || !_sameVisit(latest, entity)) {
         return;
       }
       emit(latest.copyWith(recommendations: latest.recommendations.failure()));
@@ -238,9 +248,15 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
       return;
     }
 
+    final String wallId = currentState.entity.id;
+    final String? seen = _views[wallId];
+    if (seen != null) {
+      emit(currentState.copyWith(views: seen, viewsLoading: false));
+      return;
+    }
     emit(currentState.copyWith(viewsLoading: true));
 
-    final result = await _recordPrismWallpaperViewsUsecase(currentState.entity.id);
+    final result = await _recordPrismWallpaperViewsUsecase(wallId);
 
     result.fold(
       onFailure: (failure) {
@@ -249,8 +265,9 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
         emit(latestState.copyWith(viewsLoading: false));
       },
       onSuccess: (views) {
+        _views[wallId] = views;
         final latestState = state;
-        if (latestState is! WallpaperDetailLoaded) return;
+        if (latestState is! WallpaperDetailLoaded || latestState.entity.id != wallId) return;
         emit(latestState.copyWith(views: views, viewsLoading: false));
       },
     );
@@ -449,6 +466,57 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     }
     add(const FetchViews());
     add(const FetchSetCount());
+    if (entity case PrismFeedItem(:final wallpaper) when wallpaper.variantGroupId != null) add(const LoadVariants());
+  }
+
+  /// The wall this visit opened, or one of its colour variants.
+  bool _sameVisit(WallpaperDetailLoaded latest, FeedItemEntity entity) =>
+      latest.entity.source == entity.source &&
+      (latest.entity.id == entity.id || (latest.variants?.containsId(entity.id) ?? false));
+
+  Future<void> _onLoadVariants(LoadVariants event, Emitter<WallpaperDetailState> emit) async {
+    final WallpaperDetailState initial = state;
+    if (initial is! WallpaperDetailLoaded || initial.variants != null) return;
+    final FeedItemEntity entity = initial.entity;
+    if (entity is! PrismFeedItem) return;
+    final VariantGroup? group;
+    try {
+      group = await _variants.load(entity.wallpaper);
+    } catch (error, stackTrace) {
+      logger.w('Colour variants did not load', error: error, stackTrace: stackTrace);
+      return;
+    }
+    final WallpaperDetailState latest = state;
+    if (emit.isDone || _closing || group == null || latest is! WallpaperDetailLoaded || latest.entity.id != entity.id) {
+      return;
+    }
+    emit(latest.copyWith(variants: group));
+  }
+
+  /// Puts the colour variant at [SelectVariant.index] on screen as the wall itself: its image, palette, stats and
+  /// actions. The panel, the recommendations and the set stay.
+  Future<void> _onSelectVariant(SelectVariant event, Emitter<WallpaperDetailState> emit) async {
+    final WallpaperDetailState current = state;
+    if (current is! WallpaperDetailLoaded) return;
+    final VariantGroup? group = current.variants;
+    if (group == null || event.index < 0 || event.index >= group.length || event.index == current.variantIndex) return;
+    final PrismWallpaper wall = group.walls[event.index];
+    final FeedItemEntity entity = PrismFeedItem(id: wall.id, wallpaper: wall);
+    emit(
+      WallpaperDetailLoaded(
+        entity: entity,
+        views: _views[wall.id],
+        colors: current.colors,
+        accent: current.accent,
+        panelClosed: current.panelClosed,
+        panelCollapsed: current.panelCollapsed,
+        panelScrollInProgress: current.panelScrollInProgress,
+        recommendations: current.recommendations,
+        variants: group,
+      ),
+    );
+    _fetchAndUpdateViews(entity);
+    await _loadPalette(entity, emit, null);
   }
 
   /// Search/list responses often omit `uploader`; single-wall API includes it.

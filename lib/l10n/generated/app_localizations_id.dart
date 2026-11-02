@@ -11415,6 +11415,70 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallMetadataEditDetails => 'Edit detail';
 
   @override
+  String get wallVariantAdd => 'Tambahkan varian warna';
+
+  @override
+  String wallVariantUploadContext(String title) {
+    return 'Varian warna dari $title';
+  }
+
+  @override
+  String get wallVariantUploadContextUntitled => 'Varian warna dari wallpaper Anda';
+
+  @override
+  String get wallVariantUploadHint =>
+      'Gunakan ukuran dan bentuk yang sama dengan aslinya. Varian ini bergabung ke set setelah ditinjau.';
+
+  @override
+  String get wallVariantUnlinkTooltip => 'Unggah sebagai wallpaper baru saja';
+
+  @override
+  String wallVariantCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count warna');
+    return '$_temp0';
+  }
+
+  @override
+  String wallVariantDotLabel(int index, int count, String colour) {
+    return 'Varian $index dari $count, $colour';
+  }
+
+  @override
+  String wallVariantDotLabelPlain(int index, int count) {
+    return 'Varian $index dari $count';
+  }
+
+  @override
+  String get wallVariantDotHint => 'Tampilkan warna ini';
+
+  @override
+  String get wallVariantNextHint => 'Tampilkan warna berikutnya';
+
+  @override
+  String get wallVariantPending => 'Varian warna. Akan bergabung ke set setelah ditinjau.';
+
+  @override
+  String get wallVariantLinked => 'Dalam set varian warna';
+
+  @override
+  String get wallVariantDroppedTitle => 'Tidak ditambahkan sebagai varian warna';
+
+  @override
+  String get wallVariantDroppedNotFound => 'Wallpaper asli telah dihapus.';
+
+  @override
+  String get wallVariantDroppedNotOwner => 'Wallpaper asli milik kreator lain.';
+
+  @override
+  String get wallVariantDroppedNotApproved => 'Wallpaper asli belum disetujui.';
+
+  @override
+  String get wallVariantDroppedFull => 'Set sudah memiliki 5 warna.';
+
+  @override
+  String get wallVariantDroppedAspect => 'Bentuknya berbeda dari aslinya.';
+
+  @override
   String get wallMetadataApprovedHelp => 'Ubah judul, deskripsi, dan tag. Gambar dan kategori tetap sama.';
 
   @override

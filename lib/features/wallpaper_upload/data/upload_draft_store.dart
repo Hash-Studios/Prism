@@ -275,6 +275,10 @@ class UploadDraftStore {
       'challengeId': metadata.challengeId,
       'challengeTheme': metadata.challengeTheme,
       'challengeRemoved': metadata.challengeRemoved,
+      'variantOf': metadata.variantOf,
+      'variantThumb': metadata.variantThumb,
+      'variantTitle': metadata.variantTitle,
+      'variantRemoved': metadata.variantRemoved,
     },
     'savedAtUtc': DateTime.now().toUtc().toIso8601String(),
   };
@@ -313,6 +317,10 @@ class UploadDraftStore {
       challengeId: raw['challengeId'] is String ? raw['challengeId'] as String : '',
       challengeTheme: raw['challengeTheme'] is String ? raw['challengeTheme'] as String : '',
       challengeRemoved: raw['challengeRemoved'] == true,
+      variantOf: raw['variantOf'] is String ? raw['variantOf'] as String : '',
+      variantThumb: raw['variantThumb'] is String ? raw['variantThumb'] as String : '',
+      variantTitle: raw['variantTitle'] is String ? raw['variantTitle'] as String : '',
+      variantRemoved: raw['variantRemoved'] == true,
       requestText: raw['requestText'] is String ? raw['requestText'] as String : '',
     );
   }

@@ -28,6 +28,8 @@ final class PrismWallpaper {
     this.aiSource,
     this.remixOf,
     this.remixCount = 0,
+    this.variantGroupId,
+    this.variantIndex,
   });
 
   final WallpaperCore core;
@@ -75,6 +77,12 @@ final class PrismWallpaper {
 
   /// Approved remixes by other creators. Only the server writes it.
   final int remixCount;
+
+  /// The set of colour variants this wall is in. Null when it has none. Only the server writes it.
+  final String? variantGroupId;
+
+  /// This wall's place in its colour variant set, from 0. Only the server writes it.
+  final int? variantIndex;
 
   bool isBoostedAt(DateTime now) => boostedUntil?.isAfter(now) ?? false;
 
