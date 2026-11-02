@@ -9,8 +9,8 @@ import 'package:Prism/core/purchases/annual_trial.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/premium/views/pages/premium_page.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,10 +50,10 @@ void main() {
 
   testWidgets('opening Premium waits for the user to view plans', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const PremiumPage(),
+        home: PremiumPage(),
       ),
     );
     await tester.pump();
@@ -65,10 +65,10 @@ void main() {
 
   testWidgets('unavailable native plans leave a persistent retry action', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const PremiumPage(),
+        home: PremiumPage(),
       ),
     );
     await tester.tap(find.text(AppLocalizationsEn().premiumPageViewPlans));
@@ -87,10 +87,10 @@ void main() {
       (_) => Completer<Object?>().future,
     );
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const PremiumPage(),
+        home: PremiumPage(),
       ),
     );
     await tester.tap(find.text(AppLocalizationsEn().premiumPageViewPlans));
