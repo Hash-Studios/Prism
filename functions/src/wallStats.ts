@@ -67,21 +67,27 @@ export const recordWallpaperAction = onCall(
     if (!claimed) return {counted: false};
 
     const field = ACTION_FIELDS[action];
-    await db.collection(WALLPAPER_STATS).doc(wallId).set({
-      [field]: admin.firestore.FieldValue.increment(1),
-      lastEventAt: admin.firestore.Timestamp.fromMillis(now),
-    }, {merge: true});
-    await bumpDaily(wallId, field, now).catch((err: unknown) => {
-      logger.warn("Could not record the daily wallpaper action.", {err});
-    });
     const eventId = `${uid}_${wallId}_${dayKey(now)}`;
-    if (action === "share") {
-      await progressQuestForUser(uid, "share", eventId, now);
-    } else {
-      // `set_wall` and the weekly quest count a set or a save, once per wall a day.
-      await progressQuestForUser(uid, "set_wallpaper", eventId, now);
-      if (action === "download") await progressQuestForUser(uid, "download", eventId, now);
-    }
+    // The quest events write the same user docs, so they stay in order. The rate-doc claim gates all of them.
+    const quests = async () => {
+      if (action === "share") {
+        await progressQuestForUser(uid, "share", eventId, now);
+      } else {
+        // `set_wall` and the weekly quest count a set or a save, once per wall a day.
+        await progressQuestForUser(uid, "set_wallpaper", eventId, now);
+        if (action === "download") await progressQuestForUser(uid, "download", eventId, now);
+      }
+    };
+    await Promise.all([
+      db.collection(WALLPAPER_STATS).doc(wallId).set({
+        [field]: admin.firestore.FieldValue.increment(1),
+        lastEventAt: admin.firestore.Timestamp.fromMillis(now),
+      }, {merge: true}),
+      bumpDaily(wallId, field, now).catch((err: unknown) => {
+        logger.warn("Could not record the daily wallpaper action.", {err});
+      }),
+      quests(),
+    ]);
     return {counted: true};
   },
 );
