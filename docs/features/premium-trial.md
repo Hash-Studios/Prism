@@ -111,7 +111,7 @@ Live state on 2026-11-02: the current paywall has no trial text. Its annual card
 4. Open the `v3_default` paywall in the Paywalls editor. Make the 3 changes below. Each change uses an **Offer type** rule set to **Introductory offer**. The rule shows the text only to a user that the store makes eligible. Other users see the current text.
    - Annual card subtitle: select the text "Full access for just ...". Add a text rule, Offer type, Introductory offer. Enter text A.
    - Purchase button: select the text "Continue". Add a text rule, Offer type, Introductory offer. Enter text B.
-   - Trial terms: add a new text component under the purchase button, above "Restore Purchases". Use the caption style of the footer links. Enter text C. Add a visibility rule, Offer type, Introductory offer, Show layer. The base state is hidden.
+   - Trial terms: add a new text component under the purchase button, above "Restore Purchases". Use the caption style of the footer links. Enter text C. Hide it in the default state. Then open the Paywall logic tab, select Create rule, Offer type, Introductory, case Present, select the caption, and set Show layer. Old SDKs ignore rules, so they keep the caption hidden.
 5. Add the text for each language that the paywall has. Keep the `{{ }}` variables as they are. The device localizes "1 week" and the price.
 6. Do not add static trial text outside a rule. Do not mention a reminder: old app versions do not schedule one.
 7. Publish the paywall. Check the preview with the Introductory offer state on and off.
