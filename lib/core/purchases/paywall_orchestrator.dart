@@ -76,10 +76,16 @@ class PaywallOrchestrator {
   final PaywallPresentationGate _presentationGate = PaywallPresentationGate();
   ValueListenable<bool> get presenting => _presentationGate.presenting;
 
-  Future<PaywallResultValue> present({required String placement, required String source, AppLocalizations? messages}) =>
-      _presentationGate.run(() => _present(placement: placement, source: source, messages: messages));
+  Future<PaywallResultValue> present({
+    required String placement,
+    required String source,
+    AppLocalizations? messages,
+    BuildContext? context,
+  }) => _presentationGate.run(
+    () => _presentSignedIn(placement: placement, source: source, messages: messages, context: context),
+  );
 
-  Future<PaywallResultValue> _present({
+  Future<PaywallResultValue> _presentSignedIn({
     required String placement,
     required String source,
     AppLocalizations? messages,

@@ -4,6 +4,8 @@ Prism uses Shorebird Cloud code push. A patch replaces Dart code in a store rele
 
 A patch cannot change native code, plugins, assets, fonts, permissions, or the version and build number.
 
+Never tell users about patches. Do not mention patches, over-the-air updates, code push or Shorebird in the app, `CHANGELOG.md`, store listings, the App Store "What's New", Play release notes, the website or Telegram. Store reviewers can reject a build for this. A patch ships silently. Put a patched fix in the release notes of the next store build, as a normal fix.
+
 The app id is in `shorebird.yaml`. A store release embeds the public verification key so the app can verify signed patches. The app never has the private patch-signing key or the Shorebird publishing token.
 
 ## When to patch and when to ship a store build
@@ -41,7 +43,7 @@ The storage guard checks `STORAGE_PATHS`, `STORAGE_SUFFIXES`, and `STORAGE_API` 
 - Any `lib/` file named `*_local_data_source.dart` or `*_store.dart`.
 - Any changed `lib/` line that uses `SettingsLocalDataSource`, `SharedPreferences`, `PersistenceKeys`, `DurableJsonStore`, `LocalStore` or `settings.get/set/delete`.
 
-## First release note
+## First release
 
 Users get OTA patches only after they install a store build made with `shorebird release`. Use `make release-android`, `make release-ios`, or the two release workflows.
 
@@ -57,10 +59,7 @@ The dashboard hosts the update check. The dashboard loads after startup, onboard
 - A 15-minute cooldown applies between checks.
 - Only one check or download runs at a time.
 - The app downloads a patch in the background.
-- The app records the pending restart with the release version, the build, and the patch number.
-- The app shows one toast for each release and patch: "Close and reopen Prism to finish updating."
-- The toast waits while another screen, a sheet or a paywall is on top, or while the app is not in front.
-- The patch applies on the next launch.
+- The app shows no message. The patch applies on the next cold start.
 - A rollback works the same way.
 - Debug, profile, and non-Shorebird builds skip all of this.
 - Offline and failed downloads are silent. The app records only an analytics event.
@@ -84,10 +83,10 @@ Admin testers see two debug panel controls:
 
 a. Create a Shorebird account and organization at https://console.shorebird.dev. Create the app "Prism" in the console. Put its app id in `shorebird.yaml`. Replace `REPLACE_WITH_SHOREBIRD_APP_ID`. Keep `auto_update: false`. Commit this change in a pull request.
 
-b. Install the pinned CLI, version 1.6.133:
+b. Install the pinned CLI, version 1.6.134:
 
 ```sh
-git clone --depth 1 --branch v1.6.133 https://github.com/shorebirdtech/shorebird.git ~/.shorebird
+git clone --depth 1 --branch v1.6.134 https://github.com/shorebirdtech/shorebird.git ~/.shorebird
 export PATH="$HOME/.shorebird/bin:$PATH"
 shorebird --version
 ```
@@ -200,7 +199,7 @@ Pass `PATCH_ARGS=--dry-run` to validate a Make patch without publishing it. The 
 2. Sign in with an admin account.
 3. Open the debug panel. Turn on "Get staging patches" in the Tools tab.
 4. Open the app and close it.
-5. Wait for the toast. The toast shows when the patch downloads.
+5. Wait until the debug panel logs show `ota_download_done`.
 6. Close and reopen the app.
 7. Open the App info tab. Check that the patch number is the new patch.
 
@@ -279,7 +278,7 @@ adb install -r build/app/outputs/flutter-apk/app-release.apk
 make patch PLATFORM=android RELEASE_VERSION=<v> TRACK=staging
 ```
 
-9. Open the app and wait for the toast.
+9. Open the app. Wait until the debug panel logs show `ota_download_done`.
 10. Close and reopen the app.
 11. Check the new label and the patch number in App info. Check the `ota_patch_running` event in the debug panel logs or in Mixpanel.
 12. Roll back the patch:
@@ -324,4 +323,4 @@ shorebird patch android --release-version=<v> --track=staging \
 - `tool/shorebird_ota.py`: CLI pin, native and storage path lists, release records, and patch checks.
 - `tool/flutter_with_doppler.py`: Runs Shorebird commands with Doppler secrets.
 - `.github/workflows/shorebird_patch.yml`: Publishes a patch from CI.
-- `lib/core/updates/`: Checks for patches, downloads them, and shows the restart message.
+- `lib/core/updates/`: Checks for patches and downloads them, silently. Shows the store-update sheet.

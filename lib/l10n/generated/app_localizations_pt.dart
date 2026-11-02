@@ -7990,9 +7990,6 @@ class AppLocalizationsPt extends AppLocalizations {
       'Não foi possível confirmar sua compra. Tente usar Restaurar compras nas Configurações.';
 
   @override
-  String get updatesRestartToFinish => 'Feche e abra o Prism novamente para concluir a atualização.';
-
-  @override
   String get updatesStoreUpdateAvailable => 'Uma nova versão do Prism está disponível.';
 
   @override
@@ -21197,9 +21194,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get premiumPurchaseUnconfirmed =>
       'Não foi possível confirmar sua compra. Tente usar Restaurar compras nas Configurações.';
-
-  @override
-  String get updatesRestartToFinish => 'Feche e abra o Prism novamente para concluir a atualização.';
 
   @override
   String get updatesStoreUpdateAvailable => 'Uma nova versão do Prism está disponível.';

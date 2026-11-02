@@ -7752,9 +7752,6 @@ class AppLocalizationsId extends AppLocalizations {
       'Pembelian Anda tidak dapat dikonfirmasi. Coba Pulihkan pembelian di Pengaturan.';
 
   @override
-  String get updatesRestartToFinish => 'Tutup lalu buka lagi Prism untuk menyelesaikan pembaruan.';
-
-  @override
   String get updatesStoreUpdateAvailable => 'Versi baru Prism tersedia.';
 
   @override

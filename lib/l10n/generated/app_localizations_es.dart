@@ -7816,9 +7816,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudo confirmar tu compra. Intenta usar «Restaurar compras» en Ajustes.';
 
   @override
-  String get updatesRestartToFinish => 'Cierra y vuelve a abrir Prism para terminar de actualizar.';
-
-  @override
   String get updatesStoreUpdateAvailable => 'Hay una nueva versión de Prism disponible.';
 
   @override

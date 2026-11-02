@@ -7727,9 +7727,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premiumPurchaseUnconfirmed => 'Could not confirm your purchase. Try Restore purchases in Settings.';
 
   @override
-  String get updatesRestartToFinish => 'Close and reopen Prism to finish updating.';
-
-  @override
   String get updatesStoreUpdateAvailable => 'A new version of Prism is available.';
 
   @override

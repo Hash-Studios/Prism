@@ -12013,12 +12013,6 @@ abstract class AppLocalizations {
   /// **'Could not confirm your purchase. Try Restore purchases in Settings.'**
   String get premiumPurchaseUnconfirmed;
 
-  /// Toast after an over-the-air update downloaded. It applies when the app starts again.
-  ///
-  /// In en, this message translates to:
-  /// **'Close and reopen Prism to finish updating.'**
-  String get updatesRestartToFinish;
-
   /// Sheet message when a newer store build is required. The buttons are Update Prism and Not now.
   ///
   /// In en, this message translates to:

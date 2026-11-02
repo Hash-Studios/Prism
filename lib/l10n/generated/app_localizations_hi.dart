@@ -7856,9 +7856,6 @@ class AppLocalizationsHi extends AppLocalizations {
       'आपकी खरीद की पुष्टि नहीं हो सकी। सेटिंग्स में ‘खरीदारियाँ वापस पाएँ’ आज़माएँ।';
 
   @override
-  String get updatesRestartToFinish => 'अपडेट पूरा करने के लिए Prism बंद करके फिर से खोलें।';
-
-  @override
   String get updatesStoreUpdateAvailable => 'Prism का नया संस्करण उपलब्ध है।';
 
   @override

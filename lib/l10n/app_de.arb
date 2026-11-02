@@ -6514,10 +6514,6 @@
   "@premiumPurchaseUnconfirmed": {
     "description": "Toast after a purchase that neither the store nor the server could confirm."
   },
-  "updatesRestartToFinish": "Schließe Prism und öffne es erneut, um das Update abzuschließen.",
-  "@updatesRestartToFinish": {
-    "description": "Toast after an over-the-air update downloaded. It applies when the app starts again."
-  },
   "updatesStoreUpdateAvailable": "Eine neue Version von Prism ist verfügbar.",
   "@updatesStoreUpdateAvailable": {
     "description": "Sheet message when a newer store build is required. The buttons are Update Prism and Not now."

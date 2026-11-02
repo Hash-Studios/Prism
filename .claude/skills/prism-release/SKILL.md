@@ -116,7 +116,7 @@ reach that step.
 | iOS ipa output | `build/ios/ipa/Prism.ipa` |
 | Functions region | `asia-south1` (all callables) |
 | Shorebird app id | `shorebird.yaml` (`app_id`, not a secret; `auto_update: false`) |
-| Shorebird CLI pin | `CLI_VERSION` in `tool/shorebird_ota.py` (1.6.133) |
+| Shorebird CLI pin | `CLI_VERSION` in `tool/shorebird_ota.py` (1.6.134) |
 | Shorebird secrets (Doppler `prd`, names only) | `SHOREBIRD_TOKEN`, `SHOREBIRD_PATCH_PRIVATE_KEY`, `SHOREBIRD_PATCH_PUBLIC_KEY` |
 | Shorebird release record | annotated tag `shorebird/<platform>/<version>+<build>` |
 | Functions secrets (human sets, never echoed) | `FUNCTIONS_SECRETS` in `Makefile`: `GH_TOKEN`, `REVENUECAT_SECRET_KEY`, `STUDIO_SECRET`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `FAL_API_KEY`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` |
@@ -381,6 +381,7 @@ python3 -c 'import json,sys; print(json.dumps([{"language":"en-GB","text":open(s
 ```
 Show the human both versions before any upload. The full note goes to TestFlight What to Test
 and the App Store "What's New" (4000 characters max).
+Never mention patches, over-the-air updates, code push or Shorebird in any note or announcement.
 
 Also draft separate Telegram copy from the same release diff. Use only user-visible changes and
 claims supported by the release. Keep the draft pending until public availability and store links
@@ -466,6 +467,8 @@ in with Apple (present, `lib/auth/apple_auth.dart`, entitlement in
 ### 10b. Over-the-air patches (after a Shorebird store release is live)
 
 A Dart-only fix for a live Shorebird release ships as a patch, not a store build. Follow `docs/development/ota.md`.
+Patches ship silently. Never mention patches, over-the-air updates, code push or Shorebird in `CHANGELOG.md`, store
+listings, What's New, Play release notes, the website or Telegram: store review can reject the build for it.
 Short form:
 ```sh
 make patch PLATFORM=android RELEASE_VERSION=3.14.0+353          # staging track by default; stable is refused

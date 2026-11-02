@@ -21,7 +21,7 @@ PRIVATE_PEM = '-----BEGIN PRIVATE KEY-----\nPRIV\n-----END PRIVATE KEY-----'
 FAKE_SHOREBIRD = '''#!/usr/bin/env python3
 import json, os, sys, time
 if sys.argv[1:] == ['--version']:
-    print('Shorebird ' + os.environ.get('SB_VERSION', '1.6.133') + ' \\u2022 git@github.com:shorebirdtech/shorebird.git')
+    print('Shorebird ' + os.environ.get('SB_VERSION', '1.6.134') + ' \\u2022 git@github.com:shorebirdtech/shorebird.git')
     sys.exit(0)
 keys = {}
 modes = {}
@@ -199,7 +199,7 @@ class ShorebirdOtaTest(fixture.ReleaseFixture, unittest.TestCase):
         self.assertEqual(record['schema'], 2)
         self.assertEqual(record['release_version'], '3.14.0+353')
         self.assertEqual(record['platform'], 'android')
-        self.assertEqual(record['cli_version'], '1.6.133')
+        self.assertEqual(record['cli_version'], '1.6.134')
         self.assertIs(record['obfuscate'], True)
         self.assertEqual(record['config'], {'flutter_version': '3.47.5', 'split_debug_info': True,
                                             'target': 'lib/main.dart', 'flavor': None, 'target_platform': None})
@@ -298,7 +298,7 @@ class ShorebirdOtaTest(fixture.ReleaseFixture, unittest.TestCase):
         result = self.run_wrapper('release', 'android', '--flutter-version=3.47.5', '--obfuscate',
                                   '--split-debug-info=build/symbols')
         self.assertEqual(result.returncode, 1)
-        self.assertIn('1.6.133 is required', result.stderr)
+        self.assertIn('1.6.134 is required', result.stderr)
         self.assertFalse(Path(self.env['CAPTURE']).exists())
 
     def test_release_refuses_missing_public_key(self):

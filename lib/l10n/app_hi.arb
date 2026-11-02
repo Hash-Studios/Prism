@@ -6618,10 +6618,6 @@
   "@premiumPurchaseUnconfirmed": {
     "description": "Toast after a purchase that neither the store nor the server could confirm."
   },
-  "updatesRestartToFinish": "अपडेट पूरा करने के लिए Prism बंद करके फिर से खोलें।",
-  "@updatesRestartToFinish": {
-    "description": "Toast after an over-the-air update downloaded. It applies when the app starts again."
-  },
   "updatesStoreUpdateAvailable": "Prism का नया संस्करण उपलब्ध है।",
   "@updatesStoreUpdateAvailable": {
     "description": "Sheet message when a newer store build is required. The buttons are Update Prism and Not now."

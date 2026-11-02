@@ -4,31 +4,11 @@ import 'package:Prism/core/analytics/app_analytics.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/updates/code_push_updater.dart';
-import 'package:flutter/foundation.dart';
 
 typedef StoreRelease = ({String version, String build});
 
-/// The patch that the next launch boots, for one store release. Patch 0 is the release with no patch, where a
-/// rollback of the only patch lands.
-@immutable
-class PendingRestart {
-  const PendingRestart({required this.version, required this.build, required this.patchNumber});
-
-  final String version;
-  final String build;
-  final int patchNumber;
-
-  String get key => '$version+$build#$patchNumber';
-
-  @override
-  bool operator ==(Object other) => other is PendingRestart && other.key == key;
-
-  @override
-  int get hashCode => key.hashCode;
-}
-
 /// Checks for Shorebird patches and downloads them in the background. A downloaded patch, or a rollback, applies on
-/// the next launch. [announcement] holds the restart the user was not told about yet.
+/// the next cold start. The app never tells the user about it.
 class OtaUpdateController {
   OtaUpdateController({
     required CodePushUpdater updater,
@@ -48,8 +28,6 @@ class OtaUpdateController {
        _now = now;
 
   static const String trackKey = 'ota.track';
-  static const String pendingKey = 'ota.pending';
-  static const String announcedKey = 'ota.announced';
   static const String bootedKey = 'ota.booted';
 
   final CodePushUpdater _updater;
@@ -61,8 +39,6 @@ class OtaUpdateController {
   final Duration cooldown;
   final Duration checkTimeout;
   final Duration downloadTimeout;
-
-  final ValueNotifier<PendingRestart?> announcement = ValueNotifier<PendingRestart?>(null);
 
   Future<void>? _running;
   Future<void>? _launchRecording;
@@ -96,10 +72,6 @@ class OtaUpdateController {
         _track(OtaPatchRunningEvent(patchNumber: current, previousPatchNumber: previousPatch));
       }
       await _settings.set(bootedKey, booted);
-      final String? pending = _settings.get<String?>(pendingKey);
-      if (pending != null && (pending == booted || !pending.startsWith(releasePrefix))) {
-        await _settings.delete(pendingKey);
-      }
     } catch (_) {
       // The updater keeps working without launch telemetry.
     }
@@ -130,52 +102,20 @@ class OtaUpdateController {
     return _running = runningCheck;
   }
 
-  /// The host showed [restart]. It is not shown again for this release and patch.
-  Future<void> markAnnounced(PendingRestart restart) async {
-    try {
-      await _settings.set(announcedKey, restart.key);
-    } catch (_) {
-      return;
-    }
-    if (announcement.value == restart) announcement.value = null;
-  }
-
   Future<void> _check(String trigger) async {
     int current = 0;
     bool downloading = false;
-    String? pendingAtStart;
     try {
-      try {
-        pendingAtStart = _settings.get<String?>(pendingKey);
-      } catch (_) {
-        // Persistence must not block an OTA check.
-      }
       current = await _runUpdaterCall(_updater.currentPatchNumber(), checkTimeout) ?? 0;
       _track(OtaCheckStartedEvent(trigger: trigger, patchNumber: current));
       final CodePushStatus status = await _runUpdaterCall(_updater.checkForUpdate(), checkTimeout);
-      switch (status) {
-        case CodePushStatus.outdated:
-          _track(OtaUpdateAvailableEvent(patchNumber: current));
-          downloading = true;
-          await _runUpdaterCall(_updater.downloadUpdate(), downloadTimeout);
-          downloading = false;
-          final int next = await _runUpdaterCall(_updater.nextPatchNumber(), checkTimeout) ?? 0;
-          if (next == current) return;
-          _track(OtaDownloadDoneEvent(patchNumber: current, pendingPatchNumber: next));
-          await _restartRequired(next);
-        case CodePushStatus.restartRequired:
-          final int next = await _runUpdaterCall(_updater.nextPatchNumber(), checkTimeout) ?? 0;
-          if (next == current) {
-            await _clearPendingRestart(pendingAtStart);
-          } else {
-            await _restartRequired(next);
-          }
-        case CodePushStatus.upToDate:
-          await _clearPendingRestart(pendingAtStart);
-          return;
-        case CodePushStatus.unavailable:
-          return;
-      }
+      if (status != CodePushStatus.outdated) return;
+      _track(OtaUpdateAvailableEvent(patchNumber: current));
+      downloading = true;
+      await _runUpdaterCall(_updater.downloadUpdate(), downloadTimeout);
+      downloading = false;
+      final int next = await _runUpdaterCall(_updater.nextPatchNumber(), checkTimeout) ?? 0;
+      if (next != current) _track(OtaDownloadDoneEvent(patchNumber: current, pendingPatchNumber: next));
     } on TimeoutException {
       _fail(downloading ? OtaFailureReasonValue.downloadTimeout : OtaFailureReasonValue.checkTimeout, current);
     } on CodePushException catch (error) {
@@ -187,30 +127,6 @@ class OtaUpdateController {
     } catch (_) {
       _fail(downloading ? OtaFailureReasonValue.unknown : OtaFailureReasonValue.checkFailed, current);
     }
-  }
-
-  Future<void> _restartRequired(int patchNumber) async {
-    final StoreRelease release = _release();
-    final PendingRestart restart = PendingRestart(
-      version: release.version,
-      build: release.build,
-      patchNumber: patchNumber,
-    );
-    final String? previousPending = _settings.get<String?>(pendingKey);
-    await _settings.set(pendingKey, restart.key);
-    if (previousPending != restart.key || _settings.get<String?>(announcedKey) != restart.key) {
-      announcement.value = restart;
-    }
-  }
-
-  Future<void> _clearPendingRestart(String? expectedPending) async {
-    if (expectedPending == null) return;
-    try {
-      if (_settings.get<String?>(pendingKey) == expectedPending) await _settings.delete(pendingKey);
-    } catch (_) {
-      // A failed cleanup must not block the update check.
-    }
-    if (announcement.value?.key == expectedPending) announcement.value = null;
   }
 
   Future<T> _runUpdaterCall<T>(Future<T> call, Duration timeout) => _trackUpdaterCall(call).timeout(timeout);
