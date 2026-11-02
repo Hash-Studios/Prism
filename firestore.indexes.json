@@ -1689,6 +1689,20 @@
       ]
     },
     {
+      "collectionGroup": "entries",
+      "fieldPath": "creatorUid",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    },
+    {
       "collectionGroup": "challengeVotes",
       "fieldPath": "uid",
       "indexes": [

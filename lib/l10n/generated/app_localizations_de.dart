@@ -12731,4 +12731,215 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get navMoreEditTabs => 'Tabs bearbeiten';
+
+  @override
+  String wrappedTitle(String year) {
+    return 'Prism Wrapped $year';
+  }
+
+  @override
+  String get wrappedIntroHeadline => 'Dein Jahr in Hintergrundbildern';
+
+  @override
+  String get wrappedIntroBody => 'Ein paar Karten zu den Hintergrundbildern, die dir dieses Jahr gefallen haben.';
+
+  @override
+  String get wrappedSavesLabel => 'Gespeichert';
+
+  @override
+  String wrappedSavesBody(int count, String year) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du hast $year $count Hintergrundbilder gespeichert.',
+      one: 'Du hast $year 1 Hintergrundbild gespeichert.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedColoursLabel => 'Deine Farben';
+
+  @override
+  String wrappedColoursBody(String first, String second, String third) {
+    return '$first, $second und $third kamen in deinen Speicherungen am häufigsten vor.';
+  }
+
+  @override
+  String get wrappedCreatorLabel => 'Dein beliebtester Creator';
+
+  @override
+  String wrappedCreatorBody(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du hast $count Hintergrundbilder von $name gespeichert.',
+      one: 'Du hast 1 Hintergrundbild von $name gespeichert.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedStreakLabel => 'Deine längste Serie';
+
+  @override
+  String wrappedStreakBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du warst $count Tage in Folge aktiv.',
+      one: 'Du warst 1 Tag in Folge aktiv.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Tage', one: '1 Tag');
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedAiLabel => 'Mit KI erstellt';
+
+  @override
+  String wrappedAiBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du hast $count KI-Hintergrundbilder erstellt.',
+      one: 'Du hast 1 KI-Hintergrundbild erstellt.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedCategoryLabel => 'Deine wichtigste Kategorie';
+
+  @override
+  String wrappedCategoryBody(int count, String category) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du hast $count Hintergrundbilder aus $category gespeichert.',
+      one: 'Du hast 1 Hintergrundbild aus $category gespeichert.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedFoldersLabel => 'Ordner';
+
+  @override
+  String wrappedFoldersBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du hast $count Ordner erstellt.',
+      one: 'Du hast 1 Ordner erstellt.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedOnScreenLabel => 'Auf deinem Bildschirm';
+
+  @override
+  String wrappedOnScreenBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du hast dieses Hintergrundbild $count Mal gesetzt oder heruntergeladen.',
+      one: 'Du hast dieses Hintergrundbild 1 Mal gesetzt oder heruntergeladen.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedChallengesLabel => 'Wöchentliche Herausforderungen';
+
+  @override
+  String wrappedChallengesBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du hast an $count wöchentlichen Herausforderungen teilgenommen.',
+      one: 'Du hast an 1 wöchentlichen Herausforderung teilgenommen.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedTipsLabel => 'Trinkgelder';
+
+  @override
+  String wrappedTipsBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du hast $count Trinkgelder an Creator gesendet.',
+      one: 'Du hast 1 Trinkgeld an einen Creator gesendet.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedSince(String date) {
+    return 'Seit $date';
+  }
+
+  @override
+  String wrappedSummaryHeadline(String year) {
+    return 'Dein $year in Prism';
+  }
+
+  @override
+  String get wrappedShare => 'Teilen';
+
+  @override
+  String get wrappedShareCard => 'Diese Karte teilen';
+
+  @override
+  String get wrappedPause => 'Pausieren';
+
+  @override
+  String get wrappedPlay => 'Abspielen';
+
+  @override
+  String get wrappedClose => 'Schließen';
+
+  @override
+  String get wrappedNextCard => 'Nächste Karte';
+
+  @override
+  String get wrappedPreviousCard => 'Vorherige Karte';
+
+  @override
+  String wrappedCardPosition(int index, int count) {
+    return 'Karte $index von $count';
+  }
+
+  @override
+  String wrappedHomeTitle(String year) {
+    return 'Dein $year in Prism';
+  }
+
+  @override
+  String get wrappedHomeSubtitle => 'Dein Jahr in Hintergrundbildern ist bereit.';
+
+  @override
+  String get wrappedNotEligible => 'Für dieses Konto gibt es dieses Jahr kein Wrapped.';
+
+  @override
+  String get wrappedLoadFailed =>
+      'Dein Wrapped konnte nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String notifPushWrappedReadyTitle(String year) {
+    return 'Dein $year in Prism ist da';
+  }
+
+  @override
+  String get notifPushWrappedReadyBody =>
+      'Sieh dir die Hintergrundbilder an, die du gespeichert hast, deine Farben und deine Creator.';
 }

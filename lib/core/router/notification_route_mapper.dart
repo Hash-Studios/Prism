@@ -38,6 +38,7 @@ class NotificationRouteMapper {
       'ai' ||
       'streak_reminder' ||
       'creator_stats' ||
+      'wrapped' ||
       'rewards' ||
       'drops' ||
       'announcement' ||
@@ -197,6 +198,12 @@ class NotificationRouteMapper {
         return const PageLinkIntent(path: '/ai', rawUri: '/ai');
       case 'creator_stats':
         return const PageLinkIntent(path: '/creator-stats', rawUri: '/creator-stats', source: 'inbox');
+      case 'wrapped':
+        return PageLinkIntent(
+          path: '/wrapped',
+          rawUri: '/wrapped',
+          source: sourceTag.startsWith('push') ? 'push' : 'inbox',
+        );
       case 'streak_reminder':
       case 'rewards':
         return const PageLinkIntent(path: '/dashboard/rewards', rawUri: '/dashboard/rewards');

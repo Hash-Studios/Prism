@@ -12299,5 +12299,268 @@
   "navMoreEditTabs": "Edit tabs",
   "@navMoreEditTabs": {
     "description": "Row in the More sheet that opens the Layout settings page."
+  },
+  "wrappedTitle": "Prism Wrapped {year}",
+  "@wrappedTitle": {
+    "description": "Title of the Wrapped yearly recap screen and share card.",
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "wrappedIntroHeadline": "Your year in walls",
+  "@wrappedIntroHeadline": {
+    "description": "Headline of the first Wrapped card."
+  },
+  "wrappedIntroBody": "A few cards about the walls you loved this year.",
+  "@wrappedIntroBody": {
+    "description": "Body of the first Wrapped card."
+  },
+  "wrappedSavesLabel": "Saved",
+  "@wrappedSavesLabel": {
+    "description": "Label of the Wrapped card that shows how many walls the user saved."
+  },
+  "wrappedSavesBody": "{count, plural, =1{You saved 1 wall in {year}.} other{You saved {count} walls in {year}.}}",
+  "@wrappedSavesBody": {
+    "description": "Body of the saves card. count is the number of saved walls this year.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "wrappedColoursLabel": "Your colours",
+  "@wrappedColoursLabel": {
+    "description": "Label of the Wrapped card that shows the user top colours."
+  },
+  "wrappedColoursBody": "{first}, {second} and {third} showed up most in your saves.",
+  "@wrappedColoursBody": {
+    "description": "Body of the colours card. first, second and third are the top three colour names.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      },
+      "third": {
+        "type": "String"
+      }
+    }
+  },
+  "wrappedCreatorLabel": "Your top creator",
+  "@wrappedCreatorLabel": {
+    "description": "Label of the Wrapped card that shows the creator the user saved most."
+  },
+  "wrappedCreatorBody": "{count, plural, =1{You saved 1 wall by {name}.} other{You saved {count} walls by {name}.}}",
+  "@wrappedCreatorBody": {
+    "description": "Body of the top creator card. count is the number of walls saved from that creator.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wrappedStreakLabel": "Your longest run",
+  "@wrappedStreakLabel": {
+    "description": "Label of the Wrapped card that shows the longest daily check-in run."
+  },
+  "wrappedStreakBody": "{count, plural, =1{You checked in 1 day in a row.} other{You checked in {count} days in a row.}}",
+  "@wrappedStreakBody": {
+    "description": "Body of the longest run card. count is the number of days in the run.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrappedDays": "{count, plural, =1{1 day} other{{count} days}}",
+  "@wrappedDays": {
+    "description": "Short day count used inside other Wrapped text, such as \"3 days\".",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrappedAiLabel": "Made with AI",
+  "@wrappedAiLabel": {
+    "description": "Label of the Wrapped card that shows AI walls the user made."
+  },
+  "wrappedAiBody": "{count, plural, =1{You made 1 AI wall.} other{You made {count} AI walls.}}",
+  "@wrappedAiBody": {
+    "description": "Body of the AI card. count is the number of AI walls the user made.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrappedCategoryLabel": "Your top category",
+  "@wrappedCategoryLabel": {
+    "description": "Label of the Wrapped card that shows the category the user saved from most."
+  },
+  "wrappedCategoryBody": "{count, plural, =1{You saved 1 wall from {category}.} other{You saved {count} walls from {category}.}}",
+  "@wrappedCategoryBody": {
+    "description": "Body of the top category card. count is the number of walls saved from that category.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "wrappedFoldersLabel": "Folders",
+  "@wrappedFoldersLabel": {
+    "description": "Label of the Wrapped card that shows how many folders the user made."
+  },
+  "wrappedFoldersBody": "{count, plural, =1{You made 1 folder.} other{You made {count} folders.}}",
+  "@wrappedFoldersBody": {
+    "description": "Body of the folders card. count is the number of folders the user made.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrappedOnScreenLabel": "On your screen",
+  "@wrappedOnScreenLabel": {
+    "description": "Label of the Wrapped card that shows how often the user set or downloaded a wall."
+  },
+  "wrappedOnScreenBody": "{count, plural, =1{You set or downloaded this wall 1 time.} other{You set or downloaded this wall {count} times.}}",
+  "@wrappedOnScreenBody": {
+    "description": "Body of the on screen card. count is the number of times the wall was set or downloaded.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrappedChallengesLabel": "Weekly challenges",
+  "@wrappedChallengesLabel": {
+    "description": "Label of the Wrapped card that shows weekly challenge entries."
+  },
+  "wrappedChallengesBody": "{count, plural, =1{You entered 1 weekly challenge.} other{You entered {count} weekly challenges.}}",
+  "@wrappedChallengesBody": {
+    "description": "Body of the challenges card. count is the number of weekly challenges entered.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrappedTipsLabel": "Tips",
+  "@wrappedTipsLabel": {
+    "description": "Label of the Wrapped card that shows tips the user sent."
+  },
+  "wrappedTipsBody": "{count, plural, =1{You sent 1 tip to a creator.} other{You sent {count} tips to creators.}}",
+  "@wrappedTipsBody": {
+    "description": "Body of the tips card. count is the number of tips sent.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrappedSince": "Since {date}",
+  "@wrappedSince": {
+    "description": "Date line that shows when the Wrapped period starts.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "wrappedSummaryHeadline": "Your {year} in Prism",
+  "@wrappedSummaryHeadline": {
+    "description": "Headline of the Wrapped summary card.",
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "wrappedShare": "Share",
+  "@wrappedShare": {
+    "description": "Button that shares the Wrapped card."
+  },
+  "wrappedShareCard": "Share this card",
+  "@wrappedShareCard": {
+    "description": "Accessible label for the share icon on a Wrapped card."
+  },
+  "wrappedPause": "Pause",
+  "@wrappedPause": {
+    "description": "Button that pauses the Wrapped card auto-advance."
+  },
+  "wrappedPlay": "Play",
+  "@wrappedPlay": {
+    "description": "Button that resumes the Wrapped card auto-advance."
+  },
+  "wrappedClose": "Close",
+  "@wrappedClose": {
+    "description": "Button that closes the Wrapped viewer."
+  },
+  "wrappedNextCard": "Next card",
+  "@wrappedNextCard": {
+    "description": "Accessible label for the button that moves to the next Wrapped card."
+  },
+  "wrappedPreviousCard": "Previous card",
+  "@wrappedPreviousCard": {
+    "description": "Accessible label for the button that moves to the previous Wrapped card."
+  },
+  "wrappedCardPosition": "Card {index} of {count}",
+  "@wrappedCardPosition": {
+    "description": "Accessible label that tells the position of the current Wrapped card. index is the current card, count is the total.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wrappedHomeTitle": "Your {year} in Prism",
+  "@wrappedHomeTitle": {
+    "description": "Title of the Wrapped entry card on the home screen.",
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "wrappedHomeSubtitle": "Your year in walls is ready.",
+  "@wrappedHomeSubtitle": {
+    "description": "Subtitle of the Wrapped entry card on the home screen."
+  },
+  "wrappedNotEligible": "There is no Wrapped for this account this year.",
+  "@wrappedNotEligible": {
+    "description": "Message shown when the account has no Wrapped for the year."
+  },
+  "wrappedLoadFailed": "Unable to load your Wrapped. Check your connection and try again.",
+  "@wrappedLoadFailed": {
+    "description": "Error message shown when Wrapped cannot load."
+  },
+  "notifPushWrappedReadyTitle": "Your {year} in Prism is here",
+  "@notifPushWrappedReadyTitle": {
+    "description": "Title of the push notification that tells the user Wrapped is ready.",
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushWrappedReadyBody": "See the walls you saved, your colours and your creators.",
+  "@notifPushWrappedReadyBody": {
+    "description": "Body of the push notification that tells the user Wrapped is ready."
   }
 }

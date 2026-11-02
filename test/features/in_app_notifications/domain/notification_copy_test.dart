@@ -193,6 +193,19 @@ void main() {
     );
   });
 
+  test('a wrapped-ready notification names the year', () {
+    expect(
+      localizedNotificationCopyData(
+        'wrappedReady',
+        const <String, Object?>{'year': 2026},
+        fallbackTitle: '',
+        fallbackBody: '',
+        l10n: l10n,
+      ),
+      (title: 'Your 2026 in Prism is here', body: 'See the walls you saved, your colours and your creators.'),
+    );
+  });
+
   test('an empty or whitespace WOTD title uses the untitled audience copy', () {
     for (final String wallTitle in <String>['', '   ']) {
       expect(

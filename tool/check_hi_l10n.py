@@ -13,6 +13,7 @@ from pathlib import Path
 UNCHANGED_ENGLISH = {
     'notifPushWallRequestFilledBody': '{requestText}',
     'wallpaperLiveStyleDepth': '3D',
+    'wrappedTitle': 'Prism Wrapped {year}',
     'accountLinkTypeBehance': 'Behance',
     'accountLinkTypeBioLink': 'bio.link',
     'accountLinkTypeBuyMeACoffee': 'Buy Me a Coffee',

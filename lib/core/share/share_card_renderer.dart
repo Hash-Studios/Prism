@@ -19,7 +19,7 @@ Future<File> renderShareCardFile(
   ShareCardContent content, {
   ImageProvider? wallpaperProvider,
   ImageProvider? logoProvider,
-  ShareCardImageResolver resolveImage = _resolve,
+  ShareCardImageResolver resolveImage = resolveShareCardImage,
 }) async {
   ui.Image? wallpaper;
   ui.Image? logo;
@@ -65,7 +65,8 @@ Future<File> renderShareCardFile(
   }
 }
 
-Future<ui.Image> _resolve(ImageProvider provider) {
+/// Decodes [provider] once, failing after 12 seconds.
+Future<ui.Image> resolveShareCardImage(ImageProvider provider) {
   final Completer<ui.Image> done = Completer<ui.Image>();
   final ImageStream stream = provider.resolve(ImageConfiguration.empty);
   late final Timer timeout;

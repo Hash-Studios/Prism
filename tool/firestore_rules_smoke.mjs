@@ -98,6 +98,8 @@ const seed = () => Promise.all([
   req('PATCH', 'walls/challenge-src', { email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('2026-11-02') }, 'owner'),
   req('PATCH', 'weeklyChallenges/2026-11-02', { theme: str('Quiet horizons'), state: str('open') }, 'owner'),
   req('PATCH', 'weeklyChallenges/2026-11-02/entries/entry', { creatorUid: str('b') }, 'owner'),
+  req('PATCH', 'wrapped/b/years/2026', { year: { integerValue: '2026' } }, 'owner'),
+  req('PATCH', 'wrappedRuns/2026', { phase: str('built') }, 'owner'),
   req('PATCH', 'usersv2/a', { id: str('a'), email: str('a@x.com'), followers: arr(['c@x.com']), following: arr([]) }, 'owner'),
   req('PATCH', 'profiles/a', {
     name: str('A'), username: str('a'), profilePhoto: str(''), bio: str(''), links: { mapValue: { fields: {} } },
@@ -529,6 +531,14 @@ const cases = [
       count: { integerValue: '100' }, senderUid: str('b'), creatorUid: str('b'),
     }, Bu), 403],
   ]),
+  ['owner reads own Wrapped', () => req('GET', 'wrapped/b/years/2026', null, Bu), 200],
+  ['owner cannot read Wrapped notification marker', () => req('GET', 'wrapped/b', null, Bu), 403],
+  ['another user reads a Wrapped', () => req('GET', 'wrapped/b/years/2026', null, A), 403],
+  ['signed-out read of a Wrapped', () => req('GET', 'wrapped/b/years/2026', null), 403],
+  ['owner writes own Wrapped', () => req('PATCH', 'wrapped/b/years/2026', { year: { integerValue: '2027' } }, Bu), 403],
+  ['owner deletes own Wrapped', () => req('DELETE', 'wrapped/b/years/2026', null, Bu), 403],
+  ['owner creates a Wrapped for another year', () => req('PATCH', 'wrapped/b/years/2025', { year: { integerValue: '2025' } }, Bu), 403],
+  ['user reads the Wrapped run checkpoint', () => req('GET', 'wrappedRuns/2026', null, Bu), 403],
   ['user writes a coin ledger entry', () => req('PATCH', 'coinTransactions/t1', {
     userId: { stringValue: 'b' }, delta: { integerValue: '500' },
   }, Bu), 403],

@@ -20298,6 +20298,246 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit tabs'**
   String get navMoreEditTabs;
+
+  /// Title of the Wrapped yearly recap screen and share card.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism Wrapped {year}'**
+  String wrappedTitle(String year);
+
+  /// Headline of the first Wrapped card.
+  ///
+  /// In en, this message translates to:
+  /// **'Your year in walls'**
+  String get wrappedIntroHeadline;
+
+  /// Body of the first Wrapped card.
+  ///
+  /// In en, this message translates to:
+  /// **'A few cards about the walls you loved this year.'**
+  String get wrappedIntroBody;
+
+  /// Label of the Wrapped card that shows how many walls the user saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get wrappedSavesLabel;
+
+  /// Body of the saves card. count is the number of saved walls this year.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{You saved 1 wall in {year}.} other{You saved {count} walls in {year}.}}'**
+  String wrappedSavesBody(int count, String year);
+
+  /// Label of the Wrapped card that shows the user top colours.
+  ///
+  /// In en, this message translates to:
+  /// **'Your colours'**
+  String get wrappedColoursLabel;
+
+  /// Body of the colours card. first, second and third are the top three colour names.
+  ///
+  /// In en, this message translates to:
+  /// **'{first}, {second} and {third} showed up most in your saves.'**
+  String wrappedColoursBody(String first, String second, String third);
+
+  /// Label of the Wrapped card that shows the creator the user saved most.
+  ///
+  /// In en, this message translates to:
+  /// **'Your top creator'**
+  String get wrappedCreatorLabel;
+
+  /// Body of the top creator card. count is the number of walls saved from that creator.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{You saved 1 wall by {name}.} other{You saved {count} walls by {name}.}}'**
+  String wrappedCreatorBody(int count, String name);
+
+  /// Label of the Wrapped card that shows the longest daily check-in run.
+  ///
+  /// In en, this message translates to:
+  /// **'Your longest run'**
+  String get wrappedStreakLabel;
+
+  /// Body of the longest run card. count is the number of days in the run.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{You checked in 1 day in a row.} other{You checked in {count} days in a row.}}'**
+  String wrappedStreakBody(int count);
+
+  /// Short day count used inside other Wrapped text, such as "3 days".
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day} other{{count} days}}'**
+  String wrappedDays(int count);
+
+  /// Label of the Wrapped card that shows AI walls the user made.
+  ///
+  /// In en, this message translates to:
+  /// **'Made with AI'**
+  String get wrappedAiLabel;
+
+  /// Body of the AI card. count is the number of AI walls the user made.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{You made 1 AI wall.} other{You made {count} AI walls.}}'**
+  String wrappedAiBody(int count);
+
+  /// Label of the Wrapped card that shows the category the user saved from most.
+  ///
+  /// In en, this message translates to:
+  /// **'Your top category'**
+  String get wrappedCategoryLabel;
+
+  /// Body of the top category card. count is the number of walls saved from that category.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{You saved 1 wall from {category}.} other{You saved {count} walls from {category}.}}'**
+  String wrappedCategoryBody(int count, String category);
+
+  /// Label of the Wrapped card that shows how many folders the user made.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders'**
+  String get wrappedFoldersLabel;
+
+  /// Body of the folders card. count is the number of folders the user made.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{You made 1 folder.} other{You made {count} folders.}}'**
+  String wrappedFoldersBody(int count);
+
+  /// Label of the Wrapped card that shows how often the user set or downloaded a wall.
+  ///
+  /// In en, this message translates to:
+  /// **'On your screen'**
+  String get wrappedOnScreenLabel;
+
+  /// Body of the on screen card. count is the number of times the wall was set or downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{You set or downloaded this wall 1 time.} other{You set or downloaded this wall {count} times.}}'**
+  String wrappedOnScreenBody(int count);
+
+  /// Label of the Wrapped card that shows weekly challenge entries.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly challenges'**
+  String get wrappedChallengesLabel;
+
+  /// Body of the challenges card. count is the number of weekly challenges entered.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{You entered 1 weekly challenge.} other{You entered {count} weekly challenges.}}'**
+  String wrappedChallengesBody(int count);
+
+  /// Label of the Wrapped card that shows tips the user sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Tips'**
+  String get wrappedTipsLabel;
+
+  /// Body of the tips card. count is the number of tips sent.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{You sent 1 tip to a creator.} other{You sent {count} tips to creators.}}'**
+  String wrappedTipsBody(int count);
+
+  /// Date line that shows when the Wrapped period starts.
+  ///
+  /// In en, this message translates to:
+  /// **'Since {date}'**
+  String wrappedSince(String date);
+
+  /// Headline of the Wrapped summary card.
+  ///
+  /// In en, this message translates to:
+  /// **'Your {year} in Prism'**
+  String wrappedSummaryHeadline(String year);
+
+  /// Button that shares the Wrapped card.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get wrappedShare;
+
+  /// Accessible label for the share icon on a Wrapped card.
+  ///
+  /// In en, this message translates to:
+  /// **'Share this card'**
+  String get wrappedShareCard;
+
+  /// Button that pauses the Wrapped card auto-advance.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get wrappedPause;
+
+  /// Button that resumes the Wrapped card auto-advance.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get wrappedPlay;
+
+  /// Button that closes the Wrapped viewer.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get wrappedClose;
+
+  /// Accessible label for the button that moves to the next Wrapped card.
+  ///
+  /// In en, this message translates to:
+  /// **'Next card'**
+  String get wrappedNextCard;
+
+  /// Accessible label for the button that moves to the previous Wrapped card.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous card'**
+  String get wrappedPreviousCard;
+
+  /// Accessible label that tells the position of the current Wrapped card. index is the current card, count is the total.
+  ///
+  /// In en, this message translates to:
+  /// **'Card {index} of {count}'**
+  String wrappedCardPosition(int index, int count);
+
+  /// Title of the Wrapped entry card on the home screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Your {year} in Prism'**
+  String wrappedHomeTitle(String year);
+
+  /// Subtitle of the Wrapped entry card on the home screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Your year in walls is ready.'**
+  String get wrappedHomeSubtitle;
+
+  /// Message shown when the account has no Wrapped for the year.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no Wrapped for this account this year.'**
+  String get wrappedNotEligible;
+
+  /// Error message shown when Wrapped cannot load.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load your Wrapped. Check your connection and try again.'**
+  String get wrappedLoadFailed;
+
+  /// Title of the push notification that tells the user Wrapped is ready.
+  ///
+  /// In en, this message translates to:
+  /// **'Your {year} in Prism is here'**
+  String notifPushWrappedReadyTitle(String year);
+
+  /// Body of the push notification that tells the user Wrapped is ready.
+  ///
+  /// In en, this message translates to:
+  /// **'See the walls you saved, your colours and your creators.'**
+  String get notifPushWrappedReadyBody;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

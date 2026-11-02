@@ -8,6 +8,7 @@ import {verifiedEmailForUid} from "./wallAuthor";
 import {removeUidFollowGraph} from "./profiles";
 import {FOLDERS, FOLDER_ITEMS, isFolderItemPath} from "./folders";
 import {removeWallRequestsForAccount, REQUEST_RATE_DAILY, VOTE_RATE_DAILY} from "./wallRequests";
+import {WRAPPED_COLLECTION} from "./wrapped";
 import {FOLLOWED_FOLDERS, removeAllFolderFollows, removeOwnerPublicFolders} from "./publicFolders";
 
 const USERS = "usersv2";
@@ -123,6 +124,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await db.recursiveDelete(userRef.collection("history"));
   await db.recursiveDelete(userRef.collection("wallActionReceipts"));
   await db.recursiveDelete(userRef.collection(FOLLOWED_FOLDERS));
+  await db.recursiveDelete(db.collection(WRAPPED_COLLECTION).doc(callerUid));
   // Items are found by owner, not through their folder, so items whose folder is already gone are deleted too.
   // The owner filter keeps another owner's items in a reused folder id. Items go before their folders.
   const items = (await db.collectionGroup(FOLDER_ITEMS).where("ownerId", "==", callerUid).get())

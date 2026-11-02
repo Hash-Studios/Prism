@@ -210,7 +210,7 @@ return $default(_that.loading,_that.failed,_that.data,_that.metric);case _:
 
 class _CreatorStatsState implements CreatorStatsState {
   const _CreatorStatsState({this.loading = false, this.failed = false, this.data, this.metric = StatsMetric.views});
-
+  
 
 @override@JsonKey() final  bool loading;
 @override@JsonKey() final  bool failed;
@@ -442,7 +442,7 @@ return select(_that.metric);case _:
 
 class LoadCreatorStats implements CreatorStatsEvent {
   const LoadCreatorStats();
-
+  
 
 
 
@@ -474,7 +474,7 @@ String toString() {
 
 class SelectStatsMetric implements CreatorStatsEvent {
   const SelectStatsMetric(this.metric);
-
+  
 
  final  StatsMetric metric;
 

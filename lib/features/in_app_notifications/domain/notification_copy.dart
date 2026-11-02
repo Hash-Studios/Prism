@@ -112,6 +112,10 @@ String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
     body: l10n.notifPushDropLastCallBody(_stringArg(args, 'dropTitle'), _intArg(args, 'hoursLeft')),
   ),
   'drawWinner' => (title: l10n.notifPushDrawWinnerTitle, body: l10n.notifPushDrawWinnerBody),
+  'wrappedReady' => (
+    title: l10n.notifPushWrappedReadyTitle('${_intArg(args, 'year')}'),
+    body: l10n.notifPushWrappedReadyBody,
+  ),
   'challengeWinner' => (
     title: l10n.challengeWinnerNotificationTitle,
     body: l10n.challengeWinnerNotificationBody(_stringArg(args, 'theme')),

@@ -64,6 +64,8 @@
     <string name="notif_push_draw_winner_body">One month of Pro and the Prism frame are yours.</string>
     <string name="notif_push_gift_received_title">%1$s sent you a 24-hour Pro pass</string>
     <string name="notif_push_gift_received_body">Premium collections and premium walls are open until tomorrow.</string>
+    <string name="notif_push_wrapped_ready_title">Your %1$s in Prism is here</string>
+    <string name="notif_push_wrapped_ready_body">See the walls you saved, your colours and your creators.</string>
     <string name="notif_push_tip_received_title">%1$s tipped you %2$s coins for %3$s</string>
     <string name="notif_push_tip_received_title_untitled">%1$s tipped you %2$s coins</string>
     <string name="notif_push_tip_received_body">See your tips in your creator stats.</string>

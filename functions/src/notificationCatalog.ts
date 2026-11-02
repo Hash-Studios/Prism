@@ -28,6 +28,7 @@ export type NotificationCopy =
   | { kind: "folderDigest"; folderName: string; folderCount: number; wallCount: number; tags: string }
   | { kind: "wallRequestFilled"; requestText: string }
   | { kind: "drawWinner" }
+  | { kind: "wrappedReady"; year: number }
   | { kind: "giftReceived"; senderName: string }
   | { kind: "tipReceived"; senderName: string; amount: number; wallTitle: string }
   | { kind: "tipsReceived"; tipCount: number; coins: number }
@@ -128,6 +129,13 @@ export function renderNotificationCopy(
       args: {wallTitle: copy.wallTitle},
       title: "Today's Wall of the Day is here",
       body: copy.wallTitle || "Open Prism to see today's Wall of the Day.",
+    };
+  case "wrappedReady":
+    return {
+      kind: copy.kind,
+      args: {year: copy.year},
+      title: `Your ${copy.year} in Prism is here`,
+      body: "See the walls you saved, your colours and your creators.",
     };
   case "winBack7":
     return {
@@ -418,6 +426,9 @@ export function nativeNotificationLocalization(
   case "winBack30":
   case "winBack60":
   case "drawWinner":
+    break;
+  case "wrappedReady":
+    titleArgs = [stringArg("year")];
     break;
   default: {
     const exhaustive: never = kind;

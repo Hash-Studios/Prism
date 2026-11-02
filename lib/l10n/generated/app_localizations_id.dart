@@ -12590,4 +12590,213 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get navMoreEditTabs => 'Ubah tab';
+
+  @override
+  String wrappedTitle(String year) {
+    return 'Prism Wrapped $year';
+  }
+
+  @override
+  String get wrappedIntroHeadline => 'Tahun Anda dalam wallpaper';
+
+  @override
+  String get wrappedIntroBody => 'Beberapa kartu tentang wallpaper yang Anda sukai tahun ini.';
+
+  @override
+  String get wrappedSavesLabel => 'Disimpan';
+
+  @override
+  String wrappedSavesBody(int count, String year) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda menyimpan $count wallpaper di $year.',
+      one: 'Anda menyimpan $count wallpaper di $year.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedColoursLabel => 'Warna Anda';
+
+  @override
+  String wrappedColoursBody(String first, String second, String third) {
+    return '$first, $second, dan $third paling sering muncul di wallpaper yang Anda simpan.';
+  }
+
+  @override
+  String get wrappedCreatorLabel => 'Kreator teratas Anda';
+
+  @override
+  String wrappedCreatorBody(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda menyimpan $count wallpaper dari $name.',
+      one: 'Anda menyimpan $count wallpaper dari $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedStreakLabel => 'Rentetan terpanjang Anda';
+
+  @override
+  String wrappedStreakBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda masuk $count hari berturut-turut.',
+      one: 'Anda masuk $count hari berturut-turut.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count hari', one: '$count hari');
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedAiLabel => 'Dibuat dengan AI';
+
+  @override
+  String wrappedAiBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda membuat $count wallpaper AI.',
+      one: 'Anda membuat $count wallpaper AI.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedCategoryLabel => 'Kategori teratas Anda';
+
+  @override
+  String wrappedCategoryBody(int count, String category) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda menyimpan $count wallpaper dari $category.',
+      one: 'Anda menyimpan $count wallpaper dari $category.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedFoldersLabel => 'Folder';
+
+  @override
+  String wrappedFoldersBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda membuat $count folder.',
+      one: 'Anda membuat $count folder.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedOnScreenLabel => 'Di layar Anda';
+
+  @override
+  String wrappedOnScreenBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda memasang atau mengunduh wallpaper ini $count kali.',
+      one: 'Anda memasang atau mengunduh wallpaper ini $count kali.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedChallengesLabel => 'Tantangan mingguan';
+
+  @override
+  String wrappedChallengesBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda mengikuti $count tantangan mingguan.',
+      one: 'Anda mengikuti $count tantangan mingguan.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wrappedTipsLabel => 'Tip';
+
+  @override
+  String wrappedTipsBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda mengirim $count tip ke kreator.',
+      one: 'Anda mengirim $count tip ke kreator.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wrappedSince(String date) {
+    return 'Sejak $date';
+  }
+
+  @override
+  String wrappedSummaryHeadline(String year) {
+    return '$year Anda di Prism';
+  }
+
+  @override
+  String get wrappedShare => 'Bagikan';
+
+  @override
+  String get wrappedShareCard => 'Bagikan kartu ini';
+
+  @override
+  String get wrappedPause => 'Jeda';
+
+  @override
+  String get wrappedPlay => 'Putar';
+
+  @override
+  String get wrappedClose => 'Tutup';
+
+  @override
+  String get wrappedNextCard => 'Kartu berikutnya';
+
+  @override
+  String get wrappedPreviousCard => 'Kartu sebelumnya';
+
+  @override
+  String wrappedCardPosition(int index, int count) {
+    return 'Kartu $index dari $count';
+  }
+
+  @override
+  String wrappedHomeTitle(String year) {
+    return '$year Anda di Prism';
+  }
+
+  @override
+  String get wrappedHomeSubtitle => 'Tahun Anda dalam wallpaper sudah siap.';
+
+  @override
+  String get wrappedNotEligible => 'Tidak ada Wrapped untuk akun ini tahun ini.';
+
+  @override
+  String get wrappedLoadFailed => 'Wrapped Anda tidak dapat dimuat. Periksa koneksi dan coba lagi.';
+
+  @override
+  String notifPushWrappedReadyTitle(String year) {
+    return '$year Anda di Prism sudah tiba';
+  }
+
+  @override
+  String get notifPushWrappedReadyBody => 'Lihat wallpaper yang Anda simpan, warna Anda, dan kreator Anda.';
 }
