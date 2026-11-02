@@ -20190,6 +20190,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unable to get the desktop version. Check your connection and try again.'**
   String get desktopVersionUnavailable;
+
+  /// Title of the Layout settings page and its row in Settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Layout'**
+  String get layoutTitle;
+
+  /// Subtitle of the Layout row in Settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Tabs and wallpaper grid'**
+  String get layoutRowSubtitle;
+
+  /// Section header above the bottom bar tab list on the Layout page.
+  ///
+  /// In en, this message translates to:
+  /// **'Tabs'**
+  String get layoutTabsHeader;
+
+  /// Footnote under the tab list on the Layout page.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder. At least 3 tabs stay in the bar. Hidden tabs are under More.'**
+  String get layoutTabsFootnote;
+
+  /// Subtitle of the Home row on the Layout page. Home cannot be hidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Always in the bar'**
+  String get layoutTabAlwaysShown;
+
+  /// Subtitle of a hidden tab row on the Layout page.
+  ///
+  /// In en, this message translates to:
+  /// **'Under More'**
+  String get layoutTabUnderMore;
+
+  /// Accessibility label of the switch that shows a tab in the bottom bar.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {tab}'**
+  String layoutShowTab(String tab);
+
+  /// Tooltip and accessibility label of the drag handle of a tab row.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder {tab}'**
+  String layoutReorderTab(String tab);
+
+  /// Accessibility action that moves a tab one place up in the bottom bar order.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get layoutMoveUp;
+
+  /// Accessibility action that moves a tab one place down in the bottom bar order.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get layoutMoveDown;
+
+  /// Section header above the grid size choice on the Layout page.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpaper grid'**
+  String get layoutGridHeader;
+
+  /// Grid size with small tiles (3 columns on a phone).
+  ///
+  /// In en, this message translates to:
+  /// **'Compact'**
+  String get layoutDensityCompact;
+
+  /// Default grid size (2 columns on a phone).
+  ///
+  /// In en, this message translates to:
+  /// **'Comfortable'**
+  String get layoutDensityComfortable;
+
+  /// Grid size with one full-width wallpaper per row on a phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get layoutDensityLarge;
+
+  /// Footnote under the grid size choice on the Layout page.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to every wallpaper grid. Pinch the Home feed to change it.'**
+  String get layoutGridFootnote;
+
+  /// Button that puts the tabs and grid size back to the defaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset layout'**
+  String get layoutReset;
+
+  /// Bottom bar entry that opens the hidden tabs.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get navMore;
+
+  /// Row in the More sheet that opens the Layout settings page.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit tabs'**
+  String get navMoreEditTabs;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -127,6 +127,21 @@ service cloud.firestore {
         || validThemePrefs(request.resource.data.themePrefs);
     }
 
+    function validLayoutPrefs(p) {
+      return p is map
+        && p.keys().hasOnly(['tabs', 'hidden', 'density', 'changedAt'])
+        && p.keys().hasAll(['tabs', 'hidden', 'density', 'changedAt'])
+        && p.tabs is list && p.tabs.size() <= 8 && p.tabs.hasOnly(['home', 'search', 'rewards', 'collection'])
+        && p.hidden is list && p.hidden.size() <= 8 && p.hidden.hasOnly(['search', 'rewards', 'collection'])
+        && p.density in ['compact', 'comfortable', 'large']
+        && p.changedAt is int && p.changedAt >= 0;
+    }
+
+    function ownerLayoutPrefsOk() {
+      return !('layoutPrefs' in request.resource.data.diff(resource.data).affectedKeys())
+        || validLayoutPrefs(request.resource.data.layoutPrefs);
+    }
+
     function ownerDirectoryOptOutOk() {
       return !('creatorDirectoryOptOut' in request.resource.data.diff(resource.data).affectedKeys())
         || request.resource.data.creatorDirectoryOptOut is bool;
@@ -288,8 +303,9 @@ service cloud.firestore {
             'name', 'profilePhoto', 'coverPhoto', 'bio', 'links', 'lastLoginAt', 'loggedIn',
             'interestCategories', 'onboardingV2', 'uploadsWeekStart',
             'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'coinState',
-            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs', 'creatorDirectoryOptOut'
-          ]) && ownerCoinStateOk() && ownerAppOpenOk() && ownerThemePrefsOk() && ownerDirectoryOptOutOk())
+            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs', 'creatorDirectoryOptOut', 'layoutPrefs'
+          ]) && ownerCoinStateOk() && ownerAppOpenOk() && ownerThemePrefsOk() && ownerDirectoryOptOutOk()
+            && ownerLayoutPrefsOk())
           || isConfiguredAdmin();
       allow delete: if isConfiguredAdmin();
 

@@ -4,12 +4,14 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
+import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
@@ -24,14 +26,23 @@ part 'personalized_feed_event.j.dart';
 part 'personalized_feed_state.j.dart';
 part 'personalized_feed_bloc.j.freezed.dart';
 
+/// The tab the Home feed opens on: the remembered one, except Following for a guest, who would only see a sign-in
+/// prompt there.
+HomeFeedChip _restoredChip(HomeFeedChip? remembered) =>
+    remembered == null || (remembered == HomeFeedChip.following && !app_state.prismUser.loggedIn)
+    ? HomeFeedChip.forYou
+    : remembered;
+
 @injectable
 class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedState> {
   PersonalizedFeedBloc(
     this._fetchPersonalizedFeedUseCase,
     this._repository,
     this._userBlockRepository,
-    this._dropsRepository,
-  ) : super(PersonalizedFeedState.initial()) {
+    this._dropsRepository, [
+    this._layout,
+  ]) : _seenFeedTab = _layout?.value.feedTab,
+       super(PersonalizedFeedState.initial().copyWith(chip: _restoredChip(_layout?.value.feedTab))) {
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
     on<_FetchMoreRequested>(_onFetchMoreRequested);
@@ -51,12 +62,17 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     });
     _dropsWereEnabled = EconomyConfig.notifier.value.flags.dropsEnabled;
     EconomyConfig.notifier.addListener(_onEconomyConfigChanged);
+    _layout?.addListener(_onLayoutChanged);
   }
 
   final FetchPersonalizedFeedUseCase _fetchPersonalizedFeedUseCase;
   final PersonalizedFeedRepository _repository;
   final UserBlockRepository _userBlockRepository;
   final DropsRepository _dropsRepository;
+
+  /// Remembers the chosen tab across restarts. A push or link that sets the tab there switches the feed to it.
+  final LayoutPrefsStore? _layout;
+  HomeFeedChip? _seenFeedTab;
   late bool _dropsWereEnabled;
   int _liveDropRequest = 0;
   StreamSubscription<BlockedCreators>? _blockedCreatorsSub;
@@ -121,6 +137,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
 
   @override
   Future<void> close() {
+    _layout?.removeListener(_onLayoutChanged);
     EconomyConfig.notifier.removeListener(_onEconomyConfigChanged);
     unawaited(_blockedCreatorsSub?.cancel());
     _seenTimer?.cancel();
@@ -171,11 +188,20 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
   Future<void> _onSettingsChanged(_SettingsChanged event, Emitter<PersonalizedFeedState> emit) =>
       _load(emit, sourceContext: 'personalized_feed_settings', keepItems: false);
 
+  /// Follows a new tab in the store. Other layout changes leave the feed alone.
+  void _onLayoutChanged() {
+    final HomeFeedChip requested = _layout!.value.feedTab;
+    if (requested == _seenFeedTab) return;
+    _seenFeedTab = requested;
+    if (!isClosed && requested != state.chip) add(PersonalizedFeedEvent.chipSelected(requested));
+  }
+
   void _onChipSelected(_ChipSelected event, Emitter<PersonalizedFeedState> emit) {
     if (state.chip == event.chip) {
       return;
     }
     emit(state.copyWith(chip: event.chip));
+    unawaited(_layout?.setFeedTab(event.chip));
     unawaited(
       analytics.track(
         SurfaceActionTappedEvent(

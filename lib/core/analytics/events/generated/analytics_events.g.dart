@@ -7,6 +7,7 @@ import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
+import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
 import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
@@ -46,6 +47,8 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'notification_type': NotificationTypeValue.values.map((value) => value.wireValue).toList(),
   'auth_method': AuthMethodValue.values.map((value) => value.wireValue).toList(),
   'nav_tab': NavTabValue.values.map((value) => value.wireValue).toList(),
+  'wall_grid_density': WallGridDensity.values.map((value) => value.wireValue).toList(),
+  'layout_change_source': LayoutChangeSourceValue.values.map((value) => value.wireValue).toList(),
   'notification_preference': NotificationPreferenceValue.values.map((value) => value.wireValue).toList(),
   'deep_link_source': DeepLinkSourceValue.values.map((value) => value.wireValue).toList(),
   'widget_kind': WidgetKindValue.values.map((value) => value.wireValue).toList(),
@@ -1652,6 +1655,63 @@ class NavTabSelectedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'from_tab': fromTab.wireValue, 'to_tab': toTab.wireValue};
+  }
+}
+
+class LayoutTabsReorderedEvent extends AnalyticsEvent {
+  const LayoutTabsReorderedEvent({required this.tab, required this.toPosition});
+
+  final NavTabValue tab;
+  final int toPosition;
+
+  @override
+  String get eventName => 'layout_tabs_reordered';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'tab': tab.wireValue, 'to_position': toPosition};
+  }
+}
+
+class LayoutTabVisibilityChangedEvent extends AnalyticsEvent {
+  const LayoutTabVisibilityChangedEvent({required this.tab, required this.visible});
+
+  final NavTabValue tab;
+  final bool visible;
+
+  @override
+  String get eventName => 'layout_tab_visibility_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'tab': tab.wireValue, 'visible': visible ? 1 : 0};
+  }
+}
+
+class LayoutDensityChangedEvent extends AnalyticsEvent {
+  const LayoutDensityChangedEvent({required this.density, required this.source});
+
+  final WallGridDensity density;
+  final LayoutChangeSourceValue source;
+
+  @override
+  String get eventName => 'layout_density_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'density': density.wireValue, 'source': source.wireValue};
+  }
+}
+
+class LayoutResetEvent extends AnalyticsEvent {
+  const LayoutResetEvent();
+
+  @override
+  String get eventName => 'layout_reset';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
   }
 }
 

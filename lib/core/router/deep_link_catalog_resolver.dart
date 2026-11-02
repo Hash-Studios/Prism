@@ -14,7 +14,9 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/daily_flow/domain/daily_moment_repository.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
+import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
 import 'package:Prism/features/library/views/pages/library_screen.dart' show LibraryTab;
+import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
@@ -48,7 +50,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.splash => const DashboardRoute(),
     DeepLinkPageTarget.onboarding => OnboardingV2ShellRoute(),
     DeepLinkPageTarget.dashboard => const DashboardRoute(),
-    DeepLinkPageTarget.home => const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()]),
+    DeepLinkPageTarget.home => _homeRoute(HomeFeedChip.values.asNameMap()[query['feed']]),
     DeepLinkPageTarget.searchTab => const DashboardRoute(
       children: <PageRouteInfo>[
         SearchTabRoute(children: <PageRouteInfo>[SearchRoute()]),
@@ -78,6 +80,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.editProfile => const EditProfilePanelRoute(),
     DeepLinkPageTarget.sharePrism => const SharePrismRoute(),
     DeepLinkPageTarget.settings => const SettingsRoute(),
+    DeepLinkPageTarget.layoutSettings => const LayoutSettingsRoute(),
     DeepLinkPageTarget.blockedAccounts => const BlockedAccountsRoute(),
     DeepLinkPageTarget.about => AboutRoute(),
     DeepLinkPageTarget.favourites => const FavouriteWallpaperRoute(),
@@ -384,4 +387,11 @@ bool _isTrustedImageUrl(String imageUrl, WallpaperSource source) {
     _ => const <String>{},
   };
   return (uri.port == 443 || uri.hasPort == false) && allowedHosts.contains(uri.host.toLowerCase());
+}
+
+/// Home, on the feed tab the link names. Writing the tab to the store makes the link win over the remembered tab,
+/// whether the feed is on screen already or opens after this.
+PageRouteInfo _homeRoute(HomeFeedChip? feed) {
+  if (feed != null && getIt.isRegistered<LayoutPrefsStore>()) unawaited(getIt<LayoutPrefsStore>().setFeedTab(feed));
+  return const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()]);
 }

@@ -276,6 +276,18 @@ enums:
       - search
       - streak
       - collection
+  - name: wall_grid_density
+    dart_type: WallGridDensity
+    import: package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart
+    values:
+      - compact
+      - comfortable
+      - large
+  - name: layout_change_source
+    dart_type: LayoutChangeSourceValue
+    values:
+      - settings
+      - pinch
   - name: notification_preference
     dart_type: NotificationPreferenceValue
     values:
@@ -1470,6 +1482,36 @@ events:
         key: to_tab
         type: enum
         enum: NavTabValue
+  - id: layout_tabs_reordered
+    fields:
+      - name: tab
+        key: tab
+        type: enum
+        enum: NavTabValue
+      - name: to_position
+        key: to_position
+        type: int
+  - id: layout_tab_visibility_changed
+    fields:
+      - name: tab
+        key: tab
+        type: enum
+        enum: NavTabValue
+      - name: visible
+        key: visible
+        type: bool
+  - id: layout_density_changed
+    fields:
+      - name: density
+        key: density
+        type: enum
+        enum: WallGridDensity
+      - name: source
+        key: source
+        type: enum
+        enum: LayoutChangeSourceValue
+  - id: layout_reset
+    fields: []
   - id: upload_action_selected
     fields:
       - name: action

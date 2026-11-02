@@ -20,8 +20,10 @@ import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
 import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/features/theme_mode/data/seasonal_announcement.dart';
 import 'package:Prism/features/theme_mode/seasonal_themes.dart';
@@ -222,6 +224,8 @@ class _HomeTabPageState extends State<HomeTabPage> {
     }
     final int? tabIndex = quickActionTabIndex(shortcutType);
     if (tabIndex == null) return;
+    // The shortcut is labelled For you, so it opens that tab, not the remembered one.
+    if (tabIndex == _homeTabIndex) unawaited(getIt<LayoutPrefsStore>().setFeedTab(HomeFeedChip.forYou));
     context.router.root.popUntilRouteWithName(DashboardRoute.name);
     context.tabsRouter.setActiveIndex(tabIndex);
   }

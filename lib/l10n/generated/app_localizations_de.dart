@@ -12671,4 +12671,64 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get desktopVersionUnavailable =>
       'Die Desktop-Version kann gerade nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String get layoutTitle => 'Layout';
+
+  @override
+  String get layoutRowSubtitle => 'Tabs und Hintergrundbild-Raster';
+
+  @override
+  String get layoutTabsHeader => 'Tabs';
+
+  @override
+  String get layoutTabsFootnote =>
+      'Zum Sortieren ziehen. Mindestens 3 Tabs bleiben in der Leiste. Ausgeblendete Tabs findest du unter Mehr.';
+
+  @override
+  String get layoutTabAlwaysShown => 'Immer in der Leiste';
+
+  @override
+  String get layoutTabUnderMore => 'Unter Mehr';
+
+  @override
+  String layoutShowTab(String tab) {
+    return '$tab anzeigen';
+  }
+
+  @override
+  String layoutReorderTab(String tab) {
+    return '$tab neu sortieren';
+  }
+
+  @override
+  String get layoutMoveUp => 'Nach oben verschieben';
+
+  @override
+  String get layoutMoveDown => 'Nach unten verschieben';
+
+  @override
+  String get layoutGridHeader => 'Hintergrundbild-Raster';
+
+  @override
+  String get layoutDensityCompact => 'Kompakt';
+
+  @override
+  String get layoutDensityComfortable => 'Komfortabel';
+
+  @override
+  String get layoutDensityLarge => 'Groß';
+
+  @override
+  String get layoutGridFootnote =>
+      'Gilt für alle Hintergrundbild-Raster. Zum Ändern auf dem Feed der Startseite zoomen.';
+
+  @override
+  String get layoutReset => 'Layout zurücksetzen';
+
+  @override
+  String get navMore => 'Mehr';
+
+  @override
+  String get navMoreEditTabs => 'Tabs bearbeiten';
 }

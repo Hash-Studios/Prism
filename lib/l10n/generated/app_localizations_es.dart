@@ -12649,4 +12649,64 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get desktopVersionUnavailable =>
       'No se pudo obtener la versión para escritorio. Comprueba tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get layoutTitle => 'Diseño';
+
+  @override
+  String get layoutRowSubtitle => 'Pestañas y cuadrícula de fondos de pantalla';
+
+  @override
+  String get layoutTabsHeader => 'Pestañas';
+
+  @override
+  String get layoutTabsFootnote =>
+      'Arrastra para reordenar. Al menos 3 pestañas se quedan en la barra. Las pestañas ocultas están en Más.';
+
+  @override
+  String get layoutTabAlwaysShown => 'Siempre en la barra';
+
+  @override
+  String get layoutTabUnderMore => 'En Más';
+
+  @override
+  String layoutShowTab(String tab) {
+    return 'Mostrar $tab';
+  }
+
+  @override
+  String layoutReorderTab(String tab) {
+    return 'Reordenar $tab';
+  }
+
+  @override
+  String get layoutMoveUp => 'Subir';
+
+  @override
+  String get layoutMoveDown => 'Bajar';
+
+  @override
+  String get layoutGridHeader => 'Cuadrícula de fondos de pantalla';
+
+  @override
+  String get layoutDensityCompact => 'Compacta';
+
+  @override
+  String get layoutDensityComfortable => 'Cómoda';
+
+  @override
+  String get layoutDensityLarge => 'Grande';
+
+  @override
+  String get layoutGridFootnote =>
+      'Se aplica a todas las cuadrículas de fondos de pantalla. Pellizca el feed de Inicio para cambiarla.';
+
+  @override
+  String get layoutReset => 'Restablecer diseño';
+
+  @override
+  String get navMore => 'Más';
+
+  @override
+  String get navMoreEditTabs => 'Editar pestañas';
 }

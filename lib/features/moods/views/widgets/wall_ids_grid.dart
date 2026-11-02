@@ -24,7 +24,7 @@ class WallIdsGrid extends StatelessWidget {
     final List<FeedItemEntity> items = <FeedItemEntity>[
       for (final PrismWallpaper wall in walls) PrismFeedItem(id: wall.id, wallpaper: wall),
     ];
-    final int columns = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
+    final int columns = PrismWallGrid.columns(context);
     final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns);
     return CustomScrollView(
       slivers: <Widget>[

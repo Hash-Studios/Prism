@@ -192,6 +192,11 @@ const themeFields = {
 };
 const themeNoChangedAt = Object.fromEntries(Object.entries(themeFields).filter(([k]) => k !== 'changedAt'));
 const themeMap = (fields) => ({ themePrefs: { mapValue: { fields } } });
+const layoutFields = {
+  tabs: arr(['home', 'collection', 'search', 'rewards']), hidden: arr(['rewards']), density: str('large'),
+  changedAt: { integerValue: '1793000000000' },
+};
+const layoutMap = (fields) => ({ layoutPrefs: { mapValue: { fields } } });
 const cases = [
   ['new wall accepts valid challenge and resubmission links together', () => req('PATCH', 'walls/linked-challenge', {
     email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('2026-11-02'), resubmitOf: str('wall_old.png'),
@@ -512,6 +517,12 @@ const cases = [
   ['owner writes themePrefs with a string lightAccent', () => req('PATCH', 'usersv2/b', themeMap({ ...themeFields, lightAccent: str('4293228183') }), Bu, ['themePrefs']), 403],
   ['owner writes themePrefs missing changedAt', () => req('PATCH', 'usersv2/b', themeMap(themeNoChangedAt), Bu, ['themePrefs']), 403],
   ['stranger writes themePrefs on another user doc', () => req('PATCH', 'usersv2/a', themeMap(themeFields), Bu, ['themePrefs']), 403],
+  ['owner writes a valid layoutPrefs map', () => req('PATCH', 'usersv2/b', layoutMap(layoutFields), Bu, ['layoutPrefs']), 200],
+  ['owner writes layoutPrefs with an extra key', () => req('PATCH', 'usersv2/b', layoutMap({ ...layoutFields, extra: str('x') }), Bu, ['layoutPrefs']), 403],
+  ['owner writes layoutPrefs with density huge', () => req('PATCH', 'usersv2/b', layoutMap({ ...layoutFields, density: str('huge') }), Bu, ['layoutPrefs']), 403],
+  ['owner hides Home in layoutPrefs', () => req('PATCH', 'usersv2/b', layoutMap({ ...layoutFields, hidden: arr(['home']) }), Bu, ['layoutPrefs']), 403],
+  ['owner writes an unknown tab in layoutPrefs', () => req('PATCH', 'usersv2/b', layoutMap({ ...layoutFields, tabs: arr(['home', 'ai']) }), Bu, ['layoutPrefs']), 403],
+  ['stranger writes layoutPrefs on another user doc', () => req('PATCH', 'usersv2/a', layoutMap(layoutFields), Bu, ['layoutPrefs']), 403],
   ...['tipRateDaily', 'wallTippers', 'creatorTips'].flatMap((collection) => [
     [`user reads private ${collection}`, () => req('GET', `${collection}/b`, null, Bu), 403],
     [`user writes private ${collection}`, () => req('PATCH', `${collection}/b`, {

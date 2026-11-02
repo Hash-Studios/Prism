@@ -12631,4 +12631,63 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get desktopVersionUnavailable => 'डेस्कटॉप वर्शन नहीं मिल सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।';
+
+  @override
+  String get layoutTitle => 'लेआउट';
+
+  @override
+  String get layoutRowSubtitle => 'टैब और वॉलपेपर ग्रिड';
+
+  @override
+  String get layoutTabsHeader => 'टैब';
+
+  @override
+  String get layoutTabsFootnote =>
+      'क्रम बदलने के लिए खींचें। बार में कम से कम 3 टैब रहते हैं। छिपे टैब \"और\" के नीचे हैं।';
+
+  @override
+  String get layoutTabAlwaysShown => 'हमेशा बार में';
+
+  @override
+  String get layoutTabUnderMore => '\"और\" के नीचे';
+
+  @override
+  String layoutShowTab(String tab) {
+    return '$tab दिखाएँ';
+  }
+
+  @override
+  String layoutReorderTab(String tab) {
+    return '$tab का क्रम बदलें';
+  }
+
+  @override
+  String get layoutMoveUp => 'ऊपर ले जाएँ';
+
+  @override
+  String get layoutMoveDown => 'नीचे ले जाएँ';
+
+  @override
+  String get layoutGridHeader => 'वॉलपेपर ग्रिड';
+
+  @override
+  String get layoutDensityCompact => 'कॉम्पैक्ट';
+
+  @override
+  String get layoutDensityComfortable => 'आरामदायक';
+
+  @override
+  String get layoutDensityLarge => 'बड़ा';
+
+  @override
+  String get layoutGridFootnote => 'हर वॉलपेपर ग्रिड पर लागू होता है। बदलने के लिए होम फ़ीड पर पिंच करें।';
+
+  @override
+  String get layoutReset => 'लेआउट रीसेट करें';
+
+  @override
+  String get navMore => 'और';
+
+  @override
+  String get navMoreEditTabs => 'टैब संपादित करें';
 }

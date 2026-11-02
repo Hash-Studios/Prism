@@ -23,6 +23,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [notifications.md](notifications.md) | Inbox, preferences, Wall of the Day at 09:00 local time |
 | [reliability.md](reliability.md) | Timeouts, offline banner, cache, error reports, ad consent, startup |
 | [backend-deploy.md](backend-deploy.md) | Deploy order for indexes, functions, worker, web and the app |
+| [layout.md](layout.md) | Settings > Layout: tab order and hidden tabs (More), grid density and pinch, remembered feed tab, account sync |
 | [home-feed.md](home-feed.md) | Instant home from cache, floating header and tabs (For you, Following, Trending, Latest, Popular), tight 4 px grid with rounded tiles, boosted walls after the Wall of the Day in the carousel, bottom bar, Show less undo |
 | [categories.md](categories.md) | Prism-first categories, AMOLED tile, tile quick actions |
 | [wall-of-the-day.md](wall-of-the-day.md) | Card, push, past picks archive |

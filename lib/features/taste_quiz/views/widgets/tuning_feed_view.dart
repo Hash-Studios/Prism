@@ -99,7 +99,7 @@ class _TuningFeedViewState extends State<TuningFeedView> {
     final List<FeedItemEntity> walls = widget.walls!;
     final int generation = ++_generation;
     if (walls.length < TuningFeedView.minTiles) return _lineOnly();
-    final int columns = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
+    final int columns = PrismWallGrid.columns(context);
     final int height = gridTileDecodeHeight(context, crossAxisCount: columns);
     int loaded = 0;
     final precache = TuningFeedView.precacheOverride ?? _precache;
@@ -178,7 +178,7 @@ class _TuningFeedViewState extends State<TuningFeedView> {
                         final double tileWidth = byWidth < byHeight ? byWidth : byHeight;
                         final int height = gridTileDecodeHeight(
                           context,
-                          crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
+                          crossAxisCount: PrismWallGrid.columns(context),
                         );
                         return Wrap(
                           spacing: gap,

@@ -79,6 +79,11 @@ function destination(step: number): string {
   return "home";
 }
 
+/** The "new walls" steps open the Latest tab. Builds before the `feed` field open Home as before. */
+function feedFor(step: number): {feed: string} | Record<string, never> {
+  return step === 7 || step === 14 ? {feed: "latest"} : {};
+}
+
 /** The slot the scheduler meant to run. A late run still sends to that slot. */
 function scheduledAtMs(scheduleTime: string | undefined): number {
   const ms = Date.parse(scheduleTime ?? "");
@@ -236,6 +241,7 @@ export const sendWinBackPushes = onSchedule(
                     ...copy,
                     data: {
                       route: destination(n),
+                      ...feedFor(n),
                       push_kind: "win_back",
                       step: String(n),
                       ...(wall?.wallId ? {wall_id: wall.wallId} : {}),

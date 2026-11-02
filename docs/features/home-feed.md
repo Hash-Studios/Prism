@@ -40,8 +40,9 @@ Android and iOS. The home feed has no premium or coin gate. The Following tab as
 | `lib/features/moods/views/` | The chip row, the mood row in the grid and the mood page (`/mood/:moodId`). |
 | `functions/src/wallMoods.ts` | The mood rules (one table) and the job step that writes `moods/current`. |
 | `lib/features/navigation/views/widgets/bottom_nav_bar.dart` | Hosts the floating pill and the create button above the tab pages. |
-| `lib/features/navigation/views/widgets/prism_bottom_nav.dart` | The pill with the four tab buttons. |
+| `lib/features/navigation/views/widgets/prism_bottom_nav.dart` | The pill with the visible tab buttons and the More entry. See [layout.md](layout.md). |
 | `lib/features/navigation/views/widgets/prism_fab.dart` | The round create button with four layered rings. |
+| `lib/features/layout_prefs/views/widgets/pinch_density.dart` | Pinch on the Home feed to change the grid density. See [layout.md](layout.md). |
 
 ### Header
 
@@ -68,6 +69,7 @@ The tabs sit under the top bar, in this order: For you, Following, Trending, Lat
 - The bloc keeps the selected tab, so the choice stays when the user changes tab in the bottom bar. The Following, Latest and Popular lists load the first time the user opens them. The Trending week list loads once when the Home opens, because the carousel needs the boosted walls.
 - Following with nobody followed shows "Follow creators to see their new wallpapers here" and a **Find creators** button that opens user search.
 - A guest on Following sees the sign-in prompt. The app does not read Firestore for a guest on this tab.
+- The feed opens on the tab the user saw last. A guest never opens on Following. A push or a link with `feed=<tab>` names the tab. See [layout.md](layout.md).
 - Popular reads `popular/current` (`sourceTag` `popular.current`). It takes the first 40 ids and loads the walls 10 at a time (`popular.walls`). If the doc is missing or unreadable, it reads the 40 walls with most views from `wallpaper_stats` (`popular.stats`). The ids are upper case. Upload ids are upper case, so they match the `id` field of the wall.
 - Trending shows the week list in the grid, with no switch above it. Boosted walls come first in the grid and have a "Boosted" tag. The Home loads the list when it opens. The Home screen reports the `viewTrending` quest event each time the Trending tab becomes the selected tab, the first visit included. Opening the Home alone reports nothing. A tile sends the source context `home_trending_grid`. The tab sends no `surface_content_loaded` event. Details are in [trending.md](trending.md).
 - Analytics: a tap on a tab sends `surface_action_tapped` with action `home_chip_selected` and context `home_chip_<name>`. The names are `forYou`, `following`, `trending`, `latest` and `popular`, so Trending gives `home_chip_trending`. The lists send `surface_content_loaded` with surface `home_latest_grid`, `home_following_grid` or `home_popular_grid`.
@@ -118,14 +120,18 @@ The tabs sit under the top bar, in this order: For you, Following, Trending, Lat
 
 ### Grid
 
-- Every tab uses the same grid: 3 columns on a phone in portrait (a wider screen gets more), 4 px gaps on both axes, a 4 px side margin and rounded corners (12 px). The side margin equals the gap, so the gutters are even. A tile is twice as tall as it is wide.
+- Every tab uses the same grid: 2 columns on a phone in portrait by default (a wider screen gets more), 4 px gaps on both axes, a 4 px side margin and rounded corners (12 px). The side margin equals the gap, so the gutters are even. A tile is twice as tall as it is wide.
 - The Home grids pass `PrismFeedLayout.gridSpacing` (4 px) to `PrismWallGrid.delegate` and `PrismFeedLayout.gridPadding` as the padding. The tiles keep the default `PrismWallGrid.tileRadius`.
 - The Creators to follow row sits four wallpaper rows into the Home grid. The details are in [creator-directory.md](creator-directory.md).
 - The other screens (search, categories, collections, favourites, profiles) keep the 8 px gap, the 12 px side margin and the rounded corners.
 
+### Layout
+
+The grid density comes from the Layout settings. Pinch the Home feed to change it one step at a time. Large mode shows one tile in each row. The feed opens on the tab the user saw last, and a push or link can name a tab. See [layout.md](layout.md).
+
 ### Bottom bar
 
-- The bar is a floating pill with four buttons: Home, Search, Rewards and Collections. The round create button sits next to it. It has four layered rings. The middle and the top ring turn slowly. The ring spins only while the tab is on screen and the user does not ask for reduced motion.
+- The bar is a floating pill with the Home, Search, Rewards and Collections buttons. The user sets their order and visibility in Layout. Hidden tabs open from **More**. See [layout.md](layout.md). The round create button sits next to it. It has four layered rings. The middle and the top ring turn slowly. The ring spins only while the tab is on screen and the user does not ask for reduced motion.
 - The look is the one from before the 2026-09-30 redesign. It uses the theme colours.
 - The pill and the create button hide when the user scrolls down. A round scroll-to-top button ("Scroll to top") shows in their place. A tap on it scrolls the list to the top.
 - The create button has the screen reader label "Upload". It opens the Create sheet. A guest sees the sign-in pop up first.

@@ -12833,6 +12833,66 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get desktopVersionUnavailable =>
       'Não foi possível obter a versão para computador. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get layoutTitle => 'Layout';
+
+  @override
+  String get layoutRowSubtitle => 'Abas e grade de papéis de parede';
+
+  @override
+  String get layoutTabsHeader => 'Abas';
+
+  @override
+  String get layoutTabsFootnote =>
+      'Arraste para reordenar. Pelo menos 3 abas ficam na barra. As abas ocultas ficam em Mais.';
+
+  @override
+  String get layoutTabAlwaysShown => 'Sempre na barra';
+
+  @override
+  String get layoutTabUnderMore => 'Em Mais';
+
+  @override
+  String layoutShowTab(String tab) {
+    return 'Mostrar $tab';
+  }
+
+  @override
+  String layoutReorderTab(String tab) {
+    return 'Reordenar $tab';
+  }
+
+  @override
+  String get layoutMoveUp => 'Mover para cima';
+
+  @override
+  String get layoutMoveDown => 'Mover para baixo';
+
+  @override
+  String get layoutGridHeader => 'Grade de papéis de parede';
+
+  @override
+  String get layoutDensityCompact => 'Compacta';
+
+  @override
+  String get layoutDensityComfortable => 'Confortável';
+
+  @override
+  String get layoutDensityLarge => 'Grande';
+
+  @override
+  String get layoutGridFootnote =>
+      'Vale para todas as grades de papéis de parede. Faça o gesto de pinça no feed do Início para mudar.';
+
+  @override
+  String get layoutReset => 'Redefinir layout';
+
+  @override
+  String get navMore => 'Mais';
+
+  @override
+  String get navMoreEditTabs => 'Editar abas';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -25662,4 +25722,64 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get desktopVersionUnavailable =>
       'Não foi possível obter a versão para computador. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get layoutTitle => 'Layout';
+
+  @override
+  String get layoutRowSubtitle => 'Abas e grade de papéis de parede';
+
+  @override
+  String get layoutTabsHeader => 'Abas';
+
+  @override
+  String get layoutTabsFootnote =>
+      'Arraste para reordenar. Pelo menos 3 abas ficam na barra. As abas ocultas ficam em Mais.';
+
+  @override
+  String get layoutTabAlwaysShown => 'Sempre na barra';
+
+  @override
+  String get layoutTabUnderMore => 'Em Mais';
+
+  @override
+  String layoutShowTab(String tab) {
+    return 'Mostrar $tab';
+  }
+
+  @override
+  String layoutReorderTab(String tab) {
+    return 'Reordenar $tab';
+  }
+
+  @override
+  String get layoutMoveUp => 'Mover para cima';
+
+  @override
+  String get layoutMoveDown => 'Mover para baixo';
+
+  @override
+  String get layoutGridHeader => 'Grade de papéis de parede';
+
+  @override
+  String get layoutDensityCompact => 'Compacta';
+
+  @override
+  String get layoutDensityComfortable => 'Confortável';
+
+  @override
+  String get layoutDensityLarge => 'Grande';
+
+  @override
+  String get layoutGridFootnote =>
+      'Vale para todas as grades de papéis de parede. Faça o gesto de pinça no feed do Início para mudar.';
+
+  @override
+  String get layoutReset => 'Redefinir layout';
+
+  @override
+  String get navMore => 'Mais';
+
+  @override
+  String get navMoreEditTabs => 'Editar abas';
 }

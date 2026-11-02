@@ -104,7 +104,7 @@ class _SearchGridState extends State<SearchGrid> {
 
   /// Fetches the thumbnails below the first screen of [items], at the size the tiles decode them.
   void _prefetch(List<FeedItemEntity> items, {bool firstScreen = false}) {
-    final int columns = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
+    final int columns = PrismWallGrid.columns(context);
     prefetchTileImages(
       context,
       items,
@@ -277,7 +277,7 @@ class _SearchGridState extends State<SearchGrid> {
     final List<FeedItemEntity> results = _visibleResults;
     final List<FeedItemEntity> prismResults = _visiblePrismResults;
     final bool showFooter = _hasMore && results.length >= 24;
-    final int columns = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
+    final int columns = PrismWallGrid.columns(context);
     final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns);
     return RefreshIndicator(
       color: cs.primary,
