@@ -81,7 +81,7 @@ Admin testers see two debug panel controls:
 
 ## One-time setup (owner)
 
-a. Create a Shorebird account and organization at https://console.shorebird.dev. Create the app "Prism" in the console. Put its app id in `shorebird.yaml`. Replace `REPLACE_WITH_SHOREBIRD_APP_ID`. Keep `auto_update: false`. Commit this change in a pull request.
+a. Done on 2026-11-02: the app "Prism" (id `bf69cd6f-fa5f-4a45-88a4-bd1f5f558bb8`) is in the Hash Studios organization (id 61405). The console cannot create an app. To create one again, run `shorebird init --force --display-name Prism --org-id 61405` in the repo, then restore `shorebird.yaml` with `git checkout -p shorebird.yaml`: keep only the new `app_id` line, and keep `auto_update: false`.
 
 b. Install the pinned CLI, version 1.6.134:
 
