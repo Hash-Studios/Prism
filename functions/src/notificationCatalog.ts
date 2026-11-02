@@ -32,6 +32,7 @@ export type NotificationCopy =
   | { kind: "giftReceived"; senderName: string }
   | { kind: "tipReceived"; senderName: string; amount: number; wallTitle: string }
   | { kind: "tipsReceived"; tipCount: number; coins: number }
+  | { kind: "wallCommented"; commenterName: string; wallTitle: string; text: string }
   | { kind: "reportNeedsReview"; contentType: string; reason: string }
   | {
       kind: "newContentReport";
@@ -242,6 +243,15 @@ export function renderNotificationCopy(
       title: `You got ${copy.tipCount} tips today`,
       body: `${copy.coins} coins in all. See them in your creator stats.`,
     };
+  case "wallCommented":
+    return {
+      kind: copy.kind,
+      args: {commenterName: copy.commenterName, wallTitle: copy.wallTitle, text: copy.text},
+      title: copy.wallTitle ?
+        `${copy.commenterName} commented on ${copy.wallTitle}` :
+        `${copy.commenterName} commented on your wall`,
+      body: copy.text,
+    };
   case "giftReceived":
     return {
       kind: copy.kind,
@@ -379,6 +389,12 @@ export function nativeNotificationLocalization(
     titleArgs = [stringArg("senderName"), String(Number(message.args.amount ?? 0))];
     if (!stringArg("wallTitle")) titleSuffix = "_untitled";
     else titleArgs.push(stringArg("wallTitle"));
+    break;
+  case "wallCommented":
+    titleArgs = [stringArg("commenterName")];
+    if (!stringArg("wallTitle")) titleSuffix = "_untitled";
+    else titleArgs.push(stringArg("wallTitle"));
+    bodyArgs = [stringArg("text")];
     break;
   case "galleryDrop":
     // Topic pushes reach builds that predate this kind, so it uses only shipped resources: the Drop title, and the

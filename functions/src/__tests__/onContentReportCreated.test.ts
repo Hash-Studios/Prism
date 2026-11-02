@@ -155,3 +155,27 @@ test("2 trusted reporters do not hide a wall request", async (t) => {
   assert.equal(store.get("wallRequests/q1")?.hidden, false);
   assert.equal(store.get("wallRequests/q1")?.hiddenBy, undefined);
 });
+
+test("3 trusted reporters hide a reported comment and take it off the wall count", async (t) => {
+  const target = "w1:0123456789abcdef0123456789abcdef";
+  const commentReport = (reporterUid: string) => report(reporterUid, {contentType: "comment", targetFirestoreDocId: target});
+  const reports = {r1: commentReport("a"), r2: commentReport("b"), r3: commentReport("c")};
+  const {store} = setup(t, reports, {a: 30, b: 30, c: 30}, {review: true, id: "NEON"});
+  store.set("walls/w1/comments/0123456789abcdef0123456789abcdef", {wallId: "w1", state: "visible", text: "hi"});
+  store.set("wallpaper_stats/NEON", {comments: 3});
+  await fire("r3", reports.r3);
+  assert.equal(store.get("walls/w1/comments/0123456789abcdef0123456789abcdef")?.state, "hidden");
+  assert.equal(store.get("wallpaper_stats/NEON")?.comments, 2);
+});
+
+test("2 trusted reporters leave a reported comment visible and the count unchanged", async (t) => {
+  const target = "w1:0123456789abcdef0123456789abcdef";
+  const commentReport = (reporterUid: string) => report(reporterUid, {contentType: "comment", targetFirestoreDocId: target});
+  const reports = {r1: commentReport("a"), r2: commentReport("b")};
+  const {store} = setup(t, reports, {a: 30, b: 30}, {review: true, id: "NEON"});
+  store.set("walls/w1/comments/0123456789abcdef0123456789abcdef", {wallId: "w1", state: "visible", text: "hi"});
+  store.set("wallpaper_stats/NEON", {comments: 3});
+  await fire("r2", reports.r2);
+  assert.equal(store.get("walls/w1/comments/0123456789abcdef0123456789abcdef")?.state, "visible");
+  assert.equal(store.get("wallpaper_stats/NEON")?.comments, 3);
+});

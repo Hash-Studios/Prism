@@ -37,6 +37,7 @@ export {boostWall} from "./boosts";
 export {giftPremiumPass} from "./gifts";
 export {createPromoCode, listPromoCodes, redeemCode, setPromoCodeDisabled} from "./promoCodes";
 export {tipCreator} from "./tips";
+export {addComment, deleteComment, setCommentHidden} from "./comments";
 export {buyDrawTicket, settleDraw} from "./draw";
 export {snapshotLeaderboard} from "./leaderboard";
 export {checkBadges} from "./badges";

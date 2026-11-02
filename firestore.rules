@@ -242,6 +242,15 @@ service cloud.firestore {
               && request.resource.data.review != true));
       allow delete: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email) && resource.data.review != true);
+
+      // Only the comment callables write comments. Anyone reads the visible comments of an approved wall; a list must
+      // filter on state == 'visible'. Admins also read hidden comments to review reports.
+      match /comments/{commentId} {
+        allow get, list: if isConfiguredAdmin()
+            || (resource.data.state == 'visible'
+                && get(/databases/$(database)/documents/walls/$(docId)).data.review == true);
+        allow write: if false;
+      }
     }
 
     match /setups/{docId} {
@@ -595,6 +604,15 @@ service cloud.firestore {
     }
 
     match /contentReportRateDaily/{docId} {
+      allow read, write: if false;
+    }
+
+    // Comment rate limits and the creator push gate (Cloud Functions only).
+    match /commentRate/{docId} {
+      allow read, write: if false;
+    }
+
+    match /commentPush/{docId} {
       allow read, write: if false;
     }
 

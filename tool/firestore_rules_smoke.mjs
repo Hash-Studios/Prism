@@ -183,10 +183,16 @@ const seed = () => Promise.all([
   req('PATCH', 'usersv2/c/blockedUsers/a', { blockedAt: ts() }, 'owner'),
   req('PATCH', 'usersv2/a/blockedUsers/dblock', { blockedAt: ts() }, 'owner'),
   req('PATCH', 'publicFolders/orphan/items/prism_w1', { id: str('w1'), provider: str('Prism'), thumb: str('https://img.prismwalls.com/previews/x.img'), wallpaperDocumentId: str('W1') }, 'owner'),
+  req('PATCH', 'walls/cw1', { email: str('b@x.com'), review: { booleanValue: true } }, 'owner'),
+  req('PATCH', 'walls/cw2', { email: str('b@x.com'), review: { booleanValue: false } }, 'owner'),
+  req('PATCH', 'walls/cw1/comments/v1', { state: str('visible'), authorUid: str('u1'), text: str('hi'), createdAt: ts() }, 'owner'),
+  req('PATCH', 'walls/cw1/comments/h1', { state: str('hidden'), authorUid: str('u1'), text: str('spam'), createdAt: ts() }, 'owner'),
+  req('PATCH', 'walls/cw2/comments/v2', { state: str('visible'), authorUid: str('u1'), text: str('hi'), createdAt: ts() }, 'owner'),
 ]);
 const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), HistoryOwner = tok('history-owner', 'history-owner@x.com'), ADM = tok('adm', 'admin@x.com');
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
 const C = tok('c', 'c@x.com');
+const U1 = tok('u1', 'u1@x.com');
 const D = tok('dblock', 'dblock@x.com');
 const themeFields = {
   mode: str('dark'), lightThemeId: str('kLFrost White'), lightAccent: { integerValue: '4293228183' },
@@ -907,6 +913,24 @@ const cases = [
   ['user cannot list promo redemptions across codes', () => runCollectionQuery(Bu, 'redemptions', 'promoCodes/c1'), 403],
   ['user cannot read a promo rate counter', () => req('GET', 'promoRedeemRate/u_b_1', null, Bu), 403],
   ['user cannot write a promo rate counter', () => req('PATCH', 'promoRedeemRate/u_b_1', { count: { integerValue: '0' } }, Bu), 403],
+  ['guest reads a visible comment on an approved wall', () => req('GET', 'walls/cw1/comments/v1'), 200],
+  ['signed-in user reads a visible comment on an approved wall', () => req('GET', 'walls/cw1/comments/v1', null, C), 200],
+  ['signed-in user cannot read a hidden comment', () => req('GET', 'walls/cw1/comments/h1', null, C), 403],
+  ['guest cannot read a hidden comment', () => req('GET', 'walls/cw1/comments/h1'), 403],
+  ['guest cannot read a visible comment on an unapproved wall', () => req('GET', 'walls/cw2/comments/v2'), 403],
+  ['signed-in user lists visible comments on an approved wall', () => runQuery(C, [fieldEquals('state', str('visible'))], 'comments', 'walls/cw1'), 200],
+  ['signed-in user cannot list comments without the visible filter', () => runCollectionQuery(C, 'comments', 'walls/cw1'), 403],
+  ['signed-in user cannot list visible comments on an unapproved wall', () => runQuery(C, [fieldEquals('state', str('visible'))], 'comments', 'walls/cw2'), 403],
+  ['admin reads a hidden comment', () => req('GET', 'walls/cw1/comments/h1', null, ADM), 200],
+  ['author cannot create own comment directly', () => req('PATCH', 'walls/cw1/comments/new1', { state: str('visible'), authorUid: str('u1'), text: str('mine'), createdAt: ts() }, U1), 403],
+  ['author cannot edit own comment directly', () => req('PATCH', 'walls/cw1/comments/v1', { text: str('edited') }, U1, ['text']), 403],
+  ['author cannot delete own comment directly', () => req('DELETE', 'walls/cw1/comments/v1', null, U1), 403],
+  ['wall owner cannot create a comment directly', () => req('PATCH', 'walls/cw1/comments/new2', { state: str('visible'), authorUid: str('b'), text: str('mine'), createdAt: ts() }, Bu), 403],
+  ['wall owner cannot delete a comment on their wall directly', () => req('DELETE', 'walls/cw1/comments/v1', null, Bu), 403],
+  ['comment rate docs cannot be created by clients', () => req('PATCH', 'commentRate/u1', { count: { integerValue: '1' } }, U1), 403],
+  ['comment rate docs cannot be read by clients', () => req('GET', 'commentRate/u1', null, U1), 403],
+  ['comment push gate cannot be created by clients', () => req('PATCH', 'commentPush/cw1', { day: str('2026-11-02') }, Bu), 403],
+  ['comment push gate cannot be read by clients', () => req('GET', 'commentPush/cw1', null, Bu), 403],
 ];
 await seed();
 let bad = 0;
