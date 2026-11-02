@@ -129,6 +129,8 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
 
   void _refreshWrapped() {
     if (WrappedConfig.isOpen(DateTime.now())) {
+      // Nothing tracks sign-ins before the bloc is watched, so read the account when the window opens.
+      if (_wrapped == null) _wrappedUid = _currentWrappedUid;
       // Watch even for a guest, so a sign-in inside the window loads the new account's Wrapped.
       final WrappedBloc bloc = _watchWrapped();
       if (_wrappedUid.isNotEmpty) bloc.add(WrappedEvent.load(_wrappedUid));

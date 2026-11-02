@@ -206,4 +206,59 @@ void main() {
 
     expect(bloc.state, isA<WrappedReady>());
   });
+
+  testWidgets('a guest who signs in before the window opens gets their Wrapped when it opens', (tester) async {
+    final DateTime today = DateTime.now();
+    final PrismUsersV2 previousUser = app_state.prismUser;
+    final PrismUsersV2 guest = profileUser(id: '', loggedIn: false);
+    app_state.prismUser = guest;
+    final _Sessions sessions = _Sessions(guest);
+    getIt.registerSingleton<SessionRepository>(sessions);
+    final WrappedBloc bloc = WrappedBloc(_Repository());
+    getIt.registerSingleton<WrappedBloc>(bloc);
+    final _MockWotdBloc wotd = _MockWotdBloc();
+    when(() => wotd.state).thenReturn(WotdState.initial());
+    addTearDown(wotd.close);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox());
+      app_state.prismUser = previousUser;
+      if (getIt.isRegistered<WrappedBloc>()) await getIt.unregister<WrappedBloc>();
+      if (getIt.isRegistered<SessionRepository>()) await getIt.unregister<SessionRepository>();
+      await sessions.close();
+    });
+    WrappedConfig.override = (
+      enabled: true,
+      start: DateTime(today.year, today.month, today.day + 1),
+      end: DateTime(today.year, today.month, today.day + 2),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) =>
+            MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
+        home: BlocProvider<WotdBloc>.value(
+          value: wotd,
+          child: const Scaffold(body: FeedCarousel(previewWalls: <PrismFeedItem>[])),
+        ),
+      ),
+    );
+    final PrismUsersV2 heavy = profileUser(id: 'heavy');
+    app_state.prismUser = heavy;
+    await sessions.replaceCurrentUser(heavy);
+    await tester.pump();
+
+    WrappedConfig.override = (
+      enabled: true,
+      start: DateTime(today.year, today.month, today.day - 1),
+      end: DateTime(today.year, today.month, today.day + 1),
+    );
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(bloc.state, isA<WrappedReady>());
+  });
 }
