@@ -12487,4 +12487,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopVersionUnavailable => 'Unable to get the desktop version. Check your connection and try again.';
+
+  @override
+  String get layoutTitle => 'Layout';
+
+  @override
+  String get layoutRowSubtitle => 'Tabs and wallpaper grid';
+
+  @override
+  String get layoutTabsHeader => 'Tabs';
+
+  @override
+  String get layoutTabsFootnote => 'Drag to reorder. At least 3 tabs stay in the bar. Hidden tabs are under More.';
+
+  @override
+  String get layoutTabAlwaysShown => 'Always in the bar';
+
+  @override
+  String get layoutTabUnderMore => 'Under More';
+
+  @override
+  String layoutShowTab(String tab) {
+    return 'Show $tab';
+  }
+
+  @override
+  String layoutReorderTab(String tab) {
+    return 'Reorder $tab';
+  }
+
+  @override
+  String get layoutMoveUp => 'Move up';
+
+  @override
+  String get layoutMoveDown => 'Move down';
+
+  @override
+  String get layoutGridHeader => 'Wallpaper grid';
+
+  @override
+  String get layoutDensityCompact => 'Compact';
+
+  @override
+  String get layoutDensityComfortable => 'Comfortable';
+
+  @override
+  String get layoutDensityLarge => 'Large';
+
+  @override
+  String get layoutGridFootnote => 'Applies to every wallpaper grid. Pinch the Home feed to change it.';
+
+  @override
+  String get layoutReset => 'Reset layout';
+
+  @override
+  String get navMore => 'More';
+
+  @override
+  String get navMoreEditTabs => 'Edit tabs';
 }

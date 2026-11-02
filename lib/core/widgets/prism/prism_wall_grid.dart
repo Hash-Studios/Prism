@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/features/layout_prefs/views/layout_prefs_scope.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +23,12 @@ abstract final class PrismWallGrid {
 
   static const EdgeInsets padding = EdgeInsets.symmetric(horizontal: margin);
 
-  /// Grid delegate for a wallpaper grid. [columns] defaults to [wallpaperGridColumns] for the screen width.
+  /// Columns of a wallpaper grid [width] wide (the screen by default) at the user's grid density. Every wall grid
+  /// reads this, so one setting sizes them all, and a tablet or a landscape phone gets more columns.
+  static int columns(BuildContext context, {double? width}) =>
+      LayoutPrefsScope.densityOf(context).columnsFor(width ?? MediaQuery.sizeOf(context).width);
+
+  /// Grid delegate for a wallpaper grid. [columns] defaults to [PrismWallGrid.columns].
   static SliverGridDelegate delegate(
     BuildContext context, {
     int? columns,
@@ -31,7 +37,7 @@ abstract final class PrismWallGrid {
     double footerHeight = 0,
   }) {
     return _FooterGridDelegate(
-      crossAxisCount: columns ?? wallpaperGridColumns(MediaQuery.sizeOf(context).width),
+      crossAxisCount: columns ?? PrismWallGrid.columns(context),
       mainAxisSpacing: spacing,
       crossAxisSpacing: spacing,
       childAspectRatio: aspectRatio ?? PrismFeedLayout.gridTileAspectRatio,

@@ -1,9 +1,14 @@
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
+import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 
 extension WallpaperTargetWire on WallpaperTarget {
+  String get wireValue => _snakeCase(name);
+}
+
+extension WallGridDensityWire on WallGridDensity {
   String get wireValue => _snakeCase(name);
 }
 
@@ -300,6 +305,13 @@ enum NavTabValue {
   search,
   streak,
   collection;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum LayoutChangeSourceValue {
+  settings,
+  pinch;
 
   String get wireValue => _snakeCase(name);
 }

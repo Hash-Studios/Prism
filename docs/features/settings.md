@@ -6,7 +6,7 @@ Settings holds the app switches, the storage tools, the account actions, the pri
 
 Profile drawer, then Settings. The sections run in this order:
 
-1. APPEARANCE: Themes, Haptic feedback.
+1. APPEARANCE: Themes, Layout, Haptic feedback. Layout is described in [layout.md](layout.md).
 2. PERSONALISE (Android only): Auto-rotate wallpapers, Live wallpapers, Quick tiles, Wallpaper history, Default action for Set.
 3. CONTENT FILTERS: Show anime wallpapers, Show sketchy wallpapers (Android only).
 4. NOTIFICATIONS: Notification preferences.

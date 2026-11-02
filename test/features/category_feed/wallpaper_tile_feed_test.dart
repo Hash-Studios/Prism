@@ -14,6 +14,8 @@ import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart'
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/source_feed_grid.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
+import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
+import 'package:Prism/features/layout_prefs/views/layout_prefs_scope.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -145,13 +147,17 @@ void main() {
         home: StackRouterScope(
           controller: router,
           stateHash: 0,
-          child: BlocProvider<CategoryFeedBloc>.value(
-            value: bloc,
-            child: const Scaffold(
-              body: SourceFeedGrid<PrismFeedItem>(
-                surface: AnalyticsSurfaceValue.homeWallpaperGrid,
-                listName: ScrollListNameValue.wallpaperGrid,
-                sourceContextPrefix: 'test',
+          // The tap lands on the same tile row as at three columns.
+          child: LayoutPrefsScope(
+            prefs: ValueNotifier<LayoutPrefs>(const LayoutPrefs(density: WallGridDensity.compact)),
+            child: BlocProvider<CategoryFeedBloc>.value(
+              value: bloc,
+              child: const Scaffold(
+                body: SourceFeedGrid<PrismFeedItem>(
+                  surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+                  listName: ScrollListNameValue.wallpaperGrid,
+                  sourceContextPrefix: 'test',
+                ),
               ),
             ),
           ),

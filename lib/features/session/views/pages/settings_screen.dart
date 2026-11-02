@@ -323,6 +323,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: () => context.router.push(const ThemeViewRoute()),
     ),
     PrismRow(
+      icon: Icons.dashboard_customize_rounded,
+      title: context.l10n.layoutTitle,
+      subtitle: context.l10n.layoutRowSubtitle,
+      onTap: () {
+        _trackRow('layout');
+        context.router.push(const LayoutSettingsRoute());
+      },
+    ),
+    PrismRow(
       icon: Icons.storefront_rounded,
       title: context.l10n.accountShop,
       subtitle: context.l10n.accountThemesIconsFrames,

@@ -138,13 +138,6 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
     _contentLoadTracker.start();
   }
 
-  /// Curated collections show two wallpapers across on a phone, more on a wide screen.
-  int _columns(BuildContext context) {
-    final MediaQueryData media = MediaQuery.of(context);
-    final double target = media.orientation == Orientation.portrait ? 300 : 250;
-    return (media.size.width / target).ceil().clamp(2, 6);
-  }
-
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<int>(
@@ -232,7 +225,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
       );
     }
     final ColorScheme cs = Theme.of(context).colorScheme;
-    final int columns = _columns(context);
+    final int columns = PrismWallGrid.columns(context);
     final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns, aspectRatio: 0.6625);
     return RefreshIndicator(
       backgroundColor: cs.surfaceContainerHigh,

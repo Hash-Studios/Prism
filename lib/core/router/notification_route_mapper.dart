@@ -9,6 +9,7 @@ import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
@@ -99,6 +100,12 @@ class NotificationRouteMapper {
       final String id = data['challenge_id']?.toString().trim() ?? '';
       final action = const DeepLinkParser().parse(Uri(path: '/challenges/$id'));
       if (action is PageLinkIntent) return Future<DeepLinkActionEntity?>.value(action);
+    }
+    // A `feed` field picks the Home feed tab. Older builds ignore it and open Home as before.
+    final String feed = data['feed']?.toString().trim() ?? '';
+    if (route == 'home' && HomeFeedChip.values.asNameMap().containsKey(feed)) {
+      final String path = '/dashboard/home?feed=$feed';
+      return Future<DeepLinkActionEntity?>.value(PageLinkIntent(path: path, rawUri: path));
     }
     final String wallId = data['wall_id']?.toString().trim() ?? '';
     final String profileIdentifier = _firstPresent(data, const <String>[

@@ -218,10 +218,7 @@ class _UserProfileGridState extends State<UserProfileGrid> {
           );
         }
         final bool viewerPremium = app_state.prismUser.premium;
-        final int decodeHeight = gridTileDecodeHeight(
-          context,
-          crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
-        );
+        final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: PrismWallGrid.columns(context));
         return SliverMainAxisGroup(
           slivers: <Widget>[
             if (failed)

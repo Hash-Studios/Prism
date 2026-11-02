@@ -99,8 +99,7 @@ class _TuningFeedViewState extends State<TuningFeedView> {
     final List<FeedItemEntity> walls = widget.walls!;
     final int generation = ++_generation;
     if (walls.length < TuningFeedView.minTiles) return _lineOnly();
-    final int columns = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
-    final int height = gridTileDecodeHeight(context, crossAxisCount: columns);
+    final int height = gridTileDecodeHeight(context, crossAxisCount: _columns);
     int loaded = 0;
     final precache = TuningFeedView.precacheOverride ?? _precache;
     // The urls are trimmed like the grid prefetch does, so the warmed image is the one the feed asks for.
@@ -176,10 +175,7 @@ class _TuningFeedViewState extends State<TuningFeedView> {
                         final double byWidth = (constraints.maxWidth - gap * (_columns - 1)) / _columns;
                         final double byHeight = (constraints.maxHeight - gap * (rows - 1)) / rows * _tileAspectRatio;
                         final double tileWidth = byWidth < byHeight ? byWidth : byHeight;
-                        final int height = gridTileDecodeHeight(
-                          context,
-                          crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
-                        );
+                        final int height = gridTileDecodeHeight(context, crossAxisCount: _columns);
                         return Wrap(
                           spacing: gap,
                           runSpacing: gap,

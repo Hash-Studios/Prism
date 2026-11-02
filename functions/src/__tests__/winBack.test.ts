@@ -501,3 +501,19 @@ test("empty and unbound private tokens are skipped without a completion stamp", 
   assert.equal(users.get("empty")?.winBack, undefined);
   assert.equal(users.get("unbound")?.winBack, undefined);
 });
+
+test("new-walls steps carry feed latest; AI and wall-of-the-day steps carry no feed key", async () => {
+  const {sent} = await runJob([
+    makeUser("feed-week", 7.5),
+    makeUser("feed-fortnight", 14.5),
+    makeUser("feed-month", 30.5),
+    makeUser("feed-two-months", 60.5),
+  ]);
+  const byToken = new Map(sent.map((message) => [messageToken(message), message]));
+  assert.equal(byToken.get("session-feed-week")?.data?.feed, "latest");
+  assert.equal(byToken.get("session-feed-fortnight")?.data?.feed, "latest");
+  assert.equal(byToken.get("session-feed-month")?.data?.feed, undefined);
+  assert.equal(byToken.get("session-feed-two-months")?.data?.feed, undefined);
+  assert.ok(!("feed" in (byToken.get("session-feed-month")?.data ?? {})));
+  assert.ok(!("feed" in (byToken.get("session-feed-two-months")?.data ?? {})));
+});

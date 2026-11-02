@@ -37,6 +37,7 @@ import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen
 import 'package:Prism/features/folders/views/pages/folder_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
 import 'package:Prism/features/ios_shortcuts/views/pages/ios_shortcuts_guide_screen.dart';
+import 'package:Prism/features/layout_prefs/views/pages/layout_settings_page.dart';
 import 'package:Prism/features/leaderboard/leaderboard.dart';
 import 'package:Prism/features/library/views/pages/library_screen.dart';
 import 'package:Prism/features/live_wallpaper/views/pages/live_wallpaper_screen.dart';
@@ -192,6 +193,7 @@ class AppRouter extends RootStackRouter {
     // Same reason: the Streak tab's "Invite a friend" opens the referral screen outside the profile tab.
     AutoRoute(path: '/share-prism', page: SharePrismRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/settings', page: SettingsRoute.page),
+    AutoRoute(path: '/layout', page: LayoutSettingsRoute.page),
     AutoRoute(path: '/blocked-accounts', page: BlockedAccountsRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/about', page: AboutRoute.page),
     AutoRoute(path: '/fav-walls', page: FavouriteWallpaperRoute.page, guards: [_signedInGuard]),

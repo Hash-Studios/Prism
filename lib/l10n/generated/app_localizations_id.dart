@@ -12531,4 +12531,63 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopVersionUnavailable => 'Versi desktop tidak dapat diambil. Periksa koneksi Anda, lalu coba lagi.';
+
+  @override
+  String get layoutTitle => 'Tata letak';
+
+  @override
+  String get layoutRowSubtitle => 'Tab dan kisi wallpaper';
+
+  @override
+  String get layoutTabsHeader => 'Tab';
+
+  @override
+  String get layoutTabsFootnote =>
+      'Seret untuk mengubah urutan. Minimal 3 tab tetap ada di bilah. Tab yang disembunyikan ada di Lainnya.';
+
+  @override
+  String get layoutTabAlwaysShown => 'Selalu di bilah';
+
+  @override
+  String get layoutTabUnderMore => 'Di Lainnya';
+
+  @override
+  String layoutShowTab(String tab) {
+    return 'Tampilkan $tab';
+  }
+
+  @override
+  String layoutReorderTab(String tab) {
+    return 'Ubah urutan $tab';
+  }
+
+  @override
+  String get layoutMoveUp => 'Pindahkan ke atas';
+
+  @override
+  String get layoutMoveDown => 'Pindahkan ke bawah';
+
+  @override
+  String get layoutGridHeader => 'Kisi wallpaper';
+
+  @override
+  String get layoutDensityCompact => 'Ringkas';
+
+  @override
+  String get layoutDensityComfortable => 'Nyaman';
+
+  @override
+  String get layoutDensityLarge => 'Besar';
+
+  @override
+  String get layoutGridFootnote => 'Berlaku untuk semua kisi wallpaper. Cubit feed Beranda untuk mengubahnya.';
+
+  @override
+  String get layoutReset => 'Atur ulang tata letak';
+
+  @override
+  String get navMore => 'Lainnya';
+
+  @override
+  String get navMoreEditTabs => 'Ubah tab';
 }
