@@ -71,16 +71,20 @@ Research on 2026-11-01 from store search results and competitor titles in each c
 
 ## Push (a person runs these, after approval)
 
-App Store. The only App Store version today is 3.8.0, waiting for review, and it cannot be edited. Create 3.18.0 first, then push. App-info fields (name, subtitle) become editable with the new version.
+App Store. On 2026-11-02 the only App Store version was 3.8.0 (id `8210718b-93b1-4a64-88ef-197d6bf4fbc0`), waiting for review since 2026-10-21 in submission `edf0e311-a8e5-40f8-947a-c55ddf0a1125`, with no build attached. App Store Connect allows one open version, and a version in review cannot be edited. Cancel that submission, rename the version to 3.18.1 (build 358), push, then submit. The folder name must match `--version`: if `version/<version>/` is missing, the push skips the descriptions without an error.
 
 ```sh
 asc --profile prism metadata validate --dir metadata/app-store --subscription-app --output table
-asc --profile prism versions create --app 6670200846 --version 3.18.0 --platform IOS --release-type MANUAL
-asc --profile prism metadata push --app 6670200846 --version 3.18.0 --platform IOS --dir metadata/app-store --dry-run --output table
-asc --profile prism metadata push --app 6670200846 --version 3.18.0 --platform IOS --dir metadata/app-store
+asc --profile prism review submissions-cancel --id edf0e311-a8e5-40f8-947a-c55ddf0a1125 --confirm
+asc --profile prism versions view --version-id 8210718b-93b1-4a64-88ef-197d6bf4fbc0 --output table   # state must not be WAITING_FOR_REVIEW
+asc --profile prism versions update --version-id 8210718b-93b1-4a64-88ef-197d6bf4fbc0 --version 3.18.1 --release-type MANUAL
+asc --profile prism metadata push --app 6670200846 --version 3.18.1 --platform IOS --dir metadata/app-store --dry-run --output table
+asc --profile prism metadata push --app 6670200846 --version 3.18.1 --platform IOS --dir metadata/app-store
+asc --profile prism review submit --app 6670200846 --version 3.18.1 --build-number 358 --dry-run
+asc --profile prism review submit --app 6670200846 --version 3.18.1 --build-number 358 --confirm
 ```
 
-Google Play. Push only after 3.18.0 is in production if any Play copy names a 3.18.0 feature (today none does).
+Google Play. Push only after 3.18.x is in production if any Play copy names a 3.18 feature (today none does).
 
 ```sh
 gplay metadata validate --dir metadata/play --output table
@@ -91,6 +95,6 @@ gplay metadata push --package com.hash.prism --dir metadata/play --locales en-GB
 Pull again after a push to confirm the stores match the repo:
 
 ```sh
-asc --profile prism metadata pull --app 6670200846 --version 3.18.0 --platform IOS --dir /tmp/asc-check --force
+asc --profile prism metadata pull --app 6670200846 --version 3.18.1 --platform IOS --dir /tmp/asc-check --force
 gplay metadata pull --package com.hash.prism --dir /tmp/play-check
 ```
