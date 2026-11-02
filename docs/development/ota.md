@@ -96,7 +96,7 @@ To change the pin, edit `CLI_VERSION` in `tool/shorebird_ota.py`. CI reads the s
 c. Create a CI API key. In the console, open Account, then API Keys, then Create API Key. A service account key is better for shared CI. Store the key in Doppler:
 
 ```sh
-doppler secrets set SHOREBIRD_TOKEN --project prism --config prd
+doppler secrets set SHOREBIRD_TOKEN --project prism --config prd > /dev/null
 ```
 
 Paste the value when Doppler asks. Never print the value. The CI workflow reads Doppler with the GitHub secret `DOPPLER_TOKEN_PRODUCTION`, then reads `SHOREBIRD_TOKEN` from Doppler. An environment variable named `SHOREBIRD_TOKEN` wins over Doppler.
@@ -108,8 +108,8 @@ d. Make the patch signing key pair on a trusted machine:
 ```sh
 openssl genrsa -out private.pem 2048
 openssl rsa -in private.pem -outform PEM -pubout -out public.pem
-doppler secrets set SHOREBIRD_PATCH_PRIVATE_KEY --project prism --config prd < private.pem
-doppler secrets set SHOREBIRD_PATCH_PUBLIC_KEY --project prism --config prd < public.pem
+doppler secrets set SHOREBIRD_PATCH_PRIVATE_KEY --project prism --config prd < private.pem > /dev/null
+doppler secrets set SHOREBIRD_PATCH_PUBLIC_KEY --project prism --config prd < public.pem > /dev/null
 ```
 
 Keep an offline backup of `private.pem` in your password manager. Then delete the local `private.pem` and `public.pem` files.
@@ -198,9 +198,9 @@ Pass `PATCH_ARGS=--dry-run` to validate a Make patch without publishing it. The 
 1. Install a store build from TestFlight or Play internal testing.
 2. Sign in with an admin account.
 3. Open the debug panel. Turn on "Get staging patches" in the Tools tab.
-4. Open the app and leave it open for about a minute. The app downloads the patch in the background.
-5. Close the app fully, then open it again.
-6. If the patch number did not change, wait a minute and close and reopen the app again. In Mixpanel, the `ota_download_done` event shows when the download finished.
+4. Close the app fully, then open it. The app checks for a patch when it opens, and the switch applies from this launch. Resume checks wait 15 minutes between checks.
+5. Leave the app open for about a minute. The app downloads the patch in the background. In Mixpanel, the `ota_download_done` event shows when the download finished.
+6. Close the app fully, then open it again. The patch applies at this launch.
 7. Open the App info tab in the debug panel. Check that the patch number is the new patch.
 
 To list the patches and their tracks, run:
@@ -278,8 +278,8 @@ adb install -r build/app/outputs/flutter-apk/app-release.apk
 make patch PLATFORM=android RELEASE_VERSION=<v> TRACK=staging DOPPLER_CONFIG=prd
 ```
 
-9. Open the app and leave it open for about a minute.
-10. Close and reopen the app.
+9. Close the app fully, then open it. Leave it open for about a minute while the patch downloads.
+10. Close the app fully, then open it again.
 11. Check the new label and the patch number in App info. Check the `ota_patch_running` event in Mixpanel.
 12. Roll back the patch:
 
@@ -287,7 +287,7 @@ make patch PLATFORM=android RELEASE_VERSION=<v> TRACK=staging DOPPLER_CONFIG=prd
 make patch-rollback RELEASE_VERSION=<v> PATCH_NUMBER=1 DOPPLER_CONFIG=prd
 ```
 
-13. Open the app, close it, and reopen it.
+13. Close the app fully, open it, and leave it open for about a minute. Then close it fully and open it again.
 14. Check that the old label appears.
 
 Wrong key test:
@@ -306,9 +306,9 @@ shorebird patch android --release-version=<v> --track=staging \
   --public-key-path=wrong-public.pem --private-key-path=wrong-private.pem
 ```
 
-17. Open the app, close it, and reopen it. Read the log with `adb logcat | grep shorebird`. Look for the signature check failure.
+17. Close the app fully, open it, and leave it open for about a minute. Then close it fully and open it again. Read the log with `adb logcat | grep shorebird`. Look for the signature check failure.
 18. Check that the app keeps the old code.
-19. Roll back the test patch with `make patch-rollback DOPPLER_CONFIG=prd`. Delete both `wrong-*.pem` files.
+19. Roll back the test patch: `make patch-rollback RELEASE_VERSION=<v> PATCH_NUMBER=2 DOPPLER_CONFIG=prd`. Use the patch number that step 16 printed if it is not 2. Delete both `wrong-*.pem` files.
 20. Delete the test release record tag: `git push origin :refs/tags/shorebird/android/<v>` and `git tag -d shorebird/android/<v>`.
 
 ### iOS (TestFlight)
