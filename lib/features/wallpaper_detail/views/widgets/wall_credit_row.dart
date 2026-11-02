@@ -109,7 +109,7 @@ class WallCreditRow extends StatelessWidget {
 
   Widget _avatar(BuildContext context) {
     final Color secondary = Theme.of(context).colorScheme.secondary;
-    final String? name = credit.name ?? (credit.provenance == WallProvenance.studio ? 'Hash Studios' : null);
+    final String? name = credit.name ?? (credit.provenance == WallProvenance.studio ? WallCredit.studioName : null);
     final String initial = name == null ? '?' : name.characters.first.toUpperCase();
     final TextStyle initialStyle = TextStyle(color: secondary, fontWeight: FontWeight.w600, fontSize: 11);
     final String? photoUrl = credit.photoUrl;

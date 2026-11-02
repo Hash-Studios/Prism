@@ -25,7 +25,7 @@ import '../../../../support/profile_user_fixture.dart';
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
 
-PrismWallpaper _wall({DateTime? editorsChoiceAt}) => PrismWallpaper(
+PrismWallpaper _wall({DateTime? editorsChoiceAt, bool byStudio = false}) => PrismWallpaper(
   core: const WallpaperCore(
     id: 'prism-1',
     source: WallpaperSource.prism,
@@ -36,6 +36,7 @@ PrismWallpaper _wall({DateTime? editorsChoiceAt}) => PrismWallpaper(
   ),
   firestoreDocumentId: 'doc-1',
   editorsChoiceAt: editorsChoiceAt,
+  byStudio: byStudio,
 );
 
 void main() {
@@ -93,5 +94,13 @@ void main() {
     await pumpScreen(tester, _wall());
 
     expect(find.text("Editors' Choice"), findsNothing);
+  });
+
+  testWidgets('a Studio wall names Hash Studios in the summary and the credit', (tester) async {
+    await pumpScreen(tester, _wall(byStudio: true));
+
+    expect(find.text('Hash Studios'), findsOneWidget);
+    expect(find.text('By Hash Studios', skipOffstage: false), findsOneWidget);
+    expect(find.text('Akshay'), findsNothing);
   });
 }

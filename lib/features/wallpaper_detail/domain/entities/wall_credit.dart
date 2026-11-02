@@ -18,6 +18,9 @@ final class WallCredit {
   /// The Prism Studio profile. Studio walls credit Hash Studios and open this profile.
   static const String studioProfileUid = 'prism-studio';
 
+  /// The brand name Studio walls credit. It is not translated.
+  static const String studioName = 'Hash Studios';
+
   factory WallCredit.of(FeedItemEntity entity) => entity.when(
     prism: (_, wall) => _prism(wall),
     wallhaven: (_, wall) {

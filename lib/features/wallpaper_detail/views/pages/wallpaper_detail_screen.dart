@@ -1744,7 +1744,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Widget _buildSummary(BuildContext context, WallpaperDetailLoaded state) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final FeedItemEntity entity = state.entity;
-    final String name = entity.wallpaperCore.authorName?.trim() ?? '';
+    final String name = WallCredit.of(entity).provenance == WallProvenance.studio
+        ? WallCredit.studioName
+        : entity.wallpaperCore.authorName?.trim() ?? '';
     final String? creator = name.isEmpty || name.contains('@') ? null : name;
     final String provider = entity.source == WallpaperSource.wallhaven
         ? context.l10n.wallpaperProviderWallhaven
