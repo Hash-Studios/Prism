@@ -77,14 +77,14 @@ The branch was fast-forwarded to master `be4dd20d0` before these steps.
 | A2. Index `entries.creatorUid` (#786) | 11:06, READY at 11:10 | `firebase deploy --only firestore:indexes` | n/a | The field override is READY at collection and collection-group scope. The 65 composite indexes are still READY. |
 | A3. All functions (#786, #793, #794, #795) | 11:12 to 11:18 | `make functions-env`, then `firebase deploy --only functions` | Archive MD5 `qyQ4eE3ZTACbZsH/fPLBaQ==` | See the list below. |
 | A4. Links Worker (#786 `/wrapped`, #793 `/layout`) | 11:21 | `npx wrangler deploy` in `infra/cloudflare/worker` | Version `42316e86` | The deployed script is the same, byte for byte, as the `wrangler deploy --dry-run` build of master. The secrets are kept. 12 paths return 200. The association file lists `/layout` and `/wrapped`. `make cloudflare-worker-check`: 208 pass. |
-| A5. Open this week's challenge (#794) | 11:21 | The one-off `openChallengeSlot(2026-11-02)` command from #794 | n/a | `weeklyChallenges/2026-11-02` exists with theme "Quiet horizons" (`theme_01`) and closes on 2026-11-09. |
+| A5. Open this week's challenge (#794) | 11:21 | The one-off `openChallengeSlot(2026-11-02)` command from #794 | n/a | `weeklyChallenges/2026-11-02` exists with theme "Quiet horizons" (`theme_01`) and closes on 2026-11-09. The 11:30 scheduler tick set its state to `open`. |
 
 A3 verification:
 
 - All functions were deployed because 17 modules import the changed `notificationCatalog.ts`.
 - The Doppler token is scoped to the main checkout. To write `functions/.env` from a worktree, use `make functions-env DOPPLER_PROJECT="prism --scope <main checkout>"`. The values matched the live function environment for all 2,196 comparisons.
 - 39 instances logged `failed to update` after a 429 quota error. The CLI retried each one, and each one then logged `Successful update operation`. The live state confirms this. All 183 instances are ACTIVE and were updated between 11:12 and 11:18. All 183 use one source archive, and that archive is the same, byte for byte, as `functions/src`, `package.json` and `package-lock.json`.
-- No function logged an error from 11:13 to 11:20. Before the fix, `onReviewQueueChanged` logged 106 errors from 00:00 to 01:00 on this day. It must be monitored for a full day.
+- No function logged an error from 11:13 to 11:32. Before the fix, `onReviewQueueChanged` logged 106 errors from 00:00 to 01:00 on this day. It must be monitored for a full day.
 
 ## 4. Not run, with the reason
 
