@@ -11,6 +11,8 @@ import {notificationCopyPayload} from "./notificationCatalog";
 
 const DAY = 86_400_000;
 const WEEK = 7 * DAY;
+// Cloud Scheduler adds a sub-second offset to each schedule time, so the Monday 00:00 tick is not exactly 00:00.
+const SCHEDULER_TICK = 15 * 60_000;
 const PAGE = 200;
 const stamp = (ms: number) => admin.firestore.Timestamp.fromMillis(ms);
 const challenges = () => db.collection("weeklyChallenges");
@@ -529,7 +531,7 @@ export async function runChallengeLifecycle(slot: number, recoverAward: (now: nu
     }
   });
   const week = mondayAt(slot);
-  if (slot === week && (now ?? Date.now()) < week + WEEK) await attempt("open slot", () => openChallengeSlot(week));
+  if (slot - week < SCHEDULER_TICK && (now ?? Date.now()) < week + WEEK) await attempt("open slot", () => openChallengeSlot(week));
   await attempt("challenge scan", async () => {
     const rows = await all(challenges());
     for (const row of rows) {
