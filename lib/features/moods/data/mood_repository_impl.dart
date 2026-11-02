@@ -6,11 +6,11 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_feed_settings.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
+import 'package:Prism/core/wallpaper/free_wall_eligibility.dart';
 import 'package:Prism/core/wallpaper/prism_preview.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -47,22 +47,6 @@ class MoodRepositoryImpl implements MoodRepository {
   final DateTime Function() _now;
 
   static const int _whereInLimit = 30;
-
-  bool _isEligible(Map<String, dynamic> data) {
-    if (data['review'] != true ||
-        data['originalProtected'] != true ||
-        data['is_streak_exclusive'] == true ||
-        data['dropReserved'] == true ||
-        _isTruthy(data['dropWeek'])) {
-      return false;
-    }
-    final Object? rawCollections = data['collections'];
-    if (rawCollections is! List || rawCollections.any((value) => value is! String)) return false;
-    final Set<String> premiumCollections = app_state.premiumCollections.toSet();
-    return !rawCollections.cast<String>().any((collection) => premiumCollections.contains(collection.trim()));
-  }
-
-  bool _isTruthy(Object? value) => value != null && value != false && value != '' && value != 0;
 
   @override
   Future<List<MoodList>> fetchMoods() async {
@@ -171,7 +155,7 @@ class MoodRepositoryImpl implements MoodRepository {
             limit: _whereInLimit,
             cachePolicy: FirestoreCachePolicy.memoryFirst,
           ),
-          (data, docId) => _isEligible(data) ? PrismWallDocDto.fromJson(data).toDomain(docId: docId) : null,
+          (data, docId) => isFreeListableWallDoc(data) ? PrismWallDocDto.fromJson(data).toDomain(docId: docId) : null,
         );
       }),
     );

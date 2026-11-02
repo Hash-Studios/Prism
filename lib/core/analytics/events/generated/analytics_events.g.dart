@@ -4579,6 +4579,63 @@ class TrialCancelledEvent extends AnalyticsEvent {
   }
 }
 
+class EditorsChoiceRowSeenEvent extends AnalyticsEvent {
+  const EditorsChoiceRowSeenEvent({required this.pickCount});
+
+  final int pickCount;
+
+  @override
+  String get eventName => 'editors_choice_row_seen';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'pick_count': pickCount};
+  }
+}
+
+class EditorsChoiceOpenedEvent extends AnalyticsEvent {
+  const EditorsChoiceOpenedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'editors_choice_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class EditorsChoicePickChangedEvent extends AnalyticsEvent {
+  const EditorsChoicePickChangedEvent({required this.picked, required this.surface});
+
+  final bool picked;
+  final String surface;
+
+  @override
+  String get eventName => 'editors_choice_pick_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'picked': picked ? 1 : 0, 'surface': surface};
+  }
+}
+
+class ProBadgeToggledEvent extends AnalyticsEvent {
+  const ProBadgeToggledEvent({required this.shown});
+
+  final bool shown;
+
+  @override
+  String get eventName => 'pro_badge_toggled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'shown': shown ? 1 : 0};
+  }
+}
+
 class CommentsSheetOpenedEvent extends AnalyticsEvent {
   const CommentsSheetOpenedEvent();
 

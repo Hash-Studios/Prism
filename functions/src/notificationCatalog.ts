@@ -6,6 +6,7 @@ export type NotificationCopy =
   | { kind: "wallLiveForFollowers"; artistName: string; wallTitle: string }
   | { kind: "wallApprovedForAdmin"; wallTitle: string; artistName: string }
   | { kind: "wallRemixed"; remixerName: string; wallTitle: string }
+  | { kind: "editorsChoicePicked"; wallTitle: string }
   | { kind: "newFollower"; followerName: string }
   | { kind: "streakReminder" }
   | { kind: "wotdForCreator" }
@@ -286,6 +287,15 @@ export function renderNotificationCopy(
         `${copy.remixerName} remixed ${copy.wallTitle}.` :
         `${copy.remixerName} remixed your wallpaper.`,
     };
+  case "editorsChoicePicked":
+    return {
+      kind: copy.kind,
+      args: {wallTitle: copy.wallTitle},
+      title: "Your wallpaper is an Editors' Choice",
+      body: copy.wallTitle ?
+        `Our editors picked ${copy.wallTitle}. Everyone can find it on Home.` :
+        "Our editors picked your wallpaper. Everyone can find it on Home.",
+    };
   case "wallSubmittedForReview":
     return {
       kind: copy.kind,
@@ -337,7 +347,8 @@ export function nativeNotificationLocalization(
   message: Pick<RenderedNotificationCopy, "kind" | "args">,
 ): NativeNotificationLocalization | null {
   const kind = message.kind;
-  if (kind === "custom" || kind === "wallRemixed" || kind === "creatorStatsWeekly" || kind === "challengeWinner") return null;
+  if (kind === "custom" || kind === "wallRemixed" || kind === "editorsChoicePicked" || kind === "creatorStatsWeekly" ||
+    kind === "challengeWinner") return null;
   // Later tips of the day only rewrite the inbox item, so this copy never reaches a system banner.
   if (kind === "tipsReceived") return null;
   // Installed builds that advertise localization version 2 lack these resources, so they get the English copy until a

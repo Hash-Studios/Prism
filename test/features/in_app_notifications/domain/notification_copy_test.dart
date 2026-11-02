@@ -244,6 +244,32 @@ void main() {
     ));
   });
 
+  test('an Editors Choice pick names the wall in the inbox copy', () {
+    final InAppNotificationEntity item = notification(
+      'editors_choice',
+      title: 'Legacy title',
+      body: 'Legacy body',
+    ).copyWith(copyKind: 'editorsChoicePicked', copyArgs: const <String, Object?>{'wallTitle': 'Dusk'});
+
+    expect(localizedNotificationCopy(item, l10n), (
+      title: "Your wallpaper is an Editors' Choice",
+      body: 'Our editors picked Dusk. Everyone can find it on Home.',
+    ));
+  });
+
+  test('an Editors Choice pick with no wall title uses the untitled copy', () {
+    final InAppNotificationEntity item = notification(
+      'editors_choice',
+      title: 'Legacy title',
+      body: 'Legacy body',
+    ).copyWith(copyKind: 'editorsChoicePicked', copyArgs: const <String, Object?>{'wallTitle': '  '});
+
+    expect(localizedNotificationCopy(item, l10n), (
+      title: "Your wallpaper is an Editors' Choice",
+      body: 'Our editors picked your wallpaper. Everyone can find it on Home.',
+    ));
+  });
+
   test('a comment push names the commenter and the wall, and shows the comment', () {
     String title(String wallTitle) => localizedNotificationCopyData(
       'wallCommented',

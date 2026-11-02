@@ -38,6 +38,7 @@ import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart'
 import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
 import 'package:Prism/features/promo_codes/views/redeem_code_sheet.dart';
 import 'package:Prism/features/promo_codes/views/store_code_redemption.dart';
+import 'package:Prism/features/public_profile/views/widgets/show_pro_badge_row.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/session/data/report_problem_service.dart' show ReportTrigger;
@@ -286,6 +287,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: () => context.router.push(const BlockedAccountsRoute()),
     ),
     const CreatorDirectoryOptOutRow(),
+    if (app_state.prismUser.premium) const ShowProBadgeRow(),
     PrismRow(
       icon: Icons.ios_share_rounded,
       title: context.l10n.accountShareYourProfile,

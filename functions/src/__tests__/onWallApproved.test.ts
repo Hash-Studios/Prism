@@ -4,6 +4,7 @@ import * as admin from "firebase-admin";
 import {db} from "../common";
 import {onWallApproved, postsCollapseKey} from "../onWallApproved";
 import {r2ObjectId} from "../r2Storage";
+import {STUDIO_ACCOUNT} from "../studio/account";
 import {installFakeDb} from "./fakeDb";
 
 function fixture(t: TestContext, owned = false, artist = false) {
@@ -205,4 +206,19 @@ test("a current wall read failure retries before making any claim or sending", a
   await onWallApproved.run(converted);
   assert.equal(inbox().length, 1);
   assert.deepEqual(topics.sort(), ["artist_posts", "artist_posts_loc_v1"]);
+});
+
+test("approving a Studio wall stamps byStudio so the app can label it", async (t) => {
+  const {store, event} = fixture(t);
+  store.set("walls/w1", {...store.get("walls/w1"), origin: "studio", email: STUDIO_ACCOUNT.email,
+    studioRunId: "run1", studioCandidateId: "cand1"});
+  store.set("studioRuns/run1/candidates/cand1", {wallId: "w1"});
+  await onWallApproved.run(await event());
+  assert.equal(store.get("walls/w1")?.byStudio, true);
+});
+
+test("approving a creator wall does not stamp byStudio", async (t) => {
+  const {store, event} = fixture(t);
+  await onWallApproved.run(await event());
+  assert.equal("byStudio" in (store.get("walls/w1") ?? {}), false);
 });

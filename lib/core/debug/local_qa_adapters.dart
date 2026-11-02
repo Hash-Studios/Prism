@@ -4,6 +4,8 @@ import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/persistence/store_adapters/shared_prefs_store_adapter.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
@@ -83,7 +85,22 @@ class LocalQaPexels implements PexelsWallpaperRepository {
     String? color,
   }) async => Result.success(const <PexelsWallpaper>[]);
   @override
-  Future<Result<PexelsWallpaper?>> fetchById(String id) async => Result.success<PexelsWallpaper?>(null);
+  Future<Result<PexelsWallpaper?>> fetchById(String id) async =>
+      Result.success<PexelsWallpaper?>(id == _pexelsFixture.id ? _pexelsFixture : null);
+
+  // One fixture photo so the credit row can be checked without the network.
+  static const PexelsWallpaper _pexelsFixture = PexelsWallpaper(
+    core: WallpaperCore(
+      id: 'qa-pexels-1',
+      source: WallpaperSource.pexels,
+      fullUrl: 'https://localhost:19375/wallpaper.jpg',
+      thumbnailUrl: 'https://localhost:19375/wallpaper.jpg',
+      width: 1080,
+      height: 2400,
+    ),
+    photographer: 'Lena Brooks',
+    photographerUrl: 'https://www.pexels.com/@lena-brooks',
+  );
   @override
   bool hasMoreForCategory(String categoryName, {String? paginationKey}) => false;
 }
@@ -106,7 +123,19 @@ class LocalQaWallhaven implements WallhavenWallpaperRepository {
   Future<Result<List<WallhavenWallpaper>>> fetchToplist({int page = 1}) async =>
       Result.success(const <WallhavenWallpaper>[]);
   @override
-  Future<Result<WallhavenWallpaper?>> fetchById(String id) async => Result.success<WallhavenWallpaper?>(null);
+  Future<Result<WallhavenWallpaper?>> fetchById(String id) async =>
+      Result.success<WallhavenWallpaper?>(id == _wallhavenFixture.id ? _wallhavenFixture : null);
+
+  static const WallhavenWallpaper _wallhavenFixture = WallhavenWallpaper(
+    core: WallpaperCore(
+      id: 'qa1wh',
+      source: WallpaperSource.wallhaven,
+      fullUrl: 'https://localhost:19375/wallpaper.jpg',
+      thumbnailUrl: 'https://localhost:19375/wallpaper.jpg',
+      authorName: 'kitsune',
+      resolution: '1080x2400',
+    ),
+  );
   @override
   bool hasMoreForCategory(String categoryName, {String? paginationKey}) => false;
 }

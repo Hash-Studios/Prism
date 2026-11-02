@@ -36,6 +36,7 @@ export {planWeeklyDrop, sendDropPushes, setDropTitle, unlockDrop} from "./drops"
 export {boostWall} from "./boosts";
 export {giftPremiumPass} from "./gifts";
 export {createPromoCode, listPromoCodes, redeemCode, setPromoCodeDisabled} from "./promoCodes";
+export {setEditorsChoice} from "./editorsChoice";
 export {tipCreator} from "./tips";
 export {addComment, deleteComment, setCommentHidden} from "./comments";
 export {buyDrawTicket, settleDraw} from "./draw";
