@@ -1,4 +1,5 @@
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
@@ -8,6 +9,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/admin_review_localization.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_bits.dart';
+import 'package:Prism/features/wall_comments/data/wall_comments_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -285,6 +287,134 @@ class _GenericReportCardState extends State<GenericReportCard> {
               loading: _busy,
               onPressed: _markReviewed,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// An open report on a comment: the comment, the reason, and Keep (shows it again) or Remove (deletes it).
+class CommentReportCard extends StatefulWidget {
+  const CommentReportCard({
+    super.key,
+    required this.report,
+    required this.wallId,
+    required this.commentId,
+    required this.reason,
+    required this.reporterUid,
+    required this.timeStr,
+    required this.repository,
+  });
+
+  final FirestoreDocument report;
+  final String wallId;
+  final String commentId;
+  final String reason;
+  final String reporterUid;
+  final String timeStr;
+  final AdminModerationRepository repository;
+
+  @override
+  State<CommentReportCard> createState() => _CommentReportCardState();
+}
+
+class _CommentReportCardState extends State<CommentReportCard> {
+  late Future<Map<String, dynamic>?> _comment = _loadComment();
+
+  Future<Map<String, dynamic>?> _loadComment() => firestoreClient.getById<Map<String, dynamic>>(
+    FirebaseCollections.wallComments(widget.wallId),
+    widget.commentId,
+    (Map<String, dynamic> data, String _) => data,
+    sourceTag: 'admin_review.report_comment',
+  );
+  bool _busy = false;
+
+  @override
+  void didUpdateWidget(CommentReportCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.wallId != widget.wallId || oldWidget.commentId != widget.commentId) {
+      _comment = _loadComment();
+    }
+  }
+
+  Future<void> _resolve({required bool keep}) async {
+    if (_busy) return;
+    final AppLocalizations l10n = context.l10n;
+    final CommentReportCard target = widget;
+    final WallCommentsRepository comments = getIt<WallCommentsRepository>();
+    setState(() => _busy = true);
+    try {
+      if (keep) {
+        await comments.setHidden(wallId: target.wallId, commentId: target.commentId, hidden: false);
+      } else {
+        await comments.delete(wallId: target.wallId, commentId: target.commentId);
+      }
+      await target.repository.markContentReportReviewed(
+        target.report.id,
+        resolution: keep ? 'dismissed' : 'content_removed',
+      );
+      toasts.success(keep ? l10n.adminCommentKept : l10n.adminCommentRemoved);
+    } catch (e, st) {
+      logger.e('resolve comment report failed', tag: 'AdminReview', error: e, stackTrace: st);
+      toasts.error(l10n.adminMarkReviewedFailed);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
+    return PrismCard(
+      padding: const EdgeInsets.all(PrismSpace.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: PrismTag(label: l10n.adminCommentReport, tone: PrismTone.warning),
+          ),
+          const SizedBox(height: PrismSpace.xs),
+          FutureBuilder<Map<String, dynamic>?>(
+            future: _comment,
+            builder: (BuildContext context, AsyncSnapshot<Map<String, dynamic>?> snap) {
+              if (snap.connectionState != ConnectionState.done) {
+                return const PrismSkeleton(child: PrismBone(height: 40, radius: PrismRadius.sm));
+              }
+              final Map<String, dynamic>? data = snap.data;
+              return Text(
+                data == null ? l10n.adminCommentGone : '${data['authorName'] ?? ''}: ${data['text'] ?? ''}',
+                style: PrismTextStyles.body(context).copyWith(color: Theme.of(context).colorScheme.onSurface),
+              );
+            },
+          ),
+          const SizedBox(height: PrismSpace.xs),
+          Text(
+            widget.reason.isEmpty ? l10n.adminNoReasonGiven : adminReviewReportReasonLabel(widget.reason, l10n),
+            style: PrismTextStyles.cardTitle(context),
+          ),
+          ModerationFact(label: l10n.adminReported, value: widget.timeStr.isEmpty ? l10n.adminUnknown : widget.timeStr),
+          ModerationFact(label: l10n.adminTarget, value: '${widget.wallId}:${widget.commentId}'),
+          ModerationFact(
+            label: l10n.adminReporter,
+            value: widget.reporterUid.isEmpty ? l10n.adminUnknown : widget.reporterUid,
+          ),
+          const SizedBox(height: PrismSpace.xs),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: PrismSpace.xs,
+            runSpacing: PrismSpace.xs,
+            children: <Widget>[
+              PrismButton(
+                label: l10n.adminKeepComment,
+                variant: PrismButtonVariant.tonal,
+                size: PrismButtonSize.compact,
+                loading: _busy,
+                onPressed: () => _resolve(keep: true),
+              ),
+              ModerationDangerButton(label: l10n.adminRemove, onPressed: _busy ? null : () => _resolve(keep: false)),
+            ],
           ),
         ],
       ),

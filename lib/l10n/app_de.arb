@@ -6343,7 +6343,7 @@
   "notifSettingDrops": "Wöchentliche Drops",
   "notifSettingDropsDescription": "Hinweise, wenn ein neuer Drop erscheint und bevor er endet.",
   "notifSettingFollowers": "Follower",
-  "notifSettingFollowersDescription": "Hinweise, wenn dir jemand Neues folgt.",
+  "notifSettingFollowersDescription": "Hinweise, wenn dir jemand Neues folgt oder deine Wallpaper kommentiert.",
   "notifSettingPosts": "Beiträge",
   "notifSettingPostsDescription": "Neue Beiträge von Künstlern, denen du folgst.",
   "notifSettingRecommendations": "Empfehlungen",
@@ -12095,5 +12095,210 @@
   "notifPushEditorsChoiceBodyUntitled": "Unsere Redaktion hat deinen Hintergrund empfohlen. Alle finden ihn auf der Startseite.",
   "@notifPushEditorsChoiceBodyUntitled": {
     "description": "Push notification body for an Editors' Choice pick when the wallpaper has no title."
+  },
+  "coreContentReportComment": "Kommentar",
+  "@coreContentReportComment": {
+    "description": "Content type word in the report prompt for a wall comment, lower case as in the sentence"
+  },
+  "commentsAction": "Kommentare",
+  "@commentsAction": {
+    "description": "Wall detail action bar: tooltip of the button that opens the comments sheet"
+  },
+  "commentsCountLabel": "{count, plural, =0{Keine Kommentare} =1{1 Kommentar} other{{count} Kommentare}}",
+  "@commentsCountLabel": {
+    "description": "Screen reader label for the comment count beside the comments button",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commentsTitle": "Kommentare",
+  "@commentsTitle": {
+    "description": "Title of the comments sheet on a wall"
+  },
+  "commentsEmptyTitle": "Noch keine Kommentare",
+  "@commentsEmptyTitle": {
+    "description": "Comments sheet empty state title"
+  },
+  "commentsEmptyBody": "Sag dem Creator, was dir an diesem Wallpaper gefällt.",
+  "@commentsEmptyBody": {
+    "description": "Comments sheet empty state body"
+  },
+  "commentsLoadFailed": "Kommentare konnten nicht geladen werden. Prüfe deine Verbindung und versuch es noch einmal.",
+  "@commentsLoadFailed": {
+    "description": "Comments sheet error when the first page does not load"
+  },
+  "commentsRetry": "Erneut versuchen",
+  "@commentsRetry": {
+    "description": "Button that reloads the comments after an error"
+  },
+  "commentComposerHint": "Kommentar hinzufügen",
+  "@commentComposerHint": {
+    "description": "Placeholder of the comment text field"
+  },
+  "commentSend": "Senden",
+  "@commentSend": {
+    "description": "Button that posts the comment"
+  },
+  "commentCharactersLeft": "{count, plural, =1{1 Zeichen übrig} other{{count} Zeichen übrig}}",
+  "@commentCharactersLeft": {
+    "description": "Shown under the comment field near the 500 character limit",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commentCharactersOver": "{count, plural, =1{1 Zeichen zu viel} other{{count} Zeichen zu viel}}",
+  "@commentCharactersOver": {
+    "description": "Shown under the comment field when the text is over the 500 character limit",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commentSignInToComment": "Anmelden, um zu kommentieren",
+  "@commentSignInToComment": {
+    "description": "Button in place of the comment field for signed-out users and guests"
+  },
+  "commentCreatorLabel": "Ersteller",
+  "@commentCreatorLabel": {
+    "description": "Small label beside the name when the wall's creator wrote the comment"
+  },
+  "commentAuthorFallback": "Prism-Nutzer",
+  "@commentAuthorFallback": {
+    "description": "Name shown when a comment author has no name"
+  },
+  "commentOptionsHint": "Kommentaroptionen anzeigen",
+  "@commentOptionsHint": {
+    "description": "Screen reader hint for the long press on a comment. Lower case: the system adds 'Double tap and hold to'"
+  },
+  "commentReport": "Kommentar melden",
+  "@commentReport": {
+    "description": "Comment long-press menu item"
+  },
+  "commentBlockUser": "{name} blockieren",
+  "@commentBlockUser": {
+    "description": "Comment long-press menu item that blocks the comment author",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "commentDelete": "Kommentar löschen",
+  "@commentDelete": {
+    "description": "Comment long-press menu item, and the confirm button"
+  },
+  "commentDeleteConfirmTitle": "Diesen Kommentar löschen?",
+  "@commentDeleteConfirmTitle": {
+    "description": "Title of the delete comment confirmation"
+  },
+  "commentDeleteConfirmBody": "Er wird für alle entfernt. Das kannst du nicht rückgängig machen.",
+  "@commentDeleteConfirmBody": {
+    "description": "Body of the delete comment confirmation"
+  },
+  "commentDeleted": "Kommentar gelöscht",
+  "@commentDeleted": {
+    "description": "Toast after a comment is deleted"
+  },
+  "commentDeleteFailed": "Der Kommentar konnte nicht gelöscht werden. Versuch es noch einmal.",
+  "@commentDeleteFailed": {
+    "description": "Toast when deleting a comment fails"
+  },
+  "commentPostFailed": "Dein Kommentar konnte nicht gesendet werden. Prüfe deine Verbindung und versuch es noch einmal.",
+  "@commentPostFailed": {
+    "description": "Error when posting a comment fails for a network or unknown reason"
+  },
+  "commentErrorDisabled": "Kommentare sind gerade pausiert. Versuch es später noch einmal.",
+  "@commentErrorDisabled": {
+    "description": "Refusal: the comments kill switch is off"
+  },
+  "commentErrorGuest": "Melde dich mit einem bestätigten Konto an, um zu kommentieren.",
+  "@commentErrorGuest": {
+    "description": "Refusal: guest or unverified account"
+  },
+  "commentErrorTooNew": "Du kannst 24 Stunden nach deinem Beitritt zu Prism kommentieren.",
+  "@commentErrorTooNew": {
+    "description": "Refusal: the account is younger than 24 hours"
+  },
+  "commentErrorWallUnavailable": "Dieses Wallpaper ist gerade nicht für Kommentare offen.",
+  "@commentErrorWallUnavailable": {
+    "description": "Refusal: the wall is not approved or is gone"
+  },
+  "commentErrorEmpty": "Schreib einen Kommentar, bevor du ihn sendest.",
+  "@commentErrorEmpty": {
+    "description": "Refusal: the comment is empty"
+  },
+  "commentErrorTooLong": "Verwende höchstens 500 Zeichen.",
+  "@commentErrorTooLong": {
+    "description": "Refusal: the comment is longer than 500 characters"
+  },
+  "commentErrorHiddenCharacters": "Entferne die versteckten oder Sonderzeichen und sende dann noch einmal.",
+  "@commentErrorHiddenCharacters": {
+    "description": "Refusal: the comment has control or invisible characters"
+  },
+  "commentErrorBlockedWord": "Formuliere deinen Kommentar freundlicher und sende ihn dann noch einmal.",
+  "@commentErrorBlockedWord": {
+    "description": "Refusal: the word filter matched. Keep it polite"
+  },
+  "commentErrorBlocked": "Du kannst dieses Wallpaper nicht kommentieren.",
+  "@commentErrorBlocked": {
+    "description": "Refusal: the author and the creator have blocked each other in some direction. Do not say who blocked whom"
+  },
+  "commentErrorTooFast": "Warte ein paar Sekunden, bevor du den nächsten Kommentar schreibst.",
+  "@commentErrorTooFast": {
+    "description": "Refusal: less than 10 seconds since the last comment"
+  },
+  "commentErrorDailyLimit": "Du kannst 50 Kommentare am Tag schreiben. Versuch es morgen noch einmal.",
+  "@commentErrorDailyLimit": {
+    "description": "Refusal: daily comment limit reached"
+  },
+  "notifPushWallCommentedTitle": "{name} hat {wallTitle} kommentiert",
+  "@notifPushWallCommentedTitle": {
+    "description": "Push and inbox title when someone comments on the user's wall",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushWallCommentedTitleUntitled": "{name} hat dein Wallpaper kommentiert",
+  "@notifPushWallCommentedTitleUntitled": {
+    "description": "Push and inbox title when someone comments on the user's wall that has no title",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminCommentReport": "Kommentarmeldung",
+  "@adminCommentReport": {
+    "description": "Admin review: tag on a reported comment card"
+  },
+  "adminKeepComment": "Kommentar behalten",
+  "@adminKeepComment": {
+    "description": "Admin review: dismisses the report and shows the comment again"
+  },
+  "adminCommentKept": "Meldung verworfen. Der Kommentar ist sichtbar.",
+  "@adminCommentKept": {
+    "description": "Admin review: toast after Keep comment"
+  },
+  "adminCommentRemoved": "Kommentar entfernt",
+  "@adminCommentRemoved": {
+    "description": "Admin review: toast after the comment is deleted"
+  },
+  "adminCommentGone": "Dieser Kommentar ist schon weg.",
+  "@adminCommentGone": {
+    "description": "Admin review: the reported comment no longer exists"
+  },
+  "adminContentTypeComment": "Kommentar",
+  "@adminContentTypeComment": {
+    "description": "Admin review: content type label for comment reports"
   }
 }

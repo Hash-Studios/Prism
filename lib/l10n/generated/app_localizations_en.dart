@@ -7426,7 +7426,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifSettingFollowers => 'Followers';
 
   @override
-  String get notifSettingFollowersDescription => 'Alerts when someone new follows you.';
+  String get notifSettingFollowersDescription => 'Alerts when someone new follows you or comments on your walls.';
 
   @override
   String get notifSettingPosts => 'Posts';
@@ -12935,4 +12935,164 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifPushEditorsChoiceBodyUntitled => 'Our editors picked your wallpaper. Everyone can find it on Home.';
+
+  @override
+  String get coreContentReportComment => 'comment';
+
+  @override
+  String get commentsAction => 'Comments';
+
+  @override
+  String commentsCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count comments',
+      one: '1 comment',
+      zero: 'No comments',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentsTitle => 'Comments';
+
+  @override
+  String get commentsEmptyTitle => 'No comments yet';
+
+  @override
+  String get commentsEmptyBody => 'Tell the creator what you like about this wall.';
+
+  @override
+  String get commentsLoadFailed => 'Unable to load comments. Check your connection and try again.';
+
+  @override
+  String get commentsRetry => 'Try again';
+
+  @override
+  String get commentComposerHint => 'Add a comment';
+
+  @override
+  String get commentSend => 'Send';
+
+  @override
+  String commentCharactersLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count characters left',
+      one: '1 character left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String commentCharactersOver(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count characters too many',
+      one: '1 character too many',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentSignInToComment => 'Sign in to comment';
+
+  @override
+  String get commentCreatorLabel => 'Creator';
+
+  @override
+  String get commentAuthorFallback => 'Prism user';
+
+  @override
+  String get commentOptionsHint => 'show comment options';
+
+  @override
+  String get commentReport => 'Report comment';
+
+  @override
+  String commentBlockUser(String name) {
+    return 'Block $name';
+  }
+
+  @override
+  String get commentDelete => 'Delete comment';
+
+  @override
+  String get commentDeleteConfirmTitle => 'Delete this comment?';
+
+  @override
+  String get commentDeleteConfirmBody => 'It is removed for everyone. You can\'t undo this.';
+
+  @override
+  String get commentDeleted => 'Comment deleted';
+
+  @override
+  String get commentDeleteFailed => 'Unable to delete the comment. Try again.';
+
+  @override
+  String get commentPostFailed => 'Unable to post your comment. Check your connection and try again.';
+
+  @override
+  String get commentErrorDisabled => 'Comments are paused right now. Try again later.';
+
+  @override
+  String get commentErrorGuest => 'Sign in with a verified account to comment.';
+
+  @override
+  String get commentErrorTooNew => 'You can comment 24 hours after you join Prism.';
+
+  @override
+  String get commentErrorWallUnavailable => 'This wall isn\'t open for comments right now.';
+
+  @override
+  String get commentErrorEmpty => 'Write a comment before you send it.';
+
+  @override
+  String get commentErrorTooLong => 'Use 500 characters or fewer.';
+
+  @override
+  String get commentErrorHiddenCharacters => 'Remove the hidden or special characters, then send again.';
+
+  @override
+  String get commentErrorBlockedWord => 'Reword your comment to keep it friendly, then send again.';
+
+  @override
+  String get commentErrorBlocked => 'You can\'t comment on this wall.';
+
+  @override
+  String get commentErrorTooFast => 'Wait a few seconds before your next comment.';
+
+  @override
+  String get commentErrorDailyLimit => 'You can post 50 comments a day. Try again tomorrow.';
+
+  @override
+  String notifPushWallCommentedTitle(String name, String wallTitle) {
+    return '$name commented on $wallTitle';
+  }
+
+  @override
+  String notifPushWallCommentedTitleUntitled(String name) {
+    return '$name commented on your wall';
+  }
+
+  @override
+  String get adminCommentReport => 'Comment report';
+
+  @override
+  String get adminKeepComment => 'Keep comment';
+
+  @override
+  String get adminCommentKept => 'Report dismissed. The comment is visible.';
+
+  @override
+  String get adminCommentRemoved => 'Comment removed';
+
+  @override
+  String get adminCommentGone => 'This comment is already gone.';
+
+  @override
+  String get adminContentTypeComment => 'Comment';
 }

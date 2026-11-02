@@ -6447,7 +6447,7 @@
   "notifSettingDrops": "साप्ताहिक Drops",
   "notifSettingDropsDescription": "नया Drop उपलब्ध होने पर और उसके खत्म होने से पहले अलर्ट पाएँ।",
   "notifSettingFollowers": "फ़ॉलोअर",
-  "notifSettingFollowersDescription": "कोई नया व्यक्ति आपको फ़ॉलो करे, तो अलर्ट पाएँ।",
+  "notifSettingFollowersDescription": "कोई नया व्यक्ति आपको फ़ॉलो करे या आपके वॉलपेपर पर टिप्पणी करे, तो अलर्ट पाएँ।",
   "notifSettingPosts": "पोस्ट",
   "notifSettingPostsDescription": "आप जिन क्रिएटर को फ़ॉलो करते हैं, उनके नए काम साझा करने पर अलर्ट पाएँ।",
   "notifSettingRecommendations": "सुझाव",
@@ -12644,5 +12644,210 @@
   "notifPushEditorsChoiceBodyUntitled": "हमारे संपादकों ने आपका वॉलपेपर चुना है। सभी इसे होम पर पा सकते हैं।",
   "@notifPushEditorsChoiceBodyUntitled": {
     "description": "Push notification body for an Editors' Choice pick when the wallpaper has no title."
+  },
+  "coreContentReportComment": "टिप्पणी",
+  "@coreContentReportComment": {
+    "description": "Content type word in the report prompt for a wall comment, lower case as in the sentence"
+  },
+  "commentsAction": "टिप्पणियाँ",
+  "@commentsAction": {
+    "description": "Wall detail action bar: tooltip of the button that opens the comments sheet"
+  },
+  "commentsCountLabel": "{count, plural, =0{कोई टिप्पणी नहीं} =1{1 टिप्पणी} other{{count} टिप्पणियाँ}}",
+  "@commentsCountLabel": {
+    "description": "Screen reader label for the comment count beside the comments button",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commentsTitle": "टिप्पणियाँ",
+  "@commentsTitle": {
+    "description": "Title of the comments sheet on a wall"
+  },
+  "commentsEmptyTitle": "अभी कोई टिप्पणी नहीं है",
+  "@commentsEmptyTitle": {
+    "description": "Comments sheet empty state title"
+  },
+  "commentsEmptyBody": "क्रिएटर को बताएँ कि आपको इस वॉलपेपर में क्या पसंद है।",
+  "@commentsEmptyBody": {
+    "description": "Comments sheet empty state body"
+  },
+  "commentsLoadFailed": "टिप्पणियाँ लोड नहीं हो सकीं। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
+  "@commentsLoadFailed": {
+    "description": "Comments sheet error when the first page does not load"
+  },
+  "commentsRetry": "फिर से कोशिश करें",
+  "@commentsRetry": {
+    "description": "Button that reloads the comments after an error"
+  },
+  "commentComposerHint": "टिप्पणी जोड़ें",
+  "@commentComposerHint": {
+    "description": "Placeholder of the comment text field"
+  },
+  "commentSend": "भेजें",
+  "@commentSend": {
+    "description": "Button that posts the comment"
+  },
+  "commentCharactersLeft": "{count, plural, =1{1 अक्षर बाकी} other{{count} अक्षर बाकी}}",
+  "@commentCharactersLeft": {
+    "description": "Shown under the comment field near the 500 character limit",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commentCharactersOver": "{count, plural, =1{1 अक्षर ज़्यादा} other{{count} अक्षर ज़्यादा}}",
+  "@commentCharactersOver": {
+    "description": "Shown under the comment field when the text is over the 500 character limit",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commentSignInToComment": "टिप्पणी करने के लिए साइन इन करें",
+  "@commentSignInToComment": {
+    "description": "Button in place of the comment field for signed-out users and guests"
+  },
+  "commentCreatorLabel": "क्रिएटर",
+  "@commentCreatorLabel": {
+    "description": "Small label beside the name when the wall's creator wrote the comment"
+  },
+  "commentAuthorFallback": "Prism उपयोगकर्ता",
+  "@commentAuthorFallback": {
+    "description": "Name shown when a comment author has no name"
+  },
+  "commentOptionsHint": "टिप्पणी के विकल्प दिखाएँ",
+  "@commentOptionsHint": {
+    "description": "Screen reader hint for the long press on a comment. Lower case: the system adds 'Double tap and hold to'"
+  },
+  "commentReport": "टिप्पणी की रिपोर्ट करें",
+  "@commentReport": {
+    "description": "Comment long-press menu item"
+  },
+  "commentBlockUser": "{name} को ब्लॉक करें",
+  "@commentBlockUser": {
+    "description": "Comment long-press menu item that blocks the comment author",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "commentDelete": "टिप्पणी हटाएँ",
+  "@commentDelete": {
+    "description": "Comment long-press menu item, and the confirm button"
+  },
+  "commentDeleteConfirmTitle": "क्या यह टिप्पणी हटानी है?",
+  "@commentDeleteConfirmTitle": {
+    "description": "Title of the delete comment confirmation"
+  },
+  "commentDeleteConfirmBody": "यह सभी के लिए हट जाएगी। इसे वापस नहीं लिया जा सकता।",
+  "@commentDeleteConfirmBody": {
+    "description": "Body of the delete comment confirmation"
+  },
+  "commentDeleted": "टिप्पणी हटा दी गई",
+  "@commentDeleted": {
+    "description": "Toast after a comment is deleted"
+  },
+  "commentDeleteFailed": "टिप्पणी हटाई नहीं जा सकी। फिर से कोशिश करें।",
+  "@commentDeleteFailed": {
+    "description": "Toast when deleting a comment fails"
+  },
+  "commentPostFailed": "आपकी टिप्पणी पोस्ट नहीं हो सकी। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
+  "@commentPostFailed": {
+    "description": "Error when posting a comment fails for a network or unknown reason"
+  },
+  "commentErrorDisabled": "टिप्पणियाँ अभी रोकी गई हैं। बाद में फिर से कोशिश करें।",
+  "@commentErrorDisabled": {
+    "description": "Refusal: the comments kill switch is off"
+  },
+  "commentErrorGuest": "टिप्पणी करने के लिए सत्यापित खाते से साइन इन करें।",
+  "@commentErrorGuest": {
+    "description": "Refusal: guest or unverified account"
+  },
+  "commentErrorTooNew": "Prism से जुड़ने के 24 घंटे बाद आप टिप्पणी कर सकते हैं।",
+  "@commentErrorTooNew": {
+    "description": "Refusal: the account is younger than 24 hours"
+  },
+  "commentErrorWallUnavailable": "यह वॉलपेपर अभी टिप्पणियों के लिए उपलब्ध नहीं है।",
+  "@commentErrorWallUnavailable": {
+    "description": "Refusal: the wall is not approved or is gone"
+  },
+  "commentErrorEmpty": "भेजने से पहले टिप्पणी लिखें।",
+  "@commentErrorEmpty": {
+    "description": "Refusal: the comment is empty"
+  },
+  "commentErrorTooLong": "500 अक्षरों या उससे कम का उपयोग करें।",
+  "@commentErrorTooLong": {
+    "description": "Refusal: the comment is longer than 500 characters"
+  },
+  "commentErrorHiddenCharacters": "छिपे या विशेष अक्षर हटाएँ, फिर से भेजें।",
+  "@commentErrorHiddenCharacters": {
+    "description": "Refusal: the comment has control or invisible characters"
+  },
+  "commentErrorBlockedWord": "अपनी टिप्पणी को शालीन शब्दों में लिखें, फिर से भेजें।",
+  "@commentErrorBlockedWord": {
+    "description": "Refusal: the word filter matched. Keep it polite"
+  },
+  "commentErrorBlocked": "आप इस वॉलपेपर पर टिप्पणी नहीं कर सकते।",
+  "@commentErrorBlocked": {
+    "description": "Refusal: the author and the creator have blocked each other in some direction. Do not say who blocked whom"
+  },
+  "commentErrorTooFast": "अगली टिप्पणी से पहले कुछ सेकंड रुकें।",
+  "@commentErrorTooFast": {
+    "description": "Refusal: less than 10 seconds since the last comment"
+  },
+  "commentErrorDailyLimit": "आप रोज़ 50 टिप्पणियाँ कर सकते हैं। कल फिर कोशिश करें।",
+  "@commentErrorDailyLimit": {
+    "description": "Refusal: daily comment limit reached"
+  },
+  "notifPushWallCommentedTitle": "{name} ने {wallTitle} पर टिप्पणी की",
+  "@notifPushWallCommentedTitle": {
+    "description": "Push and inbox title when someone comments on the user's wall",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushWallCommentedTitleUntitled": "{name} ने आपके वॉलपेपर पर टिप्पणी की",
+  "@notifPushWallCommentedTitleUntitled": {
+    "description": "Push and inbox title when someone comments on the user's wall that has no title",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminCommentReport": "टिप्पणी की रिपोर्ट",
+  "@adminCommentReport": {
+    "description": "Admin review: tag on a reported comment card"
+  },
+  "adminKeepComment": "टिप्पणी रखें",
+  "@adminKeepComment": {
+    "description": "Admin review: dismisses the report and shows the comment again"
+  },
+  "adminCommentKept": "रिपोर्ट खारिज की गई। टिप्पणी दिख रही है।",
+  "@adminCommentKept": {
+    "description": "Admin review: toast after Keep comment"
+  },
+  "adminCommentRemoved": "टिप्पणी हटाई गई",
+  "@adminCommentRemoved": {
+    "description": "Admin review: toast after the comment is deleted"
+  },
+  "adminCommentGone": "यह टिप्पणी पहले ही हट चुकी है।",
+  "@adminCommentGone": {
+    "description": "Admin review: the reported comment no longer exists"
+  },
+  "adminContentTypeComment": "टिप्पणी",
+  "@adminContentTypeComment": {
+    "description": "Admin review: content type label for comment reports"
   }
 }

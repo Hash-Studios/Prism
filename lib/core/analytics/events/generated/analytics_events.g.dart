@@ -19,6 +19,7 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'wallpaper_target': WallpaperTarget.values.map((value) => value.wireValue).toList(),
   'taste_quiz_source': TasteQuizSource.values.map((value) => value.wireValue).toList(),
   'quiz_side': QuizSide.values.map((value) => value.wireValue).toList(),
+  'comment_role': CommentRoleValue.values.map((value) => value.wireValue).toList(),
   'binary_result': BinaryResultValue.values.map((value) => value.wireValue).toList(),
   'ai_apply_from': AiApplyFromValue.values.map((value) => value.wireValue).toList(),
   'ai_style_pick_source': AiStylePickSource.values.map((value) => value.wireValue).toList(),
@@ -4632,5 +4633,69 @@ class ProBadgeToggledEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'shown': shown ? 1 : 0};
+  }
+}
+
+class CommentsSheetOpenedEvent extends AnalyticsEvent {
+  const CommentsSheetOpenedEvent();
+
+  @override
+  String get eventName => 'comments_sheet_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class CommentPostedEvent extends AnalyticsEvent {
+  const CommentPostedEvent();
+
+  @override
+  String get eventName => 'comment_posted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class CommentRefusedEvent extends AnalyticsEvent {
+  const CommentRefusedEvent({required this.reason});
+
+  final String reason;
+
+  @override
+  String get eventName => 'comment_refused';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'reason': reason};
+  }
+}
+
+class CommentDeletedEvent extends AnalyticsEvent {
+  const CommentDeletedEvent({required this.role});
+
+  final CommentRoleValue role;
+
+  @override
+  String get eventName => 'comment_deleted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'role': role.wireValue};
+  }
+}
+
+class CommentReportedEvent extends AnalyticsEvent {
+  const CommentReportedEvent();
+
+  @override
+  String get eventName => 'comment_reported';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
   }
 }

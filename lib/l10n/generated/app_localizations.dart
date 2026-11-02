@@ -11482,7 +11482,7 @@ abstract class AppLocalizations {
   /// No description provided for @notifSettingFollowersDescription.
   ///
   /// In en, this message translates to:
-  /// **'Alerts when someone new follows you.'**
+  /// **'Alerts when someone new follows you or comments on your walls.'**
   String get notifSettingFollowersDescription;
 
   /// No description provided for @notifSettingPosts.
@@ -20832,6 +20832,264 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Our editors picked your wallpaper. Everyone can find it on Home.'**
   String get notifPushEditorsChoiceBodyUntitled;
+
+  /// Content type word in the report prompt for a wall comment, lower case as in the sentence
+  ///
+  /// In en, this message translates to:
+  /// **'comment'**
+  String get coreContentReportComment;
+
+  /// Wall detail action bar: tooltip of the button that opens the comments sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get commentsAction;
+
+  /// Screen reader label for the comment count beside the comments button
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No comments} =1{1 comment} other{{count} comments}}'**
+  String commentsCountLabel(int count);
+
+  /// Title of the comments sheet on a wall
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get commentsTitle;
+
+  /// Comments sheet empty state title
+  ///
+  /// In en, this message translates to:
+  /// **'No comments yet'**
+  String get commentsEmptyTitle;
+
+  /// Comments sheet empty state body
+  ///
+  /// In en, this message translates to:
+  /// **'Tell the creator what you like about this wall.'**
+  String get commentsEmptyBody;
+
+  /// Comments sheet error when the first page does not load
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load comments. Check your connection and try again.'**
+  String get commentsLoadFailed;
+
+  /// Button that reloads the comments after an error
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get commentsRetry;
+
+  /// Placeholder of the comment text field
+  ///
+  /// In en, this message translates to:
+  /// **'Add a comment'**
+  String get commentComposerHint;
+
+  /// Button that posts the comment
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get commentSend;
+
+  /// Shown under the comment field near the 500 character limit
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 character left} other{{count} characters left}}'**
+  String commentCharactersLeft(int count);
+
+  /// Shown under the comment field when the text is over the 500 character limit
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 character too many} other{{count} characters too many}}'**
+  String commentCharactersOver(int count);
+
+  /// Button in place of the comment field for signed-out users and guests
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to comment'**
+  String get commentSignInToComment;
+
+  /// Small label beside the name when the wall's creator wrote the comment
+  ///
+  /// In en, this message translates to:
+  /// **'Creator'**
+  String get commentCreatorLabel;
+
+  /// Name shown when a comment author has no name
+  ///
+  /// In en, this message translates to:
+  /// **'Prism user'**
+  String get commentAuthorFallback;
+
+  /// Screen reader hint for the long press on a comment. Lower case: the system adds 'Double tap and hold to'
+  ///
+  /// In en, this message translates to:
+  /// **'show comment options'**
+  String get commentOptionsHint;
+
+  /// Comment long-press menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Report comment'**
+  String get commentReport;
+
+  /// Comment long-press menu item that blocks the comment author
+  ///
+  /// In en, this message translates to:
+  /// **'Block {name}'**
+  String commentBlockUser(String name);
+
+  /// Comment long-press menu item, and the confirm button
+  ///
+  /// In en, this message translates to:
+  /// **'Delete comment'**
+  String get commentDelete;
+
+  /// Title of the delete comment confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this comment?'**
+  String get commentDeleteConfirmTitle;
+
+  /// Body of the delete comment confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'It is removed for everyone. You can\'t undo this.'**
+  String get commentDeleteConfirmBody;
+
+  /// Toast after a comment is deleted
+  ///
+  /// In en, this message translates to:
+  /// **'Comment deleted'**
+  String get commentDeleted;
+
+  /// Toast when deleting a comment fails
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to delete the comment. Try again.'**
+  String get commentDeleteFailed;
+
+  /// Error when posting a comment fails for a network or unknown reason
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to post your comment. Check your connection and try again.'**
+  String get commentPostFailed;
+
+  /// Refusal: the comments kill switch is off
+  ///
+  /// In en, this message translates to:
+  /// **'Comments are paused right now. Try again later.'**
+  String get commentErrorDisabled;
+
+  /// Refusal: guest or unverified account
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with a verified account to comment.'**
+  String get commentErrorGuest;
+
+  /// Refusal: the account is younger than 24 hours
+  ///
+  /// In en, this message translates to:
+  /// **'You can comment 24 hours after you join Prism.'**
+  String get commentErrorTooNew;
+
+  /// Refusal: the wall is not approved or is gone
+  ///
+  /// In en, this message translates to:
+  /// **'This wall isn\'t open for comments right now.'**
+  String get commentErrorWallUnavailable;
+
+  /// Refusal: the comment is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Write a comment before you send it.'**
+  String get commentErrorEmpty;
+
+  /// Refusal: the comment is longer than 500 characters
+  ///
+  /// In en, this message translates to:
+  /// **'Use 500 characters or fewer.'**
+  String get commentErrorTooLong;
+
+  /// Refusal: the comment has control or invisible characters
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the hidden or special characters, then send again.'**
+  String get commentErrorHiddenCharacters;
+
+  /// Refusal: the word filter matched. Keep it polite
+  ///
+  /// In en, this message translates to:
+  /// **'Reword your comment to keep it friendly, then send again.'**
+  String get commentErrorBlockedWord;
+
+  /// Refusal: the author and the creator have blocked each other in some direction. Do not say who blocked whom
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t comment on this wall.'**
+  String get commentErrorBlocked;
+
+  /// Refusal: less than 10 seconds since the last comment
+  ///
+  /// In en, this message translates to:
+  /// **'Wait a few seconds before your next comment.'**
+  String get commentErrorTooFast;
+
+  /// Refusal: daily comment limit reached
+  ///
+  /// In en, this message translates to:
+  /// **'You can post 50 comments a day. Try again tomorrow.'**
+  String get commentErrorDailyLimit;
+
+  /// Push and inbox title when someone comments on the user's wall
+  ///
+  /// In en, this message translates to:
+  /// **'{name} commented on {wallTitle}'**
+  String notifPushWallCommentedTitle(String name, String wallTitle);
+
+  /// Push and inbox title when someone comments on the user's wall that has no title
+  ///
+  /// In en, this message translates to:
+  /// **'{name} commented on your wall'**
+  String notifPushWallCommentedTitleUntitled(String name);
+
+  /// Admin review: tag on a reported comment card
+  ///
+  /// In en, this message translates to:
+  /// **'Comment report'**
+  String get adminCommentReport;
+
+  /// Admin review: dismisses the report and shows the comment again
+  ///
+  /// In en, this message translates to:
+  /// **'Keep comment'**
+  String get adminKeepComment;
+
+  /// Admin review: toast after Keep comment
+  ///
+  /// In en, this message translates to:
+  /// **'Report dismissed. The comment is visible.'**
+  String get adminCommentKept;
+
+  /// Admin review: toast after the comment is deleted
+  ///
+  /// In en, this message translates to:
+  /// **'Comment removed'**
+  String get adminCommentRemoved;
+
+  /// Admin review: the reported comment no longer exists
+  ///
+  /// In en, this message translates to:
+  /// **'This comment is already gone.'**
+  String get adminCommentGone;
+
+  /// Admin review: content type label for comment reports
+  ///
+  /// In en, this message translates to:
+  /// **'Comment'**
+  String get adminContentTypeComment;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
