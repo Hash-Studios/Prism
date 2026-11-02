@@ -8,6 +8,23 @@ import 'package:Prism/features/live_photo/views/live_photo_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
+/// Resolves a protected original after consent. Tests replace it.
+@visibleForTesting
+Future<String?> Function(
+  BuildContext context, {
+  required String url,
+  required String? wallpaperId,
+  required WallpaperSource? wallpaperSource,
+  required OriginalAccessAction action,
+  required String label,
+})
+livePhotoResolveOriginal = resolveOriginalWithConsent;
+
+/// Opens the paywall for a Pro wall. Tests replace it.
+@visibleForTesting
+Future<void> Function(BuildContext context) livePhotoPaywall = (context) => PaywallOrchestrator.instance
+    .presentOrRequireSignIn(context, placement: PaywallPlacement.mainUpsell, source: 'live_photo');
+
 /// A Live Photo is a copy of the wall in Photos, so it follows the Download rules for Pro walls: they need Prism Pro
 /// or an active premium pass.
 bool livePhotoAllowed({required bool premiumWall, required bool premiumContentUnlocked}) =>
@@ -29,11 +46,7 @@ Future<void> openLivePhoto(
   bool allowed() =>
       livePhotoAllowed(premiumWall: premiumWall, premiumContentUnlocked: CoinsService.instance.premiumContentUnlocked);
   if (!allowed()) {
-    await PaywallOrchestrator.instance.presentOrRequireSignIn(
-      context,
-      placement: PaywallPlacement.mainUpsell,
-      source: 'live_photo',
-    );
+    await livePhotoPaywall(context);
     if (!context.mounted || !allowed()) return;
   }
   final String label = context.l10n.livePhotoSave;
@@ -43,7 +56,7 @@ Future<void> openLivePhoto(
     preview: preview,
     depthMapUrl: depthMapUrl,
     tint: tint,
-    resolveSource: () => resolveOriginalWithConsent(
+    resolveSource: () => livePhotoResolveOriginal(
       context,
       url: url,
       wallpaperId: wallId,
