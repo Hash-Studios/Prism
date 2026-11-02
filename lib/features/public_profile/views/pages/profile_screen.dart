@@ -91,6 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     badges: badges ?? app_state.prismUser.badges.map((b) => b.id).toList(growable: false),
     followerCount: graphProfile?.id == app_state.prismUser.id ? graphProfile!.followerCount : 0,
     followingCount: graphProfile?.id == app_state.prismUser.id ? graphProfile!.followingCount : 0,
+    proBadge: graphProfile?.id == app_state.prismUser.id && graphProfile!.proBadge,
   );
 
   @override

@@ -234,6 +234,30 @@ void main() {
     expect(repository.watchedIdentifiers, <String>['me']);
   });
 
+  testWidgets('own profile shows the Pro badge only while the public profile carries it', (tester) async {
+    await pumpScreen(tester);
+    PublicProfileEntity graph({required bool proBadge}) => PublicProfileEntity(
+      id: 'me',
+      name: 'Me Myself',
+      email: '',
+      username: 'creator_01',
+      profilePhoto: '',
+      bio: '',
+      links: const <String, String>{},
+      coverPhoto: '',
+      proBadge: proBadge,
+    );
+    expect(find.byType(ProProfileBadge), findsNothing);
+
+    repository.profiles.add(graph(proBadge: true));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(ProProfileBadge), findsOneWidget);
+
+    repository.profiles.add(graph(proBadge: false));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(ProProfileBadge), findsNothing);
+  });
+
   testWidgets('tappable profile counts expose button semantics', (tester) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
     try {
