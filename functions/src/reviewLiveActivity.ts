@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import type {Message} from "firebase-admin/messaging";
 import {randomUUID} from "node:crypto";
+import {setTimeout as delay} from "node:timers/promises";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
@@ -109,6 +110,7 @@ export function planSend(doc: ActivityDoc, state: ReviewQueueState, nowMs: numbe
 export async function syncReviewLiveActivities(onlyUid?: string): Promise<void> {
   const laRef = db.collection(LIVE_ACTIVITIES);
   const snaps: ActivitySnapshot[] = onlyUid ? [await laRef.doc(onlyUid).get()] : (await laRef.get()).docs;
+  const waitUntil = onlyUid === undefined ? Date.now() + SYNC_LEASE_MS + 10_000 : undefined;
   let firstRetryError: unknown;
 
   for (const snap of snaps) {
@@ -117,10 +119,8 @@ export async function syncReviewLiveActivities(onlyUid?: string): Promise<void> 
     let owner: string | null = null;
     let retryError: unknown;
     try {
-      owner = await acquireSyncLease(ref);
-      if (owner === null) {
-        retryError = new HttpsError("unavailable", "Another review activity sync is still running.");
-      } else {
+      owner = await acquireSyncLease(ref, waitUntil);
+      if (owner !== null) {
         const leaseOwner = owner;
         let drain = true;
         while (drain) {
@@ -233,25 +233,38 @@ async function isActiveAdmin(uid: string): Promise<boolean> {
   }});
 }
 
-async function acquireSyncLease(ref: ActivityRef): Promise<string | null> {
+async function acquireSyncLease(ref: ActivityRef, waitUntil?: number): Promise<string | null> {
   const owner = randomUUID();
-  const acquired = await db.runTransaction(async (transaction) => {
-    const snap = await transaction.get(ref);
-    const data = snap.data();
-    if (!data) return false;
-    const leaseUntil = toMillis(data.syncLeaseUntil);
-    if (leaseUntil !== null && leaseUntil > Date.now()) {
-      transaction.set(ref, {syncRequested: true}, {merge: true});
-      return false;
+  let firstAttempt = true;
+  while (true) {
+    const result = await db.runTransaction(async (transaction) => {
+      const snap = await transaction.get(ref);
+      const data = snap.data();
+      if (!data) return "missing";
+      const leaseUntil = toMillis(data.syncLeaseUntil);
+      if (leaseUntil !== null && leaseUntil > Date.now()) {
+        if (firstAttempt) transaction.set(ref, {syncRequested: true}, {merge: true});
+        return "busy";
+      }
+      transaction.set(ref, {
+        syncLeaseOwner: owner,
+        syncLeaseUntil: admin.firestore.Timestamp.fromMillis(Date.now() + SYNC_LEASE_MS),
+        syncRequested: false,
+      }, {merge: true});
+      return "acquired";
+    });
+    if (result === "acquired") return owner;
+    if (result === "missing") return null;
+    if (waitUntil === undefined) {
+      throw new HttpsError("unavailable", "Another review activity sync is still running.");
     }
-    transaction.set(ref, {
-      syncLeaseOwner: owner,
-      syncLeaseUntil: admin.firestore.Timestamp.fromMillis(Date.now() + SYNC_LEASE_MS),
-      syncRequested: false,
-    }, {merge: true});
-    return true;
-  });
-  return acquired ? owner : null;
+    firstAttempt = false;
+    const remaining = waitUntil - Date.now();
+    if (remaining <= 0) {
+      throw new HttpsError("unavailable", "Review activity sync lease did not become available.");
+    }
+    await delay(Math.min(1_000, remaining));
+  }
 }
 
 async function clearSavedTokens(ref: ActivityRef, owner: string, previous: Record<string, unknown>): Promise<void> {
@@ -367,6 +380,7 @@ export const onReviewQueueChanged = onDocumentWritten(
     document: "walls/{wallId}",
     region: REGION,
     retry: true,
+    timeoutSeconds: 540,
   },
   async (event) => {
     const before = event.data?.before?.data();

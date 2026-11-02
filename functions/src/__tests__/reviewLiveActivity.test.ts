@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import * as admin from "firebase-admin";
 import test from "node:test";
+import timers from "node:timers/promises";
 import * as adminConfig from "../adminConfig";
 import {db} from "../common";
 import * as notificationHelper from "../notificationHelper";
@@ -9,6 +10,7 @@ import {
   isApnsToken,
   isPendingWall,
   planSend,
+  onReviewQueueChanged,
   registerReviewLiveActivity,
   stateKey,
   syncReviewLiveActivities,
@@ -180,11 +182,10 @@ test("concurrent syncs send one start for the same admin", async (t) => {
   const first = syncReviewLiveActivities();
   await sendStarted;
   const second = syncReviewLiveActivities();
-  await assert.rejects(second, {code: "unavailable"});
   await new Promise<void>((resolve) => setImmediate(resolve));
   assert.ok(finishSend);
   finishSend();
-  await first;
+  await Promise.all([first, second]);
 
   assert.equal(sends, 1);
 });
@@ -202,6 +203,35 @@ test("a busy unexpired lease is marked dirty and returns unavailable for retry",
   await assert.rejects(syncReviewLiveActivities("admin"), {code: "unavailable"});
 
   assert.equal(store.get("adminLiveActivities/admin")?.syncRequested, true);
+});
+
+test("a queue-change sync waits out a dead owner's lease and sends the latest state", async (t) => {
+  let now = Date.now();
+  t.mock.method(Date, "now", () => now);
+  const store = installFakeDb(t, {
+    "adminLiveActivities/admin": {
+      activityToken: TOKEN,
+      lastStateKey: "old",
+      syncLeaseOwner: "dead-invocation",
+      syncLeaseUntil: admin.firestore.Timestamp.fromMillis(now + 120_000),
+    },
+    "usersv2/admin": {loggedIn: true},
+    "walls/wall": {review: false, by: "Ana", createdAt: new Date("2026-10-20T10:00:00Z")},
+  });
+  t.mock.method(admin.auth(), "getUser", async () => ({customClaims: {admin: true}}) as never);
+  t.mock.method(adminConfig, "isAdminCaller", async () => true);
+  t.mock.method(notificationHelper, "userPushTokens", async () => [{token: FCM, nativeLocalization: false}]);
+  t.mock.method(timers, "setTimeout", async (ms: number) => {
+    now += ms;
+  });
+  const send = t.mock.method(admin.messaging(), "send", async () => "message-id");
+
+  await syncReviewLiveActivities();
+
+  assert.equal(send.mock.callCount(), 1);
+  assert.equal(store.get("adminLiveActivities/admin")?.lastStateKey, "1|Ana|1792490400");
+  assert.equal(store.get("adminLiveActivities/admin")?.syncLeaseOwner, undefined);
+  assert.equal(onReviewQueueChanged.__endpoint.timeoutSeconds, 540);
 });
 
 test("a sync queued during a send drains the newest queue state", async (t) => {
@@ -236,11 +266,10 @@ test("a sync queued during a send drains the newest queue state", async (t) => {
     createdAt: new Date("2026-10-20T10:00:00Z"),
   });
   const second = syncReviewLiveActivities();
-  await assert.rejects(second, {code: "unavailable"});
   await new Promise<void>((resolve) => setImmediate(resolve));
   assert.ok(finishSend);
   finishSend();
-  await first;
+  await Promise.all([first, second]);
 
   assert.deepEqual(states, [
     {pending: 1, newestBy: "Ana", oldestAt: OLDEST_SECONDS},
@@ -588,4 +617,125 @@ test("one admin's persistent FCM error does not block other admins", async (t) =
 
   assert.deepEqual(tokens, ["a".repeat(64), "a".repeat(64), "b".repeat(64)]);
   assert.equal(store.get("adminLiveActivities/b")?.lastStateKey, "1|Ana|1792490400");
+});
+
+for (const exit of ["revoked admin", "missing FCM", "auth error", "send error"] as const) {
+  test(`a waiting queue trigger recovers after the owner exits with ${exit}`, async (t) => {
+    const store = installFakeDb(t, {
+      "adminLiveActivities/admin": {activityToken: TOKEN, lastStateKey: "old"},
+      "usersv2/admin": {loggedIn: true},
+      "walls/wall": {review: false, by: "Ana", createdAt: new Date("2026-10-20T10:00:00Z")},
+    });
+    let releaseOwner: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => releaseOwner = resolve);
+    let ownerStarted: () => void = () => undefined;
+    const started = new Promise<void>((resolve) => ownerStarted = resolve);
+    let authCalls = 0;
+    t.mock.method(admin.auth(), "getUser", async () => {
+      if (++authCalls === 1) {
+        ownerStarted();
+        await gate;
+        if (exit === "auth error") throw new Error("temporary auth failure");
+        if (exit === "revoked admin") return {disabled: true} as never;
+      }
+      return {customClaims: {admin: true}} as never;
+    });
+    t.mock.method(adminConfig, "isAdminCaller", async () => true);
+    let tokenCalls = 0;
+    t.mock.method(notificationHelper, "userPushTokens", async () => {
+      if (++tokenCalls === 1 && exit === "missing FCM") return [];
+      return [{token: FCM, nativeLocalization: false}];
+    });
+    let failed = false;
+    const states: unknown[] = [];
+    t.mock.method(admin.messaging(), "send", async (message: admin.messaging.Message) => {
+      if (exit === "send error" && !failed) {
+        failed = true;
+        throw new Error("temporary send failure");
+      }
+      states.push(message.apns?.payload?.aps?.["content-state"]);
+      return "message-id";
+    });
+    const first = syncReviewLiveActivities("admin");
+    const firstSettled = first.catch(() => undefined);
+    await started;
+    const rotatedToken = "b".repeat(64);
+    store.set("adminLiveActivities/admin", {
+      ...store.get("adminLiveActivities/admin"), activityToken: rotatedToken,
+    });
+    t.mock.method(timers, "setTimeout", async () => {
+      await firstSettled;
+      store.set("usersv2/admin", {loggedIn: true});
+    });
+    const second = syncReviewLiveActivities();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    releaseOwner();
+    await Promise.all([firstSettled, second]);
+
+    assert.deepEqual(states.at(-1), {pending: 1, newestBy: "Ana", oldestAt: OLDEST_SECONDS});
+    assert.equal(store.get("adminLiveActivities/admin")?.lastStateKey, "1|Ana|1792490400");
+    assert.equal(store.get("adminLiveActivities/admin")?.activityToken, rotatedToken);
+  });
+}
+
+test("a waiting trigger ends an activity after the queue becomes empty", async (t) => {
+  const store = installFakeDb(t, {
+    "adminLiveActivities/admin": {
+      activityToken: TOKEN,
+      lastStateKey: "1|Ana|1792490400",
+      syncLeaseOwner: "owner",
+      syncLeaseUntil: admin.firestore.Timestamp.fromMillis(Date.now() + 120_000),
+    },
+    "usersv2/admin": {loggedIn: true},
+  });
+  t.mock.method(admin.auth(), "getUser", async () => ({customClaims: {admin: true}}) as never);
+  t.mock.method(adminConfig, "isAdminCaller", async () => true);
+  t.mock.method(notificationHelper, "userPushTokens", async () => [{token: FCM, nativeLocalization: false}]);
+  t.mock.method(timers, "setTimeout", async () => {
+    store.set("adminLiveActivities/admin", {activityToken: TOKEN, lastStateKey: "1|Ana|1792490400"});
+  });
+  const events: unknown[] = [];
+  t.mock.method(admin.messaging(), "send", async (message: admin.messaging.Message) => {
+    events.push(message.apns?.payload?.aps?.event);
+    return "message-id";
+  });
+
+  await syncReviewLiveActivities();
+
+  assert.deepEqual(events, ["end"]);
+  assert.equal(store.get("adminLiveActivities/admin")?.activityToken, null);
+});
+
+test("missing activity documents return without waiting for a nonexistent owner", async (t) => {
+  installFakeDb(t);
+  const delay = t.mock.method(timers, "setTimeout", async () => {
+    throw new Error("must not wait for a missing activity");
+  });
+  await syncReviewLiveActivities("missing");
+  await syncReviewLiveActivities();
+  assert.equal(delay.mock.callCount(), 0);
+});
+
+test("a perpetually renewed lease fails for retry instead of acknowledging unsynced work", async (t) => {
+  let now = Date.now();
+  t.mock.method(Date, "now", () => now);
+  const store = installFakeDb(t, {
+    "adminLiveActivities/admin": {
+      activityToken: TOKEN,
+      syncLeaseOwner: "renewing-owner",
+      syncLeaseUntil: admin.firestore.Timestamp.fromMillis(now + 120_000),
+    },
+  });
+  t.mock.method(timers, "setTimeout", async (ms: number) => {
+    now += ms;
+    store.set("adminLiveActivities/admin", {
+      ...store.get("adminLiveActivities/admin"),
+      syncLeaseUntil: admin.firestore.Timestamp.fromMillis(now + 120_000),
+    });
+  });
+
+  await assert.rejects(syncReviewLiveActivities(), {code: "unavailable"});
+
+  assert.equal(store.get("adminLiveActivities/admin")?.syncLeaseOwner, "renewing-owner");
+  assert.equal(store.get("adminLiveActivities/admin")?.syncRequested, true);
 });
