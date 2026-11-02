@@ -103,7 +103,7 @@ class LayoutPrefs {
   factory LayoutPrefs.fromMap(Map<Object?, Object?> raw, {HomeFeedChip feedTab = HomeFeedChip.forYou}) {
     List<NavTab> names(Object? value) => value is List
         ? value.map((name) => NavTab.values.asNameMap()[name]).whereType<NavTab>().toSet().toList()
-        : const <NavTab>[];
+        : <NavTab>[];
     final List<NavTab> order = names(raw['tabs']);
     for (final NavTab tab in NavTab.values) {
       if (!order.contains(tab)) order.add(tab);
