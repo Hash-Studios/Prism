@@ -907,6 +907,21 @@ const cases = [
   ['user cannot list promo redemptions across codes', () => runCollectionQuery(Bu, 'redemptions', 'promoCodes/c1'), 403],
   ['user cannot read a promo rate counter', () => req('GET', 'promoRedeemRate/u_b_1', null, Bu), 403],
   ['user cannot write a promo rate counter', () => req('PATCH', 'promoRedeemRate/u_b_1', { count: { integerValue: '0' } }, Bu), 403],
+  ['owner cannot create a wall with editorsChoiceAt', () => req('PATCH', 'walls/ec-create', { email: str('b@x.com'), review: { booleanValue: false }, editorsChoiceAt: { timestampValue: '2026-01-01T00:00:00Z' } }, Bu), 403],
+  ['owner cannot create a wall with byStudio true', () => req('PATCH', 'walls/bystudio-create', { email: str('b@x.com'), review: { booleanValue: false }, byStudio: { booleanValue: true } }, Bu), 403],
+  ['owner cannot add editorsChoiceAt to own unreviewed wall', () => req('PATCH', 'walls/w8', { editorsChoiceAt: { timestampValue: '2026-01-01T00:00:00Z' } }, Bu, ['editorsChoiceAt']), 403],
+  ['owner cannot add editorsChoiceBy to own unreviewed wall', () => req('PATCH', 'walls/w8', { editorsChoiceBy: str('b') }, Bu, ['editorsChoiceBy']), 403],
+  ['owner cannot add byStudio to own unreviewed wall', () => req('PATCH', 'walls/w8', { byStudio: { booleanValue: true } }, Bu, ['byStudio']), 403],
+  ['stranger cannot set editorsChoiceAt on someone else wall', () => req('PATCH', 'walls/w8', { editorsChoiceAt: { timestampValue: '2026-01-01T00:00:00Z' } }, A, ['editorsChoiceAt']), 403],
+  ['owner sets showProBadge false on own usersv2 doc', () => req('PATCH', 'usersv2/b', { showProBadge: { booleanValue: false } }, Bu, ['showProBadge']), 200],
+  ['owner cannot write non-bool showProBadge', () => req('PATCH', 'usersv2/b', { showProBadge: str('no') }, Bu, ['showProBadge']), 403],
+  ['stranger cannot set showProBadge on another user', () => req('PATCH', 'usersv2/b', { showProBadge: { booleanValue: true } }, A, ['showProBadge']), 403],
+  ['owner cannot write proBadge on own public profile', () => req('PATCH', 'profiles/b', { proBadge: { booleanValue: true } }, Bu, ['proBadge']), 403],
+  ['stranger cannot write proBadge on public profile', () => req('PATCH', 'profiles/a', { proBadge: { booleanValue: true } }, Bu, ['proBadge']), 403],
+  ...['editorsChoiceRequests', 'editorsChoiceNotices'].flatMap((collection) => [
+    [`owner cannot read ${collection}`, () => req('GET', `${collection}/x`, null, Bu), 403],
+    [`owner cannot write ${collection}`, () => req('PATCH', `${collection}/x`, { ownerUid: str('b') }, Bu), 403],
+  ]),
 ];
 await seed();
 let bad = 0;
