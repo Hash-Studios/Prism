@@ -131,6 +131,8 @@ async function notifyCreator(wallId: string): Promise<void> {
         {uid: creator?.id, email, loggedOut: isLoggedOut(creator?.data())},
         session?.postAlerts !== false,
       );
+      // sendNotification logs and swallows a failed inbox write, so check the inbox item itself.
+      delivered = delivered && (await db.collection("notifications").doc(`editors_choice_${wallId}`).get()).exists;
     } finally {
       // A failed send frees the claim so a replay or a later pick can deliver. The fixed inbox doc id and collapse key
       // make that retry replace, not repeat, anything that did arrive.

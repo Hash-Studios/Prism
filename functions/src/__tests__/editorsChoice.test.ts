@@ -26,6 +26,7 @@ function setup(t: TestContext, seed: Record<string, Doc> = {}, ready = true) {
   const sent: Array<{payload: Doc; recipient: Doc; pushEnabled: boolean}> = [];
   t.mock.method(editorsChoiceIo, "sendToUser", async (payload: Doc, recipient: Doc, pushEnabled: boolean) => {
     sent.push({payload, recipient, pushEnabled});
+    await db.collection("notifications").doc(String(payload.docId)).set({modifier: payload.modifier});
     return true;
   });
   const store = installFakeDb(t, {
@@ -222,9 +223,12 @@ for (const failure of ["throw", "false"] as const) {
   test(`a push that returns ${failure} keeps the pick and frees the notice for one retry`, async (t) => {
     const {store} = setup(t);
     let sends = 0;
-    t.mock.method(editorsChoiceIo, "sendToUser", async () => {
+    t.mock.method(editorsChoiceIo, "sendToUser", async (payload: Doc) => {
       sends++;
-      if (sends > 1) return true;
+      if (sends > 1) {
+        await db.collection("notifications").doc(String(payload.docId)).set({});
+        return true;
+      }
       if (failure === "throw") throw new Error("fcm down");
       return false;
     });
@@ -238,3 +242,21 @@ for (const failure of ["throw", "false"] as const) {
     assert.equal(sends, 2);
   });
 }
+
+test("a push that sent without its inbox item frees the notice for a retry", async (t) => {
+  const {store} = setup(t);
+  let sends = 0;
+  t.mock.method(editorsChoiceIo, "sendToUser", async (payload: Doc) => {
+    sends++;
+    if (sends > 1) await db.collection("notifications").doc(String(payload.docId)).set({});
+    return true;
+  });
+  const input = {wallId: "w1", picked: true, requestId: "request_0001"};
+  await call(input);
+  assert.equal(store.has("editorsChoiceNotices/w1"), false);
+  await call(input);
+  assert.equal(store.has("editorsChoiceNotices/w1"), true);
+  assert.equal(store.has("notifications/editors_choice_w1"), true);
+  await call(input);
+  assert.equal(sends, 2);
+});
