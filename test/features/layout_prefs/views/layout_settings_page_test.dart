@@ -172,4 +172,33 @@ void main() {
       expect(find.text(label), findsOneWidget);
     }
   });
+
+  testWidgets('a tap on a tab row title toggles it, like the other switch rows in Settings', (tester) async {
+    await _pumpPage(tester);
+
+    await _tap(tester, find.text('Search'));
+    expect(store.value.hiddenTabs, <NavTab>{NavTab.search});
+
+    await _tap(tester, find.text('Search'));
+    expect(store.value.hiddenTabs, isEmpty);
+
+    await _tap(tester, find.text('Home'));
+    expect(store.value.hiddenTabs, isEmpty);
+  });
+
+  testWidgets('large text lists the grid sizes in full instead of truncating three segments', (tester) async {
+    await _pumpPage(tester, textScaler: const TextScaler.linear(2.0));
+    await tester.scrollUntilVisible(find.text('Large'), 200, scrollable: find.byType(Scrollable).first);
+
+    expect(find.byType(PrismSegmented<WallGridDensity>), findsNothing);
+    for (final label in ['Compact', 'Comfortable', 'Large']) {
+      expect(find.text(label), findsOneWidget);
+    }
+    await _tap(tester, find.text('Compact'));
+    expect(store.value.density, WallGridDensity.compact);
+    expect(
+      tester.getSemantics(find.text('Compact')),
+      containsSemantics(isSelected: true, isInMutuallyExclusiveGroup: true),
+    );
+  });
 }

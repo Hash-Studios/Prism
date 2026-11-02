@@ -4,7 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('fromMap repairs missing or wrongly typed tab lists', () {
-    for (final raw in <Map<Object?, Object?>>[{}, {'tabs': false, 'hidden': 'search'}]) {
+    for (final raw in <Map<Object?, Object?>>[
+      {},
+      {'tabs': false, 'hidden': 'search'},
+    ]) {
       expect(LayoutPrefs.fromMap(raw), const LayoutPrefs());
     }
   });

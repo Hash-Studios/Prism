@@ -34,15 +34,8 @@ class LayoutSettingsPage extends StatelessWidget {
             _Section(
               title: context.l10n.layoutGridHeader,
               footnote: context.l10n.layoutGridFootnote,
-              child: PrismSegmented<WallGridDensity>(
-                values: WallGridDensity.values,
+              child: _DensityPicker(
                 selected: prefs.density,
-                labelOf: (density) => density.label(context),
-                iconOf: (density) => switch (density) {
-                  WallGridDensity.compact => Icons.apps_rounded,
-                  WallGridDensity.comfortable => Icons.grid_view_rounded,
-                  WallGridDensity.large => Icons.crop_portrait_rounded,
-                },
                 onChanged: (density) {
                   if (density == prefs.density) return;
                   PrismHaptics.selection();
@@ -81,6 +74,51 @@ extension WallGridDensityLabel on WallGridDensity {
     WallGridDensity.comfortable => context.l10n.layoutDensityComfortable,
     WallGridDensity.large => context.l10n.layoutDensityLarge,
   };
+
+  IconData get icon => switch (this) {
+    WallGridDensity.compact => Icons.apps_rounded,
+    WallGridDensity.comfortable => Icons.grid_view_rounded,
+    WallGridDensity.large => Icons.crop_portrait_rounded,
+  };
+}
+
+/// Three segments at normal text sizes. Large text cannot fit three labels side by side, so the choice becomes a list.
+class _DensityPicker extends StatelessWidget {
+  const _DensityPicker({required this.selected, required this.onChanged});
+
+  static const double _listTextScale = 1.3;
+
+  final WallGridDensity selected;
+  final ValueChanged<WallGridDensity> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.textScalerOf(context).scale(1) < _listTextScale) {
+      return PrismSegmented<WallGridDensity>(
+        values: WallGridDensity.values,
+        selected: selected,
+        labelOf: (density) => density.label(context),
+        iconOf: (density) => density.icon,
+        onChanged: onChanged,
+      );
+    }
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return PrismGroup(
+      children: <Widget>[
+        for (final WallGridDensity density in WallGridDensity.values)
+          Semantics(
+            selected: density == selected,
+            inMutuallyExclusiveGroup: true,
+            child: PrismRow(
+              icon: density.icon,
+              title: density.label(context),
+              onTap: () => onChanged(density),
+              trailing: density == selected ? Icon(Icons.check_rounded, color: cs.primary) : const SizedBox.shrink(),
+            ),
+          ),
+      ],
+    );
+  }
 }
 
 class _Section extends StatelessWidget {
@@ -191,6 +229,11 @@ class _TabRow extends StatelessWidget {
     final String label = tab.label(context);
     final bool visible = !prefs.hiddenTabs.contains(tab);
     final bool canToggle = !visible || prefs.canHide(tab);
+    void toggle(bool value) {
+      PrismHaptics.selection();
+      onVisibleChanged(value);
+    }
+
     return Semantics(
       customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
         if (onMoveUp != null) CustomSemanticsAction(label: context.l10n.layoutMoveUp): onMoveUp!,
@@ -201,6 +244,7 @@ class _TabRow extends StatelessWidget {
         child: PrismRow(
           icon: tab.icon,
           title: label,
+          onTap: canToggle ? () => toggle(!visible) : null,
           subtitle: switch (tab) {
             NavTab.home => context.l10n.layoutTabAlwaysShown,
             _ when !visible => context.l10n.layoutTabUnderMore,
@@ -212,15 +256,7 @@ class _TabRow extends StatelessWidget {
             children: <Widget>[
               Semantics(
                 label: context.l10n.layoutShowTab(label),
-                child: Switch(
-                  value: visible,
-                  onChanged: canToggle
-                      ? (value) {
-                          PrismHaptics.selection();
-                          onVisibleChanged(value);
-                        }
-                      : null,
-                ),
+                child: Switch(value: visible, onChanged: canToggle ? toggle : null),
               ),
               ReorderableDragStartListener(
                 index: index,
