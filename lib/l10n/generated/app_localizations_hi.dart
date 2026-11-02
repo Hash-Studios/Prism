@@ -12899,4 +12899,95 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notifPushWrappedReadyBody => 'अपने सहेजे वॉलपेपर, अपने रंग और अपने क्रिएटर देखें।';
+
+  @override
+  String get trialTimelineTitle => 'आपका मुफ़्त ट्रायल कैसे काम करता है';
+
+  @override
+  String get trialTimelineClose => 'बंद करें';
+
+  @override
+  String trialTimelinePlanSummary(int days, String price) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString दिन', one: '1 दिन');
+    return 'Prism Pro सालाना। $_temp0 मुफ़्त, उसके बाद $price प्रति वर्ष।';
+  }
+
+  @override
+  String get trialTimelineToday => 'आज';
+
+  @override
+  String get trialTimelineTodayBody => 'आपको Prism Pro की पूरी सुविधा मिलती है। आज आपसे कुछ नहीं लिया जाता।';
+
+  @override
+  String trialTimelineDay(int day) {
+    final intl.NumberFormat dayNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String dayString = dayNumberFormat.format(day);
+
+    return 'दिन $dayString';
+  }
+
+  @override
+  String get trialTimelineReminderBody => 'हम आपको याद दिलाते हैं कि आपका ट्रायल जल्द खत्म होगा।';
+
+  @override
+  String get trialTimelineNoReminderBody => 'कोई याद दिलाना नहीं। आपने इसे नीचे बंद किया है।';
+
+  @override
+  String trialTimelineChargeBody(String price) {
+    return 'कम से कम 24 घंटे पहले रद्द न करने पर $price लिए जाएँगे।';
+  }
+
+  @override
+  String get trialTimelineRemindToggle => 'ट्रायल खत्म होने से 2 दिन पहले मुझे याद दिलाएँ';
+
+  @override
+  String trialTimelineRenewalTerms(String price, String store) {
+    return 'ट्रायल के बाद, Prism Pro सालाना $price प्रति वर्ष पर नवीनीकृत होगा, जब तक आप रद्द न करें। $store आपके खाते से शुल्क लेता है। शुल्क से बचने के लिए, ट्रायल या नवीनीकरण खत्म होने से कम से कम 24 घंटे पहले रद्द करें।';
+  }
+
+  @override
+  String trialTimelineCancelLink(String store) {
+    return '$store की सेटिंग में कभी भी रद्द करें';
+  }
+
+  @override
+  String get trialTimelineSeeAllPlans => 'सभी प्लान देखें';
+
+  @override
+  String trialTimelineStart(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    return '$daysString दिन का मुफ़्त ट्रायल शुरू करें';
+  }
+
+  @override
+  String get trialTimelineStartFailed => 'मुफ़्त ट्रायल शुरू नहीं हो सका। फिर से कोशिश करें।';
+
+  @override
+  String trialReminderTitle(String date) {
+    return 'आपका मुफ़्त ट्रायल $date को खत्म होगा';
+  }
+
+  @override
+  String trialReminderBody(String store) {
+    return 'उसके बाद, आपसे Prism Pro सालाना का शुल्क लिया जाएगा। शुल्क से बचने के लिए, कम से कम 24 घंटे पहले $store की सेटिंग में रद्द करें।';
+  }
+
+  @override
+  String get notifChannelSubscription => 'सब्सक्रिप्शन';
+
+  @override
+  String get notifChannelSubscriptionDescription => 'आपका मुफ़्त ट्रायल खत्म होने से पहले एक याद दिलाना';
+
+  @override
+  String premiumTrialEnds(String date) {
+    return 'ट्रायल, $date को खत्म होगा';
+  }
+
+  @override
+  String get premiumTrialAutoRenewOff => 'ऑटो-रिन्यू बंद है। ट्रायल खत्म होने पर आपसे कोई शुल्क नहीं लिया जाएगा।';
 }

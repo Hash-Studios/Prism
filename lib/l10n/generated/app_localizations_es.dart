@@ -12918,4 +12918,96 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get notifPushWrappedReadyBody => 'Mira los fondos de pantalla que guardaste, tus colores y tus creadores.';
+
+  @override
+  String get trialTimelineTitle => 'Cómo funciona tu prueba gratuita';
+
+  @override
+  String get trialTimelineClose => 'Cerrar';
+
+  @override
+  String trialTimelinePlanSummary(int days, String price) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString días', one: '1 día');
+    return 'Prism Pro anual. $_temp0 gratis, luego $price al año.';
+  }
+
+  @override
+  String get trialTimelineToday => 'Hoy';
+
+  @override
+  String get trialTimelineTodayBody => 'Tienes acceso completo a Prism Pro. Hoy no pagas nada.';
+
+  @override
+  String trialTimelineDay(int day) {
+    final intl.NumberFormat dayNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String dayString = dayNumberFormat.format(day);
+
+    return 'Día $dayString';
+  }
+
+  @override
+  String get trialTimelineReminderBody => 'Te recordamos que tu prueba termina pronto.';
+
+  @override
+  String get trialTimelineNoReminderBody => 'Sin recordatorio. Lo desactivaste abajo.';
+
+  @override
+  String trialTimelineChargeBody(String price) {
+    return 'Pagas $price, a menos que canceles al menos 24 horas antes.';
+  }
+
+  @override
+  String get trialTimelineRemindToggle => 'Recuérdame 2 días antes de que termine la prueba';
+
+  @override
+  String trialTimelineRenewalTerms(String price, String store) {
+    return 'Después de la prueba, Prism Pro anual se renueva por $price al año hasta que canceles. $store cobra a tu cuenta. Para evitar un cobro, cancela al menos 24 horas antes de que termine la prueba o una renovación.';
+  }
+
+  @override
+  String trialTimelineCancelLink(String store) {
+    return 'Cancela en cualquier momento en la configuración de $store';
+  }
+
+  @override
+  String get trialTimelineSeeAllPlans => 'Ver todos los planes';
+
+  @override
+  String trialTimelineStart(int days) {
+    final intl.NumberFormat daysNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String daysString = daysNumberFormat.format(days);
+
+    return 'Empezar prueba gratuita de $daysString días';
+  }
+
+  @override
+  String get trialTimelineStartFailed => 'No se pudo iniciar la prueba gratuita. Inténtalo de nuevo.';
+
+  @override
+  String trialReminderTitle(String date) {
+    return 'Tu prueba gratuita termina el $date';
+  }
+
+  @override
+  String trialReminderBody(String store) {
+    return 'Después, pagas Prism Pro anual. Para evitar el cobro, cancela en la configuración de $store al menos 24 horas antes.';
+  }
+
+  @override
+  String get notifChannelSubscription => 'Suscripción';
+
+  @override
+  String get notifChannelSubscriptionDescription => 'Un recordatorio antes de que termine tu prueba gratuita';
+
+  @override
+  String premiumTrialEnds(String date) {
+    return 'Prueba, termina el $date';
+  }
+
+  @override
+  String get premiumTrialAutoRenewOff =>
+      'La renovación automática está desactivada. No se te cobrará cuando termine la prueba.';
 }
