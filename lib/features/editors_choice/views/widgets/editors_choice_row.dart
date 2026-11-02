@@ -98,7 +98,7 @@ class _EditorsChoiceRowState extends State<EditorsChoiceRow> {
                   header: true,
                   child: Text(
                     title,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: PrismTextStyles.sectionTitle(context),
                   ),
@@ -106,7 +106,7 @@ class _EditorsChoiceRowState extends State<EditorsChoiceRow> {
                 const SizedBox(height: 2),
                 Text(
                   l10n.editorsChoiceRowBody,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: PrismTextStyles.body(context),
                 ),

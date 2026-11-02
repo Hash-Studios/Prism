@@ -34,7 +34,7 @@ class WallCreditRow extends StatelessWidget {
               Flexible(
                 child: Text(
                   primary,
-                  maxLines: 2,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.end,
                   style: PrismTextStyles.body(context).copyWith(color: cs.secondary),
