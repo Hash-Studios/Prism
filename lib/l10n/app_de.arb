@@ -2428,6 +2428,9 @@
   "coreContentNotAvailable": "Dieser Inhalt ist nicht mehr verfügbar",
   "coreContentReportUser": "Nutzer",
   "coreContentReportComment": "Kommentar",
+  "@coreContentReportComment": {
+    "description": "Content type word in the report prompt for a wall comment, lower case as in the sentence"
+  },
   "coreContentReportWallpaper": "Hintergrundbild",
   "coreContentReportWhy": "Warum meldest du {contentType}?",
   "@coreContentReportWhy": {

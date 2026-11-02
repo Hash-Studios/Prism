@@ -2552,6 +2552,9 @@
   "coreContentNotAvailable": "यह आइटम अब उपलब्ध नहीं है",
   "coreContentReportUser": "उपयोगकर्ता",
   "coreContentReportComment": "टिप्पणी",
+  "@coreContentReportComment": {
+    "description": "Content type word in the report prompt for a wall comment, lower case as in the sentence"
+  },
   "coreContentReportWallpaper": "वॉलपेपर",
   "coreContentReportWhy": "आप {contentType} की रिपोर्ट क्यों कर रहे हैं?",
   "@coreContentReportWhy": {

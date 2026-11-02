@@ -2654,6 +2654,9 @@
   "coreContentNotAvailable": "Item itu sudah tidak tersedia",
   "coreContentReportUser": "pengguna",
   "coreContentReportComment": "komentar",
+  "@coreContentReportComment": {
+    "description": "Content type word in the report prompt for a wall comment, lower case as in the sentence"
+  },
   "coreContentReportWallpaper": "wallpaper",
   "coreContentReportWhy": "Mengapa Anda melaporkan {contentType} ini?",
   "@coreContentReportWhy": {
