@@ -261,6 +261,40 @@ void main() {
       expect(profile.premium, isFalse);
     });
 
+    test('maps proBadge true from the profiles document', () async {
+      const String uid = 'ProUser';
+      client.docs['profiles'] = <String, Map<String, dynamic>>{
+        uid: <String, dynamic>{'name': 'Ana', 'username': 'ana', 'proBadge': true},
+      };
+      final emitted = <PublicProfileEntity?>[];
+      final sub = repo.watchProfile(uid).listen(emitted.add);
+      await client.waitForWatchers(1).timeout(const Duration(seconds: 2));
+      client.rows.add(<FakeDocRow>[
+        (id: uid, data: <String, dynamic>{'name': 'Ana', 'username': 'ana', 'proBadge': true}),
+      ]);
+      await _firstProfile(emitted);
+      await sub.cancel();
+
+      expect(emitted.whereType<PublicProfileEntity>().last.proBadge, isTrue);
+    });
+
+    test('maps proBadge to false when the profiles document has none', () async {
+      const String uid = 'PlainUser';
+      client.docs['profiles'] = <String, Map<String, dynamic>>{
+        uid: <String, dynamic>{'name': 'Ben', 'username': 'ben'},
+      };
+      final emitted = <PublicProfileEntity?>[];
+      final sub = repo.watchProfile(uid).listen(emitted.add);
+      await client.waitForWatchers(1).timeout(const Duration(seconds: 2));
+      client.rows.add(<FakeDocRow>[
+        (id: uid, data: <String, dynamic>{'name': 'Ben', 'username': 'ben'}),
+      ]);
+      await _firstProfile(emitted);
+      await sub.cancel();
+
+      expect(emitted.whereType<PublicProfileEntity>().last.proBadge, isFalse);
+    });
+
     test('treats UID casing as significant', () async {
       client.docs['profiles'] = <String, Map<String, dynamic>>{
         'UserABC': <String, dynamic>{'name': 'Ana', 'username': 'ana'},

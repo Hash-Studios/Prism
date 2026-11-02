@@ -34,6 +34,7 @@ import 'package:Prism/features/public_profile/domain/repositories/public_profile
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
 import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
 import 'package:Prism/features/public_profile/views/widgets/gift_pass_sheet.dart';
+import 'package:Prism/features/public_profile/views/widgets/pro_profile_badge.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_bio_text.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_parts.dart';
@@ -749,6 +750,8 @@ class _ProfileChildState extends State<_ProfileChild> {
                         ),
                         const SizedBox(height: 2),
                       ],
+                      if (_profile.proBadge)
+                        const Padding(padding: EdgeInsets.only(bottom: 6), child: ProProfileBadge()),
                       ProfileBadgeRow(badgeIds: _profile.badges),
                       if (!ownProfile) FollowedByLine(creatorUid: _profile.id),
                       const SizedBox(height: 8),
