@@ -453,6 +453,15 @@ test("non-Monday ticks and stale Monday retries do not retroactively open a week
   assert.equal(store.has(`weeklyChallenges/${CH}`), false);
 });
 
+test("the Monday 00:00 tick opens the week when Cloud Scheduler adds a sub-second offset", async (t) => {
+  const store = setup(t, {"challengeThemes/one": {order: 1, theme: "Night"}});
+  store.delete(`weeklyChallenges/${CH}`);
+  const slot = Date.parse(`${CH}T00:00:00.599332Z`);
+  await runChallengeSchedule(slot, slot + 3_000);
+  assert.equal(store.get(`weeklyChallenges/${CH}`)?.theme, "Night");
+  assert.equal(store.get(`weeklyChallenges/${CH}`)?.state, "open");
+});
+
 test("deleting a voter changes live totals without changing sealed settlement order", async (t) => {
   const store = setup(t, {"walls/w1": wall()});
   const key = await approved();
