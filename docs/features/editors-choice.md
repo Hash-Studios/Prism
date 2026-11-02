@@ -58,7 +58,7 @@ Clear deletes both fields.
 - The creator gets one inbox item and one push for each wall. This happens the first time the wall is picked.
 - The claim doc is `editorsChoiceNotices/{wallId}`.
 - Pick, clear and pick again send nothing new.
-- The push respects `postAlerts` in `usersv2/{uid}/private/session`. A false value skips the push and the inbox item.
+- The push respects `postAlerts` in `usersv2/{uid}/private/session`. A false value skips the push. The inbox item is still written.
 - Studio walls get no push.
 - The inbox doc id is `editors_choice_<wallId>`. The kind is `editorsChoicePicked`. The route is `wall`.
 - The push has the `notification_kind` `editors_choice`.

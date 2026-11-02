@@ -69,7 +69,8 @@ A Prism Pro member shows a Pro badge on the public profile. The badge sits above
 
 - `profiles/{uid}.proBadge` is true only when `usersv2.premium` is true and `usersv2.showProBadge` is not false.
 - `functions/src/profiles.ts` writes `proBadge` in `projectedProfile`.
-- `projectUserProfile` runs it on every `usersv2` write. So `syncSubscription`, the daily `reconcileSubscriptions`, gifts and promo codes all update the badge.
+- `projectUserProfile` runs it on every `usersv2` write. So `syncSubscription` and the daily `reconcileSubscriptions` (02:30 UTC) update the badge. Gifted and promo Pro passes live in `private/economy` and do not set `premium`, so they do not show the badge.
+- An expiry removes the badge at the next successful sync or reconcile. A RevenueCat error delays the removal until the next run.
 - An expiry or an opt-out removes the badge.
 - `syncSubscription` does not write `profiles` directly. The projection rewrites the whole profile doc. A direct write could remove a field that another writer adds.
 - Clients cannot write `profiles`.
