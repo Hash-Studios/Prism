@@ -62,6 +62,8 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'link_destination': LinkDestinationValue.values.map((value) => value.wireValue).toList(),
   'push_kind': PushKindValue.values.map((value) => value.wireValue).toList(),
   'immersive_toggle_source': ImmersiveToggleSourceValue.values.map((value) => value.wireValue).toList(),
+  'variant_switch_source': VariantSwitchSourceValue.values.map((value) => value.wireValue).toList(),
+  'variant_link_result': VariantLinkResultValue.values.map((value) => value.wireValue).toList(),
   'favourite_pin_surface': FavouritePinSurfaceValue.values.map((value) => value.wireValue).toList(),
   'wall_request_source': WallRequestSourceValue.values.map((value) => value.wireValue).toList(),
   'wall_request_filler': WallRequestFillerValue.values.map((value) => value.wireValue).toList(),
@@ -3801,6 +3803,63 @@ class DetailImmersiveHintShownEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return const <String, Object?>{};
+  }
+}
+
+class WallpaperVariantSwitchedEvent extends AnalyticsEvent {
+  const WallpaperVariantSwitchedEvent({
+    required this.source,
+    required this.wallId,
+    required this.variantIndex,
+    required this.variantCount,
+  });
+
+  final VariantSwitchSourceValue source;
+  final String wallId;
+  final int variantIndex;
+  final int variantCount;
+
+  @override
+  String get eventName => 'wallpaper_variant_switched';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'source': source.wireValue,
+      'wall_id': wallId,
+      'variant_index': variantIndex,
+      'variant_count': variantCount,
+    };
+  }
+}
+
+class WallpaperVariantUploadStartedEvent extends AnalyticsEvent {
+  const WallpaperVariantUploadStartedEvent({required this.wallId, required this.variantCount});
+
+  final String wallId;
+  final int variantCount;
+
+  @override
+  String get eventName => 'wallpaper_variant_upload_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'variant_count': variantCount};
+  }
+}
+
+class WallpaperVariantLinkResolvedEvent extends AnalyticsEvent {
+  const WallpaperVariantLinkResolvedEvent({required this.wallId, required this.result});
+
+  final String wallId;
+  final VariantLinkResultValue result;
+
+  @override
+  String get eventName => 'wallpaper_variant_link_resolved';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'result': result.wireValue};
   }
 }
 

@@ -55,7 +55,25 @@ export const originalAccessDelivery = {
   },
 };
 
-async function classification(): Promise<string[]> {
+const CLASSIFICATION_CACHE_MS = 60_000;
+let classificationCache: {at: number; value: Promise<string[]>} | undefined;
+
+export function resetClassificationCache(): void {
+  classificationCache = undefined;
+}
+
+/** The premium collection list, cached for a minute per instance like the economy config. Failures are not cached. */
+export function classification(nowMs = Date.now()): Promise<string[]> {
+  if (classificationCache && nowMs - classificationCache.at < CLASSIFICATION_CACHE_MS) return classificationCache.value;
+  const entry = {at: nowMs, value: fetchClassification()};
+  classificationCache = entry;
+  entry.value.catch(() => {
+    if (classificationCache === entry) classificationCache = undefined;
+  });
+  return entry.value;
+}
+
+async function fetchClassification(): Promise<string[]> {
   try {
     const template = await admin.remoteConfig().getTemplate();
     const parameter = template.parameters?.premiumCollections;
@@ -111,9 +129,7 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
     const userRef = db.collection("usersv2").doc(uid);
     const privateRef = userRef.collection("private").doc("economy");
     return db.runTransaction(async (tx) => {
-      const user = await tx.get(userRef);
-      const privateSnap = await tx.get(privateRef);
-      const receiptSnap = await tx.get(receiptRef);
+      const [user, privateSnap, receiptSnap] = await tx.getAll(userRef, privateRef, receiptRef);
       const data = user.data() ?? {};
       const privateData = privateSnap.data() ?? {};
       const currentBalance = Math.max(0, int(data.coins));
@@ -123,8 +139,8 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
       for (let index = 0; index < items.length; index++) {
         const {assetId, action: originalAction} = items[index];
         const delivery = deliveries[index];
-        const walls = await tx.get(db.collection("walls").where("id", "==", assetId).limit(2));
-        const manifest = await tx.get(db.collection("ownedAssets").doc(assetId));
+        const [walls, manifest] = await Promise.all([tx.get(db.collection("walls").where("id", "==", assetId).limit(2)),
+          tx.get(db.collection("ownedAssets").doc(assetId))]);
         if (delivery && delivery.expiresAt <= Date.now() + 1_000) {
           throw new HttpsError("unavailable", "Original delivery expired. Retry with the same requestId.");
         }
@@ -148,8 +164,7 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
           throw new HttpsError("failed-precondition", "Protected original is unavailable or has changed.");
         }
         try {
-          await verifyStoredUploadRegistry(original, tx);
-          await verifyStoredUploadRegistry(owned.thumb, tx);
+          await Promise.all([verifyStoredUploadRegistry(original, tx), verifyStoredUploadRegistry(owned.thumb, tx)]);
         } catch {
           throw new HttpsError("failed-precondition", "Protected original storage identity is unavailable or has changed.");
         }

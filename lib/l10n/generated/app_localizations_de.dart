@@ -11546,6 +11546,70 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallMetadataEditDetails => 'Details bearbeiten';
 
   @override
+  String get wallVariantAdd => 'Farbvariante hinzufügen';
+
+  @override
+  String wallVariantUploadContext(String title) {
+    return 'Farbvariante von $title';
+  }
+
+  @override
+  String get wallVariantUploadContextUntitled => 'Farbvariante deines Wallpapers';
+
+  @override
+  String get wallVariantUploadHint =>
+      'Verwende dieselbe Größe und Form wie das Original. Nach der Prüfung gehört es zum Set.';
+
+  @override
+  String get wallVariantUnlinkTooltip => 'Stattdessen als neues Wallpaper hochladen';
+
+  @override
+  String wallVariantCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count Farben');
+    return '$_temp0';
+  }
+
+  @override
+  String wallVariantDotLabel(int index, int count, String colour) {
+    return 'Variante $index von $count, $colour';
+  }
+
+  @override
+  String wallVariantDotLabelPlain(int index, int count) {
+    return 'Variante $index von $count';
+  }
+
+  @override
+  String get wallVariantDotHint => 'Diese Farbe anzeigen';
+
+  @override
+  String get wallVariantNextHint => 'Nächste Farbe anzeigen';
+
+  @override
+  String get wallVariantPending => 'Farbvariante. Nach der Prüfung gehört sie zum Set.';
+
+  @override
+  String get wallVariantLinked => 'In einem Set aus Farbvarianten';
+
+  @override
+  String get wallVariantDroppedTitle => 'Nicht als Farbvariante hinzugefügt';
+
+  @override
+  String get wallVariantDroppedNotFound => 'Das Original-Wallpaper wurde entfernt.';
+
+  @override
+  String get wallVariantDroppedNotOwner => 'Das Original gehört einem anderen Ersteller.';
+
+  @override
+  String get wallVariantDroppedNotApproved => 'Das Original ist nicht freigegeben.';
+
+  @override
+  String get wallVariantDroppedFull => 'Das Set hat bereits 5 Farben.';
+
+  @override
+  String get wallVariantDroppedAspect => 'Es hat ein anderes Format als das Original.';
+
+  @override
   String get wallMetadataApprovedHelp => 'Ändere Titel, Beschreibung und Tags. Bild und Kategorie bleiben gleich.';
 
   @override

@@ -471,6 +471,33 @@ enum WrappedSourceValue {
   String get wireValue => _snakeCase(name);
 }
 
+enum VariantSwitchSourceValue {
+  dot,
+  tap;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum VariantLinkResultValue {
+  linked,
+  notFound,
+  notOwner,
+  notApproved,
+  groupFull,
+  aspectRatio;
+
+  String get wireValue => _snakeCase(name);
+
+  static VariantLinkResultValue? fromWire(String? value) {
+    for (final VariantLinkResultValue result in values) {
+      if (result.wireValue == value) {
+        return result;
+      }
+    }
+    return null;
+  }
+}
+
 enum OtaFailureReasonValue {
   checkTimeout,
   checkFailed,

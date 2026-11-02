@@ -68,6 +68,20 @@ final class ResetAccentColor extends WallpaperDetailEvent {
   const ResetAccentColor();
 }
 
+final class LoadVariants extends WallpaperDetailEvent {
+  const LoadVariants();
+}
+
+/// Shows the colour variant at [index] of the loaded set.
+final class SelectVariant extends WallpaperDetailEvent {
+  const SelectVariant({required this.index});
+
+  final int index;
+
+  @override
+  List<Object?> get props => [index];
+}
+
 final class OnPanelOpened extends WallpaperDetailEvent {
   const OnPanelOpened();
 }

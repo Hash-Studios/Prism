@@ -18295,6 +18295,114 @@ abstract class AppLocalizations {
   /// **'Edit details'**
   String get wallMetadataEditDetails;
 
+  /// Button on the creator's own approved wallpaper. Opens the upload flow to add the same wallpaper in another colour.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a colour variant'**
+  String get wallVariantAdd;
+
+  /// Chip on the upload screen that names the wallpaper this upload is a colour of.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour variant of {title}'**
+  String wallVariantUploadContext(String title);
+
+  /// Same chip when the original has no title.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour variant of your wallpaper'**
+  String get wallVariantUploadContextUntitled;
+
+  /// Help text under the chip on the upload screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the same size and shape as the original. It joins the set after review.'**
+  String get wallVariantUploadHint;
+
+  /// Tooltip on the chip's remove button.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload as a new wallpaper instead'**
+  String get wallVariantUnlinkTooltip;
+
+  /// Small caption before the row of colour dots on a wallpaper with colour variants.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, other{{count} colours}}'**
+  String wallVariantCount(int count);
+
+  /// Screen reader label for one colour dot.
+  ///
+  /// In en, this message translates to:
+  /// **'Variant {index} of {count}, {colour}'**
+  String wallVariantDotLabel(int index, int count, String colour);
+
+  /// Screen reader label for a colour dot whose colour has no name.
+  ///
+  /// In en, this message translates to:
+  /// **'Variant {index} of {count}'**
+  String wallVariantDotLabelPlain(int index, int count);
+
+  /// Screen reader hint for tapping a colour dot.
+  ///
+  /// In en, this message translates to:
+  /// **'Show this colour'**
+  String get wallVariantDotHint;
+
+  /// Screen reader tap hint on a wallpaper with colour variants.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the next colour'**
+  String get wallVariantNextHint;
+
+  /// Line on a pending upload that is a colour variant.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour variant. It joins the set after review.'**
+  String get wallVariantPending;
+
+  /// Line on an upload that joined a set of colour variants.
+  ///
+  /// In en, this message translates to:
+  /// **'In a set of colour variants'**
+  String get wallVariantLinked;
+
+  /// Title line on an upload whose colour variant link was refused. It stays as its own wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Not added as a colour variant'**
+  String get wallVariantDroppedTitle;
+
+  /// Reason line.
+  ///
+  /// In en, this message translates to:
+  /// **'The original wallpaper was removed.'**
+  String get wallVariantDroppedNotFound;
+
+  /// Reason line.
+  ///
+  /// In en, this message translates to:
+  /// **'The original belongs to another creator.'**
+  String get wallVariantDroppedNotOwner;
+
+  /// Reason line.
+  ///
+  /// In en, this message translates to:
+  /// **'The original is not approved.'**
+  String get wallVariantDroppedNotApproved;
+
+  /// Reason line.
+  ///
+  /// In en, this message translates to:
+  /// **'The set already has 5 colours.'**
+  String get wallVariantDroppedFull;
+
+  /// Reason line.
+  ///
+  /// In en, this message translates to:
+  /// **'It has a different shape from the original.'**
+  String get wallVariantDroppedAspect;
+
   /// No description provided for @wallMetadataApprovedHelp.
   ///
   /// In en, this message translates to:

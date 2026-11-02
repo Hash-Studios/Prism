@@ -86,6 +86,7 @@ import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/variant_group.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/wall_credit.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
@@ -98,12 +99,14 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/desktop_version_sh
 import 'package:Prism/features/wallpaper_detail/views/widgets/editors_choice_label.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_scene_row.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/variant_dots.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wall_credit_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_recommendations.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
 import 'package:Prism/features/wallpaper_history/domain/recently_viewed_rules.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
+import 'package:Prism/features/wallpaper_upload/biz/variant_seed.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/wall_metadata_editor.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -112,12 +115,12 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
 @visibleForTesting
@@ -160,6 +163,11 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
 
   /// The grid this wall was opened from. A sideways swipe on the card shows the next or previous wall in place.
   final WallpaperFeed? feed;
+
+  /// Warms one colour variant's pictures. Tests replace it.
+  @visibleForTesting
+  static Future<void> Function(BuildContext context, WallpaperDisplaySource display) precacheVariant =
+      precacheWallpaperDisplay;
 
   // One bloc per route: a shared bloc showed the last wallpaper while the new one loaded.
   @override
@@ -1053,6 +1061,92 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     _Immersion.read(context)?.toggle(ImmersiveToggleSourceValue.tap);
   }
 
+  /// A tap on a wall with colour variants shows the next one. While the controls are hidden, a tap shows them again,
+  /// so a variant wall never traps the user in immersive mode. A wall with no variants toggles immersive mode.
+  void _onCardTap(WallpaperDetailLoaded state) {
+    final VariantGroup? group = state.variants;
+    if (group == null || (_Immersion.maybeOf(context)?.on ?? false)) {
+      _toggleImmersive();
+      return;
+    }
+    _selectVariant(state, (state.variantIndex + 1) % group.length, VariantSwitchSourceValue.tap);
+  }
+
+  void _selectVariant(WallpaperDetailLoaded state, int index, VariantSwitchSourceValue source) {
+    final VariantGroup? group = state.variants;
+    if (group == null || index == state.variantIndex) return;
+    _hideHint();
+    context.read<WallpaperDetailBloc>().add(SelectVariant(index: index));
+    unawaited(
+      analytics.track(
+        WallpaperVariantSwitchedEvent(
+          source: source,
+          wallId: group.walls[index].id,
+          variantIndex: index,
+          variantCount: group.length,
+        ),
+      ),
+    );
+  }
+
+  String? _warmedVariants;
+
+  void _warmVariants(VariantGroup group) {
+    if (_warmedVariants == group.id) return;
+    _warmedVariants = group.id;
+    for (final PrismWallpaper wall in group.walls) {
+      unawaited(
+        WallpaperDetailScreen.precacheVariant(
+          context,
+          WallpaperDisplaySource.of(PrismFeedItem(id: wall.id, wallpaper: wall)),
+        ).catchError((Object _) {}),
+      );
+    }
+  }
+
+  /// The wall on screen when its colour variants arrived. A variant can only be picked after that, so it is the wall
+  /// this screen opened.
+  String? _openedVariantId;
+
+  /// The downloaded file this screen opened with, while that wall is on screen. Another colour variant never uses it.
+  File? _localFileFor(WallpaperDetailLoaded state) {
+    final File? file = widget.localFile;
+    if (file == null || state.variants == null) return file;
+    _openedVariantId ??= state.entity.id;
+    return state.entity.id == _openedVariantId ? file : null;
+  }
+
+  Future<void> _addVariant(BuildContext context, WallpaperDetailLoaded state, PrismWallpaper wall) async {
+    final String? docId = wall.firestoreDocumentId;
+    if (docId == null) return;
+    unawaited(
+      analytics.track(WallpaperVariantUploadStartedEvent(wallId: wall.id, variantCount: state.variants?.length ?? 1)),
+    );
+    final router = context.router;
+    final AppLocalizations l10n = context.l10n;
+    final XFile? picked;
+    try {
+      picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    } catch (error, stackTrace) {
+      logger.w('Variant image could not be picked', error: error, stackTrace: stackTrace);
+      if (mounted) toasts.error(l10n.coreSomethingWentWrong);
+      return;
+    }
+    if (picked == null || !mounted) return;
+    unawaited(
+      router.push(
+        UploadWallRoute(
+          image: File(picked.path),
+          variantSeed: VariantSeed(
+            wallDocId: docId,
+            thumbnailUrl: WallpaperDisplaySource.of(state.entity).thumbnail,
+            title: wall.title,
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Shows "Tap to hide controls" on the first wall the user ever opens, for a few seconds.
   void _maybeShowImmersiveHint() {
     if (_hintChecked || !mounted) return;
@@ -1104,6 +1198,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           _loadMoreRecommendations();
         }
         if (state is WallpaperDetailLoaded) _observeLoaded(state);
+        if (state is WallpaperDetailLoaded && state.variants != null) _warmVariants(state.variants!);
       },
       child: BlocBuilder<WallpaperDetailBloc, WallpaperDetailState>(
         builder: (context, state) {
@@ -1399,6 +1494,28 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                                   ),
                                 )
                               else ...[
+                                if (state.variants case final VariantGroup group)
+                                  SliverToBoxAdapter(
+                                    child: SafeArea(
+                                      top: false,
+                                      bottom: false,
+                                      child: _panelColumn(
+                                        Padding(
+                                          padding: const EdgeInsetsDirectional.only(
+                                            start: _sheetHPad,
+                                            end: _sheetHPad,
+                                            top: PrismSpace.xs,
+                                          ),
+                                          child: VariantDots(
+                                            group: group,
+                                            selected: state.variantIndex,
+                                            onSelect: (index) =>
+                                                _selectVariant(state, index, VariantSwitchSourceValue.dot),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 SliverToBoxAdapter(
                                   child: SafeArea(
                                     top: false,
@@ -1517,8 +1634,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                           final display = WallpaperDisplaySource.of(entity);
                           pushClockPreview(
                             context,
-                            link: widget.localFile?.path ?? display.bestLink,
-                            file: widget.localFile != null,
+                            link: _localFileFor(state)?.path ?? display.bestLink,
+                            file: _localFileFor(state) != null,
                             wallpaperId: entity.id,
                             wallpaperSource: entity.source,
                             thumbnailUrl: display.thumbnail,
@@ -1560,7 +1677,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   /// What a screen reader hears on the card, with actions to hide or show the controls and to step through the feed.
-  Widget _cardSemantics(_FeedStep? feed, {required Widget child}) {
+  Widget _cardSemantics(_FeedStep? feed, {required Widget child, WallpaperDetailLoaded? state}) {
+    final VariantGroup? variants = state?.variants;
     final _Immersion? immersion = _Immersion.maybeOf(context);
     final String? immersiveAction = immersion == null
         ? null
@@ -1579,6 +1697,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       onTapHint: immersiveAction,
       customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
         if (immersiveAction != null) CustomSemanticsAction(label: immersiveAction): toggle,
+        if (state != null && variants != null)
+          CustomSemanticsAction(label: context.l10n.wallVariantNextHint): () =>
+              _selectVariant(state, (state.variantIndex + 1) % variants.length, VariantSwitchSourceValue.tap),
         if (feed != null && feed.hasPrevious)
           CustomSemanticsAction(label: context.l10n.wallpaperPreviousInFeed): () => feed.step(-1),
         if (feed != null && feed.hasNext)
@@ -1828,8 +1949,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   Widget _buildColorBar(BuildContext context, WallpaperDetailLoaded state) {
     final String fullUrl = state.entity.fullUrl.trim();
-    if (widget.localFile != null || !isValidNetworkUrl(fullUrl)) {
-      return _buildColorBarWithImage(context, state, localFile: widget.localFile);
+    final File? openedFile = _localFileFor(state);
+    if (openedFile != null || !isValidNetworkUrl(fullUrl)) {
+      return _buildColorBarWithImage(context, state, localFile: openedFile);
     }
 
     return FutureBuilder<File?>(
@@ -2221,7 +2343,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final (String, bool) historyOwner = (app_state.prismUser.id, app_state.prismUser.loggedIn);
     final url = entity.fullUrl;
     final String previewTitle = wallpaperPreviewTitle(context.l10n, entity);
-    final File? localFile = widget.localFile;
+    final File? localFile = _localFileFor(state);
     final DownloadedWallRef? localIdentity = localFile != null && getIt.isRegistered<DownloadedWallIndex>()
         ? getIt<DownloadedWallIndex>().resolve(localFile.path)
         : null;
@@ -2445,9 +2567,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     try {
       imageUrl = await resolveOriginalWithConsent(
         context,
-        url: widget.localFile?.path ?? entity.fullUrl,
+        url: _localFileFor(state)?.path ?? entity.fullUrl,
         wallpaperId: entity.id,
-        wallpaperSource: widget.localFile == null ? entity.source : WallpaperSource.downloaded,
+        wallpaperSource: _localFileFor(state) == null ? entity.source : WallpaperSource.downloaded,
         action: OriginalAccessAction.live,
         label: context.l10n.wallpaperMakeItLive,
       );
@@ -2630,6 +2752,20 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             ),
           ),
         ),
+      if (entity case PrismFeedItem(
+        :final wallpaper,
+      ) when _canEditMetadata(wallpaper) && !(state.variants?.isFull ?? false))
+        padded(
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: PrismButton(
+              label: context.l10n.wallVariantAdd,
+              icon: Icons.add_photo_alternate_outlined,
+              variant: PrismButtonVariant.tonal,
+              onPressed: () => _addVariant(context, state, wallpaper),
+            ),
+          ),
+        ),
       if (entity case PrismFeedItem(:final wallpaper)
           when wallpaper.review == true &&
               wallpaper.firestoreDocumentId != null &&
@@ -2791,10 +2927,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             },
             child: _cardSemantics(
               feed,
+              state: state,
               child: _FeedDragSurface(
                 feed: feed,
                 zoomable: _Immersion.maybeOf(context)?.on ?? false,
-                onTap: _toggleImmersive,
+                onTap: () => _onCardTap(state),
                 child: _withHero(image),
               ),
             ),
@@ -2859,7 +2996,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   /// It decodes for the whole screen, so immersive mode shows the same picture with no new decode.
   Widget _buildWallpaperImage(BuildContext context, WallpaperDetailLoaded state, bool paletteLoading) {
     final FeedItemEntity entity = state.entity;
-    final File? localFile = widget.localFile;
+    final File? localFile = _localFileFor(state);
     final Widget image = localFile != null
         ? ProgressiveWallpaperImage(
             display: WallpaperDisplaySource(
@@ -2877,8 +3014,20 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             errorBuilder: (_, _) =>
                 Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state))),
           );
+    // A colour variant cross-fades in over the one on screen, which stays opaque under it, so the card never dims.
+    final Key shown = ValueKey<String>('${entity.source.name}:${entity.id}');
     return SizedBox.expand(
-      child: _HueTint(tint: state.tint, duration: context.motion(const Duration(milliseconds: 220)), child: image),
+      child: AnimatedSwitcher(
+        duration: context.motion(PrismDurations.base),
+        switchInCurve: PrismCurves.enter,
+        layoutBuilder: (current, previous) => Stack(fit: StackFit.expand, children: [...previous, ?current]),
+        transitionBuilder: (child, animation) =>
+            child.key == shown ? FadeTransition(opacity: animation, child: child) : child,
+        child: KeyedSubtree(
+          key: shown,
+          child: _HueTint(tint: state.tint, duration: context.motion(const Duration(milliseconds: 220)), child: image),
+        ),
+      ),
     );
   }
 

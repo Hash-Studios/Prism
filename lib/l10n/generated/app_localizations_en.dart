@@ -11373,6 +11373,69 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallMetadataEditDetails => 'Edit details';
 
   @override
+  String get wallVariantAdd => 'Add a colour variant';
+
+  @override
+  String wallVariantUploadContext(String title) {
+    return 'Colour variant of $title';
+  }
+
+  @override
+  String get wallVariantUploadContextUntitled => 'Colour variant of your wallpaper';
+
+  @override
+  String get wallVariantUploadHint => 'Use the same size and shape as the original. It joins the set after review.';
+
+  @override
+  String get wallVariantUnlinkTooltip => 'Upload as a new wallpaper instead';
+
+  @override
+  String wallVariantCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count colours');
+    return '$_temp0';
+  }
+
+  @override
+  String wallVariantDotLabel(int index, int count, String colour) {
+    return 'Variant $index of $count, $colour';
+  }
+
+  @override
+  String wallVariantDotLabelPlain(int index, int count) {
+    return 'Variant $index of $count';
+  }
+
+  @override
+  String get wallVariantDotHint => 'Show this colour';
+
+  @override
+  String get wallVariantNextHint => 'Show the next colour';
+
+  @override
+  String get wallVariantPending => 'Colour variant. It joins the set after review.';
+
+  @override
+  String get wallVariantLinked => 'In a set of colour variants';
+
+  @override
+  String get wallVariantDroppedTitle => 'Not added as a colour variant';
+
+  @override
+  String get wallVariantDroppedNotFound => 'The original wallpaper was removed.';
+
+  @override
+  String get wallVariantDroppedNotOwner => 'The original belongs to another creator.';
+
+  @override
+  String get wallVariantDroppedNotApproved => 'The original is not approved.';
+
+  @override
+  String get wallVariantDroppedFull => 'The set already has 5 colours.';
+
+  @override
+  String get wallVariantDroppedAspect => 'It has a different shape from the original.';
+
+  @override
   String get wallMetadataApprovedHelp =>
       'Change the title, description and tags. The image and category stay the same.';
 

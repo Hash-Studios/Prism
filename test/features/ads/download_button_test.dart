@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:Prism/core/auth/require_signed_in_action.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -191,6 +192,39 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(requestCount, 1);
+  });
+
+  testWidgets('an empty protected link refreshes saved state when the wallpaper id changes', (tester) async {
+    final bool Function(String) previousCheck = CoinsService.instance.isLinkDownloaded;
+    CoinsService.instance.isLinkDownloaded = (String link) => link == 'wall-a.jpg';
+    app_state.prismUser = profileUser(premium: true);
+    addTearDown(() async {
+      CoinsService.instance.isLinkDownloaded = previousCheck;
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await getIt.reset();
+    });
+
+    const Key key = ValueKey<String>('download-variant');
+    Widget button(String id) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: DownloadButton(
+          key: key,
+          link: '',
+          contentId: id,
+          wallpaperSource: WallpaperSource.prism,
+          primary: true,
+          label: 'Download',
+        ),
+      ),
+    );
+    await tester.pumpWidget(button('wall-a'));
+    expect(find.text(AppLocalizationsEn().economyDownloadSaved), findsOneWidget);
+
+    await tester.pumpWidget(button('wall-b'));
+
+    expect(find.text(AppLocalizationsEn().economyDownloadSaved), findsNothing);
   });
 
   testWidgets('successful download records callback when permission prompt fails', (tester) async {

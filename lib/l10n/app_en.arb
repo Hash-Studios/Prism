@@ -10897,6 +10897,107 @@
   "wallResubmitUnsupported": "Choose the original image again. AI source details cannot be reused.",
   "wallResubmitUnavailable": "Unable to load this rejected upload. Try again.",
   "wallMetadataEditDetails": "Edit details",
+  "wallVariantAdd": "Add a colour variant",
+  "@wallVariantAdd": {
+    "description": "Button on the creator's own approved wallpaper. Opens the upload flow to add the same wallpaper in another colour."
+  },
+  "wallVariantUploadContext": "Colour variant of {title}",
+  "@wallVariantUploadContext": {
+    "description": "Chip on the upload screen that names the wallpaper this upload is a colour of.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "wallVariantUploadContextUntitled": "Colour variant of your wallpaper",
+  "@wallVariantUploadContextUntitled": {
+    "description": "Same chip when the original has no title."
+  },
+  "wallVariantUploadHint": "Use the same size and shape as the original. It joins the set after review.",
+  "@wallVariantUploadHint": {
+    "description": "Help text under the chip on the upload screen."
+  },
+  "wallVariantUnlinkTooltip": "Upload as a new wallpaper instead",
+  "@wallVariantUnlinkTooltip": {
+    "description": "Tooltip on the chip's remove button."
+  },
+  "wallVariantCount": "{count, plural, other{{count} colours}}",
+  "@wallVariantCount": {
+    "description": "Small caption before the row of colour dots on a wallpaper with colour variants.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallVariantDotLabel": "Variant {index} of {count}, {colour}",
+  "@wallVariantDotLabel": {
+    "description": "Screen reader label for one colour dot.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      },
+      "colour": {
+        "type": "String"
+      }
+    }
+  },
+  "wallVariantDotLabelPlain": "Variant {index} of {count}",
+  "@wallVariantDotLabelPlain": {
+    "description": "Screen reader label for a colour dot whose colour has no name.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallVariantDotHint": "Show this colour",
+  "@wallVariantDotHint": {
+    "description": "Screen reader hint for tapping a colour dot."
+  },
+  "wallVariantNextHint": "Show the next colour",
+  "@wallVariantNextHint": {
+    "description": "Screen reader tap hint on a wallpaper with colour variants."
+  },
+  "wallVariantPending": "Colour variant. It joins the set after review.",
+  "@wallVariantPending": {
+    "description": "Line on a pending upload that is a colour variant."
+  },
+  "wallVariantLinked": "In a set of colour variants",
+  "@wallVariantLinked": {
+    "description": "Line on an upload that joined a set of colour variants."
+  },
+  "wallVariantDroppedTitle": "Not added as a colour variant",
+  "@wallVariantDroppedTitle": {
+    "description": "Title line on an upload whose colour variant link was refused. It stays as its own wallpaper."
+  },
+  "wallVariantDroppedNotFound": "The original wallpaper was removed.",
+  "@wallVariantDroppedNotFound": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedNotOwner": "The original belongs to another creator.",
+  "@wallVariantDroppedNotOwner": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedNotApproved": "The original is not approved.",
+  "@wallVariantDroppedNotApproved": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedFull": "The set already has 5 colours.",
+  "@wallVariantDroppedFull": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedAspect": "It has a different shape from the original.",
+  "@wallVariantDroppedAspect": {
+    "description": "Reason line."
+  },
   "wallMetadataApprovedHelp": "Change the title, description and tags. The image and category stay the same.",
   "wallMetadataPendingHelp": "Update these details before your wallpaper is reviewed.",
   "wallMetadataSave": "Save details",

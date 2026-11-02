@@ -1,4 +1,5 @@
 import 'package:Prism/data/categories/categories.dart';
+import 'package:Prism/features/wallpaper_upload/biz/variant_seed.dart';
 import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
 import 'package:flutter/widgets.dart' show StringCharacters;
 
@@ -91,6 +92,10 @@ class SubmissionMetadata {
     this.challengeId = '',
     this.challengeTheme = '',
     this.challengeRemoved = false,
+    this.variantOf = '',
+    this.variantThumb = '',
+    this.variantTitle = '',
+    this.variantRemoved = false,
   });
 
   final String title;
@@ -106,8 +111,21 @@ class SubmissionMetadata {
   final String challengeId;
   final String challengeTheme;
   final bool challengeRemoved;
+
+  /// The creator's approved wall this upload is a colour variant of, or empty when it is none.
+  final String variantOf;
+  final String variantThumb;
+  final String variantTitle;
+  final bool variantRemoved;
   ChallengeSeed? get challengeSeed =>
       challengeId.isEmpty ? null : ChallengeSeed(id: challengeId, theme: challengeTheme);
+  VariantSeed? get variantSeed => variantOf.isEmpty
+      ? null
+      : VariantSeed(
+          wallDocId: variantOf,
+          thumbnailUrl: variantThumb,
+          title: variantTitle.isEmpty ? null : variantTitle,
+        );
 
   bool get hasTitle => title.trim().isNotEmpty;
 
@@ -121,6 +139,10 @@ class SubmissionMetadata {
     String? challengeId,
     String? challengeTheme,
     bool? challengeRemoved,
+    String? variantOf,
+    String? variantThumb,
+    String? variantTitle,
+    bool? variantRemoved,
   }) => SubmissionMetadata(
     title: title ?? this.title,
     description: description ?? this.description,
@@ -131,5 +153,9 @@ class SubmissionMetadata {
     challengeId: challengeId ?? this.challengeId,
     challengeTheme: challengeTheme ?? this.challengeTheme,
     challengeRemoved: challengeRemoved ?? this.challengeRemoved,
+    variantOf: variantOf ?? this.variantOf,
+    variantThumb: variantThumb ?? this.variantThumb,
+    variantTitle: variantTitle ?? this.variantTitle,
+    variantRemoved: variantRemoved ?? this.variantRemoved,
   );
 }

@@ -329,3 +329,27 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
     );
   }
 }
+
+/// Decodes the thumbnail of [display], and downloads and decodes its full picture, with the keys a
+/// [ProgressiveWallpaperImage] for it reads. A widget built afterwards paints from memory, so a switch shows no blank
+/// frame. A failure is ignored: the widget loads the picture itself.
+Future<void> precacheWallpaperDisplay(BuildContext context, WallpaperDisplaySource display, {Size? decodeBox}) async {
+  final Size box = decodeBox ?? MediaQuery.sizeOf(context);
+  final double ratio = MediaQuery.devicePixelRatioOf(context);
+  ImageProvider sized(ImageProvider provider) => sizedWallpaperImage(provider, box, ratio, display.pixelSize);
+  final List<Future<void>> work = <Future<void>>[
+    if (isValidNetworkUrl(display.thumbnail))
+      precacheImage(
+        sized(CachedNetworkImageProvider(display.thumbnail, cacheManager: PrismImageCache.instance)),
+        context,
+        onError: (_, _) {},
+      ),
+  ];
+  if (isValidNetworkUrl(display.full)) {
+    try {
+      final File file = await PrismFullImageCache.instance.getSingleFile(display.full);
+      if (context.mounted) work.add(precacheImage(sized(FileImage(file)), context, onError: (_, _) {}));
+    } catch (_) {}
+  }
+  await Future.wait(work);
+}

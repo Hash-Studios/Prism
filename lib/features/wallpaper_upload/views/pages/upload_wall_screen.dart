@@ -21,6 +21,7 @@ import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_quality.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_session.dart';
+import 'package:Prism/features/wallpaper_upload/biz/variant_seed.dart';
 import 'package:Prism/features/wallpaper_upload/data/last_submission_defaults_store.dart';
 import 'package:Prism/features/wallpaper_upload/data/resubmission_repository.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
@@ -32,6 +33,7 @@ import 'package:Prism/features/wallpaper_upload/views/widgets/submission_metadat
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_batch_stepper.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_checks_card.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_preview_row.dart';
+import 'package:Prism/features/wallpaper_upload/views/widgets/variant_context_chip.dart';
 import 'package:Prism/features/weekly_challenges/biz/challenge_admission_tracker.dart';
 import 'package:Prism/features/weekly_challenges/biz/confirm_challenge_submission.dart';
 import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
@@ -48,6 +50,7 @@ export 'package:Prism/features/wallpaper_upload/biz/resubmission_seed.dart' show
 // The generated routes name these types in their arguments.
 export 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart' show SubmissionMetadata;
 export 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart' show UploadBatch;
+export 'package:Prism/features/wallpaper_upload/biz/variant_seed.dart' show VariantSeed;
 export 'package:Prism/features/wallpaper_upload/data/last_submission_defaults_store.dart'
     show LastSubmissionDefaultsStore;
 export 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart' show UploadDraft;
@@ -62,6 +65,7 @@ class UploadWallScreen extends StatefulWidget {
     this.resubmission,
     this.resumedDraft,
     this.challengeSeed,
+    this.variantSeed,
     @visibleForTesting this.imageSizeForTesting,
     @visibleForTesting this.prepareImageForTesting,
     @visibleForTesting this.uploadFileForTesting,
@@ -81,6 +85,7 @@ class UploadWallScreen extends StatefulWidget {
   /// Set when this image is one of several picked together. All screens of the batch share this object.
   final UploadBatch? batch;
   final ChallengeSeed? challengeSeed;
+  final VariantSeed? variantSeed;
 
   @visibleForTesting
   final Size? imageSizeForTesting;
@@ -165,6 +170,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   late List<int> imageBytesThumb;
   bool _submitted = false;
   bool _challengeRemoved = false;
+  bool _variantRemoved = false;
   bool _submissionAttempted = false;
   bool _submissionUnresolved = false;
   bool _discarding = false;
@@ -206,6 +212,13 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         title: seed.theme.length > maxSubmissionTitleLength
             ? seed.theme.substring(0, maxSubmissionTitleLength)
             : seed.theme,
+      );
+    }
+    if (widget.variantSeed case final variant?) {
+      _metadata = _metadata.copyWith(
+        variantOf: variant.wallDocId,
+        variantThumb: variant.thumbnailUrl,
+        variantTitle: variant.title ?? '',
       );
     }
     if (widget.resumedDraft case final draft? when draft.owner == _draftOwner) {
@@ -271,6 +284,19 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         : seed == null
         ? restored
         : restored.copyWith(challengeId: seed.id, challengeTheme: seed.theme);
+    final variant = widget.variantSeed;
+    // A new "Add a colour variant" choice wins over a link removed in an older draft of the same image.
+    _variantRemoved = _variantRemoved || (variant == null && restored.variantRemoved);
+    _metadata = _variantRemoved
+        ? _metadata.copyWith(variantOf: '', variantThumb: '', variantTitle: '', variantRemoved: true)
+        : variant == null
+        ? _metadata
+        : _metadata.copyWith(
+            variantOf: variant.wallDocId,
+            variantThumb: variant.thumbnailUrl,
+            variantTitle: variant.title ?? '',
+            variantRemoved: false,
+          );
   }
 
   Future<Uint8List> _compressFile(File file) async {
@@ -589,6 +615,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 widget.batch?.confirmedUploadAward = (coins: result.delta, ownerId: app_state.prismUser.id);
               },
               challengeId: _metadata.challengeId,
+              variantOf: _metadata.variantRemoved ? '' : _metadata.variantOf,
             );
       if (result == WallSubmissionResult.quotaExceeded && _submissionUnresolved) {
         setState(() {
@@ -1092,6 +1119,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       challengeId: _metadata.challengeId,
                       challengeTheme: _metadata.challengeTheme,
                       challengeRemoved: _metadata.challengeRemoved,
+                      variantOf: _metadata.variantOf,
+                      variantThumb: _metadata.variantThumb,
+                      variantTitle: _metadata.variantTitle,
+                      variantRemoved: _metadata.variantRemoved,
                     );
                     unawaited(_persistDraft().then<void>((_) {}));
                   },
@@ -1105,6 +1136,22 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                         _challengeRemoved = true;
                         _metadata = _metadata.copyWith(challengeId: '', challengeTheme: '', challengeRemoved: true);
                         widget.batch?.challengeSeed = null;
+                      });
+                      unawaited(_persistDraft().then<void>((_) {}));
+                    },
+                  ),
+                if (_metadata.variantSeed case final seed? when !_metadata.variantRemoved)
+                  VariantContextChip(
+                    seed: seed,
+                    onRemove: () {
+                      setState(() {
+                        _variantRemoved = true;
+                        _metadata = _metadata.copyWith(
+                          variantOf: '',
+                          variantThumb: '',
+                          variantTitle: '',
+                          variantRemoved: true,
+                        );
                       });
                       unawaited(_persistDraft().then<void>((_) {}));
                     },
