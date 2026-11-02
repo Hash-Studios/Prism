@@ -62,6 +62,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/creator_tips/views/widgets/tip_sheet.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
+import 'package:Prism/features/editors_choice/biz/editors_choice_cubit.dart';
 import 'package:Prism/features/editors_choice/domain/editors_choice_repository.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -796,6 +797,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Future<File?>? _offlinePreviewFuture;
   final Map<String, bool> _pickOverrides = <String, bool>{};
   bool _pickBusy = false;
+  EditorsChoiceCubit? _picks;
 
   void _recordTaste(TasteAction action, FeedItemEntity entity) {
     final TasteSignal signal = entity.when(
@@ -999,6 +1001,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   @override
   void dispose() {
+    unawaited(_picks?.close());
     _routeAnimation?.removeStatusListener(_onRouteAnimationStatus);
     _shapeMorph.dispose();
     _hintTimer?.cancel();
@@ -2547,7 +2550,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final bool next = !_isPick(wall);
     setState(() => _pickBusy = true);
     try {
-      await getIt<EditorsChoiceRepository>().setPick(wallDocId: docId, picked: next);
+      await (_picks ??= getIt<EditorsChoiceCubit>()).setPick(wallDocId: docId, picked: next);
       if (!mounted) return;
       setState(() => _pickOverrides[docId] = next);
       toasts.success(next ? l10n.editorsChoicePicked : l10n.editorsChoiceUnpicked);

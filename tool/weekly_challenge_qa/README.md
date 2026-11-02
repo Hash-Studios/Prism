@@ -91,8 +91,18 @@ Run these steps in order. Use one `--root` for the whole run.
 ```sh
 npm --prefix functions run build
 node tool/weekly_challenge_qa.cjs prepare
+```
+
+Run these in separate foreground terminals:
+
+```sh
 node tool/weekly_challenge_qa.cjs serve
 node tool/weekly_challenge_qa.cjs emulators
+```
+
+When both are ready, run these in order:
+
+```sh
 node tool/weekly_challenge_qa.cjs seed
 node tool/weekly_challenge_qa.cjs seed-editors-choice
 ```

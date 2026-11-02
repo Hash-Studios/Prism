@@ -25,4 +25,14 @@ void main() {
 
     expect(cubit.state, isA<EditorsChoiceFailed>());
   });
+
+  test('setPick forwards the change to the repository', () async {
+    final FakeEditorsChoiceRepository repository = FakeEditorsChoiceRepository();
+    final EditorsChoiceCubit cubit = EditorsChoiceCubit(repository);
+    addTearDown(cubit.close);
+
+    await cubit.setPick(wallDocId: 'wall-1', picked: true);
+
+    expect(repository.picks, <(String, bool)>[('wall-1', true)]);
+  });
 }

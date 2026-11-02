@@ -46,6 +46,10 @@ class EditorsChoiceCubit extends Cubit<EditorsChoiceState> {
     return super.close();
   }
 
+  /// Admin only. Sets or clears one pick. Throws [EditorsChoiceNotEligible] when the server refuses the wall.
+  Future<void> setPick({required String wallDocId, required bool picked}) =>
+      _repository.setPick(wallDocId: wallDocId, picked: picked);
+
   /// Loads the newest [limit] picks.
   Future<void> load({required int limit}) async {
     if (isClosed) return;

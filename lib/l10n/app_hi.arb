@@ -12592,7 +12592,7 @@
   "@wallCreditByHashStudios": {
     "description": "Credit line for a wallpaper made by Hash Studios."
   },
-  "wallCreditPrismExclusive": "Prism की खास पेशकश",
+  "wallCreditPrismExclusive": "सिर्फ़ Prism पर",
   "@wallCreditPrismExclusive": {
     "description": "Credit line for a wallpaper that is exclusive to Prism."
   },

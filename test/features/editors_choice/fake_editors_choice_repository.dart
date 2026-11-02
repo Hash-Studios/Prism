@@ -33,7 +33,8 @@ class FakeEditorsChoiceRepository implements EditorsChoiceRepository {
     return walls;
   }
 
+  final List<(String, bool)> picks = <(String, bool)>[];
+
   @override
-  Future<void> setPick({required String wallDocId, required bool picked}) =>
-      Future<void>.error(UnimplementedError('setPick is not used by these tests'));
+  Future<void> setPick({required String wallDocId, required bool picked}) async => picks.add((wallDocId, picked));
 }

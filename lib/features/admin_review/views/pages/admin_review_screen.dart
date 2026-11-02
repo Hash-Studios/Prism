@@ -17,6 +17,7 @@ import 'package:Prism/features/admin_review/views/widgets/notification_sender_ta
 import 'package:Prism/features/admin_review/views/widgets/reject_reason_sheet.dart';
 import 'package:Prism/features/admin_review/views/widgets/report_cards.dart';
 import 'package:Prism/features/admin_review/views/widgets/wall_resubmission_notice.dart';
+import 'package:Prism/features/editors_choice/biz/editors_choice_cubit.dart';
 import 'package:Prism/features/editors_choice/domain/editors_choice_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -41,6 +42,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
   late Stream<List<FirestoreDocument>> _openReportsStream;
   late Stream<(int, int)> _pendingCountsStream;
   final Map<String, Future<String?>> _requestTexts = <String, Future<String?>>{};
+  EditorsChoiceCubit? _picks;
 
   @override
   void initState() {
@@ -86,6 +88,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
 
   @override
   void dispose() {
+    unawaited(_picks?.close());
     _controller.dispose();
     super.dispose();
   }
@@ -217,7 +220,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
               final AppLocalizations l10n = context.l10n;
               await _repository.approveWall(wall);
               try {
-                await getIt<EditorsChoiceRepository>().setPick(wallDocId: wall.id, picked: true);
+                await (_picks ??= getIt<EditorsChoiceCubit>()).setPick(wallDocId: wall.id, picked: true);
                 unawaited(analytics.track(const EditorsChoicePickChangedEvent(picked: true, surface: 'review')));
                 toasts.success(l10n.editorsChoicePicked);
               } on EditorsChoiceNotEligible {

@@ -84,4 +84,30 @@ void main() {
     expect(find.byType(ModerationDangerButton), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('Retry runs the failed action again through the same guard', (WidgetTester tester) async {
+    int calls = 0;
+    await tester.pumpWidget(
+      _app(
+        _card(
+          onApprove: () async {
+            calls++;
+            if (calls == 1) throw StateError('offline');
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(PrismButton, 'Approve'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(PrismButton, 'Retry'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(PrismButton, 'Retry'));
+    await tester.tap(find.widgetWithText(PrismButton, 'Retry'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    expect(calls, 2);
+    expect(find.widgetWithText(PrismButton, 'Retry'), findsNothing);
+  });
 }

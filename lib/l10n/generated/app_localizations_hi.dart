@@ -13045,7 +13045,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallCreditByHashStudios => 'Hash Studios द्वारा';
 
   @override
-  String get wallCreditPrismExclusive => 'Prism की खास पेशकश';
+  String get wallCreditPrismExclusive => 'सिर्फ़ Prism पर';
 
   @override
   String get wallCreditOnPexels => 'Pexels से';

@@ -148,7 +148,7 @@ class _ModerationCardState extends State<ModerationCard> {
                   label: context.l10n.adminRetry,
                   variant: PrismButtonVariant.ghost,
                   size: PrismButtonSize.compact,
-                  onPressed: _isApproving ? null : () => _approvalAction?.call(),
+                  onPressed: _isApproving || _approvalAction == null ? null : () => _runApproval(_approvalAction!),
                 ),
               ],
             ),
