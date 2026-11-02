@@ -18,7 +18,7 @@ const APP_LINK_PATHS = [
   '/dashboard/rewards', '/dashboard/streak', '/dashboard/collection', '/ai',
   '/wallpaper-detail', '/wotd-archive', '/download-wallpaper', '/wallpaper-filter', '/choose-wallpaper', '/premium', '/paywall',
   '/edit-profile', '/share-prism',
-  '/settings', '/blocked-accounts', '/about', '/fav-walls', '/downloads', '/library', '/upload-wall', '/edit-wall',
+  '/settings', '/layout', '/blocked-accounts', '/about', '/fav-walls', '/downloads', '/library', '/upload-wall', '/edit-wall',
   '/review', '/coin-transactions', '/theme', '/notifications', '/collection-view', '/gallery', '/requests', '/creators', '/wrapped', '/followers', '/following',
   '/admin-review', '/admin-review/swipe', '/admin-review/image', '/admin-firestore-telemetry', '/admin-promo-codes', '/debug-panel',
   '/daily-moment', '/daily-chest', '/spin-wheel',

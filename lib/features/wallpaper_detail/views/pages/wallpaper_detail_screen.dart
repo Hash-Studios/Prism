@@ -88,6 +88,7 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/ai_generated_tag.d
 import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/depth_effect_row.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/desktop_version_sheet.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_scene_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
@@ -969,10 +970,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       // The card grows from the top of the page, so the page scrolls back to it.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_scroll.hasClients || _scroll.offset <= 0) return;
-        final Duration duration = context.motion(PrismDurations.base);
-        duration == Duration.zero
-            ? _scroll.jumpTo(0)
-            : unawaited(_scroll.animateTo(0, duration: duration, curve: PrismCurves.enter));
+        unawaited(_scroll.animateOrJump(0, duration: context.motion(PrismDurations.base), curve: PrismCurves.enter));
       });
     }
     _immersive = immersive;
@@ -2746,6 +2744,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       if (depthTier != null && showsDepthEffect(depthTier)) padded(DepthEffectRow(tier: depthTier)),
       if (spatial != null && showsSpatialScene(spatial.tier))
         padded(SpatialSceneRow(tier: spatial.tier, wallId: entity.id)),
+      if (entity case PrismFeedItem(:final wallpaper) when wallpaper.desktop != null)
+        padded(
+          DesktopVersionChip(
+            wall: wallpaper,
+            canSendToComputer: !isPremiumFeedItem(entity, app_state.premiumCollections) && !wallpaper.isStreakExclusive,
+          ),
+        ),
       if (!hideSetWallpaperUi && (entity.fullUrl.trim().isNotEmpty || entity.source == WallpaperSource.prism))
         padded(
           Align(

@@ -12496,6 +12496,102 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get desktopVersionChip => 'Versi desktop';
+
+  @override
+  String get desktopVersionChipSemantic => 'Buka versi desktop';
+
+  @override
+  String get desktopVersionSheetTitle => 'Versi desktop';
+
+  @override
+  String desktopVersionSheetBody(int width, int height) {
+    return 'Gambar yang sama, dibuat lebar untuk layar komputer. $width × $height.';
+  }
+
+  @override
+  String get desktopVersionPreviewSemantic => 'Versi desktop di layar komputer';
+
+  @override
+  String get desktopVersionSendToComputer => 'Kirim ke komputer saya';
+
+  @override
+  String desktopVersionShareText(String url) {
+    return 'Dapatkan wallpaper ini untuk komputer Anda: $url';
+  }
+
+  @override
+  String get desktopVersionShareSubject => 'Wallpaper desktop dari Prism';
+
+  @override
+  String get desktopVersionSetOnTablet => 'Pasang versi desktop';
+
+  @override
+  String get desktopVersionSaveOnTablet => 'Simpan versi desktop ke Foto';
+
+  @override
+  String get desktopVersionUnavailable => 'Versi desktop tidak dapat diambil. Periksa koneksi Anda, lalu coba lagi.';
+
+  @override
+  String get layoutTitle => 'Tata letak';
+
+  @override
+  String get layoutRowSubtitle => 'Tab dan kisi wallpaper';
+
+  @override
+  String get layoutTabsHeader => 'Tab';
+
+  @override
+  String get layoutTabsFootnote =>
+      'Seret untuk mengubah urutan. Minimal 3 tab tetap ada di bilah. Tab yang disembunyikan ada di Lainnya.';
+
+  @override
+  String get layoutTabAlwaysShown => 'Selalu di bilah';
+
+  @override
+  String get layoutTabUnderMore => 'Di Lainnya';
+
+  @override
+  String layoutShowTab(String tab) {
+    return 'Tampilkan $tab';
+  }
+
+  @override
+  String layoutReorderTab(String tab) {
+    return 'Ubah urutan $tab';
+  }
+
+  @override
+  String get layoutMoveUp => 'Pindahkan ke atas';
+
+  @override
+  String get layoutMoveDown => 'Pindahkan ke bawah';
+
+  @override
+  String get layoutGridHeader => 'Kisi wallpaper';
+
+  @override
+  String get layoutDensityCompact => 'Ringkas';
+
+  @override
+  String get layoutDensityComfortable => 'Nyaman';
+
+  @override
+  String get layoutDensityLarge => 'Besar';
+
+  @override
+  String get layoutGridFootnote => 'Berlaku untuk semua kisi wallpaper. Cubit feed Beranda untuk mengubahnya.';
+
+  @override
+  String get layoutReset => 'Atur ulang tata letak';
+
+  @override
+  String get navMore => 'Lainnya';
+
+  @override
+  String get navMoreEditTabs => 'Ubah tab';
+
+  @override
   String wrappedTitle(String year) {
     return 'Prism Wrapped $year';
   }

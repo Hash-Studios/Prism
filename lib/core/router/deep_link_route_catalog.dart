@@ -1,3 +1,5 @@
+import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
+
 /// The path-only contract for every app route that can be opened from a URL.
 ///
 /// The catalog intentionally owns matching and validation, while route factories live in
@@ -22,6 +24,7 @@ enum DeepLinkPageTarget {
   editProfile,
   sharePrism,
   settings,
+  layoutSettings,
   blockedAccounts,
   about,
   favourites,
@@ -132,6 +135,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkRouteExample('/edit-profile', DeepLinkPageTarget.editProfile),
     DeepLinkRouteExample('/share-prism', DeepLinkPageTarget.sharePrism),
     DeepLinkRouteExample('/settings', DeepLinkPageTarget.settings),
+    DeepLinkRouteExample('/layout', DeepLinkPageTarget.layoutSettings),
     DeepLinkRouteExample('/blocked-accounts', DeepLinkPageTarget.blockedAccounts),
     DeepLinkRouteExample('/about', DeepLinkPageTarget.about),
     DeepLinkRouteExample('/fav-walls', DeepLinkPageTarget.favourites),
@@ -231,6 +235,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkPageTarget.adminImage: <String>{'wallpaperId', 'source', 'provider'},
     DeepLinkPageTarget.debugPanel: <String>{'tab'},
     DeepLinkPageTarget.redeemCode: <String>{'code'},
+    DeepLinkPageTarget.home: <String>{'feed'},
   };
 
   /// Returns null unless the URL matches a catalog route exactly and carries only supported scalar parameters.
@@ -350,6 +355,11 @@ final class DeepLinkRouteCatalog {
     if (target == DeepLinkPageTarget.library &&
         query['tab'] != null &&
         !const <String>{'favourites', 'folders', 'downloads', 'history'}.contains(query['tab']!.toLowerCase())) {
+      return null;
+    }
+    if (target == DeepLinkPageTarget.home &&
+        query['feed'] != null &&
+        !HomeFeedChip.values.asNameMap().containsKey(query['feed'])) {
       return null;
     }
     if (target == DeepLinkPageTarget.debugPanel &&
@@ -499,6 +509,7 @@ final class DeepLinkRouteCatalog {
     '/edit-profile': DeepLinkPageTarget.editProfile,
     '/share-prism': DeepLinkPageTarget.sharePrism,
     '/settings': DeepLinkPageTarget.settings,
+    '/layout': DeepLinkPageTarget.layoutSettings,
     '/blocked-accounts': DeepLinkPageTarget.blockedAccounts,
     '/about': DeepLinkPageTarget.about,
     '/fav-walls': DeepLinkPageTarget.favourites,

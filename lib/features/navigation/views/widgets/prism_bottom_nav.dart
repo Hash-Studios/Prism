@@ -1,15 +1,17 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
-import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
+import 'package:Prism/features/layout_prefs/views/layout_prefs_scope.dart';
+import 'package:Prism/features/layout_prefs/views/nav_tab_view.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
-/// The floating pill with the four tab destinations. A filled circle sits behind the active one. [axis] is vertical in
+/// The floating pill with the visible tab destinations, in the user's order, and a More entry for hidden tabs. A filled circle sits behind the active one. [axis] is vertical in
 /// the side rail.
 class PrismBottomNav extends StatefulWidget {
   const PrismBottomNav({this.axis = Axis.horizontal, super.key});
@@ -22,13 +24,6 @@ class PrismBottomNav extends StatefulWidget {
 
 class _PrismBottomNavState extends State<PrismBottomNav> {
   static const double _slot = 48;
-
-  static const List<_NavTabConfig> _tabs = <_NavTabConfig>[
-    _NavTabConfig(icon: JamIcons.home_f, value: NavTabValue.home),
-    _NavTabConfig(icon: JamIcons.search, value: NavTabValue.search),
-    _NavTabConfig(icon: JamIcons.gift_f, value: NavTabValue.streak),
-    _NavTabConfig(icon: JamIcons.grid_f, value: NavTabValue.collection),
-  ];
 
   TabsRouter? _tabsRouter;
 
@@ -59,24 +54,53 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
     }
   }
 
-  void _trackTabSelection({required int fromIndex, required int toIndex}) {
-    analytics.track(NavTabSelectedEvent(fromTab: _tabs[fromIndex].value, toTab: _tabs[toIndex].value));
-  }
-
-  void _switchTab({required int toIndex}) {
-    final fromIndex = _tabsRouter!.activeIndex;
-    if (fromIndex == toIndex) {
-      _resetActiveTab(toIndex);
+  /// The dashboard keeps one route per [NavTab] in enum order, so a tab's index is its router index.
+  void _switchTab(NavTab to) {
+    final int fromIndex = _tabsRouter!.activeIndex;
+    if (fromIndex == to.index) {
+      _resetActiveTab(to.index);
       return;
     }
     PrismHaptics.selection();
-    _trackTabSelection(fromIndex: fromIndex, toIndex: toIndex);
-    _tabsRouter!.setActiveIndex(toIndex);
+    analytics.track(NavTabSelectedEvent(fromTab: NavTab.values[fromIndex].analyticsValue, toTab: to.analyticsValue));
+    _tabsRouter!.setActiveIndex(to.index);
+  }
+
+  Future<void> _openMore(List<NavTab> hidden) async {
+    PrismHaptics.selection();
+    final NavTab? picked = await showPrismSheet<NavTab>(
+      context,
+      detents: const <PrismSheetDetent>[PrismSheetDetent.fit],
+      builder: (sheetContext) => PrismSheetBody(
+        title: sheetContext.l10n.navMore,
+        child: PrismGroup(
+          children: <Widget>[
+            for (final NavTab tab in hidden)
+              PrismRow(
+                icon: tab.icon,
+                title: tab.label(sheetContext),
+                onTap: () => Navigator.of(sheetContext).pop(tab),
+              ),
+            PrismRow(
+              icon: Icons.tune_rounded,
+              title: sheetContext.l10n.navMoreEditTabs,
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                context.router.push(const LayoutSettingsRoute());
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+    if (picked != null && mounted) _switchTab(picked);
   }
 
   @override
   Widget build(BuildContext context) {
-    final int activeIndex = _tabsRouter?.activeIndex ?? 0;
+    final NavTab active = NavTab.values[_tabsRouter?.activeIndex ?? 0];
+    final LayoutPrefs prefs = LayoutPrefsScope.of(context, LayoutAspect.tabs);
+    final List<NavTab> hidden = prefs.hiddenInOrder;
 
     final bool vertical = widget.axis == Axis.vertical;
     return Container(
@@ -94,11 +118,19 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
         direction: widget.axis,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          for (var i = 0; i < _tabs.length; i++)
+          for (final NavTab tab in prefs.visibleTabs)
             _TabButton(
-              config: _tabs[i],
-              isActive: activeIndex == i,
-              onPressed: () => _switchTab(toIndex: i),
+              icon: tab.icon,
+              label: tab.label(context),
+              isActive: active == tab,
+              onPressed: () => _switchTab(tab),
+            ),
+          if (hidden.isNotEmpty)
+            _TabButton(
+              icon: JamIcons.more_horizontal_f,
+              label: context.l10n.navMore,
+              isActive: hidden.contains(active),
+              onPressed: () => _openMore(hidden),
             ),
         ],
       ),
@@ -107,9 +139,10 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
 }
 
 class _TabButton extends StatelessWidget {
-  const _TabButton({required this.config, required this.isActive, required this.onPressed});
+  const _TabButton({required this.icon, required this.label, required this.isActive, required this.onPressed});
 
-  final _NavTabConfig config;
+  final IconData icon;
+  final String label;
   final bool isActive;
   final VoidCallback onPressed;
 
@@ -124,11 +157,11 @@ class _TabButton extends StatelessWidget {
       child: Semantics(
         button: true,
         selected: isActive,
-        label: config.label(context),
+        label: label,
         excludeSemantics: true,
         onTap: onPressed,
         child: Tooltip(
-          message: config.label(context),
+          message: label,
           excludeFromSemantics: true,
           child: PressScale(
             scale: 0.92,
@@ -149,7 +182,7 @@ class _TabButton extends StatelessWidget {
                   tween: ColorTween(end: isActive ? secondary : secondary.withValues(alpha: 0.6)),
                   duration: duration,
                   curve: PrismCurves.enter,
-                  builder: (BuildContext context, Color? color, Widget? _) => Icon(config.icon, size: 19, color: color),
+                  builder: (BuildContext context, Color? color, Widget? _) => Icon(icon, size: 19, color: color),
                 ),
               ),
             ),
@@ -158,19 +191,4 @@ class _TabButton extends StatelessWidget {
       ),
     );
   }
-}
-
-class _NavTabConfig {
-  const _NavTabConfig({required this.icon, required this.value});
-
-  /// The same glyph in both states, as on the current app. The active tab shows through the circle and the full ink.
-  final IconData icon;
-  final NavTabValue value;
-
-  String label(BuildContext context) => switch (value) {
-    NavTabValue.home => context.l10n.wallpaperNavHome,
-    NavTabValue.search => context.l10n.wallpaperNavSearch,
-    NavTabValue.streak => context.l10n.wallpaperNavRewards,
-    NavTabValue.collection => context.l10n.wallpaperNavCollections,
-  };
 }

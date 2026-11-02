@@ -11,6 +11,7 @@ Paths below work with either HTTPS host or the `prism:` scheme. "Sign-in" means 
 | Page family | Path or example | Input and access |
 |---|---|---|
 | Dashboard and home | `/dashboard`, `/dashboard/home` | Guest browsing is allowed. The app's `/` route also resumes at the dashboard after startup. |
+| Home feed tab | `/dashboard/home?feed=latest` | `feed` accepts `forYou`, `following`, `trending`, `latest` or `popular`. Another value is rejected. The link saves the tab first, so it wins over the remembered tab. See [layout.md](layout.md). |
 | Search and user search | `/dashboard/search`, `/dashboard/search/users` | Opens the selected search page. |
 | Dashboard Rewards and Collection tabs | `/dashboard/rewards`, `/dashboard/collection` | Opens the selected dashboard tab. |
 | Onboarding | `/onboarding/v2` | Opens the onboarding flow. Individual steps are internal states. |

@@ -21,6 +21,8 @@ import 'package:Prism/features/ads/views/widgets/experimental_inline_ad.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
+import 'package:Prism/features/layout_prefs/views/widgets/pinch_density.dart';
 import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/views/widgets/mood_chip_row.dart';
@@ -99,6 +101,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   static const int _carouselPreviewCount = PrismFeedLayout.carouselPreviewCount;
 
   late final PersonalizedFeedBloc _bloc;
+  final LayoutPrefsStore? _layout = getIt.isRegistered<LayoutPrefsStore>() ? getIt<LayoutPrefsStore>() : null;
   late final DateTime _sessionStart = widget.sessionStartedAt ?? DateTime.now();
   RecentlyViewedStore? _viewedHistory;
   SyncedHistoryStore? _syncedHistory;
@@ -314,7 +317,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       context,
       added,
       memCacheHeight: tileMemCacheHeight,
-      skip: firstBatch ? visibleTileCount(context, wallpaperGridColumns(MediaQuery.sizeOf(context).width)) : 0,
+      skip: firstBatch ? visibleTileCount(context, PrismWallGrid.columns(context)) : 0,
     );
   }
 
@@ -337,7 +340,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   }
 
   Widget _buildFeed(BuildContext context) {
-    final int crossAxisCount = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
+    final int crossAxisCount = PrismWallGrid.columns(context);
     final int tileMemCacheHeight = gridTileDecodeHeight(context, crossAxisCount: crossAxisCount);
     final ColorScheme cs = Theme.of(context).colorScheme;
     return BlocProvider.value(
@@ -408,38 +411,42 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                       },
                       child: WallpaperImpressionScope(
                         session: _impressions,
-                        child: CustomScrollView(
+                        child: PinchDensity(
+                          store: _layout,
                           controller: _scrollController,
-                          scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
-                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                          slivers: [
-                            SliverAppBar(
-                              primary: false,
-                              floating: true,
-                              snap: true,
-                              automaticallyImplyLeading: false,
-                              centerTitle: false,
-                              toolbarHeight: PrismTopAppBar.height,
-                              titleSpacing: 0,
-                              backgroundColor: cs.surface,
-                              surfaceTintColor: Colors.transparent,
-                              elevation: 0,
-                              scrolledUnderElevation: 0,
-                              title: const PrismTopAppBar(),
-                              bottom: HomeFeedTabBar(
-                                controller: _tabs,
-                                selected: state.chip,
-                                onSelected: (chip) {
-                                  setState(() => _impressions = WallpaperImpressionSession());
-                                  _bloc.add(PersonalizedFeedEvent.chipSelected(chip));
-                                },
-                                onTuneTap: widget.onTuneTap,
-                                isRefreshing: state.isRefreshing,
+                          child: CustomScrollView(
+                            controller: _scrollController,
+                            scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
+                            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                            slivers: [
+                              SliverAppBar(
+                                primary: false,
+                                floating: true,
+                                snap: true,
+                                automaticallyImplyLeading: false,
+                                centerTitle: false,
+                                toolbarHeight: PrismTopAppBar.height,
+                                titleSpacing: 0,
+                                backgroundColor: cs.surface,
+                                surfaceTintColor: Colors.transparent,
+                                elevation: 0,
+                                scrolledUnderElevation: 0,
+                                title: const PrismTopAppBar(),
+                                bottom: HomeFeedTabBar(
+                                  controller: _tabs,
+                                  selected: state.chip,
+                                  onSelected: (chip) {
+                                    setState(() => _impressions = WallpaperImpressionSession());
+                                    _bloc.add(PersonalizedFeedEvent.chipSelected(chip));
+                                  },
+                                  onTuneTap: widget.onTuneTap,
+                                  isRefreshing: state.isRefreshing,
+                                ),
                               ),
-                            ),
-                            ..._contentSlivers(context, state, crossAxisCount, tileMemCacheHeight),
-                            const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
-                          ],
+                              ..._contentSlivers(context, state, crossAxisCount, tileMemCacheHeight),
+                              const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -670,7 +677,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
           if (pickUpAt < chunks[i].$2) ...gridWithAd(pickUpAt, chunks[i].$2),
         ] else if (i == 1 && creatorsAt != null) ...<Widget>[
           ...gridWithAd(chunks[i].$1, creatorsAt),
-          const SliverToBoxAdapter(child: CreatorsSection(source: 'home')),
+          SliverToBoxAdapter(
+            child: CreatorsSection(source: 'home', refreshRevision: _moodRowsRevision),
+          ),
           if (creatorsAt < chunks[i].$2) ...gridWithAd(creatorsAt, chunks[i].$2),
         ] else
           ...gridWithAd(chunks[i].$1, chunks[i].$2),
@@ -682,7 +691,10 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
               slot: i,
             ),
           ),
-        if (i == 0 && chunks.length == 1) const SliverToBoxAdapter(child: CreatorsSection(source: 'home')),
+        if (i == 0 && chunks.length == 1)
+          SliverToBoxAdapter(
+            child: CreatorsSection(source: 'home', refreshRevision: _moodRowsRevision),
+          ),
       ],
       SliverToBoxAdapter(child: _bottomState(context, state, crossAxisCount)),
     ];

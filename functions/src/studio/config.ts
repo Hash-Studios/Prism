@@ -24,6 +24,8 @@ export interface StudioConfig {
   /** Series id -> weight. A series that is not in the map has weight 1. */
   seriesWeights: Record<string, number>;
   identity: StudioIdentity | null;
+  /** Make a desktop companion when a Studio wall is approved. Off unless the doc says true. */
+  desktopCompanions: boolean;
 }
 
 const DEFAULTS = {
@@ -99,6 +101,7 @@ export function parseStudioConfig(data: admin.firestore.DocumentData | undefined
     height: dimensions.height,
     seriesWeights: parseWeights(data?.seriesWeights),
     identity,
+    desktopCompanions: data?.desktopCompanions === true,
   };
 }
 

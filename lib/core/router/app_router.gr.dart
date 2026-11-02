@@ -1533,6 +1533,22 @@ class IosShortcutsGuideRouteArgs {
 }
 
 /// generated route for
+/// [LayoutSettingsPage]
+class LayoutSettingsRoute extends PageRouteInfo<void> {
+  const LayoutSettingsRoute({List<PageRouteInfo>? children})
+    : super(LayoutSettingsRoute.name, initialChildren: children);
+
+  static const String name = 'LayoutSettingsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const LayoutSettingsPage();
+    },
+  );
+}
+
+/// generated route for
 /// [LeaderboardPage]
 class LeaderboardRoute extends PageRouteInfo<void> {
   const LeaderboardRoute({List<PageRouteInfo>? children})

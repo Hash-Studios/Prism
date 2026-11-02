@@ -13,6 +13,7 @@ import 'package:Prism/core/platform/review_live_activity_sync.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
+import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
 import 'package:Prism/features/onboarding_v2/src/data/repo/onboarding_v2_repo.dart';
 import 'package:Prism/features/theme_mode/domain/repositories/theme_repository.dart';
 import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
@@ -34,7 +35,7 @@ class SignInSession {
 
   static int _latestGeneration = 0;
   final int _generation;
-  final String? Function()? _authenticatedUid;
+  String? Function()? _authenticatedUid;
   String? _expectedUid;
   String _ownerId = app_state.prismUser.id;
   bool _ownerLoggedIn = app_state.prismUser.loggedIn;
@@ -46,10 +47,18 @@ class SignInSession {
       app_state.prismUser.loggedIn == _ownerLoggedIn &&
       _economySession == CoinsService.instance.economySession;
 
-  bool get isCurrent => _ownsLocalSession && (_authenticatedUid == null || _authenticatedUid() == _expectedUid);
+  bool get isCurrent => _ownsLocalSession && (_authenticatedUid == null || _authenticatedUid?.call() == _expectedUid);
 
   void requireCurrent() {
     if (!isCurrent) throw StateError('The sign-in session changed.');
+  }
+
+  /// Reserve local ownership before waiting for Firebase, then bind its restored user once it is ready.
+  void bindAuthenticatedUid(String? Function() authenticatedUid) {
+    requireCurrent();
+    if (_authenticatedUid != null) throw StateError('The sign-in session already has an auth owner.');
+    _authenticatedUid = authenticatedUid;
+    _expectedUid = authenticatedUid();
   }
 
   /// Firebase itself changes the authenticated user while accepting our credential.
@@ -76,7 +85,7 @@ class SignInSession {
   bool finishSignOut({required bool firebaseSucceeded, required PrismUsersV2 guest}) {
     if (!_ownsLocalSession) return false;
     final String? expected = firebaseSucceeded ? null : _expectedUid;
-    if (_authenticatedUid != null && _authenticatedUid() != expected) return false;
+    if (_authenticatedUid != null && _authenticatedUid?.call() != expected) return false;
     _expectedUid = expected;
     publish(guest);
     CoinsService.instance.resetSession();
@@ -100,6 +109,14 @@ Future<void> _syncAccountTheme(String userId) async {
     await getIt<ThemeRepository>().syncWithAccount(userId);
   } catch (error, stackTrace) {
     logger.w('Theme did not sync with the account.', tag: 'Auth', error: error, stackTrace: stackTrace);
+  }
+}
+
+Future<void> _syncAccountLayout(String userId) async {
+  try {
+    await getIt<LayoutPrefsStore>().syncWithAccount(userId);
+  } catch (error, stackTrace) {
+    logger.w('Layout did not sync with the account.', tag: 'Auth', error: error, stackTrace: stackTrace);
   }
 }
 
@@ -239,6 +256,8 @@ Future<void> completeSignIn({
     await CoinsService.instance.bootstrapForCurrentUser();
     operation.requireCurrent();
     await _syncAccountTheme(user.uid);
+    operation.requireCurrent();
+    await _syncAccountLayout(user.uid);
     operation.requireCurrent();
     await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
     operation.requireCurrent();

@@ -194,6 +194,11 @@ const themeFields = {
 };
 const themeNoChangedAt = Object.fromEntries(Object.entries(themeFields).filter(([k]) => k !== 'changedAt'));
 const themeMap = (fields) => ({ themePrefs: { mapValue: { fields } } });
+const layoutFields = {
+  tabs: arr(['home', 'collection', 'search', 'rewards']), hidden: arr(['rewards']), density: str('large'),
+  changedAt: { integerValue: '1793000000000' },
+};
+const layoutMap = (fields) => ({ layoutPrefs: { mapValue: { fields } } });
 const cases = [
   ['new wall accepts valid challenge and resubmission links together', () => req('PATCH', 'walls/linked-challenge', {
     email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('2026-11-02'), resubmitOf: str('wall_old.png'),
@@ -401,6 +406,31 @@ const cases = [
     { fieldFilter: { field: { fieldPath: 'wallpaper_url' }, op: 'EQUAL', value: { stringValue: '' } } },
     ...provenanceFields.map((fieldPath) => ({ fieldFilter: { field: { fieldPath }, op: 'EQUAL', value: { stringValue: '' } } })),
   ], 'walls'), 200],
+  ['guest cannot list every wall', () => runCollectionQuery(undefined, 'walls'), 403],
+  ['signed-in user cannot list every wall', () => runCollectionQuery(Bu, 'walls'), 403],
+  ['stranger cannot list unreviewed walls', () => runQuery(C, [
+    { fieldFilter: { field: { fieldPath: 'review' }, op: 'EQUAL', value: { booleanValue: false } } },
+  ], 'walls'), 403],
+  ['stranger cannot query an unreviewed wall by document id', () => runQuery(C, [documentIdFilter('walls/w8')], 'walls'), 403],
+  ['owner can query own unreviewed wall by document id', () => runQuery(Bu, [documentIdFilter('walls/w8')], 'walls'), 200],
+  ['guest cannot read an unreviewed wall', () => req('GET', 'walls/w8'), 403],
+  ['stranger cannot read an unreviewed wall', () => req('GET', 'walls/w8', null, C), 403],
+  ['guest get of a missing wall is not found', () => req('GET', 'walls/missing-wotd'), 404],
+  ['signed-in get of a missing wall is not found', () => req('GET', 'walls/missing-wotd', null, Bu), 404],
+  ['canonical lookup of a missing wall is an empty query', () => runQuery(Bu, [
+    documentIdFilter('walls/missing-wotd'),
+    { fieldFilter: { field: { fieldPath: 'review' }, op: 'EQUAL', value: { booleanValue: true } } },
+    { fieldFilter: { field: { fieldPath: 'originalProtected' }, op: 'EQUAL', value: { booleanValue: true } } },
+    { fieldFilter: { field: { fieldPath: 'wallpaper_url' }, op: 'EQUAL', value: { stringValue: '' } } },
+    ...provenanceFields.map((fieldPath) => ({ fieldFilter: { field: { fieldPath }, op: 'EQUAL', value: { stringValue: '' } } })),
+  ], 'walls'), 200],
+  ['canonical lookup of a public wall is allowed', () => runQuery(undefined, [
+    documentIdFilter('walls/protected'),
+    { fieldFilter: { field: { fieldPath: 'review' }, op: 'EQUAL', value: { booleanValue: true } } },
+    { fieldFilter: { field: { fieldPath: 'originalProtected' }, op: 'EQUAL', value: { booleanValue: true } } },
+    { fieldFilter: { field: { fieldPath: 'wallpaper_url' }, op: 'EQUAL', value: { stringValue: '' } } },
+    ...provenanceFields.map((fieldPath) => ({ fieldFilter: { field: { fieldPath }, op: 'EQUAL', value: { stringValue: '' } } })),
+  ], 'walls'), 200],
   ['no-op follow array write rejected', () => req('PATCH', 'usersv2/target', { followers: arr(['a@x.com']) }, A, ['followers']), 403],
   ['follow array write rejected', () => req('PATCH', 'usersv2/target', { followers: arr(['a@x.com', 'b@x.com']) }, Bu, ['followers']), 403],
   ['unfollow array write rejected', () => req('PATCH', 'usersv2/target', { followers: arr(['a@x.com']) }, Bu, ['followers']), 403],
@@ -489,6 +519,12 @@ const cases = [
   ['owner writes themePrefs with a string lightAccent', () => req('PATCH', 'usersv2/b', themeMap({ ...themeFields, lightAccent: str('4293228183') }), Bu, ['themePrefs']), 403],
   ['owner writes themePrefs missing changedAt', () => req('PATCH', 'usersv2/b', themeMap(themeNoChangedAt), Bu, ['themePrefs']), 403],
   ['stranger writes themePrefs on another user doc', () => req('PATCH', 'usersv2/a', themeMap(themeFields), Bu, ['themePrefs']), 403],
+  ['owner writes a valid layoutPrefs map', () => req('PATCH', 'usersv2/b', layoutMap(layoutFields), Bu, ['layoutPrefs']), 200],
+  ['owner writes layoutPrefs with an extra key', () => req('PATCH', 'usersv2/b', layoutMap({ ...layoutFields, extra: str('x') }), Bu, ['layoutPrefs']), 403],
+  ['owner writes layoutPrefs with density huge', () => req('PATCH', 'usersv2/b', layoutMap({ ...layoutFields, density: str('huge') }), Bu, ['layoutPrefs']), 403],
+  ['owner hides Home in layoutPrefs', () => req('PATCH', 'usersv2/b', layoutMap({ ...layoutFields, hidden: arr(['home']) }), Bu, ['layoutPrefs']), 403],
+  ['owner writes an unknown tab in layoutPrefs', () => req('PATCH', 'usersv2/b', layoutMap({ ...layoutFields, tabs: arr(['home', 'ai']) }), Bu, ['layoutPrefs']), 403],
+  ['stranger writes layoutPrefs on another user doc', () => req('PATCH', 'usersv2/a', layoutMap(layoutFields), Bu, ['layoutPrefs']), 403],
   ...['tipRateDaily', 'wallTippers', 'creatorTips'].flatMap((collection) => [
     [`user reads private ${collection}`, () => req('GET', `${collection}/b`, null, Bu), 403],
     [`user writes private ${collection}`, () => req('PATCH', `${collection}/b`, {
@@ -639,6 +675,10 @@ const cases = [
   ['owner changes an existing depth', () => req('PATCH', 'walls/w12', { depth: depth('menu') }, Bu, ['depth']), 403],
   ['owner removes an existing depth', () => req('PATCH', 'walls/w12', {}, Bu, ['depth']), 403],
   ['owner updates another field and leaves depth untouched', () => req('PATCH', 'walls/w12', { by: { stringValue: 'B' } }, Bu, ['by']), 200],
+  ['owner creates a wall with desktopVariant', () => req('PATCH', 'walls/w15', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, desktopVariant: { mapValue: { fields: { v: { stringValue: '0123456789abcdef' }, thumb: { stringValue: 'https://img.prismwalls.com/previews/desktop-x.jpg' }, width: { integerValue: '2560' }, height: { integerValue: '1600' }, wideHeight: { integerValue: '1440' } } } } }, Bu), 403],
+  ['owner sets desktopVariant on own unreviewed wall', () => req('PATCH', 'walls/w3', { desktopVariant: { mapValue: { fields: { v: { stringValue: '0123456789abcdef' }, thumb: { stringValue: 'https://img.prismwalls.com/previews/desktop-x.jpg' }, width: { integerValue: '2560' }, height: { integerValue: '1600' }, wideHeight: { integerValue: '1440' } } } } }, Bu, ['desktopVariant']), 403],
+  ['signed-in user reads a desktop companion manifest', () => req('GET', 'desktopCompanions/W1', null, Bu), 403],
+  ['signed-in user writes a desktop companion manifest', () => req('PATCH', 'desktopCompanions/W1', { status: { stringValue: 'ready' } }, Bu), 403],
   ['admin sets depth on a wall', () => req('PATCH', 'walls/w12', { depth: depth('menu') }, ADM, ['depth']), 200],
   ['owner creates a wall with spatial', () => req('PATCH', 'walls/w15', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, spatial: spatial('great') }, Bu), 403],
   ['owner sets spatial on own unreviewed wall', () => req('PATCH', 'walls/w3', { spatial: spatial('great') }, Bu, ['spatial']), 403],

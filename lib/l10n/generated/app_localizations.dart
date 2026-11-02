@@ -20125,6 +20125,180 @@ abstract class AppLocalizations {
   /// **'Couldn\'t create the code: {reason}'**
   String promoAdminCreateFailed(String reason);
 
+  /// Chip on the wallpaper detail screen. Opens the desktop version of the wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version'**
+  String get desktopVersionChip;
+
+  /// Screen reader label of the Desktop version chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the desktop version'**
+  String get desktopVersionChipSemantic;
+
+  /// Title of the sheet that shows the wide desktop version of a wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version'**
+  String get desktopVersionSheetTitle;
+
+  /// Body of the desktop version sheet. width and height are pixels, for example 2560 × 1600.
+  ///
+  /// In en, this message translates to:
+  /// **'The same scene, made wide for a computer screen. {width} × {height}.'**
+  String desktopVersionSheetBody(int width, int height);
+
+  /// Screen reader label of the desktop preview image.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version on a computer screen'**
+  String get desktopVersionPreviewSemantic;
+
+  /// Button. Shares a link to the wallpaper's web page, where the desktop version can be downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to my computer'**
+  String get desktopVersionSendToComputer;
+
+  /// Text shared with the link to the desktop download page. url is the page address.
+  ///
+  /// In en, this message translates to:
+  /// **'Get this wallpaper for your computer: {url}'**
+  String desktopVersionShareText(String url);
+
+  /// Email subject used when the desktop link is shared by email.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop wallpaper from Prism'**
+  String get desktopVersionShareSubject;
+
+  /// Tablet button. Sets the wide desktop version as the tablet wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Set desktop version'**
+  String get desktopVersionSetOnTablet;
+
+  /// iPad button. Saves the wide desktop version to Photos.
+  ///
+  /// In en, this message translates to:
+  /// **'Save desktop version'**
+  String get desktopVersionSaveOnTablet;
+
+  /// Error toast when the desktop version cannot be downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to get the desktop version. Check your connection and try again.'**
+  String get desktopVersionUnavailable;
+
+  /// Title of the Layout settings page and its row in Settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Layout'**
+  String get layoutTitle;
+
+  /// Subtitle of the Layout row in Settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Tabs and wallpaper grid'**
+  String get layoutRowSubtitle;
+
+  /// Section header above the bottom bar tab list on the Layout page.
+  ///
+  /// In en, this message translates to:
+  /// **'Tabs'**
+  String get layoutTabsHeader;
+
+  /// Footnote under the tab list on the Layout page.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder. At least 3 tabs stay in the bar. Hidden tabs are under More.'**
+  String get layoutTabsFootnote;
+
+  /// Subtitle of the Home row on the Layout page. Home cannot be hidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Always in the bar'**
+  String get layoutTabAlwaysShown;
+
+  /// Subtitle of a hidden tab row on the Layout page.
+  ///
+  /// In en, this message translates to:
+  /// **'Under More'**
+  String get layoutTabUnderMore;
+
+  /// Accessibility label of the switch that shows a tab in the bottom bar.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {tab}'**
+  String layoutShowTab(String tab);
+
+  /// Tooltip and accessibility label of the drag handle of a tab row.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder {tab}'**
+  String layoutReorderTab(String tab);
+
+  /// Accessibility action that moves a tab one place up in the bottom bar order.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get layoutMoveUp;
+
+  /// Accessibility action that moves a tab one place down in the bottom bar order.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get layoutMoveDown;
+
+  /// Section header above the grid size choice on the Layout page.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpaper grid'**
+  String get layoutGridHeader;
+
+  /// Grid size with small tiles (3 columns on a phone).
+  ///
+  /// In en, this message translates to:
+  /// **'Compact'**
+  String get layoutDensityCompact;
+
+  /// Default grid size (2 columns on a phone).
+  ///
+  /// In en, this message translates to:
+  /// **'Comfortable'**
+  String get layoutDensityComfortable;
+
+  /// Grid size with one full-width wallpaper per row on a phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get layoutDensityLarge;
+
+  /// Footnote under the grid size choice on the Layout page.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to every wallpaper grid. Pinch the Home feed to change it.'**
+  String get layoutGridFootnote;
+
+  /// Button that puts the tabs and grid size back to the defaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset layout'**
+  String get layoutReset;
+
+  /// Bottom bar entry that opens the hidden tabs.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get navMore;
+
+  /// Row in the More sheet that opens the Layout settings page.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit tabs'**
+  String get navMoreEditTabs;
+
   /// Title of the Wrapped yearly recap screen and share card.
   ///
   /// In en, this message translates to:

@@ -27,7 +27,8 @@
     "drops:reserve": "npm run build && node lib/scripts/reserveDrop.js",
     "promo:create": "npm run build && node lib/scripts/createPromoCodes.js",
     "studio:account": "npm run build && node lib/scripts/setupStudioAccount.js",
-    "studio:run": "npm run build && node lib/scripts/runStudioBatch.js"
+    "studio:run": "npm run build && node lib/scripts/runStudioBatch.js",
+    "studio:desktop-backfill": "npm run build && node lib/scripts/backfillDesktopCompanions.js"
   },
   "engines": {
     "node": "24"

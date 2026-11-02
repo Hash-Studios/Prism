@@ -82,8 +82,7 @@ class _PicksGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // About 220 points per tile: two columns on a phone, more on a tablet.
-    final int columns = (MediaQuery.sizeOf(context).width / 220).ceil().clamp(2, 6);
+    final int columns = PrismWallGrid.columns(context);
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: <Widget>[
@@ -135,7 +134,11 @@ class _PickTile extends StatelessWidget {
     final String locale = Localizations.localeOf(context).toString();
     final String dateLabel = DateFormat.yMMMd(locale).format(pick.date.toLocal());
     final String heroTag = prismHeroTag(pick, index, pick.wallpaper.id);
-    final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: 2);
+    final int decodeHeight = gridTileDecodeHeight(
+      context,
+      crossAxisCount: PrismWallGrid.columns(context),
+      aspectRatio: 0.45,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/platform/live_activity_channel.dart';
 import 'package:Prism/core/platform/pigeon/prism_live_activity_api.g.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,7 +19,8 @@ class ReviewLiveActivitySync implements PrismLiveActivityFlutterApi {
   @visibleForTesting
   static bool Function() isAdmin = () => app_state.prismUser.loggedIn && app_state.isAdminUser();
   @visibleForTesting
-  static String? Function() currentUserId = () => FirebaseAuth.instance.currentUser?.uid;
+  static String? Function() currentUserId = () =>
+      FirebaseInit.hasDefaultApp ? FirebaseAuth.instance.currentUser?.uid : null;
   @visibleForTesting
   static Duration retryDelay = const Duration(seconds: 1);
 

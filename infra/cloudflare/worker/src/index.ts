@@ -2,7 +2,7 @@ import { AiQuotaCoordinator, type AiEnvBindings, bumpRateLimit, handleAiApiReque
 import { maybeHandleAssociationRequest } from './association_files';
 import { handleCatalogRequest } from './catalog';
 import { formatCount, type OgCard, type OgChip, type OgStat, renderOgCardHtml } from './og_card';
-import { buildAndroidIntentUrl, detectPlatform, escapeAttribute, escapeHtml, screenshotCard } from './page_kit';
+import { buildAndroidIntentUrl, detectPlatform, escapeAttribute, escapeHtml, iosUniversalLinkUrl, screenshotCard } from './page_kit';
 
 export interface Env extends AiEnvBindings {
   LINKS_KV: KVNamespace;
@@ -17,6 +17,7 @@ export interface Env extends AiEnvBindings {
   BROWSER_RENDERING_API_TOKEN?: string;
   CATALOG_FIRESTORE_ORIGIN?: string;
   CATALOG_PREVIEW_ORIGIN?: string;
+  MIXPANEL_TOKEN?: string;
 }
 
 type LinkType = 'share' | 'user' | 'setup' | 'refer' | 'page';
@@ -97,6 +98,7 @@ const APP_PAGE_PATHS = [
   '/onboarding/v2', '/dashboard', '/dashboard/home', '/dashboard/search', '/dashboard/search/users',
   '/dashboard/rewards', '/dashboard/streak', '/dashboard/collection', '/ai', '/wallpaper-detail',
   '/wotd-archive', '/download-wallpaper', '/wallpaper-filter', '/choose-wallpaper', '/edit-profile', '/share-prism', '/settings',
+  '/layout',
   '/premium', '/paywall',
   '/blocked-accounts', '/about', '/fav-walls', '/downloads', '/library', '/upload-wall', '/edit-wall', '/review',
   '/coin-transactions', '/theme', '/notifications', '/collection-view', '/gallery', '/requests', '/creators', '/wrapped', '/followers', '/following',
@@ -117,6 +119,7 @@ const PAGE_QUERY_KEYS = new Map<string, Set<string>>([
   ['/download-wallpaper', new Set(['wallpaperId', 'source', 'provider'])],
   ['/live-wallpaper', new Set(['wallpaperId', 'source', 'provider'])],
   ['/library', new Set(['tab'])],
+  ['/dashboard/home', new Set(['feed'])],
   ['/choose-wallpaper', new Set(['workflow'])],
   ['/debug-panel', new Set(['tab'])],
   ['/admin-review/image', new Set(['wallpaperId', 'source', 'provider'])],
@@ -156,7 +159,7 @@ const OG_ASSET_BASE = 'https://raw.githubusercontent.com/Hash-Studios/Prism/mast
 const INVITE_GALLERY = [1, 2, 3].map((n) => `${OG_ASSET_BASE}/invite-${n}.jpg`);
 const GALLERY_MAX_ITEMS = 4;
 const WALLPAPER_STATS_TIMEOUT_MS = 4000;
-const IOS_APP_ID = '1405860595';
+const IOS_APP_ID = '6670200846';
 const CREATE_LINK_MAX_BODY_BYTES = 8 * 1024;
 const CAMPAIGN_MAX_KEYS = 10;
 const CAMPAIGN_MAX_TEXT_LENGTH = 100;
@@ -191,7 +194,8 @@ export default {
       return aiResponse;
     }
 
-    const catalogResponse = await handleCatalogRequest(request, url, env, ctx, () => renderDirectLanding(url, request, env));
+    const catalogResponse = await handleCatalogRequest(request, url, env, ctx, () => renderDirectLanding(url, request, env),
+      (ip) => limitDownloads(ip, env));
     if (catalogResponse != null) {
       return catalogResponse;
     }
@@ -496,6 +500,12 @@ function renderDirectLanding(url: URL, request: Request, env: Env): Response {
     version: DEFAULT_OG_VERSION,
   };
   return html(renderHumanLandingHtml(record.canonical_url, record, request, env));
+}
+
+/** Web downloads: their own counters, apart from the link API's. */
+async function limitDownloads(ip: string, env: Env): Promise<boolean> {
+  if (!(await bumpRateLimit(env, `rl:dl:10m:${ip}`, 30, 600))) return false;
+  return bumpRateLimit(env, `rl:dl:1d:${ip}`, 300, 86400);
 }
 
 async function enforceCreateRateLimits(ip: string, env: Env): Promise<boolean> {
@@ -1471,7 +1481,8 @@ function renderHumanLandingHtml(shortUrl: string, record: LinkRecord, request: R
   const playUrl = escapeAttribute(env.PLAY_STORE_URL);
   const appStoreUrl = escapeAttribute(env.APP_STORE_URL);
   const openUrl = escapeAttribute(
-    platform === 'android' ? buildAndroidIntentUrl(canonicalUrl, env.PLAY_STORE_URL) : canonicalUrl,
+    platform === 'android' ? buildAndroidIntentUrl(canonicalUrl, env.PLAY_STORE_URL)
+      : platform === 'ios' ? iosUniversalLinkUrl(canonicalUrl, new URL(request.url).host) : canonicalUrl,
   );
 
   const buttons: string[] = [];

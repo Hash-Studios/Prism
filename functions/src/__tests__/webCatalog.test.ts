@@ -550,7 +550,8 @@ test("rebuildWebCatalog writes the catalogue once, then writes nothing on a seco
   }, writes);
   const first = await rebuildWebCatalog();
   assert.equal(first.walls, 1);
-  assert.equal(first.pages, 8);
+  assert.equal(first.pages, 9);
+  assert.deepEqual(store.get("webPages/desktop~1")?.items, []);
   assert.ok(store.has("webWalls/W1"));
   assert.ok(store.has("webPages/latest~1"));
   assert.ok(store.has("webPages/sitemap~index"));
@@ -561,6 +562,29 @@ test("rebuildWebCatalog writes the catalogue once, then writes nothing on a seco
   assert.equal(second.written, 0);
   assert.equal(writes.writes, writesAfterFirst);
   assert.equal(writes.outsideWrites, 0);
+});
+
+test("rebuildWebCatalog projects new walls in parallel and blurs each gated wall once", async (t) => {
+  stubDeps(t);
+  let inFlight = 0;
+  let maxInFlight = 0;
+  let blurs = 0;
+  t.mock.method(webCatalogDeps, "blur", async () => {
+    blurs++;
+    maxInFlight = Math.max(maxInFlight, ++inFlight);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    inFlight--;
+    return BLUR;
+  });
+  const seed: Record<string, Doc> = {"profiles/u1": samProfile};
+  for (let n = 0; n < 12; n++) seed[`walls/d${n}`] = liveWall({id: `G${n}`, collections: ["abstract"]});
+  const store = installFakeDb(t, seed);
+  const result = await rebuildWebCatalog();
+  assert.equal(result.walls, 12);
+  assert.ok(maxInFlight > 1, "walls must not be projected one at a time");
+  assert.equal(blurs, 12);
+  assert.equal(store.get("webWalls/G0")?.blur, BLUR);
+  assert.equal((await rebuildWebCatalog()).written, 0);
 });
 
 test("rebuildWebCatalog hides an id shared by approved and unapproved walls", async (t) => {

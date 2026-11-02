@@ -7,6 +7,7 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {db, REGION, str} from "./common";
 import {isPreviewUrl} from "./pushGallery";
 import {r2Secrets} from "./r2Storage";
+import {parseDesktopVariant, readyDesktopCompanion} from "./studio/desktop";
 import {PALETTE} from "./wallColors";
 import {isWotdEligible, parseCollectionList} from "./wallEligibility";
 
@@ -25,13 +26,15 @@ const CREATOR_FOLDERS = 12;
 // Keep serialized sitemap pages below Firestore's 1 MiB document limit, including worst-case URL lengths.
 const SITEMAP_SIZE = 3000;
 const WRITE_CHUNK = 100;
+// Walls projected at once in a rebuild. Each one can fetch and blur a thumbnail, so keep it below WRITE_CHUNK.
+const WALL_CHUNK = 40;
 const SHARE_ID = /^[A-Za-z0-9_-]{1,200}$/;
 const USERNAME = /^[A-Za-z0-9._-]{1,40}$/;
 const HIDDEN_TEXT = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}]/gu;
 const PALETTE_HEX = new Map(PALETTE.map(({id, hex}) => [id, `#${hex}`]));
 const RELEVANT_FIELDS = ["id", "review", "originalProtected", "is_streak_exclusive", "dropReserved", "dropWeek",
   "collections", "wallpaper_thumb", "title", "desc", "tags", "category", "colors", "resolution", "by", "creatorUid",
-  "createdAt"];
+  "createdAt", "desktopVariant"];
 
 type Doc = admin.firestore.DocumentData;
 
@@ -57,9 +60,14 @@ export interface WebWall {
   thumb?: string;
   blur?: string;
   blurKey?: string;
+  /** Live walls only: the desktop companion's public thumbnail and version. */
+  desktop?: WebDesktop;
 }
 
+export interface WebDesktop {v: string; thumb: string; width: number; height: number}
+
 export interface WebCard {id: string; title: string; thumb: string; width: number; height: number}
+export interface WebDesktopCard extends WebCard {desktop: string}
 
 interface PublicProfile {username: string; name: string; bio: string; photo: string}
 
@@ -166,6 +174,7 @@ function isBlurDataUrl(value: string | undefined): value is string {
  */
 export async function projectWall(
   wall: Doc | undefined, premium: string[], profile: PublicProfile | null, previous: WebWall | undefined, now: Date,
+  tx?: admin.firestore.Transaction,
 ): Promise<WebWall> {
   const updatedAt = now.toISOString();
   if (!wall) return {state: "gone", updatedAt};
@@ -188,7 +197,18 @@ export async function projectWall(
     creatorName: profile?.name || cleanText(wall.by, 60),
     creator: profile ? {username: profile.username, name: profile.name} : null,
   };
-  if (live) return {...projected, thumb};
+  if (live) {
+    let desktop = parseDesktopVariant(wall.desktopVariant);
+    if (desktop) {
+      try {
+        desktop = (await readyDesktopCompanion(str(wall.id), wall, tx)).variant;
+      } catch {
+        desktop = null;
+      }
+    }
+    return {...projected, thumb,
+      ...(desktop ? {desktop: {v: desktop.v, thumb: desktop.thumb, width: desktop.width, height: desktop.height}} : {})};
+  }
   if (!isPreviewUrl(thumb)) return projected;
   const blurKey = createHash("sha256").update(thumb).digest("hex").slice(0, 16);
   if (previous?.blurKey === blurKey && isBlurDataUrl(previous.blur)) return {...projected, blur: previous.blur, blurKey};
@@ -249,7 +269,7 @@ export async function syncWebWall(shareId: string): Promise<void> {
       publicProfile((await tx.get(db.collection("profiles").doc(uid))).data()) : null;
     const next = rows.size > 1 ?
       {state: "hidden" as const, updatedAt: webCatalogDeps.now().toISOString()} :
-      await projectWall(wall, premium, profile, previous, webCatalogDeps.now());
+      await projectWall(wall, premium, profile, previous, webCatalogDeps.now(), tx);
     if (!sameWall(previous, next)) tx.set(ref, next);
   });
 }
@@ -345,6 +365,10 @@ export function buildPages(
   for (const [slug, entries] of byCategory) {
     add(paged(`category~${slug}`, {kind: "category", slug, name: entries[0][1].category, categories}, cards(entries)));
   }
+  // One list serves both /desktop-wallpapers and /matching-sets: the same walls, shown as desktops or as pairs.
+  const desktops = live.filter(([, wall]) => wall.desktop);
+  add(paged("desktop", {kind: "desktop"}, desktops.map(([id, wall]): WebDesktopCard =>
+    ({...cardOf(id, wall), desktop: wall.desktop?.thumb ?? ""}))));
 
   const publicFolders = folders.map((folder) => {
     const items = folder.wallIds.flatMap((id) => {
@@ -379,6 +403,8 @@ export function buildPages(
     ["/wallpapers/popular", maxDate(popular.map(([, w]) => w.updatedAt))],
     ...[...byCategory].map(([slug, entries]): [string, string] =>
       [`/wallpapers/${slug}`, maxDate(entries.map(([, w]) => w.updatedAt))]),
+    ...(desktops.length ? ["/desktop-wallpapers", "/matching-sets"].map((path): [string, string] =>
+      [path, maxDate(desktops.map(([, w]) => w.updatedAt))]) : []),
   ];
   const folderEntries = publicFolders.filter((f) => f.items.length > 0)
     .map((f): [string, string] => [`/folder/${f.id}`, f.updatedAt]);
@@ -396,8 +422,8 @@ export function buildPages(
 
 const hashOf = (doc: PageDoc) => createHash("sha256").update(stableJson(doc)).digest("hex").slice(0, 20);
 
-async function inChunks<T>(values: T[], run: (value: T) => Promise<unknown>): Promise<void> {
-  for (let i = 0; i < values.length; i += WRITE_CHUNK) await Promise.all(values.slice(i, i + WRITE_CHUNK).map(run));
+async function inChunks<T>(values: T[], run: (value: T) => Promise<unknown>, size = WRITE_CHUNK): Promise<void> {
+  for (let i = 0; i < values.length; i += size) await Promise.all(values.slice(i, i + size).map(run));
 }
 
 /**
@@ -423,10 +449,11 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
   const ownerIds = folderDocs.docs.map((doc) => str(doc.data().ownerId));
   const profiles = await profilesOf([...[...byId.values()].flat().map((wall) => str(wall.creatorUid)), ...ownerIds]);
 
-  const walls = new Map<string, WebWall>();
   let written = 0;
-  const ids = new Set([...byId.keys(), ...previous.keys()]);
-  for (const id of ids) {
+  const ids = [...new Set([...byId.keys(), ...previous.keys()])];
+  const projected = new Map<string, WebWall>();
+  // One wall at a time could not finish a cold build of ~3,300 walls inside the timeout, so walls run in chunks.
+  await inChunks(ids, async (id) => {
     const rows = byId.get(id) ?? [];
     const wall = rows.length === 1 ? rows[0] : undefined;
     const candidate = rows.length > 1 ? {state: "hidden" as const, updatedAt: now.toISOString()} :
@@ -434,8 +461,8 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
         await projectWall(wall, premium, profiles.get(str(wall?.creatorUid)) ?? null, previous.get(id), now);
     const old = previous.get(id);
     if (sameWall(old, candidate)) {
-      walls.set(id, old as WebWall);
-      continue;
+      projected.set(id, old as WebWall);
+      return;
     }
     const ref = db.collection(WEB_WALLS).doc(id);
     const current = await db.runTransaction(async (tx) => {
@@ -449,14 +476,17 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
         publicProfile((await tx.get(db.collection("profiles").doc(uid))).data()) : null;
       const next = latestRows.size > 1 ? {state: "hidden" as const, updatedAt: now.toISOString()} :
         latestRows.size === 0 ? {state: "gone" as const, updatedAt: now.toISOString()} :
-          await projectWall(latestWall, premium, profile, currentPrevious, now);
+          // The blur from the first projection is reused when the thumbnail is unchanged, so it is fetched once.
+          await projectWall(latestWall, premium, profile, candidate.blur ? candidate : currentPrevious, now, tx);
       if (sameWall(currentPrevious, next)) return {wall: currentPrevious as WebWall, written: false};
       tx.set(ref, next);
       return {wall: next, written: true};
     });
-    walls.set(id, current.wall);
+    projected.set(id, current.wall);
     if (current.written) written++;
-  }
+  }, WALL_CHUNK);
+  // Pages keep the same wall order on every run, so their hashes only change when the walls do.
+  const walls = new Map(ids.map((id) => [id, projected.get(id) as WebWall]));
 
   const folders = await Promise.all(folderDocs.docs.map(async (doc) => {
     const data = doc.data();
@@ -501,7 +531,7 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
 }
 
 export const buildWebCatalog = onSchedule(
-  {schedule: "20 */2 * * *", timeZone: "UTC", region: REGION, retryCount: 1, memory: "1GiB", timeoutSeconds: 540,
+  {schedule: "20 */2 * * *", timeZone: "UTC", region: REGION, retryCount: 1, memory: "1GiB", timeoutSeconds: 1800,
     secrets: r2Secrets},
   async () => {
     await rebuildWebCatalog();

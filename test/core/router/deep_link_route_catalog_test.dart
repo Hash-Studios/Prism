@@ -610,6 +610,7 @@ String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (targe
   DeepLinkPageTarget.editProfile => 'EditProfilePanelRoute',
   DeepLinkPageTarget.sharePrism => 'SharePrismRoute',
   DeepLinkPageTarget.settings => 'SettingsRoute',
+  DeepLinkPageTarget.layoutSettings => 'LayoutSettingsRoute',
   DeepLinkPageTarget.blockedAccounts => 'BlockedAccountsRoute',
   DeepLinkPageTarget.folder => 'FolderRoute',
   DeepLinkPageTarget.mood => 'MoodRoute',

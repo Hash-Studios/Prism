@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' show min;
 
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
@@ -29,7 +31,7 @@ class ShortcutsFoldersStore {
   static Stream<void> get rotationFolderChanges => _rotationFolderChanges.stream;
 
   /// `{"ownerId", "folders": [{"id", "name", "itemCount", "updatedAt", "items": [{"id", "url"}]}]}`. Items are
-  /// newest first, at most [maxItems], each with an https URL.
+  /// newest first, at most [maxItems], each with an https URL or, for a protected wall, an `asset` key instead.
   static String encode(String ownerId, List<({FolderEntity folder, List<Map<String, String>> items})> folders) =>
       jsonEncode(<String, Object>{
         'ownerId': ownerId,
@@ -45,14 +47,26 @@ class ShortcutsFoldersStore {
         ],
       });
 
-  static List<Map<String, String>> encodeItems(Iterable<FavouriteWallEntity> walls) {
+  /// A wall without an https URL is kept only when [originals] has its downloaded original's asset key.
+  static List<Map<String, String>> encodeItems(
+    Iterable<FavouriteWallEntity> walls, {
+    Set<String> originals = const <String>{},
+  }) {
     final Set<String> seen = <String>{};
     final List<Map<String, String>> items = <Map<String, String>>[];
     for (final FavouriteWallEntity wall in walls) {
       final String url = wall.fullUrl.trim();
       final String id = folderItemKey(wall);
-      if (wall.id.trim().isEmpty || !url.startsWith('https://') || !seen.add(id)) continue;
-      items.add(<String, String>{'id': id, 'url': url});
+      final String asset = NativeAssetPathsStore.originalAssetKey(wall);
+      if (wall.id.trim().isEmpty || seen.contains(id)) continue;
+      if (url.startsWith('https://')) {
+        items.add(<String, String>{'id': id, 'url': url});
+      } else if (originals.contains(asset)) {
+        items.add(<String, String>{'id': id, 'asset': asset});
+      } else {
+        continue;
+      }
+      seen.add(id);
       if (items.length == maxItems) break;
     }
     return items;
@@ -87,12 +101,17 @@ class ShortcutsFoldersStore {
       final Map<String, Map<String, Object?>> previous = _previousFolders(prefs, ownerId);
       final List<({FolderEntity folder, List<Map<String, String>> items})> entries =
           <({FolderEntity folder, List<Map<String, String>> items})>[];
+      final Map<String, String> originals = <String, String>{};
       for (final FolderEntity folder in selected) {
         final Map<String, Object?>? old = previous[folder.id];
+        final List<Map<String, String>> oldItems = _items(old?['items']);
+        // A folder with protected walls is read again, so a new download joins and a deleted one leaves.
         if (old != null &&
             old['updatedAt'] == folder.updatedAt.millisecondsSinceEpoch &&
-            old['itemCount'] == folder.itemCount) {
-          entries.add((folder: folder, items: _items(old['items'])));
+            old['itemCount'] == folder.itemCount &&
+            oldItems.length == min(folder.itemCount, maxItems) &&
+            oldItems.every((item) => item.containsKey('url'))) {
+          entries.add((folder: folder, items: oldItems));
           continue;
         }
         final Result<List<FavouriteWallEntity>?> result = await fetchItems(folder.id);
@@ -101,23 +120,42 @@ class ShortcutsFoldersStore {
           // With no earlier copy, leave the folder out: the intent then says to open Prism, which syncs again, and
           // never reports a folder with walls as empty.
           if (old == null) continue;
-          // Keep what the last snapshot had. The epoch update time makes the next sync read the folder again.
+          Map<String, String> folderOriginals = const <String, String>{};
+          try {
+            folderOriginals = await NativeAssetPathsStore.downloadedOriginalPaths(_protectedWalls(oldItems));
+          } catch (_) {}
+          if (!current()) return;
+          originals.addAll(folderOriginals);
+          // The epoch update time makes the next sync read the folder again.
           entries.add((
             folder: folder.copyWith(updatedAt: DateTime.fromMillisecondsSinceEpoch(0)),
-            items: _items(old['items']),
+            items: oldItems
+                .where(
+                  (item) =>
+                      item.containsKey('url') ||
+                      (item['asset'] == 'original:${item['id']}' && folderOriginals.containsKey(item['asset'])),
+                )
+                .toList(),
           ));
           continue;
         }
         final List<FavouriteWallEntity>? walls = result.data;
         if (walls == null) continue;
-        entries.add((folder: folder, items: encodeItems(walls)));
+        Map<String, String> folderOriginals = const <String, String>{};
+        try {
+          folderOriginals = await NativeAssetPathsStore.downloadedOriginalPaths(walls);
+        } catch (_) {}
+        if (!current()) return;
+        originals.addAll(folderOriginals);
+        entries.add((folder: folder, items: encodeItems(walls, originals: folderOriginals.keys.toSet())));
       }
       Map<String, String> relativePaths = <String, String>{};
       try {
         relativePaths = await NativeAssetPathsStore.retainedRelativePaths(
-          entries.expand((entry) => entry.items).map((item) => item['url']!),
+          entries.expand((entry) => entry.items).map((item) => item['url']).whereType<String>(),
         );
       } catch (_) {}
+      relativePaths.addAll(originals);
       if (!current()) return;
       await _enqueue(() async {
         if (!current()) return;
@@ -232,8 +270,27 @@ class ShortcutsFoldersStore {
     if (raw is List)
       for (final Object? item in raw)
         if (item is Map && item['id'] is String && item['url'] is String)
-          <String, String>{'id': item['id'] as String, 'url': item['url'] as String},
+          <String, String>{'id': item['id'] as String, 'url': item['url'] as String}
+        else if (item is Map && item['id'] is String && item['asset'] is String)
+          <String, String>{'id': item['id'] as String, 'asset': item['asset'] as String},
   ];
+
+  static Iterable<FavouriteWallEntity> _protectedWalls(List<Map<String, String>> items) sync* {
+    for (final Map<String, String> item in items) {
+      final String id = item['id']!;
+      if (item['asset'] != 'original:$id') continue;
+      final int separator = id.indexOf('_');
+      if (separator <= 0 || separator == id.length - 1) continue;
+      final WallpaperSource source = WallpaperSourceX.fromWire(id.substring(0, separator));
+      if (source == WallpaperSource.unknown) continue;
+      final FavouriteWallEntity wall = LegacyFavouriteWall(
+        id: id.substring(separator + 1),
+        source: source,
+        legacyPayload: const <String, Object?>{},
+      );
+      if (folderItemKey(wall) == id) yield wall;
+    }
+  }
 
   static bool _otherOwnerIsActive(String owner) {
     final String activeOwner = app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '';

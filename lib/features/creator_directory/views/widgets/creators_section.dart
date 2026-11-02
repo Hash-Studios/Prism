@@ -23,10 +23,13 @@ const EdgeInsets _sectionHeaderPadding = EdgeInsets.fromLTRB(
 
 /// The "Creators to follow" row on Home and Search. It hides while the directory is empty or for guests.
 class CreatorsSection extends StatefulWidget {
-  const CreatorsSection({super.key, required this.source});
+  const CreatorsSection({super.key, required this.source, this.refreshRevision = 0});
 
   /// 'home' or 'search'.
   final String source;
+
+  /// Changes when Home refreshes. Search keeps the default and does not reload on rebuild.
+  final int refreshRevision;
 
   @override
   State<CreatorsSection> createState() => _CreatorsSectionState();
@@ -34,12 +37,26 @@ class CreatorsSection extends StatefulWidget {
 
 class _CreatorsSectionState extends State<CreatorsSection> {
   bool _viewedTracked = false;
+  CreatorDirectoryCubit? _directoryCubit;
+
+  @override
+  void didUpdateWidget(covariant CreatorsSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.refreshRevision != oldWidget.refreshRevision) _directoryCubit?.loadRow();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: <BlocProvider<dynamic>>[
-        BlocProvider<CreatorDirectoryCubit>(create: (_) => getIt<CreatorDirectoryCubit>()..loadRow()),
+        BlocProvider<CreatorDirectoryCubit>(
+          create: (_) {
+            final CreatorDirectoryCubit cubit = getIt<CreatorDirectoryCubit>();
+            _directoryCubit = cubit;
+            cubit.loadRow();
+            return cubit;
+          },
+        ),
         BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
       ],
       child: BlocListener<PublicProfileBloc, PublicProfileState>(

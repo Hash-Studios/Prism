@@ -12159,6 +12159,147 @@
       }
     }
   },
+  "desktopVersionChip": "डेस्कटॉप वर्शन",
+  "@desktopVersionChip": {
+    "description": "Chip on the wallpaper detail screen. Opens the desktop version of the wallpaper."
+  },
+  "desktopVersionChipSemantic": "डेस्कटॉप वर्शन खोलें",
+  "@desktopVersionChipSemantic": {
+    "description": "Screen reader label of the Desktop version chip."
+  },
+  "desktopVersionSheetTitle": "डेस्कटॉप वर्शन",
+  "@desktopVersionSheetTitle": {
+    "description": "Title of the sheet that shows the wide desktop version of a wallpaper."
+  },
+  "desktopVersionSheetBody": "वही दृश्य, कंप्यूटर स्क्रीन के लिए चौड़ा किया गया। {width} × {height}.",
+  "@desktopVersionSheetBody": {
+    "description": "Body of the desktop version sheet. width and height are pixels, for example 2560 × 1600.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopVersionPreviewSemantic": "कंप्यूटर स्क्रीन पर डेस्कटॉप वर्शन",
+  "@desktopVersionPreviewSemantic": {
+    "description": "Screen reader label of the desktop preview image."
+  },
+  "desktopVersionSendToComputer": "मेरे कंप्यूटर पर भेजें",
+  "@desktopVersionSendToComputer": {
+    "description": "Button. Shares a link to the wallpaper's web page, where the desktop version can be downloaded."
+  },
+  "desktopVersionShareText": "अपने कंप्यूटर के लिए यह वॉलपेपर पाएँ: {url}",
+  "@desktopVersionShareText": {
+    "description": "Text shared with the link to the desktop download page. url is the page address.",
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "desktopVersionShareSubject": "Prism का डेस्कटॉप वॉलपेपर",
+  "@desktopVersionShareSubject": {
+    "description": "Email subject used when the desktop link is shared by email."
+  },
+  "desktopVersionSetOnTablet": "डेस्कटॉप वर्शन लगाएँ",
+  "@desktopVersionSetOnTablet": {
+    "description": "Tablet button. Sets the wide desktop version as the tablet wallpaper."
+  },
+  "desktopVersionSaveOnTablet": "डेस्कटॉप वर्शन फ़ोटो में सेव करें",
+  "@desktopVersionSaveOnTablet": {
+    "description": "iPad button. Saves the wide desktop version to Photos."
+  },
+  "desktopVersionUnavailable": "डेस्कटॉप वर्शन नहीं मिल सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
+  "@desktopVersionUnavailable": {
+    "description": "Error toast when the desktop version cannot be downloaded."
+  },
+  "layoutTitle": "लेआउट",
+  "@layoutTitle": {
+    "description": "Title of the Layout settings page and its row in Settings."
+  },
+  "layoutRowSubtitle": "टैब और वॉलपेपर ग्रिड",
+  "@layoutRowSubtitle": {
+    "description": "Subtitle of the Layout row in Settings."
+  },
+  "layoutTabsHeader": "टैब",
+  "@layoutTabsHeader": {
+    "description": "Section header above the bottom bar tab list on the Layout page."
+  },
+  "layoutTabsFootnote": "क्रम बदलने के लिए खींचें। बार में कम से कम 3 टैब रहते हैं। छिपे टैब \"और\" के नीचे हैं।",
+  "@layoutTabsFootnote": {
+    "description": "Footnote under the tab list on the Layout page."
+  },
+  "layoutTabAlwaysShown": "हमेशा बार में",
+  "@layoutTabAlwaysShown": {
+    "description": "Subtitle of the Home row on the Layout page. Home cannot be hidden."
+  },
+  "layoutTabUnderMore": "\"और\" के नीचे",
+  "@layoutTabUnderMore": {
+    "description": "Subtitle of a hidden tab row on the Layout page."
+  },
+  "layoutShowTab": "{tab} दिखाएँ",
+  "@layoutShowTab": {
+    "description": "Accessibility label of the switch that shows a tab in the bottom bar.",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "Search"
+      }
+    }
+  },
+  "layoutReorderTab": "{tab} का क्रम बदलें",
+  "@layoutReorderTab": {
+    "description": "Tooltip and accessibility label of the drag handle of a tab row.",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "Search"
+      }
+    }
+  },
+  "layoutMoveUp": "ऊपर ले जाएँ",
+  "@layoutMoveUp": {
+    "description": "Accessibility action that moves a tab one place up in the bottom bar order."
+  },
+  "layoutMoveDown": "नीचे ले जाएँ",
+  "@layoutMoveDown": {
+    "description": "Accessibility action that moves a tab one place down in the bottom bar order."
+  },
+  "layoutGridHeader": "वॉलपेपर ग्रिड",
+  "@layoutGridHeader": {
+    "description": "Section header above the grid size choice on the Layout page."
+  },
+  "layoutDensityCompact": "कॉम्पैक्ट",
+  "@layoutDensityCompact": {
+    "description": "Grid size with small tiles (3 columns on a phone)."
+  },
+  "layoutDensityComfortable": "आरामदायक",
+  "@layoutDensityComfortable": {
+    "description": "Default grid size (2 columns on a phone)."
+  },
+  "layoutDensityLarge": "बड़ा",
+  "@layoutDensityLarge": {
+    "description": "Grid size with one full-width wallpaper per row on a phone."
+  },
+  "layoutGridFootnote": "हर वॉलपेपर ग्रिड पर लागू होता है। बदलने के लिए होम फ़ीड पर पिंच करें।",
+  "@layoutGridFootnote": {
+    "description": "Footnote under the grid size choice on the Layout page."
+  },
+  "layoutReset": "लेआउट रीसेट करें",
+  "@layoutReset": {
+    "description": "Button that puts the tabs and grid size back to the defaults."
+  },
+  "navMore": "और",
+  "@navMore": {
+    "description": "Bottom bar entry that opens the hidden tabs."
+  },
+  "navMoreEditTabs": "टैब संपादित करें",
+  "@navMoreEditTabs": {
+    "description": "Row in the More sheet that opens the Layout settings page."
+  },
   "wrappedTitle": "Prism Wrapped {year}",
   "@wrappedTitle": {"description": "Title of the Wrapped yearly recap screen and share card.", "placeholders": {"year": {"type": "String"}}},
   "wrappedIntroHeadline": "इस साल के आपके वॉलपेपर",

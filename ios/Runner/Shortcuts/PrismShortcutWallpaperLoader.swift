@@ -36,6 +36,13 @@ enum PrismShortcutWallpaperLoader {
     return data
   }
 
+  /// A protected wall loads only from its downloaded original. Its image is never fetched from the network.
+  static func imageData(for wall: PrismShortcutFavourite) async throws -> Data {
+    if let url = wall.url { return try await imageData(from: url) }
+    guard let asset = wall.asset, let data = localImageData(forKey: asset) else { throw PrismShortcutLoadError.badResponse }
+    return data
+  }
+
   static func imageData(from url: URL) async throws -> Data {
     if let local = localImageData(for: url) { return local }
     let (file, response) = try await imageSession.download(from: url)

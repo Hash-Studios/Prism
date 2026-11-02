@@ -73,6 +73,8 @@ import 'package:Prism/features/folders/views/widgets/folder_write_failure_listen
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/ios_shortcuts/views/widgets/shortcuts_favourites_listener.dart';
 import 'package:Prism/features/ios_shortcuts/views/widgets/shortcuts_folders_listener.dart';
+import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
+import 'package:Prism/features/layout_prefs/views/layout_prefs_scope.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
@@ -369,7 +371,7 @@ Future<void> main() async {
                   BlocProvider<ThemeBloc>(create: (_) => getIt<ThemeBloc>()..add(const ThemeEvent.started())),
                   BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
                 ],
-                child: AutoRotateSessionListener(child: _MyApp()),
+                child: _MyApp(),
               ),
             ),
           ),
@@ -958,10 +960,17 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
                     final ThemeData theme = Theme.of(context);
                     return Theme(
                       data: theme.copyWith(snackBarTheme: prismSnackBarThemeFor(context, theme.snackBarTheme)),
-                      child: FolderWriteFailureListener(
-                        child: ShakeToReportListener(
-                          navigatorKey: _appRouter.navigatorKey,
-                          child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                      // This builder is under MaterialApp's Localizations. The auto-rotate toasts read those messages,
+                      // so the listener cannot sit above _MyApp.
+                      child: LayoutPrefsScope(
+                        prefs: getIt<LayoutPrefsStore>(),
+                        child: AutoRotateSessionListener(
+                          child: FolderWriteFailureListener(
+                            child: ShakeToReportListener(
+                              navigatorKey: _appRouter.navigatorKey,
+                              child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                            ),
+                          ),
                         ),
                       ),
                     );

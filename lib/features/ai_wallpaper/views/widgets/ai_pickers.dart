@@ -70,12 +70,11 @@ class _AiStylePickerState extends State<AiStylePicker> {
       position.minScrollExtent,
       position.maxScrollExtent,
     );
-    final Duration duration = context.motion(PrismDurations.base);
-    if (!animate || duration == Duration.zero) {
+    if (!animate) {
       position.jumpTo(target);
-    } else {
-      _scroll.animateTo(target, duration: duration, curve: PrismCurves.move);
+      return;
     }
+    _scroll.animateOrJump(target, duration: context.motion(PrismDurations.base), curve: PrismCurves.move);
   }
 
   @override

@@ -50,3 +50,40 @@ extension PrismMotionContext on BuildContext {
   /// [d], or [Duration.zero] when the system asks for less motion.
   Duration motion(Duration d) => reduceMotion ? Duration.zero : d;
 }
+
+/// [Duration.zero] jumps.
+///
+/// [ScrollPosition.animateTo] builds a [DrivenScrollActivity] that reads its late
+/// controller before the constructor finishes assigning it. Release builds throw
+/// [LateInitializationError]. [PrismMotionContext.motion] is what produces that duration.
+extension PrismScrollMotion on ScrollController {
+  Future<void> animateOrJump(double offset, {required Duration duration, required Curve curve}) {
+    return _jumpOrAnimate(
+      duration: duration,
+      jump: () => jumpTo(offset),
+      animate: () => animateTo(offset, duration: duration, curve: curve),
+    );
+  }
+}
+
+extension PrismPageMotion on PageController {
+  Future<void> animateOrJumpToPage(int page, {required Duration duration, required Curve curve}) {
+    return _jumpOrAnimate(
+      duration: duration,
+      jump: () => jumpToPage(page),
+      animate: () => animateToPage(page, duration: duration, curve: curve),
+    );
+  }
+}
+
+Future<void> _jumpOrAnimate({
+  required Duration duration,
+  required void Function() jump,
+  required Future<void> Function() animate,
+}) {
+  if (duration == Duration.zero) {
+    jump();
+    return Future<void>.value();
+  }
+  return animate();
+}

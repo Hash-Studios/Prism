@@ -12635,6 +12635,104 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get desktopVersionChip => 'Desktop-Version';
+
+  @override
+  String get desktopVersionChipSemantic => 'Desktop-Version öffnen';
+
+  @override
+  String get desktopVersionSheetTitle => 'Desktop-Version';
+
+  @override
+  String desktopVersionSheetBody(int width, int height) {
+    return 'Dieselbe Szene, breit für einen Computerbildschirm. $width × $height.';
+  }
+
+  @override
+  String get desktopVersionPreviewSemantic => 'Desktop-Version auf einem Computerbildschirm';
+
+  @override
+  String get desktopVersionSendToComputer => 'An meinen Computer senden';
+
+  @override
+  String desktopVersionShareText(String url) {
+    return 'Hol dir dieses Hintergrundbild für deinen Computer: $url';
+  }
+
+  @override
+  String get desktopVersionShareSubject => 'Desktop-Hintergrundbild von Prism';
+
+  @override
+  String get desktopVersionSetOnTablet => 'Desktop-Version festlegen';
+
+  @override
+  String get desktopVersionSaveOnTablet => 'Desktop-Version in Fotos speichern';
+
+  @override
+  String get desktopVersionUnavailable =>
+      'Die Desktop-Version kann gerade nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String get layoutTitle => 'Layout';
+
+  @override
+  String get layoutRowSubtitle => 'Tabs und Hintergrundbild-Raster';
+
+  @override
+  String get layoutTabsHeader => 'Tabs';
+
+  @override
+  String get layoutTabsFootnote =>
+      'Zum Sortieren ziehen. Mindestens 3 Tabs bleiben in der Leiste. Ausgeblendete Tabs findest du unter Mehr.';
+
+  @override
+  String get layoutTabAlwaysShown => 'Immer in der Leiste';
+
+  @override
+  String get layoutTabUnderMore => 'Unter Mehr';
+
+  @override
+  String layoutShowTab(String tab) {
+    return '$tab anzeigen';
+  }
+
+  @override
+  String layoutReorderTab(String tab) {
+    return '$tab neu sortieren';
+  }
+
+  @override
+  String get layoutMoveUp => 'Nach oben verschieben';
+
+  @override
+  String get layoutMoveDown => 'Nach unten verschieben';
+
+  @override
+  String get layoutGridHeader => 'Hintergrundbild-Raster';
+
+  @override
+  String get layoutDensityCompact => 'Kompakt';
+
+  @override
+  String get layoutDensityComfortable => 'Komfortabel';
+
+  @override
+  String get layoutDensityLarge => 'Groß';
+
+  @override
+  String get layoutGridFootnote =>
+      'Gilt für alle Hintergrundbild-Raster. Zum Ändern auf dem Feed der Startseite zoomen.';
+
+  @override
+  String get layoutReset => 'Layout zurücksetzen';
+
+  @override
+  String get navMore => 'Mehr';
+
+  @override
+  String get navMoreEditTabs => 'Tabs bearbeiten';
+
+  @override
   String wrappedTitle(String year) {
     return 'Prism Wrapped $year';
   }

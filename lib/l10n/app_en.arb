@@ -12159,6 +12159,147 @@
       }
     }
   },
+  "desktopVersionChip": "Desktop version",
+  "@desktopVersionChip": {
+    "description": "Chip on the wallpaper detail screen. Opens the desktop version of the wallpaper."
+  },
+  "desktopVersionChipSemantic": "Open the desktop version",
+  "@desktopVersionChipSemantic": {
+    "description": "Screen reader label of the Desktop version chip."
+  },
+  "desktopVersionSheetTitle": "Desktop version",
+  "@desktopVersionSheetTitle": {
+    "description": "Title of the sheet that shows the wide desktop version of a wallpaper."
+  },
+  "desktopVersionSheetBody": "The same scene, made wide for a computer screen. {width} × {height}.",
+  "@desktopVersionSheetBody": {
+    "description": "Body of the desktop version sheet. width and height are pixels, for example 2560 × 1600.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopVersionPreviewSemantic": "Desktop version on a computer screen",
+  "@desktopVersionPreviewSemantic": {
+    "description": "Screen reader label of the desktop preview image."
+  },
+  "desktopVersionSendToComputer": "Send to my computer",
+  "@desktopVersionSendToComputer": {
+    "description": "Button. Shares a link to the wallpaper's web page, where the desktop version can be downloaded."
+  },
+  "desktopVersionShareText": "Get this wallpaper for your computer: {url}",
+  "@desktopVersionShareText": {
+    "description": "Text shared with the link to the desktop download page. url is the page address.",
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "desktopVersionShareSubject": "Desktop wallpaper from Prism",
+  "@desktopVersionShareSubject": {
+    "description": "Email subject used when the desktop link is shared by email."
+  },
+  "desktopVersionSetOnTablet": "Set desktop version",
+  "@desktopVersionSetOnTablet": {
+    "description": "Tablet button. Sets the wide desktop version as the tablet wallpaper."
+  },
+  "desktopVersionSaveOnTablet": "Save desktop version",
+  "@desktopVersionSaveOnTablet": {
+    "description": "iPad button. Saves the wide desktop version to Photos."
+  },
+  "desktopVersionUnavailable": "Unable to get the desktop version. Check your connection and try again.",
+  "@desktopVersionUnavailable": {
+    "description": "Error toast when the desktop version cannot be downloaded."
+  },
+  "layoutTitle": "Layout",
+  "@layoutTitle": {
+    "description": "Title of the Layout settings page and its row in Settings."
+  },
+  "layoutRowSubtitle": "Tabs and wallpaper grid",
+  "@layoutRowSubtitle": {
+    "description": "Subtitle of the Layout row in Settings."
+  },
+  "layoutTabsHeader": "Tabs",
+  "@layoutTabsHeader": {
+    "description": "Section header above the bottom bar tab list on the Layout page."
+  },
+  "layoutTabsFootnote": "Drag to reorder. At least 3 tabs stay in the bar. Hidden tabs are under More.",
+  "@layoutTabsFootnote": {
+    "description": "Footnote under the tab list on the Layout page."
+  },
+  "layoutTabAlwaysShown": "Always in the bar",
+  "@layoutTabAlwaysShown": {
+    "description": "Subtitle of the Home row on the Layout page. Home cannot be hidden."
+  },
+  "layoutTabUnderMore": "Under More",
+  "@layoutTabUnderMore": {
+    "description": "Subtitle of a hidden tab row on the Layout page."
+  },
+  "layoutShowTab": "Show {tab}",
+  "@layoutShowTab": {
+    "description": "Accessibility label of the switch that shows a tab in the bottom bar.",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "Search"
+      }
+    }
+  },
+  "layoutReorderTab": "Reorder {tab}",
+  "@layoutReorderTab": {
+    "description": "Tooltip and accessibility label of the drag handle of a tab row.",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "Search"
+      }
+    }
+  },
+  "layoutMoveUp": "Move up",
+  "@layoutMoveUp": {
+    "description": "Accessibility action that moves a tab one place up in the bottom bar order."
+  },
+  "layoutMoveDown": "Move down",
+  "@layoutMoveDown": {
+    "description": "Accessibility action that moves a tab one place down in the bottom bar order."
+  },
+  "layoutGridHeader": "Wallpaper grid",
+  "@layoutGridHeader": {
+    "description": "Section header above the grid size choice on the Layout page."
+  },
+  "layoutDensityCompact": "Compact",
+  "@layoutDensityCompact": {
+    "description": "Grid size with small tiles (3 columns on a phone)."
+  },
+  "layoutDensityComfortable": "Comfortable",
+  "@layoutDensityComfortable": {
+    "description": "Default grid size (2 columns on a phone)."
+  },
+  "layoutDensityLarge": "Large",
+  "@layoutDensityLarge": {
+    "description": "Grid size with one full-width wallpaper per row on a phone."
+  },
+  "layoutGridFootnote": "Applies to every wallpaper grid. Pinch the Home feed to change it.",
+  "@layoutGridFootnote": {
+    "description": "Footnote under the grid size choice on the Layout page."
+  },
+  "layoutReset": "Reset layout",
+  "@layoutReset": {
+    "description": "Button that puts the tabs and grid size back to the defaults."
+  },
+  "navMore": "More",
+  "@navMore": {
+    "description": "Bottom bar entry that opens the hidden tabs."
+  },
+  "navMoreEditTabs": "Edit tabs",
+  "@navMoreEditTabs": {
+    "description": "Row in the More sheet that opens the Layout settings page."
+  },
   "wrappedTitle": "Prism Wrapped {year}",
   "@wrappedTitle": {
     "description": "Title of the Wrapped yearly recap screen and share card.",

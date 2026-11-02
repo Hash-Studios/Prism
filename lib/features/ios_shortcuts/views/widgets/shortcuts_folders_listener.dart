@@ -14,7 +14,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// On iOS, keeps the folders snapshot that the Shortcuts intent reads in step with the signed-in user's folders.
 /// The app loads folders on every sign-in and app open, so that load writes the snapshot too. Coming back to the app
-/// syncs again, which reads only folders that changed or failed last time.
+/// syncs again, which reads only folders that changed or failed last time. Leaving the app syncs too, so an original
+/// downloaded just before the user opens Shortcuts is in the snapshot.
 class ShortcutsFoldersListener extends StatefulWidget {
   const ShortcutsFoldersListener({required this.child, this.repository, super.key});
 
@@ -64,7 +65,7 @@ class _ShortcutsFoldersListenerState extends State<ShortcutsFoldersListener> wit
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _sync();
+    if (state == AppLifecycleState.resumed || state == AppLifecycleState.hidden) _sync();
   }
 
   void _onFoldersChanged(FoldersState current) {

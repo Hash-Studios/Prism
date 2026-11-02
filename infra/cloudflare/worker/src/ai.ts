@@ -710,6 +710,9 @@ export class AiQuotaCoordinator {
     const storageKey = `ratelimit:${key}`;
     const now = Date.now();
     const stored = await this.state.storage.get<AiRateLimitRecord>(storageKey);
+    if (stored != null && (!Number.isSafeInteger(stored.count) || stored.count < 0 || !Number.isFinite(stored.expiresAt))) {
+      return quotaJson<AiQuotaRateLimitResponse>({ ok: true, allowed: false, current: limit });
+    }
     const current = stored != null && stored.expiresAt > now ? stored : null;
     const count = current?.count ?? 0;
     if (count >= limit) {
@@ -939,6 +942,9 @@ async function handleAssetRead(pathname: string, method: string, env: AiEnvBindi
   const objectKey = pathname.replace('/api/ai/assets/', '').trim();
   if (!isNonEmptyString(objectKey)) {
     return aiError('invalid_request', 400, 'Invalid asset key');
+  }
+  if (/^ai\/studio\/raw\/desk_[A-Za-z0-9_-]+\.(jpg|webp|png)$/.test(objectKey)) {
+    return new Response('Not found', { status: 404, headers: { 'cache-control': 'no-store' } });
   }
 
   if (env.AI_IMAGES != null) {
@@ -2427,6 +2433,9 @@ async function handleStudioRequest(request: Request, pathname: string, env: AiEn
     return handleStudioGenerate(request, env);
   }
   const assetKey = pathname.startsWith(STUDIO_ASSETS_PATH_PREFIX) ? pathname.slice(STUDIO_ASSETS_PATH_PREFIX.length) : null;
+  if ((request.method === 'GET' || request.method === 'HEAD') && assetKey != null) {
+    return handleStudioAssetRead(assetKey, request.method, env);
+  }
   if (request.method === 'PUT' && assetKey != null) {
     return handleStudioAssetPut(request, assetKey, env);
   }
@@ -2661,7 +2670,9 @@ async function runStudioGeneration(
     });
     return { response: aiJson({
       id: request.id,
-      imageUrl: `https://prismwalls.com/api/ai/assets/${key}`,
+      imageUrl: request.id.startsWith('desk_')
+        ? `https://prismwalls.com${STUDIO_ASSETS_PATH_PREFIX}${key}`
+        : `https://prismwalls.com/api/ai/assets/${key}`,
       key,
       width: actualSize.width,
       height: actualSize.height,
@@ -2733,6 +2744,20 @@ async function handleStudioAssetDelete(key: string, env: AiEnvBindings): Promise
   }
   await env.AI_IMAGES?.delete(key);
   return aiJson({ deleted: true });
+}
+
+async function handleStudioAssetRead(key: string, method: string, env: AiEnvBindings): Promise<Response> {
+  if (!/^ai\/studio\/raw\/[A-Za-z0-9_-]+\.(jpg|webp|png)$/.test(key)) {
+    return new Response('Not found', { status: 404, headers: { 'cache-control': 'no-store' } });
+  }
+  const object = await env.AI_IMAGES?.get(key);
+  if (object == null) return new Response('Not found', { status: 404, headers: { 'cache-control': 'no-store' } });
+  const headers = {
+    'content-type': object.httpMetadata?.contentType ?? 'application/octet-stream',
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+  };
+  return new Response(method === 'HEAD' ? null : object.body, { status: 200, headers });
 }
 
 async function readBoundedBytes(

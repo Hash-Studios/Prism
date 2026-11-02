@@ -1,6 +1,6 @@
 # Web catalogue
 
-The web catalogue gives public pages on prismwalls.com. Search engines can index them. There is a page for each approved wall, each public folder, each hub and each creator. Wall and folder pages have an **Open in Prism** button and store buttons. Visitors can browse. Web downloads come in a later release. The pages are in English only, because the site has no translations.
+The web catalogue gives public pages on prismwalls.com. Search engines can index them. There is a page for each approved wall, each public folder, each hub and each creator. Wall and folder pages have an **Open in Prism** button and store buttons. Visitors can browse and download free images. Walls with a desktop version also have desktop images and two desktop hubs. The pages are in English only, because the site has no translations.
 
 The catalogue uses the links Worker. Its code is in `infra/cloudflare/worker/src/catalog.ts`. The data builder is in `functions/src/webCatalog.ts`.
 
@@ -14,6 +14,10 @@ The catalogue uses the links Worker. Its code is in `infra/cloudflare/worker/src
 | Popular walls | `/wallpapers/popular` | The popular walls. |
 | Category | `/wallpapers/<category>` | The walls in one category. |
 | Creator | `/creator/<username>` | One creator, their public folders and their walls. |
+| Desktop wallpapers | `/desktop-wallpapers` | The walls that have a desktop version. |
+| Matching sets | `/matching-sets` | The same walls, as phone and desktop pairs. |
+| Download | `/api/catalog/download/<id>/<file>.jpg` | One free image. The file is `phone`, `desktop` or `desktop-16x9`. |
+| Desktop image | `/api/catalog/desktop/<id>.jpg` | The image in the Desktop tab of a wall page. |
 | Sitemap index | `/sitemap.xml` | The list of sitemap files. |
 
 Hub, category and creator pages show 24 walls each. Add `?page=<n>` to open the next page.
@@ -116,6 +120,7 @@ This is the same gate that public folders use.
 - Each shard holds at most 3,000 URLs, so that each document stays below the 1 MiB Firestore limit. The limit for one sitemap file is 50,000 URLs.
 - Each `lastmod` comes from the projected `updatedAt` of the wall, folder or creator.
 - The sitemaps list only live walls, and the folders and creators that have live walls.
+- The categories shard also lists `/desktop-wallpapers` and `/matching-sets`, when a live wall has a desktop version.
 - `robots.txt` already points at `/sitemap.xml`.
 
 ### Build
@@ -134,6 +139,37 @@ One build reads about 2 documents for each approved wall. It also reads one prof
 
 At 2,534 approved walls and 12 builds a day, the wall reads come to about 61,000 reads a day. The creator, folder and popular reads come on top of that.
 
+## Web downloads and desktop pages
+
+A visitor can download a wallpaper from its wall page. The links are under **Download free**. Each file is a JPEG.
+
+| File | Size | Address |
+|---|---|---|
+| Phone | The 2560 px preview. It is the same image as the page hero. | `/api/catalog/download/<id>/phone.jpg` |
+| Desktop | 1920 x 1200 | `/api/catalog/download/<id>/desktop.jpg` |
+| Desktop 16:9 | 1920 x 1080 | `/api/catalog/download/<id>/desktop-16x9.jpg` |
+
+The desktop files exist only for walls with a desktop version. Full quality stays in the Prism app. See [desktop-companions.md](desktop-companions.md) for how a desktop version is made.
+
+The Desktop tab on a wall page shows `/api/catalog/desktop/<id>.jpg`. Its address has a `v` value. The value changes with each new desktop version.
+
+The hubs `/desktop-wallpapers` and `/matching-sets` read one list, `webPages/desktop~<n>`. The first hub shows the desktop versions. The second hub shows the phone and desktop pairs.
+
+### Download checks
+
+The Worker runs these checks on each download, in this order. The download route never uses the page cache.
+
+1. **Referer.** The Referer must be `prismwalls.com` or `www.prismwalls.com`. A request with no Referer must have `Sec-Fetch-Site: same-origin`. Other sites get a 302 to the wall page.
+2. **Limit.** Each IP gets 30 downloads per 10 minutes and 300 per day. Over the limit, the Worker returns 429 with `Retry-After: 600`. If the counter fails, the Worker returns 503.
+3. **Wall state.** The Worker reads `webWalls/<id>` on every download. Only a `live` wall gets a file. A gated, hidden or gone wall gets 404. A desktop file also needs a desktop version.
+4. **Response.** The response is never cached (`Cache-Control: no-store`). It is an attachment (`Content-Disposition: attachment`), named `prism-<title>-<file>.jpg`.
+
+A `HEAD` request to a download or image route gets 405, so it costs no Firestore read and no function call.
+
+The Referer check stops hotlinks from other sites. It does not stop scripts, because a script can send any Referer. The limit is per IP, so visitors that share one IP share the allowance.
+
+Each download counts as `web_wallpaper_downloaded` in the website's Mixpanel project. The Worker sends the event with no IP. The count needs the `MIXPANEL_TOKEN` variable on the Worker. Without it, downloads are not counted.
+
 ## Limits
 
 - A new public folder or a renamed creator appears at the next build, up to 2 hours later.
@@ -149,7 +185,7 @@ The website deploys automatically when the change merges to `master`, because `d
 1. Deploy the Firestore rules with `firebase deploy --only firestore:rules`.
 2. Deploy the functions with `make functions-deploy`. This deploys `onWallWebCatalog` and `buildWebCatalog`.
 3. In Cloud Scheduler, run `buildWebCatalog` once with **Run now**. This writes the `webWalls` and `webPages` documents.
-4. Deploy the links Worker with `npx wrangler deploy` in `infra/cloudflare/worker`. This adds the routes `/creator/*`, `/sitemap.xml` and `/sitemaps/*`.
+4. Deploy the links Worker with `npx wrangler deploy` in `infra/cloudflare/worker`. This adds the routes `/creator/*`, `/sitemap.xml`, `/sitemaps/*`, `/desktop-wallpapers*` and `/matching-sets*`. The desktop steps are in [desktop-companions.md](desktop-companions.md).
 5. After step 4, add a **Wallpapers** link to the website header (`web/components/sections/header.tsx`) that goes to `/wallpapers`. Do not add it before step 4: until then, `/wallpapers` returns 404.
 
 No new Firestore index is needed.

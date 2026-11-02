@@ -3,7 +3,7 @@ import test from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 import {readCreatorStats, deliverCreatorWeek, sendCreatorWeeklyStats} from "../creatorStats";
-import {addHistory, atOrAfter, countFolderCreation, historyRef, isoWeek, MAX_IDENTITY_WALLS, onCreatorStatsFolderCreated, weekWindows} from "../creatorStatsHistory";
+import {addHistory, atOrAfter, countFolderCreation, historyRef, isoWeek, MAX_IDENTITY_WALLS, METRICS, onCreatorStatsFolderCreated, weekWindows} from "../creatorStatsHistory";
 import {enqueueCreatorStatsDaily, onCreatorStatsDailyWritten, processCreatorStatsDailyQueue} from "../creatorStatsDaily";
 import {syncRemixCredit} from "../wallRemix";
 import {nativeNotificationLocalization, renderNotificationCopy} from "../notificationCatalog";
@@ -53,13 +53,67 @@ test("ISO UTC weeks handle Sunday, Monday, and ISO year boundaries", () => {
   assert.equal(weeks[7].week, "2025-W01");
   assert.equal(weeks[7].endExclusive, "2025-01-06T00:00:00.000Z");
 });
-test("missing history remains null during wall and creator aggregation", async (t) => {
+test("missing history keeps weeks before tracking unknown, but folder adds are a real 0", async (t) => {
   installFakeDb(t, seed({"walls/second": wall({id: "SECOND"})}));
   await putHistory({views: 7});
   const stats = await readCreatorStats("alice", {}, NOW);
   assert.equal(stats.weeks[6].metrics.views, null);
-  assert.equal(stats.totals.folderAdds, null);
+  assert.equal(stats.totals.folderAdds, 0);
   assert.equal(stats.coverage.views.weeklyFrom, null);
+  assert.equal(stats.coverage.folderAdds.totalFrom, null);
+});
+test("from the first tracked week, a wall with no events counts 0, and earlier weeks stay unknown", async (t) => {
+  installFakeDb(t, seed());
+  const stats = await readCreatorStats("alice", {}, Date.parse("2026-11-10T09:00:00Z"));
+  const week = (start: string) => stats.weeks.find((w) => w.start === start)?.metrics.views;
+  assert.equal(week("2026-11-09T00:00:00.000Z"), 0);
+  assert.equal(week("2026-11-02T00:00:00.000Z"), 0);
+  assert.equal(week("2026-10-26T00:00:00.000Z"), null);
+  assert.equal(stats.walls[0].weeks.find((w) => w.start === "2026-11-02T00:00:00.000Z")?.metrics.shares, 0);
+  assert.equal(stats.walls[0].weeks.find((w) => w.start === "2026-11-02T00:00:00.000Z")?.metrics.folderAdds, 0);
+  assert.equal(stats.coverage.views.weeklyFrom, null);
+  assert.equal(stats.coverage.folderAdds.totalFrom, null);
+});
+test("the tracking cutoff is the Monday boundary, not the preceding Sunday", async (t) => {
+  installFakeDb(t, seed());
+  const sunday = await readCreatorStats("alice", {}, Date.parse("2026-11-01T12:00:00Z"));
+  const monday = await readCreatorStats("alice", {}, Date.parse("2026-11-02T00:00:00Z"));
+  assert.equal(sunday.weeks[7].start, "2026-10-26T00:00:00.000Z");
+  assert.equal(sunday.weeks[7].metrics.views, null);
+  assert.equal(monday.weeks[7].start, "2026-11-02T00:00:00.000Z");
+  assert.equal(monday.weeks[7].metrics.views, 0);
+  assert.equal(monday.weeks[7].metrics.folderAdds, 0);
+});
+test("no lifetime stats doc means never-recorded zero, unlike stats from an older wall", async (t) => {
+  installFakeDb(t, seed({"walls/second": wall({id: "SECOND"})}), undefined,
+    {createTimes: {"walls/wall": admin.firestore.Timestamp.fromMillis(9),
+      "wallpaper_stats/WALL": admin.firestore.Timestamp.fromMillis(5), "walls/second": admin.firestore.Timestamp.fromMillis(9)}});
+  const result = await readCreatorStats("alice", {}, NOW);
+  assert.equal(result.walls.find((row) => row.wallId === "wall")?.totals.views, null);
+  assert.equal(result.walls.find((row) => row.wallId === "second")?.totals.views, 0);
+  assert.equal(result.totals.views, null);
+});
+test("a counter field that was never written totals 0 across the account", async (t) => {
+  installFakeDb(t, seed({"walls/second": wall({id: "SECOND"}), "wallpaper_stats/WALL": {views: 10, favs: 3},
+    "wallpaper_stats/SECOND": {views: 4}, "walls/third": wall({id: "THIRD"})}));
+  const result = await readCreatorStats("alice", {}, NOW);
+  assert.deepEqual(result.totals, {views: 14, saves: 3, sets: 0, downloads: 0, shares: 0, folderAdds: 0, remixes: 6});
+});
+test("invalid counters stay unknown", async (t) => {
+  installFakeDb(t, seed({"walls/wall": wall({remixCount: "bad"}), "wallpaper_stats/WALL": {views: Number.NaN}}),
+    undefined, {createTimes: {"walls/wall": admin.firestore.Timestamp.fromMillis(5),
+      "wallpaper_stats/WALL": admin.firestore.Timestamp.fromMillis(5)}});
+  const result = await readCreatorStats("alice", {}, NOW);
+  assert.equal(result.totals.views, null);
+  assert.equal(result.totals.shares, 0);
+  assert.equal(result.totals.remixes, null);
+});
+test("a stats doc older than the wall stays unknown", async (t) => {
+  installFakeDb(t, seed(), undefined, {createTimes: {"walls/wall": admin.firestore.Timestamp.fromMillis(9),
+    "wallpaper_stats/WALL": admin.firestore.Timestamp.fromMillis(5)}});
+  const stale = await readCreatorStats("alice", {}, NOW);
+  assert.equal(stale.totals.views, null);
+  assert.equal(stale.totals.shares, null);
 });
 test("empty creator has zero totals, eight weeks, and no walls", async (t) => {
   installFakeDb(t, seed());
@@ -139,6 +193,69 @@ test("cache expires at five minutes and at a new UTC week", async (t) => {
   await readCreatorStats("alice", {}, sunday);
   const monday = await readCreatorStats("alice", {}, sunday + 1000);
   assert.equal(monday.weeks[7].week, "2026-W45");
+});
+test("a cached null survives until just before five minutes and refreshes at expiry", async (t) => {
+  const store = installFakeDb(t, seed());
+  await readCreatorStats("alice", {}, NOW);
+  const [cachePath, cached] = [...store.entries()].find(([path]) => path.startsWith("creatorStatsCache/")) as [string, Doc];
+  const row = cached.row as Doc;
+  store.set(cachePath, {...cached, row: {...row, totals: {...(row.totals as Doc), shares: null}}});
+  assert.equal((await readCreatorStats("alice", {}, NOW + 299999)).totals.shares, null);
+  assert.equal((await readCreatorStats("alice", {}, NOW + 300000)).totals.shares, 6);
+});
+test("invalid present history values stay null in wall rows and poison account sums", async (t) => {
+  const invalidValues: unknown[] = [null, -1, 0.5, Number.NaN, Number.POSITIVE_INFINITY,
+    Number.MAX_SAFE_INTEGER + 1, "bad", "0"];
+  for (const invalid of invalidValues) {
+    await t.test(`invalid value ${String(invalid)}`, async (subtest) => {
+      installFakeDb(subtest, seed({"walls/second": wall({id: "SECOND"})}));
+      const eventAt = Date.parse("2026-11-03T12:00:00Z");
+      const trackedWeek = "2026-W45";
+      for (const path of ["walls/wall", "walls/second"]) {
+        const snap = await db.doc(path).get();
+        const good = addHistory(snap, undefined, {views: 1, saves: 1, sets: 1, downloads: 1, shares: 1,
+          folderAdds: 1, remixes: 1}, eventAt, eventAt);
+        const history = path === "walls/wall" ? {...good, folderAdds: invalid,
+          weeks: {...good.weeks, [trackedWeek]: Object.fromEntries(METRICS.map((metric) => [metric, invalid]))}} : good;
+        await historyRef(snap).set(history);
+      }
+      const result = await readCreatorStats("alice", {}, Date.parse("2026-11-10T12:00:00Z"));
+      const badWall = result.walls.find((row) => row.wallId === "wall");
+      assert.equal(badWall?.totals.folderAdds, null, `folderAdds ${String(invalid)}`);
+      assert.equal(result.totals.folderAdds, null, `account folderAdds ${String(invalid)}`);
+      for (const metric of METRICS) {
+        assert.equal(badWall?.weeks[6].metrics[metric], null, `wall ${metric} ${String(invalid)}`);
+        assert.equal(result.weeks[6].metrics[metric], null, `account ${metric} ${String(invalid)}`);
+      }
+    });
+  }
+});
+test("undefined history counters remain zero after tracking starts", async (t) => {
+  installFakeDb(t, seed());
+  const snap = await db.doc("walls/wall").get();
+  const good = addHistory(snap, undefined, {}, Date.parse("2026-11-02T00:00:00Z"), Date.parse("2026-11-02T00:00:00Z"));
+  await historyRef(snap).set({...good, folderAdds: undefined, weeks: {"2026-W45": {}}});
+  const result = await readCreatorStats("alice", {}, Date.parse("2026-11-10T12:00:00Z"));
+  assert.equal(result.walls[0].totals.folderAdds, 0);
+  assert.equal(result.totals.folderAdds, 0);
+  for (const metric of METRICS) {
+    assert.equal(result.walls[0].weeks[6].metrics[metric], 0, metric);
+    assert.equal(result.weeks[6].metrics[metric], 0, metric);
+  }
+});
+test("remix cache invalidates when absent and invalid values are exchanged", async (t) => {
+  await t.test("absent to invalid", async (subtest) => {
+    const store = installFakeDb(subtest, seed({"walls/wall": wall({remixCount: undefined})}));
+    assert.equal((await readCreatorStats("alice", {}, NOW)).totals.remixes, 0);
+    store.set("walls/wall", wall({remixCount: null}));
+    assert.equal((await readCreatorStats("alice", {}, NOW + 1)).totals.remixes, null);
+  });
+  await t.test("invalid to absent", async (subtest) => {
+    const store = installFakeDb(subtest, seed({"walls/wall": wall({remixCount: null})}));
+    assert.equal((await readCreatorStats("alice", {}, NOW)).totals.remixes, null);
+    store.set("walls/wall", wall({remixCount: undefined}));
+    assert.equal((await readCreatorStats("alice", {}, NOW + 1)).totals.remixes, 0);
+  });
 });
 test("concurrent cold calls return complete results without shared cache mutation", async (t) => {
   installFakeDb(t, seed());
@@ -269,12 +386,11 @@ test("creation order compares nanoseconds without rounding to milliseconds", () 
 });
 
 
-test("missing individual lifetime fields and remix counters stay unavailable beside genuine zero", async (t) => {
+test("missing individual lifetime fields and remix counters count as 0, like a genuine zero", async (t) => {
   installFakeDb(t, seed({"walls/wall": wall({remixCount: undefined}),
     "wallpaper_stats/WALL": {views: 0, favs: "0"}}));
   const result = await readCreatorStats("alice", {}, NOW);
-  assert.deepEqual(result.totals, {views: 0, saves: 0, sets: null, downloads: null, shares: null,
-    folderAdds: null, remixes: null});
+  assert.deepEqual(result.totals, {views: 0, saves: 0, sets: 0, downloads: 0, shares: 0, folderAdds: 0, remixes: 0});
 });
 
 
@@ -348,6 +464,18 @@ test("rollout weeks preserve recorded partial values and never invent pre-covera
   assert.equal(result.coverage.views.weeklyFrom, new Date(observed).toISOString());
   assert.equal(result.coverage.folderAdds.totalFrom, new Date(observed).toISOString());
 });
+test("coverage reports latest weekly and earliest folder observation across walls", async (t) => {
+  installFakeDb(t, seed({"walls/second": wall({id: "SECOND"})}));
+  for (const [path, observed] of [["walls/wall", Date.parse("2026-10-20T00:00:00Z")],
+    ["walls/second", Date.parse("2026-10-24T00:00:00Z")]] as const) {
+    const snap = await db.doc(path).get();
+    await historyRef(snap).set(addHistory(snap, undefined, {views: 1}, observed, observed));
+  }
+  const result = await readCreatorStats("alice", {}, NOW);
+  assert.equal(result.coverage.views.weeklyFrom, "2026-10-24T00:00:00.000Z");
+  assert.equal(result.coverage.folderAdds.weeklyFrom, "2026-10-24T00:00:00.000Z");
+  assert.equal(result.coverage.folderAdds.totalFrom, "2026-10-20T00:00:00.000Z");
+});
 
 
 test("a uniquely identified lowercase wall uses normalized lifetime and explicit folder identity", async (t) => {
@@ -413,4 +541,18 @@ test("Monday job skips a creator over wall capacity without failing the schedule
   const inbox = [...store.entries()].filter(([p]) => p.startsWith("notifications/"));
   assert.equal(inbox.length, 1);
   assert.equal(inbox[0][1].modifier, "alice@example.com");
+});
+test("Monday inbox skips empty tracked weeks but delivers positive recorded history", async (t) => {
+  const store = installFakeDb(t, seed({"walls/bob-wall": wall({id: "BOB", creatorUid: "bob"})}));
+  const monday = Date.parse("2026-11-09T09:00:00Z");
+  const aliceWall = await db.doc("walls/wall").get();
+  await historyRef(aliceWall).set(addHistory(aliceWall, undefined, {views: 1}, Date.parse("2026-11-01T12:00:00Z"), monday));
+  const bobWall = await db.doc("walls/bob-wall").get();
+  await historyRef(bobWall).set(addHistory(bobWall, undefined, {views: 1}, Date.parse("2026-11-02T12:00:00Z"), monday));
+  assert.equal(await deliverCreatorWeek("alice", monday), false);
+  assert.equal(await deliverCreatorWeek("bob", monday), true);
+  await sendCreatorWeeklyStats(monday);
+  const notifications = [...store].filter(([path]) => path.startsWith("notifications/"));
+  assert.equal(notifications.length, 1);
+  assert.deepEqual(notifications[0][1].message, {kind: "creatorStatsWeekly", args: {week: "2026-W45"}});
 });

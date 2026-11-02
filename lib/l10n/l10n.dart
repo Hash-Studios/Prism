@@ -9,6 +9,16 @@ extension AppLocalizationsBuildContext on BuildContext {
   AppLocalizations get l10n => AppLocalizations.of(this);
 }
 
+/// Messages for [context], or the device locale when [context] is above the app's [Localizations] widget.
+///
+/// [AppLocalizations.of] throws in that case. Callers that can run before the widget is under
+/// [MaterialApp], such as the auto-rotate session listener, use this instead.
+Future<AppLocalizations> localizationsFor(BuildContext context) {
+  final AppLocalizations? inherited = Localizations.of<AppLocalizations>(context, AppLocalizations);
+  if (inherited != null) return Future<AppLocalizations>.value(inherited);
+  return loadDeviceAppLocalizations();
+}
+
 /// Formats a whole number with the grouping and digits used by the active app locale.
 String formatLocalizedNumber(int value, AppLocalizations l10n) =>
     NumberFormat.decimalPattern(l10n.localeName).format(value);

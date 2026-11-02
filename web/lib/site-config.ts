@@ -1,7 +1,7 @@
 // Replace with your production Google Play listing URL when needed.
 export const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.hash.prism";
-export const APP_STORE_URL = "https://apps.apple.com/app/id1405860595";
+export const APP_STORE_URL = "https://apps.apple.com/app/id6670200846";
 // Replace with your repository URL if project path changes.
 export const GITHUB_URL = "https://github.com/Hash-Studios/Prism";
 // Same links as the badges in the repository README.

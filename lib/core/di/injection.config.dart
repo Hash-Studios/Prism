@@ -112,6 +112,7 @@ import '../../features/in_app_notifications/domain/repositories/notifications_re
     as _i366;
 import '../../features/in_app_notifications/domain/usecases/notifications_usecases.dart'
     as _i474;
+import '../../features/layout_prefs/data/layout_prefs_store.dart' as _i633;
 import '../../features/leaderboard/biz/bloc/leaderboard_bloc.j.dart' as _i688;
 import '../../features/leaderboard/data/repositories/leaderboard_repository_impl.dart'
     as _i1008;
@@ -440,6 +441,12 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i685.GetCreatorStats>(
     () => _i685.GetCreatorStats(gh<_i330.CreatorStatsRepository>()),
+  );
+  gh.lazySingleton<_i633.LayoutPrefsStore>(
+    () => _i633.LayoutPrefsStore(
+      gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i349.FirestoreClient>(),
+    ),
   );
   gh.lazySingleton<_i366.SyncedHistoryStore>(
     () => _i366.SyncedHistoryStore(
@@ -974,6 +981,7 @@ _i174.GetIt initGetIt(
       gh<_i567.PersonalizedFeedRepository>(),
       gh<_i112.UserBlockRepository>(),
       gh<_i96.DropsRepository>(),
+      gh<_i633.LayoutPrefsStore>(),
     ),
   );
   return getIt;

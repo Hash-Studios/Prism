@@ -12613,6 +12613,104 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get desktopVersionChip => 'Versión para escritorio';
+
+  @override
+  String get desktopVersionChipSemantic => 'Abrir la versión para escritorio';
+
+  @override
+  String get desktopVersionSheetTitle => 'Versión para escritorio';
+
+  @override
+  String desktopVersionSheetBody(int width, int height) {
+    return 'La misma escena, en formato ancho para la pantalla de un ordenador. $width × $height.';
+  }
+
+  @override
+  String get desktopVersionPreviewSemantic => 'Versión para escritorio en la pantalla de un ordenador';
+
+  @override
+  String get desktopVersionSendToComputer => 'Enviar a mi ordenador';
+
+  @override
+  String desktopVersionShareText(String url) {
+    return 'Consigue este fondo de pantalla para tu ordenador: $url';
+  }
+
+  @override
+  String get desktopVersionShareSubject => 'Fondo de pantalla para escritorio de Prism';
+
+  @override
+  String get desktopVersionSetOnTablet => 'Configurar versión para escritorio';
+
+  @override
+  String get desktopVersionSaveOnTablet => 'Guardar versión para escritorio en Fotos';
+
+  @override
+  String get desktopVersionUnavailable =>
+      'No se pudo obtener la versión para escritorio. Comprueba tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get layoutTitle => 'Diseño';
+
+  @override
+  String get layoutRowSubtitle => 'Pestañas y cuadrícula de fondos de pantalla';
+
+  @override
+  String get layoutTabsHeader => 'Pestañas';
+
+  @override
+  String get layoutTabsFootnote =>
+      'Arrastra para reordenar. Al menos 3 pestañas se quedan en la barra. Las pestañas ocultas están en Más.';
+
+  @override
+  String get layoutTabAlwaysShown => 'Siempre en la barra';
+
+  @override
+  String get layoutTabUnderMore => 'En Más';
+
+  @override
+  String layoutShowTab(String tab) {
+    return 'Mostrar $tab';
+  }
+
+  @override
+  String layoutReorderTab(String tab) {
+    return 'Reordenar $tab';
+  }
+
+  @override
+  String get layoutMoveUp => 'Subir';
+
+  @override
+  String get layoutMoveDown => 'Bajar';
+
+  @override
+  String get layoutGridHeader => 'Cuadrícula de fondos de pantalla';
+
+  @override
+  String get layoutDensityCompact => 'Compacta';
+
+  @override
+  String get layoutDensityComfortable => 'Cómoda';
+
+  @override
+  String get layoutDensityLarge => 'Grande';
+
+  @override
+  String get layoutGridFootnote =>
+      'Se aplica a todas las cuadrículas de fondos de pantalla. Pellizca el feed de Inicio para cambiarla.';
+
+  @override
+  String get layoutReset => 'Restablecer diseño';
+
+  @override
+  String get navMore => 'Más';
+
+  @override
+  String get navMoreEditTabs => 'Editar pestañas';
+
+  @override
   String wrappedTitle(String year) {
     return 'Prism Wrapped $year';
   }

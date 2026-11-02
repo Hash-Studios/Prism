@@ -127,17 +127,32 @@ service cloud.firestore {
         || validThemePrefs(request.resource.data.themePrefs);
     }
 
+    function validLayoutPrefs(p) {
+      return p is map
+        && p.keys().hasOnly(['tabs', 'hidden', 'density', 'changedAt'])
+        && p.keys().hasAll(['tabs', 'hidden', 'density', 'changedAt'])
+        && p.tabs is list && p.tabs.size() <= 8 && p.tabs.hasOnly(['home', 'search', 'rewards', 'collection'])
+        && p.hidden is list && p.hidden.size() <= 8 && p.hidden.hasOnly(['search', 'rewards', 'collection'])
+        && p.density in ['compact', 'comfortable', 'large']
+        && p.changedAt is int && p.changedAt >= 0;
+    }
+
+    function ownerLayoutPrefsOk() {
+      return !('layoutPrefs' in request.resource.data.diff(resource.data).affectedKeys())
+        || validLayoutPrefs(request.resource.data.layoutPrefs);
+    }
+
     function ownerDirectoryOptOutOk() {
       return !('creatorDirectoryOptOut' in request.resource.data.diff(resource.data).affectedKeys())
         || request.resource.data.creatorDirectoryOptOut is bool;
     }
 
     function wallServerKeysAbsent() {
-      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount']);
+      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount']);
     }
 
     function wallServerKeysUntouched() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId']);
     }
 
     // Optional link to the wall this one remixes. The server removes a link it cannot verify.
@@ -200,7 +215,15 @@ service cloud.firestore {
       // Reviewed walls stay readable while 3.7.0 clients are installed: they read unconverted walls and the original URL.
       // Tighten this to review == true && originalProtected == true && wallpaper_url == '' (and the four provenance
       // fields == '') once 3.7.0 share is low. 3.8.0 clients already filter to protected walls on their side.
-      allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
+      // A missing wall has no resource. Reading resource.data there is a null-value error, so a get or a
+      // document-id query is permission-denied instead of empty. resource == null matches only that missing
+      // document. An existing unreviewed wall still fails wallReadable(), and a list with no review or owner
+      // constraint stays denied.
+      function wallReadable() {
+        return resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
+      }
+      allow get: if resource == null || wallReadable();
+      allow list: if resource == null || wallReadable();
       // Admins re-create a rejected wall when they undo the rejection.
       allow create: if validChallengeId() && (isConfiguredAdmin()
           || (isSignedIn()
@@ -280,8 +303,9 @@ service cloud.firestore {
             'name', 'profilePhoto', 'coverPhoto', 'bio', 'links', 'lastLoginAt', 'loggedIn',
             'interestCategories', 'onboardingV2', 'uploadsWeekStart',
             'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'coinState',
-            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs', 'creatorDirectoryOptOut'
-          ]) && ownerCoinStateOk() && ownerAppOpenOk() && ownerThemePrefsOk() && ownerDirectoryOptOutOk())
+            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs', 'creatorDirectoryOptOut', 'layoutPrefs'
+          ]) && ownerCoinStateOk() && ownerAppOpenOk() && ownerThemePrefsOk() && ownerDirectoryOptOutOk()
+            && ownerLayoutPrefsOk())
           || isConfiguredAdmin();
       allow delete: if isConfiguredAdmin();
 

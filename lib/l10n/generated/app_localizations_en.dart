@@ -12452,6 +12452,101 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get desktopVersionChip => 'Desktop version';
+
+  @override
+  String get desktopVersionChipSemantic => 'Open the desktop version';
+
+  @override
+  String get desktopVersionSheetTitle => 'Desktop version';
+
+  @override
+  String desktopVersionSheetBody(int width, int height) {
+    return 'The same scene, made wide for a computer screen. $width × $height.';
+  }
+
+  @override
+  String get desktopVersionPreviewSemantic => 'Desktop version on a computer screen';
+
+  @override
+  String get desktopVersionSendToComputer => 'Send to my computer';
+
+  @override
+  String desktopVersionShareText(String url) {
+    return 'Get this wallpaper for your computer: $url';
+  }
+
+  @override
+  String get desktopVersionShareSubject => 'Desktop wallpaper from Prism';
+
+  @override
+  String get desktopVersionSetOnTablet => 'Set desktop version';
+
+  @override
+  String get desktopVersionSaveOnTablet => 'Save desktop version';
+
+  @override
+  String get desktopVersionUnavailable => 'Unable to get the desktop version. Check your connection and try again.';
+
+  @override
+  String get layoutTitle => 'Layout';
+
+  @override
+  String get layoutRowSubtitle => 'Tabs and wallpaper grid';
+
+  @override
+  String get layoutTabsHeader => 'Tabs';
+
+  @override
+  String get layoutTabsFootnote => 'Drag to reorder. At least 3 tabs stay in the bar. Hidden tabs are under More.';
+
+  @override
+  String get layoutTabAlwaysShown => 'Always in the bar';
+
+  @override
+  String get layoutTabUnderMore => 'Under More';
+
+  @override
+  String layoutShowTab(String tab) {
+    return 'Show $tab';
+  }
+
+  @override
+  String layoutReorderTab(String tab) {
+    return 'Reorder $tab';
+  }
+
+  @override
+  String get layoutMoveUp => 'Move up';
+
+  @override
+  String get layoutMoveDown => 'Move down';
+
+  @override
+  String get layoutGridHeader => 'Wallpaper grid';
+
+  @override
+  String get layoutDensityCompact => 'Compact';
+
+  @override
+  String get layoutDensityComfortable => 'Comfortable';
+
+  @override
+  String get layoutDensityLarge => 'Large';
+
+  @override
+  String get layoutGridFootnote => 'Applies to every wallpaper grid. Pinch the Home feed to change it.';
+
+  @override
+  String get layoutReset => 'Reset layout';
+
+  @override
+  String get navMore => 'More';
+
+  @override
+  String get navMoreEditTabs => 'Edit tabs';
+
+  @override
   String wrappedTitle(String year) {
     return 'Prism Wrapped $year';
   }

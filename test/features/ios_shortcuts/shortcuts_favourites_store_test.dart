@@ -63,6 +63,8 @@ void main() {
   tearDown(() async {
     OfflineAssetStore.testOverride = null;
     NativeAssetPathsStore.supportDirectoryOverride = null;
+    NativeAssetPathsStore.documentsDirectoryOverride = null;
+    NativeAssetPathsStore.downloadedOriginalOverride = null;
     if (await offlineDirectory.exists()) await offlineDirectory.delete(recursive: true);
   });
 
@@ -108,6 +110,19 @@ void main() {
         ]),
       );
       expect(out.map((entry) => entry['id']), <String>['ok']);
+    });
+
+    test('an unusable duplicate does not reserve the id before a usable favourite', () {
+      final List<Map<String, dynamic>> out = _decode(
+        ShortcutsFavouritesStore.encode(<FavouriteWallEntity>[
+          _wall('same', url: ''),
+          _wall('same', url: 'https://example.com/public.jpg'),
+        ]),
+      );
+
+      expect(out, <Map<String, dynamic>>[
+        <String, dynamic>{'id': 'same', 'url': 'https://example.com/public.jpg'},
+      ]);
     });
   });
 
@@ -188,6 +203,58 @@ void main() {
       expect(prefs.getString(QuickTileConfigService.wotdRetainedKey), isNull);
       expect(metadataWritten, isFalse);
     });
+
+    test('save keeps a protected favourite with a downloaded original as an asset and maps its path', () async {
+      NativeAssetPathsStore.documentsDirectoryOverride = Directory('${offlineDirectory.path}/documents');
+      NativeAssetPathsStore.downloadedOriginalOverride = (FavouriteWallEntity wall) async =>
+          wall.id == 'protected' ? File('${offlineDirectory.path}/documents/PrismDownloads/protected.jpg') : null;
+
+      await ShortcutsFavouritesStore.save(<FavouriteWallEntity>[
+        _wall('protected', url: '', at: DateTime.utc(2026, 3)),
+        _wall('missing', url: '', at: DateTime.utc(2026, 2)),
+      ]);
+
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String key = NativeAssetPathsStore.originalAssetKey(_wall('protected', url: ''));
+      expect(_decode(prefs.getString(PersistenceKeys.shortcutsFavourites)!), <Map<String, Object?>>[
+        <String, Object?>{'id': 'protected', 'asset': key},
+      ]);
+      expect(jsonDecode(prefs.getString('offline.native_asset_paths.shortcuts')!), <String, String>{
+        key: 'protected.jpg',
+      });
+    });
+
+    for (final bool switchToGuest in <bool>[false, true]) {
+      test('save does not write account A favourites after switching owner during original lookup '
+          '(guest: $switchToGuest)', () async {
+        app_state.prismUser = profileUser(id: 'owner-a');
+        final Completer<void> lookupStarted = Completer<void>();
+        final Completer<void> lookupGate = Completer<void>();
+        NativeAssetPathsStore.documentsDirectoryOverride = Directory('${offlineDirectory.path}/documents');
+        NativeAssetPathsStore.downloadedOriginalOverride = (FavouriteWallEntity wall) async {
+          lookupStarted.complete();
+          await lookupGate.future;
+          return File('${offlineDirectory.path}/documents/PrismDownloads/${wall.id}.jpg');
+        };
+        SharedPreferences.setMockInitialValues(<String, Object>{
+          PersistenceKeys.shortcutsFavourites: '[{"id":"owner-b","url":"https://example.com/b.jpg"}]',
+          NativeAssetPathsStore.privateOwnerKey: 'owner-b',
+        });
+
+        final Future<void> save = ShortcutsFavouritesStore.save(<FavouriteWallEntity>[_wall('owner-a', url: '')]);
+        await lookupStarted.future;
+        app_state.prismUser = switchToGuest ? profileUser(id: '', loggedIn: false) : profileUser(id: 'owner-b');
+        lookupGate.complete();
+        await save;
+
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        expect(
+          prefs.getString(PersistenceKeys.shortcutsFavourites),
+          '[{"id":"owner-b","url":"https://example.com/b.jpg"}]',
+        );
+        expect(prefs.getString('${NativeAssetPathsStore.preferenceKey}.shortcuts'), isNull);
+      });
+    }
 
     test('save writes the raw string under the shared contract key', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
