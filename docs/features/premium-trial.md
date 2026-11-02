@@ -125,6 +125,7 @@ Live state on 2026-11-02: the current paywall has no trial text. Its annual card
 | A | hi | `{{ product.offer_period_with_unit }} मुफ़्त, फिर {{ product.price_per_period_abbreviated }}` |
 | A | id | `Gratis {{ product.offer_period_with_unit }}, lalu {{ product.price_per_period_abbreviated }}` |
 | A | pt-BR | `{{ product.offer_period_with_unit }} grátis, depois {{ product.price_per_period_abbreviated }}` |
+| A | pt | `{{ product.offer_period_with_unit }} grátis, depois {{ product.price_per_period_abbreviated }}` |
 | B | en | `Try free for {{ product.offer_period_with_unit }}` |
 | B | de | `{{ product.offer_period_with_unit }} kostenlos testen` |
 | B | es | `Prueba gratis durante {{ product.offer_period_with_unit }}` |
@@ -132,6 +133,7 @@ Live state on 2026-11-02: the current paywall has no trial text. Its annual card
 | B | hi | `{{ product.offer_period_with_unit }} मुफ़्त आज़माएँ` |
 | B | id | `Coba gratis selama {{ product.offer_period_with_unit }}` |
 | B | pt-BR | `Teste grátis por {{ product.offer_period_with_unit }}` |
+| B | pt | `Teste grátis por {{ product.offer_period_with_unit }}` |
 | C | en | `{{ product.offer_period_with_unit }} free, then {{ product.price_per_period }}. Renews until you cancel. To avoid the charge, cancel at least 24 hours before the trial ends.` |
 | C | de | `{{ product.offer_period_with_unit }} kostenlos, dann {{ product.price_per_period }}. Verlängert sich, bis du kündigst. Kündige mindestens 24 Stunden vor Ende des Testzeitraums, um die Zahlung zu vermeiden.` |
 | C | es | `{{ product.offer_period_with_unit }} gratis, luego {{ product.price_per_period }}. Se renueva hasta que canceles. Para evitar el cargo, cancela al menos 24 horas antes de que termine la prueba.` |
@@ -139,6 +141,7 @@ Live state on 2026-11-02: the current paywall has no trial text. Its annual card
 | C | hi | `{{ product.offer_period_with_unit }} मुफ़्त, फिर {{ product.price_per_period }}. रद्द करने तक यह रिन्यू होता है. शुल्क से बचने के लिए ट्रायल खत्म होने से कम से कम 24 घंटे पहले रद्द करें.` |
 | C | id | `Gratis {{ product.offer_period_with_unit }}, lalu {{ product.price_per_period }}. Diperpanjang sampai kamu membatalkan. Agar tidak ditagih, batalkan paling lambat 24 jam sebelum masa uji coba berakhir.` |
 | C | pt-BR | `{{ product.offer_period_with_unit }} grátis, depois {{ product.price_per_period }}. Renova até você cancelar. Para evitar a cobrança, cancele pelo menos 24 horas antes do fim do teste.` |
+| C | pt | `{{ product.offer_period_with_unit }} grátis, depois {{ product.price_per_period }}. Renova até você cancelar. Para evitar a cobrança, cancele pelo menos 24 horas antes do fim do teste.` |
 
 For an eligible user in the US, the annual card shows "1 week free, then $39.99/yr", the button shows "Try free for 1 week", and the terms show "1 week free, then $39.99/year. ...". When the user selects monthly or lifetime, the button shows "Continue" and the terms are hidden, because those products have no offer.
 
@@ -159,7 +162,7 @@ asc --profile prism subscriptions offers introductory list --app 6670200846 --su
 - The last `list` must show one row for each territory: `ONE_WEEK`, `FREE_TRIAL`, 1 period, no end date.
 - If a territory fails, run the same `create` with `--territory <code>` for that territory only.
 - Do not add an offer to `prism_v3_pro_monthly`.
-- Apple gives an introductory offer one time per subscription group. A user who had monthly or annual in `prism_v3` is not eligible.
+- Apple gives an introductory offer one time per subscription group. A user who already redeemed an introductory offer in `prism_v3` is not eligible. A lapsed subscriber who never redeemed one can still be eligible. The app follows the answer from `checkTrialOrIntroductoryPriceEligibility`.
 - The offer goes live with the subscription. While the subscription is in review, only sandbox sees it.
 
 App Store Connect UI, if you do not use `asc`: Apps, Prism, Monetization, Subscriptions, `prism_v3`, Prism v3 Pro Annual, Subscription Prices, the add button, Create Introductory Offer. Countries: all. Start date: today. End date: No end date. Type: Free. Duration: 1 week.
@@ -168,7 +171,7 @@ App Store Connect UI, if you do not use `asc`: Apps, Prism, Monetization, Subscr
 
 Live state on 2026-11-02: package `com.hash.prism`, subscription `prism_v3_pro_annual`, base plan `annual` (P1Y, active). It has region configs for ET, IN and US and an "other regions" price. It has no offers.
 
-Eligibility is "Never had any subscription in this app". This is near to Apple's rule: a user who had monthly cannot get a free week by switching to annual.
+Eligibility is "Never had any subscription in this app". This is stricter than Apple: on Android, a past monthly or annual subscriber cannot get the free week.
 
 ```sh
 cat > /tmp/free-trial-7d.json <<'JSON'
@@ -216,6 +219,6 @@ Sandbox and Play license testing make a 1-week trial last about 3 minutes. So th
 1. On an iOS sandbox account with no history, open a paywall. The timeline shows 7 days free and $39.99.
 2. Tap "See all plans". The annual card shows "1 week free, then $39.99/yr" and the button shows "Try free for 1 week".
 3. Start the trial. The App Store sheet shows the free trial. Premium shows "Trial, ends <date>".
-4. On a sandbox account that had monthly or annual, open a paywall. The normal paywall shows with no trial text.
+4. On a sandbox account that already redeemed the trial (iOS), or that had any subscription (Android), open a paywall. The normal paywall shows with no trial text.
 5. Repeat 1 to 4 with a Play license tester on Android.
 6. Open a paywall in the current store version of the app (no timeline). Eligible users see the RevenueCat trial text. Ineligible users see the old text.
