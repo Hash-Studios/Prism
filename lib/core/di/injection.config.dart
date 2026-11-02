@@ -226,6 +226,8 @@ import '../../features/user_search/domain/repositories/user_search_repository.da
     as _i204;
 import '../../features/user_search/domain/usecases/search_users_usecase.dart'
     as _i750;
+import '../../features/wall_comments/data/wall_comments_repository.dart'
+    as _i375;
 import '../../features/wall_of_the_day/biz/bloc/wotd_archive_bloc.j.dart'
     as _i71;
 import '../../features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart' as _i183;
@@ -554,6 +556,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i25.AdminModerationRepository>(
     () => _i25.AdminModerationRepository(gh<_i349.FirestoreClient>()),
+  );
+  gh.lazySingleton<_i375.WallCommentsRepository>(
+    () => _i375.WallCommentsRepository(gh<_i349.FirestoreClient>()),
   );
   gh.factory<_i896.QuestsBloc>(
     () => _i896.QuestsBloc(gh<_i651.QuestsRepository>()),

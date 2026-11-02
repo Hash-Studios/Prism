@@ -73,6 +73,9 @@ import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/theme_mode/domain/custom_accent.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/wall_remix/wall_remix.dart';
+import 'package:Prism/features/wall_comments/comments_config.dart';
+import 'package:Prism/features/wall_comments/views/comments_button.dart';
+import 'package:Prism/features/wall_comments/views/wall_comments_sheet.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
@@ -2484,6 +2487,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             ],
           ),
         ),
+        if (_commentsWall(entity) case final CommentsWall wall)
+          WallpaperBarAction(
+            label: context.l10n.commentsAction,
+            child: CommentsButton(wall: wall),
+          ),
         WallpaperBarAction(
           label: context.l10n.wallpaperShare,
           child: ShareButton(
@@ -2522,6 +2530,21 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         ),
       ],
     );
+  }
+
+  /// The wall's comments, for an approved Prism wall while the kill switch is on.
+  CommentsWall? _commentsWall(FeedItemEntity entity) {
+    if (!CommentsConfig.enabled || BundledWallpapers.isStarter(entity)) return null;
+    return switch (entity) {
+      PrismFeedItem(:final wallpaper)
+          when wallpaper.review == true && (wallpaper.firestoreDocumentId?.trim().isNotEmpty ?? false) =>
+        (
+          wallId: wallpaper.firestoreDocumentId!.trim(),
+          statsId: wallpaper.id,
+          creatorUid: wallpaper.core.authorUid?.trim() ?? '',
+        ),
+      _ => null,
+    };
   }
 
   /// Opens Make it live. The first palette colour seeds its gradients, so they follow this wallpaper.
