@@ -29,7 +29,14 @@ class _MockStackRouter extends Mock implements StackRouter {}
 
 void main() {
   test('an unlocked Drop wall carries the Studio credit', () {
-    const DropWall wall = DropWall(id: 'A', title: 'Dune', thumb: '', resolution: '', by: 'Prism Studio', seriesId: 's');
+    const DropWall wall = DropWall(
+      id: 'A',
+      title: 'Dune',
+      thumb: '',
+      resolution: '',
+      by: 'Prism Studio',
+      seriesId: 's',
+    );
     const DropUnlock unlock = DropUnlock(wallId: 'A', weekKey: '2026-W42', url: 'https://full.test/A.jpg');
     expect(dropWallFeedItem(wall, unlock).wallpaper.byStudio, isTrue);
   });
