@@ -81,3 +81,37 @@ Drive Home/card/challenge, top/new, vote/unvote/reload, self-vote rejection, his
 Linux cannot build/run the named iOS simulator. On an authorized Mac, use the prepared synthetic plist/config and explicitly select `native/Info-LocalQA.plist` when building Debug with Xcode. Ordinary Info.plist is not sufficient because native SDK initialization precedes Dart. The generated plist integration is unverified. Follow the same exclusive lock and named-device rules.
 
 No full upload admission, AI Generate/result, coins, R2 readiness, native purchases/push, large pagination or production scheduler proof is provided. Historical Android screenshots, trees, clips, and APK identities are in `/tmp/prism-weekly-qa`. They predate local head `bf1740e2b` and its warm navigation, plurals, and QA guard fixes. Use `android-evidence/evidence-index.json` to exclude transitional captures. Fresh Android proof is forthcoming. iOS proof is unavailable here. The dark upload composer remains unverified after a picker ANR. Hosted CI, merge, deploy, publication and live behavior remain separate gates.
+
+## Editors' Choice and Pro badge
+
+This section serves the Editors' Choice callable and the Pro badge projection in the same disposable `demo-prism` backend. The callable is not deployed. Its proof is local only. Pick fixtures are administratively seeded, and the Studio fixture passes through the real backfill.
+
+Run these steps in order. Use one `--root` for the whole run.
+
+```sh
+npm --prefix functions run build
+node tool/weekly_challenge_qa.cjs prepare
+node tool/weekly_challenge_qa.cjs serve
+node tool/weekly_challenge_qa.cjs emulators
+node tool/weekly_challenge_qa.cjs seed
+node tool/weekly_challenge_qa.cjs seed-editors-choice
+```
+
+Run `seed` before `seed-editors-choice` when you want `qa-creator-a` to own walls 07 to 13. Otherwise `qa-creator-b` owns them. Run `seed-editors-choice` on clean emulator data only. It refuses when any wall already has `editorsChoiceAt`. A failed run can leave walls behind, so restart the emulators before a second run.
+
+The command creates `qa-admin` with the admin claim, `qa-viewer` with Pro, `qa-creator-b` and the `prism-studio` profile. It creates walls `ec-wall-01` to `ec-wall-14`. Wall `ec-wall-14` is the Studio wall. It then runs the real Studio backfill. It picks `ec-wall-01`, `02`, `03`, `04` and `14` through the real callable as `qa-admin`. Wall `ec-wall-05` stays unpicked for the device admin proof. The command writes `editors-choice-evidence.json` to the runtime directory and fails if a check fails.
+
+Device steps, on the Android emulator rules above:
+
+- Use the default `viewer` identity. Check the Home row, the Editors' Choice page, the wall label, the credits row and the Pro badge on `qa-viewer`.
+- For the pick button, use the `admin` identity. Edit `PRISM_LOCAL_QA_USER` in `dart-defines.json` to `admin`, then run `node tool/weekly_challenge_qa.cjs build-apk` again. Pick `ec-wall-05` on device.
+
+Extra commands:
+
+```sh
+node tool/weekly_challenge_qa.cjs pro-badge-opt-out
+node tool/weekly_challenge_qa.cjs pro-badge-opt-in
+node tool/weekly_challenge_qa.cjs ec-unpick
+```
+
+`pro-badge-opt-out` sets `showProBadge` to false for `qa-viewer`, runs the real profile projection and checks that `profiles/qa-viewer` has no `proBadge`. `pro-badge-opt-in` sets `showProBadge` to true and checks that `proBadge` is true again. `ec-unpick` clears and sets the pick on `ec-wall-04`. It checks that one notice and one inbox document exist, so the creator gets no second push.
