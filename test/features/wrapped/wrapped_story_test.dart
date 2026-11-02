@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/features/wrapped/domain/wrapped.dart';
@@ -14,6 +16,7 @@ class _FakeShare {
   final List<WrappedCard> cards = <WrappedCard>[];
   final List<WrappedCopy> copies = <WrappedCopy>[];
   final List<String> ownerUserIds = <String>[];
+  Object? error;
 
   Future<void> call(
     BuildContext context, {
@@ -26,6 +29,8 @@ class _FakeShare {
     cards.add(card);
     copies.add(copy);
     ownerUserIds.add(ownerUserId);
+    final Object? failure = error;
+    if (failure != null) throw failure;
   }
 }
 
@@ -209,6 +214,24 @@ void main() {
     expect(share.cards.single.kind, WrappedCardKind.saves);
     expect(share.copies.single.body, 'You saved 12 walls in 2026.');
     expect(share.ownerUserIds, <String>['test-user']);
+  });
+
+  testWidgets('a failed share shows the story controls again', (tester) async {
+    final _FakeShare share = _FakeShare()..error = StateError('share failed');
+    await _pumpStory(tester, share: share);
+
+    final List<Object> errors = <Object>[];
+    await runZonedGuarded(() async {
+      await tester.tap(find.byTooltip('Share this card'));
+      await tester.pump();
+    }, (error, _) => errors.add(error));
+    await tester.pump(const Duration(seconds: 1));
+    expect(errors.single, isStateError);
+
+    final AnimatedOpacity chrome = tester.widget<AnimatedOpacity>(
+      find.ancestor(of: find.byTooltip('Share this card'), matching: find.byType(AnimatedOpacity)).first,
+    );
+    expect(chrome.opacity, 1);
   });
 
   testWidgets('tracks open, one view per card and a single finish', (tester) async {

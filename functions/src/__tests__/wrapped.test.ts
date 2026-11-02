@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import {readFileSync} from "node:fs";
+import path from "node:path";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 import {installFakeDb} from "./fakeDb";
@@ -236,6 +238,55 @@ test("coin signals page through large ledgers without dropping aggregates", asyn
   assert.deepEqual(signals.tips, {count: 501, coins: 501});
   assert.deepEqual(signals.claimDays, ["2026-06-01"]);
   assert.deepEqual(pageSizes, [500, 500, 500], "coin reads use bounded Firestore pages");
+});
+
+test("ranged signal reads order by the direction of their deployed composite index", async (t) => {
+  installFakeDb(t, {});
+  const orders: Record<string, unknown[][]> = {};
+  const originalCollection = db.collection.bind(db);
+  t.mock.method(db, "collection", (name: string) => {
+    const collection = originalCollection(name);
+    if (name !== "coinTransactions" && name !== "aiGenerations") return collection;
+    const wrap = (query: object): object => new Proxy(query, {get: (target, key, receiver) => {
+      const value: unknown = Reflect.get(target, key, receiver);
+      if (typeof value !== "function") return value;
+      if (["where", "orderBy", "startAfter", "limit"].includes(String(key))) {
+        return (...args: unknown[]) => {
+          if (key === "orderBy") (orders[name] ??= []).push(args);
+          return wrap(Reflect.apply(value, target, args) as object);
+        };
+      }
+      return value.bind(target);
+    }});
+    return wrap(collection) as ReturnType<typeof db.collection>;
+  });
+  await readWrappedSignals(db, "me", {}, new Map(), WINDOW);
+  const indexes = (JSON.parse(readFileSync(path.join(__dirname, "../../../firestore.indexes.json"), "utf8")) as {
+    indexes: Array<{collectionGroup: string; fields: Array<{fieldPath: string; order?: string}>}>;
+  }).indexes;
+  for (const name of ["coinTransactions", "aiGenerations"]) {
+    assert.ok(orders[name]?.length, `${name} is read in createdAt order`);
+    for (const [field, direction] of orders[name]) {
+      assert.equal(field, "createdAt");
+      const order = direction === "desc" ? "DESCENDING" : "ASCENDING";
+      assert.ok(indexes.some((index) => index.collectionGroup === name &&
+        index.fields[0]?.fieldPath === "userId" && index.fields[1]?.fieldPath === "createdAt" &&
+        index.fields[1]?.order === order), `${name} has a (userId, createdAt ${order}) index`);
+    }
+  }
+});
+
+test("claim days use the server-locked, clamped claim offset", async (t) => {
+  const timestamp = (iso: string) => admin.firestore.Timestamp.fromDate(new Date(iso));
+  installFakeDb(t, {
+    "coinTransactions/late": {userId: "me", action: "dailyLogin", createdAt: timestamp("2026-04-01T20:00:00Z")},
+  });
+  const locked = await readWrappedSignals(db, "me",
+    {coinState: {streakTimezoneOffsetMinutes: 0, streakClaimTimezoneOffsetMinutes: 330}}, new Map(), WINDOW);
+  assert.deepEqual(locked.claimDays, ["2026-04-02"], "the locked claim offset wins over the client offset");
+  const huge = await readWrappedSignals(db, "me",
+    {coinState: {streakTimezoneOffsetMinutes: 1e12}}, new Map(), WINDOW);
+  assert.deepEqual(huge.claimDays, ["2026-04-02"], "an out-of-range offset is clamped to +14:00");
 });
 
 test("signal reads deduplicate saves, prefer favouritedAt, keep legacy fallback, filter by user and use the UTC offset", async (t) => {

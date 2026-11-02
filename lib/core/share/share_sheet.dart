@@ -277,7 +277,7 @@ class _ShareSheetState extends State<ShareSheet> {
         _deleteRenders();
       }
     }
-    if (done) widget.onTargetDone?.call(target);
+    if (done && _ownerSessionValid) widget.onTargetDone?.call(target);
     if (done && mounted) Navigator.of(context).maybePop();
   }
 

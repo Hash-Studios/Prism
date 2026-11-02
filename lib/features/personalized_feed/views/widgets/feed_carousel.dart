@@ -128,8 +128,11 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
   }
 
   void _refreshWrapped() {
-    final bool isOpen = WrappedConfig.isOpen(DateTime.now());
-    if (_wrappedUid.isNotEmpty && isOpen) _watchWrapped().add(WrappedEvent.load(_wrappedUid));
+    if (WrappedConfig.isOpen(DateTime.now())) {
+      // Watch even for a guest, so a sign-in inside the window loads the new account's Wrapped.
+      final WrappedBloc bloc = _watchWrapped();
+      if (_wrappedUid.isNotEmpty) bloc.add(WrappedEvent.load(_wrappedUid));
+    }
     if (mounted) setState(() {});
     _scheduleWrappedWindowCheck();
   }

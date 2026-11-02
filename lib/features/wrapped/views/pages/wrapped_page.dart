@@ -303,15 +303,18 @@ class _WrappedStoryState extends State<WrappedStory> with TickerProviderStateMix
 
   Future<void> _share(WrappedCopy copy) async {
     _hold(true);
-    await widget.share(
-      context,
-      card: _card,
-      copy: copy,
-      accent: _accent,
-      ownerUserId: widget.ownerUserId,
-      ownerChanges: widget.ownerChanges,
-    );
-    if (mounted) _hold(false);
+    try {
+      await widget.share(
+        context,
+        card: _card,
+        copy: copy,
+        accent: _accent,
+        ownerUserId: widget.ownerUserId,
+        ownerChanges: widget.ownerChanges,
+      );
+    } finally {
+      if (mounted) _hold(false);
+    }
   }
 
   Widget _background(WrappedCard card) {

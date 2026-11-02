@@ -24,14 +24,17 @@ class _FakeShare {
 
   final File file;
   Future<File>? pendingRender;
+  Future<OperationResult>? pendingSave;
   final List<File> saved = <File>[];
 
   ShareSheetServices get services => ShareSheetServices(
     render: (_, _) => pendingRender ?? Future<File>.value(file),
     instagramAvailable: () async => false,
     saveImage: (File value) async {
+      final OperationResult result =
+          await (pendingSave ?? Future<OperationResult>.value(OperationResult(success: true)));
       saved.add(value);
-      return OperationResult(success: true);
+      return result;
     },
     copyText: (_) async {},
     shareText: ({required text, required context}) async => const ShareResult('', ShareResultStatus.success),
@@ -59,7 +62,12 @@ void _mockChannels(WidgetTester tester) {
   });
 }
 
-Future<void> _open(WidgetTester tester, _FakeShare share, Stream<String> ownerChanges) async {
+Future<void> _open(
+  WidgetTester tester,
+  _FakeShare share,
+  Stream<String> ownerChanges, {
+  ValueChanged<ShareTargetValue>? onTargetDone,
+}) async {
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -80,6 +88,7 @@ Future<void> _open(WidgetTester tester, _FakeShare share, Stream<String> ownerCh
               formats: const <ShareCardFormat>[ShareCardFormat.story],
               ownerUserId: 'user-a',
               ownerChanges: ownerChanges,
+              onTargetDone: onTargetDone,
             ),
             child: const Text('Open share'),
           ),
@@ -138,5 +147,27 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(share.saved, isEmpty);
+  });
+
+  testWidgets('a save that finishes after switching accounts is not reported as a Wrapped share', (tester) async {
+    _mockChannels(tester);
+    final Completer<OperationResult> saving = Completer<OperationResult>();
+    final _FakeShare share = _FakeShare(await _writeCard(tester))..pendingSave = saving.future;
+    final List<ShareTargetValue> done = <ShareTargetValue>[];
+    await _open(tester, share, ownerChanges.stream, onTargetDone: done.add);
+
+    await tester.tap(find.byKey(const ValueKey<ShareTargetValue>(ShareTargetValue.saveImage)));
+    await tester.pump();
+    await tester.pump();
+    app_state.prismUser = _user('user-b');
+    ownerChanges.add('user-b');
+    await tester.pump();
+    saving.complete(OperationResult(success: true));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(share.saved, hasLength(1), reason: 'the save started under A and finished');
+    expect(done, isEmpty);
+    await tester.pump(const Duration(seconds: 5));
   });
 }

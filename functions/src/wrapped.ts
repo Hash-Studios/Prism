@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 import {str} from "./common";
-import {localDateKeyFromUtc, storedTimezoneOffset} from "./streak";
+import {localDateKeyFromUtc, resolveTimezoneOffset, storedTimezoneOffset} from "./streak";
 import {DEFAULT_CATEGORY} from "./wallCategory";
 import {PALETTE} from "./wallColors";
 import {isPrismFavourite} from "./wallStats";
@@ -319,7 +319,7 @@ export async function readWrappedSignals(
     images.where("favouritedAt", ">=", start).where("favouritedAt", "<", end).get(),
     images.where("createdAt", ">=", start).where("createdAt", "<", end).get(),
     db.collection("aiGenerations").where("userId", "==", uid)
-      .where("createdAt", ">=", start).where("createdAt", "<", end).count().get(),
+      .where("createdAt", ">=", start).where("createdAt", "<", end).orderBy("createdAt", "desc").count().get(),
     db.collection("aiGenerations").where("userId", "==", uid)
       .where("createdAt", ">=", start).where("createdAt", "<", end).orderBy("createdAt", "desc").limit(1).get(),
     db.collection("folders").where("ownerId", "==", uid).get(),
@@ -342,14 +342,19 @@ export async function readWrappedSignals(
     });
   }
 
-  const offset = storedTimezoneOffset(user.coinState) ?? 0;
+  // The same offset the claim path uses: the server-locked claim offset first, clamped.
+  const offset = resolveTimezoneOffset(
+    storedTimezoneOffset(user.coinState, "streakClaimTimezoneOffsetMinutes"),
+    storedTimezoneOffset(user.coinState) ?? 0,
+  );
   const claimDays = new Set<string>();
   const tips = {count: 0, coins: 0};
   const coinQuery = db.collection("coinTransactions").where("userId", "==", uid)
     .where("createdAt", ">=", start).where("createdAt", "<", end);
   let coinCursor: admin.firestore.QueryDocumentSnapshot | undefined;
   while (true) {
-    let pageQuery = coinQuery.orderBy("createdAt").limit(SIGNAL_PAGE_SIZE);
+    // Descending matches the deployed (userId, createdAt desc) index; claim days and tips do not depend on order.
+    let pageQuery = coinQuery.orderBy("createdAt", "desc").limit(SIGNAL_PAGE_SIZE);
     if (coinCursor) pageQuery = pageQuery.startAfter(coinCursor);
     const page = await pageQuery.get();
     for (const doc of page.docs) {

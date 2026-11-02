@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dart';
+import 'package:Prism/features/session/domain/entities/session_entity.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wrapped/biz/bloc/wrapped_bloc.j.dart';
 import 'package:Prism/features/wrapped/domain/wrapped.dart';
@@ -22,6 +27,39 @@ import 'wrapped_fixture.dart';
 class _Repository implements WrappedRepository {
   @override
   Future<WrappedYear?> fetch(String uid, int year) async => fixtureWrappedYear();
+}
+
+class _Sessions implements SessionRepository {
+  _Sessions(this.currentUser);
+
+  final StreamController<PrismUsersV2> _users = StreamController<PrismUsersV2>.broadcast();
+  @override
+  PrismUsersV2 currentUser;
+
+  @override
+  Stream<PrismUsersV2> watchCurrentUser() => _users.stream;
+
+  @override
+  Future<Result<SessionEntity>> replaceCurrentUser(PrismUsersV2 user) async {
+    currentUser = user;
+    _users.add(user);
+    return Result.success<SessionEntity>(
+      SessionEntity(
+        userId: user.id,
+        loggedIn: user.loggedIn,
+        premium: user.premium,
+        subscriptionTier: user.subscriptionTier,
+      ),
+    );
+  }
+
+  @override
+  Future<Result<SessionEntity>> getSession() => throw UnimplementedError();
+
+  @override
+  Future<Result<SessionEntity>> updateFollowing(List<String> following) => throw UnimplementedError();
+
+  Future<void> close() => _users.close();
 }
 
 class _MockWotdBloc extends MockBloc<WotdEvent, WotdState> implements WotdBloc {}
@@ -119,5 +157,53 @@ void main() {
     await tester.fling(find.byType(CarouselSlider), const Offset(300, 0), 1500);
     await tester.pumpAndSettle();
     expect(find.text('Your 2026 in Prism'), findsOneWidget);
+  });
+
+  testWidgets('a guest who signs in on Home inside the window gets their Wrapped', (tester) async {
+    final DateTime today = DateTime.now();
+    final PrismUsersV2 previousUser = app_state.prismUser;
+    final PrismUsersV2 guest = profileUser(id: '', loggedIn: false);
+    app_state.prismUser = guest;
+    final _Sessions sessions = _Sessions(guest);
+    getIt.registerSingleton<SessionRepository>(sessions);
+    final WrappedBloc bloc = WrappedBloc(_Repository());
+    getIt.registerSingleton<WrappedBloc>(bloc);
+    final _MockWotdBloc wotd = _MockWotdBloc();
+    when(() => wotd.state).thenReturn(WotdState.initial());
+    addTearDown(wotd.close);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox());
+      app_state.prismUser = previousUser;
+      if (getIt.isRegistered<WrappedBloc>()) await getIt.unregister<WrappedBloc>();
+      if (getIt.isRegistered<SessionRepository>()) await getIt.unregister<SessionRepository>();
+      await sessions.close();
+    });
+    WrappedConfig.override = (
+      enabled: true,
+      start: DateTime(today.year, today.month, today.day - 1),
+      end: DateTime(today.year, today.month, today.day + 1),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) =>
+            MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
+        home: BlocProvider<WotdBloc>.value(
+          value: wotd,
+          child: const Scaffold(body: FeedCarousel(previewWalls: <PrismFeedItem>[])),
+        ),
+      ),
+    );
+    expect(bloc.state, const WrappedState.idle());
+
+    final PrismUsersV2 heavy = profileUser(id: 'heavy');
+    app_state.prismUser = heavy;
+    await sessions.replaceCurrentUser(heavy);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(bloc.state, isA<WrappedReady>());
   });
 }
