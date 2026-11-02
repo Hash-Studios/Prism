@@ -2,6 +2,7 @@ import * as crypto from "node:crypto";
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
+import {parseCommentTarget} from "./comments";
 import {db, readDailyCount, CALLABLE_REGIONS, utcDateString} from "./common";
 
 const CONTENT_REPORTS = "contentReports";
@@ -31,7 +32,7 @@ function normalizeTargetDocId(raw: unknown): string {
   return t;
 }
 
-type ContentType = "wall" | "setup" | "user" | "folder" | "wallRequest";
+type ContentType = "wall" | "setup" | "user" | "folder" | "wallRequest" | "comment";
 
 const COLLECTION_BY_CONTENT_TYPE: Record<ContentType, string> = {
   wall: "walls",
@@ -40,11 +41,13 @@ const COLLECTION_BY_CONTENT_TYPE: Record<ContentType, string> = {
   // Only a public folder can be reported, so the target is its projection.
   folder: "publicFolders",
   wallRequest: "wallRequests",
+  // The target is `<wallId>:<commentId>` because a comment lives under its wall.
+  comment: "comments",
 };
 
 function normalizeContentType(raw: unknown): ContentType {
   if (typeof raw !== "string" || !Object.prototype.hasOwnProperty.call(COLLECTION_BY_CONTENT_TYPE, raw)) {
-    throw new HttpsError("invalid-argument", "contentType must be 'wall', 'setup', 'user', 'folder', or 'wallRequest'.");
+    throw new HttpsError("invalid-argument", "contentType must be 'wall', 'setup', 'user', 'folder', 'wallRequest', or 'comment'.");
   }
   return raw as ContentType;
 }
@@ -113,7 +116,13 @@ export const submitContentReport = onCall(
     const appVersion = normalizeAppVersion(request.data?.appVersion);
 
     const collection = COLLECTION_BY_CONTENT_TYPE[contentType];
-    const targetSnap = await db.collection(collection).doc(targetFirestoreDocId).get();
+    const comment = contentType === "comment" ? parseCommentTarget(targetFirestoreDocId) : null;
+    if (contentType === "comment" && !comment) {
+      throw new HttpsError("invalid-argument", "targetFirestoreDocId is invalid.");
+    }
+    const targetSnap = await (comment ?
+      db.collection("walls").doc(comment.wallId).collection(collection).doc(comment.commentId) :
+      db.collection(collection).doc(targetFirestoreDocId)).get();
     if (!targetSnap.exists) {
       throw new HttpsError("not-found", "Content was not found.");
     }

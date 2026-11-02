@@ -7426,7 +7426,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifSettingFollowers => 'Followers';
 
   @override
-  String get notifSettingFollowersDescription => 'Alerts when someone new follows you.';
+  String get notifSettingFollowersDescription => 'Alerts when someone new follows you or comments on your walls.';
 
   @override
   String get notifSettingPosts => 'Posts';
@@ -11357,6 +11357,69 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallMetadataEditDetails => 'Edit details';
 
   @override
+  String get wallVariantAdd => 'Add a colour variant';
+
+  @override
+  String wallVariantUploadContext(String title) {
+    return 'Colour variant of $title';
+  }
+
+  @override
+  String get wallVariantUploadContextUntitled => 'Colour variant of your wallpaper';
+
+  @override
+  String get wallVariantUploadHint => 'Use the same size and shape as the original. It joins the set after review.';
+
+  @override
+  String get wallVariantUnlinkTooltip => 'Upload as a new wallpaper instead';
+
+  @override
+  String wallVariantCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count colours');
+    return '$_temp0';
+  }
+
+  @override
+  String wallVariantDotLabel(int index, int count, String colour) {
+    return 'Variant $index of $count, $colour';
+  }
+
+  @override
+  String wallVariantDotLabelPlain(int index, int count) {
+    return 'Variant $index of $count';
+  }
+
+  @override
+  String get wallVariantDotHint => 'Show this colour';
+
+  @override
+  String get wallVariantNextHint => 'Show the next colour';
+
+  @override
+  String get wallVariantPending => 'Colour variant. It joins the set after review.';
+
+  @override
+  String get wallVariantLinked => 'In a set of colour variants';
+
+  @override
+  String get wallVariantDroppedTitle => 'Not added as a colour variant';
+
+  @override
+  String get wallVariantDroppedNotFound => 'The original wallpaper was removed.';
+
+  @override
+  String get wallVariantDroppedNotOwner => 'The original belongs to another creator.';
+
+  @override
+  String get wallVariantDroppedNotApproved => 'The original is not approved.';
+
+  @override
+  String get wallVariantDroppedFull => 'The set already has 5 colours.';
+
+  @override
+  String get wallVariantDroppedAspect => 'It has a different shape from the original.';
+
+  @override
   String get wallMetadataApprovedHelp =>
       'Change the title, description and tags. The image and category stay the same.';
 
@@ -12845,6 +12908,256 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get premiumTrialAutoRenewOff => 'Auto-renew is off. You will not be charged when the trial ends.';
+
+  @override
+  String get editorsChoiceTitle => 'Editors\' Choice';
+
+  @override
+  String get editorsChoiceRowBody => 'Wallpapers our editors love.';
+
+  @override
+  String get editorsChoiceEmptyTitle => 'No picks yet';
+
+  @override
+  String get editorsChoiceEmptyBody => 'Check back soon for new picks.';
+
+  @override
+  String get editorsChoiceLoadError => 'Couldn\'t load Editors\' Choice';
+
+  @override
+  String get editorsChoiceLabelSemantics => 'Picked for Editors\' Choice';
+
+  @override
+  String get editorsChoicePick => 'Add to Editors\' Choice';
+
+  @override
+  String get editorsChoiceUnpick => 'Remove from Editors\' Choice';
+
+  @override
+  String get editorsChoicePicked => 'Added to Editors\' Choice';
+
+  @override
+  String get editorsChoiceUnpicked => 'Removed from Editors\' Choice';
+
+  @override
+  String get editorsChoiceNotEligible => 'Only approved free wallpapers with a ready original can be picks.';
+
+  @override
+  String get adminApproveAndPick => 'Approve and pick';
+
+  @override
+  String get adminApprovedPickLater => 'Approved. Add it to Editors\' Choice from its page once its original is ready.';
+
+  @override
+  String wallCreditBy(String name) {
+    return 'By $name';
+  }
+
+  @override
+  String wallCreditPhotoBy(String name) {
+    return 'Photo by $name';
+  }
+
+  @override
+  String get wallCreditByHashStudios => 'By Hash Studios';
+
+  @override
+  String get wallCreditPrismExclusive => 'Prism exclusive';
+
+  @override
+  String get wallCreditOnPexels => 'From Pexels';
+
+  @override
+  String get wallCreditOnWallhaven => 'From Wallhaven';
+
+  @override
+  String get wallCreditOpenProfileHint => 'Opens the profile';
+
+  @override
+  String get wallCreditOpenSourceHint => 'Opens in your browser';
+
+  @override
+  String get profileProBadge => 'Pro';
+
+  @override
+  String get profileProBadgeSemantics => 'Prism Pro member';
+
+  @override
+  String get settingsShowProBadgeTitle => 'Show Pro badge on my profile';
+
+  @override
+  String get settingsShowProBadgeBody => 'People who visit your profile see a Pro badge.';
+
+  @override
+  String get notifPushEditorsChoiceTitle => 'Your wallpaper is an Editors\' Choice';
+
+  @override
+  String notifPushEditorsChoiceBody(String wallTitle) {
+    return 'Our editors picked $wallTitle. Everyone can find it on Home.';
+  }
+
+  @override
+  String get notifPushEditorsChoiceBodyUntitled => 'Our editors picked your wallpaper. Everyone can find it on Home.';
+
+  @override
+  String get coreContentReportComment => 'comment';
+
+  @override
+  String get commentsAction => 'Comments';
+
+  @override
+  String commentsCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count comments',
+      one: '1 comment',
+      zero: 'No comments',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentsTitle => 'Comments';
+
+  @override
+  String get commentsEmptyTitle => 'No comments yet';
+
+  @override
+  String get commentsEmptyBody => 'Tell the creator what you like about this wall.';
+
+  @override
+  String get commentsLoadFailed => 'Unable to load comments. Check your connection and try again.';
+
+  @override
+  String get commentsRetry => 'Try again';
+
+  @override
+  String get commentComposerHint => 'Add a comment';
+
+  @override
+  String get commentSend => 'Send';
+
+  @override
+  String commentCharactersLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count characters left',
+      one: '1 character left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String commentCharactersOver(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count characters too many',
+      one: '1 character too many',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentSignInToComment => 'Sign in to comment';
+
+  @override
+  String get commentCreatorLabel => 'Creator';
+
+  @override
+  String get commentAuthorFallback => 'Prism user';
+
+  @override
+  String get commentOptionsHint => 'show comment options';
+
+  @override
+  String get commentReport => 'Report comment';
+
+  @override
+  String commentBlockUser(String name) {
+    return 'Block $name';
+  }
+
+  @override
+  String get commentDelete => 'Delete comment';
+
+  @override
+  String get commentDeleteConfirmTitle => 'Delete this comment?';
+
+  @override
+  String get commentDeleteConfirmBody => 'It is removed for everyone. You can\'t undo this.';
+
+  @override
+  String get commentDeleted => 'Comment deleted';
+
+  @override
+  String get commentDeleteFailed => 'Unable to delete the comment. Try again.';
+
+  @override
+  String get commentPostFailed => 'Unable to post your comment. Check your connection and try again.';
+
+  @override
+  String get commentErrorDisabled => 'Comments are paused right now. Try again later.';
+
+  @override
+  String get commentErrorGuest => 'Sign in with a verified account to comment.';
+
+  @override
+  String get commentErrorTooNew => 'You can comment 24 hours after you join Prism.';
+
+  @override
+  String get commentErrorWallUnavailable => 'This wall isn\'t open for comments right now.';
+
+  @override
+  String get commentErrorEmpty => 'Write a comment before you send it.';
+
+  @override
+  String get commentErrorTooLong => 'Use 500 characters or fewer.';
+
+  @override
+  String get commentErrorHiddenCharacters => 'Remove the hidden or special characters, then send again.';
+
+  @override
+  String get commentErrorBlockedWord => 'Reword your comment to keep it friendly, then send again.';
+
+  @override
+  String get commentErrorBlocked => 'You can\'t comment on this wall.';
+
+  @override
+  String get commentErrorTooFast => 'Wait a few seconds before your next comment.';
+
+  @override
+  String get commentErrorDailyLimit => 'You can post 50 comments a day. Try again tomorrow.';
+
+  @override
+  String notifPushWallCommentedTitle(String name, String wallTitle) {
+    return '$name commented on $wallTitle';
+  }
+
+  @override
+  String notifPushWallCommentedTitleUntitled(String name) {
+    return '$name commented on your wall';
+  }
+
+  @override
+  String get adminCommentReport => 'Comment report';
+
+  @override
+  String get adminKeepComment => 'Keep comment';
+
+  @override
+  String get adminCommentKept => 'Report dismissed. The comment is visible.';
+
+  @override
+  String get adminCommentRemoved => 'Comment removed';
+
+  @override
+  String get adminCommentGone => 'This comment is already gone.';
+
+  @override
+  String get adminContentTypeComment => 'Comment';
 
   @override
   String get livePhotoAction => 'Live Photo';

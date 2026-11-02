@@ -16,6 +16,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [quick-tiles.md](quick-tiles.md) | Android quick settings tiles |
 | [search.md](search.md) | Prism results, filters, recent searches, tag search |
 | [wallpaper-detail.md](wallpaper-detail.md) | Action bar, More like this, tag chips, preview |
+| [colour-variants.md](colour-variants.md) | Same wall in 2 to 5 colours: dots, add a variant, checks, set repair, Studio plan |
 | [library.md](library.md) | Library hub: favourites (sync, guest, export), downloads, history |
 | [folders.md](folders.md) | Public folders: projection, follow, "New in" push, share links, reports |
 | [web-catalogue.md](web-catalogue.md) | Public web pages on prismwalls.com: walls, folders, hubs, creators, sitemaps, caching (web and backend) |
@@ -39,6 +40,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [daily-moment.md](daily-moment.md) | Shared streak, chest, and free Pro spin sheet, reward contracts, old entry points, and release limits |
 | [premium-trial.md](premium-trial.md) | 7-day free trial on annual: eligibility, timeline, reminder, trial state, store and RevenueCat setup |
 | [coins-ledger.md](coins-ledger.md) | Ledger rows, labels, coin history screen, subscription reconcile |
+| [comments.md](comments.md) | Comments on walls: server checks, rate limits, reports and auto-hide, creator push, kill switch, deploy order |
 | [creator-tips.md](creator-tips.md) | Tip a creator 10, 25 or 50 coins from a wall or a profile, caps, ledger, daily push, Tipped by N |
 | [promo-codes.md](promo-codes.md) | Redeem a code for coins or Pro days, limits, rate limits, admin codes, store offer codes, `/redeem` link |
 | [streak-rescue.md](streak-rescue.md) | Restore a broken streak for coins |
@@ -50,6 +52,8 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [trending.md](trending.md) | Trending tab on home (the last 7 days; the all-time list is the Popular tab); boosted walls also show in the home carousel, after the Wall of the Day |
 | [moderation.md](moderation.md) | Report auto-hold, sweeper, username dedupe, WOTD creator notice (backend) |
 | [wrapped.md](wrapped.md) | Prism Wrapped 2026: private year recap built by a server job, story cards, share, Home card, launch order |
+| [editors-choice.md](editors-choice.md) | Admin picks for Editors' Choice, Home row, See all, creator notice, deploy order |
+| [wall-credits.md](wall-credits.md) | Credit row on the wall detail: creator, Prism Studio, Pexels, Wallhaven, `byStudio` backfill |
 
 ## Page rules
 

@@ -69,6 +69,9 @@
     <string name="notif_push_tip_received_title">%1$s memberi Anda %2$s koin untuk %3$s</string>
     <string name="notif_push_tip_received_title_untitled">%1$s memberi Anda %2$s koin</string>
     <string name="notif_push_tip_received_body">Lihat tip Anda di statistik kreator Anda.</string>
+    <string name="notif_push_wall_commented_title">%1$s mengomentari %2$s</string>
+    <string name="notif_push_wall_commented_title_untitled">%1$s mengomentari wallpaper Anda</string>
+    <string name="notif_push_wall_commented_body">%1$s</string>
     <string name="notif_push_report_needs_review_title">Laporan menunggu peninjauan</string>
     <string name="notif_push_report_needs_review_body">Laporan konten telah menunggu peninjauan selama lebih dari 12 jam.</string>
     <string name="notif_push_new_content_report_title">Laporan konten baru</string>

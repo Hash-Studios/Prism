@@ -7552,7 +7552,8 @@ class AppLocalizationsHi extends AppLocalizations {
   String get notifSettingFollowers => 'फ़ॉलोअर';
 
   @override
-  String get notifSettingFollowersDescription => 'कोई नया व्यक्ति आपको फ़ॉलो करे, तो अलर्ट पाएँ।';
+  String get notifSettingFollowersDescription =>
+      'कोई नया व्यक्ति आपको फ़ॉलो करे या आपके वॉलपेपर पर टिप्पणी करे, तो अलर्ट पाएँ।';
 
   @override
   String get notifSettingPosts => 'पोस्ट';
@@ -11500,6 +11501,69 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallMetadataEditDetails => 'जानकारी संपादित करें';
 
   @override
+  String get wallVariantAdd => 'रंग का एक वेरिएंट जोड़ें';
+
+  @override
+  String wallVariantUploadContext(String title) {
+    return '$title का रंग वेरिएंट';
+  }
+
+  @override
+  String get wallVariantUploadContextUntitled => 'आपके वॉलपेपर का रंग वेरिएंट';
+
+  @override
+  String get wallVariantUploadHint => 'मूल जैसा ही आकार और रूप रखें। समीक्षा के बाद यह सेट में जुड़ जाएगा।';
+
+  @override
+  String get wallVariantUnlinkTooltip => 'इसके बजाय नए वॉलपेपर के रूप में अपलोड करें';
+
+  @override
+  String wallVariantCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count रंग');
+    return '$_temp0';
+  }
+
+  @override
+  String wallVariantDotLabel(int index, int count, String colour) {
+    return 'वेरिएंट $index / $count, $colour';
+  }
+
+  @override
+  String wallVariantDotLabelPlain(int index, int count) {
+    return 'वेरिएंट $index / $count';
+  }
+
+  @override
+  String get wallVariantDotHint => 'यह रंग दिखाएँ';
+
+  @override
+  String get wallVariantNextHint => 'अगला रंग दिखाएँ';
+
+  @override
+  String get wallVariantPending => 'रंग वेरिएंट। समीक्षा के बाद यह सेट में जुड़ जाएगा।';
+
+  @override
+  String get wallVariantLinked => 'रंग वेरिएंट के सेट में';
+
+  @override
+  String get wallVariantDroppedTitle => 'रंग वेरिएंट के रूप में नहीं जोड़ा गया';
+
+  @override
+  String get wallVariantDroppedNotFound => 'मूल वॉलपेपर हटा दिया गया था।';
+
+  @override
+  String get wallVariantDroppedNotOwner => 'मूल वॉलपेपर किसी दूसरे क्रिएटर का है।';
+
+  @override
+  String get wallVariantDroppedNotApproved => 'मूल वॉलपेपर स्वीकृत नहीं है।';
+
+  @override
+  String get wallVariantDroppedFull => 'सेट में पहले से 5 रंग हैं।';
+
+  @override
+  String get wallVariantDroppedAspect => 'इसका आकार मूल से अलग है।';
+
+  @override
   String get wallMetadataApprovedHelp => 'शीर्षक, विवरण और टैग बदलें। चित्र और श्रेणी वही रहेंगे।';
 
   @override
@@ -12990,6 +13054,253 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get premiumTrialAutoRenewOff => 'ऑटो-रिन्यू बंद है। ट्रायल खत्म होने पर आपसे कोई शुल्क नहीं लिया जाएगा।';
+
+  @override
+  String get editorsChoiceTitle => 'संपादकों की पसंद';
+
+  @override
+  String get editorsChoiceRowBody => 'वे वॉलपेपर जो हमारे संपादकों को पसंद हैं।';
+
+  @override
+  String get editorsChoiceEmptyTitle => 'अभी कोई पसंद नहीं';
+
+  @override
+  String get editorsChoiceEmptyBody => 'नई पसंद के लिए जल्द फिर देखें।';
+
+  @override
+  String get editorsChoiceLoadError => 'संपादकों की पसंद लोड नहीं हो सकी';
+
+  @override
+  String get editorsChoiceLabelSemantics => 'संपादकों की पसंद के लिए चुना गया';
+
+  @override
+  String get editorsChoicePick => 'संपादकों की पसंद में जोड़ें';
+
+  @override
+  String get editorsChoiceUnpick => 'संपादकों की पसंद से हटाएं';
+
+  @override
+  String get editorsChoicePicked => 'संपादकों की पसंद में जोड़ा गया';
+
+  @override
+  String get editorsChoiceUnpicked => 'संपादकों की पसंद से हटाया गया';
+
+  @override
+  String get editorsChoiceNotEligible => 'केवल स्वीकृत, मुफ़्त वॉलपेपर, जिनका मूल संस्करण तैयार है, पसंद बन सकते हैं।';
+
+  @override
+  String get adminApproveAndPick => 'स्वीकृत करें और चुनें';
+
+  @override
+  String get adminApprovedPickLater =>
+      'स्वीकृत किया गया। मूल संस्करण तैयार होने पर इसके पेज से इसे संपादकों की पसंद में जोड़ें।';
+
+  @override
+  String wallCreditBy(String name) {
+    return '$name द्वारा';
+  }
+
+  @override
+  String wallCreditPhotoBy(String name) {
+    return '$name द्वारा फ़ोटो';
+  }
+
+  @override
+  String get wallCreditByHashStudios => 'Hash Studios द्वारा';
+
+  @override
+  String get wallCreditPrismExclusive => 'सिर्फ़ Prism पर';
+
+  @override
+  String get wallCreditOnPexels => 'Pexels से';
+
+  @override
+  String get wallCreditOnWallhaven => 'Wallhaven से';
+
+  @override
+  String get wallCreditOpenProfileHint => 'प्रोफ़ाइल खोलता है';
+
+  @override
+  String get wallCreditOpenSourceHint => 'आपके ब्राउज़र में खुलता है';
+
+  @override
+  String get profileProBadge => 'Pro';
+
+  @override
+  String get profileProBadgeSemantics => 'Prism Pro सदस्य';
+
+  @override
+  String get settingsShowProBadgeTitle => 'मेरी प्रोफ़ाइल पर Pro बैज दिखाएं';
+
+  @override
+  String get settingsShowProBadgeBody => 'आपकी प्रोफ़ाइल देखने वालों को Pro बैज दिखेगा।';
+
+  @override
+  String get notifPushEditorsChoiceTitle => 'आपका वॉलपेपर संपादकों की पसंद है';
+
+  @override
+  String notifPushEditorsChoiceBody(String wallTitle) {
+    return 'हमारे संपादकों ने $wallTitle को चुना है। सभी इसे होम पर पा सकते हैं।';
+  }
+
+  @override
+  String get notifPushEditorsChoiceBodyUntitled =>
+      'हमारे संपादकों ने आपका वॉलपेपर चुना है। सभी इसे होम पर पा सकते हैं।';
+
+  @override
+  String get coreContentReportComment => 'टिप्पणी';
+
+  @override
+  String get commentsAction => 'टिप्पणियाँ';
+
+  @override
+  String commentsCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count टिप्पणियाँ',
+      one: '1 टिप्पणी',
+      zero: 'कोई टिप्पणी नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentsTitle => 'टिप्पणियाँ';
+
+  @override
+  String get commentsEmptyTitle => 'अभी कोई टिप्पणी नहीं है';
+
+  @override
+  String get commentsEmptyBody => 'क्रिएटर को बताएँ कि आपको इस वॉलपेपर में क्या पसंद है।';
+
+  @override
+  String get commentsLoadFailed => 'टिप्पणियाँ लोड नहीं हो सकीं। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get commentsRetry => 'फिर से कोशिश करें';
+
+  @override
+  String get commentComposerHint => 'टिप्पणी जोड़ें';
+
+  @override
+  String get commentSend => 'भेजें';
+
+  @override
+  String commentCharactersLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count अक्षर बाकी', one: '1 अक्षर बाकी');
+    return '$_temp0';
+  }
+
+  @override
+  String commentCharactersOver(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count अक्षर ज़्यादा',
+      one: '1 अक्षर ज़्यादा',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentSignInToComment => 'टिप्पणी करने के लिए साइन इन करें';
+
+  @override
+  String get commentCreatorLabel => 'क्रिएटर';
+
+  @override
+  String get commentAuthorFallback => 'Prism उपयोगकर्ता';
+
+  @override
+  String get commentOptionsHint => 'टिप्पणी के विकल्प दिखाएँ';
+
+  @override
+  String get commentReport => 'टिप्पणी की रिपोर्ट करें';
+
+  @override
+  String commentBlockUser(String name) {
+    return '$name को ब्लॉक करें';
+  }
+
+  @override
+  String get commentDelete => 'टिप्पणी हटाएँ';
+
+  @override
+  String get commentDeleteConfirmTitle => 'क्या यह टिप्पणी हटानी है?';
+
+  @override
+  String get commentDeleteConfirmBody => 'यह सभी के लिए हट जाएगी। इसे वापस नहीं लिया जा सकता।';
+
+  @override
+  String get commentDeleted => 'टिप्पणी हटा दी गई';
+
+  @override
+  String get commentDeleteFailed => 'टिप्पणी हटाई नहीं जा सकी। फिर से कोशिश करें।';
+
+  @override
+  String get commentPostFailed => 'आपकी टिप्पणी पोस्ट नहीं हो सकी। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get commentErrorDisabled => 'टिप्पणियाँ अभी रोकी गई हैं। बाद में फिर से कोशिश करें।';
+
+  @override
+  String get commentErrorGuest => 'टिप्पणी करने के लिए सत्यापित खाते से साइन इन करें।';
+
+  @override
+  String get commentErrorTooNew => 'Prism से जुड़ने के 24 घंटे बाद आप टिप्पणी कर सकते हैं।';
+
+  @override
+  String get commentErrorWallUnavailable => 'यह वॉलपेपर अभी टिप्पणियों के लिए उपलब्ध नहीं है।';
+
+  @override
+  String get commentErrorEmpty => 'भेजने से पहले टिप्पणी लिखें।';
+
+  @override
+  String get commentErrorTooLong => '500 अक्षरों या उससे कम का उपयोग करें।';
+
+  @override
+  String get commentErrorHiddenCharacters => 'छिपे या विशेष अक्षर हटाएँ, फिर से भेजें।';
+
+  @override
+  String get commentErrorBlockedWord => 'अपनी टिप्पणी को शालीन शब्दों में लिखें, फिर से भेजें।';
+
+  @override
+  String get commentErrorBlocked => 'आप इस वॉलपेपर पर टिप्पणी नहीं कर सकते।';
+
+  @override
+  String get commentErrorTooFast => 'अगली टिप्पणी से पहले कुछ सेकंड रुकें।';
+
+  @override
+  String get commentErrorDailyLimit => 'आप रोज़ 50 टिप्पणियाँ कर सकते हैं। कल फिर कोशिश करें।';
+
+  @override
+  String notifPushWallCommentedTitle(String name, String wallTitle) {
+    return '$name ने $wallTitle पर टिप्पणी की';
+  }
+
+  @override
+  String notifPushWallCommentedTitleUntitled(String name) {
+    return '$name ने आपके वॉलपेपर पर टिप्पणी की';
+  }
+
+  @override
+  String get adminCommentReport => 'टिप्पणी की रिपोर्ट';
+
+  @override
+  String get adminKeepComment => 'टिप्पणी रखें';
+
+  @override
+  String get adminCommentKept => 'रिपोर्ट खारिज की गई। टिप्पणी दिख रही है।';
+
+  @override
+  String get adminCommentRemoved => 'टिप्पणी हटाई गई';
+
+  @override
+  String get adminCommentGone => 'यह टिप्पणी पहले ही हट चुकी है।';
+
+  @override
+  String get adminContentTypeComment => 'टिप्पणी';
 
   @override
   String get livePhotoAction => 'लाइव फ़ोटो';

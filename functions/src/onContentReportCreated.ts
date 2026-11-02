@@ -4,6 +4,7 @@ import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
 import {sendToUserByEmail} from "./notificationHelper";
 import {db, REGION} from "./common";
+import {parseCommentTarget, setCommentState} from "./comments";
 import {hideFolder} from "./publicFolders";
 
 interface ReportDoc {
@@ -153,6 +154,21 @@ export const onContentReportCreated = onDocumentCreated(
       } catch (err) {
         logger.error("onContentReportCreated: could not check the request reports.", {reportId, targetId, err});
         // hideRequestAfterReports hides a request once, so a retry is safe.
+        throw err;
+      }
+    }
+
+    // A comment that trusted users reported is hidden and leaves the wall count. An admin shows it again or deletes it.
+    const comment = contentType === "comment" ? parseCommentTarget(targetId) : null;
+    if (comment) {
+      try {
+        if (await reportedByTrustedUsers("comment", targetId) &&
+          await setCommentState(comment.wallId, comment.commentId, "hidden", "reports", reportId)) {
+          logger.warn("onContentReportCreated: comment hidden after reports.", {reportId, targetId});
+        }
+      } catch (err) {
+        logger.error("onContentReportCreated: could not check the comment reports.", {reportId, targetId, err});
+        // setCommentState hides a comment once, so a retry is safe.
         throw err;
       }
     }

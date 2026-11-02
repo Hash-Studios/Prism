@@ -302,9 +302,9 @@ void main() {
         ),
       ),
     );
-    // The summary under the card names the creator too; the author link is the later one, in the open details.
-    expect(find.text('artist'), findsNWidgets(2));
-    final Finder authorLink = find.ancestor(of: find.text('artist').last, matching: find.byType(InkWell)).first;
+    // The summary under the card names the creator; the credit row in the open details links to them.
+    expect(find.text('artist'), findsOneWidget);
+    final Finder authorLink = find.ancestor(of: find.text('By artist'), matching: find.byType(InkWell)).first;
     await tester.scrollUntilVisible(authorLink, 400, scrollable: find.byType(Scrollable).first);
     await tester.tap(authorLink);
     await tester.pump();

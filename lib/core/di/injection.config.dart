@@ -74,6 +74,11 @@ import '../../features/drops/biz/bloc/drops_bloc.j.dart' as _i849;
 import '../../features/drops/data/repositories/drops_repository_impl.dart'
     as _i591;
 import '../../features/drops/domain/repositories/drops_repository.dart' as _i96;
+import '../../features/editors_choice/biz/editors_choice_cubit.dart' as _i19;
+import '../../features/editors_choice/data/editors_choice_repository_impl.dart'
+    as _i534;
+import '../../features/editors_choice/domain/editors_choice_repository.dart'
+    as _i365;
 import '../../features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart'
     as _i782;
 import '../../features/favourite_walls/biz/favourite_counts_cubit.dart'
@@ -230,6 +235,8 @@ import '../../features/user_search/domain/repositories/user_search_repository.da
     as _i204;
 import '../../features/user_search/domain/usecases/search_users_usecase.dart'
     as _i750;
+import '../../features/wall_comments/data/wall_comments_repository.dart'
+    as _i375;
 import '../../features/wall_of_the_day/biz/bloc/wotd_archive_bloc.j.dart'
     as _i71;
 import '../../features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart' as _i183;
@@ -564,6 +571,9 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i25.AdminModerationRepository>(
     () => _i25.AdminModerationRepository(gh<_i349.FirestoreClient>()),
   );
+  gh.lazySingleton<_i375.WallCommentsRepository>(
+    () => _i375.WallCommentsRepository(gh<_i349.FirestoreClient>()),
+  );
   gh.factory<_i896.QuestsBloc>(
     () => _i896.QuestsBloc(gh<_i651.QuestsRepository>()),
   );
@@ -643,6 +653,13 @@ _i174.GetIt initGetIt(
     () => _i129.FoldersBloc(
       gh<_i847.FoldersRepository>(),
       gh<_i279.PublicFoldersRepository>(),
+    ),
+  );
+  gh.lazySingleton<_i365.EditorsChoiceRepository>(
+    () => _i534.EditorsChoiceRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i112.UserBlockRepository>(),
+      gh<_i1073.SettingsLocalDataSource>(),
     ),
   );
   gh.lazySingleton<_i727.PrismWallpaperRepository>(
@@ -751,6 +768,9 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i733.UserSearchBloc>(
     () => _i733.UserSearchBloc(gh<_i750.SearchUsersUseCase>()),
+  );
+  gh.factory<_i19.EditorsChoiceCubit>(
+    () => _i19.EditorsChoiceCubit(gh<_i365.EditorsChoiceRepository>()),
   );
   gh.lazySingleton<_i643.FavouriteWallsRepository>(
     () => _i176.FavouriteWallsRepositoryImpl(

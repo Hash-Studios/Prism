@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {createHash} from "node:crypto";
 import * as admin from "firebase-admin";
+import {db} from "../common";
 import {ownedAssetStorageEnabled, ownedThumbnailUrl, retainUpload, deleteRetainedUpload, stored,
   signOriginalDelivery, bindOwnedWall, cleanupDeletedOwnedWall, sweepR2Tombstones, type StoredUpload} from "../ownedAssetDelivery";
 import {r2ObjectId} from "../r2Storage";
@@ -147,6 +148,37 @@ test("original signing rejects duplicate wall IDs and stale object identity", as
   store.set("walls/a", {id: "wall", originalProtected: true, originalObjectId: "wrong"});
   await assert.rejects(signOriginalDelivery("wall"), /unavailable/);
 });
+
+for (const firstFailure of ["walls", "ownedAssets"] as const) {
+  test(`original signing fails closed when ${firstFailure} rejects before the other read`, async (t) => {
+    const started: string[] = [];
+    const rejectReads: Map<string, (reason: Error) => void> = new Map();
+    t.mock.method(db, "collection", (name: string) => {
+      const target = {
+        where: () => target,
+        limit: () => target,
+        doc: () => target,
+        get: () => {
+          started.push(name);
+          return new Promise((_, reject) => rejectReads.set(name, reject));
+        },
+      };
+      return target;
+    });
+    const signing = signOriginalDelivery("wall");
+    assert.deepEqual(started, ["walls", "ownedAssets"]);
+    const error = new Error(`${firstFailure} unavailable`);
+    const rejectFirst = rejectReads.get(firstFailure);
+    assert.ok(rejectFirst);
+    rejectFirst(error);
+    await assert.rejects(signing, (caught: unknown) => caught === error);
+    const other = firstFailure === "walls" ? "ownedAssets" : "walls";
+    const rejectOther = rejectReads.get(other);
+    assert.ok(rejectOther);
+    rejectOther(new Error(`${other} also unavailable`));
+    await new Promise((resolve) => setImmediate(resolve));
+  });
+}
 
 test("wall binding accepts matching GitHub receipts and redacts source URLs", async (t) => {
   const previous = {...process.env};

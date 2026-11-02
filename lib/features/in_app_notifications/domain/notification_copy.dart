@@ -77,6 +77,12 @@ String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
         ? l10n.notifPushWallRemixedBodyUntitled(_stringArg(args, 'remixerName'))
         : l10n.notifPushWallRemixedBody(_stringArg(args, 'remixerName'), _stringArg(args, 'wallTitle')),
   ),
+  'editorsChoicePicked' => (
+    title: l10n.notifPushEditorsChoiceTitle,
+    body: _stringArg(args, 'wallTitle').trim().isEmpty
+        ? l10n.notifPushEditorsChoiceBodyUntitled
+        : l10n.notifPushEditorsChoiceBody(_stringArg(args, 'wallTitle')),
+  ),
   'creatorStatsWeekly' => (title: l10n.statsWeeklyTitle, body: l10n.statsWeeklyBody(_stringArg(args, 'week'))),
   'streakReminder' => (title: l10n.notifPushStreakReminderTitle, body: l10n.notifPushStreakReminderBody),
   'wotdForCreator' => (title: l10n.notifPushWotdCreatorTitle, body: l10n.notifPushWotdCreatorBody),
@@ -137,6 +143,12 @@ String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
   'tipsReceived' => (
     title: l10n.notifTipsReceivedTitle(_intArg(args, 'tipCount')),
     body: l10n.notifTipsReceivedBody(_intArg(args, 'coins')),
+  ),
+  'wallCommented' => (
+    title: _stringArg(args, 'wallTitle').trim().isEmpty
+        ? l10n.notifPushWallCommentedTitleUntitled(_stringArg(args, 'commenterName'))
+        : l10n.notifPushWallCommentedTitle(_stringArg(args, 'commenterName'), _stringArg(args, 'wallTitle')),
+    body: _stringArg(args, 'text'),
   ),
   'giftReceived' => (
     title: l10n.notifPushGiftReceivedTitle(_stringArg(args, 'senderName')),

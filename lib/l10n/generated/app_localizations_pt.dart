@@ -7681,7 +7681,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get notifSettingFollowers => 'Seguidores';
 
   @override
-  String get notifSettingFollowersDescription => 'Alertas quando alguém novo segue você.';
+  String get notifSettingFollowersDescription =>
+      'Alertas quando alguém novo segue você ou comenta seus papéis de parede.';
 
   @override
   String get notifSettingPosts => 'Postagens';
@@ -11697,6 +11698,70 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallMetadataEditDetails => 'Editar detalhes';
 
   @override
+  String get wallVariantAdd => 'Adicionar uma variante de cor';
+
+  @override
+  String wallVariantUploadContext(String title) {
+    return 'Variante de cor de $title';
+  }
+
+  @override
+  String get wallVariantUploadContextUntitled => 'Variante de cor do seu papel de parede';
+
+  @override
+  String get wallVariantUploadHint =>
+      'Use o mesmo tamanho e formato do original. Ela entra no conjunto após a análise.';
+
+  @override
+  String get wallVariantUnlinkTooltip => 'Enviar como um novo papel de parede';
+
+  @override
+  String wallVariantCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count cores');
+    return '$_temp0';
+  }
+
+  @override
+  String wallVariantDotLabel(int index, int count, String colour) {
+    return 'Variante $index de $count, $colour';
+  }
+
+  @override
+  String wallVariantDotLabelPlain(int index, int count) {
+    return 'Variante $index de $count';
+  }
+
+  @override
+  String get wallVariantDotHint => 'Mostrar esta cor';
+
+  @override
+  String get wallVariantNextHint => 'Mostrar a próxima cor';
+
+  @override
+  String get wallVariantPending => 'Variante de cor. Ela entra no conjunto após a análise.';
+
+  @override
+  String get wallVariantLinked => 'Em um conjunto de variantes de cor';
+
+  @override
+  String get wallVariantDroppedTitle => 'Não adicionado como variante de cor';
+
+  @override
+  String get wallVariantDroppedNotFound => 'O papel de parede original foi removido.';
+
+  @override
+  String get wallVariantDroppedNotOwner => 'O original pertence a outro criador.';
+
+  @override
+  String get wallVariantDroppedNotApproved => 'O original não foi aprovado.';
+
+  @override
+  String get wallVariantDroppedFull => 'O conjunto já tem 5 cores.';
+
+  @override
+  String get wallVariantDroppedAspect => 'Ele tem um formato diferente do original.';
+
+  @override
   String get wallMetadataApprovedHelp =>
       'Altere o título, a descrição e as tags. A imagem e a categoria permanecem iguais.';
 
@@ -13194,6 +13259,259 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get premiumTrialAutoRenewOff =>
       'A renovação automática está desativada. Você não será cobrado quando o teste terminar.';
+
+  @override
+  String get editorsChoiceTitle => 'Escolha dos editores';
+
+  @override
+  String get editorsChoiceRowBody => 'Papéis de parede que os nossos editores amam.';
+
+  @override
+  String get editorsChoiceEmptyTitle => 'Ainda não há escolhas';
+
+  @override
+  String get editorsChoiceEmptyBody => 'Volte em breve para ver novas escolhas.';
+
+  @override
+  String get editorsChoiceLoadError => 'Não foi possível carregar a Escolha dos editores';
+
+  @override
+  String get editorsChoiceLabelSemantics => 'Escolhido para a Escolha dos editores';
+
+  @override
+  String get editorsChoicePick => 'Adicionar à Escolha dos editores';
+
+  @override
+  String get editorsChoiceUnpick => 'Remover da Escolha dos editores';
+
+  @override
+  String get editorsChoicePicked => 'Adicionado à Escolha dos editores';
+
+  @override
+  String get editorsChoiceUnpicked => 'Removido da Escolha dos editores';
+
+  @override
+  String get editorsChoiceNotEligible =>
+      'Só papéis de parede gratuitos aprovados com o original pronto podem ser escolhidos.';
+
+  @override
+  String get adminApproveAndPick => 'Aprovar e escolher';
+
+  @override
+  String get adminApprovedPickLater =>
+      'Aprovado. Adicione à Escolha dos editores pela página dele quando o original estiver pronto.';
+
+  @override
+  String wallCreditBy(String name) {
+    return 'Por $name';
+  }
+
+  @override
+  String wallCreditPhotoBy(String name) {
+    return 'Foto de $name';
+  }
+
+  @override
+  String get wallCreditByHashStudios => 'Por Hash Studios';
+
+  @override
+  String get wallCreditPrismExclusive => 'Exclusivo do Prism';
+
+  @override
+  String get wallCreditOnPexels => 'Do Pexels';
+
+  @override
+  String get wallCreditOnWallhaven => 'Do Wallhaven';
+
+  @override
+  String get wallCreditOpenProfileHint => 'Abre o perfil';
+
+  @override
+  String get wallCreditOpenSourceHint => 'Abre no seu navegador';
+
+  @override
+  String get profileProBadge => 'Pro';
+
+  @override
+  String get profileProBadgeSemantics => 'Membro Prism Pro';
+
+  @override
+  String get settingsShowProBadgeTitle => 'Mostrar o selo Pro no meu perfil';
+
+  @override
+  String get settingsShowProBadgeBody => 'As pessoas que visitam seu perfil veem um selo Pro.';
+
+  @override
+  String get notifPushEditorsChoiceTitle => 'Seu papel de parede é uma Escolha dos editores';
+
+  @override
+  String notifPushEditorsChoiceBody(String wallTitle) {
+    return 'Nossos editores escolheram $wallTitle. Todos podem encontrá-lo no Início.';
+  }
+
+  @override
+  String get notifPushEditorsChoiceBodyUntitled =>
+      'Nossos editores escolheram seu papel de parede. Todos podem encontrá-lo no Início.';
+
+  @override
+  String get coreContentReportComment => 'comentário';
+
+  @override
+  String get commentsAction => 'Comentários';
+
+  @override
+  String commentsCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count comentários',
+      one: '1 comentário',
+      zero: 'Nenhum comentário',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentsTitle => 'Comentários';
+
+  @override
+  String get commentsEmptyTitle => 'Ainda não há comentários';
+
+  @override
+  String get commentsEmptyBody => 'Conte ao criador o que você gosta neste papel de parede.';
+
+  @override
+  String get commentsLoadFailed => 'Não foi possível carregar os comentários. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get commentsRetry => 'Tentar de novo';
+
+  @override
+  String get commentComposerHint => 'Adicione um comentário';
+
+  @override
+  String get commentSend => 'Enviar';
+
+  @override
+  String commentCharactersLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Restam $count caracteres',
+      one: 'Resta 1 caractere',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String commentCharactersOver(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count caracteres a mais',
+      one: '1 caractere a mais',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentSignInToComment => 'Entre para comentar';
+
+  @override
+  String get commentCreatorLabel => 'Criador';
+
+  @override
+  String get commentAuthorFallback => 'Usuário do Prism';
+
+  @override
+  String get commentOptionsHint => 'mostrar opções do comentário';
+
+  @override
+  String get commentReport => 'Denunciar comentário';
+
+  @override
+  String commentBlockUser(String name) {
+    return 'Bloquear $name';
+  }
+
+  @override
+  String get commentDelete => 'Excluir comentário';
+
+  @override
+  String get commentDeleteConfirmTitle => 'Excluir este comentário?';
+
+  @override
+  String get commentDeleteConfirmBody => 'Ele será removido para todos. Não é possível desfazer.';
+
+  @override
+  String get commentDeleted => 'Comentário excluído';
+
+  @override
+  String get commentDeleteFailed => 'Não foi possível excluir o comentário. Tente novamente.';
+
+  @override
+  String get commentPostFailed => 'Não foi possível publicar seu comentário. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get commentErrorDisabled => 'Os comentários estão pausados agora. Tente mais tarde.';
+
+  @override
+  String get commentErrorGuest => 'Entre com uma conta verificada para comentar.';
+
+  @override
+  String get commentErrorTooNew => 'Você pode comentar 24 horas depois de entrar no Prism.';
+
+  @override
+  String get commentErrorWallUnavailable => 'Este papel de parede não está aberto para comentários agora.';
+
+  @override
+  String get commentErrorEmpty => 'Escreva um comentário antes de enviar.';
+
+  @override
+  String get commentErrorTooLong => 'Use 500 caracteres ou menos.';
+
+  @override
+  String get commentErrorHiddenCharacters => 'Remova os caracteres ocultos ou especiais e envie de novo.';
+
+  @override
+  String get commentErrorBlockedWord => 'Reescreva seu comentário de forma gentil e envie de novo.';
+
+  @override
+  String get commentErrorBlocked => 'Você não pode comentar neste papel de parede.';
+
+  @override
+  String get commentErrorTooFast => 'Aguarde alguns segundos antes do próximo comentário.';
+
+  @override
+  String get commentErrorDailyLimit => 'Você pode enviar 50 comentários por dia. Tente novamente amanhã.';
+
+  @override
+  String notifPushWallCommentedTitle(String name, String wallTitle) {
+    return '$name comentou em $wallTitle';
+  }
+
+  @override
+  String notifPushWallCommentedTitleUntitled(String name) {
+    return '$name comentou no seu papel de parede';
+  }
+
+  @override
+  String get adminCommentReport => 'Denúncia de comentário';
+
+  @override
+  String get adminKeepComment => 'Manter comentário';
+
+  @override
+  String get adminCommentKept => 'Denúncia descartada. O comentário está visível.';
+
+  @override
+  String get adminCommentRemoved => 'Comentário removido';
+
+  @override
+  String get adminCommentGone => 'Este comentário já não existe.';
+
+  @override
+  String get adminContentTypeComment => 'Comentário';
 
   @override
   String get livePhotoAction => 'Foto Live';
@@ -20980,7 +21298,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get notifSettingFollowers => 'Seguidores';
 
   @override
-  String get notifSettingFollowersDescription => 'Alertas quando alguém novo segue você.';
+  String get notifSettingFollowersDescription =>
+      'Alertas quando alguém novo segue você ou comenta seus papéis de parede.';
 
   @override
   String get notifSettingPosts => 'Postagens';
@@ -24996,6 +25315,70 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallMetadataEditDetails => 'Editar detalhes';
 
   @override
+  String get wallVariantAdd => 'Adicionar uma variante de cor';
+
+  @override
+  String wallVariantUploadContext(String title) {
+    return 'Variante de cor de $title';
+  }
+
+  @override
+  String get wallVariantUploadContextUntitled => 'Variante de cor do seu papel de parede';
+
+  @override
+  String get wallVariantUploadHint =>
+      'Use o mesmo tamanho e formato do original. Ela entra no conjunto após a análise.';
+
+  @override
+  String get wallVariantUnlinkTooltip => 'Enviar como um novo papel de parede';
+
+  @override
+  String wallVariantCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count cores');
+    return '$_temp0';
+  }
+
+  @override
+  String wallVariantDotLabel(int index, int count, String colour) {
+    return 'Variante $index de $count, $colour';
+  }
+
+  @override
+  String wallVariantDotLabelPlain(int index, int count) {
+    return 'Variante $index de $count';
+  }
+
+  @override
+  String get wallVariantDotHint => 'Mostrar esta cor';
+
+  @override
+  String get wallVariantNextHint => 'Mostrar a próxima cor';
+
+  @override
+  String get wallVariantPending => 'Variante de cor. Ela entra no conjunto após a análise.';
+
+  @override
+  String get wallVariantLinked => 'Em um conjunto de variantes de cor';
+
+  @override
+  String get wallVariantDroppedTitle => 'Não adicionado como variante de cor';
+
+  @override
+  String get wallVariantDroppedNotFound => 'O papel de parede original foi removido.';
+
+  @override
+  String get wallVariantDroppedNotOwner => 'O original pertence a outro criador.';
+
+  @override
+  String get wallVariantDroppedNotApproved => 'O original não foi aprovado.';
+
+  @override
+  String get wallVariantDroppedFull => 'O conjunto já tem 5 cores.';
+
+  @override
+  String get wallVariantDroppedAspect => 'Ele tem um formato diferente do original.';
+
+  @override
   String get wallMetadataApprovedHelp =>
       'Altere o título, a descrição e as tags. A imagem e a categoria permanecem iguais.';
 
@@ -26493,6 +26876,259 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get premiumTrialAutoRenewOff =>
       'A renovação automática está desativada. Você não será cobrado quando o teste terminar.';
+
+  @override
+  String get editorsChoiceTitle => 'Escolha dos editores';
+
+  @override
+  String get editorsChoiceRowBody => 'Papéis de parede que os nossos editores amam.';
+
+  @override
+  String get editorsChoiceEmptyTitle => 'Ainda não há escolhas';
+
+  @override
+  String get editorsChoiceEmptyBody => 'Volte em breve para ver novas escolhas.';
+
+  @override
+  String get editorsChoiceLoadError => 'Não foi possível carregar a Escolha dos editores';
+
+  @override
+  String get editorsChoiceLabelSemantics => 'Escolhido para a Escolha dos editores';
+
+  @override
+  String get editorsChoicePick => 'Adicionar à Escolha dos editores';
+
+  @override
+  String get editorsChoiceUnpick => 'Remover da Escolha dos editores';
+
+  @override
+  String get editorsChoicePicked => 'Adicionado à Escolha dos editores';
+
+  @override
+  String get editorsChoiceUnpicked => 'Removido da Escolha dos editores';
+
+  @override
+  String get editorsChoiceNotEligible =>
+      'Só papéis de parede gratuitos aprovados com o original pronto podem ser escolhidos.';
+
+  @override
+  String get adminApproveAndPick => 'Aprovar e escolher';
+
+  @override
+  String get adminApprovedPickLater =>
+      'Aprovado. Adicione à Escolha dos editores pela página dele quando o original estiver pronto.';
+
+  @override
+  String wallCreditBy(String name) {
+    return 'Por $name';
+  }
+
+  @override
+  String wallCreditPhotoBy(String name) {
+    return 'Foto de $name';
+  }
+
+  @override
+  String get wallCreditByHashStudios => 'Por Hash Studios';
+
+  @override
+  String get wallCreditPrismExclusive => 'Exclusivo do Prism';
+
+  @override
+  String get wallCreditOnPexels => 'Do Pexels';
+
+  @override
+  String get wallCreditOnWallhaven => 'Do Wallhaven';
+
+  @override
+  String get wallCreditOpenProfileHint => 'Abre o perfil';
+
+  @override
+  String get wallCreditOpenSourceHint => 'Abre no seu navegador';
+
+  @override
+  String get profileProBadge => 'Pro';
+
+  @override
+  String get profileProBadgeSemantics => 'Membro Prism Pro';
+
+  @override
+  String get settingsShowProBadgeTitle => 'Mostrar o selo Pro no meu perfil';
+
+  @override
+  String get settingsShowProBadgeBody => 'As pessoas que visitam seu perfil veem um selo Pro.';
+
+  @override
+  String get notifPushEditorsChoiceTitle => 'Seu papel de parede é uma Escolha dos editores';
+
+  @override
+  String notifPushEditorsChoiceBody(String wallTitle) {
+    return 'Nossos editores escolheram $wallTitle. Todos podem encontrá-lo no Início.';
+  }
+
+  @override
+  String get notifPushEditorsChoiceBodyUntitled =>
+      'Nossos editores escolheram seu papel de parede. Todos podem encontrá-lo no Início.';
+
+  @override
+  String get coreContentReportComment => 'comentário';
+
+  @override
+  String get commentsAction => 'Comentários';
+
+  @override
+  String commentsCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count comentários',
+      one: '1 comentário',
+      zero: 'Nenhum comentário',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentsTitle => 'Comentários';
+
+  @override
+  String get commentsEmptyTitle => 'Ainda não há comentários';
+
+  @override
+  String get commentsEmptyBody => 'Conte ao criador o que você gosta neste papel de parede.';
+
+  @override
+  String get commentsLoadFailed => 'Não foi possível carregar os comentários. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get commentsRetry => 'Tentar de novo';
+
+  @override
+  String get commentComposerHint => 'Adicione um comentário';
+
+  @override
+  String get commentSend => 'Enviar';
+
+  @override
+  String commentCharactersLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Restam $count caracteres',
+      one: 'Resta 1 caractere',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String commentCharactersOver(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count caracteres a mais',
+      one: '1 caractere a mais',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentSignInToComment => 'Entre para comentar';
+
+  @override
+  String get commentCreatorLabel => 'Criador';
+
+  @override
+  String get commentAuthorFallback => 'Usuário do Prism';
+
+  @override
+  String get commentOptionsHint => 'mostrar opções do comentário';
+
+  @override
+  String get commentReport => 'Denunciar comentário';
+
+  @override
+  String commentBlockUser(String name) {
+    return 'Bloquear $name';
+  }
+
+  @override
+  String get commentDelete => 'Excluir comentário';
+
+  @override
+  String get commentDeleteConfirmTitle => 'Excluir este comentário?';
+
+  @override
+  String get commentDeleteConfirmBody => 'Ele será removido para todos. Não é possível desfazer.';
+
+  @override
+  String get commentDeleted => 'Comentário excluído';
+
+  @override
+  String get commentDeleteFailed => 'Não foi possível excluir o comentário. Tente novamente.';
+
+  @override
+  String get commentPostFailed => 'Não foi possível publicar seu comentário. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get commentErrorDisabled => 'Os comentários estão pausados agora. Tente mais tarde.';
+
+  @override
+  String get commentErrorGuest => 'Entre com uma conta verificada para comentar.';
+
+  @override
+  String get commentErrorTooNew => 'Você pode comentar 24 horas depois de entrar no Prism.';
+
+  @override
+  String get commentErrorWallUnavailable => 'Este papel de parede não está aberto para comentários agora.';
+
+  @override
+  String get commentErrorEmpty => 'Escreva um comentário antes de enviar.';
+
+  @override
+  String get commentErrorTooLong => 'Use 500 caracteres ou menos.';
+
+  @override
+  String get commentErrorHiddenCharacters => 'Remova os caracteres ocultos ou especiais e envie de novo.';
+
+  @override
+  String get commentErrorBlockedWord => 'Reescreva seu comentário de forma gentil e envie de novo.';
+
+  @override
+  String get commentErrorBlocked => 'Você não pode comentar neste papel de parede.';
+
+  @override
+  String get commentErrorTooFast => 'Aguarde alguns segundos antes do próximo comentário.';
+
+  @override
+  String get commentErrorDailyLimit => 'Você pode enviar 50 comentários por dia. Tente novamente amanhã.';
+
+  @override
+  String notifPushWallCommentedTitle(String name, String wallTitle) {
+    return '$name comentou em $wallTitle';
+  }
+
+  @override
+  String notifPushWallCommentedTitleUntitled(String name) {
+    return '$name comentou no seu papel de parede';
+  }
+
+  @override
+  String get adminCommentReport => 'Denúncia de comentário';
+
+  @override
+  String get adminKeepComment => 'Manter comentário';
+
+  @override
+  String get adminCommentKept => 'Denúncia descartada. O comentário está visível.';
+
+  @override
+  String get adminCommentRemoved => 'Comentário removido';
+
+  @override
+  String get adminCommentGone => 'Este comentário já não existe.';
+
+  @override
+  String get adminContentTypeComment => 'Comentário';
 
   @override
   String get livePhotoAction => 'Foto Live';

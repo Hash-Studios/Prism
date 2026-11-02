@@ -46,6 +46,14 @@ extension RemixSourceTypeWire on RemixSourceType {
   String get wireValue => name;
 }
 
+enum CommentRoleValue {
+  author,
+  creator,
+  admin;
+
+  String get wireValue => _snakeCase(name);
+}
+
 enum BinaryResultValue {
   success,
   failure;
@@ -461,6 +469,33 @@ enum WrappedSourceValue {
   deepLink;
 
   String get wireValue => _snakeCase(name);
+}
+
+enum VariantSwitchSourceValue {
+  dot,
+  tap;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum VariantLinkResultValue {
+  linked,
+  notFound,
+  notOwner,
+  notApproved,
+  groupFull,
+  aspectRatio;
+
+  String get wireValue => _snakeCase(name);
+
+  static VariantLinkResultValue? fromWire(String? value) {
+    for (final VariantLinkResultValue result in values) {
+      if (result.wireValue == value) {
+        return result;
+      }
+    }
+    return null;
+  }
 }
 
 String _snakeCase(String name) => name.replaceAllMapped(RegExp('[A-Z]'), (Match m) => '_${m[0]!.toLowerCase()}');

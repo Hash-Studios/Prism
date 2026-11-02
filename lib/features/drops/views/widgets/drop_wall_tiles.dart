@@ -38,6 +38,8 @@ PrismFeedItem dropWallFeedItem(DropWall wall, DropUnlock unlock) {
     title: wall.title.isEmpty ? null : wall.title,
     review: true,
     firestoreDocumentId: wall.id,
+    // The weekly planner only takes Studio walls, and an unlocked Drop wall skips the canonical reload.
+    byStudio: true,
   );
   return PrismFeedItem(id: wall.id, wallpaper: wallpaper);
 }

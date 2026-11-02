@@ -32,6 +32,12 @@ enums:
     values:
       - left
       - right
+  - name: comment_role
+    dart_type: CommentRoleValue
+    values:
+      - author
+      - creator
+      - admin
   - name: binary_result
     dart_type: BinaryResultValue
     values:
@@ -396,6 +402,20 @@ enums:
     values:
       - tap
       - semantics
+  - name: variant_switch_source
+    dart_type: VariantSwitchSourceValue
+    values:
+      - dot
+      - tap
+  - name: variant_link_result
+    dart_type: VariantLinkResultValue
+    values:
+      - linked
+      - not_found
+      - not_owner
+      - not_approved
+      - group_full
+      - aspect_ratio
   - name: favourite_pin_surface
     dart_type: FavouritePinSurfaceValue
     values:
@@ -2703,6 +2723,38 @@ events:
         type: enum
         enum: ImmersiveToggleSourceValue
   - id: detail_immersive_hint_shown
+  - id: wallpaper_variant_switched
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: VariantSwitchSourceValue
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: variant_index
+        key: variant_index
+        type: int
+      - name: variant_count
+        key: variant_count
+        type: int
+  - id: wallpaper_variant_upload_started
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: variant_count
+        key: variant_count
+        type: int
+  - id: wallpaper_variant_link_resolved
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: result
+        key: result
+        type: enum
+        enum: VariantLinkResultValue
   - id: favourite_pin_changed
     fields:
       - name: pinned
@@ -3032,3 +3084,43 @@ events:
       - name: reason
         key: reason
         type: string
+  - id: editors_choice_row_seen
+    fields:
+      - name: pick_count
+        key: pick_count
+        type: int
+  - id: editors_choice_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: editors_choice_pick_changed
+    fields:
+      - name: picked
+        key: picked
+        type: bool
+      - name: surface
+        key: surface
+        type: string
+  - id: pro_badge_toggled
+    fields:
+      - name: shown
+        key: shown
+        type: bool
+  - id: comments_sheet_opened
+    fields: []
+  - id: comment_posted
+    fields: []
+  - id: comment_refused
+    fields:
+      - name: reason
+        key: reason
+        type: string
+  - id: comment_deleted
+    fields:
+      - name: role
+        key: role
+        type: enum
+        enum: CommentRoleValue
+  - id: comment_reported
+    fields: []

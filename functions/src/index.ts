@@ -5,6 +5,7 @@ export {sendFollowDigests} from "./followDigest";
 export {recordNotificationSignal} from "./notificationScoreboard";
 export {onWallApproved} from "./onWallApproved";
 export {onWallRemixWritten} from "./wallRemix";
+export {onWallVariantWritten} from "./wallVariants";
 export {onCreatorWallWritten, onCreatorFavouriteCreated} from "./creatorProgress";
 export {onFollowCreated} from "./onFollowCreated";
 export {onUidFollowCreated} from "./onUidFollowCreated";
@@ -36,7 +37,9 @@ export {planWeeklyDrop, sendDropPushes, setDropTitle, unlockDrop} from "./drops"
 export {boostWall} from "./boosts";
 export {giftPremiumPass} from "./gifts";
 export {createPromoCode, listPromoCodes, redeemCode, setPromoCodeDisabled} from "./promoCodes";
+export {setEditorsChoice} from "./editorsChoice";
 export {tipCreator} from "./tips";
+export {addComment, deleteComment, setCommentHidden} from "./comments";
 export {buyDrawTicket, settleDraw} from "./draw";
 export {snapshotLeaderboard} from "./leaderboard";
 export {checkBadges} from "./badges";

@@ -106,6 +106,8 @@ String _contentTypeLabel(String contentType, AppLocalizations l10n) {
   switch (contentType) {
     case 'user':
       return l10n.coreContentReportUser;
+    case 'comment':
+      return l10n.coreContentReportComment;
     default:
       return l10n.coreContentReportWallpaper;
   }

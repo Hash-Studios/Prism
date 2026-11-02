@@ -24,8 +24,8 @@ class CreatorStatsEmulator {
   static void validate({required String project, required String host, required String account}) {
     if (project != 'demo-prism' ||
         !const {'127.0.0.1', 'localhost', '::1', '10.0.2.2'}.contains(host) ||
-        !const {'creator', 'other', 'empty'}.contains(account)) {
-      throw ArgumentError('Creator stats QA requires demo-prism, a local host and creator/other/empty account.');
+        !const {'creator', 'other', 'empty', 'guest'}.contains(account)) {
+      throw ArgumentError('Creator stats QA requires demo-prism, a local host and creator/other/empty/guest account.');
     }
   }
 
@@ -72,6 +72,8 @@ class CreatorStatsEmulator {
 
   static Future<void> signIn() async {
     if (!enabled) throw StateError('Emulator sign-in requires an opt-in debug build.');
+    // A guest stays signed out, so signed-out views read the emulator too.
+    if (Env.creatorStatsEmulatorAccount == 'guest') return;
     final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
       email: '${Env.creatorStatsEmulatorAccount}@demo-prism.test',
       password: 'local-prism-qa-only',

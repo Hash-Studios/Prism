@@ -24,6 +24,7 @@ import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
+import 'package:Prism/features/editors_choice/biz/editors_choice_cubit.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/moods/biz/mood_walls_cubit.dart';
@@ -56,6 +57,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../support/empty_editors_choice_repository.dart';
 import '../support/empty_weekly_challenges_repository.dart';
 import '../support/fake_app_analytics.dart';
 import '../support/fake_user_block_repository.dart';
@@ -234,7 +236,8 @@ class _Home {
       ..registerFactory<TrendingBloc>(() => TrendingBloc(fetchTrending, FakeUserBlockRepository.pending()))
       ..registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()))
       ..registerLazySingleton<MoodsCubit>(() => MoodsCubit(_FakeMoodRepository()))
-      ..registerFactory<MoodWallsCubit>(() => MoodWallsCubit(_FakeMoodRepository()));
+      ..registerFactory<MoodWallsCubit>(() => MoodWallsCubit(_FakeMoodRepository()))
+      ..registerFactory<EditorsChoiceCubit>(() => EditorsChoiceCubit(const EmptyEditorsChoiceRepository()));
 
     final _MockWotdBloc wotd = _MockWotdBloc();
     whenListen(

@@ -223,7 +223,7 @@ void main() {
     expect(moment, isA<DailyMomentRoute>());
     reachablePages.addAll(_routeNames(moment!));
     final Set<String> appPages = _appRouteNames(AppRouter().routes)..remove('SplashWidgetRoute');
-    expect(appPages, hasLength(66));
+    expect(appPages, hasLength(67));
     expect(appPages, containsAll(<String>['CreatorStatsRoute', 'DailyMomentRoute', 'WeeklyChallengeRoute']));
     expect(
       appPages.difference(reachablePages),
@@ -614,6 +614,7 @@ String _expectedPageName(DeepLinkPageTarget target, String uri) => switch (targe
   DeepLinkPageTarget.blockedAccounts => 'BlockedAccountsRoute',
   DeepLinkPageTarget.folder => 'FolderRoute',
   DeepLinkPageTarget.mood => 'MoodRoute',
+  DeepLinkPageTarget.editorsChoice => 'EditorsChoiceRoute',
   DeepLinkPageTarget.gallery => 'GalleryRoute',
   DeepLinkPageTarget.wallRequests => 'WallRequestsRoute',
   DeepLinkPageTarget.creators => 'CreatorsRoute',

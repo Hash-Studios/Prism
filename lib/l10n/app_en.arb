@@ -6459,7 +6459,7 @@
   "notifSettingDrops": "Weekly Drops",
   "notifSettingDropsDescription": "Alerts when a new Drop is live and before it ends.",
   "notifSettingFollowers": "Followers",
-  "notifSettingFollowersDescription": "Alerts when someone new follows you.",
+  "notifSettingFollowersDescription": "Alerts when someone new follows you or comments on your walls.",
   "notifSettingPosts": "Posts",
   "notifSettingPostsDescription": "Alerts when creators you follow share new work.",
   "notifSettingRecommendations": "Recommendations",
@@ -10877,6 +10877,107 @@
   "wallResubmitUnsupported": "Choose the original image again. AI source details cannot be reused.",
   "wallResubmitUnavailable": "Unable to load this rejected upload. Try again.",
   "wallMetadataEditDetails": "Edit details",
+  "wallVariantAdd": "Add a colour variant",
+  "@wallVariantAdd": {
+    "description": "Button on the creator's own approved wallpaper. Opens the upload flow to add the same wallpaper in another colour."
+  },
+  "wallVariantUploadContext": "Colour variant of {title}",
+  "@wallVariantUploadContext": {
+    "description": "Chip on the upload screen that names the wallpaper this upload is a colour of.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "wallVariantUploadContextUntitled": "Colour variant of your wallpaper",
+  "@wallVariantUploadContextUntitled": {
+    "description": "Same chip when the original has no title."
+  },
+  "wallVariantUploadHint": "Use the same size and shape as the original. It joins the set after review.",
+  "@wallVariantUploadHint": {
+    "description": "Help text under the chip on the upload screen."
+  },
+  "wallVariantUnlinkTooltip": "Upload as a new wallpaper instead",
+  "@wallVariantUnlinkTooltip": {
+    "description": "Tooltip on the chip's remove button."
+  },
+  "wallVariantCount": "{count, plural, other{{count} colours}}",
+  "@wallVariantCount": {
+    "description": "Small caption before the row of colour dots on a wallpaper with colour variants.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallVariantDotLabel": "Variant {index} of {count}, {colour}",
+  "@wallVariantDotLabel": {
+    "description": "Screen reader label for one colour dot.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      },
+      "colour": {
+        "type": "String"
+      }
+    }
+  },
+  "wallVariantDotLabelPlain": "Variant {index} of {count}",
+  "@wallVariantDotLabelPlain": {
+    "description": "Screen reader label for a colour dot whose colour has no name.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallVariantDotHint": "Show this colour",
+  "@wallVariantDotHint": {
+    "description": "Screen reader hint for tapping a colour dot."
+  },
+  "wallVariantNextHint": "Show the next colour",
+  "@wallVariantNextHint": {
+    "description": "Screen reader tap hint on a wallpaper with colour variants."
+  },
+  "wallVariantPending": "Colour variant. It joins the set after review.",
+  "@wallVariantPending": {
+    "description": "Line on a pending upload that is a colour variant."
+  },
+  "wallVariantLinked": "In a set of colour variants",
+  "@wallVariantLinked": {
+    "description": "Line on an upload that joined a set of colour variants."
+  },
+  "wallVariantDroppedTitle": "Not added as a colour variant",
+  "@wallVariantDroppedTitle": {
+    "description": "Title line on an upload whose colour variant link was refused. It stays as its own wallpaper."
+  },
+  "wallVariantDroppedNotFound": "The original wallpaper was removed.",
+  "@wallVariantDroppedNotFound": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedNotOwner": "The original belongs to another creator.",
+  "@wallVariantDroppedNotOwner": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedNotApproved": "The original is not approved.",
+  "@wallVariantDroppedNotApproved": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedFull": "The set already has 5 colours.",
+  "@wallVariantDroppedFull": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedAspect": "It has a different shape from the original.",
+  "@wallVariantDroppedAspect": {
+    "description": "Reason line."
+  },
   "wallMetadataApprovedHelp": "Change the title, description and tags. The image and category stay the same.",
   "wallMetadataPendingHelp": "Update these details before your wallpaper is reviewed.",
   "wallMetadataSave": "Save details",
@@ -12700,6 +12801,338 @@
   "premiumTrialAutoRenewOff": "Auto-renew is off. You will not be charged when the trial ends.",
   "@premiumTrialAutoRenewOff": {
     "description": "Premium screen note during a free trial that the user cancelled."
+  },
+  "editorsChoiceTitle": "Editors' Choice",
+  "@editorsChoiceTitle": {
+    "description": "Title of the Editors' Choice page and its Home entry point."
+  },
+  "editorsChoiceRowBody": "Wallpapers our editors love.",
+  "@editorsChoiceRowBody": {
+    "description": "Subtitle of the Editors' Choice row on Home."
+  },
+  "editorsChoiceEmptyTitle": "No picks yet",
+  "@editorsChoiceEmptyTitle": {
+    "description": "Empty state title when there are no Editors' Choice picks."
+  },
+  "editorsChoiceEmptyBody": "Check back soon for new picks.",
+  "@editorsChoiceEmptyBody": {
+    "description": "Empty state body shown under the title when there are no picks."
+  },
+  "editorsChoiceLoadError": "Couldn't load Editors' Choice",
+  "@editorsChoiceLoadError": {
+    "description": "Error title when the Editors' Choice list fails to load."
+  },
+  "editorsChoiceLabelSemantics": "Picked for Editors' Choice",
+  "@editorsChoiceLabelSemantics": {
+    "description": "Accessibility label on a wallpaper that is an Editors' Choice pick."
+  },
+  "editorsChoicePick": "Add to Editors' Choice",
+  "@editorsChoicePick": {
+    "description": "Button label that adds a wallpaper to Editors' Choice."
+  },
+  "editorsChoiceUnpick": "Remove from Editors' Choice",
+  "@editorsChoiceUnpick": {
+    "description": "Button label that removes a wallpaper from Editors' Choice."
+  },
+  "editorsChoicePicked": "Added to Editors' Choice",
+  "@editorsChoicePicked": {
+    "description": "Snackbar shown after a wallpaper is added to Editors' Choice."
+  },
+  "editorsChoiceUnpicked": "Removed from Editors' Choice",
+  "@editorsChoiceUnpicked": {
+    "description": "Snackbar shown after a wallpaper is removed from Editors' Choice."
+  },
+  "editorsChoiceNotEligible": "Only approved free wallpapers with a ready original can be picks.",
+  "@editorsChoiceNotEligible": {
+    "description": "Explanation shown when a wallpaper cannot be picked for Editors' Choice."
+  },
+  "adminApproveAndPick": "Approve and pick",
+  "@adminApproveAndPick": {
+    "description": "Admin button that approves a wallpaper and picks it for Editors' Choice."
+  },
+  "adminApprovedPickLater": "Approved. Add it to Editors' Choice from its page once its original is ready.",
+  "@adminApprovedPickLater": {
+    "description": "Admin message after approval when the original is not ready to pick yet."
+  },
+  "wallCreditBy": "By {name}",
+  "@wallCreditBy": {
+    "description": "Credit line naming the creator. {name} is the creator's display name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wallCreditPhotoBy": "Photo by {name}",
+  "@wallCreditPhotoBy": {
+    "description": "Credit line for a photo. {name} is the photographer's name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wallCreditByHashStudios": "By Hash Studios",
+  "@wallCreditByHashStudios": {
+    "description": "Credit line for a wallpaper made by Hash Studios."
+  },
+  "wallCreditPrismExclusive": "Prism exclusive",
+  "@wallCreditPrismExclusive": {
+    "description": "Credit line for a wallpaper that is exclusive to Prism."
+  },
+  "wallCreditOnPexels": "From Pexels",
+  "@wallCreditOnPexels": {
+    "description": "Credit line for a wallpaper sourced from Pexels."
+  },
+  "wallCreditOnWallhaven": "From Wallhaven",
+  "@wallCreditOnWallhaven": {
+    "description": "Credit line for a wallpaper sourced from Wallhaven."
+  },
+  "wallCreditOpenProfileHint": "Opens the profile",
+  "@wallCreditOpenProfileHint": {
+    "description": "Accessibility hint for a credit that opens a creator profile."
+  },
+  "wallCreditOpenSourceHint": "Opens in your browser",
+  "@wallCreditOpenSourceHint": {
+    "description": "Accessibility hint for a credit that opens the source site."
+  },
+  "profileProBadge": "Pro",
+  "@profileProBadge": {
+    "description": "Short badge text shown on a Prism Pro member's profile."
+  },
+  "profileProBadgeSemantics": "Prism Pro member",
+  "@profileProBadgeSemantics": {
+    "description": "Accessibility label for the Pro badge on a profile."
+  },
+  "settingsShowProBadgeTitle": "Show Pro badge on my profile",
+  "@settingsShowProBadgeTitle": {
+    "description": "Settings toggle title that shows or hides the Pro badge on the user's profile."
+  },
+  "settingsShowProBadgeBody": "People who visit your profile see a Pro badge.",
+  "@settingsShowProBadgeBody": {
+    "description": "Settings toggle description for the Pro badge."
+  },
+  "notifPushEditorsChoiceTitle": "Your wallpaper is an Editors' Choice",
+  "@notifPushEditorsChoiceTitle": {
+    "description": "Push notification title when a wallpaper becomes an Editors' Choice pick."
+  },
+  "notifPushEditorsChoiceBody": "Our editors picked {wallTitle}. Everyone can find it on Home.",
+  "@notifPushEditorsChoiceBody": {
+    "description": "Push notification body for an Editors' Choice pick. {wallTitle} is the wallpaper title.",
+    "placeholders": {
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushEditorsChoiceBodyUntitled": "Our editors picked your wallpaper. Everyone can find it on Home.",
+  "@notifPushEditorsChoiceBodyUntitled": {
+    "description": "Push notification body for an Editors' Choice pick when the wallpaper has no title."
+  },
+  "coreContentReportComment": "comment",
+  "@coreContentReportComment": {
+    "description": "Content type word in the report prompt for a wall comment, lower case as in the sentence"
+  },
+  "commentsAction": "Comments",
+  "@commentsAction": {
+    "description": "Wall detail action bar: tooltip of the button that opens the comments sheet"
+  },
+  "commentsCountLabel": "{count, plural, =0{No comments} =1{1 comment} other{{count} comments}}",
+  "@commentsCountLabel": {
+    "description": "Screen reader label for the comment count beside the comments button",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commentsTitle": "Comments",
+  "@commentsTitle": {
+    "description": "Title of the comments sheet on a wall"
+  },
+  "commentsEmptyTitle": "No comments yet",
+  "@commentsEmptyTitle": {
+    "description": "Comments sheet empty state title"
+  },
+  "commentsEmptyBody": "Tell the creator what you like about this wall.",
+  "@commentsEmptyBody": {
+    "description": "Comments sheet empty state body"
+  },
+  "commentsLoadFailed": "Unable to load comments. Check your connection and try again.",
+  "@commentsLoadFailed": {
+    "description": "Comments sheet error when the first page does not load"
+  },
+  "commentsRetry": "Try again",
+  "@commentsRetry": {
+    "description": "Button that reloads the comments after an error"
+  },
+  "commentComposerHint": "Add a comment",
+  "@commentComposerHint": {
+    "description": "Placeholder of the comment text field"
+  },
+  "commentSend": "Send",
+  "@commentSend": {
+    "description": "Button that posts the comment"
+  },
+  "commentCharactersLeft": "{count, plural, =1{1 character left} other{{count} characters left}}",
+  "@commentCharactersLeft": {
+    "description": "Shown under the comment field near the 500 character limit",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commentCharactersOver": "{count, plural, =1{1 character too many} other{{count} characters too many}}",
+  "@commentCharactersOver": {
+    "description": "Shown under the comment field when the text is over the 500 character limit",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commentSignInToComment": "Sign in to comment",
+  "@commentSignInToComment": {
+    "description": "Button in place of the comment field for signed-out users and guests"
+  },
+  "commentCreatorLabel": "Creator",
+  "@commentCreatorLabel": {
+    "description": "Small label beside the name when the wall's creator wrote the comment"
+  },
+  "commentAuthorFallback": "Prism user",
+  "@commentAuthorFallback": {
+    "description": "Name shown when a comment author has no name"
+  },
+  "commentOptionsHint": "show comment options",
+  "@commentOptionsHint": {
+    "description": "Screen reader hint for the long press on a comment. Lower case: the system adds 'Double tap and hold to'"
+  },
+  "commentReport": "Report comment",
+  "@commentReport": {
+    "description": "Comment long-press menu item"
+  },
+  "commentBlockUser": "Block {name}",
+  "@commentBlockUser": {
+    "description": "Comment long-press menu item that blocks the comment author",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "commentDelete": "Delete comment",
+  "@commentDelete": {
+    "description": "Comment long-press menu item, and the confirm button"
+  },
+  "commentDeleteConfirmTitle": "Delete this comment?",
+  "@commentDeleteConfirmTitle": {
+    "description": "Title of the delete comment confirmation"
+  },
+  "commentDeleteConfirmBody": "It is removed for everyone. You can't undo this.",
+  "@commentDeleteConfirmBody": {
+    "description": "Body of the delete comment confirmation"
+  },
+  "commentDeleted": "Comment deleted",
+  "@commentDeleted": {
+    "description": "Toast after a comment is deleted"
+  },
+  "commentDeleteFailed": "Unable to delete the comment. Try again.",
+  "@commentDeleteFailed": {
+    "description": "Toast when deleting a comment fails"
+  },
+  "commentPostFailed": "Unable to post your comment. Check your connection and try again.",
+  "@commentPostFailed": {
+    "description": "Error when posting a comment fails for a network or unknown reason"
+  },
+  "commentErrorDisabled": "Comments are paused right now. Try again later.",
+  "@commentErrorDisabled": {
+    "description": "Refusal: the comments kill switch is off"
+  },
+  "commentErrorGuest": "Sign in with a verified account to comment.",
+  "@commentErrorGuest": {
+    "description": "Refusal: guest or unverified account"
+  },
+  "commentErrorTooNew": "You can comment 24 hours after you join Prism.",
+  "@commentErrorTooNew": {
+    "description": "Refusal: the account is younger than 24 hours"
+  },
+  "commentErrorWallUnavailable": "This wall isn't open for comments right now.",
+  "@commentErrorWallUnavailable": {
+    "description": "Refusal: the wall is not approved or is gone"
+  },
+  "commentErrorEmpty": "Write a comment before you send it.",
+  "@commentErrorEmpty": {
+    "description": "Refusal: the comment is empty"
+  },
+  "commentErrorTooLong": "Use 500 characters or fewer.",
+  "@commentErrorTooLong": {
+    "description": "Refusal: the comment is longer than 500 characters"
+  },
+  "commentErrorHiddenCharacters": "Remove the hidden or special characters, then send again.",
+  "@commentErrorHiddenCharacters": {
+    "description": "Refusal: the comment has control or invisible characters"
+  },
+  "commentErrorBlockedWord": "Reword your comment to keep it friendly, then send again.",
+  "@commentErrorBlockedWord": {
+    "description": "Refusal: the word filter matched. Keep it polite"
+  },
+  "commentErrorBlocked": "You can't comment on this wall.",
+  "@commentErrorBlocked": {
+    "description": "Refusal: the author and the creator have blocked each other in some direction. Do not say who blocked whom"
+  },
+  "commentErrorTooFast": "Wait a few seconds before your next comment.",
+  "@commentErrorTooFast": {
+    "description": "Refusal: less than 10 seconds since the last comment"
+  },
+  "commentErrorDailyLimit": "You can post 50 comments a day. Try again tomorrow.",
+  "@commentErrorDailyLimit": {
+    "description": "Refusal: daily comment limit reached"
+  },
+  "notifPushWallCommentedTitle": "{name} commented on {wallTitle}",
+  "@notifPushWallCommentedTitle": {
+    "description": "Push and inbox title when someone comments on the user's wall",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushWallCommentedTitleUntitled": "{name} commented on your wall",
+  "@notifPushWallCommentedTitleUntitled": {
+    "description": "Push and inbox title when someone comments on the user's wall that has no title",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminCommentReport": "Comment report",
+  "@adminCommentReport": {
+    "description": "Admin review: tag on a reported comment card"
+  },
+  "adminKeepComment": "Keep comment",
+  "@adminKeepComment": {
+    "description": "Admin review: dismisses the report and shows the comment again"
+  },
+  "adminCommentKept": "Report dismissed. The comment is visible.",
+  "@adminCommentKept": {
+    "description": "Admin review: toast after Keep comment"
+  },
+  "adminCommentRemoved": "Comment removed",
+  "@adminCommentRemoved": {
+    "description": "Admin review: toast after the comment is deleted"
+  },
+  "adminCommentGone": "This comment is already gone.",
+  "@adminCommentGone": {
+    "description": "Admin review: the reported comment no longer exists"
+  },
+  "adminContentTypeComment": "Comment",
+  "@adminContentTypeComment": {
+    "description": "Admin review: content type label for comment reports"
   },
   "livePhotoAction": "Live Photo",
   "@livePhotoAction": {

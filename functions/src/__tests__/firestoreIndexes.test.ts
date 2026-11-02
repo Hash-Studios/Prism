@@ -189,3 +189,15 @@ test("daily creator stats payload fields do not get single-field indexes or TTL"
     assert.ok(!config.fieldOverrides.some((o) => o.collectionGroup === collectionGroup && o.ttl === true), collectionGroup);
   }
 });
+
+test("wall comments have the visible feed index: state, createdAt newest first", () => {
+  assert.ok(hasIndex("comments", [["state", "ASCENDING"], ["createdAt", "DESCENDING"]]));
+});
+
+test("wall comments have a collection group index on authorUid for account deletion", () => {
+  const override = config.fieldOverrides.find((o) => o.collectionGroup === "comments" && o.fieldPath === "authorUid") as
+    (Override & {indexes: Array<{order?: string; queryScope: string}>}) | undefined;
+  assert.ok(override);
+  assert.deepEqual(override.indexes.map((i) => [i.order, i.queryScope]),
+    [["ASCENDING", "COLLECTION"], ["ASCENDING", "COLLECTION_GROUP"]]);
+});

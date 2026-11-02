@@ -62,6 +62,8 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/creator_tips/views/widgets/tip_sheet.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
+import 'package:Prism/features/editors_choice/biz/editors_choice_cubit.dart';
+import 'package:Prism/features/editors_choice/domain/editors_choice_repository.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
@@ -74,6 +76,9 @@ import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/theme_mode/domain/custom_accent.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/wall_remix/wall_remix.dart';
+import 'package:Prism/features/wall_comments/comments_config.dart';
+import 'package:Prism/features/wall_comments/views/comments_button.dart';
+import 'package:Prism/features/wall_comments/views/wall_comments_sheet.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
@@ -82,6 +87,8 @@ import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/variant_group.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/wall_credit.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
@@ -90,13 +97,17 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dar
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/depth_effect_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/desktop_version_sheet.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/editors_choice_label.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_scene_row.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/variant_dots.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/wall_credit_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_recommendations.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
 import 'package:Prism/features/wallpaper_history/domain/recently_viewed_rules.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
+import 'package:Prism/features/wallpaper_upload/biz/variant_seed.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/wall_metadata_editor.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -105,14 +116,13 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart' hide TextDirection;
-import 'package:url_launcher/url_launcher.dart';
 
 @visibleForTesting
 bool shouldRecordWallpaperSetStats(FeedItemEntity entity) =>
@@ -154,6 +164,11 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
 
   /// The grid this wall was opened from. A sideways swipe on the card shows the next or previous wall in place.
   final WallpaperFeed? feed;
+
+  /// Warms one colour variant's pictures. Tests replace it.
+  @visibleForTesting
+  static Future<void> Function(BuildContext context, WallpaperDisplaySource display) precacheVariant =
+      precacheWallpaperDisplay;
 
   // One bloc per route: a shared bloc showed the last wallpaper while the new one loaded.
   @override
@@ -792,6 +807,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   String? _favouriteLoadRequestedUserId;
   String? _offlinePreviewKey;
   Future<File?>? _offlinePreviewFuture;
+  final Map<String, bool> _pickOverrides = <String, bool>{};
+  bool _pickBusy = false;
+  EditorsChoiceCubit? _picks;
 
   void _recordTaste(TasteAction action, FeedItemEntity entity) {
     final TasteSignal signal = entity.when(
@@ -995,6 +1013,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   @override
   void dispose() {
+    unawaited(_picks?.close());
     _routeAnimation?.removeStatusListener(_onRouteAnimationStatus);
     _shapeMorph.dispose();
     _hintTimer?.cancel();
@@ -1041,6 +1060,92 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   void _toggleImmersive() {
     _hideHint();
     _Immersion.read(context)?.toggle(ImmersiveToggleSourceValue.tap);
+  }
+
+  /// A tap on a wall with colour variants shows the next one. While the controls are hidden, a tap shows them again,
+  /// so a variant wall never traps the user in immersive mode. A wall with no variants toggles immersive mode.
+  void _onCardTap(WallpaperDetailLoaded state) {
+    final VariantGroup? group = state.variants;
+    if (group == null || (_Immersion.maybeOf(context)?.on ?? false)) {
+      _toggleImmersive();
+      return;
+    }
+    _selectVariant(state, (state.variantIndex + 1) % group.length, VariantSwitchSourceValue.tap);
+  }
+
+  void _selectVariant(WallpaperDetailLoaded state, int index, VariantSwitchSourceValue source) {
+    final VariantGroup? group = state.variants;
+    if (group == null || index == state.variantIndex) return;
+    _hideHint();
+    context.read<WallpaperDetailBloc>().add(SelectVariant(index: index));
+    unawaited(
+      analytics.track(
+        WallpaperVariantSwitchedEvent(
+          source: source,
+          wallId: group.walls[index].id,
+          variantIndex: index,
+          variantCount: group.length,
+        ),
+      ),
+    );
+  }
+
+  String? _warmedVariants;
+
+  void _warmVariants(VariantGroup group) {
+    if (_warmedVariants == group.id) return;
+    _warmedVariants = group.id;
+    for (final PrismWallpaper wall in group.walls) {
+      unawaited(
+        WallpaperDetailScreen.precacheVariant(
+          context,
+          WallpaperDisplaySource.of(PrismFeedItem(id: wall.id, wallpaper: wall)),
+        ).catchError((Object _) {}),
+      );
+    }
+  }
+
+  /// The wall on screen when its colour variants arrived. A variant can only be picked after that, so it is the wall
+  /// this screen opened.
+  String? _openedVariantId;
+
+  /// The downloaded file this screen opened with, while that wall is on screen. Another colour variant never uses it.
+  File? _localFileFor(WallpaperDetailLoaded state) {
+    final File? file = widget.localFile;
+    if (file == null || state.variants == null) return file;
+    _openedVariantId ??= state.entity.id;
+    return state.entity.id == _openedVariantId ? file : null;
+  }
+
+  Future<void> _addVariant(BuildContext context, WallpaperDetailLoaded state, PrismWallpaper wall) async {
+    final String? docId = wall.firestoreDocumentId;
+    if (docId == null) return;
+    unawaited(
+      analytics.track(WallpaperVariantUploadStartedEvent(wallId: wall.id, variantCount: state.variants?.length ?? 1)),
+    );
+    final router = context.router;
+    final AppLocalizations l10n = context.l10n;
+    final XFile? picked;
+    try {
+      picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    } catch (error, stackTrace) {
+      logger.w('Variant image could not be picked', error: error, stackTrace: stackTrace);
+      if (mounted) toasts.error(l10n.coreSomethingWentWrong);
+      return;
+    }
+    if (picked == null || !mounted) return;
+    unawaited(
+      router.push(
+        UploadWallRoute(
+          image: File(picked.path),
+          variantSeed: VariantSeed(
+            wallDocId: docId,
+            thumbnailUrl: WallpaperDisplaySource.of(state.entity).thumbnail,
+            title: wall.title,
+          ),
+        ),
+      ),
+    );
   }
 
   /// Shows "Tap to hide controls" on the first wall the user ever opens, for a few seconds.
@@ -1094,6 +1199,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           _loadMoreRecommendations();
         }
         if (state is WallpaperDetailLoaded) _observeLoaded(state);
+        if (state is WallpaperDetailLoaded && state.variants != null) _warmVariants(state.variants!);
       },
       child: BlocBuilder<WallpaperDetailBloc, WallpaperDetailState>(
         builder: (context, state) {
@@ -1389,6 +1495,28 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                                   ),
                                 )
                               else ...[
+                                if (state.variants case final VariantGroup group)
+                                  SliverToBoxAdapter(
+                                    child: SafeArea(
+                                      top: false,
+                                      bottom: false,
+                                      child: _panelColumn(
+                                        Padding(
+                                          padding: const EdgeInsetsDirectional.only(
+                                            start: _sheetHPad,
+                                            end: _sheetHPad,
+                                            top: PrismSpace.xs,
+                                          ),
+                                          child: VariantDots(
+                                            group: group,
+                                            selected: state.variantIndex,
+                                            onSelect: (index) =>
+                                                _selectVariant(state, index, VariantSwitchSourceValue.dot),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 SliverToBoxAdapter(
                                   child: SafeArea(
                                     top: false,
@@ -1507,8 +1635,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                           final display = WallpaperDisplaySource.of(entity);
                           pushClockPreview(
                             context,
-                            link: widget.localFile?.path ?? display.bestLink,
-                            file: widget.localFile != null,
+                            link: _localFileFor(state)?.path ?? display.bestLink,
+                            file: _localFileFor(state) != null,
                             wallpaperId: entity.id,
                             wallpaperSource: entity.source,
                             thumbnailUrl: display.thumbnail,
@@ -1553,7 +1681,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   /// What a screen reader hears on the card, with actions to hide or show the controls and to step through the feed.
-  Widget _cardSemantics(_FeedStep? feed, {required Widget child}) {
+  Widget _cardSemantics(_FeedStep? feed, {required Widget child, WallpaperDetailLoaded? state}) {
+    final VariantGroup? variants = state?.variants;
     final _Immersion? immersion = _Immersion.maybeOf(context);
     final String? immersiveAction = immersion == null
         ? null
@@ -1572,6 +1701,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       onTapHint: immersiveAction,
       customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
         if (immersiveAction != null) CustomSemanticsAction(label: immersiveAction): toggle,
+        if (state != null && variants != null)
+          CustomSemanticsAction(label: context.l10n.wallVariantNextHint): () =>
+              _selectVariant(state, (state.variantIndex + 1) % variants.length, VariantSwitchSourceValue.tap),
         if (feed != null && feed.hasPrevious)
           CustomSemanticsAction(label: context.l10n.wallpaperPreviousInFeed): () => feed.step(-1),
         if (feed != null && feed.hasNext)
@@ -1743,7 +1875,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Widget _buildSummary(BuildContext context, WallpaperDetailLoaded state) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final FeedItemEntity entity = state.entity;
-    final String name = entity.wallpaperCore.authorName?.trim() ?? '';
+    final String name = WallCredit.of(entity).provenance == WallProvenance.studio
+        ? WallCredit.studioName
+        : entity.wallpaperCore.authorName?.trim() ?? '';
     final String? creator = name.isEmpty || name.contains('@') ? null : name;
     final String provider = entity.source == WallpaperSource.wallhaven
         ? context.l10n.wallpaperProviderWallhaven
@@ -1819,8 +1953,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   Widget _buildColorBar(BuildContext context, WallpaperDetailLoaded state) {
     final String fullUrl = state.entity.fullUrl.trim();
-    if (widget.localFile != null || !isValidNetworkUrl(fullUrl)) {
-      return _buildColorBarWithImage(context, state, localFile: widget.localFile);
+    final File? openedFile = _localFileFor(state);
+    if (openedFile != null || !isValidNetworkUrl(fullUrl)) {
+      return _buildColorBarWithImage(context, state, localFile: openedFile);
     }
 
     return FutureBuilder<File?>(
@@ -2070,6 +2205,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             alignment: Alignment.centerLeft,
             child: AiGeneratedTag(wallpaper: wallpaper, reportDocId: reportDocId, reportSubtitle: state.entity.id),
           ),
+        if (_isPick(wallpaper))
+          const Padding(
+            padding: EdgeInsets.only(bottom: 6),
+            child: Align(alignment: AlignmentDirectional.centerStart, child: EditorsChoiceLabel()),
+          ),
         if (collections != null && collections.isNotEmpty) ...[
           _buildInfoRow(context, JamIcons.folder, collections.take(2).join(', ')),
           const SizedBox(height: 4),
@@ -2079,7 +2219,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         if (sizeBytes != null) _buildInfoRow(context, JamIcons.save, formatMegabytes(sizeBytes, context.l10n)),
       ],
       right: [
-        _buildPrismAuthorRow(context, wallpaper),
+        WallCreditRow(credit: WallCredit.of(state.entity)),
         if (createdAt != null) ...[
           const SizedBox(height: 4),
           _buildInfoRow(
@@ -2089,8 +2229,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             reversed: true,
           ),
         ],
-        const SizedBox(height: 4),
-        _buildInfoRow(context, JamIcons.database, 'Prism', reversed: true),
       ],
     );
   }
@@ -2098,7 +2236,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Widget _buildWallhavenMetadata(BuildContext context, WallhavenWallpaper wallpaper) {
     final views = wallpaper.views;
     final sizeBytes = wallpaper.sizeBytes ?? wallpaper.core.sizeBytes;
-    final author = wallpaper.core.authorName;
     final category = wallpaper.core.category;
     final resolution = wallpaper.core.resolution;
     return _metadataShell(
@@ -2111,10 +2248,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         ],
       ],
       right: [
-        if (author != null && author.isNotEmpty) ...[
-          _buildAuthorLink(context, author, Uri.https('wallhaven.cc', '/user/${Uri.encodeComponent(author)}')),
-          const SizedBox(height: 4),
-        ],
+        WallCreditRow(
+          credit: WallCredit.of(FeedItemEntity.wallhaven(id: wallpaper.id, wallpaper: wallpaper)),
+        ),
+        const SizedBox(height: 4),
         if (category != null) ...[
           _buildInfoRow(context, JamIcons.unordered_list, category, reversed: true),
           const SizedBox(height: 4),
@@ -2123,7 +2260,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           _buildInfoRow(context, JamIcons.set_square, resolution, reversed: true),
           const SizedBox(height: 4),
         ],
-        _buildInfoRow(context, JamIcons.database, context.l10n.wallpaperProviderWallhaven, reversed: true),
       ],
     );
   }
@@ -2131,8 +2267,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Widget _buildPexelsMetadata(BuildContext context, PexelsWallpaper wallpaper) {
     final width = wallpaper.core.width;
     final height = wallpaper.core.height;
-    final photographer = wallpaper.photographer;
-    final photographerUrl = wallpaper.photographerUrl?.trim() ?? '';
     return _metadataShell(
       left: [
         _buildInfoTitle(context, wallpaper.id),
@@ -2142,128 +2276,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         ],
       ],
       right: [
-        if (photographer != null && photographer.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: _buildAuthorLink(
-              context,
-              photographer,
-              photographerUrl.isEmpty ? null : Uri.tryParse(photographerUrl),
-            ),
-          ),
-          const SizedBox(height: 4),
-        ],
-        _buildInfoRow(context, JamIcons.database, 'Pexels', reversed: true),
-      ],
-    );
-  }
-
-  Widget _buildPrismAuthorRow(BuildContext context, PrismWallpaper wallpaper) {
-    final String nameTrimmed = wallpaper.core.authorName?.trim() ?? '';
-    final String photoTrimmed = wallpaper.core.authorPhoto?.trim() ?? '';
-    final String creatorUid = wallpaper.core.authorUid?.trim() ?? '';
-    final bool hasName = nameTrimmed.isNotEmpty;
-    final bool hasPhoto = photoTrimmed.isNotEmpty;
-
-    final String? displayLabel = hasName ? nameTrimmed : null;
-
-    if (displayLabel == null && !hasPhoto) {
-      return const SizedBox.shrink();
-    }
-
-    final String initialChar = displayLabel != null && displayLabel.isNotEmpty
-        ? displayLabel.characters.first.toUpperCase()
-        : '?';
-
-    final Color secondary = Theme.of(context).colorScheme.secondary;
-    final Widget avatar = CircleAvatar(
-      radius: 13,
-      backgroundColor: secondary.withValues(alpha: 0.15),
-      child: hasPhoto
-          ? ClipOval(
-              child: CachedNetworkImage(
-                imageUrl: photoTrimmed,
-                width: 26,
-                height: 26,
-                fit: BoxFit.cover,
-                errorWidget: (context, url, error) => Text(
-                  initialChar,
-                  style: TextStyle(color: secondary, fontWeight: FontWeight.w600, fontSize: 11),
-                ),
-              ),
-            )
-          : Text(
-              initialChar,
-              style: TextStyle(color: secondary, fontWeight: FontWeight.w600, fontSize: 11),
-            ),
-    );
-
-    final String profileIdentifier = creatorUid;
-    Widget tappable(Widget child) => profileIdentifier.isEmpty
-        ? child
-        : Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () {
-                PrismHaptics.tap();
-                context.router.push(ProfileRoute(profileIdentifier: profileIdentifier));
-              },
-              borderRadius: BorderRadius.circular(8),
-              child: child,
-            ),
-          );
-
-    if (displayLabel == null) {
-      return tappable(Padding(padding: const EdgeInsets.only(bottom: 4), child: avatar));
-    }
-
-    return tappable(
-      Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: Text(
-                displayLabel,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.end,
-                style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: secondary),
-              ),
-            ),
-            const SizedBox(width: 10),
-            avatar,
-          ],
+        WallCreditRow(
+          credit: WallCredit.of(FeedItemEntity.pexels(id: wallpaper.id, wallpaper: wallpaper)),
         ),
-      ),
-    );
-  }
-
-  Widget _buildAuthorLink(BuildContext context, String text, Uri? uri) {
-    final style = Theme.of(context).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxW = constraints.maxWidth.isFinite ? min(constraints.maxWidth, 200.0) : 200.0;
-        final label = Text(text, overflow: TextOverflow.ellipsis, textAlign: TextAlign.end, style: style);
-        return SizedBox(
-          width: maxW,
-          child: Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: uri == null
-                ? label
-                : InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: () async {
-                      final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-                      if (!ok && context.mounted) {
-                        toasts.error(context.l10n.wallpaperProfileOpenError);
-                      }
-                    },
-                    child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: label),
-                  ),
-          ),
-        );
-      },
+      ],
     );
   }
 
@@ -2331,7 +2347,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final (String, bool) historyOwner = (app_state.prismUser.id, app_state.prismUser.loggedIn);
     final url = entity.fullUrl;
     final String previewTitle = wallpaperPreviewTitle(context.l10n, entity);
-    final File? localFile = widget.localFile;
+    final File? localFile = _localFileFor(state);
     final DownloadedWallRef? localIdentity = localFile != null && getIt.isRegistered<DownloadedWallIndex>()
         ? getIt<DownloadedWallIndex>().resolve(localFile.path)
         : null;
@@ -2488,6 +2504,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             ],
           ),
         ),
+        if (_commentsWall(entity) case final CommentsWall wall)
+          WallpaperBarAction(
+            label: context.l10n.commentsAction,
+            child: CommentsButton(wall: wall),
+          ),
         WallpaperBarAction(
           label: context.l10n.wallpaperShare,
           child: ShareButton(
@@ -2543,6 +2564,21 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     );
   }
 
+  /// The wall's comments, for an approved Prism wall while the kill switch is on.
+  CommentsWall? _commentsWall(FeedItemEntity entity) {
+    if (!CommentsConfig.enabled || BundledWallpapers.isStarter(entity)) return null;
+    return switch (entity) {
+      PrismFeedItem(:final wallpaper)
+          when wallpaper.review == true && (wallpaper.firestoreDocumentId?.trim().isNotEmpty ?? false) =>
+        (
+          wallId: wallpaper.firestoreDocumentId!.trim(),
+          statsId: wallpaper.id,
+          creatorUid: wallpaper.core.authorUid?.trim() ?? '',
+        ),
+      _ => null,
+    };
+  }
+
   /// Opens Make it live. The first palette colour seeds its gradients, so they follow this wallpaper.
   Future<void> _openMakeItLive(BuildContext context, WallpaperDetailLoaded state) async {
     final entity = state.entity;
@@ -2550,9 +2586,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     try {
       imageUrl = await resolveOriginalWithConsent(
         context,
-        url: widget.localFile?.path ?? entity.fullUrl,
+        url: _localFileFor(state)?.path ?? entity.fullUrl,
         wallpaperId: entity.id,
-        wallpaperSource: widget.localFile == null ? entity.source : WallpaperSource.downloaded,
+        wallpaperSource: _localFileFor(state) == null ? entity.source : WallpaperSource.downloaded,
         action: OriginalAccessAction.live,
         label: context.l10n.wallpaperMakeItLive,
       );
@@ -2670,6 +2706,29 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     if (changed == true && !bloc.isClosed) bloc.add(RefreshWallMetadata(wallDocId: docId));
   }
 
+  bool _isPick(PrismWallpaper wall) => _pickOverrides[wall.firestoreDocumentId] ?? wall.editorsChoiceAt != null;
+
+  Future<void> _togglePick(BuildContext context, PrismWallpaper wall) async {
+    final AppLocalizations l10n = context.l10n;
+    final String docId = wall.firestoreDocumentId!;
+    final bool next = !_isPick(wall);
+    setState(() => _pickBusy = true);
+    try {
+      await (_picks ??= getIt<EditorsChoiceCubit>()).setPick(wallDocId: docId, picked: next);
+      if (!mounted) return;
+      setState(() => _pickOverrides[docId] = next);
+      toasts.success(next ? l10n.editorsChoicePicked : l10n.editorsChoiceUnpicked);
+      unawaited(analytics.track(EditorsChoicePickChangedEvent(picked: next, surface: 'detail')));
+    } on EditorsChoiceNotEligible {
+      if (mounted) toasts.error(l10n.editorsChoiceNotEligible);
+    } catch (error, stackTrace) {
+      logger.w("Editors' Choice pick did not save", error: error, stackTrace: stackTrace);
+      if (mounted) toasts.error(l10n.coreSomethingWentWrong);
+    } finally {
+      if (mounted) setState(() => _pickBusy = false);
+    }
+  }
+
   List<Widget> _buildPanelExtras(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
     final WallViewer? remixViewer = _remixViewer();
@@ -2712,6 +2771,20 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             ),
           ),
         ),
+      if (entity case PrismFeedItem(
+        :final wallpaper,
+      ) when _canEditMetadata(wallpaper) && !(state.variants?.isFull ?? false))
+        padded(
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: PrismButton(
+              label: context.l10n.wallVariantAdd,
+              icon: Icons.add_photo_alternate_outlined,
+              variant: PrismButtonVariant.tonal,
+              onPressed: () => _addVariant(context, state, wallpaper),
+            ),
+          ),
+        ),
       if (entity case PrismFeedItem(:final wallpaper)
           when wallpaper.review == true &&
               wallpaper.firestoreDocumentId != null &&
@@ -2724,6 +2797,20 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               icon: Icons.history_rounded,
               variant: PrismButtonVariant.ghost,
               onPressed: () => _metadataHistory(context, wallpaper),
+            ),
+          ),
+        ),
+      if (entity case PrismFeedItem(
+        :final wallpaper,
+      ) when wallpaper.review == true && wallpaper.firestoreDocumentId != null && app_state.isAdminUser())
+        padded(
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: PrismButton(
+              label: _isPick(wallpaper) ? context.l10n.editorsChoiceUnpick : context.l10n.editorsChoicePick,
+              icon: Icons.auto_awesome_rounded,
+              variant: PrismButtonVariant.ghost,
+              onPressed: _pickBusy ? null : () => _togglePick(context, wallpaper),
             ),
           ),
         ),
@@ -2859,10 +2946,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             },
             child: _cardSemantics(
               feed,
+              state: state,
               child: _FeedDragSurface(
                 feed: feed,
                 zoomable: _Immersion.maybeOf(context)?.on ?? false,
-                onTap: _toggleImmersive,
+                onTap: () => _onCardTap(state),
                 child: _withHero(image),
               ),
             ),
@@ -2927,7 +3015,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   /// It decodes for the whole screen, so immersive mode shows the same picture with no new decode.
   Widget _buildWallpaperImage(BuildContext context, WallpaperDetailLoaded state, bool paletteLoading) {
     final FeedItemEntity entity = state.entity;
-    final File? localFile = widget.localFile;
+    final File? localFile = _localFileFor(state);
     final Widget image = localFile != null
         ? ProgressiveWallpaperImage(
             display: WallpaperDisplaySource(
@@ -2945,8 +3033,20 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             errorBuilder: (_, _) =>
                 Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state))),
           );
+    // A colour variant cross-fades in over the one on screen, which stays opaque under it, so the card never dims.
+    final Key shown = ValueKey<String>('${entity.source.name}:${entity.id}');
     return SizedBox.expand(
-      child: _HueTint(tint: state.tint, duration: context.motion(const Duration(milliseconds: 220)), child: image),
+      child: AnimatedSwitcher(
+        duration: context.motion(PrismDurations.base),
+        switchInCurve: PrismCurves.enter,
+        layoutBuilder: (current, previous) => Stack(fit: StackFit.expand, children: [...previous, ?current]),
+        transitionBuilder: (child, animation) =>
+            child.key == shown ? FadeTransition(opacity: animation, child: child) : child,
+        child: KeyedSubtree(
+          key: shown,
+          child: _HueTint(tint: state.tint, duration: context.motion(const Duration(milliseconds: 220)), child: image),
+        ),
+      ),
     );
   }
 

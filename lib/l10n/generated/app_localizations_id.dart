@@ -7454,7 +7454,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get notifSettingFollowers => 'Pengikut';
 
   @override
-  String get notifSettingFollowersDescription => 'Peringatan saat seseorang mulai mengikuti Anda.';
+  String get notifSettingFollowersDescription =>
+      'Peringatan saat seseorang mulai mengikuti Anda atau mengomentari wallpaper Anda.';
 
   @override
   String get notifSettingPosts => 'Postingan';
@@ -11415,6 +11416,70 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallMetadataEditDetails => 'Edit detail';
 
   @override
+  String get wallVariantAdd => 'Tambahkan varian warna';
+
+  @override
+  String wallVariantUploadContext(String title) {
+    return 'Varian warna dari $title';
+  }
+
+  @override
+  String get wallVariantUploadContextUntitled => 'Varian warna dari wallpaper Anda';
+
+  @override
+  String get wallVariantUploadHint =>
+      'Gunakan ukuran dan bentuk yang sama dengan aslinya. Varian ini bergabung ke set setelah ditinjau.';
+
+  @override
+  String get wallVariantUnlinkTooltip => 'Unggah sebagai wallpaper baru saja';
+
+  @override
+  String wallVariantCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count warna');
+    return '$_temp0';
+  }
+
+  @override
+  String wallVariantDotLabel(int index, int count, String colour) {
+    return 'Varian $index dari $count, $colour';
+  }
+
+  @override
+  String wallVariantDotLabelPlain(int index, int count) {
+    return 'Varian $index dari $count';
+  }
+
+  @override
+  String get wallVariantDotHint => 'Tampilkan warna ini';
+
+  @override
+  String get wallVariantNextHint => 'Tampilkan warna berikutnya';
+
+  @override
+  String get wallVariantPending => 'Varian warna. Akan bergabung ke set setelah ditinjau.';
+
+  @override
+  String get wallVariantLinked => 'Dalam set varian warna';
+
+  @override
+  String get wallVariantDroppedTitle => 'Tidak ditambahkan sebagai varian warna';
+
+  @override
+  String get wallVariantDroppedNotFound => 'Wallpaper asli telah dihapus.';
+
+  @override
+  String get wallVariantDroppedNotOwner => 'Wallpaper asli milik kreator lain.';
+
+  @override
+  String get wallVariantDroppedNotApproved => 'Wallpaper asli belum disetujui.';
+
+  @override
+  String get wallVariantDroppedFull => 'Set sudah memiliki 5 warna.';
+
+  @override
+  String get wallVariantDroppedAspect => 'Bentuknya berbeda dari aslinya.';
+
+  @override
   String get wallMetadataApprovedHelp => 'Ubah judul, deskripsi, dan tag. Gambar dan kategori tetap sama.';
 
   @override
@@ -12890,6 +12955,259 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get premiumTrialAutoRenewOff => 'Perpanjangan otomatis mati. Anda tidak akan ditagih saat uji coba berakhir.';
+
+  @override
+  String get editorsChoiceTitle => 'Pilihan Editor';
+
+  @override
+  String get editorsChoiceRowBody => 'Wallpaper yang disukai editor kami.';
+
+  @override
+  String get editorsChoiceEmptyTitle => 'Belum ada pilihan';
+
+  @override
+  String get editorsChoiceEmptyBody => 'Cek lagi nanti untuk pilihan baru.';
+
+  @override
+  String get editorsChoiceLoadError => 'Pilihan Editor tidak dapat dimuat';
+
+  @override
+  String get editorsChoiceLabelSemantics => 'Dipilih untuk Pilihan Editor';
+
+  @override
+  String get editorsChoicePick => 'Tambahkan ke Pilihan Editor';
+
+  @override
+  String get editorsChoiceUnpick => 'Hapus dari Pilihan Editor';
+
+  @override
+  String get editorsChoicePicked => 'Ditambahkan ke Pilihan Editor';
+
+  @override
+  String get editorsChoiceUnpicked => 'Dihapus dari Pilihan Editor';
+
+  @override
+  String get editorsChoiceNotEligible =>
+      'Hanya wallpaper gratis yang disetujui dengan file asli siap yang dapat dipilih.';
+
+  @override
+  String get adminApproveAndPick => 'Setujui dan pilih';
+
+  @override
+  String get adminApprovedPickLater =>
+      'Disetujui. Tambahkan ke Pilihan Editor dari halamannya setelah file aslinya siap.';
+
+  @override
+  String wallCreditBy(String name) {
+    return 'Oleh $name';
+  }
+
+  @override
+  String wallCreditPhotoBy(String name) {
+    return 'Foto oleh $name';
+  }
+
+  @override
+  String get wallCreditByHashStudios => 'Oleh Hash Studios';
+
+  @override
+  String get wallCreditPrismExclusive => 'Eksklusif Prism';
+
+  @override
+  String get wallCreditOnPexels => 'Dari Pexels';
+
+  @override
+  String get wallCreditOnWallhaven => 'Dari Wallhaven';
+
+  @override
+  String get wallCreditOpenProfileHint => 'Membuka profil';
+
+  @override
+  String get wallCreditOpenSourceHint => 'Membuka di browser Anda';
+
+  @override
+  String get profileProBadge => 'Pro';
+
+  @override
+  String get profileProBadgeSemantics => 'Anggota Prism Pro';
+
+  @override
+  String get settingsShowProBadgeTitle => 'Tampilkan lencana Pro di profil saya';
+
+  @override
+  String get settingsShowProBadgeBody => 'Orang yang mengunjungi profil Anda melihat lencana Pro.';
+
+  @override
+  String get notifPushEditorsChoiceTitle => 'Wallpaper Anda adalah Pilihan Editor';
+
+  @override
+  String notifPushEditorsChoiceBody(String wallTitle) {
+    return 'Editor kami memilih $wallTitle. Semua orang bisa menemukannya di Beranda.';
+  }
+
+  @override
+  String get notifPushEditorsChoiceBodyUntitled =>
+      'Editor kami memilih wallpaper Anda. Semua orang bisa menemukannya di Beranda.';
+
+  @override
+  String get coreContentReportComment => 'komentar';
+
+  @override
+  String get commentsAction => 'Komentar';
+
+  @override
+  String commentsCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count komentar',
+      one: '1 komentar',
+      zero: 'Belum ada komentar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentsTitle => 'Komentar';
+
+  @override
+  String get commentsEmptyTitle => 'Belum ada komentar';
+
+  @override
+  String get commentsEmptyBody => 'Beri tahu kreator apa yang Anda suka dari wallpaper ini.';
+
+  @override
+  String get commentsLoadFailed => 'Komentar tidak dapat dimuat. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
+  String get commentsRetry => 'Coba lagi';
+
+  @override
+  String get commentComposerHint => 'Tambahkan komentar';
+
+  @override
+  String get commentSend => 'Kirim';
+
+  @override
+  String commentCharactersLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sisa $count karakter',
+      one: 'Sisa 1 karakter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String commentCharactersOver(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Kelebihan $count karakter',
+      one: 'Kelebihan 1 karakter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentSignInToComment => 'Masuk untuk berkomentar';
+
+  @override
+  String get commentCreatorLabel => 'Kreator';
+
+  @override
+  String get commentAuthorFallback => 'Pengguna Prism';
+
+  @override
+  String get commentOptionsHint => 'tampilkan opsi komentar';
+
+  @override
+  String get commentReport => 'Laporkan komentar';
+
+  @override
+  String commentBlockUser(String name) {
+    return 'Blokir $name';
+  }
+
+  @override
+  String get commentDelete => 'Hapus komentar';
+
+  @override
+  String get commentDeleteConfirmTitle => 'Hapus komentar ini?';
+
+  @override
+  String get commentDeleteConfirmBody => 'Komentar dihapus untuk semua orang. Anda tidak bisa membatalkannya.';
+
+  @override
+  String get commentDeleted => 'Komentar dihapus';
+
+  @override
+  String get commentDeleteFailed => 'Komentar tidak dapat dihapus. Coba lagi.';
+
+  @override
+  String get commentPostFailed => 'Komentar Anda tidak dapat dikirim. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
+  String get commentErrorDisabled => 'Komentar sedang dijeda. Coba lagi nanti.';
+
+  @override
+  String get commentErrorGuest => 'Masuk dengan akun terverifikasi untuk berkomentar.';
+
+  @override
+  String get commentErrorTooNew => 'Anda bisa berkomentar 24 jam setelah bergabung dengan Prism.';
+
+  @override
+  String get commentErrorWallUnavailable => 'Wallpaper ini tidak dibuka untuk komentar saat ini.';
+
+  @override
+  String get commentErrorEmpty => 'Tulis komentar sebelum mengirimnya.';
+
+  @override
+  String get commentErrorTooLong => 'Gunakan 500 karakter atau kurang.';
+
+  @override
+  String get commentErrorHiddenCharacters => 'Hapus karakter tersembunyi atau karakter khusus, lalu kirim lagi.';
+
+  @override
+  String get commentErrorBlockedWord => 'Ubah kalimat komentar Anda agar lebih ramah, lalu kirim lagi.';
+
+  @override
+  String get commentErrorBlocked => 'Anda tidak bisa berkomentar di wallpaper ini.';
+
+  @override
+  String get commentErrorTooFast => 'Tunggu beberapa detik sebelum komentar berikutnya.';
+
+  @override
+  String get commentErrorDailyLimit => 'Anda bisa mengirim 50 komentar per hari. Coba lagi besok.';
+
+  @override
+  String notifPushWallCommentedTitle(String name, String wallTitle) {
+    return '$name berkomentar di $wallTitle';
+  }
+
+  @override
+  String notifPushWallCommentedTitleUntitled(String name) {
+    return '$name berkomentar di wallpaper Anda';
+  }
+
+  @override
+  String get adminCommentReport => 'Laporan komentar';
+
+  @override
+  String get adminKeepComment => 'Pertahankan komentar';
+
+  @override
+  String get adminCommentKept => 'Laporan ditolak. Komentar tetap terlihat.';
+
+  @override
+  String get adminCommentRemoved => 'Komentar dihapus';
+
+  @override
+  String get adminCommentGone => 'Komentar ini sudah tidak ada.';
+
+  @override
+  String get adminContentTypeComment => 'Komentar';
 
   @override
   String get livePhotoAction => 'Foto Live';

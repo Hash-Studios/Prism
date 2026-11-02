@@ -134,6 +134,7 @@ const seed = () => Promise.all([
   req('PATCH', 'walls/w12', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, depth: depth('auto') }, 'owner'),
   req('PATCH', 'walls/w14', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, searchTerms: arr(['sunset']), visionLabels: arr(['sky']), spatial: spatial('great') }, 'owner'),
   req('PATCH', 'walls/remix-src', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, title: { stringValue: 'Remix source' }, remixOf: { stringValue: 'orig_1' } }, 'owner'),
+  req('PATCH', 'walls/variant-src', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, title: { stringValue: 'Variant source' }, variantOf: { stringValue: 'orig_1' } }, 'owner'),
   req('PATCH', 'setups/s9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw1', { email: { stringValue: 'b@x.com' } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw2', { email: { stringValue: 'b@x.com' } }, 'owner'),
@@ -183,10 +184,16 @@ const seed = () => Promise.all([
   req('PATCH', 'usersv2/c/blockedUsers/a', { blockedAt: ts() }, 'owner'),
   req('PATCH', 'usersv2/a/blockedUsers/dblock', { blockedAt: ts() }, 'owner'),
   req('PATCH', 'publicFolders/orphan/items/prism_w1', { id: str('w1'), provider: str('Prism'), thumb: str('https://img.prismwalls.com/previews/x.img'), wallpaperDocumentId: str('W1') }, 'owner'),
+  req('PATCH', 'walls/cw1', { email: str('b@x.com'), review: { booleanValue: true } }, 'owner'),
+  req('PATCH', 'walls/cw2', { email: str('b@x.com'), review: { booleanValue: false } }, 'owner'),
+  req('PATCH', 'walls/cw1/comments/v1', { state: str('visible'), authorUid: str('u1'), text: str('hi'), createdAt: ts() }, 'owner'),
+  req('PATCH', 'walls/cw1/comments/h1', { state: str('hidden'), authorUid: str('u1'), text: str('spam'), createdAt: ts() }, 'owner'),
+  req('PATCH', 'walls/cw2/comments/v2', { state: str('visible'), authorUid: str('u1'), text: str('hi'), createdAt: ts() }, 'owner'),
 ]);
 const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), HistoryOwner = tok('history-owner', 'history-owner@x.com'), ADM = tok('adm', 'admin@x.com');
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
 const C = tok('c', 'c@x.com');
+const U1 = tok('u1', 'u1@x.com');
 const D = tok('dblock', 'dblock@x.com');
 const themeFields = {
   mode: str('dark'), lightThemeId: str('kLFrost White'), lightAccent: { integerValue: '4293228183' },
@@ -568,6 +575,23 @@ const cases = [
   ['owner cannot change remixOf on own unreviewed wall', () => req('PATCH', 'walls/remix-src', { remixOf: str('orig_2') }, Bu, ['remixOf']), 403],
   ['owner cannot add remixCount to own unreviewed wall', () => req('PATCH', 'walls/remix-src', { remixCount: { integerValue: '3' } }, Bu, ['remixCount']), 403],
   ['owner updates title and leaves remixOf untouched', () => req('PATCH', 'walls/remix-src', { title: str('Remixed') }, Bu, ['title']), 200],
+  ['user creates own unreviewed wall with variantOf', () => req('PATCH', 'walls/variant-create-ok', { email: str('b@x.com'), review: { booleanValue: false }, variantOf: str('orig_1') }, Bu), 200],
+  ['user creates wall with a slash in variantOf', () => req('PATCH', 'walls/variant-create-slash', { email: str('b@x.com'), review: { booleanValue: false }, variantOf: str('a/b') }, Bu), 403],
+  ['user creates wall with an integer variantOf', () => req('PATCH', 'walls/variant-create-int', { email: str('b@x.com'), review: { booleanValue: false }, variantOf: { integerValue: '5' } }, Bu), 403],
+  ['user creates wall with variantGroupId', () => req('PATCH', 'walls/variant-create-group', { email: str('b@x.com'), review: { booleanValue: false }, variantGroupId: str('g1') }, Bu), 403],
+  ['user creates wall with variantIndex', () => req('PATCH', 'walls/variant-create-index', { email: str('b@x.com'), review: { booleanValue: false }, variantIndex: { integerValue: '1' } }, Bu), 403],
+  ['user creates wall with variantLink', () => req('PATCH', 'walls/variant-create-link', { email: str('b@x.com'), review: { booleanValue: false }, variantLink: str('linked') }, Bu), 403],
+  ['owner cannot change variantOf on own unreviewed wall', () => req('PATCH', 'walls/variant-src', { variantOf: str('orig_2') }, Bu, ['variantOf']), 403],
+  ['owner cannot add variantGroupId to own unreviewed wall', () => req('PATCH', 'walls/variant-src', { variantGroupId: str('g1') }, Bu, ['variantGroupId']), 403],
+  ['owner cannot add variantIndex to own unreviewed wall', () => req('PATCH', 'walls/variant-src', { variantIndex: { integerValue: '1' } }, Bu, ['variantIndex']), 403],
+  ['owner cannot set variantLink on own unreviewed wall', () => req('PATCH', 'walls/variant-src', { variantLink: str('linked') }, Bu, ['variantLink']), 403],
+  ['owner updates title and leaves variantOf untouched', () => req('PATCH', 'walls/variant-src', { title: str('Variant edited') }, Bu, ['title']), 200],
+  ['admin cannot change variantOf on a wall update', () => req('PATCH', 'walls/w8', { variantOf: str('orig_1') }, ADM, ['variantOf']), 403],
+  ['admin cannot set variantGroupId on a wall update', () => req('PATCH', 'walls/w8', { variantGroupId: str('orig_1') }, ADM, ['variantGroupId']), 403],
+  ['admin cannot set variantIndex on a wall update', () => req('PATCH', 'walls/w8', { variantIndex: { integerValue: '1' } }, ADM, ['variantIndex']), 403],
+  ['admin cannot set variantLink on a wall update', () => req('PATCH', 'walls/w8', { variantLink: str('linked') }, ADM, ['variantLink']), 403],
+  ['variant groups are not readable', () => req('GET', 'wallVariantGroups/g1', null, Bu), 403],
+  ['variant group client writes denied', () => req('PATCH', 'wallVariantGroups/g1', { walls: arr(['w1']) }, Bu), 403],
   ['owner unpublishes own approved wall', () => req('PATCH', 'walls/w9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false } }, Bu), 403],
   ['owner unpublishes own approved setup', () => req('PATCH', 'setups/s9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false } }, Bu), 403],
   ['owner deletes own rejected wall', () => req('DELETE', 'rejectedWalls/rw1', null, Bu), 200],
@@ -907,6 +931,73 @@ const cases = [
   ['user cannot list promo redemptions across codes', () => runCollectionQuery(Bu, 'redemptions', 'promoCodes/c1'), 403],
   ['user cannot read a promo rate counter', () => req('GET', 'promoRedeemRate/u_b_1', null, Bu), 403],
   ['user cannot write a promo rate counter', () => req('PATCH', 'promoRedeemRate/u_b_1', { count: { integerValue: '0' } }, Bu), 403],
+  ['owner cannot create a wall with editorsChoiceAt', () => req('PATCH', 'walls/ec-create', { email: str('b@x.com'), review: { booleanValue: false }, editorsChoiceAt: { timestampValue: '2026-01-01T00:00:00Z' } }, Bu), 403],
+  ['owner cannot create a wall with byStudio true', () => req('PATCH', 'walls/bystudio-create', { email: str('b@x.com'), review: { booleanValue: false }, byStudio: { booleanValue: true } }, Bu), 403],
+  ['owner cannot add editorsChoiceAt to own unreviewed wall', () => req('PATCH', 'walls/w8', { editorsChoiceAt: { timestampValue: '2026-01-01T00:00:00Z' } }, Bu, ['editorsChoiceAt']), 403],
+  ['owner cannot add editorsChoiceBy to own unreviewed wall', () => req('PATCH', 'walls/w8', { editorsChoiceBy: str('b') }, Bu, ['editorsChoiceBy']), 403],
+  ['owner cannot add byStudio to own unreviewed wall', () => req('PATCH', 'walls/w8', { byStudio: { booleanValue: true } }, Bu, ['byStudio']), 403],
+  ['stranger cannot set editorsChoiceAt on someone else wall', () => req('PATCH', 'walls/w8', { editorsChoiceAt: { timestampValue: '2026-01-01T00:00:00Z' } }, A, ['editorsChoiceAt']), 403],
+  ...[
+    ['editorsChoiceAt', { timestampValue: '2026-01-01T00:00:00Z' }, { timestampValue: '2026-02-01T00:00:00Z' }],
+    ['editorsChoiceBy', str('original-admin'), str('other-admin')],
+    ['byStudio', { booleanValue: true }, { booleanValue: false }],
+  ].flatMap(([field, original, changed]) => [false, true].flatMap((review) =>
+    [['owner', Bu], ['stranger', A], ['admin', ADM]].flatMap(([role, auth]) =>
+      ['create', 'add', 'change', 'remove'].map((operation) => [
+        `${role} cannot ${operation} ${field} on a ${review ? 'approved' : 'pending'} wall`,
+        async () => {
+          const path = `walls/server-field-${field}-${review}-${role}-${operation}`;
+          const wall = { email: str('b@x.com'), review: { booleanValue: review } };
+          if (operation === 'create') return req('PATCH', path, { ...wall, [field]: original }, auth);
+          await req('PATCH', path, { ...wall, ...(operation === 'add' ? {} : { [field]: original }) }, 'owner');
+          return req('PATCH', path, operation === 'remove' ? {} : { [field]: changed }, auth, [field]);
+        },
+        403,
+      ])))),
+  ['admin can approve a wall while preserving the server fields', async () => {
+    await req('PATCH', 'walls/server-field-approval', {
+      email: str('b@x.com'), review: { booleanValue: false }, byStudio: { booleanValue: true },
+      editorsChoiceAt: { timestampValue: '2026-01-01T00:00:00Z' }, editorsChoiceBy: str('original-admin'),
+    }, 'owner');
+    return req('PATCH', 'walls/server-field-approval', { review: { booleanValue: true } }, ADM, ['review']);
+  }, 200],
+  ['owner sets showProBadge false on own usersv2 doc', () => req('PATCH', 'usersv2/b', { showProBadge: { booleanValue: false } }, Bu, ['showProBadge']), 200],
+  ['owner cannot write non-bool showProBadge', () => req('PATCH', 'usersv2/b', { showProBadge: str('no') }, Bu, ['showProBadge']), 403],
+  ['stranger cannot set showProBadge on another user', () => req('PATCH', 'usersv2/b', { showProBadge: { booleanValue: true } }, A, ['showProBadge']), 403],
+  ['owner sets showProBadge true on own usersv2 doc', () => req('PATCH', 'usersv2/b', { showProBadge: { booleanValue: true } }, Bu, ['showProBadge']), 200],
+  ['owner cannot use showProBadge to write premium', () => req('PATCH', 'usersv2/b', { showProBadge: { booleanValue: true }, premium: { booleanValue: true } }, Bu, ['showProBadge', 'premium']), 403],
+  ['owner cannot write proBadge on own usersv2 doc', () => req('PATCH', 'usersv2/b', { proBadge: { booleanValue: true } }, Bu, ['proBadge']), 403],
+  ['owner can create a profile with showProBadge false', () => req('PATCH', 'usersv2/pro-badge-optout', { id: str('pro-badge-optout'), showProBadge: { booleanValue: false } }, tok('pro-badge-optout', 'optout@x.com')), 200],
+  ['owner cannot create a profile with non-bool showProBadge', () => req('PATCH', 'usersv2/pro-badge-invalid', { id: str('pro-badge-invalid'), showProBadge: str('false') }, tok('pro-badge-invalid', 'invalid@x.com')), 403],
+  ['owner cannot write proBadge on own public profile', () => req('PATCH', 'profiles/b', { proBadge: { booleanValue: true } }, Bu, ['proBadge']), 403],
+  ['stranger cannot write proBadge on public profile', () => req('PATCH', 'profiles/a', { proBadge: { booleanValue: true } }, Bu, ['proBadge']), 403],
+  ...['editorsChoiceRequests', 'editorsChoiceNotices'].flatMap((collection) => [
+    [`owner cannot read ${collection}`, () => req('GET', `${collection}/x`, null, Bu), 403],
+    [`owner cannot write ${collection}`, () => req('PATCH', `${collection}/x`, { ownerUid: str('b') }, Bu), 403],
+  ]),
+  ['guest reads a visible comment on an approved wall', () => req('GET', 'walls/cw1/comments/v1'), 200],
+  ['signed-in user reads a visible comment on an approved wall', () => req('GET', 'walls/cw1/comments/v1', null, C), 200],
+  ['signed-in user cannot read a hidden comment', () => req('GET', 'walls/cw1/comments/h1', null, C), 403],
+  ['guest cannot read a hidden comment', () => req('GET', 'walls/cw1/comments/h1'), 403],
+  ['guest cannot read a visible comment on an unapproved wall', () => req('GET', 'walls/cw2/comments/v2'), 403],
+  ['signed-in user lists visible comments on an approved wall', () => runQuery(C, [fieldEquals('state', str('visible'))], 'comments', 'walls/cw1'), 200],
+  ['signed-in user cannot list comments without the visible filter', () => runCollectionQuery(C, 'comments', 'walls/cw1'), 403],
+  ['signed-in user cannot list visible comments on an unapproved wall', () => runQuery(C, [fieldEquals('state', str('visible'))], 'comments', 'walls/cw2'), 403],
+  ['admin reads a hidden comment', () => req('GET', 'walls/cw1/comments/h1', null, ADM), 200],
+  ['guest lists visible comments', () => runQuery(null, [fieldEquals('state', str('visible'))], 'comments', 'walls/cw1'), 200],
+  ['guest cannot list hidden comments', () => runQuery(null, [fieldEquals('state', str('hidden'))], 'comments', 'walls/cw1'), 403],
+  ['admin lists comments including hidden comments', () => runCollectionQuery(ADM, 'comments', 'walls/cw1'), 200],
+  ['admin cannot edit comments directly', () => req('PATCH', 'walls/cw1/comments/h1', { state: str('visible') }, ADM, ['state']), 403],
+  ['author cannot read own hidden comment as a pagination cursor', () => req('GET', 'walls/cw1/comments/h1', null, U1), 403],
+  ['author cannot create own comment directly', () => req('PATCH', 'walls/cw1/comments/new1', { state: str('visible'), authorUid: str('u1'), text: str('mine'), createdAt: ts() }, U1), 403],
+  ['author cannot edit own comment directly', () => req('PATCH', 'walls/cw1/comments/v1', { text: str('edited') }, U1, ['text']), 403],
+  ['author cannot delete own comment directly', () => req('DELETE', 'walls/cw1/comments/v1', null, U1), 403],
+  ['wall owner cannot create a comment directly', () => req('PATCH', 'walls/cw1/comments/new2', { state: str('visible'), authorUid: str('b'), text: str('mine'), createdAt: ts() }, Bu), 403],
+  ['wall owner cannot delete a comment on their wall directly', () => req('DELETE', 'walls/cw1/comments/v1', null, Bu), 403],
+  ['comment rate docs cannot be created by clients', () => req('PATCH', 'commentRate/u1', { count: { integerValue: '1' } }, U1), 403],
+  ['comment rate docs cannot be read by clients', () => req('GET', 'commentRate/u1', null, U1), 403],
+  ['comment push gate cannot be created by clients', () => req('PATCH', 'commentPush/cw1', { day: str('2026-11-02') }, Bu), 403],
+  ['comment push gate cannot be read by clients', () => req('GET', 'commentPush/cw1', null, Bu), 403],
 ];
 await seed();
 let bad = 0;

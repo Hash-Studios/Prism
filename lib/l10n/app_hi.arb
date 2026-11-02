@@ -6447,7 +6447,7 @@
   "notifSettingDrops": "साप्ताहिक Drops",
   "notifSettingDropsDescription": "नया Drop उपलब्ध होने पर और उसके खत्म होने से पहले अलर्ट पाएँ।",
   "notifSettingFollowers": "फ़ॉलोअर",
-  "notifSettingFollowersDescription": "कोई नया व्यक्ति आपको फ़ॉलो करे, तो अलर्ट पाएँ।",
+  "notifSettingFollowersDescription": "कोई नया व्यक्ति आपको फ़ॉलो करे या आपके वॉलपेपर पर टिप्पणी करे, तो अलर्ट पाएँ।",
   "notifSettingPosts": "पोस्ट",
   "notifSettingPostsDescription": "आप जिन क्रिएटर को फ़ॉलो करते हैं, उनके नए काम साझा करने पर अलर्ट पाएँ।",
   "notifSettingRecommendations": "सुझाव",
@@ -10877,6 +10877,107 @@
   "wallResubmitUnsupported": "मूल चित्र फिर से चुनें। AI स्रोत की जानकारी दोबारा इस्तेमाल नहीं की जा सकती।",
   "wallResubmitUnavailable": "यह अस्वीकृत अपलोड लोड नहीं हो सका। दोबारा कोशिश करें।",
   "wallMetadataEditDetails": "जानकारी संपादित करें",
+  "wallVariantAdd": "रंग का एक वेरिएंट जोड़ें",
+  "@wallVariantAdd": {
+    "description": "Button on the creator's own approved wallpaper. Opens the upload flow to add the same wallpaper in another colour."
+  },
+  "wallVariantUploadContext": "{title} का रंग वेरिएंट",
+  "@wallVariantUploadContext": {
+    "description": "Chip on the upload screen that names the wallpaper this upload is a colour of.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "wallVariantUploadContextUntitled": "आपके वॉलपेपर का रंग वेरिएंट",
+  "@wallVariantUploadContextUntitled": {
+    "description": "Same chip when the original has no title."
+  },
+  "wallVariantUploadHint": "मूल जैसा ही आकार और रूप रखें। समीक्षा के बाद यह सेट में जुड़ जाएगा।",
+  "@wallVariantUploadHint": {
+    "description": "Help text under the chip on the upload screen."
+  },
+  "wallVariantUnlinkTooltip": "इसके बजाय नए वॉलपेपर के रूप में अपलोड करें",
+  "@wallVariantUnlinkTooltip": {
+    "description": "Tooltip on the chip's remove button."
+  },
+  "wallVariantCount": "{count, plural, other{{count} रंग}}",
+  "@wallVariantCount": {
+    "description": "Small caption before the row of colour dots on a wallpaper with colour variants.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallVariantDotLabel": "वेरिएंट {index} / {count}, {colour}",
+  "@wallVariantDotLabel": {
+    "description": "Screen reader label for one colour dot.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      },
+      "colour": {
+        "type": "String"
+      }
+    }
+  },
+  "wallVariantDotLabelPlain": "वेरिएंट {index} / {count}",
+  "@wallVariantDotLabelPlain": {
+    "description": "Screen reader label for a colour dot whose colour has no name.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallVariantDotHint": "यह रंग दिखाएँ",
+  "@wallVariantDotHint": {
+    "description": "Screen reader hint for tapping a colour dot."
+  },
+  "wallVariantNextHint": "अगला रंग दिखाएँ",
+  "@wallVariantNextHint": {
+    "description": "Screen reader tap hint on a wallpaper with colour variants."
+  },
+  "wallVariantPending": "रंग वेरिएंट। समीक्षा के बाद यह सेट में जुड़ जाएगा।",
+  "@wallVariantPending": {
+    "description": "Line on a pending upload that is a colour variant."
+  },
+  "wallVariantLinked": "रंग वेरिएंट के सेट में",
+  "@wallVariantLinked": {
+    "description": "Line on an upload that joined a set of colour variants."
+  },
+  "wallVariantDroppedTitle": "रंग वेरिएंट के रूप में नहीं जोड़ा गया",
+  "@wallVariantDroppedTitle": {
+    "description": "Title line on an upload whose colour variant link was refused. It stays as its own wallpaper."
+  },
+  "wallVariantDroppedNotFound": "मूल वॉलपेपर हटा दिया गया था।",
+  "@wallVariantDroppedNotFound": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedNotOwner": "मूल वॉलपेपर किसी दूसरे क्रिएटर का है।",
+  "@wallVariantDroppedNotOwner": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedNotApproved": "मूल वॉलपेपर स्वीकृत नहीं है।",
+  "@wallVariantDroppedNotApproved": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedFull": "सेट में पहले से 5 रंग हैं।",
+  "@wallVariantDroppedFull": {
+    "description": "Reason line."
+  },
+  "wallVariantDroppedAspect": "इसका आकार मूल से अलग है।",
+  "@wallVariantDroppedAspect": {
+    "description": "Reason line."
+  },
   "wallMetadataApprovedHelp": "शीर्षक, विवरण और टैग बदलें। चित्र और श्रेणी वही रहेंगे।",
   "wallMetadataPendingHelp": "वॉलपेपर की समीक्षा से पहले यह जानकारी अपडेट करें।",
   "wallMetadataSave": "जानकारी सेव करें",
@@ -12517,6 +12618,338 @@
   "premiumTrialAutoRenewOff": "ऑटो-रिन्यू बंद है। ट्रायल खत्म होने पर आपसे कोई शुल्क नहीं लिया जाएगा।",
   "@premiumTrialAutoRenewOff": {
     "description": "Premium screen note during a free trial that the user cancelled."
+  },
+  "editorsChoiceTitle": "संपादकों की पसंद",
+  "@editorsChoiceTitle": {
+    "description": "Title of the Editors' Choice page and its Home entry point."
+  },
+  "editorsChoiceRowBody": "वे वॉलपेपर जो हमारे संपादकों को पसंद हैं।",
+  "@editorsChoiceRowBody": {
+    "description": "Subtitle of the Editors' Choice row on Home."
+  },
+  "editorsChoiceEmptyTitle": "अभी कोई पसंद नहीं",
+  "@editorsChoiceEmptyTitle": {
+    "description": "Empty state title when there are no Editors' Choice picks."
+  },
+  "editorsChoiceEmptyBody": "नई पसंद के लिए जल्द फिर देखें।",
+  "@editorsChoiceEmptyBody": {
+    "description": "Empty state body shown under the title when there are no picks."
+  },
+  "editorsChoiceLoadError": "संपादकों की पसंद लोड नहीं हो सकी",
+  "@editorsChoiceLoadError": {
+    "description": "Error title when the Editors' Choice list fails to load."
+  },
+  "editorsChoiceLabelSemantics": "संपादकों की पसंद के लिए चुना गया",
+  "@editorsChoiceLabelSemantics": {
+    "description": "Accessibility label on a wallpaper that is an Editors' Choice pick."
+  },
+  "editorsChoicePick": "संपादकों की पसंद में जोड़ें",
+  "@editorsChoicePick": {
+    "description": "Button label that adds a wallpaper to Editors' Choice."
+  },
+  "editorsChoiceUnpick": "संपादकों की पसंद से हटाएं",
+  "@editorsChoiceUnpick": {
+    "description": "Button label that removes a wallpaper from Editors' Choice."
+  },
+  "editorsChoicePicked": "संपादकों की पसंद में जोड़ा गया",
+  "@editorsChoicePicked": {
+    "description": "Snackbar shown after a wallpaper is added to Editors' Choice."
+  },
+  "editorsChoiceUnpicked": "संपादकों की पसंद से हटाया गया",
+  "@editorsChoiceUnpicked": {
+    "description": "Snackbar shown after a wallpaper is removed from Editors' Choice."
+  },
+  "editorsChoiceNotEligible": "केवल स्वीकृत, मुफ़्त वॉलपेपर, जिनका मूल संस्करण तैयार है, पसंद बन सकते हैं।",
+  "@editorsChoiceNotEligible": {
+    "description": "Explanation shown when a wallpaper cannot be picked for Editors' Choice."
+  },
+  "adminApproveAndPick": "स्वीकृत करें और चुनें",
+  "@adminApproveAndPick": {
+    "description": "Admin button that approves a wallpaper and picks it for Editors' Choice."
+  },
+  "adminApprovedPickLater": "स्वीकृत किया गया। मूल संस्करण तैयार होने पर इसके पेज से इसे संपादकों की पसंद में जोड़ें।",
+  "@adminApprovedPickLater": {
+    "description": "Admin message after approval when the original is not ready to pick yet."
+  },
+  "wallCreditBy": "{name} द्वारा",
+  "@wallCreditBy": {
+    "description": "Credit line naming the creator. {name} is the creator's display name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wallCreditPhotoBy": "{name} द्वारा फ़ोटो",
+  "@wallCreditPhotoBy": {
+    "description": "Credit line for a photo. {name} is the photographer's name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wallCreditByHashStudios": "Hash Studios द्वारा",
+  "@wallCreditByHashStudios": {
+    "description": "Credit line for a wallpaper made by Hash Studios."
+  },
+  "wallCreditPrismExclusive": "सिर्फ़ Prism पर",
+  "@wallCreditPrismExclusive": {
+    "description": "Credit line for a wallpaper that is exclusive to Prism."
+  },
+  "wallCreditOnPexels": "Pexels से",
+  "@wallCreditOnPexels": {
+    "description": "Credit line for a wallpaper sourced from Pexels."
+  },
+  "wallCreditOnWallhaven": "Wallhaven से",
+  "@wallCreditOnWallhaven": {
+    "description": "Credit line for a wallpaper sourced from Wallhaven."
+  },
+  "wallCreditOpenProfileHint": "प्रोफ़ाइल खोलता है",
+  "@wallCreditOpenProfileHint": {
+    "description": "Accessibility hint for a credit that opens a creator profile."
+  },
+  "wallCreditOpenSourceHint": "आपके ब्राउज़र में खुलता है",
+  "@wallCreditOpenSourceHint": {
+    "description": "Accessibility hint for a credit that opens the source site."
+  },
+  "profileProBadge": "Pro",
+  "@profileProBadge": {
+    "description": "Short badge text shown on a Prism Pro member's profile."
+  },
+  "profileProBadgeSemantics": "Prism Pro सदस्य",
+  "@profileProBadgeSemantics": {
+    "description": "Accessibility label for the Pro badge on a profile."
+  },
+  "settingsShowProBadgeTitle": "मेरी प्रोफ़ाइल पर Pro बैज दिखाएं",
+  "@settingsShowProBadgeTitle": {
+    "description": "Settings toggle title that shows or hides the Pro badge on the user's profile."
+  },
+  "settingsShowProBadgeBody": "आपकी प्रोफ़ाइल देखने वालों को Pro बैज दिखेगा।",
+  "@settingsShowProBadgeBody": {
+    "description": "Settings toggle description for the Pro badge."
+  },
+  "notifPushEditorsChoiceTitle": "आपका वॉलपेपर संपादकों की पसंद है",
+  "@notifPushEditorsChoiceTitle": {
+    "description": "Push notification title when a wallpaper becomes an Editors' Choice pick."
+  },
+  "notifPushEditorsChoiceBody": "हमारे संपादकों ने {wallTitle} को चुना है। सभी इसे होम पर पा सकते हैं।",
+  "@notifPushEditorsChoiceBody": {
+    "description": "Push notification body for an Editors' Choice pick. {wallTitle} is the wallpaper title.",
+    "placeholders": {
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushEditorsChoiceBodyUntitled": "हमारे संपादकों ने आपका वॉलपेपर चुना है। सभी इसे होम पर पा सकते हैं।",
+  "@notifPushEditorsChoiceBodyUntitled": {
+    "description": "Push notification body for an Editors' Choice pick when the wallpaper has no title."
+  },
+  "coreContentReportComment": "टिप्पणी",
+  "@coreContentReportComment": {
+    "description": "Content type word in the report prompt for a wall comment, lower case as in the sentence"
+  },
+  "commentsAction": "टिप्पणियाँ",
+  "@commentsAction": {
+    "description": "Wall detail action bar: tooltip of the button that opens the comments sheet"
+  },
+  "commentsCountLabel": "{count, plural, =0{कोई टिप्पणी नहीं} =1{1 टिप्पणी} other{{count} टिप्पणियाँ}}",
+  "@commentsCountLabel": {
+    "description": "Screen reader label for the comment count beside the comments button",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commentsTitle": "टिप्पणियाँ",
+  "@commentsTitle": {
+    "description": "Title of the comments sheet on a wall"
+  },
+  "commentsEmptyTitle": "अभी कोई टिप्पणी नहीं है",
+  "@commentsEmptyTitle": {
+    "description": "Comments sheet empty state title"
+  },
+  "commentsEmptyBody": "क्रिएटर को बताएँ कि आपको इस वॉलपेपर में क्या पसंद है।",
+  "@commentsEmptyBody": {
+    "description": "Comments sheet empty state body"
+  },
+  "commentsLoadFailed": "टिप्पणियाँ लोड नहीं हो सकीं। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
+  "@commentsLoadFailed": {
+    "description": "Comments sheet error when the first page does not load"
+  },
+  "commentsRetry": "फिर से कोशिश करें",
+  "@commentsRetry": {
+    "description": "Button that reloads the comments after an error"
+  },
+  "commentComposerHint": "टिप्पणी जोड़ें",
+  "@commentComposerHint": {
+    "description": "Placeholder of the comment text field"
+  },
+  "commentSend": "भेजें",
+  "@commentSend": {
+    "description": "Button that posts the comment"
+  },
+  "commentCharactersLeft": "{count, plural, =1{1 अक्षर बाकी} other{{count} अक्षर बाकी}}",
+  "@commentCharactersLeft": {
+    "description": "Shown under the comment field near the 500 character limit",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commentCharactersOver": "{count, plural, =1{1 अक्षर ज़्यादा} other{{count} अक्षर ज़्यादा}}",
+  "@commentCharactersOver": {
+    "description": "Shown under the comment field when the text is over the 500 character limit",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commentSignInToComment": "टिप्पणी करने के लिए साइन इन करें",
+  "@commentSignInToComment": {
+    "description": "Button in place of the comment field for signed-out users and guests"
+  },
+  "commentCreatorLabel": "क्रिएटर",
+  "@commentCreatorLabel": {
+    "description": "Small label beside the name when the wall's creator wrote the comment"
+  },
+  "commentAuthorFallback": "Prism उपयोगकर्ता",
+  "@commentAuthorFallback": {
+    "description": "Name shown when a comment author has no name"
+  },
+  "commentOptionsHint": "टिप्पणी के विकल्प दिखाएँ",
+  "@commentOptionsHint": {
+    "description": "Screen reader hint for the long press on a comment. Lower case: the system adds 'Double tap and hold to'"
+  },
+  "commentReport": "टिप्पणी की रिपोर्ट करें",
+  "@commentReport": {
+    "description": "Comment long-press menu item"
+  },
+  "commentBlockUser": "{name} को ब्लॉक करें",
+  "@commentBlockUser": {
+    "description": "Comment long-press menu item that blocks the comment author",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "commentDelete": "टिप्पणी हटाएँ",
+  "@commentDelete": {
+    "description": "Comment long-press menu item, and the confirm button"
+  },
+  "commentDeleteConfirmTitle": "क्या यह टिप्पणी हटानी है?",
+  "@commentDeleteConfirmTitle": {
+    "description": "Title of the delete comment confirmation"
+  },
+  "commentDeleteConfirmBody": "यह सभी के लिए हट जाएगी। इसे वापस नहीं लिया जा सकता।",
+  "@commentDeleteConfirmBody": {
+    "description": "Body of the delete comment confirmation"
+  },
+  "commentDeleted": "टिप्पणी हटा दी गई",
+  "@commentDeleted": {
+    "description": "Toast after a comment is deleted"
+  },
+  "commentDeleteFailed": "टिप्पणी हटाई नहीं जा सकी। फिर से कोशिश करें।",
+  "@commentDeleteFailed": {
+    "description": "Toast when deleting a comment fails"
+  },
+  "commentPostFailed": "आपकी टिप्पणी पोस्ट नहीं हो सकी। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
+  "@commentPostFailed": {
+    "description": "Error when posting a comment fails for a network or unknown reason"
+  },
+  "commentErrorDisabled": "टिप्पणियाँ अभी रोकी गई हैं। बाद में फिर से कोशिश करें।",
+  "@commentErrorDisabled": {
+    "description": "Refusal: the comments kill switch is off"
+  },
+  "commentErrorGuest": "टिप्पणी करने के लिए सत्यापित खाते से साइन इन करें।",
+  "@commentErrorGuest": {
+    "description": "Refusal: guest or unverified account"
+  },
+  "commentErrorTooNew": "Prism से जुड़ने के 24 घंटे बाद आप टिप्पणी कर सकते हैं।",
+  "@commentErrorTooNew": {
+    "description": "Refusal: the account is younger than 24 hours"
+  },
+  "commentErrorWallUnavailable": "यह वॉलपेपर अभी टिप्पणियों के लिए उपलब्ध नहीं है।",
+  "@commentErrorWallUnavailable": {
+    "description": "Refusal: the wall is not approved or is gone"
+  },
+  "commentErrorEmpty": "भेजने से पहले टिप्पणी लिखें।",
+  "@commentErrorEmpty": {
+    "description": "Refusal: the comment is empty"
+  },
+  "commentErrorTooLong": "500 अक्षरों या उससे कम का उपयोग करें।",
+  "@commentErrorTooLong": {
+    "description": "Refusal: the comment is longer than 500 characters"
+  },
+  "commentErrorHiddenCharacters": "छिपे या विशेष अक्षर हटाएँ, फिर से भेजें।",
+  "@commentErrorHiddenCharacters": {
+    "description": "Refusal: the comment has control or invisible characters"
+  },
+  "commentErrorBlockedWord": "अपनी टिप्पणी को शालीन शब्दों में लिखें, फिर से भेजें।",
+  "@commentErrorBlockedWord": {
+    "description": "Refusal: the word filter matched. Keep it polite"
+  },
+  "commentErrorBlocked": "आप इस वॉलपेपर पर टिप्पणी नहीं कर सकते।",
+  "@commentErrorBlocked": {
+    "description": "Refusal: the author and the creator have blocked each other in some direction. Do not say who blocked whom"
+  },
+  "commentErrorTooFast": "अगली टिप्पणी से पहले कुछ सेकंड रुकें।",
+  "@commentErrorTooFast": {
+    "description": "Refusal: less than 10 seconds since the last comment"
+  },
+  "commentErrorDailyLimit": "आप रोज़ 50 टिप्पणियाँ कर सकते हैं। कल फिर कोशिश करें।",
+  "@commentErrorDailyLimit": {
+    "description": "Refusal: daily comment limit reached"
+  },
+  "notifPushWallCommentedTitle": "{name} ने {wallTitle} पर टिप्पणी की",
+  "@notifPushWallCommentedTitle": {
+    "description": "Push and inbox title when someone comments on the user's wall",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushWallCommentedTitleUntitled": "{name} ने आपके वॉलपेपर पर टिप्पणी की",
+  "@notifPushWallCommentedTitleUntitled": {
+    "description": "Push and inbox title when someone comments on the user's wall that has no title",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminCommentReport": "टिप्पणी की रिपोर्ट",
+  "@adminCommentReport": {
+    "description": "Admin review: tag on a reported comment card"
+  },
+  "adminKeepComment": "टिप्पणी रखें",
+  "@adminKeepComment": {
+    "description": "Admin review: dismisses the report and shows the comment again"
+  },
+  "adminCommentKept": "रिपोर्ट खारिज की गई। टिप्पणी दिख रही है।",
+  "@adminCommentKept": {
+    "description": "Admin review: toast after Keep comment"
+  },
+  "adminCommentRemoved": "टिप्पणी हटाई गई",
+  "@adminCommentRemoved": {
+    "description": "Admin review: toast after the comment is deleted"
+  },
+  "adminCommentGone": "यह टिप्पणी पहले ही हट चुकी है।",
+  "@adminCommentGone": {
+    "description": "Admin review: the reported comment no longer exists"
+  },
+  "adminContentTypeComment": "टिप्पणी",
+  "@adminContentTypeComment": {
+    "description": "Admin review: content type label for comment reports"
   },
   "livePhotoAction": "लाइव फ़ोटो",
   "@livePhotoAction": {

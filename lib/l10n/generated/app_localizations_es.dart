@@ -7506,7 +7506,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get notifSettingFollowers => 'Seguidores';
 
   @override
-  String get notifSettingFollowersDescription => 'Avisos cuando alguien nuevo te siga.';
+  String get notifSettingFollowersDescription => 'Avisos cuando alguien nuevo te siga o comente tus fondos.';
 
   @override
   String get notifSettingPosts => 'Publicaciones';
@@ -11512,6 +11512,70 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallMetadataEditDetails => 'Editar detalles';
 
   @override
+  String get wallVariantAdd => 'Añadir una variante de color';
+
+  @override
+  String wallVariantUploadContext(String title) {
+    return 'Variante de color de $title';
+  }
+
+  @override
+  String get wallVariantUploadContextUntitled => 'Variante de color de tu fondo de pantalla';
+
+  @override
+  String get wallVariantUploadHint =>
+      'Usa el mismo tamaño y forma que el original. Se une al conjunto tras la revisión.';
+
+  @override
+  String get wallVariantUnlinkTooltip => 'Subir como un fondo de pantalla nuevo';
+
+  @override
+  String wallVariantCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count colores');
+    return '$_temp0';
+  }
+
+  @override
+  String wallVariantDotLabel(int index, int count, String colour) {
+    return 'Variante $index de $count, $colour';
+  }
+
+  @override
+  String wallVariantDotLabelPlain(int index, int count) {
+    return 'Variante $index de $count';
+  }
+
+  @override
+  String get wallVariantDotHint => 'Mostrar este color';
+
+  @override
+  String get wallVariantNextHint => 'Mostrar el siguiente color';
+
+  @override
+  String get wallVariantPending => 'Variante de color. Se une al conjunto tras la revisión.';
+
+  @override
+  String get wallVariantLinked => 'En un conjunto de variantes de color';
+
+  @override
+  String get wallVariantDroppedTitle => 'No se añadió como variante de color';
+
+  @override
+  String get wallVariantDroppedNotFound => 'Se eliminó el fondo de pantalla original.';
+
+  @override
+  String get wallVariantDroppedNotOwner => 'El original pertenece a otro creador.';
+
+  @override
+  String get wallVariantDroppedNotApproved => 'El original no está aprobado.';
+
+  @override
+  String get wallVariantDroppedFull => 'El conjunto ya tiene 5 colores.';
+
+  @override
+  String get wallVariantDroppedAspect => 'Tiene una forma distinta a la del original.';
+
+  @override
   String get wallMetadataApprovedHelp =>
       'Cambia el título, la descripción y las etiquetas. La imagen y la categoría no cambian.';
 
@@ -13010,6 +13074,259 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get premiumTrialAutoRenewOff =>
       'La renovación automática está desactivada. No se te cobrará cuando termine la prueba.';
+
+  @override
+  String get editorsChoiceTitle => 'Selección del editor';
+
+  @override
+  String get editorsChoiceRowBody => 'Fondos de pantalla que a nuestros editores les encantan.';
+
+  @override
+  String get editorsChoiceEmptyTitle => 'Aún no hay selecciones';
+
+  @override
+  String get editorsChoiceEmptyBody => 'Vuelve pronto para ver nuevas selecciones.';
+
+  @override
+  String get editorsChoiceLoadError => 'No se pudo cargar la Selección del editor';
+
+  @override
+  String get editorsChoiceLabelSemantics => 'Elegido para la Selección del editor';
+
+  @override
+  String get editorsChoicePick => 'Añadir a la Selección del editor';
+
+  @override
+  String get editorsChoiceUnpick => 'Quitar de la Selección del editor';
+
+  @override
+  String get editorsChoicePicked => 'Añadido a la Selección del editor';
+
+  @override
+  String get editorsChoiceUnpicked => 'Quitado de la Selección del editor';
+
+  @override
+  String get editorsChoiceNotEligible =>
+      'Solo los fondos de pantalla gratuitos aprobados con el original listo pueden ser selecciones.';
+
+  @override
+  String get adminApproveAndPick => 'Aprobar y elegir';
+
+  @override
+  String get adminApprovedPickLater =>
+      'Aprobado. Añádelo a la Selección del editor desde su página cuando su original esté listo.';
+
+  @override
+  String wallCreditBy(String name) {
+    return 'Por $name';
+  }
+
+  @override
+  String wallCreditPhotoBy(String name) {
+    return 'Foto de $name';
+  }
+
+  @override
+  String get wallCreditByHashStudios => 'Por Hash Studios';
+
+  @override
+  String get wallCreditPrismExclusive => 'Exclusivo de Prism';
+
+  @override
+  String get wallCreditOnPexels => 'De Pexels';
+
+  @override
+  String get wallCreditOnWallhaven => 'De Wallhaven';
+
+  @override
+  String get wallCreditOpenProfileHint => 'Abre el perfil';
+
+  @override
+  String get wallCreditOpenSourceHint => 'Se abre en tu navegador';
+
+  @override
+  String get profileProBadge => 'Pro';
+
+  @override
+  String get profileProBadgeSemantics => 'Miembro de Prism Pro';
+
+  @override
+  String get settingsShowProBadgeTitle => 'Mostrar la insignia Pro en mi perfil';
+
+  @override
+  String get settingsShowProBadgeBody => 'Las personas que visitan tu perfil ven una insignia Pro.';
+
+  @override
+  String get notifPushEditorsChoiceTitle => 'Tu fondo de pantalla está en la Selección del editor';
+
+  @override
+  String notifPushEditorsChoiceBody(String wallTitle) {
+    return 'Nuestros editores eligieron $wallTitle. Todos pueden encontrarlo en Inicio.';
+  }
+
+  @override
+  String get notifPushEditorsChoiceBodyUntitled =>
+      'Nuestros editores eligieron tu fondo de pantalla. Todos pueden encontrarlo en Inicio.';
+
+  @override
+  String get coreContentReportComment => 'comentario';
+
+  @override
+  String get commentsAction => 'Comentarios';
+
+  @override
+  String commentsCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count comentarios',
+      one: '1 comentario',
+      zero: 'Sin comentarios',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentsTitle => 'Comentarios';
+
+  @override
+  String get commentsEmptyTitle => 'Aún no hay comentarios';
+
+  @override
+  String get commentsEmptyBody => 'Dile al creador qué te gusta de este fondo de pantalla.';
+
+  @override
+  String get commentsLoadFailed => 'No se pueden cargar los comentarios. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get commentsRetry => 'Inténtalo de nuevo';
+
+  @override
+  String get commentComposerHint => 'Añade un comentario';
+
+  @override
+  String get commentSend => 'Enviar';
+
+  @override
+  String commentCharactersLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Quedan $count caracteres',
+      one: 'Queda 1 carácter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String commentCharactersOver(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count caracteres de más',
+      one: '1 carácter de más',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get commentSignInToComment => 'Inicia sesión para comentar';
+
+  @override
+  String get commentCreatorLabel => 'Creador';
+
+  @override
+  String get commentAuthorFallback => 'Usuario de Prism';
+
+  @override
+  String get commentOptionsHint => 'mostrar opciones del comentario';
+
+  @override
+  String get commentReport => 'Denunciar comentario';
+
+  @override
+  String commentBlockUser(String name) {
+    return 'Bloquear a $name';
+  }
+
+  @override
+  String get commentDelete => 'Eliminar comentario';
+
+  @override
+  String get commentDeleteConfirmTitle => '¿Eliminar este comentario?';
+
+  @override
+  String get commentDeleteConfirmBody => 'Se elimina para todos. No puedes deshacerlo.';
+
+  @override
+  String get commentDeleted => 'Comentario eliminado';
+
+  @override
+  String get commentDeleteFailed => 'No se pudo eliminar el comentario. Inténtalo de nuevo.';
+
+  @override
+  String get commentPostFailed => 'No se pudo publicar tu comentario. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get commentErrorDisabled => 'Los comentarios están pausados por ahora. Inténtalo más tarde.';
+
+  @override
+  String get commentErrorGuest => 'Inicia sesión con una cuenta verificada para comentar.';
+
+  @override
+  String get commentErrorTooNew => 'Puedes comentar 24 horas después de unirte a Prism.';
+
+  @override
+  String get commentErrorWallUnavailable => 'Este fondo no está abierto a comentarios en este momento.';
+
+  @override
+  String get commentErrorEmpty => 'Escribe un comentario antes de enviarlo.';
+
+  @override
+  String get commentErrorTooLong => 'Usa 500 caracteres o menos.';
+
+  @override
+  String get commentErrorHiddenCharacters => 'Quita los caracteres ocultos o especiales y vuelve a enviar.';
+
+  @override
+  String get commentErrorBlockedWord => 'Reformula tu comentario para que sea amable y vuelve a enviarlo.';
+
+  @override
+  String get commentErrorBlocked => 'No puedes comentar en este fondo de pantalla.';
+
+  @override
+  String get commentErrorTooFast => 'Espera unos segundos antes de tu siguiente comentario.';
+
+  @override
+  String get commentErrorDailyLimit => 'Puedes publicar 50 comentarios al día. Inténtalo mañana.';
+
+  @override
+  String notifPushWallCommentedTitle(String name, String wallTitle) {
+    return '$name comentó en $wallTitle';
+  }
+
+  @override
+  String notifPushWallCommentedTitleUntitled(String name) {
+    return '$name comentó en tu fondo de pantalla';
+  }
+
+  @override
+  String get adminCommentReport => 'Denuncia de comentario';
+
+  @override
+  String get adminKeepComment => 'Mantener comentario';
+
+  @override
+  String get adminCommentKept => 'Denuncia descartada. El comentario está visible.';
+
+  @override
+  String get adminCommentRemoved => 'Comentario eliminado';
+
+  @override
+  String get adminCommentGone => 'Este comentario ya no existe.';
+
+  @override
+  String get adminContentTypeComment => 'Comentario';
 
   @override
   String get livePhotoAction => 'Foto en directo';

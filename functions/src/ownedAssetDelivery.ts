@@ -390,8 +390,9 @@ export async function bindOwnedWall(wallId: string, expected?: WallBindingExpect
 }
 async function delivery(wallId: string) {
   if (!validId(wallId)) throw new Error("Invalid wall identity");
-  const rows = await db.collection("walls").where("id", "==", wallId).limit(2).get();
-  const manifest = (await db.collection("ownedAssets").doc(wallId).get()).data();
+  const [rows, manifestSnap] = await Promise.all([db.collection("walls").where("id", "==", wallId).limit(2).get(),
+    db.collection("ownedAssets").doc(wallId).get()]);
+  const manifest = manifestSnap.data();
   const wall = rows.docs[0];
   if (rows.size !== 1 || !wall?.createTime || manifest?.status !== "ready" ||
     manifest.canonicalPath !== wall.ref.path || manifest.incarnation !== wall.createTime.toMillis() ||

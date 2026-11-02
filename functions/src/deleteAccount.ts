@@ -10,6 +10,7 @@ import {FOLDERS, FOLDER_ITEMS, isFolderItemPath} from "./folders";
 import {removeWallRequestsForAccount, REQUEST_RATE_DAILY, VOTE_RATE_DAILY} from "./wallRequests";
 import {WRAPPED_COLLECTION} from "./wrapped";
 import {FOLLOWED_FOLDERS, removeAllFolderFollows, removeOwnerPublicFolders} from "./publicFolders";
+import {COMMENT_RATE, removeCommentsForAccount} from "./comments";
 
 const USERS = "usersv2";
 const COIN_TRANSACTIONS = "coinTransactions";
@@ -21,7 +22,7 @@ const DRAW_TICKETS = "drawTickets";
 const BOOSTS = "boosts";
 const DELETED_NAME = "Deleted Account";
 /** Docs keyed by the bare uid. The last two are legacy collections. */
-const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens", "rewardedAdUsers", "creatorTips"];
+const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens", "rewardedAdUsers", "creatorTips", COMMENT_RATE];
 /** Docs keyed `<uid>_<day>`. */
 const UID_PREFIX_KEYED = [
   "coinAdRateDaily", "coinRefundDaily", "contentReportRateDaily", "userBlockRateDaily", REQUEST_RATE_DAILY, VOTE_RATE_DAILY,
@@ -115,6 +116,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   // The deletion barrier is closed, so no sync can project these folders again.
   await removeOwnerPublicFolders(callerUid);
   await removeAllFolderFollows(callerUid);
+  await removeCommentsForAccount(callerUid);
 
   // 1. Favourite/private subcollections — same set the client wipes in delete_account_service.dart.
   await db.recursiveDelete(userRef.collection("images"));

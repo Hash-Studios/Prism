@@ -1,3 +1,4 @@
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_page.dart';
 import 'package:equatable/equatable.dart';
@@ -43,6 +44,16 @@ final class RecommendationState extends Equatable {
       cursor: page.nextCursor,
       kind: page.kind,
       status: page.nextCursor == null ? RecommendationStatus.exhausted : RecommendationStatus.ready,
+    );
+  }
+
+  RecommendationState excluding(Iterable<FeedItemEntity> excluded) {
+    final Set<(WallpaperSource, String)> identities = excluded.map((item) => (item.source, item.id)).toSet();
+    return RecommendationState(
+      items: items.where((item) => !identities.contains((item.source, item.id))).toList(growable: false),
+      cursor: cursor,
+      kind: kind,
+      status: status,
     );
   }
 

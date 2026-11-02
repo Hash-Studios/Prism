@@ -42,6 +42,10 @@ class FavouriteCountsRepositoryImpl implements FavouriteCountsRepository {
             PrismWallpaperStats(
               favourites: math.max(0, rawFavourites ?? 0),
               views: rawViews != null && rawViews >= 0 ? rawViews : null,
+              comments: switch (data['comments']) {
+                final num count when count.isFinite => math.max(0, count.toInt()),
+                _ => 0,
+              },
             ),
           );
         },

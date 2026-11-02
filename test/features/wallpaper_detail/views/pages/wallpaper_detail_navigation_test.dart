@@ -261,7 +261,8 @@ void main() {
     expect(blocs[0].events.single, isA<LoadFromEntity>());
     expect(blocs[1].events.single, isA<LoadFromEntity>());
     expect(find.text('SECOND'), findsOneWidget);
-    expect(find.text('Wallhaven'), findsNWidgets(2));
+    expect(find.text('Wallhaven'), findsOneWidget);
+    expect(find.text('From Wallhaven'), findsOneWidget);
 
     router.pop<void>();
     await tester.pumpAndSettle();
@@ -301,7 +302,8 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.text('Wallhaven'), findsNWidgets(2));
+    expect(find.text('Wallhaven'), findsOneWidget);
+    expect(find.text('From Wallhaven'), findsOneWidget);
 
     await router.navigate(WallpaperDetailRoute(wallId: 'OTHER-ID', source: WallpaperSource.wallhaven));
     await pumpTransition(tester);
@@ -342,7 +344,8 @@ void main() {
     );
     await tester.pump();
     expect(find.text('FETCHED'), findsOneWidget);
-    expect(find.text('Wallhaven'), findsNWidgets(2));
+    expect(find.text('Wallhaven'), findsOneWidget);
+    expect(find.text('From Wallhaven'), findsOneWidget);
     await disposeRouter(tester);
   });
 

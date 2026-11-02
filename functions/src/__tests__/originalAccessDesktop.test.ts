@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {DEFAULT_ECONOMY, resetEconomyCache} from "../economy";
-import {originalAccessDelivery, resolveOriginalAccess} from "../originalAccess";
+import {originalAccessDelivery, resetClassificationCache, resolveOriginalAccess} from "../originalAccess";
 import {R2Storage, r2ObjectId} from "../r2Storage";
 import {installFakeDb, type Doc} from "./fakeDb";
 
@@ -29,6 +29,7 @@ function setup(t: TestContext, desktopHead: {size: number; sha256: string} | nul
     R2_SECRET_ACCESS_KEY: "secret", R2_PRIVATE_BUCKET: "private", R2_PREVIEW_BUCKET: "preview",
     R2_PREVIEW_BASE_URL: PREVIEW, GH_REPO_WALLS: "walls"});
   resetEconomyCache();
+  resetClassificationCache();
   t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {
     premiumCollections: {defaultValue: {value: "[\"premium\"]"}},
   }}));

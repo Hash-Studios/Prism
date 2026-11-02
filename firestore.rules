@@ -62,6 +62,7 @@ service cloud.firestore {
           && !('usernameLower' in request.resource.data)
           && ownerAppOpenValuesOk(request.resource.data)
           && request.resource.data.get('creatorDirectoryOptOut', false) is bool
+          && request.resource.data.get('showProBadge', true) is bool
           && request.resource.data.get('coins', 0) == 0
           && request.resource.data.get('premium', false) == false
           && request.resource.data.get('subscriptionTier', 'free') == 'free'
@@ -147,12 +148,17 @@ service cloud.firestore {
         || request.resource.data.creatorDirectoryOptOut is bool;
     }
 
+    function ownerProBadgeOk() {
+      return !('showProBadge' in request.resource.data.diff(resource.data).affectedKeys())
+        || request.resource.data.showProBadge is bool;
+    }
+
     function wallServerKeysAbsent() {
-      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount']);
+      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantGroupId', 'variantIndex', 'variantLink']);
     }
 
     function wallServerKeysUntouched() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantOf', 'variantGroupId', 'variantIndex', 'variantLink']);
     }
 
     // Optional link to the wall this one remixes. The server removes a link it cannot verify.
@@ -160,6 +166,13 @@ service cloud.firestore {
       return !('remixOf' in request.resource.data)
           || (request.resource.data.remixOf is string
               && request.resource.data.remixOf.matches('^[A-Za-z0-9_-]{1,64}$'));
+    }
+
+    // Optional link to the owner's approved wall this one is a colourway of. The server checks it and owns the group.
+    function validVariantOf() {
+      return !('variantOf' in request.resource.data)
+          || (request.resource.data.variantOf is string
+              && request.resource.data.variantOf.matches('^[A-Za-z0-9_-]{1,64}$'));
     }
 
     function validResubmitOf() {
@@ -225,15 +238,20 @@ service cloud.firestore {
       allow get: if resource == null || wallReadable();
       allow list: if resource == null || wallReadable();
       // Admins re-create a rejected wall when they undo the rejection.
-      allow create: if validChallengeId() && (isConfiguredAdmin()
+      allow create: if !request.resource.data.keys().hasAny(['editorsChoiceAt', 'editorsChoiceBy', 'byStudio'])
+          && validChallengeId() && (isConfiguredAdmin()
           || (isSignedIn()
               && isEmailOwner(request.resource.data.email)
               && request.resource.data.review != true
               && wallServerKeysAbsent()
               && validRemixOf()
+              && validVariantOf()
               && validResubmitOf()));
       // delete: request.resource is null — do not use request.resource.data here.
-      allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny(['challengeId'])
+      allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantOf', 'variantGroupId', 'variantIndex',
+            'variantLink'
+          ])
           && (isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
               && wallServerKeysUntouched()
@@ -242,6 +260,15 @@ service cloud.firestore {
               && request.resource.data.review != true));
       allow delete: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email) && resource.data.review != true);
+
+      // Only the comment callables write comments. Anyone reads the visible comments of an approved wall; a list must
+      // filter on state == 'visible'. Admins also read hidden comments to review reports.
+      match /comments/{commentId} {
+        allow get, list: if isConfiguredAdmin()
+            || (resource.data.state == 'visible'
+                && get(/databases/$(database)/documents/walls/$(docId)).data.review == true);
+        allow write: if false;
+      }
     }
 
     match /setups/{docId} {
@@ -303,8 +330,9 @@ service cloud.firestore {
             'name', 'profilePhoto', 'coverPhoto', 'bio', 'links', 'lastLoginAt', 'loggedIn',
             'interestCategories', 'onboardingV2', 'uploadsWeekStart',
             'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'coinState',
-            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs', 'creatorDirectoryOptOut', 'layoutPrefs'
+            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes', 'themePrefs', 'creatorDirectoryOptOut', 'layoutPrefs', 'showProBadge'
           ]) && ownerCoinStateOk() && ownerAppOpenOk() && ownerThemePrefsOk() && ownerDirectoryOptOutOk()
+            && ownerProBadgeOk()
             && ownerLayoutPrefsOk())
           || isConfiguredAdmin();
       allow delete: if isConfiguredAdmin();
@@ -595,6 +623,15 @@ service cloud.firestore {
     }
 
     match /contentReportRateDaily/{docId} {
+      allow read, write: if false;
+    }
+
+    // Comment rate limits and the creator push gate (Cloud Functions only).
+    match /commentRate/{docId} {
+      allow read, write: if false;
+    }
+
+    match /commentPush/{docId} {
       allow read, write: if false;
     }
 

@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import * as admin from "firebase-admin";
-import {resolveOriginalAccess} from "../originalAccess";
+import {resetClassificationCache, resolveOriginalAccess} from "../originalAccess";
 import {signOriginalDelivery} from "../ownedAssetDelivery";
 import {DEFAULT_ECONOMY, resetEconomyCache} from "../economy";
 import {r2ObjectId} from "../r2Storage";
 import {installFakeDb} from "./fakeDb";
 
-function setup(t: Parameters<typeof installFakeDb>[0]) {
+function setup(t: Parameters<typeof installFakeDb>[0], observed?: Parameters<typeof installFakeDb>[2]) {
   const previous = {...process.env};
   t.after(() => {
     process.env = previous;
@@ -20,6 +20,7 @@ function setup(t: Parameters<typeof installFakeDb>[0]) {
   process.env.R2_PREVIEW_BASE_URL = "https://images.example.com";
   process.env.GH_REPO_WALLS = "walls";
   resetEconomyCache();
+  resetClassificationCache();
   t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {
     premiumCollections: {defaultValue: {value: "[\"premium\"]"}},
   }}));
@@ -45,7 +46,7 @@ function setup(t: Parameters<typeof installFakeDb>[0]) {
       original, thumb, provenance: {kind: "owned", uid: "owner"}},
     [`r2ObjectRegistry/${originalId}`]: registry(original), [`r2ObjectRegistry/${thumbId}`]: registry(thumb),
     "usersv2/user": {coins: 100}, "usersv2/user/private/economy": {graceDownloadsUsed: 100},
-  });
+  }, observed);
   const signatures: string[] = [];
   t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
     if (init?.method !== "HEAD") return new Response(null, {status: 500});
@@ -83,6 +84,18 @@ test("R2 signer grants a redacted original, validates registry, and signs a shor
   assert.equal(result.chargedCoins, DEFAULT_ECONOMY.spend.premiumWallpaperDownload);
   assert.equal(store.get("usersv2/user")?.coins, 100 - result.chargedCoins);
   assert.ok(signatures.every((value) => value.startsWith("AWS4-HMAC-SHA256 ")));
+});
+
+test("a download signs and charges in 5 Firestore read rounds", async (t) => {
+  const observed = {reads: 0, writes: 0, readRounds: 0};
+  setup(t, observed);
+  const quote = await resolveOriginalAccess.run({...request(), data: {...request().data, mode: "quote"}});
+  assert.equal(quote.status, "quoted");
+  observed.readRounds = 0;
+  assert.equal((await resolveOriginalAccess.run(request())).status, "granted");
+  // Signing: the wall and its manifest together, then the registry. The transaction: the user, private and receipt
+  // docs together, then the wall and manifest together, then both registry docs together.
+  assert.equal(observed.readRounds, 5);
 });
 
 test("registry mismatch denies signing and debit", async (t) => {
