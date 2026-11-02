@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/features/wall_comments/biz/wall_comments_cubit.dart';
 import 'package:Prism/features/wall_comments/data/wall_comments_repository.dart';
@@ -78,6 +80,41 @@ void main() {
     });
   });
 
+  test('an old next page cannot repopulate comments after a fresh empty load', () async {
+    final Completer<({List<WallComment> items, bool hasMore})> next = Completer();
+    bool refreshed = false;
+    final FakeWallCommentsRepository repo = FakeWallCommentsRepository()
+      ..onFetch = (_, String? afterId) =>
+          afterId != null ? next.future : Future.value(pageOf(refreshed ? <WallComment>[] : _twenty()));
+    final WallCommentsCubit cubit = _cubit(repo);
+    await cubit.load();
+    final Future<void> paging = cubit.loadMore();
+    refreshed = true;
+    await cubit.load();
+    next.complete(pageOf(<WallComment>[commentFor('now-hidden')]));
+    await paging;
+    expect(cubit.state.comments, isEmpty);
+    expect(cubit.state.loadingMore, isFalse);
+  });
+
+  test('an old next page cannot restore a comment deleted while paging', () async {
+    final Completer<({List<WallComment> items, bool hasMore})> next = Completer();
+    final FakeWallCommentsRepository repo = FakeWallCommentsRepository()
+      ..onFetch = (_, String? afterId) => afterId == null ? Future.value(pageOf(_twenty())) : next.future;
+    final WallCommentsCubit cubit = _cubit(repo);
+    await cubit.load();
+    final WallComment deleted = cubit.state.comments.first;
+    final Future<void> paging = cubit.loadMore();
+    final Future<bool> deleting = cubit.delete(deleted);
+    repo.deletes.single.result.complete();
+    expect(await deleting, isTrue);
+    next.complete(pageOf(<WallComment>[deleted]));
+    await paging;
+    expect(cubit.state.comments.map((c) => c.id), isNot(contains(deleted.id)));
+    expect(cubit.state.loadingMore, isFalse);
+    expect(cubit.state.hasMore, isTrue);
+  });
+
   group('send', () {
     test('shows a pending row and sending while the add is pending', () async {
       final FakeWallCommentsRepository repo = FakeWallCommentsRepository();
@@ -152,6 +189,52 @@ void main() {
       repo.adds.single.result.completeError(const CommentRefusedException(CommentRefusal.tooFast));
       await first;
     });
+  });
+
+  test('a guest send is refused rather than reported as posted', () async {
+    final FakeWallCommentsRepository repo = FakeWallCommentsRepository();
+    final WallCommentsCubit cubit = _cubit(repo, viewer: null);
+    expect(await cubit.send('Hello'), CommentRefusal.guest);
+    expect(repo.adds, isEmpty);
+  });
+
+  test('a failed delete preserves a concurrent successful send', () async {
+    final FakeWallCommentsRepository repo = FakeWallCommentsRepository()
+      ..onFetch = (_, _) async => pageOf(<WallComment>[commentFor('c1')]);
+    final WallCommentsCubit cubit = _cubit(repo);
+    await cubit.load();
+    final Future<bool> deleting = cubit.delete(cubit.state.comments.single);
+    final Future<CommentRefusal?> sending = cubit.send('New');
+    repo.adds.single.result.complete(commentFor('new', uid: 'me'));
+    await sending;
+    repo.deletes.single.result.completeError(StateError('offline'));
+    expect(await deleting, isFalse);
+    expect(cubit.state.comments.map((c) => c.id), containsAll(<String>['c1', 'new']));
+  });
+
+  test('a refresh does not lose an in-flight optimistic send', () async {
+    final FakeWallCommentsRepository repo = FakeWallCommentsRepository();
+    final WallCommentsCubit cubit = _cubit(repo);
+    final Future<CommentRefusal?> sending = cubit.send('New');
+    await cubit.load();
+    repo.adds.single.result.complete(commentFor('new', uid: 'me'));
+    await sending;
+    expect(cubit.state.comments.map((c) => c.id), contains('new'));
+  });
+
+  test('a fetch started before a successful send cannot erase it', () async {
+    final Completer<({List<WallComment> items, bool hasMore})> first = Completer();
+    int calls = 0;
+    final FakeWallCommentsRepository repo = FakeWallCommentsRepository()
+      ..onFetch = (_, _) => ++calls == 1 ? first.future : Future.value(pageOf(<WallComment>[commentFor('new')]));
+    final WallCommentsCubit cubit = _cubit(repo);
+    final Future<void> loading = cubit.load();
+    final Future<CommentRefusal?> sending = cubit.send('New');
+    repo.adds.single.result.complete(commentFor('new', uid: 'me'));
+    await sending;
+    first.complete(pageOf(<WallComment>[]));
+    await loading;
+    expect(cubit.state.comments.map((c) => c.id), contains('new'));
   });
 
   group('delete', () {

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {onContentReportCreated} from "../onContentReportCreated";
+import {setCommentState} from "../comments";
 import {type Doc, installFakeDb} from "./fakeDb";
 
 const NOW = new Date("2026-01-10T12:00:00Z");
@@ -178,4 +179,43 @@ test("2 trusted reporters leave a reported comment visible and the count unchang
   await fire("r2", reports.r2);
   assert.equal(store.get("walls/w1/comments/0123456789abcdef0123456789abcdef")?.state, "visible");
   assert.equal(store.get("wallpaper_stats/NEON")?.comments, 3);
+});
+
+test("retrying a handled comment report does not undo an admin keep decision", async (t) => {
+  const commentId = "0123456789abcdef0123456789abcdef";
+  const target = `w1:${commentId}`;
+  const reports = Object.fromEntries(["a", "b", "c"].map((uid) => [uid,
+    report(uid, {contentType: "comment", targetFirestoreDocId: target})]));
+  const {store} = setup(t, reports, {a: 30, b: 30, c: 30}, {review: true, id: "NEON"});
+  const path = `walls/w1/comments/${commentId}`;
+  store.set(path, {wallId: "w1", state: "visible", text: "hi"});
+  store.set("wallpaper_stats/NEON", {comments: 1});
+  await fire("c", reports.c);
+  assert.equal(store.get("wallpaper_stats/NEON")?.comments, 0);
+  await setCommentState("w1", commentId, "visible", "admin");
+  await fire("c", reports.c);
+  assert.equal(store.get(path)?.state, "visible");
+  assert.equal(store.get("wallpaper_stats/NEON")?.comments, 1);
+});
+
+test("reports consumed while hidden stay consumed but a new report can hide the comment again", async (t) => {
+  const commentId = "0123456789abcdef0123456789abcdef";
+  const target = `w1:${commentId}`;
+  const reports = Object.fromEntries(["a", "b", "c"].map((uid) => [uid,
+    report(uid, {contentType: "comment", targetFirestoreDocId: target})]));
+  const {store} = setup(t, reports, {a: 30, b: 30, c: 30, d: 30}, {review: true, id: "NEON"});
+  const path = `walls/w1/comments/${commentId}`;
+  store.set(path, {wallId: "w1", state: "visible", text: "hi"});
+  store.set("wallpaper_stats/NEON", {comments: 1});
+  await fire("b", reports.b);
+  await fire("c", reports.c);
+  assert.equal(store.get("wallpaper_stats/NEON")?.comments, 0);
+  await setCommentState("w1", commentId, "visible", "admin");
+  await fire("c", reports.c);
+  assert.equal(store.get(path)?.state, "visible");
+  const next = report("d", {contentType: "comment", targetFirestoreDocId: target});
+  store.set("contentReports/d", next);
+  await fire("d", next);
+  assert.equal(store.get(path)?.state, "hidden");
+  assert.equal(store.get("wallpaper_stats/NEON")?.comments, 0);
 });

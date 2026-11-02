@@ -1,4 +1,5 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -281,6 +282,40 @@ void main() {
       expect(find.text(l10n.commentSignInToComment), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
     });
+  });
+
+  testWidgets('signing in in the open sheet can post a comment', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final previous = signedInActionSignIn;
+    addTearDown(() => signedInActionSignIn = previous);
+    signedInActionSignIn = (_) async {
+      app_state.prismUser = profileUser(id: 'me');
+      return true;
+    };
+    final FakeWallCommentsRepository repo = FakeWallCommentsRepository();
+    await _openSheet(tester, repo, viewer: null);
+    await tester.tap(find.text(l10n.commentSignInToComment));
+    await _settle(tester);
+    await tester.enterText(find.byType(TextField), 'After sign in');
+    await _settle(tester);
+    await tester.tap(_sendButton());
+    await _settle(tester);
+    expect(repo.adds, hasLength(1));
+    expect(find.text('After sign in'), findsOneWidget);
+  });
+
+  testWidgets('a fully blocked first page still exposes paging', (tester) async {
+    final FakeWallCommentsRepository repo = FakeWallCommentsRepository()
+      ..onFetch = (_, String? afterId) async => afterId == null
+          ? pageOf(List<WallComment>.generate(20, (i) => commentFor('bad$i', uid: 'bad')))
+          : pageOf(<WallComment>[commentFor('good', text: 'Beyond blocked page')]);
+    await _openSheet(tester, repo, blocked: KnownBlockedCreators(const <String>{'bad'}));
+    expect(find.text(l10n.commentsRetry), findsOneWidget);
+    await tester.drag(find.text(l10n.commentsTitle), const Offset(0, -400));
+    await _settle(tester);
+    await tester.tap(find.text(l10n.commentsRetry));
+    await _settle(tester);
+    expect(find.text('Beyond blocked page'), findsOneWidget);
   });
 
   group('long-press menu', () {

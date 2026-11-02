@@ -90,11 +90,13 @@ const graphemes = (text: string): string[] => [...TEXT_SEGMENTER.segment(text)].
 export function commentText(raw: unknown): {text: string} | {reason: CommentRefusal} {
   if (typeof raw !== "string") throw new HttpsError("invalid-argument", "text must be a string.");
   if (raw.length > COMMENT_MAX_GRAPHEMES * 16) return {reason: "comment_too_long"};
-  const text = raw.replace(/\r\n?/g, "\n").replace(/[^\S\n]+/g, " ").replace(/ *\n */g, "\n")
+  const normalized = raw.replace(/\r\n?/g, "\n");
+  const bare = normalized.replace(/\n/g, "").replace(
+    /(?<=\p{Extended_Pictographic}️?\p{Emoji_Modifier}?)‍(?=\p{Extended_Pictographic})/gu, "");
+  if (HIDDEN_CHARACTERS.test(bare) || /\p{Cs}/u.test(bare)) return {reason: "comment_hidden_characters"};
+  const text = normalized.replace(/[^\S\n]+/g, " ").replace(/ *\n */g, "\n")
     .replace(/\n{3,}/g, "\n\n").trim();
   if (text === "") return {reason: "comment_empty"};
-  const bare = text.replace(/\n/g, "").replace(/(?<=\p{Extended_Pictographic}️?)‍(?=\p{Extended_Pictographic})/gu, "");
-  if (HIDDEN_CHARACTERS.test(bare) || /\p{Cs}/u.test(bare)) return {reason: "comment_hidden_characters"};
   if (graphemes(text).length > COMMENT_MAX_GRAPHEMES) return {reason: "comment_too_long"};
   if (hasBlockedWord(text)) return {reason: "comment_blocked_word"};
   return {text};
@@ -147,9 +149,11 @@ export function commentView(id: string, data: admin.firestore.DocumentData): Com
  * The count of visible comments lives in the wall's public stats doc, next to its favourites. A write to the wall doc
  * would wake its 12 triggers, one of them a 1 GiB conversion, on every comment.
  */
-function statsRef(wall: admin.firestore.DocumentData | undefined): admin.firestore.DocumentReference | null {
+function statsRef(wall: admin.firestore.DocumentData | undefined, comment?: admin.firestore.DocumentData):
+  admin.firestore.DocumentReference | null {
   try {
-    return wall ? db.collection(WALLPAPER_STATS).doc(normalizeId(wall.id)) : null;
+    const id = comment?.statsId ?? wall?.id;
+    return db.collection(WALLPAPER_STATS).doc(normalizeId(id));
   } catch {
     return null;
   }
@@ -168,8 +172,6 @@ export const addComment = onCall({region: CALLABLE_REGIONS, cors: true, maxInsta
     if (!(await commentIo.enabled())) return {ok: false, reason: "comments_disabled"};
 
     const ref = commentRef(wallId, commentIdFor(uid, requestId));
-    const done = await ref.get();
-    if (done.exists && done.data()?.authorUid === uid) return {ok: true, comment: commentView(ref.id, done.data() ?? {})};
     if ("reason" in parsed) return {ok: false, reason: parsed.reason};
 
     const account = await commentIo.account(uid);
@@ -191,10 +193,6 @@ export const addComment = onCall({region: CALLABLE_REGIONS, cors: true, maxInsta
         tx.get(ref), tx.get(wallRef), tx.get(authorRef), tx.get(db.collection("creatorDeletionState").doc(uid)),
         tx.get(rateRef), tx.get(pushRef),
       ]);
-      if (commentSnap.exists && commentSnap.data()?.authorUid === uid) {
-        response = {ok: true, comment: commentView(ref.id, commentSnap.data() ?? {})};
-        return;
-      }
       const author = authorSnap.data();
       if (!author || author.deleted === true || barrierSnap.data()?.closed === true) {
         response = {ok: false, reason: "comment_guest"};
@@ -207,14 +205,24 @@ export const addComment = onCall({region: CALLABLE_REGIONS, cors: true, maxInsta
       }
       const creatorUid = str(wall.creatorUid);
       const creatorRef = creatorUid && creatorUid !== uid ? db.collection("usersv2").doc(creatorUid) : null;
-      const [blockedBy, blocking, creatorSnap, sessionSnap] = creatorRef ? await Promise.all([
+      const [blockedBy, blocking, creatorSnap, sessionSnap, creatorBarrier] = creatorRef ? await Promise.all([
         tx.get(creatorRef.collection("blockedUsers").doc(uid)),
         tx.get(authorRef.collection("blockedUsers").doc(creatorUid)),
         tx.get(creatorRef),
         tx.get(creatorRef.collection("private").doc("session")),
-      ]) : [null, null, null, null];
+        tx.get(db.collection("creatorDeletionState").doc(creatorUid)),
+      ]) : [null, null, null, null, null];
       if (blockedBy?.exists || blocking?.exists) {
         response = {ok: false, reason: "comment_blocked"};
+        return;
+      }
+      if (commentSnap.exists) {
+        const existing = commentSnap.data() ?? {};
+        if (existing.authorUid !== uid || existing.wallId !== wallId || existing.requestId !== requestId) {
+          throw new HttpsError("already-exists", "Comment request conflicts with an existing comment.");
+        }
+        response = existing.state === "visible" ?
+          {ok: true, comment: commentView(ref.id, existing)} : {ok: false, reason: "comment_wall_unavailable"};
         return;
       }
       const nowMs = Date.now();
@@ -230,9 +238,15 @@ export const addComment = onCall({region: CALLABLE_REGIONS, cors: true, maxInsta
         return;
       }
 
+      const stats = statsRef(wall);
+      if (!stats) {
+        response = {ok: false, reason: "comment_wall_unavailable"};
+        return;
+      }
       const at = admin.firestore.Timestamp.fromMillis(nowMs);
       const data = {
         wallId,
+        statsId: stats.id,
         authorUid: uid,
         authorName: str(author.name) || str(author.username),
         authorUsername: str(author.username),
@@ -243,14 +257,13 @@ export const addComment = onCall({region: CALLABLE_REGIONS, cors: true, maxInsta
         requestId,
       };
       tx.create(ref, data);
-      const stats = statsRef(wall);
-      if (stats) tx.set(stats, countBy(1), {merge: true});
+      tx.set(stats, countBy(1), {merge: true});
       tx.set(rateRef, {lastAtMs: nowMs, day: today, count: todayCount + 1});
       response = {ok: true, comment: commentView(ref.id, data)};
 
       const creator = creatorSnap?.data();
       const creatorEmail = str(creator?.email);
-      if (!creatorRef || !creator || creator.deleted === true || !creatorEmail) return;
+      if (!creatorRef || !creator || creator.deleted === true || creatorBarrier?.data()?.closed === true || !creatorEmail) return;
       if (nowMs - int(pushSnap.data()?.lastAtMs, 0) < COMMENT_PUSH_GAP_MS) return;
       tx.set(pushRef, {lastAtMs: nowMs, creatorUid});
       const preview = graphemes(parsed.text.replace(/\n/g, " "));
@@ -275,10 +288,22 @@ export const addComment = onCall({region: CALLABLE_REGIONS, cors: true, maxInsta
     });
     if (!response) throw new HttpsError("internal", "Comment did not finish.");
 
+    const result = response as AddCommentResponse;
+    if (result.ok) {
+      const current = await ref.get();
+      if (!current.exists || current.data()?.state !== "visible") return {ok: false, reason: "comment_wall_unavailable"};
+    }
     const sent = notice as {payload: PersonalPayload; recipient: PushRecipient; pushEnabled: boolean} | null;
-    if (sent) {
+    if (sent && sent.recipient.uid) {
       try {
-        await commentIo.notify(sent.payload, sent.recipient, sent.pushEnabled);
+        const creatorRef = db.collection("usersv2").doc(sent.recipient.uid);
+        const [creator, barrier, session] = await Promise.all([
+          creatorRef.get(), db.collection("creatorDeletionState").doc(sent.recipient.uid).get(),
+          creatorRef.collection("private").doc("session").get(),
+        ]);
+        if (creator.exists && creator.data()?.deleted !== true && barrier.data()?.closed !== true) {
+          await commentIo.notify(sent.payload, sent.recipient, session.data()?.followerAlerts !== false);
+        }
       } catch (err) {
         logger.warn("addComment: notification failed.", {err});
       }
@@ -290,17 +315,22 @@ export const addComment = onCall({region: CALLABLE_REGIONS, cors: true, maxInsta
  * Moves a comment between visible and hidden, and keeps the count equal to the visible comments.
  * Returns false when the comment is gone or already in that state, so a retry changes nothing.
  */
-export async function setCommentState(wallId: string, commentId: string, state: CommentState, by: string):
+export async function setCommentState(wallId: string, commentId: string, state: CommentState, by: string, reportId?: string):
   Promise<boolean> {
   const ref = commentRef(wallId, commentId);
   const wallRef = db.collection("walls").doc(wallId);
   return db.runTransaction(async (tx) => {
-    const [comment, wall] = await Promise.all([tx.get(ref), tx.get(wallRef)]);
+    const reportRef = reportId ? db.collection("contentReports").doc(reportId) : null;
+    const [comment, wall, report] = await Promise.all([tx.get(ref), tx.get(wallRef), reportRef ? tx.get(reportRef) : null]);
+    if (reportRef) {
+      if (!report?.exists || report.data()?.status !== "open" || report.data()?.moderationApplied === true) return false;
+      tx.update(reportRef, {moderationApplied: true});
+    }
     if (!comment.exists || (comment.data()?.state === "visible") === (state === "visible")) return false;
     tx.update(ref, state === "hidden" ?
       {state, hiddenBy: by, hiddenAt: admin.firestore.FieldValue.serverTimestamp()} :
       {state, hiddenBy: admin.firestore.FieldValue.delete(), hiddenAt: admin.firestore.FieldValue.delete()});
-    const stats = statsRef(wall.data());
+    const stats = statsRef(wall.data(), comment.data());
     if (stats) tx.set(stats, countBy(state === "visible" ? 1 : -1), {merge: true});
     return true;
   });
@@ -314,7 +344,7 @@ async function removeComment(wallId: string, commentId: string, expectAuthor?: s
     const [comment, wall] = await Promise.all([tx.get(ref), tx.get(wallRef)]);
     if (!comment.exists || (expectAuthor !== undefined && comment.data()?.authorUid !== expectAuthor)) return false;
     tx.delete(ref);
-    const stats = statsRef(wall.data());
+    const stats = statsRef(wall.data(), comment.data());
     if (comment.data()?.state === "visible" && stats) tx.set(stats, countBy(-1), {merge: true});
     return true;
   });
@@ -327,13 +357,18 @@ export const deleteComment = onCall({region: CALLABLE_REGIONS, cors: true},
     const wallId = docIdFrom(field(request.data, "wallId"), "wallId");
     const commentId = docIdFrom(field(request.data, "commentId"), "commentId");
     const ref = commentRef(wallId, commentId);
-    const [comment, wall] = await Promise.all([ref.get(), db.collection("walls").doc(wallId).get()]);
-    if (!comment.exists) return {ok: true, deleted: false, role: ""};
-    const role: DeleteRole | null = comment.data()?.authorUid === uid ? "author" :
-      wall.exists && str(wall.data()?.creatorUid) === uid ? "creator" :
-        await isAdminCaller(request.auth) ? "admin" : null;
-    if (!role) throw new HttpsError("permission-denied", "comment_delete_denied");
-    return {ok: true, deleted: await removeComment(wallId, commentId), role};
+    const adminCaller = await isAdminCaller(request.auth);
+    return db.runTransaction(async (tx) => {
+      const [comment, wall] = await Promise.all([tx.get(ref), tx.get(db.collection("walls").doc(wallId))]);
+      if (!comment.exists) return {ok: true as const, deleted: false, role: "" as const};
+      const role: DeleteRole | null = comment.data()?.authorUid === uid ? "author" :
+        wall.exists && str(wall.data()?.creatorUid) === uid ? "creator" : adminCaller ? "admin" : null;
+      if (!role) throw new HttpsError("permission-denied", "comment_delete_denied");
+      tx.delete(ref);
+      const stats = statsRef(wall.data(), comment.data());
+      if (comment.data()?.state === "visible" && stats) tx.set(stats, countBy(-1), {merge: true});
+      return {ok: true as const, deleted: true, role};
+    });
   });
 
 /** Admin only: hides a comment, or shows a comment that reports hid. */

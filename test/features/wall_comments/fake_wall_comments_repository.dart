@@ -31,7 +31,8 @@ class FakeWallCommentsRepository implements WallCommentsRepository {
   final List<PendingDelete> deletes = <PendingDelete>[];
 
   @override
-  Future<CommentPage> fetchPage(String wallId, {String? afterId}) {
+  Future<CommentPage> fetchPage(String wallId, {WallComment? after}) {
+    final String? afterId = after?.id;
     fetchAfterIds.add(afterId);
     return onFetch(wallId, afterId);
   }

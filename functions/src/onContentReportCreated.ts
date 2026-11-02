@@ -163,7 +163,7 @@ export const onContentReportCreated = onDocumentCreated(
     if (comment) {
       try {
         if (await reportedByTrustedUsers("comment", targetId) &&
-          await setCommentState(comment.wallId, comment.commentId, "hidden", "reports")) {
+          await setCommentState(comment.wallId, comment.commentId, "hidden", "reports", reportId)) {
           logger.warn("onContentReportCreated: comment hidden after reports.", {reportId, targetId});
         }
       } catch (err) {

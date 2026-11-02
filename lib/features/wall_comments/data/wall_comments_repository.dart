@@ -35,8 +35,8 @@ class WallCommentsRepository {
               .call<Object?>(data))
           .data;
 
-  /// Newest first. [afterId] is the last comment of the previous page.
-  Future<({List<WallComment> items, bool hasMore})> fetchPage(String wallId, {String? afterId}) async {
+  /// Newest first. [after] is the last comment of the previous page.
+  Future<({List<WallComment> items, bool hasMore})> fetchPage(String wallId, {WallComment? after}) async {
     final List<WallComment> items = await _client.query<WallComment>(
       FirestoreQuerySpec(
         collection: FirebaseCollections.wallComments(wallId),
@@ -44,9 +44,13 @@ class WallCommentsRepository {
         filters: const <FirestoreFilter>[
           FirestoreFilter(field: 'state', op: FirestoreFilterOp.isEqualTo, value: 'visible'),
         ],
-        orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+        orderBy: const <FirestoreOrderBy>[
+          FirestoreOrderBy(field: 'createdAt', descending: true),
+          FirestoreOrderBy(field: firestoreDocumentIdField, descending: true),
+        ],
         limit: pageSize,
-        startAfterDocId: afterId,
+        startAfterFieldValues: after == null ? null : <Object?>[after.createdAt, after.id],
+        cachePolicy: FirestoreCachePolicy.serverOnly,
       ),
       WallComment.fromMap,
     );

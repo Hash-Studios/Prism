@@ -3,6 +3,7 @@ import test, {type TestContext} from "node:test";
 import {type AddCommentResponse, addComment, commentIdFor, commentIo, commentText, deleteComment, parseCommentTarget,
   removeCommentsForAccount, setCommentHidden, setCommentState} from "../comments";
 import {nativeNotificationLocalization, renderNotificationCopy} from "../notificationCatalog";
+import {db} from "../common";
 import {type Doc, installFakeDb} from "./fakeDb";
 
 const NOW = new Date("2026-11-02T12:00:00Z");
@@ -412,4 +413,143 @@ test("the wallCommented push copy names the commenter and the wall", () => {
   });
   assert.equal(nativeNotificationLocalization(renderNotificationCopy({...copy, wallTitle: ""}))?.titleKey,
     "notif_push_wall_commented_title_untitled");
+});
+
+test("replays never return hidden comments or bypass current access checks", async (t) => {
+  const {store} = setup(t);
+  await add(body());
+  await setCommentState("w1", FAN_COMMENT, "hidden", "reports");
+  assert.deepEqual(await add(body()), {ok: false, reason: "comment_wall_unavailable"});
+  await setCommentState("w1", FAN_COMMENT, "visible", "boss");
+  store.set("creatorDeletionState/fan", {closed: true});
+  assert.deepEqual(await add(body()), {ok: false, reason: "comment_guest"});
+  store.delete("creatorDeletionState/fan");
+  store.set("usersv2/maker/blockedUsers/fan", {});
+  assert.deepEqual(await add(body()), {ok: false, reason: "comment_blocked"});
+  store.delete("usersv2/maker/blockedUsers/fan");
+  store.set("walls/w1", {id: "NEON", creatorUid: "maker", review: false});
+  assert.deepEqual(await add(body()), {ok: false, reason: "comment_wall_unavailable"});
+});
+
+test("a colliding stored comment cannot be returned or replaced", async (t) => {
+  const {store} = setup(t);
+  for (const mismatch of [{authorUid: "fan2"}, {wallId: "w2"}, {requestId: "another_request"}]) {
+    const existing = {authorUid: "fan", wallId: "w1", requestId: REQ, state: "visible", text: "secret", ...mismatch};
+    store.set(`walls/w1/comments/${FAN_COMMENT}`, existing);
+    await assert.rejects(add(body()), {code: "already-exists"});
+    assert.deepEqual(store.get(`walls/w1/comments/${FAN_COMMENT}`), existing);
+    assert.equal(count(store), 0);
+  }
+});
+
+test("text cleanup does not erase prohibited control characters", () => {
+  for (const character of ["\t", "\v", "\f", "\uFEFF"]) {
+    assert.deepEqual(commentText(`hi${character}there`), {reason: "comment_hidden_characters"});
+    assert.deepEqual(commentText(`${character}hi${character}`), {reason: "comment_hidden_characters"});
+  }
+});
+
+test("skin-toned joined emoji remain valid graphemes", () => {
+  assert.deepEqual(commentText("👩🏽‍💻".repeat(500)), {text: "👩🏽‍💻".repeat(500)});
+});
+
+test("a closed creator deletion barrier prevents a notification", async (t) => {
+  const {sent} = setup(t, {"creatorDeletionState/maker": {closed: true}});
+  assert.equal((await add(body())).ok, true);
+  assert.equal(sent.length, 0);
+});
+
+
+test("delete permission is checked in the transaction against the current creator", async (t) => {
+  const {store} = setup(t);
+  await add(body());
+  const transaction = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", (callback: Parameters<typeof db.runTransaction>[0]) => {
+    store.set("walls/w1", {id: "NEON", creatorUid: "fan2", review: true});
+    return transaction(callback);
+  });
+  await assert.rejects(
+    deleteComment.run({auth: {uid: "maker", token: {}}, data: {wallId: "w1", commentId: FAN_COMMENT}} as never),
+    {code: "permission-denied"},
+  );
+  assert.equal(count(store), 1);
+});
+
+test("simultaneous new request ids share the author's rate limit", async (t) => {
+  const {store, sent} = setup(t);
+  const responses = await Promise.all(Array.from({length: 12}, (_, i) => add(body({requestId: `request_parallel_${i}`}))));
+  assert.equal(responses.filter((response) => response.ok).length, 1);
+  assert.equal(count(store), 1);
+  assert.equal(sent.length, 1);
+});
+
+test("a comment hidden after commit is not returned or sent in a notification", async (t) => {
+  const {store, sent} = setup(t);
+  const transaction = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", async (callback: Parameters<typeof db.runTransaction>[0]) => {
+    const result = await transaction(callback);
+    const path = `walls/w1/comments/${FAN_COMMENT}`;
+    store.set(path, {...store.get(path), state: "hidden"});
+    store.set("wallpaper_stats/NEON", {comments: 0});
+    return result;
+  });
+  assert.deepEqual(await add(body()), {ok: false, reason: "comment_wall_unavailable"});
+  assert.equal(sent.length, 0);
+});
+
+test("a creator deleted after commit receives no notification", async (t) => {
+  const {store, sent} = setup(t);
+  const transaction = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", async (callback: Parameters<typeof db.runTransaction>[0]) => {
+    const result = await transaction(callback);
+    store.set("creatorDeletionState/maker", {closed: true});
+    return result;
+  });
+  assert.equal((await add(body())).ok, true);
+  assert.equal(sent.length, 0);
+});
+
+test("account cleanup retains the stats target after its wall is deleted", async (t) => {
+  const {store} = setup(t);
+  await add(body());
+  store.delete("walls/w1");
+  await removeCommentsForAccount("fan");
+  assert.equal(count(store), 0);
+});
+
+test("moderation retains the stats target after its wall id field changes", async (t) => {
+  const {store} = setup(t);
+  await add(body());
+  store.set("walls/w1", {id: "RENAMED", creatorUid: "maker", review: true});
+  await setCommentState("w1", FAN_COMMENT, "hidden", "reports");
+  assert.equal(count(store), 0);
+  assert.equal(count(store, "RENAMED"), 0);
+});
+
+test("a wall without a usable stats id cannot accept an uncounted comment", async (t) => {
+  const {store} = setup(t, {"walls/w1": {creatorUid: "maker", review: true}});
+  assert.deepEqual(await add(body()), {ok: false, reason: "comment_wall_unavailable"});
+  assert.equal(commentPaths(store).length, 0);
+});
+
+test("concurrent hide, unhide and account cleanup count only surviving visible comments", async (t) => {
+  const {store} = setup(t);
+  await add(body());
+  await add(body(), "fan2");
+  await Promise.all([
+    setCommentState("w1", FAN_COMMENT, "hidden", "reports"),
+    setCommentState("w1", FAN_COMMENT, "visible", "boss"),
+    removeCommentsForAccount("fan"),
+    deleteComment.run({auth: {uid: "fan", token: {}}, data: {wallId: "w1", commentId: FAN_COMMENT}} as never),
+  ]);
+  const visible = commentPaths(store).filter((path) => store.get(path)?.state === "visible");
+  assert.equal(count(store), visible.length);
+  assert.equal(count(store), 1);
+});
+
+test("a closed author deletion barrier rejects a new request without writes", async (t) => {
+  const {store} = setup(t, {"creatorDeletionState/fan": {closed: true}});
+  assert.deepEqual(await add(body()), {ok: false, reason: "comment_guest"});
+  assert.equal(commentPaths(store).length, 0);
+  assert.equal(store.has("commentRate/fan"), false);
 });

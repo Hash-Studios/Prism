@@ -110,6 +110,8 @@ class WallCommentsSheet extends StatelessWidget {
                   kind: GlintStateKind.empty,
                   title: context.l10n.commentsEmptyTitle,
                   body: context.l10n.commentsEmptyBody,
+                  actionLabel: state.hasMore ? context.l10n.commentsRetry : null,
+                  onAction: state.hasMore ? context.read<WallCommentsCubit>().loadMore : null,
                 ),
               ),
             ),
@@ -357,6 +359,7 @@ class _CommentComposerState extends State<CommentComposer> {
     final WallCommentsCubit cubit = context.read<WallCommentsCubit>();
     final AppLocalizations l10n = context.l10n;
     final String text = _text.text;
+    cubit.updateViewer(_viewer());
     PrismHaptics.tap();
     _text.clear();
     setState(() => _error = null);
@@ -381,7 +384,10 @@ class _CommentComposerState extends State<CommentComposer> {
         variant: PrismButtonVariant.tonal,
         expand: true,
         onPressed: () async {
-          if (await requireSignedInAction(context) && mounted) setState(() {});
+          if (await requireSignedInAction(context) && context.mounted) {
+            context.read<WallCommentsCubit>().updateViewer(_viewer());
+            setState(() {});
+          }
         },
       );
     }

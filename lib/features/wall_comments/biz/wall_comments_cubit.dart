@@ -42,6 +42,7 @@ final class WallCommentsState {
     bool? loadingMore,
     bool? sending,
     BlockedCreators? blocked,
+    String? viewerUid,
   }) => WallCommentsState(
     status: status ?? this.status,
     comments: comments ?? this.comments,
@@ -49,7 +50,7 @@ final class WallCommentsState {
     loadingMore: loadingMore ?? this.loadingMore,
     sending: sending ?? this.sending,
     blocked: blocked ?? this.blocked,
-    viewerUid: viewerUid,
+    viewerUid: viewerUid ?? this.viewerUid,
   );
 }
 
@@ -73,9 +74,16 @@ class WallCommentsCubit extends Cubit<WallCommentsState> {
 
   final String wallId;
   final WallCommentsRepository _repository;
-  final CommentViewer? _viewer;
+  CommentViewer? _viewer;
   final String Function() _newRequestId;
   StreamSubscription<BlockedCreators>? _blockSub;
+  int _mutationVersion = 0;
+  int _loadVersion = 0;
+
+  void updateViewer(CommentViewer? viewer) {
+    _viewer = viewer;
+    emit(state.copyWith(viewerUid: viewer?.uid ?? ''));
+  }
 
   static String _randomRequestId() {
     final Random random = Random.secure();
@@ -84,23 +92,41 @@ class WallCommentsCubit extends Cubit<WallCommentsState> {
   }
 
   Future<void> load() async {
-    emit(state.copyWith(status: CommentsStatus.loading));
+    final int loadVersion = ++_loadVersion;
+    final int mutationVersion = _mutationVersion;
+    emit(state.copyWith(status: CommentsStatus.loading, loadingMore: false));
     try {
       final page = await _repository.fetchPage(wallId);
-      if (isClosed) return;
-      emit(state.copyWith(status: CommentsStatus.ready, comments: page.items, hasMore: page.hasMore));
+      if (isClosed || loadVersion != _loadVersion) return;
+      if (mutationVersion != _mutationVersion) {
+        await load();
+        return;
+      }
+      emit(
+        state.copyWith(
+          status: CommentsStatus.ready,
+          comments: <WallComment>[...state.comments.where((c) => c.pending), ...page.items],
+          hasMore: page.hasMore,
+        ),
+      );
     } catch (_) {
-      if (!isClosed) emit(state.copyWith(status: CommentsStatus.failed));
+      if (!isClosed && loadVersion == _loadVersion) emit(state.copyWith(status: CommentsStatus.failed));
     }
   }
 
   Future<void> loadMore() async {
-    final String? afterId = state.comments.where((c) => !c.pending).lastOrNull?.id;
-    if (state.status != CommentsStatus.ready || !state.hasMore || state.loadingMore || afterId == null) return;
+    final WallComment? after = state.comments.where((c) => !c.pending).lastOrNull;
+    if (state.status != CommentsStatus.ready || !state.hasMore || state.loadingMore || after == null) return;
+    final int loadVersion = _loadVersion;
+    final int mutationVersion = _mutationVersion;
     emit(state.copyWith(loadingMore: true));
     try {
-      final page = await _repository.fetchPage(wallId, afterId: afterId);
-      if (isClosed) return;
+      final page = await _repository.fetchPage(wallId, after: after);
+      if (isClosed || loadVersion != _loadVersion) return;
+      if (mutationVersion != _mutationVersion) {
+        emit(state.copyWith(loadingMore: false));
+        return;
+      }
       final Set<String> have = state.comments.map((c) => c.id).toSet();
       emit(
         state.copyWith(
@@ -110,7 +136,7 @@ class WallCommentsCubit extends Cubit<WallCommentsState> {
         ),
       );
     } catch (_) {
-      if (!isClosed) emit(state.copyWith(loadingMore: false));
+      if (!isClosed && loadVersion == _loadVersion) emit(state.copyWith(loadingMore: false));
     }
   }
 
@@ -118,7 +144,9 @@ class WallCommentsCubit extends Cubit<WallCommentsState> {
   /// optimistic row is gone again in that case.
   Future<CommentRefusal?> send(String text) async {
     final CommentViewer? viewer = _viewer;
-    if (state.sending || viewer == null) return null;
+    if (viewer == null) return CommentRefusal.guest;
+    if (state.sending) return null;
+    _mutationVersion++;
     final String requestId = _newRequestId();
     final WallComment pending = WallComment(
       id: 'pending_$requestId',
@@ -133,6 +161,7 @@ class WallCommentsCubit extends Cubit<WallCommentsState> {
     try {
       final WallComment posted = await _repository.add(wallId: wallId, text: text, requestId: requestId);
       if (isClosed) return null;
+      _mutationVersion++;
       emit(
         state.copyWith(
           sending: false,
@@ -159,13 +188,21 @@ class WallCommentsCubit extends Cubit<WallCommentsState> {
 
   /// Removes the row at once and puts it back if the delete fails. Returns whether it was deleted.
   Future<bool> delete(WallComment comment) async {
+    _mutationVersion++;
     final List<WallComment> before = state.comments;
     emit(state.copyWith(comments: before.where((c) => c.id != comment.id).toList()));
     try {
       await _repository.delete(wallId: wallId, commentId: comment.id);
+      _mutationVersion++;
       return true;
     } catch (_) {
-      if (!isClosed) emit(state.copyWith(comments: before));
+      if (!isClosed && !state.comments.any((c) => c.id == comment.id)) {
+        final List<WallComment> restored = <WallComment>[...state.comments];
+        final Set<String> following = before.skipWhile((c) => c.id != comment.id).skip(1).map((c) => c.id).toSet();
+        final int next = restored.indexWhere((c) => following.contains(c.id));
+        restored.insert(next < 0 ? restored.length : next, comment);
+        emit(state.copyWith(comments: restored));
+      }
       return false;
     }
   }

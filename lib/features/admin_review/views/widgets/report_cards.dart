@@ -320,7 +320,9 @@ class CommentReportCard extends StatefulWidget {
 }
 
 class _CommentReportCardState extends State<CommentReportCard> {
-  late final Future<Map<String, dynamic>?> _comment = firestoreClient.getById<Map<String, dynamic>>(
+  late Future<Map<String, dynamic>?> _comment = _loadComment();
+
+  Future<Map<String, dynamic>?> _loadComment() => firestoreClient.getById<Map<String, dynamic>>(
     FirebaseCollections.wallComments(widget.wallId),
     widget.commentId,
     (Map<String, dynamic> data, String _) => data,
@@ -328,19 +330,28 @@ class _CommentReportCardState extends State<CommentReportCard> {
   );
   bool _busy = false;
 
+  @override
+  void didUpdateWidget(CommentReportCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.wallId != widget.wallId || oldWidget.commentId != widget.commentId) {
+      _comment = _loadComment();
+    }
+  }
+
   Future<void> _resolve({required bool keep}) async {
     if (_busy) return;
     final AppLocalizations l10n = context.l10n;
+    final CommentReportCard target = widget;
     final WallCommentsRepository comments = getIt<WallCommentsRepository>();
     setState(() => _busy = true);
     try {
       if (keep) {
-        await comments.setHidden(wallId: widget.wallId, commentId: widget.commentId, hidden: false);
+        await comments.setHidden(wallId: target.wallId, commentId: target.commentId, hidden: false);
       } else {
-        await comments.delete(wallId: widget.wallId, commentId: widget.commentId);
+        await comments.delete(wallId: target.wallId, commentId: target.commentId);
       }
-      await widget.repository.markContentReportReviewed(
-        widget.report.id,
+      await target.repository.markContentReportReviewed(
+        target.report.id,
         resolution: keep ? 'dismissed' : 'content_removed',
       );
       toasts.success(keep ? l10n.adminCommentKept : l10n.adminCommentRemoved);
