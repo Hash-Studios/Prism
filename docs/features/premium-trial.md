@@ -196,14 +196,14 @@ cat > /tmp/free-trial-7d.json <<'JSON'
 JSON
 gplay offers list --package com.hash.prism --product-id prism_v3_pro_annual --base-plan-id annual --output table
 gplay offers create --package com.hash.prism --product-id prism_v3_pro_annual --base-plan-id annual \
-  --offer-id free-trial-7d --json @/tmp/free-trial-7d.json --pretty
+  --offer-id free-trial-7d --json @/tmp/free-trial-7d.json --regions-version 2026/01 --pretty
 gplay offers activate --package com.hash.prism --product-id prism_v3_pro_annual --base-plan-id annual --offer-id free-trial-7d
 gplay offers get --package com.hash.prism --product-id prism_v3_pro_annual --base-plan-id annual --offer-id free-trial-7d --pretty
 ```
 
 - The first `list` must be empty.
 - The last `get` must show `"state": "ACTIVE"`, one phase `P7D` with `free`, and `anySubscriptionInApp`.
-- If `create` asks for a regions version, run it again with `--regions-version` set to the version in the error message.
+- Play needs a regions version. `2026/01` was current on 2026-11-02. To read the current one: `gplay pricing regions-version --package com.hash.prism --price-json '{"currencyCode":"USD","units":"39","nanos":990000000}'`.
 - Do not add the `rc-ignore-offer` tag. RevenueCat then picks this offer as the default option.
 - Do not change `prism_v3_pro_monthly` or the lifetime product.
 
