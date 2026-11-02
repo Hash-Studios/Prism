@@ -32,7 +32,8 @@ Future<void> showWallCommentsSheet(BuildContext context, CommentsWall wall, {Wal
   PrismHaptics.tap();
   return showPrismSheet<void>(
     context,
-    detents: const <PrismSheetDetent>[PrismSheetDetent.medium, PrismSheetDetent.large],
+    // Full height only: at the medium stop the keyboard leaves the list no room above the composer.
+    detents: const <PrismSheetDetent>[PrismSheetDetent.large],
     dismissKeyboardOnDrag: true,
     builder: (_) => BlocProvider<WallCommentsCubit>(
       create: (_) => (cubit ?? _cubitFor(wall))..load(),
@@ -129,20 +130,24 @@ class _CommentList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: (ScrollNotification n) {
-        if (n.metrics.extentAfter < 400) unawaited(context.read<WallCommentsCubit>().loadMore());
-        return false;
-      },
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.md),
-        itemCount: shown.length + (state.hasMore ? 1 : 0),
-        itemBuilder: (BuildContext context, int i) => i == shown.length
-            ? const Padding(
-                padding: EdgeInsets.symmetric(vertical: PrismSpace.md),
-                child: Center(child: SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))),
-              )
-            : CommentRow(key: ValueKey<String>(shown[i].id), comment: shown[i], wall: wall),
+    return ClipRect(
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification n) {
+          if (n.metrics.extentAfter < 400) unawaited(context.read<WallCommentsCubit>().loadMore());
+          return false;
+        },
+        child: ListView.builder(
+          padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.md),
+          itemCount: shown.length + (state.hasMore ? 1 : 0),
+          itemBuilder: (BuildContext context, int i) => i == shown.length
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: PrismSpace.md),
+                  child: Center(
+                    child: SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                  ),
+                )
+              : CommentRow(key: ValueKey<String>(shown[i].id), comment: shown[i], wall: wall),
+        ),
       ),
     );
   }
