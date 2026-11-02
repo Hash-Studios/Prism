@@ -103,44 +103,116 @@ Do these steps in this order. The app release can come before or after them: wit
 
 ### 1. RevenueCat
 
-1. In Product catalog, open the `v3_default` offering. Make sure the `$rc_annual` package has the iOS annual product and the Play annual product with base plan `<BASE_PLAN_ID>`. Do not change the monthly or lifetime packages. Do not change the current offering.
-2. Open the `v3_default` paywall. Put all trial text inside an "Introductory offer" rule, with the normal price text as the fallback. Use `{{ product.offer_period }}` and `{{ product.offer_price_with_zero }}`. Do not add static trial text. Do not promise a reminder, because old app versions do not schedule one.
-3. Check the paywall preview with an eligible and an ineligible sandbox account.
+Live state on 2026-11-02: the current paywall has no trial text. Its annual card says "Full access for just $39.99/yr" and its button says "Continue".
+
+1. In Product catalog, Offerings, open `v3_default`. Do not change the current offering.
+2. Open the `$rc_annual` package. It must have App Store product `prism_v3_pro_annual` and Play Store product `prism_v3_pro_annual:annual`. Do not change `$rc_monthly` or `$rc_lifetime`.
+3. In Product catalog, Products, make sure both annual products are attached to entitlement `prism_v3_pro_access`.
+4. Open the `v3_default` paywall in the Paywalls editor. Make the 3 changes below. Each change uses an **Offer type** rule set to **Introductory offer**. The rule shows the text only to a user that the store makes eligible. Other users see the current text.
+   - Annual card subtitle: select the text "Full access for just ...". Add a text rule, Offer type, Introductory offer. Enter text A.
+   - Purchase button: select the text "Continue". Add a text rule, Offer type, Introductory offer. Enter text B.
+   - Trial terms: add a new text component under the purchase button, above "Restore Purchases". Use the caption style of the footer links. Enter text C. Add a visibility rule, Offer type, Introductory offer, Show layer. The base state is hidden.
+5. Add the text for each language that the paywall has. Keep the `{{ }}` variables as they are. The device localizes "1 week" and the price.
+6. Do not add static trial text outside a rule. Do not mention a reminder: old app versions do not schedule one.
+7. Publish the paywall. Check the preview with the Introductory offer state on and off.
+
+| Text | Language | Value |
+|---|---|---|
+| A | en | `{{ product.offer_period_with_unit }} free, then {{ product.price_per_period_abbreviated }}` |
+| A | de | `{{ product.offer_period_with_unit }} kostenlos, dann {{ product.price_per_period_abbreviated }}` |
+| A | es | `{{ product.offer_period_with_unit }} gratis, luego {{ product.price_per_period_abbreviated }}` |
+| A | hi | `{{ product.offer_period_with_unit }} मुफ़्त, फिर {{ product.price_per_period_abbreviated }}` |
+| A | id | `Gratis {{ product.offer_period_with_unit }}, lalu {{ product.price_per_period_abbreviated }}` |
+| A | pt-BR | `{{ product.offer_period_with_unit }} grátis, depois {{ product.price_per_period_abbreviated }}` |
+| B | en | `Try free for {{ product.offer_period_with_unit }}` |
+| B | de | `{{ product.offer_period_with_unit }} kostenlos testen` |
+| B | es | `Prueba gratis durante {{ product.offer_period_with_unit }}` |
+| B | hi | `{{ product.offer_period_with_unit }} मुफ़्त आज़माएँ` |
+| B | id | `Coba gratis selama {{ product.offer_period_with_unit }}` |
+| B | pt-BR | `Teste grátis por {{ product.offer_period_with_unit }}` |
+| C | en | `{{ product.offer_period_with_unit }} free, then {{ product.price_per_period }}. Renews until you cancel. To avoid the charge, cancel at least 24 hours before the trial ends.` |
+| C | de | `{{ product.offer_period_with_unit }} kostenlos, dann {{ product.price_per_period }}. Verlängert sich, bis du kündigst. Kündige mindestens 24 Stunden vor Ende des Testzeitraums, um die Zahlung zu vermeiden.` |
+| C | es | `{{ product.offer_period_with_unit }} gratis, luego {{ product.price_per_period }}. Se renueva hasta que canceles. Para evitar el cargo, cancela al menos 24 horas antes de que termine la prueba.` |
+| C | hi | `{{ product.offer_period_with_unit }} मुफ़्त, फिर {{ product.price_per_period }}. रद्द करने तक यह रिन्यू होता है. शुल्क से बचने के लिए ट्रायल खत्म होने से कम से कम 24 घंटे पहले रद्द करें.` |
+| C | id | `Gratis {{ product.offer_period_with_unit }}, lalu {{ product.price_per_period }}. Diperpanjang sampai kamu membatalkan. Agar tidak ditagih, batalkan paling lambat 24 jam sebelum masa uji coba berakhir.` |
+| C | pt-BR | `{{ product.offer_period_with_unit }} grátis, depois {{ product.price_per_period }}. Renova até você cancelar. Para evitar a cobrança, cancele pelo menos 24 horas antes do fim do teste.` |
+
+For an eligible user in the US, the annual card shows "1 week free, then $39.99/yr", the button shows "Try free for 1 week", and the terms show "1 week free, then $39.99/year. ...". When the user selects monthly or lifetime, the button shows "Continue" and the terms are hidden, because those products have no offer.
 
 ### 2. App Store Connect: 7 days free on annual, in all territories
 
-The iOS annual product is `prism_v3_pro_annual` (read from the live `v3_default` offering on 2026-11-01). `asc` takes a product ID with `--app`.
+Live state on 2026-11-02: app `6670200846`, group `prism_v3` (`21940856`) has `prism_v3_pro_annual` and `prism_v3_pro_monthly`. Both are in `WAITING_FOR_REVIEW`. The annual product has no introductory offer. `asc` needs `--profile prism`.
 
 ```sh
-asc subscriptions offers introductory list --app "$ASC_APP_ID" --subscription-id prism_v3_pro_annual --output table
-asc subscriptions offers introductory create --app "$ASC_APP_ID" --subscription-id prism_v3_pro_annual \
+asc --profile prism subscriptions offers introductory list --app 6670200846 --subscription-id prism_v3_pro_annual --output table
+asc --profile prism subscriptions offers introductory create --app 6670200846 --subscription-id prism_v3_pro_annual \
   --all-territories --offer-duration ONE_WEEK --offer-mode FREE_TRIAL --number-of-periods 1 --dry-run
-asc subscriptions offers introductory create --app "$ASC_APP_ID" --subscription-id prism_v3_pro_annual \
-  --all-territories --offer-duration ONE_WEEK --offer-mode FREE_TRIAL --number-of-periods 1
-asc subscriptions offers introductory list --app "$ASC_APP_ID" --subscription-id prism_v3_pro_annual --output table
+asc --profile prism subscriptions offers introductory create --app 6670200846 --subscription-id prism_v3_pro_annual \
+  --all-territories --offer-duration ONE_WEEK --offer-mode FREE_TRIAL --number-of-periods 1 --output table
+asc --profile prism subscriptions offers introductory list --app 6670200846 --subscription-id prism_v3_pro_annual --output table
 ```
 
-- Make sure the `list` shows no other introductory offer on annual before you create one. A territory can have only one.
-- Do not add an offer to the monthly subscription.
-- Apple gives an introductory offer one time for each subscription group. A user who had any subscription in the group is not eligible.
+- The first `list` must be empty. A territory can have only one introductory offer.
+- The last `list` must show one row for each territory: `ONE_WEEK`, `FREE_TRIAL`, 1 period, no end date.
+- If a territory fails, run the same `create` with `--territory <code>` for that territory only.
+- Do not add an offer to `prism_v3_pro_monthly`.
+- Apple gives an introductory offer one time per subscription group. A user who had monthly or annual in `prism_v3` is not eligible.
+- The offer goes live with the subscription. While the subscription is in review, only sandbox sees it.
+
+App Store Connect UI, if you do not use `asc`: Apps, Prism, Monetization, Subscriptions, `prism_v3`, Prism v3 Pro Annual, Subscription Prices, the add button, Create Introductory Offer. Countries: all. Start date: today. End date: No end date. Type: Free. Duration: 1 week.
 
 ### 3. Google Play: 7-day free trial for new customers
 
-In Play Console, open Monetize, Subscriptions, the annual subscription, and the yearly base plan. Add an offer:
+Live state on 2026-11-02: package `com.hash.prism`, subscription `prism_v3_pro_annual`, base plan `annual` (P1Y, active). It has region configs for ET, IN and US and an "other regions" price. It has no offers.
 
-| Field | Value |
-|---|---|
-| Offer ID | `free-trial-7d` |
-| Eligibility | New customer acquisition: "Never had this subscription" |
-| Phase 1 | Free trial, 7 days |
-| Tags | None. Do not add `rc-ignore-offer`. |
-| Regions | All regions of the base plan |
+Eligibility is "Never had any subscription in this app". This is near to Apple's rule: a user who had monthly cannot get a free week by switching to annual.
 
-Then activate the offer. Do not change the monthly subscription or the lifetime product.
+```sh
+cat > /tmp/free-trial-7d.json <<'JSON'
+{
+  "phases": [
+    {
+      "recurrenceCount": 1,
+      "duration": "P7D",
+      "regionalConfigs": [
+        {"regionCode": "ET", "free": {}},
+        {"regionCode": "IN", "free": {}},
+        {"regionCode": "US", "free": {}}
+      ],
+      "otherRegionsConfig": {"free": {}}
+    }
+  ],
+  "regionalConfigs": [
+    {"regionCode": "ET", "newSubscriberAvailability": true},
+    {"regionCode": "IN", "newSubscriberAvailability": true},
+    {"regionCode": "US", "newSubscriberAvailability": true}
+  ],
+  "otherRegionsConfig": {"otherRegionsNewSubscriberAvailability": true},
+  "targeting": {"acquisitionRule": {"scope": {"anySubscriptionInApp": {}}}}
+}
+JSON
+gplay offers list --package com.hash.prism --product-id prism_v3_pro_annual --base-plan-id annual --output table
+gplay offers create --package com.hash.prism --product-id prism_v3_pro_annual --base-plan-id annual \
+  --offer-id free-trial-7d --json @/tmp/free-trial-7d.json --pretty
+gplay offers activate --package com.hash.prism --product-id prism_v3_pro_annual --base-plan-id annual --offer-id free-trial-7d
+gplay offers get --package com.hash.prism --product-id prism_v3_pro_annual --base-plan-id annual --offer-id free-trial-7d --pretty
+```
+
+- The first `list` must be empty.
+- The last `get` must show `"state": "ACTIVE"`, one phase `P7D` with `free`, and `anySubscriptionInApp`.
+- If `create` asks for a regions version, run it again with `--regions-version` set to the version in the error message.
+- Do not add the `rc-ignore-offer` tag. RevenueCat then picks this offer as the default option.
+- Do not change `prism_v3_pro_monthly` or the lifetime product.
+
+Play Console UI, if you do not use `gplay`: Monetize with Play, Products, Subscriptions, `prism_v3_pro_annual`, base plan `annual`, Add offer. Offer ID: `free-trial-7d`. Eligibility: New customer acquisition, "Never had any subscription". Tags: none. Phases: Add phase, Free trial, 7 days. Regions: all. Save, then Activate.
 
 ### 4. Check before the release
 
-1. On an iOS sandbox account with no history, open a paywall. The timeline shows.
-2. On a sandbox account that had annual, open a paywall. The normal paywall shows with no trial text.
-3. On a Play license tester with no history, open a paywall. The timeline shows.
-4. Start a trial. Premium shows "Trial, ends <date>". A notification is pending 2 days before that date.
+Sandbox and Play license testing make a 1-week trial last about 3 minutes. So the reminder time (end minus 2 days) is already past when the trial starts, and the app schedules no notification. Check the reminder with the unit tests, not with sandbox.
+
+1. On an iOS sandbox account with no history, open a paywall. The timeline shows 7 days free and $39.99.
+2. Tap "See all plans". The annual card shows "1 week free, then $39.99/yr" and the button shows "Try free for 1 week".
+3. Start the trial. The App Store sheet shows the free trial. Premium shows "Trial, ends <date>".
+4. On a sandbox account that had monthly or annual, open a paywall. The normal paywall shows with no trial text.
+5. Repeat 1 to 4 with a Play license tester on Android.
+6. Open a paywall in the current store version of the app (no timeline). Eligible users see the RevenueCat trial text. Ineligible users see the old text.
