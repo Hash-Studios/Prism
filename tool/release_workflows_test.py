@@ -181,6 +181,8 @@ sys.stdout.write(pathlib.Path(os.environ['PAYLOAD']).read_text())
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             return json.loads(Path(self.env['CAPTURE']).read_text())['argv']
 
+        self.values['SENTRY_DSN'] = 'https://testflight@sentry.invalid/1'
+        self.write_payload()
         testflight_steps = workflow('testflight.yml')['jobs']['build-and-upload']['steps']
         testflight_build = next(step for step in testflight_steps if step.get('name') == 'Build IPA')
         self.env.update({'BUILD_NUMBER': '401', 'RUNNER_TEMP': str(self.work / 'runner-temp')})
@@ -190,10 +192,12 @@ sys.stdout.write(pathlib.Path(os.environ['PAYLOAD']).read_text())
         self.env.update({'SENTRY_ENV': 'ambient', 'SENTRY_RELEASE': 'ambient-release',
                          'SENTRY_DIST': 'ambient-dist', 'SENTRY_ENABLED': 'ambient-enabled'})
         testflight_argv = run_workflow_patch('ios', '3.14.0+401')
+        self.assertIn('--dart-define=SENTRY_DSN=https://testflight@sentry.invalid/1', testflight_argv)
         self.assertFalse(any(arg.startswith('--split-debug-info=') for arg in testflight_argv))
         self.assertFalse(any(arg.startswith('--target=') or arg.startswith('--flavor=') for arg in testflight_argv))
         self.assertEqual(Path(self.env['GITHUB_ENV']).read_text().splitlines(),
-                         ['SENTRY_DSN=', 'SENTRY_ENV=', 'SENTRY_RELEASE=', 'SENTRY_DIST=', 'SENTRY_ENABLED='])
+                         ['SENTRY_DSN=https://testflight@sentry.invalid/1', 'SENTRY_ENV=',
+                          'SENTRY_RELEASE=', 'SENTRY_DIST=', 'SENTRY_ENABLED='])
 
         makefile = (fixture.ROOT / 'Makefile').read_text()
         make_ios_recipe = next(line.strip() for line in makefile.splitlines()
@@ -203,12 +207,14 @@ sys.stdout.write(pathlib.Path(os.environ['PAYLOAD']).read_text())
         make_ios_command = make_ios_command.replace('$(IOS_BUILD_ARGS)', '--target=lib/main_alt.dart --flavor=qa')
         make_ios_args = shlex.split(make_ios_command)
         self.assertIn('--split-debug-info=build/ios/outputs/symbols', make_ios_args)
+        self.env['SENTRY_DSN'] = 'https://make-ios@sentry.invalid/2'
         self.env['BUILD_NUMBER'] = '402'
         self.env.update({'SENTRY_ENV': 'staging', 'SENTRY_RELEASE': 'Prism@staging+402',
                          'SENTRY_DIST': '402', 'SENTRY_ENABLED': 'true'})
         result = self.run_tool('python3', str(fixture.RUNNER), '--release-platform', 'ios', '--', *make_ios_args)
         self.assertEqual(result.returncode, 0, result.stderr)
         make_ios_argv = run_workflow_patch('ios', '3.14.0+402')
+        self.assertIn('--dart-define=SENTRY_DSN=https://make-ios@sentry.invalid/2', make_ios_argv)
         self.assertIn('--split-debug-info=build/ios/outputs/symbols', make_ios_argv)
         self.assertIn('--target=lib/main_alt.dart', make_ios_argv)
         self.assertIn('--flavor=qa', make_ios_argv)
@@ -216,9 +222,11 @@ sys.stdout.write(pathlib.Path(os.environ['PAYLOAD']).read_text())
         android_steps = workflow('sentry_release_android.yml')['jobs']['build_android_with_sentry']['steps']
         android_build = next(step for step in android_steps
                              if step.get('name') == 'Build release AAB with split debug info')
+        self.env['SENTRY_DSN'] = 'https://android-ci@sentry.invalid/3'
         result = self.run_tool('bash', '-e', '-o', 'pipefail', '-c', android_build['run'])
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         android_argv = run_workflow_patch('android', '3.14.0+353')
+        self.assertIn('--dart-define=SENTRY_DSN=https://android-ci@sentry.invalid/3', android_argv)
         self.assertIn('--split-debug-info=build/symbols', android_argv)
 
         origin = self.work / 'build/origin.git'
@@ -236,7 +244,7 @@ sys.stdout.write(pathlib.Path(os.environ['PAYLOAD']).read_text())
         self.env['CAPTURE_SENTRY'] = str(build_dir / 'sentry-env.json')
         self.executable('dart', '''#!/usr/bin/env python3
 import json, os, pathlib
-keys = ('SENTRY_ENV', 'SENTRY_RELEASE', 'SENTRY_DIST', 'SENTRY_ENABLED')
+keys = ('SENTRY_DSN', 'SENTRY_ENV', 'SENTRY_RELEASE', 'SENTRY_DIST', 'SENTRY_ENABLED')
 pathlib.Path(os.environ['CAPTURE_SENTRY']).write_text(json.dumps({key: os.environ.get(key) for key in keys}))
 ''')
         self.env['DOPPLER_TOKEN'] = ''
@@ -255,17 +263,37 @@ pathlib.Path(os.environ['CAPTURE_SENTRY']).write_text(json.dumps({key: os.enviro
         testflight_make_argv = run_make_patch('ios', '3.14.0+401', upload='true')
         self.assertFalse(any(arg.startswith('--split-debug-info=') for arg in testflight_make_argv))
         sentry_values = json.loads(Path(self.env['CAPTURE_SENTRY']).read_text())
-        self.assertEqual(sentry_values, {'SENTRY_ENV': '', 'SENTRY_RELEASE': '', 'SENTRY_DIST': '',
+        self.assertEqual(sentry_values, {'SENTRY_DSN': 'https://testflight@sentry.invalid/1',
+                                         'SENTRY_ENV': '', 'SENTRY_RELEASE': '', 'SENTRY_DIST': '',
                                          'SENTRY_ENABLED': ''})
         make_ios_make_argv = run_make_patch('ios', '3.14.0+402', upload='true')
         self.assertIn('--split-debug-info=build/ios/outputs/symbols', make_ios_make_argv)
         self.assertIn('--target=lib/main_alt.dart', make_ios_make_argv)
         self.assertIn('--flavor=qa', make_ios_make_argv)
         sentry_values = json.loads(Path(self.env['CAPTURE_SENTRY']).read_text())
-        self.assertEqual(sentry_values, {'SENTRY_ENV': 'staging', 'SENTRY_RELEASE': 'Prism@staging+402',
+        self.assertEqual(sentry_values, {'SENTRY_DSN': 'https://make-ios@sentry.invalid/2',
+                                         'SENTRY_ENV': 'staging', 'SENTRY_RELEASE': 'Prism@staging+402',
                                          'SENTRY_DIST': '402', 'SENTRY_ENABLED': 'true'})
         android_make_argv = run_make_patch('android', '3.14.0+353')
+        self.assertIn('--dart-define=SENTRY_DSN=https://android-ci@sentry.invalid/3', android_make_argv)
         self.assertIn('--split-debug-info=build/app/outputs/symbols', android_make_argv)
+
+        make_android_recipe = next(line.strip() for line in makefile.splitlines()
+                                   if '$(SHOREBIRD) release android --flutter-version=$(FLUTTER_PIN)' in line)
+        make_android_command = make_android_recipe.split('-- ', 1)[1].replace('$(SHOREBIRD)', 'shorebird')
+        make_android_command = make_android_command.replace('$(FLUTTER_PIN)', '3.47.5')
+        make_android_command = make_android_command.replace('$(BUILD_ARGS)', '--build-number=354')
+        self.env['SENTRY_ENV'] = 'staging'
+        self.env['SENTRY_DSN'] = 'https://make-android@sentry.invalid/4'
+        result = self.run_tool('python3', str(fixture.RUNNER), '--release-platform', 'android',
+                               '--', *shlex.split(make_android_command))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.env['SENTRY_DSN'] = 'https://ambient@sentry.invalid/5'
+        for argv in (run_workflow_patch('android', '3.14.0+354'),
+                     run_make_patch('android', '3.14.0+354', upload='true')):
+            self.assertIn('--dart-define=SENTRY_DSN=https://make-android@sentry.invalid/4', argv)
+        sentry_values = json.loads(Path(self.env['CAPTURE_SENTRY']).read_text())
+        self.assertEqual(sentry_values['SENTRY_DSN'], 'https://make-android@sentry.invalid/4')
 
         storage_file = self.work / 'lib/core/persistence/persistence_keys.dart'
         storage_file.parent.mkdir(parents=True, exist_ok=True)

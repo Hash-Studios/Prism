@@ -172,18 +172,16 @@ def storage_writers(commit, paths):
     """Changed lib/ Dart files whose added or removed lines use a local storage API."""
     native, storage = unsafe_paths(paths)
     flagged = set(native) | set(storage)
-    # Only untracked files have no diff against the release. A deleted file has one, with its removed lines.
+    # An untracked path can also have removed lines if it was tracked in the release.
     untracked = set(git('ls-files', '--others', '--exclude-standard', '-z').stdout.split('\0'))
     writers = []
     for path in paths:
         if not (path.startswith('lib/') and path.endswith('.dart')) or path in flagged:
             continue
-        if path in untracked:
-            lines = Path(path).read_text().splitlines()
-        else:
-            diff = git('diff', '--no-renames', '--unified=0', commit, '--', path).stdout
-            lines = [line[1:] for line in diff.splitlines()
-                     if line[:1] in ('+', '-') and not line.startswith(('+++', '---'))]
+        lines = Path(path).read_text().splitlines() if path in untracked else []
+        diff = git('diff', '--no-renames', '--unified=0', commit, '--', path).stdout
+        lines += [line[1:] for line in diff.splitlines()
+                  if line[:1] in ('+', '-') and not line.startswith(('+++', '---'))]
         if any(STORAGE_API.search(line) for line in lines):
             writers.append(path)
     return sorted(writers)

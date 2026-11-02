@@ -150,6 +150,27 @@ class ShorebirdOtaTest(fixture.ReleaseFixture, unittest.TestCase):
             os.chdir(cwd)
         self.assertEqual(writers, ['lib/features/x/kept.dart'])
 
+    def test_storage_writers_check_removed_lines_before_untracked_replacement(self):
+        self.commit_file('lib/writer.dart', b"void f() => settings.set('k', 1);\n")
+        commit = git(self.work, 'rev-parse', 'HEAD').stdout.strip()
+        git(self.work, 'rm', 'lib/writer.dart')
+        git(self.work, 'commit', '-q', '-m', 'remove writer')
+        (self.work / 'lib/writer.dart').write_text('void f() {}\n')
+        cwd = Path.cwd()
+        os.chdir(self.work)
+        try:
+            self.assertEqual(ota.storage_writers(commit, ota.changed_paths(commit)), ['lib/writer.dart'])
+        finally:
+            os.chdir(cwd)
+
+    def test_storage_writers_check_both_sides_of_a_rename(self):
+        self.commit_file('lib/writer.dart', b"void f() => settings.set('k', 1);\n")
+        commit = git(self.work, 'rev-parse', 'HEAD').stdout.strip()
+        git(self.work, 'mv', 'lib/writer.dart', 'lib/moved.dart')
+        with patch.object(ota, 'git', side_effect=lambda *args, **kwargs: git(self.work, *args)):
+            self.assertEqual(ota.storage_writers(commit, ota.changed_paths(commit)),
+                             ['lib/moved.dart', 'lib/writer.dart'])
+
     def test_changed_paths_reports_both_sides_of_renames_and_staged_changes(self):
         source = self.work / 'android/native.txt'
         source.write_text('native input\n')
@@ -727,11 +748,15 @@ class ShorebirdOtaTest(fixture.ReleaseFixture, unittest.TestCase):
         self.release()
         self.commit_file('lib/features/home/views/home.dart', b'void main() { print(6); }\n')
         self.env['SENTRY_RELEASE'] = 'ambient-not-from-release'
+        self.env['SENTRY_DSN'] = 'https://ambient@sentry.invalid/1'
+        self.values['SENTRY_DSN'] = 'https://doppler@sentry.invalid/2'
+        self.write_payload()
         result = self.run_wrapper('patch', 'android', '--release-version=3.14.0+353', '--track=staging',
                                   '--split-debug-info=build/symbols')
         self.assertEqual(result.returncode, 0, result.stderr)
         argv = self.captured()['argv']
         self.assertFalse(any(arg.startswith('--dart-define=SENTRY_RELEASE=') for arg in argv))
+        self.assertFalse(any(arg.startswith('--dart-define=SENTRY_DSN=') for arg in argv))
 
 
 if __name__ == '__main__':

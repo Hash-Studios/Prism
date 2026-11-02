@@ -333,5 +333,31 @@ cat "$PAYLOAD"
         self.assertFalse((self.work / 'OWNED').exists())
 
 
+class SentryUploadTest(ReleaseFixture, unittest.TestCase):
+    def test_upload_uses_recorded_environment_project_and_preserves_override(self):
+        self.env.update(SENTRY_AUTH_TOKEN='fixture-token', SENTRY_ORG='fixture-org',
+                        SENTRY_ENV='staging', SENTRY_PROJECT='')
+        self.executable('doppler', """#!/usr/bin/env python3
+import sys
+print({'SENTRY_PROJECT': 'generic-project', 'SENTRY_PROJECT_STAGING': 'staging-project',
+       'SENTRY_PROJECT_PRODUCTION': 'production-project'}.get(sys.argv[3], ''))
+""")
+        self.executable('dart', """#!/usr/bin/env python3
+import os, pathlib
+pathlib.Path(os.environ['CAPTURE']).write_text(os.environ['SENTRY_PROJECT'])
+""")
+        for environment, override, expected in (
+            ('staging', '', 'staging-project'),
+            ('production', '', 'production-project'),
+            ('', '', 'generic-project'),
+            ('staging', 'explicit-project', 'explicit-project'),
+        ):
+            with self.subTest(environment=environment, override=override):
+                self.env.update(SENTRY_ENV=environment, SENTRY_PROJECT=override)
+                result = self.run_tool('bash', str(ROOT / 'tool/sentry_upload.sh'))
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(Path(self.env['CAPTURE']).read_text(), expected)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -28,12 +28,20 @@ fetch_secret() {
 
 export SENTRY_AUTH_TOKEN="${SENTRY_AUTH_TOKEN:-$(fetch_secret SENTRY_AUTH_TOKEN)}"
 export SENTRY_ORG="${SENTRY_ORG:-$(fetch_secret SENTRY_ORG)}"
-# Try SENTRY_PROJECT first, fall back to SENTRY_PROJECT_PRODUCTION (used in CI workflow)
-_project="$(fetch_secret SENTRY_PROJECT)"
-if [ -z "$_project" ]; then
-  _project="$(fetch_secret SENTRY_PROJECT_PRODUCTION)"
+# A patch replays its release environment. Do not route staging symbols to production.
+if [ -z "${SENTRY_PROJECT:-}" ]; then
+  case "${SENTRY_ENV:-}" in
+    staging) SENTRY_PROJECT="$(fetch_secret SENTRY_PROJECT_STAGING)" ;;
+    production) SENTRY_PROJECT="$(fetch_secret SENTRY_PROJECT_PRODUCTION)" ;;
+    *)
+      SENTRY_PROJECT="$(fetch_secret SENTRY_PROJECT)"
+      if [ -z "$SENTRY_PROJECT" ]; then
+        SENTRY_PROJECT="$(fetch_secret SENTRY_PROJECT_PRODUCTION)"
+      fi
+      ;;
+  esac
 fi
-export SENTRY_PROJECT="${SENTRY_PROJECT:-$_project}"
+export SENTRY_PROJECT
 
 if [ -z "$SENTRY_AUTH_TOKEN" ] || [ -z "$SENTRY_ORG" ] || [ -z "$SENTRY_PROJECT" ]; then
   echo "sentry_upload: missing SENTRY_AUTH_TOKEN, SENTRY_ORG, or SENTRY_PROJECT_PRODUCTION in Doppler $PROJECT/$CONFIG — skipping."
