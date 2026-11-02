@@ -9,7 +9,7 @@ import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -198,6 +198,18 @@ void main() {
     await openSheet(tester);
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('at the largest text size the Save label wraps instead of being cut off', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(_host(sheetOf(bloc()), textScaler: const TextScaler.linear(3.1)));
+    await openSheet(tester);
+
+    final RenderParagraph label = tester.renderObject<RenderParagraph>(find.text(_saveLabel));
+    expect(label.didExceedMaxLines, isFalse);
   });
 
   testWidgets('dismissing an unlock after its export bloc closes does not add an event', (tester) async {

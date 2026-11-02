@@ -167,6 +167,7 @@ class LivePhotoSheet extends StatelessWidget {
               if (state.phase == LivePhotoPhase.picking)
                 PrismButton(
                   key: const ValueKey<String>('live-photo-save'),
+                  maxLines: 3,
                   label: l10n.livePhotoSave,
                   icon: Icons.motion_photos_on_rounded,
                   expand: true,
@@ -333,6 +334,7 @@ class _RefusedBody extends StatelessWidget {
       actions: <Widget>[
         PrismButton(
           key: const ValueKey<String>('live-photo-open-settings'),
+          maxLines: 3,
           label: l10n.coreOpenSettings,
           icon: Icons.settings_rounded,
           expand: true,
@@ -369,6 +371,7 @@ class _FailedBody extends StatelessWidget {
       actions: <Widget>[
         PrismButton(
           key: const ValueKey<String>('live-photo-try-again'),
+          maxLines: 3,
           label: l10n.livePhotoTryAgain,
           expand: true,
           onPressed: () => context.read<LivePhotoBloc>().add(const LivePhotoEvent.reset()),
@@ -405,6 +408,7 @@ class LivePhotoGuideSheet extends StatelessWidget {
       actions: <Widget>[
         PrismButton(
           key: const ValueKey<String>('live-photo-open-photos'),
+          maxLines: 3,
           label: l10n.coreOpenPhotos,
           icon: Icons.photo_library_rounded,
           expand: true,
