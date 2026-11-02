@@ -75,7 +75,7 @@ Before sending, the callable checks that the creator still exists, is not delete
 
 Open product decision: a delivered push or stored inbox preview can retain text after the comment is hidden. Either keep previews with this limitation, or remove comment text from push and inbox bodies. A delivered push cannot be reliably recalled.
 
-Catalog kind: `wallCommented`. The push preview stops at 80 characters or 400 UTF-8 bytes, so the push stays under the 4 KB FCM limit. The push sends the English title and body. Installed builds that advertise localization version 2 do not have the native keys `notif_push_wall_commented_title`, `notif_push_wall_commented_title_untitled` and `notif_push_wall_commented_body`. The keys ship in this build. Turn on native localization for this kind only after a new localization version is advertised. The app localizes the inbox item and a push that arrives in the foreground.
+Catalog kind: `wallCommented`. The push preview stops at 80 characters or 400 UTF-8 bytes. The commenter name stops at 40 characters or 160 bytes and the wall title at 60 characters or 240 bytes. These cuts keep the push small. They do not prove a hard limit on the whole FCM payload. The push sends the English title and body. Installed builds that advertise localization version 2 do not have the native keys `notif_push_wall_commented_title`, `notif_push_wall_commented_title_untitled` and `notif_push_wall_commented_body`. The keys ship in this build. Turn on native localization for this kind only after a new localization version is advertised. The app localizes the inbox item and a push that arrives in the foreground.
 
 ## Account deletion
 

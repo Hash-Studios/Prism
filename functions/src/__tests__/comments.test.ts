@@ -418,6 +418,17 @@ test("the push preview stops at 80 characters or 400 bytes", () => {
   assert.equal(preview, `${family.repeat(Math.floor(400 / Buffer.byteLength(family)))}…`);
 });
 
+test("a long commenter name and wall title are cut in the push", async (t) => {
+  const {sent} = setup(t, {
+    "usersv2/fan": {name: "N".repeat(3000), username: "ava", profilePhoto: "p.png"},
+    "walls/w1": {id: "NEON", creatorUid: "maker", review: true, title: "T".repeat(500)},
+  });
+  assert.equal((await add(body())).ok, true);
+  const args = sent[0].payload.message as unknown as {args: {commenterName: string; wallTitle: string}};
+  assert.equal(args.args.commenterName, `${"N".repeat(40)}…`);
+  assert.equal(args.args.wallTitle, `${"T".repeat(60)}…`);
+});
+
 test("replays never return hidden comments or bypass current access checks", async (t) => {
   const {store} = setup(t);
   await add(body());

@@ -104,12 +104,12 @@ export function commentText(raw: unknown): {text: string} | {reason: CommentRefu
   return {text};
 }
 
-/** The comment on one line, cut at 80 characters or 400 UTF-8 bytes, whichever comes first. */
-export function commentPreview(text: string): string {
+/** The text on one line, cut at 80 characters or 400 UTF-8 bytes (or the given limits), whichever comes first. */
+export function commentPreview(text: string, maxGraphemes = PREVIEW_GRAPHEMES, maxBytes = PREVIEW_BYTES): string {
   const parts = graphemes(text.replace(/\n/g, " "));
   let out = "";
   for (const [i, part] of parts.entries()) {
-    if (i === PREVIEW_GRAPHEMES || Buffer.byteLength(out + part) > PREVIEW_BYTES) return `${out}…`;
+    if (i === maxGraphemes || Buffer.byteLength(out + part) > maxBytes) return `${out}…`;
     out += part;
   }
   return out;
@@ -284,8 +284,9 @@ export const addComment = onCall({region: CALLABLE_REGIONS, cors: true, maxInsta
         payload: {
           ...notificationCopyPayload({
             kind: "wallCommented",
-            commenterName: data.authorName || "A Prism user",
-            wallTitle: str(wall.title),
+            // Names and titles are user text too, so they are cut like the preview to keep the push small.
+            commenterName: commentPreview(data.authorName || "A Prism user", 40, 160),
+            wallTitle: commentPreview(str(wall.title), 60, 240),
             text: preview,
           }),
           data: {route: "wall", wall_id: wallId, notification_kind: "wall_comment"},

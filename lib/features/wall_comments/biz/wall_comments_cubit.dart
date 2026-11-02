@@ -80,6 +80,10 @@ class WallCommentsCubit extends Cubit<WallCommentsState> {
   int _mutationVersion = 0;
   int _loadVersion = 0;
 
+  /// The last post that failed. Sending the same text again reuses its request id, so a post that did land
+  /// before a timeout is not written twice.
+  ({String text, String requestId})? _retry;
+
   void updateViewer(CommentViewer? viewer) {
     _viewer = viewer;
     emit(state.copyWith(viewerUid: viewer?.uid ?? ''));
@@ -147,7 +151,9 @@ class WallCommentsCubit extends Cubit<WallCommentsState> {
     if (viewer == null) return CommentRefusal.guest;
     if (state.sending) return null;
     _mutationVersion++;
-    final String requestId = _newRequestId();
+    final ({String text, String requestId})? retry = _retry;
+    final String requestId = retry != null && retry.text == text ? retry.requestId : _newRequestId();
+    _retry = null;
     final WallComment pending = WallComment(
       id: 'pending_$requestId',
       authorUid: viewer.uid,
@@ -173,9 +179,11 @@ class WallCommentsCubit extends Cubit<WallCommentsState> {
       );
       return null;
     } on CommentRefusedException catch (e) {
+      _retry = (text: text, requestId: requestId);
       _rollback(pending.id);
       return e.refusal;
     } catch (_) {
+      _retry = (text: text, requestId: requestId);
       _rollback(pending.id);
       return CommentRefusal.failed;
     }

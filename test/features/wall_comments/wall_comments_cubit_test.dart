@@ -303,4 +303,28 @@ void main() {
       expect(cubit.state.shown.map((WallComment c) => c.id), <String>['c1', 'c2', 'c3']);
     });
   });
+
+  test('a retry of the same failed text reuses its request id, and new text gets a new one', () async {
+    int next = 0;
+    final FakeWallCommentsRepository repo = FakeWallCommentsRepository();
+    final WallCommentsCubit cubit = WallCommentsCubit(
+      wallId: 'w1',
+      repository: repo,
+      viewer: _me,
+      initialBlocked: KnownBlockedCreators(const <String>{}),
+      newRequestId: () => 'req-${++next}',
+    );
+    addTearDown(cubit.close);
+
+    Future<CommentRefusal?> failOnce(String text) {
+      final Future<CommentRefusal?> sending = cubit.send(text);
+      repo.adds.last.result.completeError(TimeoutException('slow'));
+      return sending;
+    }
+
+    expect(await failOnce('hello'), CommentRefusal.failed);
+    expect(await failOnce('hello'), CommentRefusal.failed);
+    expect(await failOnce('hello again'), CommentRefusal.failed);
+    expect(repo.adds.map((a) => a.requestId).toList(), <String>['req-1', 'req-1', 'req-2']);
+  });
 }
