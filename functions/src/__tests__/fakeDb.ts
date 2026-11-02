@@ -97,7 +97,7 @@ const lost = (code: number) => Object.assign(new Error(`firestore ${code}`), {co
  * functions use. Returns the store so a test can seed and inspect documents by path.
  */
 export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
-  observed?: {reads: number; writes: number; outsideReads?: number; outsideWrites?: number},
+  observed?: {reads: number; writes: number; outsideReads?: number; outsideWrites?: number; readRounds?: number},
   options: {failCommits?: number; failCommitAt?: number; createTimes?: Record<string, admin.firestore.Timestamp>} = {}) {
   const store = new Map<string, Doc>(Object.entries(seed));
   const incarnations = new Map<string, number>(Object.keys(seed).map((path) => [path, 1]));
@@ -113,6 +113,14 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
   });
   const versions = new Map<string, number>();
   let auto = 0;
+  // With `observed.readRounds`, each read waits one macrotask and a read that starts while none is in flight opens a
+  // new round. Reads awaited one after another count one round each; reads started together share one.
+  let readsInFlight = 0;
+  const readRound = async (counter: {readRounds?: number}) => {
+    if (readsInFlight++ === 0) counter.readRounds = (counter.readRounds ?? 0) + 1;
+    await new Promise((resolve) => setImmediate(resolve));
+    readsInFlight--;
+  };
   const FieldValue = admin.firestore.FieldValue;
   t.mock.method(FieldValue, "increment", (n: number) => ({__op: "inc", n}));
   t.mock.method(FieldValue, "arrayRemove", (...xs: unknown[]) => ({__op: "arrayRemove", xs}));
@@ -157,6 +165,7 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
         if (!pending || transactionReadDepth === 0) {
           if (observed?.outsideReads !== undefined) observed.outsideReads++;
         }
+        if (observed?.readRounds !== undefined) await readRound(observed);
         return snap(path);
       },
       set: async (data: Doc, options?: {merge?: boolean}) => {
@@ -240,8 +249,10 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
         return {data: () => ({count: rows().length})};
       }}),
       get: async () => {
+        const outside = !pending || transactionReadDepth === 0;
+        if (observed?.readRounds !== undefined) await readRound(observed);
         const docs = rows();
-        if ((!pending || transactionReadDepth === 0) && observed?.outsideReads !== undefined) {
+        if (outside && observed?.outsideReads !== undefined) {
           observed.outsideReads += Math.max(1, docs.length);
         }
         const projection = state.projection;

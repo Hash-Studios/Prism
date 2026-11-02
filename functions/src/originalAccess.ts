@@ -129,9 +129,7 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
     const userRef = db.collection("usersv2").doc(uid);
     const privateRef = userRef.collection("private").doc("economy");
     return db.runTransaction(async (tx) => {
-      const user = await tx.get(userRef);
-      const privateSnap = await tx.get(privateRef);
-      const receiptSnap = await tx.get(receiptRef);
+      const [user, privateSnap, receiptSnap] = await Promise.all([tx.get(userRef), tx.get(privateRef), tx.get(receiptRef)]);
       const data = user.data() ?? {};
       const privateData = privateSnap.data() ?? {};
       const currentBalance = Math.max(0, int(data.coins));
@@ -141,8 +139,8 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
       for (let index = 0; index < items.length; index++) {
         const {assetId, action: originalAction} = items[index];
         const delivery = deliveries[index];
-        const walls = await tx.get(db.collection("walls").where("id", "==", assetId).limit(2));
-        const manifest = await tx.get(db.collection("ownedAssets").doc(assetId));
+        const [walls, manifest] = await Promise.all([tx.get(db.collection("walls").where("id", "==", assetId).limit(2)),
+          tx.get(db.collection("ownedAssets").doc(assetId))]);
         if (delivery && delivery.expiresAt <= Date.now() + 1_000) {
           throw new HttpsError("unavailable", "Original delivery expired. Retry with the same requestId.");
         }
@@ -166,8 +164,7 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
           throw new HttpsError("failed-precondition", "Protected original is unavailable or has changed.");
         }
         try {
-          await verifyStoredUploadRegistry(original, tx);
-          await verifyStoredUploadRegistry(owned.thumb, tx);
+          await Promise.all([verifyStoredUploadRegistry(original, tx), verifyStoredUploadRegistry(owned.thumb, tx)]);
         } catch {
           throw new HttpsError("failed-precondition", "Protected original storage identity is unavailable or has changed.");
         }
