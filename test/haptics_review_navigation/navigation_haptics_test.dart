@@ -1,6 +1,7 @@
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/features/editors_choice/biz/editors_choice_cubit.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
@@ -17,6 +18,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../features/creator_directory/creator_directory_test_support.dart';
+import '../support/empty_editors_choice_repository.dart';
 import '../support/empty_mood_repository.dart';
 import '../support/empty_weekly_challenges_repository.dart';
 
@@ -65,6 +67,7 @@ void main() {
     when(trendingBloc.close).thenAnswer((_) async {});
     getIt.registerSingleton<TrendingBloc>(trendingBloc);
     getIt.registerSingleton<MoodsCubit>(MoodsCubit(const EmptyMoodRepository()));
+    getIt.registerFactory<EditorsChoiceCubit>(() => EditorsChoiceCubit(const EmptyEditorsChoiceRepository()));
     getIt.registerFactory<WeeklyChallengesCubit>(() => WeeklyChallengesCubit(const EmptyWeeklyChallengesRepository()));
     registerCreatorDirectoryFakes();
     final _MockWotdBloc wotdBloc = _MockWotdBloc();

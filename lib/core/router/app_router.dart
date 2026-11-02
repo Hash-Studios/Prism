@@ -33,6 +33,7 @@ import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
 import 'package:Prism/features/drops/views/pages/drop_detail_page.dart';
 import 'package:Prism/features/drops/views/pages/drop_preview_page.dart';
 import 'package:Prism/features/drops/views/pages/drops_page.dart';
+import 'package:Prism/features/editors_choice/views/pages/editors_choice_screen.dart';
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
 import 'package:Prism/features/folders/views/pages/folder_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
@@ -210,6 +211,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/notifications', page: NotificationRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/collection-view', page: CollectionViewRoute.page),
     AutoRoute(path: '/mood/:moodId', page: MoodRoute.page),
+    AutoRoute(path: '/editors-choice', page: EditorsChoiceRoute.page),
     AutoRoute(path: '/gallery', page: GalleryRoute.page),
     AutoRoute(path: '/requests', page: WallRequestsRoute.page),
     AutoRoute(path: '/creators', page: CreatorsRoute.page, guards: [_signedInGuard]),

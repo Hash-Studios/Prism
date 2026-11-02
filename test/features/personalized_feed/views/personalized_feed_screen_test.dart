@@ -28,12 +28,15 @@ import 'package:Prism/features/creator_directory/domain/creator_directory_reposi
 import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
+import 'package:Prism/features/editors_choice/biz/editors_choice_cubit.dart';
+import 'package:Prism/features/editors_choice/views/widgets/editors_choice_row.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/moods/biz/mood_walls_cubit.dart';
 import 'package:Prism/features/moods/biz/moods_cubit.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
+import 'package:Prism/features/moods/views/widgets/mood_row.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/following_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
@@ -76,6 +79,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../support/coins_test_backend.dart';
+import '../../../support/empty_editors_choice_repository.dart';
 import '../../../support/empty_weekly_challenges_repository.dart';
 import '../../../support/fake_app_analytics.dart';
 import '../../../support/fake_firestore_client.dart';
@@ -83,6 +87,7 @@ import '../../../support/fake_user_block_repository.dart';
 import '../../../support/favourite_test_scope.dart';
 import '../../../support/in_memory_local_store.dart';
 import '../../creator_directory/creator_directory_test_support.dart';
+import '../../editors_choice/fake_editors_choice_repository.dart';
 
 class _MockFetchUseCase extends Mock implements FetchPersonalizedFeedUseCase {}
 
@@ -259,7 +264,8 @@ void main() {
       ..registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()))
       ..registerSingleton<UserBlockRepository>(blockRepository)
       ..registerLazySingleton<MoodsCubit>(() => MoodsCubit(moodRepository))
-      ..registerFactory<MoodWallsCubit>(() => MoodWallsCubit(moodRepository));
+      ..registerFactory<MoodWallsCubit>(() => MoodWallsCubit(moodRepository))
+      ..registerFactory<EditorsChoiceCubit>(() => EditorsChoiceCubit(const EmptyEditorsChoiceRepository()));
     registerCreatorDirectoryFakes();
   });
 
@@ -920,6 +926,29 @@ void main() {
     expect(directory.fetchCalls, hasLength(2));
     expect(homeCreatorsCubit(tester), same(cubit));
     expect(homeProfileBloc(tester), same(profileBloc));
+  });
+
+  testWidgets("the Editors' Choice row sits after the first mood row and before the Creators row", (tester) async {
+    getIt.unregister<EditorsChoiceCubit>();
+    getIt.registerFactory<EditorsChoiceCubit>(
+      () => EditorsChoiceCubit(FakeEditorsChoiceRepository(walls: pickWalls(4))),
+    );
+    blockRepository.completeInitial(<String>{});
+    moodRepository.moods = <MoodList>[
+      MoodList(mood: WallMood.dreamy, wallIds: List<String>.generate(12, (i) => 'd$i')),
+    ];
+    when(
+      () => fetchUseCase(any()),
+    ).thenAnswer((_) async => Result.success(_page(List<String>.generate(40, (i) => 'wall-$i', growable: false))));
+    await pumpScreen(tester, viewSize: const Size(600, 9000));
+    await _settle(tester);
+
+    expect(find.text("Editors' Choice", skipOffstage: false), findsOneWidget);
+    final double mood = tester.getTopLeft(find.byType(MoodRow, skipOffstage: false).first).dy;
+    final double picks = tester.getTopLeft(find.byType(EditorsChoiceRow, skipOffstage: false)).dy;
+    final double creators = tester.getTopLeft(find.byType(CreatorsSection, skipOffstage: false)).dy;
+    expect(mood, lessThan(picks));
+    expect(picks, lessThan(creators));
   });
 
   testWidgets('refresh preserves the Creators section after its second-chunk insertion point', (tester) async {
