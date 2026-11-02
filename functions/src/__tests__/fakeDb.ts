@@ -307,22 +307,37 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
         failure ??= err;
       });
     };
+    const read = async (target: {get: () => Promise<unknown>}) => {
+      transactionReadDepth++;
+      let pendingRead: Promise<unknown>;
+      try {
+        pendingRead = target.get();
+      } finally {
+        transactionReadDepth--;
+      }
+      const result = await pendingRead;
+      if (observed) {
+        observed.reads += result && typeof result === "object" && "size" in result ?
+          Math.max(1, Number(result.size)) : 1;
+      }
+      return result;
+    };
+    // Like @google-cloud/firestore, the first read starts the transaction and later reads wait for it to return.
+    let firstRead: Promise<unknown> | undefined;
+    const startOrQueue = <T>(readAll: () => Promise<T>): Promise<T> => {
+      if (firstRead) return firstRead.then(readAll);
+      const result = readAll();
+      firstRead = result.catch(() => undefined);
+      return result;
+    };
     const tx = {
       get: async (target: {get: () => Promise<unknown>}) => {
         if (wrote) throw new Error("Firestore transaction reads must precede writes");
-        transactionReadDepth++;
-        let pendingRead: Promise<unknown>;
-        try {
-          pendingRead = target.get();
-        } finally {
-          transactionReadDepth--;
-        }
-        const result = await pendingRead;
-        if (observed) {
-          observed.reads += result && typeof result === "object" && "size" in result ?
-            Math.max(1, Number(result.size)) : 1;
-        }
-        return result;
+        return startOrQueue(() => read(target));
+      },
+      getAll: async (...targets: Array<{get: () => Promise<unknown>}>) => {
+        if (wrote) throw new Error("Firestore transaction reads must precede writes");
+        return startOrQueue(() => Promise.all(targets.map(read)));
       },
       set: guarded((r: FakeRef, data: Doc, options?: {merge?: boolean}) => r.set(data, options)),
       update: guarded((r: FakeRef, data: Doc) => r.update(data)),
