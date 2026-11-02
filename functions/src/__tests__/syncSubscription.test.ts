@@ -31,6 +31,11 @@ test("subscriptionFromRevenueCat: an entitlement expiring in the future grants t
   assert.deepEqual(subscriptionFromRevenueCat(json, NOW), {premium: true, subscriptionTier: "pro"});
 });
 
+test("subscriptionFromRevenueCat: an entitlement in its free trial grants the pro tier", () => {
+  const json = subscriberJson({prism_v3_pro_access: {expires_date: "2026-01-08T00:00:00.000Z"}});
+  assert.deepEqual(subscriptionFromRevenueCat(json, NOW), {premium: true, subscriptionTier: "pro"});
+});
+
 test("subscriptionFromRevenueCat: an expired entitlement grants no premium", () => {
   const json = subscriberJson({prism_ultra: {expires_date: "2025-01-01T00:00:00.000Z"}});
   assert.deepEqual(subscriptionFromRevenueCat(json, NOW), {premium: false, subscriptionTier: "free"});

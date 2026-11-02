@@ -1,0 +1,41 @@
+{
+  "app-store": [
+    {
+      "file": "iphone-1-wallpaper",
+      "headline": "नज़र ठहर जाए ऐसे वॉलपेपर",
+      "subline": "4K और AMOLED, हर दिन एक नई पसंद के साथ"
+    },
+    {
+      "file": "iphone-2-collections",
+      "headline": "अपना वाइब ढूँढें",
+      "subline": "कैटेगरी, मूड और चुने हुए कलेक्शन"
+    },
+    {
+      "file": "iphone-3-variants",
+      "headline": "अपने अंदाज़ में",
+      "subline": "सेव करने से पहले कोई फ़िल्टर आज़माएँ"
+    },
+    {
+      "file": "iphone-4-colors",
+      "headline": "रंग से खोजें",
+      "subline": "किसी वॉलपेपर से पैलेट निकालें या रंग चुनें"
+    }
+  ],
+  "play": [
+    {
+      "file": "play-1",
+      "headline": "बोरिंग वॉलपेपर को अलविदा",
+      "subline": "4K और AMOLED, हर दिन एक नई पसंद के साथ"
+    },
+    {
+      "file": "play-2",
+      "headline": "AI से वॉलपेपर बनाएँ",
+      "subline": "आइडिया लिखें, स्टाइल चुनें, लगाएँ"
+    },
+    {
+      "file": "play-3",
+      "headline": "अपना वाइब ढूँढें",
+      "subline": "कैटेगरी, मूड और चुने हुए कलेक्शन"
+    }
+  ]
+}

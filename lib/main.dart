@@ -36,6 +36,7 @@ import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:Prism/core/platform/review_live_activity_sync.dart';
 import 'package:Prism/core/platform/streak_widget_sync.dart';
 import 'package:Prism/core/platform/system_color_schemes.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/auth_navigation_continuation.dart';
@@ -802,6 +803,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       ..onForegroundPush = () =>
           unawaited(syncInAppNotificationsFromRemote().then((_) => _reloadInAppNotificationsFromCache()));
     toasts.overlayResolver = () => _appRouter.navigatorKey.currentState?.overlay;
+    PaywallOrchestrator.instance.navigatorContext = () => _appRouter.navigatorKey.currentContext;
     AnalyticsRuntime.changes.addListener(_onAnalyticsRuntimeChanged);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());

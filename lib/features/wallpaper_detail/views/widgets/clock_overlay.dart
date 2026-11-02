@@ -623,6 +623,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
     return PrismButton(
       key: const ValueKey<String>('set-screen-set'),
       label: _setLabel(l10n),
+      maxLines: 2,
       loading: _busy && widget.request == null,
       onPressed: _busy || _completed || ((widget.request != null || widget.file) && !_supported(_target))
           ? null

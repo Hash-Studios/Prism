@@ -11959,6 +11959,144 @@
   "@navMoreEditTabs": {
     "description": "Row in the More sheet that opens the Layout settings page."
   },
+  "trialTimelineTitle": "Cara kerja uji coba gratis Anda",
+  "@trialTimelineTitle": {
+    "description": "Title of the screen that shows the annual free trial day by day, before the user starts it."
+  },
+  "trialTimelineClose": "Tutup",
+  "@trialTimelineClose": {
+    "description": "Tooltip and screen reader label of the close button on the free trial timeline."
+  },
+  "trialTimelinePlanSummary": "Prism Pro tahunan. {days, plural, =1{1 hari} other{{days} hari}} gratis, lalu {price} per tahun.",
+  "@trialTimelinePlanSummary": {
+    "description": "Plan summary at the top of the free trial timeline. {price} is the store's localized yearly price.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "trialTimelineToday": "Hari ini",
+  "@trialTimelineToday": {
+    "description": "Label of the first free trial timeline step. The date follows it."
+  },
+  "trialTimelineTodayBody": "Anda mendapat akses penuh ke Prism Pro. Anda tidak membayar apa pun hari ini.",
+  "@trialTimelineTodayBody": {
+    "description": "First free trial timeline step."
+  },
+  "trialTimelineDay": "Hari {day}",
+  "@trialTimelineDay": {
+    "description": "Label of a later free trial timeline step, counted from today. The date follows it.",
+    "placeholders": {
+      "day": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "trialTimelineReminderBody": "Kami mengingatkan Anda bahwa uji coba Anda akan segera berakhir.",
+  "@trialTimelineReminderBody": {
+    "description": "Free trial timeline step when the reminder switch is on."
+  },
+  "trialTimelineNoReminderBody": "Tanpa pengingat. Anda mematikannya di bawah.",
+  "@trialTimelineNoReminderBody": {
+    "description": "Free trial timeline step when the reminder switch is off."
+  },
+  "trialTimelineChargeBody": "Anda membayar {price}, kecuali Anda membatalkan setidaknya 24 jam sebelumnya.",
+  "@trialTimelineChargeBody": {
+    "description": "Last free trial timeline step, the day the trial ends. {price} is the store's localized yearly price.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "trialTimelineRemindToggle": "Ingatkan saya 2 hari sebelum uji coba berakhir",
+  "@trialTimelineRemindToggle": {
+    "description": "Switch on the free trial timeline. On by default."
+  },
+  "trialTimelineRenewalTerms": "Setelah uji coba, Prism Pro tahunan diperpanjang seharga {price} per tahun sampai Anda membatalkan. {store} menagih akun Anda. Untuk menghindari tagihan, batalkan setidaknya 24 jam sebelum uji coba atau perpanjangan berakhir.",
+  "@trialTimelineRenewalTerms": {
+    "description": "Subscription terms on the free trial timeline. {store} is App Store or Google Play and is not translated.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "trialTimelineCancelLink": "Batalkan kapan saja di pengaturan {store}",
+  "@trialTimelineCancelLink": {
+    "description": "Link that opens the store's subscription settings. {store} is App Store or Google Play and is not translated.",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "trialTimelineSeeAllPlans": "Lihat semua paket",
+  "@trialTimelineSeeAllPlans": {
+    "description": "Action that opens every Prism Pro plan instead of the free trial."
+  },
+  "trialTimelineStart": "Mulai uji coba gratis {days} hari",
+  "@trialTimelineStart": {
+    "description": "Main action on the free trial timeline. It starts the store purchase.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "trialTimelineStartFailed": "Tidak dapat memulai uji coba gratis. Coba lagi.",
+  "@trialTimelineStartFailed": {
+    "description": "Error toast when the store purchase for the free trial fails."
+  },
+  "trialReminderTitle": "Uji coba gratis Anda berakhir pada {date}",
+  "@trialReminderTitle": {
+    "description": "Title of the reminder notification 2 days before the free trial ends. {date} is a localized date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "trialReminderBody": "Setelah itu, Anda membayar Prism Pro tahunan. Untuk menghindari tagihan, batalkan di pengaturan {store} setidaknya 24 jam sebelumnya.",
+  "@trialReminderBody": {
+    "description": "Body of the free trial reminder notification. {store} is App Store or Google Play and is not translated.",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "notifChannelSubscription": "Langganan",
+  "@notifChannelSubscription": {
+    "description": "Android notification channel name for subscription reminders."
+  },
+  "notifChannelSubscriptionDescription": "Pengingat sebelum uji coba gratis Anda berakhir",
+  "@notifChannelSubscriptionDescription": {
+    "description": "Android notification channel description for subscription reminders."
+  },
+  "premiumTrialEnds": "Uji coba, berakhir {date}",
+  "@premiumTrialEnds": {
+    "description": "Premium screen status while the user is in the free trial. {date} is a localized date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "premiumTrialAutoRenewOff": "Perpanjangan otomatis mati. Anda tidak akan ditagih saat uji coba berakhir.",
+  "@premiumTrialAutoRenewOff": {
+    "description": "Premium screen note during a free trial that the user cancelled."
+  },
   "editorsChoiceTitle": "Pilihan Editor",
   "@editorsChoiceTitle": {
     "description": "Title of the Editors' Choice page and its Home entry point."

@@ -20539,6 +20539,132 @@ abstract class AppLocalizations {
   /// **'See the walls you saved, your colours and your creators.'**
   String get notifPushWrappedReadyBody;
 
+  /// Title of the screen that shows the annual free trial day by day, before the user starts it.
+  ///
+  /// In en, this message translates to:
+  /// **'How your free trial works'**
+  String get trialTimelineTitle;
+
+  /// Tooltip and screen reader label of the close button on the free trial timeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get trialTimelineClose;
+
+  /// Plan summary at the top of the free trial timeline. {price} is the store's localized yearly price.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism Pro yearly. {days, plural, =1{1 day} other{{days} days}} free, then {price} a year.'**
+  String trialTimelinePlanSummary(int days, String price);
+
+  /// Label of the first free trial timeline step. The date follows it.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get trialTimelineToday;
+
+  /// First free trial timeline step.
+  ///
+  /// In en, this message translates to:
+  /// **'You get full access to Prism Pro. You pay nothing today.'**
+  String get trialTimelineTodayBody;
+
+  /// Label of a later free trial timeline step, counted from today. The date follows it.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day}'**
+  String trialTimelineDay(int day);
+
+  /// Free trial timeline step when the reminder switch is on.
+  ///
+  /// In en, this message translates to:
+  /// **'We remind you that your trial ends soon.'**
+  String get trialTimelineReminderBody;
+
+  /// Free trial timeline step when the reminder switch is off.
+  ///
+  /// In en, this message translates to:
+  /// **'No reminder. You turned it off below.'**
+  String get trialTimelineNoReminderBody;
+
+  /// Last free trial timeline step, the day the trial ends. {price} is the store's localized yearly price.
+  ///
+  /// In en, this message translates to:
+  /// **'You pay {price}, unless you cancel at least 24 hours before.'**
+  String trialTimelineChargeBody(String price);
+
+  /// Switch on the free trial timeline. On by default.
+  ///
+  /// In en, this message translates to:
+  /// **'Remind me 2 days before the trial ends'**
+  String get trialTimelineRemindToggle;
+
+  /// Subscription terms on the free trial timeline. {store} is App Store or Google Play and is not translated.
+  ///
+  /// In en, this message translates to:
+  /// **'After the trial, Prism Pro yearly renews at {price} a year until you cancel. {store} charges your account. To avoid a charge, cancel at least 24 hours before the trial or a renewal ends.'**
+  String trialTimelineRenewalTerms(String price, String store);
+
+  /// Link that opens the store's subscription settings. {store} is App Store or Google Play and is not translated.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel any time in {store} settings'**
+  String trialTimelineCancelLink(String store);
+
+  /// Action that opens every Prism Pro plan instead of the free trial.
+  ///
+  /// In en, this message translates to:
+  /// **'See all plans'**
+  String get trialTimelineSeeAllPlans;
+
+  /// Main action on the free trial timeline. It starts the store purchase.
+  ///
+  /// In en, this message translates to:
+  /// **'Start {days}-day free trial'**
+  String trialTimelineStart(int days);
+
+  /// Error toast when the store purchase for the free trial fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start the free trial. Try again.'**
+  String get trialTimelineStartFailed;
+
+  /// Title of the reminder notification 2 days before the free trial ends. {date} is a localized date.
+  ///
+  /// In en, this message translates to:
+  /// **'Your free trial ends on {date}'**
+  String trialReminderTitle(String date);
+
+  /// Body of the free trial reminder notification. {store} is App Store or Google Play and is not translated.
+  ///
+  /// In en, this message translates to:
+  /// **'After that, you pay for Prism Pro yearly. To avoid the charge, cancel in {store} settings at least 24 hours before.'**
+  String trialReminderBody(String store);
+
+  /// Android notification channel name for subscription reminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription'**
+  String get notifChannelSubscription;
+
+  /// Android notification channel description for subscription reminders.
+  ///
+  /// In en, this message translates to:
+  /// **'A reminder before your free trial ends'**
+  String get notifChannelSubscriptionDescription;
+
+  /// Premium screen status while the user is in the free trial. {date} is a localized date.
+  ///
+  /// In en, this message translates to:
+  /// **'Trial, ends {date}'**
+  String premiumTrialEnds(String date);
+
+  /// Premium screen note during a free trial that the user cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-renew is off. You will not be charged when the trial ends.'**
+  String get premiumTrialAutoRenewOff;
+
   /// Title of the Editors' Choice page and its Home entry point.
   ///
   /// In en, this message translates to:

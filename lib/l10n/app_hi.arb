@@ -12380,6 +12380,144 @@
   "@notifPushWrappedReadyTitle": {"description": "Title of the push notification that tells the user Wrapped is ready.", "placeholders": {"year": {"type": "String"}}},
   "notifPushWrappedReadyBody": "अपने सहेजे वॉलपेपर, अपने रंग और अपने क्रिएटर देखें।",
   "@notifPushWrappedReadyBody": {"description": "Body of the push notification that tells the user Wrapped is ready."},
+  "trialTimelineTitle": "आपका मुफ़्त ट्रायल कैसे काम करता है",
+  "@trialTimelineTitle": {
+    "description": "Title of the screen that shows the annual free trial day by day, before the user starts it."
+  },
+  "trialTimelineClose": "बंद करें",
+  "@trialTimelineClose": {
+    "description": "Tooltip and screen reader label of the close button on the free trial timeline."
+  },
+  "trialTimelinePlanSummary": "Prism Pro सालाना। {days, plural, =1{1 दिन} other{{days} दिन}} मुफ़्त, उसके बाद {price} प्रति वर्ष।",
+  "@trialTimelinePlanSummary": {
+    "description": "Plan summary at the top of the free trial timeline. {price} is the store's localized yearly price.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "trialTimelineToday": "आज",
+  "@trialTimelineToday": {
+    "description": "Label of the first free trial timeline step. The date follows it."
+  },
+  "trialTimelineTodayBody": "आपको Prism Pro की पूरी सुविधा मिलती है। आज आपसे कुछ नहीं लिया जाता।",
+  "@trialTimelineTodayBody": {
+    "description": "First free trial timeline step."
+  },
+  "trialTimelineDay": "दिन {day}",
+  "@trialTimelineDay": {
+    "description": "Label of a later free trial timeline step, counted from today. The date follows it.",
+    "placeholders": {
+      "day": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "trialTimelineReminderBody": "हम आपको याद दिलाते हैं कि आपका ट्रायल जल्द खत्म होगा।",
+  "@trialTimelineReminderBody": {
+    "description": "Free trial timeline step when the reminder switch is on."
+  },
+  "trialTimelineNoReminderBody": "कोई याद दिलाना नहीं। आपने इसे नीचे बंद किया है।",
+  "@trialTimelineNoReminderBody": {
+    "description": "Free trial timeline step when the reminder switch is off."
+  },
+  "trialTimelineChargeBody": "कम से कम 24 घंटे पहले रद्द न करने पर {price} लिए जाएँगे।",
+  "@trialTimelineChargeBody": {
+    "description": "Last free trial timeline step, the day the trial ends. {price} is the store's localized yearly price.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "trialTimelineRemindToggle": "ट्रायल खत्म होने से 2 दिन पहले मुझे याद दिलाएँ",
+  "@trialTimelineRemindToggle": {
+    "description": "Switch on the free trial timeline. On by default."
+  },
+  "trialTimelineRenewalTerms": "ट्रायल के बाद, Prism Pro सालाना {price} प्रति वर्ष पर नवीनीकृत होगा, जब तक आप रद्द न करें। {store} आपके खाते से शुल्क लेता है। शुल्क से बचने के लिए, ट्रायल या नवीनीकरण खत्म होने से कम से कम 24 घंटे पहले रद्द करें।",
+  "@trialTimelineRenewalTerms": {
+    "description": "Subscription terms on the free trial timeline. {store} is App Store or Google Play and is not translated.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "trialTimelineCancelLink": "{store} की सेटिंग में कभी भी रद्द करें",
+  "@trialTimelineCancelLink": {
+    "description": "Link that opens the store's subscription settings. {store} is App Store or Google Play and is not translated.",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "trialTimelineSeeAllPlans": "सभी प्लान देखें",
+  "@trialTimelineSeeAllPlans": {
+    "description": "Action that opens every Prism Pro plan instead of the free trial."
+  },
+  "trialTimelineStart": "{days} दिन का मुफ़्त ट्रायल शुरू करें",
+  "@trialTimelineStart": {
+    "description": "Main action on the free trial timeline. It starts the store purchase.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "trialTimelineStartFailed": "मुफ़्त ट्रायल शुरू नहीं हो सका। फिर से कोशिश करें।",
+  "@trialTimelineStartFailed": {
+    "description": "Error toast when the store purchase for the free trial fails."
+  },
+  "trialReminderTitle": "आपका मुफ़्त ट्रायल {date} को खत्म होगा",
+  "@trialReminderTitle": {
+    "description": "Title of the reminder notification 2 days before the free trial ends. {date} is a localized date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "trialReminderBody": "उसके बाद, आपसे Prism Pro सालाना का शुल्क लिया जाएगा। शुल्क से बचने के लिए, कम से कम 24 घंटे पहले {store} की सेटिंग में रद्द करें।",
+  "@trialReminderBody": {
+    "description": "Body of the free trial reminder notification. {store} is App Store or Google Play and is not translated.",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "notifChannelSubscription": "सब्सक्रिप्शन",
+  "@notifChannelSubscription": {
+    "description": "Android notification channel name for subscription reminders."
+  },
+  "notifChannelSubscriptionDescription": "आपका मुफ़्त ट्रायल खत्म होने से पहले एक याद दिलाना",
+  "@notifChannelSubscriptionDescription": {
+    "description": "Android notification channel description for subscription reminders."
+  },
+  "premiumTrialEnds": "ट्रायल, {date} को खत्म होगा",
+  "@premiumTrialEnds": {
+    "description": "Premium screen status while the user is in the free trial. {date} is a localized date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "premiumTrialAutoRenewOff": "ऑटो-रिन्यू बंद है। ट्रायल खत्म होने पर आपसे कोई शुल्क नहीं लिया जाएगा।",
+  "@premiumTrialAutoRenewOff": {
+    "description": "Premium screen note during a free trial that the user cancelled."
+  },
   "editorsChoiceTitle": "संपादकों की पसंद",
   "@editorsChoiceTitle": {
     "description": "Title of the Editors' Choice page and its Home entry point."

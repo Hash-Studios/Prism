@@ -89,6 +89,7 @@ jobs:
               - '!.claude/**'
               - '!.agents/**'
               - '!**/*.md'
+              - '!metadata/**'
               - '!firestore.rules'
               - '!firestore.indexes.json'
             functions:
@@ -371,6 +372,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Check repository assets
         run: python3 tool/check_repo_assets.py
+      - name: Check store listing limits
+        run: python3 tool/check_store_listings.py && python3 -m unittest tool.check_store_listings_test
 
   # Not part of the required `ci` check, so the merge does not wait for two
   # APK builds. A size regression still shows as a red check and a PR comment.
