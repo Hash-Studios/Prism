@@ -1,5 +1,12 @@
 ## Changelog
 
+### v3.18.2
+- Make Prism yours: reorder or hide tabs and pick a grid size in Settings, Layout
+- Prism remembers the Home feed you were on
+- See a clear timeline before you start the annual Pro free trial
+- Weekly Challenges now open on time each Monday
+- Security and stability fixes
+
 ### v3.18.1
 - Open a desktop version of a wallpaper, and send it to your computer
 - Your iPhone Shortcut now rotates walls you have downloaded, including protected ones
