@@ -53,6 +53,8 @@ _PrismWallDocDto _$PrismWallDocDtoFromJson(Map<String, dynamic> json) => _PrismW
   origin: json['origin'] == null ? '' : const FirestoreStringConverter().fromJson(json['origin']),
   remixOf: json['remixOf'] == null ? '' : const FirestoreStringConverter().fromJson(json['remixOf']),
   remixCount: (json['remixCount'] as num?)?.toInt(),
+  editorsChoiceAt: const FirestoreDateTimeConverter().fromJson(json['editorsChoiceAt']),
+  byStudio: json['byStudio'] == null ? false : const FirestoreTrueConverter().fromJson(json['byStudio']),
 );
 
 Map<String, dynamic> _$PrismWallDocDtoToJson(_PrismWallDocDto instance) => <String, dynamic>{
@@ -90,4 +92,6 @@ Map<String, dynamic> _$PrismWallDocDtoToJson(_PrismWallDocDto instance) => <Stri
   'origin': const FirestoreStringConverter().toJson(instance.origin),
   'remixOf': const FirestoreStringConverter().toJson(instance.remixOf),
   'remixCount': instance.remixCount,
+  'editorsChoiceAt': const FirestoreDateTimeConverter().toJson(instance.editorsChoiceAt),
+  'byStudio': const FirestoreTrueConverter().toJson(instance.byStudio),
 };

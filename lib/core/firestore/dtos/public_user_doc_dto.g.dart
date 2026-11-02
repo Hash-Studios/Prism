@@ -20,6 +20,7 @@ _PublicUserDocDto _$PublicUserDocDtoFromJson(Map<String, dynamic> json) => _Publ
       : const FirestoreStringMapConverter().fromJson(json['cosmetics']),
   followerCount: (json['followerCount'] as num?)?.toInt() ?? 0,
   followingCount: (json['followingCount'] as num?)?.toInt() ?? 0,
+  proBadge: json['proBadge'] == null ? false : const FirestoreTrueConverter().fromJson(json['proBadge']),
 );
 
 Map<String, dynamic> _$PublicUserDocDtoToJson(_PublicUserDocDto instance) => <String, dynamic>{
@@ -34,4 +35,5 @@ Map<String, dynamic> _$PublicUserDocDtoToJson(_PublicUserDocDto instance) => <St
   'cosmetics': const FirestoreStringMapConverter().toJson(instance.cosmetics),
   'followerCount': instance.followerCount,
   'followingCount': instance.followingCount,
+  'proBadge': const FirestoreTrueConverter().toJson(instance.proBadge),
 };
