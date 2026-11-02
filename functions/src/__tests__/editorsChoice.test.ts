@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
+import {db} from "../common";
 import {editorsChoiceIo, setEditorsChoice} from "../editorsChoice";
 import {type Doc, installFakeDb} from "./fakeDb";
 
@@ -121,6 +122,38 @@ test("a requestId reused for another change is refused", async (t) => {
   assert.ok(store.get(WALL)?.editorsChoiceAt);
 });
 
+test("a completed pick replays after the wall becomes unavailable", async (t) => {
+  const {store, sent} = setup(t);
+  const input = {wallId: "w1", picked: true, requestId: "request_0001"};
+  await call(input);
+  store.delete(WALL);
+  t.mock.method(editorsChoiceIo, "readyWall", async () => false);
+  assert.deepEqual(await call(input), {wallId: "w1", picked: true});
+  assert.equal(store.has(WALL), false);
+  assert.equal(sent.length, 1);
+});
+
+test("a completed pick replays without reading eligibility dependencies", async (t) => {
+  const {sent} = setup(t);
+  const input = {wallId: "w1", picked: true, requestId: "request_0001"};
+  await call(input);
+  t.mock.method(editorsChoiceIo, "premiumCollections", async () => {
+    throw new Error("remote config down");
+  });
+  t.mock.method(editorsChoiceIo, "readyWall", async () => {
+    throw new Error("delivery read down");
+  });
+  assert.deepEqual(await call(input), {wallId: "w1", picked: true});
+  assert.equal(sent.length, 1);
+});
+
+test("a reused requestId is refused before checking another wall's eligibility", async (t) => {
+  setup(t);
+  await call({wallId: "w1", picked: true, requestId: "request_0001"});
+  t.mock.method(editorsChoiceIo, "readyWall", async () => false);
+  await refusedWith(call({wallId: "w2", picked: true, requestId: "request_0001"}), "already-exists");
+});
+
 test("pick, clear and pick again pushes once and keeps the newest pick time", async (t) => {
   const {store, sent} = setup(t);
   await call({wallId: "w1", picked: true, requestId: "request_0001"});
@@ -157,11 +190,48 @@ test("a Studio wall is picked without a creator push", async (t) => {
   assert.equal(sent.length, 0);
 });
 
-test("a failed push does not fail the pick", async (t) => {
-  const {store} = setup(t);
-  t.mock.method(editorsChoiceIo, "sendToUser", async () => {
-    throw new Error("fcm down");
+test("a failed session lookup leaves the notice available for a retry", async (t) => {
+  const {store, sent} = setup(t);
+  const originalDoc = db.doc.bind(db);
+  const docMock = t.mock.method(db, "doc", (path: string) => {
+    if (path === "usersv2/u1/private/session") throw new Error("session unavailable");
+    return originalDoc(path);
   });
-  assert.deepEqual(await call({wallId: "w1", picked: true, requestId: "request_0001"}), {wallId: "w1", picked: true});
-  assert.ok(store.get(WALL)?.editorsChoiceAt);
+  const input = {wallId: "w1", picked: true, requestId: "request_0001"};
+  assert.deepEqual(await call(input), {wallId: "w1", picked: true});
+  assert.equal(store.has("editorsChoiceNotices/w1"), false);
+  assert.equal(sent.length, 0);
+  docMock.mock.restore();
+  assert.deepEqual(await call(input), {wallId: "w1", picked: true});
+  assert.equal(store.has("editorsChoiceNotices/w1"), true);
+  assert.equal(sent.length, 1);
 });
+
+test("concurrent picks of one wall send one creator notice", async (t) => {
+  const {store, sent} = setup(t);
+  await Promise.all([
+    call({wallId: "w1", picked: true, requestId: "request_0001"}),
+    call({wallId: "w1", picked: true, requestId: "request_0002"}),
+  ]);
+  assert.ok(store.get(WALL)?.editorsChoiceAt);
+  assert.equal(store.has("editorsChoiceNotices/w1"), true);
+  assert.equal(sent.length, 1);
+});
+
+for (const failure of ["throw", "false"] as const) {
+  test(`a push that returns ${failure} does not fail the pick or send again on retry`, async (t) => {
+    const {store} = setup(t);
+    let sends = 0;
+    t.mock.method(editorsChoiceIo, "sendToUser", async () => {
+      sends++;
+      if (failure === "throw") throw new Error("fcm down");
+      return false;
+    });
+    const input = {wallId: "w1", picked: true, requestId: "request_0001"};
+    assert.deepEqual(await call(input), {wallId: "w1", picked: true});
+    assert.ok(store.get(WALL)?.editorsChoiceAt);
+    assert.equal(store.has("editorsChoiceNotices/w1"), true);
+    assert.deepEqual(await call(input), {wallId: "w1", picked: true});
+    assert.equal(sends, 1);
+  });
+}

@@ -231,7 +231,8 @@ service cloud.firestore {
       allow get: if resource == null || wallReadable();
       allow list: if resource == null || wallReadable();
       // Admins re-create a rejected wall when they undo the rejection.
-      allow create: if validChallengeId() && (isConfiguredAdmin()
+      allow create: if !request.resource.data.keys().hasAny(['editorsChoiceAt', 'editorsChoiceBy', 'byStudio'])
+          && validChallengeId() && (isConfiguredAdmin()
           || (isSignedIn()
               && isEmailOwner(request.resource.data.email)
               && request.resource.data.review != true
@@ -239,7 +240,9 @@ service cloud.firestore {
               && validRemixOf()
               && validResubmitOf()));
       // delete: request.resource is null — do not use request.resource.data here.
-      allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny(['challengeId'])
+      allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio'
+          ])
           && (isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
               && wallServerKeysUntouched()

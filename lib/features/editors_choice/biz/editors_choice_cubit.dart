@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/editors_choice/domain/editors_choice_repository.dart';
 import 'package:Prism/logger/logger.dart';
@@ -26,14 +28,28 @@ final class EditorsChoiceFailed extends EditorsChoiceState {
 /// The Editors' Choice picks, newest pick first.
 @injectable
 class EditorsChoiceCubit extends Cubit<EditorsChoiceState> {
-  EditorsChoiceCubit(this._repository) : super(const EditorsChoiceLoading());
+  EditorsChoiceCubit(this._repository) : super(const EditorsChoiceLoading()) {
+    _pickChanges = _repository.watchPickChanges().listen((_) {
+      final int? limit = _limit;
+      if (limit != null) unawaited(load(limit: limit));
+    });
+  }
 
   final EditorsChoiceRepository _repository;
+  late final StreamSubscription<void> _pickChanges;
+  int? _limit;
   int _loadVersion = 0;
+
+  @override
+  Future<void> close() async {
+    await _pickChanges.cancel();
+    return super.close();
+  }
 
   /// Loads the newest [limit] picks.
   Future<void> load({required int limit}) async {
     if (isClosed) return;
+    _limit = limit;
     final int loadVersion = ++_loadVersion;
     emit(const EditorsChoiceLoading());
     try {

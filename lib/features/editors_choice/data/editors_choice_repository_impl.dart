@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -33,6 +35,10 @@ class EditorsChoiceRepositoryImpl implements EditorsChoiceRepository {
   final UserBlockRepository _userBlockRepository;
   final SettingsLocalDataSource _settingsLocal;
   final EditorsChoiceCaller _call;
+  final StreamController<void> _pickChanges = StreamController<void>.broadcast();
+
+  @override
+  Stream<void> watchPickChanges() => _pickChanges.stream;
 
   static Future<Object?> _callable(String name, Map<String, Object?> data) async =>
       (await appFunctions
@@ -74,6 +80,7 @@ class EditorsChoiceRepositoryImpl implements EditorsChoiceRepository {
       rethrow;
     }
     _firestoreClient.invalidateQueryCache();
+    _pickChanges.add(null);
   }
 
   List<PrismWallpaper> _visible(List<PrismWallpaper> walls, BlockedCreators blocked) {

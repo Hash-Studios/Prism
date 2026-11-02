@@ -295,6 +295,51 @@ void main() {
       expect(emitted.whereType<PublicProfileEntity>().last.proBadge, isFalse);
     });
 
+    test('does not restore an old Pro badge from a durable profile snapshot', () async {
+      const String uid = 'ExpiredProUser';
+      client.docs['profiles'] = <String, Map<String, dynamic>>{
+        uid: <String, dynamic>{'name': 'Ana', 'username': 'ana'},
+      };
+      await DurableJsonStore(
+        'public_profiles',
+      ).write('v2::__guest::$uid', <String, Object?>{'id': uid, 'name': 'Ana', 'username': 'ana', 'proBadge': true});
+
+      final PublicProfileEntity? cached = await repo.watchProfile(uid).first.timeout(const Duration(seconds: 2));
+
+      expect(cached, isNotNull);
+      expect(cached!.proBadge, isFalse);
+    });
+
+    test('updates a live Pro badge when the projection removes it and keeps it out of the durable snapshot', () async {
+      const String uid = 'ChangingProUser';
+      client.docs['profiles'] = <String, Map<String, dynamic>>{
+        uid: <String, dynamic>{'name': 'Ana', 'username': 'ana', 'proBadge': true},
+      };
+      final emitted = <PublicProfileEntity?>[];
+      final shown = Completer<void>();
+      final removed = Completer<void>();
+      final sub = repo.watchProfile(uid).listen((profile) {
+        emitted.add(profile);
+        if (profile?.proBadge == true && !shown.isCompleted) shown.complete();
+        if (profile?.proBadge == false && !removed.isCompleted) removed.complete();
+      });
+      addTearDown(sub.cancel);
+      await client.waitForWatchers(1).timeout(const Duration(seconds: 2));
+      client.rows.add(<FakeDocRow>[
+        (id: uid, data: <String, dynamic>{'name': 'Ana', 'username': 'ana', 'proBadge': true}),
+      ]);
+      await shown.future.timeout(_profileSnapshotDiskObservationTimeout);
+      expect(emitted.whereType<PublicProfileEntity>().last.proBadge, isTrue);
+      expect((await DurableJsonStore('public_profiles').read('v2::__guest::$uid'))?.containsKey('proBadge'), isFalse);
+
+      client.rows.add(<FakeDocRow>[
+        (id: uid, data: <String, dynamic>{'name': 'Ana', 'username': 'ana'}),
+      ]);
+      await removed.future.timeout(_profileSnapshotDiskObservationTimeout);
+
+      expect(emitted.whereType<PublicProfileEntity>().map((profile) => profile.proBadge), <bool>[true, false]);
+    });
+
     test('treats UID casing as significant', () async {
       client.docs['profiles'] = <String, Map<String, dynamic>>{
         'UserABC': <String, dynamic>{'name': 'Ana', 'username': 'ana'},

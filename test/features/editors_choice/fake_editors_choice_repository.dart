@@ -23,6 +23,9 @@ class FakeEditorsChoiceRepository implements EditorsChoiceRepository {
   final List<int> requestedLimits = <int>[];
 
   @override
+  Stream<void> watchPickChanges() => const Stream<void>.empty();
+
+  @override
   Future<List<PrismWallpaper>> fetchPicks({required int limit}) async {
     requestedLimits.add(limit);
     if (gate != null) await gate;

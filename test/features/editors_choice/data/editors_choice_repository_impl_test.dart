@@ -1,6 +1,7 @@
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/features/editors_choice/biz/editors_choice_cubit.dart';
 import 'package:Prism/features/editors_choice/data/editors_choice_repository_impl.dart';
 import 'package:Prism/features/editors_choice/domain/editors_choice_repository.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -81,6 +82,57 @@ void main() {
   });
 
   group('setPick', () {
+    test('updates mounted row and screen after a successful pick change', () async {
+      List<FakeDocRow> rows = <FakeDocRow>[(id: 'PICK', data: _wall('PICK'))];
+      client.onQuery = (_) => rows;
+      final EditorsChoiceRepositoryImpl repo = repository();
+      final EditorsChoiceCubit row = EditorsChoiceCubit(repo);
+      final EditorsChoiceCubit screen = EditorsChoiceCubit(repo);
+      addTearDown(row.close);
+      addTearDown(screen.close);
+      await Future.wait(<Future<void>>[row.load(limit: 30), screen.load(limit: 60)]);
+
+      rows = <FakeDocRow>[];
+      await repo.setPick(wallDocId: 'PICK', picked: false);
+      await Future<void>.delayed(Duration.zero);
+
+      expect((row.state as EditorsChoiceLoaded).walls, isEmpty);
+      expect((screen.state as EditorsChoiceLoaded).walls, isEmpty);
+      expect(client.querySpecs.map((spec) => spec.limit), <int>[30, 60, 30, 60]);
+    });
+
+    test('a failed pick change keeps the loaded picks without a reload', () async {
+      client.onQuery = (_) => <FakeDocRow>[(id: 'PICK', data: _wall('PICK'))];
+      final EditorsChoiceRepositoryImpl repo = repository();
+      final EditorsChoiceCubit cubit = EditorsChoiceCubit(repo);
+      addTearDown(cubit.close);
+      await cubit.load(limit: 30);
+      callerError = (_, _) async => throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
+
+      await expectLater(repo.setPick(wallDocId: 'PICK', picked: false), throwsA(isA<FirebaseFunctionsException>()));
+      await Future<void>.delayed(Duration.zero);
+
+      expect((cubit.state as EditorsChoiceLoaded).walls.single.id, 'PICK');
+      expect(client.querySpecs, hasLength(1));
+    });
+
+    test('pick changes skip closed cubits and cubits that have not loaded', () async {
+      client.onQuery = (_) => <FakeDocRow>[];
+      final EditorsChoiceRepositoryImpl repo = repository();
+      final EditorsChoiceCubit closed = EditorsChoiceCubit(repo);
+      final EditorsChoiceCubit idle = EditorsChoiceCubit(repo);
+      addTearDown(idle.close);
+      await closed.load(limit: 30);
+      await closed.close();
+
+      await repo.setPick(wallDocId: 'PICK', picked: false);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(closed.isClosed, isTrue);
+      expect(idle.state, isA<EditorsChoiceLoading>());
+      expect(client.querySpecs, hasLength(1));
+    });
+
     test('sends the wall id, the flag and a 32-character request id to setEditorsChoice', () async {
       await repository().setPick(wallDocId: 'wall-1', picked: true);
 

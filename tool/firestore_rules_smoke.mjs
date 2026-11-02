@@ -913,9 +913,38 @@ const cases = [
   ['owner cannot add editorsChoiceBy to own unreviewed wall', () => req('PATCH', 'walls/w8', { editorsChoiceBy: str('b') }, Bu, ['editorsChoiceBy']), 403],
   ['owner cannot add byStudio to own unreviewed wall', () => req('PATCH', 'walls/w8', { byStudio: { booleanValue: true } }, Bu, ['byStudio']), 403],
   ['stranger cannot set editorsChoiceAt on someone else wall', () => req('PATCH', 'walls/w8', { editorsChoiceAt: { timestampValue: '2026-01-01T00:00:00Z' } }, A, ['editorsChoiceAt']), 403],
+  ...[
+    ['editorsChoiceAt', { timestampValue: '2026-01-01T00:00:00Z' }, { timestampValue: '2026-02-01T00:00:00Z' }],
+    ['editorsChoiceBy', str('original-admin'), str('other-admin')],
+    ['byStudio', { booleanValue: true }, { booleanValue: false }],
+  ].flatMap(([field, original, changed]) => [false, true].flatMap((review) =>
+    [['owner', Bu], ['stranger', A], ['admin', ADM]].flatMap(([role, auth]) =>
+      ['create', 'add', 'change', 'remove'].map((operation) => [
+        `${role} cannot ${operation} ${field} on a ${review ? 'approved' : 'pending'} wall`,
+        async () => {
+          const path = `walls/server-field-${field}-${review}-${role}-${operation}`;
+          const wall = { email: str('b@x.com'), review: { booleanValue: review } };
+          if (operation === 'create') return req('PATCH', path, { ...wall, [field]: original }, auth);
+          await req('PATCH', path, { ...wall, ...(operation === 'add' ? {} : { [field]: original }) }, 'owner');
+          return req('PATCH', path, operation === 'remove' ? {} : { [field]: changed }, auth, [field]);
+        },
+        403,
+      ])))),
+  ['admin can approve a wall while preserving the server fields', async () => {
+    await req('PATCH', 'walls/server-field-approval', {
+      email: str('b@x.com'), review: { booleanValue: false }, byStudio: { booleanValue: true },
+      editorsChoiceAt: { timestampValue: '2026-01-01T00:00:00Z' }, editorsChoiceBy: str('original-admin'),
+    }, 'owner');
+    return req('PATCH', 'walls/server-field-approval', { review: { booleanValue: true } }, ADM, ['review']);
+  }, 200],
   ['owner sets showProBadge false on own usersv2 doc', () => req('PATCH', 'usersv2/b', { showProBadge: { booleanValue: false } }, Bu, ['showProBadge']), 200],
   ['owner cannot write non-bool showProBadge', () => req('PATCH', 'usersv2/b', { showProBadge: str('no') }, Bu, ['showProBadge']), 403],
   ['stranger cannot set showProBadge on another user', () => req('PATCH', 'usersv2/b', { showProBadge: { booleanValue: true } }, A, ['showProBadge']), 403],
+  ['owner sets showProBadge true on own usersv2 doc', () => req('PATCH', 'usersv2/b', { showProBadge: { booleanValue: true } }, Bu, ['showProBadge']), 200],
+  ['owner cannot use showProBadge to write premium', () => req('PATCH', 'usersv2/b', { showProBadge: { booleanValue: true }, premium: { booleanValue: true } }, Bu, ['showProBadge', 'premium']), 403],
+  ['owner cannot write proBadge on own usersv2 doc', () => req('PATCH', 'usersv2/b', { proBadge: { booleanValue: true } }, Bu, ['proBadge']), 403],
+  ['owner can create a profile with showProBadge false', () => req('PATCH', 'usersv2/pro-badge-optout', { id: str('pro-badge-optout'), showProBadge: { booleanValue: false } }, tok('pro-badge-optout', 'optout@x.com')), 200],
+  ['owner cannot create a profile with non-bool showProBadge', () => req('PATCH', 'usersv2/pro-badge-invalid', { id: str('pro-badge-invalid'), showProBadge: str('false') }, tok('pro-badge-invalid', 'invalid@x.com')), 403],
   ['owner cannot write proBadge on own public profile', () => req('PATCH', 'profiles/b', { proBadge: { booleanValue: true } }, Bu, ['proBadge']), 403],
   ['stranger cannot write proBadge on public profile', () => req('PATCH', 'profiles/a', { proBadge: { booleanValue: true } }, Bu, ['proBadge']), 403],
   ...['editorsChoiceRequests', 'editorsChoiceNotices'].flatMap((collection) => [

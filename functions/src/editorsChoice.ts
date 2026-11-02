@@ -53,11 +53,6 @@ export const setEditorsChoice = onCall(CALLABLE_OPTIONS, async (request: Callabl
   if (!await isAdminCaller(request.auth)) throw new HttpsError("permission-denied", "Admins only.");
   const adminUid = request.auth.uid;
   const input = parseEditorsChoiceInput(request.data);
-  const premium = input.picked ? await editorsChoiceIo.premiumCollections() : [];
-  if (input.picked && !await editorsChoiceIo.readyWall(input.wallId, premium)) {
-    throw new HttpsError("failed-precondition", "This wall cannot be an Editors' Choice.");
-  }
-
   const requestRef = db.collection(REQUESTS).doc(input.requestId);
   const wallRef = db.collection("walls").doc(input.wallId);
   const {result, firstWrite} = await db.runTransaction(async (tx) => {
@@ -68,6 +63,10 @@ export const setEditorsChoice = onCall(CALLABLE_OPTIONS, async (request: Callabl
         throw new HttpsError("already-exists", "requestId was used for another change.");
       }
       return {result: {wallId: input.wallId, picked: input.picked}, firstWrite: false};
+    }
+    const premium = input.picked ? await editorsChoiceIo.premiumCollections() : [];
+    if (input.picked && !await editorsChoiceIo.readyWall(input.wallId, premium)) {
+      throw new HttpsError("failed-precondition", "This wall cannot be an Editors' Choice.");
     }
     const data = wall.data();
     if (!data) throw new HttpsError("not-found", "No such wall.");
@@ -107,6 +106,8 @@ async function notifyCreator(wallId: string): Promise<void> {
     const wall = (await wallRef.get()).data();
     const email = str(wall?.email);
     if (!wall || !email || wall.editorsChoiceAt == null || await isStudioWall(wallId, wall)) return;
+    const creator = await findUserByEmail(email);
+    const session = creator ? (await db.doc(`usersv2/${creator.id}/private/session`).get()).data() : undefined;
     const noticeRef = db.collection(NOTICES).doc(wallId);
     const claimed = await db.runTransaction(async (tx) => {
       if ((await tx.get(noticeRef)).exists) return false;
@@ -114,8 +115,6 @@ async function notifyCreator(wallId: string): Promise<void> {
       return true;
     });
     if (!claimed) return;
-    const creator = await findUserByEmail(email);
-    const session = creator ? (await db.doc(`usersv2/${creator.id}/private/session`).get()).data() : undefined;
     await editorsChoiceIo.sendToUser(
       {
         ...notificationCopyPayload({kind: "editorsChoicePicked", wallTitle: str(wall.title)}),

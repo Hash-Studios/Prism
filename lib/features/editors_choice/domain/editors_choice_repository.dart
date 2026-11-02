@@ -2,6 +2,9 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 
 /// Editors' Choice picks. Only the `setEditorsChoice` callable writes `walls.editorsChoiceAt`.
 abstract interface class EditorsChoiceRepository {
+  /// Successful pick changes made in this app, so mounted lists can reload.
+  Stream<void> watchPickChanges();
+
   /// Picks the viewer can see, newest pick first.
   Future<List<PrismWallpaper>> fetchPicks({required int limit});
 

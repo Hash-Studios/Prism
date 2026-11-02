@@ -6,6 +6,9 @@ class EmptyEditorsChoiceRepository implements EditorsChoiceRepository {
   const EmptyEditorsChoiceRepository();
 
   @override
+  Stream<void> watchPickChanges() => const Stream<void>.empty();
+
+  @override
   Future<List<PrismWallpaper>> fetchPicks({required int limit}) async => const <PrismWallpaper>[];
 
   @override
