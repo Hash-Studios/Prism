@@ -70,6 +70,7 @@ import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapte
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_pin_toggle.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/wallpaper_stats_row.dart';
+import 'package:Prism/features/live_photo/views/open_live_photo.dart';
 import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/theme_mode/domain/custom_accent.dart';
@@ -1642,6 +1643,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                             tint: state.tint,
                             saveAction: _saveAction,
                             spatialMapUrl: spatialOf(entity)?.mapUrl,
+                            livePhotoAction: isDuoWallpaper(entity)
+                                ? null
+                                : (previewContext, preview) => _openLivePhoto(previewContext, state, preview),
                             duoReveal: isDuoWallpaper(entity),
                             allowDuo: isLandscapeWallpaper(entity.wallpaperCore),
                           );
@@ -2542,6 +2546,21 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           ),
         ),
       ],
+    );
+  }
+
+  /// Opens the iOS Live Photo sheet. The first palette colour tints the Shimmer glow.
+  Future<void> _openLivePhoto(BuildContext context, WallpaperDetailLoaded state, ImageProvider? preview) {
+    final entity = state.entity;
+    return openLivePhoto(
+      context,
+      url: widget.localFile?.path ?? entity.fullUrl,
+      wallId: entity.id,
+      wallpaperSource: widget.localFile == null ? entity.source : WallpaperSource.downloaded,
+      premiumWall: isPremiumFeedItem(entity, app_state.premiumCollections),
+      preview: preview,
+      depthMapUrl: spatialOf(entity)?.mapUrl,
+      tint: state.colors?.firstOrNull,
     );
   }
 

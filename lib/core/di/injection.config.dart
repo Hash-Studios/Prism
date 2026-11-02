@@ -123,6 +123,10 @@ import '../../features/leaderboard/data/repositories/leaderboard_repository_impl
     as _i1008;
 import '../../features/leaderboard/domain/repositories/leaderboard_repository.dart'
     as _i655;
+import '../../features/live_photo/data/repositories/live_photo_repository_impl.dart'
+    as _i157;
+import '../../features/live_photo/domain/repositories/live_photo_repository.dart'
+    as _i574;
 import '../../features/live_wallpaper/data/live_texture_preparer.dart'
     as _i1003;
 import '../../features/live_wallpaper/data/repositories/live_wallpaper_repository_impl.dart'
@@ -465,6 +469,11 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i638.WallpaperPositionBloc>(
     () => _i638.WallpaperPositionBloc(gh<_i307.WallpaperPositionRepository>()),
+  );
+  gh.lazySingleton<_i574.LivePhotoRepository>(
+    () => _i157.LivePhotoRepositoryImpl(
+      texturePreparer: gh<_i1003.LiveTexturePreparer>(),
+    ),
   );
   gh.factory<_i219.BadgesBloc>(
     () => _i219.BadgesBloc(gh<_i360.BadgeRepository>()),

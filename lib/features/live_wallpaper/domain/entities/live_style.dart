@@ -25,3 +25,12 @@ enum GradientStyle {
 
   bool get isFree => this == GradientStyle.aurora || this == GradientStyle.mesh;
 }
+
+/// A paid style is open for Pro users and until the end of its coin unlock.
+bool isLiveStyleLocked(
+  String styleId, {
+  required bool isFree,
+  required bool isPro,
+  required Map<String, DateTime> unlockedStyles,
+  DateTime? now,
+}) => !isPro && !isFree && !(unlockedStyles[styleId]?.isAfter(now ?? DateTime.now()) ?? false);

@@ -13174,4 +13174,112 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminContentTypeComment => 'Comment';
+
+  @override
+  String get livePhotoAction => 'Live Photo';
+
+  @override
+  String get livePhotoActionTooltip => 'Save as a Live Photo';
+
+  @override
+  String get livePhotoTitle => 'Live Photo';
+
+  @override
+  String get livePhotoBody =>
+      'Pick how the wall moves. Prism saves a 3-second Live Photo to Photos, ready for your Lock Screen.';
+
+  @override
+  String get livePhotoStyleGroup => 'Motion style';
+
+  @override
+  String livePhotoPreview(String style) {
+    return 'Preview: $style';
+  }
+
+  @override
+  String livePhotoStyleLocked(String style) {
+    return '$style, Pro style';
+  }
+
+  @override
+  String get livePhotoSave => 'Save Live Photo';
+
+  @override
+  String get livePhotoRendering => 'Making your Live Photo';
+
+  @override
+  String livePhotoProgress(String percent) {
+    return '$percent done';
+  }
+
+  @override
+  String get livePhotoSaving => 'Saving to Photos';
+
+  @override
+  String get livePhotoCancelling => 'Stopping';
+
+  @override
+  String get livePhotoRefusedTitle => 'Prism can\'t add to Photos';
+
+  @override
+  String get livePhotoRefusedBody =>
+      'To save a Live Photo, allow Prism to add photos. In Settings, tap Photos, then Add Photos Only.';
+
+  @override
+  String get livePhotoRestrictedBody =>
+      'Photos access is blocked on this iPhone, for example by Screen Time. Check Settings, or ask the person who manages this iPhone.';
+
+  @override
+  String get livePhotoNotNow => 'Not now';
+
+  @override
+  String get livePhotoFailedTitle => 'Unable to make the Live Photo';
+
+  @override
+  String get livePhotoFailedSource => 'Unable to load this wall. Check your connection and try again.';
+
+  @override
+  String get livePhotoFailedTimeout => 'This took too long. Try again, or pick another style.';
+
+  @override
+  String get livePhotoFailedSave => 'Photos did not save the Live Photo. Try again.';
+
+  @override
+  String get livePhotoFailedGeneric => 'Unable to render the Live Photo. Try again.';
+
+  @override
+  String get livePhotoTryAgain => 'Try again';
+
+  @override
+  String get livePhotoGuideTitle => 'Set it as your Lock Screen';
+
+  @override
+  String get livePhotoGuideBody =>
+      'Your Live Photo is in Photos. iOS does not let apps change your wallpaper, so finish there:';
+
+  @override
+  String get livePhotoGuideStep1 => 'Open Photos. The new photo has a LIVE badge.';
+
+  @override
+  String get livePhotoGuideStep2 => 'Tap Share, then Use as Wallpaper.';
+
+  @override
+  String get livePhotoGuideStep3 => 'Make sure the Live Photo button at the bottom is on, then tap Add.';
+
+  @override
+  String get livePhotoGuideNotesTitle => 'Good to know';
+
+  @override
+  String get livePhotoGuideNoteWake =>
+      'Motion plays on the Lock Screen when you wake your iPhone. The Home Screen shows the still photo.';
+
+  @override
+  String get livePhotoGuideNoteLowPower => 'Low Power Mode turns off Lock Screen motion.';
+
+  @override
+  String get livePhotoGuideNoteNotAvailable =>
+      'If iOS says Motion not available, use it as a still wallpaper or try another style.';
+
+  @override
+  String get livePhotoGuideNoteVersion => 'Lock Screen motion needs iOS 17 or later.';
 }

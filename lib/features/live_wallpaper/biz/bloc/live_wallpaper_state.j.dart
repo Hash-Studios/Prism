@@ -31,7 +31,6 @@ abstract class LiveWallpaperState with _$LiveWallpaperState {
 }
 
 extension LiveWallpaperStateLocks on LiveWallpaperState {
-  /// A paid style is open for Pro users and until the end of its coin unlock.
   bool isLocked(String styleId, {required bool isFree, DateTime? now}) =>
-      !isPro && !isFree && !(unlockedStyles[styleId]?.isAfter(now ?? DateTime.now()) ?? false);
+      isLiveStyleLocked(styleId, isFree: isFree, isPro: isPro, unlockedStyles: unlockedStyles, now: now);
 }

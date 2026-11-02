@@ -2402,6 +2402,37 @@ events:
       - name: result
         key: result
         type: string
+  - id: live_photo_export_started
+    fields:
+      - name: style
+        key: style
+        type: enum
+        enum: LiveWallpaperStyleValue
+  - id: live_photo_export_done
+    fields:
+      - name: style
+        key: style
+        type: enum
+        enum: LiveWallpaperStyleValue
+      - name: duration_ms
+        key: duration_ms
+        type: int
+  - id: live_photo_export_failed
+    fields:
+      - name: style
+        key: style
+        type: enum
+        enum: LiveWallpaperStyleValue
+      - name: reason
+        key: reason
+        type: string
+  - id: live_photo_export_cancelled
+    fields:
+      - name: style
+        key: style
+        type: enum
+        enum: LiveWallpaperStyleValue
+  - id: live_photo_guide_opened
   - id: auto_rotate_run_result
     fields:
       - name: result

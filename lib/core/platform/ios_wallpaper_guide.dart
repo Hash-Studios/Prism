@@ -144,7 +144,7 @@ class IosWallpaperGuideSheet extends StatelessWidget {
         ),
         TextButton(onPressed: () => Navigator.of(context).maybePop(), child: Text(l10n.coreDone)),
       ],
-      child: _NumberedSteps(steps: steps),
+      child: GuideNumberedSteps(steps: steps),
     );
   }
 }
@@ -165,14 +165,14 @@ class SpatialSceneGuideSheet extends StatelessWidget {
       title: l10n.wallpaperSpatialGuideTitle,
       message: l10n.wallpaperSpatialGuideBody,
       actions: <Widget>[TextButton(onPressed: () => Navigator.of(context).maybePop(), child: Text(l10n.coreDone))],
-      child: _NumberedSteps(steps: SpatialSceneGuideSheet.steps(l10n)),
+      child: GuideNumberedSteps(steps: SpatialSceneGuideSheet.steps(l10n)),
     );
   }
 }
 
-/// The numbered steps both guide sheets show.
-class _NumberedSteps extends StatelessWidget {
-  const _NumberedSteps({required this.steps});
+/// The numbered steps the iOS guide sheets show.
+class GuideNumberedSteps extends StatelessWidget {
+  const GuideNumberedSteps({super.key, required this.steps});
 
   final List<String> steps;
 

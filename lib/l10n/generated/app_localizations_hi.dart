@@ -13317,4 +13317,112 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get adminContentTypeComment => 'टिप्पणी';
+
+  @override
+  String get livePhotoAction => 'लाइव फ़ोटो';
+
+  @override
+  String get livePhotoActionTooltip => 'लाइव फ़ोटो के रूप में सेव करें';
+
+  @override
+  String get livePhotoTitle => 'लाइव फ़ोटो';
+
+  @override
+  String get livePhotoBody =>
+      'चुनें कि वॉलपेपर कैसे चले। Prism 3 सेकंड की एक लाइव फ़ोटो Photos में सेव करता है, जो आपकी लॉक स्क्रीन के लिए तैयार होगी।';
+
+  @override
+  String get livePhotoStyleGroup => 'मोशन स्टाइल';
+
+  @override
+  String livePhotoPreview(String style) {
+    return 'पूर्वावलोकन: $style';
+  }
+
+  @override
+  String livePhotoStyleLocked(String style) {
+    return '$style, Pro स्टाइल';
+  }
+
+  @override
+  String get livePhotoSave => 'लाइव फ़ोटो सेव करें';
+
+  @override
+  String get livePhotoRendering => 'आपकी लाइव फ़ोटो बन रही है';
+
+  @override
+  String livePhotoProgress(String percent) {
+    return '$percent पूरा';
+  }
+
+  @override
+  String get livePhotoSaving => 'Photos में सेव हो रहा है';
+
+  @override
+  String get livePhotoCancelling => 'रोका जा रहा है';
+
+  @override
+  String get livePhotoRefusedTitle => 'Prism Photos में नहीं जोड़ सकता';
+
+  @override
+  String get livePhotoRefusedBody =>
+      'लाइव फ़ोटो सेव करने के लिए Prism को फ़ोटो जोड़ने की अनुमति दें। सेटिंग्स में Photos पर टैप करें, फिर केवल फ़ोटो जोड़ें पर टैप करें।';
+
+  @override
+  String get livePhotoRestrictedBody =>
+      'इस iPhone पर Photos का एक्सेस बंद है, जैसे स्क्रीन टाइम की वजह से। सेटिंग्स देखें, या इस iPhone को संभालने वाले व्यक्ति से पूछें।';
+
+  @override
+  String get livePhotoNotNow => 'अभी नहीं';
+
+  @override
+  String get livePhotoFailedTitle => 'लाइव फ़ोटो नहीं बन सकी';
+
+  @override
+  String get livePhotoFailedSource => 'यह वॉलपेपर लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get livePhotoFailedTimeout => 'इसमें बहुत समय लग गया। फिर से कोशिश करें, या कोई दूसरी स्टाइल चुनें।';
+
+  @override
+  String get livePhotoFailedSave => 'Photos ने लाइव फ़ोटो सेव नहीं की। फिर से कोशिश करें।';
+
+  @override
+  String get livePhotoFailedGeneric => 'लाइव फ़ोटो नहीं बन सकी। फिर से कोशिश करें।';
+
+  @override
+  String get livePhotoTryAgain => 'फिर से कोशिश करें';
+
+  @override
+  String get livePhotoGuideTitle => 'इसे अपनी लॉक स्क्रीन बनाएं';
+
+  @override
+  String get livePhotoGuideBody =>
+      'आपकी लाइव फ़ोटो Photos में है। iOS ऐप्स को आपका वॉलपेपर बदलने नहीं देता, इसलिए आगे का काम वहीं करें:';
+
+  @override
+  String get livePhotoGuideStep1 => 'Photos खोलें। नई फ़ोटो पर LIVE बैज है।';
+
+  @override
+  String get livePhotoGuideStep2 => 'शेयर करें पर टैप करें, फिर वॉलपेपर के रूप में इस्तेमाल करें पर टैप करें।';
+
+  @override
+  String get livePhotoGuideStep3 => 'नीचे का लाइव फ़ोटो बटन चालू रखें, फिर जोड़ें पर टैप करें।';
+
+  @override
+  String get livePhotoGuideNotesTitle => 'जानना अच्छा है';
+
+  @override
+  String get livePhotoGuideNoteWake =>
+      'iPhone जगाने पर लॉक स्क्रीन पर मोशन चलता है। होम स्क्रीन पर स्थिर फ़ोटो दिखती है।';
+
+  @override
+  String get livePhotoGuideNoteLowPower => 'लो पावर मोड लॉक स्क्रीन की मोशन बंद कर देता है।';
+
+  @override
+  String get livePhotoGuideNoteNotAvailable =>
+      'अगर iOS मोशन उपलब्ध नहीं है कहे, तो इसे स्थिर वॉलपेपर की तरह इस्तेमाल करें या कोई दूसरी स्टाइल आज़माएं।';
+
+  @override
+  String get livePhotoGuideNoteVersion => 'लॉक स्क्रीन पर मोशन के लिए iOS 17 या उसके बाद का वर्शन चाहिए।';
 }
