@@ -115,7 +115,12 @@ FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
   switch (type) {
     case 'prism':
       if (!validLists(wallpaper, const <String>['collections', 'tags']) ||
-          !validNumbers(wallpaper, const <String>['requiredStreakDays', 'streakShopCoinCost', 'remixCount', 'variantIndex']) ||
+          !validNumbers(wallpaper, const <String>[
+            'requiredStreakDays',
+            'streakShopCoinCost',
+            'remixCount',
+            'variantIndex',
+          ]) ||
           !validBools(wallpaper, const <String>['review', 'isStreakExclusive', 'isAiGenerated']) ||
           !validMaps(wallpaper, const <String>['aiMetadata', 'spatial', 'desktop', 'aiSource'])) {
         return null;
