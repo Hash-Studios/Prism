@@ -16,8 +16,8 @@ final class PrismLivePhotoHostApiImpl: @preconcurrency PrismLivePhotoHostApi {
     for export in exports.values { export.cancel() }
     let id = request.exportId
     exports[id] = Task { [weak self] in
-      let result = await PrismLivePhotoExporter.export(request) { fraction in
-        Task { @MainActor [weak self] in self?.report(id, fraction) }
+      let result = await PrismLivePhotoExporter.export(request) { [weak self] fraction in
+        Task { @MainActor in self?.report(id, fraction) }
       }
       completion(.success(result))
       self?.exports[id] = nil

@@ -35,10 +35,13 @@ final class LivePhotoExportTests: XCTestCase {
     )
     let identifier = try await XCTUnwrap(items.first).load(.stringValue)
     XCTAssertEqual(identifier, files.contentIdentifier)
-    XCTAssertEqual(try await video.load(.duration).seconds, 1.0, accuracy: 0.05)
-    let videoTrack = try await XCTUnwrap(video.loadTracks(withMediaType: .video).first)
-    XCTAssertEqual(try await videoTrack.load(.naturalSize), CGSize(width: 390, height: 844))
-    XCTAssertEqual(try await video.loadTracks(withMediaType: .metadata).count, 1)
+    let duration = try await video.load(.duration)
+    XCTAssertEqual(duration.seconds, 1.0, accuracy: 0.05)
+    let videoTracks = try await video.loadTracks(withMediaType: .video)
+    let naturalSize = try await XCTUnwrap(videoTracks.first).load(.naturalSize)
+    XCTAssertEqual(naturalSize, CGSize(width: 390, height: 844))
+    let metadataTracks = try await video.loadTracks(withMediaType: .metadata)
+    XCTAssertEqual(metadataTracks.count, 1)
 
     let status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
     try XCTSkipUnless(status == .authorized || status == .limited, "Photos access is not granted")
@@ -54,9 +57,9 @@ final class LivePhotoExportTests: XCTestCase {
     for style in LivePhotoStyle.allCases {
       let folder = directory.appendingPathComponent("\(style)", isDirectory: true)
       try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-      var request = request(style: style)
-      request.depthPath = style == .depth ? depth.path : nil
-      let files = try await PrismLivePhotoExporter.render(request, into: folder) { _ in }
+      var styleRequest = request(style: style)
+      styleRequest.depthPath = style == .depth ? depth.path : nil
+      let files = try await PrismLivePhotoExporter.render(styleRequest, into: folder) { _ in }
       XCTAssertTrue(FileManager.default.fileExists(atPath: files.video.path), "\(style)")
     }
   }
@@ -64,8 +67,9 @@ final class LivePhotoExportTests: XCTestCase {
   func testCancelReturnsCancelledAndRemovesFiles() async throws {
     let started = expectation(description: "first frame")
     started.assertForOverFulfill = false
+    let breathe = request(style: .breathe, durationMs: 3000)
     let export = Task {
-      await PrismLivePhotoExporter.export(request(style: .breathe, durationMs: 3000)) { _ in started.fulfill() }
+      await PrismLivePhotoExporter.export(breathe) { _ in started.fulfill() }
     }
     await fulfillment(of: [started], timeout: 30)
     export.cancel()
@@ -75,9 +79,9 @@ final class LivePhotoExportTests: XCTestCase {
   }
 
   func testTimeLimitReturnsTimedOutAndRemovesFiles() async throws {
-    var request = request(style: .shimmer, durationMs: 3000)
-    request.timeoutMs = 1
-    let result = await PrismLivePhotoExporter.export(request) { _ in }
+    var shimmer = request(style: .shimmer, durationMs: 3000)
+    shimmer.timeoutMs = 1
+    let result = await PrismLivePhotoExporter.export(shimmer) { _ in }
     XCTAssertEqual(result.status, .timedOut)
     XCTAssertEqual(try leftoverFiles(), [])
   }
@@ -89,9 +93,9 @@ final class LivePhotoExportTests: XCTestCase {
     tooLong.durationMs = 4000
     var badRate = request(style: .drift)
     badRate.framesPerSecond = 60
-    for request in [depthWithoutMap, tooLong, badRate] {
+    for invalid in [depthWithoutMap, tooLong, badRate] {
       do {
-        _ = try await PrismLivePhotoExporter.render(request, into: directory) { _ in }
+        _ = try await PrismLivePhotoExporter.render(invalid, into: directory) { _ in }
         XCTFail("expected invalid-request")
       } catch {
         XCTAssertEqual(error as? PrismLivePhotoFailure, .invalidRequest)
