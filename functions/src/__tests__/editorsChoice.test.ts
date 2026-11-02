@@ -219,19 +219,22 @@ test("concurrent picks of one wall send one creator notice", async (t) => {
 });
 
 for (const failure of ["throw", "false"] as const) {
-  test(`a push that returns ${failure} does not fail the pick or send again on retry`, async (t) => {
+  test(`a push that returns ${failure} keeps the pick and frees the notice for one retry`, async (t) => {
     const {store} = setup(t);
     let sends = 0;
     t.mock.method(editorsChoiceIo, "sendToUser", async () => {
       sends++;
+      if (sends > 1) return true;
       if (failure === "throw") throw new Error("fcm down");
       return false;
     });
     const input = {wallId: "w1", picked: true, requestId: "request_0001"};
     assert.deepEqual(await call(input), {wallId: "w1", picked: true});
     assert.ok(store.get(WALL)?.editorsChoiceAt);
+    assert.equal(store.has("editorsChoiceNotices/w1"), false);
+    assert.deepEqual(await call(input), {wallId: "w1", picked: true});
     assert.equal(store.has("editorsChoiceNotices/w1"), true);
     assert.deepEqual(await call(input), {wallId: "w1", picked: true});
-    assert.equal(sends, 1);
+    assert.equal(sends, 2);
   });
 }

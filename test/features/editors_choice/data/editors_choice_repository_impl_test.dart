@@ -75,9 +75,25 @@ void main() {
       expect(ids, <String>['NEWEST', 'OLDEST']);
       final FirestoreQuerySpec spec = client.querySpecs.single;
       expect(spec.collection, FirebaseCollections.walls);
-      expect(spec.limit, 30);
+      expect(spec.limit, 60);
       expect(spec.filters.single, const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true));
       expect(spec.orderBy.single, const FirestoreOrderBy(field: 'editorsChoiceAt', descending: true));
+    });
+    test('ineligible picks do not use up the limit', () async {
+      final Map<String, Map<String, dynamic>> walls = <String, Map<String, dynamic>>{
+        'PREMIUM': _wall('PREMIUM', collections: <String>['space']),
+        'UNPROTECTED': _wall('UNPROTECTED', protected: false),
+        'A': _wall('A'),
+        'B': _wall('B'),
+        'C': _wall('C'),
+      };
+      client.onQuery = (spec) => <FakeDocRow>[
+        for (final String id in walls.keys.take(spec.limit!)) (id: id, data: walls[id]!),
+      ];
+
+      final List<String> ids = (await repository().fetchPicks(limit: 2)).map((wall) => wall.id).toList();
+
+      expect(ids, <String>['A', 'B']);
     });
   });
 
@@ -98,7 +114,7 @@ void main() {
 
       expect((row.state as EditorsChoiceLoaded).walls, isEmpty);
       expect((screen.state as EditorsChoiceLoaded).walls, isEmpty);
-      expect(client.querySpecs.map((spec) => spec.limit), <int>[30, 60, 30, 60]);
+      expect(client.querySpecs.map((spec) => spec.limit), <int>[60, 120, 60, 120]);
     });
 
     test('a failed pick change keeps the loaded picks without a reload', () async {

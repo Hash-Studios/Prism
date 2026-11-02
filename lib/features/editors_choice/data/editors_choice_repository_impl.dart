@@ -35,6 +35,10 @@ class EditorsChoiceRepositoryImpl implements EditorsChoiceRepository {
   final UserBlockRepository _userBlockRepository;
   final SettingsLocalDataSource _settingsLocal;
   final EditorsChoiceCaller _call;
+
+  /// A pick can stop being listable after it was picked (a premium collection, a Drop), or the viewer can hide it.
+  /// Reading twice the limit keeps those from emptying the row.
+  static const int _overfetch = 2;
   final StreamController<void> _pickChanges = StreamController<void>.broadcast();
 
   @override
@@ -56,7 +60,7 @@ class EditorsChoiceRepositoryImpl implements EditorsChoiceRepository {
           FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
         ],
         orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'editorsChoiceAt', descending: true)],
-        limit: limit,
+        limit: limit * _overfetch,
         cachePolicy: FirestoreCachePolicy.memoryFirst,
       ),
       (data, docId) => isFreeListableWallDoc(data) && data['editorsChoiceAt'] != null
@@ -64,7 +68,7 @@ class EditorsChoiceRepositoryImpl implements EditorsChoiceRepository {
           : null,
     )).whereType<PrismWallpaper>().toList(growable: false);
     final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
-    return _visible(picks, blocked);
+    return _visible(picks, blocked).take(limit).toList(growable: false);
   }
 
   @override

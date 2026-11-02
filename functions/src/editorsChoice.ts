@@ -115,21 +115,28 @@ async function notifyCreator(wallId: string): Promise<void> {
       return true;
     });
     if (!claimed) return;
-    await editorsChoiceIo.sendToUser(
-      {
-        ...notificationCopyPayload({kind: "editorsChoicePicked", wallTitle: str(wall.title)}),
-        data: {route: "wall", wall_id: wallId, notification_kind: "editors_choice"},
-        imageUrl: str(wall.wallpaper_thumb) || undefined,
-        modifier: email,
-        channelId: "posts",
-        scoreKind: "post",
-        collapseKey: `editors_choice_${wallId}`,
-        docId: `editors_choice_${wallId}`,
-      },
-      {uid: creator?.id, email, loggedOut: isLoggedOut(creator?.data())},
-      session?.postAlerts !== false,
-    );
-    logger.info("setEditorsChoice: creator notified.", {wallId, creatorHash: emailHash(email)});
+    let delivered = false;
+    try {
+      delivered = await editorsChoiceIo.sendToUser(
+        {
+          ...notificationCopyPayload({kind: "editorsChoicePicked", wallTitle: str(wall.title)}),
+          data: {route: "wall", wall_id: wallId, notification_kind: "editors_choice"},
+          imageUrl: str(wall.wallpaper_thumb) || undefined,
+          modifier: email,
+          channelId: "posts",
+          scoreKind: "post",
+          collapseKey: `editors_choice_${wallId}`,
+          docId: `editors_choice_${wallId}`,
+        },
+        {uid: creator?.id, email, loggedOut: isLoggedOut(creator?.data())},
+        session?.postAlerts !== false,
+      );
+    } finally {
+      // A failed send frees the claim so a replay or a later pick can deliver. The fixed inbox doc id and collapse key
+      // make that retry replace, not repeat, anything that did arrive.
+      if (!delivered) await noticeRef.delete().catch((err) => logger.warn("setEditorsChoice: claim release failed.", {wallId, err}));
+    }
+    if (delivered) logger.info("setEditorsChoice: creator notified.", {wallId, creatorHash: emailHash(email)});
   } catch (err) {
     logger.warn("setEditorsChoice: creator notice failed.", {wallId, err});
   }
