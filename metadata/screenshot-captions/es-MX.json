@@ -1,0 +1,41 @@
+{
+  "app-store": [
+    {
+      "file": "iphone-1-wallpaper",
+      "headline": "Fondos que enamoran",
+      "subline": "4K y AMOLED, con una selección nueva cada día"
+    },
+    {
+      "file": "iphone-2-collections",
+      "headline": "Encuentra tu estilo",
+      "subline": "Categorías, estados de ánimo y colecciones"
+    },
+    {
+      "file": "iphone-3-variants",
+      "headline": "Hazlo tuyo",
+      "subline": "Prueba un filtro antes de guardarlo"
+    },
+    {
+      "file": "iphone-4-colors",
+      "headline": "Busca por color",
+      "subline": "Saca la paleta de un fondo o elige un color"
+    }
+  ],
+  "play": [
+    {
+      "file": "play-1",
+      "headline": "Adiós a los fondos aburridos",
+      "subline": "4K y AMOLED, con una selección nueva cada día"
+    },
+    {
+      "file": "play-2",
+      "headline": "Crea fondos con IA",
+      "subline": "Escribe una idea, elige un estilo y listo"
+    },
+    {
+      "file": "play-3",
+      "headline": "Encuentra tu estilo",
+      "subline": "Categorías, estados de ánimo y colecciones"
+    }
+  ]
+}

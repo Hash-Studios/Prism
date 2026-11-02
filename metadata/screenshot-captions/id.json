@@ -1,0 +1,41 @@
+{
+  "app-store": [
+    {
+      "file": "iphone-1-wallpaper",
+      "headline": "Wallpaper yang bikin terpukau",
+      "subline": "4K dan AMOLED, dengan pilihan baru setiap hari"
+    },
+    {
+      "file": "iphone-2-collections",
+      "headline": "Temukan gaya Anda",
+      "subline": "Kategori, suasana, dan koleksi pilihan"
+    },
+    {
+      "file": "iphone-3-variants",
+      "headline": "Jadikan wallpaper Anda",
+      "subline": "Coba filter sebelum menyimpan"
+    },
+    {
+      "file": "iphone-4-colors",
+      "headline": "Cari berdasarkan warna",
+      "subline": "Ambil palet dari wallpaper atau pilih warna"
+    }
+  ],
+  "play": [
+    {
+      "file": "play-1",
+      "headline": "Bye, wallpaper membosankan",
+      "subline": "4K dan AMOLED, dengan pilihan baru setiap hari"
+    },
+    {
+      "file": "play-2",
+      "headline": "Bikin wallpaper dengan AI",
+      "subline": "Tulis ide, pilih gaya, pasang"
+    },
+    {
+      "file": "play-3",
+      "headline": "Temukan gaya Anda",
+      "subline": "Kategori, suasana, dan koleksi pilihan"
+    }
+  ]
+}

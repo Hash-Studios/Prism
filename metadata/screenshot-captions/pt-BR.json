@@ -1,0 +1,41 @@
+{
+  "app-store": [
+    {
+      "file": "iphone-1-wallpaper",
+      "headline": "De cair o queixo",
+      "subline": "4K e AMOLED, com uma escolha nova todo dia"
+    },
+    {
+      "file": "iphone-2-collections",
+      "headline": "Ache a sua vibe",
+      "subline": "Categorias, humores e coleções selecionadas"
+    },
+    {
+      "file": "iphone-3-variants",
+      "headline": "Deixe com a sua cara",
+      "subline": "Teste um filtro antes de salvar"
+    },
+    {
+      "file": "iphone-4-colors",
+      "headline": "Busque por cor",
+      "subline": "Tire a paleta de uma imagem ou escolha uma cor"
+    }
+  ],
+  "play": [
+    {
+      "file": "play-1",
+      "headline": "Chega de fundo sem graça",
+      "subline": "4K e AMOLED, com uma escolha nova todo dia"
+    },
+    {
+      "file": "play-2",
+      "headline": "Crie com IA",
+      "subline": "Digite uma ideia, escolha um estilo e pronto"
+    },
+    {
+      "file": "play-3",
+      "headline": "Ache a sua vibe",
+      "subline": "Categorias, humores e coleções selecionadas"
+    }
+  ]
+}

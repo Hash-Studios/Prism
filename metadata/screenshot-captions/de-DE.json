@@ -1,0 +1,41 @@
+{
+  "app-store": [
+    {
+      "file": "iphone-1-wallpaper",
+      "headline": "Bilder mit Wow-Effekt",
+      "subline": "4K und AMOLED, jeden Tag ein neues Highlight"
+    },
+    {
+      "file": "iphone-2-collections",
+      "headline": "Finde deinen Stil",
+      "subline": "Kategorien, Stimmungen und kuratierte Sammlungen"
+    },
+    {
+      "file": "iphone-3-variants",
+      "headline": "Mach es zu deinem",
+      "subline": "Probier einen Filter, bevor du speicherst"
+    },
+    {
+      "file": "iphone-4-colors",
+      "headline": "Suche nach Farbe",
+      "subline": "Farbpalette aus jedem Bild, oder wähle eine Farbe"
+    }
+  ],
+  "play": [
+    {
+      "file": "play-1",
+      "headline": "Schluss mit langweilig",
+      "subline": "4K und AMOLED, jeden Tag ein neues Highlight"
+    },
+    {
+      "file": "play-2",
+      "headline": "Wallpaper mit KI",
+      "subline": "Idee eintippen, Stil wählen, festlegen"
+    },
+    {
+      "file": "play-3",
+      "headline": "Finde deinen Stil",
+      "subline": "Kategorien, Stimmungen und kuratierte Sammlungen"
+    }
+  ]
+}
