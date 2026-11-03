@@ -8,25 +8,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:github/github.dart';
-import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
 
-class _RecordingUrlLauncher extends UrlLauncherPlatform {
-  _RecordingUrlLauncher({required this.opens});
+const MethodChannel _urlLauncherChannel = MethodChannel('plugins.flutter.io/url_launcher');
+final List<String> _launchedUrls = <String>[];
+bool _urlLauncherOpens = true;
 
-  final bool opens;
-  final List<String> urls = <String>[];
+void _mockUrlLauncher({bool opens = true}) {
+  _launchedUrls.clear();
+  _urlLauncherOpens = opens;
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(_urlLauncherChannel, (
+    MethodCall call,
+  ) async {
+    final Object? url = (call.arguments as Map<Object?, Object?>?)?['url'];
+    if (call.method == 'launch' && url is String) _launchedUrls.add(url);
+    return _urlLauncherOpens;
+  });
+}
 
-  @override
-  Future<bool> launchUrl(String url, LaunchOptions options) async {
-    urls.add(url);
-    return opens;
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+void _mockInstaller(String? installerStore) {
+  PackageInfo.setMockInitialValues(
+    appName: 'Prism',
+    packageName: 'com.hash.prism',
+    version: '3.18.2',
+    buildNumber: '359',
+    buildSignature: '',
+    installerStore: installerStore,
+  );
 }
 
 Contributor _contributor(String? login, {int commits = 5}) =>
@@ -50,6 +61,8 @@ void main() {
 
     setUp(() async {
       copied.clear();
+      _mockUrlLauncher();
+      _mockInstaller('com.android.vending');
       AnalyticsRuntime.instance = FakeAppAnalytics();
       await getIt.reset();
       getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
@@ -63,6 +76,10 @@ void main() {
     });
 
     tearDown(() async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        _urlLauncherChannel,
+        null,
+      );
       contributorsLoader = () =>
           GitHub().repositories.listContributors(RepositorySlug('Hash-Studios', 'Prism')).toList();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -142,9 +159,7 @@ void main() {
 
     testWidgets('a link that cannot open shows its address with a Copy action', (tester) async {
       contributorsLoader = () async => <Contributor>[];
-      final previous = UrlLauncherPlatform.instance;
-      UrlLauncherPlatform.instance = _RecordingUrlLauncher(opens: false);
-      addTearDown(() => UrlLauncherPlatform.instance = previous);
+      _mockUrlLauncher(opens: false);
       await pumpAbout(tester);
 
       await tester.tap(find.text('GITHUB'));
@@ -161,10 +176,7 @@ void main() {
 
     testWidgets('FEEDBACK opens the mail app, and falls back to Report a problem when none opens', (tester) async {
       contributorsLoader = () async => <Contributor>[];
-      final launcher = _RecordingUrlLauncher(opens: false);
-      final previous = UrlLauncherPlatform.instance;
-      UrlLauncherPlatform.instance = launcher;
-      addTearDown(() => UrlLauncherPlatform.instance = previous);
+      _mockUrlLauncher(opens: false);
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
         const MethodChannel('dev.fluttercommunity.plus/package_info'),
         (call) async => <String, Object?>{
@@ -188,7 +200,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump(const Duration(milliseconds: 400));
 
-      expect(launcher.urls.single, startsWith('mailto:hash.studios.inc@gmail.com'));
+      expect(_launchedUrls.single, startsWith('mailto:hash.studios.inc@gmail.com'));
       expect(find.text('Report a problem'), findsOneWidget);
       expect(find.text('Send report'), findsOneWidget);
     });
@@ -283,17 +295,14 @@ void main() {
         _contributor('c'),
         _contributor('dave'),
       ];
-      final launcher = _RecordingUrlLauncher(opens: true);
-      final previous = UrlLauncherPlatform.instance;
-      UrlLauncherPlatform.instance = launcher;
-      addTearDown(() => UrlLauncherPlatform.instance = previous);
+      _mockUrlLauncher();
       await pumpAbout(tester);
 
       await tester.tap(find.text('dave'));
       await tester.pump();
       await tester.pump();
 
-      expect(launcher.urls, contains('https://github.com/dave'));
+      expect(_launchedUrls, contains('https://github.com/dave'));
     });
 
     testWidgets('the header shows a hairline only once the page is scrolled', (tester) async {
@@ -371,6 +380,45 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       expect(tester.takeException(), isNull);
       expect(find.text('WallHaven API'), findsOneWidget);
+    });
+
+    testWidgets('a sideloaded install shows DOWNLOAD APK and opens the APK page', (tester) async {
+      contributorsLoader = () async => <Contributor>[];
+      final analytics = FakeAppAnalytics();
+      AnalyticsRuntime.instance = analytics;
+      _mockUrlLauncher();
+      _mockInstaller(null);
+      await pumpAbout(tester);
+
+      expect(find.text('DOWNLOAD APK'), findsOneWidget);
+      await tester.ensureVisible(find.text('DOWNLOAD APK'));
+      await tester.tap(find.text('DOWNLOAD APK'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(_launchedUrls, <String>['https://prismwalls.com/download']);
+      final List<Object?> shown = analytics.events
+          .where((event) => event.eventName == 'apk_link_shown')
+          .map((event) => event.toWireParameters()['source'])
+          .toList();
+      final List<Object?> tapped = analytics.events
+          .where((event) => event.eventName == 'apk_link_tapped')
+          .map((event) => event.toWireParameters()['source'])
+          .toList();
+      expect(shown, <Object?>['about']);
+      expect(tapped, <Object?>['about']);
+    });
+
+    testWidgets('a Play install shows no APK chip', (tester) async {
+      contributorsLoader = () async => <Contributor>[];
+      final analytics = FakeAppAnalytics();
+      AnalyticsRuntime.instance = analytics;
+      _mockInstaller('com.android.vending');
+      await pumpAbout(tester);
+
+      expect(find.text('DOWNLOAD APK'), findsNothing);
+      expect(analytics.events.where((event) => event.eventName == 'apk_link_shown'), isEmpty);
+      expect(find.text('RATE'), findsOneWidget);
     });
   });
 }

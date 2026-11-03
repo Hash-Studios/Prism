@@ -700,6 +700,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get accountSpatialSceneSemanticLabel => 'Räumlich, Walls mit klarer 3D-Tiefe';
 
   @override
+  String get accountDownloadApk => 'APK HERUNTERLADEN';
+
+  @override
   String accountDownloadedWallpaperCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -9214,6 +9217,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String wallpaperOldVersionBody(String version) {
     return 'Version $version wird nicht mehr unterstützt. Aktualisiere Prism, um es weiterhin zu nutzen.';
   }
+
+  @override
+  String get wallpaperOldVersionDownloadLatest => 'Neueste Version herunterladen';
 
   @override
   String get wallpaperOldVersionTitle => 'Zeit für ein Update';

@@ -1209,6 +1209,12 @@ abstract class AppLocalizations {
   /// **'Spatial, walls with clear 3D depth'**
   String get accountSpatialSceneSemanticLabel;
 
+  /// About page action that opens the APK download page. Shown only on installs that did not come from Google Play.
+  ///
+  /// In en, this message translates to:
+  /// **'DOWNLOAD APK'**
+  String get accountDownloadApk;
+
   /// Subtitle describing downloaded files and retained offline copies.
   ///
   /// In en, this message translates to:
@@ -14274,6 +14280,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Version {version} is no longer supported. Update Prism to keep using it.'**
   String wallpaperOldVersionBody(String version);
+
+  /// Action on the update screen that opens the APK download page. Shown only on installs that did not come from Google Play.
+  ///
+  /// In en, this message translates to:
+  /// **'Download the latest version'**
+  String get wallpaperOldVersionDownloadLatest;
 
   /// Title shown when the app version is no longer supported.
   ///

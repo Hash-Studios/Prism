@@ -6,6 +6,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/platform/install_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
@@ -108,6 +109,7 @@ class _AboutScreenState extends State<AboutScreen> {
   int _versionTapCount = 0;
 
   late Future<List<Contributor>> _contributors = _fetchContributors();
+  bool _showsApkLink = false;
 
   String get _storeLink => defaultTargetPlatform == TargetPlatform.iOS ? appStoreUrl : playStoreUrl;
 
@@ -117,6 +119,13 @@ class _AboutScreenState extends State<AboutScreen> {
   void initState() {
     super.initState();
     _contentLoadTracker.start();
+    unawaited(
+      apkDownloadOffered().then((bool offered) {
+        if (!offered || !mounted) return;
+        setState(() => _showsApkLink = true);
+        unawaited(analytics.track(const ApkLinkShownEvent(source: ApkLinkSourceValue.about)));
+      }),
+    );
   }
 
   void _onVersionTap() {
@@ -219,6 +228,16 @@ class _AboutScreenState extends State<AboutScreen> {
               link: 'https://www.github.com/Hash-Studios/Prism',
             ),
             ActionButton(icon: Icons.star_rounded, text: context.l10n.accountRateApp, link: _storeLink),
+            if (_showsApkLink)
+              ActionButton(
+                icon: Icons.download_rounded,
+                text: context.l10n.accountDownloadApk,
+                link: apkDownloadUrl,
+                onTap: (BuildContext context) {
+                  unawaited(analytics.track(const ApkLinkTappedEvent(source: ApkLinkSourceValue.about)));
+                  unawaited(_openOrExplain(context, apkDownloadUrl, address: apkDownloadUrl));
+                },
+              ),
             ActionButton(
               icon: Icons.mail_outline_rounded,
               text: context.l10n.accountFeedback,

@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard rules-test no-dynamic-guard no-shape-parse-guard guard-test env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab release-android release-ios patch patch-list patch-promote patch-rollback ensure-shorebird size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks repo-assets-check store-listings-check
+.PHONY: public-apk setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard rules-test no-dynamic-guard no-shape-parse-guard guard-test env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab release-android release-ios patch patch-list patch-promote patch-rollback ensure-shorebird size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks repo-assets-check store-listings-check
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -157,7 +157,7 @@ no-shape-parse-guard:
 
 guard-test:
 	@bash tool/search_guard_test.sh
-	@python3 -m unittest tool.release_tools_test tool.release_workflows_test tool.ios_ci_signing_test tool.app_size_workflow_test tool.check_store_listings_test tool.shorebird_ota_test
+	@python3 -m unittest tool.release_tools_test tool.release_workflows_test tool.ios_ci_signing_test tool.app_size_workflow_test tool.check_store_listings_test tool.shorebird_ota_test tool.public_apk_test
 	@node --test tool/ai_style_samples.test.mjs
 
 .PHONY: notification-contract-fixture-test
@@ -226,6 +226,12 @@ build-aab: ensure-fvm doppler-check
 	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
 		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
 	fi
+
+# Attach the Play-signed universal APK to a GitHub release. See docs/features/public-apk.md.
+# make public-apk TAG='v3.18.2+359' DRY_RUN=1
+public-apk:
+	@test -n "$(TAG)" || { echo "Set TAG, for example TAG='v3.18.2+359'."; exit 1; }
+	@python3 tool/public_apk.py --tag '$(TAG)' $(if $(DRY_RUN),--dry-run,) $(PUBLIC_APK_ARGS)
 
 # Shorebird store releases and over-the-air Dart patches. See docs/development/ota.md.
 ensure-shorebird:

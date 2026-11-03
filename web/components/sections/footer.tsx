@@ -1,11 +1,18 @@
 import Image from "next/image";
 import { APP_STORE_URL, GITHUB_URL, PLAY_STORE_URL, TELEGRAM_URL, X_URL } from "@/lib/site-config";
+import { cn } from "@/lib/utils";
 
-export function Footer() {
+/** `adaptive` follows the dark colour scheme. Only pages that style their own body for dark mode pass it. */
+export function Footer({ adaptive = false }: { adaptive?: boolean }) {
   const year = new Date().getFullYear();
 
   return (
-    <div className="w-full rounded-t-4xl sm:rounded-t-[100px] flex flex-col gap-40 items-center justify-center bg-white/60 border-t-4 border-white pt-10 sm:pt-20 px-12 overflow-hidden">
+    <div
+      className={cn(
+        "w-full rounded-t-4xl sm:rounded-t-[100px] flex flex-col gap-40 items-center justify-center bg-white/60 border-t-4 border-white pt-10 sm:pt-20 px-12 overflow-hidden",
+        adaptive && "dark:bg-base-850 dark:border-white/5 [&_h3:not(.select-none)]:dark:text-white [&_h3.select-none]:dark:text-white/5 [&_a]:dark:text-neutral-400 [&_a:hover]:dark:text-white",
+      )}
+    >
       <div className="flex sm:flex-row flex-col sm:justify-between justify-start sm:gap-0 gap-10 w-full max-w-7xl relative z-10">
         <div className="flex flex-col gap-10">
           <Image
@@ -74,6 +81,7 @@ export function Footer() {
             >
               App Store
             </a>
+            <a href="/download" className="text-neutral-400 hover:text-black transition-all">Download</a>
           </div>
         </div>
       </div>

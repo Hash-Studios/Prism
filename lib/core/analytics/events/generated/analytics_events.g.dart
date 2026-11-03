@@ -64,6 +64,7 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'push_kind': PushKindValue.values.map((value) => value.wireValue).toList(),
   'immersive_toggle_source': ImmersiveToggleSourceValue.values.map((value) => value.wireValue).toList(),
   'variant_switch_source': VariantSwitchSourceValue.values.map((value) => value.wireValue).toList(),
+  'apk_link_source': ApkLinkSourceValue.values.map((value) => value.wireValue).toList(),
   'variant_link_result': VariantLinkResultValue.values.map((value) => value.wireValue).toList(),
   'favourite_pin_surface': FavouritePinSurfaceValue.values.map((value) => value.wireValue).toList(),
   'wall_request_source': WallRequestSourceValue.values.map((value) => value.wireValue).toList(),
@@ -4930,5 +4931,33 @@ class OtaPatchRunningEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'patch_number': patchNumber, 'previous_patch_number': previousPatchNumber};
+  }
+}
+
+class ApkLinkShownEvent extends AnalyticsEvent {
+  const ApkLinkShownEvent({required this.source});
+
+  final ApkLinkSourceValue source;
+
+  @override
+  String get eventName => 'apk_link_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
+  }
+}
+
+class ApkLinkTappedEvent extends AnalyticsEvent {
+  const ApkLinkTappedEvent({required this.source});
+
+  final ApkLinkSourceValue source;
+
+  @override
+  String get eventName => 'apk_link_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
   }
 }

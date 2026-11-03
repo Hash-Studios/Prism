@@ -511,6 +511,23 @@ Before you attach the aab, check that it is this build:
 Pass `--notes-start-tag` so the notes list only the PRs since the last release. The repo is public, so
 the release reaches an audience: get the human's yes first.
 
+### 11b-2. Public APK (after the GitHub release exists)
+
+Attach the universal APK that Play signed from the same `.aab`, plus its SHA-256 file. Users without the Play Store
+install it from `https://prismwalls.com/download`. See `docs/features/public-apk.md` for the policy and signing rules.
+Run the dry run first. It downloads the APK from the Play Developer API, checks its signature against the pinned Play
+app signing certificate and its version code against the tag, writes the SHA-256 file, and attaches nothing:
+```sh
+make public-apk TAG='v<VERSION>+<N>' DRY_RUN=1
+make public-apk TAG='v<VERSION>+<N>'          # human-only: attaches to the public release
+```
+It reads the Play service account from `PLAY_SERVICE_ACCOUNT_JSON`, else `android/google-play-console.json` (the
+fastlane key). It prints no key and no token. Wait until Play has processed the bundle (the `gplay release` or
+fastlane upload finished). If Play has no universal APK yet, the script stops; run it again later. It refuses a
+release that already has only one of the two files. If no Play credentials are available, download the signed
+universal APK in Play Console (App bundle explorer, the version, Downloads) and pass it with
+`PUBLIC_APK_ARGS='--apk <path>'`; the same signature check runs.
+
 ### 11c. Telegram release announcement (after public store availability)
 
 Skip this for `--backend-only` unless the human asks for an announcement. A Play upload, App Store
@@ -545,6 +562,7 @@ Prism release: version <VERSION>, build <N>.
   Telegram:           <posted message ids and image sources, or "draft only" / "skipped">
   Version bump commit: <sha, merged to master in PR #<n> (or "not merged, human decides")>
   GitHub release:     v<VERSION>+<N> with app-release.aab           (or "not created")
+  Public APK:         prism-<VERSION>-<N>.apk + .sha256 attached     (or "dry run only" / "not attached")
 ```
 
 ## Human-only steps (stop and get an explicit yes at the concrete step, not once up front)
@@ -557,6 +575,7 @@ Prism release: version <VERSION>, build <N>.
 - Decrypting `android/android_keys.zip.gpg` (passphrase stays with the human)
 - Pushing the version-bump commit and merging its PR to `master`
 - Pushing the release tag and `gh release create`
+- `make public-apk` without `DRY_RUN` (attaches the APK to the public GitHub release)
 - `make release-android` / `make release-ios` (uploads a Shorebird release and pushes its record tag)
 - `make patch` or the "Shorebird Patch" workflow, `make patch-promote` (stable reaches every user), `make patch-rollback`
 - Posting a Telegram release announcement (approval must cover the exact copy, images, and channel)

@@ -689,6 +689,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountSpatialSceneSemanticLabel => 'Spatial, walls with clear 3D depth';
 
   @override
+  String get accountDownloadApk => 'DOWNLOAD APK';
+
+  @override
   String accountDownloadedWallpaperCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -9087,6 +9090,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String wallpaperOldVersionBody(String version) {
     return 'Version $version is no longer supported. Update Prism to keep using it.';
   }
+
+  @override
+  String get wallpaperOldVersionDownloadLatest => 'Download the latest version';
 
   @override
   String get wallpaperOldVersionTitle => 'Time to update';

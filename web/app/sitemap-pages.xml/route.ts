@@ -4,7 +4,7 @@ import { duoIsIndexable, duoRoute, duoWalls } from "@/lib/duo-wallpapers";
 
 export const dynamic = "force-static";
 
-const routes = ["/", ...seoRouteOrder.map((slug) => `/${slug}`), "/changelog",
+const routes = ["/", ...seoRouteOrder.map((slug) => `/${slug}`), "/changelog", "/download",
   ...(duoIsIndexable(duoWalls) ? [duoRoute] : [])];
 
 function escapeXml(value: string): string {

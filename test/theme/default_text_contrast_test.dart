@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../support/in_memory_local_store.dart';
 
@@ -49,6 +50,14 @@ void main() {
 
   setUp(() {
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+    PackageInfo.setMockInitialValues(
+      appName: 'Prism',
+      packageName: 'com.hash.prism',
+      version: '3.18.2',
+      buildNumber: '359',
+      buildSignature: '',
+      installerStore: 'com.android.vending',
+    );
   });
 
   tearDown(getIt.reset);
@@ -98,6 +107,7 @@ void main() {
             home: const OldVersion(),
           ),
         );
+        await tester.pump();
 
         _expectReadable(tester, find.text('Time to update'), reason: 'title', page: page);
         expect(find.widgetWithText(FilledButton, 'Update Prism'), findsOneWidget);
