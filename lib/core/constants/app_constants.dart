@@ -13,6 +13,7 @@ const String defaultObsoleteAppVersion = '2.6.0';
 const String defaultBannerText = '';
 const String appStoreUrl = 'https://apps.apple.com/app/id6670200846';
 const String playStoreUrl = 'https://play.google.com/store/apps/details?id=com.hash.prism';
+const String apkDownloadUrl = 'https://prismwalls.com/download';
 const String shortLinkApiUrl = 'https://prismwalls.com/api/links';
 
 const String defaultBannerUrl = 'https://t.me/PrismWallpapers';

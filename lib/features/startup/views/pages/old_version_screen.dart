@@ -1,4 +1,9 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart';
+import 'package:Prism/core/platform/install_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -7,10 +12,29 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Blocking screen for app builds below the minimum supported version.
-class OldVersion extends StatelessWidget {
+class OldVersion extends StatefulWidget {
   const OldVersion({super.key});
 
+  @override
+  State<OldVersion> createState() => _OldVersionState();
+}
+
+class _OldVersionState extends State<OldVersion> {
+  late final Future<bool> _apkOffered = apkDownloadOffered();
+
   String get _storeLink => defaultTargetPlatform == TargetPlatform.iOS ? appStoreUrl : playStoreUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(
+      _apkOffered.then((bool offered) {
+        if (offered && mounted) {
+          unawaited(analytics.track(const ApkLinkShownEvent(source: ApkLinkSourceValue.oldVersion)));
+        }
+      }),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,11 +72,27 @@ class OldVersion extends StatelessWidget {
                   ),
                 ),
               ),
-              PrismButton(
-                label: context.l10n.wallpaperUpdatePrism,
-                expand: true,
-                onPressed: () {
-                  openPrismLink(context, _storeLink);
+              FutureBuilder<bool>(
+                future: _apkOffered,
+                builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
+                  if (!snapshot.hasData) return const SizedBox(height: 48);
+                  if (snapshot.data!) {
+                    return PrismButton(
+                      label: context.l10n.wallpaperOldVersionDownloadLatest,
+                      expand: true,
+                      onPressed: () {
+                        unawaited(analytics.track(const ApkLinkTappedEvent(source: ApkLinkSourceValue.oldVersion)));
+                        openPrismLink(context, apkDownloadUrl);
+                      },
+                    );
+                  }
+                  return PrismButton(
+                    label: context.l10n.wallpaperUpdatePrism,
+                    expand: true,
+                    onPressed: () {
+                      openPrismLink(context, _storeLink);
+                    },
+                  );
                 },
               ),
             ],

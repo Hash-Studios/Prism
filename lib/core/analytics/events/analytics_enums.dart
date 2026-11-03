@@ -478,6 +478,13 @@ enum VariantSwitchSourceValue {
   String get wireValue => _snakeCase(name);
 }
 
+enum ApkLinkSourceValue {
+  oldVersion,
+  about;
+
+  String get wireValue => _snakeCase(name);
+}
+
 enum VariantLinkResultValue {
   linked,
   notFound,

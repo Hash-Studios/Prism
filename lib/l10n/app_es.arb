@@ -385,6 +385,10 @@
   "accountSpatialScene": "Espacial",
   "accountSpatialSceneSubtitle": "Fondos con profundidad 3D clara",
   "accountSpatialSceneSemanticLabel": "Espacial, fondos con profundidad 3D clara",
+  "accountDownloadApk": "DESCARGAR APK",
+  "@accountDownloadApk": {
+    "description": "About page action that opens the APK download page. Shown only on installs that did not come from Google Play."
+  },
   "accountDownloadedWallpaperCount": "{count, plural, =0{No hay fondos descargados; las copias guardadas sin conexión se conservan} =1{1 fondo descargado; las copias guardadas sin conexión se conservan} other{{count} fondos descargados; las copias guardadas sin conexión se conservan}}",
   "accountDownloadsDeleted": "Se borraron todas las descargas.",
   "accountEarnCoins": "Ganar monedas",
@@ -2553,6 +2557,10 @@
   "wallpaperNotificationPromptTitle": "Descubre el Fondo del día",
   "wallpaperOffline": "Sin conexión",
   "wallpaperOldVersionBody": "La versión {version} ya no es compatible. Actualiza Prism para seguir usándola.",
+  "wallpaperOldVersionDownloadLatest": "Descargar la última versión",
+  "@wallpaperOldVersionDownloadLatest": {
+    "description": "Action on the update screen that opens the APK download page. Shown only on installs that did not come from Google Play."
+  },
   "wallpaperOldVersionTitle": "Es hora de actualizar",
   "wallpaperOnPrism": "Fondo de pantalla en Prism",
   "wallpaperOpenError": "No se pudo cargar este fondo de pantalla",

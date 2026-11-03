@@ -1,6 +1,7 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/install_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:github/github.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import '../../support/fake_app_analytics.dart';
@@ -27,6 +29,17 @@ class _RecordingUrlLauncher extends UrlLauncherPlatform {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+void _mockInstaller(String? installerStore) {
+  PackageInfo.setMockInitialValues(
+    appName: 'Prism',
+    packageName: 'com.hash.prism',
+    version: '3.18.2',
+    buildNumber: '359',
+    buildSignature: '',
+    installerStore: installerStore,
+  );
 }
 
 Contributor _contributor(String? login, {int commits = 5}) =>
@@ -50,6 +63,8 @@ void main() {
 
     setUp(() async {
       copied.clear();
+      resetApkDownloadOffer();
+      _mockInstaller('com.android.vending');
       AnalyticsRuntime.instance = FakeAppAnalytics();
       await getIt.reset();
       getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
@@ -70,6 +85,7 @@ void main() {
         null,
       );
       AnalyticsRuntime.reset();
+      resetApkDownloadOffer();
       await getIt.reset();
     });
 
@@ -371,6 +387,50 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       expect(tester.takeException(), isNull);
       expect(find.text('WallHaven API'), findsOneWidget);
+    });
+
+    testWidgets('a sideloaded install shows DOWNLOAD APK and opens the APK page', (tester) async {
+      contributorsLoader = () async => <Contributor>[];
+      final analytics = FakeAppAnalytics();
+      AnalyticsRuntime.instance = analytics;
+      final launcher = _RecordingUrlLauncher(opens: true);
+      final previous = UrlLauncherPlatform.instance;
+      UrlLauncherPlatform.instance = launcher;
+      addTearDown(() => UrlLauncherPlatform.instance = previous);
+      resetApkDownloadOffer();
+      _mockInstaller(null);
+      await pumpAbout(tester);
+
+      expect(find.text('DOWNLOAD APK'), findsOneWidget);
+      await tester.ensureVisible(find.text('DOWNLOAD APK'));
+      await tester.tap(find.text('DOWNLOAD APK'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(launcher.urls, <String>['https://prismwalls.com/download']);
+      final List<Object?> shown = analytics.events
+          .where((event) => event.eventName == 'apk_link_shown')
+          .map((event) => event.toWireParameters()['source'])
+          .toList();
+      final List<Object?> tapped = analytics.events
+          .where((event) => event.eventName == 'apk_link_tapped')
+          .map((event) => event.toWireParameters()['source'])
+          .toList();
+      expect(shown, <Object?>['about']);
+      expect(tapped, <Object?>['about']);
+    });
+
+    testWidgets('a Play install shows no APK chip', (tester) async {
+      contributorsLoader = () async => <Contributor>[];
+      final analytics = FakeAppAnalytics();
+      AnalyticsRuntime.instance = analytics;
+      resetApkDownloadOffer();
+      _mockInstaller('com.android.vending');
+      await pumpAbout(tester);
+
+      expect(find.text('DOWNLOAD APK'), findsNothing);
+      expect(analytics.events.where((event) => event.eventName == 'apk_link_shown'), isEmpty);
+      expect(find.text('RATE'), findsOneWidget);
     });
   });
 }

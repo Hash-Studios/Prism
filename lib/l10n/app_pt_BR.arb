@@ -190,6 +190,10 @@
   "accountSpatialScene": "Espacial",
   "accountSpatialSceneSubtitle": "Walls com profundidade 3D nítida",
   "accountSpatialSceneSemanticLabel": "Espacial, walls com profundidade 3D nítida",
+  "accountDownloadApk": "BAIXAR APK",
+  "@accountDownloadApk": {
+    "description": "About page action that opens the APK download page. Shown only on installs that did not come from Google Play."
+  },
   "accountDownloadedWallpaperCount": "{count, plural, =0{Nenhum papel de parede baixado; as cópias salvas para uso off-line serão mantidas} =1{1 papel de parede baixado; as cópias salvas para uso off-line serão mantidas} other{{count} papéis de parede baixados; as cópias salvas para uso off-line serão mantidas}}",
   "accountDownloadsDeleted": "Todos os downloads foram excluídos.",
   "accountEarnCoins": "Ganhe moedas",
@@ -2363,6 +2367,10 @@
   "wallpaperNotificationPromptTitle": "Receba o papel de parede do dia",
   "wallpaperOffline": "Off-line",
   "wallpaperOldVersionBody": "A versão {version} não é mais suportada. Atualize o Prism para continuar usando-o.",
+  "wallpaperOldVersionDownloadLatest": "Baixar a versão mais recente",
+  "@wallpaperOldVersionDownloadLatest": {
+    "description": "Action on the update screen that opens the APK download page. Shown only on installs that did not come from Google Play."
+  },
   "wallpaperOldVersionTitle": "Hora de atualizar",
   "wallpaperOnPrism": "Papel de parede no Prism",
   "wallpaperOpenError": "Não foi possível carregar este papel de parede",

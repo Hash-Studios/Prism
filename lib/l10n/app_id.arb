@@ -933,6 +933,10 @@
   "@accountSpatialSceneSemanticLabel": {
     "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
+  "accountDownloadApk": "UNDUH APK",
+  "@accountDownloadApk": {
+    "description": "About page action that opens the APK download page. Shown only on installs that did not come from Google Play."
+  },
   "accountDownloadedWallpaperCount": "{count, plural, =0{Tidak ada wallpaper yang diunduh; salinan offline tetap tersimpan} =1{1 wallpaper yang diunduh; salinan offline tetap tersimpan} other{{count} wallpaper yang diunduh; salinan offline tetap tersimpan}}",
   "@accountDownloadedWallpaperCount": {
     "description": "Subtitle describing downloaded files and retained offline copies.",
@@ -8504,6 +8508,10 @@
         "type": "String"
       }
     }
+  },
+  "wallpaperOldVersionDownloadLatest": "Unduh versi terbaru",
+  "@wallpaperOldVersionDownloadLatest": {
+    "description": "Action on the update screen that opens the APK download page. Shown only on installs that did not come from Google Play."
   },
   "wallpaperOldVersionTitle": "Saatnya memperbarui",
   "@wallpaperOldVersionTitle": {

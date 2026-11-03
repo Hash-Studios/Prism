@@ -700,6 +700,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountSpatialSceneSemanticLabel => 'Espacial, walls com profundidade 3D nítida';
 
   @override
+  String get accountDownloadApk => 'TRANSFERIR APK';
+
+  @override
   String accountDownloadedWallpaperCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -9386,6 +9389,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String wallpaperOldVersionBody(String version) {
     return 'A versão $version não é mais suportada. Atualize o Prism para continuar usando-o.';
   }
+
+  @override
+  String get wallpaperOldVersionDownloadLatest => 'Transferir a versão mais recente';
 
   @override
   String get wallpaperOldVersionTitle => 'Hora de atualizar';
@@ -14333,6 +14339,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get accountSpatialSceneSemanticLabel => 'Espacial, walls com profundidade 3D nítida';
 
   @override
+  String get accountDownloadApk => 'BAIXAR APK';
+
+  @override
   String accountDownloadedWallpaperCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -23019,6 +23028,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String wallpaperOldVersionBody(String version) {
     return 'A versão $version não é mais suportada. Atualize o Prism para continuar usando-o.';
   }
+
+  @override
+  String get wallpaperOldVersionDownloadLatest => 'Baixar a versão mais recente';
 
   @override
   String get wallpaperOldVersionTitle => 'Hora de atualizar';

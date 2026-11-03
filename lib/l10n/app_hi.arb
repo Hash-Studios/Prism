@@ -831,6 +831,10 @@
   "@accountSpatialSceneSemanticLabel": {
     "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
+  "accountDownloadApk": "APK डाउनलोड करें",
+  "@accountDownloadApk": {
+    "description": "About page action that opens the APK download page. Shown only on installs that did not come from Google Play."
+  },
   "accountDownloadedWallpaperCount": "{count, plural, =0{कोई डाउनलोड किया हुआ वॉलपेपर नहीं; ऑफ़लाइन सेव प्रतियाँ बनी रहेंगी} =1{1 डाउनलोड किया हुआ वॉलपेपर; ऑफ़लाइन सेव प्रतियाँ बनी रहेंगी} other{{count} डाउनलोड किए हुए वॉलपेपर; ऑफ़लाइन सेव प्रतियाँ बनी रहेंगी}}",
   "@accountDownloadedWallpaperCount": {
     "description": "Subtitle describing downloaded files and retained offline copies.",
@@ -8391,6 +8395,10 @@
         "type": "String"
       }
     }
+  },
+  "wallpaperOldVersionDownloadLatest": "नया वर्ज़न डाउनलोड करें",
+  "@wallpaperOldVersionDownloadLatest": {
+    "description": "Action on the update screen that opens the APK download page. Shown only on installs that did not come from Google Play."
   },
   "wallpaperOldVersionTitle": "अपडेट करने का समय",
   "@wallpaperOldVersionTitle": {

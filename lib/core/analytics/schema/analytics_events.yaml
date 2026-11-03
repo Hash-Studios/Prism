@@ -407,6 +407,11 @@ enums:
     values:
       - dot
       - tap
+  - name: apk_link_source
+    dart_type: ApkLinkSourceValue
+    values:
+      - old_version
+      - about
   - name: variant_link_result
     dart_type: VariantLinkResultValue
     values:
@@ -3171,3 +3176,15 @@ events:
       - name: previous_patch_number
         key: previous_patch_number
         type: int
+  - id: apk_link_shown
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: ApkLinkSourceValue
+  - id: apk_link_tapped
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: ApkLinkSourceValue
