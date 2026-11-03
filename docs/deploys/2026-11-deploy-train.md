@@ -57,7 +57,7 @@ cd <main checkout> && GOOGLE_CLOUD_PROJECT=prism-wallpapers GCLOUD_PROJECT=prism
 
 ### G4. Desktop companion backfill, remaining walls (#783, paid, in progress)
 
-- 10:59: the first run was stopped by hand before it finished a wall. `planStudioBatch` plans 10 Studio candidates each day at 20:00 and uses the same $2 daily Studio budget. A backfill that uses up the budget before 20:00 makes those candidates fail with `budget_exhausted`. Wall `5BPVSQZJXR` stayed `generating`. The next run claims it again after 6 minutes, and the Worker does not charge for a stored generation again.
+- 10:59: the first run was stopped by hand before it finished a wall. `planStudioBatch` plans 10 Studio candidates each day at 20:00 and uses the same $2 daily Studio budget. A backfill that uses up the budget before 20:00 makes those candidates fail with `budget_exhausted`. Wall `5BPVSQZJXR` stayed `generating`. After 6 minutes, the backfill can claim its Firestore manifest again. The Worker generation claim for that id is a different record. It stays `in_progress` and blocks another provider call (see the 23:30 run below).
 - New schedule: a T3 scheduled task runs the backfill each night at 23:30, after the 20:00 batch. Each run uses only the budget that is left for that UTC day. The expected time is about 8 nights.
 - The task stops at the first error that is not `deferred`. When no walls are left, it runs `buildWebCatalog` and checks `/desktop-wallpapers`, then it disables itself.
 - Run log: `~/.deploy-train-2026-11/g4_runs.md` on the owner's Mac.
