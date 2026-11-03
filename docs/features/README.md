@@ -8,6 +8,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [live-photo.md](live-photo.md) | Live Photo walls (iOS): render a live style, save as a Live Photo, Lock Screen guide |
 | [set-wallpaper.md](set-wallpaper.md) | Set sheet, Fit and Fill, Undo, lock and home pair, Match accent, default target, errors, iOS save guide |
 | [position-studio.md](position-studio.md) | Adjust position and preview: pan, zoom, fit modes, dim |
+| [wallpaper-editor.md](wallpaper-editor.md) | Edit screen: filters, adjust, crop presets and frame, rotate, export size, Share, crop vs placement |
 | [depth-effect.md](depth-effect.md) | iOS Lock Screen Depth Effect: detector, `walls.depth` tiers, Depth tag, backfill |
 | [wallpaper-history.md](wallpaper-history.md) | List of wallpapers you set, with re-apply |
 | [auto-rotate.md](auto-rotate.md) | Timed rotation from favourites, downloads, a category, Wall of the Day or history (Android, Pro) |

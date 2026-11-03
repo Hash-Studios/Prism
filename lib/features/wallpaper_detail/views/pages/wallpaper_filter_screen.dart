@@ -189,7 +189,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   void _pickCropPreset(CropPreset preset) {
     final CropSpec? crop = _crop;
     if (crop == null) return;
-    PrismHaptics.selection();
     setState(() => _crop = crop.withPreset(preset));
   }
 

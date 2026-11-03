@@ -5,7 +5,8 @@ import 'package:Prism/features/wallpaper_detail/domain/entities/crop_spec.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
-/// The whole image with the crop frame on top. Drag inside the frame to move it, pinch to resize it, or drag a corner.
+/// The whole image with the crop frame on top. The frame is white on a black scrim, as all chrome on a wallpaper is.
+/// Drag inside the frame to move it, pinch to resize it, or drag a corner.
 ///
 /// [image] is drawn as the source, before the turn. Every gesture starts from the spec it began with and applies the
 /// total movement since then, so no rounding builds up.
@@ -92,15 +93,12 @@ class _CropFrameViewState extends State<CropFrameView> with SingleTickerProvider
     setState(() => _dragging = false);
   }
 
-  void _resize(CropCorner corner, double step) {
-    widget.onChanged(widget.spec.resized(corner, corner.sx * step, corner.sy * step));
-  }
+  CropSpec _stepped(CropCorner corner, double step) => widget.spec.resized(corner, corner.sx * step, corner.sy * step);
 
   @override
   Widget build(BuildContext context) {
     final CropSpec spec = widget.spec;
     final AppLocalizations l10n = context.l10n;
-    final ColorScheme cs = Theme.of(context).colorScheme;
     return LayoutBuilder(
       builder: (context, constraints) {
         const double inset = CropFrameView.handleInset;
@@ -109,6 +107,7 @@ class _CropFrameViewState extends State<CropFrameView> with SingleTickerProvider
         final Size box = Size(spec.viewWidth * scale, spec.viewHeight * scale);
         final Offset origin = Offset((constraints.maxWidth - box.width) / 2, (constraints.maxHeight - box.height) / 2);
         final double step = math.min(spec.viewWidth, spec.viewHeight) * 0.05;
+        String sizeOf(CropSpec next) => l10n.wallpaperCropSize(next.outputWidth, next.outputHeight);
         return AnimatedBuilder(
           animation: _snap,
           builder: (context, _) {
@@ -127,7 +126,7 @@ class _CropFrameViewState extends State<CropFrameView> with SingleTickerProvider
                 Positioned.fill(
                   child: Semantics(
                     label: l10n.wallpaperCropArea,
-                    value: l10n.wallpaperCropSize(spec.outputWidth, spec.outputHeight),
+                    value: sizeOf(spec),
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onScaleStart: (_) => _begin(),
@@ -143,8 +142,8 @@ class _CropFrameViewState extends State<CropFrameView> with SingleTickerProvider
                         painter: _CropPainter(
                           frame: frame,
                           image: origin & box,
-                          scrim: cs.surface.withValues(alpha: 0.72),
-                          line: cs.onSurface,
+                          scrim: Colors.black.withValues(alpha: 0.55),
+                          line: Colors.white,
                         ),
                       ),
                     ),
@@ -157,7 +156,7 @@ class _CropFrameViewState extends State<CropFrameView> with SingleTickerProvider
                       opacity: _dragging ? 1 : 0,
                       duration: context.motion(PrismDurations.fast),
                       curve: PrismCurves.enter,
-                      child: CustomPaint(painter: _ThirdsPainter(cs.onSurface.withValues(alpha: 0.5))),
+                      child: CustomPaint(painter: _ThirdsPainter(Colors.white.withValues(alpha: 0.6))),
                     ),
                   ),
                 ),
@@ -174,9 +173,11 @@ class _CropFrameViewState extends State<CropFrameView> with SingleTickerProvider
                         CropCorner.bottomLeft => l10n.wallpaperCropCornerBottomLeft,
                         CropCorner.bottomRight => l10n.wallpaperCropCornerBottomRight,
                       },
-                      value: l10n.wallpaperCropSize(spec.outputWidth, spec.outputHeight),
-                      onIncrease: () => _resize(corner, step),
-                      onDecrease: () => _resize(corner, -step),
+                      value: sizeOf(spec),
+                      increasedValue: sizeOf(_stepped(corner, step)),
+                      decreasedValue: sizeOf(_stepped(corner, -step)),
+                      onIncrease: () => widget.onChanged(_stepped(corner, step)),
+                      onDecrease: () => widget.onChanged(_stepped(corner, -step)),
                       child: GestureDetector(
                         key: ValueKey<CropCorner>(corner),
                         behavior: HitTestBehavior.opaque,
@@ -189,7 +190,7 @@ class _CropFrameViewState extends State<CropFrameView> with SingleTickerProvider
                         },
                         onPanEnd: (_) => _end(),
                         onPanCancel: _end,
-                        child: CustomPaint(painter: _CornerPainter(corner, cs.onSurface)),
+                        child: CustomPaint(painter: _CornerPainter(corner, Colors.white)),
                       ),
                     ),
                   ),
@@ -216,13 +217,21 @@ class _CropPainter extends CustomPainter {
       Path.combine(PathOperation.difference, Path()..addRect(image), Path()..addRect(frame)),
       Paint()..color = scrim,
     );
-    canvas.drawRect(
-      frame.deflate(0.5),
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1
-        ..color = line,
-    );
+    canvas
+      ..drawRect(
+        frame.deflate(0.5),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3
+          ..color = Colors.black.withValues(alpha: 0.25),
+      )
+      ..drawRect(
+        frame.deflate(0.5),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = line,
+      );
   }
 
   @override
@@ -271,13 +280,20 @@ class _CornerPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
     final double inX = -corner.sx * arm;
     final double inY = -corner.sy * arm;
-    canvas.drawPath(
-      Path()
-        ..moveTo(c.dx + inX, c.dy)
-        ..lineTo(c.dx, c.dy)
-        ..lineTo(c.dx, c.dy + inY),
-      paint,
-    );
+    final Path path = Path()
+      ..moveTo(c.dx + inX, c.dy)
+      ..lineTo(c.dx, c.dy)
+      ..lineTo(c.dx, c.dy + inY);
+    canvas
+      ..drawPath(
+        path,
+        Paint()
+          ..color = Colors.black.withValues(alpha: 0.35)
+          ..strokeWidth = 5
+          ..strokeCap = StrokeCap.round
+          ..style = PaintingStyle.stroke,
+      )
+      ..drawPath(path, paint);
   }
 
   @override
