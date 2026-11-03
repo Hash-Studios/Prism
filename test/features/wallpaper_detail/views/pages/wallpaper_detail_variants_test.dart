@@ -31,6 +31,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -431,6 +432,45 @@ void main() {
     expect(urls().where((u) => u!.contains('v0')), isEmpty);
     expect(tester.widget<Hero>(find.byType(Hero)).tag, 'tile-1');
     verifyNever(() => createdBlocs.first.add(any(that: isA<SelectVariant>())));
+  });
+
+  testWidgets('immersive on a variant wall, a tap shows the controls and keeps the variant', (tester) async {
+    const String immersive = 'SystemUiMode.immersiveSticky';
+    const String edgeToEdge = 'SystemUiMode.edgeToEdge';
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final List<String> modes = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'SystemChrome.setEnabledSystemUIMode') modes.add(call.arguments as String);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await pumpFeed(
+      tester,
+      feed: [_entity(_v0)],
+      open: _entity(_v0),
+      states: [_state(entity: _entity(_v0), variants: _group)],
+    );
+    expect(_controlsShown(tester), isTrue);
+
+    final SemanticsFinder wall = find.semantics.byLabel(RegExp(r'^Wallpaper$'));
+    tester.semantics.customAction(wall, const CustomSemanticsAction(label: 'Hide controls'));
+    await tester.pumpAndSettle();
+    expect(_controlsShown(tester), isFalse);
+    expect(modes.last, immersive);
+
+    await tester.tapAt(tester.getCenter(_card));
+    await tester.pumpAndSettle();
+    expect(_controlsShown(tester), isTrue);
+    expect(modes.last, edgeToEdge);
+    verifyNever(() => createdBlocs.first.add(any(that: isA<SelectVariant>())));
+
+    await tester.tapAt(tester.getCenter(_card));
+    await tester.pumpAndSettle();
+    verify(() => createdBlocs.first.add(const SelectVariant(index: 1))).called(1);
+    expect(_controlsShown(tester), isTrue);
+
+    await tester.pumpWidget(const SizedBox());
+    semantics.dispose();
   });
 
   testWidgets('a picker failure shows an error and opens no upload', (tester) async {

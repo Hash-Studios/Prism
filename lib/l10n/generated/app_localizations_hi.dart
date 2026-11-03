@@ -12772,6 +12772,24 @@ class AppLocalizationsHi extends AppLocalizations {
   String get navMoreEditTabs => 'टैब संपादित करें';
 
   @override
+  String get layoutControlsHeader => 'नियंत्रण';
+
+  @override
+  String get layoutOneHanded => 'एक हाथ वाले नियंत्रण';
+
+  @override
+  String get layoutOneHandedFootnote => 'आपकी प्रोफ़ाइल और सूचनाएँ नीचे की बार में रखता है, जहाँ अंगूठा पहुँचता है।';
+
+  @override
+  String get navAccount => 'प्रोफ़ाइल और सूचनाएँ';
+
+  @override
+  String navUnreadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count अपठित', one: '1 अपठित');
+    return '$_temp0';
+  }
+
+  @override
   String wrappedTitle(String year) {
     return 'Prism Wrapped $year';
   }

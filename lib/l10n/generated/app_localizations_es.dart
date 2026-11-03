@@ -12791,6 +12791,25 @@ class AppLocalizationsEs extends AppLocalizations {
   String get navMoreEditTabs => 'Editar pestañas';
 
   @override
+  String get layoutControlsHeader => 'Controles';
+
+  @override
+  String get layoutOneHanded => 'Controles a una mano';
+
+  @override
+  String get layoutOneHandedFootnote =>
+      'Pone tu perfil y tus notificaciones en la barra inferior, al alcance de tu pulgar.';
+
+  @override
+  String get navAccount => 'Perfil y notificaciones';
+
+  @override
+  String navUnreadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count sin leer', one: '1 sin leer');
+    return '$_temp0';
+  }
+
+  @override
   String wrappedTitle(String year) {
     return 'Prism Wrapped $year';
   }

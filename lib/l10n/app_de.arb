@@ -11965,6 +11965,31 @@
   "@navMoreEditTabs": {
     "description": "Row in the More sheet that opens the Layout settings page."
   },
+  "layoutControlsHeader": "Bedienelemente",
+  "@layoutControlsHeader": {
+    "description": "Header of the Layout page section with the one-handed controls switch."
+  },
+  "layoutOneHanded": "Einhandbedienung",
+  "@layoutOneHanded": {
+    "description": "Switch on the Layout page. On, the profile and notifications buttons move from the top bar to the bottom bar."
+  },
+  "layoutOneHandedFootnote": "Zeigt dein Profil und deine Benachrichtigungen in der unteren Leiste, in Reichweite deines Daumens.",
+  "@layoutOneHandedFootnote": {
+    "description": "Footnote under the one-handed controls switch."
+  },
+  "navAccount": "Profil und Benachrichtigungen",
+  "@navAccount": {
+    "description": "Label and tooltip of the bottom bar button that opens a sheet with the profile and notifications, and the title of that sheet."
+  },
+  "navUnreadCount": "{count, plural, =1{1 ungelesen} other{{count} ungelesen}}",
+  "@navUnreadCount": {
+    "description": "Subtitle of the Notifications row in the profile sheet: how many notifications are unread.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "trialTimelineTitle": "So funktioniert deine kostenlose Testphase",
   "@trialTimelineTitle": {"description": "Title of the screen that shows the annual free trial day by day, before the user starts it."},
   "trialTimelineClose": "Schließen",

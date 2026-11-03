@@ -2,16 +2,20 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/utils/side_safe_column.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
 import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
 import 'package:Prism/features/layout_prefs/views/nav_tab_view.dart';
+import 'package:Prism/features/layout_prefs/views/widgets/one_handed_preview.dart';
+import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 
-/// Settings > Layout: the order and visibility of the bottom bar tabs, and the size of every wallpaper grid.
+/// Settings > Layout: the order and visibility of the bottom bar tabs, the size of every wallpaper grid, and where the
+/// profile and notifications controls sit.
 @RoutePage()
 class LayoutSettingsPage extends StatelessWidget {
   const LayoutSettingsPage({super.key});
@@ -19,6 +23,9 @@ class LayoutSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final LayoutPrefsStore layout = getIt<LayoutPrefsStore>();
+    final bool roomy = oneHandedRowHasRoom(context);
+    final bool avatarAbove = oneHandedAvatarAbove(context);
+    final bool sideRail = screenSideSafeColumnWidth(context) > 0;
     return PrismPage(
       title: context.l10n.layoutTitle,
       body: ValueListenableBuilder<LayoutPrefs>(
@@ -43,6 +50,22 @@ class LayoutSettingsPage extends StatelessWidget {
                   analytics.track(
                     LayoutDensityChangedEvent(density: density, source: LayoutChangeSourceValue.settings),
                   );
+                },
+              ),
+            ),
+            _Section(
+              title: context.l10n.layoutControlsHeader,
+              footnote: context.l10n.layoutOneHandedFootnote,
+              child: _OneHandedSwitch(
+                value: prefs.oneHanded,
+                roomy: roomy,
+                avatarAbove: avatarAbove,
+                sideRail: sideRail,
+                onChanged: (on) {
+                  if (on == prefs.oneHanded) return;
+                  PrismHaptics.selection();
+                  layout.update(prefs.copyWith(oneHanded: on));
+                  analytics.track(LayoutOneHandedToggledEvent(enabled: on));
                 },
               ),
             ),
@@ -117,6 +140,48 @@ class _DensityPicker extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// The one-handed switch under a live sketch of where the profile and the notifications go.
+class _OneHandedSwitch extends StatelessWidget {
+  const _OneHandedSwitch({
+    required this.value,
+    required this.roomy,
+    required this.avatarAbove,
+    required this.sideRail,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final bool roomy;
+  final bool avatarAbove;
+  final bool sideRail;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return PrismCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(PrismSpace.md, PrismSpace.md, PrismSpace.md, PrismSpace.xs),
+            child: OneHandedPreview(oneHanded: value, roomy: roomy, avatarAbove: avatarAbove, sideRail: sideRail),
+          ),
+          Material(
+            type: MaterialType.transparency,
+            child: MergeSemantics(
+              child: PrismRow(
+                title: context.l10n.layoutOneHanded,
+                onTap: () => onChanged(!value),
+                trailing: Switch(value: value, onChanged: onChanged),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

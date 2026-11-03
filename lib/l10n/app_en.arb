@@ -12421,6 +12421,31 @@
   "@navMoreEditTabs": {
     "description": "Row in the More sheet that opens the Layout settings page."
   },
+  "layoutControlsHeader": "Controls",
+  "@layoutControlsHeader": {
+    "description": "Header of the Layout page section with the one-handed controls switch."
+  },
+  "layoutOneHanded": "One-handed controls",
+  "@layoutOneHanded": {
+    "description": "Switch on the Layout page. On, the profile and notifications buttons move from the top bar to the bottom bar."
+  },
+  "layoutOneHandedFootnote": "Puts your profile and notifications in the bottom bar, in reach of your thumb.",
+  "@layoutOneHandedFootnote": {
+    "description": "Footnote under the one-handed controls switch."
+  },
+  "navAccount": "Profile and notifications",
+  "@navAccount": {
+    "description": "Label and tooltip of the bottom bar button that opens a sheet with the profile and notifications, and the title of that sheet."
+  },
+  "navUnreadCount": "{count, plural, =1{1 unread} other{{count} unread}}",
+  "@navUnreadCount": {
+    "description": "Subtitle of the Notifications row in the profile sheet: how many notifications are unread.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "wrappedTitle": "Prism Wrapped {year}",
   "@wrappedTitle": {
     "description": "Title of the Wrapped yearly recap screen and share card.",

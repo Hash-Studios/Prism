@@ -301,6 +301,11 @@ enums:
     values:
       - settings
       - pinch
+  - name: notifications_entry_source
+    dart_type: NotificationsEntrySourceValue
+    values:
+      - top
+      - bottom
   - name: notification_preference
     dart_type: NotificationPreferenceValue
     values:
@@ -1548,6 +1553,17 @@ events:
         enum: LayoutChangeSourceValue
   - id: layout_reset
     fields: []
+  - id: layout_one_handed_toggled
+    fields:
+      - name: enabled
+        key: enabled
+        type: bool
+  - id: notifications_opened
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: NotificationsEntrySourceValue
   - id: upload_action_selected
     fields:
       - name: action
