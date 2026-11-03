@@ -107,7 +107,15 @@ test("parseCreateInput rejects more than 3 tags and unknown tags", () => {
     () => parseCreateInput({text: "dark minimal", tags: ["Dark", "Minimal", "Nature", "Space"]}),
     {code: "invalid-argument"},
   );
-  assert.throws(() => parseCreateInput({text: "dark minimal", tags: ["Pastel"]}), {code: "invalid-argument"});
+  assert.throws(() => parseCreateInput({text: "dark minimal", tags: ["Vaporwave"]}), {code: "invalid-argument"});
+});
+
+test("parseCreateInput accepts the Pastel and Gaming categories", () => {
+  assert.deepEqual(parseCreateInput({text: "soft game art", tags: ["Pastel", "Gaming"]}), {
+    text: "soft game art",
+    tags: ["Pastel", "Gaming"],
+    force: false,
+  });
 });
 
 test("parseCreateInput removes duplicate tags and defaults force to false", () => {
