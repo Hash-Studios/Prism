@@ -54,6 +54,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [wrapped.md](wrapped.md) | Prism Wrapped 2026: private year recap built by a server job, story cards, share, Home card, launch order |
 | [editors-choice.md](editors-choice.md) | Admin picks for Editors' Choice, Home row, See all, creator notice, deploy order |
 | [wall-credits.md](wall-credits.md) | Credit row on the wall detail: creator, Prism Studio, Pexels, Wallhaven, `byStudio` backfill |
+| [public-apk.md](public-apk.md) | Play-signed APK on GitHub releases, `/download` page, sideload-only app link, Play policy, release step |
 
 ## Page rules
 

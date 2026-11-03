@@ -29,6 +29,10 @@ What this means for Prism:
 
 The rule is fail-closed. If the app cannot read the installer, it hides the link. iOS never shows the link.
 
+The gate covers links inside the app. A Play user can still open Privacy or Terms on prismwalls.com, and the website
+footer links to `/download`. That is the website, which also has the Play button first. The app does not offer an
+update there.
+
 ## Signing
 
 - Prism uses Play App Signing. Google keeps the app signing key. We sign the `.aab` with the upload key.
@@ -74,11 +78,13 @@ The script:
 2. Gets an OAuth token for the Play service account. It uses the same file as fastlane,
    `android/google-play-console.json` (or the path in `PLAY_SERVICE_ACCOUNT_JSON`). It signs the token request with
    `openssl` and passes the private key through a pipe, so the key never goes to disk and never prints. The token is
-   never printed. Error text from Google is cut to a short summary.
+   never printed. For a Google error, the script prints only the HTTP status. For any other error, it prints only
+   the error type.
 3. Lists the generated APKs for the version code and picks the universal APK for the pinned certificate.
 4. Downloads it, then checks it with `apksigner verify --print-certs` and `aapt2 dump badging`. The APK must have
-   exactly one signing certificate, its SHA-256 must equal the pinned Play app signing certificate, and the package and
-   version code must match the tag. Any difference stops the script before it attaches anything.
+   exactly one signing certificate, and its SHA-256 must equal the pinned Play app signing certificate. The package,
+   version name and version code must match the tag. A short download is deleted. Any difference stops the script
+   before it attaches anything.
 5. Writes `prism-<version>-<code>.apk.sha256` in `sha256sum` format.
 6. Uploads both files with `gh release upload` (not in dry-run mode). It does not overwrite an asset that is already
    there.
@@ -95,8 +101,10 @@ downloaded APK and the real attach refuses to run.
 - It shows the version, the size and the SHA-256 of the latest release that has an APK, short install steps, and the
   Google Play services note.
 - The browser asks the GitHub API for the last 10 releases (`/repos/Hash-Studios/Prism/releases?per_page=10`) and
-  keeps the answer in `localStorage` for 1 hour. The SHA-256 comes from the asset `digest` field, so there is no
-  second request.
+  keeps the answer in `localStorage` for 1 hour. A failed or interrupted request also uses up that hour. The SHA-256
+  comes from the asset `digest` field, so there is no second request. If the browser blocks storage, the page makes
+  one request for each page load.
+- Only `https://github.com/Hash-Studios/Prism/releases/...` addresses from the API or the cache can become links.
 - Read budget: the page reads no Firestore documents and does not call the links Worker, so the #780 catalogue read
   budget does not change. GitHub allows 60 unauthenticated requests an hour for each IP. The page makes at most one
   each hour for each browser.
@@ -112,6 +120,15 @@ downloaded APK and the real attach refuses to run.
   first, so the user can still pick Play.
 - About shows a "Download APK" chip on a sideloaded install.
 - Analytics: `apk_link_shown` and `apk_link_tapped`, each with `source` (`old_version` or `about`).
+
+## Testing on a device
+
+- `adb install app.apk` records `initiatingPackageName=com.android.shell`. The app treats this as a sideload and shows
+  the link.
+- `adb install -i com.android.vending app.apk` sets only the installing package. The initiating package stays
+  `com.android.shell`, so adb cannot fake a Play install. To see the Play branch on a device, build with a local,
+  uncommitted `PackageInfo.setMockInitialValues(..., installerStore: 'com.android.vending')` at the start of `main()`.
+- Check the values with `adb shell dumpsys package com.hash.prism | grep -E 'installerPackageName|initiatingPackageName'`.
 
 ## Needs the owner
 
