@@ -1,10 +1,14 @@
+import 'dart:ui' as ui;
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
 import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
 import 'package:Prism/features/layout_prefs/views/pages/layout_settings_page.dart';
+import 'package:Prism/features/layout_prefs/views/widgets/one_handed_preview.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
@@ -43,9 +47,21 @@ Finder _switchFor(String label) => find.descendant(
   matching: find.byType(Switch),
 );
 
-Future<void> _pumpPage(WidgetTester tester, {TextScaler textScaler = TextScaler.noScaling}) async {
+/// The Switch in the one-handed card, found from its row title.
+Finder _oneHandedSwitch() => find.descendant(
+  of: find.ancestor(of: find.text('One-handed controls'), matching: find.byType(PrismCard)),
+  matching: find.byType(Switch),
+);
+
+Future<void> _pumpPage(
+  WidgetTester tester, {
+  TextScaler textScaler = TextScaler.noScaling,
+  Size size = const Size(390, 844),
+  bool disableAnimations = false,
+  TextDirection direction = TextDirection.ltr,
+}) async {
   tester.view
-    ..physicalSize = const Size(390, 844)
+    ..physicalSize = size
     ..devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -56,10 +72,10 @@ Future<void> _pumpPage(WidgetTester tester, {TextScaler textScaler = TextScaler.
       supportedLocales: AppLocalizations.supportedLocales,
       theme: withPrismAccent(prismLightThemes.first.theme, prismLightThemes.first.defaultAccentValue),
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+        data: MediaQuery.of(context).copyWith(textScaler: textScaler, disableAnimations: disableAnimations),
         child: child!,
       ),
-      home: const LayoutSettingsPage(),
+      home: Directionality(textDirection: direction, child: const LayoutSettingsPage()),
     ),
   );
   await tester.pumpAndSettle();
@@ -97,7 +113,7 @@ void main() {
     expect(centerOf('Home'), lessThan(centerOf('Search')));
     expect(centerOf('Search'), lessThan(centerOf('Rewards')));
 
-    expect(find.byType(Switch), findsNWidgets(4));
+    expect(find.descendant(of: find.byType(ReorderableListView), matching: find.byType(Switch)), findsNWidgets(4));
     expect(find.text('Always in the bar'), findsOneWidget);
     expect(tester.widget<Switch>(_switchFor('Home')).onChanged, isNull);
     expect(tester.widget<Switch>(_switchFor('Search')).onChanged, isNotNull);
@@ -152,13 +168,16 @@ void main() {
 
   testWidgets('Reset layout is disabled on the default layout and restores it after changes', (tester) async {
     await _pumpPage(tester);
+    await tester.scrollUntilVisible(find.text('Reset layout'), 200, scrollable: find.byType(Scrollable).first);
 
     expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Reset layout')).onPressed, isNull);
 
+    await tester.scrollUntilVisible(find.text('Large'), -200, scrollable: find.byType(Scrollable).first);
     await _tap(tester, find.text('Large'));
     await _tap(tester, _switchFor('Search'));
     expect(store.value.isDefaultLayout, isFalse);
 
+    await tester.scrollUntilVisible(find.text('Reset layout'), 200, scrollable: find.byType(Scrollable).first);
     await _tap(tester, find.widgetWithText(PrismButton, 'Reset layout'));
 
     expect(store.value.isDefaultLayout, isTrue);
@@ -213,4 +232,110 @@ void main() {
 
     expect(store.value.tabOrder, <NavTab>[NavTab.collection, NavTab.home, NavTab.search, NavTab.rewards]);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('controls section shows the one-handed switch off with its footnote', (tester) async {
+    await _pumpPage(tester);
+
+    expect(find.text('Controls'), findsOneWidget);
+    expect(find.text('One-handed controls'), findsOneWidget);
+    expect(find.text('Puts your profile and notifications in the bottom bar, in reach of your thumb.'), findsOneWidget);
+    expect(tester.widget<Switch>(_oneHandedSwitch()).value, isFalse);
+  });
+
+  testWidgets('the one-handed switch sets oneHanded and tracks each change', (tester) async {
+    await _pumpPage(tester);
+
+    await _tap(tester, _oneHandedSwitch());
+    expect(store.value.oneHanded, isTrue);
+    expect(analytics.events.whereType<LayoutOneHandedToggledEvent>().map((e) => e.enabled).toList(), <bool>[true]);
+
+    await _tap(tester, _oneHandedSwitch());
+    expect(store.value.oneHanded, isFalse);
+    expect(analytics.events.whereType<LayoutOneHandedToggledEvent>().map((e) => e.enabled).toList(), <bool>[
+      true,
+      false,
+    ]);
+  });
+
+  testWidgets('a tap on the one-handed row title toggles it', (tester) async {
+    await _pumpPage(tester);
+
+    await _tap(tester, find.text('One-handed controls'));
+    expect(store.value.oneHanded, isTrue);
+
+    await _tap(tester, find.text('One-handed controls'));
+    expect(store.value.oneHanded, isFalse);
+  });
+
+  testWidgets('the one-handed row reads as one toggle and the preview adds no semantics', (tester) async {
+    final handle = tester.ensureSemantics();
+    await _pumpPage(tester);
+
+    await _tap(tester, _oneHandedSwitch());
+
+    final SemanticsData row = tester.getSemantics(find.text('One-handed controls')).getSemanticsData();
+    expect(row.flagsCollection.isToggled, ui.Tristate.isTrue);
+    expect(
+      find.descendant(
+        of: find.byType(OneHandedPreview),
+        matching: find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label != null),
+      ),
+      findsNothing,
+    );
+    handle.dispose();
+  });
+
+  testWidgets('Reset layout turns one-handed controls back off', (tester) async {
+    await store.update(const LayoutPrefs(oneHanded: true));
+    await _pumpPage(tester);
+    await tester.scrollUntilVisible(find.text('Reset layout'), 200, scrollable: find.byType(Scrollable).first);
+
+    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Reset layout')).onPressed, isNotNull);
+
+    await _tap(tester, find.widgetWithText(PrismButton, 'Reset layout'));
+
+    expect(store.value.oneHanded, isFalse);
+  });
+
+  testWidgets('one-handed controls at 320 wide and 2x text render and the preview fits the card', (tester) async {
+    await _pumpPage(tester, size: const Size(320, 640), textScaler: const TextScaler.linear(2.0));
+    await tester.scrollUntilVisible(find.text('One-handed controls'), 200, scrollable: find.byType(Scrollable).first);
+
+    expect(tester.takeException(), isNull);
+    final double cardWidth = tester
+        .getSize(find.ancestor(of: find.byType(OneHandedPreview), matching: find.byType(PrismCard)))
+        .width;
+    final double previewWidth = tester
+        .getSize(find.descendant(of: find.byType(OneHandedPreview), matching: find.byType(FittedBox)))
+        .width;
+    expect(previewWidth, lessThanOrEqualTo(cardWidth));
+  });
+
+  testWidgets('reduced motion puts the preview in its end state after one frame', (tester) async {
+    await _pumpPage(tester, disableAnimations: true);
+    final Finder slides = find.descendant(
+      of: find.byType(OneHandedPreview),
+      matching: find.byType(AnimatedPositionedDirectional),
+    );
+    expect(slides, findsNWidgets(4));
+
+    await tester.ensureVisible(_oneHandedSwitch());
+    await tester.pumpAndSettle();
+    await tester.tap(_oneHandedSwitch());
+    await tester.pump();
+    final List<Rect> afterOneFrame = [for (int i = 0; i < 4; i++) tester.getRect(slides.at(i))];
+
+    await tester.pumpAndSettle();
+    final List<Rect> settled = [for (int i = 0; i < 4; i++) tester.getRect(slides.at(i))];
+
+    expect(afterOneFrame, settled);
+  });
+
+  testWidgets('right-to-left renders the one-handed row without exceptions', (tester) async {
+    await _pumpPage(tester, direction: TextDirection.rtl);
+    await tester.scrollUntilVisible(find.text('One-handed controls'), 200, scrollable: find.byType(Scrollable).first);
+
+    expect(tester.takeException(), isNull);
+    expect(_oneHandedSwitch(), findsOneWidget);
+  });
 }

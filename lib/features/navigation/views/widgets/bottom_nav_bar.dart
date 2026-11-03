@@ -17,20 +17,22 @@ const double _createGap = 12;
 const double _createSize = 56;
 const double _controlSize = 44;
 
-/// With one-handed controls on, the bottom row has room for both the avatar and the bell, with a margin of
-/// [PrismSpace.xs] on each side. Else the avatar alone holds both, in a sheet.
-bool oneHandedRowHasRoom(BuildContext context) {
-  final double row =
-      _controlSize +
-      PrismSpace.xxs +
-      PrismBottomNav.maxLength +
-      _createGap +
-      _createSize +
-      PrismSpace.xxs +
-      _controlSize;
-  final double width = MediaQuery.sizeOf(context).width - MediaQuery.paddingOf(context).horizontal;
-  return width >= row + 2 * PrismSpace.xs;
-}
+/// The space the floating bar leaves on each side of its row ([floating.BottomBarLayout.offset]).
+const double _barInset = 10;
+
+const double _compactRow = _controlSize + PrismSpace.xxs + _createGap + _createSize;
+
+double _oneHandedRowSpace(BuildContext context) =>
+    MediaQuery.sizeOf(context).width - MediaQuery.paddingOf(context).horizontal - 2 * _barInset;
+
+/// With one-handed controls on, the bottom row has room for both the avatar and the bell. Else the avatar alone holds
+/// both, in a sheet.
+bool oneHandedRowHasRoom(BuildContext context) =>
+    _oneHandedRowSpace(context) >= _compactRow + PrismBottomNav.maxLength + PrismSpace.xxs + _controlSize;
+
+/// Too narrow for the avatar in the row: it stands above the create button instead.
+bool _oneHandedAvatarAbove(BuildContext context) =>
+    _oneHandedRowSpace(context) < _compactRow + PrismBottomNav.maxLength;
 
 /// Hosts the tab content with the floating pill and create button above it. The bar hides while the user scrolls
 /// down; the package's scroll-to-top button takes its place.
@@ -48,6 +50,7 @@ class BottomBar extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final double railWidth = sideSafeColumnWidth(context);
     final bool oneHanded = LayoutPrefsScope.oneHandedOf(context);
+    final bool avatarAbove = oneHanded && _oneHandedAvatarAbove(context);
     if (railWidth > 0) {
       return ColoredBox(
         color: theme.scaffoldBackgroundColor,
@@ -116,7 +119,7 @@ class BottomBar extends StatelessWidget {
         data: theme.copyWith(
           snackBarTheme: theme.snackBarTheme.copyWith(
             insetPadding: (theme.snackBarTheme.insetPadding ?? const EdgeInsets.fromLTRB(15, 5, 15, 10)).copyWith(
-              bottom: _snackBarBottomInset,
+              bottom: _snackBarBottomInset + (avatarAbove ? _controlSize + PrismSpace.xs : 0),
             ),
           ),
         ),
@@ -139,30 +142,47 @@ class BottomBar extends StatelessWidget {
   }
 }
 
-/// The avatar before the pill and the bell after the create button. A narrow screen gets the avatar alone, which opens
-/// a sheet with both. Below even that width the row scales down rather than overflow.
+/// The avatar before the pill and the bell after the create button. A narrower screen gets the avatar alone, which
+/// opens a sheet with both, and the narrowest stands it above the create button so the pill keeps its size.
 class _OneHandedRow extends StatelessWidget {
   const _OneHandedRow();
 
   @override
   Widget build(BuildContext context) {
-    final bool roomy = oneHandedRowHasRoom(context);
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Row(
+    const Widget tabsAndCreate = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IntrinsicWidth(child: PrismBottomNav()),
+        SizedBox(width: _createGap),
+        PrismFab(),
+      ],
+    );
+    if (_oneHandedAvatarAbove(context)) {
+      return const Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (roomy) const ProfileAvatarButton(floating: true) else const AccountButton(),
-          const SizedBox(width: PrismSpace.xxs),
-          const IntrinsicWidth(child: PrismBottomNav()),
-          const SizedBox(width: _createGap),
-          const PrismFab(),
-          if (roomy) ...const [
-            SizedBox(width: PrismSpace.xxs),
-            NotificationBell(source: NotificationsEntrySourceValue.bottom),
-          ],
+          Padding(
+            padding: EdgeInsetsDirectional.only(end: (_createSize - _controlSize) / 2),
+            child: AccountButton(),
+          ),
+          SizedBox(height: PrismSpace.xs),
+          tabsAndCreate,
         ],
-      ),
+      );
+    }
+    final bool roomy = oneHandedRowHasRoom(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (roomy) const ProfileAvatarButton(floating: true) else const AccountButton(),
+        const SizedBox(width: PrismSpace.xxs),
+        tabsAndCreate,
+        if (roomy) ...const [
+          SizedBox(width: PrismSpace.xxs),
+          NotificationBell(source: NotificationsEntrySourceValue.bottom),
+        ],
+      ],
     );
   }
 }
