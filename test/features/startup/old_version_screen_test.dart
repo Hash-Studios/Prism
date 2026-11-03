@@ -1,5 +1,4 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
-import 'package:Prism/core/platform/install_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/startup/views/pages/old_version_screen.dart';

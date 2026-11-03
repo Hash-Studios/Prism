@@ -700,7 +700,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountSpatialSceneSemanticLabel => 'Espacial, walls com profundidade 3D nítida';
 
   @override
-  String get accountDownloadApk => 'TRANSFERIR APK';
+  String get accountDownloadApk => 'BAIXAR APK';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -9391,7 +9391,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get wallpaperOldVersionDownloadLatest => 'Transferir a versão mais recente';
+  String get wallpaperOldVersionDownloadLatest => 'Baixar a versão mais recente';
 
   @override
   String get wallpaperOldVersionTitle => 'Hora de atualizar';

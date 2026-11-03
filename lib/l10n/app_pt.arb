@@ -190,7 +190,7 @@
   "accountSpatialScene": "Espacial",
   "accountSpatialSceneSubtitle": "Walls com profundidade 3D nítida",
   "accountSpatialSceneSemanticLabel": "Espacial, walls com profundidade 3D nítida",
-  "accountDownloadApk": "TRANSFERIR APK",
+  "accountDownloadApk": "BAIXAR APK",
   "@accountDownloadApk": {
     "description": "About page action that opens the APK download page. Shown only on installs that did not come from Google Play."
   },
@@ -2367,7 +2367,7 @@
   "wallpaperNotificationPromptTitle": "Receba o papel de parede do dia",
   "wallpaperOffline": "Off-line",
   "wallpaperOldVersionBody": "A versão {version} não é mais suportada. Atualize o Prism para continuar usando-o.",
-  "wallpaperOldVersionDownloadLatest": "Transferir a versão mais recente",
+  "wallpaperOldVersionDownloadLatest": "Baixar a versão mais recente",
   "@wallpaperOldVersionDownloadLatest": {
     "description": "Action on the update screen that opens the APK download page. Shown only on installs that did not come from Google Play."
   },
