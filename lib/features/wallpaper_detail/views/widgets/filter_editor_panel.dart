@@ -13,6 +13,9 @@ import 'package:intl/intl.dart';
 /// The bottom half of the wallpaper editor: a Filters tab with a strip of filter thumbnails, an Adjust tab with five
 /// sliders and a Crop tab with frame shapes. It holds no state: the editor owns the tabs, the filters, the adjustments
 /// and the crop.
+/// Above this text scale the three tab labels no longer fit side by side, so the tab bar scrolls.
+const double _largeTextScale = 1.3;
+
 class FilterEditorPanel extends StatelessWidget {
   const FilterEditorPanel({
     super.key,
@@ -68,6 +71,8 @@ class FilterEditorPanel extends StatelessWidget {
           children: [
             TabBar(
               controller: controller,
+              isScrollable: MediaQuery.textScalerOf(context).scale(1) > _largeTextScale,
+              tabAlignment: MediaQuery.textScalerOf(context).scale(1) > _largeTextScale ? TabAlignment.start : null,
               onTap: (_) => PrismHaptics.selection(),
               indicatorSize: TabBarIndicatorSize.label,
               tabs: [
@@ -127,7 +132,8 @@ class FilterEditorPanel extends StatelessWidget {
         const SizedBox(height: PrismSpace.xs),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
-          child: Row(
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               PrismIconButton(
                 icon: Icons.rotate_90_degrees_cw_rounded,
@@ -139,9 +145,9 @@ class FilterEditorPanel extends StatelessWidget {
                 tooltip: l10n.wallpaperCropReset,
                 onPressed: spec == null || spec.isIdentity ? null : onCropReset,
               ),
-              const SizedBox(width: PrismSpace.xs),
               if (spec != null)
-                Flexible(
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(start: PrismSpace.xs),
                   child: Text(
                     l10n.wallpaperCropSize(spec.outputWidth, spec.outputHeight),
                     style: PrismTextStyles.body(context).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),

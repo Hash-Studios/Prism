@@ -5,6 +5,7 @@ import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_f
 import 'package:Prism/features/wallpaper_detail/views/widgets/filter_editor_panel.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -28,6 +29,8 @@ void main() {
       ),
     );
 
+    await tester.ensureVisible(find.text('Crop'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Crop'));
     await tester.pumpAndSettle();
 
@@ -35,6 +38,12 @@ void main() {
     expect(MediaQuery.textScalerOf(tester.element(find.text('Free'))).scale(10), 20);
     expect(find.text('Free'), findsOneWidget);
     expect(find.byTooltip('Rotate 90°'), findsOneWidget);
+    expect(tester.widget<TabBar>(find.byType(TabBar)).isScrollable, isTrue);
+    for (final String label in <String>['Filters', 'Adjust', 'Crop']) {
+      final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(find.text(label));
+      expect(paragraph.didExceedMaxLines, isFalse, reason: label);
+      expect(paragraph.size.width, greaterThanOrEqualTo(paragraph.getMaxIntrinsicWidth(double.infinity) - 0.5));
+    }
   });
 }
 
