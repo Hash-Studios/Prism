@@ -28,7 +28,7 @@ PRs #786, #793, #794 and #795 were merged on 2026-11-02 during the train. Their 
 
 ### G1. Smoke test (no change)
 
-- 09:11: an unauthenticated POST to each of the 23 new callables, in both regions (44 instances). Each instance returned 401, 400 or 403. None returned 404 or 500.
+- 09:11: an unauthenticated POST to each live instance of the 23 new callables (44 instances). 21 callables are deployed in asia-south1 and us-central1. `beginRewardedSession` and `getRewardedSession` are deployed only in us-central1, as the code specifies. Each instance returned 401, 400 or 403. None returned 404 or 500.
 - 09:11: `wallpaperPreview` (#728) returned 200 two times, about 2.2 s each. The preview was already in the cache from an earlier deploy, so the second call was not faster.
 - 09:13: `make rules-test` on the local emulator: 638 pass, 0 fail.
 
