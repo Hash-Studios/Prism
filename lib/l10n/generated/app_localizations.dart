@@ -3921,13 +3921,13 @@ abstract class AppLocalizations {
   /// **'Gaming'**
   String get coreCategoryGaming;
 
-  /// Browse category name for pastel-colored wallpapers.
+  /// No description provided for @coreCategoryPastel.
   ///
   /// In en, this message translates to:
   /// **'Pastel'**
   String get coreCategoryPastel;
 
-  /// Browse category name for wallpapers that have a desktop version.
+  /// No description provided for @coreCategoryDesktop.
   ///
   /// In en, this message translates to:
   /// **'Desktop'**

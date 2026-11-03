@@ -2393,13 +2393,7 @@
   "coreCategoryGalaxy": "Galaxy",
   "coreCategoryGaming": "Gaming",
   "coreCategoryPastel": "Pastel",
-  "@coreCategoryPastel": {
-    "description": "Browse category name for pastel-colored wallpapers."
-  },
   "coreCategoryDesktop": "Desktop",
-  "@coreCategoryDesktop": {
-    "description": "Browse category name for wallpapers that have a desktop version."
-  },
   "coreCategoryGradient": "Gradient",
   "coreCategoryIllustration": "Illustration",
   "coreCategoryKawaii": "Kawaii",
