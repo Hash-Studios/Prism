@@ -2,13 +2,21 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:flutter/material.dart';
 
 /// A small sketch of the screen. The avatar and the bell move from the top bar to the bottom row when [oneHanded] is
-/// on. With [roomy] off, the bar has no room for the bell, so it joins the avatar, as the real bar does. Offsets are
-/// from the start edge, so the sketch mirrors in a right-to-left language like the bar.
+/// on. With [roomy] off, the bell joins the avatar. With [avatarAbove] on, the combined control stands above Create.
+/// The row mirrors in a right-to-left language; [sideRail] keeps one-handed controls on the physical right edge.
 class OneHandedPreview extends StatelessWidget {
-  const OneHandedPreview({super.key, required this.oneHanded, required this.roomy});
+  const OneHandedPreview({
+    super.key,
+    required this.oneHanded,
+    required this.roomy,
+    this.avatarAbove = false,
+    this.sideRail = false,
+  });
 
   final bool oneHanded;
   final bool roomy;
+  final bool avatarAbove;
+  final bool sideRail;
 
   static const double _width = 220;
   static const double _height = 132;
@@ -27,18 +35,33 @@ class OneHandedPreview extends StatelessWidget {
     final Duration duration = context.motion(PrismDurations.base);
     const Curve curve = PrismCurves.move;
 
-    // The row, start to end: avatar, pill, create and, when there is room, the bell.
+    // The narrowest row puts the account control above Create instead of beside the pill.
+    final bool avatarInRow = oneHanded && !avatarAbove;
     final bool bellInRow = oneHanded && roomy;
-    final double rowWidth = (oneHanded ? _control + 3 : 0) + _pillWidth + 4 + _create + (bellInRow ? 3 + _control : 0);
+    final double rowWidth =
+        (avatarInRow ? _control + 3 : 0) + _pillWidth + 4 + _create + (bellInRow ? 3 + _control : 0);
     final double rowStart = (_width - rowWidth) / 2;
-    final double pillX = rowStart + (oneHanded ? _control + 3 : 0);
-    final double createX = pillX + _pillWidth + 4;
-    final Offset avatar = oneHanded ? Offset(rowStart, _controlBottomY) : const Offset(10, _topY);
-    final Offset bell = switch ((oneHanded, roomy)) {
-      (false, _) => const Offset(_width - 10 - _control, _topY),
-      (true, true) => Offset(createX + _create + 3, _controlBottomY),
-      (true, false) => avatar,
-    };
+    double railStart(double x, double size) =>
+        oneHanded && Directionality.of(context) == TextDirection.rtl ? _width - x - size : x;
+    final double pillX = sideRail
+        ? railStart(_width - 10 - _create, _pillHeight)
+        : rowStart + (avatarInRow ? _control + 3 : 0);
+    final double createX = sideRail ? pillX : pillX + _pillWidth + 4;
+    final double pillY = sideRail ? _bottomY - 4 - _pillWidth : _bottomY;
+    final Offset avatar = sideRail && oneHanded
+        ? Offset(railStart(_width - 10 - (_create + _control) / 2, _control), pillY - 4 - 2 * _control - 3)
+        : switch ((oneHanded, avatarAbove)) {
+            (false, _) => const Offset(10, _topY),
+            (true, false) => Offset(rowStart, _controlBottomY),
+            (true, true) => Offset(createX + (_create - _control) / 2, _bottomY - _control - 3),
+          };
+    final Offset bell = sideRail && oneHanded
+        ? Offset(avatar.dx, pillY - 4 - _control)
+        : switch ((oneHanded, roomy)) {
+            (false, _) => const Offset(_width - 10 - _control, _topY),
+            (true, true) => Offset(createX + _create + 3, _controlBottomY),
+            (true, false) => avatar,
+          };
 
     Widget slide(Offset at, double size, Widget child) => AnimatedPositionedDirectional(
       duration: duration,
@@ -99,8 +122,8 @@ class OneHandedPreview extends StatelessWidget {
                   duration: duration,
                   curve: curve,
                   start: pillX,
-                  top: _bottomY,
-                  child: _Pill(color: theme.primaryColor, ink: cs.secondary),
+                  top: pillY,
+                  child: _Pill(color: theme.primaryColor, ink: cs.secondary, vertical: sideRail),
                 ),
                 AnimatedPositionedDirectional(
                   duration: duration,
@@ -115,7 +138,7 @@ class OneHandedPreview extends StatelessWidget {
                   AnimatedOpacity(
                     duration: duration,
                     curve: curve,
-                    opacity: oneHanded && !roomy ? 0 : 1,
+                    opacity: oneHanded && !roomy && !sideRail ? 0 : 1,
                     child: AnimatedContainer(
                       duration: duration,
                       curve: curve,
@@ -160,7 +183,7 @@ class OneHandedPreview extends StatelessWidget {
                         child: AnimatedOpacity(
                           duration: duration,
                           curve: curve,
-                          opacity: oneHanded && !roomy ? 1 : 0,
+                          opacity: oneHanded && !roomy && !sideRail ? 1 : 0,
                           child: dot,
                         ),
                       ),
@@ -193,16 +216,17 @@ class _Bar extends StatelessWidget {
 }
 
 class _Pill extends StatelessWidget {
-  const _Pill({required this.color, required this.ink});
+  const _Pill({required this.color, required this.ink, this.vertical = false});
 
   final Color color;
   final Color ink;
+  final bool vertical;
 
   @override
   Widget build(BuildContext context) => Container(
-    width: OneHandedPreview._pillWidth,
-    height: OneHandedPreview._pillHeight,
-    padding: const EdgeInsets.symmetric(horizontal: 6),
+    width: vertical ? OneHandedPreview._pillHeight : OneHandedPreview._pillWidth,
+    height: vertical ? OneHandedPreview._pillWidth : OneHandedPreview._pillHeight,
+    padding: vertical ? const EdgeInsets.symmetric(vertical: 6) : const EdgeInsets.symmetric(horizontal: 6),
     decoration: BoxDecoration(
       color: color,
       borderRadius: BorderRadius.circular(PrismRadius.pill),
@@ -210,7 +234,8 @@ class _Pill extends StatelessWidget {
         BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 2, offset: const Offset(0, 1)),
       ],
     ),
-    child: Row(
+    child: Flex(
+      direction: vertical ? Axis.vertical : Axis.horizontal,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
         for (int i = 0; i < 4; i++)

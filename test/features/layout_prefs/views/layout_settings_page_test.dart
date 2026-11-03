@@ -59,6 +59,7 @@ Future<void> _pumpPage(
   Size size = const Size(390, 844),
   bool disableAnimations = false,
   TextDirection direction = TextDirection.ltr,
+  EdgeInsets padding = EdgeInsets.zero,
 }) async {
   tester.view
     ..physicalSize = size
@@ -72,7 +73,12 @@ Future<void> _pumpPage(
       supportedLocales: AppLocalizations.supportedLocales,
       theme: withPrismAccent(prismLightThemes.first.theme, prismLightThemes.first.defaultAccentValue),
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(textScaler: textScaler, disableAnimations: disableAnimations),
+        data: MediaQuery.of(context).copyWith(
+          textScaler: textScaler,
+          disableAnimations: disableAnimations,
+          padding: padding,
+          viewPadding: padding,
+        ),
         child: child!,
       ),
       home: Directionality(textDirection: direction, child: const LayoutSettingsPage()),
@@ -338,4 +344,118 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(_oneHandedSwitch(), findsOneWidget);
   });
+
+  for (final double width in <double>[320, 360, 390]) {
+    for (final TextDirection direction in TextDirection.values) {
+      testWidgets('the one-handed preview matches the bar at $width in ${direction.name}', (tester) async {
+        await store.update(const LayoutPrefs(oneHanded: true));
+        await _pumpPage(tester, size: Size(width, 844), direction: direction);
+        await tester.ensureVisible(find.byType(OneHandedPreview));
+        await tester.pumpAndSettle();
+
+        final Finder slides = find.descendant(
+          of: find.byType(OneHandedPreview),
+          matching: find.byType(AnimatedPositionedDirectional),
+        );
+        final Rect pill = tester.getRect(slides.at(0));
+        final Rect create = tester.getRect(slides.at(1));
+        final Rect bell = tester.getRect(slides.at(2));
+        final Rect account = tester.getRect(slides.at(3));
+        final bool ltr = direction == TextDirection.ltr;
+
+        expect(ltr ? pill.right < create.left : create.right < pill.left, isTrue);
+        if (width == 320) {
+          expect(account.center.dx, closeTo(create.center.dx, 0.01));
+          expect(account.bottom, lessThan(create.top));
+        } else {
+          expect(account.center.dy, closeTo(create.center.dy, 0.01));
+          expect(ltr ? account.right < pill.left : pill.right < account.left, isTrue);
+        }
+        final AnimatedOpacity bellVisibility = tester.widget<AnimatedOpacity>(
+          find.descendant(of: slides.at(2), matching: find.byType(AnimatedOpacity)),
+        );
+        expect(bellVisibility.opacity, width == 390 ? 1 : 0);
+        if (width == 390) {
+          expect(bell.center.dy, closeTo(create.center.dy, 0.01));
+          expect(ltr ? create.right < bell.left : bell.right < create.left, isTrue);
+        }
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+
+  for (final double width in <double>[360, 390]) {
+    testWidgets('the one-handed preview accounts for side safe areas at $width', (tester) async {
+      await store.update(const LayoutPrefs(oneHanded: true));
+      await _pumpPage(tester, size: Size(width, 844), padding: const EdgeInsets.symmetric(horizontal: 20));
+      await tester.ensureVisible(find.byType(OneHandedPreview));
+      await tester.pumpAndSettle();
+
+      final Finder slides = find.descendant(
+        of: find.byType(OneHandedPreview),
+        matching: find.byType(AnimatedPositionedDirectional),
+      );
+      final Rect create = tester.getRect(slides.at(1));
+      final Rect account = tester.getRect(slides.at(3));
+      expect(
+        tester
+            .widget<AnimatedOpacity>(find.descendant(of: slides.at(2), matching: find.byType(AnimatedOpacity)))
+            .opacity,
+        0,
+      );
+      if (width == 360) {
+        expect(account.center.dx, closeTo(create.center.dx, 0.01));
+        expect(account.bottom, lessThan(create.top));
+      } else {
+        expect(account.center.dy, closeTo(create.center.dy, 0.01));
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final bool oneHanded in <bool>[false, true]) {
+    for (final TextDirection direction in TextDirection.values) {
+      testWidgets('the Duo preview matches its rail with one-handed $oneHanded in ${direction.name}', (tester) async {
+        tester.view.viewPadding = const FakeViewPadding(right: 84, bottom: 34);
+        addTearDown(tester.view.resetViewPadding);
+        await store.update(LayoutPrefs(oneHanded: oneHanded));
+        await _pumpPage(tester, direction: direction, padding: const EdgeInsets.only(right: 84, bottom: 34));
+        await tester.ensureVisible(find.byType(OneHandedPreview));
+        await tester.pumpAndSettle();
+
+        final Finder preview = find.byType(OneHandedPreview);
+        final Finder slides = find.descendant(of: preview, matching: find.byType(AnimatedPositionedDirectional));
+        final Rect screen = tester.getRect(find.descendant(of: preview, matching: find.byType(Container)).first);
+        final Rect pill = tester.getRect(slides.at(0));
+        final Rect create = tester.getRect(slides.at(1));
+        final Rect bell = tester.getRect(slides.at(2));
+        final Rect avatar = tester.getRect(slides.at(3));
+
+        expect(pill.height, greaterThan(pill.width));
+        expect(
+          pill.center.dx,
+          oneHanded || direction == TextDirection.ltr ? greaterThan(screen.center.dx) : lessThan(screen.center.dx),
+        );
+        expect(create.center.dx, closeTo(pill.center.dx, 0.01));
+        expect(pill.bottom, lessThan(create.top));
+        expect(
+          tester
+              .widget<AnimatedOpacity>(find.descendant(of: slides.at(2), matching: find.byType(AnimatedOpacity)))
+              .opacity,
+          1,
+        );
+        if (oneHanded) {
+          expect(avatar.center.dx, closeTo(pill.center.dx, 0.01));
+          expect(bell.center.dx, closeTo(pill.center.dx, 0.01));
+          expect(avatar.bottom, lessThan(bell.top));
+          expect(bell.bottom, lessThan(pill.top));
+        } else {
+          expect(avatar.center.dy, closeTo(bell.center.dy, 0.01));
+          expect(avatar.bottom, lessThan(pill.top));
+          expect(bell.bottom, lessThan(pill.top));
+        }
+        expect(tester.takeException(), isNull);
+      }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+    }
+  }
 }

@@ -48,13 +48,22 @@ class NotificationBell extends StatelessWidget {
           color: floating ? cs.secondary : null,
         ),
         if (hasUnread)
-          Positioned(
-            top: 10,
-            right: 11,
-            child: IgnorePointer(
-              child: _UnreadDot(color: cs.primary, border: floating ? theme.primaryColor : cs.surface),
+          if (floating)
+            PositionedDirectional(
+              top: 10,
+              end: 11,
+              child: IgnorePointer(
+                child: _UnreadDot(color: cs.primary, border: theme.primaryColor),
+              ),
+            )
+          else
+            Positioned(
+              top: 10,
+              right: 11,
+              child: IgnorePointer(
+                child: _UnreadDot(color: cs.primary, border: cs.surface),
+              ),
             ),
-          ),
       ],
     );
     return Semantics(
@@ -63,7 +72,7 @@ class NotificationBell extends StatelessWidget {
       hint: hasUnread ? context.l10n.wallpaperUnreadItems : null,
       excludeSemantics: true,
       onTap: open,
-      child: floating ? _FloatingDisc(child: bell) : bell,
+      child: floating ? SizedBox.square(dimension: 44, child: _FloatingDisc(child: bell)) : bell,
     );
   }
 }

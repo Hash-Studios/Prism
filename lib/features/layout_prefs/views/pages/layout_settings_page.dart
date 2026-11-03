@@ -2,6 +2,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/utils/side_safe_column.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
 import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
@@ -22,6 +23,9 @@ class LayoutSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final LayoutPrefsStore layout = getIt<LayoutPrefsStore>();
+    final bool roomy = oneHandedRowHasRoom(context);
+    final bool avatarAbove = oneHandedAvatarAbove(context);
+    final bool sideRail = screenSideSafeColumnWidth(context) > 0;
     return PrismPage(
       title: context.l10n.layoutTitle,
       body: ValueListenableBuilder<LayoutPrefs>(
@@ -54,6 +58,9 @@ class LayoutSettingsPage extends StatelessWidget {
               footnote: context.l10n.layoutOneHandedFootnote,
               child: _OneHandedSwitch(
                 value: prefs.oneHanded,
+                roomy: roomy,
+                avatarAbove: avatarAbove,
+                sideRail: sideRail,
                 onChanged: (on) {
                   if (on == prefs.oneHanded) return;
                   PrismHaptics.selection();
@@ -139,9 +146,18 @@ class _DensityPicker extends StatelessWidget {
 
 /// The one-handed switch under a live sketch of where the profile and the notifications go.
 class _OneHandedSwitch extends StatelessWidget {
-  const _OneHandedSwitch({required this.value, required this.onChanged});
+  const _OneHandedSwitch({
+    required this.value,
+    required this.roomy,
+    required this.avatarAbove,
+    required this.sideRail,
+    required this.onChanged,
+  });
 
   final bool value;
+  final bool roomy;
+  final bool avatarAbove;
+  final bool sideRail;
   final ValueChanged<bool> onChanged;
 
   @override
@@ -152,7 +168,7 @@ class _OneHandedSwitch extends StatelessWidget {
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.fromLTRB(PrismSpace.md, PrismSpace.md, PrismSpace.md, PrismSpace.xs),
-            child: OneHandedPreview(oneHanded: value, roomy: oneHandedRowHasRoom(context)),
+            child: OneHandedPreview(oneHanded: value, roomy: roomy, avatarAbove: avatarAbove, sideRail: sideRail),
           ),
           Material(
             type: MaterialType.transparency,

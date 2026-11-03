@@ -31,8 +31,7 @@ bool oneHandedRowHasRoom(BuildContext context) =>
     _oneHandedRowSpace(context) >= _compactRow + PrismBottomNav.maxLength + PrismSpace.xxs + _controlSize;
 
 /// Too narrow for the avatar in the row: it stands above the create button instead.
-bool _oneHandedAvatarAbove(BuildContext context) =>
-    _oneHandedRowSpace(context) < _compactRow + PrismBottomNav.maxLength;
+bool oneHandedAvatarAbove(BuildContext context) => _oneHandedRowSpace(context) < _compactRow + PrismBottomNav.maxLength;
 
 /// Hosts the tab content with the floating pill and create button above it. The bar hides while the user scrolls
 /// down; the package's scroll-to-top button takes its place.
@@ -50,11 +49,12 @@ class BottomBar extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final double railWidth = sideSafeColumnWidth(context);
     final bool oneHanded = LayoutPrefsScope.oneHandedOf(context);
-    final bool avatarAbove = oneHanded && _oneHandedAvatarAbove(context);
+    final bool avatarAbove = oneHanded && oneHandedAvatarAbove(context);
     if (railWidth > 0) {
       return ColoredBox(
         color: theme.scaffoldBackgroundColor,
         child: Row(
+          textDirection: oneHanded ? TextDirection.ltr : null,
           children: [
             Expanded(
               child: SideSafeColumnScope(
@@ -128,7 +128,7 @@ class BottomBar extends StatelessWidget {
       child: Align(
         heightFactor: 1.0,
         child: oneHanded
-            ? const _OneHandedRow()
+            ? _OneHandedRow(avatarAbove: avatarAbove, roomy: oneHandedRowHasRoom(context))
             : const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -145,7 +145,10 @@ class BottomBar extends StatelessWidget {
 /// The avatar before the pill and the bell after the create button. A narrower screen gets the avatar alone, which
 /// opens a sheet with both, and the narrowest stands it above the create button so the pill keeps its size.
 class _OneHandedRow extends StatelessWidget {
-  const _OneHandedRow();
+  const _OneHandedRow({required this.avatarAbove, required this.roomy});
+
+  final bool avatarAbove;
+  final bool roomy;
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +160,7 @@ class _OneHandedRow extends StatelessWidget {
         PrismFab(),
       ],
     );
-    if (_oneHandedAvatarAbove(context)) {
+    if (avatarAbove) {
       return const Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -171,7 +174,6 @@ class _OneHandedRow extends StatelessWidget {
         ],
       );
     }
-    final bool roomy = oneHandedRowHasRoom(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

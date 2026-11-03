@@ -78,11 +78,18 @@ Future<_TestRouter> _pump(
   required double width,
   required InAppNotificationsBloc bloc,
   required ValueNotifier<LayoutPrefs> prefs,
+  double height = 700,
   double textScale = 1,
   TextDirection direction = TextDirection.ltr,
+  double horizontalInset = 0,
+  double? rightInset,
+  GlobalKey<ScaffoldMessengerState>? messengerKey,
+  Widget? content,
 }) async {
-  tester.view.physicalSize = Size(width, 700);
+  tester.view.physicalSize = Size(width, height);
   tester.view.devicePixelRatio = 1;
+  tester.view.padding = FakeViewPadding(left: horizontalInset, right: rightInset ?? horizontalInset, bottom: 34);
+  tester.view.viewPadding = FakeViewPadding(left: horizontalInset, right: rightInset ?? horizontalInset, bottom: 34);
   addTearDown(tester.view.reset);
 
   final _TestRouter router = _TestRouter(
@@ -91,9 +98,9 @@ Future<_TestRouter> _pump(
       child: TabsRouterScope(
         controller: _FakeTabsRouter(),
         stateHash: 0,
-        child: const Scaffold(
-          body: BottomBar(
-            child: Align(alignment: Alignment.topCenter, child: PrismTopAppBar()),
+        child: Material(
+          child: BottomBar(
+            child: content ?? const Align(alignment: Alignment.topCenter, child: PrismTopAppBar()),
           ),
         ),
       ),
@@ -106,6 +113,7 @@ Future<_TestRouter> _pump(
       child: BlocProvider<InAppNotificationsBloc>.value(
         value: bloc,
         child: MaterialApp.router(
+          scaffoldMessengerKey: messengerKey,
           debugShowCheckedModeBanner: false,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -327,6 +335,95 @@ void main() {
     expect(tester.getSize(find.byType(PrismBottomNav)).width, PrismBottomNav.maxLength);
   });
 
+  for (final direction in TextDirection.values) {
+    for (final (width, height, left, right) in <(double, double, double, double)>[
+      (320, 700, 12, 12),
+      for (final width in <double>[360, 375, 376, 390, 423, 424]) (width, 700, 20, 20),
+      (700, 320, 44, 24),
+    ]) {
+      _semanticsTest(
+        '$width x $height with $left/$right insets, 2x text and $direction keep controls and feedback clear',
+        (tester) async {
+          final messenger = GlobalKey<ScaffoldMessengerState>();
+          await _pump(
+            tester,
+            width: width,
+            height: height,
+            horizontalInset: left,
+            rightInset: right,
+            bloc: _bloc(2),
+            prefs: _prefs(tester, oneHanded: true),
+            textScale: 2,
+            direction: direction,
+            messengerKey: messenger,
+            content: const Scaffold(body: SizedBox.expand()),
+          );
+
+          expect(tester.takeException(), isNull);
+          final Rect pill = tester.getRect(find.byType(PrismBottomNav));
+          final Rect create = tester.getRect(find.byType(PrismFab));
+          expect(pill.size, const Size(200, 56));
+          expect(create.size, const Size(56, 56));
+          expect(find.bySemanticsLabel('Upload').hitTestable(), findsOneWidget);
+          final bool stacked = width - left - right < 336;
+          final bool separateBell = width - left - right >= 384;
+          final Finder account = find.byTooltip('Profile and notifications');
+          final Finder profile = find.bySemanticsLabel('Your profile');
+          final Finder bell = find.byTooltip('Notifications');
+          final List<Rect> controls = [pill, create];
+          double top = pill.top;
+          if (separateBell) {
+            expect(account, findsNothing);
+            expect(profile.hitTestable(), findsOneWidget);
+            expect(bell.hitTestable(), findsOneWidget);
+            expect(tester.getSize(profile), const Size(44, 44));
+            expect(tester.getSize(bell), const Size(44, 44));
+            final Rect avatar = tester.getRect(profile);
+            final Rect notifications = tester.getRect(bell);
+            controls.addAll([avatar, notifications]);
+            expect(direction == TextDirection.ltr ? avatar.right <= pill.left : avatar.left >= pill.right, isTrue);
+            expect(
+              direction == TextDirection.ltr ? notifications.left >= create.right : notifications.right <= create.left,
+              isTrue,
+            );
+          } else {
+            expect(bell, findsNothing);
+            expect(profile, findsNothing);
+            expect(account.hitTestable(), findsOneWidget);
+            final Rect target = tester.getRect(account);
+            expect(target.size, const Size(44, 44));
+            controls.add(target);
+            if (stacked) {
+              expect(target.center.dx, create.center.dx);
+              expect(target.bottom, closeTo(create.top - 8, 0.01));
+              top = target.top;
+            } else {
+              expect(target.center.dy, pill.center.dy);
+              expect(direction == TextDirection.ltr ? target.right <= pill.left : target.left >= pill.right, isTrue);
+            }
+          }
+          for (final target in controls) {
+            expect(target.left, greaterThanOrEqualTo(left + 10));
+            expect(target.right, lessThanOrEqualTo(width - right - 10));
+            expect(target.top, greaterThanOrEqualTo(0));
+            expect(target.bottom, lessThanOrEqualTo(height - 34 - 10));
+          }
+          expect(direction == TextDirection.ltr ? pill.right <= create.left : create.right <= pill.left, isTrue);
+
+          messenger.currentState!.showSnackBar(
+            const SnackBar(content: Text('Wallpaper set'), behavior: SnackBarBehavior.floating),
+          );
+          await tester.pumpAndSettle();
+          final Rect feedback = tester.getRect(
+            find.descendant(of: find.byType(SnackBar), matching: find.byType(Material)).first,
+          );
+          expect(feedback.bottom, closeTo(top - 8, 0.01));
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+
   _semanticsTest('guest on at 390: the bottom avatar shows and pushes the profile route', (tester) async {
     app_state.prismUser = app_constants.createGuestPrismUser()..profilePhoto = '';
     final _TestRouter router = await _pump(tester, width: 390, bloc: _bloc(0), prefs: _prefs(tester, oneHanded: true));
@@ -337,6 +434,39 @@ void main() {
 
     expect(router.stack.last.name, ProfileRoute.name);
   });
+
+  testWidgets('one-handed RTL Duo keeps all controls in the physical right safe column', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+    const contentKey = Key('duo-content');
+    await _pump(
+      tester,
+      width: 466,
+      rightInset: 84,
+      bloc: _bloc(2),
+      prefs: _prefs(tester, oneHanded: true),
+      direction: TextDirection.rtl,
+      textScale: 2,
+      content: const SizedBox.expand(key: contentKey),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(tester.getRect(find.byKey(contentKey)).right, 382);
+    expect(tester.widget<PrismBottomNav>(find.byType(PrismBottomNav)).axis, Axis.vertical);
+    for (final control in [
+      find.bySemanticsLabel('Your profile'),
+      find.byTooltip('Notifications'),
+      find.byType(PrismBottomNav),
+      find.byType(PrismFab),
+    ]) {
+      final Rect target = tester.getRect(control);
+      expect(target.left, greaterThanOrEqualTo(382));
+      expect(target.right, lessThanOrEqualTo(466));
+      expect(control.hitTestable(), findsOneWidget);
+    }
+    expect(tester.getSize(find.bySemanticsLabel('Your profile')), const Size(44, 44));
+    expect(tester.getSize(find.byTooltip('Notifications')), const Size(44, 44));
+    handle.dispose();
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   _semanticsTest('right to left on at 390: the avatar sits right of the pill and the bell left of the create button', (
     tester,
