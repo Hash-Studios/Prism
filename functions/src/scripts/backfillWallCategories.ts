@@ -123,6 +123,9 @@ export async function backfillWallCategories(
   log(`samples: ${counts.samples.join(" ")}`);
   log(`done scanned=${counts.scanned} noLabels=${counts.noLabels} creatorPicked=${counts.creatorPicked} ` +
     `changed=${counts.changed} written=${counts.written} failed=${counts.failed} applied=${options.apply}`);
+  if (options.apply && counts.failed > 0) {
+    throw new Error(`${counts.failed} category writes failed`);
+  }
   return counts;
 }
 

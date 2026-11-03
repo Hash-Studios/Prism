@@ -93,7 +93,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
       final Future<List<FeedItemEntity>> prismFirst = refresh
           ? _fetchPrismFirst(category).timeout(_prismFirstTimeout, onTimeout: () => const <FeedItemEntity>[])
           : Future.value(const <FeedItemEntity>[]);
-      final fetched = await _fetchFromSource(category, refresh: refresh);
+      final fetched = await _fetchFromSource(category, refresh: refresh, isCurrent: isCurrent);
       if (!isCurrent()) return Result.error(const UnknownFailure('Category request was invalidated'));
       final CategoryFeedPage? providerPage = fetched.data;
       final page = providerPage == null
@@ -194,18 +194,30 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     return unique.values.toList(growable: false);
   }
 
-  /// The Desktop category is listed only when it has enough walls for a full page. A failure hides it.
+  /// The Desktop category is listed only when it has enough visible walls. A failure hides it.
   Future<bool> _hasDesktopWalls() async {
     try {
       final result = await _prismRepository.fetchDesktopCompanions().timeout(_desktopCheckTimeout);
-      return (result.data?.length ?? 0) >= minimumCategoryWalls;
+      final List<PrismWallpaper>? walls = result.data;
+      if (walls == null) return false;
+      final List<FeedItemEntity> items = walls
+          .map((wall) => PrismFeedItem(id: wall.id, wallpaper: wall))
+          .toList(growable: false);
+      final List<FeedItemEntity> visible = AnimeContentFilter.filterFeedItems(
+        AiContentFilter.filterFeedItems(items, showAi: AiContentFilter.showsAi(_settingsLocal)),
+        showAnime: AnimeContentFilter.showsAnime(_settingsLocal),
+      );
+      return visible.length >= minimumCategoryWalls;
     } catch (error) {
       logger.w('[CategoryFeedRepository] Desktop walls check failed; hiding the Desktop category', error: error);
       return false;
     }
   }
 
-  Future<Result<CategoryFeedPage>> _fetchDesktopPage({required bool refresh}) async {
+  Future<Result<CategoryFeedPage>> _fetchDesktopPage({
+    required bool refresh,
+    required bool Function() isCurrent,
+  }) async {
     if (refresh) {
       _desktopCursor = null;
       _desktopHasMore = true;
@@ -214,6 +226,9 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
       return Result.success(const CategoryFeedPage(items: <FeedItemEntity>[], hasMore: false));
     }
     final result = await _prismRepository.fetchDesktopCompanions(startAfterDocId: _desktopCursor);
+    if (!isCurrent()) {
+      return Result.error(const UnknownFailure('Category request was invalidated'));
+    }
     final walls = result.data;
     if (walls == null) {
       return Result.error(result.failure ?? const UnknownFailure('Failed to fetch Prism feed'));
@@ -231,11 +246,15 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     );
   }
 
-  Future<Result<CategoryFeedPage>> _fetchFromSource(CategoryEntity category, {required bool refresh}) async {
+  Future<Result<CategoryFeedPage>> _fetchFromSource(
+    CategoryEntity category, {
+    required bool refresh,
+    required bool Function() isCurrent,
+  }) async {
     switch (category.source) {
       case WallpaperSource.prism:
         if (category.searchType == CategorySearchType.desktop) {
-          return _fetchDesktopPage(refresh: refresh);
+          return _fetchDesktopPage(refresh: refresh, isCurrent: isCurrent);
         }
         final result = await _prismRepository.fetchFeed(refresh: refresh);
         return _toPage(

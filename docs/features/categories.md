@@ -125,13 +125,15 @@ Thus Pastel and Gaming pages are full on day one from Pexels. Prism walls join t
 - `CategorySearchType.desktop` marks the tile. `PrismWallpaperRepository.fetchDesktopCompanions` reads approved walls with `desktopVariant.v > ''`, 24 per page, in `desktopVariant.v` order. The source tag is `category_feed.desktop`.
 - The query needs the index `walls (review ASC, desktopVariant.v ASC)`. It is in `firestore.indexes.json`. Deploy it before the release that ships this tile.
 - The order is stable but not newest first. Firestore must sort by the field of the `>` filter first.
-- On the Desktop page, the detail screen opens with `desktopDownload: true`. **Download** then saves the 2560 x 1600 desktop file through `resolveOriginalAccess` with variant `desktop`. It has its own grant, its own name in Downloads (`<phone name>_desktop-<v>.png`) and the same price as the phone file. **Set** still sets the phone wall.
+- On the Desktop page, the detail screen opens with `desktopDownload: true`, including after a swipe to another wall. **Download** then saves the 2560 x 1600 desktop file through `resolveOriginalAccess` with variant `desktop`. It has its own grant, its own name in Downloads (`<phone name>_desktop-<v>.png`) and the same price as the phone file. A wall without a desktop version uses its phone file. **Set** still sets the phone wall.
 - The search "Browse by Category" row and the quick tile picker do not show Desktop. The quick tile searches Wallhaven by name, so it cannot use a Prism-only tile.
 - A user cannot pick Desktop as an upload category.
 
 #### Thin categories are hidden
 
-A category page with fewer than 12 walls (`minimumCategoryWalls`) is not listed. Today this affects only Desktop, because its walls come from Prism only. `getCategories` asks for page 1 of the Desktop walls. If the page has fewer than 12 walls, or the query fails or takes more than 3 seconds, the Collections tab does not show the tile. The short limit keeps the other tiles from waiting.
+A category page with fewer than 12 walls (`minimumCategoryWalls`) is not listed. Today this affects only Desktop, because its walls come from Prism only. `getCategories` asks for page 1 of the Desktop walls and applies the user's AI and anime filters before the count. If the page has fewer than 12 visible walls, or the query fails or takes more than 3 seconds, the Collections tab does not show the tile. The short limit keeps the other tiles from waiting.
+
+Collections pull-to-refresh and AI or anime setting changes check eligibility again. If Desktop is no longer eligible while selected, the feed uses the first listed category. Older category-list results cannot replace a newer refresh.
 
 With 6 desktop walls today, **the Desktop tile stays hidden** until the desktop backfill runs. Pexels and Wallhaven categories are not counted at run time. Their counts are in the table above.
 
@@ -153,6 +155,7 @@ With 6 desktop walls today, **the Desktop tile stays hidden** until the desktop 
 - It reads the stored `visionLabels`. It calls no paid service.
 - A dry run is the default. It lists each wall that would change, the counts by old and new category, and up to 10 sample ids.
 - `--apply` writes `category`, `aiCategorized` and `categorizedAt`. It does not change the wall's collections. Get the owner's OK first.
+- If a write fails, the script prints the summary and exits with an error. Each write requires the document's scanned update time, so a later creator edit is not overwritten.
 
 ```sh
 cd functions && npm run migrate:wall-categories            # dry run

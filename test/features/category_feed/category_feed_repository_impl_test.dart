@@ -575,7 +575,7 @@ void main() {
       image2: '',
     );
 
-    PrismWallpaper desktopWall(int n) => PrismWallpaper(
+    PrismWallpaper desktopWall(int n, {bool ai = false, bool anime = false}) => PrismWallpaper(
       core: WallpaperCore(
         id: 'd$n',
         source: WallpaperSource.prism,
@@ -583,6 +583,8 @@ void main() {
         thumbnailUrl: 'https://prism.test/d$n-thumb.jpg',
       ),
       firestoreDocumentId: 'doc-d$n',
+      isAiGenerated: ai,
+      tags: anime ? <String>['anime'] : null,
     );
 
     setUp(() {
@@ -617,6 +619,33 @@ void main() {
       when(
         () => prism.fetchDesktopCompanions(),
       ).thenAnswer((_) async => Result.error<List<PrismWallpaper>>(const ServerFailure('x')));
+
+      final categories = (await repository.getCategories()).data!;
+
+      expect(categories.map((category) => category.name), isNot(contains('Desktop')));
+    });
+
+    test('getCategories counts only walls visible under AI and anime settings', () async {
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(store);
+      for (final bool hideAi in <bool>[true, false]) {
+        final bool hideAnime = !hideAi;
+        await AiContentFilter.setShowsAi(settings, !hideAi);
+        await settings.set('WHcategories', hideAnime ? 100 : 110);
+        when(() => prism.fetchDesktopCompanions()).thenAnswer(
+          (_) async => Result.success(<PrismWallpaper>[
+            for (int n = 1; n <= 11; n++) desktopWall(n),
+            for (int n = 12; n <= 24; n++) desktopWall(n, ai: hideAi, anime: hideAnime),
+          ]),
+        );
+
+        final categories = (await repository.getCategories()).data!;
+
+        expect(categories.map((category) => category.name), isNot(contains('Desktop')));
+      }
+    });
+
+    test('getCategories hides Desktop when its first page query takes over three seconds', () async {
+      when(() => prism.fetchDesktopCompanions()).thenAnswer((_) => Completer<Result<List<PrismWallpaper>>>().future);
 
       final categories = (await repository.getCategories()).data!;
 
@@ -662,6 +691,36 @@ void main() {
       expect(more.data!.items.map((item) => item.id), <String>['d25']);
       expect(more.data!.hasMore, isFalse);
       verify(() => prism.fetchDesktopCompanions(startAfterDocId: 'doc-d24')).called(1);
+    });
+
+    test('a late Desktop refresh cannot rewind pagination after a newer refresh and page', () async {
+      final Completer<Result<List<PrismWallpaper>>> oldRefresh = Completer<Result<List<PrismWallpaper>>>();
+      var firstPageRequest = 0;
+      when(() => prism.fetchDesktopCompanions()).thenAnswer((_) {
+        firstPageRequest++;
+        return firstPageRequest == 1
+            ? oldRefresh.future
+            : Future<Result<List<PrismWallpaper>>>.value(
+                Result.success(<PrismWallpaper>[for (int n = 1; n <= 24; n++) desktopWall(n)]),
+              );
+      });
+      when(
+        () => prism.fetchDesktopCompanions(startAfterDocId: 'doc-d24'),
+      ).thenAnswer((_) async => Result.success(<PrismWallpaper>[for (int n = 25; n <= 48; n++) desktopWall(n)]));
+      when(
+        () => prism.fetchDesktopCompanions(startAfterDocId: 'doc-d48'),
+      ).thenAnswer((_) async => Result.success(<PrismWallpaper>[desktopWall(49)]));
+
+      final Future<Result<CategoryFeedPage>> stale = repository.fetchCategoryFeed(category: desktop, refresh: true);
+      await repository.fetchCategoryFeed(category: desktop, refresh: true);
+      await repository.fetchCategoryFeed(category: desktop, refresh: false);
+      oldRefresh.complete(Result.success(<PrismWallpaper>[desktopWall(999)]));
+      await stale;
+
+      final Result<CategoryFeedPage> next = await repository.fetchCategoryFeed(category: desktop, refresh: false);
+
+      expect(next.data!.items.map((item) => item.id), <String>['d49']);
+      verify(() => prism.fetchDesktopCompanions(startAfterDocId: 'doc-d48')).called(1);
     });
   });
 }

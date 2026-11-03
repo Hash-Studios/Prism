@@ -180,6 +180,21 @@ void main() {
     expect(find.text('No wallpapers here yet'), findsOneWidget);
   });
 
+  testWidgets('a hidden Desktop deep link uses the first listed category fallback', (tester) async {
+    current = CategoryFeedState.initial().copyWith(
+      status: LoadStatus.success,
+      categories: const <CategoryEntity>[_space, _dark],
+      selectedCategory: _space,
+      items: <FeedItemEntity>[],
+    );
+    when(() => bloc.add(any())).thenAnswer((_) => states.add(current));
+
+    await pumpScreen(tester, 'category:Desktop');
+    await tester.pump();
+
+    verify(() => bloc.add(CategoryFeedEvent.categorySelected(category: _space))).called(1);
+  });
+
   testWidgets('a collection shows its name as the title, then an empty state when it has no wallpapers', (
     tester,
   ) async {

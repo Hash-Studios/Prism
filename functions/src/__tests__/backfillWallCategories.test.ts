@@ -13,24 +13,30 @@ type Ref = {id: string; update: (data: Doc, precondition?: unknown) => Promise<v
 type Write = {ref: Ref; data: Doc; precondition: unknown};
 
 /** A fake bulkWriter that records each update and applies it to the fake store with its precondition. */
-function installBulkWriter(t: TestContext): Write[] {
+function installBulkWriter(t: TestContext, options: {failWrites?: boolean; staleWrites?: boolean} = {}):
+  {writes: Write[]; creations: {count: number}} {
   const writes: Write[] = [];
+  const creations = {count: 0};
   const pending: Array<Promise<unknown>> = [];
-  t.mock.method(db, "bulkWriter", () => ({
-    update: (ref: Ref, data: Doc, precondition?: unknown) => {
-      writes.push({ref, data, precondition});
-      const write = ref.update(data, precondition);
-      pending.push(write);
-      return write;
-    },
-    flush: async () => {
-      await Promise.allSettled(pending);
-    },
-    close: async () => {
-      await Promise.allSettled(pending);
-    },
-  }));
-  return writes;
+  t.mock.method(db, "bulkWriter", () => {
+    creations.count += 1;
+    return {
+      update: (ref: Ref, data: Doc, precondition?: unknown) => {
+        writes.push({ref, data, precondition});
+        const write = options.failWrites ? Promise.reject(new Error("write rejected")) : options.staleWrites ?
+          ref.update({concurrentChange: true}).then(() => ref.update(data, precondition)) : ref.update(data, precondition);
+        pending.push(write);
+        return write;
+      },
+      flush: async () => {
+        await Promise.allSettled(pending);
+      },
+      close: async () => {
+        await Promise.allSettled(pending);
+      },
+    };
+  });
+  return {writes, creations};
 }
 
 const SEED: Record<string, Doc> = {
@@ -54,7 +60,7 @@ test("planCategoryChange moves only classifier-owned walls into the new categori
 
 test("the category backfill is a dry run by default and writes nothing", async (t) => {
   const store = installFakeDb(t, SEED);
-  const writes = installBulkWriter(t);
+  const {writes, creations} = installBulkWriter(t);
   const before = JSON.stringify([...store.entries()]);
   const logs: string[] = [];
   const counts = await backfillWallCategories(db, parseWallCategoryArgs([]), (line) => logs.push(line));
@@ -62,6 +68,7 @@ test("the category backfill is a dry run by default and writes nothing", async (
   assert.deepEqual(counts, {scanned: 4, noLabels: 0, creatorPicked: 1, changed: 2, written: 0, failed: 0,
     moves: {"Anime -> Gaming": 1, "General -> Pastel": 1}, samples: ["a", "b"]});
   assert.equal(writes.length, 0);
+  assert.equal(creations.count, 0, "dry run must not create a bulk writer");
   assert.equal(JSON.stringify([...store.entries()]), before);
   assert.deepEqual(logs, [
     "a Anime -> Gaming",
@@ -75,7 +82,7 @@ test("the category backfill is a dry run by default and writes nothing", async (
 
 test("the category backfill with --apply writes the new category with a precondition", async (t) => {
   const store = installFakeDb(t, SEED);
-  const writes = installBulkWriter(t);
+  const {writes} = installBulkWriter(t);
   const updateTime = (await db.collection("walls").doc("a").get()).updateTime;
   const counts = await backfillWallCategories(db, parseWallCategoryArgs(["--apply"]), () => undefined);
 
@@ -90,6 +97,43 @@ test("the category backfill with --apply writes the new category with a precondi
   assert.deepEqual(anime.precondition, {lastUpdateTime: updateTime});
   assert.equal(store.get("walls/a")?.category, "Gaming");
   assert.deepEqual(store.get("walls/c"), SEED["walls/c"]);
+});
+
+test("the category backfill paginates all approved walls without creating a writer in dry-run mode", async (t) => {
+  const seed = Object.fromEntries(Array.from({length: 301}, (_, i) => [`walls/${String(i).padStart(3, "0")}`,
+    {review: true, category: "General", visionLabels: ["PC game"]}]));
+  installFakeDb(t, seed);
+  const {writes, creations} = installBulkWriter(t);
+  const counts = await backfillWallCategories(db, parseWallCategoryArgs([]), () => undefined);
+
+  assert.equal(counts.scanned, 301);
+  assert.equal(counts.changed, 301);
+  assert.equal(counts.samples.length, 10);
+  assert.equal(writes.length, 0);
+  assert.equal(creations.count, 0);
+});
+
+test("the category backfill rejects after logging failed apply writes", async (t) => {
+  installFakeDb(t, SEED);
+  const {writes} = installBulkWriter(t, {failWrites: true});
+  const logs: string[] = [];
+
+  await assert.rejects(backfillWallCategories(db, parseWallCategoryArgs(["--apply"]), (line) => logs.push(line)),
+    /2 category writes failed/);
+  assert.equal(writes.length, 2);
+  assert.ok(logs.includes("done scanned=4 noLabels=0 creatorPicked=1 changed=2 written=0 failed=2 applied=true"));
+});
+
+test("the category backfill does not overwrite walls changed since the scan", async (t) => {
+  const store = installFakeDb(t, SEED);
+  installBulkWriter(t, {staleWrites: true});
+
+  await assert.rejects(backfillWallCategories(db, parseWallCategoryArgs(["--apply"]), () => undefined),
+    /2 category writes failed/);
+  assert.equal(store.get("walls/a")?.category, "Anime");
+  assert.equal(store.get("walls/b")?.category, "General");
+  assert.equal(store.get("walls/a")?.concurrentChange, true);
+  assert.equal(store.get("walls/b")?.concurrentChange, true);
 });
 
 test("parseWallCategoryArgs reads --apply", () => {

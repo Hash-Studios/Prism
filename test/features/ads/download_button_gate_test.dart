@@ -11,7 +11,9 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
+import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -19,27 +21,64 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wall_desktop.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
+import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
+import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
+import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
+import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
+import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
+import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:cloud_functions/cloud_functions.dart' show FirebaseFunctionsException;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
+import '../../support/favourite_test_scope.dart';
 import '../../support/in_memory_local_store.dart';
 import '../../support/offline_asset_fixture.dart';
 import '../../support/wait_for_real_io.dart';
+
+class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
+    implements WallpaperDetailBloc {}
+
+FeedItemEntity _desktopFeedItem(String id, {bool hasDesktop = true}) => FeedItemEntity.prism(
+  id: id,
+  wallpaper: PrismWallpaper(
+    core: WallpaperCore(
+      id: id,
+      source: WallpaperSource.prism,
+      fullUrl: 'https://example.com/$id.jpg',
+      thumbnailUrl: 'https://example.com/$id-thumb.jpg',
+    ),
+    desktop: hasDesktop
+        ? WallDesktopVariant(
+            version: id == 'desktop-a' ? 'aaaaaaaaaaaaaaaa' : 'bbbbbbbbbbbbbbbb',
+            thumbnailUrl: 'https://example.com/$id-desktop-thumb.jpg',
+            width: 2560,
+            height: 1600,
+          )
+        : null,
+  ),
+);
 
 class _OrderedAnalytics extends FakeAppAnalytics {
   _OrderedAnalytics(this.onTrack);
@@ -116,6 +155,8 @@ class _SwitchingAccountAssetStore extends OfflineAssetStore {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpFavouriteCounts();
+  setUpAll(() => registerFallbackValue(const OnPanelOpened()));
   final backend = CoinsTestBackend();
   late FakeAppAnalytics fakeAnalytics;
   late List<Map<String, dynamic>> spendCalls;
@@ -2061,6 +2102,9 @@ void main() {
 
     testWidgets('saves the desktop file under its own name', (tester) async {
       backend.originalAssets['wall-1'] = (premium: false, coins: 20);
+      final DownloadedWallIndex index = DownloadedWallIndex(getIt<SettingsLocalDataSource>());
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      addTearDown(() => getIt.unregister<DownloadedWallIndex>());
       await pump(tester, source: WallpaperSource.prism, desktop: desktop);
       await tapSave(tester);
       await tester.tap(find.text('Download').last);
@@ -2071,6 +2115,26 @@ void main() {
       final DownloadRequest request = enqueued.single! as DownloadRequest;
       expect(request.link, 'https://signed.test/wall-1');
       expect(request.filenameWithoutExtension, 'sunset_desktop-a1b2c3d4e5f60718');
+      final String pendingKey =
+          'originalAccess.${app_state.prismUser.id}.${OriginalAccessService.grantKey('wall-1', desktop: true, desktopVersion: desktop.version)}.download';
+      expect(getIt<SettingsLocalDataSource>().get<String?>(pendingKey, hasDefault: true), isNull);
+      expect(getIt<SettingsLocalDataSource>().get<int?>('$pendingKey.until', hasDefault: true), isNull);
+      final Map<String, dynamic> acquisitions =
+          jsonDecode(getIt<SettingsLocalDataSource>().get<String>('downloaded_walls_v1', defaultValue: '{}'))
+              as Map<String, dynamic>;
+      final String desktopIdentity = DownloadVariant.identityFor(_link, 'desktop-${desktop.version}');
+      final Iterable<Map<String, dynamic>> desktopAcquisitions = acquisitions.values
+          .whereType<Map>()
+          .map((Map value) => Map<String, dynamic>.from(value))
+          .where(
+            (Map<String, dynamic> value) =>
+                value['owner'] == app_state.prismUser.id &&
+                value['id'] == 'wall-1' &&
+                value['source'] == 'prism' &&
+                value['link'] == desktopIdentity,
+          );
+      expect(desktopAcquisitions, hasLength(1));
+      expect(desktopAcquisitions.single['original'], isFalse);
     });
 
     testWidgets('the phone download sends no variant', (tester) async {
@@ -2103,6 +2167,88 @@ void main() {
       expect(acquisitions, hasLength(1));
       expect(acquisitions.single['variant'], 'desktop');
       expect((enqueued.single! as DownloadRequest).link, 'https://signed.test/wall-1');
+    });
+
+    testWidgets('the desktop setting survives wrapped feed pages and swipes', (tester) async {
+      final List<FeedItemEntity> blocItems = <FeedItemEntity>[
+        _desktopFeedItem('desktop-a'),
+        _desktopFeedItem('desktop-b'),
+        _desktopFeedItem('desktop-c', hasDesktop: false),
+      ];
+      getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
+      getIt.registerSingleton<TasteSignalStore>(TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore())));
+      getIt.registerLazySingleton<RecentlyViewedStore>(
+        () => RecentlyViewedStore(SettingsLocalDataSource(InMemoryLocalStore())),
+      );
+      addTearDown(() => getIt.unregister<FavoritesLocalDataSource>());
+      addTearDown(() => getIt.unregister<TasteSignalStore>());
+      addTearDown(() => getIt.unregister<RecentlyViewedStore>());
+      getIt.registerFactory<WallpaperDetailBloc>(() {
+        final _MockWallpaperDetailBloc bloc = _MockWallpaperDetailBloc();
+        whenListen(
+          bloc,
+          const Stream<WallpaperDetailState>.empty(),
+          initialState: WallpaperDetailLoaded(
+            entity: blocItems.removeAt(0),
+            recommendations: const RecommendationState.exhausted(),
+          ),
+        );
+        return bloc;
+      });
+      addTearDown(() => getIt.unregister<WallpaperDetailBloc>());
+
+      final List<FeedItemEntity> feedItems = <FeedItemEntity>[
+        _desktopFeedItem('desktop-a'),
+        _desktopFeedItem('desktop-b'),
+        _desktopFeedItem('desktop-c', hasDesktop: false),
+      ];
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(
+            builder: (BuildContext context) {
+              final WallpaperFeed feed = WallpaperFeed(
+                grid: context,
+                tiles: <WallpaperFeedTile>[
+                  for (final (int index, FeedItemEntity item) in feedItems.indexed)
+                    (item: item, index: index, heroTag: 'desktop-$index'),
+                ],
+              );
+              return WallpaperDetailScreen(
+                entity: feedItems.first,
+                feed: feed,
+                desktopDownload: true,
+              ).wrappedRoute(context);
+            },
+          ),
+        ),
+      );
+
+      expect(find.byType(WallpaperDetailScreen), findsOneWidget);
+      expect(
+        tester
+            .widgetList<WallpaperDetailScreen>(find.byType(WallpaperDetailScreen))
+            .every((WallpaperDetailScreen page) => page.desktopDownload),
+        isTrue,
+      );
+      expect(tester.widget<DownloadButton>(find.byType(DownloadButton)).desktop?.version, 'aaaaaaaaaaaaaaaa');
+      await tester.fling(find.byType(WallpaperQuickActionRegion).first, const Offset(-300, 0), 1000);
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widgetList<WallpaperDetailScreen>(find.byType(WallpaperDetailScreen))
+            .every((WallpaperDetailScreen page) => page.desktopDownload),
+        isTrue,
+      );
+      expect(find.byType(WallpaperDetailScreen), findsOneWidget);
+      expect(tester.widget<DownloadButton>(find.byType(DownloadButton)).desktop?.version, 'bbbbbbbbbbbbbbbb');
+      await tester.fling(find.byType(WallpaperQuickActionRegion).first, const Offset(-300, 0), 1000);
+      await tester.pumpAndSettle();
+      expect(find.byType(WallpaperDetailScreen), findsOneWidget);
+      expect(tester.widget<WallpaperDetailScreen>(find.byType(WallpaperDetailScreen)).desktopDownload, isTrue);
+      expect(tester.widget<DownloadButton>(find.byType(DownloadButton)).desktop, isNull);
+      await tester.pumpWidget(const SizedBox());
     });
   });
 }

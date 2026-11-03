@@ -43,6 +43,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
   bool _blockListUnknown = true;
   bool _blockRecoveryDuringLoad = false;
   int _generation = 0;
+  int _categoriesGeneration = 0;
 
   static const int _maxEmptyPages = 5;
 
@@ -79,7 +80,9 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
   }
 
   Future<void> _onStarted(_Started event, Emitter<CategoryFeedState> emit) async {
+    final int generation = ++_categoriesGeneration;
     final categoriesResult = await _loadCategoriesUseCase(const NoParams());
+    if (generation != _categoriesGeneration || emit.isDone) return;
     categoriesResult.fold(
       onSuccess: (categories) => emit(state.copyWith(categories: categories)),
       onFailure: (failure) => emit(state.copyWith(status: LoadStatus.failure, failure: failure)),
@@ -199,10 +202,79 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
   }
 
   Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<CategoryFeedState> emit) async {
-    final selected = state.selectedCategory;
-    if (selected == null) {
+    final int generation = ++_generation;
+    final int categoriesGeneration = ++_categoriesGeneration;
+    final CategoryEntity? selected = state.selectedCategory;
+    emit(
+      state.copyWith(
+        status: LoadStatus.loading,
+        actionStatus: ActionStatus.inProgress,
+        isFetchingMore: false,
+        failure: null,
+      ),
+    );
+
+    final Result<List<CategoryEntity>> result = await _loadCategoriesUseCase(const NoParams());
+    if (categoriesGeneration != _categoriesGeneration || emit.isDone) return;
+
+    final List<CategoryEntity>? categories = result.data;
+    if (categories == null) {
+      if (generation != _generation) return;
+      if (selected == null) {
+        emit(
+          state.copyWith(
+            status: LoadStatus.failure,
+            actionStatus: ActionStatus.failure,
+            isFetchingMore: false,
+            failure: result.failure ?? const UnknownFailure('Failed to load categories'),
+          ),
+        );
+        return;
+      }
+      await _onCategorySelected(_CategorySelected(category: selected), emit);
       return;
     }
-    await _onCategorySelected(_CategorySelected(category: selected), emit);
+
+    emit(state.copyWith(categories: categories));
+    final bool feedChanged = generation != _generation;
+    final CategoryEntity? currentSelection = state.selectedCategory;
+    CategoryEntity? categoryToLoad;
+    if (currentSelection != null) {
+      for (final CategoryEntity category in categories) {
+        if (category.name == currentSelection.name && category.source == currentSelection.source) {
+          categoryToLoad = category;
+          break;
+        }
+      }
+    }
+    if (feedChanged && categoryToLoad != null) return;
+    if (selected == null && currentSelection == null) {
+      emit(
+        state.copyWith(
+          status: LoadStatus.success,
+          actionStatus: ActionStatus.success,
+          isFetchingMore: false,
+          failure: null,
+        ),
+      );
+      return;
+    }
+    categoryToLoad ??= categories.firstOrNull;
+    if (categoryToLoad == null) {
+      if (feedChanged) _generation++;
+      emit(
+        state.copyWith(
+          status: LoadStatus.success,
+          actionStatus: ActionStatus.success,
+          selectedCategory: null,
+          items: const <FeedItemEntity>[],
+          hasMore: false,
+          isFetchingMore: false,
+          failure: null,
+        ),
+      );
+      return;
+    }
+    await _onCategorySelected(_CategorySelected(category: categoryToLoad), emit);
   }
 }

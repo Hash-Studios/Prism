@@ -670,6 +670,7 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
                   requestId: screen.requestId,
                   heroTag: tile.heroTag,
                   aspectRatio: index == widget.start ? screen.aspectRatio : null,
+                  desktopDownload: screen.desktopDownload,
                 ),
               ),
             ),
