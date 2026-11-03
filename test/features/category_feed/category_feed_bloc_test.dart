@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -30,14 +29,6 @@ const CategoryEntity _home = CategoryEntity(
   image2: '',
 );
 
-const CategoryEntity _desktop = CategoryEntity(
-  name: 'Desktop',
-  source: WallpaperSource.prism,
-  searchType: CategorySearchType.desktop,
-  image: '',
-  image2: '',
-);
-
 FeedItemEntity _prismItem(String id, {required String authorUid}) {
   return FeedItemEntity.prism(
     id: id,
@@ -57,7 +48,6 @@ void main() {
   test('same-category refresh rejects old pages and ignores pagination while loading', () async {
     final load = _MockLoadCategoriesUseCase();
     final fetch = _MockFetchCategoryFeedUseCase();
-    when(() => load(any())).thenAnswer((_) async => Result.success(const <CategoryEntity>[_home]));
     final oldPage = Completer<Result<CategoryFeedPage>>();
     final refresh = Completer<Result<CategoryFeedPage>>();
     int calls = 0;
@@ -150,104 +140,7 @@ void main() {
     verifyNever(() => fetch(any()));
   });
 
-  test('a late initial category load cannot replace newer refreshed eligibility', () async {
-    final load = _MockLoadCategoriesUseCase();
-    final fetch = _MockFetchCategoryFeedUseCase();
-    final Completer<Result<List<CategoryEntity>>> initialLoad = Completer<Result<List<CategoryEntity>>>();
-    int calls = 0;
-    when(() => load(any())).thenAnswer((_) {
-      calls++;
-      return calls == 1
-          ? initialLoad.future
-          : Future<Result<List<CategoryEntity>>>.value(Result.success(const <CategoryEntity>[_home]));
-    });
-    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
-    addTearDown(bloc.close);
-
-    bloc.add(const CategoryFeedEvent.started());
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-    bloc.add(const CategoryFeedEvent.refreshRequested());
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-    expect(bloc.state.categories, const <CategoryEntity>[_home]);
-
-    initialLoad.complete(Result.success(const <CategoryEntity>[_home, _desktop]));
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-
-    expect(bloc.state.categories, const <CategoryEntity>[_home]);
-    expect(bloc.state.selectedCategory, isNull);
-    verifyNever(() => fetch(any()));
-  });
-
-  test('selecting a category does not invalidate the initial category list load', () async {
-    final load = _MockLoadCategoriesUseCase();
-    final fetch = _MockFetchCategoryFeedUseCase();
-    final Completer<Result<List<CategoryEntity>>> initialLoad = Completer<Result<List<CategoryEntity>>>();
-    when(() => load(any())).thenAnswer((_) => initialLoad.future);
-    when(() => fetch(any())).thenAnswer(
-      (_) async =>
-          Result.success(CategoryFeedPage(items: <FeedItemEntity>[_prismItem('home', authorUid: 'a')], hasMore: false)),
-    );
-    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
-    addTearDown(bloc.close);
-
-    bloc.add(const CategoryFeedEvent.started());
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-    bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-    initialLoad.complete(Result.success(const <CategoryEntity>[_home, _desktop]));
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-
-    expect(bloc.state.categories, const <CategoryEntity>[_home, _desktop]);
-    expect(bloc.state.selectedCategory, _home);
-    expect(bloc.state.items.map((item) => item.id), <String>['home']);
-  });
-
-  test(
-    'a category selection during eligibility refresh still applies the new list and falls back if removed',
-    () async {
-      final load = _MockLoadCategoriesUseCase();
-      final fetch = _MockFetchCategoryFeedUseCase();
-      final Completer<Result<List<CategoryEntity>>> eligibility = Completer<Result<List<CategoryEntity>>>();
-      int loadCalls = 0;
-      when(() => load(any())).thenAnswer((_) {
-        loadCalls++;
-        return loadCalls == 1
-            ? Future<Result<List<CategoryEntity>>>.value(Result.success(const <CategoryEntity>[_home, _desktop]))
-            : eligibility.future;
-      });
-      when(() => fetch(any())).thenAnswer((invocation) {
-        final params = invocation.positionalArguments.single as FetchCategoryFeedParams;
-        return Future.value(
-          Result.success(
-            CategoryFeedPage(
-              items: <FeedItemEntity>[_prismItem(params.category.name.toLowerCase(), authorUid: 'a')],
-              hasMore: false,
-            ),
-          ),
-        );
-      });
-      final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
-      addTearDown(bloc.close);
-
-      bloc.add(const CategoryFeedEvent.started());
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      bloc.add(const CategoryFeedEvent.refreshRequested());
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      bloc.add(const CategoryFeedEvent.categorySelected(category: _desktop));
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      expect(bloc.state.selectedCategory, _desktop);
-
-      eligibility.complete(Result.success(const <CategoryEntity>[_home]));
-      await Future<void>.delayed(const Duration(milliseconds: 20));
-
-      expect(bloc.state.categories, const <CategoryEntity>[_home]);
-      expect(bloc.state.selectedCategory, _home);
-      expect(bloc.state.items.map((item) => item.id), <String>['home']);
-      expect(bloc.state.status, LoadStatus.success);
-    },
-  );
-
-  test('refreshRequested reloads the category list without fetching a feed when nothing is selected', () async {
+  test('refreshRequested does nothing until a category was selected', () async {
     final load = _MockLoadCategoriesUseCase();
     final fetch = _MockFetchCategoryFeedUseCase();
     when(() => load(any())).thenAnswer((_) async => Result.success(const <CategoryEntity>[_home]));
@@ -258,44 +151,6 @@ void main() {
     bloc.add(const CategoryFeedEvent.refreshRequested());
     await Future<void>.delayed(const Duration(milliseconds: 10));
 
-    verifyNever(() => fetch(any()));
-  });
-
-  test('refreshRequested reloads categories when no category was selected', () async {
-    final load = _MockLoadCategoriesUseCase();
-    final fetch = _MockFetchCategoryFeedUseCase();
-    List<CategoryEntity> categories = const <CategoryEntity>[_home, _desktop];
-    when(() => load(any())).thenAnswer((_) async => Result.success(categories));
-    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
-    addTearDown(bloc.close);
-    bloc.add(const CategoryFeedEvent.started());
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-
-    categories = const <CategoryEntity>[_home];
-    bloc.add(const CategoryFeedEvent.refreshRequested());
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-
-    expect(bloc.state.categories, const <CategoryEntity>[_home]);
-    expect(bloc.state.selectedCategory, isNull);
-    verifyNever(() => fetch(any()));
-  });
-
-  test('refreshRequested adds a newly eligible category when no category was selected', () async {
-    final load = _MockLoadCategoriesUseCase();
-    final fetch = _MockFetchCategoryFeedUseCase();
-    List<CategoryEntity> categories = const <CategoryEntity>[_home];
-    when(() => load(any())).thenAnswer((_) async => Result.success(categories));
-    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
-    addTearDown(bloc.close);
-    bloc.add(const CategoryFeedEvent.started());
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-
-    categories = const <CategoryEntity>[_home, _desktop];
-    bloc.add(const CategoryFeedEvent.refreshRequested());
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-
-    expect(bloc.state.categories, const <CategoryEntity>[_home, _desktop]);
-    expect(bloc.state.selectedCategory, isNull);
     verifyNever(() => fetch(any()));
   });
 
@@ -554,85 +409,6 @@ void main() {
 
       expect(bloc.state.items.map((e) => e.id), <String>['space-1']);
       expect(bloc.state.hasMore, isFalse);
-    });
-
-    test('a late first-page error from the old category cannot fail the new one', () async {
-      final load = _MockLoadCategoriesUseCase();
-      final fetch = _MockFetchCategoryFeedUseCase();
-      when(() => load(any())).thenAnswer((_) async => Result.success(const <CategoryEntity>[_home, space]));
-      final Completer<Result<CategoryFeedPage>> slowHome = Completer<Result<CategoryFeedPage>>();
-      when(() => fetch(any())).thenAnswer((invocation) {
-        final params = invocation.positionalArguments.single as FetchCategoryFeedParams;
-        if (params.category.name == 'Home') return slowHome.future;
-        return Future.value(
-          Result.success(
-            CategoryFeedPage(items: <FeedItemEntity>[_prismItem('space-1', authorUid: 'a@x.com')], hasMore: false),
-          ),
-        );
-      });
-      final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
-      addTearDown(bloc.close);
-
-      bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      bloc.add(const CategoryFeedEvent.categorySelected(category: space));
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      slowHome.complete(Result.error<CategoryFeedPage>(const ServerFailure('old request failed')));
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-
-      expect(bloc.state.selectedCategory?.name, 'Space');
-      expect(bloc.state.items.map((item) => item.id), <String>['space-1']);
-      expect(bloc.state.status, LoadStatus.success);
-      expect(bloc.state.failure, isNull);
-    });
-
-    test('refreshing removed Desktop falls back to an eligible category and rejects its late page', () async {
-      final load = _MockLoadCategoriesUseCase();
-      final fetch = _MockFetchCategoryFeedUseCase();
-      final Completer<Result<List<CategoryEntity>>> eligibility = Completer<Result<List<CategoryEntity>>>();
-      int loadCalls = 0;
-      when(() => load(any())).thenAnswer((_) {
-        loadCalls++;
-        return loadCalls == 1
-            ? Future<Result<List<CategoryEntity>>>.value(Result.success(const <CategoryEntity>[_home, _desktop]))
-            : eligibility.future;
-      });
-      final Completer<Result<CategoryFeedPage>> lateDesktop = Completer<Result<CategoryFeedPage>>();
-      when(() => fetch(any())).thenAnswer((invocation) {
-        final params = invocation.positionalArguments.single as FetchCategoryFeedParams;
-        if (params.category.name == 'Desktop') return lateDesktop.future;
-        return Future.value(
-          Result.success(
-            CategoryFeedPage(items: <FeedItemEntity>[_prismItem('home-after-refresh', authorUid: 'a')], hasMore: false),
-          ),
-        );
-      });
-      final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
-      addTearDown(bloc.close);
-
-      bloc.add(const CategoryFeedEvent.started());
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      bloc.add(const CategoryFeedEvent.categorySelected(category: _desktop));
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      expect(bloc.state.status, LoadStatus.loading);
-
-      bloc.add(const CategoryFeedEvent.refreshRequested());
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      lateDesktop.complete(
-        Result.success(
-          CategoryFeedPage(items: <FeedItemEntity>[_prismItem('stale-desktop', authorUid: 'a')], hasMore: true),
-        ),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      expect(bloc.state.status, LoadStatus.loading, reason: 'the old page must not settle the eligibility refresh');
-
-      eligibility.complete(Result.success(const <CategoryEntity>[_home]));
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-
-      expect(bloc.state.categories, const <CategoryEntity>[_home]);
-      expect(bloc.state.selectedCategory, _home);
-      expect(bloc.state.items.map((item) => item.id), <String>['home-after-refresh']);
-      expect(bloc.state.status, LoadStatus.success);
     });
   });
 

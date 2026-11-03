@@ -133,7 +133,7 @@ Thus Pastel and Gaming pages are full on day one from Pexels. Prism walls join t
 
 A category page with fewer than 12 walls (`minimumCategoryWalls`) is not listed. Today this affects only Desktop, because its walls come from Prism only. `getCategories` asks for page 1 of the Desktop walls and applies the user's AI and anime filters before the count. If the page has fewer than 12 visible walls, or the query fails or takes more than 3 seconds, the Collections tab does not show the tile. The short limit keeps the other tiles from waiting.
 
-Collections pull-to-refresh and AI or anime setting changes check eligibility again. If Desktop is no longer eligible while selected, the feed uses the first listed category. Older category-list results cannot replace a newer refresh.
+The check runs when the Collections tab first loads the category list. A change in the number of desktop walls shows at the next app start.
 
 With 6 desktop walls today, **the Desktop tile stays hidden** until the desktop backfill runs. Pexels and Wallhaven categories are not counted at run time. Their counts are in the table above.
 

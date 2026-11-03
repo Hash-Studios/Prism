@@ -2,9 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
-import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/firestore/firestore_client.dart';
-import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/categories/category_definition.dart';
@@ -21,8 +18,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
-import '../../support/fake_feed_cache_local_data_source.dart';
-import '../../support/fake_firestore_client.dart';
 
 class _MockCategoryFeedBloc extends MockBloc<CategoryFeedEvent, CategoryFeedState> implements CategoryFeedBloc {}
 
@@ -90,9 +85,8 @@ void main() {
     required ThemeData theme,
     TextScaler textScaler = TextScaler.noScaling,
     StackRouter? router,
-    CategoryFeedBloc? feedBloc,
   }) async {
-    final CategoryFeedBloc bloc = feedBloc ?? _MockCategoryFeedBloc();
+    final _MockCategoryFeedBloc bloc = _MockCategoryFeedBloc();
     when(() => bloc.state).thenReturn(CategoryFeedState.initial().copyWith(categories: categories));
 
     final Widget grid = BlocProvider<CategoryFeedBloc>.value(
@@ -166,18 +160,5 @@ void main() {
 
     final CollectionViewRoute route = verify(() => router.push(captureAny())).captured.single as CollectionViewRoute;
     expect(route.args!.collectionName, 'category:Pastel');
-  });
-
-  testWidgets('refreshing the collections grid reloads category eligibility', (tester) async {
-    getIt.registerSingleton<FirestoreClient>(FakeFirestoreClient());
-    getIt.registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource());
-    addTearDown(() => getIt.reset());
-    final _MockCategoryFeedBloc bloc = _MockCategoryFeedBloc();
-    when(() => bloc.add(const CategoryFeedEvent.refreshRequested())).thenAnswer((_) {});
-    await pumpGrid(tester, categories: _categories(includeDesktop: false), theme: ThemeData.light(), feedBloc: bloc);
-
-    await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
-
-    verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
   });
 }

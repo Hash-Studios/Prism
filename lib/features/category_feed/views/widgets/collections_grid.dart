@@ -176,7 +176,6 @@ class _CollectionsGridState extends State<CollectionsGrid> {
       logger.w('Failed to refresh collections.', error: error, stackTrace: stackTrace);
     }
     if (mounted) {
-      context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.refreshRequested());
       setState(() {});
     }
   }
