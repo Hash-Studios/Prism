@@ -348,7 +348,7 @@ void main() {
     );
 
     expect(opened, hasLength(1));
-    expect(opened.single.onAdjust, isNull);
+    expect(opened.single.onAdjust, isNotNull);
     expect(client.requests, hasLength(1));
     expect(opened.single.url, client.requests.single.source.filePath);
     expect(client.requests.single.source.filePath, isNotNull);

@@ -7866,6 +7866,78 @@
       }
     }
   },
+  "wallpaperFilterTabCrop": "क्रॉप",
+  "@wallpaperFilterTabCrop": {
+    "description": "Tab label for the wallpaper crop panel."
+  },
+  "wallpaperCropPresetFree": "मुक्त",
+  "@wallpaperCropPresetFree": {
+    "description": "Crop shape preset that allows any aspect ratio."
+  },
+  "wallpaperCropPresetPhone": "यह फ़ोन",
+  "@wallpaperCropPresetPhone": {
+    "description": "Crop shape preset that matches this device screen."
+  },
+  "wallpaperCropPresetPortrait": "9:16",
+  "@wallpaperCropPresetPortrait": {
+    "description": "Crop shape preset with a 9:16 portrait ratio."
+  },
+  "wallpaperCropPresetSquare": "1:1",
+  "@wallpaperCropPresetSquare": {
+    "description": "Crop shape preset with a 1:1 square ratio."
+  },
+  "wallpaperCropPresetLandscape": "16:9 डेस्कटॉप",
+  "@wallpaperCropPresetLandscape": {
+    "description": "Crop shape preset with a 16:9 desktop ratio."
+  },
+  "wallpaperCropPresetOriginal": "मूल",
+  "@wallpaperCropPresetOriginal": {
+    "description": "Crop shape preset that covers the whole image."
+  },
+  "wallpaperCropRotate": "90° घुमाएँ",
+  "@wallpaperCropRotate": {
+    "description": "Tooltip for the button that rotates the crop by 90 degrees."
+  },
+  "wallpaperCropReset": "क्रॉप रीसेट करें",
+  "@wallpaperCropReset": {
+    "description": "Tooltip for the button that resets the crop."
+  },
+  "wallpaperCropArea": "क्रॉप क्षेत्र",
+  "@wallpaperCropArea": {
+    "description": "Screen reader label for the crop frame."
+  },
+  "wallpaperCropSize": "{width} × {height} px",
+  "@wallpaperCropSize": {
+    "description": "Size of the crop area in pixels.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "wallpaperCropCornerTopLeft": "ऊपरी बायाँ कोना",
+  "@wallpaperCropCornerTopLeft": {
+    "description": "Screen reader label for the top-left crop handle."
+  },
+  "wallpaperCropCornerTopRight": "ऊपरी दायाँ कोना",
+  "@wallpaperCropCornerTopRight": {
+    "description": "Screen reader label for the top-right crop handle."
+  },
+  "wallpaperCropCornerBottomLeft": "निचला बायाँ कोना",
+  "@wallpaperCropCornerBottomLeft": {
+    "description": "Screen reader label for the bottom-left crop handle."
+  },
+  "wallpaperCropCornerBottomRight": "निचला दायाँ कोना",
+  "@wallpaperCropCornerBottomRight": {
+    "description": "Screen reader label for the bottom-right crop handle."
+  },
+  "wallpaperExportTimedOut": "सेव होने में बहुत समय लगा। छोटा क्रॉप या कम फ़िल्टर आज़माएँ।",
+  "@wallpaperExportTimedOut": {
+    "description": "Error shown when saving an edited wallpaper takes too long."
+  },
   "wallpaperFitBlur": "धुंधले बैकग्राउंड के साथ फ़िट करें",
   "@wallpaperFitBlur": {
     "description": "Wallpaper placement fit option that fills empty areas with a blur."

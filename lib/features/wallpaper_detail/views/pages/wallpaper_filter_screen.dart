@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -17,8 +18,10 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/ads.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/crop_spec.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_filters.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/crop_frame_view.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/filter_editor_panel.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -27,6 +30,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 @RoutePage()
 class WallpaperFilterScreen extends StatefulWidget {
@@ -34,11 +38,36 @@ class WallpaperFilterScreen extends StatefulWidget {
 
   final String filePath;
 
+  /// Renders the export. Tests replace it.
+  @visibleForTesting
+  static Future<Uint8List> Function(
+    String path, {
+    required List<WallpaperFilter> stack,
+    required WallpaperAdjustments adjustments,
+    CropSpec? crop,
+    double? previewPixelShortSide,
+    double deviceLongSidePx,
+  })
+  renderFile = renderEditedFile;
+
+  /// How long the export may take. Tests shorten it.
+  @visibleForTesting
+  static Duration exportTimeLimit = editExportTimeLimit;
+
+  /// Opens the system share sheet. Tests replace it.
+  @visibleForTesting
+  static Future<ShareResult> Function(ShareParams params) share = (params) => SharePlus.instance.share(params);
+
   @override
   State<StatefulWidget> createState() => _WallpaperFilterScreenState();
 }
 
-class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
+class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with SingleTickerProviderStateMixin {
+  static const int _cropTab = 2;
+  late final TabController _tabs = TabController(length: 3, vsync: this)..addListener(_onTabChanged);
+  CropSpec? _crop;
+  bool _cropTabShown = false;
+  final List<File> _sharedFiles = <File>[];
   final List<WallpaperFilter> _stack = <WallpaperFilter>[];
   WallpaperAdjustments _adjustments = WallpaperAdjustments.none;
   final Map<KernelEffect, ui.ImageFilter> _kernelThumbFilters = <KernelEffect, ui.ImageFilter>{};
@@ -50,7 +79,21 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   bool _comparing = false;
   bool _busy = false;
   bool _premiumFilterUnlockedForSession = false;
-  double? _previewPixelShortSide;
+  double? _previewPixelsPerSourcePixel;
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    for (final File file in _sharedFiles) {
+      unawaited(_deleteEditedFile(file));
+    }
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    final bool shown = _tabs.index == _cropTab;
+    if (shown != _cropTabShown) setState(() => _cropTabShown = shown);
+  }
 
   @override
   void initState() {
@@ -76,8 +119,15 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       if (!mounted) {
         return;
       }
+      final int width = descriptor.width;
+      final int height = descriptor.height;
+      final Size screen = MediaQuery.sizeOf(context);
       setState(() {
-        _imageSize = Size(descriptor!.width.toDouble(), descriptor.height.toDouble());
+        _imageSize = Size(width.toDouble(), height.toDouble());
+        final CropSpec? crop = _crop;
+        if (crop == null || crop.sourceWidth != width || crop.sourceHeight != height) {
+          _crop = CropSpec.initial(sourceWidth: width, sourceHeight: height, phoneAspect: screen.width / screen.height);
+        }
       });
     } catch (error, stackTrace) {
       logger.w('Could not read wallpaper for editing', error: error, stackTrace: stackTrace);
@@ -92,11 +142,16 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   String get _editLabel => <String>[..._stack.map((f) => f.name), if (!_adjustments.isNone) 'Adjust'].join('+');
 
-  bool get _isEdited => _stack.isNotEmpty || !_adjustments.isNone;
+  bool get _isFiltered => _stack.isNotEmpty || !_adjustments.isNone;
 
-  bool get _selectedFilterNeedsPremiumSpend => _isEdited;
+  bool get _isCropped => !(_crop?.isIdentity ?? true);
 
-  bool get _editorReady => !_loadFailed && _previewLoaded && _previewPixelShortSide != null;
+  bool get _isEdited => _isFiltered || _isCropped;
+
+  /// Filters and adjustments cost coins. A crop alone does not: the source already took the same grant as Download.
+  bool get _selectedFilterNeedsPremiumSpend => _isFiltered;
+
+  bool get _editorReady => !_loadFailed && _previewLoaded && _previewPixelsPerSourcePixel != null;
 
   void _toggleFilter(WallpaperFilter filter) {
     PrismHaptics.selection();
@@ -117,59 +172,86 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   void _reset() {
+    _resetCrop();
     setState(() {
       _stack.clear();
       _adjustments = WallpaperAdjustments.none;
     });
   }
 
+  void _resetCrop() {
+    final CropSpec? crop = _crop;
+    if (crop == null || crop.isIdentity) return;
+    analytics.track(WallpaperCropResetEvent(preset: crop.preset));
+    setState(() => _crop = crop.reset());
+  }
+
+  void _pickCropPreset(CropPreset preset) {
+    final CropSpec? crop = _crop;
+    if (crop == null) return;
+    PrismHaptics.selection();
+    setState(() => _crop = crop.withPreset(preset));
+  }
+
+  void _rotateCrop() {
+    final CropSpec? crop = _crop;
+    if (crop == null) return;
+    PrismHaptics.selection();
+    setState(() => _crop = crop.rotated());
+  }
+
+  void _trackCropApplied() {
+    final CropSpec? crop = _crop;
+    if (crop == null || crop.isIdentity) return;
+    analytics.track(WallpaperCropAppliedEvent(preset: crop.preset, adjusted: crop.adjusted));
+  }
+
+  /// Writes the edit to a PNG in a temporary folder of its own and returns it, or the source when nothing changed.
+  /// Throws [EditExportTimedOut] when the render runs past [WallpaperFilterScreen.exportTimeLimit].
   Future<File> saveFilteredImage() async {
     final List<WallpaperFilter> stack = List<WallpaperFilter>.of(_stack);
     final WallpaperAdjustments adjustments = _adjustments;
-    final double? previewPixelShortSide = _previewPixelShortSide;
+    final CropSpec? crop = _crop;
+    final double? pixelsPerSourcePixel = _previewPixelsPerSourcePixel;
     final Size screenPixels = MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context);
-    if (stack.isEmpty && adjustments.isNone) {
+    if (stack.isEmpty && adjustments.isNone && (crop == null || crop.isIdentity)) {
       return File(widget.filePath);
     }
-    final ui.Codec codec = await ui.instantiateImageCodec(await File(widget.filePath).readAsBytes());
-    try {
-      final ui.FrameInfo frame = await codec.getNextFrame();
-      try {
-        final Uint8List png = await renderEditedPng(
-          frame.image,
-          stack,
-          adjustments,
-          previewPixelShortSide: previewPixelShortSide,
-          deviceLongSidePx: screenPixels.longestSide,
-        );
-        if (!mounted) {
-          throw StateError('Wallpaper editor closed before export completed');
-        }
-        final Directory exportBase = Directory('${(await getTemporaryDirectory()).path}/prism_edit');
-        await exportBase.create(recursive: true);
-        final Directory exportDirectory = await exportBase.createTemp('export_');
-        if (!mounted) {
-          await exportDirectory.delete(recursive: true);
-          throw StateError('Wallpaper editor closed before export completed');
-        }
-        final File file = File('${exportDirectory.path}/edited.png');
-        try {
-          await file.writeAsBytes(png);
-        } catch (_) {
-          await exportDirectory.delete(recursive: true);
-          rethrow;
-        }
-        if (!mounted) {
-          await exportDirectory.delete(recursive: true);
-          throw StateError('Wallpaper editor closed before export completed');
-        }
-        return file;
-      } finally {
-        frame.image.dispose();
-      }
-    } finally {
-      codec.dispose();
+    final Uint8List png = await withExportTimeLimit(
+      WallpaperFilterScreen.renderFile(
+        widget.filePath,
+        stack: stack,
+        adjustments: adjustments,
+        crop: crop,
+        previewPixelShortSide: pixelsPerSourcePixel == null || crop == null
+            ? null
+            : math.min(crop.outputWidth, crop.outputHeight) * pixelsPerSourcePixel,
+        deviceLongSidePx: screenPixels.longestSide,
+      ),
+      limit: WallpaperFilterScreen.exportTimeLimit,
+    );
+    if (!mounted) {
+      throw StateError('Wallpaper editor closed before export completed');
     }
+    final Directory exportBase = Directory('${(await getTemporaryDirectory()).path}/prism_edit');
+    await exportBase.create(recursive: true);
+    final Directory exportDirectory = await exportBase.createTemp('export_');
+    if (!mounted) {
+      await exportDirectory.delete(recursive: true);
+      throw StateError('Wallpaper editor closed before export completed');
+    }
+    final File file = File('${exportDirectory.path}/edited.png');
+    try {
+      await file.writeAsBytes(png);
+    } catch (_) {
+      await exportDirectory.delete(recursive: true);
+      rethrow;
+    }
+    if (!mounted) {
+      await exportDirectory.delete(recursive: true);
+      throw StateError('Wallpaper editor closed before export completed');
+    }
+    return file;
   }
 
   Future<void> _deleteEditedFile(File file) async {
@@ -181,10 +263,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   Future<WallpaperSetResult> _setWallpaper(String path, SetWallpaperChoice choice) async {
     final AppLocalizations l10n = context.l10n;
+    final PlacedWallpaper? placed = choice.placed;
     final WallpaperSetResult result = await WallpaperService.setWallpaper(
-      path,
+      placed?.path ?? path,
       choice.target,
-      useSystemCropper: choice.useSystemCropper,
+      useSystemCropper: placed == null && choice.useSystemCropper,
       recordHistory: false,
     );
     if (mounted) {
@@ -195,7 +278,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           l10n: l10n,
           target: choice.target,
           setContext: WallpaperSetContext(
-            fit: WallpaperFit.fill.name,
+            fit: placed == null ? WallpaperFit.fill.name : 'studio_${placed.placement.fit.name}',
             entryPoint: 'wallpaper_filter',
             targetChanged: choice.targetChanged,
           ),
@@ -303,6 +386,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       final result = await PrismMediaHostApi().saveMedia(request);
       if (result.success) {
         try {
+          _trackCropApplied();
           analytics.track(DownloadWallpaperEvent(link: imageFile.path));
           toasts.success(wallpaperSavedMessage(l10n));
           if (mounted) unawaited(showIosSetWallpaperGuide(context));
@@ -323,6 +407,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         logger.e('saveMedia failed', error: e);
       }
       toasts.error(l10n.wallpaperFilterSaveError);
+    } on EditExportTimedOut {
+      toasts.error(l10n.wallpaperExportTimedOut);
     } catch (e) {
       logger.e('Unexpected saveMedia failure', error: e);
       toasts.error(l10n.wallpaperGenericError);
@@ -342,6 +428,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     try {
       toasts.success(l10n.wallpaperProcessing, haptic: false);
       imageFile = await saveFilteredImage();
+    } on EditExportTimedOut {
+      toasts.error(l10n.wallpaperExportTimedOut);
+      return false;
     } catch (e) {
       logger.e('Unexpected filter render failure', error: e);
       toasts.error(l10n.wallpaperGenericError);
@@ -351,21 +440,59 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       await _deleteEditedFile(imageFile);
       return false;
     }
+    final String path = imageFile.path;
+    SetWallpaperChoice? choice;
     try {
-      final SetWallpaperChoice? choice = await SetWallpaperFlow.openScreen(
+      choice = await SetWallpaperFlow.openScreen(
         context,
-        SetScreenRequest(url: imageFile.path),
+        SetScreenRequest(
+          url: path,
+          onAdjust: (screenContext) =>
+              SetWallpaperFlow.openStudio(screenContext, url: path, entryPoint: 'wallpaper_filter'),
+        ),
       );
       if (!mounted || !app_state.prismUser.loggedIn || owner != app_state.prismUser.id) return false;
       if (choice == null) return true;
-      final WallpaperSetResult result = await _setWallpaper(imageFile.path, choice);
+      final WallpaperSetResult result = await _setWallpaper(path, choice);
+      if (!result.isFailure) _trackCropApplied();
       if (result.isSuccess || result.isInfo) {
         if (mounted) Navigator.of(context).pop();
       }
       return !result.isFailure;
     } finally {
+      await choice?.placed?.discard();
       await _deleteEditedFile(imageFile);
     }
+  }
+
+  /// Shares the edited file. The file stays until the editor closes, because the receiving app may read it late.
+  Future<bool> _handleShareAction() async {
+    if (!await requireSignedInAction(context) || !mounted) return false;
+    final String owner = app_state.prismUser.id;
+    final AppLocalizations l10n = context.l10n;
+    final RenderObject? box = context.findRenderObject();
+    final Rect origin = box is RenderBox && box.hasSize ? box.localToGlobal(Offset.zero) & box.size : Rect.zero;
+    File? imageFile;
+    try {
+      toasts.success(l10n.wallpaperProcessing, haptic: false);
+      imageFile = await saveFilteredImage();
+      if (imageFile.path != widget.filePath) _sharedFiles.add(imageFile);
+      if (!mounted || !app_state.prismUser.loggedIn || owner != app_state.prismUser.id) return false;
+      await WallpaperFilterScreen.share(
+        ShareParams(
+          files: <XFile>[XFile(imageFile.path, mimeType: 'image/png')],
+          sharePositionOrigin: origin.isEmpty ? const Rect.fromLTWH(1, 1, 1, 1) : origin,
+        ),
+      );
+      _trackCropApplied();
+      return true;
+    } on EditExportTimedOut {
+      toasts.error(l10n.wallpaperExportTimedOut);
+    } catch (error, stackTrace) {
+      logger.e('Could not share the edited wallpaper', error: error, stackTrace: stackTrace);
+      toasts.error(l10n.wallpaperGenericError);
+    }
+    return false;
   }
 
   @override
@@ -414,6 +541,16 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                           },
                   ),
           ),
+          PrismIconButton(
+            icon: Icons.ios_share_rounded,
+            tooltip: context.l10n.wallpaperShare,
+            onPressed: !_editorReady || _busy
+                ? null
+                : () {
+                    PrismHaptics.tap();
+                    unawaited(_startActionWithPremiumFilterGate(_handleShareAction, sourceTag: 'coins.filter.share'));
+                  },
+          ),
           if (!hideSetWallpaperUi)
             PrismIconButton(
               icon: Icons.check_rounded,
@@ -440,6 +577,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                   IgnorePointer(
                     ignoring: _busy,
                     child: FilterEditorPanel(
+                      controller: _tabs,
                       thumbProvider: _thumbProvider,
                       stack: _stack,
                       adjustments: _adjustments,
@@ -448,6 +586,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                       onClear: () => setState(_stack.clear),
                       onToggle: _toggleFilter,
                       onAdjust: (update) => setState(() => _adjustments = update(_adjustments)),
+                      crop: _crop,
+                      onCropPreset: _pickCropPreset,
+                      onRotate: _rotateCrop,
+                      onCropReset: _resetCrop,
                     ),
                   ),
                 ],
@@ -457,8 +599,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Widget _buildPreview(ColorScheme cs) {
-    final Size? size = _imageSize;
-    if (size == null) {
+    final CropSpec? crop = _crop;
+    if (_imageSize == null || crop == null) {
       return GlintState(kind: GlintStateKind.loading, title: context.l10n.wallpaperLoadingImage);
     }
     final double dpr = MediaQuery.devicePixelRatioOf(context);
@@ -467,105 +609,149 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: PrismSpace.sm),
-            child: Center(
-              child: AspectRatio(
-                aspectRatio: size.width / size.height,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(PrismRadius.md),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final double shortSide = constraints.biggest.shortestSide;
-                      final double pixelShortSide = shortSide * dpr;
-                      if (_previewPixelShortSide != pixelShortSide) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted && _previewPixelShortSide != pixelShortSide) {
-                            setState(() => _previewPixelShortSide = pixelShortSide);
-                          }
-                        });
-                      }
-                      final ui.ImageFilter? filter = _comparing
-                          ? null
-                          : buildEditFilter(_stack, _adjustments, shortSide);
-                      Widget image = Image.file(
-                        File(widget.filePath),
-                        fit: BoxFit.cover,
-                        cacheWidth: (constraints.maxWidth * dpr).round(),
-                        gaplessPlayback: true,
-                        frameBuilder: (context, child, frame, synchronous) {
-                          if (frame != null && !_previewLoaded) {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              if (mounted && !_previewLoaded) setState(() => _previewLoaded = true);
-                            });
-                          }
-                          return child;
-                        },
-                        errorBuilder: (_, _, _) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted && !_loadFailed) {
-                              setState(() {
-                                _loadFailed = true;
-                                _previewLoaded = false;
-                              });
-                            }
-                          });
-                          return const SizedBox.shrink();
-                        },
-                      );
-                      if (filter != null) {
-                        image = ImageFiltered(imageFilter: filter, child: image);
-                      }
-                      return GestureDetector(
-                        onLongPressStart: (_) => setState(() => _comparing = true),
-                        onLongPressEnd: (_) => setState(() => _comparing = false),
-                        onLongPressCancel: () => setState(() => _comparing = false),
-                        child: RepaintBoundary(
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              image,
-                              if (_comparing)
-                                PositionedDirectional(
-                                  start: PrismSpace.sm,
-                                  top: PrismSpace.sm,
-                                  child: DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.5),
-                                      borderRadius: BorderRadius.circular(PrismRadius.pill),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: PrismSpace.xs,
-                                        vertical: PrismSpace.xxs,
-                                      ),
-                                      child: Text(
-                                        context.l10n.wallpaperFilterOriginal,
-                                        style: PrismTextStyles.caption(
-                                          context,
-                                        ).copyWith(color: Colors.white, fontWeight: FontWeight.w600),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
+            child: _cropTabShown ? _buildCropFrame(crop, dpr) : _buildCroppedPreview(cs, crop, dpr),
           ),
         ),
         AnimatedOpacity(
           duration: context.motion(PrismDurations.fast),
-          opacity: _isEdited && !_comparing ? 1 : 0,
+          opacity: _isFiltered && !_comparing && !_cropTabShown ? 1 : 0,
           child: Padding(
             padding: const EdgeInsets.only(bottom: PrismSpace.xs),
             child: Text(context.l10n.wallpaperFilterHoldToCompare, style: PrismTextStyles.caption(context)),
           ),
         ),
       ],
+    );
+  }
+
+  /// Records how many screen pixels one source pixel takes in the preview, so the export draws effects at the size the
+  /// user saw them.
+  void _notePreviewScale(double pixelsPerSourcePixel) {
+    if (_previewPixelsPerSourcePixel == pixelsPerSourcePixel) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _previewPixelsPerSourcePixel != pixelsPerSourcePixel) {
+        setState(() => _previewPixelsPerSourcePixel = pixelsPerSourcePixel);
+      }
+    });
+  }
+
+  /// The source decoded at about the width it is drawn at, in steps of 256 pixels so small changes do not decode again.
+  Widget _sourceImage(CropSpec crop, double drawnSourceWidthPx) {
+    final int needed = math.max(1, drawnSourceWidthPx.ceil());
+    final int decodeWidth = math.min(crop.sourceWidth, ((needed + 255) ~/ 256) * 256);
+    return Image.file(
+      File(widget.filePath),
+      fit: BoxFit.fill,
+      cacheWidth: decodeWidth,
+      gaplessPlayback: true,
+      frameBuilder: (context, child, frame, synchronous) {
+        if (frame != null && !_previewLoaded) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && !_previewLoaded) setState(() => _previewLoaded = true);
+          });
+        }
+        return child;
+      },
+      errorBuilder: (_, _, _) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_loadFailed) {
+            setState(() {
+              _loadFailed = true;
+              _previewLoaded = false;
+            });
+          }
+        });
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget _buildCropFrame(CropSpec crop, double dpr) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double scale = CropFrameView.fitScale(crop, constraints.biggest);
+        _notePreviewScale(scale * dpr);
+        Widget image = _sourceImage(crop, crop.sourceWidth * scale * dpr);
+        final double shortSide = math.min(crop.viewWidth, crop.viewHeight) * scale;
+        final ui.ImageFilter? filter = shortSide > 0 ? buildEditFilter(_stack, _adjustments, shortSide) : null;
+        if (filter != null) image = ImageFiltered(imageFilter: filter, child: image);
+        return CropFrameView(spec: crop, image: image, onChanged: (next) => setState(() => _crop = next));
+      },
+    );
+  }
+
+  Widget _buildCroppedPreview(ColorScheme cs, CropSpec crop, double dpr) {
+    return Center(
+      child: AspectRatio(
+        aspectRatio: crop.outputWidth / crop.outputHeight,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(PrismRadius.md),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final double scale = constraints.maxWidth / crop.outputWidth;
+              _notePreviewScale(scale * dpr);
+              final double shortSide = constraints.biggest.shortestSide;
+              final ui.ImageFilter? filter = _comparing ? null : buildEditFilter(_stack, _adjustments, shortSide);
+              Widget image = ClipRect(
+                child: OverflowBox(
+                  alignment: Alignment.topLeft,
+                  minWidth: 0,
+                  minHeight: 0,
+                  maxWidth: double.infinity,
+                  maxHeight: double.infinity,
+                  child: Transform.translate(
+                    offset: Offset(-crop.rect.left * scale, -crop.rect.top * scale),
+                    child: SizedBox(
+                      width: crop.viewWidth * scale,
+                      height: crop.viewHeight * scale,
+                      child: RotatedBox(
+                        quarterTurns: crop.quarterTurns,
+                        child: _sourceImage(crop, crop.sourceWidth * scale * dpr),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+              if (filter != null) {
+                image = ImageFiltered(imageFilter: filter, child: image);
+              }
+              return GestureDetector(
+                onLongPressStart: (_) => setState(() => _comparing = true),
+                onLongPressEnd: (_) => setState(() => _comparing = false),
+                onLongPressCancel: () => setState(() => _comparing = false),
+                child: RepaintBoundary(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      image,
+                      if (_comparing)
+                        PositionedDirectional(
+                          start: PrismSpace.sm,
+                          top: PrismSpace.sm,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(PrismRadius.pill),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: PrismSpace.xxs),
+                              child: Text(
+                                context.l10n.wallpaperFilterOriginal,
+                                style: PrismTextStyles.caption(
+                                  context,
+                                ).copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 }

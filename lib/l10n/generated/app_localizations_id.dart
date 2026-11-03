@@ -8743,6 +8743,57 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get wallpaperFilterTabCrop => 'Pangkas';
+
+  @override
+  String get wallpaperCropPresetFree => 'Bebas';
+
+  @override
+  String get wallpaperCropPresetPhone => 'Ponsel ini';
+
+  @override
+  String get wallpaperCropPresetPortrait => '9:16';
+
+  @override
+  String get wallpaperCropPresetSquare => '1:1';
+
+  @override
+  String get wallpaperCropPresetLandscape => '16:9 desktop';
+
+  @override
+  String get wallpaperCropPresetOriginal => 'Asli';
+
+  @override
+  String get wallpaperCropRotate => 'Putar 90°';
+
+  @override
+  String get wallpaperCropReset => 'Atur ulang pangkasan';
+
+  @override
+  String get wallpaperCropArea => 'Area pangkasan';
+
+  @override
+  String wallpaperCropSize(int width, int height) {
+    return '$width × $height px';
+  }
+
+  @override
+  String get wallpaperCropCornerTopLeft => 'Sudut kiri atas';
+
+  @override
+  String get wallpaperCropCornerTopRight => 'Sudut kanan atas';
+
+  @override
+  String get wallpaperCropCornerBottomLeft => 'Sudut kiri bawah';
+
+  @override
+  String get wallpaperCropCornerBottomRight => 'Sudut kanan bawah';
+
+  @override
+  String get wallpaperExportTimedOut =>
+      'Penyimpanan memakan waktu terlalu lama. Coba pangkasan yang lebih kecil atau filter yang lebih sedikit.';
+
+  @override
   String get wallpaperFitBlur => 'Paskan dengan efek buram';
 
   @override

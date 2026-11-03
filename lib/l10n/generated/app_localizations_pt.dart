@@ -9010,6 +9010,56 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get wallpaperFilterTabCrop => 'Recortar';
+
+  @override
+  String get wallpaperCropPresetFree => 'Livre';
+
+  @override
+  String get wallpaperCropPresetPhone => 'Este telefone';
+
+  @override
+  String get wallpaperCropPresetPortrait => '9:16';
+
+  @override
+  String get wallpaperCropPresetSquare => '1:1';
+
+  @override
+  String get wallpaperCropPresetLandscape => '16:9 desktop';
+
+  @override
+  String get wallpaperCropPresetOriginal => 'Original';
+
+  @override
+  String get wallpaperCropRotate => 'Girar 90°';
+
+  @override
+  String get wallpaperCropReset => 'Redefinir recorte';
+
+  @override
+  String get wallpaperCropArea => 'Área de recorte';
+
+  @override
+  String wallpaperCropSize(int width, int height) {
+    return '$width × $height px';
+  }
+
+  @override
+  String get wallpaperCropCornerTopLeft => 'Canto superior esquerdo';
+
+  @override
+  String get wallpaperCropCornerTopRight => 'Canto superior direito';
+
+  @override
+  String get wallpaperCropCornerBottomLeft => 'Canto inferior esquerdo';
+
+  @override
+  String get wallpaperCropCornerBottomRight => 'Canto inferior direito';
+
+  @override
+  String get wallpaperExportTimedOut => 'Salvar demorou demais. Tente um recorte menor ou menos filtros.';
+
+  @override
   String get wallpaperFitBlur => 'Ajustar com desfoque';
 
   @override
@@ -22666,6 +22716,56 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
     return 'Filtro premium desbloqueado para esta edição (-$coinsString moedas).';
   }
+
+  @override
+  String get wallpaperFilterTabCrop => 'Recortar';
+
+  @override
+  String get wallpaperCropPresetFree => 'Livre';
+
+  @override
+  String get wallpaperCropPresetPhone => 'Este celular';
+
+  @override
+  String get wallpaperCropPresetPortrait => '9:16';
+
+  @override
+  String get wallpaperCropPresetSquare => '1:1';
+
+  @override
+  String get wallpaperCropPresetLandscape => '16:9 desktop';
+
+  @override
+  String get wallpaperCropPresetOriginal => 'Original';
+
+  @override
+  String get wallpaperCropRotate => 'Girar 90°';
+
+  @override
+  String get wallpaperCropReset => 'Redefinir recorte';
+
+  @override
+  String get wallpaperCropArea => 'Área de recorte';
+
+  @override
+  String wallpaperCropSize(int width, int height) {
+    return '$width × $height px';
+  }
+
+  @override
+  String get wallpaperCropCornerTopLeft => 'Canto superior esquerdo';
+
+  @override
+  String get wallpaperCropCornerTopRight => 'Canto superior direito';
+
+  @override
+  String get wallpaperCropCornerBottomLeft => 'Canto inferior esquerdo';
+
+  @override
+  String get wallpaperCropCornerBottomRight => 'Canto inferior direito';
+
+  @override
+  String get wallpaperExportTimedOut => 'Salvar demorou demais. Tente um recorte menor ou menos filtros.';
 
   @override
   String get wallpaperFitBlur => 'Ajustar com desfoque';

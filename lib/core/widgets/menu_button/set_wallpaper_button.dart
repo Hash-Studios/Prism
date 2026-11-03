@@ -59,6 +59,14 @@ class SetWallpaperFlow {
   })
   studioOpener = _openStudio;
 
+  /// Opens the position studio through [studioOpener]. Screens that set the wall themselves call this.
+  static Future<StudioResult?> openStudio(
+    BuildContext context, {
+    required String url,
+    String? thumbnailUrl,
+    String? entryPoint,
+  }) => studioOpener(context, url: url, thumbnailUrl: thumbnailUrl, entryPoint: entryPoint);
+
   /// Opens the lock screen picker. Tests replace it.
   @visibleForTesting
   static Future<PairPick?> Function(BuildContext context, {String? excludeUrl}) pairPicker = showPairPickerSheet;

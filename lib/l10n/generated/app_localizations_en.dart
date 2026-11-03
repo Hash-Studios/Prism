@@ -8717,6 +8717,56 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get wallpaperFilterTabCrop => 'Crop';
+
+  @override
+  String get wallpaperCropPresetFree => 'Free';
+
+  @override
+  String get wallpaperCropPresetPhone => 'This phone';
+
+  @override
+  String get wallpaperCropPresetPortrait => '9:16';
+
+  @override
+  String get wallpaperCropPresetSquare => '1:1';
+
+  @override
+  String get wallpaperCropPresetLandscape => '16:9 desktop';
+
+  @override
+  String get wallpaperCropPresetOriginal => 'Original';
+
+  @override
+  String get wallpaperCropRotate => 'Rotate 90°';
+
+  @override
+  String get wallpaperCropReset => 'Reset crop';
+
+  @override
+  String get wallpaperCropArea => 'Crop area';
+
+  @override
+  String wallpaperCropSize(int width, int height) {
+    return '$width × $height px';
+  }
+
+  @override
+  String get wallpaperCropCornerTopLeft => 'Top-left corner';
+
+  @override
+  String get wallpaperCropCornerTopRight => 'Top-right corner';
+
+  @override
+  String get wallpaperCropCornerBottomLeft => 'Bottom-left corner';
+
+  @override
+  String get wallpaperCropCornerBottomRight => 'Bottom-right corner';
+
+  @override
+  String get wallpaperExportTimedOut => 'Saving took too long. Try a smaller crop or fewer filters.';
+
+  @override
   String get wallpaperFitBlur => 'Fit with blur';
 
   @override
