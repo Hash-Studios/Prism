@@ -27,7 +27,8 @@ enum WallGridDensity {
   WallGridDensity? get smaller => index == 0 ? null : values[index - 1];
 }
 
-/// The user's layout of the app: the bottom bar, the wallpaper grid and the Home feed tab to open on.
+/// The user's layout of the app: the bottom bar, the wallpaper grid, the place of the profile and notifications
+/// controls, and the Home feed tab to open on.
 ///
 /// Every value is legal: [tabOrder] holds each [NavTab] once, [hiddenTabs] never holds [NavTab.home], and at least
 /// [minVisibleTabs] tabs stay visible. [LayoutPrefs.fromMap] repairs a stored copy that breaks a rule.
@@ -38,6 +39,7 @@ class LayoutPrefs {
     this.hiddenTabs = const <NavTab>{},
     this.density = WallGridDensity.comfortable,
     this.feedTab = HomeFeedChip.forYou,
+    this.oneHanded = false,
   });
 
   static const int minVisibleTabs = 3;
@@ -45,6 +47,9 @@ class LayoutPrefs {
   final List<NavTab> tabOrder;
   final Set<NavTab> hiddenTabs;
   final WallGridDensity density;
+
+  /// The profile and the notifications sit in the bottom bar, in thumb reach, instead of the top bar.
+  final bool oneHanded;
 
   /// The Home feed tab the user saw last. It stays on this device and does not sync.
   final HomeFeedChip feedTab;
@@ -56,9 +61,9 @@ class LayoutPrefs {
 
   bool canHide(NavTab tab) => tab != NavTab.home && !hiddenTabs.contains(tab) && visibleTabs.length > minVisibleTabs;
 
-  /// The bar and grid parts equal the defaults. [feedTab] is not a setting, so it does not count.
+  /// The bar, grid and controls parts equal the defaults. [feedTab] is not a setting, so it does not count.
   bool get isDefaultLayout =>
-      listEquals(tabOrder, NavTab.values) && hiddenTabs.isEmpty && density == WallGridDensity.comfortable;
+      listEquals(tabOrder, NavTab.values) && hiddenTabs.isEmpty && density == WallGridDensity.comfortable && !oneHanded;
 
   /// [tab] shown or hidden. A change that breaks a rule returns this object unchanged.
   LayoutPrefs withTabVisible(NavTab tab, {required bool visible}) {
@@ -76,7 +81,7 @@ class LayoutPrefs {
     return copyWith(tabOrder: order);
   }
 
-  /// The bar and grid back to the defaults. The feed tab stays.
+  /// The bar, grid and controls back to the defaults. The feed tab stays.
   LayoutPrefs resetLayout() => LayoutPrefs(feedTab: feedTab);
 
   LayoutPrefs copyWith({
@@ -84,18 +89,22 @@ class LayoutPrefs {
     Set<NavTab>? hiddenTabs,
     WallGridDensity? density,
     HomeFeedChip? feedTab,
+    bool? oneHanded,
   }) => LayoutPrefs(
     tabOrder: List<NavTab>.unmodifiable(tabOrder ?? this.tabOrder),
     hiddenTabs: Set<NavTab>.unmodifiable(hiddenTabs ?? this.hiddenTabs),
     density: density ?? this.density,
     feedTab: feedTab ?? this.feedTab,
+    oneHanded: oneHanded ?? this.oneHanded,
   );
 
-  /// The synced part: `{tabs, hidden, density}`. The store adds `changedAt`.
+  /// The synced part: `{tabs, hidden, density}`, plus `oneHanded: true` when it is on. The store adds `changedAt`.
   Map<String, Object> toLayoutMap() => <String, Object>{
     'tabs': [for (final NavTab tab in tabOrder) tab.name],
     'hidden': [for (final NavTab tab in hiddenInOrder) tab.name],
     'density': density.name,
+    // Written only when on, so builds without the rules change still accept an off copy.
+    if (oneHanded) 'oneHanded': true,
   };
 
   /// Reads [toLayoutMap] output over [feedTab]. Unknown names are dropped, missing tabs are added at the end, and a
@@ -117,6 +126,7 @@ class LayoutPrefs {
       hiddenTabs: Set<NavTab>.unmodifiable(hidden),
       density: WallGridDensity.values.asNameMap()[raw['density']] ?? WallGridDensity.comfortable,
       feedTab: feedTab,
+      oneHanded: raw['oneHanded'] == true,
     );
   }
 
@@ -126,8 +136,10 @@ class LayoutPrefs {
       listEquals(other.tabOrder, tabOrder) &&
       setEquals(other.hiddenTabs, hiddenTabs) &&
       other.density == density &&
-      other.feedTab == feedTab;
+      other.feedTab == feedTab &&
+      other.oneHanded == oneHanded;
 
   @override
-  int get hashCode => Object.hash(Object.hashAll(tabOrder), Object.hashAllUnordered(hiddenTabs), density, feedTab);
+  int get hashCode =>
+      Object.hash(Object.hashAll(tabOrder), Object.hashAllUnordered(hiddenTabs), density, feedTab, oneHanded);
 }

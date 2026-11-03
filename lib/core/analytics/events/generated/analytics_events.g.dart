@@ -51,6 +51,7 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'nav_tab': NavTabValue.values.map((value) => value.wireValue).toList(),
   'wall_grid_density': WallGridDensity.values.map((value) => value.wireValue).toList(),
   'layout_change_source': LayoutChangeSourceValue.values.map((value) => value.wireValue).toList(),
+  'notifications_entry_source': NotificationsEntrySourceValue.values.map((value) => value.wireValue).toList(),
   'notification_preference': NotificationPreferenceValue.values.map((value) => value.wireValue).toList(),
   'deep_link_source': DeepLinkSourceValue.values.map((value) => value.wireValue).toList(),
   'widget_kind': WidgetKindValue.values.map((value) => value.wireValue).toList(),
@@ -1718,6 +1719,34 @@ class LayoutResetEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return const <String, Object?>{};
+  }
+}
+
+class LayoutOneHandedToggledEvent extends AnalyticsEvent {
+  const LayoutOneHandedToggledEvent({required this.enabled});
+
+  final bool enabled;
+
+  @override
+  String get eventName => 'layout_one_handed_toggled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'enabled': enabled ? 1 : 0};
+  }
+}
+
+class NotificationsOpenedEvent extends AnalyticsEvent {
+  const NotificationsOpenedEvent({required this.source});
+
+  final NotificationsEntrySourceValue source;
+
+  @override
+  String get eventName => 'notifications_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source.wireValue};
   }
 }
 

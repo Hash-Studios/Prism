@@ -12679,6 +12679,24 @@ class AppLocalizationsId extends AppLocalizations {
   String get navMoreEditTabs => 'Ubah tab';
 
   @override
+  String get layoutControlsHeader => 'Kontrol';
+
+  @override
+  String get layoutOneHanded => 'Kontrol satu tangan';
+
+  @override
+  String get layoutOneHandedFootnote => 'Menaruh profil dan notifikasi Anda di bilah bawah, dalam jangkauan ibu jari.';
+
+  @override
+  String get navAccount => 'Profil dan notifikasi';
+
+  @override
+  String navUnreadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count belum dibaca');
+    return '$_temp0';
+  }
+
+  @override
   String wrappedTitle(String year) {
     return 'Prism Wrapped $year';
   }

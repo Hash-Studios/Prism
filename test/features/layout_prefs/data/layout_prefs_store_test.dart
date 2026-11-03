@@ -120,6 +120,38 @@ void main() {
     expect(firestore.writes, isEmpty);
   });
 
+  test('signed in update pushes oneHanded to the account', () async {
+    app_state.prismUser = profileUser();
+    final LayoutPrefsStore layout = newStore();
+
+    await layout.update(layout.value.copyWith(oneHanded: true));
+    await pumpEventQueue();
+
+    final Map<String, Object?> pushed = firestore.writes.single.data!['layoutPrefs'] as Map<String, Object?>;
+    expect(pushed['oneHanded'], isTrue);
+  });
+
+  test('sync applies a newer account copy with oneHanded on, and a new store keeps it', () async {
+    firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
+      'u1': <String, dynamic>{
+        'layoutPrefs': <String, Object>{
+          'tabs': <String>['home', 'search', 'rewards', 'collection'],
+          'hidden': <String>[],
+          'density': 'comfortable',
+          'oneHanded': true,
+          'changedAt': 1000,
+        },
+      },
+    };
+
+    final LayoutPrefsStore layout = newStore();
+    await layout.syncWithAccount('u1');
+
+    expect(layout.value.oneHanded, isTrue);
+    expect(newStore().value.oneHanded, isTrue);
+    expect(firestore.writes, isEmpty);
+  });
+
   test('sync applies the account copy when this device has no local change', () async {
     firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
       'u1': <String, dynamic>{

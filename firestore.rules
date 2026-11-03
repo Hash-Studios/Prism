@@ -130,11 +130,12 @@ service cloud.firestore {
 
     function validLayoutPrefs(p) {
       return p is map
-        && p.keys().hasOnly(['tabs', 'hidden', 'density', 'changedAt'])
+        && p.keys().hasOnly(['tabs', 'hidden', 'density', 'oneHanded', 'changedAt'])
         && p.keys().hasAll(['tabs', 'hidden', 'density', 'changedAt'])
         && p.tabs is list && p.tabs.size() <= 8 && p.tabs.hasOnly(['home', 'search', 'rewards', 'collection'])
         && p.hidden is list && p.hidden.size() <= 8 && p.hidden.hasOnly(['search', 'rewards', 'collection'])
         && p.density in ['compact', 'comfortable', 'large']
+        && (!('oneHanded' in p) || p.oneHanded is bool)
         && p.changedAt is int && p.changedAt >= 0;
     }
 

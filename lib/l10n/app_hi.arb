@@ -12429,6 +12429,31 @@
   "@navMoreEditTabs": {
     "description": "Row in the More sheet that opens the Layout settings page."
   },
+  "layoutControlsHeader": "नियंत्रण",
+  "@layoutControlsHeader": {
+    "description": "Header of the Layout page section with the one-handed controls switch."
+  },
+  "layoutOneHanded": "एक हाथ वाले नियंत्रण",
+  "@layoutOneHanded": {
+    "description": "Switch on the Layout page. On, the profile and notifications buttons move from the top bar to the bottom bar."
+  },
+  "layoutOneHandedFootnote": "आपकी प्रोफ़ाइल और सूचनाएँ नीचे की बार में रखता है, जहाँ अंगूठा पहुँचता है।",
+  "@layoutOneHandedFootnote": {
+    "description": "Footnote under the one-handed controls switch."
+  },
+  "navAccount": "प्रोफ़ाइल और सूचनाएँ",
+  "@navAccount": {
+    "description": "Label and tooltip of the bottom bar button that opens a sheet with the profile and notifications, and the title of that sheet."
+  },
+  "navUnreadCount": "{count, plural, =1{1 अपठित} other{{count} अपठित}}",
+  "@navUnreadCount": {
+    "description": "Subtitle of the Notifications row in the profile sheet: how many notifications are unread.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "wrappedTitle": "Prism Wrapped {year}",
   "@wrappedTitle": {"description": "Title of the Wrapped yearly recap screen and share card.", "placeholders": {"year": {"type": "String"}}},
   "wrappedIntroHeadline": "इस साल के आपके वॉलपेपर",

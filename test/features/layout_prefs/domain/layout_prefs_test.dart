@@ -94,6 +94,42 @@ void main() {
     expect(restored, equals(prefs));
   });
 
+  test('oneHanded defaults to off and is not synced until it is on', () {
+    const LayoutPrefs prefs = LayoutPrefs();
+
+    expect(prefs.oneHanded, isFalse);
+    expect(prefs.toLayoutMap().containsKey('oneHanded'), isFalse);
+  });
+
+  test('copyWith oneHanded is written to the synced map', () {
+    expect(const LayoutPrefs().copyWith(oneHanded: true).toLayoutMap()['oneHanded'], isTrue);
+  });
+
+  test('fromMap reads oneHanded only when it is true', () {
+    const Map<Object?, Object?> map = <Object?, Object?>{};
+
+    expect(LayoutPrefs.fromMap(const {'oneHanded': true}).oneHanded, isTrue);
+    expect(LayoutPrefs.fromMap(const {'oneHanded': 'yes'}).oneHanded, isFalse);
+    expect(LayoutPrefs.fromMap(map).oneHanded, isFalse);
+  });
+
+  test('toLayoutMap and fromMap round trip oneHanded', () {
+    final LayoutPrefs prefs = const LayoutPrefs().copyWith(oneHanded: true);
+
+    expect(LayoutPrefs.fromMap(prefs.toLayoutMap()), equals(prefs));
+  });
+
+  test('oneHanded makes the layout non-default, and resetLayout turns it off', () {
+    final LayoutPrefs prefs = const LayoutPrefs().copyWith(oneHanded: true);
+
+    expect(prefs.isDefaultLayout, isFalse);
+    expect(prefs.resetLayout().oneHanded, isFalse);
+  });
+
+  test('prefs that differ only in oneHanded are not equal', () {
+    expect(const LayoutPrefs().copyWith(oneHanded: true), isNot(equals(const LayoutPrefs())));
+  });
+
   test('WallGridDensity steps one size at a time and stops at the ends', () {
     expect(WallGridDensity.compact.larger, WallGridDensity.comfortable);
     expect(WallGridDensity.large.larger, isNull);
