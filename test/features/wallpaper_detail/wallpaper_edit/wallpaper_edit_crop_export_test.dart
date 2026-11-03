@@ -30,11 +30,11 @@ Future<ui.Image> paintRects(int width, int height, List<(Rect, Color)> rects) {
 
 /// 40x20, red for x < 20 and blue for x >= 20.
 Future<ui.Image> leftRedRightBlue() =>
-    paintRects(40, 20, [(Rect.fromLTWH(0, 0, 20, 20), _red), (Rect.fromLTWH(20, 0, 20, 20), _blue)]);
+    paintRects(40, 20, [(const Rect.fromLTWH(0, 0, 20, 20), _red), (const Rect.fromLTWH(20, 0, 20, 20), _blue)]);
 
 /// 30x60, red for y < 30 and blue for y >= 30.
 Future<ui.Image> topRedBottomBlue() =>
-    paintRects(30, 60, [(Rect.fromLTWH(0, 0, 30, 30), _red), (Rect.fromLTWH(0, 30, 30, 30), _blue)]);
+    paintRects(30, 60, [(const Rect.fromLTWH(0, 0, 30, 30), _red), (const Rect.fromLTWH(0, 30, 30, 30), _blue)]);
 
 Future<_Decoded> decodePng(Uint8List png) async {
   final ui.Codec codec = await ui.instantiateImageCodec(png);

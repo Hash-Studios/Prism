@@ -41,12 +41,7 @@ Future<void> _waitForReady(WidgetTester tester) async {
 
 Widget _screenHost(String sourcePath, {bool reduceMotion = false, TextScaler textScaler = TextScaler.noScaling}) =>
     MediaQuery(
-      data: MediaQueryData(
-        size: _viewSize,
-        devicePixelRatio: 1,
-        disableAnimations: reduceMotion,
-        textScaler: textScaler,
-      ),
+      data: MediaQueryData(size: _viewSize, disableAnimations: reduceMotion, textScaler: textScaler),
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
