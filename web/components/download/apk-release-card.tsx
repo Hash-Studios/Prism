@@ -4,13 +4,10 @@ import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import {
   type ApkRelease,
-  CACHE_TTL_MS,
   LATEST_RELEASE_URL,
   RELEASES_URL,
-  fetchApkRelease,
   formatSize,
-  readCache,
-  writeCache,
+  getApkRelease,
 } from "@/lib/apk-release";
 
 type ReleaseState =
@@ -19,36 +16,16 @@ type ReleaseState =
   | { kind: "missing" }
   | { kind: "failed" };
 
-let refresh: Promise<ApkRelease | null> | null = null;
-
-/** One request per page load, shared by every component that shows the release. */
-function refreshOnce(): Promise<ApkRelease | null> {
-  refresh ??= fetchApkRelease().then((release) => {
-    if (release) writeCache(release, Date.now());
-    return release;
-  });
-  return refresh;
-}
-
 function useApkRelease(): ReleaseState {
   const [state, setState] = useState<ReleaseState>({ kind: "loading" });
 
   useEffect(() => {
     let active = true;
-    const cached = readCache();
-    if (cached) setState({ kind: "ready", release: cached.release });
-    if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) return;
-
-    refreshOnce().then(
-      (release) => {
-        if (!active) return;
-        if (release) setState({ kind: "ready", release });
-        else if (!cached) setState({ kind: "missing" });
-      },
-      () => {
-        if (active && !cached) setState({ kind: "failed" });
-      },
-    );
+    void getApkRelease().then((result) => {
+      if (!active) return;
+      if (result.release) setState({ kind: "ready", release: result.release });
+      else setState({ kind: result.status === "missing" ? "missing" : "failed" });
+    });
     return () => {
       active = false;
     };

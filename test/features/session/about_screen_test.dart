@@ -10,25 +10,24 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:github/github.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
 
-class _RecordingUrlLauncher extends UrlLauncherPlatform {
-  _RecordingUrlLauncher({required this.opens});
+const MethodChannel _urlLauncherChannel = MethodChannel('plugins.flutter.io/url_launcher');
+final List<String> _launchedUrls = <String>[];
+bool _urlLauncherOpens = true;
 
-  final bool opens;
-  final List<String> urls = <String>[];
-
-  @override
-  Future<bool> launchUrl(String url, LaunchOptions options) async {
-    urls.add(url);
-    return opens;
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+void _mockUrlLauncher({bool opens = true}) {
+  _launchedUrls.clear();
+  _urlLauncherOpens = opens;
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(_urlLauncherChannel, (
+    MethodCall call,
+  ) async {
+    final Object? url = (call.arguments as Map<Object?, Object?>?)?['url'];
+    if (call.method == 'launch' && url is String) _launchedUrls.add(url);
+    return _urlLauncherOpens;
+  });
 }
 
 void _mockInstaller(String? installerStore) {
@@ -63,7 +62,7 @@ void main() {
 
     setUp(() async {
       copied.clear();
-      resetApkDownloadOffer();
+      _mockUrlLauncher();
       _mockInstaller('com.android.vending');
       AnalyticsRuntime.instance = FakeAppAnalytics();
       await getIt.reset();
@@ -78,6 +77,10 @@ void main() {
     });
 
     tearDown(() async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        _urlLauncherChannel,
+        null,
+      );
       contributorsLoader = () =>
           GitHub().repositories.listContributors(RepositorySlug('Hash-Studios', 'Prism')).toList();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -85,7 +88,6 @@ void main() {
         null,
       );
       AnalyticsRuntime.reset();
-      resetApkDownloadOffer();
       await getIt.reset();
     });
 
@@ -158,9 +160,7 @@ void main() {
 
     testWidgets('a link that cannot open shows its address with a Copy action', (tester) async {
       contributorsLoader = () async => <Contributor>[];
-      final previous = UrlLauncherPlatform.instance;
-      UrlLauncherPlatform.instance = _RecordingUrlLauncher(opens: false);
-      addTearDown(() => UrlLauncherPlatform.instance = previous);
+      _mockUrlLauncher(opens: false);
       await pumpAbout(tester);
 
       await tester.tap(find.text('GITHUB'));
@@ -177,10 +177,7 @@ void main() {
 
     testWidgets('FEEDBACK opens the mail app, and falls back to Report a problem when none opens', (tester) async {
       contributorsLoader = () async => <Contributor>[];
-      final launcher = _RecordingUrlLauncher(opens: false);
-      final previous = UrlLauncherPlatform.instance;
-      UrlLauncherPlatform.instance = launcher;
-      addTearDown(() => UrlLauncherPlatform.instance = previous);
+      _mockUrlLauncher(opens: false);
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
         const MethodChannel('dev.fluttercommunity.plus/package_info'),
         (call) async => <String, Object?>{
@@ -204,7 +201,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump(const Duration(milliseconds: 400));
 
-      expect(launcher.urls.single, startsWith('mailto:hash.studios.inc@gmail.com'));
+      expect(_launchedUrls.single, startsWith('mailto:hash.studios.inc@gmail.com'));
       expect(find.text('Report a problem'), findsOneWidget);
       expect(find.text('Send report'), findsOneWidget);
     });
@@ -299,17 +296,14 @@ void main() {
         _contributor('c'),
         _contributor('dave'),
       ];
-      final launcher = _RecordingUrlLauncher(opens: true);
-      final previous = UrlLauncherPlatform.instance;
-      UrlLauncherPlatform.instance = launcher;
-      addTearDown(() => UrlLauncherPlatform.instance = previous);
+      _mockUrlLauncher();
       await pumpAbout(tester);
 
       await tester.tap(find.text('dave'));
       await tester.pump();
       await tester.pump();
 
-      expect(launcher.urls, contains('https://github.com/dave'));
+      expect(_launchedUrls, contains('https://github.com/dave'));
     });
 
     testWidgets('the header shows a hairline only once the page is scrolled', (tester) async {
@@ -393,11 +387,7 @@ void main() {
       contributorsLoader = () async => <Contributor>[];
       final analytics = FakeAppAnalytics();
       AnalyticsRuntime.instance = analytics;
-      final launcher = _RecordingUrlLauncher(opens: true);
-      final previous = UrlLauncherPlatform.instance;
-      UrlLauncherPlatform.instance = launcher;
-      addTearDown(() => UrlLauncherPlatform.instance = previous);
-      resetApkDownloadOffer();
+      _mockUrlLauncher();
       _mockInstaller(null);
       await pumpAbout(tester);
 
@@ -407,7 +397,7 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(launcher.urls, <String>['https://prismwalls.com/download']);
+      expect(_launchedUrls, <String>['https://prismwalls.com/download']);
       final List<Object?> shown = analytics.events
           .where((event) => event.eventName == 'apk_link_shown')
           .map((event) => event.toWireParameters()['source'])
@@ -424,7 +414,6 @@ void main() {
       contributorsLoader = () async => <Contributor>[];
       final analytics = FakeAppAnalytics();
       AnalyticsRuntime.instance = analytics;
-      resetApkDownloadOffer();
       _mockInstaller('com.android.vending');
       await pumpAbout(tester);
 

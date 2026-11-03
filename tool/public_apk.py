@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import sys
 import time
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -77,18 +78,19 @@ def normalize_sha256(value: str) -> str:
         raw = b''
     if len(raw) == 32:
         return raw.hex()
-    raise ReleaseError(f'{value!r} is not a SHA-256 certificate digest.')
+    raise ReleaseError('Invalid SHA-256 certificate digest.')
 
 
 def signer_digests(apksigner_output: str) -> set[str]:
     return {d.lower() for d in re.findall(r'certificate SHA-256 digest: ([0-9a-fA-F]{64})', apksigner_output)}
 
 
-def badging(aapt2_output: str) -> tuple[str, int]:
-    match = re.search(r"^package: name='([^']+)' versionCode='(\d+)'", aapt2_output, re.MULTILINE)
+def badging(aapt2_output: str) -> tuple[str, int, str]:
+    match = re.search(r"^package: name='([^']+)' versionCode='(\d+)' versionName='([^']*)'",
+                      aapt2_output, re.MULTILINE)
     if not match:
-        raise ReleaseError('aapt2 did not print the package name and version code.')
-    return match.group(1), int(match.group(2))
+        raise ReleaseError('aapt2 did not print the package name, version code and version name.')
+    return match.group(1), int(match.group(2)), match.group(3)
 
 
 def find_tools() -> Tools:
@@ -115,19 +117,25 @@ def run(cmd: list[str], *, what: str) -> str:
 
 def check_apk(apk: Path, tag: Tag, expected_cert: str | None, tools: Tools) -> str:
     """Returns the signing certificate SHA-256. Raises unless the APK is this release, signed by one expected key."""
-    digests = signer_digests(run([str(tools.apksigner), 'verify', '--print-certs', str(apk)],
-                                 what='apksigner verify'))
-    if len(digests) != 1:
-        raise ReleaseError(f'APK has {len(digests)} signing certificates, expected exactly 1.')
+    output = run([str(tools.apksigner), 'verify', '--verbose', '--print-certs', str(apk)],
+                 what='apksigner verify')
+    signer_count = re.findall(r'^Number of signers: (\d+)$', output, re.MULTILINE)
+    digests = signer_digests(output)
+    if signer_count != ['1'] or len(digests) != 1:
+        actual = signer_count[0] if len(signer_count) == 1 else str(len(digests))
+        raise ReleaseError(f'APK has {actual} signing certificates, expected exactly 1.')
     cert = digests.pop()
     if expected_cert is not None and cert != expected_cert:
         raise ReleaseError(f'APK is signed by certificate {cert}, expected the Play app signing certificate '
                            f'{expected_cert}.')
-    package, code = badging(run([str(tools.aapt2), 'dump', 'badging', str(apk)], what='aapt2 dump badging'))
+    package, code, version = badging(run([str(tools.aapt2), 'dump', 'badging', str(apk)],
+                                         what='aapt2 dump badging'))
     if package != PACKAGE:
         raise ReleaseError(f'APK package is {package}, expected {PACKAGE}.')
     if code != tag.code:
         raise ReleaseError(f'APK version code is {code}, expected {tag.code}.')
+    if version != tag.version:
+        raise ReleaseError(f'APK version is {version!r}, expected {tag.version}.')
     return cert
 
 
@@ -161,17 +169,33 @@ def load_service_account(path: Path) -> dict[str, str]:
 
 def sign_rs256(message: bytes, private_key_pem: str) -> bytes:
     """Signs with openssl. The key goes through a pipe, never to disk or argv."""
-    read_fd, write_fd = os.pipe()
     try:
-        os.write(write_fd, private_key_pem.encode())
-    finally:
-        os.close(write_fd)
+        read_fd, write_fd = os.pipe()
+    except Exception:
+        raise ReleaseError('Could not open the service account signing pipe.') from None
+    writer_failed = []
+
+    def write_key():
+        try:
+            with os.fdopen(write_fd, 'wb') as pipe:
+                pipe.write(private_key_pem.encode())
+        except Exception:
+            writer_failed.append(True)
+
+    writer = threading.Thread(target=write_key, daemon=True)
     try:
+        writer.start()
         result = subprocess.run(['openssl', 'dgst', '-sha256', '-sign', f'/dev/fd/{read_fd}'], input=message,
                                 capture_output=True, pass_fds=(read_fd,))
+    except Exception:
+        raise ReleaseError('openssl could not sign the token request with the service account key.') from None
     finally:
         os.close(read_fd)
-    if result.returncode != 0 or not result.stdout:
+        if writer.ident is None:
+            os.close(write_fd)
+        else:
+            writer.join()
+    if writer_failed or result.returncode != 0 or not result.stdout:
         raise ReleaseError('openssl could not sign the token request with the service account key.')
     return result.stdout
 
@@ -181,49 +205,39 @@ def _b64url(data: bytes) -> str:
 
 
 def google_error(error: urllib.error.HTTPError) -> str:
-    """A short status line. Only Google's own error fields, never the request."""
-    try:
-        body = json.loads(error.read().decode(errors='replace'))
-    except ValueError:
-        body = {}
-    detail = body.get('error') if isinstance(body, dict) else None
-    if isinstance(detail, dict):
-        detail = detail.get('message') or detail.get('status')
-    elif isinstance(body, dict) and isinstance(body.get('error_description'), str):
-        detail = f'{detail}: {body["error_description"]}'
-    text = f'HTTP {error.code}' + (f' ({str(detail)[:160]})' if detail else '')
-    return text
+    """Response bodies can echo credentials or bearer tokens. Report only the status."""
+    return f'HTTP {error.code}'
 
 
 def access_token(account: dict[str, str]) -> str:
-    now = int(time.time())
-    header = _b64url(json.dumps({'alg': 'RS256', 'typ': 'JWT'}).encode())
-    claims = _b64url(json.dumps({'iss': account['client_email'], 'scope': SCOPE, 'aud': account['token_uri'],
-                                 'iat': now, 'exp': now + 600}).encode())
-    signing_input = f'{header}.{claims}'.encode()
-    assertion = f'{header}.{claims}.{_b64url(sign_rs256(signing_input, account["private_key"]))}'
-    body = urllib.parse.urlencode({'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-                                   'assertion': assertion}).encode()
     try:
+        now = int(time.time())
+        header = _b64url(json.dumps({'alg': 'RS256', 'typ': 'JWT'}).encode())
+        claims = _b64url(json.dumps({'iss': account['client_email'], 'scope': SCOPE, 'aud': account['token_uri'],
+                                     'iat': now, 'exp': now + 600}).encode())
+        signing_input = f'{header}.{claims}'.encode()
+        assertion = f'{header}.{claims}.{_b64url(sign_rs256(signing_input, account["private_key"]))}'
+        body = urllib.parse.urlencode({'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                                       'assertion': assertion}).encode()
         with urllib.request.urlopen(urllib.request.Request(account['token_uri'], data=body), timeout=30) as response:
             token = json.loads(response.read()).get('access_token')
     except urllib.error.HTTPError as error:
         raise ReleaseError(f'Play token request refused: {google_error(error)}') from None
-    except (urllib.error.URLError, ValueError, TimeoutError) as error:
-        raise ReleaseError(f'Play token request failed: {type(error).__name__}') from None
+    except Exception:
+        raise ReleaseError('Play token request failed.') from None
     if not isinstance(token, str) or not token:
         raise ReleaseError('Play token response had no access token.')
     return token
 
 
 def play_get(url: str, token: str, *, what: str):
-    request = urllib.request.Request(url, headers={'Authorization': f'Bearer {token}'})
     try:
+        request = urllib.request.Request(url, headers={'Authorization': f'Bearer {token}'})
         return urllib.request.urlopen(request, timeout=300)
     except urllib.error.HTTPError as error:
         raise ReleaseError(f'{what} refused: {google_error(error)}') from None
-    except (urllib.error.URLError, TimeoutError) as error:
-        raise ReleaseError(f'{what} failed: {type(error).__name__}') from None
+    except Exception:
+        raise ReleaseError(f'{what} failed.') from None
 
 
 def pick_universal_apk(listing: dict, expected_cert: str | None) -> tuple[str, str]:
@@ -244,17 +258,27 @@ def pick_universal_apk(listing: dict, expected_cert: str | None) -> tuple[str, s
 
 def download_play_apk(tag: Tag, credentials: Path, expected_cert: str | None, target: Path) -> str:
     """Downloads the universal APK into target. Returns the certificate SHA-256 that Play reports for it."""
-    token = access_token(load_service_account(credentials))
-    base = f'{PUBLISHER_API}/{PACKAGE}/generatedApks/{tag.code}'
-    with play_get(base, token, what='Listing generated APKs') as response:
-        listing = json.loads(response.read())
-    download_id, cert = pick_universal_apk(listing, expected_cert)
     partial = target.with_name(target.name + '.part')
-    url = f'{base}/downloads/{urllib.parse.quote(download_id, safe="")}:download?alt=media'
-    with play_get(url, token, what='Downloading the universal APK') as response, partial.open('wb') as out:
-        shutil.copyfileobj(response, out, 1 << 20)
-    partial.replace(target)
-    return cert
+    try:
+        token = access_token(load_service_account(credentials))
+        base = f'{PUBLISHER_API}/{PACKAGE}/generatedApks/{tag.code}'
+        with play_get(base, token, what='Listing generated APKs') as response:
+            listing = json.loads(response.read())
+        download_id, cert = pick_universal_apk(listing, expected_cert)
+        url = f'{base}/downloads/{urllib.parse.quote(download_id, safe="")}:download?alt=media'
+        with play_get(url, token, what='Downloading the universal APK') as response, partial.open('wb') as out:
+            shutil.copyfileobj(response, out, 1 << 20)
+            length = response.headers.get('Content-Length')
+            if length is not None and out.tell() != int(length):
+                raise ReleaseError('The universal APK download was incomplete.')
+        partial.replace(target)
+        return cert
+    except ReleaseError:
+        raise
+    except Exception:
+        raise ReleaseError('Could not download the universal APK.') from None
+    finally:
+        partial.unlink(missing_ok=True)
 
 
 def release_assets(tag: Tag) -> set[str]:
@@ -282,7 +306,7 @@ def main(argv: list[str]) -> int:
             if pinned is None:
                 raise ReleaseError('PLAY_APP_SIGNING_CERT_SHA256 is not set in tool/public_apk.py. '
                                    'Copy it from Play Console > App integrity, then run again.')
-            if override is not None and override != pinned:
+            if args.expected_cert is not None:
                 raise ReleaseError('--expected-cert is for dry runs. A real attach checks only the pinned certificate.')
             expected = pinned
         tools = find_tools()
@@ -324,6 +348,10 @@ def main(argv: list[str]) -> int:
         return 0
     except ReleaseError as error:
         print(f'public_apk: {error}', file=sys.stderr)
+        return 1
+    except Exception as error:
+        print(f'public_apk: failed with {type(error).__name__}. No release assets were confirmed attached.',
+              file=sys.stderr)
         return 1
 
 

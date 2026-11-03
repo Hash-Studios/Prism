@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import traceback
 from unittest import mock
 import unittest
 import urllib.error
@@ -196,6 +197,24 @@ class SignatureCheckTest(unittest.TestCase):
             public_apk.check_apk(FIXTURES['old_apk'], tag, FIXTURES['right_digest'], TOOLS)
         self.assertIn('version code is 358', str(context.exception))
 
+    def test_check_apk_refuses_wrong_version_name(self):
+        tag = public_apk.parse_tag(TAG)
+        output = ('Number of signers: 1\nV3.0 Signer: certificate SHA-256 digest: '
+                  f'{FIXTURES["right_digest"]}')
+        with mock.patch.object(public_apk, 'run', side_effect=[output,
+                               "package: name='com.hash.prism' versionCode='359' versionName='3.18.1'"]):
+            with self.assertRaisesRegex(public_apk.ReleaseError, 'version is'):
+                public_apk.check_apk(Path('test.apk'), tag, FIXTURES['right_digest'], TOOLS)
+
+    def test_check_apk_refuses_wrong_package(self):
+        tag = public_apk.parse_tag(TAG)
+        output = ('Number of signers: 1\nV3.0 Signer: certificate SHA-256 digest: '
+                  f'{FIXTURES["right_digest"]}')
+        with mock.patch.object(public_apk, 'run', side_effect=[output,
+                               "package: name='com.other.app' versionCode='359' versionName='3.18.2'"]):
+            with self.assertRaisesRegex(public_apk.ReleaseError, 'package'):
+                public_apk.check_apk(Path('test.apk'), tag, FIXTURES['right_digest'], TOOLS)
+
 
 class GhCliTest(unittest.TestCase):
     def setUp(self):
@@ -282,6 +301,13 @@ class RealRunTest(GhCliTest):
         self.assertIn('for dry runs', err)
         self.assertEqual(self.upload_calls(self.gh_calls()), [], 'override must not upload')
 
+    def test_real_run_refuses_expected_cert_even_when_it_matches_pin(self):
+        code, _, err = self.run_main(['--tag', TAG, '--apk', str(FIXTURES['right_apk']),
+                                      '--expected-cert', FIXTURES['right_digest'], '--out-dir', str(self.out)])
+        self.assertEqual(code, 1)
+        self.assertIn('for dry runs', err)
+        self.assertEqual(self.gh_calls(), [])
+
     def test_real_run_skips_upload_when_release_already_has_both_files(self):
         assets = json.dumps({'assets': [{'name': 'prism-3.18.2-359.apk'}, {'name': 'prism-3.18.2-359.apk.sha256'}]})
         code, _, err = self.run_main(['--tag', TAG, '--apk', str(FIXTURES['right_apk']), '--out-dir', str(self.out)],
@@ -334,7 +360,7 @@ class SecretHandlingTest(unittest.TestCase):
                 public_apk.access_token(public_apk.load_service_account(path))
         message = str(context.exception)
         self.assertIn('HTTP 400', message)
-        self.assertIn('invalid_grant', message)
+        self.assertNotIn('Invalid JWT Signature.', message)
         middle = len(self.pem) // 2
         self.assertNotIn(self.pem[middle:middle + 40], message)
         self.assertNotIn('assertion', message)
@@ -352,6 +378,106 @@ class SecretHandlingTest(unittest.TestCase):
     def test_load_service_account_names_missing_credentials_path(self):
         with self.assertRaisesRegex(public_apk.ReleaseError, 'Play credentials not found'):
             public_apk.load_service_account(self.work / 'missing.json')
+
+
+class ReleaseSafetyRegressionTest(unittest.TestCase):
+    token = 'oauth-token-that-must-stay-private'
+    key = 'private-key-that-must-stay-private'
+
+    def assert_safe_failure(self, operation):
+        with self.assertRaises(public_apk.ReleaseError) as caught:
+            operation()
+        rendered = ''.join(traceback.format_exception(caught.exception))
+        self.assertNotIn(self.token, rendered)
+        self.assertNotIn(self.key, rendered)
+        self.assertNotIn('assertion=private-jwt', rendered)
+
+    def test_google_error_does_not_echo_server_messages_or_credentials(self):
+        for body in ({'error': {'message': self.token + self.key}},
+                     {'error': 'invalid_grant', 'error_description': 'assertion=private-jwt'},
+                     {'error': self.token}):
+            with self.subTest(body=body):
+                error = urllib.error.HTTPError('https://example.test', 403, 'Forbidden', None,
+                                               io.BytesIO(json.dumps(body).encode()))
+                rendered = public_apk.google_error(error)
+                self.assertIn('HTTP 403', rendered)
+                self.assertNotIn(self.token, rendered)
+                self.assertNotIn(self.key, rendered)
+                self.assertNotIn('assertion=private-jwt', rendered)
+
+    def test_unexpected_token_request_error_is_safe_including_traceback(self):
+        account = {'client_email': 'ci@example.test', 'private_key': self.key,
+                   'token_uri': 'https://oauth2.googleapis.com/token'}
+        with mock.patch.object(public_apk, 'sign_rs256', return_value=b'signature'), \
+                mock.patch('public_apk.urllib.request.urlopen', side_effect=RuntimeError(self.key)):
+            self.assert_safe_failure(lambda: public_apk.access_token(account))
+
+    def test_unexpected_play_get_error_is_safe_including_traceback(self):
+        with mock.patch('public_apk.urllib.request.urlopen', side_effect=RuntimeError(self.token)):
+            self.assert_safe_failure(lambda: public_apk.play_get('https://example.test', self.token, what='Download'))
+
+    def test_unexpected_signing_error_is_safe_including_traceback(self):
+        with mock.patch('public_apk.subprocess.run', side_effect=RuntimeError(self.key)):
+            self.assert_safe_failure(lambda: public_apk.sign_rs256(b'message', self.key))
+
+    def test_oversized_key_cannot_block_before_openssl_starts(self):
+        program = ("import sys; sys.path.insert(0, 'tool'); import public_apk; "
+                   "public_apk.sign_rs256(b'message', sys.stdin.read())")
+        try:
+            result = subprocess.run([sys.executable, '-c', program], input='x' * (1 << 20),
+                                    capture_output=True, text=True, timeout=5, cwd=ROOT)
+        except subprocess.TimeoutExpired:
+            self.fail('signing blocked while writing a key before openssl could read it')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn('x' * 100, result.stderr)
+
+    def test_main_unexpected_error_has_no_traceback_or_secret(self):
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with mock.patch.object(public_apk, 'find_tools', side_effect=RuntimeError(self.token)), \
+                contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            code = public_apk.main(['--tag', TAG, '--dry-run'])
+        self.assertEqual(code, 1)
+        self.assertNotIn(self.token, stdout.getvalue() + stderr.getvalue())
+        self.assertNotIn('Traceback', stderr.getvalue())
+
+    def test_multiple_signers_with_same_certificate_are_rejected(self):
+        cert = 'a' * 64
+        output = (f'Number of signers: 2\nV3.0 Signer: certificate SHA-256 digest: {cert}\n'
+                  f'V3.0 Signer: certificate SHA-256 digest: {cert}\n')
+        with mock.patch.object(public_apk, 'run', side_effect=[output,
+                               "package: name='com.hash.prism' versionCode='359'"]):
+            with self.assertRaisesRegex(public_apk.ReleaseError, 'sign'):
+                public_apk.check_apk(Path('test.apk'), public_apk.parse_tag(TAG), cert,
+                                     public_apk.Tools(Path('apksigner'), Path('aapt2')))
+
+    def test_download_rejects_truncated_content_and_preserves_target(self):
+        self.check_failed_download(short_content=True)
+
+    def test_download_removes_partial_file_after_stream_error(self):
+        self.check_failed_download(short_content=False)
+
+    def check_failed_download(self, *, short_content):
+        class Response(io.BytesIO):
+            headers = {'Content-Length': '100'}
+
+            def read(inner, size=-1):
+                if not short_content and inner.tell():
+                    raise RuntimeError(self.token)
+                return super().read(size)
+
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / 'release.apk'
+            target.write_bytes(b'previous verified APK')
+            listing = {'generatedApks': [{'certificateSha256Hash': 'a' * 64,
+                                         'generatedUniversalApk': {'downloadId': 'X'}}]}
+            with mock.patch.object(public_apk, 'load_service_account', return_value={}), \
+                    mock.patch.object(public_apk, 'access_token', return_value=self.token), \
+                    mock.patch.object(public_apk, 'play_get', side_effect=[
+                        io.BytesIO(json.dumps(listing).encode()), Response(b'truncated')]):
+                self.assert_safe_failure(lambda: public_apk.download_play_apk(
+                    public_apk.parse_tag(TAG), Path('credentials.json'), 'a' * 64, target))
+            self.assertEqual(target.read_bytes(), b'previous verified APK')
+            self.assertFalse(target.with_name(target.name + '.part').exists())
 
 
 if __name__ == '__main__':

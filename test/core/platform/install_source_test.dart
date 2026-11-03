@@ -1,5 +1,6 @@
 import 'package:Prism/core/platform/install_source.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -15,8 +16,23 @@ void _mockInstaller(String? installerStore) {
 }
 
 void main() {
-  setUp(resetApkDownloadOffer);
-  tearDown(resetApkDownloadOffer);
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('apkDownloadOffered fails closed when reading the installer throws', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    const MethodChannel channel = MethodChannel('dev.fluttercommunity.plus/package_info');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+      MethodCall methodCall,
+    ) {
+      return Future<Object?>.error(PlatformException(code: 'installer_unavailable'));
+    });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    expect(await apkDownloadOffered(), isFalse);
+  });
 
   test('offersApkDownload offers the APK only to Android installs that Play did not make', () {
     final cases = <({TargetPlatform platform, String? installer, bool expected})>[
@@ -42,17 +58,6 @@ void main() {
   });
 
   test('apkDownloadOffered is false for a Play install', () async {
-    _mockInstaller('com.android.vending');
-    expect(await apkDownloadOffered(), isFalse);
-  });
-
-  test('apkDownloadOffered reads the installer once per process until reset', () async {
-    _mockInstaller(null);
-    final first = apkDownloadOffered();
-    final second = apkDownloadOffered();
-    expect(identical(first, second), isTrue);
-
-    resetApkDownloadOffer();
     _mockInstaller('com.android.vending');
     expect(await apkDownloadOffered(), isFalse);
   });

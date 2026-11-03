@@ -100,6 +100,7 @@ downloaded APK and the real attach refuses to run.
 - Read budget: the page reads no Firestore documents and does not call the links Worker, so the #780 catalogue read
   budget does not change. GitHub allows 60 unauthenticated requests an hour for each IP. The page makes at most one
   each hour for each browser.
+- Until a release has an APK, the page says "No APK is available yet" and links to the GitHub releases page.
 - If GitHub fails and there is no cached copy, the page says so and links to the GitHub releases page. The Download
   APK button always works without JavaScript: it links to the latest GitHub release.
 
@@ -116,6 +117,8 @@ downloaded APK and the real attach refuses to run.
 
 - The first real attach: `make public-apk TAG=...` without `DRY_RUN`. The repository is public.
 - Set `PLAY_APP_SIGNING_CERT_SHA256` from Play Console before the first real attach.
-- The Play service account needs "View app information and download bulk reports" in Play Console to download
-  generated APKs.
+- The Play service account must have access to Prism in Play Console, Users and permissions. Google does not document
+  the exact permission for generated APKs. If the list call answers HTTP 403, give the account the release permissions
+  it already uses for uploads.
+- The first real attach must also confirm the Shorebird patch check above.
 - Deploy the website after the merge.

@@ -8,23 +8,24 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import '../../support/fake_app_analytics.dart';
 
-class _RecordingUrlLauncher extends UrlLauncherPlatform {
-  final List<String> urls = <String>[];
+const MethodChannel _urlLauncherChannel = MethodChannel('plugins.flutter.io/url_launcher');
+final List<String> _launchedUrls = <String>[];
 
-  @override
-  Future<bool> launchUrl(String url, LaunchOptions options) async {
-    urls.add(url);
+void _mockUrlLauncher() {
+  _launchedUrls.clear();
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(_urlLauncherChannel, (
+    MethodCall call,
+  ) async {
+    final Object? url = (call.arguments as Map<Object?, Object?>?)?['url'];
+    if (call.method == 'launch' && url is String) _launchedUrls.add(url);
     return true;
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  });
 }
 
 void _mockInstaller(String? installerStore) {
@@ -54,10 +55,15 @@ Future<void> _pumpOldVersion(WidgetTester tester, {TransitionBuilder? builder}) 
 
 void main() {
   setUp(() {
-    resetApkDownloadOffer();
     _mockInstaller('com.android.vending');
+    _mockUrlLauncher();
   });
-  tearDown(resetApkDownloadOffer);
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      _urlLauncherChannel,
+      null,
+    );
+  });
 
   testWidgets('the update wall shows Glint, the reason and one primary action on every theme', (tester) async {
     for (final option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {
@@ -89,24 +95,16 @@ void main() {
   });
 
   group('APK link', () {
-    late _RecordingUrlLauncher launcher;
-    late UrlLauncherPlatform previousLauncher;
     late FakeAppAnalytics analytics;
 
     setUp(() {
-      resetApkDownloadOffer();
       analytics = FakeAppAnalytics();
       AnalyticsRuntime.instance = analytics;
-      launcher = _RecordingUrlLauncher();
-      previousLauncher = UrlLauncherPlatform.instance;
-      UrlLauncherPlatform.instance = launcher;
     });
 
     tearDown(() {
-      resetApkDownloadOffer();
       debugDefaultTargetPlatformOverride = null;
       AnalyticsRuntime.reset();
-      UrlLauncherPlatform.instance = previousLauncher;
     });
 
     testWidgets('a sideloaded install offers the APK page', (tester) async {
@@ -119,7 +117,7 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Download the latest version'));
       await tester.pump();
 
-      expect(launcher.urls, <String>['https://prismwalls.com/download']);
+      expect(_launchedUrls, <String>['https://prismwalls.com/download']);
       final List<Object?> shown = analytics.events
           .where((event) => event.eventName == 'apk_link_shown')
           .map((event) => event.toWireParameters()['source'])
@@ -142,7 +140,7 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Update Prism'));
       await tester.pump();
 
-      expect(launcher.urls, <String>['https://play.google.com/store/apps/details?id=com.hash.prism']);
+      expect(_launchedUrls, <String>['https://play.google.com/store/apps/details?id=com.hash.prism']);
       expect(analytics.events.where((event) => event.eventName.startsWith('apk_link')), isEmpty);
     });
 

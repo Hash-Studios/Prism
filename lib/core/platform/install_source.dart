@@ -9,7 +9,8 @@ const String googlePlayInstaller = 'com.android.vending';
 bool offersApkDownload({required TargetPlatform platform, required String? installer}) =>
     platform == TargetPlatform.android && installer != googlePlayInstaller;
 
-Future<bool> _readApkDownloadOffer() async {
+/// Whether this install shows the APK download page. PackageInfo caches the platform read.
+Future<bool> apkDownloadOffered() async {
   if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return false;
   try {
     final PackageInfo info = await PackageInfo.fromPlatform();
@@ -19,11 +20,3 @@ Future<bool> _readApkDownloadOffer() async {
     return false;
   }
 }
-
-Future<bool>? _offer;
-
-/// Whether this install shows the APK download page. Read once per process: the installer cannot change while it runs.
-Future<bool> apkDownloadOffered() => _offer ??= _readApkDownloadOffer();
-
-@visibleForTesting
-void resetApkDownloadOffer() => _offer = null;
