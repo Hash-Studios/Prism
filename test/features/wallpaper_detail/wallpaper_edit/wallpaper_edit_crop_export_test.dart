@@ -36,6 +36,13 @@ Future<ui.Image> leftRedRightBlue() =>
 Future<ui.Image> topRedBottomBlue() =>
     paintRects(30, 60, [(const Rect.fromLTWH(0, 0, 30, 30), _red), (const Rect.fromLTWH(0, 30, 30, 30), _blue)]);
 
+Color _patternColor(int x, int y) => Color.fromARGB(255, 20 + x * 25, 30 + y * 35, 40 + x * 11 + y * 7);
+
+Future<ui.Image> oddPatternImage() => paintRects(7, 5, [
+  for (int y = 0; y < 5; y++)
+    for (int x = 0; x < 7; x++) (Rect.fromLTWH(x.toDouble(), y.toDouble(), 1, 1), _patternColor(x, y)),
+]);
+
 Future<_Decoded> decodePng(Uint8List png) async {
   final ui.Codec codec = await ui.instantiateImageCodec(png);
   try {
@@ -201,6 +208,48 @@ void main() {
     });
   });
 
+  testWidgets('odd asymmetric crop pixels map exactly for every turn', (tester) async {
+    await tester.runAsync(() async {
+      final ui.Image source = await oddPatternImage();
+      try {
+        for (int turns = 0; turns < 4; turns++) {
+          CropSpec crop = spec(
+            7,
+            5,
+          ).withPreset(CropPreset.free).resized(CropCorner.topLeft, 1, 1).resized(CropCorner.bottomRight, -1, -1);
+          for (int i = 0; i < turns; i++) {
+            crop = crop.rotated();
+          }
+          final _Decoded out = await renderAndDecode(source, crop: crop);
+          expect(crop.sourceRect, const PixelRect(1, 1, 5, 3), reason: 'turns=$turns');
+          expect((out.width, out.height), (crop.outputWidth, crop.outputHeight), reason: 'turns=$turns');
+          for (int y = 0; y < out.height; y++) {
+            for (int x = 0; x < out.width; x++) {
+              final (int sx, int sy) = switch (turns) {
+                0 => (1 + x, 1 + y),
+                1 => (1 + y, 3 - x),
+                2 => (5 - x, 3 - y),
+                _ => (5 - y, 1 + x),
+              };
+              final int argb = _patternColor(sx, sy).toARGB32();
+              final List<int> actual = rgbaAt(out, x, y);
+              final List<int> expected = [(argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF, 0xFF];
+              for (int channel = 0; channel < 4; channel++) {
+                expect(
+                  actual[channel],
+                  closeTo(expected[channel], 3),
+                  reason: 'turns=$turns at $x,$y channel=$channel',
+                );
+              }
+            }
+          }
+        }
+      } finally {
+        source.dispose();
+      }
+    });
+  });
+
   testWidgets('filters run on the cropped area', (tester) async {
     await tester.runAsync(() async {
       final ui.Image source = await leftRedRightBlue();
@@ -229,6 +278,20 @@ void main() {
             WallpaperAdjustments.none,
             crop: spec(41, 20).withPreset(CropPreset.square),
           ),
+          throwsStateError,
+        );
+      } finally {
+        source.dispose();
+      }
+    });
+  });
+
+  testWidgets('an identity crop for another source size throws', (tester) async {
+    await tester.runAsync(() async {
+      final ui.Image source = await leftRedRightBlue();
+      try {
+        await expectLater(
+          renderEditedPng(source, const <WallpaperFilter>[], WallpaperAdjustments.none, crop: spec(41, 20)),
           throwsStateError,
         );
       } finally {

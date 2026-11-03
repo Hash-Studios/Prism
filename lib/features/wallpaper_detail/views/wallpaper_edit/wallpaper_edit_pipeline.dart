@@ -125,12 +125,12 @@ Future<Uint8List> renderEditedPng(
   double? previewPixelShortSide,
   double deviceLongSidePx = 0,
 }) async {
-  final CropSpec? applied = crop == null || crop.isIdentity ? null : crop;
-  if (applied != null && (applied.sourceWidth != source.width || applied.sourceHeight != source.height)) {
+  if (crop != null && (crop.sourceWidth != source.width || crop.sourceHeight != source.height)) {
     throw StateError(
-      'Crop is for ${applied.sourceWidth}x${applied.sourceHeight}, source is ${source.width}x${source.height}',
+      'Crop is for ${crop.sourceWidth}x${crop.sourceHeight}, source is ${source.width}x${source.height}',
     );
   }
+  final CropSpec? applied = crop == null || crop.isIdentity ? null : crop;
   final ({int width, int height}) size = applied == null
       ? exportSize(source.width, source.height, deviceLongSidePx: deviceLongSidePx)
       : (width: applied.outputWidth, height: applied.outputHeight);

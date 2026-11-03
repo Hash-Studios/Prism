@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -24,6 +25,17 @@ const String _mediaChannel = 'dev.flutter.pigeon.Prism.PrismMediaHostApi.saveMed
 const MethodChannel _toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
 const MethodChannel _pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
 const String _timeoutMessage = 'Saving took too long. Try a smaller crop or fewer filters.';
+const String _tinyJpeg =
+    '/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYwLjMxLjEwMgD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYHBwcICAgHBwcGBgcH'
+    'CAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xACBAAEBAQEBAAAAAAAAAAAAAAAABgUIBwEBAQEBAQEBAQAAAAAAAAAAAAcGBQgDAgEQAQAABwEA'
+    'AAAAAAAAAAAAAACj42RlFhfkpBEAAQEDCAYIBgMBAAAAAAAAAAIEAwE1MnJ0sbMFGJQW0RETEhdVVmVkohSjgQcVMTQhCEFRBv/AABEIACgA'
+    'UAMBEgACEgADEgD/2gAMAwEAAhEDEQA/AIsZQF/AAAAAAAAAH8VMVRVYFTFUVWHxxGT2urvrtQxGT2urvrtR6SMvGcqkq0RnKpKtPDzV+c'
+    '311rvlhq/Ob6613ywAPwAAAAAAAADx/KqOPJY6+ZZo9pHmjJ2lXPT2YWPUC9ITsJwbGVUceSx0oyzR7SPNGTtKuUfMLHqBekJ2E4NjKq'
+    'OPJY6UZZo9pHmjJ2lXKPmFj1AvSE7CcGxlVHHksdKMs0e0jzRk7SrlHzCx6gXpCdhODYyqjjyWOkjT/GuLhmfvdY1x5HTxe70yf3ypjH'
+    '/SqYnJrbVn92oor/5/xaHLxz9BWnioU73+oh+ueHLv+39bydQnIpJtOn9c3PydKmeIWn/ovTtTQ6izwjw3z1G/m+/KuMN/xOZicpNtZf3ij'
+    'kvfkbxnz599d5eM9eP+XgzeKqK93w3m+hNRRTYTOubn5OlTOhrP4bzHIMB0E9/eyb8mdc3PydKmdfWfw3mOQYDoJ7+9k35M65ufk6VM6'
+    '+s/hvMcgwHQT397JvyZ1zc/J0qZ19Z/DeY5BgOgnv72TfnHQ9/gy4AAAAAAAAA+GJya21Z/dqGJya21Z/dqEJyKSbRCcikm07FHg7E5Sbay'
+    '/vFDE5Sbay/vFGohNRRTYITUUU2AfAAAAAAAAAAH/9k=';
 
 class _Decoded {
   const _Decoded(this.width, this.height, this.centre);
@@ -165,13 +177,13 @@ void main() {
     directory.deleteSync(recursive: true);
   });
 
-  Future<File> openEditor(WidgetTester tester) async {
+  Future<File> openEditor(WidgetTester tester, {String fileName = 'source.png', List<int>? sourceBytes}) async {
     tester.view.physicalSize = const Size(800, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    final Uint8List png = (await tester.runAsync(_sourcePng))!;
-    final File source = File('${directory.path}/source.png')..writeAsBytesSync(png);
+    final List<int> bytes = sourceBytes ?? (await tester.runAsync(_sourcePng))!;
+    final File source = File('${directory.path}/$fileName')..writeAsBytesSync(bytes);
     await tester.pumpWidget(_screenHost(source.path));
     await _waitForEditor(tester);
     return source;
@@ -284,10 +296,12 @@ void main() {
     final originalShare = WallpaperFilterScreen.share;
     addTearDown(() => WallpaperFilterScreen.share = originalShare);
     final List<String> sharedPaths = <String>[];
+    final List<String?> sharedMimeTypes = <String?>[];
     final List<Uint8List> sharedBytes = <Uint8List>[];
     WallpaperFilterScreen.share = (params) async {
       final String path = params.files!.single.path;
       sharedPaths.add(path);
+      sharedMimeTypes.add(params.files!.single.mimeType);
       sharedBytes.add(File(path).readAsBytesSync());
       return const ShareResult('', ShareResultStatus.success);
     };
@@ -302,36 +316,44 @@ void main() {
     final _Decoded decoded = await _decode(tester, sharedBytes.single);
     expect(decoded.width, 40);
     expect(decoded.height, 40);
+    expect(sharedMimeTypes.single, 'image/png');
   });
 
   testWidgets('share without any edit sends the source file unchanged', (tester) async {
     final originalShare = WallpaperFilterScreen.share;
     addTearDown(() => WallpaperFilterScreen.share = originalShare);
     final List<String> sharedPaths = <String>[];
+    final List<String?> sharedMimeTypes = <String?>[];
     WallpaperFilterScreen.share = (params) async {
       sharedPaths.add(params.files!.single.path);
+      sharedMimeTypes.add(params.files!.single.mimeType);
       return const ShareResult('', ShareResultStatus.success);
     };
 
-    final File source = await openEditor(tester);
+    final File source = await openEditor(tester, fileName: 'source.img', sourceBytes: base64Decode(_tinyJpeg));
 
     await tester.tap(find.byTooltip('Share'));
     await waitForRealIo(tester, () => sharedPaths.isNotEmpty, reason: 'share called');
     await _waitForIdle(tester);
 
     expect(sharedPaths.single, source.path);
+    expect(sharedMimeTypes.single, 'image/*');
   });
 
-  testWidgets('a render past the export time limit shows a toast and re-enables Download', (tester) async {
+  testWidgets('a timed-out render blocks duplicate exports until the late render finishes', (tester) async {
     final originalRender = WallpaperFilterScreen.renderFile;
     final originalLimit = WallpaperFilterScreen.exportTimeLimit;
     addTearDown(() {
       WallpaperFilterScreen.renderFile = originalRender;
       WallpaperFilterScreen.exportTimeLimit = originalLimit;
     });
+    final Completer<Uint8List> lateRender = Completer<Uint8List>();
+    int renderCalls = 0;
     WallpaperFilterScreen.renderFile =
-        (path, {required stack, required adjustments, crop, previewPixelShortSide, deviceLongSidePx = 0}) =>
-            Completer<Uint8List>().future;
+        (path, {required stack, required adjustments, crop, previewPixelShortSide, deviceLongSidePx = 0}) {
+          renderCalls++;
+          return lateRender.future;
+        };
     WallpaperFilterScreen.exportTimeLimit = const Duration(milliseconds: 50);
 
     await openEditor(tester);
@@ -346,13 +368,21 @@ void main() {
     );
     expect(saved, isEmpty);
 
+    await tester.tap(find.byTooltip('Download'), warnIfMissed: false);
+    await tester.pump();
+    expect(renderCalls, 1);
+    expect(tester.widget<IconButton>(_downloadButton()).onPressed, isNull);
+
+    lateRender.complete((await tester.runAsync(_sourcePng))!);
     await waitForRealIo(
       tester,
       () => _downloadButton().evaluate().isNotEmpty && tester.widget<IconButton>(_downloadButton()).onPressed != null,
-      reason: 'Download enabled after timeout',
+      reason: 'Download enabled after late render settles',
       pumpDuration: const Duration(milliseconds: 20),
     );
-    expect(tester.widget<IconButton>(_downloadButton()).onPressed, isNotNull);
+    expect(renderCalls, 1);
+    expect(saved, isEmpty);
+    expect(Directory('${directory.path}/prism_edit').existsSync(), isFalse);
   });
 
   testWidgets('crop alone does not charge a non-premium user', (tester) async {

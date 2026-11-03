@@ -66,12 +66,15 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   static const int _cropTab = 2;
   late final TabController _tabs = TabController(length: 3, vsync: this)..addListener(_onTabChanged);
   CropSpec? _crop;
+  int _sourceLoadGeneration = 0;
   bool _cropTabShown = false;
   final List<File> _sharedFiles = <File>[];
+  final Set<String> _ownedExportDirectories = <String>{};
   final List<WallpaperFilter> _stack = <WallpaperFilter>[];
   WallpaperAdjustments _adjustments = WallpaperAdjustments.none;
   final Map<KernelEffect, ui.ImageFilter> _kernelThumbFilters = <KernelEffect, ui.ImageFilter>{};
-  late final ImageProvider _thumbProvider = ResizeImage(FileImage(File(widget.filePath)), width: 160);
+  final Set<int> _sourceDecodeWidths = <int>{};
+  ImageProvider get _thumbProvider => ResizeImage(FileImage(File(widget.filePath)), width: 160);
   Size? _imageSize;
   bool _loadFailed = false;
   bool _previewLoaded = false;
@@ -80,6 +83,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   bool _busy = false;
   bool _premiumFilterUnlockedForSession = false;
   double? _previewPixelsPerSourcePixel;
+  Future<Uint8List>? _pendingRender;
 
   @override
   void dispose() {
@@ -108,17 +112,34 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
     );
   }
 
+  @override
+  void didUpdateWidget(covariant WallpaperFilterScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.filePath == widget.filePath) return;
+    _sourceLoadGeneration++;
+    _sourceDecodeWidths.clear();
+    setState(() {
+      _crop = null;
+      _imageSize = null;
+      _loadFailed = false;
+      _previewLoaded = false;
+      _previewPixelsPerSourcePixel = null;
+      _stack.clear();
+      _adjustments = WallpaperAdjustments.none;
+      _comparing = false;
+    });
+    unawaited(_readImageSize());
+  }
+
   Future<void> _readImageSize() async {
+    final int generation = ++_sourceLoadGeneration;
+    final String path = widget.filePath;
     ui.ImmutableBuffer? buffer;
     ui.ImageDescriptor? descriptor;
     try {
-      final Uint8List bytes = await File(widget.filePath).readAsBytes();
-      if (!mounted) return;
-      buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      buffer = await ui.ImmutableBuffer.fromFilePath(path);
       descriptor = await ui.ImageDescriptor.encoded(buffer);
-      if (!mounted) {
-        return;
-      }
+      if (!mounted || generation != _sourceLoadGeneration) return;
       final int width = descriptor.width;
       final int height = descriptor.height;
       final Size screen = MediaQuery.sizeOf(context);
@@ -130,6 +151,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
         }
       });
     } catch (error, stackTrace) {
+      if (generation != _sourceLoadGeneration) return;
       logger.w('Could not read wallpaper for editing', error: error, stackTrace: stackTrace);
       if (mounted) {
         setState(() => _loadFailed = true);
@@ -151,7 +173,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   /// Filters and adjustments cost coins. A crop alone does not: the source already took the same grant as Download.
   bool get _selectedFilterNeedsPremiumSpend => _isFiltered;
 
-  bool get _editorReady => !_loadFailed && _previewLoaded && _previewPixelsPerSourcePixel != null;
+  bool get _editorReady =>
+      !_loadFailed && _previewLoaded && _previewPixelsPerSourcePixel != null && _pendingRender == null;
 
   void _toggleFilter(WallpaperFilter filter) {
     PrismHaptics.selection();
@@ -162,13 +185,22 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
     });
   }
 
-  void _retryLoad() {
+  Future<void> _retryLoad() async {
+    final int generation = ++_sourceLoadGeneration;
+    final String path = widget.filePath;
+    final Set<int> decodeWidths = <int>{..._sourceDecodeWidths, 160};
+    _sourceDecodeWidths.clear();
     setState(() {
       _loadFailed = false;
       _previewLoaded = false;
       _imageSize = null;
+      _crop = null;
+      _previewPixelsPerSourcePixel = null;
     });
-    unawaited(_readImageSize());
+    // A new Image widget key does not invalidate FileImage's path-based resized cache keys.
+    await Future.wait(decodeWidths.map((width) => ResizeImage(FileImage(File(path)), width: width).evict()));
+    if (!mounted || generation != _sourceLoadGeneration) return;
+    await _readImageSize();
   }
 
   void _reset() {
@@ -208,6 +240,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   /// Writes the edit to a PNG in a temporary folder of its own and returns it, or the source when nothing changed.
   /// Throws [EditExportTimedOut] when the render runs past [WallpaperFilterScreen.exportTimeLimit].
   Future<File> saveFilteredImage() async {
+    final String sourcePath = widget.filePath;
+    final int sourceGeneration = _sourceLoadGeneration;
+    bool sourceIsCurrent() => mounted && sourceGeneration == _sourceLoadGeneration;
     final List<WallpaperFilter> stack = List<WallpaperFilter>.of(_stack);
     final WallpaperAdjustments adjustments = _adjustments;
     final CropSpec? crop = _crop;
@@ -216,9 +251,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
     if (stack.isEmpty && adjustments.isNone && (crop == null || crop.isIdentity)) {
       return File(widget.filePath);
     }
-    final Uint8List png = await withExportTimeLimit(
-      WallpaperFilterScreen.renderFile(
-        widget.filePath,
+    Future<Uint8List>? rendering = _pendingRender;
+    if (rendering == null) {
+      final Future<Uint8List> activeRender = WallpaperFilterScreen.renderFile(
+        sourcePath,
         stack: stack,
         adjustments: adjustments,
         crop: crop,
@@ -226,16 +262,28 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
             ? null
             : math.min(crop.outputWidth, crop.outputHeight) * pixelsPerSourcePixel,
         deviceLongSidePx: screenPixels.longestSide,
-      ),
-      limit: WallpaperFilterScreen.exportTimeLimit,
-    );
-    if (!mounted) {
+      );
+      rendering = activeRender;
+      _pendingRender = activeRender;
+      unawaited(
+        activeRender.then<void>(
+          (_) => _finishPendingRender(activeRender),
+          onError: (Object _, StackTrace _) => _finishPendingRender(activeRender),
+        ),
+      );
+    }
+    final Future<Uint8List> activeRender = rendering;
+    final Uint8List png = await withExportTimeLimit(activeRender, limit: WallpaperFilterScreen.exportTimeLimit);
+    if (!sourceIsCurrent()) {
       throw StateError('Wallpaper editor closed before export completed');
     }
     final Directory exportBase = Directory('${(await getTemporaryDirectory()).path}/prism_edit');
+    if (!sourceIsCurrent()) throw StateError('Wallpaper editor source changed before export completed');
     await exportBase.create(recursive: true);
     final Directory exportDirectory = await exportBase.createTemp('export_');
-    if (!mounted) {
+    _ownedExportDirectories.add(exportDirectory.path);
+    if (!sourceIsCurrent()) {
+      _ownedExportDirectories.remove(exportDirectory.path);
       await exportDirectory.delete(recursive: true);
       throw StateError('Wallpaper editor closed before export completed');
     }
@@ -243,18 +291,24 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
     try {
       await file.writeAsBytes(png);
     } catch (_) {
-      await exportDirectory.delete(recursive: true);
+      await _deleteEditedFile(file);
       rethrow;
     }
-    if (!mounted) {
-      await exportDirectory.delete(recursive: true);
+    if (!sourceIsCurrent()) {
+      await _deleteEditedFile(file);
       throw StateError('Wallpaper editor closed before export completed');
     }
     return file;
   }
 
+  void _finishPendingRender(Future<Uint8List> rendering) {
+    if (!identical(_pendingRender, rendering)) return;
+    _pendingRender = null;
+    if (mounted) setState(() {});
+  }
+
   Future<void> _deleteEditedFile(File file) async {
-    if (file.path == widget.filePath) return;
+    if (!_ownedExportDirectories.remove(file.parent.path)) return;
     try {
       await file.parent.delete(recursive: true);
     } catch (_) {}
@@ -291,7 +345,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
 
   /// [action] is the export. It runs inside the coin gate and returns false when it failed, so the gate attempts a refund.
   Future<void> _runWithPremiumFilterGate(Future<bool> Function() action, {required String sourceTag}) async {
+    final int sourceGeneration = _sourceLoadGeneration;
+    bool sourceIsCurrent() => mounted && sourceGeneration == _sourceLoadGeneration;
     if (!await requireSignedInAction(context) || !mounted) return;
+    if (!sourceIsCurrent()) return;
     final String owner = app_state.prismUser.id;
     if (!_selectedFilterNeedsPremiumSpend || app_state.prismUser.premium || _premiumFilterUnlockedForSession) {
       await action();
@@ -314,8 +371,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
         ),
         upsellSource: 'premium_filter_watch_ad',
         upgradeSource: 'premium_filter_low_balance',
-        isMounted: () => mounted && app_state.prismUser.loggedIn && owner == app_state.prismUser.id,
-        perform: action,
+        isMounted: () => sourceIsCurrent() && app_state.prismUser.loggedIn && owner == app_state.prismUser.id,
+        perform: () => sourceIsCurrent() ? action() : Future<bool>.value(false),
         creditAfterUnmount: true,
         choose: _choosePremiumFilterAction,
         failureLabel: context.l10n.economyExportFailedLabel,
@@ -371,14 +428,18 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   }
 
   Future<bool> _handleDownloadAction() async {
-    if (!await requireSignedInAction(context) || !mounted) return false;
+    if (!mounted || !app_state.prismUser.loggedIn) return false;
     final String owner = app_state.prismUser.id;
+    final int sourceGeneration = _sourceLoadGeneration;
     final AppLocalizations l10n = context.l10n;
     File? imageFile;
     try {
       toasts.success(l10n.wallpaperProcessing, haptic: false);
       imageFile = await saveFilteredImage();
-      if (!mounted || !app_state.prismUser.loggedIn || owner != app_state.prismUser.id) {
+      if (!mounted ||
+          _sourceLoadGeneration != sourceGeneration ||
+          !app_state.prismUser.loggedIn ||
+          owner != app_state.prismUser.id) {
         return false;
       }
       final request = SaveMediaRequest(link: imageFile.path, isLocalFile: true, kind: SaveMediaKind.wallpaper);
@@ -420,8 +481,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   /// Returns false when the render or the wallpaper set failed, or the account changed. Closing the target sheet is
   /// not a failure.
   Future<bool> _handleSetAction() async {
-    if (!await requireSignedInAction(context) || !mounted) return false;
+    if (!mounted || !app_state.prismUser.loggedIn) return false;
     final String owner = app_state.prismUser.id;
+    final int sourceGeneration = _sourceLoadGeneration;
     final AppLocalizations l10n = context.l10n;
     File? imageFile;
     try {
@@ -435,7 +497,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
       toasts.error(l10n.wallpaperGenericError);
       return false;
     }
-    if (!mounted || !app_state.prismUser.loggedIn || owner != app_state.prismUser.id) {
+    if (!mounted ||
+        _sourceLoadGeneration != sourceGeneration ||
+        !app_state.prismUser.loggedIn ||
+        owner != app_state.prismUser.id) {
       await _deleteEditedFile(imageFile);
       return false;
     }
@@ -450,7 +515,12 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
               SetWallpaperFlow.openStudio(screenContext, url: path, entryPoint: 'wallpaper_filter'),
         ),
       );
-      if (!mounted || !app_state.prismUser.loggedIn || owner != app_state.prismUser.id) return false;
+      if (!mounted ||
+          _sourceLoadGeneration != sourceGeneration ||
+          !app_state.prismUser.loggedIn ||
+          owner != app_state.prismUser.id) {
+        return false;
+      }
       if (choice == null) return true;
       final WallpaperSetResult result = await _setWallpaper(path, choice);
       if (!result.isFailure) _trackCropApplied();
@@ -466,8 +536,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
 
   /// Shares the edited file. The file stays until the editor closes, because the receiving app may read it late.
   Future<bool> _handleShareAction() async {
-    if (!await requireSignedInAction(context) || !mounted) return false;
+    if (!mounted || !app_state.prismUser.loggedIn) return false;
     final String owner = app_state.prismUser.id;
+    final String sourcePath = widget.filePath;
+    final int sourceGeneration = _sourceLoadGeneration;
     final AppLocalizations l10n = context.l10n;
     final RenderObject? box = context.findRenderObject();
     final Rect origin = box is RenderBox && box.hasSize ? box.localToGlobal(Offset.zero) & box.size : Rect.zero;
@@ -475,11 +547,17 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
     try {
       toasts.success(l10n.wallpaperProcessing, haptic: false);
       imageFile = await saveFilteredImage();
-      if (imageFile.path != widget.filePath) _sharedFiles.add(imageFile);
-      if (!mounted || !app_state.prismUser.loggedIn || owner != app_state.prismUser.id) return false;
+      if (!mounted ||
+          _sourceLoadGeneration != sourceGeneration ||
+          !app_state.prismUser.loggedIn ||
+          owner != app_state.prismUser.id) {
+        await _deleteEditedFile(imageFile);
+        return false;
+      }
+      if (_ownedExportDirectories.contains(imageFile.parent.path)) _sharedFiles.add(imageFile);
       await WallpaperFilterScreen.share(
         ShareParams(
-          files: <XFile>[XFile(imageFile.path, mimeType: 'image/png')],
+          files: <XFile>[XFile(imageFile.path, mimeType: imageFile.path == sourcePath ? 'image/*' : 'image/png')],
           sharePositionOrigin: origin.isEmpty ? const Rect.fromLTWH(1, 1, 1, 1) : origin,
         ),
       );
@@ -627,8 +705,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   /// user saw them.
   void _notePreviewScale(double pixelsPerSourcePixel) {
     if (_previewPixelsPerSourcePixel == pixelsPerSourcePixel) return;
+    final int generation = _sourceLoadGeneration;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _previewPixelsPerSourcePixel != pixelsPerSourcePixel) {
+      if (mounted && generation == _sourceLoadGeneration && _previewPixelsPerSourcePixel != pixelsPerSourcePixel) {
         setState(() => _previewPixelsPerSourcePixel = pixelsPerSourcePixel);
       }
     });
@@ -636,24 +715,29 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
 
   /// The source decoded at about the width it is drawn at, in steps of 256 pixels so small changes do not decode again.
   Widget _sourceImage(CropSpec crop, double drawnSourceWidthPx) {
+    final int generation = _sourceLoadGeneration;
     final int needed = math.max(1, drawnSourceWidthPx.ceil());
     final int decodeWidth = math.min(crop.sourceWidth, ((needed + 255) ~/ 256) * 256);
+    _sourceDecodeWidths.add(decodeWidth);
     return Image.file(
       File(widget.filePath),
+      key: ValueKey<String>('${widget.filePath}:$_sourceLoadGeneration'),
       fit: BoxFit.fill,
       cacheWidth: decodeWidth,
       gaplessPlayback: true,
       frameBuilder: (context, child, frame, synchronous) {
         if (frame != null && !_previewLoaded) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && !_previewLoaded) setState(() => _previewLoaded = true);
+            if (mounted && generation == _sourceLoadGeneration && !_previewLoaded) {
+              setState(() => _previewLoaded = true);
+            }
           });
         }
         return child;
       },
       errorBuilder: (_, _, _) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && !_loadFailed) {
+          if (mounted && generation == _sourceLoadGeneration && !_loadFailed) {
             setState(() {
               _loadFailed = true;
               _previewLoaded = false;

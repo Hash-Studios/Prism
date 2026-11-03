@@ -60,9 +60,9 @@ The export applies the crop first. It reads the kept area from the source in sou
 
 - With a crop, the output is the kept area at full resolution. The export does not downscale.
 - Without a crop, the long side is capped at 4096 px (`maxExportLongSide`). If the device screen long side is larger, the cap is the screen size.
-- The source is decoded once. Peak memory is about the source plus the output, as RGBA.
+- The source is decoded once. Rendering and PNG encoding can allocate more full-image buffers, including the output and encoded PNG. Cropped exports are not capped, so large sources or crop outputs can use substantial memory and may run out of memory.
 - Decode, render and PNG encode run on engine threads. The UI thread only waits.
-- The export stops after 30 s (`editExportTimeLimit`). It then shows "Saving took too long. Try a smaller crop or fewer filters."
+- After 30 s (`editExportTimeLimit`), the action reports that saving took too long. This timeout does not cancel the render. Export actions stay disabled until the render settles. If it finishes after the timeout, the bytes are discarded and no temporary export file is created.
 - The decoder applies EXIF orientation first. The crop uses that oriented space. The output PNG has no EXIF.
 
 The export runs in `renderEditedFile` and `renderEditedPng` in `wallpaper_edit_pipeline.dart`.
@@ -71,8 +71,8 @@ The export runs in `renderEditedFile` and `renderEditedPng` in `wallpaper_edit_p
 
 Each action uses the cropped and filtered file.
 
-- **Download** saves the edited file.
-- **Share** sends the edited file. The temporary file stays until the editor closes. The receiving app can read it late.
+- **Download** saves the edited file. Its temporary export is removed after the action.
+- **Share** sends the edited file. Its temporary file stays until the editor closes so the receiving app can read it late; the editor then removes its owned export. Cleanup only removes files created by the editor, never the source wallpaper.
 - **Set** opens the Set screen with the edited file. Its **Adjust position and preview** row opens the Position studio on that file. If the user places the wall in the studio, **Set** uses the placed file.
 
 ## Crop and placement are different
@@ -95,8 +95,8 @@ Use crop for a new file that you keep or share. Use placement to frame a wall on
 
 - The frame cannot leave the image.
 - The minimum side is a tenth of the short side of the image.
-- The crop lasts for one editor session. It resets when the editor opens again or when the image size changes.
-- Large images use more memory. See the memory note in Export.
+- The crop lasts for one editor session. It resets when the editor opens again, when the source file changes, when the image size changes, or when the user retries a failed image load.
+- Large sources and uncapped crop outputs can use substantial memory and may run out of memory. See the memory note in Export.
 - VoiceOver: each preset is a button. The presets alone give a usable crop.
 - VoiceOver: each corner handle has a label. Swipe up or down on a handle to grow or shrink the frame by 5 percent of the short side.
 

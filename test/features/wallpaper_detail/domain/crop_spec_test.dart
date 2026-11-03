@@ -154,6 +154,24 @@ void main() {
         }
       }
     });
+
+    test('minimum side holds through all turns and extreme gestures on normal and tiny images', () {
+      for (final (int width, int height) in [(1001, 1999), (3, 7), (1, 1)]) {
+        for (final CropPreset preset in CropPreset.values) {
+          for (int turns = 0; turns < 4; turns++) {
+            for (final CropCorner corner in CropCorner.values) {
+              CropSpec s = spec(width, height).withPreset(preset);
+              for (int i = 0; i < turns; i++) {
+                s = s.rotated();
+              }
+              s = s.resized(corner, -corner.sx * 10000, -corner.sy * 10000).moved(10000, -10000);
+              expect(s.rect.width, greaterThanOrEqualTo(s.minSide), reason: '$width x $height $preset $turns $corner');
+              expect(s.rect.height, greaterThanOrEqualTo(s.minSide), reason: '$width x $height $preset $turns $corner');
+            }
+          }
+        }
+      }
+    });
   });
 
   group('rotate', () {
