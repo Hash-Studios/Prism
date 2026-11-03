@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = 'com.hash.prism'
 REPO = 'Hash-Studios/Prism'
 # Play Console > Test and release > App integrity > App signing key certificate > SHA-256, as lowercase hex.
-PLAY_APP_SIGNING_CERT_SHA256 = ''
+PLAY_APP_SIGNING_CERT_SHA256 = '46f7ad7fc24ba1f32253a872c172c267d40e961b94143fb0a1b8205b9783052f'
 DEFAULT_CREDENTIALS = ROOT / 'android/google-play-console.json'
 PUBLISHER_API = 'https://androidpublisher.googleapis.com/androidpublisher/v3/applications'
 SCOPE = 'https://www.googleapis.com/auth/androidpublisher'
@@ -82,7 +82,9 @@ def normalize_sha256(value: str) -> str:
 
 
 def signer_digests(apksigner_output: str) -> set[str]:
-    return {d.lower() for d in re.findall(r'certificate SHA-256 digest: ([0-9a-fA-F]{64})', apksigner_output)}
+    """App signer certificates. Skips the source stamp, a second certificate that Play adds to its APKs."""
+    return {d.lower() for d in re.findall(r'^(?!Source Stamp)[^\n]*certificate SHA-256 digest: ([0-9a-fA-F]{64})$',
+                                          apksigner_output, re.MULTILINE)}
 
 
 def badging(aapt2_output: str) -> tuple[str, int, str]:
@@ -122,8 +124,8 @@ def check_apk(apk: Path, tag: Tag, expected_cert: str | None, tools: Tools) -> s
     signer_count = re.findall(r'^Number of signers: (\d+)$', output, re.MULTILINE)
     digests = signer_digests(output)
     if signer_count != ['1'] or len(digests) != 1:
-        actual = signer_count[0] if len(signer_count) == 1 else str(len(digests))
-        raise ReleaseError(f'APK has {actual} signing certificates, expected exactly 1.')
+        signers = signer_count[0] if len(signer_count) == 1 else 'unknown'
+        raise ReleaseError(f'APK has {signers} signers and {len(digests)} signing certificates, expected 1 of each.')
     cert = digests.pop()
     if expected_cert is not None and cert != expected_cert:
         raise ReleaseError(f'APK is signed by certificate {cert}, expected the Play app signing certificate '

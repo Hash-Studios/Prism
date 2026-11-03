@@ -82,13 +82,16 @@ def _cert_digest(keystore):
     return hashlib.sha256(der).hexdigest()
 
 
-def _build_apk(directory, name, keystore, version_code):
+def _build_apk(directory, name, keystore, version_code, stamp=None):
     manifest = directory / f'{name}-AndroidManifest.xml'
     manifest.write_text(MANIFEST.format(code=version_code))
     unsigned = directory / f'{name}-unsigned.apk'
     signed = directory / f'{name}.apk'
     _run([TOOLS.aapt2, 'link', '-I', ANDROID_JAR, '--manifest', manifest, '-o', unsigned])
-    _run([TOOLS.apksigner, 'sign', '--ks', keystore, '--ks-pass', f'pass:{PASSWORD}', '--out', signed, unsigned])
+    # Play adds a source stamp, signed by a Google key, to the APKs it generates.
+    stamp_args = ['--stamp-signer', '--ks', stamp, '--ks-pass', f'pass:{PASSWORD}'] if stamp else []
+    _run([TOOLS.apksigner, 'sign', '--ks', keystore, '--ks-pass', f'pass:{PASSWORD}', *stamp_args, '--out', signed,
+          unsigned])
     return signed
 
 
@@ -104,6 +107,7 @@ def setUpModule():
     FIXTURES['right_apk'] = _build_apk(directory, 'right', right, 359)
     FIXTURES['wrong_apk'] = _build_apk(directory, 'wrong', wrong, 359)
     FIXTURES['old_apk'] = _build_apk(directory, 'old', right, 358)
+    FIXTURES['stamped_apk'] = _build_apk(directory, 'stamped', right, 359, stamp=wrong)
 
 
 def tearDownModule():
@@ -147,6 +151,11 @@ class DigestTest(unittest.TestCase):
                 + '\nSigner #1 certificate SHA-256 digest: ' + 'a' * 64)
         self.assertEqual(public_apk.signer_digests(text), {'a' * 64})
 
+    def test_signer_digests_ignores_source_stamp(self):
+        text = ('V3.0 Signer: certificate SHA-256 digest: ' + 'a' * 64
+                + '\nSource Stamp Signer: certificate SHA-256 digest: ' + 'b' * 64)
+        self.assertEqual(public_apk.signer_digests(text), {'a' * 64})
+
     def test_signer_digests_keeps_each_distinct_certificate(self):
         text = ('Signer #1 certificate SHA-256 digest: ' + 'a' * 64
                 + '\nSigner #2 certificate SHA-256 digest: ' + 'b' * 64)
@@ -181,6 +190,11 @@ class SignatureCheckTest(unittest.TestCase):
     def test_check_apk_returns_digest_of_expected_signing_key(self):
         tag = public_apk.parse_tag(TAG)
         cert = public_apk.check_apk(FIXTURES['right_apk'], tag, FIXTURES['right_digest'], TOOLS)
+        self.assertEqual(cert, FIXTURES['right_digest'])
+
+    def test_check_apk_accepts_play_source_stamp(self):
+        tag = public_apk.parse_tag(TAG)
+        cert = public_apk.check_apk(FIXTURES['stamped_apk'], tag, FIXTURES['right_digest'], TOOLS)
         self.assertEqual(cert, FIXTURES['right_digest'])
 
     def test_check_apk_refuses_other_signing_key_and_names_both_digests(self):

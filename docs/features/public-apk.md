@@ -82,7 +82,8 @@ The script:
    the error type.
 3. Lists the generated APKs for the version code and picks the universal APK for the pinned certificate.
 4. Downloads it, then checks it with `apksigner verify --print-certs` and `aapt2 dump badging`. The APK must have
-   exactly one signing certificate, and its SHA-256 must equal the pinned Play app signing certificate. The package,
+   exactly one signing certificate, and its SHA-256 must equal the pinned Play app signing certificate. Play also adds
+   a source stamp, which has its own Google certificate. The check does not count it as a signer. The package,
    version name and version code must match the tag. A short download is deleted. Any difference stops the script
    before it attaches anything.
 5. Writes `prism-<version>-<code>.apk.sha256` in `sha256sum` format.
