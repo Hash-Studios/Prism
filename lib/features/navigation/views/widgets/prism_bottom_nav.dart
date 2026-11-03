@@ -18,6 +18,9 @@ class PrismBottomNav extends StatefulWidget {
 
   final Axis axis;
 
+  /// The pill length with every tab in it, the most it can hold.
+  static double get maxLength => NavTab.values.length * _PrismBottomNavState._slot + 8;
+
   @override
   State<PrismBottomNav> createState() => _PrismBottomNavState();
 }
