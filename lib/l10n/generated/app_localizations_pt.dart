@@ -12976,6 +12976,25 @@ class AppLocalizationsPt extends AppLocalizations {
   String get navMoreEditTabs => 'Editar abas';
 
   @override
+  String get layoutControlsHeader => 'Controles';
+
+  @override
+  String get layoutOneHanded => 'Controles para uma mão';
+
+  @override
+  String get layoutOneHandedFootnote =>
+      'Coloca seu perfil e suas notificações na barra inferior, ao alcance do polegar.';
+
+  @override
+  String get navAccount => 'Perfil e notificações';
+
+  @override
+  String navUnreadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count não lidas', one: '1 não lida');
+    return '$_temp0';
+  }
+
+  @override
   String wrappedTitle(String year) {
     return 'Prism Wrapped $year';
   }
@@ -26607,6 +26626,25 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get navMoreEditTabs => 'Editar abas';
+
+  @override
+  String get layoutControlsHeader => 'Controles';
+
+  @override
+  String get layoutOneHanded => 'Controles para uma mão';
+
+  @override
+  String get layoutOneHandedFootnote =>
+      'Coloca seu perfil e suas notificações na barra inferior, ao alcance do polegar.';
+
+  @override
+  String get navAccount => 'Perfil e notificações';
+
+  @override
+  String navUnreadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count não lidas', one: '1 não lida');
+    return '$_temp0';
+  }
 
   @override
   String wrappedTitle(String year) {

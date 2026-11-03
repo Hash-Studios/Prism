@@ -324,6 +324,13 @@ enum LayoutChangeSourceValue {
   String get wireValue => _snakeCase(name);
 }
 
+enum NotificationsEntrySourceValue {
+  top,
+  bottom;
+
+  String get wireValue => _snakeCase(name);
+}
+
 enum NotificationPreferenceValue {
   followers,
   posts,

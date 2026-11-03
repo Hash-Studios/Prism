@@ -20437,6 +20437,36 @@ abstract class AppLocalizations {
   /// **'Edit tabs'**
   String get navMoreEditTabs;
 
+  /// Header of the Layout page section with the one-handed controls switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Controls'**
+  String get layoutControlsHeader;
+
+  /// Switch on the Layout page. On, the profile and notifications buttons move from the top bar to the bottom bar.
+  ///
+  /// In en, this message translates to:
+  /// **'One-handed controls'**
+  String get layoutOneHanded;
+
+  /// Footnote under the one-handed controls switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Puts your profile and notifications in the bottom bar, in reach of your thumb.'**
+  String get layoutOneHandedFootnote;
+
+  /// Label and tooltip of the bottom bar button that opens a sheet with the profile and notifications, and the title of that sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile and notifications'**
+  String get navAccount;
+
+  /// Subtitle of the Notifications row in the profile sheet: how many notifications are unread.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 unread} other{{count} unread}}'**
+  String navUnreadCount(int count);
+
   /// Title of the Wrapped yearly recap screen and share card.
   ///
   /// In en, this message translates to:
