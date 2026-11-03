@@ -1,5 +1,14 @@
 ## Changelog
 
+### v3.19.0
+- Comment on wallpapers and talk with creators
+- Editors' Choice: a hand-picked row of our favourite walls
+- Switch between colour versions of a wallpaper with one tap
+- On iPhone, save a wallpaper as a Live Photo for your Lock Screen
+- One-handed mode moves your profile and notifications to the bottom bar
+- See who made each wall, and show or hide your Pro badge
+- Security and stability fixes
+
 ### v3.18.2
 - Make Prism yours: reorder or hide tabs and pick a grid size in Settings, Layout
 - Prism remembers the Home feed you were on
