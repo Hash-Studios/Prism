@@ -55,12 +55,19 @@ cd <main checkout> && GOOGLE_CLOUD_PROJECT=prism-wallpapers GCLOUD_PROJECT=prism
   sh -c 'cd <worktree>/functions && npm run studio:desktop-backfill -- --limit=5 --apply'
 ```
 
-### G4. Desktop companion backfill, remaining 124 walls (#783, paid, in progress)
+### G4. Desktop companion backfill, remaining walls (#783, paid, in progress)
 
 - 10:59: the first run was stopped by hand before it finished a wall. `planStudioBatch` plans 10 Studio candidates each day at 20:00 and uses the same $2 daily Studio budget. A backfill that uses up the budget before 20:00 makes those candidates fail with `budget_exhausted`. Wall `5BPVSQZJXR` stayed `generating`. The next run claims it again after 6 minutes, and the Worker does not charge for a stored generation again.
 - New schedule: a T3 scheduled task runs the backfill each night at 23:30, after the 20:00 batch. Each run uses only the budget that is left for that UTC day. The expected time is about 8 nights.
 - The task stops at the first error that is not `deferred`. When no walls are left, it runs `buildWebCatalog` and checks `/desktop-wallpapers`, then it disables itself.
 - Run log: `~/.deploy-train-2026-11/g4_runs.md` on the owner's Mac.
+- 2026-11-02 23:30 run: 1 `ready` (`2ZDAFWMYNN`, $0.0745). The run then stopped on `5BPVSQZJXR` with `worker 409 in_progress`, and the task was disabled.
+  - Cause: the manual stop at 10:59 cut off the Worker request for `5BPVSQZJXR` after it started. The Worker studio claim for that id stays `in_progress`.
+  - This is the documented fail-closed rule in `docs/features/studio.md`: after a provider request starts, an unknown outcome blocks the id, so the Worker never pays twice.
+  - The owner decided on 2026-11-03 to keep the rule and skip `5BPVSQZJXR`. That wall has no desktop companion.
+- From 2026-11-03, the task runs with `--start-after=5BPVSQZJXR`. All wall ids before it are done. A dry run confirmed that the next walls are `6KIMTJYYLD`, `7SYOLMVGSR` and `8DEVMDWHFO`.
+- Lesson: do not stop a running `--apply` backfill by hand. To limit spend, use `--limit=N` before the run starts.
+- Progress on 2026-11-03: 6 of 129 walls are `ready`, and 1 is skipped.
 
 ### G5 and G6. Not run
 
