@@ -9016,7 +9016,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperCropPresetFree => 'Livre';
 
   @override
-  String get wallpaperCropPresetPhone => 'Este telefone';
+  String get wallpaperCropPresetPhone => 'Este celular';
 
   @override
   String get wallpaperCropPresetPortrait => '9:16';
