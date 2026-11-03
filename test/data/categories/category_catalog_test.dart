@@ -37,6 +37,22 @@ void main() {
       expect(categories.last.hasPrismWalls, isTrue);
     });
 
+    test('reads the optional search query and trims it', () {
+      final categories = CategoryCatalog.decode('''
+[{"name":"Pastel","source":"pexels","imageUrl":"https://x/y.jpg","query":" pastel aesthetic "}]
+''')!;
+
+      expect(categories.single.searchQuery, 'pastel aesthetic');
+    });
+
+    test('uses the name as the search query when the query is not text', () {
+      final categories = CategoryCatalog.decode('''
+[{"name":"Pastel","source":"pexels","imageUrl":"https://x/y.jpg","query":7}]
+''')!;
+
+      expect(categories.single.searchQuery, 'Pastel');
+    });
+
     test('skips entries the feed cannot show', () {
       final categories = CategoryCatalog.decode('''
 [

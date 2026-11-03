@@ -37,8 +37,9 @@ const WALL_ID = /^[A-Za-z0-9_-]{1,200}$/;
 
 /** The browse categories (lib/data/categories/categories.dart) and the mood ids a request may carry as tags. */
 export const REQUEST_CATEGORIES = [
-  "AI Art", "Aesthetic", "Cyberpunk", "3D Render", "Gradient", "Minimal", "Dark", "Nature", "Landscape", "Space",
-  "Anime", "Neon", "Abstract", "Architecture", "Ocean", "Forest", "Galaxy", "Vintage", "Flowers", "Cars", "AMOLED",
+  "AI Art", "Aesthetic", "Pastel", "Cyberpunk", "Gaming", "3D Render", "Gradient", "Minimal", "Dark", "Nature",
+  "Landscape", "Space", "Anime", "Neon", "Abstract", "Architecture", "Ocean", "Forest", "Galaxy", "Vintage", "Flowers",
+  "Cars", "AMOLED",
 ];
 export const REQUEST_MOODS = ["dreamy", "dark_quiet", "bright_bold"];
 const REQUEST_TAGS = new Set([...REQUEST_CATEGORIES, ...REQUEST_MOODS]);

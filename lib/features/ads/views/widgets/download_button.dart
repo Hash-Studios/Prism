@@ -19,6 +19,7 @@ import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_desktop.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
@@ -58,6 +59,7 @@ class DownloadButton extends StatefulWidget {
     this.creatorName,
     this.onOpenDownloads,
     this.variant,
+    this.desktop,
     this.primary = false,
     this.labelled = false,
     this.duoReveal = false,
@@ -101,6 +103,10 @@ class DownloadButton extends StatefulWidget {
   /// each variation is its own purchase.
   final DownloadVariant? variant;
 
+  /// Saves the desktop version of the wall in place of the phone original. It has its own grant and its own name in
+  /// Downloads.
+  final WallDesktopVariant? desktop;
+
   /// Draws a compact accent button with a label instead of a round icon button.
   final bool primary;
 
@@ -135,6 +141,7 @@ class _DownloadTap {
     required this.ownerId,
     required this.isGuest,
     required this.duoReveal,
+    required this.desktop,
   });
 
   final String link;
@@ -154,6 +161,7 @@ class _DownloadTap {
   final String ownerId;
   final bool isGuest;
   final bool duoReveal;
+  final WallDesktopVariant? desktop;
 }
 
 class _DownloadButtonState extends State<DownloadButton> {
@@ -198,6 +206,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         oldWidget.contentId != widget.contentId ||
         oldWidget.wallpaperSource != widget.wallpaperSource ||
         oldWidget.variant?.key != widget.variant?.key ||
+        oldWidget.desktop != widget.desktop ||
         oldWidget.savedIdentity != widget.savedIdentity ||
         oldWidget.indexSource != widget.indexSource ||
         _savedOwner != app_state.prismUser.id) {
@@ -211,7 +220,11 @@ class _DownloadButtonState extends State<DownloadButton> {
     final String link = widget.link?.trim() ?? '';
     if (link.isEmpty && (widget.contentId?.trim().isEmpty ?? true)) return null;
     final original = _originalIdentity(link, widget.contentId);
-    return widget.savedIdentity ?? widget.variant?.identityOf(original) ?? original;
+    final WallDesktopVariant? desktop = widget.desktop;
+    return widget.savedIdentity ??
+        (desktop == null ? null : DownloadVariant.identityFor(original, 'desktop-${desktop.version}')) ??
+        widget.variant?.identityOf(original) ??
+        original;
   }
 
   String _originalIdentity(String link, String? id) => link.isEmpty ? '$id.jpg' : link;
@@ -390,6 +403,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         ownerId: app_state.prismUser.id,
         isGuest: _isGuest,
         duoReveal: widget.duoReveal,
+        desktop: widget.desktop,
       );
       _activeTap = tap;
       _attemptStarted = false;
@@ -416,7 +430,12 @@ class _DownloadButtonState extends State<DownloadButton> {
         ),
       );
       final bool serverAccess =
-          OriginalAccessService.requiresGrant(tap.link, tap.contentId, tap.wallpaperSource) ||
+          OriginalAccessService.requiresGrant(
+            tap.link,
+            tap.contentId,
+            tap.wallpaperSource,
+            desktop: tap.desktop != null,
+          ) ||
           ((tap.wallpaperSource == null ||
                   tap.wallpaperSource == WallpaperSource.unknown ||
                   tap.wallpaperSource == WallpaperSource.downloaded) &&
@@ -730,6 +749,8 @@ class _DownloadButtonState extends State<DownloadButton> {
       final quote = await OriginalAccessService.instance.quote(
         wallpaperId: contentId,
         action: OriginalAccessAction.download,
+        desktop: _tap.desktop != null,
+        desktopVersion: _tap.desktop?.version,
       );
       serverRequiredCoins = quote.requiredCoins;
       serverBalance = quote.currentBalance;
@@ -754,6 +775,8 @@ class _DownloadButtonState extends State<DownloadButton> {
                     action: OriginalAccessAction.download,
                     requestId: _tap.requestId,
                     maxCoins: serverRequiredCoins,
+                    desktop: _tap.desktop != null,
+                    desktopVersion: _tap.desktop?.version,
                   );
                   return CoinMutationResult(
                     success: true,
@@ -891,11 +914,15 @@ class _DownloadButtonState extends State<DownloadButton> {
       if (tap.contentId != null && tap.wallpaperSource == WallpaperSource.prism) {
         await OriginalAccessService.instance.complete(
           owner: tap.ownerId,
-          wallpaperId: tap.contentId!,
+          wallpaperId: OriginalAccessService.grantKey(
+            tap.contentId!,
+            desktop: tap.desktop != null,
+            desktopVersion: tap.desktop?.version,
+          ),
           action: OriginalAccessAction.download,
         );
       }
-      if (!prepared) {
+      if (!prepared && tap.desktop == null) {
         await _retainCompletedOriginal(
           assetStore,
           _originalIdentity(link, tap.contentId),
@@ -942,7 +969,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         id: contentId,
         source: wallpaperSource,
         ownerId: tap.ownerId,
-        original: !prepared && tap.indexSource == tap.wallpaperSource,
+        original: !prepared && tap.desktop == null && tap.indexSource == tap.wallpaperSource,
       );
     }
 

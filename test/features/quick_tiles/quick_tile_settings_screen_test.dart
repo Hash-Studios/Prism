@@ -7,6 +7,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/data/categories/category_catalog.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/quick_tiles/views/quick_tile_settings_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -147,6 +148,15 @@ void main() {
 
     expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'Diwali')).selected, isTrue);
     expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'Nature')).selected, isFalse);
+  });
+
+  testWidgets('the picker lists no desktop category, because the native tile searches by name', (tester) async {
+    fakeChannel(sdkInt: 32);
+    await pumpScreen(tester);
+
+    expect(CategoryCatalog.current.map((cat) => cat.name), contains('Desktop'));
+    expect(find.widgetWithText(PrismChip, 'Desktop'), findsNothing);
+    expect(find.widgetWithText(PrismChip, 'Nature'), findsOneWidget);
   });
 
   testWidgets('adds no extra chip for a category the list has', (tester) async {

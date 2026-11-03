@@ -107,6 +107,16 @@ void main() {
     );
   });
 
+  test('category_opened serializes the category and the entry surface', () {
+    const CategoryOpenedEvent collections = CategoryOpenedEvent(category: 'Pastel', entry: 'collections');
+    expect(collections.eventName, 'category_opened');
+    expect(collections.toWireParameters(), <String, Object?>{'category': 'Pastel', 'entry': 'collections'});
+
+    const CategoryOpenedEvent search = CategoryOpenedEvent(category: 'Gaming', entry: 'search');
+    expect(search.eventName, 'category_opened');
+    expect(search.toWireParameters(), <String, Object?>{'category': 'Gaming', 'entry': 'search'});
+  });
+
   group('provider-backed track dispatch', () {
     test('dispatches typed event via provider.logEvent', () async {
       final RecordingAnalyticsProvider provider = RecordingAnalyticsProvider();

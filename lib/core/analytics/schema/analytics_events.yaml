@@ -2980,6 +2980,14 @@ events:
       - name: category
         key: category
         type: string
+  - id: category_opened
+    fields:
+      - name: category
+        key: category
+        type: string
+      - name: entry
+        key: entry
+        type: string
   - id: followed_by_shown
     fields:
       - name: count

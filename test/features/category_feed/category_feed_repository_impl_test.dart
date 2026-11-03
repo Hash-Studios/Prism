@@ -538,7 +538,7 @@ void main() {
 
       expect(categories.firstWhere((category) => category.name == 'Nature').hasPrismWalls, isTrue);
       expect(categories.firstWhere((category) => category.name == 'Forest').hasPrismWalls, isFalse);
-      expect(categories.where((category) => category.hasPrismWalls), hasLength(18));
+      expect(categories.where((category) => category.hasPrismWalls), hasLength(20));
       final amoled = categories.singleWhere((category) => category.name == 'AMOLED');
       expect(amoled.source, WallpaperSource.wallhaven);
       expect(amoled.image, startsWith('https://images.pexels.com/photos/'));
@@ -560,6 +560,108 @@ void main() {
       expect(categories.first.image2, 'https://img/d.jpg');
       expect(categories.first.hasPrismWalls, isFalse);
       expect(categories.last.hasPrismWalls, isTrue);
+    });
+  });
+
+  group('Desktop category and provider queries', () {
+    late _MockPrism prism;
+    late _MockPexels pexels;
+
+    const CategoryEntity desktop = CategoryEntity(
+      name: 'Desktop',
+      source: WallpaperSource.prism,
+      searchType: CategorySearchType.desktop,
+      image: '',
+      image2: '',
+    );
+
+    PrismWallpaper desktopWall(int n) => PrismWallpaper(
+      core: WallpaperCore(
+        id: 'd$n',
+        source: WallpaperSource.prism,
+        fullUrl: 'https://prism.test/d$n.jpg',
+        thumbnailUrl: 'https://prism.test/d$n-thumb.jpg',
+      ),
+      firestoreDocumentId: 'doc-d$n',
+    );
+
+    setUp(() {
+      prism = _MockPrism();
+      pexels = _MockPexels();
+      repository = CategoryFeedRepositoryImpl(SettingsLocalDataSource(store), cache, prism, wallhaven, pexels);
+    });
+
+    test('getCategories hides Desktop when the desktop check returns 6 walls', () async {
+      when(
+        () => prism.fetchDesktopCompanions(),
+      ).thenAnswer((_) async => Result.success(<PrismWallpaper>[for (int n = 1; n <= 6; n++) desktopWall(n)]));
+
+      final categories = (await repository.getCategories()).data!;
+
+      expect(categories.map((category) => category.name), isNot(contains('Desktop')));
+    });
+
+    test('getCategories shows Desktop when the desktop check returns 12 walls', () async {
+      when(
+        () => prism.fetchDesktopCompanions(),
+      ).thenAnswer((_) async => Result.success(<PrismWallpaper>[for (int n = 1; n <= 12; n++) desktopWall(n)]));
+
+      final categories = (await repository.getCategories()).data!;
+
+      final CategoryEntity shown = categories.singleWhere((category) => category.name == 'Desktop');
+      expect(shown.searchType, CategorySearchType.desktop);
+      expect(shown.source, WallpaperSource.prism);
+    });
+
+    test('getCategories hides Desktop when the desktop check fails', () async {
+      when(
+        () => prism.fetchDesktopCompanions(),
+      ).thenAnswer((_) async => Result.error<List<PrismWallpaper>>(const ServerFailure('x')));
+
+      final categories = (await repository.getCategories()).data!;
+
+      expect(categories.map((category) => category.name), isNot(contains('Desktop')));
+    });
+
+    test('a Pexels category searches its query, not its name', () async {
+      const CategoryEntity pastel = CategoryEntity(
+        name: 'Pastel',
+        source: WallpaperSource.pexels,
+        searchType: CategorySearchType.search,
+        image: '',
+        image2: '',
+        query: 'pastel aesthetic',
+      );
+      when(
+        () => pexels.fetchFeed(
+          categoryName: any(named: 'categoryName'),
+          refresh: any(named: 'refresh'),
+        ),
+      ).thenAnswer((_) async => Result.success(<PexelsWallpaper>[]));
+      when(() => pexels.hasMoreForCategory(any(), paginationKey: any(named: 'paginationKey'))).thenReturn(false);
+
+      await repository.fetchCategoryFeed(category: pastel, refresh: true);
+
+      verify(() => pexels.fetchFeed(categoryName: 'pastel aesthetic', refresh: true)).called(1);
+      verify(() => pexels.hasMoreForCategory('pastel aesthetic')).called(1);
+    });
+
+    test('the Desktop feed refreshes from the first page, then passes the last wall doc id to load more', () async {
+      final List<PrismWallpaper> firstPage = <PrismWallpaper>[for (int n = 1; n <= 24; n++) desktopWall(n)];
+      when(() => prism.fetchDesktopCompanions()).thenAnswer((_) async => Result.success(firstPage));
+      when(
+        () => prism.fetchDesktopCompanions(startAfterDocId: 'doc-d24'),
+      ).thenAnswer((_) async => Result.success(<PrismWallpaper>[desktopWall(25)]));
+
+      final Result<CategoryFeedPage> refreshed = await repository.fetchCategoryFeed(category: desktop, refresh: true);
+      final Result<CategoryFeedPage> more = await repository.fetchCategoryFeed(category: desktop, refresh: false);
+
+      expect(refreshed.data!.items, hasLength(24));
+      expect(refreshed.data!.items.first.id, 'd1');
+      expect(refreshed.data!.hasMore, isTrue);
+      expect(more.data!.items.map((item) => item.id), <String>['d25']);
+      expect(more.data!.hasMore, isFalse);
+      verify(() => prism.fetchDesktopCompanions(startAfterDocId: 'doc-d24')).called(1);
     });
   });
 }

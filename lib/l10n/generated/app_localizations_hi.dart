@@ -2241,6 +2241,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreCategoryGaming => 'गेमिंग';
 
   @override
+  String get coreCategoryPastel => 'पेस्टल';
+
+  @override
+  String get coreCategoryDesktop => 'डेस्कटॉप';
+
+  @override
   String get coreCategoryGradient => 'ग्रेडिएंट';
 
   @override

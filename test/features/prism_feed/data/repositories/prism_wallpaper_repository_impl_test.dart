@@ -323,6 +323,57 @@ void main() {
       });
     });
 
+    group('fetchDesktopCompanions', () {
+      test('asks for reviewed walls with a desktop version, in desktopVariant.v order, with its source tag', () async {
+        final firestore = _walls(_buildWallDocs(count: 3));
+        final repo = PrismWallpaperRepositoryImpl(
+          firestore,
+          FakeFeedCacheLocalDataSource(),
+          FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+        );
+
+        final result = await repo.fetchDesktopCompanions(startAfterDocId: 'doc-1');
+
+        final FirestoreQuerySpec spec = firestore.querySpecs.single;
+        expect(spec.sourceTag, 'category_feed.desktop');
+        expect(spec.collection, FirebaseCollections.walls);
+        expect(spec.filters.map((f) => (f.field, f.op, f.value)), <(String, FirestoreFilterOp, Object?)>[
+          ('review', FirestoreFilterOp.isEqualTo, true),
+          ('desktopVariant.v', FirestoreFilterOp.isGreaterThan, ''),
+        ]);
+        expect(spec.orderBy.single.field, 'desktopVariant.v');
+        expect(spec.orderBy.single.descending, isFalse);
+        expect(spec.startAfterDocId, 'doc-1');
+        expect(spec.limit, 24);
+        expect(result.data!.map((wall) => wall.id), <String>['wall-2', 'wall-3']);
+      });
+
+      test('hides walls from blocked creators', () async {
+        final repo = PrismWallpaperRepositoryImpl(
+          _walls(_buildWallDocs(count: 3)),
+          FakeFeedCacheLocalDataSource(),
+          FakeUserBlockRepository.pending()..completeInitial(<String>{'creator2'}),
+        );
+
+        final result = await repo.fetchDesktopCompanions();
+
+        expect(result.data!.map((wall) => wall.id), <String>['wall-1', 'wall-3']);
+      });
+
+      test('a failed query is a user-facing failure', () async {
+        final firestore = _walls(_buildWallDocs(count: 1))..queryError = StateError('boom');
+        final repo = PrismWallpaperRepositoryImpl(
+          firestore,
+          FakeFeedCacheLocalDataSource(),
+          FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+        );
+
+        final result = await repo.fetchDesktopCompanions();
+
+        expect(result.failure!.message, wallpaperLoadFailureMessage);
+      });
+    });
+
     group('fetchByCategory', () {
       test('asks for reviewed walls of that category, newest first, with the Prism-first source tag', () async {
         final docs = _buildWallDocs(count: 3);

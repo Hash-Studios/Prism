@@ -3921,6 +3921,18 @@ abstract class AppLocalizations {
   /// **'Gaming'**
   String get coreCategoryGaming;
 
+  /// Browse category name for pastel-colored wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'Pastel'**
+  String get coreCategoryPastel;
+
+  /// Browse category name for wallpapers that have a desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop'**
+  String get coreCategoryDesktop;
+
   /// No description provided for @coreCategoryGradient.
   ///
   /// In en, this message translates to:

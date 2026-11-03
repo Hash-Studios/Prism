@@ -1,13 +1,17 @@
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/l10n/l10n.dart';
 
-enum CategorySearchType { search, nonSearch }
+/// How a category finds its walls: a provider search, or the Prism walls that have a desktop version.
+enum CategorySearchType { search, desktop }
 
 /// Values the `onWallCategorize` Cloud Function writes to `walls.category`.
 const Set<String> prismClassifierCategories = <String>{
   'Nature', 'Architecture', 'Cars', 'Anime', 'Space', 'Ocean', 'Flowers', 'Neon', 'Dark', 'Abstract', //
-  '3D Render', 'Minimal', 'Gradient', 'AI Art', 'Cyberpunk', 'Vintage', 'Landscape', 'Galaxy',
+  '3D Render', 'Minimal', 'Gradient', 'AI Art', 'Cyberpunk', 'Vintage', 'Landscape', 'Galaxy', 'Gaming', 'Pastel',
 };
+
+/// A category page that would show fewer walls than this is not listed.
+const int minimumCategoryWalls = 12;
 
 class CategoryDefinition {
   const CategoryDefinition({
@@ -16,6 +20,7 @@ class CategoryDefinition {
     required this.searchType,
     required this.imageUrl,
     required this.secondaryImageUrl,
+    this.query,
   });
 
   final String name;
@@ -23,6 +28,11 @@ class CategoryDefinition {
   final CategorySearchType searchType;
   final String imageUrl;
   final String secondaryImageUrl;
+
+  /// The provider search term when it differs from [name].
+  final String? query;
+
+  String get searchQuery => query ?? name;
 
   /// True when creators' walls can carry this name as their `category`, so Prism walls can lead the feed.
   bool get hasPrismWalls => prismClassifierCategories.contains(name);
@@ -76,6 +86,8 @@ String categoryDisplayName(String name, AppLocalizations l10n) => switch (name) 
   'Comic' => l10n.coreCategoryComic,
   'Tech' => l10n.coreCategoryTech,
   'Gaming' => l10n.coreCategoryGaming,
+  'Pastel' => l10n.coreCategoryPastel,
+  'Desktop' => l10n.coreCategoryDesktop,
   'Food' => l10n.coreCategoryFood,
   'Music' => l10n.coreCategoryMusic,
   _ => name,

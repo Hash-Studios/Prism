@@ -9,6 +9,7 @@ class CategoryEntity {
     required this.image,
     required this.image2,
     this.hasPrismWalls = false,
+    this.query,
   });
 
   final String name;
@@ -16,6 +17,11 @@ class CategoryEntity {
   final CategorySearchType searchType;
   final String image;
   final String image2;
+
+  /// The provider search term when it differs from [name].
+  final String? query;
+
+  String get searchQuery => query ?? name;
 
   /// Prism creator walls exist under this name, so the feed starts with them.
   final bool hasPrismWalls;

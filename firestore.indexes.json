@@ -323,6 +323,20 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "desktopVariant.v",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "depth.tier",
           "order": "ASCENDING"
         },

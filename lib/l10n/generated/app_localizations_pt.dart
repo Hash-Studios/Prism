@@ -2264,6 +2264,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get coreCategoryGaming => 'Jogos';
 
   @override
+  String get coreCategoryPastel => 'Pastel';
+
+  @override
+  String get coreCategoryDesktop => 'Computador';
+
+  @override
   String get coreCategoryGradient => 'Degradê';
 
   @override
@@ -15920,6 +15926,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get coreCategoryGaming => 'Jogos';
+
+  @override
+  String get coreCategoryPastel => 'Pastel';
+
+  @override
+  String get coreCategoryDesktop => 'Computador';
 
   @override
   String get coreCategoryGradient => 'Degradê';

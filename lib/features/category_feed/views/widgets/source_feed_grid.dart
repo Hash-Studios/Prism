@@ -35,6 +35,7 @@ class SourceFeedGrid<T extends FeedItemEntity> extends StatefulWidget {
     required this.sourceContextPrefix,
     this.itemWrapper,
     this.includePrism = false,
+    this.desktopDownload = false,
   });
 
   final AnalyticsSurfaceValue surface;
@@ -44,6 +45,9 @@ class SourceFeedGrid<T extends FeedItemEntity> extends StatefulWidget {
 
   /// Also shows Prism walls. A category on Wallhaven or Pexels starts with creator walls from Prism.
   final bool includePrism;
+
+  /// Opens each wallpaper with Download set to the desktop version.
+  final bool desktopDownload;
 
   @override
   State<SourceFeedGrid<T>> createState() => _SourceFeedGridState<T>();
@@ -204,6 +208,7 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
               impressionSession: _impressions,
               sourceContext: widget.includePrism && item is PrismFeedItem ? 'category_prism_first' : null,
               feed: walls,
+              desktopDownload: widget.desktopDownload,
             );
             return KeyedSubtree(
               key: ValueKey<String>(item.id),

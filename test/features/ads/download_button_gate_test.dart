@@ -18,6 +18,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
+import 'package:Prism/core/wallpaper/wall_desktop.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
@@ -237,6 +238,7 @@ void main() {
     VoidCallback? onOpen,
     VoidCallback? onDownloaded,
     DownloadVariant? variant,
+    WallDesktopVariant? desktop,
     String link = _link,
     WallpaperSource source = WallpaperSource.wallhaven,
   }) async {
@@ -258,6 +260,7 @@ void main() {
             creatorName: creator,
             onOpenDownloads: onOpen,
             variant: variant,
+            desktop: desktop,
             onDownloaded: onDownloaded,
           ),
         ),
@@ -2045,6 +2048,61 @@ void main() {
       expect(find.textContaining('Watch a video'), findsNothing);
       expect(enqueued, isEmpty);
       expect(fakeAnalytics.events.whereType<DownloadAttemptEvent>(), isEmpty);
+    });
+  });
+
+  group('desktop version', () {
+    const WallDesktopVariant desktop = WallDesktopVariant(
+      version: 'a1b2c3d4e5f60718',
+      thumbnailUrl: 'https://img.prismwalls.com/previews/desktop-x.jpg',
+      width: 2560,
+      height: 1600,
+    );
+
+    testWidgets('saves the desktop file under its own name', (tester) async {
+      backend.originalAssets['wall-1'] = (premium: false, coins: 20);
+      await pump(tester, source: WallpaperSource.prism, desktop: desktop);
+      await tapSave(tester);
+      await tester.tap(find.text('Download').last);
+      await settle(tester);
+
+      expect(backend.originalCalls, isNotEmpty);
+      expect(backend.originalCalls.every((call) => call['variant'] == 'desktop'), isTrue);
+      final DownloadRequest request = enqueued.single! as DownloadRequest;
+      expect(request.link, 'https://signed.test/wall-1');
+      expect(request.filenameWithoutExtension, 'sunset_desktop-a1b2c3d4e5f60718');
+    });
+
+    testWidgets('the phone download sends no variant', (tester) async {
+      backend.originalAssets['wall-1'] = (premium: false, coins: 20);
+      await pump(tester, source: WallpaperSource.prism);
+      await tapSave(tester);
+      await tester.tap(find.text('Download').last);
+      await settle(tester);
+
+      expect(backend.originalCalls, isNotEmpty);
+      expect(backend.originalCalls.every((call) => !call.containsKey('variant')), isTrue);
+    });
+
+    testWidgets('a phone copy in Downloads does not stand in for the desktop file', (tester) async {
+      backend.originalAssets['wall-1'] = (premium: false, coins: 20);
+      final DownloadedWallIndex index = DownloadedWallIndex(getIt<SettingsLocalDataSource>());
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      addTearDown(() => getIt.unregister<DownloadedWallIndex>());
+      final File phone = File('${tempDir.path}/sunset.jpg')..writeAsStringSync('x');
+      downloadsOnDisk = <String>[phone.path];
+      await index.remember(link: _link, id: 'wall-1', source: WallpaperSource.prism);
+      await pump(tester, source: WallpaperSource.prism, desktop: desktop);
+      await tapSave(tester);
+      await tester.tap(find.text('Download').last);
+      await settle(tester);
+
+      final List<Map<String, dynamic>> acquisitions = backend.originalCalls
+          .where((call) => call['mode'] != 'quote')
+          .toList();
+      expect(acquisitions, hasLength(1));
+      expect(acquisitions.single['variant'], 'desktop');
+      expect((enqueued.single! as DownloadRequest).link, 'https://signed.test/wall-1');
     });
   });
 }

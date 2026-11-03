@@ -41,7 +41,10 @@ class DownloadVariant {
   /// character outside `[A-Za-z0-9._-]` becomes `_`, the base is cut so the stem stays within the 200 bytes the native
   /// side accepts, and the `.png` stands in for the extension the native side adds. Without it a wallpaper name that
   /// has a dot would lose the key.
-  String identityOf(String link) {
+  String identityOf(String link) => identityFor(link, key);
+
+  /// [identityOf] for a variation that has no [DownloadVariant], such as the desktop version.
+  static String identityFor(String link, String key) {
     final String safe = downloadBaseName(link).replaceAll(_unsafeCharacters, '_').replaceFirst(_leadingDot, '_');
     final String suffix = '_$key';
     final int room = _maxNameLength - suffix.length;

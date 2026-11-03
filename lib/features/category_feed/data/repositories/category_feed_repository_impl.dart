@@ -12,7 +12,9 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/categories/category_catalog.dart';
+import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/data/feed_cache/paged_feed_cache.dart';
 import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
@@ -46,10 +48,19 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
 
   static const int _feedTtlHours = 6;
   static const Duration _prismFirstTimeout = Duration(seconds: 10);
+  static const int _desktopPageSize = 24;
+  static const Duration _desktopCheckTimeout = Duration(seconds: 3);
+
+  String? _desktopCursor;
+  bool _desktopHasMore = true;
 
   @override
   Future<Result<List<CategoryEntity>>> getCategories() async {
-    final categories = CategoryCatalog.current
+    final List<CategoryDefinition> definitions = CategoryCatalog.current;
+    final bool showDesktop =
+        definitions.any((def) => def.searchType == CategorySearchType.desktop) && await _hasDesktopWalls();
+    final categories = definitions
+        .where((def) => def.searchType != CategorySearchType.desktop || showDesktop)
         .map(
           (def) => CategoryEntity(
             name: def.name,
@@ -58,6 +69,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
             image: def.imageUrl,
             image2: def.secondaryImageUrl,
             hasPrismWalls: def.hasPrismWalls,
+            query: def.query,
           ),
         )
         .toList(growable: false);
@@ -182,9 +194,49 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     return unique.values.toList(growable: false);
   }
 
+  /// The Desktop category is listed only when it has enough walls for a full page. A failure hides it.
+  Future<bool> _hasDesktopWalls() async {
+    try {
+      final result = await _prismRepository.fetchDesktopCompanions().timeout(_desktopCheckTimeout);
+      return (result.data?.length ?? 0) >= minimumCategoryWalls;
+    } catch (error) {
+      logger.w('[CategoryFeedRepository] Desktop walls check failed; hiding the Desktop category', error: error);
+      return false;
+    }
+  }
+
+  Future<Result<CategoryFeedPage>> _fetchDesktopPage({required bool refresh}) async {
+    if (refresh) {
+      _desktopCursor = null;
+      _desktopHasMore = true;
+    }
+    if (!_desktopHasMore) {
+      return Result.success(const CategoryFeedPage(items: <FeedItemEntity>[], hasMore: false));
+    }
+    final result = await _prismRepository.fetchDesktopCompanions(startAfterDocId: _desktopCursor);
+    final walls = result.data;
+    if (walls == null) {
+      return Result.error(result.failure ?? const UnknownFailure('Failed to fetch Prism feed'));
+    }
+    if (walls.isNotEmpty) {
+      final PrismWallpaper last = walls.last;
+      _desktopCursor = last.firestoreDocumentId ?? last.id;
+    }
+    _desktopHasMore = walls.length == _desktopPageSize;
+    return Result.success(
+      CategoryFeedPage(
+        items: walls.map((wall) => PrismFeedItem(id: wall.id, wallpaper: wall)).toList(growable: false),
+        hasMore: _desktopHasMore,
+      ),
+    );
+  }
+
   Future<Result<CategoryFeedPage>> _fetchFromSource(CategoryEntity category, {required bool refresh}) async {
     switch (category.source) {
       case WallpaperSource.prism:
+        if (category.searchType == CategorySearchType.desktop) {
+          return _fetchDesktopPage(refresh: refresh);
+        }
         final result = await _prismRepository.fetchFeed(refresh: refresh);
         return _toPage(
           result,
@@ -194,7 +246,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
         );
       case WallpaperSource.wallhaven:
         final result = await _wallhavenRepository.fetchFeed(
-          categoryName: category.name,
+          categoryName: category.searchQuery,
           refresh: refresh,
           categories: _settingsLocal.get<int>('WHcategories', defaultValue: 100),
           purity: _settingsLocal.get<int>('WHpurity', defaultValue: 100),
@@ -203,15 +255,15 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
           result,
           label: 'Wallhaven',
           toItem: (wall) => WallhavenFeedItem(id: wall.id, wallpaper: wall),
-          hasMore: _wallhavenRepository.hasMoreForCategory(category.name),
+          hasMore: _wallhavenRepository.hasMoreForCategory(category.searchQuery),
         );
       case WallpaperSource.pexels:
-        final result = await _pexelsRepository.fetchFeed(categoryName: category.name, refresh: refresh);
+        final result = await _pexelsRepository.fetchFeed(categoryName: category.searchQuery, refresh: refresh);
         return _toPage(
           result,
           label: 'Pexels',
           toItem: (wall) => PexelsFeedItem(id: wall.id, wallpaper: wall),
-          hasMore: _pexelsRepository.hasMoreForCategory(category.name),
+          hasMore: _pexelsRepository.hasMoreForCategory(category.searchQuery),
         );
       case WallpaperSource.downloaded:
       case WallpaperSource.unknown:

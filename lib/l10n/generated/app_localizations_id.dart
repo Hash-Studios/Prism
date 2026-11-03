@@ -2239,6 +2239,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreCategoryGaming => 'Game';
 
   @override
+  String get coreCategoryPastel => 'Pastel';
+
+  @override
+  String get coreCategoryDesktop => 'Desktop';
+
+  @override
   String get coreCategoryGradient => 'Gradien';
 
   @override

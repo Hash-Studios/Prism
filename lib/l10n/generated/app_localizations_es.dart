@@ -2257,6 +2257,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get coreCategoryGaming => 'Videojuegos';
 
   @override
+  String get coreCategoryPastel => 'Pastel';
+
+  @override
+  String get coreCategoryDesktop => 'Escritorio';
+
+  @override
   String get coreCategoryGradient => 'Degradado';
 
   @override

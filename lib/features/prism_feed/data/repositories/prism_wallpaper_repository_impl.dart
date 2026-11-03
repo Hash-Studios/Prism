@@ -185,6 +185,40 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
   }
 
   @override
+  Future<Result<List<PrismWallpaper>>> fetchDesktopCompanions({String? startAfterDocId, int limit = _pageSize}) async {
+    try {
+      final List<_PrismRow> rows = await _firestoreClient
+          .query<_PrismRow>(
+            FirestoreQuerySpec(
+              collection: FirebaseCollections.walls,
+              sourceTag: 'category_feed.desktop',
+              filters: const <FirestoreFilter>[
+                FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+                FirestoreFilter(field: 'desktopVariant.v', op: FirestoreFilterOp.isGreaterThan, value: ''),
+              ],
+              orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'desktopVariant.v')],
+              startAfterDocId: startAfterDocId,
+              limit: limit,
+              dedupeWindowMs: 1000,
+              cachePolicy: FirestoreCachePolicy.memoryFirst,
+            ),
+            (data, docId) => (docId: docId, doc: PrismWallDocDto.fromJson(data)),
+          )
+          .timeout(_queryTimeout);
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
+      return Result.success(
+        rows
+            .map((row) => row.doc.toDomain(docId: row.docId))
+            .where((wall) => !BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked))
+            .toList(growable: false),
+      );
+    } catch (error, stackTrace) {
+      logger.e('[PrismWallpaperRepository] fetchDesktopCompanions failed', error: error, stackTrace: stackTrace);
+      return Result.error(ServerFailure(wallpaperLoadFailureMessage, code: mapFirestoreError(error).code));
+    }
+  }
+
+  @override
   Future<Result<List<PrismWallpaper>>> fetchStreakShopWallpapers() async {
     try {
       final List<_PrismRow> rows = await _firestoreClient.query<_PrismRow>(
