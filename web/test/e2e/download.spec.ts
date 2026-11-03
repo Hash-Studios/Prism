@@ -255,9 +255,17 @@ for (const url of [
     await page.route(RELEASES_URL, (route) => route.fulfill({ json: payload }));
     await page.goto("/download");
     await expect(page.getByTestId("apk-status")).toContainText("No APK is available yet");
-    await expect(page.getByRole("link", { name: /^Download APK/ })).toHaveAttribute("href", LATEST_URL);
+    await expect(page.getByRole("link", { name: /^Download APK/ })).toHaveCount(0);
   });
 }
+
+test("with no APK, the action links to the releases list, not a download", async ({ page }) => {
+  await page.route(RELEASES_URL, (route) => route.fulfill({ json: [] }));
+  await page.goto("/download");
+  await expect(page.getByTestId("apk-status")).toContainText("No APK is available yet");
+  await expect(page.getByRole("link", { name: /^Download APK/ })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Releases on GitHub", exact: true })).toHaveAttribute("href", RELEASES_PAGE_URL);
+});
 
 test("blocked storage still shows the release, one request per page load", async ({ page }) => {
   let calls = 0;
