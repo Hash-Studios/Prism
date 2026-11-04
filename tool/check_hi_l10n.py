@@ -97,6 +97,9 @@ UNCHANGED_ENGLISH = {
     'wallpaperPremium': 'Premium',
     'wallpaperProviderWallhaven': 'Wallhaven',
     'wallpaperSpatialPreviewLabel': '3D',
+    'dayNightGuideScreensHome': 'Home Screen',
+    'dayNightGuideScreensLock': 'Lock Screen',
+    'dayNightGuideScreensBoth': 'Lock Screen and Home Screen',
 }
 
 UNTRANSLATED_UI_TOKENS = (
