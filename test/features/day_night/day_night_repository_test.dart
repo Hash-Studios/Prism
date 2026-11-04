@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -13,6 +14,7 @@ import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart'
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 
 import '../../support/in_memory_local_store.dart';
 import '../../support/profile_user_fixture.dart';
@@ -42,13 +44,16 @@ const DayNightWall _protected = DayNightWall(
 
 /// Keeps each https source under the retained root as `copy-<n>.jpg` without touching the disk.
 class _FakeOfflineStore extends OfflineAssetStore {
-  _FakeOfflineStore(this.root);
+  _FakeOfflineStore(this.root, {this.delayedSource, this.releaseDelayedSource});
 
   final Directory root;
+  final String? delayedSource;
+  final Completer<void>? releaseDelayedSource;
   final Map<String, String> retained = <String, String>{};
 
   @override
   Future<File> retain(String source, {File? file}) async {
+    if (source == delayedSource) await releaseDelayedSource!.future;
     final String absolute = path.join(root.path, 'prism', 'offline', 'assets', 'copy-${retained.length}.jpg');
     retained[source] = absolute;
     return File(absolute);
@@ -56,6 +61,16 @@ class _FakeOfflineStore extends OfflineAssetStore {
 
   @override
   Future<Map<String, String>> localPaths() async => retained;
+}
+
+class _FailingDayNightPathStore extends InMemorySharedPreferencesStore {
+  _FailingDayNightPathStore(super.data) : super.withData();
+
+  @override
+  Future<bool> setValue(String valueType, String key, Object value) {
+    if (key == 'flutter.offline.native_asset_paths.daynight') return Future<bool>.value(false);
+    return super.setValue(valueType, key, value);
+  }
 }
 
 void main() {
@@ -83,6 +98,8 @@ void main() {
     NativeAssetPathsStore.documentsDirectoryOverride = null;
     DayNightRepositoryImpl.downloadedOriginalOverride = null;
     if (await root.exists()) await root.delete(recursive: true);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await SharedPreferences.getInstance();
   });
 
   Future<String?> snapshot() async => (await SharedPreferences.getInstance()).getString(_snapshotKey);
@@ -131,6 +148,108 @@ void main() {
       'https://example.com/day.jpg': 'copy-0.jpg',
       'https://example.com/night.jpg': 'copy-1.jpg',
     });
+  });
+
+  test('a slower earlier publish cannot replace a later enabled edit', () async {
+    final Completer<void> releaseFirst = Completer<void>();
+    OfflineAssetStore.testOverride = _FakeOfflineStore(
+      root,
+      delayedSource: _httpsDay.fullUrl,
+      releaseDelayedSource: releaseFirst,
+    );
+    const DayNightWall laterDay = DayNightWall(
+      id: 'later-day',
+      source: WallpaperSource.prism,
+      fullUrl: 'https://example.com/later-day.jpg',
+      thumbnailUrl: 'https://example.com/later-day-thumb.jpg',
+    );
+    final Future<void> first = repository.publish(DayNightPair(day: _httpsDay, night: _httpsNight));
+    await Future<void>.delayed(Duration.zero);
+
+    await repository.publish(DayNightPair(day: laterDay, night: _httpsNight));
+    releaseFirst.complete();
+    await first;
+
+    expect((jsonDecode((await snapshot())!) as Map<String, dynamic>)['day'], <String, Object?>{
+      'id': 'later-day',
+      'url': 'https://example.com/later-day.jpg',
+    });
+  });
+
+  test('unpublish cancels a publish still preparing assets', () async {
+    final Completer<void> releaseFirst = Completer<void>();
+    OfflineAssetStore.testOverride = _FakeOfflineStore(
+      root,
+      delayedSource: _httpsDay.fullUrl,
+      releaseDelayedSource: releaseFirst,
+    );
+    final Future<void> first = repository.publish(DayNightPair(day: _httpsDay, night: _httpsNight));
+    await Future<void>.delayed(Duration.zero);
+
+    await repository.unpublish();
+    releaseFirst.complete();
+    await first;
+
+    expect(await snapshot(), isNull);
+    expect((await SharedPreferences.getInstance()).getString('offline.native_asset_paths.daynight'), '{}');
+  });
+
+  test('account change during preparation does not publish the old account snapshot', () async {
+    final Completer<void> releaseFirst = Completer<void>();
+    OfflineAssetStore.testOverride = _FakeOfflineStore(
+      root,
+      delayedSource: _httpsDay.fullUrl,
+      releaseDelayedSource: releaseFirst,
+    );
+    final Future<void> first = repository.publish(DayNightPair(day: _httpsDay, night: _httpsNight));
+    await Future<void>.delayed(Duration.zero);
+    app_state.prismUser = profileUser(id: 'owner-b');
+    releaseFirst.complete();
+    await first;
+
+    expect(await snapshot(), isNull);
+    expect((await SharedPreferences.getInstance()).getString('offline.native_asset_paths.daynight'), isNull);
+  });
+
+  test('native path invalidation before queued publish prevents an orphan snapshot', () async {
+    final Completer<void> releaseQueue = Completer<void>();
+    final Future<void> blocker = NativeAssetPathsStore.replaceGroup(
+      'daynight',
+      const <String, String>{},
+      afterReplace: () => releaseQueue.future,
+    );
+    final Future<void> publish = repository.publish(DayNightPair(day: _httpsDay, night: _httpsNight));
+    await Future<void>.delayed(Duration.zero);
+    final Future<void> clear = NativeAssetPathsStore.clearForUser('owner-a');
+    await Future<void>.delayed(Duration.zero);
+    releaseQueue.complete();
+    await Future.wait(<Future<void>>[blocker, publish, clear]);
+
+    expect(await snapshot(), isNull);
+    expect((await SharedPreferences.getInstance()).getString('offline.native_asset_paths.daynight'), '{}');
+  });
+
+  test('guest publish does not write a shortcut snapshot', () async {
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
+
+    await repository.publish(DayNightPair(day: _httpsDay, night: _httpsNight));
+
+    expect(await snapshot(), isNull);
+    expect((await SharedPreferences.getInstance()).getString('offline.native_asset_paths.daynight'), isNull);
+  });
+
+  test('unpublish removes the snapshot even when clearing native paths fails', () async {
+    await repository.publish(DayNightPair(day: _httpsDay, night: _httpsNight));
+    final Map<String, Object> stored = await SharedPreferencesStorePlatform.instance.getAll();
+    SharedPreferencesStorePlatform.instance = _FailingDayNightPathStore(stored);
+    SharedPreferences.resetStatic();
+    await SharedPreferences.getInstance();
+
+    await expectLater(repository.unpublish(), throwsStateError);
+
+    expect(await snapshot(), isNull);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await SharedPreferences.getInstance();
   });
 
   test('publish uses the downloaded original for a protected wall', () async {

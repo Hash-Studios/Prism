@@ -114,6 +114,7 @@ class NativeAssetPathsStore {
     String group,
     Map<String, String> paths, {
     bool Function()? isCurrent,
+    Future<void> Function()? beforeReplace,
     Future<void> Function()? afterReplace,
   }) {
     if (!_groups.contains(group)) throw ArgumentError.value(group, 'group');
@@ -129,6 +130,8 @@ class NativeAssetPathsStore {
           isCurrent?.call() != false;
       if (!current()) return;
       final SharedPreferences prefs = await SharedPreferences.getInstance();
+      if (!current()) return;
+      await beforeReplace?.call();
       if (!current()) return;
       if (privateOwnerWrite && (prefs.getString(privateOwnerKey)?.trim() ?? '') != owner) {
         for (final String privateGroup in _privateGroups) {

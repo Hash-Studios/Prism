@@ -5,6 +5,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/day_night/domain/repositories/day_night_repository.dart';
 import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart';
@@ -20,6 +21,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
   static const String _pairKey = 'dayNight.pair';
   static const String _snapshotKey = 'shortcuts.day_night';
   static const String _group = 'daynight';
+  static int _publishGeneration = 0;
 
   @visibleForTesting
   static Future<File?> Function(DayNightWall wall)? downloadedOriginalOverride;
@@ -48,6 +50,14 @@ class DayNightRepositoryImpl implements DayNightRepository {
 
   @override
   Future<void> publish(DayNightPair pair) async {
+    final int generation = ++_publishGeneration;
+    final String owner = app_state.prismUser.id.trim();
+    final bool loggedIn = app_state.prismUser.loggedIn;
+    if (!loggedIn || owner.isEmpty) return;
+    bool isCurrent() =>
+        generation == _publishGeneration &&
+        app_state.prismUser.id.trim() == owner &&
+        app_state.prismUser.loggedIn == loggedIn;
     final DayNightWall? day = pair.day;
     final DayNightWall? night = pair.night;
     if (!pair.isComplete || day == null || night == null) {
@@ -56,26 +66,43 @@ class DayNightRepositoryImpl implements DayNightRepository {
     final Map<String, String> paths = <String, String>{};
     final Map<String, Object?> dayItem = await _snapshotItem(DayNightSlot.day, day, paths);
     final Map<String, Object?> nightItem = await _snapshotItem(DayNightSlot.night, night, paths);
-    await NativeAssetPathsStore.replaceGroup(_group, paths);
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (!isCurrent()) return;
     final String snapshot = jsonEncode(<String, Object?>{
       'dayStart': pair.times.dayStart.minutes,
       'nightStart': pair.times.nightStart.minutes,
       'day': dayItem,
       'night': nightItem,
     });
-    if (!await prefs.setString(_snapshotKey, snapshot)) {
-      throw StateError('Day and night snapshot could not be persisted');
-    }
+    await NativeAssetPathsStore.replaceGroup(
+      _group,
+      paths,
+      isCurrent: isCurrent,
+      afterReplace: () async {
+        if (!isCurrent()) return;
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        if (!isCurrent()) return;
+        if (!await prefs.setString(_snapshotKey, snapshot)) {
+          throw StateError('Day and night snapshot could not be persisted');
+        }
+      },
+    );
   }
 
   @override
   Future<void> unpublish() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (!await prefs.remove(_snapshotKey)) {
-      throw StateError('Day and night snapshot could not be removed');
-    }
-    await NativeAssetPathsStore.replaceGroup(_group, const <String, String>{});
+    final int generation = ++_publishGeneration;
+    await NativeAssetPathsStore.replaceGroup(
+      _group,
+      const <String, String>{},
+      beforeReplace: () async {
+        if (generation != _publishGeneration) return;
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        if (generation != _publishGeneration) return;
+        if (!await prefs.remove(_snapshotKey)) {
+          throw StateError('Day and night snapshot could not be removed');
+        }
+      },
+    );
   }
 
   Future<Map<String, Object?>> _snapshotItem(DayNightSlot slot, DayNightWall wall, Map<String, String> paths) async {
