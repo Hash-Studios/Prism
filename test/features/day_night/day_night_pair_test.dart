@@ -24,6 +24,25 @@ void main() {
       expect(wrapped.slotAt(DayTime.hm(6, 0)), DayNightSlot.night);
       expect(wrapped.slotAt(DayTime.hm(12, 0)), DayNightSlot.night);
     });
+
+    test('every minute belongs to exactly the expected side of each boundary', () {
+      for (final DayNightTimes times in <DayNightTimes>[
+        standard,
+        _times(DayTime.hm(22, 0), DayTime.hm(6, 0)),
+        _times(DayTime.hm(0, 1), DayTime.hm(0, 0)),
+      ]) {
+        for (int minute = 0; minute < 1440; minute++) {
+          final bool expectedDay = times.dayStart.minutes < times.nightStart.minutes
+              ? minute >= times.dayStart.minutes && minute < times.nightStart.minutes
+              : minute >= times.dayStart.minutes || minute < times.nightStart.minutes;
+          expect(
+            times.slotAt(DayTime.fromMinutes(minute)!),
+            expectedDay ? DayNightSlot.day : DayNightSlot.night,
+            reason: 'minute $minute for ${times.dayStart}/${times.nightStart}',
+          );
+        }
+      }
+    });
   });
 
   group('DayNightTimes.tryCreate', () {
@@ -53,6 +72,42 @@ void main() {
 
       expect(standard.slotAtInstant(utcInstant, Duration.zero), DayNightSlot.night);
       expect(standard.slotAtInstant(utcInstant, const Duration(hours: 1)), DayNightSlot.day);
+    });
+
+    test('a timezone change uses the new offset for the same instant', () {
+      final DateTime instant = DateTime.utc(2026, 11, 4, 12);
+
+      expect(standard.slotAtInstant(instant, Duration.zero), DayNightSlot.day);
+      expect(standard.slotAtInstant(instant, const Duration(hours: -8)), DayNightSlot.night);
+    });
+
+    test('slotNow uses the supplied instant in the device timezone', () {
+      final DateTime instant = DateTime.utc(2026, 11, 4, 12);
+      final DateTime local = instant.toLocal();
+
+      expect(standard.slotNow(instant), standard.slotAtInstant(local, local.timeZoneOffset));
+    });
+
+    test('spring-gap and repeated-hour wall times follow the supplied offset', () {
+      final DayNightTimes aroundTwoThirty = _times(DayTime.hm(2, 30), DayTime.hm(22, 0));
+      final DayNightTimes aroundOneThirty = _times(DayTime.hm(1, 30), DayTime.hm(2, 30));
+      final DateTime beforeSpringJump = DateTime.utc(2026, 3, 8, 9, 59);
+      final DateTime afterSpringJump = DateTime.utc(2026, 3, 8, 10);
+      final DateTime firstFallOneTwentyNine = DateTime.utc(2026, 11, 1, 8, 29);
+      final DateTime firstFallOneThirty = DateTime.utc(2026, 11, 1, 8, 30);
+      final DateTime firstFallOneFortyFive = DateTime.utc(2026, 11, 1, 8, 45);
+      final DateTime secondFallOneTwentyNine = DateTime.utc(2026, 11, 1, 9, 29);
+      final DateTime secondFallOneThirty = DateTime.utc(2026, 11, 1, 9, 30);
+      final DateTime secondFallOneFortyFive = DateTime.utc(2026, 11, 1, 9, 45);
+
+      expect(aroundTwoThirty.slotAtInstant(beforeSpringJump, const Duration(hours: -8)), DayNightSlot.night);
+      expect(aroundTwoThirty.slotAtInstant(afterSpringJump, const Duration(hours: -7)), DayNightSlot.day);
+      expect(aroundOneThirty.slotAtInstant(firstFallOneTwentyNine, const Duration(hours: -7)), DayNightSlot.night);
+      expect(aroundOneThirty.slotAtInstant(firstFallOneThirty, const Duration(hours: -7)), DayNightSlot.day);
+      expect(aroundOneThirty.slotAtInstant(firstFallOneFortyFive, const Duration(hours: -7)), DayNightSlot.day);
+      expect(aroundOneThirty.slotAtInstant(secondFallOneTwentyNine, const Duration(hours: -8)), DayNightSlot.night);
+      expect(aroundOneThirty.slotAtInstant(secondFallOneThirty, const Duration(hours: -8)), DayNightSlot.day);
+      expect(aroundOneThirty.slotAtInstant(secondFallOneFortyFive, const Duration(hours: -8)), DayNightSlot.day);
     });
   });
 

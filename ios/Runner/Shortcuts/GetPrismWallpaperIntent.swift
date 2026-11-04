@@ -178,7 +178,9 @@ struct GetPrismWallpaperIntent: AppIntent {
     defaults: UserDefaults = .standard,
     now: Date = Date()
   ) async throws -> Data {
-    guard let pair = PrismDayNight.parse(defaults.string(forKey: PrismDayNight.defaultsKey)) else {
+    let snapshot = defaults.string(forKey: PrismDayNight.defaultsKey)
+    let revision = PrismShortcutShuffle.sessionRevision(in: defaults)
+    guard let pair = PrismDayNight.parse(snapshot) else {
       throw PrismShortcutError.dayNightOff
     }
     let slot: PrismDayNightSlot
@@ -188,7 +190,11 @@ struct GetPrismWallpaperIntent: AppIntent {
     case .night: slot = .night
     }
     do {
-      return try await PrismShortcutWallpaperLoader.imageData(for: pair.wall(for: slot))
+      return try await PrismDayNight.loadPublishedWall(
+        pair.wall(for: slot), snapshot: snapshot, revision: revision, defaults: defaults
+      ) { wall in
+        try await PrismShortcutWallpaperLoader.imageData(for: wall)
+      }
     } catch let error as CancellationError {
       throw error
     } catch {

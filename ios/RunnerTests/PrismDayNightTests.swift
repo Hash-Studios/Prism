@@ -25,8 +25,15 @@ final class PrismDayNightTests: XCTestCase {
     return calendar
   }
 
-  private func date(hour: Int, minute: Int, zone: String = "UTC") -> Date {
-    var components = DateComponents(year: 2026, month: 11, day: 4, hour: hour, minute: minute)
+  private func date(
+    year: Int = 2026,
+    month: Int = 11,
+    day: Int = 4,
+    hour: Int,
+    minute: Int,
+    zone: String = "UTC"
+  ) -> Date {
+    var components = DateComponents(year: year, month: month, day: day, hour: hour, minute: minute)
     components.timeZone = TimeZone(identifier: zone)
     return calendar(zone).date(from: components)!
   }
@@ -85,9 +92,118 @@ final class PrismDayNightTests: XCTestCase {
     XCTAssertEqual(parsed.slot(at: noonUTC, calendar: calendar("America/Los_Angeles")), .night)
   }
 
+  func testEveryMinuteMatchesTheHalfOpenIntervals() throws {
+    for (dayStart, nightStart) in [(420, 1140), (1320, 360), (1, 0)] {
+      let parsed = try XCTUnwrap(PrismDayNight.parse(json(dayStart: "\(dayStart)", nightStart: "\(nightStart)")))
+      let utc = calendar("UTC")
+      for minute in 0..<1440 {
+        let date = date(hour: minute / 60, minute: minute % 60)
+        let expected: PrismDayNightSlot = dayStart < nightStart
+          ? (minute >= dayStart && minute < nightStart ? .day : .night)
+          : (minute >= dayStart || minute < nightStart ? .day : .night)
+        XCTAssertEqual(parsed.slot(at: date, calendar: utc), expected, "minute \(minute), \(dayStart)/\(nightStart)")
+      }
+    }
+  }
+
+  func testSpringGapAndRepeatedFallHourUseTheLocalWallClock() throws {
+    let spring = try XCTUnwrap(PrismDayNight.parse(json(dayStart: "150", nightStart: "1320")))
+    let springZone = calendar("America/Los_Angeles")
+    let springStart = date(month: 3, day: 8, hour: 8, minute: 0).timeIntervalSince1970
+    XCTAssertEqual(
+      springZone.timeZone.secondsFromGMT(for: Date(timeIntervalSince1970: springStart + 119 * 60)), -8 * 3600
+    )
+    XCTAssertEqual(
+      springZone.timeZone.secondsFromGMT(for: Date(timeIntervalSince1970: springStart + 120 * 60)), -7 * 3600
+    )
+    for minute in 0..<1380 {
+      let wallMinute = minute < 120 ? minute : minute + 60
+      let expected: PrismDayNightSlot = wallMinute >= 150 && wallMinute < 1320 ? .day : .night
+      let instant = Date(timeIntervalSince1970: springStart + Double(minute * 60))
+      XCTAssertEqual(spring.slot(at: instant, calendar: springZone), expected, "spring minute \(minute)")
+    }
+
+    let fall = try XCTUnwrap(PrismDayNight.parse(json(dayStart: "90", nightStart: "150")))
+    let fallZone = calendar("America/Los_Angeles")
+    let fallStart = date(month: 11, day: 1, hour: 7, minute: 0).timeIntervalSince1970
+    XCTAssertEqual(fallZone.timeZone.secondsFromGMT(for: Date(timeIntervalSince1970: fallStart + 119 * 60)), -7 * 3600)
+    XCTAssertEqual(fallZone.timeZone.secondsFromGMT(for: Date(timeIntervalSince1970: fallStart + 120 * 60)), -8 * 3600)
+    for minute in 0..<1500 {
+      let wallMinute = minute < 120 ? minute : minute - 60
+      let expected: PrismDayNightSlot = wallMinute >= 90 && wallMinute < 150 ? .day : .night
+      let instant = Date(timeIntervalSince1970: fallStart + Double(minute * 60))
+      XCTAssertEqual(fall.slot(at: instant, calendar: fallZone), expected, "fall minute \(minute)")
+    }
+    for minute in [89, 90, 149, 150] {
+      let wallMinute = minute < 120 ? minute : minute - 60
+      let expected: PrismDayNightSlot = wallMinute >= 90 && wallMinute < 150 ? .day : .night
+      XCTAssertEqual(
+        fall.slot(at: Date(timeIntervalSince1970: fallStart + Double(minute * 60)), calendar: fallZone), expected
+      )
+    }
+  }
+
+  func testPublishedWallLoadRejectsSnapshotChangeDuringLoad() async throws {
+    let suite = "PrismDayNightTests.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suite)!
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let snapshot = Self.snapshot
+    defaults.set(snapshot, forKey: PrismDayNight.defaultsKey)
+    defaults.set(3, forKey: PrismShortcutShuffle.sessionRevisionKey)
+    let parsed = try XCTUnwrap(PrismDayNight.parse(snapshot))
+
+    do {
+      _ = try await PrismDayNight.loadPublishedWall(
+        parsed.wall(for: .day), snapshot: snapshot, revision: 3, defaults: defaults
+      ) { _ in
+        await Task.yield()
+        defaults.set("replacement", forKey: PrismDayNight.defaultsKey)
+        return Data([1])
+      }
+      XCTFail("Expected a replaced snapshot to cancel the result")
+    } catch is CancellationError {
+      // The wall was loaded after the source snapshot changed.
+    }
+  }
+
+  func testPublishedWallLoadRejectsSessionChangeDuringLoad() async throws {
+    let suite = "PrismDayNightTests.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suite)!
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let snapshot = Self.snapshot
+    defaults.set(snapshot, forKey: PrismDayNight.defaultsKey)
+    defaults.set(3, forKey: PrismShortcutShuffle.sessionRevisionKey)
+    let parsed = try XCTUnwrap(PrismDayNight.parse(snapshot))
+
+    do {
+      _ = try await PrismDayNight.loadPublishedWall(
+        parsed.wall(for: .day), snapshot: snapshot, revision: 3, defaults: defaults
+      ) { _ in
+        await Task.yield()
+        defaults.set(4, forKey: PrismShortcutShuffle.sessionRevisionKey)
+        return Data([1])
+      }
+      XCTFail("Expected a changed session to cancel the result")
+    } catch is CancellationError {
+      // The user session changed while the wall was loading.
+    }
+  }
+
+  func testPublishedUrlWallIsConvertedToLocalOnlyAssetKey() throws {
+    let parsed = try XCTUnwrap(PrismDayNight.parse(Self.snapshot))
+    let day = parsed.wall(for: .day)
+    XCTAssertNil(day.url)
+    XCTAssertEqual(day.asset, "https://example.com/day.jpg")
+
+    let night = parsed.wall(for: .night)
+    XCTAssertNil(night.url)
+    XCTAssertEqual(night.asset, "original:prism_abc")
+  }
+
   func testWallForSlotReturnsMatchingWall() throws {
     let parsed = try XCTUnwrap(PrismDayNight.parse(Self.snapshot))
     XCTAssertEqual(parsed.wall(for: .day).id, "prism_day")
     XCTAssertEqual(parsed.wall(for: .night).id, "prism_abc")
   }
+
 }

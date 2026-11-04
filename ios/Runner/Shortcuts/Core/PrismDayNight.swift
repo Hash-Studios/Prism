@@ -34,10 +34,28 @@ struct PrismDayNight: Equatable, Sendable {
   }
 
   func wall(for slot: PrismDayNightSlot) -> PrismShortcutFavourite {
-    switch slot {
-    case .day: day
-    case .night: night
+    let wall = slot == .day ? day : night
+    if let url = wall.url {
+      // Published URLs are keys for retained files, not permission to fetch from the network.
+      return PrismShortcutFavourite(id: wall.id, asset: url.absoluteString)
     }
+    return wall
+  }
+
+  static func loadPublishedWall(
+    _ wall: PrismShortcutFavourite,
+    snapshot: String?,
+    revision: Int,
+    defaults: UserDefaults,
+    load: (PrismShortcutFavourite) async throws -> Data
+  ) async throws -> Data {
+    let data = try await load(wall)
+    guard PrismShortcutShuffle.snapshotMatchesSession(
+      snapshot, for: defaultsKey, revision: revision, in: defaults
+    ) else {
+      throw CancellationError()
+    }
+    return data
   }
 
   private static func minutes(_ value: Any?) -> Int? {
