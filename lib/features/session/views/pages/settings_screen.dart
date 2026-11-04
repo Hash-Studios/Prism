@@ -30,6 +30,7 @@ import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/creator_directory/views/widgets/creator_directory_opt_out_row.dart';
 import 'package:Prism/features/day_night/day_night_support.dart';
+import 'package:Prism/features/day_night/views/pages/day_night_screen.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
@@ -388,7 +389,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         icon: Icons.contrast_rounded,
         title: context.l10n.dayNightTitle,
         subtitle: context.l10n.dayNightSettingsSubtitle,
-        onTap: () => context.router.push(const DayNightRoute()),
+        onTap: () => openDayNightScreen(context),
       ),
     if (_isAndroid) ..._androidPersonaliseRows(),
   ];

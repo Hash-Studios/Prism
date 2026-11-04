@@ -47,7 +47,7 @@ Widget _screen(DayNightState state, {double textScale = 1}) {
 
 void main() {
   setUpAll(() async {
-    registerFallbackValue(const DayNightRoute());
+    registerFallbackValue(AutoRotateRoute());
     registerFallbackValue(const DayNightEvent.proLapseAcknowledged());
     await loadFonts();
   });

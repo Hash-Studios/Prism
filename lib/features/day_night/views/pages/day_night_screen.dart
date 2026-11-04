@@ -10,11 +10,15 @@ import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/day_night/views/widgets/day_night_guide_sheet.dart';
 import 'package:Prism/features/day_night/views/widgets/day_night_phone_preview.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-@RoutePage()
+/// Opens Day and night as an in-app page. It has no route path, so it needs no deep-link or web allowlist entry.
+Future<void> openDayNightScreen(BuildContext context) => Navigator.of(
+  context,
+  rootNavigator: true,
+).push<void>(MaterialPageRoute<void>(builder: (_) => const DayNightScreen()));
+
 class DayNightScreen extends StatelessWidget {
   const DayNightScreen({super.key});
 

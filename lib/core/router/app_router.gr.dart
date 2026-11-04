@@ -786,22 +786,6 @@ class DashboardRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [DayNightScreen]
-class DayNightRoute extends PageRouteInfo<void> {
-  const DayNightRoute({List<PageRouteInfo>? children})
-    : super(DayNightRoute.name, initialChildren: children);
-
-  static const String name = 'DayNightRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const DayNightScreen();
-    },
-  );
-}
-
-/// generated route for
 /// [DebugPanelPage]
 class DebugPanelRoute extends PageRouteInfo<DebugPanelRouteArgs> {
   DebugPanelRoute({

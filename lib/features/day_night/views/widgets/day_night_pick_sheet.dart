@@ -1,16 +1,15 @@
 import 'dart:async';
 
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/day_night/biz/bloc/day_night_bloc.j.dart';
+import 'package:Prism/features/day_night/views/pages/day_night_screen.dart';
 import 'package:Prism/features/day_night/domain/day_night_variants.dart';
 import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/variant_group.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -34,7 +33,7 @@ Future<void> showDayNightPickSheet(BuildContext context, {required FeedItemEntit
           action: (
             label: l10n.dayNightOpenAction,
             onPressed: () {
-              if (context.mounted) unawaited(context.router.push(const DayNightRoute()));
+              if (context.mounted) unawaited(openDayNightScreen(context));
             },
           ),
         );

@@ -50,7 +50,7 @@ void main() {
     ..loggedIn = true;
   dayNightSupportedOverride = true;
   final _QaRouter router = _QaRouter();
-  registerFallbackValue(const DayNightRoute());
+  registerFallbackValue(AutoRotateRoute());
   when(() => router.push(any())).thenAnswer((_) async => null);
   final DayNightBloc bloc = DayNightBloc(DayNightRepositoryImpl(SettingsLocalDataSource(InMemoryLocalStore())))
     ..add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'qa-user'))
