@@ -4,6 +4,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart'
 import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/crop_spec.dart';
+import 'package:Prism/features/watch_set/domain/entities/watch_format.dart';
 
 extension WallpaperTargetWire on WallpaperTarget {
   String get wireValue => _snakeCase(name);
@@ -48,6 +49,17 @@ extension RemixSourceTypeWire on RemixSourceType {
 }
 
 extension CropPresetWire on CropPreset {
+  String get wireValue => _snakeCase(name);
+}
+
+extension WatchFormatWire on WatchFormat {
+  String get wireValue => id;
+}
+
+enum WatchGuideSourceValue {
+  afterSave,
+  sheet;
+
   String get wireValue => _snakeCase(name);
 }
 

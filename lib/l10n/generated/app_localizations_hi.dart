@@ -13505,4 +13505,211 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get livePhotoGuideNoteVersion => 'लॉक स्क्रीन पर मोशन के लिए iOS 17 या उसके बाद का वर्शन चाहिए।';
+
+  @override
+  String get watchSetCropPreset => 'वॉच';
+
+  @override
+  String get watchSetRowTitle => 'वॉच सेट';
+
+  @override
+  String get watchSetRowSubtitle => 'फ़ोन और वॉच, एक ही सेव';
+
+  @override
+  String get watchSetRowSubtitleDesktop => 'फ़ोन, वॉच और डेस्कटॉप, एक ही सेव';
+
+  @override
+  String get watchSetSheetTitle => 'वॉच सेट';
+
+  @override
+  String get watchSetSheetMessage =>
+      'इस वॉलपेपर को अपने फ़ोन के लिए और अपनी वॉच में फ़िट होने वाले क्रॉप के साथ सेव करें।';
+
+  @override
+  String get watchSetSheetMessageDesktop =>
+      'इस वॉलपेपर को अपने फ़ोन के लिए, अपनी वॉच में फ़िट होने वाले क्रॉप के लिए और डेस्कटॉप वर्शन के साथ सेव करें।';
+
+  @override
+  String get watchSetItemPhone => 'फ़ोन';
+
+  @override
+  String get watchSetItemWatch => 'वॉच';
+
+  @override
+  String get watchSetItemDesktop => 'डेस्कटॉप';
+
+  @override
+  String get watchSetItemFullSize => 'पूरा साइज़';
+
+  @override
+  String get watchSetPhonePreviewSemantic => 'फ़ोन वॉलपेपर का पूर्वावलोकन';
+
+  @override
+  String watchSetWatchPreviewSemantic(String watch) {
+    return '$watch के लिए वॉच इमेज का पूर्वावलोकन';
+  }
+
+  @override
+  String get watchSetDesktopPreviewSemantic => 'डेस्कटॉप वर्शन का पूर्वावलोकन';
+
+  @override
+  String get watchSetSave => 'सेट सेव करें';
+
+  @override
+  String get watchSetAdjustCrop => 'वॉच क्रॉप एडजस्ट करें';
+
+  @override
+  String get watchSetChangeWatch => 'वॉच बदलें';
+
+  @override
+  String get watchSetHowTo => 'अपनी वॉच पर इसे कैसे इस्तेमाल करें';
+
+  @override
+  String get watchSetSaved => 'वॉच सेट सेव हो गया';
+
+  @override
+  String get watchSetDesktopNotSaved =>
+      'फ़ोन और वॉच की इमेज सेव हो गईं। डेस्कटॉप वर्शन सेव नहीं हुआ। कुछ मिनट बाद फिर से कोशिश करें।';
+
+  @override
+  String get watchSetPreviewFailed => 'वॉलपेपर लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get watchSetPickerTitle => 'आपके पास कौन-सी वॉच है?';
+
+  @override
+  String get watchSetPickerMessage =>
+      'Prism वॉच इमेज को आपकी स्क्रीन के साइज़ में सेव करता है। आप इसे बाद में बदल सकते हैं।';
+
+  @override
+  String get watchSetPlatformApple => 'Apple Watch';
+
+  @override
+  String get watchSetPlatformWearOs => 'Wear OS';
+
+  @override
+  String get watchSetPickerHintApple =>
+      'अपना मॉडल खोजने के लिए, अपने iPhone पर Watch ऐप खोलें, फिर सामान्य पर टैप करें और फिर जानकारी पर टैप करें।';
+
+  @override
+  String get watchSetPickerHintWearOs =>
+      'अपना मॉडल खोजने के लिए, अपनी वॉच पर सेटिंग्स खोलें, फिर सिस्टम पर टैप करें और फिर के बारे में पर टैप करें।';
+
+  @override
+  String get watchFormatApple40 => 'Series 4 से 6 और SE, 40 mm';
+
+  @override
+  String get watchFormatApple44 => 'Series 4 से 6 और SE, 44 mm';
+
+  @override
+  String get watchFormatApple41 => 'Series 7 से 9, 41 mm';
+
+  @override
+  String get watchFormatApple45 => 'Series 7 से 9, 45 mm';
+
+  @override
+  String get watchFormatApple42 => 'Series 10 से 12, 42 mm';
+
+  @override
+  String get watchFormatApple46 => 'Series 10 से 12, 46 mm';
+
+  @override
+  String get watchFormatAppleUltra => 'Ultra और Ultra 2';
+
+  @override
+  String get watchFormatAppleUltra3 => 'Ultra 3 और Ultra 4';
+
+  @override
+  String get watchFormatPixelWatch => 'Pixel Watch';
+
+  @override
+  String get watchFormatGalaxySmall => 'Galaxy Watch, 40 mm या Classic';
+
+  @override
+  String get watchFormatGalaxyLarge => 'Galaxy Watch, 44 mm या Ultra';
+
+  @override
+  String get watchCropTitle => 'वॉच क्रॉप';
+
+  @override
+  String get watchCropHint =>
+      'फ़्रेम हिलाने के लिए खींचें। साइज़ बदलने के लिए कोई कोना खींचें या दो उँगलियों से पिंच करें।';
+
+  @override
+  String get watchCropReset => 'रीसेट';
+
+  @override
+  String get watchCropDone => 'यह क्रॉप इस्तेमाल करें';
+
+  @override
+  String get watchGuideTitle => 'इसे अपनी वॉच पर लगाएँ';
+
+  @override
+  String get watchGuideBodyIos => 'सेट फ़ोटो में है, हाल ही में सेक्शन में। वॉच इमेज से एक फ़ोटो वॉच फ़ेस बनाएँ।';
+
+  @override
+  String get watchGuideBodyAndroid =>
+      'सेट गैलरी में है, चित्र, Prism और डाउनलोड फ़ोल्डर में। वॉच इमेज को किसी फ़ोटो वॉच फ़ेस में जोड़ें।';
+
+  @override
+  String get watchGuideShare => 'वॉच इमेज शेयर करें';
+
+  @override
+  String get watchGuideIosStep1 => 'फ़ोटो खोलें और वॉच इमेज पर टैप करें।';
+
+  @override
+  String get watchGuideIosStep2 => 'शेयर करें पर टैप करें, ऊपर स्वाइप करें, फिर वॉच फ़ेस बनाएँ पर टैप करें।';
+
+  @override
+  String get watchGuideIosStep3 => 'फ़ोटो वॉच फ़ेस पर टैप करें, फिर जोड़ें पर टैप करें।';
+
+  @override
+  String get watchGuideIosAlternative =>
+      'आप अपने iPhone पर Watch ऐप भी खोल सकते हैं। फ़ेस गैलरी पर टैप करें, फिर फ़ोटो पर टैप करें, फिर फ़ोटो चुनें पर टैप करें।';
+
+  @override
+  String get watchGuidePixelTitle => 'Pixel Watch';
+
+  @override
+  String get watchGuidePixelStep1 => 'Pixel Watch ऐप खोलें। वॉच फ़ेस पर टैप करें, फिर नया जोड़ें पर टैप करें।';
+
+  @override
+  String get watchGuidePixelStep2 => 'फ़ोटो पर टैप करें, फिर Google Photos में से वॉच इमेज चुनें।';
+
+  @override
+  String get watchGuidePixelStep3 => 'जोड़ें पर टैप करें, फिर सेव करें पर टैप करें।';
+
+  @override
+  String get watchGuideGalaxyTitle => 'Galaxy Watch';
+
+  @override
+  String get watchGuideGalaxyStep1 => 'Galaxy Wearable ऐप खोलें और वॉच फ़ेस पर टैप करें।';
+
+  @override
+  String get watchGuideGalaxyStep2 => 'My Photo+ पर टैप करें, फिर कस्टमाइज़ करें पर टैप करें।';
+
+  @override
+  String get watchGuideGalaxyStep3 => 'गैलरी से वॉच इमेज चुनें, फिर सेव करें पर टैप करें।';
+
+  @override
+  String get watchGuideNotesTitle => 'Prism क्या नहीं कर सकता';
+
+  @override
+  String get watchGuideNoteNoTransfer => 'Prism इमेज को आपकी वॉच पर नहीं डाल सकता। यह काम आपकी वॉच ऐप करता है।';
+
+  @override
+  String get watchGuideNoteShareSheet =>
+      'वॉच फ़ेस बनाएँ विकल्प केवल फ़ोटो ऐप में है। Prism इसे अपने शेयर मेनू में नहीं जोड़ सकता।';
+
+  @override
+  String get watchGuideNoteAlbum =>
+      'Prism हाल ही में सेक्शन में सेव करता है, Prism एल्बम में नहीं। एल्बम के लिए आपकी सारी फ़ोटो तक पूरी पहुँच चाहिए, और Prism सिर्फ़ फ़ोटो जोड़ने की अनुमति माँगता है।';
+
+  @override
+  String get watchGuideNoteLayout =>
+      'हर वॉच फ़ेस की अपनी घड़ी और लेआउट होता है, इसलिए वह इमेज के एक हिस्से को ढक सकता है।';
+
+  @override
+  String get watchGuideNoteGooglePhotos =>
+      'Pixel Watch Google Photos पढ़ता है। अगर इमेज नहीं दिखती, तो पहले उसे Google Photos में बैकअप करें।';
 }

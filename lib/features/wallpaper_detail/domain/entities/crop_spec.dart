@@ -18,6 +18,9 @@ enum CropPreset {
 
   /// The aspect of the whole image as it is turned now.
   original,
+
+  /// The aspect of a watch screen, see [CropSpec.watchAspect].
+  watch,
 }
 
 /// A corner of the crop frame, as the user sees it.
@@ -68,19 +71,27 @@ class CropSpec {
     required this.sourceWidth,
     required this.sourceHeight,
     required this.phoneAspect,
+    required this.watchAspect,
     required this.quarterTurns,
     required this.preset,
     required this.rect,
     required this.adjusted,
   });
 
-  /// The whole image, not turned. [phoneAspect] is the screen's width over its height in portrait.
-  factory CropSpec.initial({required int sourceWidth, required int sourceHeight, required double phoneAspect}) {
+  /// The whole image, not turned. [phoneAspect] is the screen's width over its height in portrait. [watchAspect] is the
+  /// width over height of a watch screen, for [CropPreset.watch].
+  factory CropSpec.initial({
+    required int sourceWidth,
+    required int sourceHeight,
+    required double phoneAspect,
+    double watchAspect = 1,
+  }) {
     if (sourceWidth < 1 || sourceHeight < 1) throw ArgumentError('Empty source: ${sourceWidth}x$sourceHeight');
     return CropSpec._(
       sourceWidth: sourceWidth,
       sourceHeight: sourceHeight,
       phoneAspect: phoneAspect > 0 ? math.min(phoneAspect, 1 / phoneAspect) : 9 / 16,
+      watchAspect: watchAspect > 0 && watchAspect.isFinite ? watchAspect : 1,
       quarterTurns: 0,
       preset: CropPreset.original,
       rect: PixelRect(0, 0, sourceWidth, sourceHeight),
@@ -91,6 +102,7 @@ class CropSpec {
   final int sourceWidth;
   final int sourceHeight;
   final double phoneAspect;
+  final double watchAspect;
 
   /// 0 to 3 clockwise turns of 90 degrees.
   final int quarterTurns;
@@ -116,6 +128,7 @@ class CropSpec {
     CropPreset.square => 1,
     CropPreset.landscape => 16 / 9,
     CropPreset.original => viewWidth / viewHeight,
+    CropPreset.watch => watchAspect,
   };
 
   /// The smallest side the frame may have: a tenth of the image's short side, and at least one pixel.
@@ -147,6 +160,36 @@ class CropSpec {
     return _copy(preset: preset, rect: _fit(target), adjusted: false);
   }
 
+  /// The largest frame of [preset]'s aspect inside the image, centred on [centreX], [centreY] in view pixels, then kept
+  /// inside. A preset without an aspect keeps the frame.
+  CropSpec withPresetAround(CropPreset preset, double centreX, double centreY) {
+    final double? target = aspectOf(preset);
+    if (target == null) return _copy(preset: preset, adjusted: false);
+    final double width = math.min(viewWidth.toDouble(), viewHeight * target);
+    return _copy(preset: preset, rect: _centred(width, width / target, centreX, centreY), adjusted: false);
+  }
+
+  /// The same crop on the same image at another size, such as the full file of a preview. The frame keeps its place
+  /// and, when the preset has one, its aspect.
+  CropSpec scaledTo({required int sourceWidth, required int sourceHeight}) {
+    final CropSpec target = CropSpec._(
+      sourceWidth: sourceWidth,
+      sourceHeight: sourceHeight,
+      phoneAspect: phoneAspect,
+      watchAspect: watchAspect,
+      quarterTurns: quarterTurns,
+      preset: preset,
+      rect: const PixelRect(0, 0, 1, 1),
+      adjusted: adjusted,
+    );
+    final double sx = target.viewWidth / viewWidth;
+    final double sy = target.viewHeight / viewHeight;
+    final double width = rect.width * sx;
+    final double? ratio = aspect;
+    final double height = ratio == null ? rect.height * sy : width / ratio;
+    return target._copy(rect: target._centred(width, height, _centreX * sx, _centreY * sy));
+  }
+
   /// Turns the image 90 degrees clockwise. The frame turns with it. A preset with a fixed aspect then fits a new
   /// frame of that aspect, so 9:16 stays 9:16.
   CropSpec rotated() {
@@ -161,7 +204,12 @@ class CropSpec {
   }
 
   /// The whole image, not turned, with [CropPreset.original].
-  CropSpec reset() => CropSpec.initial(sourceWidth: sourceWidth, sourceHeight: sourceHeight, phoneAspect: phoneAspect);
+  CropSpec reset() => CropSpec.initial(
+    sourceWidth: sourceWidth,
+    sourceHeight: sourceHeight,
+    phoneAspect: phoneAspect,
+    watchAspect: watchAspect,
+  );
 
   /// The frame moved by [dx], [dy] view pixels and kept inside the image.
   CropSpec moved(double dx, double dy) {
@@ -234,6 +282,7 @@ class CropSpec {
     sourceWidth: sourceWidth,
     sourceHeight: sourceHeight,
     phoneAspect: phoneAspect,
+    watchAspect: watchAspect,
     quarterTurns: quarterTurns ?? this.quarterTurns,
     preset: preset ?? this.preset,
     rect: rect ?? this.rect,
@@ -246,13 +295,15 @@ class CropSpec {
       other.sourceWidth == sourceWidth &&
       other.sourceHeight == sourceHeight &&
       other.phoneAspect == phoneAspect &&
+      other.watchAspect == watchAspect &&
       other.quarterTurns == quarterTurns &&
       other.preset == preset &&
       other.rect == rect &&
       other.adjusted == adjusted;
 
   @override
-  int get hashCode => Object.hash(sourceWidth, sourceHeight, phoneAspect, quarterTurns, preset, rect, adjusted);
+  int get hashCode =>
+      Object.hash(sourceWidth, sourceHeight, phoneAspect, watchAspect, quarterTurns, preset, rect, adjusted);
 
   @override
   String toString() => 'CropSpec(${sourceWidth}x$sourceHeight, turns $quarterTurns, $preset, $rect)';

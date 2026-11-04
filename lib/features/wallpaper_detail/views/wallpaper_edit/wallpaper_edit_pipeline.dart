@@ -116,12 +116,14 @@ Future<T> withExportTimeLimit<T>(Future<T> export, {Duration limit = editExportT
 /// Renders [source] with the edit applied and returns PNG bytes.
 ///
 /// A [crop] that is not the identity is applied first, in source pixels, so the filters run on the kept area only. The
-/// output is then the kept area at full resolution. Without a crop the long side is capped, see [exportSize].
+/// output is then the kept area at full resolution, or the kept area scaled to [outputSize] when it is given. Without a
+/// crop the long side is capped, see [exportSize].
 Future<Uint8List> renderEditedPng(
   ui.Image source,
   List<WallpaperFilter> stack,
   WallpaperAdjustments adjustments, {
   CropSpec? crop,
+  ({int width, int height})? outputSize,
   double? previewPixelShortSide,
   double deviceLongSidePx = 0,
 }) async {
@@ -131,9 +133,11 @@ Future<Uint8List> renderEditedPng(
     );
   }
   final CropSpec? applied = crop == null || crop.isIdentity ? null : crop;
-  final ({int width, int height}) size = applied == null
-      ? exportSize(source.width, source.height, deviceLongSidePx: deviceLongSidePx)
-      : (width: applied.outputWidth, height: applied.outputHeight);
+  final ({int width, int height}) size =
+      outputSize ??
+      (applied == null
+          ? exportSize(source.width, source.height, deviceLongSidePx: deviceLongSidePx)
+          : (width: applied.outputWidth, height: applied.outputHeight));
   final int width = size.width;
   final int height = size.height;
   final int shortSide = math.min(width, height);
@@ -148,11 +152,14 @@ Future<Uint8List> renderEditedPng(
     canvas.drawImageRect(source, Rect.fromLTWH(0, 0, source.width.toDouble(), source.height.toDouble()), bounds, paint);
   } else {
     final PixelRect area = applied.sourceRect;
+    final int keptWidth = applied.outputWidth;
+    final int keptHeight = applied.outputHeight;
     canvas
       ..save()
+      ..scale(width / keptWidth, height / keptHeight)
       ..translate(
-        applied.quarterTurns == 1 || applied.quarterTurns == 2 ? width.toDouble() : 0,
-        applied.quarterTurns >= 2 ? height.toDouble() : 0,
+        applied.quarterTurns == 1 || applied.quarterTurns == 2 ? keptWidth.toDouble() : 0,
+        applied.quarterTurns >= 2 ? keptHeight.toDouble() : 0,
       )
       ..rotate(applied.quarterTurns * math.pi / 2)
       ..drawImageRect(

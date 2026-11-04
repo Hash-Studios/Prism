@@ -103,6 +103,7 @@ class FilterEditorPanel extends StatelessWidget {
       CropPreset.square => l10n.wallpaperCropPresetSquare,
       CropPreset.landscape => l10n.wallpaperCropPresetLandscape,
       CropPreset.original => l10n.wallpaperCropPresetOriginal,
+      CropPreset.watch => l10n.watchSetCropPreset,
     };
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
@@ -112,7 +113,7 @@ class FilterEditorPanel extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
           child: Row(
             children: [
-              for (final CropPreset preset in CropPreset.values)
+              for (final CropPreset preset in CropPreset.values.where((p) => p != CropPreset.watch))
                 Padding(
                   padding: const EdgeInsetsDirectional.only(end: PrismSpace.xs),
                   child: PrismChip(

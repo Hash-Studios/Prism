@@ -21570,6 +21570,390 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lock Screen motion needs iOS 17 or later.'**
   String get livePhotoGuideNoteVersion;
+
+  /// Crop preset chip for a watch screen. Not shown in the editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch'**
+  String get watchSetCropPreset;
+
+  /// Row on the wallpaper detail screen. Opens the watch set sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch set'**
+  String get watchSetRowTitle;
+
+  /// Subtitle of the Watch set row when the wall has no desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone and watch, one save'**
+  String get watchSetRowSubtitle;
+
+  /// Subtitle of the Watch set row when the wall has a desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone, watch and desktop, one save'**
+  String get watchSetRowSubtitleDesktop;
+
+  /// Title of the watch set sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch set'**
+  String get watchSetSheetTitle;
+
+  /// Body of the watch set sheet when the wall has no desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Save this wall for your phone and a crop that fits your watch.'**
+  String get watchSetSheetMessage;
+
+  /// Body of the watch set sheet when the wall has a desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Save this wall for your phone, a crop that fits your watch, and the desktop version.'**
+  String get watchSetSheetMessageDesktop;
+
+  /// Label under the phone preview in the watch set sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get watchSetItemPhone;
+
+  /// Label under the watch preview in the watch set sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch'**
+  String get watchSetItemWatch;
+
+  /// Label under the desktop preview in the watch set sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop'**
+  String get watchSetItemDesktop;
+
+  /// Size line under the phone preview when the pixel size is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'Full size'**
+  String get watchSetItemFullSize;
+
+  /// Screen reader label of the phone preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone wallpaper preview'**
+  String get watchSetPhonePreviewSemantic;
+
+  /// Screen reader label of the watch preview. {watch} is the watch type.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch image preview for {watch}'**
+  String watchSetWatchPreviewSemantic(String watch);
+
+  /// Screen reader label of the desktop preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version preview'**
+  String get watchSetDesktopPreviewSemantic;
+
+  /// Label of the button that saves the whole watch set. The price is added after it.
+  ///
+  /// In en, this message translates to:
+  /// **'Save set'**
+  String get watchSetSave;
+
+  /// Button in the watch set sheet. Opens the crop screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust watch crop'**
+  String get watchSetAdjustCrop;
+
+  /// Subtitle of the row that shows the picked watch in the watch set sheet. Tapping the row opens the watch list.
+  ///
+  /// In en, this message translates to:
+  /// **'Change watch'**
+  String get watchSetChangeWatch;
+
+  /// Button in the watch set sheet. Opens the watch face guide.
+  ///
+  /// In en, this message translates to:
+  /// **'How to use it on your watch'**
+  String get watchSetHowTo;
+
+  /// Toast after the watch set is saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch set saved'**
+  String get watchSetSaved;
+
+  /// Toast when the desktop version of a set did not save.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone and watch images saved. The desktop version did not save. Try again in a few minutes.'**
+  String get watchSetDesktopNotSaved;
+
+  /// Shown in the watch set sheet when the preview image does not load.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the wall. Check your connection and try again.'**
+  String get watchSetPreviewFailed;
+
+  /// Title of the watch type list.
+  ///
+  /// In en, this message translates to:
+  /// **'Which watch do you have?'**
+  String get watchSetPickerTitle;
+
+  /// Body of the watch type list.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism saves the watch image at your screen size. You can change it later.'**
+  String get watchSetPickerMessage;
+
+  /// Section header in the watch type list.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple Watch'**
+  String get watchSetPlatformApple;
+
+  /// Section header in the watch type list.
+  ///
+  /// In en, this message translates to:
+  /// **'Wear OS'**
+  String get watchSetPlatformWearOs;
+
+  /// Hint under the Apple Watch list.
+  ///
+  /// In en, this message translates to:
+  /// **'To find your model, open the Watch app on your iPhone, then tap General, then About.'**
+  String get watchSetPickerHintApple;
+
+  /// Hint under the Wear OS list.
+  ///
+  /// In en, this message translates to:
+  /// **'To find your model, open Settings on your watch, then tap System, then About.'**
+  String get watchSetPickerHintWearOs;
+
+  /// Apple Watch model group and case size. Keep the model names in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Series 4 to 6 and SE, 40 mm'**
+  String get watchFormatApple40;
+
+  /// Apple Watch model group and case size. Keep the model names in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Series 4 to 6 and SE, 44 mm'**
+  String get watchFormatApple44;
+
+  /// Apple Watch model group and case size. Keep the model names in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Series 7 to 9, 41 mm'**
+  String get watchFormatApple41;
+
+  /// Apple Watch model group and case size. Keep the model names in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Series 7 to 9, 45 mm'**
+  String get watchFormatApple45;
+
+  /// Apple Watch model group and case size. Keep the model names in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Series 10 to 12, 42 mm'**
+  String get watchFormatApple42;
+
+  /// Apple Watch model group and case size. Keep the model names in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Series 10 to 12, 46 mm'**
+  String get watchFormatApple46;
+
+  /// Apple Watch model group. Keep the model names in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Ultra and Ultra 2'**
+  String get watchFormatAppleUltra;
+
+  /// Apple Watch model group. Keep the model names in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Ultra 3 and Ultra 4'**
+  String get watchFormatAppleUltra3;
+
+  /// Wear OS watch group. Keep the model name in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Pixel Watch'**
+  String get watchFormatPixelWatch;
+
+  /// Wear OS watch group and case size. Keep the model names in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Galaxy Watch, 40 mm or Classic'**
+  String get watchFormatGalaxySmall;
+
+  /// Wear OS watch group and case size. Keep the model names in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Galaxy Watch, 44 mm or Ultra'**
+  String get watchFormatGalaxyLarge;
+
+  /// Title of the watch crop screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch crop'**
+  String get watchCropTitle;
+
+  /// Hint under the watch crop frame.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to move the frame. Pinch or drag a corner to resize it.'**
+  String get watchCropHint;
+
+  /// Header action on the watch crop screen. Goes back to the first crop.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get watchCropReset;
+
+  /// Button on the watch crop screen. Keeps the crop and goes back.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this crop'**
+  String get watchCropDone;
+
+  /// Title of the watch face guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Put it on your watch'**
+  String get watchGuideTitle;
+
+  /// Body of the watch face guide on iPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'The set is in Photos, in Recents. Make a Photos watch face from the watch image.'**
+  String get watchGuideBodyIos;
+
+  /// Body of the watch face guide on Android.
+  ///
+  /// In en, this message translates to:
+  /// **'The set is in Gallery, in Pictures, Prism, Downloads. Add the watch image to a photo watch face.'**
+  String get watchGuideBodyAndroid;
+
+  /// Button in the watch face guide on iPhone. Opens the share sheet with the watch image.
+  ///
+  /// In en, this message translates to:
+  /// **'Share watch image'**
+  String get watchGuideShare;
+
+  /// Step 1 of the iPhone watch face guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Photos and tap the watch image.'**
+  String get watchGuideIosStep1;
+
+  /// Step 2 of the iPhone watch face guide. Use the iOS label for Create Watch Face.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Share, swipe up, then tap Create Watch Face.'**
+  String get watchGuideIosStep2;
+
+  /// Step 3 of the iPhone watch face guide. Use the iOS labels.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Photos Watch Face, then tap Add.'**
+  String get watchGuideIosStep3;
+
+  /// Other way to make the face on iPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'You can also open the Watch app on your iPhone. Tap Face Gallery, tap Photos, then tap Choose Photos.'**
+  String get watchGuideIosAlternative;
+
+  /// Heading in the Android watch face guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Pixel Watch'**
+  String get watchGuidePixelTitle;
+
+  /// Step 1 for Pixel Watch. Use the app's labels.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the Pixel Watch app. Tap Watch faces, then tap Add new.'**
+  String get watchGuidePixelStep1;
+
+  /// Step 2 for Pixel Watch.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Photos, then pick the watch image in Google Photos.'**
+  String get watchGuidePixelStep2;
+
+  /// Step 3 for Pixel Watch.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Add, then tap Save.'**
+  String get watchGuidePixelStep3;
+
+  /// Heading in the Android watch face guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Galaxy Watch'**
+  String get watchGuideGalaxyTitle;
+
+  /// Step 1 for Galaxy Watch. Use the app's labels.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the Galaxy Wearable app and tap Watch faces.'**
+  String get watchGuideGalaxyStep1;
+
+  /// Step 2 for Galaxy Watch. Keep My Photo+ as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap My Photo+, then tap Customize.'**
+  String get watchGuideGalaxyStep2;
+
+  /// Step 3 for Galaxy Watch.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the watch image from Gallery, then tap Save.'**
+  String get watchGuideGalaxyStep3;
+
+  /// Heading above the honest notes in the watch face guide.
+  ///
+  /// In en, this message translates to:
+  /// **'What Prism can\'t do'**
+  String get watchGuideNotesTitle;
+
+  /// Note in the watch face guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism can\'t put the image on your watch. Your watch app does that.'**
+  String get watchGuideNoteNoTransfer;
+
+  /// Note in the iPhone watch face guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Watch Face is only in the Photos app. Prism can\'t add it to its own share sheet.'**
+  String get watchGuideNoteShareSheet;
+
+  /// Note in the iPhone watch face guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism saves to Recents, not to a Prism album. An album needs full access to your photos, and Prism only asks to add photos.'**
+  String get watchGuideNoteAlbum;
+
+  /// Note in the watch face guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Each watch face has its own clock and layout, so it can cover part of the image.'**
+  String get watchGuideNoteLayout;
+
+  /// Note in the Android watch face guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Pixel Watch reads Google Photos. If the image doesn\'t show, back it up to Google Photos first.'**
+  String get watchGuideNoteGooglePhotos;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

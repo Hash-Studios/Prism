@@ -98,6 +98,7 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dar
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/depth_effect_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/desktop_version_sheet.dart';
+import 'package:Prism/features/watch_set/views/watch_set_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/editors_choice_label.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_scene_row.dart';
@@ -2867,6 +2868,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             canSendToComputer: !isPremiumFeedItem(entity, app_state.premiumCollections) && !wallpaper.isStreakExclusive,
           ),
         ),
+      if (showsWatchSet(entity)) padded(WatchSetRow(entity: entity)),
       if (!hideSetWallpaperUi && (entity.fullUrl.trim().isNotEmpty || entity.source == WallpaperSource.prism))
         padded(
           Align(

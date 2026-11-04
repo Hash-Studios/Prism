@@ -11,11 +11,15 @@ import 'package:flutter/material.dart';
 /// [image] is drawn as the source, before the turn. Every gesture starts from the spec it began with and applies the
 /// total movement since then, so no rounding builds up.
 class CropFrameView extends StatefulWidget {
-  const CropFrameView({super.key, required this.spec, required this.image, required this.onChanged});
+  const CropFrameView({super.key, required this.spec, required this.image, required this.onChanged, this.window});
 
   final CropSpec spec;
   final Widget image;
   final ValueChanged<CropSpec> onChanged;
+
+  /// The part of the frame that stays clear, such as the screen of a watch. The rest of the frame is dimmed too.
+  /// Null keeps the whole frame clear.
+  final RRect Function(Rect frame)? window;
 
   /// Half the hit target of a corner handle, so a handle on the image edge stays inside the view.
   static const double handleInset = 24;
@@ -141,6 +145,7 @@ class _CropFrameViewState extends State<CropFrameView> with SingleTickerProvider
                       child: CustomPaint(
                         painter: _CropPainter(
                           frame: frame,
+                          window: widget.window?.call(frame),
                           image: origin & box,
                           scrim: Colors.black.withValues(alpha: 0.55),
                           line: Colors.white,
@@ -204,19 +209,34 @@ class _CropFrameViewState extends State<CropFrameView> with SingleTickerProvider
 }
 
 class _CropPainter extends CustomPainter {
-  _CropPainter({required this.frame, required this.image, required this.scrim, required this.line});
+  _CropPainter({required this.frame, this.window, required this.image, required this.scrim, required this.line});
 
   final Rect frame;
+  final RRect? window;
   final Rect image;
   final Color scrim;
   final Color line;
 
   @override
   void paint(Canvas canvas, Size size) {
+    final RRect? window = this.window;
     canvas.drawPath(
-      Path.combine(PathOperation.difference, Path()..addRect(image), Path()..addRect(frame)),
+      Path.combine(
+        PathOperation.difference,
+        Path()..addRect(image),
+        window == null ? (Path()..addRect(frame)) : (Path()..addRRect(window)),
+      ),
       Paint()..color = scrim,
     );
+    if (window != null) {
+      canvas.drawRRect(
+        window.deflate(0.5),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2
+          ..color = line,
+      );
+    }
     canvas
       ..drawRect(
         frame.deflate(0.5),
@@ -236,7 +256,7 @@ class _CropPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_CropPainter old) =>
-      old.frame != frame || old.image != image || old.scrim != scrim || old.line != line;
+      old.frame != frame || old.window != window || old.image != image || old.scrim != scrim || old.line != line;
 }
 
 class _ThirdsPainter extends CustomPainter {

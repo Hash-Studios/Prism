@@ -13220,5 +13220,266 @@
   "livePhotoGuideNoteVersion": "लॉक स्क्रीन पर मोशन के लिए iOS 17 या उसके बाद का वर्शन चाहिए।",
   "@livePhotoGuideNoteVersion": {
     "description": "Guide note about the minimum iOS version."
+  },
+  "watchSetCropPreset": "वॉच",
+  "@watchSetCropPreset": {
+    "description": "Crop preset chip for a watch screen. Not shown in the editor."
+  },
+  "watchSetRowTitle": "वॉच सेट",
+  "@watchSetRowTitle": {
+    "description": "Row on the wallpaper detail screen. Opens the watch set sheet."
+  },
+  "watchSetRowSubtitle": "फ़ोन और वॉच, एक ही सेव",
+  "@watchSetRowSubtitle": {
+    "description": "Subtitle of the Watch set row when the wall has no desktop version."
+  },
+  "watchSetRowSubtitleDesktop": "फ़ोन, वॉच और डेस्कटॉप, एक ही सेव",
+  "@watchSetRowSubtitleDesktop": {
+    "description": "Subtitle of the Watch set row when the wall has a desktop version."
+  },
+  "watchSetSheetTitle": "वॉच सेट",
+  "@watchSetSheetTitle": {
+    "description": "Title of the watch set sheet."
+  },
+  "watchSetSheetMessage": "इस वॉलपेपर को अपने फ़ोन के लिए और अपनी वॉच में फ़िट होने वाले क्रॉप के साथ सेव करें।",
+  "@watchSetSheetMessage": {
+    "description": "Body of the watch set sheet when the wall has no desktop version."
+  },
+  "watchSetSheetMessageDesktop": "इस वॉलपेपर को अपने फ़ोन के लिए, अपनी वॉच में फ़िट होने वाले क्रॉप के लिए और डेस्कटॉप वर्शन के साथ सेव करें।",
+  "@watchSetSheetMessageDesktop": {
+    "description": "Body of the watch set sheet when the wall has a desktop version."
+  },
+  "watchSetItemPhone": "फ़ोन",
+  "@watchSetItemPhone": {
+    "description": "Label under the phone preview in the watch set sheet."
+  },
+  "watchSetItemWatch": "वॉच",
+  "@watchSetItemWatch": {
+    "description": "Label under the watch preview in the watch set sheet."
+  },
+  "watchSetItemDesktop": "डेस्कटॉप",
+  "@watchSetItemDesktop": {
+    "description": "Label under the desktop preview in the watch set sheet."
+  },
+  "watchSetItemFullSize": "पूरा साइज़",
+  "@watchSetItemFullSize": {
+    "description": "Size line under the phone preview when the pixel size is not known."
+  },
+  "watchSetPhonePreviewSemantic": "फ़ोन वॉलपेपर का पूर्वावलोकन",
+  "@watchSetPhonePreviewSemantic": {
+    "description": "Screen reader label of the phone preview."
+  },
+  "watchSetWatchPreviewSemantic": "{watch} के लिए वॉच इमेज का पूर्वावलोकन",
+  "@watchSetWatchPreviewSemantic": {
+    "description": "Screen reader label of the watch preview. {watch} is the watch type.",
+    "placeholders": {
+      "watch": {
+        "type": "String"
+      }
+    }
+  },
+  "watchSetDesktopPreviewSemantic": "डेस्कटॉप वर्शन का पूर्वावलोकन",
+  "@watchSetDesktopPreviewSemantic": {
+    "description": "Screen reader label of the desktop preview."
+  },
+  "watchSetSave": "सेट सेव करें",
+  "@watchSetSave": {
+    "description": "Label of the button that saves the whole watch set. The price is added after it."
+  },
+  "watchSetAdjustCrop": "वॉच क्रॉप एडजस्ट करें",
+  "@watchSetAdjustCrop": {
+    "description": "Button in the watch set sheet. Opens the crop screen."
+  },
+  "watchSetChangeWatch": "वॉच बदलें",
+  "@watchSetChangeWatch": {
+    "description": "Subtitle of the row that shows the picked watch in the watch set sheet. Tapping the row opens the watch list."
+  },
+  "watchSetHowTo": "अपनी वॉच पर इसे कैसे इस्तेमाल करें",
+  "@watchSetHowTo": {
+    "description": "Button in the watch set sheet. Opens the watch face guide."
+  },
+  "watchSetSaved": "वॉच सेट सेव हो गया",
+  "@watchSetSaved": {
+    "description": "Toast after the watch set is saved."
+  },
+  "watchSetDesktopNotSaved": "फ़ोन और वॉच की इमेज सेव हो गईं। डेस्कटॉप वर्शन सेव नहीं हुआ। कुछ मिनट बाद फिर से कोशिश करें।",
+  "@watchSetDesktopNotSaved": {
+    "description": "Toast when the desktop version of a set did not save."
+  },
+  "watchSetPreviewFailed": "वॉलपेपर लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
+  "@watchSetPreviewFailed": {
+    "description": "Shown in the watch set sheet when the preview image does not load."
+  },
+  "watchSetPickerTitle": "आपके पास कौन-सी वॉच है?",
+  "@watchSetPickerTitle": {
+    "description": "Title of the watch type list."
+  },
+  "watchSetPickerMessage": "Prism वॉच इमेज को आपकी स्क्रीन के साइज़ में सेव करता है। आप इसे बाद में बदल सकते हैं।",
+  "@watchSetPickerMessage": {
+    "description": "Body of the watch type list."
+  },
+  "watchSetPlatformApple": "Apple Watch",
+  "@watchSetPlatformApple": {
+    "description": "Section header in the watch type list."
+  },
+  "watchSetPlatformWearOs": "Wear OS",
+  "@watchSetPlatformWearOs": {
+    "description": "Section header in the watch type list."
+  },
+  "watchSetPickerHintApple": "अपना मॉडल खोजने के लिए, अपने iPhone पर Watch ऐप खोलें, फिर सामान्य पर टैप करें और फिर जानकारी पर टैप करें।",
+  "@watchSetPickerHintApple": {
+    "description": "Hint under the Apple Watch list."
+  },
+  "watchSetPickerHintWearOs": "अपना मॉडल खोजने के लिए, अपनी वॉच पर सेटिंग्स खोलें, फिर सिस्टम पर टैप करें और फिर के बारे में पर टैप करें।",
+  "@watchSetPickerHintWearOs": {
+    "description": "Hint under the Wear OS list."
+  },
+  "watchFormatApple40": "Series 4 से 6 और SE, 40 mm",
+  "@watchFormatApple40": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple44": "Series 4 से 6 और SE, 44 mm",
+  "@watchFormatApple44": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple41": "Series 7 से 9, 41 mm",
+  "@watchFormatApple41": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple45": "Series 7 से 9, 45 mm",
+  "@watchFormatApple45": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple42": "Series 10 से 12, 42 mm",
+  "@watchFormatApple42": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple46": "Series 10 से 12, 46 mm",
+  "@watchFormatApple46": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatAppleUltra": "Ultra और Ultra 2",
+  "@watchFormatAppleUltra": {
+    "description": "Apple Watch model group. Keep the model names in English."
+  },
+  "watchFormatAppleUltra3": "Ultra 3 और Ultra 4",
+  "@watchFormatAppleUltra3": {
+    "description": "Apple Watch model group. Keep the model names in English."
+  },
+  "watchFormatPixelWatch": "Pixel Watch",
+  "@watchFormatPixelWatch": {
+    "description": "Wear OS watch group. Keep the model name in English."
+  },
+  "watchFormatGalaxySmall": "Galaxy Watch, 40 mm या Classic",
+  "@watchFormatGalaxySmall": {
+    "description": "Wear OS watch group and case size. Keep the model names in English."
+  },
+  "watchFormatGalaxyLarge": "Galaxy Watch, 44 mm या Ultra",
+  "@watchFormatGalaxyLarge": {
+    "description": "Wear OS watch group and case size. Keep the model names in English."
+  },
+  "watchCropTitle": "वॉच क्रॉप",
+  "@watchCropTitle": {
+    "description": "Title of the watch crop screen."
+  },
+  "watchCropHint": "फ़्रेम हिलाने के लिए खींचें। साइज़ बदलने के लिए कोई कोना खींचें या दो उँगलियों से पिंच करें।",
+  "@watchCropHint": {
+    "description": "Hint under the watch crop frame."
+  },
+  "watchCropReset": "रीसेट",
+  "@watchCropReset": {
+    "description": "Header action on the watch crop screen. Goes back to the first crop."
+  },
+  "watchCropDone": "यह क्रॉप इस्तेमाल करें",
+  "@watchCropDone": {
+    "description": "Button on the watch crop screen. Keeps the crop and goes back."
+  },
+  "watchGuideTitle": "इसे अपनी वॉच पर लगाएँ",
+  "@watchGuideTitle": {
+    "description": "Title of the watch face guide."
+  },
+  "watchGuideBodyIos": "सेट फ़ोटो में है, हाल ही में सेक्शन में। वॉच इमेज से एक फ़ोटो वॉच फ़ेस बनाएँ।",
+  "@watchGuideBodyIos": {
+    "description": "Body of the watch face guide on iPhone."
+  },
+  "watchGuideBodyAndroid": "सेट गैलरी में है, चित्र, Prism और डाउनलोड फ़ोल्डर में। वॉच इमेज को किसी फ़ोटो वॉच फ़ेस में जोड़ें।",
+  "@watchGuideBodyAndroid": {
+    "description": "Body of the watch face guide on Android."
+  },
+  "watchGuideShare": "वॉच इमेज शेयर करें",
+  "@watchGuideShare": {
+    "description": "Button in the watch face guide on iPhone. Opens the share sheet with the watch image."
+  },
+  "watchGuideIosStep1": "फ़ोटो खोलें और वॉच इमेज पर टैप करें।",
+  "@watchGuideIosStep1": {
+    "description": "Step 1 of the iPhone watch face guide."
+  },
+  "watchGuideIosStep2": "शेयर करें पर टैप करें, ऊपर स्वाइप करें, फिर वॉच फ़ेस बनाएँ पर टैप करें।",
+  "@watchGuideIosStep2": {
+    "description": "Step 2 of the iPhone watch face guide. Use the iOS label for Create Watch Face."
+  },
+  "watchGuideIosStep3": "फ़ोटो वॉच फ़ेस पर टैप करें, फिर जोड़ें पर टैप करें।",
+  "@watchGuideIosStep3": {
+    "description": "Step 3 of the iPhone watch face guide. Use the iOS labels."
+  },
+  "watchGuideIosAlternative": "आप अपने iPhone पर Watch ऐप भी खोल सकते हैं। फ़ेस गैलरी पर टैप करें, फिर फ़ोटो पर टैप करें, फिर फ़ोटो चुनें पर टैप करें।",
+  "@watchGuideIosAlternative": {
+    "description": "Other way to make the face on iPhone."
+  },
+  "watchGuidePixelTitle": "Pixel Watch",
+  "@watchGuidePixelTitle": {
+    "description": "Heading in the Android watch face guide."
+  },
+  "watchGuidePixelStep1": "Pixel Watch ऐप खोलें। वॉच फ़ेस पर टैप करें, फिर नया जोड़ें पर टैप करें।",
+  "@watchGuidePixelStep1": {
+    "description": "Step 1 for Pixel Watch. Use the app's labels."
+  },
+  "watchGuidePixelStep2": "फ़ोटो पर टैप करें, फिर Google Photos में से वॉच इमेज चुनें।",
+  "@watchGuidePixelStep2": {
+    "description": "Step 2 for Pixel Watch."
+  },
+  "watchGuidePixelStep3": "जोड़ें पर टैप करें, फिर सेव करें पर टैप करें।",
+  "@watchGuidePixelStep3": {
+    "description": "Step 3 for Pixel Watch."
+  },
+  "watchGuideGalaxyTitle": "Galaxy Watch",
+  "@watchGuideGalaxyTitle": {
+    "description": "Heading in the Android watch face guide."
+  },
+  "watchGuideGalaxyStep1": "Galaxy Wearable ऐप खोलें और वॉच फ़ेस पर टैप करें।",
+  "@watchGuideGalaxyStep1": {
+    "description": "Step 1 for Galaxy Watch. Use the app's labels."
+  },
+  "watchGuideGalaxyStep2": "My Photo+ पर टैप करें, फिर कस्टमाइज़ करें पर टैप करें।",
+  "@watchGuideGalaxyStep2": {
+    "description": "Step 2 for Galaxy Watch. Keep My Photo+ as it is."
+  },
+  "watchGuideGalaxyStep3": "गैलरी से वॉच इमेज चुनें, फिर सेव करें पर टैप करें।",
+  "@watchGuideGalaxyStep3": {
+    "description": "Step 3 for Galaxy Watch."
+  },
+  "watchGuideNotesTitle": "Prism क्या नहीं कर सकता",
+  "@watchGuideNotesTitle": {
+    "description": "Heading above the honest notes in the watch face guide."
+  },
+  "watchGuideNoteNoTransfer": "Prism इमेज को आपकी वॉच पर नहीं डाल सकता। यह काम आपकी वॉच ऐप करता है।",
+  "@watchGuideNoteNoTransfer": {
+    "description": "Note in the watch face guide."
+  },
+  "watchGuideNoteShareSheet": "वॉच फ़ेस बनाएँ विकल्प केवल फ़ोटो ऐप में है। Prism इसे अपने शेयर मेनू में नहीं जोड़ सकता।",
+  "@watchGuideNoteShareSheet": {
+    "description": "Note in the iPhone watch face guide."
+  },
+  "watchGuideNoteAlbum": "Prism हाल ही में सेक्शन में सेव करता है, Prism एल्बम में नहीं। एल्बम के लिए आपकी सारी फ़ोटो तक पूरी पहुँच चाहिए, और Prism सिर्फ़ फ़ोटो जोड़ने की अनुमति माँगता है।",
+  "@watchGuideNoteAlbum": {
+    "description": "Note in the iPhone watch face guide."
+  },
+  "watchGuideNoteLayout": "हर वॉच फ़ेस की अपनी घड़ी और लेआउट होता है, इसलिए वह इमेज के एक हिस्से को ढक सकता है।",
+  "@watchGuideNoteLayout": {
+    "description": "Note in the watch face guide."
+  },
+  "watchGuideNoteGooglePhotos": "Pixel Watch Google Photos पढ़ता है। अगर इमेज नहीं दिखती, तो पहले उसे Google Photos में बैकअप करें।",
+  "@watchGuideNoteGooglePhotos": {
+    "description": "Note in the Android watch face guide."
   }
 }

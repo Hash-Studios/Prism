@@ -12477,5 +12477,266 @@
   "livePhotoGuideNoteWake": "Die Bewegung läuft auf dem Sperrbildschirm, wenn du dein iPhone aufweckst. Der Home-Bildschirm zeigt das Standbild.",
   "livePhotoGuideNoteLowPower": "Der Energiesparmodus schaltet die Bewegung auf dem Sperrbildschirm aus.",
   "livePhotoGuideNoteNotAvailable": "Wenn iOS „Bewegung nicht verfügbar“ meldet, nutze es als Standbild-Hintergrundbild oder probiere einen anderen Stil.",
-  "livePhotoGuideNoteVersion": "Die Bewegung auf dem Sperrbildschirm braucht iOS 17 oder neuer."
+  "livePhotoGuideNoteVersion": "Die Bewegung auf dem Sperrbildschirm braucht iOS 17 oder neuer.",
+  "watchSetCropPreset": "Uhr",
+  "@watchSetCropPreset": {
+    "description": "Crop preset chip for a watch screen. Not shown in the editor."
+  },
+  "watchSetRowTitle": "Watch-Set",
+  "@watchSetRowTitle": {
+    "description": "Row on the wallpaper detail screen. Opens the watch set sheet."
+  },
+  "watchSetRowSubtitle": "Telefon und Uhr, mit einem Speichern",
+  "@watchSetRowSubtitle": {
+    "description": "Subtitle of the Watch set row when the wall has no desktop version."
+  },
+  "watchSetRowSubtitleDesktop": "Telefon, Uhr und Desktop, mit einem Speichern",
+  "@watchSetRowSubtitleDesktop": {
+    "description": "Subtitle of the Watch set row when the wall has a desktop version."
+  },
+  "watchSetSheetTitle": "Watch-Set",
+  "@watchSetSheetTitle": {
+    "description": "Title of the watch set sheet."
+  },
+  "watchSetSheetMessage": "Speichere dieses Hintergrundbild für dein Telefon und einen Zuschnitt, der auf deine Uhr passt.",
+  "@watchSetSheetMessage": {
+    "description": "Body of the watch set sheet when the wall has no desktop version."
+  },
+  "watchSetSheetMessageDesktop": "Speichere dieses Hintergrundbild für dein Telefon, einen Zuschnitt für deine Uhr und die Desktop-Version.",
+  "@watchSetSheetMessageDesktop": {
+    "description": "Body of the watch set sheet when the wall has a desktop version."
+  },
+  "watchSetItemPhone": "Telefon",
+  "@watchSetItemPhone": {
+    "description": "Label under the phone preview in the watch set sheet."
+  },
+  "watchSetItemWatch": "Uhr",
+  "@watchSetItemWatch": {
+    "description": "Label under the watch preview in the watch set sheet."
+  },
+  "watchSetItemDesktop": "Desktop",
+  "@watchSetItemDesktop": {
+    "description": "Label under the desktop preview in the watch set sheet."
+  },
+  "watchSetItemFullSize": "Volle Größe",
+  "@watchSetItemFullSize": {
+    "description": "Size line under the phone preview when the pixel size is not known."
+  },
+  "watchSetPhonePreviewSemantic": "Vorschau des Telefon-Hintergrundbilds",
+  "@watchSetPhonePreviewSemantic": {
+    "description": "Screen reader label of the phone preview."
+  },
+  "watchSetWatchPreviewSemantic": "Vorschau des Uhrbilds für {watch}",
+  "@watchSetWatchPreviewSemantic": {
+    "description": "Screen reader label of the watch preview. {watch} is the watch type.",
+    "placeholders": {
+      "watch": {
+        "type": "String"
+      }
+    }
+  },
+  "watchSetDesktopPreviewSemantic": "Vorschau der Desktop-Version",
+  "@watchSetDesktopPreviewSemantic": {
+    "description": "Screen reader label of the desktop preview."
+  },
+  "watchSetSave": "Set speichern",
+  "@watchSetSave": {
+    "description": "Label of the button that saves the whole watch set. The price is added after it."
+  },
+  "watchSetAdjustCrop": "Uhr-Zuschnitt anpassen",
+  "@watchSetAdjustCrop": {
+    "description": "Button in the watch set sheet. Opens the crop screen."
+  },
+  "watchSetChangeWatch": "Uhr ändern",
+  "@watchSetChangeWatch": {
+    "description": "Subtitle of the row that shows the picked watch in the watch set sheet. Tapping the row opens the watch list."
+  },
+  "watchSetHowTo": "So nutzt du es auf deiner Uhr",
+  "@watchSetHowTo": {
+    "description": "Button in the watch set sheet. Opens the watch face guide."
+  },
+  "watchSetSaved": "Watch-Set gespeichert",
+  "@watchSetSaved": {
+    "description": "Toast after the watch set is saved."
+  },
+  "watchSetDesktopNotSaved": "Bilder für Telefon und Uhr gespeichert. Die Desktop-Version wurde nicht gespeichert. Versuche es in ein paar Minuten noch einmal.",
+  "@watchSetDesktopNotSaved": {
+    "description": "Toast when the desktop version of a set did not save."
+  },
+  "watchSetPreviewFailed": "Das Hintergrundbild konnte nicht geladen werden. Prüfe deine Verbindung und versuche es noch einmal.",
+  "@watchSetPreviewFailed": {
+    "description": "Shown in the watch set sheet when the preview image does not load."
+  },
+  "watchSetPickerTitle": "Welche Uhr hast du?",
+  "@watchSetPickerTitle": {
+    "description": "Title of the watch type list."
+  },
+  "watchSetPickerMessage": "Prism speichert das Uhrbild in der Größe deines Bildschirms. Du kannst es später ändern.",
+  "@watchSetPickerMessage": {
+    "description": "Body of the watch type list."
+  },
+  "watchSetPlatformApple": "Apple Watch",
+  "@watchSetPlatformApple": {
+    "description": "Section header in the watch type list."
+  },
+  "watchSetPlatformWearOs": "Wear OS",
+  "@watchSetPlatformWearOs": {
+    "description": "Section header in the watch type list."
+  },
+  "watchSetPickerHintApple": "Um dein Modell zu finden, öffne die Watch-App auf deinem iPhone, tippe auf Allgemein und dann auf Info.",
+  "@watchSetPickerHintApple": {
+    "description": "Hint under the Apple Watch list."
+  },
+  "watchSetPickerHintWearOs": "Um dein Modell zu finden, öffne Einstellungen auf deiner Uhr, tippe auf System und dann auf Info.",
+  "@watchSetPickerHintWearOs": {
+    "description": "Hint under the Wear OS list."
+  },
+  "watchFormatApple40": "Series 4 bis 6 und SE, 40 mm",
+  "@watchFormatApple40": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple44": "Series 4 bis 6 und SE, 44 mm",
+  "@watchFormatApple44": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple41": "Series 7 bis 9, 41 mm",
+  "@watchFormatApple41": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple45": "Series 7 bis 9, 45 mm",
+  "@watchFormatApple45": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple42": "Series 10 bis 12, 42 mm",
+  "@watchFormatApple42": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple46": "Series 10 bis 12, 46 mm",
+  "@watchFormatApple46": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatAppleUltra": "Ultra und Ultra 2",
+  "@watchFormatAppleUltra": {
+    "description": "Apple Watch model group. Keep the model names in English."
+  },
+  "watchFormatAppleUltra3": "Ultra 3 und Ultra 4",
+  "@watchFormatAppleUltra3": {
+    "description": "Apple Watch model group. Keep the model names in English."
+  },
+  "watchFormatPixelWatch": "Pixel Watch",
+  "@watchFormatPixelWatch": {
+    "description": "Wear OS watch group. Keep the model name in English."
+  },
+  "watchFormatGalaxySmall": "Galaxy Watch, 40 mm oder Classic",
+  "@watchFormatGalaxySmall": {
+    "description": "Wear OS watch group and case size. Keep the model names in English."
+  },
+  "watchFormatGalaxyLarge": "Galaxy Watch, 44 mm oder Ultra",
+  "@watchFormatGalaxyLarge": {
+    "description": "Wear OS watch group and case size. Keep the model names in English."
+  },
+  "watchCropTitle": "Uhr-Zuschnitt",
+  "@watchCropTitle": {
+    "description": "Title of the watch crop screen."
+  },
+  "watchCropHint": "Ziehe, um den Rahmen zu verschieben. Ziehe eine Ecke, um die Größe zu ändern, oder ziehe mit zwei Fingern zusammen.",
+  "@watchCropHint": {
+    "description": "Hint under the watch crop frame."
+  },
+  "watchCropReset": "Zurücksetzen",
+  "@watchCropReset": {
+    "description": "Header action on the watch crop screen. Goes back to the first crop."
+  },
+  "watchCropDone": "Diesen Zuschnitt verwenden",
+  "@watchCropDone": {
+    "description": "Button on the watch crop screen. Keeps the crop and goes back."
+  },
+  "watchGuideTitle": "So kommt es auf deine Uhr",
+  "@watchGuideTitle": {
+    "description": "Title of the watch face guide."
+  },
+  "watchGuideBodyIos": "Das Set findest du in Fotos unter Zuletzt. Erstelle aus dem Uhrbild ein Fotos-Zifferblatt.",
+  "@watchGuideBodyIos": {
+    "description": "Body of the watch face guide on iPhone."
+  },
+  "watchGuideBodyAndroid": "Das Set findest du in der Galerie unter Bilder, Prism, Downloads. Füge das Uhrbild einem Foto-Zifferblatt hinzu.",
+  "@watchGuideBodyAndroid": {
+    "description": "Body of the watch face guide on Android."
+  },
+  "watchGuideShare": "Uhrbild teilen",
+  "@watchGuideShare": {
+    "description": "Button in the watch face guide on iPhone. Opens the share sheet with the watch image."
+  },
+  "watchGuideIosStep1": "Öffne Fotos und tippe auf das Uhrbild.",
+  "@watchGuideIosStep1": {
+    "description": "Step 1 of the iPhone watch face guide."
+  },
+  "watchGuideIosStep2": "Tippe auf Teilen, wische nach oben und tippe dann auf Zifferblatt erstellen.",
+  "@watchGuideIosStep2": {
+    "description": "Step 2 of the iPhone watch face guide. Use the iOS label for Create Watch Face."
+  },
+  "watchGuideIosStep3": "Tippe auf Fotos-Zifferblatt und dann auf Hinzufügen.",
+  "@watchGuideIosStep3": {
+    "description": "Step 3 of the iPhone watch face guide. Use the iOS labels."
+  },
+  "watchGuideIosAlternative": "Du kannst auch die Watch-App auf deinem iPhone öffnen. Tippe auf Zifferblattgalerie, dann auf Fotos und dann auf Fotos auswählen.",
+  "@watchGuideIosAlternative": {
+    "description": "Other way to make the face on iPhone."
+  },
+  "watchGuidePixelTitle": "Pixel Watch",
+  "@watchGuidePixelTitle": {
+    "description": "Heading in the Android watch face guide."
+  },
+  "watchGuidePixelStep1": "Öffne die Pixel Watch-App. Tippe auf Zifferblätter und dann auf Neu hinzufügen.",
+  "@watchGuidePixelStep1": {
+    "description": "Step 1 for Pixel Watch. Use the app's labels."
+  },
+  "watchGuidePixelStep2": "Tippe auf Fotos und wähle dann das Uhrbild in Google Photos aus.",
+  "@watchGuidePixelStep2": {
+    "description": "Step 2 for Pixel Watch."
+  },
+  "watchGuidePixelStep3": "Tippe auf Hinzufügen und dann auf Speichern.",
+  "@watchGuidePixelStep3": {
+    "description": "Step 3 for Pixel Watch."
+  },
+  "watchGuideGalaxyTitle": "Galaxy Watch",
+  "@watchGuideGalaxyTitle": {
+    "description": "Heading in the Android watch face guide."
+  },
+  "watchGuideGalaxyStep1": "Öffne die App Galaxy Wearable und tippe auf Zifferblätter.",
+  "@watchGuideGalaxyStep1": {
+    "description": "Step 1 for Galaxy Watch. Use the app's labels."
+  },
+  "watchGuideGalaxyStep2": "Tippe auf My Photo+ und dann auf Anpassen.",
+  "@watchGuideGalaxyStep2": {
+    "description": "Step 2 for Galaxy Watch. Keep My Photo+ as it is."
+  },
+  "watchGuideGalaxyStep3": "Wähle das Uhrbild aus der Galerie und tippe dann auf Speichern.",
+  "@watchGuideGalaxyStep3": {
+    "description": "Step 3 for Galaxy Watch."
+  },
+  "watchGuideNotesTitle": "Was Prism nicht kann",
+  "@watchGuideNotesTitle": {
+    "description": "Heading above the honest notes in the watch face guide."
+  },
+  "watchGuideNoteNoTransfer": "Prism kann das Bild nicht auf deine Uhr übertragen. Das macht die App deiner Uhr.",
+  "@watchGuideNoteNoTransfer": {
+    "description": "Note in the watch face guide."
+  },
+  "watchGuideNoteShareSheet": "Zifferblatt erstellen gibt es nur in der App Fotos. Prism kann es nicht in sein eigenes Teilen-Menü aufnehmen.",
+  "@watchGuideNoteShareSheet": {
+    "description": "Note in the iPhone watch face guide."
+  },
+  "watchGuideNoteAlbum": "Prism speichert unter Zuletzt, nicht in einem Prism-Album. Ein Album braucht vollen Zugriff auf deine Fotos, und Prism fragt nur nach dem Hinzufügen von Fotos.",
+  "@watchGuideNoteAlbum": {
+    "description": "Note in the iPhone watch face guide."
+  },
+  "watchGuideNoteLayout": "Jedes Zifferblatt hat eine eigene Uhr und ein eigenes Layout, daher kann es einen Teil des Bildes verdecken.",
+  "@watchGuideNoteLayout": {
+    "description": "Note in the watch face guide."
+  },
+  "watchGuideNoteGooglePhotos": "Pixel Watch liest Google Photos. Wenn das Bild nicht erscheint, sichere es zuerst in Google Photos.",
+  "@watchGuideNoteGooglePhotos": {
+    "description": "Note in the Android watch face guide."
+  }
 }

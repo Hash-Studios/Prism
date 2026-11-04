@@ -13534,4 +13534,212 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get livePhotoGuideNoteVersion => 'El movimiento en la pantalla bloqueada necesita iOS 17 o posterior.';
+
+  @override
+  String get watchSetCropPreset => 'Reloj';
+
+  @override
+  String get watchSetRowTitle => 'Conjunto de reloj';
+
+  @override
+  String get watchSetRowSubtitle => 'Teléfono y reloj, en un solo guardado';
+
+  @override
+  String get watchSetRowSubtitleDesktop => 'Teléfono, reloj y escritorio, en un solo guardado';
+
+  @override
+  String get watchSetSheetTitle => 'Conjunto de reloj';
+
+  @override
+  String get watchSetSheetMessage =>
+      'Guarda este fondo de pantalla para tu teléfono y un recorte que encaje en tu reloj.';
+
+  @override
+  String get watchSetSheetMessageDesktop =>
+      'Guarda este fondo de pantalla para tu teléfono, un recorte para tu reloj y la versión de escritorio.';
+
+  @override
+  String get watchSetItemPhone => 'Teléfono';
+
+  @override
+  String get watchSetItemWatch => 'Reloj';
+
+  @override
+  String get watchSetItemDesktop => 'Escritorio';
+
+  @override
+  String get watchSetItemFullSize => 'Tamaño completo';
+
+  @override
+  String get watchSetPhonePreviewSemantic => 'Vista previa del fondo de pantalla del teléfono';
+
+  @override
+  String watchSetWatchPreviewSemantic(String watch) {
+    return 'Vista previa de la imagen del reloj para $watch';
+  }
+
+  @override
+  String get watchSetDesktopPreviewSemantic => 'Vista previa de la versión de escritorio';
+
+  @override
+  String get watchSetSave => 'Guardar conjunto';
+
+  @override
+  String get watchSetAdjustCrop => 'Ajustar recorte del reloj';
+
+  @override
+  String get watchSetChangeWatch => 'Cambiar reloj';
+
+  @override
+  String get watchSetHowTo => 'Cómo usarlo en tu reloj';
+
+  @override
+  String get watchSetSaved => 'Conjunto de reloj guardado';
+
+  @override
+  String get watchSetDesktopNotSaved =>
+      'Las imágenes del teléfono y del reloj se guardaron. La versión de escritorio no se guardó. Inténtalo de nuevo en unos minutos.';
+
+  @override
+  String get watchSetPreviewFailed =>
+      'No se pudo cargar el fondo de pantalla. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get watchSetPickerTitle => '¿Qué reloj tienes?';
+
+  @override
+  String get watchSetPickerMessage =>
+      'Prism guarda la imagen del reloj con el tamaño de tu pantalla. Puedes cambiarlo más tarde.';
+
+  @override
+  String get watchSetPlatformApple => 'Apple Watch';
+
+  @override
+  String get watchSetPlatformWearOs => 'Wear OS';
+
+  @override
+  String get watchSetPickerHintApple =>
+      'Para encontrar tu modelo, abre la app Watch en tu iPhone, toca General y luego Información.';
+
+  @override
+  String get watchSetPickerHintWearOs =>
+      'Para encontrar tu modelo, abre Ajustes en tu reloj, toca Sistema y luego Acerca de.';
+
+  @override
+  String get watchFormatApple40 => 'Series 4 a 6 y SE, 40 mm';
+
+  @override
+  String get watchFormatApple44 => 'Series 4 a 6 y SE, 44 mm';
+
+  @override
+  String get watchFormatApple41 => 'Series 7 a 9, 41 mm';
+
+  @override
+  String get watchFormatApple45 => 'Series 7 a 9, 45 mm';
+
+  @override
+  String get watchFormatApple42 => 'Series 10 a 12, 42 mm';
+
+  @override
+  String get watchFormatApple46 => 'Series 10 a 12, 46 mm';
+
+  @override
+  String get watchFormatAppleUltra => 'Ultra y Ultra 2';
+
+  @override
+  String get watchFormatAppleUltra3 => 'Ultra 3 y Ultra 4';
+
+  @override
+  String get watchFormatPixelWatch => 'Pixel Watch';
+
+  @override
+  String get watchFormatGalaxySmall => 'Galaxy Watch, 40 mm o Classic';
+
+  @override
+  String get watchFormatGalaxyLarge => 'Galaxy Watch, 44 mm o Ultra';
+
+  @override
+  String get watchCropTitle => 'Recorte del reloj';
+
+  @override
+  String get watchCropHint => 'Arrastra para mover el marco. Pellizca o arrastra una esquina para cambiar su tamaño.';
+
+  @override
+  String get watchCropReset => 'Restablecer';
+
+  @override
+  String get watchCropDone => 'Usar este recorte';
+
+  @override
+  String get watchGuideTitle => 'Ponlo en tu reloj';
+
+  @override
+  String get watchGuideBodyIos =>
+      'El conjunto está en Fotos, en Recientes. Crea una esfera de Fotos con la imagen del reloj.';
+
+  @override
+  String get watchGuideBodyAndroid =>
+      'El conjunto está en Galería, en Imágenes, Prism, Descargas. Añade la imagen del reloj a una esfera con foto.';
+
+  @override
+  String get watchGuideShare => 'Compartir imagen del reloj';
+
+  @override
+  String get watchGuideIosStep1 => 'Abre Fotos y toca la imagen del reloj.';
+
+  @override
+  String get watchGuideIosStep2 => 'Toca Compartir, desliza hacia arriba y luego toca Crear esfera.';
+
+  @override
+  String get watchGuideIosStep3 => 'Toca Esfera de Fotos y luego toca Añadir.';
+
+  @override
+  String get watchGuideIosAlternative =>
+      'También puedes abrir la app Watch en tu iPhone. Toca Galería de esferas, toca Fotos y luego toca Elegir fotos.';
+
+  @override
+  String get watchGuidePixelTitle => 'Pixel Watch';
+
+  @override
+  String get watchGuidePixelStep1 => 'Abre la app Pixel Watch. Toca Esferas y luego toca Añadir nueva.';
+
+  @override
+  String get watchGuidePixelStep2 => 'Toca Fotos y luego elige la imagen del reloj en Google Photos.';
+
+  @override
+  String get watchGuidePixelStep3 => 'Toca Añadir y luego toca Guardar.';
+
+  @override
+  String get watchGuideGalaxyTitle => 'Galaxy Watch';
+
+  @override
+  String get watchGuideGalaxyStep1 => 'Abre la app Galaxy Wearable y toca Esferas.';
+
+  @override
+  String get watchGuideGalaxyStep2 => 'Toca My Photo+ y luego toca Personalizar.';
+
+  @override
+  String get watchGuideGalaxyStep3 => 'Elige la imagen del reloj de Galería y luego toca Guardar.';
+
+  @override
+  String get watchGuideNotesTitle => 'Lo que Prism no puede hacer';
+
+  @override
+  String get watchGuideNoteNoTransfer => 'Prism no puede poner la imagen en tu reloj. Eso lo hace la app de tu reloj.';
+
+  @override
+  String get watchGuideNoteShareSheet =>
+      'Crear esfera solo está en la app Fotos. Prism no puede añadirla a su propio menú de compartir.';
+
+  @override
+  String get watchGuideNoteAlbum =>
+      'Prism guarda en Recientes, no en un álbum de Prism. Un álbum necesita acceso total a tus fotos, y Prism solo pide permiso para añadir fotos.';
+
+  @override
+  String get watchGuideNoteLayout =>
+      'Cada esfera tiene su propio reloj y diseño, así que puede tapar parte de la imagen.';
+
+  @override
+  String get watchGuideNoteGooglePhotos =>
+      'Pixel Watch lee Google Photos. Si la imagen no aparece, haz primero una copia de seguridad en Google Photos.';
 }
