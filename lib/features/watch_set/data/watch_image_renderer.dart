@@ -14,7 +14,7 @@ import 'package:path_provider/path_provider.dart';
 /// The folder in the temporary directory that holds watch images until they are saved.
 const String watchSetFolder = 'prism_watch_set';
 
-String? _sweptPath;
+final Map<String, Future<void>> _sessionSweeps = <String, Future<void>>{};
 int _serial = 0;
 
 /// Renders [crop] of the wall at [source] (an http(s) URL or a local path) at exactly [format]'s pixel size and returns
@@ -75,14 +75,21 @@ Future<void> deleteWatchImage(String path) async {
 /// The folder, empty of files from earlier app runs the first time it is asked for.
 Future<Directory> _sessionDirectory() async {
   final Directory directory = Directory('${(await getTemporaryDirectory()).path}/$watchSetFolder');
-  if (_sweptPath != directory.path) {
-    _sweptPath = directory.path;
-    try {
-      if (await directory.exists()) await directory.delete(recursive: true);
-    } on FileSystemException catch (error, stackTrace) {
-      logger.w('Could not delete old watch images', error: error, stackTrace: stackTrace);
-    }
+  final Future<void> ready = _sessionSweeps.putIfAbsent(directory.path, () => _sweepDirectory(directory));
+  try {
+    await ready;
+  } catch (_) {
+    if (identical(_sessionSweeps[directory.path], ready)) _sessionSweeps.remove(directory.path);
+    rethrow;
   }
   await directory.create(recursive: true);
   return directory;
+}
+
+Future<void> _sweepDirectory(Directory directory) async {
+  try {
+    if (await directory.exists()) await directory.delete(recursive: true);
+  } on FileSystemException catch (error, stackTrace) {
+    logger.w('Could not delete old watch images', error: error, stackTrace: stackTrace);
+  }
 }

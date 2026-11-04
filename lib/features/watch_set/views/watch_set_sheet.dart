@@ -86,6 +86,7 @@ class _WatchSetSheetState extends State<WatchSetSheet> {
   WatchFormat? _format;
   ui.Image? _image;
   bool _imageFailed = false;
+  bool _saving = false;
   PixelRect? _subject;
   bool _subjectLoaded = false;
   MatchingSet? _set;
@@ -300,6 +301,9 @@ class _WatchSetSheetState extends State<WatchSetSheet> {
             set: DownloadSet(
               key: set.watchKey,
               desktop: desktop,
+              onBusyChanged: (bool saving) {
+                if (mounted) setState(() => _saving = saving);
+              },
               prepare: (String phoneSource) async => <String, String>{
                 set.watchKey: await renderWatchImage(
                   source: phoneSource,
@@ -319,14 +323,14 @@ class _WatchSetSheetState extends State<WatchSetSheet> {
             variant: PrismButtonVariant.tonal,
             expand: true,
             maxLines: 3,
-            onPressed: _adjust,
+            onPressed: _saving ? null : _adjust,
           ),
           PrismButton(
             label: l10n.watchSetHowTo,
             variant: PrismButtonVariant.ghost,
             expand: true,
             maxLines: 3,
-            onPressed: () => _openGuide(WatchGuideSourceValue.sheet),
+            onPressed: _saving ? null : () => _openGuide(WatchGuideSourceValue.sheet),
           ),
         ],
       ],
@@ -348,7 +352,7 @@ class _WatchSetSheetState extends State<WatchSetSheet> {
                         icon: Icons.watch_rounded,
                         title: watchFormatLabel(l10n, format),
                         subtitle: l10n.watchSetChangeWatch,
-                        onTap: () => setState(() => _step = _Step.pick),
+                        onTap: _saving ? null : () => setState(() => _step = _Step.pick),
                       ),
                     ],
                   ),

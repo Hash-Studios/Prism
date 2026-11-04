@@ -50,6 +50,11 @@ So a set without a desktop version costs the same as one download. A set with a 
 | The phone save fails | Nothing more is saved. The download rules for a failed save apply. |
 | The desktop grant is refused after the phone grant (the balance changed) | Prism saves the phone and the watch files and says that the desktop version was not saved. |
 | The desktop save fails | Prism keeps the phone and the watch files and says that the desktop version was not saved. Its grant stays open for 5 minutes, so a retry in that time does not charge again. |
+| The user closes the sheet during the save | The save goes on, as **Download** does. The temporary files are deleted when it ends. |
+| Another account signs in during the save | Prism saves no more files of the set. The account that tapped keeps what it paid for. |
+| The user has exactly one grace download left and the set has a desktop version | Each server quote is free, but the phone uses the grace download. The desktop grant then needs coins that the user did not confirm, so Prism skips it. The phone and watch files save, and Prism says that the desktop version was not saved. |
+
+While a set saves, the sheet locks **Adjust watch crop**, the watch row and the guide button. A save refused by Photos or by Android storage permission stops the set before the second file. The `download_result` reason names the cause: `permission_denied`, `permission_restricted`, `permission_unknown` or `storage_permission_required`.
 
 ## Watch sizes
 

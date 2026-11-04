@@ -403,6 +403,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       return;
     }
     if (playTapHaptic) PrismHaptics.tap();
+    final DownloadSet? busySet = widget.set;
 
     if (mounted) {
       setState(() {
@@ -411,6 +412,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       });
     }
     try {
+      busySet?.onBusyChanged?.call(true);
       _preparedSource = null;
       _authorizedDesktop = null;
       final DownloadVariant? variant = widget.variant;
@@ -579,7 +581,8 @@ class _DownloadButtonState extends State<DownloadButton> {
       logger.w('Could not acquire wallpaper', error: error, stackTrace: stackTrace);
       if (mounted) toasts.error(l10n.economyAiDownloadFailed);
     } finally {
-      unawaited(_discardSetFiles());
+      await _discardSetFiles();
+      busySet?.onBusyChanged?.call(false);
       if (_attemptStarted && !_resultTracked) {
         _track(
           DownloadResultEvent(result: 'failed', reason: _failureReason ?? 'preparation_failed', stage: _failureStage),
@@ -645,9 +648,10 @@ class _DownloadButtonState extends State<DownloadButton> {
     final bool free =
         app_state.prismUser.premium ||
         _isGuest ||
-        _downloadIsFree(tap.isPremiumContent) ||
+        (_downloadIsFree(tap.isPremiumContent) &&
+            (tap.isPremiumContent || CoinsService.instance.graceDownloadsLeft >= (tap.set?.paidItems ?? 1))) ||
         OriginalAccessService.isUnlockedDropUrl(tap.link, tap.contentId, tap.wallpaperSource);
-    final int cost = _tapSpendAction.cost();
+    final int cost = _tapSpendAction.cost() * (tap.set?.paidItems ?? 1);
     final _SavedChoice? choice = await showCoinGateSheet<_SavedChoice>(
       context,
       title: context.l10n.economyDownloadAlreadyInDownloads,
@@ -817,6 +821,17 @@ class _DownloadButtonState extends State<DownloadButton> {
             : (_) async {
                 if (!_ownerStillMatches(_tap)) throw StateError('Download account changed');
                 final balance = CoinsService.instance.balanceNotifier.value;
+                if (setDesktop != null && balance < (serverRequiredCoins ?? 0)) {
+                  serverBalance = balance;
+                  return CoinMutationResult(
+                    success: false,
+                    changed: false,
+                    previousBalance: balance,
+                    currentBalance: balance,
+                    delta: 0,
+                    insufficientBalance: true,
+                  );
+                }
                 try {
                   _authorizedSource ??= await OriginalAccessService.instance.resolve(
                     url: _tap.link,
@@ -886,7 +901,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           final actualPrompt = CoinGatePrompt(
             phase: prompt.phase,
             cost: serverRequiredCoins ?? prompt.cost,
-            balance: serverBalance ?? prompt.balance,
+            balance: setDesktop == null ? serverBalance ?? prompt.balance : CoinsService.instance.balanceNotifier.value,
             adsAllowed: prompt.adsAllowed,
             adsRemaining: prompt.adsRemaining,
           );
@@ -979,6 +994,8 @@ class _DownloadButtonState extends State<DownloadButton> {
       }
     }
     bool setDesktopSaved = false;
+    final Set<String> savedSetKeys = <String>{};
+    bool setInterrupted = false;
 
     try {
       final DownloadRequest request = DownloadRequest(
@@ -988,7 +1005,16 @@ class _DownloadButtonState extends State<DownloadButton> {
       );
       final OperationResult result = await PrismMediaHostApi().enqueueDownload(request);
       if (!result.success) {
-        _failureReason = isPhotosPermissionDenied(result.errorCode) ? 'permission_denied' : 'enqueue_failed';
+        _failureReason = isPhotosPermissionDenied(result.errorCode)
+            ? 'permission_denied'
+            : set == null
+            ? 'enqueue_failed'
+            : switch (result.errorCode) {
+                'PHOTO_PERMISSION_RESTRICTED' => 'permission_restricted',
+                'PHOTO_PERMISSION_UNKNOWN' => 'permission_unknown',
+                'STORAGE_PERMISSION_REQUIRED' => 'storage_permission_required',
+                _ => 'enqueue_failed',
+              };
         if (isPhotosPermissionDenied(result.errorCode)) {
           if (mounted) showPhotosPermissionDenied(context);
         } else {
@@ -1002,6 +1028,10 @@ class _DownloadButtonState extends State<DownloadButton> {
         return false;
       }
       for (final MapEntry<String, String> file in _setFiles.entries) {
+        if (!_ownerStillMatches(tap)) {
+          setInterrupted = true;
+          break;
+        }
         final OperationResult saved = await PrismMediaHostApi().enqueueDownload(
           DownloadRequest(
             link: file.value,
@@ -1014,11 +1044,16 @@ class _DownloadButtonState extends State<DownloadButton> {
           toasts.error(l10n.economyAiDownloadFailed);
           return false;
         }
+        savedSetKeys.add(file.key);
       }
       final WallDesktopVariant? setDesktop = set?.desktop;
       final String? desktopSource = _authorizedDesktop;
-      if (setDesktop != null && desktopSource != null) {
+      if (setDesktop != null && desktopSource != null && _ownerStillMatches(tap)) {
         setDesktopSaved = await _saveSetDesktop(tap, setDesktop, desktopSource);
+      }
+      if (set != null && !_ownerStillMatches(tap)) {
+        setInterrupted = true;
+        _cancelAfterAccountSwitch();
       }
       if (tap.contentId != null && tap.wallpaperSource == WallpaperSource.prism) {
         await OriginalAccessService.instance.complete(
@@ -1081,7 +1116,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         ownerId: tap.ownerId,
         original: !prepared && tap.desktop == null && tap.indexSource == tap.wallpaperSource,
       );
-      for (final String key in <String>[..._setFiles.keys, if (setDesktopSaved) 'desktop-${set!.desktop!.version}']) {
+      for (final String key in <String>[...savedSetKeys, if (setDesktopSaved) 'desktop-${set!.desktop!.version}']) {
         await index.remember(
           link: DownloadVariant.identityFor(tap.fileIdentity, key),
           id: contentId,
@@ -1109,7 +1144,9 @@ class _DownloadButtonState extends State<DownloadButton> {
       logger.w('Download analytics failed after media was saved', error: e, stackTrace: stackTrace);
     }
 
-    if (mounted && _ownerStillMatches(tap) && tap.identity == _currentIdentity) setState(() => _saved = true);
+    if (mounted && _ownerStillMatches(tap) && tap.identity == _currentIdentity && !setInterrupted) {
+      setState(() => _saved = true);
+    }
     final String recordedContentId = tap.contentId?.trim() ?? '';
     if (!isBundledStarter && recordedContentId.isNotEmpty) {
       unawaited(_recordAward(recordedContentId, tap));
@@ -1120,8 +1157,10 @@ class _DownloadButtonState extends State<DownloadButton> {
       if (set == null) {
         toasts.success(savedWallpaperMessage(l10n: l10n, depthTier: tap.depthTier, spatialTier: tap.spatialTier));
       }
-      onDownloaded?.call();
-      set?.onSaved?.call(desktopSaved: setDesktopSaved, files: _setFiles);
+      if (!setInterrupted) {
+        onDownloaded?.call();
+        set?.onSaved?.call(desktopSaved: setDesktopSaved, files: _setFiles);
+      }
     } catch (e, stackTrace) {
       logger.w('Download follow-up failed after media was saved', error: e, stackTrace: stackTrace);
     }

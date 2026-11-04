@@ -1,12 +1,17 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/watch_set/data/watch_type_store.dart';
 import 'package:Prism/features/watch_set/domain/entities/watch_format.dart';
@@ -17,8 +22,10 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../support/coins_test_backend.dart';
 import '../../../support/fake_app_analytics.dart';
 import '../../../support/in_memory_local_store.dart';
 
@@ -64,6 +71,36 @@ Future<void> _openSheet(WidgetTester tester) async {
   for (int i = 0; i < 4; i++) {
     await tester.pump(const Duration(milliseconds: 400));
   }
+}
+
+Future<Directory> _openLoadedSheet(WidgetTester tester) async {
+  final Directory directory = Directory.systemTemp.createTempSync('watch_set_sheet');
+  addTearDown(() => directory.deleteSync(recursive: true));
+  final File preview = File('${directory.path}/preview.png');
+  await tester.runAsync(() async {
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    Canvas(recorder).drawRect(const Rect.fromLTWH(0, 0, 90, 160), Paint()..color = const Color(0xFF336699));
+    final ui.Image image = await recorder.endRecording().toImage(90, 160);
+    final ByteData? png = await image.toByteData(format: ui.ImageByteFormat.png);
+    image.dispose();
+    await preview.writeAsBytes(png!.buffer.asUint8List());
+  });
+  final WatchSetWall wall = WatchSetWall(
+    id: 'w1',
+    source: WallpaperSource.wallhaven,
+    link: preview.path,
+    previewUrl: preview.path,
+    isPremium: false,
+  );
+  await tester.pumpWidget(_host((context) => showWatchSetSheet(context, wall)));
+  await tester.tap(find.text('open'));
+  for (int i = 0; i < 20 && find.byType(WatchFacePreview).evaluate().isEmpty; i++) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  expect(find.byType(WatchFacePreview), findsOneWidget);
+  await tester.pump(const Duration(milliseconds: 400));
+  return directory;
 }
 
 void main() {
@@ -127,6 +164,83 @@ void main() {
     await tester.pump();
 
     expect(find.text('Which watch do you have?'), findsOneWidget);
+  });
+
+  testWidgets('a pending save keeps its watch, crop and guide controls until the tap ends', (tester) async {
+    final CoinsTestBackend backend = CoinsTestBackend();
+    await backend.install();
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    await getIt<SettingsLocalDataSource>().set(watchFormatSettingsKey, 'apple_46');
+    final Completer<Object?> listed = Completer<Object?>();
+    const BasicMessageChannel<Object?> listChannel = BasicMessageChannel<Object?>(
+      'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
+      PrismMediaHostApi.pigeonChannelCodec,
+    );
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockDecodedMessageHandler<Object?>(listChannel, (_) => listed.future);
+    messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), (_) async => true);
+    addTearDown(() {
+      messenger.setMockDecodedMessageHandler<Object?>(listChannel, null);
+      messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), null);
+    });
+    await _openLoadedSheet(tester);
+    await tester.ensureVisible(find.byType(DownloadButton));
+    await tester.tap(find.byType(DownloadButton));
+    await tester.pump();
+
+    await tester.ensureVisible(find.text('Change watch'));
+    await tester.tap(find.text('Change watch'));
+    await tester.pump();
+    expect(find.text('Which watch do you have?'), findsNothing);
+    expect(find.text('Series 10 to 12, 46 mm'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Adjust watch crop'));
+    await tester.tap(find.text('Adjust watch crop'));
+    await tester.pump();
+    expect(find.byKey(const ValueKey<String>('watch-crop-done')), findsNothing);
+    await tester.ensureVisible(find.text('How to use it on your watch'));
+    await tester.tap(find.text('How to use it on your watch'));
+    await tester.pump();
+    expect(find.text('Put it on your watch'), findsNothing);
+
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    listed.complete(<Object?>[DownloadItemsResult(success: true, items: <String>[])]);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.ensureVisible(find.text('Change watch'));
+    await tester.tap(find.text('Change watch'));
+    await tester.pump();
+    expect(find.text('Which watch do you have?'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('closing the saved guide deletes its share copy but leaves the saved source alone', (tester) async {
+    await getIt<SettingsLocalDataSource>().set(watchFormatSettingsKey, 'apple_46');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), (_) async => true);
+    addTearDown(() => messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), null));
+    final Directory directory = await _openLoadedSheet(tester);
+    final File original = File('${directory.path}/preview.png');
+    final DownloadButton button = tester.widget<DownloadButton>(find.byType(DownloadButton));
+    button.set!.onSaved!(desktopSaved: false, files: <String, String>{'watch-apple_46': original.path});
+    await tester.pump();
+
+    final File copy = directory.listSync().whereType<File>().singleWhere((file) => file.path.contains('/share_'));
+    expect(copy.readAsBytesSync(), original.readAsBytesSync());
+    expect(find.text('Put it on your watch'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Done'));
+    await tester.tap(find.text('Done'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    });
+
+    expect(copy.existsSync(), isFalse);
+    expect(original.existsSync(), isTrue);
+    expect(find.text('open'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
   });
 
   testWidgets('the Apple guide shows the three iPhone steps and the Apple notes', (tester) async {

@@ -185,7 +185,7 @@ class CropSpec {
     final double sx = target.viewWidth / viewWidth;
     final double sy = target.viewHeight / viewHeight;
     final double width = rect.width * sx;
-    final double? ratio = aspect;
+    final double? ratio = target.aspect;
     final double height = ratio == null ? rect.height * sy : width / ratio;
     return target._copy(rect: target._centred(width, height, _centreX * sx, _centreY * sy));
   }

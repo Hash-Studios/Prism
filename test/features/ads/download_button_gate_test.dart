@@ -2284,8 +2284,178 @@ void main() {
 
     List<String> savedNames() => enqueued.map((Object? r) => (r! as DownloadRequest).filenameWithoutExtension).toList();
 
+    testWidgets('a set checks the total again before granting either file', (tester) async {
+      backend.originalAssets['wall-1'] = (premium: false, coins: 20);
+      await pump(
+        tester,
+        source: WallpaperSource.prism,
+        set: watchSet(desktop: desktop),
+      );
+      await tapSave(tester);
+      backend.originalBalance = 30;
+      CoinsService.instance.applyServerBalance(30, ownerId: app_state.prismUser.id);
+      await tester.tap(find.text('Download').last);
+      await settle(tester);
+
+      expect(backend.originalCalls.where((call) => call['mode'] != 'quote'), isEmpty);
+      expect(backend.originalBalance, 30);
+      expect(enqueued, isEmpty);
+      expect(results().single.reason, 'insufficient_balance');
+    });
+
+    testWidgets('a set keeps the sheet busy through preparation, save and cleanup', (tester) async {
+      final List<bool> busy = <bool>[];
+      final Completer<Map<String, String>> preparedFiles = Completer<Map<String, String>>();
+      await pump(
+        tester,
+        set: DownloadSet(
+          key: 'watch-apple_46',
+          prepare: (_) => preparedFiles.future,
+          onBusyChanged: (bool value) {
+            if (!value) expect(File(watchFile).existsSync(), isFalse);
+            busy.add(value);
+          },
+          onSaved: ({required bool desktopSaved, required Map<String, String> files}) {
+            expect(busy, <bool>[true]);
+            expect(File(files['watch-apple_46']!).existsSync(), isTrue);
+          },
+        ),
+      );
+      await tapSave(tester);
+      expect(busy, <bool>[true]);
+      preparedFiles.complete(<String, String>{'watch-apple_46': watchFile});
+      await settle(tester);
+
+      expect(savedNames(), <String>['sunset', 'sunset_watch-apple_46']);
+      expect(busy, <bool>[true, false]);
+      expect(File(watchFile).existsSync(), isFalse);
+    });
+
+    testWidgets('a set closed during preparation still saves every file and cleans up', (tester) async {
+      backend.originalAssets['wall-1'] = (premium: false, coins: 20);
+      final Completer<Map<String, String>> preparedFiles = Completer<Map<String, String>>();
+      await pump(
+        tester,
+        source: WallpaperSource.prism,
+        set: DownloadSet(
+          key: 'watch-apple_46',
+          prepare: (String source) {
+            prepared.add(source);
+            return preparedFiles.future;
+          },
+        ),
+      );
+      await tapSave(tester);
+      await tester.tap(find.text('Download').last);
+      await pumpUntil(tester, () => prepared.isNotEmpty);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      preparedFiles.complete(<String, String>{'watch-apple_46': watchFile});
+      await waitForRealIo(tester, () => !File(watchFile).existsSync(), reason: 'closed set cleanup');
+      await settle(tester);
+
+      expect(savedNames(), <String>['sunset', 'sunset_watch-apple_46']);
+      expect(File(watchFile).existsSync(), isFalse);
+    });
+
+    testWidgets('a repeat set advertises both paid items rather than one download', (tester) async {
+      final File local = File('${tempDir.path}/sunset_watch-apple_46.png')..writeAsStringSync('x');
+      downloadsOnDisk = <String>[local.path];
+      await pump(
+        tester,
+        source: WallpaperSource.prism,
+        set: watchSet(desktop: desktop),
+      );
+      await tapSave(tester);
+
+      expect(
+        find.text(AppLocalizationsEn().economyDownloadAgainCost(CoinPolicy.wallpaperDownload * 2)),
+        findsOneWidget,
+      );
+      expect(find.text('Already in Downloads'), findsOneWidget);
+      expect(enqueued, isEmpty);
+    });
+
+    testWidgets('one remaining grace download saves phone and watch but cannot authorize a paid desktop quote', (
+      tester,
+    ) async {
+      backend.originalAssets['wall-1'] = (premium: false, coins: 20);
+      backend.originalGrace = 1;
+      await pump(
+        tester,
+        source: WallpaperSource.prism,
+        set: watchSet(desktop: desktop),
+      );
+      await tapSave(tester);
+
+      final List<Map<String, dynamic>> grants = backend.originalCalls.where((call) => call['mode'] != 'quote').toList();
+      expect(grants.map((call) => call['maxCoins']), <int>[0, 0]);
+      expect(backend.originalDebits, 0);
+      expect(backend.originalGrace, 0);
+      expect(savedNames(), <String>['sunset', 'sunset_watch-apple_46']);
+      expect(savedDesktop, <bool>[false]);
+    });
+
+    testWidgets('an account switch during the phone save stops the remaining set without refunding the phone', (
+      tester,
+    ) async {
+      backend.originalAssets['wall-1'] = (premium: false, coins: 20);
+      final String owner = app_state.prismUser.id;
+      onEnqueue = () {
+        if (enqueued.length == 1) {
+          app_state.prismUser = app_constants.createGuestPrismUser()
+            ..id = 'account-b'
+            ..loggedIn = true;
+        }
+      };
+      await pump(
+        tester,
+        source: WallpaperSource.prism,
+        set: watchSet(desktop: desktop),
+      );
+      await tapSave(tester);
+      await tester.tap(find.text('Download').last);
+      await settle(tester);
+
+      expect(savedNames(), <String>['sunset']);
+      expect(savedDesktop, isEmpty);
+      expect(File(watchFile).existsSync(), isFalse);
+      expect(results().single.reason, 'account_changed');
+      final settings = getIt<SettingsLocalDataSource>();
+      expect(settings.get<String?>('originalAccess.$owner.wall-1.download', hasDefault: true), isNull);
+      expect(spendCalls, isEmpty);
+    });
+
+    for (final (String code, String reason) in <(String, String)>[
+      ('PHOTO_PERMISSION_DENIED', 'permission_denied'),
+      ('PHOTO_PERMISSION_RESTRICTED', 'permission_restricted'),
+      ('PHOTO_PERMISSION_UNKNOWN', 'permission_unknown'),
+      ('STORAGE_PERMISSION_REQUIRED', 'storage_permission_required'),
+    ]) {
+      testWidgets('a first-save $code stops the set and cleans its image', (tester) async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+          enqueueChannel,
+          (message) async {
+            enqueued.add((message! as List<Object?>).single);
+            return <Object?>[OperationResult(success: false, errorCode: code)];
+          },
+        );
+        await pump(tester, set: watchSet());
+        await tapSave(tester);
+
+        expect(savedNames(), <String>['sunset']);
+        expect(savedDesktop, isEmpty);
+        expect(File(watchFile).existsSync(), isFalse);
+        expect(results().single.reason, reason);
+        expect(find.text('Saved'), findsNothing);
+      });
+    }
+
     testWidgets('one gate run saves the phone, watch and desktop files and charges two downloads', (tester) async {
       backend.originalAssets['wall-1'] = (premium: false, coins: 20);
+      final DownloadedWallIndex index = DownloadedWallIndex(getIt<SettingsLocalDataSource>());
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      addTearDown(() => getIt.unregister<DownloadedWallIndex>());
       await pump(
         tester,
         source: WallpaperSource.prism,
@@ -2312,6 +2482,27 @@ void main() {
       expect(savedDesktop, <bool>[true]);
       expect(File(watchFile).existsSync(), isFalse);
       expect(find.text('Saved'), findsOneWidget);
+      for (final String identity in <String>[
+        _link,
+        'sunset_watch-apple_46.png',
+        'sunset_desktop-a1b2c3d4e5f60718.png',
+      ]) {
+        expect(index.hasAcquired(link: identity, id: 'wall-1', source: WallpaperSource.prism), isTrue);
+      }
+      final Map<String, dynamic> records =
+          jsonDecode(getIt<SettingsLocalDataSource>().get<String>('downloaded_walls_v1')) as Map<String, dynamic>;
+      expect(
+        records.values
+            .whereType<Map<String, dynamic>>()
+            .where((Map<String, dynamic> record) => record['owner'] == app_state.prismUser.id)
+            .map((Map<String, dynamic> record) => (record['link'], record['original']))
+            .toSet(),
+        <(String, bool)>{
+          (_link, true),
+          ('sunset_watch-apple_46.png', false),
+          ('sunset_desktop-a1b2c3d4e5f60718.png', false),
+        },
+      );
     });
 
     testWidgets('a set without a desktop version spends one download', (tester) async {
@@ -2325,6 +2516,22 @@ void main() {
       expect(savedNames(), <String>['sunset', 'sunset_watch-apple_46']);
       expect(savedDesktop, <bool>[false]);
       expect(File(watchFile).existsSync(), isFalse);
+    });
+
+    testWidgets('saving the same set twice prepares fresh files and settles each tap', (tester) async {
+      await pump(tester, set: watchSet());
+      await tapSave(tester);
+      expect(File(watchFile).existsSync(), isFalse);
+
+      File(watchFile).writeAsBytesSync(File(tinted).readAsBytesSync());
+      await tapSave(tester);
+
+      expect(spendCalls, hasLength(2));
+      expect(prepared, hasLength(2));
+      expect(savedNames(), <String>['sunset', 'sunset_watch-apple_46', 'sunset', 'sunset_watch-apple_46']);
+      expect(savedDesktop, <bool>[false, false]);
+      expect(File(watchFile).existsSync(), isFalse);
+      expect(ledger(), isEmpty);
     });
 
     testWidgets('a balance below the set total grants nothing and makes no watch image', (tester) async {

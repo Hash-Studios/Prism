@@ -98,7 +98,6 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dar
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/depth_effect_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/desktop_version_sheet.dart';
-import 'package:Prism/features/watch_set/views/watch_set_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/editors_choice_label.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_scene_row.dart';
@@ -112,6 +111,7 @@ import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/features/wallpaper_upload/biz/variant_seed.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/wall_metadata_editor.dart';
+import 'package:Prism/features/watch_set/views/watch_set_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';

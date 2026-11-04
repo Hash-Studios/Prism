@@ -56,7 +56,7 @@ class DownloadVariant {
 /// Files a download saves with the wall in the same purchase, such as a watch set. The coin gate runs one time for the
 /// whole set: the phone wall, the files [prepare] makes from it, and the [desktop] version when there is one.
 class DownloadSet {
-  const DownloadSet({required this.key, required this.prepare, this.desktop, this.onSaved});
+  const DownloadSet({required this.key, required this.prepare, this.desktop, this.onSaved, this.onBusyChanged});
 
   /// Names the set in the Downloads index, for example `watch-apple_46`. The file that [prepare] returns under this
   /// key carries the same name, so the set reads as saved while that file is in Downloads.
@@ -72,6 +72,9 @@ class DownloadSet {
   /// Runs after the set is saved, before the button deletes [files]: copy a file to keep it. [desktopSaved] is false
   /// when the set has a desktop version that did not save.
   final void Function({required bool desktopSaved, required Map<String, String> files})? onSaved;
+
+  /// True while a tap of the set runs, until its temporary files are deleted.
+  final void Function(bool busy)? onBusyChanged;
 
   /// Each paid item counts as one download: the phone wall and the desktop version. The extra files are free.
   int get paidItems => desktop == null ? 1 : 2;
