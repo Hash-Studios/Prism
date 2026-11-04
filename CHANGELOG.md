@@ -1,5 +1,12 @@
 ## Changelog
 
+### v3.20.0
+- Crop a wallpaper in the editor: drag the frame or pick a shape like This phone, 1:1 or 16:9
+- Share an edited wallpaper straight from the editor
+- Browse the new Pastel, Gaming and Desktop categories
+- Editor tabs stay readable at large text sizes
+- Security and stability fixes
+
 ### v3.19.0
 - Comment on wallpapers and talk with creators
 - Editors' Choice: a hand-picked row of our favourite walls
