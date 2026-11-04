@@ -13726,24 +13726,24 @@ class AppLocalizationsPt extends AppLocalizations {
   String get watchSetRowTitle => 'Conjunto do relógio';
 
   @override
-  String get watchSetRowSubtitle => 'Telemóvel e relógio, guardados juntos';
+  String get watchSetRowSubtitle => 'Celular e relógio, salvos juntos';
 
   @override
-  String get watchSetRowSubtitleDesktop => 'Telemóvel, relógio e computador, guardados juntos';
+  String get watchSetRowSubtitleDesktop => 'Celular, relógio e computador, salvos juntos';
 
   @override
   String get watchSetSheetTitle => 'Conjunto do relógio';
 
   @override
   String get watchSetSheetMessage =>
-      'Guarde este papel de parede para o seu telemóvel e um recorte que caiba no seu relógio.';
+      'Salve este papel de parede para o seu celular e um recorte que caiba no seu relógio.';
 
   @override
   String get watchSetSheetMessageDesktop =>
-      'Guarde este papel de parede para o seu telemóvel, um recorte que caiba no seu relógio e a versão para computador.';
+      'Salve este papel de parede para o seu celular, um recorte que caiba no seu relógio e a versão para computador.';
 
   @override
-  String get watchSetItemPhone => 'Telemóvel';
+  String get watchSetItemPhone => 'Celular';
 
   @override
   String get watchSetItemWatch => 'Relógio';
@@ -13755,7 +13755,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get watchSetItemFullSize => 'Tamanho total';
 
   @override
-  String get watchSetPhonePreviewSemantic => 'Pré-visualização do papel de parede do telemóvel';
+  String get watchSetPhonePreviewSemantic => 'Pré-visualização do papel de parede do celular';
 
   @override
   String watchSetWatchPreviewSemantic(String watch) {
@@ -13766,33 +13766,34 @@ class AppLocalizationsPt extends AppLocalizations {
   String get watchSetDesktopPreviewSemantic => 'Pré-visualização da versão para computador';
 
   @override
-  String get watchSetSave => 'Guardar conjunto';
+  String get watchSetSave => 'Salvar conjunto';
 
   @override
   String get watchSetAdjustCrop => 'Ajustar recorte do relógio';
 
   @override
-  String get watchSetChangeWatch => 'Mudar de relógio';
+  String get watchSetChangeWatch => 'Trocar de relógio';
 
   @override
   String get watchSetHowTo => 'Como usar no seu relógio';
 
   @override
-  String get watchSetSaved => 'Conjunto do relógio guardado';
+  String get watchSetSaved => 'Conjunto do relógio salvo';
 
   @override
   String get watchSetDesktopNotSaved =>
-      'As imagens do telemóvel e do relógio foram guardadas. A versão para computador não foi guardada. Tente de novo daqui a alguns minutos.';
+      'As imagens do celular e do relógio foram salvas. A versão para computador não foi salva. Tente de novo daqui a alguns minutos.';
 
   @override
   String get watchSetPreviewFailed =>
-      'Não foi possível carregar o papel de parede. Verifique a sua ligação e tente de novo.';
+      'Não foi possível carregar o papel de parede. Verifique sua conexão e tente de novo.';
 
   @override
   String get watchSetPickerTitle => 'Qual relógio você tem?';
 
   @override
-  String get watchSetPickerMessage => 'O Prism guarda a imagem do relógio no tamanho do seu ecrã. Pode mudar depois.';
+  String get watchSetPickerMessage =>
+      'O Prism salva a imagem do relógio no tamanho da sua tela. Você pode mudar depois.';
 
   @override
   String get watchSetPlatformApple => 'Apple Watch';
@@ -13802,11 +13803,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get watchSetPickerHintApple =>
-      'Para encontrar o seu modelo, abra a app Watch no seu iPhone, toque em Geral e depois em Informações.';
+      'Para encontrar seu modelo, abra o app Watch no seu iPhone, toque em Geral e depois em Sobre.';
 
   @override
   String get watchSetPickerHintWearOs =>
-      'Para encontrar o seu modelo, abra Definições no seu relógio, toque em Sistema e depois em Acerca de.';
+      'Para encontrar seu modelo, abra Configurações no seu relógio, toque em Sistema e depois em Sobre.';
 
   @override
   String get watchFormatApple40 => 'Series 4 a 6 e SE, 40 mm';
@@ -13848,7 +13849,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get watchCropHint => 'Arraste para mover a moldura. Use dois dedos ou arraste um canto para mudar o tamanho.';
 
   @override
-  String get watchCropReset => 'Repor';
+  String get watchCropReset => 'Redefinir';
 
   @override
   String get watchCropDone => 'Usar este recorte';
@@ -13862,70 +13863,70 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get watchGuideBodyAndroid =>
-      'O conjunto está na Galeria, em Imagens, Prism, Transferências. Adicione a imagem do relógio a um mostrador com foto.';
+      'O conjunto está na Galeria, em Imagens, Prism, Downloads. Adicione a imagem do relógio a um mostrador com foto.';
 
   @override
-  String get watchGuideShare => 'Partilhar imagem do relógio';
+  String get watchGuideShare => 'Compartilhar imagem do relógio';
 
   @override
   String get watchGuideIosStep1 => 'Abra Fotos e toque na imagem do relógio.';
 
   @override
-  String get watchGuideIosStep2 => 'Toque em Partilhar, deslize para cima e depois toque em Criar mostrador.';
+  String get watchGuideIosStep2 => 'Toque em Compartilhar, deslize para cima e depois toque em Criar mostrador.';
 
   @override
   String get watchGuideIosStep3 => 'Toque em Mostrador de Fotos e depois em Adicionar.';
 
   @override
   String get watchGuideIosAlternative =>
-      'Também pode abrir a app Watch no seu iPhone. Toque em Galeria de mostradores, depois em Fotos e depois em Escolher Fotos.';
+      'Você também pode abrir o app Watch no seu iPhone. Toque em Galeria de mostradores, depois em Fotos e depois em Escolher Fotos.';
 
   @override
   String get watchGuidePixelTitle => 'Pixel Watch';
 
   @override
-  String get watchGuidePixelStep1 => 'Abra a app Pixel Watch. Toque em Mostradores e depois em Adicionar novo.';
+  String get watchGuidePixelStep1 => 'Abra o app Pixel Watch. Toque em Mostradores e depois em Adicionar novo.';
 
   @override
   String get watchGuidePixelStep2 => 'Toque em Fotos e depois escolha a imagem do relógio no Google Photos.';
 
   @override
-  String get watchGuidePixelStep3 => 'Toque em Adicionar e depois em Guardar.';
+  String get watchGuidePixelStep3 => 'Toque em Adicionar e depois em Salvar.';
 
   @override
   String get watchGuideGalaxyTitle => 'Galaxy Watch';
 
   @override
-  String get watchGuideGalaxyStep1 => 'Abra a app Galaxy Wearable e toque em Mostradores.';
+  String get watchGuideGalaxyStep1 => 'Abra o app Galaxy Wearable e toque em Mostradores.';
 
   @override
   String get watchGuideGalaxyStep2 => 'Toque em My Photo+ e depois em Personalizar.';
 
   @override
-  String get watchGuideGalaxyStep3 => 'Escolha a imagem do relógio na Galeria e depois toque em Guardar.';
+  String get watchGuideGalaxyStep3 => 'Escolha a imagem do relógio na Galeria e depois toque em Salvar.';
 
   @override
   String get watchGuideNotesTitle => 'O que o Prism não consegue fazer';
 
   @override
   String get watchGuideNoteNoTransfer =>
-      'O Prism não consegue colocar a imagem no seu relógio. Quem faz isso é a app do seu relógio.';
+      'O Prism não consegue colocar a imagem no seu relógio. Quem faz isso é o app do seu relógio.';
 
   @override
   String get watchGuideNoteShareSheet =>
-      'Criar mostrador só existe na app Fotos. O Prism não consegue adicioná-lo ao seu próprio menu de partilha.';
+      'Criar mostrador só existe no app Fotos. O Prism não consegue adicioná-lo ao seu próprio menu de compartilhamento.';
 
   @override
   String get watchGuideNoteAlbum =>
-      'O Prism guarda em Recentes, não num álbum do Prism. Um álbum precisa de acesso total às suas fotos, e o Prism só pede para adicionar fotos.';
+      'O Prism salva em Recentes, não em um álbum do Prism. Um álbum precisa de acesso total às suas fotos, e o Prism só pede permissão para adicionar fotos.';
 
   @override
   String get watchGuideNoteLayout =>
-      'Cada mostrador tem o seu próprio relógio e layout, por isso pode cobrir parte da imagem.';
+      'Cada mostrador tem seu próprio relógio e layout, por isso pode cobrir parte da imagem.';
 
   @override
   String get watchGuideNoteGooglePhotos =>
-      'O Pixel Watch lê o Google Photos. Se a imagem não aparecer, faça primeiro uma cópia de segurança no Google Photos.';
+      'O Pixel Watch lê o Google Photos. Se a imagem não aparecer, faça primeiro um backup no Google Photos.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
