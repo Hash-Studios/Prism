@@ -40,7 +40,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
     } on FormatException {
       return DayNightPair();
     }
-    if (decoded is! Map || decoded['ownerId'] != owner) return DayNightPair();
+    if (decoded is! Map<String, Object?> || decoded['ownerId'] != owner) return DayNightPair();
     return _pairFromJson(decoded);
   }
 
@@ -144,7 +144,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
     'fromVariants': pair.fromVariants,
   };
 
-  static DayNightPair _pairFromJson(Map<dynamic, dynamic> json) {
+  static DayNightPair _pairFromJson(Map<String, Object?> json) {
     final DayTime? dayStart = DayTime.fromMinutes(json['dayStart']);
     final DayTime? nightStart = DayTime.fromMinutes(json['nightStart']);
     final DayNightTimes? times = dayStart == null || nightStart == null
