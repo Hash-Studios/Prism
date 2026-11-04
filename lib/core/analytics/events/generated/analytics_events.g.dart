@@ -1585,6 +1585,45 @@ class AutoRotateDisabledEvent extends AnalyticsEvent {
   }
 }
 
+class DayNightEnabledEvent extends AnalyticsEvent {
+  const DayNightEnabledEvent({required this.target, required this.fromVariants});
+
+  final WallpaperTarget target;
+  final bool fromVariants;
+
+  @override
+  String get eventName => 'day_night_enabled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'target': target.wireValue, 'from_variants': fromVariants ? 1 : 0};
+  }
+}
+
+class DayNightDisabledEvent extends AnalyticsEvent {
+  const DayNightDisabledEvent();
+
+  @override
+  String get eventName => 'day_night_disabled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class DayNightIosGuideOpenedEvent extends AnalyticsEvent {
+  const DayNightIosGuideOpenedEvent();
+
+  @override
+  String get eventName => 'day_night_ios_guide_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
 class AutoRotateFolderSetEvent extends AnalyticsEvent {
   const AutoRotateFolderSetEvent({required this.itemCountBucket});
 
