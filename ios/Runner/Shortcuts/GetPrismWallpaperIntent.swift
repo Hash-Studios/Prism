@@ -9,6 +9,7 @@ enum PrismWallpaperSource: String, AppEnum {
   case randomFavourite
   case rotationFolder
   case folder
+  case dayNight
 
   static var typeDisplayRepresentation: TypeDisplayRepresentation { "Wallpaper source" }
 
@@ -17,7 +18,25 @@ enum PrismWallpaperSource: String, AppEnum {
       .wallOfTheDay: "Wall of the Day",
       .randomFavourite: "Random favourite",
       .rotationFolder: "Rotation folder",
-      .folder: "Folder"
+      .folder: "Folder",
+      .dayNight: "Day and night"
+    ]
+  }
+}
+
+@available(iOS 16.0, *)
+enum PrismDayNightTime: String, AppEnum {
+  case now
+  case day
+  case night
+
+  static var typeDisplayRepresentation: TypeDisplayRepresentation { "Time" }
+
+  static var caseDisplayRepresentations: [PrismDayNightTime: DisplayRepresentation] {
+    [
+      .now: "Now",
+      .day: "Day",
+      .night: "Night"
     ]
   }
 }
@@ -67,6 +86,8 @@ enum PrismShortcutError: Error, CustomLocalizedStringResourceConvertible {
   case folderNotFound
   case folderWallUnavailable
   case unsupportedImage
+  case dayNightOff
+  case dayNightWallUnavailable
 
   var localizedStringResource: LocalizedStringResource {
     switch self {
@@ -88,6 +109,10 @@ enum PrismShortcutError: Error, CustomLocalizedStringResourceConvertible {
       return "Could not load a wallpaper from this folder. Check your connection."
     case .unsupportedImage:
       return "This wallpaper is in a format that Shortcuts cannot use."
+    case .dayNightOff:
+      return "Day and night is off. Open Prism and turn it on."
+    case .dayNightWallUnavailable:
+      return "Could not load your day or night wall. Open Prism, then try again."
     }
   }
 }
@@ -108,11 +133,18 @@ struct GetPrismWallpaperIntent: AppIntent {
   @Parameter(title: "Folder")
   var folder: PrismFolderEntity?
 
+  @Parameter(title: "Time", default: .now)
+  var time: PrismDayNightTime
+
   static var parameterSummary: some ParameterSummary {
     When(\GetPrismWallpaperIntent.$source, .equalTo, PrismWallpaperSource.folder) {
       Summary("Get \(\.$source) wallpaper from \(\.$folder)")
     } otherwise: {
-      Summary("Get \(\.$source) wallpaper")
+      When(\GetPrismWallpaperIntent.$source, .equalTo, PrismWallpaperSource.dayNight) {
+        Summary("Get \(\.$source) wallpaper for \(\.$time)")
+      } otherwise: {
+        Summary("Get \(\.$source) wallpaper")
+      }
     }
   }
 
@@ -135,8 +167,33 @@ struct GetPrismWallpaperIntent: AppIntent {
     case .folder:
       guard let folder else { throw $folder.needsValueError() }
       data = try await Self.folderImage(id: folder.id, rotation: false)
+    case .dayNight:
+      data = try await Self.dayNightImage(time: time)
     }
     return .result(value: try Self.file(from: data))
+  }
+
+  static func dayNightImage(
+    time: PrismDayNightTime,
+    defaults: UserDefaults = .standard,
+    now: Date = Date()
+  ) async throws -> Data {
+    guard let pair = PrismDayNight.parse(defaults.string(forKey: PrismDayNight.defaultsKey)) else {
+      throw PrismShortcutError.dayNightOff
+    }
+    let slot: PrismDayNightSlot
+    switch time {
+    case .now: slot = pair.slot(at: now)
+    case .day: slot = .day
+    case .night: slot = .night
+    }
+    do {
+      return try await PrismShortcutWallpaperLoader.imageData(for: pair.wall(for: slot))
+    } catch let error as CancellationError {
+      throw error
+    } catch {
+      throw PrismShortcutError.dayNightWallUnavailable
+    }
   }
 
   private static func wallOfTheDayImage() async throws -> Data {
