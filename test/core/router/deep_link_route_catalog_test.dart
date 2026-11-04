@@ -216,6 +216,7 @@ void main() {
       'LiveWallpaperRoute',
       'ClockPreviewRoute',
       'ReviewPhotoPreviewRoute',
+      'DayNightRoute',
     });
 
     DailyMomentConfig.enabledOverride = true;
@@ -223,7 +224,7 @@ void main() {
     expect(moment, isA<DailyMomentRoute>());
     reachablePages.addAll(_routeNames(moment!));
     final Set<String> appPages = _appRouteNames(AppRouter().routes)..remove('SplashWidgetRoute');
-    expect(appPages, hasLength(67));
+    expect(appPages, hasLength(68));
     expect(appPages, containsAll(<String>['CreatorStatsRoute', 'DailyMomentRoute', 'WeeklyChallengeRoute']));
     expect(
       appPages.difference(reachablePages),

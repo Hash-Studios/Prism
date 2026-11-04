@@ -230,7 +230,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/auto-rotate', page: AutoRotateRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/ios-shortcuts', page: IosShortcutsGuideRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/day-night', page: DayNightRoute.page, guards: [_signedInGuard]),
+    AutoRoute(page: DayNightRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/wallpaper-position', page: WallpaperPositionRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/rewards', page: RewardsRoute.page, guards: [_signedInGuard]),
