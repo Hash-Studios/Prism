@@ -193,7 +193,7 @@ Day and night is a mode of auto-rotate. The user picks a day wall and a night wa
 - Settings, section PERSONALISE, row "Day and night".
 - Hold a wallpaper in a grid or on the wallpaper card. Tap the round "Day and night" action. A sheet opens with "Use as day wall" and "Use as night wall".
 - If the wall has colour variants, the sheet also shows "Use the lightest and darkest variant".
-- Route `DayNightRoute`, path `/day-night`. Screen: `lib/features/day_night/views/pages/day_night_screen.dart`.
+- Screen: `lib/features/day_night/views/pages/day_night_screen.dart`. `openDayNightScreen` pushes it as an in-app page. It has no route path, so it has no deep link.
 
 The hold menu holds at most 6 actions, so Day and night uses one action that opens a sheet. The Set screen "More" menu shows on Android only, so it has no Day and night item.
 
