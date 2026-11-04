@@ -1,6 +1,6 @@
 # Auto-rotate
 
-Auto-rotate changes the wallpaper on a schedule. The user picks a source, how often to change, and where to apply it. The sources are Favourites, Downloads, a Category, the Wall of the Day archive, and History.
+Auto-rotate changes the wallpaper on a schedule. The user picks a source, how often to change, and where to apply it. The sources are Favourites, Downloads, a Category, the Wall of the Day archive, and History. Day and night is a separate mode with two walls. See [Day and night](#day-and-night).
 
 ## Where to find it
 
@@ -174,6 +174,147 @@ Folder is an Android only source. The user can rotate the walls of one of their 
 ### Limits of the folder source
 
 - Own folders only. Followed public folders are not a source yet. They come with public folders (PR #734).
+
+## Day and night
+
+Day and night is a mode of auto-rotate. The user picks a day wall and a night wall. The wallpaper changes to the day wall at the day start time and to the night wall at the night start time.
+
+### Platforms
+
+| Platform | Status |
+|---|---|
+| iOS 16 or later | Supported through Shortcuts. Prism prepares both walls. Two Shortcuts automations set the wallpaper. |
+| Android | Not available. The `async_wallpaper` plugin cannot change the wallpaper at two times of day. All entry points are hidden on Android. See "Android: what the plugin needs" below. |
+
+`dayNightSupported()` in `lib/features/day_night/day_night_support.dart` decides this. It is true only on iOS 16 or later.
+
+### Where to find it
+
+- Settings, section PERSONALISE, row "Day and night".
+- Hold a wallpaper in a grid or on the wallpaper card. Tap the round "Day and night" action. A sheet opens with "Use as day wall" and "Use as night wall".
+- If the wall has colour variants, the sheet also shows "Use the lightest and darkest variant".
+- Route `DayNightRoute`, path `/day-night`. Screen: `lib/features/day_night/views/pages/day_night_screen.dart`.
+
+The hold menu holds at most 6 actions, so Day and night uses one action that opens a sheet. The Set screen "More" menu shows on Android only, so it has no Day and night item.
+
+### The pair
+
+`DayNightPair` in `lib/features/day_night/domain/entities/day_night_pair.dart`:
+
+| Field | Meaning | Default |
+|---|---|---|
+| `day`, `night` | The two walls (`DayNightWall`: id, source, full URL, thumbnail URL, main colour). | None |
+| `times` | `DayNightTimes`: the day start and the night start, in minutes after local midnight. The two times are never equal. | 07:00 and 19:00 |
+| `target` | Home screen, lock screen, or both. | Both |
+| `enabled` | The mode is on. | Off |
+| `fromVariants` | Both walls came from the variant pick. | False |
+
+- Day runs from the day start up to the night start. When the night start is earlier than the day start, day runs past midnight.
+- Prism uses the local wall clock of the device. When the time zone changes, the slot follows the new local time.
+- On a DST change day, a missing local time (for example 02:30) is not a problem: the next minute that exists is past the start, so the slot is correct.
+- Equal times are refused. The screen shows "Pick two different times." and keeps the old times.
+
+The pair is stored in the settings box at `dayNight.pair` as one JSON value with the owner id. A pair saved by another account loads as an empty pair.
+
+### Variant pick
+
+`dayNightFromVariants` in `lib/features/day_night/domain/day_night_variants.dart` reads the main colour of each variant: a Prism palette id or a hex value. It takes the relative luminance. The lightest variant is the day wall and the darkest is the night wall. The item does not show when fewer than 2 variants have a main colour, or when all have the same luminance.
+
+### Free and Pro
+
+Day and night uses the same gate as auto-rotate: Prism Pro or an active 7-day auto-rotate pass (`autoRotateEntitled`).
+
+- Any signed-in user can pick the walls.
+- A free user sees "Day and night is a Prism Pro feature." and "See Prism Pro" in place of the switch.
+- When Pro or the pass ends, the same lapse rule as auto-rotate applies. `DayNightSessionListener` sends the session to `DayNightBloc` when the app starts, on resume, and when the session or the passes change. If the mode was on, the bloc turns it off, removes the Shortcuts snapshot and shows one toast: "Day and night is off because your Prism Pro plan or pass ended." Signing out or switching account turns it off with no toast.
+
+### iOS: how it works
+
+| Path | Role |
+|---|---|
+| `lib/features/day_night/biz/bloc/day_night_bloc.j.dart` | Loads, saves and publishes the pair. Owns the Pro gate and the lapse rule. |
+| `lib/features/day_night/data/repositories/day_night_repository_impl.dart` | Saves the pair. Keeps offline copies of both walls. Writes and removes the Shortcuts snapshot. |
+| `lib/features/day_night/views/widgets/day_night_guide_sheet.dart` | The guide that builds the two automations. |
+| `ios/Runner/Shortcuts/Core/PrismDayNight.swift` | Parses the snapshot and picks the slot for a date. |
+| `ios/Runner/Shortcuts/GetPrismWallpaperIntent.swift` | The source "Day and night" and its option "Time" (Now, Day or Night). |
+
+Data path:
+
+```text
+Day and night screen -> DayNightBloc -> DayNightRepositoryImpl.publish
+  -> OfflineAssetStore.retain (https walls) or the downloaded original (protected walls)
+  -> NativeAssetPathsStore group "daynight"
+  -> shared_preferences "shortcuts.day_night" -> UserDefaults "flutter.shortcuts.day_night"
+  -> Get Prism Wallpaper (source Day and night) -> Set Wallpaper Photo
+```
+
+- Turn on the switch. Prism copies both walls for offline use first. Then it writes the snapshot. The action then works without the app and without the network.
+- A protected Prism original has no public URL. Prism uses it only if the user downloaded it. If not, the wall card shows "Download this wall in Prism first." and the mode stays off.
+- If the copy fails, the screen shows "Could not save the walls for offline use. Check your connection." with "Try again".
+- A change to a wall, the times or the target while the mode is on publishes again. If that fails, the mode turns off and the screen shows the reason.
+- Each app start publishes again, so the offline copies stay. A wall that was deleted or made protected after the pick still works from its offline copy.
+- Turning the mode off, a lapse, sign-out and account deletion remove the snapshot. The action then fails with "Day and night is off. Open Prism and turn it on."
+
+Snapshot value:
+
+```json
+{"dayStart": 420, "nightStart": 1140,
+ "day": {"id": "<wall id>", "url": "https://..."},
+ "night": {"id": "<wall id>", "asset": "original:prism_<wall id>"}}
+```
+
+### iOS: the automations
+
+"Set up in Shortcuts" opens the guide sheet. The user makes 2 automations, one for each start time:
+
+1. In Shortcuts, tap Automation, then tap +.
+2. Tap Time of Day. Choose the time, then Daily.
+3. Choose Run Immediately, then tap Next.
+4. Tap New Blank Automation.
+5. Add "Get Prism Wallpaper". Set Source to Day and night.
+6. Add "Set Wallpaper Photo". Choose the screens that match the target. Turn off Show Preview.
+
+With Sunrise or Sunset in place of a fixed time, set Time to Day for the sunrise automation and Night for the sunset one. With Time set to Now, the action uses Prism's times.
+
+### Android: what the plugin needs
+
+`async_wallpaper` 3.6.0 has these triggers. None can change the wallpaper at two times of day:
+
+- `timeOfDay` sets one inexact alarm each day, on the hour only. Each run moves to the next wall in the playlist. It does not look at the time.
+- `interval` is WorkManager periodic work. It does not follow the clock, and it starts its count again after each reboot.
+- The boot receiver schedules the triggers again. It does not apply a wallpaper.
+
+The plugin needs a daily schedule API: a list of `{minute of day, source}` entries, one inexact `setAndAllowWhileIdle` alarm for the next entry, and a run that applies the entry for the current local time. Boot, time change and time zone change must apply the current entry and set the next alarm. Starting a daily schedule must stop rotation, and the reverse. A plugin release needs the owner's OK.
+
+### Analytics
+
+- `day_night_enabled` has the fields `target` and `from_variants`.
+- `day_night_disabled` has no fields.
+- `day_night_ios_guide_opened` has no fields.
+- There is no `day_night_switched` event. On iOS, Shortcuts sets the wallpaper and Prism does not see it. Android has no switch yet.
+
+### How to test
+
+1. Use an iPhone with iOS 16 or later. Sign in as a Pro user.
+2. Hold a wallpaper. Tap "Day and night", then "Use as day wall". Make sure the toast "Day wall set." shows.
+3. Hold another wallpaper. Tap "Day and night", then "Use as night wall".
+4. Open Settings, then "Day and night". Make sure both walls show with "From 07:00" and "From 19:00".
+5. Set both times to the same value. Make sure "Pick two different times." shows.
+6. Turn on "Switch walls at these times". Tap "Set up in Shortcuts" and follow the guide.
+7. Turn on airplane mode. Run each automation. Make sure the day wall and the night wall are set.
+8. Open a wall with colour variants. Hold it. Make sure "Use the lightest and darkest variant" shows and sets both walls.
+9. On Android, make sure no Day and night item shows.
+
+Automated tests:
+
+- `test/features/day_night/`
+- `ios/RunnerTests/PrismDayNightTests.swift`
+
+Command:
+
+```sh
+fvm flutter test --no-pub test/features/day_night
+```
 
 ## Limits
 
