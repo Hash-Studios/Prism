@@ -6,8 +6,8 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
-import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart' as path;
@@ -19,8 +19,8 @@ class NativeAssetPathsStore {
 
   static const String preferenceKey = 'offline.native_asset_paths';
   static const String privateOwnerKey = '$preferenceKey.private_owner';
-  static const List<String> _groups = <String>['favourites', 'shortcuts', 'folders', 'wotd', 'category'];
-  static const List<String> _privateGroups = <String>['favourites', 'shortcuts', 'folders', 'wotd'];
+  static const List<String> _groups = <String>['favourites', 'shortcuts', 'folders', 'wotd', 'category', 'daynight'];
+  static const List<String> _privateGroups = <String>['favourites', 'shortcuts', 'folders', 'wotd', 'daynight'];
   static Future<void> _tail = Future<void>.value();
   static int _generation = 0;
   @visibleForTesting
@@ -31,7 +31,30 @@ class NativeAssetPathsStore {
   static Future<File?> Function(FavouriteWallEntity wall)? downloadedOriginalOverride;
 
   /// The key the Shortcuts intent reads a wall's downloaded original by. A protected wall has no public URL.
-  static String originalAssetKey(FavouriteWallEntity wall) => 'original:${folderItemKey(wall)}';
+  static String originalAssetKey(FavouriteWallEntity wall) => originalAssetKeyFor(wall.source, wall.id);
+
+  static String originalAssetKeyFor(WallpaperSource source, String id) =>
+      'original:${source.legacyProviderString.toLowerCase()}_$id';
+
+  /// The path of [original] under the retained root or the downloads root, or null when it is under neither.
+  static Future<String?> originalRelativePath(File original) async {
+    final Directory supportDirectory = supportDirectoryOverride ?? await getApplicationSupportDirectory();
+    final Directory documentsDirectory = documentsDirectoryOverride ?? await getApplicationDocumentsDirectory();
+    return _relativeOriginalPath(
+      original,
+      path.join(supportDirectory.path, 'prism', 'offline', 'assets'),
+      path.join(documentsDirectory.path, 'PrismDownloads'),
+    );
+  }
+
+  static String? _relativeOriginalPath(File original, String retainedRoot, String downloadsRoot) {
+    final String root = path.isWithin(retainedRoot, original.path) ? retainedRoot : downloadsRoot;
+    final String relativePath = path.relative(original.path, from: root);
+    if (path.isAbsolute(relativePath) || relativePath == '..' || relativePath.startsWith('..${path.separator}')) {
+      return null;
+    }
+    return relativePath;
+  }
 
   /// The downloaded original of each wall in [walls] that has no https URL, keyed by [originalAssetKey], as a path
   /// under the retained or downloads root. Only originals the user already got are used, so no coin gate is skipped.
@@ -60,11 +83,8 @@ class NativeAssetPathsStore {
       final File? original = await lookup(wall);
       if (!ownerIsCurrent()) return <String, String>{};
       if (original == null) continue;
-      final String root = path.isWithin(retainedRoot, original.path) ? retainedRoot : downloadsRoot;
-      final String relativePath = path.relative(original.path, from: root);
-      if (path.isAbsolute(relativePath) || relativePath == '..' || relativePath.startsWith('..${path.separator}')) {
-        continue;
-      }
+      final String? relativePath = _relativeOriginalPath(original, retainedRoot, downloadsRoot);
+      if (relativePath == null) continue;
       relativePaths[originalAssetKey(wall)] = relativePath;
     }
     return ownerIsCurrent() ? relativePaths : <String, String>{};

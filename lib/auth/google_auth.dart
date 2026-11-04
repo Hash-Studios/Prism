@@ -32,6 +32,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Thrown when the user selects a different Google account during re-authentication.
 class WrongAccountException implements Exception {
@@ -543,6 +544,12 @@ class GoogleAuth {
         await _clearShortcutsFolders();
       } catch (e, st) {
         logger.w('Shortcuts folders clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+      }
+      if (!operation.isCurrent) return;
+      try {
+        await (await SharedPreferences.getInstance()).remove('shortcuts.day_night');
+      } catch (e, st) {
+        logger.w('Day and night snapshot clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
       }
       if (!operation.isCurrent) return;
       await StreakWidgetSync.clear();

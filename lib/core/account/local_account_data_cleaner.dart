@@ -67,6 +67,12 @@ class LocalAccountDataCleaner {
     (name: 'favourites', run: (String userId) => getIt<FavoritesLocalDataSource>().clearUser(userId)),
     (name: 'iOS favourites mirror', run: ShortcutsFavouritesStore.clearForUser),
     (name: 'iOS folders mirror', run: ShortcutsFoldersStore.clearForUser),
+    (
+      name: 'iOS day and night snapshot',
+      run: (_) async {
+        await (await SharedPreferences.getInstance()).remove('shortcuts.day_night');
+      },
+    ),
     (name: 'iOS widget streak', run: clearIosWidgetStreakForUser),
     (name: 'native favourites paths', run: NativeAssetPathsStore.clearForUser),
     (name: 'Android favourites mirror', run: _clearAndroidFavouritesForUser),
