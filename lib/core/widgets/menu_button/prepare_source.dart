@@ -1,4 +1,5 @@
 import 'package:Prism/core/utils/url_utils.dart';
+import 'package:Prism/core/wallpaper/wall_desktop.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -50,4 +51,28 @@ class DownloadVariant {
     final int room = _maxNameLength - suffix.length;
     return '${safe.length > room ? safe.substring(0, room) : safe}$suffix.png';
   }
+}
+
+/// Files a download saves with the wall in the same purchase, such as a watch set. The coin gate runs one time for the
+/// whole set: the phone wall, the files [prepare] makes from it, and the [desktop] version when there is one.
+class DownloadSet {
+  const DownloadSet({required this.key, required this.prepare, this.desktop, this.onSaved});
+
+  /// Names the set in the Downloads index, for example `watch-apple_46`. The file that [prepare] returns under this
+  /// key carries the same name, so the set reads as saved while that file is in Downloads.
+  final String key;
+
+  /// Makes the extra files from the phone source the gate authorized: a URL or a local path. Returns local paths by
+  /// name key. It runs once per tap, before any file is saved. The button deletes the files after the save.
+  final Future<Map<String, String>> Function(String phoneSource) prepare;
+
+  /// The desktop version. It needs its own server grant, which the same gate run asks for.
+  final WallDesktopVariant? desktop;
+
+  /// Runs after the set is saved, before the button deletes [files]: copy a file to keep it. [desktopSaved] is false
+  /// when the set has a desktop version that did not save.
+  final void Function({required bool desktopSaved, required Map<String, String> files})? onSaved;
+
+  /// Each paid item counts as one download: the phone wall and the desktop version. The extra files are free.
+  int get paidItems => desktop == null ? 1 : 2;
 }
