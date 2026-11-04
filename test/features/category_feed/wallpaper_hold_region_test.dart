@@ -21,6 +21,7 @@ void main() {
     Object identity = 'wall',
     Size tileSize = const Size(160, 200),
     double textScale = 1,
+    String? dayNightLabel,
   }) => tester.pumpWidget(
     MaterialApp(
       home: MediaQuery(
@@ -45,6 +46,7 @@ void main() {
                 pinLabel: isPinned == null ? null : 'Pin to top',
                 unpinLabel: 'Unpin',
                 readIsPinned: isPinned == null ? null : () => isPinned,
+                dayNightLabel: dayNightLabel,
                 onAction: actions.add,
                 preview: const ColoredBox(key: ValueKey('preview'), color: Colors.blue),
                 child: GestureDetector(
@@ -250,6 +252,45 @@ void main() {
       expect(find.byIcon(Icons.ios_share_rounded), findsNothing);
     });
   }
+
+  testWidgets('day and night is the last hold action when labelled', (tester) async {
+    final actions = <WallpaperQuickAction>[];
+    await pumpRegion(
+      tester,
+      actions,
+      showLess: false,
+      resetOriginal: true,
+      saveToFolder: true,
+      isPinned: false,
+      dayNightLabel: 'Day and night',
+    );
+    final gesture = await hold(tester);
+    final Finder dayNight = find.bySemanticsLabel('Day and night');
+    expect(dayNight, findsOneWidget);
+    expect(find.byIcon(Icons.contrast_rounded), findsOneWidget);
+    await gesture.moveTo(tester.getCenter(dayNight));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 180));
+    await tester.pump();
+    expect(actions, <WallpaperQuickAction>[WallpaperQuickAction.dayNight]);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('day and night is absent from the hold ring without a label', (tester) async {
+    await pumpRegion(
+      tester,
+      <WallpaperQuickAction>[],
+      showLess: false,
+      resetOriginal: true,
+      saveToFolder: true,
+      isPinned: false,
+    );
+    await hold(tester);
+    expect(find.bySemanticsLabel('Day and night'), findsNothing);
+    expect(find.byIcon(Icons.contrast_rounded), findsNothing);
+  });
 
   testWidgets('pin is a reachable sixth hold action', (tester) async {
     final actions = <WallpaperQuickAction>[];

@@ -25,6 +25,7 @@ import 'package:Prism/features/creator_directory/views/pages/creators_page.dart'
 import 'package:Prism/features/creator_stats/views/pages/creator_stats_page.dart';
 import 'package:Prism/features/daily_chest/views/pages/daily_chest_page.dart';
 import 'package:Prism/features/daily_flow/views/daily_moment_page.dart';
+import 'package:Prism/features/day_night/views/pages/day_night_screen.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
 import 'package:Prism/features/deep_link_input/views/pages/deep_link_input_page.dart';

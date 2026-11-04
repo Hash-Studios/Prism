@@ -2949,6 +2949,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             onResetOriginal: () => _handleAccentLongPress(context, state),
             preview: ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(_cardRadius)), child: image),
             readIsPinned: () => _favouritePinState(entity),
+            variants: state.variants,
             onTogglePin: () {
               final bool? pinned = _favouritePinState(entity);
               if (pinned == null) return;
