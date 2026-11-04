@@ -15,6 +15,7 @@ import 'package:Prism/features/category_feed/domain/entities/category_entity.dar
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
+import 'package:Prism/features/category_feed/views/widgets/wallpaper_grid.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -34,14 +35,21 @@ class _MockCategoryFeedBloc extends MockBloc<CategoryFeedEvent, CategoryFeedStat
 const CategoryEntity _space = CategoryEntity(
   name: 'Space',
   source: WallpaperSource.prism,
-  searchType: CategorySearchType.nonSearch,
+  searchType: CategorySearchType.search,
   image: '',
   image2: '',
 );
 const CategoryEntity _dark = CategoryEntity(
   name: 'Dark',
   source: WallpaperSource.prism,
-  searchType: CategorySearchType.nonSearch,
+  searchType: CategorySearchType.search,
+  image: '',
+  image2: '',
+);
+const CategoryEntity _desktop = CategoryEntity(
+  name: 'Desktop',
+  source: WallpaperSource.prism,
+  searchType: CategorySearchType.desktop,
   image: '',
   image2: '',
 );
@@ -108,6 +116,36 @@ void main() {
     expect(find.text('No wallpapers here yet'), findsOneWidget);
   });
 
+  testWidgets('a Prism category of the desktop type shows the desktop grid', (tester) async {
+    current = CategoryFeedState.initial().copyWith(
+      status: LoadStatus.success,
+      categories: const <CategoryEntity>[_space, _desktop],
+      selectedCategory: _desktop,
+      items: <FeedItemEntity>[],
+    );
+    when(() => bloc.add(any())).thenAnswer((_) => states.add(current));
+
+    await pumpScreen(tester, 'category:Desktop');
+    await tester.pump();
+
+    expect(tester.widget<WallpaperGrid>(find.byType(WallpaperGrid)).desktopDownload, isTrue);
+  });
+
+  testWidgets('a Prism category of the search type shows the wallpaper grid', (tester) async {
+    current = CategoryFeedState.initial().copyWith(
+      status: LoadStatus.success,
+      categories: const <CategoryEntity>[_space, _dark],
+      selectedCategory: _dark,
+      items: <FeedItemEntity>[],
+    );
+    when(() => bloc.add(any())).thenAnswer((_) => states.add(current));
+
+    await pumpScreen(tester);
+    await tester.pump();
+
+    expect(tester.widget<WallpaperGrid>(find.byType(WallpaperGrid)).desktopDownload, isFalse);
+  });
+
   testWidgets('a failed category list shows the error, not an endless skeleton', (tester) async {
     current = CategoryFeedState.initial().copyWith(
       status: LoadStatus.failure,
@@ -140,6 +178,21 @@ void main() {
 
     expect(find.byType(LoadingCards), findsNothing);
     expect(find.text('No wallpapers here yet'), findsOneWidget);
+  });
+
+  testWidgets('a hidden Desktop deep link uses the first listed category fallback', (tester) async {
+    current = CategoryFeedState.initial().copyWith(
+      status: LoadStatus.success,
+      categories: const <CategoryEntity>[_space, _dark],
+      selectedCategory: _space,
+      items: <FeedItemEntity>[],
+    );
+    when(() => bloc.add(any())).thenAnswer((_) => states.add(current));
+
+    await pumpScreen(tester, 'category:Desktop');
+    await tester.pump();
+
+    verify(() => bloc.add(CategoryFeedEvent.categorySelected(category: _space))).called(1);
   });
 
   testWidgets('a collection shows its name as the title, then an empty state when it has no wallpapers', (

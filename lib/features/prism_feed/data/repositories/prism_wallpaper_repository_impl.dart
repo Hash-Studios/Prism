@@ -185,6 +185,53 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
   }
 
   @override
+  Future<Result<List<PrismWallpaper>>> fetchDesktopCompanions({String? startAfterDocId, int limit = _pageSize}) async {
+    try {
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
+      // Unknown blocks cannot safely filter creators, so fail before traversing pages.
+      if (blocked is UnknownBlockedCreators) return Result.error(const ServerFailure(wallpaperLoadFailureMessage));
+
+      final List<PrismWallpaper> visibleWalls = <PrismWallpaper>[];
+      String? cursor = startAfterDocId;
+      while (visibleWalls.length < limit) {
+        final List<_PrismRow> rows = await _firestoreClient
+            .query<_PrismRow>(
+              FirestoreQuerySpec(
+                collection: FirebaseCollections.walls,
+                sourceTag: 'category_feed.desktop',
+                filters: const <FirestoreFilter>[
+                  FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+                  FirestoreFilter(field: 'desktopVariant.v', op: FirestoreFilterOp.isGreaterThan, value: ''),
+                ],
+                orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'desktopVariant.v')],
+                startAfterDocId: cursor,
+                limit: limit,
+                dedupeWindowMs: 1000,
+                cachePolicy: FirestoreCachePolicy.memoryFirst,
+              ),
+              (data, docId) => (docId: docId, doc: PrismWallDocDto.fromJson(data)),
+            )
+            .timeout(_queryTimeout);
+        if (rows.isEmpty) break;
+
+        for (final _PrismRow row in rows) {
+          cursor = row.docId;
+          final PrismWallpaper wall = row.doc.toDomain(docId: row.docId);
+          if (!BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked)) {
+            visibleWalls.add(wall);
+            if (visibleWalls.length == limit) break;
+          }
+        }
+        if (rows.length < limit || visibleWalls.length == limit) break;
+      }
+      return Result.success(visibleWalls);
+    } catch (error, stackTrace) {
+      logger.e('[PrismWallpaperRepository] fetchDesktopCompanions failed', error: error, stackTrace: stackTrace);
+      return Result.error(ServerFailure(wallpaperLoadFailureMessage, code: mapFirestoreError(error).code));
+    }
+  }
+
+  @override
   Future<Result<List<PrismWallpaper>>> fetchStreakShopWallpapers() async {
     try {
       final List<_PrismRow> rows = await _firestoreClient.query<_PrismRow>(

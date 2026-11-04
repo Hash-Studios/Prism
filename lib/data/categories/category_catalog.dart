@@ -28,9 +28,9 @@ class CategoryCatalog {
     return _session = decode(remoteConfig.getString(categoriesRemoteConfigKey)) ?? categoryDefinitions;
   }
 
-  /// Reads `[{"name", "source": "pexels" | "wallhaven", "imageUrl", "secondaryImageUrl"?}]` in display order. The
-  /// name is also the search query. Entries without a text name or image, with another source, or with a name already
-  /// listed are skipped. Null when no entry is left.
+  /// Reads `[{"name", "source": "pexels" | "wallhaven", "imageUrl", "secondaryImageUrl"?, "query"?}]` in display
+  /// order. The search query is `query`, else the name. Entries without a text name or image, with another source, or
+  /// with a name already listed are skipped. Null when no entry is left.
   @visibleForTesting
   static List<CategoryDefinition>? decode(String raw) {
     final Object? decoded;
@@ -47,10 +47,12 @@ class CategoryCatalog {
       final Object? rawName = item['name'];
       final Object? rawImageUrl = item['imageUrl'];
       final Object? rawSecondaryImageUrl = item['secondaryImageUrl'];
+      final Object? rawQuery = item['query'];
       final String name = rawName is String ? rawName.trim() : '';
       final WallpaperSource source = WallpaperSourceX.fromWire(item['source']);
       final String imageUrl = rawImageUrl is String ? rawImageUrl.trim() : '';
       final String secondaryImageUrl = rawSecondaryImageUrl is String ? rawSecondaryImageUrl.trim() : '';
+      final String query = rawQuery is String ? rawQuery.trim() : '';
       if (name.isEmpty || imageUrl.isEmpty) continue;
       if (source != WallpaperSource.pexels && source != WallpaperSource.wallhaven) continue;
       if (!names.add(name.toLowerCase())) continue;
@@ -61,6 +63,7 @@ class CategoryCatalog {
           searchType: CategorySearchType.search,
           imageUrl: imageUrl,
           secondaryImageUrl: secondaryImageUrl.isEmpty ? imageUrl : secondaryImageUrl,
+          query: query.isEmpty ? null : query,
         ),
       );
     }

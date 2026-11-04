@@ -4429,6 +4429,21 @@ class CreatorsCategoryFilteredEvent extends AnalyticsEvent {
   }
 }
 
+class CategoryOpenedEvent extends AnalyticsEvent {
+  const CategoryOpenedEvent({required this.category, required this.entry});
+
+  final String category;
+  final String entry;
+
+  @override
+  String get eventName => 'category_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'category': category, 'entry': entry};
+  }
+}
+
 class FollowedByShownEvent extends AnalyticsEvent {
   const FollowedByShownEvent({required this.count});
 

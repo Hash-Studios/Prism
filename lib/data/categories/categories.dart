@@ -21,6 +21,16 @@ const List<CategoryDefinition> categoryDefinitions = <CategoryDefinition>[
         'https://images.pexels.com/photos/1714205/pexels-photo-1714205.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940',
   ),
   CategoryDefinition(
+    name: 'Pastel',
+    source: WallpaperSource.pexels,
+    searchType: CategorySearchType.search,
+    query: 'pastel aesthetic',
+    imageUrl:
+        'https://images.pexels.com/photos/7354509/pexels-photo-7354509.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940',
+    secondaryImageUrl:
+        'https://images.pexels.com/photos/2088142/pexels-photo-2088142.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940',
+  ),
+  CategoryDefinition(
     name: 'Cyberpunk',
     source: WallpaperSource.wallhaven,
     searchType: CategorySearchType.search,
@@ -30,13 +40,33 @@ const List<CategoryDefinition> categoryDefinitions = <CategoryDefinition>[
         'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940',
   ),
   CategoryDefinition(
+    name: 'Gaming',
+    source: WallpaperSource.pexels,
+    searchType: CategorySearchType.search,
+    query: 'gaming wallpaper',
+    imageUrl:
+        'https://images.pexels.com/photos/33888375/pexels-photo-33888375.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940',
+    secondaryImageUrl:
+        'https://images.pexels.com/photos/30353203/pexels-photo-30353203.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940',
+  ),
+  CategoryDefinition(
     name: '3D Render',
     source: WallpaperSource.pexels,
     searchType: CategorySearchType.search,
+    query: '3d render abstract',
     imageUrl:
-        'https://images.pexels.com/photos/1624496/pexels-photo-1624496.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940',
+        'https://images.pexels.com/photos/31687154/pexels-photo-31687154.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940',
     secondaryImageUrl:
-        'https://images.pexels.com/photos/1194420/pexels-photo-1194420.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940',
+        'https://images.pexels.com/photos/29101883/pexels-photo-29101883.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940',
+  ),
+  CategoryDefinition(
+    name: 'Desktop',
+    source: WallpaperSource.prism,
+    searchType: CategorySearchType.desktop,
+    imageUrl:
+        'https://img.prismwalls.com/previews/desktop-a21132e6a067d05ca17391ed1db9ef03de20043a228511f683dc662c616d8700.jpg',
+    secondaryImageUrl:
+        'https://img.prismwalls.com/previews/desktop-c5e33e9074d92c1c41a4f3d49896df44ae7e88e7b87c384c49d61fbb27c7cba5.jpg',
   ),
   CategoryDefinition(
     name: 'Gradient',

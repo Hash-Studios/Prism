@@ -22,6 +22,7 @@
     "migrate:dedupe-wall-ids": "npm run build && node lib/scripts/dedupeWallIds.js",
     "migrate:wall-authors": "npm run build && node lib/scripts/backfillWallAuthors.js",
     "migrate:wall-spatial": "npm run build && node lib/scripts/backfillWallSpatial.js",
+    "migrate:wall-categories": "npm run build && node lib/scripts/backfillWallCategories.js",
     "job:wrapped": "npm run build && node lib/scripts/buildWrapped.js",
     "economy:config": "node lib/scripts/economyConfig.js",
     "drops:reserve": "npm run build && node lib/scripts/reserveDrop.js",

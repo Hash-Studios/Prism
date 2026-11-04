@@ -2266,6 +2266,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get coreCategoryGaming => 'Gaming';
 
   @override
+  String get coreCategoryPastel => 'Pastell';
+
+  @override
+  String get coreCategoryDesktop => 'Desktop';
+
+  @override
   String get coreCategoryGradient => 'Farbverlauf';
 
   @override

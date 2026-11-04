@@ -186,6 +186,7 @@ class _CollectionsGridState extends State<CollectionsGrid> {
       unawaited(_handleCollectionTap(isPremium: data.isPremium, collectionName: data.name));
       return;
     }
+    unawaited(analytics.track(CategoryOpenedEvent(category: data.name, entry: 'collections')));
     context.router.push(CollectionViewRoute(collectionName: 'category:${Uri.encodeComponent(data.name)}'));
   }
 

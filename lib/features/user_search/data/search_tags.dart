@@ -4,6 +4,5 @@ import 'package:Prism/data/categories/category_definition.dart';
 final List<String> curatedSearchTags = List<String>.unmodifiable(<String>[
   ...prismClassifierCategories,
   'AMOLED',
-  'Pastel',
   'Cityscape',
 ]);

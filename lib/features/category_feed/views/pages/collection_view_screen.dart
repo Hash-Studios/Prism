@@ -159,6 +159,7 @@ class _CategoryFeedContent extends StatelessWidget {
           case WallpaperSource.pexels:
             return const PexelsGrid();
           case WallpaperSource.prism:
+            return WallpaperGrid(desktopDownload: state.selectedCategory?.searchType == CategorySearchType.desktop);
           case WallpaperSource.downloaded:
           case WallpaperSource.unknown:
             return const WallpaperGrid();

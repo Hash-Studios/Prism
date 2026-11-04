@@ -1,4 +1,7 @@
-import 'package:Prism/core/analytics/events/analytics_enums.dart';
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -140,7 +143,9 @@ class CategorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<CategoryDefinition> categories = CategoryCatalog.current;
+    final List<CategoryDefinition> categories = CategoryCatalog.current
+        .where((category) => category.searchType == CategorySearchType.search)
+        .toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -156,6 +161,7 @@ class CategorySection extends StatelessWidget {
               fallbackImage: categories[index].secondaryImageUrl,
               onTap: () {
                 PrismHaptics.tap();
+                unawaited(analytics.track(CategoryOpenedEvent(category: name, entry: 'search')));
                 context.router.push(CollectionViewRoute(collectionName: 'category:${Uri.encodeComponent(name)}'));
               },
             );

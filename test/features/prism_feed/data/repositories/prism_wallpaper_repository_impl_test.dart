@@ -323,6 +323,100 @@ void main() {
       });
     });
 
+    group('fetchDesktopCompanions', () {
+      test('refills pages after blocked creators without skipping or duplicating desktop walls', () async {
+        final List<({String docId, Map<String, dynamic> data})> docs = _buildWallDocs(count: 30);
+        for (final ({String docId, Map<String, dynamic> data}) row in docs) {
+          row.data['desktopVariant'] = <String, Object?>{'v': 'desktop/${row.docId}.jpg'};
+        }
+        final firestore = _walls(docs);
+        final repo = PrismWallpaperRepositoryImpl(
+          firestore,
+          FakeFeedCacheLocalDataSource(),
+          FakeUserBlockRepository.pending()..completeInitial(<String>{'creator1', 'creator2', 'creator3'}),
+        );
+
+        final firstPage = await repo.fetchDesktopCompanions();
+
+        expect(firstPage.data, hasLength(24));
+        expect(firstPage.data!.first.id, 'wall-4');
+        expect(firstPage.data!.last.id, 'wall-27');
+        expect(firestore.querySpecs.map((spec) => spec.startAfterDocId), <String?>[null, 'doc-24']);
+
+        final secondPage = await repo.fetchDesktopCompanions(startAfterDocId: 'doc-27');
+
+        expect(secondPage.data!.map((wall) => wall.id).toList(growable: false), <String>[
+          'wall-28',
+          'wall-29',
+          'wall-30',
+        ]);
+        expect(firestore.querySpecs.skip(2).map((spec) => spec.startAfterDocId), <String?>['doc-27']);
+      });
+
+      test('an unknown block list fails before querying desktop walls', () async {
+        final firestore = _walls(_buildWallDocs(count: 30));
+        final repo = PrismWallpaperRepositoryImpl(
+          firestore,
+          FakeFeedCacheLocalDataSource(),
+          FakeUserBlockRepository.pending()..timeOutInitialLoad(),
+        );
+
+        final result = await repo.fetchDesktopCompanions();
+
+        expect(result.isFailure, isTrue);
+        expect(firestore.querySpecs, isEmpty);
+      });
+
+      test('asks for reviewed walls with a desktop version, in desktopVariant.v order, with its source tag', () async {
+        final firestore = _walls(_buildWallDocs(count: 3));
+        final repo = PrismWallpaperRepositoryImpl(
+          firestore,
+          FakeFeedCacheLocalDataSource(),
+          FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+        );
+
+        final result = await repo.fetchDesktopCompanions(startAfterDocId: 'doc-1');
+
+        final FirestoreQuerySpec spec = firestore.querySpecs.single;
+        expect(spec.sourceTag, 'category_feed.desktop');
+        expect(spec.collection, FirebaseCollections.walls);
+        expect(spec.filters.map((f) => (f.field, f.op, f.value)), <(String, FirestoreFilterOp, Object?)>[
+          ('review', FirestoreFilterOp.isEqualTo, true),
+          ('desktopVariant.v', FirestoreFilterOp.isGreaterThan, ''),
+        ]);
+        expect(spec.orderBy.single.field, 'desktopVariant.v');
+        expect(spec.orderBy.single.descending, isFalse);
+        expect(spec.startAfterDocId, 'doc-1');
+        expect(spec.limit, 24);
+        expect(result.data!.map((wall) => wall.id), <String>['wall-2', 'wall-3']);
+      });
+
+      test('hides walls from blocked creators', () async {
+        final repo = PrismWallpaperRepositoryImpl(
+          _walls(_buildWallDocs(count: 3)),
+          FakeFeedCacheLocalDataSource(),
+          FakeUserBlockRepository.pending()..completeInitial(<String>{'creator2'}),
+        );
+
+        final result = await repo.fetchDesktopCompanions();
+
+        expect(result.data!.map((wall) => wall.id), <String>['wall-1', 'wall-3']);
+      });
+
+      test('a failed query is a user-facing failure', () async {
+        final firestore = _walls(_buildWallDocs(count: 1))..queryError = StateError('boom');
+        final repo = PrismWallpaperRepositoryImpl(
+          firestore,
+          FakeFeedCacheLocalDataSource(),
+          FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+        );
+
+        final result = await repo.fetchDesktopCompanions();
+
+        expect(result.failure!.message, wallpaperLoadFailureMessage);
+      });
+    });
+
     group('fetchByCategory', () {
       test('asks for reviewed walls of that category, newest first, with the Prism-first source tag', () async {
         final docs = _buildWallDocs(count: 3);

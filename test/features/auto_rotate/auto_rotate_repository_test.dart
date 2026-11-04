@@ -653,8 +653,11 @@ void main() {
     });
 
     test('the category picker offers the classifier names', () {
-      expect(autoRotateCategories, hasLength(18));
-      expect(autoRotateCategories, containsAll(<String>['Nature', 'AI Art', '3D Render', 'Galaxy']));
+      expect(autoRotateCategories, hasLength(20));
+      expect(
+        autoRotateCategories,
+        containsAll(<String>['Nature', 'AI Art', '3D Render', 'Galaxy', 'Gaming', 'Pastel']),
+      );
     });
 
     test('folder reads with a blank id or owner are unavailable, not deleted', () async {

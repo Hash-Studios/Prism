@@ -33,6 +33,7 @@ import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_desktop.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
@@ -142,6 +143,7 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
     this.aspectRatio,
     this.requestId,
     this.feed,
+    this.desktopDownload = false,
   }) : assert(entity != null || (wallId != null && source != null), 'Either entity or wallId+source must be provided');
 
   final FeedItemEntity? entity;
@@ -164,6 +166,9 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
 
   /// The grid this wall was opened from. A sideways swipe on the card shows the next or previous wall in place.
   final WallpaperFeed? feed;
+
+  /// Set from the Desktop category: Download saves the desktop version of a wall that has one.
+  final bool desktopDownload;
 
   /// Warms one colour variant's pictures. Tests replace it.
   @visibleForTesting
@@ -665,6 +670,7 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
                   requestId: screen.requestId,
                   heroTag: tile.heroTag,
                   aspectRatio: index == widget.start ? screen.aspectRatio : null,
+                  desktopDownload: screen.desktopDownload,
                 ),
               ),
             ),
@@ -2359,10 +2365,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final Future<String> Function()? localSource = localFile == null ? null : () async => localFile.path;
     final Color? tint = state.tint;
     final double deviceLongSidePx = _screenPixels(context).longestSide;
+    final WallDesktopVariant? desktop = widget.desktopDownload && localFile == null && entity is PrismFeedItem
+        ? entity.wallpaper.desktop
+        : null;
     Future<String> Function()? prepareSource;
     Future<String> Function(String)? prepareAuthorized;
     DownloadVariant? variant;
-    if (tint != null) {
+    if (desktop == null && tint != null) {
       prepareAuthorized = (authorized) => renderTintedWallpaper(
         source: authorized,
         tint: tint,
@@ -2382,6 +2391,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         label: label,
         link: source,
         variant: variant,
+        desktop: desktop,
         isPremiumContent: isPremiumFeedItem(entity, app_state.premiumCollections),
         contentId: entity.id,
         wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,

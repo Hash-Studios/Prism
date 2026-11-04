@@ -3,7 +3,9 @@
 const List<String> wallRequestCategoryTags = <String>[
   'AI Art',
   'Aesthetic',
+  'Pastel',
   'Cyberpunk',
+  'Gaming',
   '3D Render',
   'Gradient',
   'Minimal',

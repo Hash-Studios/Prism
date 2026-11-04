@@ -8,14 +8,18 @@ import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
 class WallpaperGrid extends StatelessWidget {
-  const WallpaperGrid({super.key});
+  const WallpaperGrid({super.key, this.desktopDownload = false});
+
+  /// The Desktop category: each wallpaper opens with Download set to its desktop version.
+  final bool desktopDownload;
 
   @override
   Widget build(BuildContext context) {
     return SourceFeedGrid<PrismFeedItem>(
       surface: AnalyticsSurfaceValue.homeWallpaperGrid,
       listName: ScrollListNameValue.wallpaperGrid,
-      sourceContextPrefix: 'home_wallpaper_grid',
+      sourceContextPrefix: desktopDownload ? 'category_desktop' : 'home_wallpaper_grid',
+      desktopDownload: desktopDownload,
       itemWrapper: (context, item, tile) {
         if (!isPremiumWall(app_state.premiumCollections, item.wallpaper.collections ?? const <String>[])) return tile;
         return Stack(

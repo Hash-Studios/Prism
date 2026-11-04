@@ -3921,6 +3921,18 @@ abstract class AppLocalizations {
   /// **'Gaming'**
   String get coreCategoryGaming;
 
+  /// No description provided for @coreCategoryPastel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pastel'**
+  String get coreCategoryPastel;
+
+  /// No description provided for @coreCategoryDesktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop'**
+  String get coreCategoryDesktop;
+
   /// No description provided for @coreCategoryGradient.
   ///
   /// In en, this message translates to:

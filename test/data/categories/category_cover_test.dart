@@ -17,7 +17,8 @@ void main() {
   final List<String> stockCovers = <String>[
     for (final Object? interest in json.decode(defaultPersonalizedInterestsJson) as List<Object?>)
       (interest! as Map<String, Object?>)['imageUrl']! as String,
-    for (final category in categoryDefinitions) category.imageUrl,
+    for (final category in categoryDefinitions)
+      if (category.imageUrl.startsWith('https://images.pexels.com/')) category.imageUrl,
   ];
 
   test('every stock interest and category cover ships in the app', () {

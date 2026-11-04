@@ -11,6 +11,9 @@ abstract class PrismWallpaperRepository {
     int limit = 24,
     String sourceTag = 'category_feed.prism_first',
   });
+
+  /// Approved walls that have a desktop version, in a stable order.
+  Future<Result<List<PrismWallpaper>>> fetchDesktopCompanions({String? startAfterDocId, int limit = 24});
   Future<Result<PrismWallpaper?>> fetchById(String id);
 
   /// Reads the current reviewed wall by canonical identity, without offline fallback.

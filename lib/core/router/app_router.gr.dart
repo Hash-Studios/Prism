@@ -2783,6 +2783,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
     double? aspectRatio,
     String? requestId,
     WallpaperFeed? feed,
+    bool desktopDownload = false,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperDetailRoute.name,
@@ -2798,6 +2799,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
            aspectRatio: aspectRatio,
            requestId: requestId,
            feed: feed,
+           desktopDownload: desktopDownload,
          ),
          initialChildren: children,
        );
@@ -2823,6 +2825,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
           aspectRatio: args.aspectRatio,
           requestId: args.requestId,
           feed: args.feed,
+          desktopDownload: args.desktopDownload,
         ),
       );
     },
@@ -2842,6 +2845,7 @@ class WallpaperDetailRouteArgs {
     this.aspectRatio,
     this.requestId,
     this.feed,
+    this.desktopDownload = false,
   });
 
   final Key? key;
@@ -2866,9 +2870,11 @@ class WallpaperDetailRouteArgs {
 
   final WallpaperFeed? feed;
 
+  final bool desktopDownload;
+
   @override
   String toString() {
-    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile, aspectRatio: $aspectRatio, requestId: $requestId, feed: $feed}';
+    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile, aspectRatio: $aspectRatio, requestId: $requestId, feed: $feed, desktopDownload: $desktopDownload}';
   }
 
   @override
@@ -2885,7 +2891,8 @@ class WallpaperDetailRouteArgs {
         localFile == other.localFile &&
         aspectRatio == other.aspectRatio &&
         requestId == other.requestId &&
-        feed == other.feed;
+        feed == other.feed &&
+        desktopDownload == other.desktopDownload;
   }
 
   @override
@@ -2900,7 +2907,8 @@ class WallpaperDetailRouteArgs {
       localFile.hashCode ^
       aspectRatio.hashCode ^
       requestId.hashCode ^
-      feed.hashCode;
+      feed.hashCode ^
+      desktopDownload.hashCode;
 }
 
 /// generated route for

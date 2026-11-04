@@ -111,7 +111,7 @@ class OriginalAccessService {
   }
 
   /// Request ids of the desktop companion are kept apart from the phone original's.
-  static String _grantKey(String wallpaperId, bool desktop, String? desktopVersion) =>
+  static String grantKey(String wallpaperId, {bool desktop = false, String? desktopVersion}) =>
       desktop ? '$wallpaperId~desktop${desktopVersion == null ? '' : '~$desktopVersion'}' : wallpaperId;
 
   Future<OriginalAccessQuote> quote({
@@ -121,7 +121,7 @@ class OriginalAccessService {
     String? desktopVersion,
   }) async {
     final owner = _owner();
-    final key = _grantKey(wallpaperId, desktop, desktopVersion);
+    final key = grantKey(wallpaperId, desktop: desktop, desktopVersion: desktopVersion);
     if (!desktop && await _acquiredLocal(wallpaperId) != null) return OriginalAccessQuote(0, app_state.prismUser.coins);
     final requestId = await _requestId(owner, key, action, null, acquire: false);
     if (_owner() != owner) throw StateError('Original access unavailable');
@@ -307,7 +307,7 @@ class OriginalAccessService {
     if (owner.isEmpty || wallpaperId == null || wallpaperId.trim().isEmpty) {
       throw StateError('Original access unavailable');
     }
-    final key = _grantKey(wallpaperId, desktop, desktopVersion);
+    final key = grantKey(wallpaperId, desktop: desktop, desktopVersion: desktopVersion);
     if (!desktop) {
       final local = await _acquiredLocal(wallpaperId);
       if (local != null) return local;

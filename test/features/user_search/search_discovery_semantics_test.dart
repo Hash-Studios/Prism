@@ -116,6 +116,27 @@ void main() {
     }
   });
 
+  testWidgets('browse by category shows Pastel and hides the Desktop category', (tester) async {
+    final router = _DiscoveryRouter();
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router.config(),
+        ),
+      );
+      await router.navigatePath('/');
+      await tester.pumpAndSettle();
+
+      expect(find.bySemanticsLabel('Category, Pastel'), findsOneWidget);
+      expect(find.bySemanticsLabel('Category, Desktop'), findsNothing);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('colour semantic tap reports the matching palette colour', (tester) async {
     _tappedColours.clear();
     final router = _DiscoveryRouter();

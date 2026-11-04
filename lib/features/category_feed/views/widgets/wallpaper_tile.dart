@@ -31,6 +31,7 @@ class WallpaperTile extends StatelessWidget {
     this.onVisible,
     this.feed,
     this.gridItems,
+    this.desktopDownload = false,
   });
 
   final FeedItemEntity item;
@@ -59,6 +60,9 @@ class WallpaperTile extends StatelessWidget {
 
   /// Legacy grid-column hint for callers that need a fixed decode size.
   final int? crossAxisCount;
+
+  /// Opens the detail page with Download set to the desktop version.
+  final bool desktopDownload;
 
   AnalyticsSurfaceValue get _surface => switch (item.source) {
     WallpaperSource.wallhaven => AnalyticsSurfaceValue.homeWallhavenGrid,
@@ -134,6 +138,7 @@ class WallpaperTile extends StatelessWidget {
                 heroTag: heroTag,
                 requestId: session.requestId,
                 feed: walls == null ? null : _wallpaperFeed(context, heroScope, walls),
+                desktopDownload: desktopDownload,
               ),
             );
           },

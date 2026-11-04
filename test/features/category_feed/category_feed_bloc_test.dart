@@ -24,7 +24,7 @@ class _MockFetchCategoryFeedUseCase extends Mock implements FetchCategoryFeedUse
 const CategoryEntity _home = CategoryEntity(
   name: 'Home',
   source: WallpaperSource.prism,
-  searchType: CategorySearchType.nonSearch,
+  searchType: CategorySearchType.search,
   image: '',
   image2: '',
 );
@@ -111,7 +111,7 @@ void main() {
         category: CategoryEntity(
           name: 'B',
           source: WallpaperSource.prism,
-          searchType: CategorySearchType.nonSearch,
+          searchType: CategorySearchType.search,
           image: '',
           image2: '',
         ),
@@ -288,7 +288,7 @@ void main() {
     const other = CategoryEntity(
       name: 'Other',
       source: WallpaperSource.prism,
-      searchType: CategorySearchType.nonSearch,
+      searchType: CategorySearchType.search,
       image: '',
       image2: '',
     );
@@ -332,7 +332,7 @@ void main() {
     const CategoryEntity space = CategoryEntity(
       name: 'Space',
       source: WallpaperSource.prism,
-      searchType: CategorySearchType.nonSearch,
+      searchType: CategorySearchType.search,
       image: '',
       image2: '',
     );
