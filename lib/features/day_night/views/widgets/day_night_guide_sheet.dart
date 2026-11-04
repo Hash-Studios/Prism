@@ -7,22 +7,30 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/day_night/views/widgets/day_night_phone_preview.dart';
+import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// The Shortcuts steps that switch the day and night walls at the times in [pair].
-Future<void> showDayNightGuideSheet(BuildContext context, {required DayNightPair pair}) {
+Future<void> showDayNightGuideSheet(BuildContext context, {required DayNightPair pair}) async {
   unawaited(analytics.track(const DayNightIosGuideOpenedEvent()));
-  return showPrismSheet<void>(context, builder: (_) => _DayNightGuideSheet(pair: pair));
+  final int? iosVersion = defaultTargetPlatform == TargetPlatform.iOS ? await iosMajor() : 17;
+  if (!context.mounted) return;
+  await showPrismSheet<void>(
+    context,
+    builder: (_) => _DayNightGuideSheet(pair: pair, legacyAutomation: iosVersion == null || iosVersion < 17),
+  );
 }
 
 class _DayNightGuideSheet extends StatelessWidget {
-  const _DayNightGuideSheet({required this.pair});
+  const _DayNightGuideSheet({required this.pair, required this.legacyAutomation});
 
   final DayNightPair pair;
+  final bool legacyAutomation;
 
   Future<void> _openShortcuts(BuildContext context) async {
     PrismHaptics.selection();
@@ -49,8 +57,7 @@ class _DayNightGuideSheet extends StatelessWidget {
     final List<String> steps = <String>[
       l10n.dayNightGuideStepAutomation,
       l10n.dayNightGuideStepTime(dayTime),
-      l10n.dayNightGuideStepRun,
-      l10n.dayNightGuideStepBlank,
+      if (!legacyAutomation) ...<String>[l10n.dayNightGuideStepRun, l10n.dayNightGuideStepBlank],
       l10n.dayNightGuideStepGet,
       l10n.dayNightGuideStepSet(screens),
       l10n.dayNightGuideStepRepeat(nightTime),
@@ -75,6 +82,11 @@ class _DayNightGuideSheet extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: PrismSpace.sm),
               child: _GuideStep(number: index + 1, text: step),
+            ),
+          if (legacyAutomation)
+            Padding(
+              padding: const EdgeInsets.only(bottom: PrismSpace.md),
+              child: Text(l10n.shortcutsAutomationIos16, style: PrismTextStyles.body(context)),
             ),
           PrismSectionHeader(title: l10n.dayNightGuideSunTitle, small: true),
           Text(l10n.dayNightGuideSunBody, style: PrismTextStyles.body(context)),

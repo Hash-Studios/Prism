@@ -3,6 +3,7 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/day_night/views/widgets/day_night_guide_sheet.dart';
+import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,11 +14,17 @@ DayNightWall _wall(String id) =>
     DayNightWall(id: id, source: WallpaperSource.prism, fullUrl: 'https://example.com/$id.jpg', thumbnailUrl: '');
 
 void main() {
+  final Future<int?> Function() originalIosVersion = iosMajorVersion;
+
   setUp(() {
     AnalyticsRuntime.instance = FakeAppAnalytics();
+    iosMajorVersion = () async => 17;
   });
 
-  tearDown(AnalyticsRuntime.reset);
+  tearDown(() {
+    AnalyticsRuntime.reset();
+    iosMajorVersion = originalIosVersion;
+  });
 
   Future<void> pumpHost(WidgetTester tester, DayNightPair pair, {double textScale = 1}) {
     tester.view.physicalSize = const Size(800, 4000);
@@ -65,4 +72,17 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('iOS 16 uses its automation instruction instead of iOS 17 labels', (tester) async {
+    iosMajorVersion = () async => 16;
+    final DayNightPair pair = DayNightPair(day: _wall('day'), night: _wall('night'));
+    await pumpHost(tester, pair);
+
+    await tester.tap(find.text('Open guide'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('On iOS 16 there is no Run Immediately. Turn off Ask Before Running instead.'), findsOneWidget);
+    expect(find.text('Choose Run Immediately, then tap Next.'), findsNothing);
+    expect(find.text('Tap New Blank Automation.'), findsNothing);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 }

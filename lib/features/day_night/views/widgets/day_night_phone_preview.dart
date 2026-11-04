@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -86,7 +89,7 @@ class DayNightPhonePreview extends StatelessWidget {
             ),
           ),
         ),
-        if (needsDownload) ...<Widget>[
+        if (needsDownload && current != null) ...<Widget>[
           const SizedBox(height: PrismSpace.xs),
           Text(
             l10n.dayNightNeedsDownload,
@@ -98,7 +101,11 @@ class DayNightPhonePreview extends StatelessWidget {
             label: l10n.dayNightOpenWall,
             variant: PrismButtonVariant.tonal,
             size: PrismButtonSize.compact,
-            onPressed: () => context.router.maybePop(),
+            onPressed: () => unawaited(
+              context.router.push(
+                WallpaperDetailRoute(wallId: current.id, source: current.source, thumbnailUrl: current.thumbnailUrl),
+              ),
+            ),
           ),
         ],
       ],

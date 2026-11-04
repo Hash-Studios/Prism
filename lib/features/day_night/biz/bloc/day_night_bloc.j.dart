@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/day_night/domain/repositories/day_night_repository.dart';
 import 'package:Prism/logger/logger.dart';
@@ -37,7 +38,10 @@ class DayNightBloc extends Bloc<DayNightEvent, DayNightState> {
 
   Future<void> _onEntitlementChanged(_EntitlementChanged event, Emitter<DayNightState> emit) async {
     final String userId = event.userId.trim();
+    if (userId.isEmpty ? app_state.prismUser.loggedIn : !_ownsCurrentUser(userId)) return;
     if (userId == state.userId) {
+      if (!state.loaded && userId.isEmpty) await _unpublishQuietly();
+      if (userId.isNotEmpty && !_ownsCurrentUser(userId)) return;
       if (state.pair.enabled && !event.isPro) {
         await _lapse(emit, notice: true);
       } else {
@@ -45,23 +49,29 @@ class DayNightBloc extends Bloc<DayNightEvent, DayNightState> {
       }
       return;
     }
-    final String previousUserId = state.userId;
-    final bool wasEnabled = state.pair.enabled;
-    if (wasEnabled) await _unpublishQuietly();
+    final bool isInitialSession = !state.loaded;
+    await _unpublishQuietly();
+    if (!_eventOwnerIsCurrent(userId)) return;
     final DayNightPair pair = userId.isEmpty ? DayNightPair() : await _repository.load(ownerId: userId);
-    emit(state.copyWith(pair: pair, loaded: true, isPro: event.isPro, userId: userId, issue: null, proLapsed: false));
+    if (!_eventOwnerIsCurrent(userId)) return;
+    emit(
+      state.copyWith(
+        pair: pair,
+        loaded: true,
+        isPro: event.isPro,
+        userId: userId,
+        preparing: false,
+        issue: null,
+        proLapsed: false,
+      ),
+    );
     if (pair.enabled && !event.isPro) {
-      await _lapse(emit, notice: previousUserId.isEmpty, unpublish: !wasEnabled);
+      await _lapse(emit, notice: isInitialSession, unpublish: false);
     } else if (pair.enabled) {
-      try {
-        await _repository.publish(pair);
-      } catch (error, stackTrace) {
-        logger.w(
-          'Day and night could not refresh its offline copies.',
-          tag: 'DayNightBloc',
-          error: error,
-          stackTrace: stackTrace,
-        );
+      final DayNightIssue? issue = await _publish(pair, ownerId: userId);
+      if (!_ownsCurrentUser(userId)) return;
+      if (issue != null) {
+        await _saveDisabledAfterPublishFailure(pair, userId, issue, emit);
       }
     }
   }
@@ -82,44 +92,75 @@ class DayNightBloc extends Bloc<DayNightEvent, DayNightState> {
       emit(state.copyWith(pair: next, issue: null));
       return;
     }
+    if (!_ownsCurrentUser(owner)) return;
     await _repository.save(next, ownerId: owner);
+    if (!_ownsCurrentUser(owner)) return;
     if (!next.enabled) {
       emit(state.copyWith(pair: next, issue: null));
       return;
     }
     emit(state.copyWith(pair: next, issue: null, preparing: true));
-    final DayNightIssue? issue = await _publish(next);
+    final DayNightIssue? issue = await _publish(next, ownerId: owner);
+    if (!_ownsCurrentUser(owner)) return;
     if (issue == null) {
       emit(state.copyWith(preparing: false, issue: null));
       return;
     }
+    await _saveDisabledAfterPublishFailure(next, owner, issue, emit);
+  }
+
+  Future<void> _saveDisabledAfterPublishFailure(
+    DayNightPair pair,
+    String owner,
+    DayNightIssue issue,
+    Emitter<DayNightState> emit,
+  ) async {
     await _unpublishQuietly();
-    final DayNightPair off = next.copyWith(enabled: false);
+    if (!_ownsCurrentUser(owner)) return;
+    final DayNightPair off = pair.copyWith(enabled: false);
     await _repository.save(off, ownerId: owner);
+    if (!_ownsCurrentUser(owner)) return;
     emit(state.copyWith(pair: off, preparing: false, issue: issue));
     analytics.track(const DayNightDisabledEvent());
   }
 
   Future<void> _enable(Emitter<DayNightState> emit) async {
-    if (!state.isPro || state.userId.isEmpty) return;
+    if (!state.isPro || state.userId.isEmpty || !_ownsCurrentUser(state.userId)) return;
     if (!state.pair.isComplete) {
       emit(state.copyWith(issue: DayNightIssue.needsBothWalls));
       return;
     }
     final DayNightPair on = state.pair.copyWith(enabled: true);
     emit(state.copyWith(preparing: true, issue: null));
-    final DayNightIssue? issue = await _publish(on);
+    final DayNightIssue? issue = await _publish(on, ownerId: state.userId);
+    if (!_ownsCurrentUser(state.userId)) return;
     if (issue != null) {
       emit(state.copyWith(preparing: false, issue: issue));
       return;
     }
-    await _repository.save(on, ownerId: state.userId);
+    try {
+      await _repository.save(on, ownerId: state.userId);
+    } catch (error, stackTrace) {
+      if (!_ownsCurrentUser(state.userId)) return;
+      logger.w(
+        'Day and night could not save its enabled state.',
+        tag: 'DayNightBloc',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      await _unpublishQuietly();
+      if (!_ownsCurrentUser(state.userId)) return;
+      emit(state.copyWith(preparing: false, issue: DayNightIssue.offlineCopyFailed));
+      return;
+    }
+    if (!_ownsCurrentUser(state.userId)) return;
     emit(state.copyWith(pair: on, preparing: false, issue: null));
     analytics.track(DayNightEnabledEvent(target: on.target, fromVariants: on.fromVariants));
   }
 
   /// Null when the offline copies are ready, otherwise the issue to show.
-  Future<DayNightIssue?> _publish(DayNightPair pair) async {
+  Future<DayNightIssue?> _publish(DayNightPair pair, {required String ownerId}) async {
+    if (!_ownsCurrentUser(ownerId)) return null;
     try {
       await _repository.publish(pair);
       return null;
@@ -132,7 +173,9 @@ class DayNightBloc extends Bloc<DayNightEvent, DayNightState> {
   }
 
   Future<void> _turnOff(Emitter<DayNightState> emit) async {
+    if (state.userId.isNotEmpty && !_ownsCurrentUser(state.userId)) return;
     await _unpublishQuietly();
+    if (state.userId.isNotEmpty && !_ownsCurrentUser(state.userId)) return;
     final DayNightPair off = state.pair.copyWith(enabled: false);
     if (state.userId.isNotEmpty) await _repository.save(off, ownerId: state.userId);
     emit(state.copyWith(pair: off, issue: null));
@@ -141,9 +184,12 @@ class DayNightBloc extends Bloc<DayNightEvent, DayNightState> {
 
   /// Turns the feature off because Pro ended. [notice] shows the lapse message, which only a returning user needs.
   Future<void> _lapse(Emitter<DayNightState> emit, {required bool notice, bool unpublish = true}) async {
+    if (!_ownsCurrentUser(state.userId)) return;
     if (unpublish) await _unpublishQuietly();
+    if (!_ownsCurrentUser(state.userId)) return;
     final DayNightPair off = state.pair.copyWith(enabled: false);
     await _repository.save(off, ownerId: state.userId);
+    if (!_ownsCurrentUser(state.userId)) return;
     emit(state.copyWith(pair: off, isPro: false, proLapsed: notice));
     analytics.track(const DayNightDisabledEvent());
   }
@@ -160,6 +206,11 @@ class DayNightBloc extends Bloc<DayNightEvent, DayNightState> {
       );
     }
   }
+
+  bool _ownsCurrentUser(String userId) =>
+      userId.isNotEmpty && app_state.prismUser.loggedIn && app_state.prismUser.id.trim() == userId;
+
+  bool _eventOwnerIsCurrent(String userId) => userId.isEmpty ? !app_state.prismUser.loggedIn : _ownsCurrentUser(userId);
 
   static DayNightIssue _issueFor(DayNightPrepareException error) => switch (error.failure) {
     DayNightPrepareFailure.needsDownload =>

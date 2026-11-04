@@ -547,7 +547,9 @@ class GoogleAuth {
       }
       if (!operation.isCurrent) return;
       try {
-        await (await SharedPreferences.getInstance()).remove('shortcuts.day_night');
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        if (!operation.isCurrent) return;
+        await prefs.remove('shortcuts.day_night');
       } catch (e, st) {
         logger.w('Day and night snapshot clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
       }

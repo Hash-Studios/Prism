@@ -269,10 +269,10 @@ Snapshot value:
 
 1. In Shortcuts, tap Automation, then tap +.
 2. Tap Time of Day. Choose the time, then Daily.
-3. Choose Run Immediately, then tap Next.
-4. Tap New Blank Automation.
-5. Add "Get Prism Wallpaper". Set Source to Day and night.
-6. Add "Set Wallpaper Photo". Choose the screens that match the target. Turn off Show Preview.
+3. On iOS 17 or later, choose Run Immediately, tap Next, then tap New Blank Automation. On iOS 16, there is no Run Immediately or New Blank Automation step.
+4. Add "Get Prism Wallpaper". Set Source to Day and night.
+5. Add "Set Wallpaper Photo". Choose the screens that match the target. Turn off Show Preview.
+6. On iOS 16, turn off Ask Before Running after adding the actions.
 
 With Sunrise or Sunset in place of a fixed time, set Time to Day for the sunrise automation and Night for the sunset one. With Time set to Now, the action uses Prism's times.
 
