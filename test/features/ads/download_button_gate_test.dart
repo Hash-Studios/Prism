@@ -2626,6 +2626,8 @@ void main() {
       expect(ledger(), isEmpty);
       expect(savedFiles, <Map<String, String>>[<String, String>{}]);
       expect(find.text('Saved'), findsNothing);
+      final DownloadResultEvent result = fakeAnalytics.events.whereType<DownloadResultEvent>().single;
+      expect((result.result, result.reason, result.stage), ('failed', 'set_save_failed', 'download'));
       expect(File(watchFile).existsSync(), isFalse);
     });
   });

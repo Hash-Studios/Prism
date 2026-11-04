@@ -205,6 +205,10 @@ class _DownloadButtonState extends State<DownloadButton> {
   String? _failureReason;
   String _failureStage = 'download';
 
+  /// True when this tap saved the paid files of a set but not every extra file. The spend stands, but the result
+  /// counts as failed.
+  bool _setIncomplete = false;
+
   CoinSpendAction get _downloadSpendAction =>
       widget.isPremiumContent ? CoinSpendAction.premiumWallpaperDownload : CoinSpendAction.wallpaperDownload;
 
@@ -452,6 +456,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       }
       _failureReason = null;
       _failureStage = 'download';
+      _setIncomplete = false;
       _authorizedSource = null;
       _attemptStarted = true;
       _track(
@@ -603,9 +608,10 @@ class _DownloadButtonState extends State<DownloadButton> {
     if (event is DownloadResultEvent) {
       if (!_attemptStarted || _resultTracked) return;
       _resultTracked = true;
+      final bool incomplete = _setIncomplete && event.result == 'success';
       event = DownloadResultEvent(
-        result: event.result,
-        reason: event.reason,
+        result: incomplete ? 'failed' : event.result,
+        reason: incomplete ? 'set_save_failed' : event.reason,
         stage: event.stage,
         operationId: _tap.operationId,
         requestId: _tap.requestId,
@@ -1040,6 +1046,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           ),
         );
         if (!saved.success) {
+          _setIncomplete = true;
           toasts.error(l10n.economyAiDownloadFailed);
           break;
         }

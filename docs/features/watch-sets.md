@@ -48,7 +48,7 @@ So a set without a desktop version costs the same as one download. A set with a 
 |---|---|
 | The watch crop cannot render | Nothing is saved. A client spend is refunded, as for any failed download. |
 | The phone save fails | Nothing more is saved. The download rules for a failed save apply. |
-| The watch file does not save after the phone file saved | The phone file was paid for and is kept, so the spend stays. Prism says the save failed and does not mark the set as saved. The guide does not open. |
+| The watch file does not save after the phone file saved | The phone file was paid for and is kept, so the spend stays. Prism says the save failed and does not mark the set as saved. The guide does not open. `download_result` is `failed` with reason `set_save_failed`. |
 | The desktop grant is refused after the phone grant (the balance changed) | Prism saves the phone and the watch files and says that the desktop version was not saved. |
 | The desktop save fails | Prism keeps the phone and the watch files and says that the desktop version was not saved. Its grant stays open for 5 minutes, so a retry in that time does not charge again. |
 | The user closes the sheet during the save | The save goes on, as **Download** does. The temporary files are deleted when it ends. |
