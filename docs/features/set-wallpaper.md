@@ -35,7 +35,7 @@ The sheet has these parts, from the top:
 - **Always use this**: when on, the target the user taps becomes the saved default (`PersistenceKeys.defaultApplyTarget`). The next tap on Set skips the sheet.
 - The line "Both sets it on your home screen and lock screen." It shows only when Both is on the sheet.
 
-The editor opens the same sheet without the thumbnail, the studio row, and the pair row.
+The editor opens the sheet without the thumbnail and the pair row. The studio row opens on the edited file. See [wallpaper-editor.md](wallpaper-editor.md).
 
 ### Crop and position and the Position studio
 
@@ -109,7 +109,8 @@ After a successful set from the Set button, the app calls `RatePromptService.ins
 
 ## Editor export
 
-- The editor caps the long side of the export at 4096 px (`maxExportLongSide`). If the device screen long side is larger, the cap is the screen size.
+- The cap applies only without a crop. Without a crop, the long side is capped at 4096 px (`maxExportLongSide`). If the device screen long side is larger, the cap is the screen size. A crop exports the kept area at full size. See [wallpaper-editor.md](wallpaper-editor.md).
+- The export stops after 30 s (`editExportTimeLimit`). It then shows "Saving took too long. Try a smaller crop or fewer filters."
 - The image fetch in `EditButton` stops after 30 s.
 - The editor saved toast uses `wallpaperSavedMessage` ("Saved to Photos." on iOS, "Wall downloaded in Pictures/Prism!" on Android).
 - The editor passes `recordHistory: false`, so an edited export has no Undo and no history row.

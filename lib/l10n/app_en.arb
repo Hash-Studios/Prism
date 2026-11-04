@@ -7880,6 +7880,78 @@
       }
     }
   },
+  "wallpaperFilterTabCrop": "Crop",
+  "@wallpaperFilterTabCrop": {
+    "description": "Tab label for the wallpaper crop panel."
+  },
+  "wallpaperCropPresetFree": "Free",
+  "@wallpaperCropPresetFree": {
+    "description": "Crop shape preset that allows any aspect ratio."
+  },
+  "wallpaperCropPresetPhone": "This phone",
+  "@wallpaperCropPresetPhone": {
+    "description": "Crop shape preset that matches this device screen."
+  },
+  "wallpaperCropPresetPortrait": "9:16",
+  "@wallpaperCropPresetPortrait": {
+    "description": "Crop shape preset with a 9:16 portrait ratio."
+  },
+  "wallpaperCropPresetSquare": "1:1",
+  "@wallpaperCropPresetSquare": {
+    "description": "Crop shape preset with a 1:1 square ratio."
+  },
+  "wallpaperCropPresetLandscape": "16:9 desktop",
+  "@wallpaperCropPresetLandscape": {
+    "description": "Crop shape preset with a 16:9 desktop ratio."
+  },
+  "wallpaperCropPresetOriginal": "Original",
+  "@wallpaperCropPresetOriginal": {
+    "description": "Crop shape preset that covers the whole image."
+  },
+  "wallpaperCropRotate": "Rotate 90°",
+  "@wallpaperCropRotate": {
+    "description": "Tooltip for the button that rotates the crop by 90 degrees."
+  },
+  "wallpaperCropReset": "Reset crop",
+  "@wallpaperCropReset": {
+    "description": "Tooltip for the button that resets the crop."
+  },
+  "wallpaperCropArea": "Crop area",
+  "@wallpaperCropArea": {
+    "description": "Screen reader label for the crop frame."
+  },
+  "wallpaperCropSize": "{width} × {height} px",
+  "@wallpaperCropSize": {
+    "description": "Size of the crop area in pixels.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "wallpaperCropCornerTopLeft": "Top-left corner",
+  "@wallpaperCropCornerTopLeft": {
+    "description": "Screen reader label for the top-left crop handle."
+  },
+  "wallpaperCropCornerTopRight": "Top-right corner",
+  "@wallpaperCropCornerTopRight": {
+    "description": "Screen reader label for the top-right crop handle."
+  },
+  "wallpaperCropCornerBottomLeft": "Bottom-left corner",
+  "@wallpaperCropCornerBottomLeft": {
+    "description": "Screen reader label for the bottom-left crop handle."
+  },
+  "wallpaperCropCornerBottomRight": "Bottom-right corner",
+  "@wallpaperCropCornerBottomRight": {
+    "description": "Screen reader label for the bottom-right crop handle."
+  },
+  "wallpaperExportTimedOut": "Saving took too long. Try a smaller crop or fewer filters.",
+  "@wallpaperExportTimedOut": {
+    "description": "Error shown when saving an edited wallpaper takes too long."
+  },
   "wallpaperFitBlur": "Fit with blur",
   "@wallpaperFitBlur": {
     "description": "Wallpaper placement fit option that fills empty areas with a blur."

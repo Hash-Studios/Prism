@@ -7764,6 +7764,78 @@
       }
     }
   },
+  "wallpaperFilterTabCrop": "Zuschneiden",
+  "@wallpaperFilterTabCrop": {
+    "description": "Tab label for the wallpaper crop panel."
+  },
+  "wallpaperCropPresetFree": "Frei",
+  "@wallpaperCropPresetFree": {
+    "description": "Crop shape preset that allows any aspect ratio."
+  },
+  "wallpaperCropPresetPhone": "Dieses Telefon",
+  "@wallpaperCropPresetPhone": {
+    "description": "Crop shape preset that matches this device screen."
+  },
+  "wallpaperCropPresetPortrait": "9:16",
+  "@wallpaperCropPresetPortrait": {
+    "description": "Crop shape preset with a 9:16 portrait ratio."
+  },
+  "wallpaperCropPresetSquare": "1:1",
+  "@wallpaperCropPresetSquare": {
+    "description": "Crop shape preset with a 1:1 square ratio."
+  },
+  "wallpaperCropPresetLandscape": "16:9 Desktop",
+  "@wallpaperCropPresetLandscape": {
+    "description": "Crop shape preset with a 16:9 desktop ratio."
+  },
+  "wallpaperCropPresetOriginal": "Original",
+  "@wallpaperCropPresetOriginal": {
+    "description": "Crop shape preset that covers the whole image."
+  },
+  "wallpaperCropRotate": "90° drehen",
+  "@wallpaperCropRotate": {
+    "description": "Tooltip for the button that rotates the crop by 90 degrees."
+  },
+  "wallpaperCropReset": "Zuschnitt zurücksetzen",
+  "@wallpaperCropReset": {
+    "description": "Tooltip for the button that resets the crop."
+  },
+  "wallpaperCropArea": "Zuschneidebereich",
+  "@wallpaperCropArea": {
+    "description": "Screen reader label for the crop frame."
+  },
+  "wallpaperCropSize": "{width} × {height} px",
+  "@wallpaperCropSize": {
+    "description": "Size of the crop area in pixels.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "wallpaperCropCornerTopLeft": "Obere linke Ecke",
+  "@wallpaperCropCornerTopLeft": {
+    "description": "Screen reader label for the top-left crop handle."
+  },
+  "wallpaperCropCornerTopRight": "Obere rechte Ecke",
+  "@wallpaperCropCornerTopRight": {
+    "description": "Screen reader label for the top-right crop handle."
+  },
+  "wallpaperCropCornerBottomLeft": "Untere linke Ecke",
+  "@wallpaperCropCornerBottomLeft": {
+    "description": "Screen reader label for the bottom-left crop handle."
+  },
+  "wallpaperCropCornerBottomRight": "Untere rechte Ecke",
+  "@wallpaperCropCornerBottomRight": {
+    "description": "Screen reader label for the bottom-right crop handle."
+  },
+  "wallpaperExportTimedOut": "Speichern hat zu lange gedauert. Versuche einen kleineren Zuschnitt oder weniger Filter.",
+  "@wallpaperExportTimedOut": {
+    "description": "Error shown when saving an edited wallpaper takes too long."
+  },
   "wallpaperFitBlur": "Mit Weichzeichner einpassen",
   "@wallpaperFitBlur": {
     "description": "Wallpaper placement fit option that fills empty areas with a blur."

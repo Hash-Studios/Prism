@@ -8831,6 +8831,57 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get wallpaperFilterTabCrop => 'Recortar';
+
+  @override
+  String get wallpaperCropPresetFree => 'Libre';
+
+  @override
+  String get wallpaperCropPresetPhone => 'Este teléfono';
+
+  @override
+  String get wallpaperCropPresetPortrait => '9:16';
+
+  @override
+  String get wallpaperCropPresetSquare => '1:1';
+
+  @override
+  String get wallpaperCropPresetLandscape => '16:9 escritorio';
+
+  @override
+  String get wallpaperCropPresetOriginal => 'Original';
+
+  @override
+  String get wallpaperCropRotate => 'Girar 90°';
+
+  @override
+  String get wallpaperCropReset => 'Restablecer recorte';
+
+  @override
+  String get wallpaperCropArea => 'Área de recorte';
+
+  @override
+  String wallpaperCropSize(int width, int height) {
+    return '$width × $height px';
+  }
+
+  @override
+  String get wallpaperCropCornerTopLeft => 'Esquina superior izquierda';
+
+  @override
+  String get wallpaperCropCornerTopRight => 'Esquina superior derecha';
+
+  @override
+  String get wallpaperCropCornerBottomLeft => 'Esquina inferior izquierda';
+
+  @override
+  String get wallpaperCropCornerBottomRight => 'Esquina inferior derecha';
+
+  @override
+  String get wallpaperExportTimedOut =>
+      'Guardar tardó demasiado. Prueba con un recorte más pequeño o con menos filtros.';
+
+  @override
   String get wallpaperFitBlur => 'Ajustar con desenfoque';
 
   @override

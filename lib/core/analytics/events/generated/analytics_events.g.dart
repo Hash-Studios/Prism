@@ -11,12 +11,14 @@ import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
 import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/crop_spec.dart';
 import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
 
 Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'daily_moment_step': DailyMomentStepValue.values.map((value) => value.wireValue).toList(),
   'challenge_entry_source': ChallengeEntrySource.values.map((value) => value.wireValue).toList(),
   'wallpaper_target': WallpaperTarget.values.map((value) => value.wireValue).toList(),
+  'crop_preset': CropPreset.values.map((value) => value.wireValue).toList(),
   'taste_quiz_source': TasteQuizSource.values.map((value) => value.wireValue).toList(),
   'quiz_side': QuizSide.values.map((value) => value.wireValue).toList(),
   'comment_role': CommentRoleValue.values.map((value) => value.wireValue).toList(),
@@ -205,6 +207,35 @@ class CoinPremiumFilterSpendSuccessEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'source_tag': sourceTag, 'coins_spent': coinsSpent, 'filter': filter};
+  }
+}
+
+class WallpaperCropAppliedEvent extends AnalyticsEvent {
+  const WallpaperCropAppliedEvent({required this.preset, required this.adjusted});
+
+  final CropPreset preset;
+  final bool adjusted;
+
+  @override
+  String get eventName => 'wallpaper_crop_applied';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'preset': preset.wireValue, 'adjusted': adjusted ? 1 : 0};
+  }
+}
+
+class WallpaperCropResetEvent extends AnalyticsEvent {
+  const WallpaperCropResetEvent({required this.preset});
+
+  final CropPreset preset;
+
+  @override
+  String get eventName => 'wallpaper_crop_reset';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'preset': preset.wireValue};
   }
 }
 

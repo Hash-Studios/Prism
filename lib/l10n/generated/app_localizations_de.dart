@@ -8840,6 +8840,57 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get wallpaperFilterTabCrop => 'Zuschneiden';
+
+  @override
+  String get wallpaperCropPresetFree => 'Frei';
+
+  @override
+  String get wallpaperCropPresetPhone => 'Dieses Telefon';
+
+  @override
+  String get wallpaperCropPresetPortrait => '9:16';
+
+  @override
+  String get wallpaperCropPresetSquare => '1:1';
+
+  @override
+  String get wallpaperCropPresetLandscape => '16:9 Desktop';
+
+  @override
+  String get wallpaperCropPresetOriginal => 'Original';
+
+  @override
+  String get wallpaperCropRotate => '90° drehen';
+
+  @override
+  String get wallpaperCropReset => 'Zuschnitt zurücksetzen';
+
+  @override
+  String get wallpaperCropArea => 'Zuschneidebereich';
+
+  @override
+  String wallpaperCropSize(int width, int height) {
+    return '$width × $height px';
+  }
+
+  @override
+  String get wallpaperCropCornerTopLeft => 'Obere linke Ecke';
+
+  @override
+  String get wallpaperCropCornerTopRight => 'Obere rechte Ecke';
+
+  @override
+  String get wallpaperCropCornerBottomLeft => 'Untere linke Ecke';
+
+  @override
+  String get wallpaperCropCornerBottomRight => 'Untere rechte Ecke';
+
+  @override
+  String get wallpaperExportTimedOut =>
+      'Speichern hat zu lange gedauert. Versuche einen kleineren Zuschnitt oder weniger Filter.';
+
+  @override
   String get wallpaperFitBlur => 'Mit Weichzeichner einpassen';
 
   @override

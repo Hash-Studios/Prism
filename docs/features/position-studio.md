@@ -62,7 +62,7 @@ Analytics:
 - The preview is approximate. Launchers crop, scroll, and place clocks in their own way.
 - The final look is not proven on a device. The plugin crops to the display size, so the rendered PNG has the display aspect. Check a launcher that scrolls the wallpaper.
 - A wallpaper larger than 4096 px on the long side is decoded smaller.
-- The editor (filters) does not use the studio. Set from the editor opens the set sheet without the studio row.
+- The editor's Set screen has the **Adjust position and preview** row. The studio opens on the cropped and filtered export. See [wallpaper-editor.md](wallpaper-editor.md).
 - The dominant colour comes from a 64 by 64 copy of the wallpaper.
 
 ## How to test

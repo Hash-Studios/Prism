@@ -7987,6 +7987,78 @@
       }
     }
   },
+  "wallpaperFilterTabCrop": "Pangkas",
+  "@wallpaperFilterTabCrop": {
+    "description": "Tab label for the wallpaper crop panel."
+  },
+  "wallpaperCropPresetFree": "Bebas",
+  "@wallpaperCropPresetFree": {
+    "description": "Crop shape preset that allows any aspect ratio."
+  },
+  "wallpaperCropPresetPhone": "Ponsel ini",
+  "@wallpaperCropPresetPhone": {
+    "description": "Crop shape preset that matches this device screen."
+  },
+  "wallpaperCropPresetPortrait": "9:16",
+  "@wallpaperCropPresetPortrait": {
+    "description": "Crop shape preset with a 9:16 portrait ratio."
+  },
+  "wallpaperCropPresetSquare": "1:1",
+  "@wallpaperCropPresetSquare": {
+    "description": "Crop shape preset with a 1:1 square ratio."
+  },
+  "wallpaperCropPresetLandscape": "16:9 desktop",
+  "@wallpaperCropPresetLandscape": {
+    "description": "Crop shape preset with a 16:9 desktop ratio."
+  },
+  "wallpaperCropPresetOriginal": "Asli",
+  "@wallpaperCropPresetOriginal": {
+    "description": "Crop shape preset that covers the whole image."
+  },
+  "wallpaperCropRotate": "Putar 90°",
+  "@wallpaperCropRotate": {
+    "description": "Tooltip for the button that rotates the crop by 90 degrees."
+  },
+  "wallpaperCropReset": "Atur ulang pangkasan",
+  "@wallpaperCropReset": {
+    "description": "Tooltip for the button that resets the crop."
+  },
+  "wallpaperCropArea": "Area pangkasan",
+  "@wallpaperCropArea": {
+    "description": "Screen reader label for the crop frame."
+  },
+  "wallpaperCropSize": "{width} × {height} px",
+  "@wallpaperCropSize": {
+    "description": "Size of the crop area in pixels.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "wallpaperCropCornerTopLeft": "Sudut kiri atas",
+  "@wallpaperCropCornerTopLeft": {
+    "description": "Screen reader label for the top-left crop handle."
+  },
+  "wallpaperCropCornerTopRight": "Sudut kanan atas",
+  "@wallpaperCropCornerTopRight": {
+    "description": "Screen reader label for the top-right crop handle."
+  },
+  "wallpaperCropCornerBottomLeft": "Sudut kiri bawah",
+  "@wallpaperCropCornerBottomLeft": {
+    "description": "Screen reader label for the bottom-left crop handle."
+  },
+  "wallpaperCropCornerBottomRight": "Sudut kanan bawah",
+  "@wallpaperCropCornerBottomRight": {
+    "description": "Screen reader label for the bottom-right crop handle."
+  },
+  "wallpaperExportTimedOut": "Penyimpanan memakan waktu terlalu lama. Coba pangkasan yang lebih kecil atau filter yang lebih sedikit.",
+  "@wallpaperExportTimedOut": {
+    "description": "Error shown when saving an edited wallpaper takes too long."
+  },
   "wallpaperFitBlur": "Paskan dengan efek buram",
   "@wallpaperFitBlur": {
     "description": "Wallpaper placement fit option that fills empty areas with a blur."

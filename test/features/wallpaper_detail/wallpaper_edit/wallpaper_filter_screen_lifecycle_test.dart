@@ -240,7 +240,7 @@ void main() {
     const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(pathProviderChannel, (_) async => directory.path);
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) => Completer<bool>().future);
     addTearDown(() {
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(pathProviderChannel, null);
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
@@ -301,6 +301,47 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
+  testWidgets('source replacement during native save never deletes the old source', (tester) async {
+    final Directory directory = Directory.systemTemp.createTempSync('wallpaper_filter_source_replace_');
+    addTearDown(() => directory.deleteSync(recursive: true));
+    final List<int> png = (await tester.runAsync(_smallPng))!;
+    final File first = File('${directory.path}/first.png')..writeAsBytesSync(png);
+    final File second = File('${directory.path}/second.png')..writeAsBytesSync(png);
+    app_state.prismUser = profileUser(premium: true);
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+
+    final Completer<void> allowSave = Completer<void>();
+    final Completer<void> saveStarted = Completer<void>();
+    const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(pathProviderChannel, (_) async => directory.path);
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) => Completer<bool>().future);
+    addTearDown(() {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(pathProviderChannel, null);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+    });
+    const String channelName = 'dev.flutter.pigeon.Prism.PrismMediaHostApi.saveMedia';
+    tester.binding.defaultBinaryMessenger.setMockMessageHandler(channelName, (message) async {
+      saveStarted.complete();
+      await allowSave.future;
+      return PrismMediaHostApi.pigeonChannelCodec.encodeMessage(<Object?>[OperationResult(success: true)]);
+    });
+    addTearDown(() {
+      tester.binding.defaultBinaryMessenger.setMockMessageHandler(channelName, null);
+    });
+
+    await tester.pumpWidget(_screenHost(first.path));
+    await _waitForReady(tester);
+    await tester.tap(find.byTooltip('Download'));
+    await waitForRealIo(tester, () => saveStarted.isCompleted, reason: 'save starts with source file');
+    await tester.pumpWidget(_screenHost(second.path));
+    allowSave.complete();
+    await _waitForReady(tester);
+
+    expect(first.existsSync(), isTrue);
+    expect(second.existsSync(), isTrue);
+  });
+
   testWidgets('removes the edited export after a pending wallpaper preview', (tester) async {
     tester.view.physicalSize = const Size(800, 1200);
     tester.view.devicePixelRatio = 1;
@@ -348,7 +389,7 @@ void main() {
     );
 
     expect(opened, hasLength(1));
-    expect(opened.single.onAdjust, isNull);
+    expect(opened.single.onAdjust, isNotNull);
     expect(client.requests, hasLength(1));
     expect(opened.single.url, client.requests.single.source.filePath);
     expect(client.requests.single.source.filePath, isNotNull);

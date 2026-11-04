@@ -8854,6 +8854,56 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get wallpaperFilterTabCrop => 'क्रॉप';
+
+  @override
+  String get wallpaperCropPresetFree => 'मुक्त';
+
+  @override
+  String get wallpaperCropPresetPhone => 'यह फ़ोन';
+
+  @override
+  String get wallpaperCropPresetPortrait => '9:16';
+
+  @override
+  String get wallpaperCropPresetSquare => '1:1';
+
+  @override
+  String get wallpaperCropPresetLandscape => '16:9 डेस्कटॉप';
+
+  @override
+  String get wallpaperCropPresetOriginal => 'मूल';
+
+  @override
+  String get wallpaperCropRotate => '90° घुमाएँ';
+
+  @override
+  String get wallpaperCropReset => 'क्रॉप रीसेट करें';
+
+  @override
+  String get wallpaperCropArea => 'क्रॉप क्षेत्र';
+
+  @override
+  String wallpaperCropSize(int width, int height) {
+    return '$width × $height px';
+  }
+
+  @override
+  String get wallpaperCropCornerTopLeft => 'ऊपरी बायाँ कोना';
+
+  @override
+  String get wallpaperCropCornerTopRight => 'ऊपरी दायाँ कोना';
+
+  @override
+  String get wallpaperCropCornerBottomLeft => 'निचला बायाँ कोना';
+
+  @override
+  String get wallpaperCropCornerBottomRight => 'निचला दायाँ कोना';
+
+  @override
+  String get wallpaperExportTimedOut => 'सेव होने में बहुत समय लगा। छोटा क्रॉप या कम फ़िल्टर आज़माएँ।';
+
+  @override
   String get wallpaperFitBlur => 'धुंधले बैकग्राउंड के साथ फ़िट करें';
 
   @override

@@ -13609,6 +13609,102 @@ abstract class AppLocalizations {
   /// **'Premium filter unlocked for this edit (-{coins} coins).'**
   String wallpaperFilterUnlocked(int coins);
 
+  /// Tab label for the wallpaper crop panel.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop'**
+  String get wallpaperFilterTabCrop;
+
+  /// Crop shape preset that allows any aspect ratio.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get wallpaperCropPresetFree;
+
+  /// Crop shape preset that matches this device screen.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone'**
+  String get wallpaperCropPresetPhone;
+
+  /// Crop shape preset with a 9:16 portrait ratio.
+  ///
+  /// In en, this message translates to:
+  /// **'9:16'**
+  String get wallpaperCropPresetPortrait;
+
+  /// Crop shape preset with a 1:1 square ratio.
+  ///
+  /// In en, this message translates to:
+  /// **'1:1'**
+  String get wallpaperCropPresetSquare;
+
+  /// Crop shape preset with a 16:9 desktop ratio.
+  ///
+  /// In en, this message translates to:
+  /// **'16:9 desktop'**
+  String get wallpaperCropPresetLandscape;
+
+  /// Crop shape preset that covers the whole image.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get wallpaperCropPresetOriginal;
+
+  /// Tooltip for the button that rotates the crop by 90 degrees.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate 90°'**
+  String get wallpaperCropRotate;
+
+  /// Tooltip for the button that resets the crop.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset crop'**
+  String get wallpaperCropReset;
+
+  /// Screen reader label for the crop frame.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop area'**
+  String get wallpaperCropArea;
+
+  /// Size of the crop area in pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'{width} × {height} px'**
+  String wallpaperCropSize(int width, int height);
+
+  /// Screen reader label for the top-left crop handle.
+  ///
+  /// In en, this message translates to:
+  /// **'Top-left corner'**
+  String get wallpaperCropCornerTopLeft;
+
+  /// Screen reader label for the top-right crop handle.
+  ///
+  /// In en, this message translates to:
+  /// **'Top-right corner'**
+  String get wallpaperCropCornerTopRight;
+
+  /// Screen reader label for the bottom-left crop handle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bottom-left corner'**
+  String get wallpaperCropCornerBottomLeft;
+
+  /// Screen reader label for the bottom-right crop handle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bottom-right corner'**
+  String get wallpaperCropCornerBottomRight;
+
+  /// Error shown when saving an edited wallpaper takes too long.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving took too long. Try a smaller crop or fewer filters.'**
+  String get wallpaperExportTimedOut;
+
   /// Wallpaper placement fit option that fills empty areas with a blur.
   ///
   /// In en, this message translates to:

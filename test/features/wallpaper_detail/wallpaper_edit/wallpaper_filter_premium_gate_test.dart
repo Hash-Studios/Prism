@@ -215,87 +215,102 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('does not save an edited image when the screen is disposed during the spend', (tester) async {
-    final Directory directory = Directory.systemTemp.createTempSync('wallpaper_filter_gate_dispose_');
-    addTearDown(() => directory.deleteSync(recursive: true));
-    final File source = File('${directory.path}/source.png');
-    source.writeAsBytesSync((await tester.runAsync(_smallPng))!);
+  for (final bool disposeDuringSpend in <bool>[true, false]) {
+    testWidgets(
+      disposeDuringSpend
+          ? 'does not save an edited image when the screen is disposed during the spend'
+          : 'refunds a filter spend when the editor source changes during the spend',
+      (tester) async {
+        final Directory directory = Directory.systemTemp.createTempSync('wallpaper_filter_gate_dispose_');
+        addTearDown(() => directory.deleteSync(recursive: true));
+        final File source = File('${directory.path}/source.png');
+        source.writeAsBytesSync((await tester.runAsync(_smallPng))!);
+        final File replacement = File('${directory.path}/replacement.png')..writeAsBytesSync(source.readAsBytesSync());
 
-    final Completer<void> allowSpend = Completer<void>();
-    final Completer<void> spendStarted = Completer<void>();
-    app_state.prismUser.coins = 20;
-    CoinsService.instance.balanceNotifier.value = 20;
-    var saveCalls = 0;
-    var refundCalls = 0;
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      _toastChannel,
-      (_) async => true,
+        final Completer<void> allowSpend = Completer<void>();
+        final Completer<void> spendStarted = Completer<void>();
+        app_state.prismUser.coins = 20;
+        CoinsService.instance.balanceNotifier.value = 20;
+        var saveCalls = 0;
+        var refundCalls = 0;
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+          _toastChannel,
+          (_) async => true,
+        );
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+          _pathProviderChannel,
+          (_) async => directory.path,
+        );
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(_functionsChannel, (
+          message,
+        ) async {
+          final List<Object?> arguments = _codec.decodeMessage(message)! as List<Object?>;
+          final Map<Object?, Object?> call = arguments.single! as Map<Object?, Object?>;
+          if (call['functionName'] == 'spendCoins') {
+            spendStarted.complete();
+            await allowSpend.future;
+            return _codec.encodeMessage(<Object?>[
+              <String, Object?>{
+                'success': true,
+                'changed': true,
+                'previousBalance': 20,
+                'currentBalance': 15,
+                'delta': -CoinPolicy.premiumFilter,
+                'transactionId': 'disposed-filter-spend',
+              },
+            ]);
+          }
+          if (call['functionName'] == 'awardCoins') {
+            refundCalls++;
+            if (app_state.prismUser.id != 'test') {
+              return _codec.encodeMessage(<Object?>[_wrongPayerRefundReply]);
+            }
+            final Map<Object?, Object?> parameters = call['parameters']! as Map<Object?, Object?>;
+            expect(parameters['transactionId'], 'disposed-filter-spend');
+            return _codec.encodeMessage(<Object?>[
+              <String, Object?>{
+                'success': true,
+                'changed': true,
+                'previousBalance': 15,
+                'currentBalance': 20,
+                'delta': CoinPolicy.premiumFilter,
+              },
+            ]);
+          }
+          fail('Unexpected callable: ${call['functionName']}');
+        });
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(_mediaChannel, (
+          _,
+        ) async {
+          saveCalls++;
+          return PrismMediaHostApi.pigeonChannelCodec.encodeMessage(<Object?>[OperationResult(success: true)]);
+        });
+
+        await tester.pumpWidget(_screenHost(source.path));
+        await _waitForEditorReady(tester);
+        await _tapInvert(tester);
+        await tester.tap(_iconButton('Download'));
+        await tester.pump();
+        await _waitForSignal(tester, spendStarted, 'premium filter spend before screen disposal');
+
+        await tester.pumpWidget(disposeDuringSpend ? const SizedBox() : _screenHost(replacement.path));
+        allowSpend.complete();
+        await _waitForCount(
+          tester,
+          () => refundCalls,
+          1,
+          disposeDuringSpend ? 'refund after screen disposal' : 'refund after editor source changes',
+        );
+        await _waitForCount(tester, () => CoinsService.instance.balanceNotifier.value, 20, 'refunded balance');
+
+        expect(saveCalls, 0);
+        expect(refundCalls, 1);
+        expect(CoinsService.instance.balanceNotifier.value, 20);
+        await tester.pump(const Duration(seconds: 2));
+        expect(tester.takeException(), isNull);
+      },
     );
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      _pathProviderChannel,
-      (_) async => directory.path,
-    );
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(_functionsChannel, (
-      message,
-    ) async {
-      final List<Object?> arguments = _codec.decodeMessage(message)! as List<Object?>;
-      final Map<Object?, Object?> call = arguments.single! as Map<Object?, Object?>;
-      if (call['functionName'] == 'spendCoins') {
-        spendStarted.complete();
-        await allowSpend.future;
-        return _codec.encodeMessage(<Object?>[
-          <String, Object?>{
-            'success': true,
-            'changed': true,
-            'previousBalance': 20,
-            'currentBalance': 15,
-            'delta': -CoinPolicy.premiumFilter,
-            'transactionId': 'disposed-filter-spend',
-          },
-        ]);
-      }
-      if (call['functionName'] == 'awardCoins') {
-        refundCalls++;
-        if (app_state.prismUser.id != 'test') {
-          return _codec.encodeMessage(<Object?>[_wrongPayerRefundReply]);
-        }
-        final Map<Object?, Object?> parameters = call['parameters']! as Map<Object?, Object?>;
-        expect(parameters['transactionId'], 'disposed-filter-spend');
-        return _codec.encodeMessage(<Object?>[
-          <String, Object?>{
-            'success': true,
-            'changed': true,
-            'previousBalance': 15,
-            'currentBalance': 20,
-            'delta': CoinPolicy.premiumFilter,
-          },
-        ]);
-      }
-      fail('Unexpected callable: ${call['functionName']}');
-    });
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(_mediaChannel, (_) async {
-      saveCalls++;
-      return PrismMediaHostApi.pigeonChannelCodec.encodeMessage(<Object?>[OperationResult(success: true)]);
-    });
-
-    await tester.pumpWidget(_screenHost(source.path));
-    await _waitForEditorReady(tester);
-    await _tapInvert(tester);
-    await tester.tap(_iconButton('Download'));
-    await tester.pump();
-    await _waitForSignal(tester, spendStarted, 'premium filter spend before screen disposal');
-
-    await tester.pumpWidget(const SizedBox());
-    allowSpend.complete();
-    await _waitForCount(tester, () => refundCalls, 1, 'refund after screen disposal');
-    await _waitForCount(tester, () => CoinsService.instance.balanceNotifier.value, 20, 'refunded balance');
-
-    expect(saveCalls, 0);
-    expect(refundCalls, 1);
-    expect(CoinsService.instance.balanceNotifier.value, 20);
-    await tester.pump(const Duration(seconds: 2));
-    expect(tester.takeException(), isNull);
-  });
+  }
 
   testWidgets('refunds a failed export and charges again on the next attempt', (tester) async {
     final Directory directory = Directory.systemTemp.createTempSync('wallpaper_filter_gate_refund_');

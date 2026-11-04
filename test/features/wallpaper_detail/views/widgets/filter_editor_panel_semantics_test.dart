@@ -93,6 +93,7 @@ void main() {
 
           home: Scaffold(
             body: FilterEditorPanel(
+              controller: TabController(length: 3, vsync: const TestVSync()),
               thumbProvider: MemoryImage(Uint8List.fromList(pixel)),
               stack: const <WallpaperFilter>[],
               adjustments: WallpaperAdjustments.none,
@@ -101,6 +102,10 @@ void main() {
               onClear: () {},
               onToggle: (filter) => selected = filter,
               onAdjust: (_) {},
+              crop: null,
+              onCropPreset: (_) {},
+              onRotate: () {},
+              onCropReset: () {},
             ),
           ),
         ),

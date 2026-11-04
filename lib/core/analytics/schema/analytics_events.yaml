@@ -20,6 +20,16 @@ enums:
       - both
       - lock
       - home
+  - name: crop_preset
+    dart_type: CropPreset
+    import: package:Prism/features/wallpaper_detail/domain/entities/crop_spec.dart
+    values:
+      - free
+      - phone
+      - portrait
+      - square
+      - landscape
+      - original
   - name: taste_quiz_source
     dart_type: TasteQuizSource
     import: package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart
@@ -593,6 +603,21 @@ events:
       - name: filter
         key: filter
         type: string
+  - id: wallpaper_crop_applied
+    fields:
+      - name: preset
+        key: preset
+        type: enum
+        enum: CropPreset
+      - name: adjusted
+        key: adjusted
+        type: bool
+  - id: wallpaper_crop_reset
+    fields:
+      - name: preset
+        key: preset
+        type: enum
+        enum: CropPreset
   - id: coin_filter_watch_and_retry_used
     fields:
       - name: source_tag

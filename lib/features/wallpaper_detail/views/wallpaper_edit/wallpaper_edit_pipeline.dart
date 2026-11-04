@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:Prism/features/wallpaper_detail/domain/entities/crop_spec.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/color_matrix.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_filters.dart';
 import 'package:Prism/logger/logger.dart';
@@ -100,15 +101,39 @@ const int maxExportLongSide = 4096;
   return (width: math.max(1, (width * scale).round()), height: math.max(1, (height * scale).round()));
 }
 
-/// Renders [source] with the edit applied and returns PNG bytes. The long side is capped, see [exportSize].
+/// How long an export may take before the editor gives up and says so.
+const Duration editExportTimeLimit = Duration(seconds: 30);
+
+/// The export did not finish inside [editExportTimeLimit].
+class EditExportTimedOut implements Exception {
+  const EditExportTimedOut();
+}
+
+/// Runs [export] under [limit]. Throws [EditExportTimedOut] when it runs out.
+Future<T> withExportTimeLimit<T>(Future<T> export, {Duration limit = editExportTimeLimit}) =>
+    export.timeout(limit, onTimeout: () => throw const EditExportTimedOut());
+
+/// Renders [source] with the edit applied and returns PNG bytes.
+///
+/// A [crop] that is not the identity is applied first, in source pixels, so the filters run on the kept area only. The
+/// output is then the kept area at full resolution. Without a crop the long side is capped, see [exportSize].
 Future<Uint8List> renderEditedPng(
   ui.Image source,
   List<WallpaperFilter> stack,
   WallpaperAdjustments adjustments, {
+  CropSpec? crop,
   double? previewPixelShortSide,
   double deviceLongSidePx = 0,
 }) async {
-  final ({int width, int height}) size = exportSize(source.width, source.height, deviceLongSidePx: deviceLongSidePx);
+  if (crop != null && (crop.sourceWidth != source.width || crop.sourceHeight != source.height)) {
+    throw StateError(
+      'Crop is for ${crop.sourceWidth}x${crop.sourceHeight}, source is ${source.width}x${source.height}',
+    );
+  }
+  final CropSpec? applied = crop == null || crop.isIdentity ? null : crop;
+  final ({int width, int height}) size = applied == null
+      ? exportSize(source.width, source.height, deviceLongSidePx: deviceLongSidePx)
+      : (width: applied.outputWidth, height: applied.outputHeight);
   final int width = size.width;
   final int height = size.height;
   final int shortSide = math.min(width, height);
@@ -118,12 +143,26 @@ Future<Uint8List> renderEditedPng(
   final Canvas canvas = Canvas(recorder);
   final Rect bounds = Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble());
   if (filter != null) canvas.saveLayer(bounds, Paint()..imageFilter = filter);
-  canvas.drawImageRect(
-    source,
-    Rect.fromLTWH(0, 0, source.width.toDouble(), source.height.toDouble()),
-    bounds,
-    Paint()..filterQuality = FilterQuality.high,
-  );
+  final Paint paint = Paint()..filterQuality = FilterQuality.high;
+  if (applied == null) {
+    canvas.drawImageRect(source, Rect.fromLTWH(0, 0, source.width.toDouble(), source.height.toDouble()), bounds, paint);
+  } else {
+    final PixelRect area = applied.sourceRect;
+    canvas
+      ..save()
+      ..translate(
+        applied.quarterTurns == 1 || applied.quarterTurns == 2 ? width.toDouble() : 0,
+        applied.quarterTurns >= 2 ? height.toDouble() : 0,
+      )
+      ..rotate(applied.quarterTurns * math.pi / 2)
+      ..drawImageRect(
+        source,
+        Rect.fromLTWH(area.left.toDouble(), area.top.toDouble(), area.width.toDouble(), area.height.toDouble()),
+        Rect.fromLTWH(0, 0, area.width.toDouble(), area.height.toDouble()),
+        paint,
+      )
+      ..restore();
+  }
   if (filter != null) canvas.restore();
   final ui.Picture picture = recorder.endRecording();
   final ui.Image rendered = await rasterizePicture(picture, width, height);
@@ -133,5 +172,35 @@ Future<Uint8List> renderEditedPng(
     return data.buffer.asUint8List();
   } finally {
     rendered.dispose();
+  }
+}
+
+/// Decodes the image at [path] and renders it with the edit, see [renderEditedPng]. The decode, the render and the
+/// PNG encode run on the engine's threads, so the UI thread only waits.
+Future<Uint8List> renderEditedFile(
+  String path, {
+  required List<WallpaperFilter> stack,
+  required WallpaperAdjustments adjustments,
+  CropSpec? crop,
+  double? previewPixelShortSide,
+  double deviceLongSidePx = 0,
+}) async {
+  final ui.Codec codec = await ui.instantiateImageCodecFromBuffer(await ui.ImmutableBuffer.fromFilePath(path));
+  try {
+    final ui.FrameInfo frame = await codec.getNextFrame();
+    try {
+      return await renderEditedPng(
+        frame.image,
+        stack,
+        adjustments,
+        crop: crop,
+        previewPixelShortSide: previewPixelShortSide,
+        deviceLongSidePx: deviceLongSidePx,
+      );
+    } finally {
+      frame.image.dispose();
+    }
+  } finally {
+    codec.dispose();
   }
 }

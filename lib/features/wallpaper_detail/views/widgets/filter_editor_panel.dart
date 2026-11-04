@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/crop_spec.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_filters.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -9,11 +10,16 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// The bottom half of the wallpaper editor: a Filters tab with a strip of filter thumbnails and an Adjust tab with
-/// five sliders. It holds no state: the editor owns the filter stack and the adjustments.
+/// The bottom half of the wallpaper editor: a Filters tab with a strip of filter thumbnails, an Adjust tab with five
+/// sliders and a Crop tab with frame shapes. It holds no state: the editor owns the tabs, the filters, the adjustments
+/// and the crop.
+/// Above this text scale the three tab labels no longer fit side by side, so the tab bar scrolls.
+const double _largeTextScale = 1.3;
+
 class FilterEditorPanel extends StatelessWidget {
   const FilterEditorPanel({
     super.key,
+    required this.controller,
     required this.thumbProvider,
     required this.stack,
     required this.adjustments,
@@ -22,7 +28,14 @@ class FilterEditorPanel extends StatelessWidget {
     required this.onClear,
     required this.onToggle,
     required this.onAdjust,
+    required this.crop,
+    required this.onCropPreset,
+    required this.onRotate,
+    required this.onCropReset,
   });
+
+  /// Index 0 is Filters, 1 is Adjust, 2 is Crop.
+  final TabController controller;
 
   /// A small copy of the wallpaper, drawn under every filter.
   final ImageProvider thumbProvider;
@@ -41,30 +54,109 @@ class FilterEditorPanel extends StatelessWidget {
   /// two changes in one frame both stay.
   final ValueChanged<WallpaperAdjustments Function(WallpaperAdjustments)> onAdjust;
 
+  /// Null until the image size is known.
+  final CropSpec? crop;
+  final ValueChanged<CropPreset> onCropPreset;
+  final VoidCallback onRotate;
+  final VoidCallback onCropReset;
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    return DefaultTabController(
-      length: 2,
-      child: SizedBox(
-        height: 244 + MediaQuery.paddingOf(context).bottom,
-        child: Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
-          child: Column(
-            children: [
-              TabBar(
-                onTap: (_) => PrismHaptics.selection(),
-                indicatorSize: TabBarIndicatorSize.label,
-                tabs: [
-                  Tab(text: context.l10n.wallpaperFilterTabFilters),
-                  Tab(text: context.l10n.wallpaperFilterTabAdjustments),
-                ],
+    return SizedBox(
+      height: 244 + MediaQuery.paddingOf(context).bottom,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+        child: Column(
+          children: [
+            TabBar(
+              controller: controller,
+              isScrollable: MediaQuery.textScalerOf(context).scale(1) > _largeTextScale,
+              tabAlignment: MediaQuery.textScalerOf(context).scale(1) > _largeTextScale ? TabAlignment.start : null,
+              onTap: (_) => PrismHaptics.selection(),
+              indicatorSize: TabBarIndicatorSize.label,
+              tabs: [
+                Tab(text: context.l10n.wallpaperFilterTabFilters),
+                Tab(text: context.l10n.wallpaperFilterTabAdjustments),
+                Tab(text: context.l10n.wallpaperFilterTabCrop),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: controller,
+                children: [_buildFiltersTab(context, cs), _buildAdjustTab(context, cs), _buildCropTab(context)],
               ),
-              Expanded(child: TabBarView(children: [_buildFiltersTab(context, cs), _buildAdjustTab(context, cs)])),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCropTab(BuildContext context) {
+    final CropSpec? spec = crop;
+    final AppLocalizations l10n = context.l10n;
+    String label(CropPreset preset) => switch (preset) {
+      CropPreset.free => l10n.wallpaperCropPresetFree,
+      CropPreset.phone => l10n.wallpaperCropPresetPhone,
+      CropPreset.portrait => l10n.wallpaperCropPresetPortrait,
+      CropPreset.square => l10n.wallpaperCropPresetSquare,
+      CropPreset.landscape => l10n.wallpaperCropPresetLandscape,
+      CropPreset.original => l10n.wallpaperCropPresetOriginal,
+    };
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
+          child: Row(
+            children: [
+              for (final CropPreset preset in CropPreset.values)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: PrismSpace.xs),
+                  child: PrismChip(
+                    label: label(preset),
+                    icon: switch (preset) {
+                      CropPreset.phone => Icons.smartphone_rounded,
+                      CropPreset.landscape => Icons.desktop_windows_rounded,
+                      _ => null,
+                    },
+                    selected: spec?.preset == preset,
+                    onTap: spec == null ? null : () => onCropPreset(preset),
+                  ),
+                ),
             ],
           ),
         ),
-      ),
+        const SizedBox(height: PrismSpace.xs),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              PrismIconButton(
+                icon: Icons.rotate_90_degrees_cw_rounded,
+                tooltip: l10n.wallpaperCropRotate,
+                onPressed: spec == null ? null : onRotate,
+              ),
+              PrismIconButton(
+                icon: Icons.restart_alt_rounded,
+                tooltip: l10n.wallpaperCropReset,
+                onPressed: spec == null || spec.isIdentity ? null : onCropReset,
+              ),
+              if (spec != null)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(start: PrismSpace.xs),
+                  child: Text(
+                    l10n.wallpaperCropSize(spec.outputWidth, spec.outputHeight),
+                    style: PrismTextStyles.body(context).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
