@@ -13571,7 +13571,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get watchGuideIosAlternative =>
-      'Anda juga bisa membuka app Watch di iPhone. Ketuk Galeri Watch Face, ketuk Foto, lalu ketuk Pilih Foto.';
+      'Anda juga bisa membuka app Watch di iPhone. Ketuk Galeri Wajah, ketuk Foto, lalu ketuk Pilih Foto.';
 
   @override
   String get watchGuidePixelTitle => 'Pixel Watch';

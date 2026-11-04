@@ -13402,7 +13402,7 @@
   "@watchGuideBodyIos": {
     "description": "Body of the watch face guide on iPhone."
   },
-  "watchGuideBodyAndroid": "सेट गैलरी में है, चित्र, Prism और डाउनलोड फ़ोल्डर में। वॉच इमेज को किसी फ़ोटो वॉच फ़ेस में जोड़ें।",
+  "watchGuideBodyAndroid": "सेट गैलरी में Pictures/Prism/Downloads फ़ोल्डर में है। वॉच इमेज को किसी फ़ोटो वॉच फ़ेस में जोड़ें।",
   "@watchGuideBodyAndroid": {
     "description": "Body of the watch face guide on Android."
   },

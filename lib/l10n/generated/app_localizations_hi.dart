@@ -13649,7 +13649,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get watchGuideBodyAndroid =>
-      'सेट गैलरी में है, चित्र, Prism और डाउनलोड फ़ोल्डर में। वॉच इमेज को किसी फ़ोटो वॉच फ़ेस में जोड़ें।';
+      'सेट गैलरी में Pictures/Prism/Downloads फ़ोल्डर में है। वॉच इमेज को किसी फ़ोटो वॉच फ़ेस में जोड़ें।';
 
   @override
   String get watchGuideShare => 'वॉच इमेज शेयर करें';

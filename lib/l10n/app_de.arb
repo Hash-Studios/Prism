@@ -12486,11 +12486,11 @@
   "@watchSetRowTitle": {
     "description": "Row on the wallpaper detail screen. Opens the watch set sheet."
   },
-  "watchSetRowSubtitle": "Telefon und Uhr, mit einem Speichern",
+  "watchSetRowSubtitle": "Telefon und Uhr, einmal speichern",
   "@watchSetRowSubtitle": {
     "description": "Subtitle of the Watch set row when the wall has no desktop version."
   },
-  "watchSetRowSubtitleDesktop": "Telefon, Uhr und Desktop, mit einem Speichern",
+  "watchSetRowSubtitleDesktop": "Telefon, Uhr und Desktop, einmal speichern",
   "@watchSetRowSubtitleDesktop": {
     "description": "Subtitle of the Watch set row when the wall has a desktop version."
   },

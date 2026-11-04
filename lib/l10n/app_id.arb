@@ -12807,7 +12807,7 @@
   "@watchGuideIosStep3": {
     "description": "Step 3 of the iPhone watch face guide. Use the iOS labels."
   },
-  "watchGuideIosAlternative": "Anda juga bisa membuka app Watch di iPhone. Ketuk Galeri Watch Face, ketuk Foto, lalu ketuk Pilih Foto.",
+  "watchGuideIosAlternative": "Anda juga bisa membuka app Watch di iPhone. Ketuk Galeri Wajah, ketuk Foto, lalu ketuk Pilih Foto.",
   "@watchGuideIosAlternative": {
     "description": "Other way to make the face on iPhone."
   },

@@ -223,6 +223,8 @@ class _WatchSetSheetState extends State<WatchSetSheet> {
     required bool desktopSaved,
     required Map<String, String> files,
   }) {
+    final String? watchFile = files[set.watchKey];
+    if (watchFile == null) return;
     analytics.track(WatchSetSavedEvent(watchType: set.watch, withDesktop: desktopSaved));
     if (set.withDesktop && !desktopSaved) {
       toasts.error(l10n.watchSetDesktopNotSaved);
@@ -230,17 +232,14 @@ class _WatchSetSheetState extends State<WatchSetSheet> {
       toasts.success(l10n.watchSetSaved);
     }
     if (!mounted) return;
-    final String? watchFile = files[set.watchKey];
-    if (watchFile != null) {
-      try {
-        final String copy = '${File(watchFile).parent.path}/share_${DateTime.now().microsecondsSinceEpoch}.png';
-        File(watchFile).copySync(copy);
-        final String? previous = _shareCopy;
-        if (previous != null) unawaited(deleteWatchImage(previous));
-        _shareCopy = copy;
-      } catch (error, stackTrace) {
-        logger.w('Could not keep the watch image to share', error: error, stackTrace: stackTrace);
-      }
+    try {
+      final String copy = '${File(watchFile).parent.path}/share_${DateTime.now().microsecondsSinceEpoch}.png';
+      File(watchFile).copySync(copy);
+      final String? previous = _shareCopy;
+      if (previous != null) unawaited(deleteWatchImage(previous));
+      _shareCopy = copy;
+    } catch (error, stackTrace) {
+      logger.w('Could not keep the watch image to share', error: error, stackTrace: stackTrace);
     }
     _openGuide(WatchGuideSourceValue.afterSave);
   }

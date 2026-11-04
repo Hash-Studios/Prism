@@ -1040,9 +1040,8 @@ class _DownloadButtonState extends State<DownloadButton> {
           ),
         );
         if (!saved.success) {
-          _failureReason = 'set_save_failed';
           toasts.error(l10n.economyAiDownloadFailed);
-          return false;
+          break;
         }
         savedSetKeys.add(file.key);
       }
@@ -1144,7 +1143,8 @@ class _DownloadButtonState extends State<DownloadButton> {
       logger.w('Download analytics failed after media was saved', error: e, stackTrace: stackTrace);
     }
 
-    if (mounted && _ownerStillMatches(tap) && tap.identity == _currentIdentity && !setInterrupted) {
+    final bool setComplete = savedSetKeys.length == _setFiles.length;
+    if (mounted && _ownerStillMatches(tap) && tap.identity == _currentIdentity && !setInterrupted && setComplete) {
       setState(() => _saved = true);
     }
     final String recordedContentId = tap.contentId?.trim() ?? '';
@@ -1159,7 +1159,10 @@ class _DownloadButtonState extends State<DownloadButton> {
       }
       if (!setInterrupted) {
         onDownloaded?.call();
-        set?.onSaved?.call(desktopSaved: setDesktopSaved, files: _setFiles);
+        set?.onSaved?.call(
+          desktopSaved: setDesktopSaved,
+          files: <String, String>{for (final String key in savedSetKeys) key: _setFiles[key]!},
+        );
       }
     } catch (e, stackTrace) {
       logger.w('Download follow-up failed after media was saved', error: e, stackTrace: stackTrace);

@@ -2598,5 +2598,35 @@ void main() {
       expect(savedDesktop, isEmpty);
       expect(fakeAnalytics.events.whereType<DownloadResultEvent>().single.reason, 'set_prepare_failed');
     });
+
+    testWidgets('a watch file that fails after the phone saved keeps the spend and is not marked saved', (
+      tester,
+    ) async {
+      final List<String> calls = <String>[];
+      backend.onCall = (String name, Map<String, dynamic> parameters) async {
+        calls.add(name);
+        if (name == 'spendCoins') spendCalls.add(parameters);
+        return _spent;
+      };
+      final List<Map<String, String>> savedFiles = <Map<String, String>>[];
+      onEnqueue = () => enqueueSucceeds = enqueued.length < 2;
+      await pump(
+        tester,
+        set: DownloadSet(
+          key: 'watch-apple_46',
+          prepare: (_) async => <String, String>{'watch-apple_46': watchFile},
+          onSaved: ({required bool desktopSaved, required Map<String, String> files}) => savedFiles.add(files),
+        ),
+      );
+      await tapSave(tester);
+
+      expect(savedNames(), <String>['sunset', 'sunset_watch-apple_46']);
+      expect(spendCalls, hasLength(1));
+      expect(calls.where((String name) => name != 'spendCoins'), isEmpty);
+      expect(ledger(), isEmpty);
+      expect(savedFiles, <Map<String, String>>[<String, String>{}]);
+      expect(find.text('Saved'), findsNothing);
+      expect(File(watchFile).existsSync(), isFalse);
+    });
   });
 }

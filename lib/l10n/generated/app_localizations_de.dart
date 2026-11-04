@@ -13571,10 +13571,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get watchSetRowTitle => 'Watch-Set';
 
   @override
-  String get watchSetRowSubtitle => 'Telefon und Uhr, mit einem Speichern';
+  String get watchSetRowSubtitle => 'Telefon und Uhr, einmal speichern';
 
   @override
-  String get watchSetRowSubtitleDesktop => 'Telefon, Uhr und Desktop, mit einem Speichern';
+  String get watchSetRowSubtitleDesktop => 'Telefon, Uhr und Desktop, einmal speichern';
 
   @override
   String get watchSetSheetTitle => 'Watch-Set';

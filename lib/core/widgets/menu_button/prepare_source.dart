@@ -69,8 +69,8 @@ class DownloadSet {
   /// The desktop version. It needs its own server grant, which the same gate run asks for.
   final WallDesktopVariant? desktop;
 
-  /// Runs after the set is saved, before the button deletes [files]: copy a file to keep it. [desktopSaved] is false
-  /// when the set has a desktop version that did not save.
+  /// Runs after the paid files are saved, before the button deletes [files]: copy a file to keep it. [files] holds only
+  /// the extra files that saved. [desktopSaved] is false when the set has a desktop version that did not save.
   final void Function({required bool desktopSaved, required Map<String, String> files})? onSaved;
 
   /// True while a tap of the set runs, until its temporary files are deleted.
