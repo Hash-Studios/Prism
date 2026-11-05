@@ -349,7 +349,11 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
                 ),
         ),
         if (_mode != _LiveMode.video && _screensSet != null)
-          _ScreensSetCard(outcome: _screensSet!, onPickOther: (screen) => _pickOtherScreen(context, screen)),
+          Flexible(
+            child: SingleChildScrollView(
+              child: _ScreensSetCard(outcome: _screensSet!, onPickOther: (screen) => _pickOtherScreen(context, screen)),
+            ),
+          ),
         if (!(shadersOff || videoOff))
           _ApplyBar(
             label: _applyLabel(state),

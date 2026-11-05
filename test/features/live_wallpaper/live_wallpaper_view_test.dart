@@ -496,6 +496,36 @@ void main() {
       expect(find.text('In the preview, tap Set wallpaper, then Home screen.'), findsNothing);
     });
 
+    testWidgets('large text keeps the result and other-screen offer reachable on a small phone', (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      const LiveApplyOutcome outcome = LiveApplyOutcome.screensSet(
+        target: WallpaperTarget.lock,
+        screens: LiveScreens(
+          home: LiveScreenContent.other,
+          lock: LiveScreenContent(
+            showsPrism: true,
+            tag: LiveContentTag(style: GradientStyle.aurora, applyId: 'a'),
+          ),
+        ),
+      );
+      final _MockLiveWallpaperBloc bloc = await _pumpScreen(
+        tester,
+        state: _readyState(),
+        states: Stream<LiveWallpaperState>.value(_readyState(outcome: outcome)),
+        textScaler: const TextScaler.linear(2),
+      );
+
+      expect(tester.takeException(), isNull);
+      final Finder offer = find.text('Pick a wall for the Home screen');
+      await tester.ensureVisible(offer);
+      await tester.tap(offer);
+      await tester.pump();
+
+      verify(() => bloc.add(const LiveWallpaperEvent.otherScreenPicked(WallpaperTarget.home))).called(1);
+    });
+
     testWidgets('per-screen hint names the picked screen', (tester) async {
       const LiveApplyOutcome outcome = LiveApplyOutcome.confirmInPreview(target: WallpaperTarget.lock);
       await _pumpScreen(
