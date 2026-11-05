@@ -2991,6 +2991,34 @@ test('a folder landing without a short code shows a generic title and hides the 
   assert.doesNotMatch(body, /og:title" content="[^"]*AbC123/);
 });
 
+test('folder invite links keep a valid invite code and refuse any other query', async () => {
+  const env = workerEnv(FOLDER_ENV);
+  const invite = 'https://prismwalls.com/folder/f1?invite=ABCDEFGHJK';
+  const created = await postLink(env, { type: 'page', canonical_url: invite });
+  assert.equal(created.status, 201);
+  const { code } = await created.json();
+  const lookup = await worker.fetch(new Request(`https://prismwalls.com/api/links/${code}`), env);
+  assert.equal(lookup.status, 200);
+  assert.equal((await lookup.json()).canonical_url, invite);
+
+  for (const canonical of [
+    'https://prismwalls.com/folder/f1?invite=bad',
+    'https://prismwalls.com/folder/f1?invite=ABCDEFGHJK&x=1',
+    'https://prismwalls.com/library?invite=ABCDEFGHJK',
+  ]) {
+    const response = await postLink(env, { type: 'page', canonical_url: canonical });
+    assert.equal(response.status, 400, canonical);
+    assert.equal((await response.json()).error, 'invalid_canonical_url', canonical);
+  }
+});
+
+test('folder invite landing shows the invite title and description', async () => {
+  const body = await (await getShare(ANDROID_UA, '/folder/f1?invite=ABCDEFGHJK')).text();
+  assert.match(body, /<title>An invite to a folder on Prism<\/title>/);
+  assert.match(body, /og:title" content="An invite to a folder on Prism"/);
+  assert.match(body, /Open this invite in Prism to join the folder\./);
+});
+
 test('profile and invite cards read names from old titles and never query wallpaper counts', async () => {
   const env = workerEnv({
     ...RENDER_ENV,
