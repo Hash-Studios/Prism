@@ -570,8 +570,9 @@ void main() {
       ),
     );
     savedCopy.complete(acquired);
-    for (int i = 0; i < 3; i++) {
-      await flushIo(tester);
+    // Keeping the saved copy as the offline original is many real file steps. Each needs real time, then a timed pump.
+    for (int i = 0; i < 100 && toastMessages.isEmpty; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
       await tester.pump(const Duration(milliseconds: 100));
     }
 

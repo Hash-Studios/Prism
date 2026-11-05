@@ -153,6 +153,7 @@ class _DownloadTap {
     required this.desktop,
     required this.set,
     required this.fileIdentity,
+    required this.l10n,
   });
 
   final String link;
@@ -177,6 +178,9 @@ class _DownloadTap {
 
   /// The name the main file is saved under. For a set it is the wall's own name, and [identity] names the set.
   final String fileIdentity;
+
+  /// Taken before the tap's first await, so a save that ends after the page closes can still tell the user.
+  final AppLocalizations l10n;
 }
 
 class _DownloadButtonState extends State<DownloadButton> {
@@ -443,6 +447,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         fileIdentity: widget.set == null
             ? _currentIdentity ?? _originalIdentity(link, widget.contentId)
             : _originalIdentity(link, widget.contentId),
+        l10n: l10n,
       );
       _activeTap = tap;
       _attemptStarted = false;
@@ -817,6 +822,8 @@ class _DownloadButtonState extends State<DownloadButton> {
       if (!mounted || !_ownerStillMatches(_tap)) return CoinGateResult.cancelled;
       CoinsService.instance.applyServerBalance(quote.currentBalance, ownerId: _tap.ownerId);
     }
+    // The gate needs the page for its sheets. It cancels a closed page too, but reading its context would throw first.
+    if (!mounted) return CoinGateResult.cancelled;
     return CoinGate.forContext(context).run(
       CoinGateSpec(
         premiumBypass: !originalAccess,
@@ -897,7 +904,7 @@ class _DownloadButtonState extends State<DownloadButton> {
                     variant.prepareAuthorized == null
                         ? variant.prepare
                         : () => variant.prepareAuthorized!(_authorizedSource!),
-                    l10n: context.l10n,
+                    l10n: _tap.l10n,
                   );
                   if (_preparedSource == null || !_ownerStillMatches(_tap)) return false;
                 }
@@ -952,15 +959,15 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   Future<bool> _performDownload({File? cachedOriginalForRestore}) async {
-    final AppLocalizations l10n = context.l10n;
     final _DownloadTap tap = _tap;
+    final AppLocalizations l10n = tap.l10n;
     if (!_ownerStillMatches(tap)) return false;
     final String link = tap.link;
     final String? sourceContext = tap.sourceContext;
     final bool premiumContent = tap.isPremiumContent;
     final VoidCallback? onDownloaded = tap.onDownloaded;
     if (link.isEmpty && _authorizedSource == null) {
-      toasts.error(context.l10n.economyDownloadLinkUnavailable);
+      toasts.error(l10n.economyDownloadLinkUnavailable);
       return false;
     }
     final bool prepared = _preparedSource != null;
