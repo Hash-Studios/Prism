@@ -67,9 +67,11 @@ void _mockChannels(WidgetTester tester, {List<MethodCall>? toastCalls}) {
 Future<void> _pumpSheet(
   WidgetTester tester, {
   required Future<void> Function(String text) copyText,
+  Uri? link,
   ThemeData? theme,
   double textScale = 1,
 }) async {
+  final Uri shareLink = link ?? Uri.parse(_link);
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -85,7 +87,7 @@ Future<void> _pumpSheet(
             child: TextButton(
               onPressed: () => showOpenOnComputerSheet(
                 context,
-                link: Uri.parse(_link),
+                link: shareLink,
                 sourceContext: 'wallpaper_screen',
                 copyText: copyText,
               ),
@@ -269,45 +271,145 @@ void main() {
       expect(toastCalls, isNotEmpty);
     });
 
-    for (final double scale in <double>[2.0, 3.0]) {
-      testWidgets('large text at $scale x does not overflow and copy still works', (tester) async {
+    for (final Uri link in <Uri>[
+      Uri.parse(_link),
+      Uri.parse('https://prismwalls.com/l/Ab3dEf7?d=1'),
+      Uri.parse('https://prismwalls.com/l/Ab3dEf7hQ2?d=1'),
+      Uri.parse('https://prismwalls.com/wallpaper/WBN0?view=desktop'),
+    ]) {
+      testWidgets('rendered link glyphs stay one-line, centered, and contained for $link', (tester) async {
         tester.view
           ..devicePixelRatio = 1
           ..physicalSize = const Size(320, 640);
         addTearDown(tester.view.reset);
         _mockChannels(tester);
-        final List<String> copied = <String>[];
 
-        await _pumpSheet(tester, copyText: (String text) async => copied.add(text), textScale: scale);
-        await tester.pump();
+        for (int tenth = 10; tenth <= 30; tenth++) {
+          final double scale = tenth / 10;
+          final List<String> copied = <String>[];
+          await _pumpSheet(tester, copyText: (String text) async => copied.add(text), link: link, textScale: scale);
+          await tester.pump();
 
-        expect(tester.takeException(), isNull);
-        expect(_shownLinkParts(tester), <String>['prismwalls.com', '/l/Ab3dEf7h', '?d=1']);
-        for (final Text part in _shownLinkTexts(tester)) {
-          expect(part.softWrap, isFalse, reason: 'a link part never breaks inside itself');
+          final String display = link.toString().replaceFirst('https://', '');
+          final List<String> parts = openOnComputerDisplayParts(link);
+          final List<Text> texts = _shownLinkTexts(tester);
+          final Finder linkFinder = find.byKey(const ValueKey<String>('open-on-computer-link'));
+          await tester.ensureVisible(linkFinder);
+          await tester.pump();
+          final RenderBox linkBox = tester.renderObject<RenderBox>(linkFinder);
+          final Offset linkCenter = linkBox.size.center(Offset.zero);
+          final List<Rect> glyphRects = <Rect>[];
+          final List<List<Rect>> renderedLines = <List<Rect>>[];
+          expect(texts.map((Text text) => text.data).join(), display);
+          expect(_shownLinkParts(tester), parts);
+          expect(
+            tester.widget<QrTile>(find.byKey(const ValueKey<String>('open-on-computer-qr'))).data,
+            link.toString(),
+          );
+
+          for (final Element element in find.descendant(of: linkFinder, matching: find.byType(Text)).evaluate()) {
+            final Text text = element.widget as Text;
+            final RenderParagraph paragraph = element.renderObject! as RenderParagraph;
+            final List<TextBox> boxes = paragraph.getBoxesForSelection(
+              TextSelection(baseOffset: 0, extentOffset: text.data!.length),
+            );
+            expect(boxes, isNotEmpty, reason: 'scale $scale: ${text.data} has rendered glyphs');
+            final toLink = paragraph.getTransformTo(linkBox);
+            final List<Rect> transformed = boxes
+                .map((TextBox box) => MatrixUtils.transformRect(toLink, box.toRect()))
+                .toList();
+            glyphRects.addAll(transformed);
+            for (final Rect rect in transformed) {
+              List<Rect>? line;
+              for (final List<Rect> candidate in renderedLines) {
+                if ((candidate.first.center.dy - rect.center.dy).abs() <= 1) {
+                  line = candidate;
+                  break;
+                }
+              }
+              if (line == null) {
+                renderedLines.add(<Rect>[rect]);
+              } else {
+                line.add(rect);
+              }
+            }
+            for (final Rect rect in transformed) {
+              expect(rect.left, greaterThanOrEqualTo(-0.5), reason: 'scale $scale: ${text.data} left is contained');
+              expect(
+                rect.right,
+                lessThanOrEqualTo(linkBox.size.width + 0.5),
+                reason: 'scale $scale: ${text.data} right is contained',
+              );
+              expect(rect.top, greaterThanOrEqualTo(-0.5), reason: 'scale $scale: ${text.data} top is contained');
+              expect(
+                rect.bottom,
+                lessThanOrEqualTo(linkBox.size.height + 0.5),
+                reason: 'scale $scale: ${text.data} bottom is contained',
+              );
+            }
+            expect(
+              transformed.map((Rect rect) => rect.center.dy).toSet().length,
+              1,
+              reason: 'scale $scale: ${text.data} stays on one rendered line',
+            );
+            expect(text.softWrap, isFalse);
+          }
+          expect(glyphRects, isNotEmpty);
+          for (final List<Rect> line in renderedLines) {
+            final Rect lineBounds = line.reduce((Rect first, Rect next) => first.expandToInclude(next));
+            expect(
+              lineBounds.center.dx,
+              closeTo(linkCenter.dx, 4),
+              reason: 'scale $scale: each rendered line is centered',
+            );
+          }
+          expect(tester.takeException(), isNull, reason: 'scale $scale');
+
+          final SemanticsHandle semantics = tester.ensureSemantics();
+          expect(tester.getSemantics(linkFinder).getSemanticsData().label, display);
+          expect(
+            find.bySemanticsLabel(
+              RegExp(
+                '^${RegExp.escape(display)}'
+                r'$',
+              ),
+            ),
+            findsOneWidget,
+            reason: 'scale $scale: one full link label',
+          );
+          for (final String part in parts) {
+            expect(
+              find.bySemanticsLabel(
+                RegExp(
+                  '^${RegExp.escape(part)}'
+                  r'$',
+                ),
+              ),
+              findsNothing,
+              reason: 'scale $scale: $part is not a separate label',
+            );
+          }
+          expect(
+            find.bySemanticsLabel(
+              RegExp(
+                '^QR code for ${RegExp.escape(display)}'
+                r'$',
+              ),
+            ),
+            findsOneWidget,
+          );
+          semantics.dispose();
+
+          final Finder copy = find.byKey(const ValueKey<String>('open-on-computer-copy'));
+          await tester.ensureVisible(copy);
+          await tester.pump();
+          await tester.tap(copy);
+          await tester.pump();
+          await tester.pump(const Duration(seconds: 1));
+          expect(copied, <String>[link.toString()]);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
         }
-        final RenderBox sheet = tester.renderObject<RenderBox>(
-          find.byKey(const ValueKey<String>('open-on-computer-link')),
-        );
-        for (final Element part
-            in find
-                .descendant(
-                  of: find.byKey(const ValueKey<String>('open-on-computer-link')),
-                  matching: find.byType(FittedBox),
-                )
-                .evaluate()) {
-          expect((part.renderObject! as RenderBox).size.width, lessThanOrEqualTo(sheet.size.width));
-        }
-
-        final Finder copy = find.byKey(const ValueKey<String>('open-on-computer-copy'));
-        await tester.ensureVisible(copy);
-        await tester.pump();
-        await tester.tap(copy);
-        await tester.pump();
-        await tester.pump(const Duration(seconds: 1));
-
-        expect(copied, <String>[_link]);
-        expect(tester.takeException(), isNull);
       });
     }
 
