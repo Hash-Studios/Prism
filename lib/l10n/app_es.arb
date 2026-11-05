@@ -3905,5 +3905,43 @@
   "watchGuideNoteShareSheet": "Crear esfera solo está en la app Fotos. Prism no puede añadirla a su propio menú de compartir.",
   "watchGuideNoteAlbum": "Prism guarda en Recientes, no en un álbum de Prism. Un álbum necesita acceso total a tus fotos, y Prism solo pide permiso para añadir fotos.",
   "watchGuideNoteLayout": "Cada esfera tiene su propio reloj y diseño, así que puede tapar parte de la imagen.",
-  "watchGuideNoteGooglePhotos": "Pixel Watch lee Google Photos. Si la imagen no aparece, haz primero una copia de seguridad en Google Photos."
+  "watchGuideNoteGooglePhotos": "Pixel Watch lee Google Photos. Si la imagen no aparece, haz primero una copia de seguridad en Google Photos.",
+  "searchByPhoto": "Buscar con una foto",
+  "searchPhotoPrivacy": "Prism lee los colores de tu teléfono. Para saber qué hay en la foto, se envía una pequeña copia a Google Cloud Vision. No se guarda.",
+  "searchPhotoChoose": "Elegir foto",
+  "searchPhotoChipLabel": "Tu foto",
+  "searchPhotoClear": "Quitar",
+  "searchPhotoClearTooltip": "Quitar foto",
+  "searchPhotoMatchesFor": "Coincidencias para {labels}",
+  "@searchPhotoMatchesFor": {
+    "placeholders": {
+      "labels": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoColourMatches": "Coincidencias por color",
+  "searchPhotoMainColours": "Colores principales: {colours}",
+  "@searchPhotoMainColours": {
+    "placeholders": {
+      "colours": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoSentNote": "Se envió una pequeña copia a Google Cloud Vision para averiguar qué hay en ella. No se guarda.",
+  "searchPhotoGuestNote": "Solo coincidencias de color. Inicia sesión para encontrar también lo que hay en la foto.",
+  "searchPhotoCappedNote": "Has usado las {count} búsquedas con foto de hoy. Hasta mañana, solo coincidencias por color.",
+  "@searchPhotoCappedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchPhotoUnavailableNote": "No se pudo leer lo que hay en la foto. Solo coincidencias por color.",
+  "searchPhotoNoMatches": "Ningún fondo de pantalla coincide con esta foto",
+  "searchPhotoNoMatchesBody": "Prueba con una foto de colores más intensos.",
+  "searchPhotoChooseAnother": "Elegir otra foto",
+  "searchPhotoCouldNotOpen": "No se pudo abrir esa foto. Prueba con otra."
 }

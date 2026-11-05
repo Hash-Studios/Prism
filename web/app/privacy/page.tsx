@@ -104,6 +104,13 @@ const PROVIDERS: Array<{ name: string; purpose: string; href: string; label: str
     label: "policies.google.com/privacy",
   },
   {
+    name: "Google Cloud Vision",
+    purpose:
+      "Search by photo (signed-in users): finds what is in a photo you pick. Prism sends a small copy, at most 512 px with no location or other metadata. Neither Prism nor the request stores it.",
+    href: "https://cloud.google.com/terms/cloud-privacy-notice",
+    label: "cloud.google.com/terms/cloud-privacy-notice",
+  },
+  {
     name: "Pexels API",
     purpose: "Curated wallpaper content",
     href: "https://www.pexels.com/privacy-policy",
@@ -207,6 +214,14 @@ export default function PrivacyPage() {
                 <li>
                   <strong className="text-black">AI-generated wallpapers</strong> - prompts you
                   submit and images generated
+                </li>
+                <li>
+                  <strong className="text-black">Search by photo</strong> - the app reads the
+                  colours of a photo you pick on your device. If you are signed in, a small copy
+                  without location or other metadata goes to Google Cloud Vision to find what is in
+                  it. The photo is not stored. Prism keeps only a daily count of your photo
+                  searches and the words Cloud Vision returned, for about two days after your last
+                  photo search, so a retry does not count twice
                 </li>
               </ul>
             </SubSection>

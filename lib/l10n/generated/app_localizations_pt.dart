@@ -14142,6 +14142,66 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'O Pixel Watch lê o Google Photos. Se a imagem não aparecer, faça primeiro um backup no Google Photos.';
+
+  @override
+  String get searchByPhoto => 'Buscar por foto';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'O Prism lê as cores do seu celular. Para descobrir o que tem na foto, uma pequena cópia é enviada ao Google Cloud Vision. Ela não é armazenada.';
+
+  @override
+  String get searchPhotoChoose => 'Escolher foto';
+
+  @override
+  String get searchPhotoChipLabel => 'Sua foto';
+
+  @override
+  String get searchPhotoClear => 'Remover';
+
+  @override
+  String get searchPhotoClearTooltip => 'Remover foto';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Resultados para $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Resultados por cor';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Cores principais: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'Uma pequena cópia foi enviada ao Google Cloud Vision para descobrir o que tem nela. Ela não é armazenada.';
+
+  @override
+  String get searchPhotoGuestNote =>
+      'Apenas resultados por cor. Entre na sua conta para também buscar pelo que tem na foto.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'Você já usou as $count buscas por foto de hoje. Até amanhã, só resultados por cor.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'Não foi possível identificar o que tem na foto. Apenas resultados por cor.';
+
+  @override
+  String get searchPhotoNoMatches => 'Nenhum papel de parede combina com esta foto';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Tente uma foto com cores mais vivas.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Escolher outra foto';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'Não foi possível abrir essa foto. Tente outra.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -28280,4 +28340,64 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get watchGuideNoteGooglePhotos =>
       'O Pixel Watch lê o Google Photos. Se a imagem não aparecer, faça primeiro um backup no Google Photos.';
+
+  @override
+  String get searchByPhoto => 'Buscar por foto';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'O Prism lê as cores do seu celular. Para descobrir o que tem na foto, uma pequena cópia é enviada ao Google Cloud Vision. Ela não é armazenada.';
+
+  @override
+  String get searchPhotoChoose => 'Escolher foto';
+
+  @override
+  String get searchPhotoChipLabel => 'Sua foto';
+
+  @override
+  String get searchPhotoClear => 'Remover';
+
+  @override
+  String get searchPhotoClearTooltip => 'Remover foto';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Resultados para $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Resultados por cor';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Cores principais: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'Uma pequena cópia foi enviada ao Google Cloud Vision para descobrir o que tem nela. Ela não é armazenada.';
+
+  @override
+  String get searchPhotoGuestNote =>
+      'Apenas resultados por cor. Entre na sua conta para também buscar pelo que tem na foto.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'Você já usou as $count buscas por foto de hoje. Até amanhã, só resultados por cor.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'Não foi possível identificar o que tem na foto. Apenas resultados por cor.';
+
+  @override
+  String get searchPhotoNoMatches => 'Nenhum papel de parede combina com esta foto';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Tente uma foto com cores mais vivas.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Escolher outra foto';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'Não foi possível abrir essa foto. Tente outra.';
 }

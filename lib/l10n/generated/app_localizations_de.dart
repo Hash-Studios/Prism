@@ -13992,4 +13992,64 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'Pixel Watch liest Google Photos. Wenn das Bild nicht erscheint, sichere es zuerst in Google Photos.';
+
+  @override
+  String get searchByPhoto => 'Mit Foto suchen';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'Prism liest die Farben auf deinem Handy. Um zu erkennen, was auf dem Foto ist, wird eine kleine Kopie an Google Cloud Vision geschickt. Sie wird nicht gespeichert.';
+
+  @override
+  String get searchPhotoChoose => 'Foto auswählen';
+
+  @override
+  String get searchPhotoChipLabel => 'Dein Foto';
+
+  @override
+  String get searchPhotoClear => 'Entfernen';
+
+  @override
+  String get searchPhotoClearTooltip => 'Foto entfernen';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Treffer für $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Treffer nach Farbe';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Hauptfarben: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'Eine kleine Kopie wurde an Google Cloud Vision geschickt, um zu erkennen, was drauf ist. Sie wird nicht gespeichert.';
+
+  @override
+  String get searchPhotoGuestNote => 'Nur Farbtreffer. Melde dich an, damit auch passende Motive gefunden werden.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'Du hast die $count Fotosuchen von heute genutzt. Bis morgen nur nach Farbe suchen.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote =>
+      'Was auf dem Foto zu sehen ist, konnte nicht erkannt werden. Nur Farbtreffer.';
+
+  @override
+  String get searchPhotoNoMatches => 'Keine Hintergrundbilder passen zu diesem Foto';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Versuch es mit einem Foto mit kräftigeren Farben.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Anderes Foto auswählen';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'Dieses Foto konnte nicht geöffnet werden. Versuch ein anderes.';
 }

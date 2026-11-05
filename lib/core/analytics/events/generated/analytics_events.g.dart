@@ -1283,6 +1283,77 @@ class SearchResultOpenedEvent extends AnalyticsEvent {
   }
 }
 
+class PhotoSearchStartedEvent extends AnalyticsEvent {
+  const PhotoSearchStartedEvent({required this.signedIn, required this.searchId});
+
+  final bool signedIn;
+  final String searchId;
+
+  @override
+  String get eventName => 'photo_search_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'signed_in': signedIn ? 1 : 0, 'search_id': searchId};
+  }
+}
+
+class PhotoSearchLabelsReturnedEvent extends AnalyticsEvent {
+  const PhotoSearchLabelsReturnedEvent({required this.labelCount, required this.searchId});
+
+  final int labelCount;
+  final String searchId;
+
+  @override
+  String get eventName => 'photo_search_labels_returned';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'label_count': labelCount, 'search_id': searchId};
+  }
+}
+
+class PhotoSearchLabelsCappedEvent extends AnalyticsEvent {
+  const PhotoSearchLabelsCappedEvent({required this.searchId});
+
+  final String searchId;
+
+  @override
+  String get eventName => 'photo_search_labels_capped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'search_id': searchId};
+  }
+}
+
+class PhotoSearchResultOpenedEvent extends AnalyticsEvent {
+  const PhotoSearchResultOpenedEvent({
+    required this.provider,
+    required this.itemId,
+    required this.index,
+    this.searchId,
+  });
+
+  final SearchProviderValue provider;
+  final String itemId;
+  final int index;
+  final String? searchId;
+
+  @override
+  String get eventName => 'photo_search_result_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'provider': provider.wireValue,
+      'item_id': itemId,
+      'index': index,
+      if (searchId != null) 'search_id': searchId!,
+    };
+  }
+}
+
 class SearchPaginationRequestedEvent extends AnalyticsEvent {
   const SearchPaginationRequestedEvent({
     required this.provider,

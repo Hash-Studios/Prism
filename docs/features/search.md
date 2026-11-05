@@ -1,12 +1,13 @@
 # Search
 
-The user types a word and gets wallpapers from Wallhaven, with Pexels as a fallback. Matching Prism catalogue wallpapers show first in a "From Prism" row. The user can narrow results with filters, and can search by colour.
+The user types a word and gets wallpapers from Wallhaven, with Pexels as a fallback. Matching Prism catalogue wallpapers show first in a "From Prism" row. The user can narrow results with filters, search by colour, and search by photo.
 
 ## Where to find it
 
 - The **Search** tab in the bottom bar (`SearchScreen`, `lib/features/user_search/views/pages/search_screen.dart`).
 - The tag chips on the wallpaper detail screen. A tap on a chip opens the Search tab and runs that tag.
 - The **Filters** icon (tune icon) in the search bar opens the filter sheet.
+- The **Search by photo** icon (image search icon) in the search bar opens the camera roll.
 
 ## Platforms
 
@@ -34,6 +35,12 @@ Search is free. The search files contain no premium or coin gate.
 | `lib/features/user_search/data/repositories/user_search_repository_impl.dart` | Finds creators by name or username. |
 | `lib/features/prism_feed/data/prism_wall_search.dart` | Finds Prism walls by tag or category in Firestore. |
 | `lib/features/wallpaper_detail/biz/tag_search_launcher.dart` | `openTagSearch` hands a tag to the Search screen. |
+| `lib/features/user_search/domain/entities/photo_query.dart` | `PhotoQuery`: the palette, labels and category of a picked photo. |
+| `lib/features/user_search/data/photo_search_service.dart` | Picks the photo, makes the clean 512 px copy, reads the palette, calls `photoSearchLabels`. |
+| `lib/features/user_search/data/photo_palette.dart` | The palette of a photo, in an isolate. |
+| `lib/features/user_search/data/photo_match_ranking.dart` | Ranks Prism walls by palette closeness and label overlap. |
+| `lib/features/user_search/views/widgets/photo_search_chip.dart` | The photo chip above photo results. |
+| `functions/src/photoSearchLabels.ts` | The `photoSearchLabels` callable: Cloud Vision labels, the daily cap. |
 
 Data path:
 
@@ -126,6 +133,140 @@ The backend writes `walls.colors` (1 to 3 palette ids, most dominant first). An 
 
 The page cursor key for a colour search is `search:<query>:color:<id>`. The Wallhaven cache scope also holds the colour.
 
+### Search by photo
+
+The user picks a photo, for example an outfit, a room or a sunset. Search shows walls with the same colours and, for a signed-in user, the same subject.
+
+The domain model is `PhotoQuery`:
+
+| Field | Value |
+|---|---|
+| `palette` | 1 to 3 palette colours with shares that add up to 1. The largest share is first. |
+| `labels` | 0 to 5 Cloud Vision labels. The most certain label is first. |
+| `category` | The Prism category that the labels map to (`mapLabelsToCategory`), or none. |
+| `labelsStatus` | `found`, `guest`, `capped` or `unavailable`. |
+| `preview` | The clean 512 px copy. The photo chip shows it. |
+
+Data path:
+
+```text
+camera roll (image_picker, long side 1024 or less, no metadata request)
+  -> decode on the phone (dart:ui)
+       -> PNG from raw pixels, long side 512 or less -> JPEG (flutter_image_compress)   = clean copy
+       -> RGBA pixels, long side 48 or less -> palette in an isolate                   = PhotoQuery.palette
+  -> signed in: photoSearchLabels callable (clean copy, requestId) -> Cloud Vision     = PhotoQuery.labels
+     guest: no network call
+  -> PrismWallSearch.photoCandidates -> rankPhotoMatches      -> "From Prism" row
+  -> WallpaperSearchService.search(top label, colour = top colour) -> Wallhaven, then Pexels
+       no results -> the same search with the colour only
+```
+
+How to use it:
+
+1. Tap the **Search by photo** icon in the search bar.
+2. A signed-in user sees a sheet one time. It says that a small copy goes to Google Cloud Vision and is not stored. **Choose photo** opens the camera roll. The app keeps the answer in the setting `search.photo_privacy_seen`.
+3. Pick a photo. The results show with a photo chip above them.
+4. Tap **Clear** on the chip to go back to the discover view. System back does the same.
+
+The photo chip shows:
+
+- A 44 point thumbnail of the clean copy. Its screen reader label is "Your photo".
+- "Matches for" and the first 3 labels in lowercase, or "Matches by colour" when there are no labels.
+- A dot for each palette colour. Its screen reader label is "Main colours:" and the colour names.
+- A **Clear** button. Its tooltip and screen reader label is "Clear photo".
+- One note:
+
+| `labelsStatus` | Note |
+|---|---|
+| `found` | A small copy went to Google Cloud Vision to find what's in it. It isn't stored. |
+| `guest` | Colour matches only. Sign in to match what's in the photo too. |
+| `capped` | You've used today's 20 photo searches. Matching by colour until tomorrow. |
+| `unavailable` | Couldn't read what's in the photo. Matching by colour only. |
+
+The chip fades in. With reduce motion on, it shows at once (`context.motion`). The text wraps at large text sizes.
+
+#### Colours on the phone
+
+- The palette uses the same rule as the backend wall colours (`functions/src/wallColors.ts`). The image is sampled at a long side of 48 pixels. Each pixel goes to the nearest of the 12 palette colours (`nearestPaletteColor`, CIE76 in Lab space). A transparent pixel counts as on white.
+- The palette keeps the colours that cover 12% of the pixels or more, at most 3, the largest first. When no colour covers 12%, it keeps the top colour.
+- The count runs in `Isolate.run`. The isolate gets only the 48 pixel sample, which is 9 KB or less.
+- No network call is needed for the colours.
+
+#### Labels
+
+- Only a signed-in user gets labels. A guest's photo never leaves the phone.
+- The app sends the clean copy and a new `requestId` to the `photoSearchLabels` callable (`us-central1`, the region of `appFunctions`).
+- The callable sends the bytes to Cloud Vision label detection in the request body. It uses the same Vision client and the same score floor (0.7) as `categorizeWallpaper`. It returns at most 5 labels and the mapped category.
+- The callable does not write the image anywhere. It does not use Firebase Storage or R2.
+- App Check is not used. No other callable uses it.
+
+Callable rules:
+
+| Check | Answer |
+|---|---|
+| No sign-in, or an anonymous sign-in | `unauthenticated`. The app shows the guest note. |
+| `requestId` is not 8 to 64 characters of `A-Z a-z 0-9 _ -` | `invalid-argument` |
+| `image` is not base64 of a JPEG or PNG | `invalid-argument` |
+| `image` is over 512 KiB | `invalid-argument`, before any count or Vision call |
+| 20 labelled searches today (UTC) | `resource-exhausted`. The app shows the capped note and matches by colour. |
+| The same `requestId` again on the same day | The same labels. No new count and no new Vision call. |
+| The same `requestId` while the first call runs (90 seconds or less) | `aborted` |
+| Cloud Vision fails | `unavailable`. The count goes back down. The app shows the unavailable note. |
+
+The callable keeps one doc for each user, `photoSearchRate/{uid}`: `day`, `count`, `results` (the labels and category for each `requestId` of the day) and `expireAt`. The doc has no image data. `expireAt` is two days after the last photo search. A TTL policy on `photoSearchRate.expireAt` (`firestore.indexes.json`) deletes the doc. `deleteAccount` deletes it too. Firestore rules refuse all client reads and writes (the default deny).
+
+#### Ranking
+
+The "From Prism" row uses walls that the backend already labels. It needs no new field and no backfill:
+
+- `walls.colors`: 1 to 3 palette ids, the largest first (`wallColors.ts`).
+- `walls.searchTerms`: the terms of the title, tags, category, description, creator name and `visionLabels` (`wallSearchTerms.ts`).
+
+`PrismWallSearch.photoCandidates` runs two queries on reviewed walls, newest first, limit 48 each: `colors array-contains <top colour>`, and `searchTerms array-contains-any <label terms>`. A guest runs only the colour query. The existing indexes cover both. The service removes duplicates and walls from blocked creators.
+
+`rankPhotoMatches` gives each wall a score from 0 to 1 and keeps the best 12:
+
+- Palette closeness. The wall colours count 1, then 0.6 and 0.4, then 0.5, 0.3 and 0.2. Half of the closeness is the share overlap: for each colour, the smaller of the two shares. The other half is 1 minus the mean Lab distance from each colour to the nearest colour on the other side, where black to white is 1. A wall without colours has closeness 0.
+- Label overlap. The label terms and the category term are made with the backend rule (lowercase, singular, no stop words). The overlap is the part of these terms that the wall's `searchTerms` holds.
+- With labels, the score is half palette closeness and half label overlap. With no labels, the score is the palette closeness.
+- Equal scores keep the query order: colour matches first, then label matches, each newest first.
+
+The resolution and portrait filters apply to the Prism row. The colour filter is replaced by the top photo colour. Depth Effect and Spatial Scene filters do not apply to a photo search.
+
+#### Wallhaven and Pexels
+
+The service runs the normal search with the top label as the query and the top colour as the colour filter. If that has no results, it runs the colour only (Wallhaven only, because Pexels needs a query). The grid loads the next pages with the query that gave results. A guest has no label, so the search is colour only.
+
+#### Analytics
+
+| Event | When |
+|---|---|
+| `photo_search_started` (`signed_in`, `search_id`) | The user picked a photo. |
+| `photo_search_labels_returned` (`label_count`, `search_id`) | The callable returned labels. |
+| `photo_search_labels_capped` (`search_id`) | The callable refused because of the daily cap. |
+| `photo_search_result_opened` (`provider`, `item_id`, `index`, `search_id`) | The user opened a result of a photo search. `search_result_opened` is sent too. |
+
+#### Privacy
+
+- The photo is downscaled on the phone to a long side of 512 pixels or less before it leaves the phone.
+- The clean copy is a new image made from the decoded pixels. EXIF, location and all other metadata of the original are not in it. `test/features/user_search/photo_search_service_test.dart` proves this with a photo that has location data.
+- The picker asks for no metadata (`requestFullMetadata: false`).
+- A small copy goes to Google Cloud Vision for a signed-in user only. It is not stored. The app says this in the one-time sheet and in the note under the photo chip.
+- The privacy page (`web/app/privacy/page.tsx`) lists Google Cloud Vision as a third party.
+
+#### Cost
+
+Cloud Vision label detection list price (check the Google Cloud pricing page before release): the first 1,000 units each month are free, then USD 1.50 for each 1,000 units up to 5 million units.
+
+| Case | Vision units | Cost |
+|---|---|---|
+| 1,000 signed-in photo searches | 1,000 | USD 1.50 |
+| A guest search, a capped search, a refused image, a replayed `requestId` | 0 | USD 0 |
+| One user at the cap for one day | 20 | USD 0.03 |
+| Worst case per day | 20 for each signed-in user | USD 0.03 for each signed-in user. 1,000 users at the cap is USD 30 a day. 10,000 users is USD 300 a day. |
+
+The callable also costs one Cloud Functions call and up to three Firestore transactions for each search.
+
 ### Pagination
 
 - The page cursor key is `search:<query>`. A search cursor does not reuse a category cursor.
@@ -189,6 +330,10 @@ The Prism tag query needs the Firestore index on `walls`: `tags` (array contains
 - A Prism wall has colours only after the backend writes `colors`. Until the backfill runs, the "From Prism" row has few walls for a colour.
 - Pexels matches a colour with its own colour model. Results can include photos with a different main colour.
 - The search analytics event always names Wallhaven as the provider for a submitted query (`SearchSubmittedEvent`).
+- Cloud Vision labels are in English. "Matches for" shows them in English in every language.
+- The `photoSearchLabels` callable must be deployed before a release that ships photo search. Until then, a signed-in user gets the unavailable note and colour matches.
+- The TTL policy on `photoSearchRate.expireAt` takes effect only after `firestore.indexes.json` is deployed.
+- A photo search with a label that Wallhaven does not know falls back to the colour only. The label still ranks the Prism row.
 
 ## How to test
 
@@ -208,6 +353,11 @@ The Prism tag query needs the Firestore index on `walls`: `tags` (array contains
 14. Tap **Clear colour** on the chip. Make sure the discover view shows.
 15. Type "forest" and submit. Open **Filters**, choose **My accent**, and tap **Apply**. Make sure the results reload and the Filters icon has a badge.
 16. Open **Filters** and tap the selected swatch. Make sure the swatch ring goes away. Tap **Apply**. Make sure the results have no colour.
+17. As a guest, tap the **Search by photo** icon and pick a sunset photo. Make sure the photo chip shows orange or red dots, "Matches by colour" and the guest note. Make sure the results are warm colours.
+18. Sign in and tap the **Search by photo** icon. Make sure the privacy sheet shows. Tap **Choose photo** and pick a photo of a green room. Make sure the chip shows "Matches for" with labels and the Cloud Vision note.
+19. Tap the icon again. Make sure the sheet does not show again.
+20. Tap **Clear** on the chip. Make sure the discover view shows.
+21. Use one account for 20 photo searches in one day. Make sure the 21st shows the capped note and colour matches.
 
 Automated tests:
 
@@ -227,6 +377,12 @@ Automated tests:
 - `test/features/pexels_feed/data/repositories/pexels_wallpaper_repository_impl_test.dart`
 - `test/features/user_search/wallpaper_search_service_test.dart`
 - `test/features/wallpaper_detail/views/widgets/wallpaper_detail_widgets_test.dart` (tag chips)
+- `test/features/user_search/photo_palette_test.dart` (palette of a solid colour, two colours, a gradient)
+- `test/features/user_search/photo_match_ranking_test.dart` (ranking, empty labels)
+- `test/features/user_search/photo_search_service_test.dart` (512 px clean copy, no EXIF or location, label errors)
+- `test/features/user_search/photo_search_screen_test.dart` (picker button, guest note, privacy sheet, capped note, results order, large text)
+- `test/features/user_search/photo_search_chip_test.dart` (chip, notes, large text, dark theme)
+- `functions/src/__tests__/photoSearchLabels.test.ts` (auth, cap, `requestId` replay, oversize image, no image stored)
 
 Command:
 

@@ -22332,6 +22332,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pixel Watch reads Google Photos. If the image doesn\'t show, back it up to Google Photos first.'**
   String get watchGuideNoteGooglePhotos;
+
+  /// Tooltip of the camera roll button in the search bar, and title of the photo search privacy sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by photo'**
+  String get searchByPhoto;
+
+  /// Shown once before a signed-in user's first photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism reads the colours on your phone. To find what\'s in the photo, a small copy goes to Google Cloud Vision. It isn\'t stored.'**
+  String get searchPhotoPrivacy;
+
+  /// Button on the photo search privacy sheet. Opens the camera roll.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose photo'**
+  String get searchPhotoChoose;
+
+  /// Screen reader label of the small photo thumbnail above photo search results.
+  ///
+  /// In en, this message translates to:
+  /// **'Your photo'**
+  String get searchPhotoChipLabel;
+
+  /// Button next to the photo thumbnail. Ends the photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get searchPhotoClear;
+
+  /// Tooltip and screen reader label of the Clear button next to the photo thumbnail.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear photo'**
+  String get searchPhotoClearTooltip;
+
+  /// Line above photo search results. labels is a comma-separated list of words that describe the photo, in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches for {labels}'**
+  String searchPhotoMatchesFor(String labels);
+
+  /// Line above photo search results when the photo has no labels.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches by colour'**
+  String get searchPhotoColourMatches;
+
+  /// Screen reader label of the colour dots next to the photo thumbnail.
+  ///
+  /// In en, this message translates to:
+  /// **'Main colours: {colours}'**
+  String searchPhotoMainColours(String colours);
+
+  /// Note under the photo thumbnail after the photo was sent for labels.
+  ///
+  /// In en, this message translates to:
+  /// **'A small copy went to Google Cloud Vision to find what\'s in it. It isn\'t stored.'**
+  String get searchPhotoSentNote;
+
+  /// Note under the photo thumbnail for a guest. A guest's photo never leaves the phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour matches only. Sign in to match what\'s in the photo too.'**
+  String get searchPhotoGuestNote;
+
+  /// Note under the photo thumbnail when the daily photo search limit is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used today\'s {count} photo searches. Matching by colour until tomorrow.'**
+  String searchPhotoCappedNote(int count);
+
+  /// Note under the photo thumbnail when the labels call failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read what\'s in the photo. Matching by colour only.'**
+  String get searchPhotoUnavailableNote;
+
+  /// Empty state title for a photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'No walls match this photo'**
+  String get searchPhotoNoMatches;
+
+  /// Empty state body for a photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a photo with bolder colours.'**
+  String get searchPhotoNoMatchesBody;
+
+  /// Empty state button for a photo search. Opens the camera roll.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another photo'**
+  String get searchPhotoChooseAnother;
+
+  /// Toast when the picked photo cannot be decoded.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open that photo. Try another one.'**
+  String get searchPhotoCouldNotOpen;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

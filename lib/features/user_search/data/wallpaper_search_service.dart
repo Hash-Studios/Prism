@@ -15,7 +15,9 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/data/prism_wall_search.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/features/user_search/data/photo_match_ranking.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
+import 'package:Prism/features/user_search/domain/entities/photo_query.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:get_it/get_it.dart';
@@ -76,6 +78,46 @@ class WallpaperSearchService {
   /// as [WallpaperSearchPage.results] and never throws.
   Future<WallpaperSearchPage> search(String query, {SearchFilters filters = const SearchFilters()}) {
     return PerformanceProbe.measure('search', 'wallpaper.search', () => _search(query, filters: filters));
+  }
+
+  /// The search for a picked photo. External results come from [search] with the top label as the query and the top
+  /// colour as the colour filter. When that finds nothing it tries the colour alone. [WallpaperSearchPage.prismResults]
+  /// are Prism walls ranked by palette closeness and label overlap. [query] is the text query of the page, which the
+  /// grid uses for the next pages. Throws [WallpaperSearchException] only when every source fails.
+  Future<({WallpaperSearchPage page, String query})> searchByPhoto(
+    PhotoQuery photo, {
+    SearchFilters filters = const SearchFilters(),
+  }) async {
+    final SearchFilters photoFilters = filters.copyWith(color: photo.topColor, depthOnly: false, spatialOnly: false);
+    final Future<List<FeedItemEntity>> prism = _prismSearch
+        .photoCandidates(photo)
+        .then(
+          (candidates) => rankPhotoMatches(photo, <PhotoCandidate>[
+            for (final PhotoCandidate candidate in candidates)
+              if (photoFilters.acceptsResolution(candidate.wall.core.resolution)) candidate,
+          ]),
+        )
+        .then((walls) => <FeedItemEntity>[for (final wall in walls) PrismFeedItem(id: wall.id, wallpaper: wall)]);
+    String query = photo.topLabel;
+    WallpaperSearchPage? page;
+    try {
+      page = await search(query, filters: photoFilters);
+      if (page.results.isEmpty && query.isNotEmpty) {
+        final WallpaperSearchPage colourOnly = await search('', filters: photoFilters);
+        if (colourOnly.results.isNotEmpty) (page, query) = (colourOnly, '');
+      }
+    } on WallpaperSearchException {
+      if ((await prism).isEmpty) rethrow;
+    }
+    return (
+      page: await _withoutHidden((
+        provider: page?.provider ?? SearchProviderValue.prism,
+        results: page?.results ?? const <FeedItemEntity>[],
+        prismResults: await prism,
+        isLocal: page?.isLocal ?? false,
+      )),
+      query: query,
+    );
   }
 
   Future<WallpaperSearchPage> _search(String query, {SearchFilters filters = const SearchFilters()}) async {

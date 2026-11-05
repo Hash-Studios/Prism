@@ -1,0 +1,112 @@
+import * as admin from "firebase-admin";
+import {logger} from "firebase-functions/v2";
+import {HttpsError, onCall} from "firebase-functions/v2/https";
+import {isValidRequestId} from "./coinsCallables";
+import {CALLABLE_REGIONS, db, readDailyCount, utcDateString} from "./common";
+import {DEFAULT_CATEGORY, detectLabelsInImage, mapLabelsToCategory} from "./wallCategory";
+
+export const PHOTO_SEARCH_RATE = "photoSearchRate";
+export const MAX_PHOTO_SEARCHES_PER_DAY = 20;
+export const MAX_PHOTO_BYTES = 512 * 1024;
+export const MAX_PHOTO_LABELS = 5;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const STALE_PENDING_MS = 90 * 1000;
+const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
+
+export type PhotoLabels = {labels: string[]; category: string | null};
+type Slot = {pending: true; at: number} | PhotoLabels;
+
+/** The decoded JPEG or PNG bytes of [raw], a base64 string. Refuses anything else and anything over 512 KiB. */
+export function parsePhoto(raw: unknown): Buffer {
+  if (typeof raw !== "string" || raw.length === 0) {
+    throw new HttpsError("invalid-argument", "image must be a base64 JPEG or PNG.");
+  }
+  if (raw.length > Math.ceil(MAX_PHOTO_BYTES / 3) * 4) {
+    throw new HttpsError("invalid-argument", "image is over 512 KiB. Downscale it to 512 px first.");
+  }
+  if (raw.length % 4 !== 0 || !BASE64.test(raw)) {
+    throw new HttpsError("invalid-argument", "image must be a base64 JPEG or PNG.");
+  }
+  const bytes = Buffer.from(raw, "base64");
+  if (bytes.length > MAX_PHOTO_BYTES) {
+    throw new HttpsError("invalid-argument", "image is over 512 KiB. Downscale it to 512 px first.");
+  }
+  const jpeg = bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  const png = bytes.length > 8 && bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  if (!jpeg && !png) throw new HttpsError("invalid-argument", "image must be a base64 JPEG or PNG.");
+  return bytes;
+}
+
+function slotsOf(data: admin.firestore.DocumentData | undefined, day: string): Record<string, Slot> {
+  return data?.day === day && data.results && typeof data.results === "object" ? {...data.results} : {};
+}
+
+function isLabels(slot: Slot | undefined): slot is PhotoLabels {
+  return !!slot && Array.isArray((slot as PhotoLabels).labels);
+}
+
+/**
+ * Labels for a photo the user picked in Search. The image is sent to Cloud Vision in the request body and is never
+ * written anywhere. The day's doc keeps only a count and each request's labels, so a retried requestId returns the
+ * same labels without a second Vision call or a second count.
+ */
+export const photoSearchLabels = onCall({region: CALLABLE_REGIONS, timeoutSeconds: 60}, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid || request.auth?.token.firebase?.sign_in_provider === "anonymous") {
+    throw new HttpsError("unauthenticated", "Sign in to search by photo.");
+  }
+  const requestId = request.data?.requestId;
+  if (!isValidRequestId(requestId)) throw new HttpsError("invalid-argument", "requestId is invalid.");
+  const image = parsePhoto(request.data?.image);
+
+  const now = Date.now();
+  const day = utcDateString(new Date(now));
+  const ref = db.collection(PHOTO_SEARCH_RATE).doc(uid);
+  const claim = await db.runTransaction(async (tx): Promise<{replay: PhotoLabels; used: number} | {used: number}> => {
+    const snap = await tx.get(ref);
+    const used = readDailyCount(snap, day);
+    const slots = slotsOf(snap.data(), day);
+    const slot = slots[requestId];
+    if (isLabels(slot)) return {replay: {labels: slot.labels, category: slot.category ?? null}, used};
+    if (slot && now - slot.at < STALE_PENDING_MS) {
+      throw new HttpsError("aborted", "This photo search is still running.");
+    }
+    const count = slot ? used : used + 1;
+    if (!slot && used >= MAX_PHOTO_SEARCHES_PER_DAY) {
+      throw new HttpsError("resource-exhausted", "Daily photo search limit reached.");
+    }
+    tx.set(ref, {
+      day,
+      count,
+      results: {...slots, [requestId]: {pending: true, at: now}},
+      expireAt: admin.firestore.Timestamp.fromMillis(now + 2 * DAY_MS),
+    });
+    return {used: count};
+  });
+  if ("replay" in claim) return {...claim.replay, remaining: Math.max(0, MAX_PHOTO_SEARCHES_PER_DAY - claim.used)};
+
+  let labels: string[];
+  try {
+    labels = (await detectLabelsInImage(image)).slice(0, MAX_PHOTO_LABELS);
+  } catch (err) {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const slots = slotsOf(snap.data(), day);
+      if (!slots[requestId] || isLabels(slots[requestId])) return;
+      delete slots[requestId];
+      tx.set(ref, {day, count: Math.max(0, readDailyCount(snap, day) - 1), results: slots,
+        expireAt: snap.data()?.expireAt ?? admin.firestore.Timestamp.fromMillis(now + 2 * DAY_MS)});
+    });
+    logger.warn("photoSearchLabels: Vision failed; the count was given back.", {uid, err});
+    throw new HttpsError("unavailable", "Could not read the photo. Try again.");
+  }
+  const category = mapLabelsToCategory(labels);
+  const result: PhotoLabels = {labels, category: category === DEFAULT_CATEGORY ? null : category};
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const slots = slotsOf(snap.data(), day);
+    if (!slots[requestId] || isLabels(slots[requestId])) return;
+    tx.update(ref, {results: {...slots, [requestId]: result}});
+  });
+  return {...result, remaining: Math.max(0, MAX_PHOTO_SEARCHES_PER_DAY - claim.used)};
+});

@@ -13038,5 +13038,88 @@
   "watchGuideNoteGooglePhotos": "Pixel Watch liest Google Photos. Wenn das Bild nicht erscheint, sichere es zuerst in Google Photos.",
   "@watchGuideNoteGooglePhotos": {
     "description": "Note in the Android watch face guide."
+  },
+  "searchByPhoto": "Mit Foto suchen",
+  "@searchByPhoto": {
+    "description": "Tooltip of the camera roll button in the search bar, and title of the photo search privacy sheet."
+  },
+  "searchPhotoPrivacy": "Prism liest die Farben auf deinem Handy. Um zu erkennen, was auf dem Foto ist, wird eine kleine Kopie an Google Cloud Vision geschickt. Sie wird nicht gespeichert.",
+  "@searchPhotoPrivacy": {
+    "description": "Shown once before a signed-in user's first photo search."
+  },
+  "searchPhotoChoose": "Foto auswählen",
+  "@searchPhotoChoose": {
+    "description": "Button on the photo search privacy sheet. Opens the camera roll."
+  },
+  "searchPhotoChipLabel": "Dein Foto",
+  "@searchPhotoChipLabel": {
+    "description": "Screen reader label of the small photo thumbnail above photo search results."
+  },
+  "searchPhotoClear": "Entfernen",
+  "@searchPhotoClear": {
+    "description": "Button next to the photo thumbnail. Ends the photo search."
+  },
+  "searchPhotoClearTooltip": "Foto entfernen",
+  "@searchPhotoClearTooltip": {
+    "description": "Tooltip and screen reader label of the Clear button next to the photo thumbnail."
+  },
+  "searchPhotoMatchesFor": "Treffer für {labels}",
+  "@searchPhotoMatchesFor": {
+    "description": "Line above photo search results. labels is a comma-separated list of words that describe the photo, in English.",
+    "placeholders": {
+      "labels": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoColourMatches": "Treffer nach Farbe",
+  "@searchPhotoColourMatches": {
+    "description": "Line above photo search results when the photo has no labels."
+  },
+  "searchPhotoMainColours": "Hauptfarben: {colours}",
+  "@searchPhotoMainColours": {
+    "description": "Screen reader label of the colour dots next to the photo thumbnail.",
+    "placeholders": {
+      "colours": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoSentNote": "Eine kleine Kopie wurde an Google Cloud Vision geschickt, um zu erkennen, was drauf ist. Sie wird nicht gespeichert.",
+  "@searchPhotoSentNote": {
+    "description": "Note under the photo thumbnail after the photo was sent for labels."
+  },
+  "searchPhotoGuestNote": "Nur Farbtreffer. Melde dich an, damit auch passende Motive gefunden werden.",
+  "@searchPhotoGuestNote": {
+    "description": "Note under the photo thumbnail for a guest. A guest's photo never leaves the phone."
+  },
+  "searchPhotoCappedNote": "Du hast die {count} Fotosuchen von heute genutzt. Bis morgen nur nach Farbe suchen.",
+  "@searchPhotoCappedNote": {
+    "description": "Note under the photo thumbnail when the daily photo search limit is reached.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchPhotoUnavailableNote": "Was auf dem Foto zu sehen ist, konnte nicht erkannt werden. Nur Farbtreffer.",
+  "@searchPhotoUnavailableNote": {
+    "description": "Note under the photo thumbnail when the labels call failed."
+  },
+  "searchPhotoNoMatches": "Keine Hintergrundbilder passen zu diesem Foto",
+  "@searchPhotoNoMatches": {
+    "description": "Empty state title for a photo search."
+  },
+  "searchPhotoNoMatchesBody": "Versuch es mit einem Foto mit kräftigeren Farben.",
+  "@searchPhotoNoMatchesBody": {
+    "description": "Empty state body for a photo search."
+  },
+  "searchPhotoChooseAnother": "Anderes Foto auswählen",
+  "@searchPhotoChooseAnother": {
+    "description": "Empty state button for a photo search. Opens the camera roll."
+  },
+  "searchPhotoCouldNotOpen": "Dieses Foto konnte nicht geöffnet werden. Versuch ein anderes.",
+  "@searchPhotoCouldNotOpen": {
+    "description": "Toast when the picked photo cannot be decoded."
   }
 }

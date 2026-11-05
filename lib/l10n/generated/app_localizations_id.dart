@@ -13831,4 +13831,63 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'Pixel Watch membaca Google Photos. Jika gambar tidak muncul, cadangkan dulu ke Google Photos.';
+
+  @override
+  String get searchByPhoto => 'Cari dengan foto';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'Prism membaca warna di ponselmu. Untuk mencari tahu isi fotonya, salinan kecil dikirim ke Google Cloud Vision. Salinan itu tidak disimpan.';
+
+  @override
+  String get searchPhotoChoose => 'Pilih foto';
+
+  @override
+  String get searchPhotoChipLabel => 'Fotomu';
+
+  @override
+  String get searchPhotoClear => 'Hapus';
+
+  @override
+  String get searchPhotoClearTooltip => 'Hapus foto';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Cocok dengan $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Cocok berdasarkan warna';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Warna utama: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'Salinan kecil dikirim ke Google Cloud Vision untuk mencari tahu isinya. Salinan itu tidak disimpan.';
+
+  @override
+  String get searchPhotoGuestNote => 'Hanya cocok berdasarkan warna. Masuk untuk juga mencocokkan isi fotomu.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'Kamu sudah memakai $count pencarian foto hari ini. Sampai besok, pencocokan hanya berdasarkan warna.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'Isi foto tidak bisa dibaca. Hanya cocok berdasarkan warna.';
+
+  @override
+  String get searchPhotoNoMatches => 'Tidak ada wallpaper yang cocok dengan foto ini';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Coba foto dengan warna yang lebih cerah.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Pilih foto lain';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'Foto itu tidak bisa dibuka. Coba foto lain.';
 }

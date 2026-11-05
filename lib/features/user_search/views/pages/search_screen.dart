@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/analytics_correlation.dart';
@@ -7,16 +8,21 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
+import 'package:Prism/features/user_search/data/photo_search_service.dart';
 import 'package:Prism/features/user_search/data/recent_searches_store.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/search_tags.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
+import 'package:Prism/features/user_search/domain/entities/photo_query.dart';
+import 'package:Prism/features/user_search/views/widgets/photo_search_chip.dart';
 import 'package:Prism/features/user_search/views/widgets/prism_search_field.dart';
 import 'package:Prism/features/user_search/views/widgets/search_discovery_widget.dart';
 import 'package:Prism/features/user_search/views/widgets/search_filter_sheet.dart';
@@ -25,6 +31,7 @@ import 'package:Prism/features/user_search/views/widgets/search_request_prompt.d
 import 'package:Prism/features/wall_requests/views/widgets/wall_request_sheet.dart';
 import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -51,6 +58,12 @@ class _SearchScreenState extends State<SearchScreen> {
   String _submittedQuery = '';
   String? _searchId;
   SearchFilters _filters = const SearchFilters();
+
+  /// The picked photo while its results are on screen. Its results replace the text and colour search.
+  PhotoQuery? _photo;
+
+  /// The text query of a photo search page, which the grid uses for the next pages.
+  String _photoPageQuery = '';
   bool isSubmitted = false;
   late bool _showAi;
 
@@ -97,6 +110,7 @@ class _SearchScreenState extends State<SearchScreen> {
       _submittedQuery = trimmed;
       _searchId = searchId;
       _search = search;
+      _photo = null;
     });
     _trackSearchSubmitted(
       provider: SearchProviderValue.auto,
@@ -180,6 +194,7 @@ class _SearchScreenState extends State<SearchScreen> {
       isSubmitted = false;
       _searchId = null;
       _search = null;
+      _photo = null;
       if (_submittedQuery.isEmpty) {
         _filters = _filters.copyWith(clearColor: true, depthOnly: false, spatialOnly: false);
       }
@@ -191,11 +206,98 @@ class _SearchScreenState extends State<SearchScreen> {
     final SearchFilters? picked = await showSearchFilterSheet(context, _filters);
     if (picked == null || picked == _filters || !mounted) return;
     setState(() => _filters = picked);
+    if (_photo case final PhotoQuery photo) {
+      _showPhotoResults(photo, _searchId ?? AnalyticsCorrelation.newId());
+      return;
+    }
     final String query = (isSubmitted ? _submittedQuery : searchController.text).trim();
     if (query.isEmpty && !picked.listsWithoutQuery) {
       if (isSubmitted) _backToDiscover();
     } else if (isSubmitted || query.isEmpty) {
       _triggerSearch(query);
+    }
+  }
+
+  Future<void> _searchByPhoto() async {
+    final PhotoSearchService photos = getIt<PhotoSearchService>();
+    final bool signedIn = app_state.prismUser.loggedIn;
+    if (signedIn && !_settingsLocal.get<bool>(PersistenceKeys.photoSearchPrivacySeen, defaultValue: false)) {
+      final bool accepted = await showPrismConfirm(
+        context,
+        title: context.l10n.searchByPhoto,
+        message: context.l10n.searchPhotoPrivacy,
+        confirmLabel: context.l10n.searchPhotoChoose,
+      );
+      if (!accepted || !mounted) return;
+      await _settingsLocal.set(PersistenceKeys.photoSearchPrivacySeen, true);
+    }
+    final Uint8List? original = await photos.pick();
+    if (original == null || !mounted) return;
+    final String searchId = AnalyticsCorrelation.newId();
+    analytics.track(PhotoSearchStartedEvent(signedIn: signedIn, searchId: searchId));
+    searchController.clear();
+    _focus.unfocus();
+    final Future<WallpaperSearchPage> search = _readPhoto(photos, original, signedIn, searchId)..ignore();
+    setState(() {
+      isSubmitted = true;
+      _submittedQuery = '';
+      _searchId = searchId;
+      _search = search;
+      _photo = null;
+      _filters = _filters.copyWith(clearColor: true, depthOnly: false, spatialOnly: false);
+    });
+  }
+
+  Future<WallpaperSearchPage> _readPhoto(
+    PhotoSearchService photos,
+    Uint8List original,
+    bool signedIn,
+    String searchId,
+  ) async {
+    final PhotoQuery photo;
+    try {
+      photo = await photos.queryFor(original, signedIn: signedIn);
+    } catch (_) {
+      if (mounted && _searchId == searchId) {
+        toasts.error(context.l10n.searchPhotoCouldNotOpen);
+        _backToDiscover();
+      }
+      rethrow;
+    }
+    switch (photo.labelsStatus) {
+      case PhotoLabelsStatus.found:
+        analytics.track(PhotoSearchLabelsReturnedEvent(labelCount: photo.labels.length, searchId: searchId));
+      case PhotoLabelsStatus.capped:
+        analytics.track(PhotoSearchLabelsCappedEvent(searchId: searchId));
+      case PhotoLabelsStatus.guest || PhotoLabelsStatus.unavailable:
+        break;
+    }
+    if (!mounted || _searchId != searchId) throw StateError('A newer search replaced this photo search.');
+    return _photoResults(photo, searchId);
+  }
+
+  /// Shows the results for [photo] with the current filters.
+  void _showPhotoResults(PhotoQuery photo, String searchId) {
+    final Future<WallpaperSearchPage> search = _photoResults(photo, searchId)..ignore();
+    setState(() {
+      isSubmitted = true;
+      _searchId = searchId;
+      _search = search;
+    });
+  }
+
+  Future<WallpaperSearchPage> _photoResults(PhotoQuery photo, String searchId) async {
+    setState(() => _photo = photo);
+    final result = await getIt<WallpaperSearchService>().searchByPhoto(photo, filters: _filters);
+    if (mounted && _searchId == searchId) setState(() => _photoPageQuery = result.query);
+    return result.page;
+  }
+
+  void _retrySearch() {
+    if (_photo case final PhotoQuery photo) {
+      _showPhotoResults(photo, AnalyticsCorrelation.newId());
+    } else {
+      _triggerSearch(_submittedQuery);
     }
   }
 
@@ -318,6 +420,11 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
               const SizedBox(width: PrismSpace.xxs),
+              PrismIconButton(
+                icon: Icons.image_search_rounded,
+                tooltip: context.l10n.searchByPhoto,
+                onPressed: () => unawaited(_searchByPhoto()),
+              ),
               Badge(
                 isLabelVisible: _filters != const SearchFilters(),
                 smallSize: 8,
@@ -349,13 +456,23 @@ class _SearchScreenState extends State<SearchScreen> {
             title: context.l10n.accountCouldNotSearchRightNow,
             body: context.l10n.accountCheckConnectionTryAgain,
             actionLabel: context.l10n.accountTryAgain,
-            onAction: () => _triggerSearch(_submittedQuery),
-            onRefresh: () async => _triggerSearch(_submittedQuery),
+            onAction: _retrySearch,
+            onRefresh: () async => _retrySearch(),
           );
         }
         final WallpaperSearchPage? page = snapshot.data;
         if (page == null) {
           return const LoadingCards();
+        }
+        final PhotoQuery? photo = _photo;
+        if (page.results.isEmpty && page.prismResults.isEmpty && photo != null) {
+          return GlintState(
+            kind: GlintStateKind.empty,
+            title: context.l10n.searchPhotoNoMatches,
+            body: context.l10n.searchPhotoNoMatchesBody,
+            actionLabel: context.l10n.searchPhotoChooseAnother,
+            onAction: () => unawaited(_searchByPhoto()),
+          );
         }
         if (page.results.isEmpty && page.prismResults.isEmpty) {
           final bool filtered = _filters != const SearchFilters();
@@ -392,15 +509,18 @@ class _SearchScreenState extends State<SearchScreen> {
         }
         return SearchGrid(
           key: ValueKey<Future<WallpaperSearchPage>?>(_search),
-          query: _submittedQuery,
+          query: photo == null ? _submittedQuery : _photoPageQuery,
           searchId: _searchId,
           trackInitialResults: false,
           provider: page.provider,
           initialResults: page.results,
           prismResults: page.prismResults,
-          filters: _filters,
+          filters: photo == null
+              ? _filters
+              : _filters.copyWith(color: photo.topColor, depthOnly: false, spatialOnly: false),
           isLocal: page.isLocal,
-          footer: _submittedQuery.isNotEmpty && page.results.length + page.prismResults.length <= 5
+          fromPhoto: photo != null,
+          footer: photo == null && _submittedQuery.isNotEmpty && page.results.length + page.prismResults.length <= 5
               ? SearchRequestPrompt(query: _submittedQuery)
               : null,
         );
@@ -426,6 +546,18 @@ class _SearchScreenState extends State<SearchScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       _header(context),
+                      AnimatedSwitcher(
+                        duration: context.motion(PrismDurations.fast),
+                        switchInCurve: PrismCurves.enter,
+                        switchOutCurve: PrismCurves.exitReverse,
+                        child: _photo == null
+                            ? const SizedBox.shrink()
+                            : Padding(
+                                key: ValueKey<PhotoQuery>(_photo!),
+                                padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.sm),
+                                child: PhotoSearchChip(photo: _photo!, onClear: _backToDiscover),
+                              ),
+                      ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
                         child: Row(

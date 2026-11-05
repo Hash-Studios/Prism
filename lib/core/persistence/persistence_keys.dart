@@ -66,6 +66,9 @@ class PersistenceKeys {
   // JSON list of recent search queries, newest first.
   static const String recentSearches = 'search.recent';
 
+  // True once the user saw that photo search sends a small copy of the photo to Google Cloud Vision.
+  static const String photoSearchPrivacySeen = 'search.photo_privacy_seen';
+
   // Notification ids the user deleted, so a remote sync does not restore them.
   static const String notificationsDeletedIds = 'notifications.deleted_ids';
 

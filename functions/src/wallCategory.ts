@@ -58,11 +58,20 @@ export function mapLabelsToCategory(labels: string[]): string {
 let visionClient: ImageAnnotatorClient | undefined;
 
 export async function detectLabels(imageUrl: string): Promise<string[]> {
+  return labelsFor({source: {imageUri: imageUrl}});
+}
+
+/** Labels for image bytes sent inline. Vision reads the bytes for this request only. */
+export async function detectLabelsInImage(content: Buffer): Promise<string[]> {
+  return labelsFor({content});
+}
+
+async function labelsFor(image: {source: {imageUri: string}} | {content: Buffer}): Promise<string[]> {
   const {ImageAnnotatorClient} = await import("@google-cloud/vision");
   visionClient ??= new ImageAnnotatorClient();
 
   const [result] = await visionClient.annotateImage({
-    image: {source: {imageUri: imageUrl}},
+    image,
     features: [{type: "LABEL_DETECTION", maxResults: 10}],
   });
 
