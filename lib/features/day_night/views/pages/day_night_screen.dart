@@ -36,8 +36,6 @@ class DayNightScreen extends StatelessWidget {
     final String nightTime = dayNightTimeLabel(context, times.nightStart);
     final bool canSwitch = !state.preparing && pair.isComplete;
     final bool android = defaultTargetPlatform == TargetPlatform.android;
-    final String dayValue = android ? l10n.dayNightAroundTime(dayTime) : dayTime;
-    final String nightValue = android ? l10n.dayNightAroundTime(nightTime) : nightTime;
 
     return PrismPage(
       title: l10n.dayNightTitle,
@@ -74,13 +72,15 @@ class DayNightScreen extends StatelessWidget {
               PrismRow(
                 icon: Icons.light_mode_outlined,
                 title: l10n.dayNightDayStarts,
-                value: dayValue,
+                subtitle: android ? l10n.dayNightAroundTime(dayTime) : null,
+                value: android ? null : dayTime,
                 onTap: () => unawaited(_pickStart(context, bloc, times, DayNightSlot.day)),
               ),
               PrismRow(
                 icon: Icons.dark_mode_outlined,
                 title: l10n.dayNightNightStarts,
-                value: nightValue,
+                subtitle: android ? l10n.dayNightAroundTime(nightTime) : null,
+                value: android ? null : nightTime,
                 onTap: () => unawaited(_pickStart(context, bloc, times, DayNightSlot.night)),
               ),
             ],

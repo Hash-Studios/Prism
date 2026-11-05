@@ -236,6 +236,11 @@ void main() {
     await tester.ensureVisible(find.text('Around 07:00'));
     expect(find.text('Around 07:00'), findsOneWidget);
 
+    expect(
+      tester.getSize(find.text('Day starts')).width,
+      greaterThan(tester.getSize(find.text('Around 07:00')).width / 2),
+    );
+
     await pumpScreen(tester, state, theme: ThemeData.dark(), textScale: 2, alwaysUse24HourFormat: true);
     expect(tester.takeException(), isNull);
     await tester.ensureVisible(find.text('Around 07:00'));
