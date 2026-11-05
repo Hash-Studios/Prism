@@ -54,7 +54,36 @@ void main() {
     final image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
     expect(image.imageUrl, 'https://example.com/nature.jpg');
     expect(image.cacheManager, same(cache));
-    expect(image.memCacheWidth, 200);
+    expect(image.memCacheWidth, 192);
+  });
+
+  testWidgets('the cover decode size does not change when the tile is selected', (tester) async {
+    Future<int?> decodeWidth({required bool selected}) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Center(
+            child: SizedBox(
+              width: 100,
+              height: 100,
+              child: InterestCategoryTile(
+                name: 'Nature',
+                imageUrl: 'https://example.com/nature.jpg',
+                isSelected: selected,
+                onTap: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).memCacheWidth;
+    }
+
+    final int? unselected = await decodeWidth(selected: false);
+    final int? selected = await decodeWidth(selected: true);
+    expect(selected, unselected);
   });
 
   testWidgets('a stock cover shows the bundled copy and never waits on Pexels', (tester) async {

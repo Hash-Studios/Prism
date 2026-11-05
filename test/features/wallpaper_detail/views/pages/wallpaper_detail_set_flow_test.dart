@@ -123,6 +123,7 @@ void main() {
   });
 
   setUp(() async {
+    MakeItLiveChip.resetCacheForTest();
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'detail-set-owner'
       ..loggedIn = true;

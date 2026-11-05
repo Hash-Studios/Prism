@@ -135,7 +135,7 @@ class CircularMenuButton extends StatelessWidget {
         ),
         Positioned.fill(
           child: AnimatedSwitcher(
-            duration: context.motion(const Duration(milliseconds: 120)),
+            duration: context.motion(PrismDurations.fast),
             child: isLoading
                 ? const CircularProgressIndicator(key: ValueKey<bool>(true), strokeWidth: 2)
                 : const SizedBox.shrink(key: ValueKey<bool>(false)),

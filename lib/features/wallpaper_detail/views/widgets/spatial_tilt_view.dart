@@ -223,7 +223,7 @@ class _SpatialTiltViewState extends State<SpatialTiltView> with SingleTickerProv
 
   void _onDragEnd(DragEndDetails _) {
     _settleFrom = _tilt.value;
-    _settle.duration = context.motion(PrismDurations.slow);
+    _settle.duration = context.motion(PrismDurations.base);
     if (_settle.duration == Duration.zero) {
       _tilt.value = Offset.zero;
       return;

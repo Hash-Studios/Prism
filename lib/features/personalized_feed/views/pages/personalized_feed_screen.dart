@@ -136,7 +136,12 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     _trending = getIt<TrendingBloc>()..add(const TrendingEvent.started());
     _moods = getIt<MoodsCubit>();
     unawaited(_loadHomeMoods());
-    _tabs = TabController(length: HomeFeedChip.values.length, vsync: this, initialIndex: _bloc.state.chip.index);
+    _tabs = TabController(
+      length: HomeFeedChip.values.length,
+      vsync: this,
+      initialIndex: _bloc.state.chip.index,
+      animationDuration: PrismDurations.fast,
+    );
     personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
     if (getIt.isRegistered<RecentlyViewedStore>()) {
       _viewedHistory = getIt<RecentlyViewedStore>()..addListener(_onHistoryChanged);
@@ -365,7 +370,11 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
             listenWhen: (prev, curr) => prev.chip != curr.chip,
             listener: (context, state) {
               if (_tabs.index != state.chip.index) {
-                _tabs.animateTo(state.chip.index);
+                if (context.reduceMotion) {
+                  _tabs.index = state.chip.index;
+                } else {
+                  _tabs.animateTo(state.chip.index, duration: PrismDurations.fast, curve: PrismCurves.move);
+                }
               }
               if (_scrollController.hasClients && _scrollController.offset > 0) {
                 _scrollController.jumpTo(0);

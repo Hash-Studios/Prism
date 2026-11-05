@@ -64,7 +64,20 @@ class SpookySpider extends StatefulWidget {
 }
 
 class _SpookySpiderState extends State<SpookySpider> with SingleTickerProviderStateMixin {
-  late final AnimationController _bob = AnimationController(vsync: this, duration: const Duration(milliseconds: 2600));
+  late final AnimationController _bob = AnimationController(vsync: this, duration: const Duration(milliseconds: 10400));
+
+  /// The spider bobs twice, then hangs at rest, so the home header does not repaint forever.
+  bool _played = false;
+  bool _tickerPaused = false;
+  bool _settled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bob.addStatusListener((status) {
+      if (status == AnimationStatus.completed && mounted) setState(() => _settled = true);
+    });
+  }
 
   @override
   void dispose() {
@@ -76,12 +89,29 @@ class _SpookySpiderState extends State<SpookySpider> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     if (!isSpookyActive(context)) {
       if (_bob.isAnimating) _bob.stop();
+      _bob.value = 0;
+      _played = false;
+      _settled = false;
+      _tickerPaused = false;
       return const SizedBox.shrink();
     }
-    if (context.reduceMotion) {
+    final bool tickerEnabled = TickerMode.valuesOf(context).enabled;
+    if (context.reduceMotion && !_settled) {
       _bob.stop();
-    } else if (!_bob.isAnimating) {
-      _bob.repeat(reverse: true);
+      _bob.value = 0;
+      _played = false;
+      _settled = true;
+      _tickerPaused = false;
+    } else if (!tickerEnabled && _bob.isAnimating) {
+      _bob.stop(canceled: false);
+      _tickerPaused = true;
+    }
+    if (tickerEnabled && _tickerPaused) {
+      _tickerPaused = false;
+      _bob.forward();
+    } else if (tickerEnabled && !_settled && !_played && !_bob.isAnimating && !context.reduceMotion) {
+      _played = true;
+      _bob.forward(from: 0);
     }
     final Widget spider = _svgCurrentColor(
       _spiderSvgWithAccent(Theme.of(context).colorScheme.primary),
@@ -90,13 +120,18 @@ class _SpookySpiderState extends State<SpookySpider> with SingleTickerProviderSt
     );
     return IgnorePointer(
       child: ExcludeSemantics(
-        child: AnimatedBuilder(
-          animation: _bob,
-          builder: (context, child) => Transform.translate(
-            offset: Offset(0, -widget.size * 0.5 * Curves.easeInOut.transform(_bob.value)),
-            child: child,
+        child: RepaintBoundary(
+          child: AnimatedBuilder(
+            animation: _bob,
+            builder: (context, child) => Transform.translate(
+              offset: Offset(
+                0,
+                -widget.size * 0.5 * Curves.easeInOut.transform(1 - (2 * ((2 * _bob.value) % 1) - 1).abs()),
+              ),
+              child: child,
+            ),
+            child: spider,
           ),
-          child: spider,
         ),
       ),
     );

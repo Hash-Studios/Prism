@@ -87,7 +87,7 @@ class TasteQuizBody extends StatelessWidget {
         builder: (context, state) => AnimatedSwitcher(
           duration: context.motion(PrismDurations.base),
           switchInCurve: PrismCurves.enter,
-          switchOutCurve: PrismCurves.enter,
+          switchOutCurve: PrismCurves.exitReverse,
           child: switch (state) {
             final TasteQuizPlaying playing => _Rounds(key: const ValueKey<String>('rounds'), state: playing),
             final TasteQuizTuning tuning => TuningFeedView(
@@ -284,7 +284,7 @@ class _RoundsState extends State<_Rounds> {
                     child: AnimatedSwitcher(
                       duration: context.motion(PrismDurations.base),
                       switchInCurve: PrismCurves.enter,
-                      switchOutCurve: PrismCurves.enter,
+                      switchOutCurve: PrismCurves.exitReverse,
                       child: Row(
                         key: ValueKey<int>(_round),
                         crossAxisAlignment: CrossAxisAlignment.stretch,

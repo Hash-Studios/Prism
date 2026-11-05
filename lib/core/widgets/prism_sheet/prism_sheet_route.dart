@@ -145,6 +145,30 @@ class _PrismSheetRoute<T> extends ModalSheetRoute<T> {
 
   static int open = 0;
 
+  CurvedAnimation? _curved;
+
+  // smooth_sheets runs the close with the open curve backwards, so an ease-out holds still and then drops. Ease out
+  // on the way down too. A swipe-to-dismiss keeps the package's own linear follow.
+  @override
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (navigator?.userGestureInProgress ?? false) {
+      return super.buildTransitions(context, animation, secondaryAnimation, child);
+    }
+    if (_curved?.parent != animation) {
+      _curved?.dispose();
+      _curved = CurvedAnimation(parent: animation, curve: transitionCurve, reverseCurve: FlippedCurve(transitionCurve));
+    }
+    return SlideTransition(
+      position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(_curved!),
+      child: child,
+    );
+  }
+
   @override
   void install() {
     super.install();
@@ -154,6 +178,7 @@ class _PrismSheetRoute<T> extends ModalSheetRoute<T> {
   @override
   void dispose() {
     open -= 1;
+    _curved?.dispose();
     // One frame later, so a notification the controller queued for the end of this frame still finds it alive.
     WidgetsBinding.instance.addPostFrameCallback((_) => sheetController.dispose());
     super.dispose();

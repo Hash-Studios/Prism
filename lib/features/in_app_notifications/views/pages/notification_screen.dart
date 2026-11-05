@@ -395,6 +395,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
           ),
           AnimatedSwitcher(
             duration: context.motion(PrismDurations.fast),
+            layoutBuilder: (Widget? current, List<Widget> previous) => current ?? const SizedBox.shrink(),
             child: expanded
                 ? Column(
                     key: ValueKey<String>('open:${group.key}'),

@@ -31,6 +31,9 @@ class ProfileFoldersRow extends StatefulWidget {
 class _ProfileFoldersRowState extends State<ProfileFoldersRow> {
   late Future<Result<List<PublicFolderEntity>>> _folders = _load();
 
+  /// The last loaded folders. The row keeps showing them while a reload runs, so the profile scroll does not jump.
+  List<PublicFolderEntity>? _shown;
+
   Future<Result<List<PublicFolderEntity>>> _load() async => getIt.isRegistered<PublicFoldersRepository>()
       ? getIt<PublicFoldersRepository>().fetchOwnerFolders(widget.ownerId)
       : Result.success(const <PublicFolderEntity>[]);
@@ -38,13 +41,20 @@ class _ProfileFoldersRowState extends State<ProfileFoldersRow> {
   @override
   void didUpdateWidget(ProfileFoldersRow oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.ownerId != widget.ownerId) _folders = _load();
+    if (oldWidget.ownerId != widget.ownerId) {
+      _shown = null;
+      _folders = _load();
+    }
   }
 
   Future<void> _open(PublicFolderEntity folder) async {
     PrismHaptics.tap();
     await context.router.push(FolderRoute(folderId: folder.id));
-    if (mounted) setState(() => _folders = _load());
+    if (mounted) {
+      setState(() {
+        _folders = _load();
+      });
+    }
   }
 
   @override
@@ -52,8 +62,11 @@ class _ProfileFoldersRowState extends State<ProfileFoldersRow> {
     return FutureBuilder<Result<List<PublicFolderEntity>>>(
       future: _folders,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) return const SizedBox(width: double.infinity);
-        final List<PublicFolderEntity> folders = snapshot.data?.data ?? const <PublicFolderEntity>[];
+        final bool done = snapshot.connectionState == ConnectionState.done;
+        if (!done && _shown == null) return const SizedBox(width: double.infinity);
+        final List<PublicFolderEntity> folders = done
+            ? (_shown = snapshot.data?.data ?? const <PublicFolderEntity>[])
+            : _shown!;
         return AnimatedSize(
           duration: context.motion(PrismDurations.fast),
           alignment: Alignment.topCenter,

@@ -28,9 +28,9 @@ class FavouriteTileImage extends StatelessWidget {
     imageUrl: url,
     cacheManager: PrismImageCache.instance,
     fit: BoxFit.cover,
-    fadeInDuration: context.motion(const Duration(milliseconds: 180)),
-    fadeInCurve: Curves.easeOut,
-    fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
+    fadeInDuration: context.motion(PrismDurations.fast),
+    fadeInCurve: PrismCurves.enter,
+    fadeOutDuration: context.motion(PrismDurations.fast),
     placeholder: (_, _) => const PulseFill(),
     errorWidget: (context, _, _) =>
         fallback != null && fallback.isNotEmpty && fallback != url ? _image(context, fallback) : _unavailable(context),

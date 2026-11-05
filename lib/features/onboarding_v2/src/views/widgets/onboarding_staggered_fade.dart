@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:Prism/core/motion/prism_motion.dart';
-import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:flutter/material.dart';
 
 /// Fades [child] in [delay] after the first frame. With reduced motion it shows at once.
@@ -47,7 +46,8 @@ class _OnboardingStaggeredFadeState extends State<OnboardingStaggeredFade> {
   Widget build(BuildContext context) {
     return AnimatedOpacity(
       opacity: _visible ? 1.0 : 0.0,
-      duration: context.motion(OnboardingMotion.fade),
+      duration: context.motion(PrismDurations.base),
+      curve: PrismCurves.enter,
       child: widget.child,
     );
   }

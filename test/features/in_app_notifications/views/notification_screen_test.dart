@@ -102,6 +102,26 @@ void main() {
     expect(find.text('Kim'), findsOneWidget);
   });
 
+  testWidgets('a group collapse drops its rows at once instead of holding their height', (tester) async {
+    final DateTime now = DateTime.now();
+    await pump(
+      tester,
+      loaded(<Object>[
+        notification('a', title: 'You have a new follower!', body: 'Sam is now following you.', createdAt: now),
+        notification('b', title: 'You have a new follower!', body: 'Kim is now following you.', createdAt: now),
+      ]),
+    );
+    await tester.tap(find.text('You have a new follower!'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Sam'), findsOneWidget);
+
+    await tester.tap(find.text('You have a new follower!'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 16));
+
+    expect(find.text('Sam'), findsNothing);
+  });
+
   test('cleanNotificationTitle strips trailing emoji only', () {
     expect(cleanNotificationTitle('New Premium Wall for review! 🎉'), 'New Premium Wall for review!');
     expect(cleanNotificationTitle('Streak 🔥 alert'), 'Streak 🔥 alert');

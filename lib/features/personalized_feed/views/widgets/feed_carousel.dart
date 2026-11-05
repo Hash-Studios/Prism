@@ -346,6 +346,7 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
             autoPlay: moving && !context.reduceMotion && visible,
             autoPlayInterval: const Duration(seconds: 5),
             autoPlayCurve: PrismCurves.move,
+            autoPlayAnimationDuration: PrismDurations.base,
             enableInfiniteScroll: moving,
             onPageChanged: (int index, CarouselPageChangedReason reason) {
               if (mounted) setState(() => _current = index);

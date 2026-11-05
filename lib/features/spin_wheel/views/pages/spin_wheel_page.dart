@@ -46,10 +46,12 @@ Future<void> showSpinWheel(BuildContext context) {
           const SpinWheelPage(),
       transitionsBuilder:
           (BuildContext context, Animation<double> animation, Animation<double> secondary, Widget child) {
-            final Animation<double> curved = CurvedAnimation(parent: animation, curve: PrismCurves.enter);
-            return FadeTransition(
-              opacity: curved,
-              child: ScaleTransition(scale: Tween<double>(begin: 0.96, end: 1).animate(curved), child: child),
+            return PrismEased(
+              animation: animation,
+              builder: (curved) => FadeTransition(
+                opacity: curved,
+                child: ScaleTransition(scale: Tween<double>(begin: 0.96, end: 1).animate(curved), child: child),
+              ),
             );
           },
     ),
@@ -382,10 +384,10 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
                     child: AnimatedSwitcher(
                       duration: slide,
                       switchInCurve: PrismCurves.enter,
-                      switchOutCurve: PrismCurves.exit,
+                      switchOutCurve: PrismCurves.exitReverse,
                       // One fades out in the first half, the other fades in during the second, so they never overlap.
                       transitionBuilder: (Widget child, Animation<double> animation) => FadeTransition(
-                        opacity: CurvedAnimation(parent: animation, curve: const Interval(0.5, 1)),
+                        opacity: animation.drive(CurveTween(curve: const Interval(0.5, 1))),
                         child: SlideTransition(
                           position: Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(animation),
                           child: child,

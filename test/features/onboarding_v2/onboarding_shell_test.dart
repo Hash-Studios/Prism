@@ -288,7 +288,9 @@ void main() {
     expect(quizOffset(), closeTo(0, 0.001));
     await tester.pump(const Duration(milliseconds: 60));
     expect(quizOffset(), closeTo(0, 0.001));
-    await tester.pump(const Duration(milliseconds: 240));
+    // The background no longer runs a long reveal, so no other animation adds a frame: the exit's first tick is the
+    // 60 ms pump, and it ends 240 ms after that.
+    await tester.pump(const Duration(milliseconds: 260));
     expect(find.byKey(const ValueKey<String>('taste_quiz')), findsNothing);
   });
 

@@ -7,6 +7,10 @@ import 'package:flutter/material.dart';
 Future<bool> _deviceSupportsOpenGlLive() async =>
     (await aw.AsyncWallpaper.getCapabilities()).supportsOpenGlLiveWallpaper;
 
+/// The device answer for the default probe. It does not change, so later chips skip the probe and the fade.
+bool? _deviceSupport;
+int _deviceSupportGeneration = 0;
+
 /// "Make it live" action. It appears only when the device can run an OpenGL live wallpaper.
 class MakeItLiveButton extends StatefulWidget {
   const MakeItLiveButton({required this.onPressed, this.supportProbe = _deviceSupportsOpenGlLive, super.key});
@@ -64,27 +68,64 @@ class MakeItLiveChip extends StatefulWidget {
   final VoidCallback onPressed;
   final Future<bool> Function() supportProbe;
 
+  @visibleForTesting
+  static void resetCacheForTest() {
+    _deviceSupport = null;
+    _deviceSupportGeneration++;
+  }
+
   @override
   State<MakeItLiveChip> createState() => _MakeItLiveChipState();
 }
 
 class _MakeItLiveChipState extends State<MakeItLiveChip> {
+  bool get _isDefaultProbe => widget.supportProbe == _deviceSupportsOpenGlLive;
+
   bool _supported = false;
+  late bool _fade;
+  int _probeGeneration = 0;
 
   @override
   void initState() {
     super.initState();
-    _probe();
+    final bool? cached = _isDefaultProbe ? _deviceSupport : null;
+    _supported = cached ?? false;
+    _fade = !_supported;
+    if (cached == null) _probe();
+  }
+
+  @override
+  void didUpdateWidget(covariant MakeItLiveChip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.supportProbe != widget.supportProbe) {
+      _probeGeneration++;
+      _supported = false;
+      _fade = true;
+      final bool? cached = _isDefaultProbe ? _deviceSupport : null;
+      if (cached != null) {
+        _supported = cached;
+        _fade = !cached;
+      } else {
+        _probe();
+      }
+    }
   }
 
   Future<void> _probe() async {
+    final int probeGeneration = ++_probeGeneration;
+    final int cacheGeneration = _deviceSupportGeneration;
+    final Future<bool> Function() probe = widget.supportProbe;
     bool supported;
     try {
-      supported = await widget.supportProbe();
+      supported = await probe();
     } catch (_) {
       supported = false;
     }
-    if (supported && mounted) setState(() => _supported = true);
+    if (!mounted || probeGeneration != _probeGeneration) return;
+    if (supported && widget.supportProbe == _deviceSupportsOpenGlLive && cacheGeneration == _deviceSupportGeneration) {
+      _deviceSupport = true;
+    }
+    if (supported) setState(() => _supported = true);
   }
 
   @override
@@ -132,12 +173,14 @@ class _MakeItLiveChipState extends State<MakeItLiveChip> {
         ),
       ),
     );
+    final Widget scaled = MediaQuery.withClampedTextScaling(maxScaleFactor: 1.5, child: chip);
+    if (!_fade) return scaled;
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: 1),
-      duration: context.motion(const Duration(milliseconds: 160)),
-      curve: Curves.easeOut,
+      duration: context.motion(PrismDurations.fast),
+      curve: PrismCurves.enter,
       builder: (BuildContext context, double opacity, Widget? child) => Opacity(opacity: opacity, child: child),
-      child: MediaQuery.withClampedTextScaling(maxScaleFactor: 1.5, child: chip),
+      child: scaled,
     );
   }
 }

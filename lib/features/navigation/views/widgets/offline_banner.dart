@@ -27,7 +27,7 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTick
   late final CurvedAnimation _curve = CurvedAnimation(
     parent: _controller,
     curve: PrismCurves.enter,
-    reverseCurve: PrismCurves.exit,
+    reverseCurve: PrismCurves.exitReverse,
   );
   late final Animation<Offset> _position = Tween<Offset>(
     begin: const Offset(0, -1.5),
