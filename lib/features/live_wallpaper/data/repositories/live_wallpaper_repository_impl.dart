@@ -18,6 +18,18 @@ import 'package:Prism/features/session/domain/repositories/session_repository.da
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:injectable/injectable.dart';
 
+class _LiveSessionGuard {
+  _LiveSessionGuard(this.owner);
+
+  final String owner;
+  bool invalidated = false;
+  StreamSubscription<PrismUsersV2>? subscription;
+
+  bool get isValid => !invalidated && app_state.prismUser.loggedIn && app_state.prismUser.id == owner;
+
+  Future<void> dispose() async => subscription?.cancel();
+}
+
 @LazySingleton(as: LiveWallpaperRepository)
 class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
   LiveWallpaperRepositoryImpl({LiveTexturePreparer texturePreparer = const LiveTexturePreparer()})
@@ -28,6 +40,16 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
   static const int maxVideoBytes = 256 * 1024 * 1024;
 
   final LiveTexturePreparer _texturePreparer;
+
+  _LiveSessionGuard _watchSession(String owner) {
+    final _LiveSessionGuard guard = _LiveSessionGuard(owner);
+    if (getIt.isRegistered<SessionRepository>()) {
+      guard.subscription = getIt<SessionRepository>().watchCurrentUser().listen((user) {
+        if (!user.loggedIn || user.id != owner) guard.invalidated = true;
+      });
+    }
+    return guard;
+  }
 
   WallpaperTarget? _nextTarget;
   String? _nextTargetOwner;
@@ -93,6 +115,7 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
     if (style.needsDepthMap && depthMapUrl == null) {
       return const LiveApplyOutcome.failed(LiveApplyFailure.styleUnavailable);
     }
+    final _LiveSessionGuard session = _watchSession(owner);
     final List<String> texturePaths = <String>[];
     try {
       if (style.needsDepthMap) {
@@ -106,9 +129,7 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
       } else {
         texturePaths.add(await _texturePreparer.prepare(imageUrl, screenAspectRatio, uniquePaths: true));
       }
-      if (!app_state.prismUser.loggedIn || owner != app_state.prismUser.id) {
-        return const LiveApplyOutcome(LiveApplyStatus.cancelled);
-      }
+      if (!session.isValid) return const LiveApplyOutcome(LiveApplyStatus.cancelled);
       return await _applyShader(
         LiveShaderSources.motion(style, palette, tilt: tilt),
         <aw.WallpaperSource>[for (final String path in texturePaths) aw.WallpaperSource.filePath(path)],
@@ -119,6 +140,7 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
     } on LiveTextureException catch (error) {
       return LiveApplyOutcome.failed(error.failure);
     } finally {
+      await session.dispose();
       for (final String path in texturePaths) {
         try {
           await File(path).delete();

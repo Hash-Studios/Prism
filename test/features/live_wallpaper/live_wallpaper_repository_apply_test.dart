@@ -149,6 +149,41 @@ void main() {
     verifyZeroInteractions(client);
   });
 
+  test('a sign-out and sign-in during texture preparation cancels the native apply', () async {
+    final StreamController<PrismUsersV2> sessionChanges = StreamController<PrismUsersV2>.broadcast();
+    addTearDown(sessionChanges.close);
+    final _SessionRepository sessions = _SessionRepository();
+    when(() => sessions.currentUser).thenReturn(profileUser());
+    when(() => sessions.watchCurrentUser()).thenAnswer((_) => _watchSessions(sessionChanges.stream));
+    getIt.registerSingleton<SessionRepository>(sessions);
+    addTearDown(getIt.reset);
+
+    final Completer<String> preparation = Completer<String>();
+    final File prepared = File('${directory.path}/session-texture.jpg')..writeAsBytesSync(<int>[1, 2, 3]);
+    when(() => texture.prepare('/local.jpg', 0.5, uniquePaths: true)).thenAnswer((_) => preparation.future);
+    when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) async => pending);
+    final Future<LiveApplyOutcome> applying = repository.applyMotion(
+      imageUrl: '/local.jpg',
+      style: MotionStyle.drift,
+      palette: palette,
+      screenAspectRatio: 0.5,
+      batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
+    );
+    await Future<void>.delayed(Duration.zero);
+    sessionChanges
+      ..add(profileUser(loggedIn: false))
+      ..add(profileUser());
+    await Future<void>.delayed(Duration.zero);
+    preparation.complete(prepared.path);
+
+    expect((await applying).status, LiveApplyStatus.cancelled);
+    expect(await prepared.exists(), isFalse);
+    verifyNever(() => client.applyOpenGlWallpaper(any()));
+    await getIt.reset();
+  });
+
   test('capabilities reflect the host and gradient request uses battery saver without textures', () async {
     when(
       client.getCapabilities,
