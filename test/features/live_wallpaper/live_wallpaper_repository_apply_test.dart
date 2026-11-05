@@ -125,6 +125,21 @@ void main() {
     expect(request.fragmentShader, contains('void main'));
   });
 
+  test('screen readback ignores a tag when the host says the screen is not Prism', () async {
+    when(() => client.getLiveWallpaperScreens()).thenAnswer(
+      (_) async => const aw.LiveWallpaperScreens(
+        home: aw.LiveScreenState(contentTag: 'prism.live:motion:drift:apply-test'),
+        lock: aw.LiveScreenState(showsThisWallpaper: true, contentTag: 'prism.live:motion:drift:apply-test'),
+      ),
+    );
+
+    final LiveScreens screens = await repository.getScreens();
+
+    expect(screens.home.tag, isNull);
+    expect(screens.home.showsPrism, isFalse);
+    expect(screens.lock.tag, tag);
+  });
+
   test('motion prepares the requested aspect ratio and passes the resulting local texture to the host', () async {
     when(() => texture.prepare('https://example.test/wall.jpg', 0.5)).thenAnswer((_) async => '/prepared/texture.jpg');
     when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) async => pending);

@@ -64,5 +64,13 @@ void main() {
       );
       expect(screens.screensShowing(tag), isNull);
     });
+
+    test('a matching tag is ignored when the host says that screen is not Prism', () {
+      const LiveScreens screens = LiveScreens(
+        home: LiveScreenContent(showsPrism: false, tag: tag),
+        lock: LiveScreenContent.other,
+      );
+      expect(screens.screensShowing(tag), isNull);
+    });
   });
 }

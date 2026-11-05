@@ -62,8 +62,8 @@ class LiveScreens {
 
   /// The screens that show the apply that [tag] names, or null when none does.
   WallpaperTarget? screensShowing(LiveContentTag tag) {
-    final bool onHome = home.tag == tag;
-    final bool onLock = lock.tag == tag;
+    final bool onHome = home.showsPrism && home.tag == tag;
+    final bool onLock = lock.showsPrism && lock.tag == tag;
     if (onHome && onLock) return WallpaperTarget.both;
     if (onHome) return WallpaperTarget.home;
     if (onLock) return WallpaperTarget.lock;

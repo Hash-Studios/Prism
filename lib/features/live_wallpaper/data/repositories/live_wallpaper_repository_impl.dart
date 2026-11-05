@@ -42,8 +42,10 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
   @override
   Future<LiveScreens> getScreens() async {
     final aw.LiveWallpaperScreens screens = await aw.AsyncWallpaper.getLiveWallpaperScreens();
-    LiveScreenContent content(aw.LiveScreenState state) =>
-        LiveScreenContent(showsPrism: state.showsThisWallpaper, tag: LiveContentTag.parse(state.contentTag));
+    LiveScreenContent content(aw.LiveScreenState state) => LiveScreenContent(
+      showsPrism: state.showsThisWallpaper,
+      tag: state.showsThisWallpaper ? LiveContentTag.parse(state.contentTag) : null,
+    );
     return LiveScreens(home: content(screens.home), lock: content(screens.lock));
   }
 
