@@ -154,6 +154,10 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
     )
   }
 
+  nonisolated static func canManagePhotoAlbums(with status: PHAuthorizationStatus) -> Bool {
+    status == .authorized
+  }
+
   private static func saveToPhotoLibrary(image: PrismImageFile, album: String?) async throws {
     guard let album, !album.trimmingCharacters(in: .whitespaces).isEmpty else {
       try await addToPhotoLibrary(image: image)
@@ -163,7 +167,7 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
     if status == .notDetermined {
       status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
     }
-    guard status == .authorized || status == .limited else {
+    guard canManagePhotoAlbums(with: status) else {
       try await addToPhotoLibrary(image: image)
       return
     }

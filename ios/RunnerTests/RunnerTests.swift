@@ -6,6 +6,13 @@ import Testing
 
 @MainActor
 struct RunnerTests {
+  @Test func onlyFullPhotosAccessAllowsAlbumManagement() {
+    #expect(PrismMediaHostApiImpl.canManagePhotoAlbums(with: .authorized))
+    for status in [PHAuthorizationStatus.limited, .denied, .restricted, .notDetermined] {
+      #expect(!PrismMediaHostApiImpl.canManagePhotoAlbums(with: status))
+    }
+  }
+
   @Test func downloadSavesRealImageAndReadableCacheAfterPhotosCompletes() async throws {
     let fixture = try MediaFixture()
     let imageBytes = try Data(contentsOf: fixture.source)
