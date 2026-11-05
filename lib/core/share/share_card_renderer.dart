@@ -24,23 +24,31 @@ Future<File> renderShareCardFile(
   ui.Image? wallpaper;
   ui.Image? logo;
   try {
-    // Fit within card bounds at decode time while preserving the source aspect ratio.
-    final ImageProvider provider;
-    if (wallpaperProvider != null) {
-      provider = wallpaperProvider;
-    } else {
-      final File source = await WallpaperService.resolveToLocalFile(content.imageUrl);
-      provider = FileImage(source);
+    Future<ui.Image> loadWallpaper() async {
+      // Fit within card bounds at decode time while preserving the source aspect ratio.
+      final ImageProvider provider;
+      if (wallpaperProvider != null) {
+        provider = wallpaperProvider;
+      } else {
+        final File source = await WallpaperService.resolveToLocalFile(content.imageUrl);
+        provider = FileImage(source);
+      }
+      return resolveImage(
+        ResizeImage(
+          provider,
+          width: format.size.width.toInt(),
+          height: format.size.height.toInt(),
+          policy: ResizeImagePolicy.fit,
+        ),
+      );
     }
-    wallpaper = await resolveImage(
-      ResizeImage(
-        provider,
-        width: format.size.width.toInt(),
-        height: format.size.height.toInt(),
-        policy: ResizeImagePolicy.fit,
-      ),
-    );
-    logo = await resolveImage(logoProvider ?? const AssetImage(ShareCardStyle.logoAsset));
+
+    final images = await Future.wait<ui.Image>(<Future<ui.Image>>[
+      loadWallpaper(),
+      Future.sync(() => resolveImage(logoProvider ?? const AssetImage(ShareCardStyle.logoAsset))),
+    ], cleanUp: (image) => image.dispose());
+    wallpaper = images[0];
+    logo = images[1];
     final ByteData? bytes = await paintShareCard(
       ShareCard(wallpaper: wallpaper, logo: logo, content: content, format: format),
       size: format.size,

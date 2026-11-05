@@ -38,14 +38,14 @@ class _FavoriteIconState extends State<FavoriteIcon> with SingleTickerProviderSt
   void initState() {
     super.initState();
     _maxIconSize = widget.iconSize.clamp(20.0, 100.0);
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+    _controller = AnimationController(vsync: this, duration: PrismDurations.fast);
     _scale = TweenSequence(<TweenSequenceItem<double>>[
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: 1, end: 1.25).chain(CurveTween(curve: PrismCurves.enter)),
+        tween: Tween<double>(begin: 1, end: 1.15).chain(CurveTween(curve: PrismCurves.enter)),
         weight: 50,
       ),
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: 1.25, end: 1).chain(CurveTween(curve: PrismCurves.exit)),
+        tween: Tween<double>(begin: 1.15, end: 1).chain(CurveTween(curve: PrismCurves.exit)),
         weight: 50,
       ),
     ]).animate(_controller);

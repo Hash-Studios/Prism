@@ -19675,6 +19675,264 @@ abstract class AppLocalizations {
   /// **'On iOS 16 there is no Run Immediately. Turn off Ask Before Running instead.'**
   String get shortcutsAutomationIos16;
 
+  /// Title of the Day and night screen and its Settings row.
+  ///
+  /// In en, this message translates to:
+  /// **'Day and night'**
+  String get dayNightTitle;
+
+  /// Subtitle of the Settings row.
+  ///
+  /// In en, this message translates to:
+  /// **'One wall for the day, one for the night'**
+  String get dayNightSettingsSubtitle;
+
+  /// Intro text at the top of the screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a wall for the day and one for the night. Shortcuts switches them at the times you set.'**
+  String get dayNightIntro;
+
+  /// Wall hold menu item.
+  ///
+  /// In en, this message translates to:
+  /// **'Use as day wall'**
+  String get dayNightUseAsDay;
+
+  /// Wall hold menu item.
+  ///
+  /// In en, this message translates to:
+  /// **'Use as night wall'**
+  String get dayNightUseAsNight;
+
+  /// Wall hold menu item for a wall with colour variants. Sets the lightest as day wall and the darkest as night wall.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the lightest and darkest variant'**
+  String get dayNightUseVariants;
+
+  /// Toast after Use as day wall.
+  ///
+  /// In en, this message translates to:
+  /// **'Day wall set.'**
+  String get dayNightDaySetToast;
+
+  /// Toast after Use as night wall.
+  ///
+  /// In en, this message translates to:
+  /// **'Night wall set.'**
+  String get dayNightNightSetToast;
+
+  /// Toast after the variant one-tap pair.
+  ///
+  /// In en, this message translates to:
+  /// **'Day and night walls set.'**
+  String get dayNightPairSetToast;
+
+  /// Toast action that opens the Day and night screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get dayNightOpenAction;
+
+  /// Label of the day wall card.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get dayNightDayLabel;
+
+  /// Label of the night wall card.
+  ///
+  /// In en, this message translates to:
+  /// **'Night'**
+  String get dayNightNightLabel;
+
+  /// Empty day card.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold any wallpaper, then tap Use as day wall.'**
+  String get dayNightEmptyDay;
+
+  /// Empty night card.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold any wallpaper, then tap Use as night wall.'**
+  String get dayNightEmptyNight;
+
+  /// Time row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Day starts'**
+  String get dayNightDayStarts;
+
+  /// Time row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Night starts'**
+  String get dayNightNightStarts;
+
+  /// Caption under a phone preview. {time} is a formatted time such as 07:00.
+  ///
+  /// In en, this message translates to:
+  /// **'From {time}'**
+  String dayNightFrom(String time);
+
+  /// Screen reader label of a phone preview. {slot} is Day or Night.
+  ///
+  /// In en, this message translates to:
+  /// **'{slot} wall, from {time}'**
+  String dayNightPreviewLabel(String slot, String time);
+
+  /// Error when day and night start at the same time.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick two different times.'**
+  String get dayNightTimesEqual;
+
+  /// Main switch. Describes the on state.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch walls at these times'**
+  String get dayNightSwitch;
+
+  /// Hint under the disabled switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a day wall and a night wall first.'**
+  String get dayNightNeedsBoth;
+
+  /// Error on a wall card when a protected wall has no downloaded original.
+  ///
+  /// In en, this message translates to:
+  /// **'Download this wall in Prism first.'**
+  String get dayNightNeedsDownload;
+
+  /// Button next to dayNightNeedsDownload. Opens the wall.
+  ///
+  /// In en, this message translates to:
+  /// **'Open wall'**
+  String get dayNightOpenWall;
+
+  /// Progress text while walls are copied for offline use.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving both walls for offline use'**
+  String get dayNightPreparing;
+
+  /// Error after the offline copy fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the walls for offline use. Check your connection.'**
+  String get dayNightPrepareFailed;
+
+  /// Button after dayNightPrepareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get dayNightTryAgain;
+
+  /// Pro card title for a free user.
+  ///
+  /// In en, this message translates to:
+  /// **'Day and night is a Prism Pro feature.'**
+  String get dayNightProTitle;
+
+  /// One toast when Pro or the pass ends.
+  ///
+  /// In en, this message translates to:
+  /// **'Day and night is off because your Prism Pro plan or pass ended.'**
+  String get dayNightOffEnded;
+
+  /// Button that opens the guide sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up in Shortcuts'**
+  String get dayNightSetUpAction;
+
+  /// Guide sheet title.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch walls with Shortcuts'**
+  String get dayNightGuideTitle;
+
+  /// Guide sheet intro.
+  ///
+  /// In en, this message translates to:
+  /// **'Make 2 automations in Shortcuts, one for {dayTime} and one for {nightTime}. Each sets the wall that matches its time.'**
+  String dayNightGuideBody(String dayTime, String nightTime);
+
+  /// Guide step.
+  ///
+  /// In en, this message translates to:
+  /// **'In Shortcuts, tap Automation, then tap +.'**
+  String get dayNightGuideStepAutomation;
+
+  /// Guide step. {time} is the day or night start.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Time of Day. Choose {time}, then Daily.'**
+  String dayNightGuideStepTime(String time);
+
+  /// Guide step.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Run Immediately, then tap Next.'**
+  String get dayNightGuideStepRun;
+
+  /// Guide step.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap New Blank Automation.'**
+  String get dayNightGuideStepBlank;
+
+  /// Guide step. "Get Prism Wallpaper" and "Day and night" are names in the Shortcuts app.
+  ///
+  /// In en, this message translates to:
+  /// **'Add \"Get Prism Wallpaper\". Set Source to Day and night.'**
+  String get dayNightGuideStepGet;
+
+  /// Guide step. {screens} is one of the 3 screen names below.
+  ///
+  /// In en, this message translates to:
+  /// **'Add \"Set Wallpaper Photo\". Tap the arrow on it, choose {screens}, then turn off Show Preview.'**
+  String dayNightGuideStepSet(String screens);
+
+  /// Name of the option in Apple's Set Wallpaper Photo action.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Screen'**
+  String get dayNightGuideScreensHome;
+
+  /// Name of the option in Apple's Set Wallpaper Photo action.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock Screen'**
+  String get dayNightGuideScreensLock;
+
+  /// Both options in Apple's Set Wallpaper Photo action.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock Screen and Home Screen'**
+  String get dayNightGuideScreensBoth;
+
+  /// Last guide step. {time} is the night start.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a second automation the same way for {time}.'**
+  String dayNightGuideStepRepeat(String time);
+
+  /// Guide section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunrise and sunset'**
+  String get dayNightGuideSunTitle;
+
+  /// Guide section body. "Time", "Day" and "Night" are names in the Shortcuts app.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Sunrise or Sunset instead of a time. In Get Prism Wallpaper, set Time to Day for sunrise and Night for sunset.'**
+  String get dayNightGuideSunBody;
+
   /// Wall detail: opens the sheet to tip the wall's creator coins
   ///
   /// In en, this message translates to:

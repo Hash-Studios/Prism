@@ -1,3 +1,4 @@
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
@@ -42,6 +43,88 @@ void main() {
     await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
     expect(find.text('Sort by'), findsNothing);
+  });
+
+  testWidgets('closing moves the sheet at once instead of holding still', (tester) async {
+    await tester.pumpWidget(
+      _app((context) => showPrismSheet<void>(context, builder: (_) => const PrismSheetBody(title: 'Sort by'))),
+    );
+    await _open(tester);
+    final double rest = tester.getTopLeft(find.text('Sort by')).dy;
+    final double height = tester.view.physicalSize.height / tester.view.devicePixelRatio;
+    Navigator.of(tester.element(find.text('Sort by'))).pop();
+    await tester.pump();
+    await tester.pump(PrismDurations.sheet * 0.25);
+    expect(tester.getTopLeft(find.text('Sort by')).dy - rest, greaterThan(height * 0.15));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('a released swipe settles from the finger position without a jump', (tester) async {
+    await tester.pumpWidget(
+      _app((context) => showPrismSheet<void>(context, builder: (_) => const PrismSheetBody(title: 'Sort by'))),
+    );
+    await _open(tester);
+    final TestGesture gesture = await tester.startGesture(tester.getCenter(find.text('Sort by')));
+    await gesture.moveBy(const Offset(0, 100));
+    await tester.pump();
+    final double draggedTop = tester.getTopLeft(find.text('Sort by')).dy;
+
+    await gesture.up();
+    await tester.pump();
+    final double releasedTop = tester.getTopLeft(find.text('Sort by')).dy;
+    expect(releasedTop, closeTo(draggedTop, 1));
+
+    await tester.pump(const Duration(milliseconds: 30));
+    final double settledTop = tester.getTopLeft(find.text('Sort by')).dy;
+    expect(settledTop, greaterThan(releasedTop));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('a close interrupted during a swipe keeps moving in the same direction', (tester) async {
+    await tester.pumpWidget(
+      _app((context) => showPrismSheet<void>(context, builder: (_) => const PrismSheetBody(title: 'Sort by'))),
+    );
+    await _open(tester);
+    final TestGesture gesture = await tester.startGesture(tester.getCenter(find.text('Sort by')));
+    await gesture.moveBy(const Offset(0, 80));
+    await tester.pump();
+    final double draggedTop = tester.getTopLeft(find.text('Sort by')).dy;
+
+    Navigator.of(tester.element(find.text('Sort by'))).pop();
+    await tester.pump();
+    final double closeStart = tester.getTopLeft(find.text('Sort by')).dy;
+    expect(closeStart, closeTo(draggedTop, 1));
+    await tester.pump(const Duration(milliseconds: 30));
+    final double closeProgress = tester.getTopLeft(find.text('Sort by')).dy;
+    expect(closeProgress, greaterThan(closeStart));
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.text('Sort by'), findsNothing);
+  });
+
+  testWidgets('interrupting a close reverses from its current position without a jump', (tester) async {
+    await tester.pumpWidget(
+      _app((context) => showPrismSheet<void>(context, builder: (_) => const PrismSheetBody(title: 'Sort by'))),
+    );
+    await _open(tester);
+    final ModalRoute<dynamic> route = ModalRoute.of(tester.element(find.text('Sort by')))!;
+    final Animation<double> routeAnimation = route.animation!;
+    final ProxyAnimation proxy = routeAnimation as ProxyAnimation;
+    final AnimationController controller = proxy.parent! as AnimationController;
+
+    Navigator.of(tester.element(find.text('Sort by'))).pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+    final double closingTop = tester.getTopLeft(find.text('Sort by')).dy;
+
+    controller.forward();
+    await tester.pump();
+    final double reversedTop = tester.getTopLeft(find.text('Sort by')).dy;
+    expect(reversedTop, closeTo(closingTop, 1));
+    await tester.pump(const Duration(milliseconds: 30));
+    expect(tester.getTopLeft(find.text('Sort by')).dy, lessThan(reversedTop));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('floats on an inset with concentric bottom corners', (tester) async {

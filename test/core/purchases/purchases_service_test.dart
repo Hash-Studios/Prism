@@ -1206,6 +1206,188 @@ void main() {
     expect(app_state.prismUser.premium, isTrue);
   });
 
+  group('restore and cold start reapply RevenueCat state', () {
+    late int restoreCalls;
+
+    setUp(() {
+      restoreCalls = 0;
+      app_state.prismUser = profileUser();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('purchases_flutter'),
+        (call) async {
+          if (call.method == 'setLogLevel') return null;
+          if (call.method == 'restorePurchases') {
+            restoreCalls++;
+            return _proCustomerJson;
+          }
+          throw StateError('Unexpected RevenueCat call: ${call.method}');
+        },
+      );
+    });
+
+    test('a restore reapplies Pro that the account lost and the server confirms it', () async {
+      final service = buildService();
+
+      expect(await service.restore(), PurchaseEntitlementStatus.serverConfirmed);
+      expect(app_state.prismUser.premium, isTrue);
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+      expect(syncCalls, 1);
+    });
+
+    test('a restore that cannot sign in to RevenueCat throws and keeps the stored tier', () async {
+      app_state.prismUser = profileUser(premium: true)..subscriptionTier = 'pro';
+      final service = buildService(
+        apiKey: () => 'test-key',
+        logIn: (_) async => throw PlatformException(code: 'login_failed'),
+      );
+      await service.configureEarly();
+
+      await expectLater(service.restore(), throwsA(isA<PlatformException>()));
+      expect(restoreCalls, 0);
+      expect(app_state.prismUser.premium, isTrue);
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+      expect(syncCalls, 0);
+    });
+
+    test('a background read that began before a restore cannot undo the restored Pro', () async {
+      final staleRead = Completer<CustomerInfo>();
+      final service = buildService(getCustomerInfo: () => staleRead.future);
+      final Future<bool> background = service.checkAndPersistPremium();
+      await pumpEventQueue();
+
+      expect(await service.restore(), PurchaseEntitlementStatus.serverConfirmed);
+      staleRead.complete(_freeCustomer);
+
+      expect(await background, isTrue);
+      expect(app_state.prismUser.premium, isTrue);
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+      expect(syncCalls, 1);
+    });
+
+    test('a background read that lands during the restore confirmation does not report no purchases', () async {
+      final staleRead = Completer<CustomerInfo>();
+      final serverReply = Completer<void>();
+      final service = PurchasesService.forTesting(
+        addCustomerInfoListener: listeners.add,
+        configurePurchases: (_) async {},
+        logIn: (_) async {},
+        getCustomerInfo: () => staleRead.future,
+        syncSubscription: () async {
+          syncCalls++;
+          await serverReply.future;
+          return <String, dynamic>{'premium': true, 'subscriptionTier': 'pro'};
+        },
+      );
+      final Future<bool> background = service.checkAndPersistPremium();
+      await pumpEventQueue();
+      final Future<PurchaseEntitlementStatus> restored = service.restore();
+      await pumpEventQueue();
+
+      staleRead.complete(_freeCustomer);
+      await pumpEventQueue();
+      serverReply.complete();
+
+      expect(await restored, PurchaseEntitlementStatus.serverConfirmed);
+      await background;
+      expect(app_state.prismUser.premium, isTrue);
+      expect(syncCalls, 1);
+    });
+
+    test('a background read that began before a purchase check cannot undo the purchase', () async {
+      final staleRead = Completer<CustomerInfo>();
+      int reads = 0;
+      final service = buildService(
+        getCustomerInfo: () => ++reads == 1 ? staleRead.future : Future<CustomerInfo>.value(_proCustomer),
+      );
+      final Future<bool> background = service.checkAndPersistPremium();
+      await pumpEventQueue();
+
+      expect(await service.checkPurchaseEntitlement(), PurchaseEntitlementStatus.serverConfirmed);
+      staleRead.complete(_freeCustomer);
+      await background;
+
+      expect(app_state.prismUser.premium, isTrue);
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+    });
+
+    test('a store update received before a purchase check cannot undo the purchase', () async {
+      final service = buildService(getCustomerInfo: () async => _proCustomer);
+      await service.ensureConfigured('u1');
+
+      listeners.single(_freeCustomer);
+      final PurchaseEntitlementStatus status = await service.checkPurchaseEntitlement();
+      await pumpEventQueue();
+
+      expect(status, PurchaseEntitlementStatus.serverConfirmed);
+      expect(app_state.prismUser.premium, isTrue);
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+    });
+
+    test('a revocation that arrives after a restore still clears Pro', () async {
+      final service = buildService();
+      expect(await service.restore(), PurchaseEntitlementStatus.serverConfirmed);
+
+      listeners.single(_freeCustomer);
+      await pumpEventQueue();
+
+      expect(app_state.prismUser.premium, isFalse);
+      expect(app_state.prismUser.subscriptionTier, 'free');
+    });
+
+    test('a restored account does not pass Pro to the next account', () async {
+      String sdkUserId = '';
+      final service = buildService(
+        configurePurchases: (configuration) async => sdkUserId = configuration.appUserID ?? '',
+        logIn: (userId) async => sdkUserId = userId,
+        getCustomerInfo: () async => sdkUserId == 'u1' ? _proCustomer : _freeCustomer,
+      );
+      expect(await service.restore(), PurchaseEntitlementStatus.serverConfirmed);
+
+      app_state.prismUser = profileUser(id: 'other-user', premium: true)..subscriptionTier = 'pro';
+      expect(await service.checkAndPersistPremium(), isFalse);
+
+      expect(sdkUserId, 'other-user');
+      expect(app_state.prismUser.premium, isFalse);
+      expect(app_state.prismUser.subscriptionTier, 'free');
+    });
+
+    for (final bool active in <bool>[true, false]) {
+      test('a cold start applies RevenueCat active=$active over the opposite stored tier', () async {
+        app_state.prismUser = profileUser(premium: !active)..subscriptionTier = active ? 'free' : 'pro';
+        final service = buildService(
+          apiKey: () => 'test-key',
+          getCustomerInfo: () async => active ? _proCustomer : _freeCustomer,
+        );
+        await service.configureEarly();
+
+        expect(await service.checkAndPersistPremium(), active);
+        expect(app_state.prismUser.premium, active);
+        expect(app_state.prismUser.subscriptionTier, active ? 'pro' : 'free');
+        expect(loginCalls, <String>['u1']);
+        expect(syncCalls, 1);
+      });
+    }
+
+    for (final String failure in <String>['sign-in', 'read']) {
+      test('a cold start keeps stored Pro when the RevenueCat $failure fails', () async {
+        app_state.prismUser = profileUser(premium: true)..subscriptionTier = 'pro';
+        final service = buildService(
+          apiKey: () => 'test-key',
+          logIn: (_) async {
+            if (failure == 'sign-in') throw PlatformException(code: 'offline');
+          },
+          getCustomerInfo: () async => throw PlatformException(code: 'offline'),
+        );
+        await service.configureEarly();
+
+        expect(await service.checkAndPersistPremium(), isTrue);
+        expect(app_state.prismUser.premium, isTrue);
+        expect(app_state.prismUser.subscriptionTier, 'pro');
+        expect(syncCalls, 0);
+      });
+    }
+  });
+
   group('subscription conversion event', () {
     late FakeAppAnalytics fakeAnalytics;
 

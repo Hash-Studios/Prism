@@ -26,7 +26,7 @@ class InterestCategoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final String displayName = categoryDisplayName(name, context.l10n);
     const tileRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile));
-    const selectedTileRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile - 2));
+    const innerRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile - 2));
     final accent = Theme.of(context).colorScheme.primary;
     final shortMotion = context.motion(OnboardingMotion.short);
     return AnimatedContainer(
@@ -35,7 +35,7 @@ class InterestCategoryTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: OnboardingColors.surfaceGlass.withValues(alpha: OnboardingOpacity.cardBase),
         borderRadius: tileRadius,
-        border: isSelected ? Border.all(color: accent, width: 2) : null,
+        border: Border.all(color: isSelected ? accent : OnboardingColors.transparent, width: 2),
       ),
       child: Material(
         color: OnboardingColors.transparent,
@@ -47,7 +47,7 @@ class InterestCategoryTile extends StatelessWidget {
             onTap();
           },
           child: ClipRRect(
-            borderRadius: isSelected ? selectedTileRadius : tileRadius,
+            borderRadius: innerRadius,
             child: Stack(
               fit: StackFit.expand,
               children: [

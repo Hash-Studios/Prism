@@ -274,9 +274,7 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
       animation: animation,
       zoom: zoom,
       curve: _curve,
-      fade: zoom != null || reduceMotion || returning
-          ? kAlwaysCompleteAnimation
-          : animation.drive(CurveTween(curve: PrismCurves.enter)),
+      fade: zoom != null || reduceMotion || returning ? kAlwaysCompleteAnimation : animation,
       child: child,
     );
     if (!isIOS) return body;
@@ -343,7 +341,10 @@ class _DetailTransition extends AnimatedWidget {
                 child: Transform.scale(
                   scale: scale,
                   alignment: Alignment.topLeft,
-                  child: FadeTransition(opacity: fade, child: child),
+                  child: PrismEased(
+                    animation: fade,
+                    builder: (eased) => FadeTransition(opacity: eased, child: child),
+                  ),
                 ),
               ),
             ),

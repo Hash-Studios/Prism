@@ -49,21 +49,23 @@ class CompositeAnalyticsProvider implements AnalyticsProvider {
   }
 
   Future<void> _fanOut(Future<void> Function(AnalyticsProvider provider) dispatch, {required String operation}) async {
-    for (final AnalyticsProvider provider in _providers) {
-      try {
-        await dispatch(provider);
-      } catch (error, stackTrace) {
-        if (!_logProviderFailures) {
-          continue;
+    await Future.wait(
+      _providers.map((provider) async {
+        try {
+          await dispatch(provider);
+        } catch (error, stackTrace) {
+          if (!_logProviderFailures) {
+            return;
+          }
+          logger.w(
+            'Analytics provider failed during dispatch.',
+            tag: 'Analytics',
+            error: error,
+            stackTrace: stackTrace,
+            fields: <String, Object?>{'operation': operation, 'provider': provider.runtimeType.toString()},
+          );
         }
-        logger.w(
-          'Analytics provider failed during dispatch.',
-          tag: 'Analytics',
-          error: error,
-          stackTrace: stackTrace,
-          fields: <String, Object?>{'operation': operation, 'provider': provider.runtimeType.toString()},
-        );
-      }
-    }
+      }),
+    );
   }
 }

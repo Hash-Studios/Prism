@@ -5,6 +5,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/personalization/taste_profile.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/features/moods/biz/gallery_walls_cubit.dart';
 import 'package:Prism/features/moods/biz/mood_walls_cubit.dart';
 import 'package:Prism/features/moods/data/mood_repository_impl.dart';
@@ -51,6 +52,28 @@ class _FakeFeedRepository extends Fake implements PersonalizedFeedRepository {
 
   @override
   TasteProfile currentTasteProfile() => profile;
+}
+
+class _GatedWallsClient extends FakeFirestoreClient {
+  final gate = Completer<void>();
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
+    await gate.future;
+    return <T>[map(_wall('A', creatorUid: 'blocked'), 'doc-A')];
+  }
+}
+
+class _TrackingBlocks extends FakeUserBlockRepository {
+  _TrackingBlocks() : super.pending();
+
+  bool started = false;
+
+  @override
+  Future<BlockedCreators> loadBlockedCreators() {
+    started = true;
+    return super.loadBlockedCreators();
+  }
 }
 
 void main() {
@@ -169,6 +192,26 @@ void main() {
   });
 
   group('fetchMoodWalls', () {
+    test('loads blocks alongside walls and waits for filtering before returning', () async {
+      final gated = _GatedWallsClient();
+      final tracking = _TrackingBlocks();
+      final subject = MoodRepositoryImpl(gated, tracking, settings, feed);
+      var completed = false;
+      final pending = subject.fetchMoodWalls(<String>['A'], keepOrder: true).then((walls) {
+        completed = true;
+        return walls;
+      });
+      await pumpEventQueue();
+      final overlapped = tracking.started;
+      gated.gate.complete();
+      await pumpEventQueue();
+      final returnedBeforeBlocks = completed;
+      tracking.completeInitial(<String>{'blocked'});
+      expect(await pending, isEmpty);
+      expect(overlapped, isTrue);
+      expect(returnedBeforeBlocks, isFalse);
+    });
+
     test('makes no query for an empty id list', () async {
       expect(await repository.fetchMoodWalls(const <String>[]), isEmpty);
 

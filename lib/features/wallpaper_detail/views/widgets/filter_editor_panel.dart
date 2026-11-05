@@ -246,6 +246,7 @@ class FilterEditorPanel extends StatelessWidget {
                   children: [
                     AnimatedContainer(
                       duration: context.motion(PrismDurations.fast),
+                      curve: PrismCurves.enter,
                       width: 64,
                       height: 92,
                       foregroundDecoration: BoxDecoration(

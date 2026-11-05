@@ -158,8 +158,21 @@ class DiwaliFireworks extends StatefulWidget {
 class _DiwaliFireworksState extends State<DiwaliFireworks> with SingleTickerProviderStateMixin {
   late final AnimationController _bloom = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 4200),
+    duration: const Duration(milliseconds: 8400),
   );
+
+  /// The bursts play twice, then settle on the still pose, so the home header does not repaint forever.
+  bool _played = false;
+  bool _settled = false;
+  bool _tickerPaused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bloom.addStatusListener((status) {
+      if (status == AnimationStatus.completed && mounted) setState(() => _settled = true);
+    });
+  }
 
   @override
   void dispose() {
@@ -171,14 +184,29 @@ class _DiwaliFireworksState extends State<DiwaliFireworks> with SingleTickerProv
   Widget build(BuildContext context) {
     if (!isDiwaliActive(context)) {
       if (_bloom.isAnimating) _bloom.stop();
+      _bloom.value = 0;
+      _played = false;
+      _settled = false;
+      _tickerPaused = false;
       return const SizedBox.shrink();
     }
+    final bool still = context.reduceMotion || _settled;
     final bool tickerEnabled = TickerMode.valuesOf(context).enabled;
-    final bool still = context.reduceMotion;
-    if (!tickerEnabled || still) {
+    if (context.reduceMotion && !_settled) {
       _bloom.stop();
-    } else if (!_bloom.isAnimating) {
-      _bloom.repeat();
+      _bloom.value = 0;
+      _played = false;
+      _settled = true;
+      _tickerPaused = false;
+    } else if (!tickerEnabled && _bloom.isAnimating) {
+      _bloom.stop(canceled: false);
+      _tickerPaused = true;
+    } else if (tickerEnabled && _tickerPaused) {
+      _tickerPaused = false;
+      _bloom.forward();
+    } else if (tickerEnabled && !_settled && !_played && !_bloom.isAnimating && !context.reduceMotion) {
+      _played = true;
+      _bloom.forward(from: 0);
     }
     final double s = widget.size;
     final List<({double x, double y, double size, Color color, double phase})> bursts = [
@@ -189,20 +217,22 @@ class _DiwaliFireworksState extends State<DiwaliFireworks> with SingleTickerProv
     final List<Widget> art = <Widget>[for (final b in bursts) _svg(_burstSvg(b.color), width: b.size * s)];
     return IgnorePointer(
       child: ExcludeSemantics(
-        child: SizedBox(
-          width: s,
-          height: s,
-          child: AnimatedBuilder(
-            animation: _bloom,
-            builder: (context, _) => Stack(
-              children: <Widget>[
-                for (int i = 0; i < bursts.length; i++)
-                  Positioned(
-                    left: (widget.right ? bursts[i].x : 1 - bursts[i].x - bursts[i].size) * s,
-                    top: bursts[i].y * s,
-                    child: _bloomed(art[i], (_bloom.value + bursts[i].phase) % 1, still),
-                  ),
-              ],
+        child: RepaintBoundary(
+          child: SizedBox(
+            width: s,
+            height: s,
+            child: AnimatedBuilder(
+              animation: _bloom,
+              builder: (context, _) => Stack(
+                children: <Widget>[
+                  for (int i = 0; i < bursts.length; i++)
+                    Positioned(
+                      left: (widget.right ? bursts[i].x : 1 - bursts[i].x - bursts[i].size) * s,
+                      top: bursts[i].y * s,
+                      child: _bloomed(art[i], (_bloom.value * 2 + bursts[i].phase) % 1, still),
+                    ),
+                ],
+              ),
             ),
           ),
         ),

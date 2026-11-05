@@ -5,6 +5,7 @@ import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -17,6 +18,53 @@ import '../../../../support/fake_user_block_repository.dart';
 
 void main() {
   group('PrismWallpaperRepositoryImpl', () {
+    final lookups = <String, Future<Result<Object?>> Function(PrismWallpaperRepositoryImpl)>{
+      'category': (repo) => repo.fetchByCategory('Nature'),
+      'streak shop': (repo) => repo.fetchStreakShopWallpapers(),
+      'canonical id': (repo) => repo.fetchCanonicalById('wall-1'),
+      'canonical document': (repo) => repo.fetchCanonicalByDocumentId('doc-1'),
+      'id': (repo) => repo.fetchById('wall-1'),
+      'document': (repo) => repo.fetchByDocumentId('doc-1'),
+    };
+    for (final lookup in lookups.entries) {
+      test('${lookup.key} handles a late block failure after its wall read fails', () async {
+        final firestore = _GatedLookupFirestore(_buildWallDocs(count: 1));
+        final blockLoad = Completer<BlockedCreators>();
+        final blocks = _TrackingBlocks(load: blockLoad.future);
+        final repo = PrismWallpaperRepositoryImpl(firestore, FakeFeedCacheLocalDataSource(), blocks);
+        final pending = lookup.value(repo);
+        firestore.gate.completeError(StateError('wall read failed'));
+        expect((await pending).isFailure, isTrue);
+        blockLoad.completeError(StateError('block read failed'));
+        await pumpEventQueue();
+        expect(blocks.started, isTrue);
+      });
+
+      test('${lookup.key} overlaps wall and block reads but waits for filtering', () async {
+        final docs = _buildWallDocs(count: 1);
+        docs.single.data.addAll(<String, dynamic>{'originalProtected': true, 'wallpaper_url': ''});
+        final firestore = _GatedLookupFirestore(docs);
+        final blocks = _TrackingBlocks();
+        final repo = PrismWallpaperRepositoryImpl(firestore, FakeFeedCacheLocalDataSource(), blocks);
+        var completed = false;
+        final pending = lookup.value(repo).then((result) {
+          completed = true;
+          return result;
+        });
+        await Future<void>.delayed(Duration.zero);
+        final blockReadStarted = blocks.started;
+        firestore.gate.complete();
+        await Future<void>.delayed(Duration.zero);
+        final publishedBeforeBlocks = completed;
+        blocks.completeInitial(<String>{'creator1'});
+        final result = await pending;
+        expect(blockReadStarted, isTrue);
+        expect(publishedBeforeBlocks, isFalse);
+        expect(result.isSuccess, isTrue);
+        expect(result.data, lookup.key == 'category' || lookup.key == 'streak shop' ? isEmpty : isNull);
+      });
+    }
+
     test('a page paused in its cache append read cannot overwrite a refreshed snapshot', () async {
       final firestore = _walls(_buildWallDocs(count: 60));
       final cache = _DelayedReadCache();
@@ -527,6 +575,48 @@ class _FailingGetFirestore extends FakeFirestoreClient {
   }) => Future<T?>.error(
     FirestoreError(message: '[cloud_firestore/unavailable] The service is currently unavailable.', code: 'unavailable'),
   );
+}
+
+class _TrackingBlocks extends FakeUserBlockRepository {
+  _TrackingBlocks({this.load}) : super.pending();
+  final Future<BlockedCreators>? load;
+  bool started = false;
+
+  @override
+  Future<BlockedCreators> loadBlockedCreators() {
+    started = true;
+    return load ?? super.loadBlockedCreators();
+  }
+}
+
+class _GatedLookupFirestore extends FakeFirestoreClient {
+  _GatedLookupFirestore(List<({String docId, Map<String, dynamic> data})> rows)
+    : super(
+        onQuery: _walls(rows).onQuery,
+        docs: <String, Map<String, Map<String, dynamic>>>{
+          'walls': <String, Map<String, dynamic>>{for (final row in rows) row.docId: row.data},
+        },
+      );
+
+  final gate = Completer<void>();
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
+    await gate.future;
+    return super.query(spec, map);
+  }
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic>, String) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async {
+    await gate.future;
+    return super.getById(collection, id, map, sourceTag: sourceTag, preferCacheFirst: preferCacheFirst);
+  }
 }
 
 class _DelayedPageFirestore extends FakeFirestoreClient {

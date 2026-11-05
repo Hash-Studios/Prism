@@ -148,6 +148,8 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
     String sourceTag = 'category_feed.prism_first',
   }) async {
     try {
+      final blockedFuture = _userBlockRepository.loadBlockedCreators();
+      blockedFuture.ignore();
       final List<_PrismRow> rows = await _firestoreClient
           .query<_PrismRow>(
             FirestoreQuerySpec(
@@ -166,7 +168,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
             (data, docId) => (docId: docId, doc: PrismWallDocDto.fromJson(data)),
           )
           .timeout(_queryTimeout);
-      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
+      final BlockedCreators blocked = await blockedFuture;
       return Result.success(
         rows
             .map((row) => row.doc.toDomain(docId: row.docId))
@@ -234,6 +236,8 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
   @override
   Future<Result<List<PrismWallpaper>>> fetchStreakShopWallpapers() async {
     try {
+      final blockedFuture = _userBlockRepository.loadBlockedCreators();
+      blockedFuture.ignore();
       final List<_PrismRow> rows = await _firestoreClient.query<_PrismRow>(
         const FirestoreQuerySpec(
           collection: FirebaseCollections.walls,
@@ -247,7 +251,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         ),
         (data, docId) => (docId: docId, doc: PrismWallDocDto.fromJson(data)),
       );
-      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
+      final BlockedCreators blocked = await blockedFuture;
       final List<PrismWallpaper> walls = rows
           .map((row) => row.doc.toDomain(docId: row.docId))
           .where((w) => !BlockedCreatorsFilter.hidesCreatorUid(w.core.authorUid, blocked))
@@ -272,6 +276,8 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
   Future<Result<PrismWallpaper?>> fetchCanonicalById(String id) async {
     if (id.trim().isEmpty) return Result.success(null);
     try {
+      final blockedFuture = _userBlockRepository.loadBlockedCreators();
+      blockedFuture.ignore();
       final List<_PrismRow> rows = await _firestoreClient
           .query<_PrismRow>(
             FirestoreQuerySpec(
@@ -290,7 +296,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       if (rows.isEmpty) return Result.success(null);
       if (rows.length != 1) return Result.error(const ServerFailure('Ambiguous wallpaper identity'));
       final PrismWallpaper wall = rows.single.doc.toDomain(docId: rows.single.docId);
-      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
+      final BlockedCreators blocked = await blockedFuture;
       if (BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked)) return Result.success(null);
       return Result.success(wall);
     } catch (error, stackTrace) {
@@ -303,6 +309,8 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
   Future<Result<PrismWallpaper?>> fetchCanonicalByDocumentId(String documentId) async {
     if (documentId.trim().isEmpty) return Result.success(null);
     try {
+      final blockedFuture = _userBlockRepository.loadBlockedCreators();
+      blockedFuture.ignore();
       final List<Map<String, dynamic>> rows = await _firestoreClient
           .query<Map<String, dynamic>>(
             FirestoreQuerySpec(
@@ -324,7 +332,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         return Result.success(null);
       }
       final PrismWallpaper wall = PrismWallDocDto.fromJson(data).toDomain(docId: documentId);
-      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
+      final BlockedCreators blocked = await blockedFuture;
       if (BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked)) return Result.success(null);
       return Result.success(wall);
     } catch (error, stackTrace) {
@@ -336,6 +344,8 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
   @override
   Future<Result<PrismWallpaper?>> fetchById(String id) async {
     try {
+      final blockedFuture = _userBlockRepository.loadBlockedCreators();
+      blockedFuture.ignore();
       final List<_PrismRow> results = await _firestoreClient.query<_PrismRow>(
         FirestoreQuerySpec(
           collection: FirebaseCollections.walls,
@@ -355,7 +365,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         return byDocId.data?.review == true ? byDocId : Result.success(null);
       }
       final PrismWallpaper wall = results.first.doc.toDomain(docId: results.first.docId);
-      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
+      final BlockedCreators blocked = await blockedFuture;
       if (BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked)) {
         return Result.success(null);
       }
@@ -373,6 +383,8 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       return Result.success(null);
     }
     try {
+      final blockedFuture = _userBlockRepository.loadBlockedCreators();
+      blockedFuture.ignore();
       final Map<String, dynamic>? data = await _firestoreClient.getById<Map<String, dynamic>>(
         FirebaseCollections.walls,
         documentId,
@@ -383,7 +395,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         return Result.success(null);
       }
       final PrismWallpaper wallpaper = PrismWallDocDto.fromJson(data).toDomain(docId: documentId);
-      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
+      final BlockedCreators blocked = await blockedFuture;
       if (BlockedCreatorsFilter.hidesCreatorUid(wallpaper.core.authorUid, blocked)) {
         return Result.success(null);
       }

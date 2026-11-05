@@ -5,11 +5,12 @@ On iPhone, Shortcuts can set a wallpaper on a schedule or trigger. Add Prism's "
 ## What it does
 
 - The action "Get Prism Wallpaper" returns one full-size image. It does not open the app.
-- You pick one of four sources:
+- You pick one of five sources:
   - Wall of the Day. Download today's original in Prism first. When the daily pick changes, download the new original before running this source. Downloads use Prism's existing access and payment rules.
   - Random favourite. A random favourite that Shortcuts can use. Heart wallpapers in Prism first. Some protected wallpapers may not be available.
   - Rotation folder. Shuffles the folder that you pick in Prism.
   - Folder. Shuffles a folder that you pick in the action. The Folder field shows only for this source.
+  - Day and night. Returns the day wall or the night wall that you picked in Prism. The Time field shows only for this source: Now uses Prism's times, Day and Night force one wall. See [Day and night](auto-rotate.md#day-and-night).
 - Random favourite, Rotation folder and Folder use a shuffle. Each wall shows once before any wall repeats. A folder rotates its 200 newest walls; favourites rotate the 200 newest favourites.
 - Apple's "Set Wallpaper" action takes the image and sets it.
 - The action also shows as App Shortcuts in Siri and Spotlight. Say "Get a wallpaper from Prism" or "Shuffle my Prism wallpaper".

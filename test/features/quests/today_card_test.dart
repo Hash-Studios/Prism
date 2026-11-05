@@ -39,7 +39,7 @@ void main() {
     EconomyConfig.resetForTest();
   });
 
-  /// The chest box loops while it can be opened, so these tests pump fixed durations and never settle.
+  /// The chest box is still on this card, but other parts animate, so these tests pump fixed durations.
   Future<FakeQuestsRepository> pumpCard(
     WidgetTester tester,
     QuestState? quests, {
@@ -295,7 +295,7 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('paid: the chest is a box that loops in an 88 slot, and the pips count the quests done', (tester) async {
+  testWidgets('paid: the chest is a still box in an 88 slot, and the pips count the quests done', (tester) async {
     await pumpCard(
       tester,
       questState(
@@ -309,7 +309,7 @@ void main() {
 
     final ChestBox box = tester.widget<ChestBox>(find.byType(ChestBox));
     expect(box.phase, ChestPhase.ready);
-    expect(box.still, isFalse);
+    expect(box.still, isTrue);
     expect(tester.getSize(chestSlot()), const Size.square(88));
     final Iterable<double> pips = tester
         .widgetList<AnimatedOpacity>(
@@ -342,7 +342,7 @@ void main() {
     expect(find.text(AppLocalizationsEn().economyChestPriceFreeAfter(12, 3)), findsOneWidget);
   });
 
-  testWidgets('free: the chest is free today, with its XP, and the box still loops', (tester) async {
+  testWidgets('free: the chest is free today, with its XP, and the box is still', (tester) async {
     final SemanticsHandle handle = tester.ensureSemantics();
     await pumpCard(tester, allClaimed());
 

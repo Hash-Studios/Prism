@@ -5,7 +5,7 @@ import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-enum WallpaperQuickAction { favourite, share, showLess, resetOriginal, saveToFolder, pin }
+enum WallpaperQuickAction { favourite, share, showLess, resetOriginal, saveToFolder, pin, dayNight }
 
 enum _HoldPhase { idle, entering, open, exiting }
 
@@ -27,6 +27,7 @@ class WallpaperHoldRegion extends StatefulWidget {
     this.pinLabel,
     this.unpinLabel,
     this.readIsPinned,
+    this.dayNightLabel,
   });
 
   final Object identity;
@@ -45,6 +46,9 @@ class WallpaperHoldRegion extends StatefulWidget {
   /// Read when the menu opens. Null hides Pin, as for a wall that is not a favourite.
   final bool? Function()? readIsPinned;
   final ValueChanged<WallpaperQuickAction> onAction;
+
+  /// Null hides Day and night: on Android, and on iOS before 16.
+  final String? dayNightLabel;
 
   @override
   State<WallpaperHoldRegion> createState() => _WallpaperHoldRegionState();
@@ -77,7 +81,8 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
     if (oldWidget.identity != widget.identity ||
         (oldWidget.showLessLabel == null) != (widget.showLessLabel == null) ||
         (oldWidget.resetOriginalLabel == null) != (widget.resetOriginalLabel == null) ||
-        (oldWidget.saveToFolderLabel == null) != (widget.saveToFolderLabel == null)) {
+        (oldWidget.saveToFolderLabel == null) != (widget.saveToFolderLabel == null) ||
+        (oldWidget.dayNightLabel == null) != (widget.dayNightLabel == null)) {
       _close(rebuild: false, animate: false);
     }
   }
@@ -221,7 +226,9 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
       if (widget.resetOriginalLabel != null) WallpaperQuickAction.resetOriginal,
       if (widget.saveToFolderLabel != null) WallpaperQuickAction.saveToFolder,
       if (_pinned != null) WallpaperQuickAction.pin,
+      if (widget.dayNightLabel != null) WallpaperQuickAction.dayNight,
     ];
+    assert(actions.length <= 6, 'The hold ring has six positions');
     final List<Offset> offsets = <Offset>[
       Offset(0, vertical * 64),
       Offset(direction * 50, vertical * 40),
@@ -274,6 +281,7 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
     WallpaperQuickAction.resetOriginal => widget.resetOriginalLabel!,
     WallpaperQuickAction.saveToFolder => widget.saveToFolderLabel!,
     WallpaperQuickAction.pin => _pinned == true ? widget.unpinLabel ?? widget.pinLabel! : widget.pinLabel!,
+    WallpaperQuickAction.dayNight => widget.dayNightLabel!,
   };
 
   Widget _buildOverlay(Rect lifted, Rect safe, List<WallpaperQuickAction> actions) {
@@ -400,6 +408,7 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
                     WallpaperQuickAction.resetOriginal => Icons.restart_alt_rounded,
                     WallpaperQuickAction.saveToFolder => Icons.create_new_folder_rounded,
                     WallpaperQuickAction.pin => _pinned == true ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+                    WallpaperQuickAction.dayNight => Icons.contrast_rounded,
                   }, color: action == _hovered ? cs.onPrimary : cs.onSurface),
                 ),
               ),

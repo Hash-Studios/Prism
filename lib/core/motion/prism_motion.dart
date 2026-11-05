@@ -33,6 +33,10 @@ abstract final class PrismCurves {
   /// duration than the matching entrance.
   static const Curve exit = Cubic(0.23, 1, 0.32, 1);
 
+  /// [exit] for curves that run from 1 to 0: `reverseCurve` and `AnimatedSwitcher.switchOutCurve`. Flutter does not
+  /// flip those, so a plain [exit] there holds still and then drops at the end.
+  static const Curve exitReverse = FlippedCurve(exit);
+
   /// Things that move from one place to another on screen.
   static const Curve move = Cubic(0.77, 0, 0.175, 1);
 
@@ -41,6 +45,43 @@ abstract final class PrismCurves {
 
   /// A small overshoot for playful pops (badges, success ticks). Use sparingly.
   static const Curve pop = Cubic(.34, 1.56, .64, 1);
+}
+
+/// Eases [animation] with [PrismCurves.enter] going in and [PrismCurves.exitReverse] coming out. It owns the
+/// [CurvedAnimation], so a transition builder that runs again does not stack up listeners on the route animation.
+class PrismEased extends StatefulWidget {
+  const PrismEased({super.key, required this.animation, required this.builder});
+
+  final Animation<double> animation;
+  final Widget Function(Animation<double> eased) builder;
+
+  @override
+  State<PrismEased> createState() => _PrismEasedState();
+}
+
+class _PrismEasedState extends State<PrismEased> {
+  late CurvedAnimation _eased = _make();
+
+  CurvedAnimation _make() =>
+      CurvedAnimation(parent: widget.animation, curve: PrismCurves.enter, reverseCurve: PrismCurves.exitReverse);
+
+  @override
+  void didUpdateWidget(PrismEased oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.animation != widget.animation) {
+      _eased.dispose();
+      _eased = _make();
+    }
+  }
+
+  @override
+  void dispose() {
+    _eased.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(_eased);
 }
 
 extension PrismMotionContext on BuildContext {

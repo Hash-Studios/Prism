@@ -11803,6 +11803,214 @@
   "@shortcutsAutomationIos16": {
     "description": "Note under the Step 2 automation lines for iOS 16, which has no Run Immediately option. Use the Shortcuts labels in this language."
   },
+  "dayNightTitle": "Day and night",
+  "@dayNightTitle": {
+    "description": "Title of the Day and night screen and its Settings row."
+  },
+  "dayNightSettingsSubtitle": "One wall for the day, one for the night",
+  "@dayNightSettingsSubtitle": {
+    "description": "Subtitle of the Settings row."
+  },
+  "dayNightIntro": "Pick a wall for the day and one for the night. Shortcuts switches them at the times you set.",
+  "@dayNightIntro": {
+    "description": "Intro text at the top of the screen."
+  },
+  "dayNightUseAsDay": "Use as day wall",
+  "@dayNightUseAsDay": {
+    "description": "Wall hold menu item."
+  },
+  "dayNightUseAsNight": "Use as night wall",
+  "@dayNightUseAsNight": {
+    "description": "Wall hold menu item."
+  },
+  "dayNightUseVariants": "Use the lightest and darkest variant",
+  "@dayNightUseVariants": {
+    "description": "Wall hold menu item for a wall with colour variants. Sets the lightest as day wall and the darkest as night wall."
+  },
+  "dayNightDaySetToast": "Day wall set.",
+  "@dayNightDaySetToast": {
+    "description": "Toast after Use as day wall."
+  },
+  "dayNightNightSetToast": "Night wall set.",
+  "@dayNightNightSetToast": {
+    "description": "Toast after Use as night wall."
+  },
+  "dayNightPairSetToast": "Day and night walls set.",
+  "@dayNightPairSetToast": {
+    "description": "Toast after the variant one-tap pair."
+  },
+  "dayNightOpenAction": "Open",
+  "@dayNightOpenAction": {
+    "description": "Toast action that opens the Day and night screen."
+  },
+  "dayNightDayLabel": "Day",
+  "@dayNightDayLabel": {
+    "description": "Label of the day wall card."
+  },
+  "dayNightNightLabel": "Night",
+  "@dayNightNightLabel": {
+    "description": "Label of the night wall card."
+  },
+  "dayNightEmptyDay": "Hold any wallpaper, then tap Use as day wall.",
+  "@dayNightEmptyDay": {
+    "description": "Empty day card."
+  },
+  "dayNightEmptyNight": "Hold any wallpaper, then tap Use as night wall.",
+  "@dayNightEmptyNight": {
+    "description": "Empty night card."
+  },
+  "dayNightDayStarts": "Day starts",
+  "@dayNightDayStarts": {
+    "description": "Time row label."
+  },
+  "dayNightNightStarts": "Night starts",
+  "@dayNightNightStarts": {
+    "description": "Time row label."
+  },
+  "dayNightFrom": "From {time}",
+  "@dayNightFrom": {
+    "description": "Caption under a phone preview. {time} is a formatted time such as 07:00.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightPreviewLabel": "{slot} wall, from {time}",
+  "@dayNightPreviewLabel": {
+    "description": "Screen reader label of a phone preview. {slot} is Day or Night.",
+    "placeholders": {
+      "slot": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightTimesEqual": "Pick two different times.",
+  "@dayNightTimesEqual": {
+    "description": "Error when day and night start at the same time."
+  },
+  "dayNightSwitch": "Switch walls at these times",
+  "@dayNightSwitch": {
+    "description": "Main switch. Describes the on state."
+  },
+  "dayNightNeedsBoth": "Pick a day wall and a night wall first.",
+  "@dayNightNeedsBoth": {
+    "description": "Hint under the disabled switch."
+  },
+  "dayNightNeedsDownload": "Download this wall in Prism first.",
+  "@dayNightNeedsDownload": {
+    "description": "Error on a wall card when a protected wall has no downloaded original."
+  },
+  "dayNightOpenWall": "Open wall",
+  "@dayNightOpenWall": {
+    "description": "Button next to dayNightNeedsDownload. Opens the wall."
+  },
+  "dayNightPreparing": "Saving both walls for offline use",
+  "@dayNightPreparing": {
+    "description": "Progress text while walls are copied for offline use."
+  },
+  "dayNightPrepareFailed": "Could not save the walls for offline use. Check your connection.",
+  "@dayNightPrepareFailed": {
+    "description": "Error after the offline copy fails."
+  },
+  "dayNightTryAgain": "Try again",
+  "@dayNightTryAgain": {
+    "description": "Button after dayNightPrepareFailed."
+  },
+  "dayNightProTitle": "Day and night is a Prism Pro feature.",
+  "@dayNightProTitle": {
+    "description": "Pro card title for a free user."
+  },
+  "dayNightOffEnded": "Day and night is off because your Prism Pro plan or pass ended.",
+  "@dayNightOffEnded": {
+    "description": "One toast when Pro or the pass ends."
+  },
+  "dayNightSetUpAction": "Set up in Shortcuts",
+  "@dayNightSetUpAction": {
+    "description": "Button that opens the guide sheet."
+  },
+  "dayNightGuideTitle": "Switch walls with Shortcuts",
+  "@dayNightGuideTitle": {
+    "description": "Guide sheet title."
+  },
+  "dayNightGuideBody": "Make 2 automations in Shortcuts, one for {dayTime} and one for {nightTime}. Each sets the wall that matches its time.",
+  "@dayNightGuideBody": {
+    "description": "Guide sheet intro.",
+    "placeholders": {
+      "dayTime": {
+        "type": "String"
+      },
+      "nightTime": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightGuideStepAutomation": "In Shortcuts, tap Automation, then tap +.",
+  "@dayNightGuideStepAutomation": {
+    "description": "Guide step."
+  },
+  "dayNightGuideStepTime": "Tap Time of Day. Choose {time}, then Daily.",
+  "@dayNightGuideStepTime": {
+    "description": "Guide step. {time} is the day or night start.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightGuideStepRun": "Choose Run Immediately, then tap Next.",
+  "@dayNightGuideStepRun": {
+    "description": "Guide step."
+  },
+  "dayNightGuideStepBlank": "Tap New Blank Automation.",
+  "@dayNightGuideStepBlank": {
+    "description": "Guide step."
+  },
+  "dayNightGuideStepGet": "Add \"Get Prism Wallpaper\". Set Source to Day and night.",
+  "@dayNightGuideStepGet": {
+    "description": "Guide step. \"Get Prism Wallpaper\" and \"Day and night\" are names in the Shortcuts app."
+  },
+  "dayNightGuideStepSet": "Add \"Set Wallpaper Photo\". Tap the arrow on it, choose {screens}, then turn off Show Preview.",
+  "@dayNightGuideStepSet": {
+    "description": "Guide step. {screens} is one of the 3 screen names below.",
+    "placeholders": {
+      "screens": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightGuideScreensHome": "Home Screen",
+  "@dayNightGuideScreensHome": {
+    "description": "Name of the option in Apple's Set Wallpaper Photo action."
+  },
+  "dayNightGuideScreensLock": "Lock Screen",
+  "@dayNightGuideScreensLock": {
+    "description": "Name of the option in Apple's Set Wallpaper Photo action."
+  },
+  "dayNightGuideScreensBoth": "Lock Screen and Home Screen",
+  "@dayNightGuideScreensBoth": {
+    "description": "Both options in Apple's Set Wallpaper Photo action."
+  },
+  "dayNightGuideStepRepeat": "Make a second automation the same way for {time}.",
+  "@dayNightGuideStepRepeat": {
+    "description": "Last guide step. {time} is the night start.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightGuideSunTitle": "Sunrise and sunset",
+  "@dayNightGuideSunTitle": {
+    "description": "Guide section title."
+  },
+  "dayNightGuideSunBody": "Choose Sunrise or Sunset instead of a time. In Get Prism Wallpaper, set Time to Day for sunrise and Night for sunset.",
+  "@dayNightGuideSunBody": {
+    "description": "Guide section body. \"Time\", \"Day\" and \"Night\" are names in the Shortcuts app."
+  },
   "tipAction": "Tip creator",
   "@tipAction": {
     "description": "Wall detail: opens the sheet to tip the wall's creator coins"

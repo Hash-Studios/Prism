@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/user_search/data/repositories/user_search_repository_impl.dart';
 import 'package:Prism/features/user_search/domain/entities/user_search_user.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
@@ -11,6 +14,42 @@ UserSearchRepositoryImpl _repo(FakeFirestoreClient firestore, {Set<String> block
     UserSearchRepositoryImpl(firestore, FakeUserBlockRepository.pending()..completeInitial(blocked));
 
 void main() {
+  test('starts registry and block reads while prefix queries are pending', () async {
+    final firestore = _GatedSearchClient();
+    final blocks = _TrackingSearchBlocks();
+    final pending = UserSearchRepositoryImpl(firestore, blocks).searchUsers('kev');
+    await pumpEventQueue();
+    final registryStarted = firestore.querySpecs.any((spec) => spec.collection == 'usernames');
+    final blocksStarted = blocks.started;
+    firestore.queryGate.complete();
+    expect((await pending).isSuccess, isTrue);
+    expect(registryStarted, isTrue);
+    expect(blocksStarted, isTrue);
+  });
+
+  test('overlaps missing profile lookups with a bound and preserves registry order', () async {
+    final firestore = _GatedSearchClient()..queryGate.complete();
+    firestore.holdProfiles = true;
+    firestore.onQuery = (spec) => spec.collection == 'usernames'
+        ? <FakeDocRow>[
+            for (var i = 0; i < 6; i++) (id: 'kev$i', data: <String, dynamic>{'uid': 'uid-$i'}),
+            (id: 'duplicate', data: <String, dynamic>{'uid': 'uid-0'}),
+            (id: 'blocked', data: <String, dynamic>{'uid': 'blocked'}),
+          ]
+        : const <FakeDocRow>[];
+    final blocks = _TrackingSearchBlocks()
+      ..blockedRows = const <BlockedUserListRow>[BlockedUserListRow(blockedUid: 'blocked')];
+    final pending = UserSearchRepositoryImpl(firestore, blocks).searchUsers('kev');
+    await pumpEventQueue();
+    final inFlight = firestore.profileReads.length;
+    firestore.profileGate.complete();
+    final result = await pending;
+    expect(result.isSuccess, isTrue);
+    expect(inFlight, 4);
+    expect(firestore.profileReads, List.generate(6, (i) => 'uid-$i'));
+    expect(result.data!.map((user) => user.id), List.generate(6, (i) => 'uid-$i'));
+  });
+
   test('a blank query does not hit Firestore', () async {
     final firestore = FakeFirestoreClient();
 
@@ -125,4 +164,42 @@ void main() {
 
     expect(result.data!.map((UserSearchUser u) => u.id), <String>['d2']);
   });
+}
+
+class _GatedSearchClient extends FakeFirestoreClient {
+  final queryGate = Completer<void>();
+  final profileGate = Completer<void>();
+  final profileReads = <String>[];
+  bool holdProfiles = false;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
+    querySpecs.add(spec);
+    if (spec.collection == 'profiles') await queryGate.future;
+    return (onQuery?.call(spec) ?? const <FakeDocRow>[]).map((row) => map(row.data, row.id)).toList();
+  }
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic>, String) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async {
+    profileReads.add(id);
+    if (holdProfiles) await profileGate.future;
+    return map(<String, dynamic>{'name': id}, id);
+  }
+}
+
+class _TrackingSearchBlocks extends FakeUserBlockRepository {
+  _TrackingSearchBlocks() : super.pending();
+  bool started = false;
+
+  @override
+  Future<Result<List<BlockedUserListRow>>> fetchBlockedUsersList() {
+    started = true;
+    return super.fetchBlockedUsersList();
+  }
 }

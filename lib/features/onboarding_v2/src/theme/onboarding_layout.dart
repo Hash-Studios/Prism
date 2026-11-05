@@ -30,7 +30,6 @@ class OnboardingLayout {
   static const double aiTitleX = 10;
 
   static const double progressY = 63;
-  static const double progressWidth = 56;
   static const double progressHeight = 8;
 
   static const double skipX = 332;

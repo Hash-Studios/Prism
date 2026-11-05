@@ -2,14 +2,19 @@ import 'dart:async';
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/widgets/profile_folders_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+class _MockStackRouter extends Mock implements StackRouter {}
 
 class _FakePublicFoldersRepository implements PublicFoldersRepository {
   List<PublicFolderEntity> ownerFolders = const <PublicFolderEntity>[];
@@ -142,5 +147,36 @@ void main() {
     pending.complete(Result.success(<PublicFolderEntity>[_folder('new', 'New profile folder')]));
     await _settle(tester);
     expect(find.text('New profile folder'), findsOneWidget);
+  });
+
+  testWidgets('returning from a folder keeps the row height while it reloads', (tester) async {
+    registerFallbackValue(FolderRoute(folderId: 'x'));
+    final _MockStackRouter router = _MockStackRouter();
+    when(() => router.push(any())).thenAnswer((_) async => null);
+    repo.ownerFolders = <PublicFolderEntity>[_folder('a', 'Night Owl')];
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: StackRouterScope(
+          controller: router,
+          stateHash: 0,
+          child: const Scaffold(body: ProfileFoldersRow(ownerId: 'owner', ownProfile: true)),
+        ),
+      ),
+    );
+    await _settle(tester);
+    final double height = tester.getSize(find.byType(ProfileFoldersRow)).height;
+    expect(height, greaterThan(0));
+
+    final Completer<Result<List<PublicFolderEntity>>> pending = Completer<Result<List<PublicFolderEntity>>>();
+    repo.ownerFoldersHandler = (_) => pending.future;
+    await tester.tap(find.text('Night Owl'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Night Owl'), findsOneWidget);
+    expect(tester.getSize(find.byType(ProfileFoldersRow)).height, height);
   });
 }

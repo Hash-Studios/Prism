@@ -49,6 +49,8 @@ void main() {
       }
 
       await tester.tap(find.widgetWithText(PrismChip, 'ERR'));
+      // The label colour cross-fades: one frame starts the fade, the next lands after it ends.
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(labelOf('ERR'), theme.colorScheme.onSurface);

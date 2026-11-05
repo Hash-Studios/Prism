@@ -10,10 +10,13 @@ import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_hold_region.dart';
+import 'package:Prism/features/day_night/day_night_support.dart';
+import 'package:Prism/features/day_night/views/widgets/day_night_pick_sheet.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/variant_group.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -29,6 +32,7 @@ class WallpaperQuickActionRegion extends StatelessWidget {
     this.preview,
     this.readIsPinned,
     this.onTogglePin,
+    this.variants,
   });
 
   final FeedItemEntity item;
@@ -40,6 +44,9 @@ class WallpaperQuickActionRegion extends StatelessWidget {
   /// Read when the menu opens: whether the wall is pinned, or null to hide Pin.
   final bool? Function()? readIsPinned;
   final VoidCallback? onTogglePin;
+
+  /// The colour variants of this wall, for the one-tap light and dark pair.
+  final VariantGroup? variants;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +61,7 @@ class WallpaperQuickActionRegion extends StatelessWidget {
       pinLabel: onTogglePin == null ? null : context.l10n.favouritePin,
       unpinLabel: context.l10n.favouriteUnpin,
       readIsPinned: readIsPinned,
+      dayNightLabel: dayNightSupportedNow ? context.l10n.dayNightTitle : null,
       readIsFavourite: () => getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, item.id),
       preview:
           preview ??
@@ -70,6 +78,7 @@ class WallpaperQuickActionRegion extends StatelessWidget {
           onShowLessLikeThis: onShowLessLikeThis,
           onResetOriginal: onResetOriginal,
           onTogglePin: onTogglePin,
+          variants: variants,
         ),
       ),
       child: child,
@@ -84,6 +93,7 @@ Future<void> _dispatch(
   VoidCallback? onShowLessLikeThis,
   VoidCallback? onResetOriginal,
   VoidCallback? onTogglePin,
+  VariantGroup? variants,
 }) async {
   if (!await requireSignedInAction(context) || !context.mounted) return;
   switch (action) {
@@ -111,6 +121,8 @@ Future<void> _dispatch(
       await showFolderSheet(context, FavouriteWallEntity.fromFeedItem(item));
     case WallpaperQuickAction.pin:
       onTogglePin?.call();
+    case WallpaperQuickAction.dayNight:
+      await showDayNightPickSheet(context, item: item, variants: variants);
   }
 }
 

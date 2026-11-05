@@ -180,7 +180,7 @@ class PrismSegmented<T> extends StatelessWidget {
           Positioned.fill(
             child: AnimatedAlign(
               alignment: Alignment(x, 0),
-              duration: context.motion(PrismDurations.base),
+              duration: context.motion(PrismDurations.fast),
               curve: PrismCurves.move,
               child: FractionallySizedBox(
                 widthFactor: 1 / values.length,
@@ -215,7 +215,12 @@ class PrismSegmented<T> extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
                               if (iconOf?.call(value) != null) ...<Widget>[
-                                Icon(iconOf!(value), size: 16, color: value == selected ? cs.surface : cs.onSurface),
+                                TweenAnimationBuilder<Color?>(
+                                  tween: ColorTween(end: value == selected ? cs.surface : cs.onSurface),
+                                  duration: context.motion(PrismDurations.fast),
+                                  curve: PrismCurves.enter,
+                                  builder: (_, c, _) => Icon(iconOf!(value), size: 16, color: c),
+                                ),
                                 const SizedBox(width: 6),
                               ],
                               Flexible(

@@ -167,7 +167,6 @@ class _TabButton extends StatelessWidget {
           message: label,
           excludeFromSemantics: true,
           child: PressScale(
-            scale: 0.92,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: onPressed,

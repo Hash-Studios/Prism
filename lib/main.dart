@@ -68,6 +68,8 @@ import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_session_lis
 import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
+import 'package:Prism/features/day_night/biz/bloc/day_night_bloc.j.dart';
+import 'package:Prism/features/day_night/views/widgets/day_night_session_listener.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_quick_tile_listener.dart';
 import 'package:Prism/features/folders/folders.dart';
@@ -369,6 +371,7 @@ Future<void> main() async {
                 providers: [
                   BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
                   BlocProvider<CategoryFeedBloc>(create: (_) => getIt<CategoryFeedBloc>()),
+                  BlocProvider<DayNightBloc>(create: (_) => getIt<DayNightBloc>()),
                   BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
                   BlocProvider<FoldersBloc>(create: (_) => getIt<FoldersBloc>()),
                   BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
@@ -979,10 +982,12 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
                       child: LayoutPrefsScope(
                         prefs: getIt<LayoutPrefsStore>(),
                         child: AutoRotateSessionListener(
-                          child: FolderWriteFailureListener(
-                            child: ShakeToReportListener(
-                              navigatorKey: _appRouter.navigatorKey,
-                              child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                          child: DayNightSessionListener(
+                            child: FolderWriteFailureListener(
+                              child: ShakeToReportListener(
+                                navigatorKey: _appRouter.navigatorKey,
+                                child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
+                              ),
                             ),
                           ),
                         ),
@@ -1003,7 +1008,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
                   theme: context.prismLightTheme(),
                   darkTheme: context.prismDarkTheme(),
                   themeMode: context.prismThemeMode(),
-                  themeAnimationDuration: context.motion(PrismDurations.slow),
+                  themeAnimationDuration: context.motion(PrismDurations.base),
                   themeAnimationCurve: PrismCurves.move,
                 ),
               ),

@@ -73,6 +73,29 @@ class _EmptyFirestore extends Fake implements FirestoreClient {
   }) async => null;
 }
 
+class _GatedBootstrapFirestore extends _OneWallFirestore {
+  final profileGate = Completer<void>();
+  bool followingStarted = false;
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic>, String) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async {
+    await profileGate.future;
+    return null;
+  }
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) {
+    if (spec.sourceTag == 'personalized.following_uids') followingStarted = true;
+    return super.query(spec, map);
+  }
+}
+
 class _OneWallFirestore extends Fake implements FirestoreClient {
   static const Map<String, dynamic> _wall = <String, dynamic>{
     'wallpaper_url': 'https://example.com/wall.jpg',
@@ -1198,6 +1221,23 @@ void main() {
 
     expect(result.data!.items, isNotEmpty);
     expect(watch.elapsedMilliseconds, lessThan(900));
+  });
+
+  test('following bootstrap starts without waiting for the user profile', () async {
+    final previousUser = app_state.prismUser;
+    addTearDown(() => app_state.prismUser = previousUser);
+    app_state.prismUser = _signedInUser();
+    final firestore = _GatedBootstrapFirestore();
+    final pending = _repository(
+      firestore: firestore,
+      favourites: _CountingFavourites(),
+      settings: SettingsLocalDataSource(InMemoryLocalStore()),
+    ).fetch(_firstPage);
+    await Future<void>.delayed(Duration.zero);
+    final followingStarted = firestore.followingStarted;
+    firestore.profileGate.complete();
+    expect((await pending).isSuccess, isTrue);
+    expect(followingStarted, isTrue);
   });
 
   test('creators from a slow blocked load are still filtered and never cached', () async {

@@ -442,6 +442,9 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         }
 
         final Future<Map<String, dynamic>> userDocFuture = loadUserDoc();
+        final Future<List<String>> followingFuture = isGuest
+            ? Future.value(const <String>[])
+            : _loadFollowingUids(userId);
         final Future<void> seedFuture = isGuest
             ? Future<void>.value()
             : _seedTasteFromFavourites(userId, expectedRevision: tasteRevision);
@@ -459,7 +462,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
         }
         final List<String> interests = _resolveInterests(userDoc, catalog);
-        final List<String> following = isGuest ? const <String>[] : await _loadFollowingUids(userId);
+        final List<String> following = await followingFuture;
         if (!isCurrentSession() || !isCurrentPrime() || !isCurrentGeneration()) {
           return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
         }
