@@ -28,13 +28,21 @@ String folderMemberName(PublicProfileEntity? profile, AppLocalizations l10n) {
   return l10n.foldersUnknownPerson;
 }
 
-/// One member's public profile. [placeholder] shows while it loads, so a fallback name never flashes first.
+/// One member's public profile. [placeholder] shows while it loads, so a fallback name never flashes first. A
+/// profile that has not arrived after [timeout] shows the fallback, and replaces it if it arrives later.
 class FolderMemberProfile extends StatefulWidget {
-  const FolderMemberProfile({super.key, required this.uid, required this.builder, required this.placeholder});
+  const FolderMemberProfile({
+    super.key,
+    required this.uid,
+    required this.builder,
+    required this.placeholder,
+    this.timeout = const Duration(seconds: 5),
+  });
 
   final String uid;
   final Widget Function(BuildContext context, PublicProfileEntity? profile) builder;
   final Widget placeholder;
+  final Duration timeout;
 
   @override
   State<FolderMemberProfile> createState() => _FolderMemberProfileState();
@@ -42,6 +50,8 @@ class FolderMemberProfile extends StatefulWidget {
 
 class _FolderMemberProfileState extends State<FolderMemberProfile> {
   Stream<PublicProfileEntity?>? _profileStream;
+  Timer? _timeout;
+  bool _timedOut = false;
 
   @override
   void initState() {
@@ -55,7 +65,18 @@ class _FolderMemberProfileState extends State<FolderMemberProfile> {
     if (oldWidget.uid != widget.uid) _watchProfile();
   }
 
+  @override
+  void dispose() {
+    _timeout?.cancel();
+    super.dispose();
+  }
+
   void _watchProfile() {
+    _timeout?.cancel();
+    _timedOut = false;
+    _timeout = Timer(widget.timeout, () {
+      if (mounted) setState(() => _timedOut = true);
+    });
     _profileStream = getIt.isRegistered<PublicProfileRepository>()
         ? getIt<PublicProfileRepository>().watchProfile(widget.uid)
         : null;
@@ -67,7 +88,8 @@ class _FolderMemberProfileState extends State<FolderMemberProfile> {
     return StreamBuilder<PublicProfileEntity?>(
       key: ValueKey<String>(widget.uid),
       stream: _profileStream,
-      builder: (context, snapshot) => snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData
+      builder: (context, snapshot) =>
+          snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData && !_timedOut
           ? widget.placeholder
           : widget.builder(context, snapshot.data),
     );

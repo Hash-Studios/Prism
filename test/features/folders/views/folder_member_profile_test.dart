@@ -119,9 +119,9 @@ void main() {
   });
 
   testWidgets('a profile error leaves the placeholder and renders the fallback', (tester) async {
-    when(() => profiles.watchProfile('ana')).thenAnswer(
-      (_) => Stream<PublicProfileEntity?>.error(StateError('profile read failed')),
-    );
+    when(
+      () => profiles.watchProfile('ana'),
+    ).thenAnswer((_) => Stream<PublicProfileEntity?>.error(StateError('profile read failed')));
 
     await tester.pumpWidget(_host());
     await tester.pump();
@@ -141,7 +141,7 @@ void main() {
     expect(find.text('Loading profile'), findsNothing);
   });
 
-  testWidgets('an open profile stream without events stays loading until disposal', (tester) async {
+  testWidgets('an open profile stream without events falls back, and disposal cancels it', (tester) async {
     final StreamController<PublicProfileEntity?> pending = StreamController<PublicProfileEntity?>();
     addTearDown(pending.close);
     when(() => profiles.watchProfile('ana')).thenAnswer((_) => pending.stream);
@@ -149,10 +149,31 @@ void main() {
     await tester.pumpWidget(_host());
     await tester.pump(const Duration(minutes: 1));
 
-    expect(find.text('Loading profile'), findsOneWidget);
-    expect(find.text('Unavailable profile'), findsNothing);
+    expect(find.text('Loading profile'), findsNothing);
+    expect(find.text('Unavailable profile'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     expect(pending.hasListener, isFalse);
+  });
+
+  testWidgets('a profile that never arrives shows the fallback after the timeout, then the profile if it comes', (
+    tester,
+  ) async {
+    final StreamController<PublicProfileEntity?> slow = StreamController<PublicProfileEntity?>();
+    addTearDown(slow.close);
+    when(() => profiles.watchProfile('ana')).thenAnswer((_) => slow.stream);
+    await tester.pumpWidget(_host());
+
+    await tester.pump(const Duration(seconds: 4));
+    expect(find.text('Loading profile'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('Loading profile'), findsNothing);
+    expect(find.text('Unavailable profile'), findsOneWidget);
+
+    slow.add(_ana);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Ana'), findsOneWidget);
   });
 }

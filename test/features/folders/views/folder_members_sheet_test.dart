@@ -148,7 +148,11 @@ void main() {
           await tester.ensureVisible(row);
           await _settle(tester);
           expect(find.text(title).hitTestable(), findsOneWidget);
-          _expectTapTarget(tester, find.descendant(of: row, matching: find.byType(InkWell)).first, label: title);
+          _expectTapTarget(
+            tester,
+            find.descendant(of: row, matching: find.byType(InkWell)).first,
+            label: title,
+          );
           if (uid != 'owner') {
             final Finder remove = find.descendant(of: row, matching: find.widgetWithText(FilledButton, 'Remove'));
             _expectTapTarget(tester, remove, label: 'Remove');
