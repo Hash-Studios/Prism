@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/store_adapters/lazy_file_cache.dart';
 import 'package:Prism/features/favourite_walls/domain/guest_favourites_codec.dart';
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 
 @lazySingleton
@@ -19,7 +20,9 @@ class GuestFavouritesStore {
   final LazyFileCache _legacy;
   Future<void> _writeTail = Future<void>.value();
 
-  Future<Map<String, Map<String, Object?>>> readAll() async {
+  Future<Map<String, Map<String, Object?>>> readAll() => _serialize(_readAll);
+
+  Future<Map<String, Map<String, Object?>>> _readAll() async {
     final snapshot = await _durable.read(_snapshotKey);
     if (snapshot != null) return GuestFavouritesCodec.decode(snapshot['itemsJson']! as String);
 
@@ -31,13 +34,13 @@ class GuestFavouritesStore {
     } catch (_) {
       imported = <String, Map<String, Object?>>{};
     }
-    await _durable.write(_snapshotKey, <String, Object?>{'itemsJson': GuestFavouritesCodec.encode(imported)});
+    await _persist(imported);
     return imported;
   }
 
   /// Saves [doc] under [id] and returns how many favourites the guest has now.
   Future<int> put(String id, Map<String, dynamic> doc) => _serialize(() async {
-    final Map<String, Map<String, Object?>> all = await readAll();
+    final Map<String, Map<String, Object?>> all = await _readAll();
     all.remove(id);
     all[id] = <String, Object?>{
       for (final MapEntry<String, dynamic> entry in doc.entries)
@@ -51,7 +54,7 @@ class GuestFavouritesStore {
   });
 
   Future<void> remove(Iterable<String> ids) => _serialize(() async {
-    final Map<String, Map<String, Object?>> all = await readAll();
+    final Map<String, Map<String, Object?>> all = await _readAll();
     final Set<String> drop = ids.toSet();
     all.removeWhere((String id, _) => drop.contains(id));
     await _persist(all);
@@ -62,8 +65,10 @@ class GuestFavouritesStore {
     await _legacy.delete(_legacyKey);
   });
 
-  Future<void> _persist(Map<String, Map<String, Object?>> items) =>
-      _durable.write(_snapshotKey, <String, Object?>{'itemsJson': GuestFavouritesCodec.encode(items)});
+  Future<void> _persist(Map<String, Map<String, Object?>> items) async {
+    final encoded = await compute(GuestFavouritesCodec.encode, items, debugLabel: 'favourites.guestSnapshot');
+    await _durable.write(_snapshotKey, <String, Object?>{'itemsJson': encoded});
+  }
 
   Future<T> _serialize<T>(Future<T> Function() action) {
     final Future<T> next = _writeTail.then((_) => action());

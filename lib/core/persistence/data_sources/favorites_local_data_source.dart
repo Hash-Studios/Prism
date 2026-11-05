@@ -6,6 +6,7 @@ import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/features/favourite_walls/data/favourite_wall_doc_mapper.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 
 @lazySingleton
@@ -147,18 +148,7 @@ class FavoritesLocalDataSource {
       if (wall.id.isEmpty || !seen.add(wall.id)) continue;
       docs.add(_jsonFavouriteDoc(wall));
     }
-    final List<List<Map<String, Object?>>> chunks = <List<Map<String, Object?>>>[];
-    var chunk = <Map<String, Object?>>[];
-    for (final doc in docs) {
-      final candidate = <Map<String, Object?>>[...chunk, doc];
-      if (chunk.isNotEmpty && utf8.encode(jsonEncode(candidate)).length > _snapshotChunkBytes) {
-        chunks.add(chunk);
-        chunk = <Map<String, Object?>>[doc];
-      } else {
-        chunk = candidate;
-      }
-    }
-    if (chunk.isNotEmpty) chunks.add(chunk);
+    final chunks = await compute(_chunkWallSnapshot, docs, debugLabel: 'favourites.snapshot');
 
     final String generation = '${DateTime.now().microsecondsSinceEpoch}-${_snapshotGeneration++}';
     for (int index = 0; index < chunks.length; index++) {
@@ -170,6 +160,25 @@ class FavoritesLocalDataSource {
     for (final key in records.keys.where((key) => key.startsWith(prefix) && !key.startsWith('$prefix$generation:'))) {
       await _durable.delete(key);
     }
+  }
+
+  static List<List<Map<String, Object?>>> _chunkWallSnapshot(List<Map<String, Object?>> docs) {
+    final chunks = <List<Map<String, Object?>>>[];
+    var chunk = <Map<String, Object?>>[];
+    var chunkBytes = 2;
+    for (final doc in docs) {
+      final docBytes = utf8.encode(jsonEncode(doc)).length;
+      final separatorBytes = chunk.isEmpty ? 0 : 1;
+      if (chunk.isNotEmpty && chunkBytes + separatorBytes + docBytes > _snapshotChunkBytes) {
+        chunks.add(chunk);
+        chunk = <Map<String, Object?>>[];
+        chunkBytes = 2;
+      }
+      chunkBytes += (chunk.isEmpty ? 0 : 1) + docBytes;
+      chunk.add(doc);
+    }
+    if (chunk.isNotEmpty) chunks.add(chunk);
+    return chunks;
   }
 
   Future<Map<String, Object?>?> readFavouriteOperation(String userId, String wallId) =>
