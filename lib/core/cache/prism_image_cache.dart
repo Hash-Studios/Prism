@@ -1,3 +1,4 @@
+import 'package:Prism/core/cache/legacy_thumbnail_file_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
@@ -15,7 +16,14 @@ class PrismImageCache {
   /// Created on first use, so nothing touches the file system before an image loads.
   static BaseCacheManager get instance =>
       testOverride ??
-      (_shared ??= CacheManager(Config(key, stalePeriod: stalePeriod, maxNrOfCacheObjects: maxObjects)));
+      (_shared ??= CacheManager(
+        Config(
+          key,
+          stalePeriod: stalePeriod,
+          maxNrOfCacheObjects: maxObjects,
+          fileService: LegacyThumbnailFileService(),
+        ),
+      ));
 
   /// Replaces the cache manager in tests. Set it back to `null` to restore the shared one.
   @visibleForTesting
