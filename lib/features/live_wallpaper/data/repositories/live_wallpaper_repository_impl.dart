@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/live_wallpaper/data/live_apply_outcome_mapper.dart';
@@ -11,6 +14,7 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart'
 import 'package:Prism/features/live_wallpaper/domain/entities/live_screens.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/domain/repositories/live_wallpaper_repository.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:injectable/injectable.dart';
 
@@ -25,8 +29,31 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
 
   final LiveTexturePreparer _texturePreparer;
 
+  WallpaperTarget? _nextTarget;
+  String? _nextTargetOwner;
+  StreamSubscription<PrismUsersV2>? _nextTargetSessionSubscription;
+
   @override
-  WallpaperTarget? nextTarget;
+  WallpaperTarget? get nextTarget {
+    if (!app_state.prismUser.loggedIn || app_state.prismUser.id != _nextTargetOwner) {
+      nextTarget = null;
+    }
+    return _nextTarget;
+  }
+
+  @override
+  set nextTarget(WallpaperTarget? target) {
+    _nextTargetOwner = target == null || !app_state.prismUser.loggedIn ? null : app_state.prismUser.id;
+    _nextTarget = _nextTargetOwner == null ? null : target;
+    unawaited(_nextTargetSessionSubscription?.cancel());
+    _nextTargetSessionSubscription = null;
+    if (_nextTarget != null && getIt.isRegistered<SessionRepository>()) {
+      final String owner = _nextTargetOwner!;
+      _nextTargetSessionSubscription = getIt<SessionRepository>().watchCurrentUser().listen((user) {
+        if (!user.loggedIn || user.id != owner) nextTarget = null;
+      });
+    }
+  }
 
   @override
   Future<LiveCapabilities> getCapabilities() async {

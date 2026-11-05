@@ -1,4 +1,8 @@
+import 'dart:async';
 import 'dart:io';
+
+import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 
@@ -8,6 +12,7 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_screens.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:async_wallpaper/src/wallpaper_client.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +24,13 @@ import '../../support/profile_user_fixture.dart';
 class _Client extends Mock implements WallpaperClient {}
 
 class _Texture extends Mock implements LiveTexturePreparer {}
+
+class _SessionRepository extends Mock implements SessionRepository {}
+
+Stream<PrismUsersV2> _watchSessions(Stream<PrismUsersV2> changes) async* {
+  yield profileUser();
+  yield* changes;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -56,6 +68,8 @@ void main() {
 
   test('guest local premium cannot prepare textures or invoke any native live apply', () async {
     app_state.prismUser = profileUser(loggedIn: false, premium: true);
+    repository.nextTarget = WallpaperTarget.lock;
+    expect(repository.nextTarget, isNull);
     final motion = await repository.applyMotion(
       imageUrl: '/local.jpg',
       style: MotionStyle.drift,
@@ -77,6 +91,42 @@ void main() {
     expect(<LiveApplyStatus>[motion.status, gradient.status, video.status], everyElement(LiveApplyStatus.cancelled));
     verifyZeroInteractions(texture);
     verifyZeroInteractions(client);
+  });
+
+  test('a queued screen target is discarded when the session signs out', () {
+    repository.nextTarget = WallpaperTarget.lock;
+    expect(repository.nextTarget, WallpaperTarget.lock);
+
+    app_state.prismUser = profileUser(loggedIn: false);
+
+    expect(repository.nextTarget, isNull);
+  });
+
+  test('a queued screen target is discarded when a new session starts for the same user', () async {
+    final StreamController<PrismUsersV2> sessionChanges = StreamController<PrismUsersV2>.broadcast();
+    addTearDown(sessionChanges.close);
+    final _SessionRepository sessions = _SessionRepository();
+    when(() => sessions.currentUser).thenReturn(profileUser());
+    when(() => sessions.watchCurrentUser()).thenAnswer((_) => _watchSessions(sessionChanges.stream));
+    getIt.registerSingleton<SessionRepository>(sessions);
+    addTearDown(getIt.reset);
+
+    repository.nextTarget = WallpaperTarget.lock;
+    await Future<void>.delayed(Duration.zero);
+    sessionChanges.add(profileUser());
+    await Future<void>.delayed(Duration.zero);
+    expect(repository.nextTarget, WallpaperTarget.lock);
+
+    sessionChanges.add(profileUser(loggedIn: false));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(repository.nextTarget, isNull);
+    repository.nextTarget = WallpaperTarget.lock;
+    await Future<void>.delayed(Duration.zero);
+    sessionChanges.add(profileUser(id: 'u2'));
+    await Future<void>.delayed(Duration.zero);
+    expect(repository.nextTarget, isNull);
+    await getIt.reset();
   });
 
   test('losing the session during texture preparation cancels before native apply', () async {
